@@ -96,6 +96,8 @@ export interface FooterCopy {
   readonly label: string;
   readonly tagline: string;
   readonly languageHeading: string;
+  /** Names the language links for assistive technology; the visible heading is separate. */
+  readonly languageSwitcherLabel: string;
   readonly currencyHeading: string;
   readonly currencyValue: string;
   readonly groups: readonly ResolvedFooterGroup[];
@@ -152,6 +154,7 @@ export function footerCopyFrom(t: ShellTranslator): FooterCopy {
     label: t('footer.label'),
     tagline: t('tagline'),
     languageHeading: t('footer.languageHeading'),
+    languageSwitcherLabel: t('footer.languageSwitcherLabel'),
     currencyHeading: t('footer.currencyHeading'),
     currencyValue: t('footer.currencyValue'),
     groups: FOOTER_GROUPS.map((group) => ({

@@ -51,6 +51,7 @@
     "footer": {
       "label": "Footer",
       "languageHeading": "Language",
+      "languageSwitcherLabel": "Choose a language",
       "currencyHeading": "Currency",
       "currencyValue": "Azerbaijani manat (AZN)",
       "groups": {
