@@ -16,6 +16,8 @@ import type { ChecklistItem, ProjectChecklist } from './api';
  * feedback while somebody types.
  */
 
+import { fillPlaceholders } from '../i18n/placeholders';
+
 /**
  * The editor sections a requirement can point at.
  *
@@ -47,12 +49,11 @@ export function sectionHref(projectId: string, section: string): string | null {
   return `/projects/${encodeURIComponent(projectId)}/edit/${section}`;
 }
 
-/** How a section is named in a sentence — "Fix in Basics". */
-export const SECTION_LABEL: Record<ChecklistSectionKey, string> = {
-  basics: 'Basics',
-  rewards: 'Rewards',
-  story: 'Story',
-};
+/*
+ * NO `SECTION_LABEL` — issue #8. The three sections are named by the editor's own tabs, read
+ * as `copy.tabs[section]`, so "Fix in Rewards" and the Rewards tab cannot end up spelled
+ * differently. `tabs.ts` gave up its labels for the same reason.
+ */
 
 /* -------------------------------------------------------------------------
  * Progress
@@ -86,12 +87,14 @@ export function progressOf(checklist: ProjectChecklist): ChecklistProgress {
  * required" answers the question the bar cannot — whether the remainder is
  * optional.
  */
-export function describeProgress(progress: ChecklistProgress): string {
-  return (
-    `${progress.score}% complete. ` +
-    `${progress.blockingDone} of ${progress.blockingTotal} required items done, ` +
-    `${progress.advisoryDone} of ${progress.advisoryTotal} recommended.`
-  );
+export function describeProgress(progress: ChecklistProgress, template: string): string {
+  return fillPlaceholders(template, {
+    score: String(progress.score),
+    blockingDone: String(progress.blockingDone),
+    blockingTotal: String(progress.blockingTotal),
+    advisoryDone: String(progress.advisoryDone),
+    advisoryTotal: String(progress.advisoryTotal),
+  });
 }
 
 export function unmetOf(items: readonly ChecklistItem[]): readonly ChecklistItem[] {

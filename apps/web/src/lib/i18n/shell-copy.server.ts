@@ -21,9 +21,11 @@ import type { PluralForms } from '@ideanest/ui';
 import {
   type BasicsPanelCopy,
   type EditorChromeCopy,
+  type ReviewPanelCopy,
   type RewardsPanelCopy,
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
+  reviewPanelCopyFrom,
   rewardsPanelCopyFrom,
 } from './campaign-editor-copy';
 import {
@@ -301,4 +303,10 @@ export async function rewardsPanelCopy(): Promise<RewardsPanelCopy> {
     remaining: counter.raw('remaining') as PluralForms,
     tooMany: counter.raw('tooMany') as PluralForms,
   });
+}
+
+/** The review tab — what is left to do, and the two irreversible buttons. */
+export async function reviewPanelCopy(): Promise<ReviewPanelCopy> {
+  const [editor, locale] = await Promise.all([getTranslations('campaignEditor'), getLocale()]);
+  return reviewPanelCopyFrom(editor, localeOrDefault(locale));
 }
