@@ -470,7 +470,8 @@
       "/admin/health": "Sistemin vəziyyəti",
       "/admin/legal": "Hüquqi sənədlər",
       "/admin/moderation/submissions": "Baxış gözləyən kampaniyalar",
-      "/admin/campaigns": "Bütün kampaniyalar"
+      "/admin/campaigns": "Bütün kampaniyalar",
+      "/admin/revenue": "Gəlir"
     },
     "states": {
       "built": "Hazırdır",
@@ -790,6 +791,12 @@
         "metaDescription": "§22.2-nin tələb etdiyi səkkiz sənəd, onların versiyaları və dərci.",
         "title": "Hüquqi sənədlər",
         "intro": "Dərc edilmiş versiya dəyişdirilmir. Düzəliş yeni versiyadır, köhnəsi isə oxunaqlı qalır — çünki qəbul qeydi məhz versiyanı göstərir."
+      },
+      "revenue": {
+        "metaTitle": "Gəlir",
+        "metaDescription": "Abunəliklərin gətirdiyi gəlir — dövr, plan və ödəniş üsulu üzrə.",
+        "title": "Gəlir",
+        "intro": "Yaradıcıların planlar üçün ödədikləri, pulun daxil olduğu tarixə görə qruplaşdırılıb. Hər valyuta ayrıca göstərilir və heç vaxt başqası ilə toplanmır."
       }
     },
     "screens": {
@@ -2096,6 +2103,72 @@
           "ru": "Rusca",
           "tr": "Türkcə"
         }
+      },
+      "revenue": {
+        "subject": "gəlir hesabatı",
+        "noticeTitle": "Geri qaytarmalar gizlədilmir, göstərilir",
+        "noticeBody": "«Daxil olub» gələn məbləğdir, «qaytarılıb» geri verilən, «qalıb» isə onların fərqi. «Daxil olub» məbləğini bank çıxarışı ilə tutuşdurun, ayı bağlayanda «qalıb» məbləğindən istifadə edin.",
+        "periodLegend": "Dövr",
+        "fromLabel": "Başlanğıc",
+        "toLabel": "Son",
+        "toHint": "Bu gün də daxil olmaqla. Günlər Bakı vaxtı ilə sayılır.",
+        "thisMonth": "Bu ay",
+        "lastMonth": "Keçən ay",
+        "show": "Göstər",
+        "planLabel": "Plan kodu",
+        "planHint": "Bütün planlar üçün boş saxlayın.",
+        "methodLabel": "Ödəniş üsulu",
+        "anyMethod": "İstənilən üsul",
+        "method": {
+          "BANK_TRANSFER": "Bank köçürməsi",
+          "CARD": "Kart",
+          "CASH": "Nağd",
+          "OTHER": "Digər"
+        },
+        "periodCaption": "{from} — {to}",
+        "totalsHeading": "Yekunlar",
+        "loadingTotals": "Yekunlar yüklənir",
+        "gross": "Daxil olub",
+        "reversed": "Qaytarılıb",
+        "net": "Qalıb",
+        "payments": {
+          "one": "{count} ödəniş",
+          "few": "{count} ödəniş",
+          "many": "{count} ödəniş",
+          "other": "{count} ödəniş"
+        },
+        "reversals": {
+          "one": "{count} geri qaytarma",
+          "few": "{count} geri qaytarma",
+          "many": "{count} geri qaytarma",
+          "other": "{count} geri qaytarma"
+        },
+        "byPlanHeading": "Planlar üzrə",
+        "byMethodHeading": "Ödəniş üsulları üzrə",
+        "entries": {
+          "one": "{count} qeyd",
+          "few": "{count} qeyd",
+          "many": "{count} qeyd",
+          "other": "{count} qeyd"
+        },
+        "emptyTitle": "Bu dövrdə heç nə ödənilməyib",
+        "emptyBody": "Bu tarixlər arasında abunəlik üçün heç bir ödəniş daxil olmayıb. Ödəniş «Planlar» ekranında qeyd ediləndən sonra burada görünür.",
+        "listHeading": "Ödənişlər",
+        "loadingList": "Ödənişlər yüklənir",
+        "reversal": "Geri qaytarma",
+        "closedAccount": "Hesab bağlanıb",
+        "receivedOn": "Daxil olub: {date}",
+        "recordedOn": "qeyd edilib: {date}",
+        "reference": "İstinad: {reference}",
+        "exportCsv": "CSV yüklə",
+        "exporting": "Fayl hazırlanır",
+        "exported": {
+          "one": "{count} ödəniş yükləndi.",
+          "few": "{count} ödəniş yükləndi.",
+          "many": "{count} ödəniş yükləndi.",
+          "other": "{count} ödəniş yükləndi."
+        },
+        "truncated": "Fayl natamamdır: dövrün ödənişlərindən yalnız ilk {count} ödəniş daxildir. Dövrü daraldın və qalanını ayrıca yükləyin."
       }
     },
     "moderation": {

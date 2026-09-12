@@ -3,6 +3,7 @@ import type { FeeScope } from '../../admin/fees';
 import type { TransactionStatus, TransactionType } from '../../admin/payments';
 import type { DestinationStanding, PayoutState, VerificationStanding } from '../../admin/payouts';
 import type { RefundReason, RefundState } from '../../admin/refunds';
+import type { PaymentMethod } from '../../admin/revenue';
 import type { FindingCode, FindingKind } from '../../admin/reconciliation';
 import type { AdminTranslator } from '../admin-copy';
 import type { PluralForms } from '../plurals';
@@ -854,5 +855,132 @@ export function feeEditorCopyFrom(
     window: String(t.raw('screens.fees.window')),
     now: t('screens.fees.now'),
     scope: t.raw('screens.fees.scope') as Readonly<Record<FeeScope, string>>,
+  };
+}
+
+/**
+ * AD-11's third screen: what the subscriptions brought in — #23.
+ *
+ * <h2>Three figures per currency, and the words for them are chosen to be read together</h2>
+ *
+ * `gross`, `reversed` and `net` are labelled "Received", "Reversed" and "Kept" rather than in
+ * accounting's vocabulary, because the person reading them is somebody holding a bank
+ * statement and a month to close. The notice says which of the three each job uses.
+ *
+ * <h2>Counts are plural forms, never a number glued to a noun</h2>
+ *
+ * "1 payments" is wrong in English and "21 платежей" is wrong in Russian, and the second is
+ * the one a fixed suffix gets wrong. `lib/i18n/plurals.ts` chooses the form; this reads all
+ * four categories in every language because `catalogue.test.ts` demands identical key sets.
+ */
+export interface RevenueReportCopy extends ConsoleChromeCopy {
+  readonly subject: string;
+  readonly noticeTitle: string;
+  readonly noticeBody: string;
+
+  readonly periodLegend: string;
+  readonly fromLabel: string;
+  readonly toLabel: string;
+  readonly toHint: string;
+  readonly thisMonth: string;
+  readonly lastMonth: string;
+  readonly show: string;
+  readonly planLabel: string;
+  readonly planHint: string;
+  readonly methodLabel: string;
+  readonly anyMethod: string;
+  /** Keyed by the service's own spelling of the method. */
+  readonly method: Readonly<Record<PaymentMethod, string>>;
+  /** Carries `{from}` and `{to}`, both already formatted as dates. */
+  readonly periodCaption: string;
+
+  readonly totalsHeading: string;
+  readonly loadingTotals: string;
+  readonly gross: string;
+  readonly reversed: string;
+  readonly net: string;
+  readonly payments: PluralForms;
+  readonly reversals: PluralForms;
+  readonly byPlanHeading: string;
+  readonly byMethodHeading: string;
+  readonly entries: PluralForms;
+  readonly emptyTitle: string;
+  readonly emptyBody: string;
+
+  readonly listHeading: string;
+  readonly loadingList: string;
+  readonly reversal: string;
+  readonly closedAccount: string;
+  /** Carries `{date}`. */
+  readonly receivedOn: string;
+  /** Carries `{date}`. Shown only when the payment was typed in on a different day. */
+  readonly recordedOn: string;
+  /** Carries `{reference}`. */
+  readonly reference: string;
+
+  readonly exportCsv: string;
+  readonly exporting: string;
+  readonly exported: PluralForms;
+  /** Carries `{count}`. */
+  readonly truncated: string;
+}
+
+export function revenueReportCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy): RevenueReportCopy {
+  // `t.raw` for every template and every set of plural forms: `t('key')` on a message holding a
+  // placeholder renders the key's own path, and `test-copy.ts` refuses it.
+  const template = (key: string) => String(t.raw(`screens.revenue.${key}`));
+  const forms = (key: string) => t.raw(`screens.revenue.${key}`) as PluralForms;
+  const word = (key: string) => t(`screens.revenue.${key}`);
+
+  return {
+    ...chrome,
+    subject: word('subject'),
+    noticeTitle: word('noticeTitle'),
+    noticeBody: word('noticeBody'),
+
+    periodLegend: word('periodLegend'),
+    fromLabel: word('fromLabel'),
+    toLabel: word('toLabel'),
+    toHint: word('toHint'),
+    thisMonth: word('thisMonth'),
+    lastMonth: word('lastMonth'),
+    show: word('show'),
+    planLabel: word('planLabel'),
+    planHint: word('planHint'),
+    methodLabel: word('methodLabel'),
+    anyMethod: word('anyMethod'),
+    method: {
+      BANK_TRANSFER: word('method.BANK_TRANSFER'),
+      CARD: word('method.CARD'),
+      CASH: word('method.CASH'),
+      OTHER: word('method.OTHER'),
+    },
+    periodCaption: template('periodCaption'),
+
+    totalsHeading: word('totalsHeading'),
+    loadingTotals: word('loadingTotals'),
+    gross: word('gross'),
+    reversed: word('reversed'),
+    net: word('net'),
+    payments: forms('payments'),
+    reversals: forms('reversals'),
+    byPlanHeading: word('byPlanHeading'),
+    byMethodHeading: word('byMethodHeading'),
+    entries: forms('entries'),
+    emptyTitle: word('emptyTitle'),
+    emptyBody: word('emptyBody'),
+
+    listHeading: word('listHeading'),
+    loadingList: word('loadingList'),
+    reversal: word('reversal'),
+    closedAccount: word('closedAccount'),
+    receivedOn: template('receivedOn'),
+    recordedOn: template('recordedOn'),
+    reference: template('reference'),
+
+    exportCsv: word('exportCsv'),
+    exporting: word('exporting'),
+    exported: forms('exported'),
+    truncated: template('truncated'),
   };
 }

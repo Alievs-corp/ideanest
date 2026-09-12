@@ -232,7 +232,14 @@ export const CONSOLE_MODULES: readonly ConsoleModule[] = Object.freeze([
      * looking for the terms of use is not thinking about money, and the rail is a place to
      * look things up rather than a diagram of §4.11.
      */
-    otherScreens: ['/admin/plans', '/admin/legal'],
+    /*
+     * `/admin/revenue` is the plans screen's other half and is filed with it: what the
+     * platform charges a creator, and what those charges brought in (#23). Its own screen
+     * rather than a section of `/admin/plans`, because that one is somebody's work queue —
+     * payments waiting to be recorded — and a report is read by the person closing a month,
+     * who has no reason to scroll past a queue to reach it.
+     */
+    otherScreens: ['/admin/plans', '/admin/revenue', '/admin/legal'],
     issue: 311,
   },
   {
@@ -342,6 +349,7 @@ export const CONSOLE_GROUPS: readonly ConsoleGroup[] = Object.freeze([
       '/admin/disputes',
       '/admin/fees',
       '/admin/plans',
+      '/admin/revenue',
     ],
   },
   {
