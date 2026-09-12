@@ -9,6 +9,7 @@ import CampaignEditorLayout from './layout';
 import NewProjectLayout from '../../new/layout';
 import MESSAGES from '../../../../../../messages/en.json';
 import { resolveServerTree } from '../../../../../test-support/server-tree';
+import { EDITOR_COPY } from '../../../../../test-editor-copy';
 
 /**
  * The campaign editor and the create form carry the site shell — issue #347.
@@ -78,7 +79,7 @@ async function renderInLayout(
 
 describe('the campaign editor', () => {
   const editor = (
-    <EditorShell projectId="p1" active="basics" title="A solar lamp" state="DRAFT">
+    <EditorShell projectId="p1" copy={EDITOR_COPY} active="basics" title="A solar lamp" state="DRAFT">
       <p>The basics form</p>
     </EditorShell>
   );

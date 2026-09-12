@@ -37,7 +37,17 @@ import { describeFailure, type SaveFailure } from './useAutosave';
  * messages land through the same `fieldErrorsFrom` both editors use, so a
  * refusal reads the same wherever in the editor it happened.
  */
+import type {
+  ItemEditorCopy,
+  ItemValidationCopy,
+} from '../../lib/i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+
 export interface ItemEditorProps {
+  /** This drawer's words. */
+  copy: ItemEditorCopy;
+  /** The vocabulary `validateItem` refuses in. */
+  validation: ItemValidationCopy;
   projectId: string;
   open: boolean;
   /** The item being edited, or null to create one. */
@@ -47,7 +57,15 @@ export interface ItemEditorProps {
   onSaved: (item: Item) => void;
 }
 
-export function ItemEditor({ projectId, open, item, onOpenChange, onSaved }: ItemEditorProps) {
+export function ItemEditor({
+  projectId,
+  copy,
+  validation,
+  open,
+  item,
+  onOpenChange,
+  onSaved,
+}: ItemEditorProps) {
   const [draft, setDraft] = useState<ItemDraft>(EMPTY_ITEM);
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState<SaveFailure | null>(null);
@@ -68,7 +86,7 @@ export function ItemEditor({ projectId, open, item, onOpenChange, onSaved }: Ite
     setAttempted(false);
   }, [open, item]);
 
-  const errors = validateItem(draft);
+  const errors = validateItem(draft, validation);
   const serverErrors = fieldErrorsFrom(failure, isItemField);
 
   /*
@@ -107,16 +125,17 @@ export function ItemEditor({ projectId, open, item, onOpenChange, onSaved }: Ite
 
   return (
     <EditorDrawer
+      copy={copy.drawer}
       open={open}
       onOpenChange={onOpenChange}
-      title={item === null ? 'Add an item' : 'Edit item'}
-      description="Items are the things your campaign produces. A reward is a selection of them with quantities."
+      title={item === null ? copy.addTitle : copy.editTitle}
+      description={copy.drawerDescription}
       saving={saving}
       onSave={() => void save()}
     >
       <div className="flex flex-col gap-6">
         {failure !== null && (
-          <InlineAlert variant="danger" title="This item was not saved">
+          <InlineAlert variant="danger" title={copy.notSavedTitle}>
             <p>{failure.message}</p>
             <p className="mt-2 text-white/64">
               Nothing you typed has been lost — it is still in the fields below.
@@ -125,9 +144,9 @@ export function ItemEditor({ projectId, open, item, onOpenChange, onSaved }: Ite
         )}
 
         <Field
-          label="Name"
+          label={copy.name}
           required
-          hint={`What it is, as a backer would recognise it. ${ITEM_NAME_MAX_CHARACTERS} characters or fewer.`}
+          hint={fillPlaceholders(copy.nameHint, { max: String(ITEM_NAME_MAX_CHARACTERS) })}
           error={visible.name}
         >
           {/*
@@ -140,12 +159,17 @@ export function ItemEditor({ projectId, open, item, onOpenChange, onSaved }: Ite
             autoComplete="off"
             onChange={(event) => setDraft({ ...draft, name: event.target.value })}
           />
-          <CharacterCount count={characterCount(draft.name)} limit={ITEM_NAME_MAX_CHARACTERS} />
+          <CharacterCount
+            count={characterCount(draft.name)}
+            limit={ITEM_NAME_MAX_CHARACTERS}
+            copy={copy.characterCount}
+            locale={copy.locale}
+          />
         </Field>
 
         <Field
-          label="Description"
-          hint="Optional. Size, colour, edition — whatever distinguishes this from the next item."
+          label={copy.description}
+          hint={copy.descriptionHint}
           error={visible.description}
         >
           <Textarea
@@ -156,8 +180,8 @@ export function ItemEditor({ projectId, open, item, onOpenChange, onSaved }: Ite
         </Field>
 
         <Field
-          label="Image address"
-          hint="A published address. There is no uploader yet, so paste a link to an image that is already online."
+          label={copy.imageUrl}
+          hint={copy.imageUrlHint}
           error={visible.imageUrl}
         >
           {/*
@@ -170,7 +194,7 @@ export function ItemEditor({ projectId, open, item, onOpenChange, onSaved }: Ite
             type="url"
             inputMode="url"
             autoComplete="off"
-            placeholder="https://"
+            placeholder={copy.imageUrlPlaceholder}
             value={draft.imageUrl}
             onChange={(event) => setDraft({ ...draft, imageUrl: event.target.value })}
           />
@@ -185,7 +209,7 @@ export function ItemEditor({ projectId, open, item, onOpenChange, onSaved }: Ite
           */}
           <Switch
             checked={draft.isDigital}
-            label="Delivered as a file"
+            label={copy.isDigital}
             aria-describedby={digitalHintId}
             onCheckedChange={(checked) =>
               setDraft({
@@ -201,16 +225,16 @@ export function ItemEditor({ projectId, open, item, onOpenChange, onSaved }: Ite
             }
           />
           <p id={digitalHintId} className="mt-2 text-[13px] text-white/64">
-            A download or a licence. Nothing is shipped, so no weight and no address.
+            {copy.isDigitalHint}
           </p>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2">
           <Field
-            label="Weight in grams"
+            label={copy.weight}
             hint={
               draft.isDigital
-                ? 'A file has no shipping weight.'
+                ? copy.weightHintDigital
                 : 'Optional, and what shipping is worked out from later.'
             }
             error={visible.weightGrams}
@@ -225,8 +249,8 @@ export function ItemEditor({ projectId, open, item, onOpenChange, onSaved }: Ite
           </Field>
 
           <Field
-            label="Stock code"
-            hint="Optional. Your own reference, unique within this campaign."
+            label={copy.sku}
+            hint={copy.skuHint}
             error={visible.sku}
           >
             <TextInput

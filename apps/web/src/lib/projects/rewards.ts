@@ -5,6 +5,14 @@ import {
   toDateTimeLocal,
 } from './basics';
 import type {
+  AmountMessagesCopy,
+  ItemValidationCopy,
+  RewardValidationCopy,
+  RewardsVocabularyCopy,
+} from '../i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../i18n/placeholders';
+import { pluralise } from '../i18n/plurals';
+import type {
   Item,
   ItemPatch,
   NewItem,
@@ -79,28 +87,20 @@ const COUNTRY_CODE = /^[A-Za-z]{2}$/;
  * `NONE` and `DIGITAL` is invisible from the words alone, and choosing wrongly
  * decides whether a backer is asked for a postal address at all.
  */
-export const SHIPPING_SCOPES: readonly {
-  value: ShippingType;
-  label: string;
-  hint: string;
-}[] = [
-  { value: 'NONE', label: 'Nothing is delivered', hint: 'A credit, a thank-you, a name on a wall.' },
-  { value: 'DIGITAL', label: 'Digital delivery', hint: 'A file or a licence. No address is asked for.' },
-  {
-    value: 'LOCAL_PICKUP',
-    label: 'Collected in person',
-    hint: 'No carrier and no rate, but the backer’s country is still asked for.',
-  },
-  {
-    value: 'DOMESTIC',
-    label: 'Shipped domestically',
-    hint: 'Inside your own country only. Needs a rate per destination.',
-  },
-  {
-    value: 'INTERNATIONAL',
-    label: 'Shipped internationally',
-    hint: 'Anywhere you have priced. A destination with no rate cannot be chosen.',
-  },
+/**
+ * The delivery scopes §5.3 recognises, in the order they are offered.
+ *
+ * NO `label` AND NO `hint` ANY MORE — issue #324. The words are catalogue copy, read as
+ * `copy.scopes[scope]`, for the reason `tabs.ts` gives about its own sections: a spelling
+ * here as well would be the second declaration, and the second is the one nobody updates.
+ * What stays is the list, which is what the guard below and the option order need.
+ */
+export const SHIPPING_SCOPES: readonly ShippingType[] = [
+  'NONE',
+  'DIGITAL',
+  'LOCAL_PICKUP',
+  'DOMESTIC',
+  'INTERNATIONAL',
 ];
 
 /**
@@ -113,7 +113,7 @@ export const SHIPPING_SCOPES: readonly {
  * cannot fall out of step with what is offered.
  */
 export function isShippingType(value: string): value is ShippingType {
-  return SHIPPING_SCOPES.some((scope) => scope.value === value);
+  return SHIPPING_SCOPES.some((scope) => scope === value);
 }
 
 /** Whether a per-country rate means anything for this scope. `ShippingType.isShipped`. */
@@ -121,8 +121,11 @@ export function isShippedScope(scope: ShippingType): boolean {
   return scope === 'DOMESTIC' || scope === 'INTERNATIONAL';
 }
 
-export function shippingScopeLabel(scope: ShippingType): string {
-  return SHIPPING_SCOPES.find((option) => option.value === scope)?.label ?? scope;
+export function shippingScopeLabel(
+  scope: ShippingType,
+  copy: Readonly<Record<ShippingType, { label: string }>>,
+): string {
+  return copy[scope]?.label ?? scope;
 }
 
 /* -------------------------------------------------------------------------
@@ -189,22 +192,24 @@ export function isItemField(value: string): value is ItemField {
 
 export type ItemErrors = Partial<Record<ItemField, string>>;
 
-export function validateItem(draft: ItemDraft): ItemErrors {
+/** THE COPY IS AN ARGUMENT, for the reason `validateBasics` states: this runs per keystroke. */
+export function validateItem(draft: ItemDraft, copy: ItemValidationCopy): ItemErrors {
   const errors: ItemErrors = {};
 
   const nameLength = characterCount(draft.name.trim());
   if (nameLength === 0) {
     // Not "not filled in yet": `items.name` is NOT NULL and the service refuses
     // a blank one, so an empty name is a save that cannot succeed.
-    errors.name = 'An item needs a name.';
+    errors.name = copy.nameRequired;
   } else if (nameLength > ITEM_NAME_MAX_CHARACTERS) {
-    errors.name = `A name is ${ITEM_NAME_MAX_CHARACTERS} characters or fewer. Remove ${
-      nameLength - ITEM_NAME_MAX_CHARACTERS
-    }.`;
+    errors.name = fillPlaceholders(copy.nameTooLong, {
+      max: String(ITEM_NAME_MAX_CHARACTERS),
+      over: String(nameLength - ITEM_NAME_MAX_CHARACTERS),
+    });
   }
 
   if (characterCount(draft.sku.trim()) > ITEM_SKU_MAX_CHARACTERS) {
-    errors.sku = `A stock code is ${ITEM_SKU_MAX_CHARACTERS} characters or fewer.`;
+    errors.sku = fillPlaceholders(copy.skuTooLong, { max: String(ITEM_SKU_MAX_CHARACTERS) });
   }
 
   const weight = draft.weightGrams.trim();
@@ -215,12 +220,11 @@ export function validateItem(draft: ItemDraft): ItemErrors {
        * of taste. It is worded as two ways out rather than one because either
        * is a legitimate thing the creator meant.
        */
-      errors.weightGrams =
-        'A digital item has no shipping weight. Clear the weight, or make it a physical item.';
+      errors.weightGrams = copy.weightOnDigital;
     } else if (!WHOLE_NUMBER.test(weight)) {
-      errors.weightGrams = 'Enter the weight as a whole number of grams.';
+      errors.weightGrams = copy.weightNotWhole;
     } else if (Number.parseInt(weight, 10) <= 0) {
-      errors.weightGrams = 'A weight is more than zero grams.';
+      errors.weightGrams = copy.weightNotPositive;
     }
   }
 
@@ -439,27 +443,19 @@ export type RewardErrors = Partial<Record<RewardField, string>>;
  * differ: "Enter the goal in digits" is wrong on a field labelled Price, and a
  * creator reading it wonders which field the message is about.
  */
-const PRICE_MESSAGE: Record<AmountRejection, string> = {
-  empty: 'A reward needs a price.',
-  'not-a-number': 'Enter the price in digits, for example 19.99.',
-  comma: 'Use a full stop for the decimal point, for example 19.99.',
-  'too-many-decimals': 'A price has at most two decimal places.',
-  'too-large': 'That price is larger than the platform can hold.',
-  // §5.3 puts the floor at "the smallest chargeable amount", which is the
-  // payment provider's and belongs to configuration. Zero and below are not
-  // prices at all, and that much can be said here — it is also exactly what
-  // `RewardService.requirePrice` refuses.
-  'not-positive': 'A reward price is more than zero.',
-};
+function amountMessage(copy: AmountMessagesCopy, reason: AmountRejection): string {
+  const messages: Record<AmountRejection, string> = {
+    empty: copy.empty,
+    'not-a-number': copy.notANumber,
+    comma: copy.comma,
+    'too-many-decimals': copy.tooManyDecimals,
+    'too-large': copy.tooLarge,
+    'not-positive': copy.notPositive,
+  };
+  return messages[reason];
+}
 
-const RATE_MESSAGE: Record<AmountRejection, string> = {
-  empty: 'Enter what shipping to this destination costs.',
-  'not-a-number': 'Enter the rate in digits, for example 12.50.',
-  comma: 'Use a full stop for the decimal point, for example 12.50.',
-  'too-many-decimals': 'A rate has at most two decimal places.',
-  'too-large': 'That rate is larger than the platform can hold.',
-  'not-positive': 'A rate cannot be negative. Enter 0 for free shipping.',
-};
+
 
 export interface RewardValidationContext {
   /**
@@ -474,6 +470,7 @@ export interface RewardValidationContext {
 
 export function validateReward(
   draft: RewardDraft,
+  copy: RewardValidationCopy,
   context: RewardValidationContext = {},
 ): RewardErrors {
   const errors: RewardErrors = {};
@@ -481,29 +478,27 @@ export function validateReward(
 
   const titleLength = characterCount(draft.title.trim());
   if (titleLength === 0) {
-    errors.title = 'A reward needs a title.';
+    errors.title = copy.titleRequired;
   } else if (titleLength > REWARD_TITLE_MAX_CHARACTERS) {
-    errors.title = `A title is ${REWARD_TITLE_MAX_CHARACTERS} characters or fewer. Remove ${
-      titleLength - REWARD_TITLE_MAX_CHARACTERS
-    }.`;
+    errors.title = fillPlaceholders(copy.titleTooLong, {
+      max: String(REWARD_TITLE_MAX_CHARACTERS),
+      over: String(titleLength - REWARD_TITLE_MAX_CHARACTERS),
+    });
   }
 
   const price = parseAmount(draft.priceAmount);
-  if (!price.ok) errors.price = PRICE_MESSAGE[price.reason];
+  if (!price.ok) errors.price = amountMessage(copy.price, price.reason);
 
   const limit = draft.limitQuantity.trim();
   if (limit !== '') {
     if (!WHOLE_NUMBER.test(limit)) {
-      errors.limitQuantity = 'Enter the number of places as a whole number, or leave it empty for unlimited.';
+      errors.limitQuantity = copy.limitNotWhole;
     } else {
       const places = Number.parseInt(limit, 10);
       if (places < 1) {
-        errors.limitQuantity =
-          'A limited reward offers at least one place. Clear the limit to make it unlimited.';
+        errors.limitQuantity = copy.limitBelowOne;
       } else if (places < committed) {
-        errors.limitQuantity =
-          `That is below the ${committed} ${committed === 1 ? 'place' : 'places'} already taken. ` +
-          'A quantity may always be raised, and lowered only above what is claimed.';
+        errors.limitQuantity = pluralise(copy.locale, copy.limitBelowCommitted, committed);
       }
     }
   }
@@ -512,25 +507,25 @@ export function validateReward(
     // Featured means shown first; secret means not shown at all. A tier
     // claiming both leaves the campaign page to guess, and the service refuses
     // it on this field.
-    errors.isFeatured = 'A secret reward is not shown on the page, so it cannot also be featured.';
+    errors.isFeatured = copy.secretAndFeatured;
   }
 
   if (draft.isEarlyBird && draft.availableUntil.trim() === '' && limit === '') {
     // An early bird is early because it runs out. Without a closing date or a
     // cap it is an ordinary tier with a label that hurries a backer for nothing.
-    errors.isEarlyBird = 'An early-bird reward needs either a closing date or a limited number of places.';
+    errors.isEarlyBird = copy.earlyBirdNeedsLimit;
   }
 
   const from = draft.availableFrom.trim() === '' ? null : fromDateTimeLocal(draft.availableFrom);
   const until = draft.availableUntil.trim() === '' ? null : fromDateTimeLocal(draft.availableUntil);
   if (draft.availableFrom.trim() !== '' && from === null) {
-    errors.availableFrom = 'Enter a date and time, or leave it empty.';
+    errors.availableFrom = copy.dateInvalid;
   }
   if (draft.availableUntil.trim() !== '' && until === null) {
-    errors.availableUntil = 'Enter a date and time, or leave it empty.';
+    errors.availableUntil = copy.dateInvalid;
   }
   if (from !== null && until !== null && new Date(until).getTime() <= new Date(from).getTime()) {
-    errors.availableUntil = 'A reward closes after it opens, not before.';
+    errors.availableUntil = copy.closesBeforeOpens;
   }
 
   const seenItems = new Set<string>();
@@ -538,19 +533,19 @@ export function validateReward(
     if (seenItems.has(line.itemId)) {
       // Two lines for one item would have to be summed to be read, and one of
       // the two would eventually be edited alone.
-      errors.items = 'Each item appears once, with the quantity as its count.';
+      errors.items = copy.itemsDuplicate;
       break;
     }
     seenItems.add(line.itemId);
 
     const quantity = line.quantity.trim();
     if (!WHOLE_NUMBER.test(quantity) || Number.parseInt(quantity, 10) < 1) {
-      errors.items = 'A reward contains at least one of every item it lists.';
+      errors.items = copy.itemsQuantity;
       break;
     }
   }
 
-  const rulesProblem = validateShippingRates(draft);
+  const rulesProblem = validateShippingRates(draft, copy);
   if (rulesProblem !== null) errors.rules = rulesProblem;
 
   return errors;
@@ -564,31 +559,41 @@ export function validateReward(
  * `RewardService` reports the first row it cannot accept. Naming the
  * destination in the message is what makes a single message enough to act on.
  */
-function validateShippingRates(draft: RewardDraft): string | null {
+function validateShippingRates(draft: RewardDraft, copy: RewardValidationCopy): string | null {
   if (draft.shippingRules.length === 0) return null;
 
   if (!isShippedScope(draft.shippingType)) {
-    return 'Only a reward shipped domestically or internationally has per-country rates. Change the delivery method, or remove the rates.';
+    return copy.rates.notShipped;
   }
 
   const seen = new Set<string>();
   for (const rule of draft.shippingRules) {
     const code = rule.countryCode.trim().toUpperCase();
     if (!COUNTRY_CODE.test(code)) {
-      return 'A destination is a two-letter country code, for example AZ or TR.';
+      return copy.rates.badCountryCode;
     }
     if (seen.has(code)) {
-      return `Each destination appears once: ${code} is listed twice.`;
+      return fillPlaceholders(copy.rates.duplicateDestination, { code });
     }
     seen.add(code);
 
     const amount = parseAmount(rule.amount, { allowZero: true });
-    if (!amount.ok) return `${code}: ${RATE_MESSAGE[amount.reason]}`;
+    if (!amount.ok) {
+      return fillPlaceholders(copy.rates.prefixed, {
+        code,
+        message: amountMessage(copy.rate, amount.reason),
+      });
+    }
 
     const additional = parseAmount(rule.additionalItemAmount.trim() === '' ? '0' : rule.additionalItemAmount, {
       allowZero: true,
     });
-    if (!additional.ok) return `${code}: ${RATE_MESSAGE[additional.reason]}`;
+    if (!additional.ok) {
+      return fillPlaceholders(copy.rates.prefixed, {
+        code,
+        message: amountMessage(copy.rate, additional.reason),
+      });
+    }
   }
 
   return null;
@@ -825,9 +830,9 @@ export function showPatch(): RewardPatch {
  * fixing one field and a creator reading a 400 about a field they did not
  * touch.
  */
-export function showBlockedReason(reward: Reward): string | null {
+export function showBlockedReason(reward: Reward, copy: RewardsVocabularyCopy): string | null {
   if (reward.isEarlyBird && reward.limitQuantity == null) {
-    return 'This is an early-bird reward, and one needs either a closing date or a limited number of places. Set a limit, or turn off early bird, before showing it again.';
+    return copy.showBlockedEarlyBird;
   }
   return null;
 }
@@ -867,11 +872,14 @@ export function movedTo<T>(list: readonly T[], from: number, to: number): readon
  * against. "Unlimited" is a real state and by far the commonest, so it is said
  * rather than shown as an empty count.
  */
-export function describeStock(reward: Reward): string {
-  if (reward.limitQuantity == null) return 'Unlimited places';
+export function describeStock(reward: Reward, copy: RewardsVocabularyCopy): string {
+  if (reward.limitQuantity == null) return copy.stock.unlimited;
 
   const taken = reward.claimedQuantity + reward.reservedQuantity;
   const remaining = reward.remainingQuantity ?? reward.limitQuantity - taken;
 
-  return `${remaining} of ${reward.limitQuantity} places left`;
+  return fillPlaceholders(copy.stock.remaining, {
+    remaining: String(remaining),
+    limit: String(reward.limitQuantity),
+  });
 }

@@ -2,6 +2,7 @@
 
 import { CircleAlert, CircleCheck, LoaderCircle } from 'lucide-react';
 import { cn } from '@ideanest/ui';
+import type { SaveStatusCopy } from '../../lib/i18n/campaign-editor-copy';
 import type { SaveState } from './useAutosave';
 
 /**
@@ -27,32 +28,33 @@ import type { SaveState } from './useAutosave';
  */
 export interface SaveStatusProps {
   state: SaveState;
+  copy: SaveStatusCopy;
   className?: string;
 }
 
-export function SaveStatus({ state, className }: SaveStatusProps) {
-  const announced = state === 'saved' ? 'Saved' : state === 'failed' ? 'Not saved' : '';
+export function SaveStatus({ state, copy, className }: SaveStatusProps) {
+  const announced = state === 'saved' ? copy.saved : state === 'failed' ? copy.notSaved : '';
 
   return (
     <p className={cn('flex items-center gap-1.5 text-[13px]', className)}>
       {state === 'saving' && (
         <span aria-hidden="true" className="flex items-center gap-1.5 text-white/40">
           <LoaderCircle className="size-3.5 motion-safe:animate-spin" />
-          Saving
+          {copy.saving}
         </span>
       )}
 
       {state === 'saved' && (
         <span aria-hidden="true" className="flex items-center gap-1.5 text-success">
           <CircleCheck className="size-3.5" />
-          Saved
+          {copy.saved}
         </span>
       )}
 
       {state === 'failed' && (
         <span aria-hidden="true" className="flex items-center gap-1.5 text-danger">
           <CircleAlert className="size-3.5" />
-          Not saved
+          {copy.notSaved}
         </span>
       )}
 

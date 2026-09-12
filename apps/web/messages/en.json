@@ -21,6 +21,20 @@
       "discover": "Discover",
       "categories": "Categories",
       "collections": "Collections"
+    },
+    "characterCount": {
+      "remaining": {
+        "one": "{count} character remaining",
+        "few": "{count} characters remaining",
+        "many": "{count} characters remaining",
+        "other": "{count} characters remaining"
+      },
+      "tooMany": {
+        "one": "{count} character too many",
+        "few": "{count} characters too many",
+        "many": "{count} characters too many",
+        "other": "{count} characters too many"
+      }
     }
   },
   "shell": {
@@ -3006,6 +3020,337 @@
       "withdraw": "Withdraw",
       "withdrawWarning": "Withdrawing leaves a note saying the comment was removed. Any replies to it stay, and it cannot be edited or restored.",
       "keep": "Keep it"
+    }
+  },
+  "campaignEditor": {
+    "eyebrow": "Campaign editor",
+    "loadingTitle": "Loading",
+    "sectionsLabel": "Campaign sections",
+    "soon": "soon",
+    "notAvailable": ", not available yet",
+    "signedOutTitle": "You are signed out",
+    "signedOutDetail": "This browser no longer has a session. Sign in again to keep editing this campaign.",
+    "loadFailedTitle": "This project could not be loaded",
+    "tryAgain": "Try again",
+    "tabs": {
+      "basics": "Basics",
+      "rewards": "Rewards",
+      "story": "Story",
+      "faq": "FAQ",
+      "prelaunch": "Pre-launch",
+      "review": "Review"
+    },
+    "save": {
+      "saving": "Saving",
+      "saved": "Saved",
+      "notSaved": "Not saved"
+    },
+    "state": {
+      "DRAFT": "Draft",
+      "PRELAUNCH": "Pre-launch",
+      "SUBMITTED": "In review",
+      "CHANGES_REQUESTED": "Changes requested",
+      "REJECTED": "Rejected",
+      "APPROVED": "Approved",
+      "SCHEDULED": "Scheduled",
+      "LIVE": "Live",
+      "SUSPENDED": "Suspended",
+      "CANCELED": "Canceled",
+      "SUCCESSFUL": "Funded",
+      "UNSUCCESSFUL": "Not funded",
+      "COLLECTING": "Collecting",
+      "LATE_PLEDGE": "Late pledges",
+      "FULFILLING": "Fulfilling",
+      "COMPLETED": "Completed"
+    },
+    "basics": {
+      "loadingLabel": "Loading this campaign",
+      "notSavedTitle": "This change was not saved",
+      "notSavedDetail": "Nothing you typed has been lost — it is still in the fields below and will be sent again.",
+      "categoriesUnavailableTitle": "The category list is unavailable",
+      "categoriesUnavailableDetail": "Categories could not be loaded, so this campaign’s category cannot be changed here yet. Everything else on this page still saves.",
+      "title": "Title",
+      "titleHint": "The name on the discovery grid. {max} characters or fewer.",
+      "summary": "Summary",
+      "summaryHint": "One or two sentences, shown under the title in search and on the grid. {max} characters or fewer.",
+      "category": "Category",
+      "categoryHint": "Where backers will find this project.",
+      "categoryPlaceholder": "Choose a category",
+      "subcategory": "Subcategory",
+      "subcategoryPlaceholder": "No subcategory",
+      "subcategoryHintNoCategory": "Choose a category first.",
+      "subcategoryHintNone": "This category has no subcategories.",
+      "subcategoryHint": "Optional, and more specific.",
+      "goal": "Funding goal",
+      "goalHint": "All or nothing: nothing is collected unless this figure is reached.",
+      "goalHintLocked": "The goal cannot change once the campaign has launched.",
+      "currency": "Currency",
+      "currencyHint": "Fixed once the campaign launches.",
+      "duration": "Duration in days",
+      "durationHint": "{min} to {max} days. {recommended} is recommended.",
+      "durationHintLocked": "The deadline cannot change once the campaign has launched.",
+      "scheduledLaunch": "Scheduled launch",
+      "scheduledLaunchHint": "Optional. Leave it empty to launch by hand once the review is complete.",
+      "latePledges": "Accept late pledges",
+      "latePledgesHint": "Keeps the project open to pledges after the deadline, once it has been funded. It can be turned off again at any time.",
+      "validation": {
+        "titleRequired": "A project needs a title.",
+        "titleTooLong": "A title is {max} characters or fewer. Remove {over}.",
+        "summaryTooLong": "A summary is {max} characters or fewer. Remove {over}.",
+        "subcategoryWithoutCategory": "Choose a category first.",
+        "currencyUnsupported": "Choose a currency the platform can collect in.",
+        "durationNotWhole": "Enter the duration as a whole number of days.",
+        "durationOutOfRange": "A campaign runs for {min} to {max} days.",
+        "launchNotADate": "Enter a date and time.",
+        "launchInPast": "Choose a date and time in the future.",
+        "amount": {
+          "empty": "Enter the amount you need to raise.",
+          "notANumber": "Enter the goal in digits, for example 5000.00.",
+          "comma": "Use a full stop for the decimal point, for example 5000.00.",
+          "tooManyDecimals": "A goal has at most two decimal places.",
+          "tooLarge": "That goal is larger than the platform can hold.",
+          "notPositive": "A goal has to be more than zero."
+        }
+      }
+    },
+    "rewards": {
+      "loadingLabel": "Loading this campaign’s rewards",
+      "failedTitle": "That did not work",
+      "rewardsFailedTitle": "The rewards could not be loaded",
+      "listLabel": "Reward tiers, in the order backers see them",
+      "description": "A reward is what a backer selects and pays for: a title, a price, and the items they receive. A campaign can run without any, but almost none do.",
+      "emptyTitle": "No rewards yet",
+      "add": "Add a reward",
+      "addFirst": "Add the first reward",
+      "atCapacityTitle": "This campaign has the most rewards it can have",
+      "deleteItemTitle": "Delete item",
+      "deleteRewardTitle": "Delete reward",
+      "cannotBeUndone": "This cannot be undone.",
+      "keepIt": "Keep it",
+      "delete": "Delete",
+      "duplicate": "Duplicate",
+      "hidden": "Hidden",
+      "opensLater": "Opens later",
+      "featured": "Featured",
+      "secret": "Secret",
+      "earlyBird": "Early bird",
+      "addOn": "Add-on",
+      "items": {
+        "description": "An item is one physical or digital thing — a mug, a poster, a download. Rewards are built out of them, so this is where a campaign starts.",
+        "loadingLabel": "Loading this campaign’s items",
+        "emptyTitle": "No items yet",
+        "add": "Add an item",
+        "addFirst": "Add the first item",
+        "delete": "Delete",
+        "digital": "Digital",
+        "physical": "Physical",
+        "editNamed": "Edit {name}",
+        "deleteNamed": "Delete {name}",
+        "itemsHeading": "Items",
+        "edit": "Edit"
+      },
+      "item": {
+        "addTitle": "Add an item",
+        "editTitle": "Edit item",
+        "notSavedTitle": "This item was not saved",
+        "name": "Name",
+        "description": "Description",
+        "descriptionHint": "Optional. Size, colour, edition — whatever distinguishes this from the next item.",
+        "imageUrl": "Image address",
+        "imageUrlHint": "A published address. There is no uploader yet, so paste a link to an image that is already online.",
+        "imageUrlPlaceholder": "https://",
+        "isDigital": "Delivered as a file",
+        "weight": "Weight in grams",
+        "weightHintDigital": "A file has no shipping weight.",
+        "sku": "Stock code",
+        "skuHint": "Optional. Your own reference, unique within this campaign.",
+        "isDigitalHint": "A download or a licence. Nothing is shipped, so no weight and no address.",
+        "nameHint": "What it is, as a backer would recognise it. {max} characters or fewer.",
+        "drawerDescription": "Items are the things your campaign produces. A reward is a selection of them with quantities.",
+        "drawer": {
+          "cancel": "Cancel",
+          "save": "Save",
+          "saving": "Saving"
+        }
+      },
+      "tier": {
+        "addTitle": "Add a reward",
+        "editTitle": "Edit reward",
+        "description": "What a backer selects and pays for. It is made of the items above, in the quantities you choose.",
+        "notSavedTitle": "This reward was not saved",
+        "ratesNotSavedTitle": "The shipping rates were not saved",
+        "title": "Title",
+        "summary": "Description",
+        "summaryHint": "What they get, in a sentence or two.",
+        "price": "Price",
+        "estimatedDelivery": "Estimated delivery",
+        "estimatedDeliveryHint": "The month you expect to deliver in. Backers read this as a promise.",
+        "places": "Number of places",
+        "placesHint": "Leave empty for unlimited. A quantity may always be raised later; it may only be lowered above what is already taken.",
+        "rest": "Everything else about the reward",
+        "offering": "How it is offered",
+        "opens": "Opens",
+        "opensHint": "Optional. Leave it empty for a reward that is available as soon as the campaign is.",
+        "closes": "Closes",
+        "closesHint": "Optional. A moment in the past hides the reward — which is what the Hide control in the list sets.",
+        "earlyBird": "Early bird",
+        "featured": "Featured",
+        "featuredHint": "Shown first on the campaign page.",
+        "secret": "Secret",
+        "addOn": "Sold as an add-on",
+        "addOnHint": "Offered alongside a reward rather than instead of one.",
+        "contents": "What is in it",
+        "contentsHint": "The items a backer receives. A reward with nothing in it is legitimate — a thank-you, a credit — and it is what an empty list means.",
+        "addItem": "Add an item to this reward",
+        "addItemPlaceholder": "Add an item…",
+        "missingItem": "An item that is no longer in this campaign",
+        "noItemsYet": "This campaign has no items yet. Add one in the list behind this panel, and it will appear here.",
+        "everyItemAdded": "Every item in this campaign is already in this reward.",
+        "shipping": "Shipping rates",
+        "delivery": "Delivery",
+        "ratesHint": "One rate per destination, in {currency}. A country with no rate cannot be chosen at checkout, and 0 is free shipping.",
+        "noDestinations": "No destinations priced yet, so this reward cannot be shipped anywhere.",
+        "addDestination": "Add a destination",
+        "countryPlaceholder": "AZ",
+        "ratePlaceholder": "Rate",
+        "extraPlaceholder": "Each extra",
+        "token": "Token",
+        "titleHint": "What a backer sees in the reward list. {max} characters or fewer.",
+        "priceHint": "The amount a backer pays. Priced in {currency}, the campaign’s currency.",
+        "priceHintLocked": "The price cannot change once the campaign has launched. Priced in {currency}.",
+        "quantityOf": "Quantity of {name}",
+        "removeFromReward": "Remove {name} from this reward",
+        "countryCodeFor": "Country code for {name}",
+        "shippingRateTo": "Shipping rate to {name}",
+        "additionalRateTo": "Rate for each additional item to {name}",
+        "removeNamed": "Remove {name}",
+        "placesHintCommitted": {
+          "one": "Leave empty for unlimited. {count} place is already taken, so the limit cannot go below that.",
+          "few": "Leave empty for unlimited. {count} places are already taken, so the limit cannot go below that.",
+          "many": "Leave empty for unlimited. {count} places are already taken, so the limit cannot go below that.",
+          "other": "Leave empty for unlimited. {count} places are already taken, so the limit cannot go below that."
+        },
+        "drawer": {
+          "cancel": "Cancel",
+          "save": "Save",
+          "saving": "Saving"
+        }
+      },
+      "deleteItemNamed": "Delete {name}?",
+      "deleteRewardNamed": "Delete {title}?",
+      "movedAnnouncement": "{title} moved to position {position} of {total}.",
+      "duplicatedAnnouncement": "{title} was copied to position {position}.",
+      "hiddenAnnouncement": "{title} is hidden from the campaign page.",
+      "shownAnnouncement": "{title} is back on the campaign page.",
+      "rewardDeletedAnnouncement": "{title} was deleted.",
+      "itemDeletedAnnouncement": "{name} was deleted.",
+      "moveUpLabel": "Move {title} up, currently {position} of {total}",
+      "moveDownLabel": "Move {title} down, currently {position} of {total}",
+      "editLabel": "Edit {title}",
+      "duplicateLabel": "Duplicate {title}",
+      "showLabel": "Show {title} on the campaign page",
+      "hideLabel": "Hide {title} from the campaign page",
+      "deleteLabel": "Delete {title}",
+      "rewardsHeading": "Rewards",
+      "countOf": "{count} of {max}",
+      "edit": "Edit",
+      "show": "Show",
+      "hide": "Hide",
+      "containsNothing": "Contains no items",
+      "contains": "Contains {items}",
+      "itemTimes": "{name} ×{quantity}",
+      "missingItemInline": "an item no longer in this campaign",
+      "aRewardInCampaign": "a reward in this campaign",
+      "aReward": "a reward",
+      "itemInUse": {
+        "one": "It is part of {tiers}. Take it out of that reward first, then delete it.",
+        "few": "It is part of {tiers}. Take it out of those rewards first, then delete it.",
+        "many": "It is part of {tiers}. Take it out of those rewards first, then delete it.",
+        "other": "It is part of {tiers}. Take it out of those rewards first, then delete it."
+      },
+      "rewardHasBackers": "Hide it instead — the people who chose it keep the description of what they are owed, and it stops being offered to anybody else.",
+      "vocabulary": {
+        "scopes": {
+          "NONE": {
+            "label": "Nothing is delivered",
+            "hint": "A credit, a thank-you, a name on a wall."
+          },
+          "DIGITAL": {
+            "label": "Digital delivery",
+            "hint": "A file or a licence. No address is asked for."
+          },
+          "LOCAL_PICKUP": {
+            "label": "Collected in person",
+            "hint": "No carrier and no rate, but the backer’s country is still asked for."
+          },
+          "DOMESTIC": {
+            "label": "Shipped domestically",
+            "hint": "Inside your own country only. Needs a rate per destination."
+          },
+          "INTERNATIONAL": {
+            "label": "Shipped internationally",
+            "hint": "Anywhere you have priced. A destination with no rate cannot be chosen."
+          }
+        },
+        "item": {
+          "nameRequired": "An item needs a name.",
+          "nameTooLong": "A name is {max} characters or fewer. Remove {over}.",
+          "skuTooLong": "A stock code is {max} characters or fewer.",
+          "weightOnDigital": "A digital item has no shipping weight. Clear the weight, or make it a physical item.",
+          "weightNotWhole": "Enter the weight as a whole number of grams.",
+          "weightNotPositive": "A weight is more than zero grams."
+        },
+        "price": {
+          "empty": "A reward needs a price.",
+          "notANumber": "Enter the price in digits, for example 19.99.",
+          "comma": "Use a full stop for the decimal point, for example 19.99.",
+          "tooManyDecimals": "A price has at most two decimal places.",
+          "tooLarge": "That price is larger than the platform can hold.",
+          "notPositive": "A reward price is more than zero."
+        },
+        "rate": {
+          "empty": "Enter what shipping to this destination costs.",
+          "notANumber": "Enter the rate in digits, for example 12.50.",
+          "comma": "Use a full stop for the decimal point, for example 12.50.",
+          "tooManyDecimals": "A rate has at most two decimal places.",
+          "tooLarge": "That rate is larger than the platform can hold.",
+          "notPositive": "A rate cannot be negative. Enter 0 for free shipping."
+        },
+        "reward": {
+          "titleRequired": "A reward needs a title.",
+          "titleTooLong": "A title is {max} characters or fewer. Remove {over}.",
+          "limitNotWhole": "Enter the number of places as a whole number, or leave it empty for unlimited.",
+          "limitBelowOne": "A limited reward offers at least one place. Clear the limit to make it unlimited.",
+          "limitBelowCommitted": {
+            "one": "That is below the {count} place already taken. A quantity may always be raised, and lowered only above what is claimed.",
+            "few": "That is below the {count} places already taken. A quantity may always be raised, and lowered only above what is claimed.",
+            "many": "That is below the {count} places already taken. A quantity may always be raised, and lowered only above what is claimed.",
+            "other": "That is below the {count} places already taken. A quantity may always be raised, and lowered only above what is claimed."
+          },
+          "secretAndFeatured": "A secret reward is not shown on the page, so it cannot also be featured.",
+          "earlyBirdNeedsLimit": "An early-bird reward needs either a closing date or a limited number of places.",
+          "dateInvalid": "Enter a date and time, or leave it empty.",
+          "closesBeforeOpens": "A reward closes after it opens, not before.",
+          "itemsDuplicate": "Each item appears once, with the quantity as its count.",
+          "itemsQuantity": "A reward contains at least one of every item it lists."
+        },
+        "rates": {
+          "notShipped": "Only a reward shipped domestically or internationally has per-country rates. Change the delivery method, or remove the rates.",
+          "badCountryCode": "A destination is a two-letter country code, for example AZ or TR.",
+          "duplicateDestination": "Each destination appears once: {code} is listed twice.",
+          "prefixed": "{code}: {message}"
+        },
+        "showBlockedEarlyBird": "This is an early-bird reward, and one needs either a closing date or a limited number of places. Set a limit, or turn off early bird, before showing it again.",
+        "stock": {
+          "unlimited": "Unlimited places",
+          "remaining": "{remaining} of {limit} places left"
+        }
+      }
+    },
+    "drawer": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving"
     }
   },
   "profile": {

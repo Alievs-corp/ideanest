@@ -39,6 +39,11 @@ import {
   type BasicsField,
 } from '../../lib/projects/basics';
 import { CoverImageField } from './CoverImageField';
+import type {
+  BasicsPanelCopy,
+  EditorChromeCopy,
+} from '../../lib/i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { EditorShell } from './EditorShell';
 import { SaveStatus } from './SaveStatus';
 import { useAutosave, type SaveFailure } from './useAutosave';
@@ -88,9 +93,13 @@ function serverErrors(failure: SaveFailure | null): BasicsErrors {
 
 export interface BasicsPanelProps {
   projectId: string;
+  /** The editor frame's words, resolved by this tab's page. */
+  copy: EditorChromeCopy;
+  /** This tab's own words. */
+  basics: BasicsPanelCopy;
 }
 
-export function BasicsPanel({ projectId }: BasicsPanelProps) {
+export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
   const { project, status, error, reload, apply } = useProjectEdit(projectId);
 
   /**
@@ -158,9 +167,9 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
 
   if (status === 'signed-out') {
     return (
-      <EditorShell projectId={projectId} active="basics">
-        <InlineAlert variant="info" title="You are signed out">
-          This browser no longer has a session. Sign in again to keep editing this campaign.
+      <EditorShell projectId={projectId} copy={copy} active="basics">
+        <InlineAlert variant="info" title={copy.signedOutTitle}>
+          {copy.signedOutDetail}
         </InlineAlert>
       </EditorShell>
     );
@@ -168,18 +177,18 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
 
   if (status === 'failed' || draft === null || project === null) {
     return (
-      <EditorShell projectId={projectId} active="basics">
+      <EditorShell projectId={projectId} copy={copy} active="basics">
         {status === 'failed' ? (
           <>
-            <InlineAlert variant="danger" title="This project could not be loaded">
+            <InlineAlert variant="danger" title={copy.loadFailedTitle}>
               {error}
             </InlineAlert>
             <Pill variant="ghost" size="sm" className="mt-4" onClick={reload}>
-              Try again
+              {copy.tryAgain}
             </Pill>
           </>
         ) : (
-          <SkeletonGroup label="Loading this campaign">
+          <SkeletonGroup label={basics.loadingLabel}>
             <div className="flex flex-col gap-6">
               {LOADING_ROWS.map((row) => (
                 <div key={row} className="flex flex-col gap-2">
@@ -194,7 +203,10 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
     );
   }
 
-  const errors: BasicsErrors = { ...validateBasics(draft), ...serverErrors(failure) };
+  const errors: BasicsErrors = {
+    ...validateBasics(draft, basics.validation),
+    ...serverErrors(failure),
+  };
   const selected = categories?.find((category) => category.id === draft.categoryId) ?? null;
   const subcategories = selected?.subcategories ?? [];
 
@@ -204,10 +216,11 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
   return (
     <EditorShell
       projectId={projectId}
+      copy={copy}
       active="basics"
       title={project.title}
       state={project.state}
-      status={<SaveStatus state={autosave.state} />}
+      status={<SaveStatus state={autosave.state} copy={copy.save} />}
     >
       {/*
         There is no submit. The element is a `form` so that Enter inside a field
@@ -216,22 +229,19 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
       */}
       <form className="flex flex-col gap-7" onSubmit={(event) => event.preventDefault()}>
         {failure !== null && (
-          <InlineAlert variant="danger" title="This change was not saved">
+          <InlineAlert variant="danger" title={basics.notSavedTitle}>
             <p>{failure.message}</p>
-            <p className="mt-2 text-white/64">
-              Nothing you typed has been lost — it is still in the fields below and will be sent
-              again.
-            </p>
+            <p className="mt-2 text-white/64">{basics.notSavedDetail}</p>
             <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
-              Try again
+              {copy.tryAgain}
             </Pill>
           </InlineAlert>
         )}
 
         <Field
-          label="Title"
+          label={basics.title}
           required
-          hint={`The name on the discovery grid. ${TITLE_MAX_CHARACTERS} characters or fewer.`}
+          hint={fillPlaceholders(basics.titleHint, { max: String(TITLE_MAX_CHARACTERS) })}
           error={errors.title}
         >
           {/*
@@ -246,12 +256,17 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
             onChange={(event) => change('title', { ...draft, title: event.target.value })}
             onBlur={autosave.flush}
           />
-          <CharacterCount count={characterCount(draft.title)} limit={TITLE_MAX_CHARACTERS} />
+          <CharacterCount
+            count={characterCount(draft.title)}
+            limit={TITLE_MAX_CHARACTERS}
+            copy={copy.characterCount}
+            locale={copy.locale}
+          />
         </Field>
 
         <Field
-          label="Summary"
-          hint={`One or two sentences, shown under the title in search and on the grid. ${BLURB_MAX_CHARACTERS} characters or fewer.`}
+          label={basics.summary}
+          hint={fillPlaceholders(basics.summaryHint, { max: String(BLURB_MAX_CHARACTERS) })}
           error={errors.blurb}
         >
           <Textarea
@@ -260,25 +275,29 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
             onChange={(event) => change('blurb', { ...draft, blurb: event.target.value })}
             onBlur={autosave.flush}
           />
-          <CharacterCount count={characterCount(draft.blurb)} limit={BLURB_MAX_CHARACTERS} />
+          <CharacterCount
+            count={characterCount(draft.blurb)}
+            limit={BLURB_MAX_CHARACTERS}
+            copy={copy.characterCount}
+            locale={copy.locale}
+          />
         </Field>
 
         {categoriesUnavailable && (
-          <InlineAlert variant="warning" title="The category list is unavailable">
-            Categories could not be loaded, so this campaign&rsquo;s category cannot be changed
-            here yet. Everything else on this page still saves.
+          <InlineAlert variant="warning" title={basics.categoriesUnavailableTitle}>
+            {basics.categoriesUnavailableDetail}
           </InlineAlert>
         )}
 
         <div className="grid gap-6 sm:grid-cols-2">
           <Field
-            label="Category"
-            hint="Where backers will find this project."
+            label={basics.category}
+            hint={basics.categoryHint}
             error={errors.categoryId}
           >
             <Select
               value={draft.categoryId}
-              placeholder="Choose a category"
+              placeholder={basics.categoryPlaceholder}
               disabled={categories === null}
               onChange={(event) =>
                 change('categoryId', {
@@ -298,19 +317,19 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
           </Field>
 
           <Field
-            label="Subcategory"
+            label={basics.subcategory}
             hint={
               selected === null
-                ? 'Choose a category first.'
+                ? basics.subcategoryHintNoCategory
                 : subcategories.length === 0
-                  ? 'This category has no subcategories.'
-                  : 'Optional, and more specific.'
+                  ? basics.subcategoryHintNone
+                  : basics.subcategoryHint
             }
             error={errors.subcategoryId}
           >
             <Select
               value={draft.subcategoryId}
-              placeholder="No subcategory"
+              placeholder={basics.subcategoryPlaceholder}
               disabled={subcategories.length === 0}
               onChange={(event) =>
                 change('subcategoryId', { ...draft, subcategoryId: event.target.value })
@@ -327,13 +346,9 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
 
         <div className="grid gap-6 sm:grid-cols-[2fr_1fr]">
           <Field
-            label="Funding goal"
+            label={basics.goal}
             required
-            hint={
-              goalLocked
-                ? 'The goal cannot change once the campaign has launched.'
-                : 'All or nothing: nothing is collected unless this figure is reached.'
-            }
+            hint={goalLocked ? basics.goalHintLocked : basics.goalHint}
             error={errors.goal}
           >
             {/*
@@ -353,7 +368,7 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
             />
           </Field>
 
-          <Field label="Currency" hint="Fixed once the campaign launches.">
+          <Field label={basics.currency} hint={basics.currencyHint}>
             <Select
               value={draft.currency}
               disabled={goalLocked}
@@ -370,12 +385,16 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
 
         <div className="grid gap-6 sm:grid-cols-2">
           <Field
-            label="Duration in days"
+            label={basics.duration}
             required
             hint={
               durationLocked
-                ? 'The deadline cannot change once the campaign has launched.'
-                : `${DURATION_MIN_DAYS} to ${DURATION_MAX_DAYS} days. ${DURATION_RECOMMENDED_DAYS} is recommended.`
+                ? basics.durationHintLocked
+                : fillPlaceholders(basics.durationHint, {
+                    min: String(DURATION_MIN_DAYS),
+                    max: String(DURATION_MAX_DAYS),
+                    recommended: String(DURATION_RECOMMENDED_DAYS),
+                  })
             }
             error={errors.durationDays}
           >
@@ -392,8 +411,8 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
           </Field>
 
           <Field
-            label="Scheduled launch"
-            hint="Optional. Leave it empty to launch by hand once the review is complete."
+            label={basics.scheduledLaunch}
+            hint={basics.scheduledLaunchHint}
             error={errors.scheduledLaunchAt}
           >
             <TextInput
@@ -415,15 +434,14 @@ export function BasicsPanel({ projectId }: BasicsPanelProps) {
           */}
           <Switch
             checked={draft.latePledgeEnabled}
-            label="Accept late pledges"
+            label={basics.latePledges}
             aria-describedby={latePledgeHintId}
             onCheckedChange={(checked) =>
               change('latePledgeEnabled', { ...draft, latePledgeEnabled: checked })
             }
           />
           <p id={latePledgeHintId} className="mt-2 text-[13px] text-white/64">
-            Keeps the project open to pledges after the deadline, once it has been funded. It can be
-            turned off again at any time.
+            {basics.latePledgesHint}
           </p>
         </div>
 

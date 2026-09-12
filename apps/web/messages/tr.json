@@ -21,6 +21,20 @@
       "discover": "Keşfet",
       "categories": "Kategoriler",
       "collections": "Koleksiyonlar"
+    },
+    "characterCount": {
+      "remaining": {
+        "one": "{count} karakter kaldı",
+        "few": "{count} karakter kaldı",
+        "many": "{count} karakter kaldı",
+        "other": "{count} karakter kaldı"
+      },
+      "tooMany": {
+        "one": "{count} karakter fazla",
+        "few": "{count} karakter fazla",
+        "many": "{count} karakter fazla",
+        "other": "{count} karakter fazla"
+      }
     }
   },
   "shell": {
@@ -3006,6 +3020,337 @@
       "withdraw": "Geri çek",
       "withdrawWarning": "Geri çekmek, yorumun kaldırıldığını belirten bir not bırakır. Ona verilen yanıtlar kalır ve yorum ne düzenlenebilir ne de geri getirilebilir.",
       "keep": "Kalsın"
+    }
+  },
+  "campaignEditor": {
+    "eyebrow": "Kampanya düzenleyici",
+    "loadingTitle": "Yükleniyor",
+    "sectionsLabel": "Kampanya bölümleri",
+    "soon": "yakında",
+    "notAvailable": ", bölüm henüz kullanılamıyor",
+    "signedOutTitle": "Oturumunuz kapandı",
+    "signedOutDetail": "Bu tarayıcıda artık oturum yok. Kampanyayı düzenlemeye devam etmek için yeniden giriş yapın.",
+    "loadFailedTitle": "Proje yüklenemedi",
+    "tryAgain": "Yeniden dene",
+    "tabs": {
+      "basics": "Temel bilgiler",
+      "rewards": "Ödüller",
+      "story": "Hikâye",
+      "faq": "Sorular",
+      "prelaunch": "Lansman öncesi",
+      "review": "İnceleme"
+    },
+    "save": {
+      "saving": "Kaydediliyor",
+      "saved": "Kaydedildi",
+      "notSaved": "Kaydedilmedi"
+    },
+    "state": {
+      "DRAFT": "Taslak",
+      "PRELAUNCH": "Lansman öncesi",
+      "SUBMITTED": "İncelemede",
+      "CHANGES_REQUESTED": "Değişiklik istendi",
+      "REJECTED": "Reddedildi",
+      "APPROVED": "Onaylandı",
+      "SCHEDULED": "Planlandı",
+      "LIVE": "Etkin",
+      "SUSPENDED": "Askıya alındı",
+      "CANCELED": "İptal edildi",
+      "SUCCESSFUL": "Fonlandı",
+      "UNSUCCESSFUL": "Fonlanmadı",
+      "COLLECTING": "Tahsilat",
+      "LATE_PLEDGE": "Geç destekler",
+      "FULFILLING": "Gönderim",
+      "COMPLETED": "Tamamlandı"
+    },
+    "basics": {
+      "loadingLabel": "Kampanya yükleniyor",
+      "notSavedTitle": "Bu değişiklik kaydedilmedi",
+      "notSavedDetail": "Yazdıklarınızdan hiçbiri kaybolmadı — metin aşağıdaki alanlarda duruyor ve yeniden gönderilecek.",
+      "categoriesUnavailableTitle": "Kategori listesi kullanılamıyor",
+      "categoriesUnavailableDetail": "Kategoriler yüklenemedi, bu yüzden kampanyanın kategorisi burada henüz değiştirilemiyor. Bu sayfadaki diğer her şey kaydedilmeye devam ediyor.",
+      "title": "Başlık",
+      "titleHint": "Keşfet akışındaki ad. En fazla {max} karakter.",
+      "summary": "Özet",
+      "summaryHint": "Bir iki cümle — aramada ve akışta başlığın altında görünür. En fazla {max} karakter.",
+      "category": "Kategori",
+      "categoryHint": "Destekçiler bu projeyi nerede bulacak.",
+      "categoryPlaceholder": "Bir kategori seçin",
+      "subcategory": "Alt kategori",
+      "subcategoryPlaceholder": "Alt kategori yok",
+      "subcategoryHintNoCategory": "Önce bir kategori seçin.",
+      "subcategoryHintNone": "Bu kategorinin alt kategorisi yok.",
+      "subcategoryHint": "İsteğe bağlı, daha belirgin.",
+      "goal": "Fonlama hedefi",
+      "goalHint": "Ya hep ya hiç: bu tutara ulaşılmadıkça hiçbir şey tahsil edilmez.",
+      "goalHintLocked": "Kampanya başladıktan sonra hedef değiştirilemez.",
+      "currency": "Para birimi",
+      "currencyHint": "Kampanya başlayınca sabitlenir.",
+      "duration": "Gün olarak süre",
+      "durationHint": "{min} ile {max} gün arası. {recommended} öneriyoruz.",
+      "durationHintLocked": "Kampanya başladıktan sonra son tarih değiştirilemez.",
+      "scheduledLaunch": "Planlanmış lansman",
+      "scheduledLaunchHint": "İsteğe bağlı. İnceleme bitince elle başlatmak için boş bırakın.",
+      "latePledges": "Geç destekleri kabul et",
+      "latePledgesHint": "Hedefe ulaşıldıktan sonra projeyi son tarihin ardından da desteğe açık tutar. İstediğiniz zaman kapatabilirsiniz.",
+      "validation": {
+        "titleRequired": "Bir projenin başlığı olmalı.",
+        "titleTooLong": "Başlık en fazla {max} karakter olur. {over} karakter çıkarın.",
+        "summaryTooLong": "Özet en fazla {max} karakter olur. {over} karakter çıkarın.",
+        "subcategoryWithoutCategory": "Önce bir kategori seçin.",
+        "currencyUnsupported": "Platformun tahsil edebileceği bir para birimi seçin.",
+        "durationNotWhole": "Süreyi tam gün sayısı olarak girin.",
+        "durationOutOfRange": "Bir kampanya {min} ile {max} gün arası sürer.",
+        "launchNotADate": "Bir tarih ve saat girin.",
+        "launchInPast": "Gelecekte bir tarih ve saat seçin.",
+        "amount": {
+          "empty": "Toplamanız gereken tutarı girin.",
+          "notANumber": "Hedefi rakamla girin, örneğin 5000.00.",
+          "comma": "Ondalık ayırıcı olarak nokta kullanın, örneğin 5000.00.",
+          "tooManyDecimals": "Bir hedefte en fazla iki ondalık basamak olur.",
+          "tooLarge": "Bu hedef platformun tutabileceğinden büyük.",
+          "notPositive": "Hedef sıfırdan büyük olmalı."
+        }
+      }
+    },
+    "rewards": {
+      "loadingLabel": "Kampanyanın ödülleri yükleniyor",
+      "failedTitle": "Bu işe yaramadı",
+      "rewardsFailedTitle": "Ödüller yüklenemedi",
+      "listLabel": "Ödül kademeleri, destekçilerin gördüğü sırayla",
+      "description": "Ödül, bir destekçinin seçip ödediği şeydir: bir başlık, bir fiyat ve alacağı ürünler. Bir kampanya ödülsüz de yürüyebilir ama neredeyse hiçbiri yürümez.",
+      "emptyTitle": "Henüz ödül yok",
+      "add": "Ödül ekle",
+      "addFirst": "İlk ödülü ekle",
+      "atCapacityTitle": "Bu kampanya alabileceği en fazla ödüle sahip",
+      "deleteItemTitle": "Ürünü sil",
+      "deleteRewardTitle": "Ödülü sil",
+      "cannotBeUndone": "Bu geri alınamaz.",
+      "keepIt": "Kalsın",
+      "delete": "Sil",
+      "duplicate": "Çoğalt",
+      "hidden": "Gizli",
+      "opensLater": "Sonra açılıyor",
+      "featured": "Öne çıkarıldı",
+      "secret": "Gizli ödül",
+      "earlyBird": "Erken fiyat",
+      "addOn": "Ek ürün",
+      "items": {
+        "description": "Ürün tek bir fiziksel ya da dijital şeydir — bir kupa, bir afiş, bir indirme. Ödüller bunlardan kurulur, kampanya da buradan başlar.",
+        "loadingLabel": "Kampanyanın ürünleri yükleniyor",
+        "emptyTitle": "Henüz ürün yok",
+        "add": "Ürün ekle",
+        "addFirst": "İlk ürünü ekle",
+        "delete": "Sil",
+        "digital": "Dijital",
+        "physical": "Fiziksel",
+        "editNamed": "«{name}» düzenle",
+        "deleteNamed": "«{name}» sil",
+        "itemsHeading": "Ürünler",
+        "edit": "Düzenle"
+      },
+      "item": {
+        "addTitle": "Ürün ekle",
+        "editTitle": "Ürünü düzenle",
+        "notSavedTitle": "Bu ürün kaydedilmedi",
+        "name": "Ad",
+        "description": "Açıklama",
+        "descriptionHint": "İsteğe bağlı. Boyut, renk, baskı — bu ürünü diğerinden ayıran ne varsa.",
+        "imageUrl": "Görsel adresi",
+        "imageUrlHint": "Yayımlanmış bir adres. Henüz yükleyici yok, bu yüzden zaten internette olan bir görselin bağlantısını yapıştırın.",
+        "imageUrlPlaceholder": "https://",
+        "isDigital": "Dosya olarak teslim edilir",
+        "weight": "Gram olarak ağırlık",
+        "weightHintDigital": "Bir dosyanın kargo ağırlığı yoktur.",
+        "sku": "Stok kodu",
+        "skuHint": "İsteğe bağlı. Bu kampanya içinde benzersiz, kendi referansınız.",
+        "isDigitalHint": "Bir indirme ya da lisans. Hiçbir şey gönderilmez, bu yüzden ağırlık da adres de gerekmez.",
+        "nameHint": "Bir destekçinin tanıyacağı biçimde ne olduğu. En fazla {max} karakter.",
+        "drawerDescription": "Ürünler kampanyanızın ürettiği şeylerdir. Ödül ise bunların adetlerle seçilmiş bir kümesidir.",
+        "drawer": {
+          "cancel": "İptal",
+          "save": "Kaydet",
+          "saving": "Kaydediliyor"
+        }
+      },
+      "tier": {
+        "addTitle": "Ödül ekle",
+        "editTitle": "Ödülü düzenle",
+        "description": "Bir destekçinin seçip ödediği şey. Yukarıdaki ürünlerden, sizin belirlediğiniz adetlerle kurulur.",
+        "notSavedTitle": "Bu ödül kaydedilmedi",
+        "ratesNotSavedTitle": "Kargo ücretleri kaydedilmedi",
+        "title": "Başlık",
+        "summary": "Açıklama",
+        "summaryHint": "Ne alacakları, bir iki cümleyle.",
+        "price": "Fiyat",
+        "estimatedDelivery": "Tahmini teslimat",
+        "estimatedDeliveryHint": "Teslim etmeyi beklediğiniz ay. Destekçiler bunu bir söz olarak okur.",
+        "places": "Kontenjan",
+        "placesHint": "Sınırsız için boş bırakın. Adet her zaman artırılabilir; yalnızca halihazırda alınanın üstüne indirilebilir.",
+        "rest": "Ödülle ilgili diğer her şey",
+        "offering": "Nasıl sunuluyor",
+        "opens": "Açılış",
+        "opensHint": "İsteğe bağlı. Ödül kampanyayla birlikte açılsın diye boş bırakın.",
+        "closes": "Kapanış",
+        "closesHint": "İsteğe bağlı. Geçmişteki bir an ödülü gizler — listedeki «Gizle» denetimi de bunu yapar.",
+        "earlyBird": "Erken fiyat",
+        "featured": "Öne çıkarıldı",
+        "featuredHint": "Kampanya sayfasında ilk gösterilir.",
+        "secret": "Gizli ödül",
+        "addOn": "Ek ürün olarak satılır",
+        "addOnHint": "Bir ödülün yerine değil, yanında sunulur.",
+        "contents": "İçinde ne var",
+        "contentsHint": "Destekçinin aldığı ürünler. İçinde hiçbir şey olmayan bir ödül de geçerlidir — bir teşekkür, bir anma — ve boş liste tam olarak bunu anlatır.",
+        "addItem": "Bu ödüle ürün ekle",
+        "addItemPlaceholder": "Ürün ekle…",
+        "missingItem": "Artık bu kampanyada olmayan bir ürün",
+        "noItemsYet": "Bu kampanyada henüz ürün yok. Bu panelin arkasındaki listeye ekleyin, burada görünecek.",
+        "everyItemAdded": "Bu kampanyadaki her ürün zaten bu ödülde.",
+        "shipping": "Kargo ücretleri",
+        "delivery": "Teslimat",
+        "ratesHint": "Her varış yeri için bir ücret, {currency} cinsinden. Ücreti olmayan bir ülke ödeme adımında seçilemez, 0 ise ücretsiz kargodur.",
+        "noDestinations": "Henüz fiyatlandırılmış bir varış yeri yok, bu yüzden bu ödül hiçbir yere gönderilemez.",
+        "addDestination": "Varış yeri ekle",
+        "countryPlaceholder": "AZ",
+        "ratePlaceholder": "Ücret",
+        "extraPlaceholder": "Her ek için",
+        "token": "Jeton",
+        "titleHint": "Destekçinin ödül listesinde gördüğü ad. En fazla {max} karakter.",
+        "priceHint": "Destekçinin ödediği tutar. Kampanyanın para birimi olan {currency} cinsinden.",
+        "priceHintLocked": "Kampanya başladıktan sonra fiyat değiştirilemez. {currency} cinsinden.",
+        "quantityOf": "{name} adedi",
+        "removeFromReward": "«{name}» ürününü bu ödülden çıkar",
+        "countryCodeFor": "{name} için ülke kodu",
+        "shippingRateTo": "{name} için kargo ücreti",
+        "additionalRateTo": "{name} için her ek ürünün ücreti",
+        "removeNamed": "{name} çıkar",
+        "placesHintCommitted": {
+          "one": "Sınırsız için boş bırakın. {count} kontenjan zaten alındı, bu yüzden sınır bunun altına inemez.",
+          "few": "Sınırsız için boş bırakın. {count} kontenjan zaten alındı, bu yüzden sınır bunun altına inemez.",
+          "many": "Sınırsız için boş bırakın. {count} kontenjan zaten alındı, bu yüzden sınır bunun altına inemez.",
+          "other": "Sınırsız için boş bırakın. {count} kontenjan zaten alındı, bu yüzden sınır bunun altına inemez."
+        },
+        "drawer": {
+          "cancel": "İptal",
+          "save": "Kaydet",
+          "saving": "Kaydediliyor"
+        }
+      },
+      "deleteItemNamed": "«{name}» silinsin mi?",
+      "deleteRewardNamed": "«{title}» silinsin mi?",
+      "movedAnnouncement": "«{title}» {total} konumdan {position}. konuma taşındı.",
+      "duplicatedAnnouncement": "«{title}» {position}. konuma kopyalandı.",
+      "hiddenAnnouncement": "«{title}» kampanya sayfasından gizlendi.",
+      "shownAnnouncement": "«{title}» yeniden kampanya sayfasında.",
+      "rewardDeletedAnnouncement": "«{title}» silindi.",
+      "itemDeletedAnnouncement": "«{name}» silindi.",
+      "moveUpLabel": "«{title}» yukarı, şu anda {total} konumdan {position}.",
+      "moveDownLabel": "«{title}» aşağı, şu anda {total} konumdan {position}.",
+      "editLabel": "«{title}» düzenle",
+      "duplicateLabel": "«{title}» çoğalt",
+      "showLabel": "«{title}» kampanya sayfasında göster",
+      "hideLabel": "«{title}» kampanya sayfasından gizle",
+      "deleteLabel": "«{title}» sil",
+      "rewardsHeading": "Ödüller",
+      "countOf": "{max} içinden {count}",
+      "edit": "Düzenle",
+      "show": "Göster",
+      "hide": "Gizle",
+      "containsNothing": "İçinde ürün yok",
+      "contains": "İçinde: {items}",
+      "itemTimes": "{name} ×{quantity}",
+      "missingItemInline": "artık bu kampanyada olmayan bir ürün",
+      "aRewardInCampaign": "bu kampanyadaki bir ödül",
+      "aReward": "bir ödül",
+      "itemInUse": {
+        "one": "{tiers} içinde yer alıyor. Önce o ödülden çıkarın, sonra silin.",
+        "few": "{tiers} içinde yer alıyor. Önce o ödüllerden çıkarın, sonra silin.",
+        "many": "{tiers} içinde yer alıyor. Önce o ödüllerden çıkarın, sonra silin.",
+        "other": "{tiers} içinde yer alıyor. Önce o ödüllerden çıkarın, sonra silin."
+      },
+      "rewardHasBackers": "Bunun yerine gizleyin — onu seçmiş olanlar kendilerine borçlu olunan şeyin açıklamasını korur, ödül de artık başkasına sunulmaz.",
+      "vocabulary": {
+        "scopes": {
+          "NONE": {
+            "label": "Hiçbir şey gönderilmiyor",
+            "hint": "Bir anma, bir teşekkür, duvarda bir ad."
+          },
+          "DIGITAL": {
+            "label": "Dijital teslimat",
+            "hint": "Bir dosya ya da lisans. Adres sorulmaz."
+          },
+          "LOCAL_PICKUP": {
+            "label": "Elden teslim",
+            "hint": "Ne kargo ne ücret var, ama destekçinin ülkesi yine de sorulur."
+          },
+          "DOMESTIC": {
+            "label": "Yurt içine gönderilir",
+            "hint": "Yalnızca kendi ülkenizin içinde. Her varış yeri için ücret gerekir."
+          },
+          "INTERNATIONAL": {
+            "label": "Yurt dışına gönderilir",
+            "hint": "Ücretlendirdiğiniz her yere. Ücreti olmayan bir varış yeri seçilemez."
+          }
+        },
+        "item": {
+          "nameRequired": "Bir ürünün adı olmalı.",
+          "nameTooLong": "Ad en fazla {max} karakter olur. {over} karakter çıkarın.",
+          "skuTooLong": "Stok kodu en fazla {max} karakter olur.",
+          "weightOnDigital": "Dijital bir ürünün kargo ağırlığı yoktur. Ağırlığı temizleyin ya da ürünü fiziksel yapın.",
+          "weightNotWhole": "Ağırlığı tam gram sayısı olarak girin.",
+          "weightNotPositive": "Ağırlık sıfır gramdan büyük olmalı."
+        },
+        "price": {
+          "empty": "Bir ödülün fiyatı olmalı.",
+          "notANumber": "Fiyatı rakamla girin, örneğin 19.99.",
+          "comma": "Ondalık ayırıcı olarak nokta kullanın, örneğin 19.99.",
+          "tooManyDecimals": "Bir fiyatta en fazla iki ondalık basamak olur.",
+          "tooLarge": "Bu fiyat platformun tutabileceğinden büyük.",
+          "notPositive": "Ödül fiyatı sıfırdan büyük olmalı."
+        },
+        "rate": {
+          "empty": "Bu varış yerine kargonun ne tuttuğunu girin.",
+          "notANumber": "Ücreti rakamla girin, örneğin 12.50.",
+          "comma": "Ondalık ayırıcı olarak nokta kullanın, örneğin 12.50.",
+          "tooManyDecimals": "Bir ücrette en fazla iki ondalık basamak olur.",
+          "tooLarge": "Bu ücret platformun tutabileceğinden büyük.",
+          "notPositive": "Ücret negatif olamaz. Ücretsiz kargo için 0 girin."
+        },
+        "reward": {
+          "titleRequired": "Bir ödülün başlığı olmalı.",
+          "titleTooLong": "Başlık en fazla {max} karakter olur. {over} karakter çıkarın.",
+          "limitNotWhole": "Kontenjanı tam sayı olarak girin ya da sınırsız için boş bırakın.",
+          "limitBelowOne": "Sınırlı bir ödülde en az bir kontenjan olur. Sınırsız yapmak için sınırı temizleyin.",
+          "limitBelowCommitted": {
+            "one": "Bu, hâlihazırda alınmış {count} kontenjanın altında. Adet her zaman artırılabilir, yalnızca alınanın üstüne indirilebilir.",
+            "few": "Bu, hâlihazırda alınmış {count} kontenjanın altında. Adet her zaman artırılabilir, yalnızca alınanın üstüne indirilebilir.",
+            "many": "Bu, hâlihazırda alınmış {count} kontenjanın altında. Adet her zaman artırılabilir, yalnızca alınanın üstüne indirilebilir.",
+            "other": "Bu, hâlihazırda alınmış {count} kontenjanın altında. Adet her zaman artırılabilir, yalnızca alınanın üstüne indirilebilir."
+          },
+          "secretAndFeatured": "Gizli bir ödül sayfada gösterilmez, bu yüzden aynı anda öne de çıkarılamaz.",
+          "earlyBirdNeedsLimit": "Erken fiyatlı bir ödülün ya kapanış tarihi ya da sınırlı kontenjanı olmalı.",
+          "dateInvalid": "Bir tarih ve saat girin ya da boş bırakın.",
+          "closesBeforeOpens": "Bir ödül açıldıktan sonra kapanır, öncesinde değil.",
+          "itemsDuplicate": "Her ürün bir kez görünür, sayısı da adedidir.",
+          "itemsQuantity": "Bir ödülde, listelediği her üründen en az bir tane bulunur."
+        },
+        "rates": {
+          "notShipped": "Ülke bazlı ücretler yalnızca yurt içine ya da yurt dışına gönderilen ödüllerde olur. Teslimat yöntemini değiştirin ya da ücretleri kaldırın.",
+          "badCountryCode": "Varış yeri iki harfli bir ülke kodudur, örneğin AZ ya da TR.",
+          "duplicateDestination": "Her varış yeri bir kez görünür: {code} iki kez yazılmış.",
+          "prefixed": "{code}: {message}"
+        },
+        "showBlockedEarlyBird": "Bu erken fiyatlı bir ödül ve böylesinin ya kapanış tarihi ya da sınırlı kontenjanı olmalı. Yeniden göstermeden önce bir sınır koyun ya da erken fiyatı kapatın.",
+        "stock": {
+          "unlimited": "Kontenjan sınırsız",
+          "remaining": "{limit} kontenjandan {remaining} kaldı"
+        }
+      }
+    },
+    "drawer": {
+      "cancel": "İptal",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor"
     }
   },
   "profile": {

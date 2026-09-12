@@ -17,6 +17,15 @@ import {
   verifyEmailCopyFrom,
 } from './auth-copy';
 import { type CheckoutCopy, checkoutCopyFrom } from './checkout-copy';
+import type { PluralForms } from '@ideanest/ui';
+import {
+  type BasicsPanelCopy,
+  type EditorChromeCopy,
+  type RewardsPanelCopy,
+  basicsPanelCopyFrom,
+  editorChromeCopyFrom,
+  rewardsPanelCopyFrom,
+} from './campaign-editor-copy';
 import {
   type CampaignActionsCopy,
   type CommentCopy,
@@ -258,4 +267,38 @@ export async function graphContext(): Promise<{
   readonly trailCopy: TrailCopy;
 }> {
   return { locale: localeOrDefault(await getLocale()), trailCopy: await trailCopy() };
+}
+
+/**
+ * The campaign editor's frame — `lib/i18n/campaign-editor-copy.ts`.
+ *
+ * <p>Every one of the six tab pages resolves this and hands it to its panel, which threads it
+ * into `EditorShell` and `SaveStatus`. It is the frame only: a panel's own field labels and
+ * refusals belong to that panel, so translating one tab does not touch the other five.
+ */
+export async function editorChromeCopy(): Promise<EditorChromeCopy> {
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return editorChromeCopyFrom(editor, counter, localeOrDefault(locale));
+}
+
+/** The basics tab's own words — the first of the six panels. */
+export async function basicsPanelCopy(): Promise<BasicsPanelCopy> {
+  return basicsPanelCopyFrom(await getTranslations('campaignEditor'));
+}
+
+/** The rewards tab, the items list, and the two drawers they open. */
+export async function rewardsPanelCopy(): Promise<RewardsPanelCopy> {
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return rewardsPanelCopyFrom(editor, localeOrDefault(locale), {
+    remaining: counter.raw('remaining') as PluralForms,
+    tooMany: counter.raw('tooMany') as PluralForms,
+  });
 }

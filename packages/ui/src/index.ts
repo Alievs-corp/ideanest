@@ -59,7 +59,13 @@ export { TextInput, type TextInputProps } from './components/form/TextInput';
 export { PasswordInput, type PasswordInputProps } from './components/form/PasswordInput';
 export { Textarea, type TextareaProps } from './components/form/Textarea';
 export { Select, type SelectProps } from './components/form/Select';
-export { CharacterCount, type CharacterCountProps } from './components/form/CharacterCount';
+export {
+  CharacterCount,
+  CHARACTER_COUNT_COPY_EN,
+  type CharacterCountProps,
+  type CharacterCountCopy,
+  type PluralForms,
+} from './components/form/CharacterCount';
 export { Checkbox, type CheckboxProps } from './components/form/Checkbox';
 export {
   Radio,

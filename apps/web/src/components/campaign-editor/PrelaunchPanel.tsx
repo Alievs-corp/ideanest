@@ -35,6 +35,10 @@ import {
   type BasicsField,
 } from '../../lib/projects/basics';
 import { CoverImageField } from './CoverImageField';
+import type {
+  BasicsValidationCopy,
+  EditorChromeCopy,
+} from '../../lib/i18n/campaign-editor-copy';
 import { EditorShell } from './EditorShell';
 import { SaveStatus } from './SaveStatus';
 import { useAutosave, describeFailure, type SaveFailure } from './useAutosave';
@@ -98,9 +102,16 @@ function prelaunchLink(projectId: string): string {
 
 export interface PrelaunchPanelProps {
   projectId: string;
+  /** The editor frame's words, resolved by this tab's page. */
+  copy: EditorChromeCopy;
+  /**
+   * The basics form's refusals. This tab edits the same fields through the same
+   * `validateBasics`, so it refuses in the same vocabulary rather than a second one.
+   */
+  validation: BasicsValidationCopy;
 }
 
-export function PrelaunchPanel({ projectId }: PrelaunchPanelProps) {
+export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelProps) {
   const { project, status, error, reload, apply } = useProjectEdit(projectId);
 
   /** Seeded once, for the reason `BasicsPanel` gives: re-seeding eats keystrokes. */
@@ -184,7 +195,7 @@ export function PrelaunchPanel({ projectId }: PrelaunchPanelProps) {
 
   if (status === 'signed-out') {
     return (
-      <EditorShell projectId={projectId} active="prelaunch">
+      <EditorShell projectId={projectId} copy={copy} active="prelaunch">
         <InlineAlert variant="info" title="You are signed out">
           This browser no longer has a session. Sign in again to keep editing this campaign.
         </InlineAlert>
@@ -194,7 +205,7 @@ export function PrelaunchPanel({ projectId }: PrelaunchPanelProps) {
 
   if (status === 'failed' || draft === null || project === null) {
     return (
-      <EditorShell projectId={projectId} active="prelaunch">
+      <EditorShell projectId={projectId} copy={copy} active="prelaunch">
         {status === 'failed' ? (
           <>
             <InlineAlert variant="danger" title="This project could not be loaded">
@@ -220,17 +231,18 @@ export function PrelaunchPanel({ projectId }: PrelaunchPanelProps) {
     );
   }
 
-  const errors: BasicsErrors = { ...validateBasics(draft), ...serverErrors(autosave.failure) };
+  const errors: BasicsErrors = { ...validateBasics(draft, validation), ...serverErrors(autosave.failure) };
   const canOpen = project.state === 'DRAFT';
   const closed = !canOpen && !collecting;
 
   return (
     <EditorShell
       projectId={projectId}
+      copy={copy}
       active="prelaunch"
       title={project.title}
       state={project.state}
-      status={<SaveStatus state={autosave.state} />}
+      status={<SaveStatus state={autosave.state} copy={copy.save} />}
     >
       <div className="flex flex-col gap-7">
         {autosave.failure !== null && (
@@ -373,7 +385,12 @@ export function PrelaunchPanel({ projectId }: PrelaunchPanelProps) {
               onChange={(event) => change('title', { ...draft, title: event.target.value })}
               onBlur={autosave.flush}
             />
-            <CharacterCount count={characterCount(draft.title)} limit={TITLE_MAX_CHARACTERS} />
+            <CharacterCount
+            count={characterCount(draft.title)}
+            limit={TITLE_MAX_CHARACTERS}
+            copy={copy.characterCount}
+            locale={copy.locale}
+          />
           </Field>
 
           <Field
@@ -387,7 +404,12 @@ export function PrelaunchPanel({ projectId }: PrelaunchPanelProps) {
               onChange={(event) => change('blurb', { ...draft, blurb: event.target.value })}
               onBlur={autosave.flush}
             />
-            <CharacterCount count={characterCount(draft.blurb)} limit={BLURB_MAX_CHARACTERS} />
+            <CharacterCount
+            count={characterCount(draft.blurb)}
+            limit={BLURB_MAX_CHARACTERS}
+            copy={copy.characterCount}
+            locale={copy.locale}
+          />
           </Field>
 
           <CoverImageField

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Item, Reward } from './api';
+import { REWARDS_COPY } from '../../test-editor-copy';
+import RU_MESSAGES from '../../../messages/ru.json';
+
+/** The Russian forms, read from the catalogue rather than retyped into the assertion. */
+const RU_LIMIT_BELOW_COMMITTED =
+  RU_MESSAGES.campaignEditor.rewards.vocabulary.reward.limitBelowCommitted;
 import {
   EMPTY_ITEM,
   ITEM_NAME_MAX_CHARACTERS,
@@ -86,13 +92,13 @@ function draft(overrides: Partial<RewardDraft> = {}): RewardDraft {
 
 describe('an item', () => {
   it('needs a name, because the column is NOT NULL', () => {
-    expect(validateItem(EMPTY_ITEM).name).toBe('An item needs a name.');
-    expect(validateItem({ ...EMPTY_ITEM, name: '   ' }).name).toBe('An item needs a name.');
+    expect(validateItem(EMPTY_ITEM, REWARDS_COPY.vocabulary.item).name).toBe('An item needs a name.');
+    expect(validateItem({ ...EMPTY_ITEM, name: '   ' }, REWARDS_COPY.vocabulary.item).name).toBe('An item needs a name.');
   });
 
   it(`accepts a ${ITEM_NAME_MAX_CHARACTERS}-character name and refuses the next one`, () => {
-    expect(validateItem({ ...EMPTY_ITEM, name: 'a'.repeat(120) }).name).toBeUndefined();
-    expect(validateItem({ ...EMPTY_ITEM, name: 'a'.repeat(121) }).name).toBe(
+    expect(validateItem({ ...EMPTY_ITEM, name: 'a'.repeat(120) }, REWARDS_COPY.vocabulary.item).name).toBeUndefined();
+    expect(validateItem({ ...EMPTY_ITEM, name: 'a'.repeat(121) }, REWARDS_COPY.vocabulary.item).name).toBe(
       'A name is 120 characters or fewer. Remove 1.',
     );
   });
@@ -103,7 +109,7 @@ describe('an item', () => {
    * legitimate thing the creator meant.
    */
   it('refuses a weight on something delivered as a file', () => {
-    const errors = validateItem({ ...EMPTY_ITEM, name: 'Wallpaper', isDigital: true, weightGrams: '10' });
+    const errors = validateItem({ ...EMPTY_ITEM, name: 'Wallpaper', isDigital: true, weightGrams: '10' }, REWARDS_COPY.vocabulary.item);
     expect(errors.weightGrams).toContain('A digital item has no shipping weight');
   });
 
@@ -111,7 +117,7 @@ describe('an item', () => {
     ['2.5', 'Enter the weight as a whole number of grams.'],
     ['0', 'A weight is more than zero grams.'],
   ])('refuses a weight of %s', (weight, message) => {
-    expect(validateItem({ ...EMPTY_ITEM, name: 'Mug', weightGrams: weight }).weightGrams).toBe(
+    expect(validateItem({ ...EMPTY_ITEM, name: 'Mug', weightGrams: weight }, REWARDS_COPY.vocabulary.item).weightGrams).toBe(
       message,
     );
   });
@@ -154,14 +160,14 @@ describe('an item', () => {
 
 describe('a reward tier', () => {
   it('needs a title and a price, which are the two the service requires', () => {
-    const errors = validateReward(emptyReward('AZN'));
+    const errors = validateReward(emptyReward('AZN'), REWARDS_COPY.vocabulary.reward);
     expect(errors.title).toBe('A reward needs a title.');
     expect(errors.price).toBe('A reward needs a price.');
   });
 
   it(`accepts a ${REWARD_TITLE_MAX_CHARACTERS}-character title and refuses the next one`, () => {
-    expect(validateReward(draft({ title: 'a'.repeat(80) })).title).toBeUndefined();
-    expect(validateReward(draft({ title: 'a'.repeat(81) })).title).toBe(
+    expect(validateReward(draft({ title: 'a'.repeat(80) }), REWARDS_COPY.vocabulary.reward).title).toBeUndefined();
+    expect(validateReward(draft({ title: 'a'.repeat(81) }), REWARDS_COPY.vocabulary.reward).title).toBe(
       'A title is 80 characters or fewer. Remove 1.',
     );
   });
@@ -179,7 +185,7 @@ describe('a reward tier', () => {
       ['19.999', 'A price has at most two decimal places.'],
       ['1e5', 'Enter the price in digits, for example 19.99.'],
     ])('refuses %s', (amount, message) => {
-      expect(validateReward(draft({ priceAmount: amount })).price).toBe(message);
+      expect(validateReward(draft({ priceAmount: amount }), REWARDS_COPY.vocabulary.reward).price).toBe(message);
     });
 
     it('crosses the wire as a string, at the scale the column holds', () => {
@@ -196,7 +202,7 @@ describe('a reward tier', () => {
 
   describe('the number of places', () => {
     it('may be raised freely', () => {
-      const errors = validateReward(draft({ limitQuantity: '500' }), { committedQuantity: 40 });
+      const errors = validateReward(draft({ limitQuantity: '500' }), REWARDS_COPY.vocabulary.reward, { committedQuantity: 40 });
       expect(errors.limitQuantity).toBeUndefined();
     });
 
@@ -207,47 +213,73 @@ describe('a reward tier', () => {
      */
     it('may be lowered to exactly what is taken, and no further', () => {
       expect(
-        validateReward(draft({ limitQuantity: '40' }), { committedQuantity: 40 }).limitQuantity,
+        validateReward(draft({ limitQuantity: '40' }), REWARDS_COPY.vocabulary.reward, { committedQuantity: 40 }).limitQuantity,
       ).toBeUndefined();
 
       expect(
-        validateReward(draft({ limitQuantity: '39' }), { committedQuantity: 40 }).limitQuantity,
+        validateReward(draft({ limitQuantity: '39' }), REWARDS_COPY.vocabulary.reward, { committedQuantity: 40 }).limitQuantity,
       ).toContain('below the 40 places already taken');
     });
 
+    it('refuses in the reader’s language, declining the count as that language does', () => {
+      /*
+       * The English catalogue says "places" for every number above one, so an English
+       * assertion cannot tell a working plural rule from a hard-coded "s". Russian can:
+       * 1 место, 3 места, 5 мест. This is what `lib/i18n/plurals.ts` is for, and the
+       * message was built with an English ternary until #459.
+       */
+      const russian = { ...REWARDS_COPY.vocabulary.reward, locale: 'ru' as const,
+        limitBelowCommitted: RU_LIMIT_BELOW_COMMITTED };
+
+      const refusal = (committedQuantity: number) =>
+        validateReward(draft({ limitQuantity: '1' }), russian, {
+          committedQuantity,
+        }).limitQuantity;
+
+      /*
+       * No case for one place taken: to be below it the limit would have to be zero, and
+       * `places < 1` is refused a branch earlier. Russian's `one` category is still covered —
+       * it is what 21 selects, which is the half of the rule an English "s" gets wrong.
+       */
+      expect(refusal(3)).toContain('3 уже занятых места');
+      expect(refusal(5)).toContain('5 уже занятых мест');
+      expect(refusal(21)).toContain('21 уже занятое место');
+    });
+
     it('is a whole number of at least one, or empty for unlimited', () => {
-      expect(validateReward(draft({ limitQuantity: '0' })).limitQuantity).toContain(
+      expect(validateReward(draft({ limitQuantity: '0' }), REWARDS_COPY.vocabulary.reward).limitQuantity).toContain(
         'at least one place',
       );
-      expect(validateReward(draft({ limitQuantity: '1.5' })).limitQuantity).toContain(
+      expect(validateReward(draft({ limitQuantity: '1.5' }), REWARDS_COPY.vocabulary.reward).limitQuantity).toContain(
         'whole number',
       );
-      expect(validateReward(draft({ limitQuantity: '' })).limitQuantity).toBeUndefined();
+      expect(validateReward(draft({ limitQuantity: '' }), REWARDS_COPY.vocabulary.reward).limitQuantity).toBeUndefined();
       expect(newRewardFrom(draft({ limitQuantity: '' })).limitQuantity).toBeNull();
     });
   });
 
   describe('the combinations the service refuses', () => {
     it('refuses a tier that is both secret and featured', () => {
-      const errors = validateReward(draft({ isSecret: true, isFeatured: true }));
+      const errors = validateReward(draft({ isSecret: true, isFeatured: true }), REWARDS_COPY.vocabulary.reward);
       expect(errors.isFeatured).toContain('not shown on the page');
     });
 
     it('refuses an early bird with neither a closing date nor a limit', () => {
-      expect(validateReward(draft({ isEarlyBird: true })).isEarlyBird).toContain(
+      expect(validateReward(draft({ isEarlyBird: true }), REWARDS_COPY.vocabulary.reward).isEarlyBird).toContain(
         'closing date or a limited number of places',
       );
       expect(
-        validateReward(draft({ isEarlyBird: true, limitQuantity: '100' })).isEarlyBird,
+        validateReward(draft({ isEarlyBird: true, limitQuantity: '100' }), REWARDS_COPY.vocabulary.reward).isEarlyBird,
       ).toBeUndefined();
       expect(
-        validateReward(draft({ isEarlyBird: true, availableUntil: '2027-01-01T10:00' })).isEarlyBird,
+        validateReward(draft({ isEarlyBird: true, availableUntil: '2027-01-01T10:00' }), REWARDS_COPY.vocabulary.reward).isEarlyBird,
       ).toBeUndefined();
     });
 
     it('refuses a window that closes before it opens', () => {
       const errors = validateReward(
         draft({ availableFrom: '2027-01-02T10:00', availableUntil: '2027-01-01T10:00' }),
+        REWARDS_COPY.vocabulary.reward,
       );
       expect(errors.availableUntil).toBe('A reward closes after it opens, not before.');
     });
@@ -255,7 +287,7 @@ describe('a reward tier', () => {
 
   describe('the composition', () => {
     it('refuses a quantity below one', () => {
-      const errors = validateReward(draft({ items: [{ itemId: 'item-mug', quantity: '0' }] }));
+      const errors = validateReward(draft({ items: [{ itemId: 'item-mug', quantity: '0' }] }), REWARDS_COPY.vocabulary.reward);
       expect(errors.items).toContain('at least one of every item');
     });
 
@@ -267,6 +299,7 @@ describe('a reward tier', () => {
             { itemId: 'item-mug', quantity: '2' },
           ],
         }),
+        REWARDS_COPY.vocabulary.reward,
       );
       expect(errors.items).toContain('Each item appears once');
     });
@@ -284,6 +317,7 @@ describe('a reward tier', () => {
           shippingType: 'DIGITAL',
           shippingRules: [{ countryCode: 'AZ', amount: '5.00', additionalItemAmount: '0.00' }],
         }),
+        REWARDS_COPY.vocabulary.reward,
       );
       expect(errors.rules).toContain('Change the delivery method');
     });
@@ -294,6 +328,7 @@ describe('a reward tier', () => {
           shippingType: 'DOMESTIC',
           shippingRules: [{ countryCode: 'AZE', amount: '5.00', additionalItemAmount: '0.00' }],
         }),
+        REWARDS_COPY.vocabulary.reward,
       );
       expect(errors.rules).toContain('two-letter country code');
     });
@@ -307,6 +342,7 @@ describe('a reward tier', () => {
             { countryCode: 'AZ', amount: '6.00', additionalItemAmount: '0.00' },
           ],
         }),
+        REWARDS_COPY.vocabulary.reward,
       );
       expect(errors.rules).toBe('Each destination appears once: AZ is listed twice.');
     });
@@ -455,10 +491,10 @@ describe('hiding, which is what deleting becomes once somebody has backed a tier
    * reading a 400 about a field nobody touched.
    */
   it('says why an early bird with no limit cannot simply be shown again', () => {
-    expect(showBlockedReason({ ...REWARD, isEarlyBird: true, limitQuantity: null })).toContain(
+    expect(showBlockedReason({ ...REWARD, isEarlyBird: true, limitQuantity: null }, REWARDS_COPY.vocabulary)).toContain(
       'Set a limit, or turn off early bird',
     );
-    expect(showBlockedReason(REWARD)).toBeNull();
+    expect(showBlockedReason(REWARD, REWARDS_COPY.vocabulary)).toBeNull();
   });
 });
 
@@ -483,7 +519,7 @@ describe('the order', () => {
 
 describe('the sentences the list needs', () => {
   it('says unlimited rather than showing an empty count', () => {
-    expect(describeStock({ ...REWARD, limitQuantity: null, remainingQuantity: null })).toBe(
+    expect(describeStock({ ...REWARD, limitQuantity: null, remainingQuantity: null }, REWARDS_COPY.vocabulary)).toBe(
       'Unlimited places',
     );
   });
@@ -496,7 +532,7 @@ describe('the sentences the list needs', () => {
         claimedQuantity: 8,
         reservedQuantity: 2,
         remainingQuantity: 90,
-      }),
+      }, REWARDS_COPY.vocabulary),
     ).toBe('90 of 100 places left');
   });
 });

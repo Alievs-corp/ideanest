@@ -6,6 +6,8 @@ import {
   type AmountRejection,
 } from '../money';
 import type { CoverImage, ProjectEdit, ProjectPatch } from './api';
+import type { BasicsValidationCopy } from '../i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../i18n/placeholders';
 
 /**
  * The basics tab, as data: what the creator has typed, what is wrong with it,
@@ -191,14 +193,23 @@ export function fromDateTimeLocal(value: string): string | null {
  * Validation
  * ---------------------------------------------------------------------- */
 
-const AMOUNT_MESSAGE: Record<AmountRejection, string> = {
-  empty: 'Enter the amount you need to raise.',
-  'not-a-number': 'Enter the goal in digits, for example 5000.00.',
-  comma: 'Use a full stop for the decimal point, for example 5000.00.',
-  'too-many-decimals': 'A goal has at most two decimal places.',
-  'too-large': 'That goal is larger than the platform can hold.',
-  'not-positive': 'A goal has to be more than zero.',
-};
+/**
+ * The rejection the amount parser reports, as the sentence for it — issue #324.
+ *
+ * A `Record` rather than a `switch` so that a rejection added to `AmountRejection` fails to
+ * compile here rather than rendering `undefined` under the field it refuses.
+ */
+function amountMessage(copy: BasicsValidationCopy, reason: AmountRejection): string {
+  const messages: Record<AmountRejection, string> = {
+    empty: copy.amount.empty,
+    'not-a-number': copy.amount.notANumber,
+    comma: copy.amount.comma,
+    'too-many-decimals': copy.amount.tooManyDecimals,
+    'too-large': copy.amount.tooLarge,
+    'not-positive': copy.amount.notPositive,
+  };
+  return messages[reason];
+}
 
 /** Integer days only — `"14.5"` and `"14 days"` are both refusals. */
 const WHOLE_DAYS = /^\d+$/;
@@ -208,49 +219,65 @@ export interface ValidationContext {
   now?: Date;
 }
 
-export function validateBasics(draft: BasicsDraft, context: ValidationContext = {}): BasicsErrors {
+/**
+ * THE COPY IS AN ARGUMENT, AND IT IS REQUIRED.
+ *
+ * This runs on every keystroke in two client panels, so it cannot reach a catalogue, and an
+ * optional vocabulary would leave the form quietly refusing in English at the moment somebody
+ * is already stuck. `lib/auth/failures.ts` states the same rule for the same reason.
+ */
+export function validateBasics(
+  draft: BasicsDraft,
+  copy: BasicsValidationCopy,
+  context: ValidationContext = {},
+): BasicsErrors {
   const errors: BasicsErrors = {};
   const now = context.now ?? new Date();
 
   const titleLength = characterCount(draft.title.trim());
   if (titleLength === 0) {
-    errors.title = 'A project needs a title.';
+    errors.title = copy.titleRequired;
   } else if (titleLength > TITLE_MAX_CHARACTERS) {
-    errors.title = `A title is ${TITLE_MAX_CHARACTERS} characters or fewer. Remove ${
-      titleLength - TITLE_MAX_CHARACTERS
-    }.`;
+    errors.title = fillPlaceholders(copy.titleTooLong, {
+      max: String(TITLE_MAX_CHARACTERS),
+      over: String(titleLength - TITLE_MAX_CHARACTERS),
+    });
   }
 
   const blurbLength = characterCount(draft.blurb);
   if (blurbLength > BLURB_MAX_CHARACTERS) {
-    errors.blurb = `A summary is ${BLURB_MAX_CHARACTERS} characters or fewer. Remove ${
-      blurbLength - BLURB_MAX_CHARACTERS
-    }.`;
+    errors.blurb = fillPlaceholders(copy.summaryTooLong, {
+      max: String(BLURB_MAX_CHARACTERS),
+      over: String(blurbLength - BLURB_MAX_CHARACTERS),
+    });
   }
 
   // A subcategory belongs to a category, so one without the other is not a
   // half-finished choice — it is a contradiction, and the server would refuse it.
   if (draft.subcategoryId !== '' && draft.categoryId === '') {
-    errors.subcategoryId = 'Choose a category first.';
+    errors.subcategoryId = copy.subcategoryWithoutCategory;
   }
 
   if (draft.goalAmount.trim() !== '') {
     const parsed = parseAmount(draft.goalAmount);
-    if (!parsed.ok) errors.goal = AMOUNT_MESSAGE[parsed.reason];
+    if (!parsed.ok) errors.goal = amountMessage(copy, parsed.reason);
   }
 
   if (!isSupportedCurrency(draft.currency)) {
-    errors.goal = errors.goal ?? 'Choose a currency the platform can collect in.';
+    errors.goal = errors.goal ?? copy.currencyUnsupported;
   }
 
   const days = draft.durationDays.trim();
   if (days !== '') {
     if (!WHOLE_DAYS.test(days)) {
-      errors.durationDays = 'Enter the duration as a whole number of days.';
+      errors.durationDays = copy.durationNotWhole;
     } else {
       const value = Number.parseInt(days, 10);
       if (value < DURATION_MIN_DAYS || value > DURATION_MAX_DAYS) {
-        errors.durationDays = `A campaign runs for ${DURATION_MIN_DAYS} to ${DURATION_MAX_DAYS} days.`;
+        errors.durationDays = fillPlaceholders(copy.durationOutOfRange, {
+          min: String(DURATION_MIN_DAYS),
+          max: String(DURATION_MAX_DAYS),
+        });
       }
     }
   }
@@ -258,9 +285,9 @@ export function validateBasics(draft: BasicsDraft, context: ValidationContext = 
   if (draft.scheduledLaunchAt.trim() !== '') {
     const instant = fromDateTimeLocal(draft.scheduledLaunchAt);
     if (instant === null) {
-      errors.scheduledLaunchAt = 'Enter a date and time.';
+      errors.scheduledLaunchAt = copy.launchNotADate;
     } else if (new Date(instant).getTime() <= now.getTime()) {
-      errors.scheduledLaunchAt = 'Choose a date and time in the future.';
+      errors.scheduledLaunchAt = copy.launchInPast;
     }
   }
 

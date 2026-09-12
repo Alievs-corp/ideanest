@@ -13,6 +13,7 @@ import {
   type BasicsDraft,
 } from './basics';
 import type { ProjectEdit } from './api';
+import { BASICS_COPY } from '../../test-editor-copy';
 
 /**
  * The boundaries of docs/architecture.md §5.3, which is where this fails: 60
@@ -54,14 +55,14 @@ describe('characterCount', () => {
 
 describe('validateBasics', () => {
   it('accepts a well-formed draft', () => {
-    expect(validateBasics(draft(), { now: NOW })).toEqual({});
+    expect(validateBasics(draft(), BASICS_COPY.validation, { now: NOW })).toEqual({});
   });
 
   describe('title', () => {
     it(`accepts exactly ${TITLE_MAX_CHARACTERS} characters and refuses one more`, () => {
-      expect(validateBasics(draft({ title: of(60) }), { now: NOW }).title).toBeUndefined();
+      expect(validateBasics(draft({ title: of(60) }), BASICS_COPY.validation, { now: NOW }).title).toBeUndefined();
 
-      const errors = validateBasics(draft({ title: of(61) }), { now: NOW });
+      const errors = validateBasics(draft({ title: of(61) }), BASICS_COPY.validation, { now: NOW });
       expect(errors.title).toContain('60 characters or fewer');
       // The message says how much has to go, so the fix does not need counting.
       expect(errors.title).toContain('Remove 1');
@@ -74,7 +75,7 @@ describe('validateBasics', () => {
      * now rather than work not yet done.
      */
     it('refuses an empty title', () => {
-      expect(validateBasics(draft({ title: '   ' }), { now: NOW }).title).toBe(
+      expect(validateBasics(draft({ title: '   ' }), BASICS_COPY.validation, { now: NOW }).title).toBe(
         'A project needs a title.',
       );
     });
@@ -82,42 +83,42 @@ describe('validateBasics', () => {
 
   describe('summary', () => {
     it(`accepts exactly ${BLURB_MAX_CHARACTERS} characters and refuses one more`, () => {
-      expect(validateBasics(draft({ blurb: of(135) }), { now: NOW }).blurb).toBeUndefined();
-      expect(validateBasics(draft({ blurb: of(136) }), { now: NOW }).blurb).toContain('Remove 1');
+      expect(validateBasics(draft({ blurb: of(135) }), BASICS_COPY.validation, { now: NOW }).blurb).toBeUndefined();
+      expect(validateBasics(draft({ blurb: of(136) }), BASICS_COPY.validation, { now: NOW }).blurb).toContain('Remove 1');
     });
 
     it('says nothing about an empty summary, because a draft is unfinished', () => {
-      expect(validateBasics(draft({ blurb: '' }), { now: NOW })).toEqual({});
+      expect(validateBasics(draft({ blurb: '' }), BASICS_COPY.validation, { now: NOW })).toEqual({});
     });
   });
 
   describe('duration', () => {
     it(`runs from ${DURATION_MIN_DAYS} to ${DURATION_MAX_DAYS} days inclusive`, () => {
       for (const days of ['1', '30', '60']) {
-        expect(validateBasics(draft({ durationDays: days }), { now: NOW }).durationDays).toBeUndefined();
+        expect(validateBasics(draft({ durationDays: days }), BASICS_COPY.validation, { now: NOW }).durationDays).toBeUndefined();
       }
     });
 
     it.each(['0', '61', '600'])('refuses %s days', (days) => {
-      expect(validateBasics(draft({ durationDays: days }), { now: NOW }).durationDays).toBe(
+      expect(validateBasics(draft({ durationDays: days }), BASICS_COPY.validation, { now: NOW }).durationDays).toBe(
         'A campaign runs for 1 to 60 days.',
       );
     });
 
     it('refuses a fraction of a day', () => {
-      expect(validateBasics(draft({ durationDays: '14.5' }), { now: NOW }).durationDays).toContain(
+      expect(validateBasics(draft({ durationDays: '14.5' }), BASICS_COPY.validation, { now: NOW }).durationDays).toContain(
         'whole number',
       );
     });
 
     it('accepts an empty duration, which simply is not chosen yet', () => {
-      expect(validateBasics(draft({ durationDays: '' }), { now: NOW })).toEqual({});
+      expect(validateBasics(draft({ durationDays: '' }), BASICS_COPY.validation, { now: NOW })).toEqual({});
     });
   });
 
   describe('goal', () => {
     it('explains a comma instead of silently reading half the figure', () => {
-      expect(validateBasics(draft({ goalAmount: '5,000' }), { now: NOW }).goal).toContain(
+      expect(validateBasics(draft({ goalAmount: '5,000' }), BASICS_COPY.validation, { now: NOW }).goal).toContain(
         'full stop',
       );
     });
@@ -127,18 +128,18 @@ describe('validateBasics', () => {
       ['5.005', 'two decimal places'],
       ['not a number', 'digits'],
     ])('refuses %s', (input, fragment) => {
-      expect(validateBasics(draft({ goalAmount: input }), { now: NOW }).goal).toContain(fragment);
+      expect(validateBasics(draft({ goalAmount: input }), BASICS_COPY.validation, { now: NOW }).goal).toContain(fragment);
     });
 
     it('refuses a currency the platform cannot collect in', () => {
-      expect(validateBasics(draft({ currency: 'BTC' }), { now: NOW }).goal).toContain('currency');
+      expect(validateBasics(draft({ currency: 'BTC' }), BASICS_COPY.validation, { now: NOW }).goal).toContain('currency');
     });
   });
 
   describe('scheduled launch', () => {
     it('refuses a moment that has already passed', () => {
       const past = toDateTimeLocal('2026-08-14T09:00:00.000Z');
-      expect(validateBasics(draft({ scheduledLaunchAt: past }), { now: NOW }).scheduledLaunchAt).toBe(
+      expect(validateBasics(draft({ scheduledLaunchAt: past }), BASICS_COPY.validation, { now: NOW }).scheduledLaunchAt).toBe(
         'Choose a date and time in the future.',
       );
     });
@@ -146,7 +147,7 @@ describe('validateBasics', () => {
     it('accepts one in the future', () => {
       const future = toDateTimeLocal('2026-09-01T09:00:00.000Z');
       expect(
-        validateBasics(draft({ scheduledLaunchAt: future }), { now: NOW }).scheduledLaunchAt,
+        validateBasics(draft({ scheduledLaunchAt: future }), BASICS_COPY.validation, { now: NOW }).scheduledLaunchAt,
       ).toBeUndefined();
     });
   });
@@ -164,12 +165,12 @@ describe('validateBasics', () => {
      */
     it('does not refuse one below 1024×576', () => {
       const small = { url: 'https://cdn.example.test/small.jpg', width: 800, height: 450 };
-      expect(validateBasics(draft({ coverImage: small }), { now: NOW }).coverImage).toBeUndefined();
+      expect(validateBasics(draft({ coverImage: small }), BASICS_COPY.validation, { now: NOW }).coverImage).toBeUndefined();
     });
 
     it('accepts exactly the minimum', () => {
       const exact = { url: 'https://cdn.example.test/exact.jpg', width: 1024, height: 576 };
-      expect(validateBasics(draft({ coverImage: exact }), { now: NOW }).coverImage).toBeUndefined();
+      expect(validateBasics(draft({ coverImage: exact }), BASICS_COPY.validation, { now: NOW }).coverImage).toBeUndefined();
     });
 
     it('carries a media identifier through to the patch when the cover came from an upload', () => {
@@ -179,15 +180,17 @@ describe('validateBasics', () => {
         height: 810,
         mediaId: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
       };
-      expect(validateBasics(draft({ coverImage: uploaded }), { now: NOW }).coverImage).toBeUndefined();
+      expect(validateBasics(draft({ coverImage: uploaded }), BASICS_COPY.validation, { now: NOW }).coverImage).toBeUndefined();
     });
   });
 
   it('refuses a subcategory with no category, which the server would too', () => {
-    const errors = validateBasics(draft({ categoryId: '', subcategoryId: 'sub-hardware' }), {
-      now: NOW,
-    });
-    expect(errors.subcategoryId).toBe('Choose a category first.');
+    const errors = validateBasics(
+      draft({ categoryId: '', subcategoryId: 'sub-hardware' }),
+      BASICS_COPY.validation,
+      { now: NOW },
+    );
+    expect(errors.subcategoryId).toBe(BASICS_COPY.validation.subcategoryWithoutCategory);
   });
 });
 

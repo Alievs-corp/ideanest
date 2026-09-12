@@ -13,6 +13,7 @@ import {
 import { measureImage } from '../../lib/projects/coverImage';
 import { IMAGE_ALT_REQUIRED, type StoryDocument } from '../../lib/projects/story';
 import { StoryPanel } from './StoryPanel';
+import { EDITOR_COPY } from '../../test-editor-copy';
 
 /**
  * Appearance is reviewed in Storybook. The document model's own rules are pinned
@@ -77,7 +78,7 @@ const PROJECT: ProjectEdit = {
 };
 
 function renderPanel() {
-  return render(<StoryPanel projectId="project-1" />);
+  return render(<StoryPanel projectId="project-1" copy={EDITOR_COPY} />);
 }
 
 /** Every patch the panel has sent, oldest first. */

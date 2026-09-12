@@ -54,8 +54,19 @@ import { describeFailure, type SaveFailure } from './useAutosave';
  * `prefers-reduced-motion`. Nothing here adds any: docs/motion-system.md §5
  * gives the campaign editor "none — autosave indicator only".
  */
+import type { EditorDrawerCopy } from '../../lib/i18n/campaign-editor-copy';
+
 export interface FaqEntryEditorProps {
   projectId: string;
+  /**
+   * The drawer's two buttons.
+   *
+   * The rest of this editor is still English — the FAQ tab has not been translated yet — and
+   * these are threaded now because `EditorDrawer` is shared and stopped carrying its own
+   * words. A partly translated drawer is not the goal; it is what a shared component being
+   * translated first looks like from the tab that follows it.
+   */
+  drawer: EditorDrawerCopy;
   open: boolean;
   /** The entry being edited, or null to add one. */
   faq: ProjectFaq | null;
@@ -66,6 +77,7 @@ export interface FaqEntryEditorProps {
 
 export function FaqEntryEditor({
   projectId,
+  drawer,
   open,
   faq,
   onOpenChange,
@@ -127,6 +139,7 @@ export function FaqEntryEditor({
 
   return (
     <EditorDrawer
+      copy={drawer}
       open={open}
       onOpenChange={onOpenChange}
       title={faq === null ? 'Add a question' : 'Edit question'}

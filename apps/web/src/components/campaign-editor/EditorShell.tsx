@@ -3,6 +3,7 @@
 import { Link } from '../../i18n/navigation';
 import type { ReactNode } from 'react';
 import { Tag, cn } from '@ideanest/ui';
+import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
 import type { ProjectState } from '../../lib/projects/api';
 import { EDITOR_TABS, editorTabHref, type EditorTabKey } from './tabs';
 
@@ -27,30 +28,6 @@ import { EDITOR_TABS, editorTabHref, type EditorTabKey } from './tabs';
  * uses; nothing enters, nothing fades up.
  */
 
-/**
- * The sixteen states of docs/architecture.md §6.1 as words a creator can read.
- *
- * Exported because every editor surface has to name the state, and two
- * translations of `CHANGES_REQUESTED` would eventually disagree.
- */
-export const PROJECT_STATE_LABEL: Record<ProjectState, string> = {
-  DRAFT: 'Draft',
-  PRELAUNCH: 'Pre-launch',
-  SUBMITTED: 'In review',
-  CHANGES_REQUESTED: 'Changes requested',
-  REJECTED: 'Rejected',
-  APPROVED: 'Approved',
-  SCHEDULED: 'Scheduled',
-  LIVE: 'Live',
-  SUSPENDED: 'Suspended',
-  CANCELED: 'Canceled',
-  SUCCESSFUL: 'Funded',
-  UNSUCCESSFUL: 'Not funded',
-  COLLECTING: 'Collecting',
-  LATE_PLEDGE: 'Late pledges',
-  FULFILLING: 'Fulfilling',
-  COMPLETED: 'Completed',
-};
 
 const TAB_BASE = [
   'inline-flex h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap',
@@ -60,6 +37,8 @@ const TAB_BASE = [
 
 export interface EditorShellProps {
   projectId: string;
+  /** The frame's words, resolved on the server by the tab's own page. */
+  copy: EditorChromeCopy;
   /** Which tab the surrounding route is. */
   active: EditorTabKey;
   /** The project's title, once it has loaded. */
@@ -78,6 +57,7 @@ export interface EditorShellProps {
 
 export function EditorShell({
   projectId,
+  copy,
   active,
   title,
   state,
@@ -102,22 +82,22 @@ export function EditorShell({
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
           <p className="text-xs font-medium tracking-[0.06em] text-white/40 uppercase">
-            Campaign editor
+            {copy.eyebrow}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
             {/* An untitled project is impossible — creation requires a title —
                 but a project still loading has no title to show yet. */}
-            {title ?? 'Loading'}
+            {title ?? copy.loadingTitle}
           </h1>
         </div>
 
         <div className="flex items-center gap-3">
-          {state != null && <Tag>{PROJECT_STATE_LABEL[state]}</Tag>}
+          {state != null && <Tag>{copy.states[state]}</Tag>}
           {status}
         </div>
       </div>
 
-      <nav aria-label="Campaign sections" className="mt-7">
+      <nav aria-label={copy.sectionsLabel} className="mt-7">
         <ul className="scrollbar-none flex gap-2 overflow-x-auto">
           {EDITOR_TABS.map((tab) => {
             const current = tab.key === active;
@@ -140,7 +120,7 @@ export function EditorShell({
                       'cursor-default border-white/8 bg-surface-2 text-white/64',
                     )}
                   >
-                    {tab.label}
+                    {copy.tabs[tab.key]}
                     {/*
                       Visible cue and spoken cue, saying the same thing. The
                       hidden half keeps the accessible name honest — it contains
@@ -152,13 +132,13 @@ export function EditorShell({
                       colour carrying meaning by itself.
                     */}
                     <span aria-hidden="true" className="text-white/40">
-                      soon
+                      {copy.soon}
                     </span>
                     {/* The comma is load-bearing. An accessible name is the
                         concatenation of its parts with each part trimmed and no
                         separator inserted, so a leading space would be dropped
                         and the name would read "Rewardsnot available yet". */}
-                    <span className="sr-only">, not available yet</span>
+                    <span className="sr-only">{copy.notAvailable}</span>
                   </button>
                 </li>
               );
@@ -178,7 +158,7 @@ export function EditorShell({
                       : 'border-white/8 bg-surface-2 text-white/64 hover:bg-surface-3 hover:text-white',
                   )}
                 >
-                  {tab.label}
+                  {copy.tabs[tab.key]}
                 </Link>
               </li>
             );

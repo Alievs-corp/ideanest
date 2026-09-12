@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { EDITOR_COPY } from '../../test-editor-copy';
 
 /*
  * The disabled-tab half of `available`, pinned against a fabricated tab list.
@@ -33,7 +34,7 @@ const { EditorShell } = await import('./EditorShell');
 describe('EditorShell, for a section whose route does not exist', () => {
   function renderShell() {
     return render(
-      <EditorShell projectId="project-1" active="basics" title="A field recorder" state="DRAFT">
+      <EditorShell projectId="project-1" copy={EDITOR_COPY} active="basics" title="A field recorder" state="DRAFT">
         <p>The basics form</p>
       </EditorShell>,
     );

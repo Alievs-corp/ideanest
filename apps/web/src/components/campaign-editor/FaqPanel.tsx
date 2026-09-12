@@ -19,6 +19,7 @@ import {
   type ProjectFaq,
 } from '../../lib/projects/api';
 import { movedTo } from '../../lib/projects/rewards';
+import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
 import { EditorShell } from './EditorShell';
 import { FaqEntryEditor } from './FaqEntryEditor';
 import { describeFailure, type SaveFailure } from './useAutosave';
@@ -78,9 +79,11 @@ type ListStatus = 'loading' | 'ready' | 'failed';
 
 export interface FaqPanelProps {
   projectId: string;
+  /** The editor frame's words, resolved by this tab's page. */
+  copy: EditorChromeCopy;
 }
 
-export function FaqPanel({ projectId }: FaqPanelProps) {
+export function FaqPanel({ projectId, copy }: FaqPanelProps) {
   const { project, status, error, reload } = useProjectEdit(projectId);
 
   const [faqs, setFaqs] = useState<readonly ProjectFaq[]>([]);
@@ -260,7 +263,7 @@ export function FaqPanel({ projectId }: FaqPanelProps) {
 
   if (status === 'signed-out') {
     return (
-      <EditorShell projectId={projectId} active="faq">
+      <EditorShell projectId={projectId} copy={copy} active="faq">
         <InlineAlert variant="info" title="You are signed out">
           This browser no longer has a session. Sign in again to keep editing this campaign.
         </InlineAlert>
@@ -270,7 +273,7 @@ export function FaqPanel({ projectId }: FaqPanelProps) {
 
   if (status === 'failed' || project === null) {
     return (
-      <EditorShell projectId={projectId} active="faq">
+      <EditorShell projectId={projectId} copy={copy} active="faq">
         {status === 'failed' ? (
           <>
             <InlineAlert variant="danger" title="This project could not be loaded">
@@ -296,7 +299,7 @@ export function FaqPanel({ projectId }: FaqPanelProps) {
   const full = faqs.length >= MAX_PROJECT_FAQS;
 
   return (
-    <EditorShell projectId={projectId} active="faq" title={project.title} state={project.state}>
+    <EditorShell projectId={projectId} copy={copy} active="faq" title={project.title} state={project.state}>
       <div className="flex flex-col gap-6">
         {/*
           Present from the first render, so the region is registered before
@@ -430,6 +433,7 @@ export function FaqPanel({ projectId }: FaqPanelProps) {
 
       <FaqEntryEditor
         projectId={projectId}
+        drawer={copy.drawer}
         open={editor.open}
         faq={editor.faq}
         onOpenChange={(open) => setEditor((current) => ({ ...current, open }))}

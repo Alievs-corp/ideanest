@@ -13,6 +13,7 @@ import {
 import { measureImage } from '../../lib/projects/coverImage';
 import { UploadFailed, uploadImage } from '../../lib/media/upload';
 import { BasicsPanel } from './BasicsPanel';
+import { BASICS_COPY, EDITOR_COPY } from '../../test-editor-copy';
 
 /**
  * Appearance is reviewed in Storybook. These cover what fails silently: the
@@ -101,7 +102,7 @@ async function openBasics(overrides: Partial<ProjectEdit> = {}): Promise<UserEve
   getProjectEditMock.mockResolvedValue({ ...PROJECT, ...overrides });
 
   const user = userEvent.setup({ advanceTimers: (ms) => void vi.advanceTimersByTime(ms) });
-  render(<BasicsPanel projectId="project-1" />);
+  render(<BasicsPanel projectId="project-1" copy={EDITOR_COPY} basics={BASICS_COPY} />);
 
   // The project and the category list resolve independently.
   await tick();
@@ -156,7 +157,7 @@ function chooseFile(file: File): void {
 describe('BasicsPanel', () => {
   it('announces that it is loading rather than showing an empty form', () => {
     getProjectEditMock.mockReturnValue(new Promise<ProjectEdit>(() => {}));
-    render(<BasicsPanel projectId="project-1" />);
+    render(<BasicsPanel projectId="project-1" copy={EDITOR_COPY} basics={BASICS_COPY} />);
 
     const label = screen.getByText('Loading this campaign');
     expect(label.closest('[aria-busy]')).toHaveAttribute('aria-busy', 'true');
@@ -641,7 +642,7 @@ describe('BasicsPanel', () => {
   describe('when the project cannot be loaded', () => {
     it('says the session has ended rather than showing an empty form', async () => {
       getProjectEditMock.mockRejectedValue(new ApiError(401, null));
-      render(<BasicsPanel projectId="project-1" />);
+      render(<BasicsPanel projectId="project-1" copy={EDITOR_COPY} basics={BASICS_COPY} />);
       await tick();
 
       expect(screen.getByText('You are signed out')).toBeInTheDocument();
@@ -651,7 +652,7 @@ describe('BasicsPanel', () => {
     it('offers a retry when the request simply failed', async () => {
       getProjectEditMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
       const user = userEvent.setup({ advanceTimers: (ms) => void vi.advanceTimersByTime(ms) });
-      render(<BasicsPanel projectId="project-1" />);
+      render(<BasicsPanel projectId="project-1" copy={EDITOR_COPY} basics={BASICS_COPY} />);
       await tick();
 
       expect(screen.getByRole('alert')).toHaveTextContent('The service could not be reached.');
