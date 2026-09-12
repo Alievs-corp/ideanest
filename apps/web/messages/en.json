@@ -3499,6 +3499,54 @@
         "boldShortcut": "Control B",
         "italicShortcut": "Control I"
       }
+    },
+    "faq": {
+      "atLimitTitle": "This campaign is at the limit",
+      "failedTitle": "That did not work",
+      "questionsFailedTitle": "The questions could not be loaded",
+      "emptyTitle": "No questions yet",
+      "loadingLabel": "Loading this campaign’s questions",
+      "listLabel": "Questions, in the order backers see them",
+      "description": "The campaign page shows this list on its own tab. Until there is something in it, the tab tells a backer the campaign has not answered anything yet — which is true, and is worth changing before you launch.",
+      "add": "Add a question",
+      "addFirst": "Add the first question",
+      "keepIt": "Keep it",
+      "delete": "Delete",
+      "edit": "Edit",
+      "deleteTitle": "Delete question",
+      "deleteNamed": "Delete “{question}”?",
+      "cannotBeUndone": "This cannot be undone.",
+      "moveUpLabel": "Move {question} up, currently {position} of {total}",
+      "moveDownLabel": "Move {question} down, currently {position} of {total}",
+      "editLabel": "Edit {question}",
+      "deleteLabel": "Delete {question}",
+      "movedAnnouncement": "{question} moved to position {position} of {total}.",
+      "deletedAnnouncement": "{question} was deleted.",
+      "order": {
+        "refusal": "The order was refused because {detail}. The list has been read again, so it now matches the campaign — put it back in the order you wanted.",
+        "missing": "this page had not seen {items}",
+        "unexpected": "{items} no longer exists",
+        "disagreed": "the two lists disagreed",
+        "quoted": "“{question}”",
+        "joinAnd": "{head} and {last}",
+        "otherQuestions": {
+          "one": "{count} other question",
+          "few": "{count} other questions",
+          "many": "{count} other questions",
+          "other": "{count} other questions"
+        }
+      },
+      "entry": {
+        "addTitle": "Add a question",
+        "editTitle": "Edit question",
+        "notSavedTitle": "This question was not saved",
+        "notSavedDetail": "Nothing you typed has been lost — it is still in the fields below.",
+        "description": "Questions and answers appear on the campaign page, in the order you put them in.",
+        "question": "Question",
+        "questionHint": "As a backer would ask it. {max} characters or fewer.",
+        "answer": "Answer",
+        "answerHint": "Plain text. Blank lines become paragraph breaks on the campaign page; nothing else is formatting. {max} characters or fewer."
+      }
     }
   },
   "profile": {
