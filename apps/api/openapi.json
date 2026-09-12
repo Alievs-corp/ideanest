@@ -9424,9 +9424,22 @@
       "ActivateRequest" : {
         "type" : "object",
         "properties" : {
+          "method" : {
+            "type" : "string",
+            "enum" : [ "BANK_TRANSFER", "CARD", "CASH", "OTHER" ]
+          },
           "note" : {
             "type" : "string",
             "maxLength" : 2000,
+            "minLength" : 0
+          },
+          "receivedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "reference" : {
+            "type" : "string",
+            "maxLength" : 200,
             "minLength" : 0
           }
         }

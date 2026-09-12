@@ -3794,7 +3794,12 @@ export interface components {
             verifications?: components["schemas"]["VerificationRecord"][];
         };
         ActivateRequest: {
+            /** @enum {string} */
+            method?: "BANK_TRANSFER" | "CARD" | "CASH" | "OTHER";
             note?: string;
+            /** Format: date-time */
+            receivedAt?: string;
+            reference?: string;
         };
         AddEvidenceRequest: {
             description: string;

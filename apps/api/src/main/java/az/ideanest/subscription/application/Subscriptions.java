@@ -7,9 +7,12 @@ import az.ideanest.audit.AuditOutcome;
 import az.ideanest.shared.Identifiers;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
+import az.ideanest.subscription.domain.PaymentMethod;
 import az.ideanest.subscription.domain.Subscription;
+import az.ideanest.subscription.domain.SubscriptionPayment;
 import az.ideanest.subscription.domain.SubscriptionPlan;
 import az.ideanest.subscription.domain.SubscriptionState;
+import az.ideanest.subscription.infrastructure.SubscriptionPaymentRepository;
 import az.ideanest.subscription.infrastructure.SubscriptionPlanRepository;
 import az.ideanest.subscription.infrastructure.SubscriptionRepository;
 import java.time.Clock;
@@ -50,6 +53,15 @@ import org.springframework.transaction.annotation.Transactional;
  * violation into a refusal. A read-then-write would let two purchases arriving together
  * both find nothing and both insert.
  *
+ * <h2>What was paid is written down separately</h2>
+ *
+ * <p>{@link #activate} opens the entitlement <em>and</em> writes V73's journal row, in one
+ * transaction. The journal is not a second copy of the subscription: it records the money
+ * rather than the entitlement, with the plan's code, name and price copied onto it as they
+ * stood when the transfer arrived. V73's header argues why a report must not read those
+ * through {@code subscription_plans} — an operator repricing or renaming a plan would
+ * otherwise rewrite every total the platform has ever published.
+ *
  * <p>The same index cannot consult a clock, so an {@code ACTIVE} row whose period ended
  * last week would block the account from buying again. {@link #subscribe} retires it
  * inside its own transaction, immediately before inserting — which is why there is no
@@ -62,6 +74,7 @@ public class Subscriptions {
 
     private final SubscriptionRepository subscriptions;
     private final SubscriptionPlanRepository plans;
+    private final SubscriptionPaymentRepository payments;
     private final PlatformStaff staff;
     private final AuditLog audit;
     private final Clock clock;
@@ -69,11 +82,13 @@ public class Subscriptions {
     public Subscriptions(
             SubscriptionRepository subscriptions,
             SubscriptionPlanRepository plans,
+            SubscriptionPaymentRepository payments,
             PlatformStaff staff,
             AuditLog audit,
             Clock clock) {
         this.subscriptions = subscriptions;
         this.plans = plans;
+        this.payments = payments;
         this.staff = staff;
         this.audit = audit;
         this.clock = clock;
@@ -207,14 +222,40 @@ public class Subscriptions {
      * <p>The period starts now rather than when the plan was chosen, so a creator who
      * waited three days for a transfer to clear gets the month they paid for.
      *
-     * @param note the transfer reference or invoice number. Not required by the column and
-     *     required here in spirit only — the audit row carries who and when regardless,
-     *     and refusing an activation for a missing reference would leave a paying creator
-     *     waiting while somebody looks one up
+     * <h3>Two writes, one transaction</h3>
+     *
+     * <p>The entitlement opens and V73's journal gets a row, and they commit together or
+     * not at all. An entitlement without a receipt is revenue the platform cannot account
+     * for; a receipt without an entitlement is a creator who paid and cannot publish.
+     * Either alone is found weeks later by somebody reconciling a bank statement, which is
+     * the worst time to find it.
+     *
+     * <p>The journal row is not the audit row and neither replaces the other. The audit
+     * entry says a privileged action was taken and by whom; the journal says what money
+     * arrived, for which plan, at what price — and it survives the account being closed,
+     * which V62 cascades the subscription away with.
+     *
+     * @param method how it arrived. Null means {@link PaymentMethod#BANK_TRANSFER}, which
+     *     is the only way anything arrives while #60 is unanswered
+     * @param receivedAt when the money arrived. Null means now. May be earlier than now,
+     *     because a transfer that cleared on the 31st belongs in the month it cleared
+     * @param reference the transfer reference or invoice number. Not required by the
+     *     column and required here in spirit only — refusing an activation for a missing
+     *     reference would leave a paying creator waiting while somebody looks one up
+     * @param note anything else worth recording, kept on both the subscription and the
+     *     journal row
      * @throws SubscriptionNotAwaitingPaymentException when a colleague got there first
+     * @throws PaymentNotYetReceivedException when {@code receivedAt} is in the future
      */
     @Transactional
-    public Subscription activate(UUID staffId, UUID subscriptionId, String note) {
+    public Subscription activate(
+            UUID staffId,
+            UUID subscriptionId,
+            PaymentMethod method,
+            Instant receivedAt,
+            String reference,
+            String note) {
+
         staff.requireCapability(staffId, StaffCapability.CONFIGURE_PLATFORM);
 
         Subscription subscription = subscriptions
@@ -229,22 +270,49 @@ public class Subscriptions {
                 .orElseThrow(() -> new UnknownPlanException(subscription.getPlanId()));
 
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        Instant arrived = receivedAt == null ? now : receivedAt.truncatedTo(ChronoUnit.MICROS);
+        if (arrived.isAfter(now)) {
+            throw new PaymentNotYetReceivedException(receivedAt);
+        }
+
         subscription.activate(plan, staffId, note, now);
+
+        SubscriptionPayment payment = payments.save(SubscriptionPayment.received(
+                Identifiers.newIdentifier(),
+                subscription,
+                plan,
+                method == null ? PaymentMethod.BANK_TRANSFER : method,
+                arrived,
+                staffId,
+                reference,
+                note));
 
         audit.record(
                 AuditAction.SUBSCRIPTION_ACTIVATED,
                 subscription.getId(),
                 AuditActor.moderator(staffId),
                 AuditOutcome.SUCCEEDED,
-                "account=%s; plan=%s; paid=%s; until=%s"
+                "account=%s; plan=%s; paid=%s; received=%s; payment=%s; until=%s"
                         .formatted(
                                 subscription.getAccountId(),
                                 plan.getCode(),
                                 subscription.getPrice(),
+                                arrived,
+                                payment.getId(),
                                 subscription.getCurrentPeriodEnd()));
 
-        log.info("Subscription {} activated by {}", subscription.getId(), staffId);
+        log.info(
+                "Subscription {} activated by {}; payment {} recorded",
+                subscription.getId(),
+                staffId,
+                payment.getId());
         return subscription;
+    }
+
+    /** What this account has paid, newest first — V73's journal for one account. */
+    @Transactional(readOnly = true)
+    public List<SubscriptionPayment> paymentsBy(UUID accountId) {
+        return payments.forAccount(accountId);
     }
 
     /**

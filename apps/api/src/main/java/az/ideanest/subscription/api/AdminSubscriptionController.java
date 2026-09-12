@@ -3,6 +3,7 @@ package az.ideanest.subscription.api;
 import az.ideanest.subscription.application.SubscriptionPlans;
 import az.ideanest.subscription.application.Subscriptions;
 import az.ideanest.subscription.domain.BillingPeriod;
+import az.ideanest.subscription.domain.PaymentMethod;
 import az.ideanest.subscription.domain.SubscriptionPlan;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -175,6 +176,12 @@ public class AdminSubscriptionController {
      * <p>This exists because no payment provider is integrated (#60). V62's header argues
      * why that is how a platform with no processor sells rather than a stub pretending to
      * be one, and what changes when a provider lands: this endpoint, and nothing above it.
+     *
+     * <p><strong>It also writes V73's journal row</strong>, in the same transaction, which
+     * is what the revenue report is built on. The three payment fields are optional so
+     * that the console's existing dialogue keeps working unchanged — a request carrying
+     * only a note records a bank transfer received now, which is what every activation
+     * before this endpoint learned to ask was.
      */
     @PostMapping("/subscriptions/{subscriptionId}/activate")
     public ResponseEntity<SubscriptionResponses.ConsoleRow> activate(
@@ -183,7 +190,13 @@ public class AdminSubscriptionController {
             @Valid @RequestBody ActivateRequest request) {
 
         UUID staffId = callerOf(accessToken);
-        var activated = subscriptions.activate(staffId, subscriptionId, request.note());
+        var activated = subscriptions.activate(
+                staffId,
+                subscriptionId,
+                request.method(),
+                request.receivedAt(),
+                request.reference(),
+                request.note());
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
@@ -249,11 +262,37 @@ public class AdminSubscriptionController {
     }
 
     /**
-     * @param note the transfer reference or invoice number. Optional — see
+     * The payment being recorded.
+     *
+     * <p><strong>Every field is optional, including all three of the new ones.</strong>
+     * The console's activation dialogue asked for a note and nothing else, and an
+     * endpoint that started refusing those requests would stop a member of staff
+     * recording a transfer that has already arrived — over a field the platform can
+     * default correctly. {@code Subscriptions.activate} states the defaults: a bank
+     * transfer, received now.
+     *
+     * <p>There is no {@code amount}. What was paid is {@code subscriptions.price}, the
+     * figure snapshotted when the creator bought the plan and the figure on the invoice
+     * they were sent; taking it from the request would let a typo record a payment for
+     * a sum nobody agreed. A transfer that arrived short is a discrepancy to settle
+     * before the entitlement opens, not a different number to write down.
+     *
+     * @param method how it arrived. Absent means {@code BANK_TRANSFER}
+     * @param receivedAt when the money arrived, absent meaning now. May be earlier — a
+     *     transfer that cleared on the 31st belongs in the month it cleared — and is
+     *     refused if it is later, because {@code received_at} is what every total is
+     *     grouped by and the row cannot be edited afterwards
+     * @param reference the transfer reference or invoice number. Optional — see
      *     {@code Subscriptions.activate} on why a missing reference does not hold up a
      *     paying creator
+     * @param note anything else worth recording, kept on the subscription and on the
+     *     journal row
      */
-    public record ActivateRequest(@Size(max = 2000) String note) {
+    public record ActivateRequest(
+            PaymentMethod method,
+            Instant receivedAt,
+            @Size(max = 200) String reference,
+            @Size(max = 2000) String note) {
     }
 
     /** @param reason required: this takes an entitlement away from somebody */

@@ -1,6 +1,7 @@
 package az.ideanest.subscription;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.shared.EmailAddress;
@@ -65,6 +66,9 @@ class SubscriptionApiTests extends AbstractIntegrationTest {
         // And any plan this suite added. The three seeded rows have a null created_by and
         // are left alone, because every other suite's fixtures buy PRO.
         new JdbcTemplate(dataSource).update("DELETE FROM subscription_plans WHERE created_by IS NOT NULL");
+        // `subscription_payments` is NOT cleared, because V73 refuses DELETE and TRUNCATE
+        // alike. Every assertion about it is scoped to a subscription this test created,
+        // which is how a reader of that table has to work anyway.
     }
 
     @Test
@@ -151,6 +155,121 @@ class SubscriptionApiTests extends AbstractIntegrationTest {
         assertThat(activated.getBody().get("state")).isEqualTo("ACTIVE");
         assertThat(activated.getBody().get("entitled")).isEqualTo(true);
         assertThat(activated.getBody().get("currentPeriodEnd")).isNotNull();
+    }
+
+    @Test
+    @DisplayName("recording the payment writes it to the journal, with the plan as it stood")
+    void activationWritesTheJournal() {
+        UUID plan = addPlan("JOURNAL", "49.00", 3, null);
+        Account creator = account();
+        post("/v1/me/subscription", creator.accessToken(), Map.of("planId", plan.toString()));
+        String subscriptionId = (String) subscriptionIn(get("/v1/me/subscription", creator.accessToken()).getBody())
+                .get("id");
+
+        post(
+                "/v1/admin/subscriptions/" + subscriptionId + "/activate",
+                admin().accessToken(),
+                Map.of("method", "CASH", "reference", "receipt 7", "note", "handed over at the office"));
+
+        Map<String, Object> payment = paymentFor(subscriptionId);
+        assertThat(payment.get("amount")).isEqualTo(new java.math.BigDecimal("49.00"));
+        assertThat(payment.get("currency")).isEqualTo("AZN");
+        assertThat(payment.get("method")).isEqualTo("CASH");
+        assertThat(payment.get("reference")).isEqualTo("receipt 7");
+        assertThat(payment.get("account_id")).isEqualTo(creator.id());
+        assertThat(payment.get("recorded_by")).isEqualTo(admin().id());
+        // The plan, copied onto the row rather than referred to.
+        assertThat(payment.get("plan_code")).isEqualTo("JOURNAL");
+        assertThat(payment.get("plan_name")).isEqualTo("JOURNAL");
+
+        // And the reason it is copied: V62 makes a plan editable on purpose, so a report
+        // that read the name and price through `subscription_plans` would be retitled by a
+        // rename and re-priced by a repricing. A report about March must not change in
+        // April.
+        patchPlan(plan, Map.of("name", "Renamed", "price", "99.00"));
+
+        Map<String, Object> unchanged = paymentFor(subscriptionId);
+        assertThat(unchanged.get("plan_name")).isEqualTo("JOURNAL");
+        assertThat(unchanged.get("amount")).isEqualTo(new java.math.BigDecimal("49.00"));
+    }
+
+    @Test
+    @DisplayName("an activation that says nothing about the payment records a transfer received now")
+    void thePaymentFieldsAreOptional() {
+        Account creator = account();
+        post("/v1/me/subscription", creator.accessToken(), Map.of("planId", idOf("GROWTH")));
+        String subscriptionId = (String) subscriptionIn(get("/v1/me/subscription", creator.accessToken()).getBody())
+                .get("id");
+
+        // The console's dialogue asked for a note and nothing else. An endpoint that began
+        // refusing those requests would stop a member of staff recording a transfer that
+        // has already arrived, over fields the platform can default correctly.
+        ResponseEntity<Map<String, Object>> activated = post(
+                "/v1/admin/subscriptions/" + subscriptionId + "/activate",
+                admin().accessToken(),
+                Map.of("note", "transfer 44"));
+
+        assertThat(activated.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Map<String, Object> payment = paymentFor(subscriptionId);
+        assertThat(payment.get("method")).isEqualTo("BANK_TRANSFER");
+        assertThat(payment.get("reference")).isNull();
+        assertThat((java.sql.Timestamp) payment.get("received_at")).isCloseTo(new java.util.Date(), 60_000L);
+    }
+
+    @Test
+    @DisplayName("a payment may be backdated to the day it cleared, but not into the future")
+    void aPaymentIsDatedWhenTheMoneyArrived() {
+        Account creator = account();
+        post("/v1/me/subscription", creator.accessToken(), Map.of("planId", idOf("GROWTH")));
+        String subscriptionId = (String) subscriptionIn(get("/v1/me/subscription", creator.accessToken()).getBody())
+                .get("id");
+
+        // A typed year puts a payment in a period nobody reconciles for twelve months and
+        // takes it out of the one it belonged to, and the row cannot be edited afterwards.
+        ResponseEntity<Map<String, Object>> refused = post(
+                "/v1/admin/subscriptions/" + subscriptionId + "/activate",
+                admin().accessToken(),
+                Map.of("receivedAt", Instant.now().plusSeconds(86_400).toString()));
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(refused.getBody().get("code")).isEqualTo("PAYMENT_NOT_YET_RECEIVED");
+
+        // Backwards is the ordinary case: a transfer that cleared on the 31st and was
+        // recorded on the 3rd belongs in the month it cleared, or the report disagrees
+        // with the bank statement it is checked against.
+        Instant cleared = Instant.now().minusSeconds(5 * 86_400);
+        ResponseEntity<Map<String, Object>> activated = post(
+                "/v1/admin/subscriptions/" + subscriptionId + "/activate",
+                admin().accessToken(),
+                Map.of("receivedAt", cleared.toString()));
+
+        assertThat(activated.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Map<String, Object> payment = paymentFor(subscriptionId);
+        assertThat(((java.sql.Timestamp) payment.get("received_at")).toInstant())
+                .isCloseTo(cleared, within(2, java.time.temporal.ChronoUnit.SECONDS));
+        // The entitlement still starts now, not five days ago: a creator who waited for a
+        // transfer to clear gets the month they paid for.
+        assertThat(activated.getBody().get("entitled")).isEqualTo(true);
+    }
+
+    @Test
+    @DisplayName("a free plan writes no payment, because no money arrived")
+    void aFreePlanLeavesTheJournalAlone() {
+        UUID freePlan = addPlan("GRATIS", "0.00", 1, null);
+        Account creator = account();
+
+        post("/v1/me/subscription", creator.accessToken(), Map.of("planId", freePlan.toString()));
+        String subscriptionId = (String) subscriptionIn(get("/v1/me/subscription", creator.accessToken()).getBody())
+                .get("id");
+
+        // A zero row would sit in the account's history as a payment, and V73's CHECK
+        // refuses it at the statement.
+        assertThat(new JdbcTemplate(dataSource)
+                        .queryForObject(
+                                "SELECT count(*) FROM subscription_payments WHERE subscription_id = ?::uuid",
+                                Integer.class,
+                                subscriptionId))
+                .isZero();
     }
 
     @Test
@@ -368,6 +487,19 @@ class SubscriptionApiTests extends AbstractIntegrationTest {
      * --------------------------------------------------------------- */
 
     private record Account(String accessToken, UUID id) {
+    }
+
+    /**
+     * The one journal row for a subscription, read straight from V73's table.
+     *
+     * <p>Through SQL rather than an endpoint because there is no endpoint yet: the revenue
+     * report is the next task, and the property worth pinning now is that activating writes
+     * the row at all.
+     */
+    private Map<String, Object> paymentFor(String subscriptionId) {
+        return new JdbcTemplate(dataSource)
+                .queryForMap(
+                        "SELECT * FROM subscription_payments WHERE subscription_id = ?::uuid", subscriptionId);
     }
 
     private Account account() {
