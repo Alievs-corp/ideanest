@@ -858,7 +858,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/IconBut
 </svg>
 </button>
 <button type="button" aria-label="Share" title="Share" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] size-10 [&amp;_svg]:size-[18px]">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2 lucide-share-2" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2" aria-hidden="true">
 <circle cx="18" cy="5" r="3">
 </circle>
 <circle cx="6" cy="12" r="3">
@@ -1485,7 +1485,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/data/In
 </div>
 </div>
 <div class="flex items-start gap-3 rounded-md border-l-2 bg-surface-2 p-4 text-sm border-l-success">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check mt-px size-4 shrink-0 text-success" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check lucide-check-circle-2 mt-px size-4 shrink-0 text-success" aria-hidden="true">
 <circle cx="12" cy="12" r="10">
 </circle>
 <path d="m16 9-5.5 5.5L8 12">
@@ -1497,7 +1497,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/data/In
 </div>
 </div>
 <div role="alert" class="flex items-start gap-3 rounded-md border-l-2 bg-surface-2 p-4 text-sm border-l-warning">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert mt-px size-4 shrink-0 text-warning" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert lucide-alert-triangle mt-px size-4 shrink-0 text-warning" aria-hidden="true">
 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3">
 </path>
 <path d="M12 9v4">
@@ -1511,7 +1511,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/data/In
 </div>
 </div>
 <div role="alert" class="flex items-start gap-3 rounded-md border-l-2 bg-surface-2 p-4 text-sm border-l-danger">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert mt-px size-4 shrink-0 text-danger" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert lucide-alert-circle mt-px size-4 shrink-0 text-danger" aria-hidden="true">
 <circle cx="12" cy="12" r="10">
 </circle>
 <line x1="12" x2="12" y1="8" y2="12">
@@ -1956,7 +1956,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/form/Fi
 </div>
 <p id="[id-0]-hint" class="text-[13px] text-white/64">Sixty characters or fewer.</p>
 <p id="[id-0]-error" class="flex items-start gap-1.5 text-[13px] text-danger">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert mt-0.5 size-3.5 shrink-0" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert lucide-alert-circle mt-0.5 size-3.5 shrink-0" aria-hidden="true">
 <circle cx="12" cy="12" r="10">
 </circle>
 <line x1="12" x2="12" y1="8" y2="12">
@@ -2429,7 +2429,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/form/Te
 </textarea>
 <p id="[id-0]-hint" class="text-[13px] text-white/64">The first thing a backer reads.</p>
 <p id="[id-0]-error" class="flex items-start gap-1.5 text-[13px] text-danger">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert mt-0.5 size-3.5 shrink-0" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert lucide-alert-circle mt-0.5 size-3.5 shrink-0" aria-hidden="true">
 <circle cx="12" cy="12" r="10">
 </circle>
 <line x1="12" x2="12" y1="8" y2="12">
@@ -2981,7 +2981,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay
 "<div class="font-sans text-white antialiased">
 <span class="inline-flex">
 <button type="button" aria-label="Share" title="Share" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-surface-3 text-white hover:bg-surface-4 size-10 [&amp;_svg]:size-[18px]">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2 lucide-share-2" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2" aria-hidden="true">
 <circle cx="18" cy="5" r="3">
 </circle>
 <circle cx="6" cy="12" r="3">
@@ -4187,7 +4187,7 @@ exports[`rendered markup > ./components/IconButton/IconButton.stories.tsx — Va
 </svg>
 </button>
 <button type="button" aria-label="Share" title="Share" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] size-10 [&amp;_svg]:size-[18px]">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2 lucide-share-2" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2" aria-hidden="true">
 <circle cx="18" cy="5" r="3">
 </circle>
 <circle cx="6" cy="12" r="3">
@@ -4814,7 +4814,7 @@ exports[`rendered markup > ./components/data/InlineAlert.stories.tsx — Variant
 </div>
 </div>
 <div class="flex items-start gap-3 rounded-md border-l-2 bg-surface-2 p-4 text-sm border-l-success">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check mt-px size-4 shrink-0 text-success" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check lucide-check-circle-2 mt-px size-4 shrink-0 text-success" aria-hidden="true">
 <circle cx="12" cy="12" r="10">
 </circle>
 <path d="m16 9-5.5 5.5L8 12">
@@ -4826,7 +4826,7 @@ exports[`rendered markup > ./components/data/InlineAlert.stories.tsx — Variant
 </div>
 </div>
 <div role="alert" class="flex items-start gap-3 rounded-md border-l-2 bg-surface-2 p-4 text-sm border-l-warning">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert mt-px size-4 shrink-0 text-warning" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert lucide-alert-triangle mt-px size-4 shrink-0 text-warning" aria-hidden="true">
 <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3">
 </path>
 <path d="M12 9v4">
@@ -4840,7 +4840,7 @@ exports[`rendered markup > ./components/data/InlineAlert.stories.tsx — Variant
 </div>
 </div>
 <div role="alert" class="flex items-start gap-3 rounded-md border-l-2 bg-surface-2 p-4 text-sm border-l-danger">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert mt-px size-4 shrink-0 text-danger" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert lucide-alert-circle mt-px size-4 shrink-0 text-danger" aria-hidden="true">
 <circle cx="12" cy="12" r="10">
 </circle>
 <line x1="12" x2="12" y1="8" y2="12">
@@ -5285,7 +5285,7 @@ exports[`rendered markup > ./components/form/Field.stories.tsx — Errored 1`] =
 </div>
 <p id="[id-0]-hint" class="text-[13px] text-white/64">Sixty characters or fewer.</p>
 <p id="[id-0]-error" class="flex items-start gap-1.5 text-[13px] text-danger">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert mt-0.5 size-3.5 shrink-0" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert lucide-alert-circle mt-0.5 size-3.5 shrink-0" aria-hidden="true">
 <circle cx="12" cy="12" r="10">
 </circle>
 <line x1="12" x2="12" y1="8" y2="12">
@@ -5758,7 +5758,7 @@ exports[`rendered markup > ./components/form/Textarea.stories.tsx — InAField 1
 </textarea>
 <p id="[id-0]-hint" class="text-[13px] text-white/64">The first thing a backer reads.</p>
 <p id="[id-0]-error" class="flex items-start gap-1.5 text-[13px] text-danger">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert mt-0.5 size-3.5 shrink-0" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert lucide-alert-circle mt-0.5 size-3.5 shrink-0" aria-hidden="true">
 <circle cx="12" cy="12" r="10">
 </circle>
 <line x1="12" x2="12" y1="8" y2="12">
@@ -6310,7 +6310,7 @@ exports[`rendered markup > ./components/overlay/Tooltip.stories.tsx — Default 
 "<div class="font-sans text-white antialiased">
 <span class="inline-flex">
 <button type="button" aria-label="Share" title="Share" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-surface-3 text-white hover:bg-surface-4 size-10 [&amp;_svg]:size-[18px]">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2 lucide-share-2" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2" aria-hidden="true">
 <circle cx="18" cy="5" r="3">
 </circle>
 <circle cx="6" cy="12" r="3">
