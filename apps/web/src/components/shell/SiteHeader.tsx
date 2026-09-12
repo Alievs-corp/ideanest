@@ -93,14 +93,19 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
           IdeaNest
         </Link>
       }
+      navClassName="hidden md:flex"
       nav={
         /*
-         * `hidden md:flex` on the list rather than on `TopBar`'s slot: the slot is what
-         * carries the collapsing pill, and hiding it outright below the breakpoint would
-         * remove the element §4.7 animates. Below `md` the same links are in the drawer
-         * (WS-03), which is the one navigation on screen at that size.
+         * THE PILL IS WHAT IS HIDDEN BELOW `md`, NOT THE LIST INSIDE IT. It used to be the
+         * other way round — `hidden md:flex` on this list, on the argument that hiding
+         * `TopBar`'s slot would remove the element §4.7 animates. What that left on a phone
+         * was an empty pill that still drew a white surface once the bar collapsed and still
+         * held 66px of a 390px row open, which pushed the drawer's own button past the edge
+         * of the screen (#19). There is no animation to protect at that width: the pill is
+         * empty, because below `md` these links are in the drawer (WS-03), which is the one
+         * navigation on screen at that size.
          */
-        <ul aria-label={copy.nav.label} className="hidden list-none items-center gap-8 md:flex">
+        <ul aria-label={copy.nav.label} className="flex list-none items-center gap-8">
           {copy.nav.links.map((link) => {
             const current = isCurrent(link.href, pathname);
             return (

@@ -9,6 +9,7 @@ import { DotIndicator } from './DotIndicator/DotIndicator';
 import { Avatar, AvatarGroup } from './Avatar/Avatar';
 import { Timeline } from '../layout/Timeline';
 import { RailItem, Rail } from '../layout/Rail';
+import { TopBar } from '../layout/TopBar';
 
 /**
  * Appearance is reviewed in Storybook. These tests cover BEHAVIOUR and
@@ -228,5 +229,36 @@ describe('Timeline', () => {
       />,
     );
     expect((container.querySelector('[title="Only"]') as HTMLElement).style.left).toBe('0%');
+  });
+});
+
+describe('TopBar', () => {
+  /**
+   * The pill is a surface and two 32px gutters, and a consumer whose navigation is not drawn
+   * at every width pays for both regardless: `@ideanest/web` hid its own links below `md` and
+   * was left with an empty white oval holding 66px of a 390px row open, which pushed the
+   * control beside it off the screen.
+   */
+  it('puts navClassName on the pill, so a consumer can hide it where its links are not drawn', () => {
+    const { container } = render(
+      <TopBar
+        logo={<span>IdeaNest</span>}
+        navClassName="hidden md:flex"
+        nav={<a href="/discover">Discover</a>}
+      />,
+    );
+
+    const pill = screen.getByRole('link', { name: 'Discover' }).parentElement as HTMLElement;
+    expect(pill.className).toContain('hidden md:flex');
+    /* And it is still the pill — the class is merged, not a replacement. */
+    expect(pill.className).toContain('rounded-full');
+    expect(container.querySelector('header')).not.toBeNull();
+  });
+
+  it('leaves the pill alone when the consumer says nothing', () => {
+    render(<TopBar logo={<span>IdeaNest</span>} nav={<a href="/discover">Discover</a>} />);
+
+    const pill = screen.getByRole('link', { name: 'Discover' }).parentElement as HTMLElement;
+    expect(pill.className).not.toContain('hidden');
   });
 });
