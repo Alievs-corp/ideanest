@@ -1415,3 +1415,121 @@ export function prelaunchPanelCopyFrom(
     locale,
   };
 }
+
+/* -------------------------------------------------------------------------
+ * Review — §4.5's sixth tab
+ * ---------------------------------------------------------------------- */
+
+/** The states this tab has a sentence for. The other eleven get none. */
+export type ReviewNotedState = Extract<
+  ProjectState,
+  'SUBMITTED' | 'APPROVED' | 'SCHEDULED' | 'REJECTED' | 'LIVE'
+>;
+
+/** The review tab: what is left to do, and the two irreversible buttons. */
+export interface ReviewPanelCopy {
+  readonly loadFailedTitle: string;
+  readonly notSubmittedTitle: string;
+  readonly notLaunchedTitle: string;
+  readonly loadingLabel: string;
+  readonly completeness: string;
+  /** Carries `{score}`. */
+  readonly progressLabel: string;
+  /** Carries `{score}`, `{blockingDone}`, `{blockingTotal}`, `{advisoryDone}`, `{advisoryTotal}`. */
+  readonly progressSummary: string;
+  readonly checkAgain: string;
+  readonly seeOtherPlans: string;
+  readonly requiredHeading: string;
+  readonly requiredDescription: string;
+  readonly recommendedHeading: string;
+  readonly recommendedDescription: string;
+  readonly requiredNotDone: string;
+  readonly recommendedNotDone: string;
+  /**
+   * Carries `{section}`.
+   *
+   * THE SECTION NAME IS THE TAB'S OWN, read from `EditorChromeCopy.tabs` rather than spelled
+   * again here — `SECTION_LABEL` used to hold a second copy of "Basics", "Rewards" and
+   * "Story", which is the drift `tabs.ts` already gave up its labels to avoid.
+   */
+  readonly fixIn: string;
+  readonly submit: string;
+  readonly submitting: string;
+  /** One form per category. Carries `{count}` — required items still outstanding. */
+  readonly blockersRemaining: AppPluralForms;
+  readonly moderatorNote: string;
+  readonly recommendedNotPartOfThis: string;
+  readonly finishThem: string;
+  readonly launch: string;
+  readonly launching: string;
+  readonly launchNow: string;
+  readonly confirmLaunchTitle: string;
+  readonly cancel: string;
+  readonly noReason: string;
+  readonly refusedTitle: string;
+  readonly changesRequestedTitle: string;
+  readonly planDoesNotCover: string;
+  readonly serviceRefused: string;
+  readonly notFound: string;
+  readonly noAccess: string;
+  readonly unreachable: string;
+  readonly stateNote: Readonly<Record<ReviewNotedState, string>>;
+  /** The language whose plural rule picks the outstanding-items form. */
+  readonly locale: Locale;
+}
+
+const REVIEW_NOTED_STATES = [
+  'SUBMITTED',
+  'APPROVED',
+  'SCHEDULED',
+  'REJECTED',
+  'LIVE',
+] as const satisfies readonly ReviewNotedState[];
+
+export function reviewPanelCopyFrom(
+  t: CampaignEditorTranslator,
+  locale: Locale,
+): ReviewPanelCopy {
+  const at = (key: string) => t(`review.${key}`);
+  const tpl = (key: string) => template(t, `review.${key}`);
+
+  return {
+    loadFailedTitle: at('loadFailedTitle'),
+    notSubmittedTitle: at('notSubmittedTitle'),
+    notLaunchedTitle: at('notLaunchedTitle'),
+    loadingLabel: at('loadingLabel'),
+    completeness: at('completeness'),
+    progressLabel: tpl('progressLabel'),
+    progressSummary: tpl('progressSummary'),
+    checkAgain: at('checkAgain'),
+    seeOtherPlans: at('seeOtherPlans'),
+    requiredHeading: at('requiredHeading'),
+    requiredDescription: at('requiredDescription'),
+    recommendedHeading: at('recommendedHeading'),
+    recommendedDescription: at('recommendedDescription'),
+    requiredNotDone: at('requiredNotDone'),
+    recommendedNotDone: at('recommendedNotDone'),
+    fixIn: tpl('fixIn'),
+    submit: at('submit'),
+    submitting: at('submitting'),
+    blockersRemaining: t.raw('review.blockersRemaining') as AppPluralForms,
+    moderatorNote: at('moderatorNote'),
+    recommendedNotPartOfThis: at('recommendedNotPartOfThis'),
+    finishThem: at('finishThem'),
+    launch: at('launch'),
+    launching: at('launching'),
+    launchNow: at('launchNow'),
+    confirmLaunchTitle: at('confirmLaunchTitle'),
+    cancel: at('cancel'),
+    noReason: at('noReason'),
+    refusedTitle: at('refusedTitle'),
+    changesRequestedTitle: at('changesRequestedTitle'),
+    planDoesNotCover: at('planDoesNotCover'),
+    serviceRefused: at('serviceRefused'),
+    notFound: at('notFound'),
+    noAccess: at('noAccess'),
+    unreachable: at('unreachable'),
+    stateNote: record(REVIEW_NOTED_STATES, (state) => at(`stateNote.${state}`)),
+    locale,
+  };
+}

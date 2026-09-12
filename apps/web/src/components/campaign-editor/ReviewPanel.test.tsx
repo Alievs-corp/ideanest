@@ -12,7 +12,7 @@ import {
   type ProjectEdit,
 } from '../../lib/projects/api';
 import { ReviewPanel } from './ReviewPanel';
-import { EDITOR_COPY } from '../../test-editor-copy';
+import { EDITOR_COPY, REVIEW_COPY } from '../../test-editor-copy';
 
 /**
  * Appearance is reviewed in Storybook. These cover what the review tab has to get
@@ -131,7 +131,7 @@ function completeChecklist(overrides: Partial<ProjectChecklist> = {}): ProjectCh
 }
 
 async function renderPanel(): Promise<void> {
-  render(<ReviewPanel projectId="project-1" copy={EDITOR_COPY} />);
+  render(<ReviewPanel projectId="project-1" copy={EDITOR_COPY} review={REVIEW_COPY} />);
   await screen.findByRole('heading', { name: 'Required before you can submit' });
 }
 
@@ -556,7 +556,7 @@ describe('ReviewPanel', () => {
   it('reports a checklist that could not be loaded, and offers to try again', async () => {
     getProjectChecklistMock.mockRejectedValue(new ApiError(500, null));
 
-    render(<ReviewPanel projectId="project-1" copy={EDITOR_COPY} />);
+    render(<ReviewPanel projectId="project-1" copy={EDITOR_COPY} review={REVIEW_COPY} />);
 
     await waitFor(() =>
       expect(screen.getByText('This campaign could not be loaded')).toBeInTheDocument(),

@@ -23,12 +23,14 @@ import {
   type EditorChromeCopy,
   type FaqPanelCopy,
   type PrelaunchPanelCopy,
+  type ReviewPanelCopy,
   type RewardsPanelCopy,
   type StoryPanelCopy,
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
   faqPanelCopyFrom,
   prelaunchPanelCopyFrom,
+  reviewPanelCopyFrom,
   rewardsPanelCopyFrom,
   storyPanelCopyFrom,
 } from './campaign-editor-copy';
@@ -358,4 +360,10 @@ export async function prelaunchPanelCopy(): Promise<PrelaunchPanelCopy> {
     remaining: counter.raw('remaining') as PluralForms,
     tooMany: counter.raw('tooMany') as PluralForms,
   });
+}
+
+/** The review tab — what is left to do, and the two irreversible buttons. */
+export async function reviewPanelCopy(): Promise<ReviewPanelCopy> {
+  const [editor, locale] = await Promise.all([getTranslations('campaignEditor'), getLocale()]);
+  return reviewPanelCopyFrom(editor, localeOrDefault(locale));
 }

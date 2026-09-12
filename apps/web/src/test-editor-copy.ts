@@ -4,12 +4,14 @@ import {
   editorChromeCopyFrom,
   faqPanelCopyFrom,
   prelaunchPanelCopyFrom,
+  reviewPanelCopyFrom,
   rewardsPanelCopyFrom,
   storyPanelCopyFrom,
   type BasicsPanelCopy,
   type EditorChromeCopy,
   type FaqPanelCopy,
   type PrelaunchPanelCopy,
+  type ReviewPanelCopy,
   type RewardsPanelCopy,
   type StoryPanelCopy,
 } from './lib/i18n/campaign-editor-copy';
@@ -92,3 +94,6 @@ export const PRELAUNCH_COPY: PrelaunchPanelCopy = prelaunchPanelCopyFrom(
   'en',
   EDITOR_COPY.characterCount,
 );
+
+/** The review tab. */
+export const REVIEW_COPY: ReviewPanelCopy = reviewPanelCopyFrom(read, 'en');
