@@ -45,7 +45,19 @@ import {
  * MOTION: the overlay's own entry, which `Modal` and `Drawer` own and which honours
  * `prefers-reduced-motion`. Nothing here adds any.
  */
+import type {
+  StoryHistoryCopy,
+  StoryVocabularyCopy,
+} from '../../lib/i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralise } from '../../lib/i18n/plurals';
+import { INTL_LOCALE } from '../../lib/i18n/formats';
+
 export interface StoryVersionHistoryProps {
+  /** This drawer's words. */
+  copy: StoryHistoryCopy;
+  /** How a block is named, for the preview. */
+  vocabulary: StoryVocabularyCopy;
   projectId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -78,6 +90,8 @@ function errorMessage(cause: unknown, fallback: string): string {
 }
 
 export function StoryVersionHistory({
+  copy,
+  vocabulary,
   projectId,
   open,
   onOpenChange,
@@ -163,11 +177,11 @@ export function StoryVersionHistory({
       <Drawer
         open={open}
         onOpenChange={onOpenChange}
-        title="Earlier versions"
-        description="A version is kept each time the story changes, at most one every few minutes. The most recent fifty are here."
+        title={copy.title}
+        description={copy.description}
       >
         {status === 'loading' && (
-          <SkeletonGroup label="Loading earlier versions">
+          <SkeletonGroup label={copy.loadingLabel}>
             <div className="flex flex-col gap-3">
               {[0, 1, 2].map((row) => (
                 <Skeleton key={row} height="4.5rem" />
@@ -178,11 +192,11 @@ export function StoryVersionHistory({
 
         {status === 'failed' && (
           <>
-            <InlineAlert variant="danger" title="The history could not be loaded">
+            <InlineAlert variant="danger" title={copy.failedTitle}>
               {error}
             </InlineAlert>
             <Pill variant="ghost" size="sm" className="mt-3" onClick={() => void load()}>
-              Try again
+              {copy.tryAgain}
             </Pill>
           </>
         )}
@@ -190,8 +204,8 @@ export function StoryVersionHistory({
         {status === 'ready' && versions.length === 0 && (
           <EmptyState
             headingLevel={3}
-            title="No earlier versions yet"
-            description="One is kept the first time the story changes, and then at most one every few minutes while you write."
+            title={copy.emptyTitle}
+            description={copy.emptyDescription}
           />
         )}
 
@@ -226,25 +240,25 @@ export function StoryVersionHistory({
                       variant="ghost"
                       size="sm"
                       aria-expanded={previewing === version.number}
-                      aria-label={`Preview version ${version.number}`}
+                      aria-label={fillPlaceholders(copy.previewVersion, { number: String(version.number) })}
                       onClick={() =>
                         previewing === version.number
                           ? setPreviewing(null)
                           : void showPreview(version)
                       }
                     >
-                      {previewing === version.number ? 'Hide' : 'Preview'}
+                      {previewing === version.number ? 'Hide' : copy.preview}
                     </Pill>
                     <Pill
                       variant="ghost"
                       size="sm"
-                      aria-label={`Restore version ${version.number}`}
+                      aria-label={fillPlaceholders(copy.restoreVersion, { number: String(version.number) })}
                       onClick={() => {
                         setRestoreError(null);
                         setConfirming(version);
                       }}
                     >
-                      Restore
+                      {copy.restore}
                     </Pill>
                   </div>
                 </div>
@@ -256,7 +270,7 @@ export function StoryVersionHistory({
                     ) : preview === null ? (
                       <p className="text-[13px] text-white/64">Loading this version…</p>
                     ) : (
-                      <StoryPreview document={preview} />
+                      <StoryPreview copy={copy} vocabulary={vocabulary} document={preview} />
                     )}
                   </div>
                 )}
@@ -271,8 +285,8 @@ export function StoryVersionHistory({
         onOpenChange={(next) => {
           if (!next) setConfirming(null);
         }}
-        title={confirming === null ? 'Restore a version' : `Restore version ${confirming.number}?`}
-        description="The story you have now is replaced."
+        title={confirming === null ? copy.restoreTitle : fillPlaceholders(copy.confirmTitle, { number: String(confirming.number) })}
+        description={copy.replaceWarning}
         // The creator has to choose. Dismissing by clicking outside a dialog about
         // overwriting an afternoon's work is too easy a way to press the wrong thing.
         closeOnBackdropClick={false}
@@ -280,7 +294,7 @@ export function StoryVersionHistory({
         footer={
           <div className="flex flex-wrap justify-end gap-2">
             <Pill variant="ghost" disabled={restoring} onClick={() => setConfirming(null)}>
-              Keep what I have
+              {copy.keepMine}
             </Pill>
             {/*
               Lime, because this is the action the dialog exists for and lime means
@@ -296,7 +310,7 @@ export function StoryVersionHistory({
                 if (confirming !== null) void restore(confirming);
               }}
             >
-              {restoring ? 'Restoring' : 'Restore this version'}
+              {restoring ? copy.restoring : copy.restoreThis}
             </Pill>
           </div>
         }
@@ -332,21 +346,37 @@ export function StoryVersionHistory({
  * `h2`, so that a preview inside a drawer does not add a second document outline to
  * the page.
  */
-function StoryPreview({ document }: { document: StoryDocument }) {
+function StoryPreview({
+  copy,
+  vocabulary,
+  document,
+}: {
+  copy: StoryHistoryCopy;
+  vocabulary: StoryVocabularyCopy;
+  document: StoryDocument;
+}) {
   if (document.blocks.length === 0) {
-    return <p className="text-[13px] text-white/64">This version has no blocks.</p>;
+    return <p className="text-[13px] text-white/64">{copy.noBlocks}</p>;
   }
 
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[13px] text-white/40">
-        {document.blocks.length} {document.blocks.length === 1 ? 'block' : 'blocks'} ·{' '}
-        {storyCharacterCount(document).toLocaleString('en')} characters
+        {fillPlaceholders(
+          pluralise(vocabulary.locale, copy.previewSummary, document.blocks.length),
+          {
+            count: String(document.blocks.length),
+            /* The reader's own digit grouping, not English's. */
+            characters: storyCharacterCount(document).toLocaleString(
+              INTL_LOCALE[vocabulary.locale],
+            ),
+          },
+        )}
       </p>
       <ol className="flex flex-col gap-2 text-[13px]">
         {document.blocks.map((block, index) => (
           <li key={index} className="text-white/64">
-            <span className="text-white/40">{blockKind(block.type)}: </span>
+            <span className="text-white/40">{vocabulary.blockLabel[block.type]}: </span>
             {blockText(block)}
           </li>
         ))}
@@ -355,9 +385,6 @@ function StoryPreview({ document }: { document: StoryDocument }) {
   );
 }
 
-function blockKind(type: StoryDocument['blocks'][number]['type']): string {
-  return type === 'rule' ? 'Divider' : type.charAt(0).toUpperCase() + type.slice(1);
-}
 
 function blockText(block: StoryDocument['blocks'][number]): string {
   switch (block.type) {

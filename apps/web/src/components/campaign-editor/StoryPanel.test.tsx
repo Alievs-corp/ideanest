@@ -11,9 +11,9 @@ import {
   type StoryVersionSummary,
 } from '../../lib/projects/api';
 import { measureImage } from '../../lib/projects/coverImage';
-import { IMAGE_ALT_REQUIRED, type StoryDocument } from '../../lib/projects/story';
+import type { StoryDocument } from '../../lib/projects/story';
 import { StoryPanel } from './StoryPanel';
-import { EDITOR_COPY } from '../../test-editor-copy';
+import { EDITOR_COPY, STORY_COPY } from '../../test-editor-copy';
 
 /**
  * Appearance is reviewed in Storybook. The document model's own rules are pinned
@@ -78,7 +78,7 @@ const PROJECT: ProjectEdit = {
 };
 
 function renderPanel() {
-  return render(<StoryPanel projectId="project-1" copy={EDITOR_COPY} />);
+  return render(<StoryPanel projectId="project-1" copy={EDITOR_COPY} story={STORY_COPY} />);
 }
 
 /** Every patch the panel has sent, oldest first. */
@@ -192,7 +192,7 @@ describe('StoryPanel', () => {
      * refusal would block every later save until the page was reloaded.
      */
     expect(sent()).toHaveLength(0);
-    expect(screen.getByText(IMAGE_ALT_REQUIRED)).toBeInTheDocument();
+    expect(screen.getByText(STORY_COPY.vocabulary.problems.imageNeedsAlt)).toBeInTheDocument();
     expect(screen.getByText(/story is not being saved yet/i)).toBeInTheDocument();
 
     await user.type(

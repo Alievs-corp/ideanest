@@ -1,5 +1,12 @@
 'use client';
 
+import type {
+  StoryBlocksCopy,
+  StoryToolbarCopy,
+  StoryVocabularyCopy,
+} from '../../lib/i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralise } from '../../lib/i18n/plurals';
 import { useId, useState } from 'react';
 import {
   ArrowDown,
@@ -18,7 +25,6 @@ import { InlineAlert, Media, Pill, Select, TextInput, cn } from '@ideanest/ui';
 import { intrinsicSize } from '../../lib/images/source';
 import { describeSize, measureImage } from '../../lib/projects/coverImage';
 import {
-  BLOCK_LABEL,
   EMBED_PROVIDERS,
   blockProblem,
   describeBlock,
@@ -78,17 +84,29 @@ import { StoryTextField } from './StoryTextField';
  * creator who has just pressed "move down" and is about to press it again.
  */
 
-const ADDABLE: readonly { type: StoryBlockType; icon: typeof Text; hint: string }[] = [
-  { type: 'paragraph', icon: Text, hint: 'A run of text, with bold and italics.' },
-  { type: 'heading', icon: Heading2, hint: 'A section title. Headings become the anchor menu.' },
-  { type: 'list', icon: List, hint: 'Bulleted or numbered.' },
-  { type: 'quote', icon: Quote, hint: 'A pulled-out quotation.' },
-  { type: 'image', icon: ImageIcon, hint: 'An image that is already published somewhere.' },
-  { type: 'embed', icon: Video, hint: 'A YouTube or Vimeo video.' },
-  { type: 'rule', icon: Minus, hint: 'A horizontal divider.' },
+/**
+ * The kinds a block can be, in the order the add menu offers them.
+ *
+ * NO `hint` ANY MORE — issue #324. What each kind is is catalogue copy, read as
+ * `copy.hints[type]`, for the reason `tabs.ts` gives about its own sections.
+ */
+const ADDABLE: readonly { type: StoryBlockType; icon: typeof Text }[] = [
+  { type: 'paragraph', icon: Text },
+  { type: 'heading', icon: Heading2 },
+  { type: 'list', icon: List },
+  { type: 'quote', icon: Quote },
+  { type: 'image', icon: ImageIcon },
+  { type: 'embed', icon: Video },
+  { type: 'rule', icon: Minus },
 ];
 
 export interface StoryBlockEditorProps {
+  /** The editor's own words. */
+  copy: StoryBlocksCopy;
+  /** How a block is named and what is wrong with it — shared with `lib/projects/story.ts`. */
+  vocabulary: StoryVocabularyCopy;
+  /** The two mark controls' words. */
+  toolbar: StoryToolbarCopy;
   document: StoryDocument;
   disabled?: boolean;
   /** Per-block messages from the server, keyed by the index the path named. */
@@ -99,6 +117,9 @@ export interface StoryBlockEditorProps {
 }
 
 export function StoryBlockEditor({
+  copy,
+  vocabulary,
+  toolbar,
   document,
   disabled = false,
   serverProblems,
@@ -129,7 +150,14 @@ export function StoryBlockEditor({
     // Appended rather than inserted at a focused position: there is no "current
     // block" when the focus is on the add row, and guessing would put a paragraph
     // somewhere the creator did not ask for.
-    put(insertBlock(blocks, total, block), `${BLOCK_LABEL[type]} added as block ${total + 1} of ${total + 1}.`);
+    put(
+      insertBlock(blocks, total, block),
+      fillPlaceholders(copy.addedAnnouncement, {
+        label: vocabulary.blockLabel[type],
+        position: String(total + 1),
+        total: String(total + 1),
+      }),
+    );
   }
 
   function move(index: number, by: -1 | 1): void {
@@ -137,7 +165,11 @@ export function StoryBlockEditor({
     if (block === undefined) return;
     put(
       moveBlock(blocks, index, index + by),
-      `${BLOCK_LABEL[block.type]} moved to ${index + by + 1} of ${total}.`,
+      fillPlaceholders(copy.movedAnnouncement, {
+        label: vocabulary.blockLabel[block.type],
+        position: String(index + by + 1),
+        total: String(total),
+      }),
     );
   }
 
@@ -146,7 +178,9 @@ export function StoryBlockEditor({
     if (block === undefined) return;
     put(
       removeBlock(blocks, index),
-      `${BLOCK_LABEL[block.type]} removed. ${total - 1} ${total - 1 === 1 ? 'block' : 'blocks'} left.`,
+      fillPlaceholders(pluralise(vocabulary.locale, copy.removedAnnouncement, total - 1), {
+        label: vocabulary.blockLabel[block.type],
+      }),
     );
   }
 
@@ -157,7 +191,7 @@ export function StoryBlockEditor({
   return (
     <section aria-labelledby="story-blocks-heading" className="flex flex-col gap-4">
       <h2 id="story-blocks-heading" className="text-lg font-semibold text-white">
-        Story
+        {copy.heading}
       </h2>
 
       {/*
@@ -167,13 +201,15 @@ export function StoryBlockEditor({
       */}
       {total === 0 ? (
         <p className="rounded-lg border border-white/8 bg-surface-2 p-5 text-[15px] text-white/64">
-          Nothing here yet. Add a paragraph to begin — most campaigns open with what the product is
-          and who it is for.
+          {copy.empty}
         </p>
       ) : (
         <ol className="flex flex-col gap-4">
           {blocks.map((block, index) => (
             <BlockRow
+            copy={copy}
+            vocabulary={vocabulary}
+            toolbar={toolbar}
               // The index, deliberately, and it is the one place index-as-key is
               // right: a block has no identity of its own in the contract's model,
               // and keying by content would remount the field a creator is typing
@@ -199,7 +235,7 @@ export function StoryBlockEditor({
 
       <div className="rounded-lg border border-white/8 bg-surface-2 p-4">
         <h3 className="text-[13px] font-medium tracking-[0.06em] text-white/40 uppercase">
-          Add a block
+          {copy.add}
         </h3>
         {/*
           A row of named buttons rather than a menu. Seven controls do not need to be
@@ -207,7 +243,7 @@ export function StoryBlockEditor({
           contract for no gain.
         */}
         <div className="mt-3 flex flex-wrap gap-2">
-          {ADDABLE.map(({ type, icon: Icon, hint }) => (
+          {ADDABLE.map(({ type, icon: Icon }) => (
             <Pill
               key={type}
               variant="ghost"
@@ -216,10 +252,10 @@ export function StoryBlockEditor({
               iconLeft={<Icon aria-hidden="true" className="size-4" />}
               // The name is the action, not the noun: "Paragraph" alone would be
               // announced as though it were a heading in the page.
-              aria-label={`Add ${BLOCK_LABEL[type].toLowerCase()}. ${hint}`}
+              aria-label={fillPlaceholders(copy.addOne, { kind: vocabulary.blockLabel[type].toLowerCase(), hint: copy.hints[type] })}
               onClick={() => add(type)}
             >
-              {BLOCK_LABEL[type]}
+              {vocabulary.blockLabel[type]}
             </Pill>
           ))}
         </div>
@@ -243,6 +279,9 @@ export function StoryBlockEditor({
  * ---------------------------------------------------------------------- */
 
 interface BlockRowProps {
+  copy: StoryBlocksCopy;
+  vocabulary: StoryVocabularyCopy;
+  toolbar: StoryToolbarCopy;
   block: StoryBlock;
   index: number;
   total: number;
@@ -258,6 +297,9 @@ interface BlockRowProps {
 }
 
 function BlockRow({
+  copy,
+  vocabulary,
+  toolbar,
   block,
   index,
   total,
@@ -270,8 +312,8 @@ function BlockRow({
   onFlush,
   headingIdsInUse,
 }: BlockRowProps) {
-  const name = describeBlock(block, index, total);
-  const problem = serverProblem ?? blockProblem(block);
+  const name = describeBlock(block, index, total, vocabulary);
+  const problem = serverProblem ?? blockProblem(block, vocabulary);
   const problemId = useId();
 
   return (
@@ -289,8 +331,14 @@ function BlockRow({
       <div role="group" aria-label={name} className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <p className="text-[13px] font-medium text-white/64">
-            {BLOCK_LABEL[block.type]}
-            <span className="text-white/40"> · {index + 1} of {total}</span>
+            {vocabulary.blockLabel[block.type]}
+            <span className="text-white/40">
+              {' · '}
+              {fillPlaceholders(vocabulary.describe.position, {
+                index: String(index + 1),
+                total: String(total),
+              })}
+            </span>
           </p>
 
           <div className="flex items-center gap-1">
@@ -306,19 +354,19 @@ function BlockRow({
               rest.
             */}
             <MoveButton
-              label={`Move ${name} up`}
+              label={fillPlaceholders(copy.moveUp, { name })}
               disabled={disabled || onMoveUp === null}
               icon={<ArrowUp aria-hidden="true" className="size-4" />}
               onClick={onMoveUp ?? undefined}
             />
             <MoveButton
-              label={`Move ${name} down`}
+              label={fillPlaceholders(copy.moveDown, { name })}
               disabled={disabled || onMoveDown === null}
               icon={<ArrowDown aria-hidden="true" className="size-4" />}
               onClick={onMoveDown ?? undefined}
             />
             <MoveButton
-              label={`Remove ${name}`}
+              label={fillPlaceholders(copy.remove, { name })}
               disabled={disabled}
               danger
               icon={<Trash2 aria-hidden="true" className="size-4" />}
@@ -328,6 +376,8 @@ function BlockRow({
         </div>
 
         <BlockFields
+          copy={copy}
+          toolbar={toolbar}
           block={block}
           name={name}
           disabled={disabled}
@@ -390,6 +440,8 @@ function MoveButton({
  * ---------------------------------------------------------------------- */
 
 interface BlockFieldsProps {
+  copy: StoryBlocksCopy;
+  toolbar: StoryToolbarCopy;
   block: StoryBlock;
   name: string;
   disabled: boolean;
@@ -401,6 +453,8 @@ interface BlockFieldsProps {
 }
 
 function BlockFields({
+  copy,
+  toolbar,
   block,
   name,
   disabled,
@@ -415,29 +469,29 @@ function BlockFields({
       return (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
           <label className="sr-only" htmlFor={`${name}-level`}>
-            Level of {name}
+            {fillPlaceholders(copy.levelOf, { name })}
           </label>
           <Select
             id={`${name}-level`}
             value={String(block.level)}
             disabled={disabled}
-            aria-label={`Level of ${name}`}
+            aria-label={fillPlaceholders(copy.levelOf, { name })}
             className="sm:w-40"
             onChange={(event) =>
               onChange({ ...block, level: event.target.value === '3' ? 3 : 2 })
             }
           >
-            <option value="2">Section</option>
-            <option value="3">Subsection</option>
+            <option value="2">{copy.section}</option>
+            <option value="3">{copy.subsection}</option>
           </Select>
 
           <TextInput
             value={block.text}
             disabled={disabled}
             invalid={invalid}
-            aria-label={`Text of ${name}`}
+            aria-label={fillPlaceholders(copy.textOf, { name })}
             aria-describedby={describedBy}
-            placeholder="How it works"
+            placeholder={copy.headingPlaceholder}
             className="sm:flex-1"
             onChange={(event) => {
               const text = event.target.value;
@@ -466,6 +520,7 @@ function BlockFields({
     case 'quote':
       return (
         <StoryTextField
+          toolbar={toolbar}
           value={spansToText(block.spans)}
           label={name}
           invalid={invalid}
@@ -483,7 +538,7 @@ function BlockFields({
       );
 
     case 'list':
-      return <ListFields block={block} name={name} disabled={disabled} onChange={onChange} onFlush={onFlush} />;
+      return <ListFields copy={copy} toolbar={toolbar} block={block} name={name} disabled={disabled} onChange={onChange} onFlush={onFlush} />;
 
     case 'rule':
       return (
@@ -492,7 +547,7 @@ function BlockFields({
               group label already says a divider is present. */}
           <hr aria-hidden="true" className="border-white/8" />
           <p className="text-[13px] text-white/40">
-            A divider. It separates sections and carries no text.
+            {copy.ruleHint}
           </p>
         </>
       );
@@ -500,6 +555,7 @@ function BlockFields({
     case 'image':
       return (
         <ImageFields
+          copy={copy}
           block={block}
           name={name}
           disabled={disabled}
@@ -517,7 +573,7 @@ function BlockFields({
             <Select
               value={block.provider}
               disabled={disabled}
-              aria-label={`Provider of ${name}`}
+              aria-label={fillPlaceholders(copy.providerOf, { name })}
               className="sm:w-40"
               onChange={(event) => {
                 const provider = event.target.value;
@@ -539,9 +595,9 @@ function BlockFields({
               value={block.url}
               disabled={disabled}
               invalid={invalid}
-              aria-label={`Address of ${name}`}
+              aria-label={fillPlaceholders(copy.addressOf, { name })}
               aria-describedby={describedBy}
-              placeholder="https://www.youtube.com/watch?v=…"
+              placeholder={copy.embedUrlPlaceholder}
               className="sm:flex-1"
               onChange={(event) => onChange({ ...block, url: event.target.value })}
               onBlur={onFlush}
@@ -552,8 +608,8 @@ function BlockFields({
             value={block.title}
             disabled={disabled}
             invalid={invalid}
-            aria-label={`Title of ${name}`}
-            placeholder="What this video shows"
+            aria-label={fillPlaceholders(copy.titleOf, { name })}
+            placeholder={copy.embedTitlePlaceholder}
             onChange={(event) => onChange({ ...block, title: event.target.value })}
             onBlur={onFlush}
           />
@@ -571,12 +627,16 @@ function BlockFields({
  * ---------------------------------------------------------------------- */
 
 function ListFields({
+  copy,
+  toolbar,
   block,
   name,
   disabled,
   onChange,
   onFlush,
 }: {
+  copy: StoryBlocksCopy;
+  toolbar: StoryToolbarCopy;
   block: Extract<StoryBlock, { type: 'list' }>;
   name: string;
   disabled: boolean;
@@ -588,12 +648,12 @@ function ListFields({
       <Select
         value={block.ordered ? 'ordered' : 'bulleted'}
         disabled={disabled}
-        aria-label={`Style of ${name}`}
+        aria-label={fillPlaceholders(copy.styleOf, { name })}
         className="sm:w-48"
         onChange={(event) => onChange({ ...block, ordered: event.target.value === 'ordered' })}
       >
-        <option value="bulleted">Bulleted</option>
-        <option value="ordered">Numbered</option>
+        <option value="bulleted">{copy.bulleted}</option>
+        <option value="ordered">{copy.numbered}</option>
       </Select>
 
       <ol className="flex flex-col gap-3">
@@ -601,8 +661,9 @@ function ListFields({
           <li key={at} className="flex flex-col gap-2 sm:flex-row sm:items-start">
             <div className="flex-1">
               <StoryTextField
+                toolbar={toolbar}
                 value={spansToText(item)}
-                label={`Item ${at + 1} of ${block.items.length} in ${name}`}
+                label={fillPlaceholders(copy.itemOf, { at: String(at + 1), count: String(block.items.length), name })}
                 rows={2}
                 disabled={disabled}
                 onChange={(text) =>
@@ -617,7 +678,7 @@ function ListFields({
               />
             </div>
             <MoveButton
-              label={`Remove item ${at + 1} of ${block.items.length} in ${name}`}
+              label={fillPlaceholders(copy.removeItemOf, { at: String(at + 1), count: String(block.items.length), name })}
               disabled={disabled || block.items.length === 1}
               danger
               icon={<Trash2 aria-hidden="true" className="size-4" />}
@@ -633,11 +694,11 @@ function ListFields({
         variant="ghost"
         size="sm"
         disabled={disabled}
-        aria-label={`Add an item to ${name}`}
+        aria-label={fillPlaceholders(copy.addItemTo, { name })}
         className="self-start"
         onClick={() => onChange({ ...block, items: [...block.items, []] })}
       >
-        Add item
+        {copy.addItem}
       </Pill>
     </div>
   );
@@ -648,6 +709,7 @@ function ListFields({
  * ---------------------------------------------------------------------- */
 
 function ImageFields({
+  copy,
   block,
   name,
   disabled,
@@ -656,6 +718,7 @@ function ImageFields({
   onChange,
   onFlush,
 }: {
+  copy: StoryBlocksCopy;
   block: Extract<StoryBlock, { type: 'image' }>;
   name: string;
   disabled: boolean;
@@ -688,7 +751,7 @@ function ImageFields({
   async function measure(): Promise<void> {
     const address = typed.trim();
     if (address === '') {
-      setNote({ tone: 'danger', text: 'Enter the address of an image first.' });
+      setNote({ tone: 'danger', text: copy.needUrlFirst });
       return;
     }
 
@@ -698,11 +761,11 @@ function ImageFields({
       const size = await measureImage(address);
       setPlaceholder(size.placeholder);
       onChange({ ...block, url: address, width: size.width, height: size.height });
-      setNote({ tone: 'success', text: `Added a ${describeSize(size)} pixel image.` });
+      setNote({ tone: 'success', text: fillPlaceholders(copy.measured, { size: describeSize(size) }) });
     } catch (cause) {
       setNote({
         tone: 'danger',
-        text: cause instanceof Error ? cause.message : 'That address could not be loaded as an image.',
+        text: cause instanceof Error ? cause.message : copy.notAnImage,
       });
     } finally {
       setMeasuring(false);
@@ -717,7 +780,7 @@ function ImageFields({
         does puts a file anywhere. A drop zone here would be a control that quietly
         did nothing, which is worse than no control.
       */}
-      <InlineAlert variant="info" title="Nothing is uploaded here">
+      <InlineAlert variant="info" title={copy.nothingUploadedTitle}>
         Give the address of an image that is already published. Its size is read in your browser and
         stored with the story, so the page can reserve its space before it loads.
       </InlineAlert>
@@ -729,14 +792,14 @@ function ImageFields({
           value={typed}
           disabled={disabled}
           invalid={invalid}
-          aria-label={`Address of ${name}`}
+          aria-label={fillPlaceholders(copy.addressOf, { name })}
           aria-describedby={describedBy}
-          placeholder="https://images.example.com/prototype.jpg"
+          placeholder={copy.imageUrlPlaceholder}
           className="sm:flex-1"
           onChange={(event) => setTyped(event.target.value)}
         />
         <Pill variant="ghost" disabled={disabled || measuring} onClick={() => void measure()}>
-          {measuring ? 'Measuring' : 'Measure and add'}
+          {measuring ? copy.measuring : copy.measureAndAdd}
         </Pill>
       </div>
 
@@ -789,8 +852,8 @@ function ImageFields({
         value={block.alt}
         disabled={disabled}
         invalid={invalid}
-        aria-label={`Description of ${name}`}
-        placeholder="What the picture shows"
+        aria-label={fillPlaceholders(copy.descriptionOf, { name })}
+        placeholder={copy.imageAltPlaceholder}
         onChange={(event) => onChange({ ...block, alt: event.target.value })}
         onBlur={onFlush}
       />

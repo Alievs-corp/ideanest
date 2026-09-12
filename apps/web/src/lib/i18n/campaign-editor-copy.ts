@@ -3,6 +3,7 @@ import type { PluralForms as AppPluralForms } from './plurals';
 import type { Locale } from './locale';
 import type { ProjectState, ShippingType } from '../projects/api';
 import type { EditorTabKey } from '../../components/campaign-editor/tabs';
+import type { StoryBlockType } from '../projects/story';
 
 /**
  * The words the campaign editor's frame draws — issue #324, docs/architecture.md §21.1.
@@ -880,6 +881,177 @@ export function rewardsVocabularyCopyFrom(
 }
 
 /* -------------------------------------------------------------------------
+ * Story — §4.5's third tab
+ * ---------------------------------------------------------------------- */
+
+/**
+ * How a block is named to a screen reader, and what is wrong with it.
+ *
+ * <h2>Why `describeBlock` needs a vocabulary rather than a sentence</h2>
+ *
+ * Every add, move and remove control in the story editor carries a name built from the block's
+ * kind, its position and enough of its contents to tell it from its neighbours — "Move up"
+ * eleven times in a row is eleven identical buttons by ear. The parts come from three
+ * different places, so the sentence has to be assembled, and assembling it in code is what
+ * put `'item' : 'items'` there in the first place.
+ */
+export interface StoryVocabularyCopy {
+  readonly blockLabel: Readonly<Record<StoryBlockType, string>>;
+  readonly describe: {
+    /** Carries `{index}` and `{total}`. */
+    readonly position: string;
+    /** Carries `{position}` and `{text}`. */
+    readonly heading: string;
+    readonly headingEmpty: string;
+    /** Carries `{label}`, `{position}` and `{preview}`. */
+    readonly withPreview: string;
+    /** One form per category. Carries `{style}`, `{position}` and `{count}`. */
+    readonly list: AppPluralForms;
+    /** Carries `{position}`. */
+    readonly rule: string;
+    /** Carries `{position}` and `{alt}`. */
+    readonly image: string;
+    readonly imageNoAlt: string;
+    /** Carries `{provider}`, `{position}` and `{title}`. */
+    readonly embed: string;
+    readonly embedNoTitle: string;
+    readonly numbered: string;
+    readonly bulleted: string;
+  };
+  readonly problems: {
+    readonly headingNeedsText: string;
+    readonly anchorUnusable: string;
+    readonly anchorDuplicate: string;
+    readonly imageNeedsUrl: string;
+    readonly urlScheme: string;
+    readonly imageNotMeasured: string;
+    readonly imageNeedsAlt: string;
+    readonly embedNeedsUrl: string;
+    readonly embedNeedsTitle: string;
+  };
+  /** The language whose plural rule picks the list form. */
+  readonly locale: Locale;
+}
+
+/** `StoryMarkToolbar` — bold and italic, and the shortcuts announced with them. */
+export interface StoryToolbarCopy {
+  /** Carries `{label}`. */
+  readonly formattingFor: string;
+  readonly bold: string;
+  readonly italic: string;
+  readonly boldShortcut: string;
+  readonly italicShortcut: string;
+}
+
+/** `StoryVersionHistory` — the drawer of earlier versions. */
+export interface StoryHistoryCopy {
+  readonly title: string;
+  readonly failedTitle: string;
+  readonly emptyTitle: string;
+  readonly loadingLabel: string;
+  readonly description: string;
+  readonly emptyDescription: string;
+  readonly replaceWarning: string;
+  readonly preview: string;
+  /** Carries `{number}`. */
+  readonly previewVersion: string;
+  readonly restoreTitle: string;
+  readonly restore: string;
+  readonly restoring: string;
+  readonly restoreThis: string;
+  /** Carries `{number}`. */
+  readonly restoreVersion: string;
+  /** Carries `{number}`. */
+  readonly confirmTitle: string;
+  readonly keepMine: string;
+  readonly noBlocks: string;
+  readonly divider: string;
+  readonly tryAgain: string;
+  /** One form per category. Carries `{count}` and `{characters}`. */
+  readonly previewSummary: AppPluralForms;
+}
+
+/** `StoryBlockEditor` — the document itself. */
+export interface StoryBlocksCopy {
+  readonly heading: string;
+  readonly add: string;
+  readonly empty: string;
+  /** Carries `{kind}` and `{hint}`. */
+  readonly addOne: string;
+  readonly section: string;
+  readonly subsection: string;
+  readonly ruleHint: string;
+  readonly bulleted: string;
+  readonly numbered: string;
+  readonly addItem: string;
+  readonly headingPlaceholder: string;
+  readonly embedUrlPlaceholder: string;
+  readonly embedTitlePlaceholder: string;
+  readonly imageUrlPlaceholder: string;
+  readonly imageAltPlaceholder: string;
+  readonly nothingUploadedTitle: string;
+  readonly listHint: string;
+  readonly imageHint: string;
+  readonly quoteHint: string;
+  readonly paragraphHint: string;
+  readonly needUrlFirst: string;
+  readonly notAnImage: string;
+  readonly measuring: string;
+  readonly measureAndAdd: string;
+  /** Carries `{size}`. */
+  readonly measured: string;
+  /** Each of these carries `{name}`, the block's own description. */
+  readonly moveUp: string;
+  readonly moveDown: string;
+  readonly remove: string;
+  readonly levelOf: string;
+  readonly textOf: string;
+  readonly providerOf: string;
+  readonly addressOf: string;
+  readonly titleOf: string;
+  readonly styleOf: string;
+  readonly descriptionOf: string;
+  /** Carries `{at}`, `{count}` and `{name}`. */
+  readonly itemOf: string;
+  /** Carries `{at}`, `{count}` and `{name}`. */
+  readonly removeItemOf: string;
+  /** Carries `{name}`. */
+  readonly addItemTo: string;
+  /** Carries `{label}`, `{position}` and `{total}`. */
+  readonly addedAnnouncement: string;
+  /** Carries `{label}`, `{position}` and `{total}`. */
+  readonly movedAnnouncement: string;
+  /** One form per category. Carries `{label}` and `{count}`. */
+  readonly removedAnnouncement: AppPluralForms;
+  /** What each kind of block is, shown beside it in the add menu. */
+  readonly hints: Readonly<Record<StoryBlockType, string>>;
+}
+
+/** The story tab. */
+export interface StoryPanelCopy {
+  readonly readOnlyTitle: string;
+  readonly notSavedTitle: string;
+  readonly notSavingTitle: string;
+  readonly notSavingDetail: string;
+  readonly loadingLabel: string;
+  readonly reload: string;
+  readonly earlierVersions: string;
+  readonly anchorMenu: string;
+  readonly risks: string;
+  /** Carries `{min}`. */
+  readonly risksHint: string;
+  readonly risksPlaceholder: string;
+  /** Carries `{count}` and `{min}`. */
+  readonly charactersNeeded: string;
+  readonly blocks: StoryBlocksCopy;
+  readonly history: StoryHistoryCopy;
+  readonly toolbar: StoryToolbarCopy;
+  readonly vocabulary: StoryVocabularyCopy;
+  readonly characterCount: CharacterCountCopy;
+  readonly locale: Locale;
+}
+
+/* -------------------------------------------------------------------------
  * FAQ — §4.5's fourth tab
  * ---------------------------------------------------------------------- */
 
@@ -957,6 +1129,145 @@ export interface FaqPanelCopy {
   readonly entry: FaqEntryCopy;
   readonly characterCount: CharacterCountCopy;
   readonly locale: Locale;
+}
+
+/** Every block kind. Listed so a new one fails to compile rather than rendering blank. */
+const STORY_BLOCK_TYPES = [
+  'heading',
+  'paragraph',
+  'list',
+  'quote',
+  'rule',
+  'image',
+  'embed',
+] as const satisfies readonly StoryBlockType[];
+
+export function storyPanelCopyFrom(
+  t: CampaignEditorTranslator,
+  locale: Locale,
+  counter: CharacterCountCopy,
+): StoryPanelCopy {
+  const at = (key: string) => t(`story.${key}`);
+  const tpl = (key: string) => template(t, `story.${key}`);
+
+  return {
+    readOnlyTitle: at('panel.readOnlyTitle'),
+    notSavedTitle: at('panel.notSavedTitle'),
+    notSavingTitle: at('panel.notSavingTitle'),
+    notSavingDetail: at('panel.notSavingDetail'),
+    loadingLabel: at('panel.loadingLabel'),
+    reload: at('panel.reload'),
+    earlierVersions: at('panel.earlierVersions'),
+    anchorMenu: at('panel.anchorMenu'),
+    risks: at('panel.risks'),
+    risksHint: tpl('panel.risksHint'),
+    risksPlaceholder: at('panel.risksPlaceholder'),
+    charactersNeeded: tpl('panel.charactersNeeded'),
+    blocks: {
+      heading: at('blocks.heading'),
+      add: at('blocks.add'),
+      empty: at('blocks.empty'),
+      addOne: tpl('blocks.addOne'),
+      section: at('blocks.section'),
+      subsection: at('blocks.subsection'),
+      ruleHint: at('blocks.ruleHint'),
+      bulleted: at('blocks.bulleted'),
+      numbered: at('blocks.numbered'),
+      addItem: at('blocks.addItem'),
+      headingPlaceholder: at('blocks.headingPlaceholder'),
+      embedUrlPlaceholder: at('blocks.embedUrlPlaceholder'),
+      embedTitlePlaceholder: at('blocks.embedTitlePlaceholder'),
+      imageUrlPlaceholder: at('blocks.imageUrlPlaceholder'),
+      imageAltPlaceholder: at('blocks.imageAltPlaceholder'),
+      nothingUploadedTitle: at('blocks.nothingUploadedTitle'),
+      listHint: at('blocks.listHint'),
+      imageHint: at('blocks.imageHint'),
+      quoteHint: at('blocks.quoteHint'),
+      paragraphHint: at('blocks.paragraphHint'),
+      needUrlFirst: at('blocks.needUrlFirst'),
+      notAnImage: at('blocks.notAnImage'),
+      measuring: at('blocks.measuring'),
+      measureAndAdd: at('blocks.measureAndAdd'),
+      measured: tpl('blocks.measured'),
+      moveUp: tpl('blocks.moveUp'),
+      moveDown: tpl('blocks.moveDown'),
+      remove: tpl('blocks.remove'),
+      levelOf: tpl('blocks.levelOf'),
+      textOf: tpl('blocks.textOf'),
+      providerOf: tpl('blocks.providerOf'),
+      addressOf: tpl('blocks.addressOf'),
+      titleOf: tpl('blocks.titleOf'),
+      styleOf: tpl('blocks.styleOf'),
+      descriptionOf: tpl('blocks.descriptionOf'),
+      itemOf: tpl('blocks.itemOf'),
+      removeItemOf: tpl('blocks.removeItemOf'),
+      addItemTo: tpl('blocks.addItemTo'),
+      addedAnnouncement: tpl('blocks.addedAnnouncement'),
+      movedAnnouncement: tpl('blocks.movedAnnouncement'),
+      removedAnnouncement: t.raw('story.blocks.removedAnnouncement') as AppPluralForms,
+      hints: record(STORY_BLOCK_TYPES, (kind) => at(`blocks.hints.${kind}`)),
+    },
+    history: {
+      title: at('history.title'),
+      failedTitle: at('history.failedTitle'),
+      emptyTitle: at('history.emptyTitle'),
+      loadingLabel: at('history.loadingLabel'),
+      description: at('history.description'),
+      emptyDescription: at('history.emptyDescription'),
+      replaceWarning: at('history.replaceWarning'),
+      preview: at('history.preview'),
+      previewVersion: tpl('history.previewVersion'),
+      restoreTitle: at('history.restoreTitle'),
+      restore: at('history.restore'),
+      restoring: at('history.restoring'),
+      restoreThis: at('history.restoreThis'),
+      restoreVersion: tpl('history.restoreVersion'),
+      confirmTitle: tpl('history.confirmTitle'),
+      keepMine: at('history.keepMine'),
+      noBlocks: at('history.noBlocks'),
+      divider: at('history.divider'),
+      tryAgain: at('history.tryAgain'),
+      previewSummary: t.raw('story.history.previewSummary') as AppPluralForms,
+    },
+    toolbar: {
+      formattingFor: tpl('toolbar.formattingFor'),
+      bold: at('toolbar.bold'),
+      italic: at('toolbar.italic'),
+      boldShortcut: at('toolbar.boldShortcut'),
+      italicShortcut: at('toolbar.italicShortcut'),
+    },
+    vocabulary: {
+      blockLabel: record(STORY_BLOCK_TYPES, (kind) => at(`vocabulary.blockLabel.${kind}`)),
+      describe: {
+        position: tpl('vocabulary.describe.position'),
+        heading: tpl('vocabulary.describe.heading'),
+        headingEmpty: at('vocabulary.describe.headingEmpty'),
+        withPreview: tpl('vocabulary.describe.withPreview'),
+        list: t.raw('story.vocabulary.describe.list') as AppPluralForms,
+        rule: tpl('vocabulary.describe.rule'),
+        image: tpl('vocabulary.describe.image'),
+        imageNoAlt: at('vocabulary.describe.imageNoAlt'),
+        embed: tpl('vocabulary.describe.embed'),
+        embedNoTitle: at('vocabulary.describe.embedNoTitle'),
+        numbered: at('vocabulary.describe.numbered'),
+        bulleted: at('vocabulary.describe.bulleted'),
+      },
+      problems: {
+        headingNeedsText: at('vocabulary.problems.headingNeedsText'),
+        anchorUnusable: at('vocabulary.problems.anchorUnusable'),
+        anchorDuplicate: at('vocabulary.problems.anchorDuplicate'),
+        imageNeedsUrl: at('vocabulary.problems.imageNeedsUrl'),
+        urlScheme: at('vocabulary.problems.urlScheme'),
+        imageNotMeasured: at('vocabulary.problems.imageNotMeasured'),
+        imageNeedsAlt: at('vocabulary.problems.imageNeedsAlt'),
+        embedNeedsUrl: at('vocabulary.problems.embedNeedsUrl'),
+        embedNeedsTitle: at('vocabulary.problems.embedNeedsTitle'),
+      },
+      locale,
+    },
+    characterCount: counter,
+    locale,
+  };
 }
 
 export function faqPanelCopyFrom(
