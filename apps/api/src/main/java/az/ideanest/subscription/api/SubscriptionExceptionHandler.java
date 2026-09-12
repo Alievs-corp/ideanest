@@ -13,6 +13,7 @@ import az.ideanest.subscription.application.PlanNotOnSaleException;
 import az.ideanest.subscription.application.SubscriptionNotAwaitingPaymentException;
 import az.ideanest.subscription.application.SubscriptionNotFoundException;
 import az.ideanest.subscription.application.UnknownPlanException;
+import az.ideanest.user.application.AccountNotFoundException;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -49,6 +50,24 @@ public class SubscriptionExceptionHandler {
     @ExceptionHandler(InsufficientStaffCapabilityException.class)
     public ProblemDetail handleInsufficient(InsufficientStaffCapabilityException exception) {
         return StaffRefusals.insufficient(exception);
+    }
+
+    /**
+     * 404: the account page named an account that is not there, or no longer is.
+     *
+     * <p>The body is {@code AdminUserExceptionHandler}'s, word for word and code for code. The
+     * account page makes three reads against one identifier and they are served by two
+     * modules; a client that branched on {@code ACCOUNT_NOT_FOUND} from one of them must meet
+     * the same body from the other, or a deleted account shows as a broken section.
+     */
+    @ExceptionHandler(AccountNotFoundException.class)
+    public ProblemDetail handleAccountNotFound(AccountNotFoundException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problem.setType(URI.create("https://ideanest.az/problems/account-not-found"));
+        problem.setTitle("No such account");
+        problem.setDetail("That account does not exist.");
+        problem.setProperty("code", "ACCOUNT_NOT_FOUND");
+        return problem;
     }
 
     /** 404: the plan identifier names nothing. */

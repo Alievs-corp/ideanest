@@ -1,9 +1,11 @@
 package az.ideanest.subscription.api;
 
+import az.ideanest.subscription.application.AccountSubscriptionHistory;
 import az.ideanest.subscription.application.SubscriptionPlans;
 import az.ideanest.subscription.application.Subscriptions;
 import az.ideanest.subscription.domain.BillingPeriod;
 import az.ideanest.subscription.domain.PaymentMethod;
+import az.ideanest.subscription.domain.Subscription;
 import az.ideanest.subscription.domain.SubscriptionPlan;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -202,6 +204,52 @@ public class AdminSubscriptionController {
                 .cacheControl(CacheControl.noStore())
                 .body(SubscriptionResponses.ConsoleRow.of(
                         activated, plans.byId(activated.getPlanId()).orElse(null), clock.instant()));
+    }
+
+    /**
+     * One account's subscriptions and payments, for the console's account page.
+     *
+     * <p>Under {@code /v1/admin/users/{accountId}} beside the account's pledges, because that is
+     * the page it is drawn on and the path a reader of the API would look for it at. Served
+     * from this module rather than the admin module's user controller: the rows are this
+     * module's domain types, and {@code ModuleBoundaryTests} forbids another module from
+     * reaching into them — which is the rule working as intended rather than an obstacle.
+     *
+     * <p>Any member of staff; {@code Subscriptions.accountHistory} argues why that and not
+     * {@code CONFIGURE_PLATFORM}. {@code no-store}, like everything under this prefix.
+     *
+     * @return 404 {@code ACCOUNT_NOT_FOUND} for an identifier that names nothing or a deleted
+     *     account, which is what the account page's other reads answer
+     */
+    @GetMapping("/users/{accountId}/subscriptions")
+    public ResponseEntity<SubscriptionResponses.AccountSubscriptionHistoryResponse> accountHistory(
+            @AuthenticationPrincipal Jwt accessToken, @PathVariable UUID accountId) {
+
+        AccountSubscriptionHistory history = subscriptions.accountHistory(callerOf(accessToken), accountId);
+        Instant now = clock.instant();
+
+        // One lookup per distinct plan rather than per row, and through `byId` rather than the
+        // catalogue: `catalogue` needs CONFIGURE_PLATFORM, which this endpoint deliberately
+        // does not, and a moderator's view of an account must not fail on a capability that
+        // governs editing prices.
+        Map<UUID, SubscriptionPlan> byId = new HashMap<>();
+        for (Subscription subscription : history.subscriptions()) {
+            if (!byId.containsKey(subscription.getPlanId())) {
+                byId.put(subscription.getPlanId(), plans.byId(subscription.getPlanId()).orElse(null));
+            }
+        }
+
+        List<SubscriptionResponses.ConsoleRow> rows = history.subscriptions().stream()
+                .map(subscription ->
+                        SubscriptionResponses.ConsoleRow.of(subscription, byId.get(subscription.getPlanId()), now))
+                .toList();
+        List<SubscriptionRevenueResponses.SubscriptionPaymentEntry> paid = history.payments().stream()
+                .map(SubscriptionRevenueResponses.SubscriptionPaymentEntry::of)
+                .toList();
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(new SubscriptionResponses.AccountSubscriptionHistoryResponse(rows, paid));
     }
 
     /** Ends a subscription outright — a reversed payment, a fraud finding, a mistake. */

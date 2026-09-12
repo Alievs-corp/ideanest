@@ -3,6 +3,7 @@ package az.ideanest.subscription.application;
 import az.ideanest.shared.money.Money;
 import az.ideanest.subscription.domain.BillingPeriod;
 import az.ideanest.subscription.domain.PaymentMethod;
+import az.ideanest.subscription.domain.SubscriptionPayment;
 import az.ideanest.subscription.infrastructure.SubscriptionRevenueRepository;
 import java.time.Instant;
 import java.util.List;
@@ -73,6 +74,35 @@ public record PaymentPage(List<Payment> payments, String nextCursor) {
                     row.getRecordedAt(),
                     row.getRecordedBy(),
                     row.getReverses());
+        }
+
+        /**
+         * One payment as the journal holds it, without the payer's name and address.
+         *
+         * <p>For the console's account page, which is already about one account and has its
+         * name at the top: repeating it on every row would be the same fact twelve times, and
+         * a second read of {@code users} to supply it would be a join that only ever
+         * confirms what the page's own heading says.
+         */
+        static Payment recorded(SubscriptionPayment payment) {
+            return new Payment(
+                    payment.getId(),
+                    payment.getSubscriptionId(),
+                    payment.getAccountId(),
+                    null,
+                    null,
+                    payment.getPlanId(),
+                    payment.getPlanCode(),
+                    payment.getPlanName(),
+                    payment.getAmount(),
+                    payment.getBillingPeriod(),
+                    payment.getMethod(),
+                    payment.getReference(),
+                    payment.getNote(),
+                    payment.getReceivedAt(),
+                    payment.getRecordedAt(),
+                    payment.getRecordedBy(),
+                    payment.getReverses());
         }
 
         /** Whether this row undoes another. */

@@ -1508,6 +1508,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/users/{accountId}/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminSubscriptionAccountHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/users/{id}": {
         parameters: {
             query?: never;
@@ -3840,6 +3856,10 @@ export interface components {
             format?: string;
             sessions?: components["schemas"]["SessionRecord"][];
             verifications?: components["schemas"]["VerificationRecord"][];
+        };
+        AccountSubscriptionHistoryResponse: {
+            payments?: components["schemas"]["SubscriptionPaymentEntry"][];
+            subscriptions?: components["schemas"]["ConsoleRow"][];
         };
         ActivateRequest: {
             /** @enum {string} */
@@ -6598,6 +6618,7 @@ export type SchemaAcceptance = components['schemas']['Acceptance'];
 export type SchemaAcceptanceRecord = components['schemas']['AcceptanceRecord'];
 export type SchemaAccount = components['schemas']['Account'];
 export type SchemaAccountExport = components['schemas']['AccountExport'];
+export type SchemaAccountSubscriptionHistoryResponse = components['schemas']['AccountSubscriptionHistoryResponse'];
 export type SchemaActivateRequest = components['schemas']['ActivateRequest'];
 export type SchemaAddEvidenceRequest = components['schemas']['AddEvidenceRequest'];
 export type SchemaAddPlanRequest = components['schemas']['AddPlanRequest'];
@@ -9449,6 +9470,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminUserListResponse"];
+                };
+            };
+        };
+    };
+    adminSubscriptionAccountHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountSubscriptionHistoryResponse"];
                 };
             };
         };

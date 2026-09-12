@@ -3993,6 +3993,8 @@ GET    /v1/admin/subscription/revenue         # #23: totals per currency (gross,
                                               # ?from=&to= half-open, defaulting to this month in Asia/Baku; ?planCode=&accountId=&method=
 GET    /v1/admin/subscription/payments        # the journal behind those totals, newest by received_at; same filters, ?after= keyset cursor
 GET    /v1/admin/subscription/payments/export # the same list as text/csv, capped, X-Export-Rows / X-Export-Truncated. Audited
+GET    /v1/admin/users/{accountId}/subscriptions # one account's subscriptions (every state) and payments, unpaged. Any member of
+                                              # staff, like the account's pledges; audited as counts. 404 ACCOUNT_NOT_FOUND
 ```
 
 > **Two-factor is four endpoints rather than two.** `2fa/verify` is the second

@@ -3563,6 +3563,33 @@
         "tags" : [ "admin-user-controller" ]
       }
     },
+    "/v1/admin/users/{accountId}/subscriptions" : {
+      "get" : {
+        "operationId" : "adminSubscriptionAccountHistory",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "accountId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountSubscriptionHistoryResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-subscription-controller" ]
+      }
+    },
     "/v1/admin/users/{id}" : {
       "get" : {
         "operationId" : "adminUserInspect",
@@ -9607,6 +9634,23 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/VerificationRecord"
+            }
+          }
+        }
+      },
+      "AccountSubscriptionHistoryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "payments" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SubscriptionPaymentEntry"
+            }
+          },
+          "subscriptions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConsoleRow"
             }
           }
         }
