@@ -2066,6 +2066,111 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/form/Fi
 </div>"
 `;
 
+exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/form/PasswordInput.stories.tsx — Default [reduced motion] 1`] = `
+"<div class="font-sans text-white antialiased">
+<div class="w-[360px]">
+<div class="relative">
+<input readonly="" class="w-full rounded-md bg-surface-3 text-white border border-white/8 placeholder:text-white/40 transition-[background-color,border-color] duration-150 ease-in-out hover:border-white/16 focus:border-white/16 disabled:pointer-events-none disabled:opacity-40 h-11 px-3.5 text-sm pr-10" type="password" value="correct horse battery staple">
+<span class="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&amp;_svg]:size-4">
+<button type="button" aria-pressed="false" aria-label="Show password" title="Show password" class="grid size-8 place-items-center rounded-full text-white/64 transition-[color,background-color] duration-150 ease-in-out hover:bg-surface-4 hover:text-white disabled:pointer-events-none disabled:opacity-40">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye size-4" aria-hidden="true">
+<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0">
+</path>
+<circle cx="12" cy="12" r="3">
+</circle>
+</svg>
+</button>
+</span>
+</div>
+</div>
+</div>"
+`;
+
+exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/form/PasswordInput.stories.tsx — Disabled [reduced motion] 1`] = `
+"<div class="font-sans text-white antialiased">
+<div class="w-[360px]">
+<div class="relative">
+<input disabled="" readonly="" class="w-full rounded-md bg-surface-3 text-white border border-white/8 placeholder:text-white/40 transition-[background-color,border-color] duration-150 ease-in-out hover:border-white/16 focus:border-white/16 disabled:pointer-events-none disabled:opacity-40 h-11 px-3.5 text-sm pr-10" type="password" value="locked">
+<span class="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&amp;_svg]:size-4">
+<button type="button" aria-pressed="false" aria-label="Show password" title="Show password" class="grid size-8 place-items-center rounded-full text-white/64 transition-[color,background-color] duration-150 ease-in-out hover:bg-surface-4 hover:text-white disabled:pointer-events-none disabled:opacity-40" disabled="">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye size-4" aria-hidden="true">
+<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0">
+</path>
+<circle cx="12" cy="12" r="3">
+</circle>
+</svg>
+</button>
+</span>
+</div>
+</div>
+</div>"
+`;
+
+exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/form/PasswordInput.stories.tsx — Empty [reduced motion] 1`] = `
+"<div class="font-sans text-white antialiased">
+<div class="w-[360px]">
+<div class="relative">
+<input class="w-full rounded-md bg-surface-3 text-white border border-white/8 placeholder:text-white/40 transition-[background-color,border-color] duration-150 ease-in-out hover:border-white/16 focus:border-white/16 disabled:pointer-events-none disabled:opacity-40 h-11 px-3.5 text-sm pr-10" type="password">
+<span class="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&amp;_svg]:size-4">
+<button type="button" aria-pressed="false" aria-label="Show password" title="Show password" class="grid size-8 place-items-center rounded-full text-white/64 transition-[color,background-color] duration-150 ease-in-out hover:bg-surface-4 hover:text-white disabled:pointer-events-none disabled:opacity-40">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye size-4" aria-hidden="true">
+<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0">
+</path>
+<circle cx="12" cy="12" r="3">
+</circle>
+</svg>
+</button>
+</span>
+</div>
+</div>
+</div>"
+`;
+
+exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/form/PasswordInput.stories.tsx — InAField [reduced motion] 1`] = `
+"<div class="font-sans text-white antialiased">
+<div class="w-[360px]">
+<div class="flex flex-col gap-1.5">
+<label id="[id-0]-label" for="[id-0]-control" class="text-sm font-medium text-white">Password<span aria-hidden="true" class="ml-0.5 text-white/40">*</span>
+</label>
+<div class="relative">
+<input autocomplete="new-password" id="[id-0]-control" aria-describedby="[id-0]-hint" required="" class="w-full rounded-md bg-surface-3 text-white border border-white/8 placeholder:text-white/40 transition-[background-color,border-color] duration-150 ease-in-out hover:border-white/16 focus:border-white/16 disabled:pointer-events-none disabled:opacity-40 h-11 px-3.5 text-sm pr-10" type="password" name="password">
+<span class="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&amp;_svg]:size-4">
+<button type="button" aria-pressed="false" aria-label="Show password" title="Show password" class="grid size-8 place-items-center rounded-full text-white/64 transition-[color,background-color] duration-150 ease-in-out hover:bg-surface-4 hover:text-white disabled:pointer-events-none disabled:opacity-40">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye size-4" aria-hidden="true">
+<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0">
+</path>
+<circle cx="12" cy="12" r="3">
+</circle>
+</svg>
+</button>
+</span>
+</div>
+<p id="[id-0]-hint" class="text-[13px] text-white/64">Long is stronger than complicated. The exact requirement comes from the service if this one is refused.</p>
+</div>
+</div>
+</div>"
+`;
+
+exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/form/PasswordInput.stories.tsx — Invalid [reduced motion] 1`] = `
+"<div class="font-sans text-white antialiased">
+<div class="w-[360px]">
+<div class="relative">
+<input readonly="" aria-invalid="true" class="w-full rounded-md bg-surface-3 text-white border placeholder:text-white/40 transition-[background-color,border-color] duration-150 ease-in-out disabled:pointer-events-none disabled:opacity-40 h-11 px-3.5 text-sm border-danger hover:border-danger focus:border-danger pr-10" type="password" value="short">
+<span class="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&amp;_svg]:size-4">
+<button type="button" aria-pressed="false" aria-label="Show password" title="Show password" class="grid size-8 place-items-center rounded-full text-white/64 transition-[color,background-color] duration-150 ease-in-out hover:bg-surface-4 hover:text-white disabled:pointer-events-none disabled:opacity-40">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye size-4" aria-hidden="true">
+<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0">
+</path>
+<circle cx="12" cy="12" r="3">
+</circle>
+</svg>
+</button>
+</span>
+</div>
+</div>
+</div>"
+`;
+
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/form/Select.stories.tsx — Default [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="w-[360px]">
@@ -5285,6 +5390,111 @@ exports[`rendered markup > ./components/form/FileDropZone.stories.tsx — InAFie
 <p class="text-[13px] text-white/40">PNG or JPG, up to 8 MB each.</p>
 </div>
 <p id="[id-0]-hint" class="text-[13px] text-white/64">The first image becomes the card thumbnail.</p>
+</div>
+</div>
+</div>"
+`;
+
+exports[`rendered markup > ./components/form/PasswordInput.stories.tsx — Default 1`] = `
+"<div class="font-sans text-white antialiased">
+<div class="w-[360px]">
+<div class="relative">
+<input readonly="" class="w-full rounded-md bg-surface-3 text-white border border-white/8 placeholder:text-white/40 transition-[background-color,border-color] duration-150 ease-in-out hover:border-white/16 focus:border-white/16 disabled:pointer-events-none disabled:opacity-40 h-11 px-3.5 text-sm pr-10" type="password" value="correct horse battery staple">
+<span class="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&amp;_svg]:size-4">
+<button type="button" aria-pressed="false" aria-label="Show password" title="Show password" class="grid size-8 place-items-center rounded-full text-white/64 transition-[color,background-color] duration-150 ease-in-out hover:bg-surface-4 hover:text-white disabled:pointer-events-none disabled:opacity-40">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye size-4" aria-hidden="true">
+<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0">
+</path>
+<circle cx="12" cy="12" r="3">
+</circle>
+</svg>
+</button>
+</span>
+</div>
+</div>
+</div>"
+`;
+
+exports[`rendered markup > ./components/form/PasswordInput.stories.tsx — Disabled 1`] = `
+"<div class="font-sans text-white antialiased">
+<div class="w-[360px]">
+<div class="relative">
+<input disabled="" readonly="" class="w-full rounded-md bg-surface-3 text-white border border-white/8 placeholder:text-white/40 transition-[background-color,border-color] duration-150 ease-in-out hover:border-white/16 focus:border-white/16 disabled:pointer-events-none disabled:opacity-40 h-11 px-3.5 text-sm pr-10" type="password" value="locked">
+<span class="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&amp;_svg]:size-4">
+<button type="button" aria-pressed="false" aria-label="Show password" title="Show password" class="grid size-8 place-items-center rounded-full text-white/64 transition-[color,background-color] duration-150 ease-in-out hover:bg-surface-4 hover:text-white disabled:pointer-events-none disabled:opacity-40" disabled="">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye size-4" aria-hidden="true">
+<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0">
+</path>
+<circle cx="12" cy="12" r="3">
+</circle>
+</svg>
+</button>
+</span>
+</div>
+</div>
+</div>"
+`;
+
+exports[`rendered markup > ./components/form/PasswordInput.stories.tsx — Empty 1`] = `
+"<div class="font-sans text-white antialiased">
+<div class="w-[360px]">
+<div class="relative">
+<input class="w-full rounded-md bg-surface-3 text-white border border-white/8 placeholder:text-white/40 transition-[background-color,border-color] duration-150 ease-in-out hover:border-white/16 focus:border-white/16 disabled:pointer-events-none disabled:opacity-40 h-11 px-3.5 text-sm pr-10" type="password">
+<span class="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&amp;_svg]:size-4">
+<button type="button" aria-pressed="false" aria-label="Show password" title="Show password" class="grid size-8 place-items-center rounded-full text-white/64 transition-[color,background-color] duration-150 ease-in-out hover:bg-surface-4 hover:text-white disabled:pointer-events-none disabled:opacity-40">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye size-4" aria-hidden="true">
+<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0">
+</path>
+<circle cx="12" cy="12" r="3">
+</circle>
+</svg>
+</button>
+</span>
+</div>
+</div>
+</div>"
+`;
+
+exports[`rendered markup > ./components/form/PasswordInput.stories.tsx — InAField 1`] = `
+"<div class="font-sans text-white antialiased">
+<div class="w-[360px]">
+<div class="flex flex-col gap-1.5">
+<label id="[id-0]-label" for="[id-0]-control" class="text-sm font-medium text-white">Password<span aria-hidden="true" class="ml-0.5 text-white/40">*</span>
+</label>
+<div class="relative">
+<input autocomplete="new-password" id="[id-0]-control" aria-describedby="[id-0]-hint" required="" class="w-full rounded-md bg-surface-3 text-white border border-white/8 placeholder:text-white/40 transition-[background-color,border-color] duration-150 ease-in-out hover:border-white/16 focus:border-white/16 disabled:pointer-events-none disabled:opacity-40 h-11 px-3.5 text-sm pr-10" type="password" name="password">
+<span class="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&amp;_svg]:size-4">
+<button type="button" aria-pressed="false" aria-label="Show password" title="Show password" class="grid size-8 place-items-center rounded-full text-white/64 transition-[color,background-color] duration-150 ease-in-out hover:bg-surface-4 hover:text-white disabled:pointer-events-none disabled:opacity-40">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye size-4" aria-hidden="true">
+<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0">
+</path>
+<circle cx="12" cy="12" r="3">
+</circle>
+</svg>
+</button>
+</span>
+</div>
+<p id="[id-0]-hint" class="text-[13px] text-white/64">Long is stronger than complicated. The exact requirement comes from the service if this one is refused.</p>
+</div>
+</div>
+</div>"
+`;
+
+exports[`rendered markup > ./components/form/PasswordInput.stories.tsx — Invalid 1`] = `
+"<div class="font-sans text-white antialiased">
+<div class="w-[360px]">
+<div class="relative">
+<input readonly="" aria-invalid="true" class="w-full rounded-md bg-surface-3 text-white border placeholder:text-white/40 transition-[background-color,border-color] duration-150 ease-in-out disabled:pointer-events-none disabled:opacity-40 h-11 px-3.5 text-sm border-danger hover:border-danger focus:border-danger pr-10" type="password" value="short">
+<span class="absolute inset-y-0 right-3 grid place-items-center text-white/40 [&amp;_svg]:size-4">
+<button type="button" aria-pressed="false" aria-label="Show password" title="Show password" class="grid size-8 place-items-center rounded-full text-white/64 transition-[color,background-color] duration-150 ease-in-out hover:bg-surface-4 hover:text-white disabled:pointer-events-none disabled:opacity-40">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye size-4" aria-hidden="true">
+<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0">
+</path>
+<circle cx="12" cy="12" r="3">
+</circle>
+</svg>
+</button>
+</span>
 </div>
 </div>
 </div>"

@@ -2306,7 +2306,9 @@
       "email": "E-posta adresi",
       "emailPlaceholder": "you@example.com",
       "password": "Parola",
-      "passwordHint": "Uzun parola karmaşık paroladan güçlüdür. Kesin gereklilik, bu parola reddedilirse servisin kendisinden gelir."
+      "passwordHint": "Uzun parola karmaşık paroladan güçlüdür. Kesin gereklilik, bu parola reddedilirse servisin kendisinden gelir.",
+      "showPassword": "Parolayı göster",
+      "hidePassword": "Parolayı gizle"
     },
     "failures": {
       "unexpectedTitle": "Bir şeyler ters gitti",

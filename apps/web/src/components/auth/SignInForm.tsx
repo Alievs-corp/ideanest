@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from '../../i18n/navigation';
 import { useSearchParams } from 'next/navigation';
-import { Field, InlineAlert, Pill, TextInput } from '@ideanest/ui';
+import { Field, InlineAlert, PasswordInput, Pill, TextInput } from '@ideanest/ui';
 import { deviceLabelOf, signIn } from '../../lib/auth/api';
 import { PASSWORD_CHANGED_NOTICE, SIGN_IN_NOTICE_PARAM } from '../../lib/auth/credentials';
 import { describeAuthFailure, fieldErrorsOf, type AuthFailure } from '../../lib/auth/failures';
@@ -191,10 +191,11 @@ export function SignInForm({ copy }: SignInFormProps) {
       </Field>
 
       <Field label={copy.fields.password} required error={fieldErrors['password']}>
-        <TextInput
-          type="password"
+        <PasswordInput
           name="password"
           autoComplete="current-password"
+          showLabel={copy.fields.showPassword}
+          hideLabel={copy.fields.hidePassword}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />

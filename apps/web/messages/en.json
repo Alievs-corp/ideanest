@@ -2306,7 +2306,9 @@
       "email": "Email address",
       "emailPlaceholder": "you@example.com",
       "password": "Password",
-      "passwordHint": "Long is stronger than complicated. The exact requirement comes from the service if this one is refused."
+      "passwordHint": "Long is stronger than complicated. The exact requirement comes from the service if this one is refused.",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
     },
     "failures": {
       "unexpectedTitle": "Something went wrong",
