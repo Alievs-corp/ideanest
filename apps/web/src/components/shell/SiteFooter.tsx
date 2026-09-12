@@ -36,7 +36,9 @@ import { LanguageSwitcher } from './LanguageSwitcher';
  * render time: it is four links from this address to the same page under another prefix, and
  * each of those is a cached render of its own. `src/i18n/request.ts` states the consequence
  * outright — "there is no longer a performance argument for leaving any surface in English".
- * `LanguageSwitcher` is the only client boundary in this footer and carries the rest.
+ * `LanguageSwitcher` is the only client boundary in this footer and carries the rest. It is
+ * a globe with the four names behind it since it became an icon, and the header carries the
+ * same control — a reader who landed in the wrong language looks up, not down.
  *
  * Until that control existed the four languages were reachable only from
  * `/settings/language`, which is the account area: a signed-out visitor could change the
@@ -74,7 +76,14 @@ export async function SiteFooter() {
 
   return (
     <footer className="mt-24 border-t border-white/6 bg-surface-1">
-      <div className="mx-auto w-full max-w-[1400px] px-5 py-14 sm:px-6">
+      {/*
+          THE BOTTOM PADDING CLEARS THE FLOATING WHATSAPP CONTROL. That button is fixed to the
+          bottom-right corner of the viewport, so at the very end of a page it sits over
+          whatever this row ends with — which is the currency statement. Padding here rather
+          than a rule in the launcher: the footer is the one surface that is guaranteed to be
+          under it, and a control that moved out of the way would move on every page.
+        */}
+        <div className="mx-auto w-full max-w-[1400px] px-5 pt-14 pb-24 sm:px-6">
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
           {/*
             The platform's own statement of what it is (WS-02). It says the funding model,
@@ -118,18 +127,26 @@ export async function SiteFooter() {
           */}
           <p>© IdeaNest</p>
 
-          <dl className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            {/*
+              THE LANGUAGE IS A CONTROL AND THE CURRENCY IS A STATEMENT, so the two stopped
+              being one `dl` when the language became an icon: a `dt`/`dd` pair describes a
+              value, and a button that opens a list of four languages is not one. The
+              currency keeps the pair, because it is still a term and its value.
+            */}
             <div className="flex items-center gap-2">
-              <dt>{copy.languageHeading}</dt>
-              <dd>
-                <LanguageSwitcher label={copy.languageSwitcherLabel} />
-              </dd>
+              <span>{copy.languageHeading}</span>
+              <LanguageSwitcher
+                label={copy.languageSwitcherLabel}
+                placement="up"
+                appearance="quiet"
+              />
             </div>
-            <div className="flex items-center gap-2">
+            <dl className="flex items-center gap-2">
               <dt>{copy.currencyHeading}</dt>
               <dd className="text-white/64">{copy.currencyValue}</dd>
-            </div>
-          </dl>
+            </dl>
+          </div>
         </div>
       </div>
     </footer>

@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Link } from '../../i18n/navigation';
-import { usePathname } from '../../i18n/navigation';
+import { useLocale, usePathname } from '../../i18n/navigation';
 import { Menu, X } from 'lucide-react';
 import { cn, useDismiss, useFocusTrap, useScrollLock } from '@ideanest/ui';
 import { useSession } from '../session/SessionProvider';
+import { LanguageLinks } from './LanguageSwitcher';
 import { SearchField } from '../search/SearchField';
 import { isCurrent } from './navigation';
 import type { ShellCopy } from '../../lib/i18n/shell-copy';
@@ -52,6 +53,8 @@ export interface MobileNavDrawerProps {
 
 export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
   const pathname = usePathname();
+  const locale = useLocale();
+  const languageHeadingId = useId();
   const { status, session, signOut } = useSession();
 
   const [open, setOpen] = useState(false);
@@ -228,6 +231,22 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
                     </Link>
                   </div>
                 )}
+              </div>
+
+              {/*
+                THE LANGUAGE, FLAT. The header's globe is `hidden sm:block` because the action
+                row at 390px cannot hold it, so below that width this is the way out of a
+                language somebody cannot read — and the footer, which is a scroll away.
+                A disclosure inside the drawer would be a panel inside a panel; the drawer is
+                already a list of links, so these are four more.
+              */}
+              <div className="mt-4 border-t border-white/6 pt-4">
+                <p id={languageHeadingId} className="px-3 pb-1 text-xs text-white/40">
+                  {copy.language.label}
+                </p>
+                <div aria-labelledby={languageHeadingId} role="group">
+                  <LanguageLinks current={locale} path={pathname} onChosen={close} />
+                </div>
               </div>
             </nav>
           </div>

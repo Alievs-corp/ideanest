@@ -62,10 +62,12 @@
       "startCampaign": "Kampanya başlat",
       "console": "Yönetim konsolu"
     },
+    "language": {
+      "label": "Bir dil seçin"
+    },
     "footer": {
       "label": "Alt bilgi",
       "languageHeading": "Dil",
-      "languageSwitcherLabel": "Bir dil seçin",
       "currencyHeading": "Para birimi",
       "currencyValue": "Azerbaycan manatı (AZN)",
       "groups": {

@@ -62,10 +62,12 @@
       "startCampaign": "Kampaniya başladın",
       "console": "İdarəetmə konsolu"
     },
+    "language": {
+      "label": "Dil seçin"
+    },
     "footer": {
       "label": "Altlıq",
       "languageHeading": "Dil",
-      "languageSwitcherLabel": "Dil seçin",
       "currencyHeading": "Valyuta",
       "currencyValue": "Azərbaycan manatı (AZN)",
       "groups": {

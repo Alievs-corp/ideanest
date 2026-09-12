@@ -2,7 +2,7 @@ import az from '../../../messages/az.json';
 import en from '../../../messages/en.json';
 import ru from '../../../messages/ru.json';
 import tr from '../../../messages/tr.json';
-import { type Locale } from '../../lib/i18n/locale';
+import { SUPPORTED_LOCALES, type Locale } from '../../lib/i18n/locale';
 import { type ShellCopy, shellCopyFrom } from '../../lib/i18n/shell-copy';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
@@ -215,6 +215,44 @@ describe('the current section', () => {
     const nav = screen.getByRole('link', { name: 'Categories' });
     expect(nav).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Discover' })).not.toHaveAttribute('aria-current');
+  });
+});
+
+describe('the language control', () => {
+  /**
+   * It is in the header as well as the footer now, and that is the point of it: somebody who
+   * landed in a language they cannot read does not scroll to the bottom of the page looking
+   * for a way out. Before this the footer was the only route out that did not need an
+   * account — `/settings/language` is behind a sign-in.
+   */
+  it.each(SUPPORTED_LOCALES)('is offered to every visitor, in %s', async (at) => {
+    const { unmount } = renderHeader(at);
+    const label = CATALOGUES[at].shell.language.label;
+
+    /* Icon-only, so the name is what makes it reachable at all (§9.2). */
+    const control = screen.getByRole('button', { name: label });
+    expect(control).toHaveAttribute('aria-expanded', 'false');
+
+    await userEvent.click(control);
+
+    const panel = screen.getByRole('navigation', { name: label });
+    for (const [name, tag] of [
+      ['Azərbaycan dili', 'az'],
+      ['English', 'en'],
+      ['Русский', 'ru'],
+      ['Türkçe', 'tr'],
+    ] as const) {
+      expect(within(panel).getByRole('link', { name })).toHaveAttribute('lang', tag);
+    }
+
+    unmount();
+  });
+
+  it('is drawn before the session is known, so the row does not reflow around it', () => {
+    renderHeader();
+
+    /* The signed-out pair is still unknown at this point — see the placeholder above. */
+    expect(screen.getByRole('button', { name: en.shell.language.label })).toBeInTheDocument();
   });
 });
 
