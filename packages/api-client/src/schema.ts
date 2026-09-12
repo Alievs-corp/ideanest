@@ -1156,6 +1156,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/subscription/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["subscriptionRevenuePayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/subscription/payments/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["subscriptionRevenueExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/subscription/revenue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["subscriptionRevenueReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/subscriptions": {
         parameters: {
             query?: never;
@@ -6120,6 +6168,86 @@ export interface components {
             /** Format: uuid */
             planId: string;
         };
+        SubscriptionPaymentEntry: {
+            accountEmail?: string;
+            /** Format: uuid */
+            accountId?: string;
+            accountName?: string;
+            amount?: string;
+            /** @enum {string} */
+            billingPeriod?: "MONTHLY" | "YEARLY";
+            currency?: string;
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            method?: "BANK_TRANSFER" | "CARD" | "CASH" | "OTHER";
+            note?: string;
+            planCode?: string;
+            /** Format: uuid */
+            planId?: string;
+            planName?: string;
+            /** Format: date-time */
+            receivedAt?: string;
+            /** Format: date-time */
+            recordedAt?: string;
+            /** Format: uuid */
+            recordedBy?: string;
+            reference?: string;
+            reversal?: boolean;
+            /** Format: uuid */
+            reverses?: string;
+            /** Format: uuid */
+            subscriptionId?: string;
+        };
+        SubscriptionPaymentList: {
+            nextCursor?: string;
+            payments?: components["schemas"]["SubscriptionPaymentEntry"][];
+        };
+        SubscriptionRevenueCurrencyTotal: {
+            currency?: string;
+            gross?: string;
+            net?: string;
+            /** Format: int64 */
+            payments?: number;
+            /** Format: int64 */
+            reversals?: number;
+            reversed?: string;
+        };
+        SubscriptionRevenueFilter: {
+            /** Format: uuid */
+            accountId?: string;
+            /** @enum {string} */
+            method?: "BANK_TRANSFER" | "CARD" | "CASH" | "OTHER";
+            planCode?: string;
+        };
+        SubscriptionRevenueMethodTotal: {
+            currency?: string;
+            /** Format: int64 */
+            entries?: number;
+            /** @enum {string} */
+            method?: "BANK_TRANSFER" | "CARD" | "CASH" | "OTHER";
+            net?: string;
+        };
+        SubscriptionRevenuePlanTotal: {
+            /** @enum {string} */
+            billingPeriod?: "MONTHLY" | "YEARLY";
+            currency?: string;
+            /** Format: int64 */
+            entries?: number;
+            net?: string;
+            planCode?: string;
+            planName?: string;
+        };
+        SubscriptionRevenueReport: {
+            currencies?: components["schemas"]["SubscriptionRevenueCurrencyTotal"][];
+            filter?: components["schemas"]["SubscriptionRevenueFilter"];
+            /** Format: date-time */
+            from?: string;
+            methods?: components["schemas"]["SubscriptionRevenueMethodTotal"][];
+            plans?: components["schemas"]["SubscriptionRevenuePlanTotal"][];
+            /** Format: date-time */
+            to?: string;
+        };
         SuggestionItem: {
             kind?: string;
             label?: string;
@@ -6734,6 +6862,13 @@ export type SchemaSubcategoryResponse = components['schemas']['SubcategoryRespon
 export type SchemaSubmission = components['schemas']['Submission'];
 export type SchemaSubmissionQueueResponse = components['schemas']['SubmissionQueueResponse'];
 export type SchemaSubscribeRequest = components['schemas']['SubscribeRequest'];
+export type SchemaSubscriptionPaymentEntry = components['schemas']['SubscriptionPaymentEntry'];
+export type SchemaSubscriptionPaymentList = components['schemas']['SubscriptionPaymentList'];
+export type SchemaSubscriptionRevenueCurrencyTotal = components['schemas']['SubscriptionRevenueCurrencyTotal'];
+export type SchemaSubscriptionRevenueFilter = components['schemas']['SubscriptionRevenueFilter'];
+export type SchemaSubscriptionRevenueMethodTotal = components['schemas']['SubscriptionRevenueMethodTotal'];
+export type SchemaSubscriptionRevenuePlanTotal = components['schemas']['SubscriptionRevenuePlanTotal'];
+export type SchemaSubscriptionRevenueReport = components['schemas']['SubscriptionRevenueReport'];
 export type SchemaSuggestionItem = components['schemas']['SuggestionItem'];
 export type SchemaSuggestions = components['schemas']['Suggestions'];
 export type SchemaSummary = components['schemas']['Summary'];
@@ -8723,6 +8858,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Membership"];
+                };
+            };
+        };
+    };
+    subscriptionRevenuePayments: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                planCode?: string;
+                accountId?: string;
+                method?: "BANK_TRANSFER" | "CARD" | "CASH" | "OTHER";
+                after?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionPaymentList"];
+                };
+            };
+        };
+    };
+    subscriptionRevenueExport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                planCode?: string;
+                accountId?: string;
+                method?: "BANK_TRANSFER" | "CARD" | "CASH" | "OTHER";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    subscriptionRevenueReport: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                planCode?: string;
+                accountId?: string;
+                method?: "BANK_TRANSFER" | "CARD" | "CASH" | "OTHER";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionRevenueReport"];
                 };
             };
         };

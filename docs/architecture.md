@@ -2130,6 +2130,25 @@ Three properties of that table are load-bearing:
   makes the backdating visible rather than silent. A future `received_at` is
   refused: it would move a payment into a period nobody reconciles for a year.
 
+**The report reads the journal, and never the catalogue.** AD-11's revenue
+screen asks three `GROUP BY`s of one window — per currency, per plan, per method —
+and a keyset list behind them that the CSV export and the console's per-account
+history also read. Three decisions shape what it shows:
+
+- **Per currency, never summed across.** Each currency row carries `gross`,
+  `reversed` (negative, as stored) and `net`, so `gross + reversed = net` is visible
+  arithmetic rather than a claimed figure. There is no grand total, for §21.2's
+  reason.
+- **A renamed plan is two rows under one code.** Grouping by code alone would need
+  one name chosen for the group, and any choice retitles the other month.
+- **The default window is this month in `Asia/Baku`**, half-open. A UTC month would
+  put the last four hours of the local month into the next one, which is exactly the
+  figure an operator checks against a bank statement. An explicit `from`/`to` is
+  taken as given; a window longer than 400 days is refused rather than clamped.
+
+Opening the report is not audited; exporting it is (`subscription.revenue_exported`),
+because the file is every paying creator's address beside what they paid.
+
 **Not built, deliberately:** proration, mid-period upgrades, automatic renewal,
 invoices as documents, and per-plan fee rates. The first three need a provider
 that can refund a part-month or charge a stored card. A per-plan fee rate would
@@ -3970,6 +3989,10 @@ POST   /v1/admin/subscriptions/{id}/activate  # record that the transfer arrived
                                               # bank transfer received now. There is no amount: what was paid is the price
                                               # snapshotted on the subscription, not a figure the request may disagree with
 POST   /v1/admin/subscriptions/{id}/cancel    # end one outright, with a required reason. Audited
+GET    /v1/admin/subscription/revenue         # #23: totals per currency (gross, reversed, net), per plan and name, per method.
+                                              # ?from=&to= half-open, defaulting to this month in Asia/Baku; ?planCode=&accountId=&method=
+GET    /v1/admin/subscription/payments        # the journal behind those totals, newest by received_at; same filters, ?after= keyset cursor
+GET    /v1/admin/subscription/payments/export # the same list as text/csv, capped, X-Export-Rows / X-Export-Truncated. Audited
 ```
 
 > **Two-factor is four endpoints rather than two.** `2fa/verify` is the second

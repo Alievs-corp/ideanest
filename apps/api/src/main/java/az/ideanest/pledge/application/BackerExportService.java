@@ -5,6 +5,7 @@ import az.ideanest.audit.AuditActor;
 import az.ideanest.audit.AuditLog;
 import az.ideanest.audit.AuditOutcome;
 import az.ideanest.pledge.PledgeProperties;
+import az.ideanest.shared.export.Csv;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -57,13 +58,13 @@ import org.springframework.stereotype.Service;
 public class BackerExportService {
 
     /**
-     * The three bytes that tell Excel the file is UTF-8.
+     * The three bytes that tell Excel the file is UTF-8 — {@link Csv#BYTE_ORDER_MARK}.
      *
-     * <p>Written as an escape rather than as the character itself: a literal byte order
-     * mark inside a string literal is invisible in every editor, and the next person to
-     * touch this line would delete it without seeing it.
+     * <p>Kept as a name here because this file's tests and header refer to it, and
+     * defined there because #23's revenue report needs the same three bytes and the rule
+     * is about CSV rather than about backers.
      */
-    static final String BYTE_ORDER_MARK = "\uFEFF";
+    static final String BYTE_ORDER_MARK = Csv.BYTE_ORDER_MARK;
 
     /**
      * The header row.
@@ -184,18 +185,11 @@ public class BackerExportService {
      * Null becomes an empty cell rather than the four letters {@code null}.
      */
     static String safe(String value) {
-        if (value == null || value.isEmpty()) {
-            return "";
-        }
-        String cell = value;
-        char first = cell.charAt(0);
-        if (first == '=' || first == '+' || first == '-' || first == '@' || first == '\t' || first == '\r') {
-            cell = "'" + cell;
-        }
-        if (cell.indexOf(',') >= 0 || cell.indexOf('"') >= 0 || cell.indexOf('\n') >= 0 || cell.indexOf('\r') >= 0) {
-            return '"' + cell.replace("\"", "\"\"") + '"';
-        }
-        return cell;
+        // Both rules now live in `shared.export.Csv`, because #23's revenue report is the
+        // second file this platform hands somebody and a display name is not the only
+        // string an attacker chooses. This name stays for the call sites below and for
+        // what the class header says about them.
+        return Csv.cell(value);
     }
 
     /**
