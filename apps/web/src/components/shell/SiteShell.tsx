@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { SiteFooter } from './SiteFooter';
 import { SiteHeader } from './SiteHeader';
 import { MAIN_CONTENT_ID, SkipLink } from './SkipLink';
-import { shellCopy } from '../../lib/i18n/shell-copy.server';
+import { WhatsAppLauncher } from './WhatsAppLauncher';
+import { shellCopy, whatsappCopy } from '../../lib/i18n/shell-copy.server';
 
 /**
  * The frame every public page renders inside — §4.13 WS-01, WS-02, WS-09.
@@ -32,11 +33,17 @@ import { shellCopy } from '../../lib/i18n/shell-copy.server';
  *
  * <h2>Motion</h2>
  *
- * The header's collapse, and nothing else — docs/motion-system.md §5 gives the shell a budget
- * of one, and says why it is worth stating: this is on every route in the table below it, so
- * its budget is paid on all of them at once. The footer does not animate. Neither does the
- * transition between pages: §5's own table keeps page transitions to "marketing to app only",
- * and a 300ms overlay between a campaign page and its checkout is pure friction.
+ * The header's collapse — docs/motion-system.md §5 gives the shell a budget of one, and says
+ * why it is worth stating: this is on every route in the table below it, so its budget is paid
+ * on all of them at once. The footer does not animate. Neither does the transition between
+ * pages: §5's own table keeps page transitions to "marketing to app only", and a 300ms overlay
+ * between a campaign page and its checkout is pure friction.
+ *
+ * <p>`WhatsAppLauncher`'s halo is the second animation on this frame, and the budget says one.
+ * That component's docblock states the exception rather than leaving it to be noticed, and
+ * narrows it: the movement stops on the surfaces §5 gives "None" — `/projects/new` and the six
+ * editor tabs — and the checkout never carries this shell at all. Whether the frame keeps a
+ * second animation at all is a design decision, not this component's to make quietly.
  */
 
 export interface SiteShellProps {
@@ -50,7 +57,7 @@ export async function SiteShell({ children }: SiteShellProps) {
    * a `NextIntlClientProvider` above this component would be a provider above every route on
    * the site, and this repository has already measured what that costs.
    */
-  const copy = await shellCopy();
+  const [copy, whatsapp] = await Promise.all([shellCopy(), whatsappCopy()]);
 
   return (
     /*
@@ -66,6 +73,15 @@ export async function SiteShell({ children }: SiteShellProps) {
         {children}
       </main>
       <SiteFooter />
+
+      {/*
+        LAST IN THE DOM, and that is the accessibility decision in it. A floating control put
+        first would be the first thing a screen reader meets on every page of the site and the
+        first tab stop after the skip link, ahead of the navigation and the heading somebody
+        came for. It is `fixed`, so where it sits in the source changes nothing about where it
+        is drawn.
+      */}
+      <WhatsAppLauncher copy={whatsapp} />
     </div>
   );
 }

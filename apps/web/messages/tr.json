@@ -98,6 +98,28 @@
         "categories": "Kategoriler",
         "search": "Arama"
       }
+    },
+    "whatsapp": {
+      "open": "WhatsApp'tan bize yazın",
+      "title": "WhatsApp'tan bize yazın",
+      "intro": "Formu doldurun — WhatsApp mesaj hazır olarak açılır. Gönder tuşuna siz basarsınız, böylece mesaj kendi numaranızdan gelir ve size yanıt verebiliriz.",
+      "fields": {
+        "firstName": "Ad",
+        "lastName": "Soyad",
+        "message": "Mesaj"
+      },
+      "errors": {
+        "firstName": "Adınızı yazın.",
+        "lastName": "Soyadınızı yazın.",
+        "message": "Göndermek istediğiniz mesajı yazın."
+      },
+      "submit": "WhatsApp'tan gönder",
+      "cancel": "Vazgeç",
+      "handoff": {
+        "title": "WhatsApp açıldı",
+        "detail": "Mesajın iletilmesi için WhatsApp'ta Gönder tuşuna basın. Bu sayfadan hiçbir şey gönderilmiyor.",
+        "again": "WhatsApp'ı yeniden açın"
+      }
     }
   },
   "account": {
