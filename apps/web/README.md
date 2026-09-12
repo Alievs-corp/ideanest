@@ -241,6 +241,18 @@ Two things about it are worth knowing before the next change to the shell:
   `Textarea` or `Field` to switch to. A white panel means adding those to the
   kit. `ReportControl` met the same wall and resolved it the same way.
 
+**The language is changed from a globe, in three places.**
+`components/shell/LanguageSwitcher.tsx` is an icon with the four names behind
+it: in the header from `sm` up, in the footer's bottom row at every width, and
+flat inside the mobile drawer below `sm` — measured at 390px the icon pushed the
+register pill and the drawer's own button past the edge of the screen, and §8.6
+spends the shell's one lime element on that pill. It used to be four names
+written out in the footer and nothing in the header at all, which put the only
+account-free way out of a language a reader cannot read at the bottom of the
+page. Each name is its own endonym, each link goes to the same page under
+another prefix, and choosing one writes the cookie `proxy.ts` reads when it
+answers a bare path.
+
 **Every route is served under a `[locale]` segment (#123).** `/az/discover`, `/ru/discover`
 and so on; `proxy.ts` answers a bare path with a 307 to the language the reader last
 chose. `src/i18n/routing.ts` declares the shape, `src/i18n/request.ts` resolves the catalogue

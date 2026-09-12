@@ -6,6 +6,7 @@ import { Bell } from 'lucide-react';
 import { TopBar, cn } from '@ideanest/ui';
 import { useSession } from '../session/SessionProvider';
 import { AccountMenu } from './AccountMenu';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { SearchField } from '../search/SearchField';
 import { MobileNavDrawer } from './MobileNavDrawer';
 import { isCurrent } from './navigation';
@@ -119,6 +120,22 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
       actions={
         <>
           <SearchField className="hidden lg:block" />
+
+          {/*
+            THE LANGUAGE CONTROL IS HERE AND NOT ONLY IN THE FOOTER. Somebody who landed in a
+            language they cannot read does not scroll to the bottom of a page to look for a
+            way out of it — and until this, the footer was the only way out that did not need
+            an account. It is drawn for every visitor, signed in or not, and before the pair
+            that changes with the session so that its position does not move when the
+            bootstrap answers.
+
+            NOT BELOW `sm`. Measured at 390px the globe pushed the register pill past the
+            edge and took the drawer's own button with it, and the row has no slack to give:
+            §8.6 spends the shell's one lime element on that pill. The drawer carries the
+            four languages flat at those widths, which is where a phone's navigation already
+            is.
+          */}
+          <LanguageSwitcher label={copy.language.label} className="hidden sm:block" />
 
           {status === 'signed-in' && session !== null && (
             <>

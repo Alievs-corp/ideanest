@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import az from '../../../messages/az.json';
 import en from '../../../messages/en.json';
 import ru from '../../../messages/ru.json';
@@ -155,14 +156,24 @@ describe('the footer', () => {
 
   it.each(SUPPORTED_LOCALES)('names the language being read, in itself (%s)', async (at) => {
     /*
-     * Not "Russian" but "Русский". A reader scanning the bottom of the page for their own
-     * language recognises the endonym; the English name is a word they may not read. It also
-     * has to follow the route rather than a build-time constant, which is what the line was
-     * before #123.
+     * Not "Russian" but "Русский". A reader looking for their own language recognises the
+     * endonym; the English name is a word they may not read. It also has to follow the route
+     * rather than a build-time constant, which is what the line was before #123.
+     *
+     * BEHIND THE CONTROL RATHER THAN BESIDE IT since the switcher became an icon. The name is
+     * still drawn from the route, and it is still the current one that is marked — what
+     * changed is that a reader opens a globe to see it rather than reading four names at the
+     * bottom of every page.
      */
     const { unmount } = await renderFooter(at);
+    const catalogue = CATALOGUES[at];
 
-    expect(screen.getByText(NAMES[at])).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: catalogue.shell.language.label }));
+
+    expect(screen.getByRole('link', { name: NAMES[at] })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
 
     unmount();
   });
@@ -175,10 +186,11 @@ describe('the footer', () => {
      */
     const { unmount } = await renderFooter(at);
     const catalogue = CATALOGUES[at];
+    const label = catalogue.shell.language.label;
 
-    const group = screen.getByRole('navigation', {
-      name: catalogue.shell.footer.languageSwitcherLabel,
-    });
+    /* Icon-only, so the name is the assertion as much as the reach is (§9.2). */
+    await userEvent.click(screen.getByRole('button', { name: label }));
+    const group = screen.getByRole('navigation', { name: label });
 
     for (const target of SUPPORTED_LOCALES) {
       expect(
@@ -193,9 +205,17 @@ describe('the footer', () => {
   it('states the currency rather than offering a control', async () => {
     await renderFooter();
 
-    expect(screen.getByText(en.shell.footer.currencyValue)).toBeInTheDocument();
-    expect(screen.queryByRole('combobox')).toBeNull();
-    expect(screen.queryByRole('button')).toBeNull();
+    /*
+     * Scoped to the currency's own pair. The footer does carry a button now — the language
+     * globe — and an assertion that there is no button anywhere would be asserting that the
+     * language is not a control either, which is the opposite of what #123 built.
+     */
+    const value = screen.getByText(en.shell.footer.currencyValue);
+    const pair = value.closest('dl');
+    expect(pair).not.toBeNull();
+    expect(within(pair as HTMLElement).queryByRole('combobox')).toBeNull();
+    expect(within(pair as HTMLElement).queryByRole('button')).toBeNull();
+    expect(within(pair as HTMLElement).queryByRole('link')).toBeNull();
   });
 
   it('offers no legal links, because the documents do not exist', async () => {

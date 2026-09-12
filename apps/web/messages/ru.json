@@ -62,10 +62,12 @@
       "startCampaign": "Создать кампанию",
       "console": "Консоль администрирования"
     },
+    "language": {
+      "label": "Выберите язык"
+    },
     "footer": {
       "label": "Нижний колонтитул",
       "languageHeading": "Язык",
-      "languageSwitcherLabel": "Выберите язык",
       "currencyHeading": "Валюта",
       "currencyValue": "Азербайджанский манат (AZN)",
       "groups": {

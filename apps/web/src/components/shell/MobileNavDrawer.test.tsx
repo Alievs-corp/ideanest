@@ -32,6 +32,8 @@ const CATALOGUES: Record<Locale, typeof en> = { az, en, ru, tr };
  */
 
 let pathname = '/discover';
+/** The route's own `[locale]` segment, which the language links read. */
+let locale: Locale = 'en';
 
 vi.mock('next/navigation', async (importOriginal) => ({
   /*
@@ -43,6 +45,7 @@ vi.mock('next/navigation', async (importOriginal) => ({
    */
   ...(await importOriginal<typeof import('next/navigation')>()),
   usePathname: () => pathname,
+  useParams: () => ({ locale }),
   useRouter: () => ({
     push: () => {},
     replace: () => {},
@@ -67,6 +70,7 @@ const ACCOUNT = {
 };
 
 function renderDrawer(at: Locale = 'en') {
+  locale = at;
   return render(
     <SessionProvider>
       <MobileNavDrawer copy={copyFor(at)} />
@@ -96,6 +100,7 @@ const open = () => screen.getByRole('button', { name: 'Open navigation' });
 
 beforeEach(() => {
   pathname = '/discover';
+  locale = 'en';
   sessionMock.mockReset();
   sessionMock.mockResolvedValue(null);
 });
@@ -212,6 +217,37 @@ describe('the actions inside it', () => {
     expect(within(dialog).getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
     expect(within(dialog).queryByRole('link', { name: 'Register' })).toBeNull();
     expect(dialog.querySelectorAll('[data-on-lime]')).toHaveLength(0);
+  });
+});
+
+describe('the language', () => {
+  /**
+   * The header's globe is `hidden sm:block` — measured at 390px it pushed the register pill
+   * and this drawer's own button off the edge — so below that width these four links are the
+   * way out of a language somebody cannot read, short of scrolling to the footer.
+   */
+  it('offers all four, each named in itself, and keeps the page being read', async () => {
+    pathname = '/projects/42/blueprint';
+    const user = userEvent.setup();
+    renderDrawer('ru');
+
+    await user.click(screen.getByRole('button', { name: ru.shell.drawer.open }));
+
+    for (const [name, tag] of [
+      ['Azərbaycan dili', 'az'],
+      ['English', 'en'],
+      ['Русский', 'ru'],
+      ['Türkçe', 'tr'],
+    ] as const) {
+      const link = screen.getByRole('link', { name });
+      expect(link).toHaveAttribute('lang', tag);
+      expect(link).toHaveAttribute('href', `/${tag}/projects/42/blueprint`);
+    }
+
+    expect(screen.getByRole('link', { name: 'Русский' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 });
 

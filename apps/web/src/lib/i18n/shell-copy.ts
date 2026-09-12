@@ -44,6 +44,15 @@ export interface ShellCopy {
     readonly close: string;
     readonly label: string;
   };
+  /**
+   * The language control, which is in the header as well as the footer since it became an
+   * icon. One key read by both, rather than one string spelled twice: the two are the same
+   * control, and a reader who meets it in both places should not be told two different
+   * things about it.
+   */
+  readonly language: {
+    readonly label: string;
+  };
   readonly actions: {
     readonly signIn: string;
     readonly register: string;
@@ -136,7 +145,7 @@ export interface FooterCopy {
   readonly label: string;
   readonly tagline: string;
   readonly languageHeading: string;
-  /** Names the language links for assistive technology; the visible heading is separate. */
+  /** Names the language control for assistive technology; it is icon-only (§9.2). */
   readonly languageSwitcherLabel: string;
   readonly currencyHeading: string;
   readonly currencyValue: string;
@@ -174,6 +183,7 @@ export function shellCopyFrom(t: ShellTranslator): ShellCopy {
       close: t('drawer.close'),
       label: t('drawer.label'),
     },
+    language: { label: t('language.label') },
     actions: {
       signIn: t('actions.signIn'),
       register: t('actions.register'),
@@ -194,7 +204,7 @@ export function footerCopyFrom(t: ShellTranslator): FooterCopy {
     label: t('footer.label'),
     tagline: t('tagline'),
     languageHeading: t('footer.languageHeading'),
-    languageSwitcherLabel: t('footer.languageSwitcherLabel'),
+    languageSwitcherLabel: t('language.label'),
     currencyHeading: t('footer.currencyHeading'),
     currencyValue: t('footer.currencyValue'),
     groups: FOOTER_GROUPS.map((group) => ({
