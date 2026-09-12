@@ -4,6 +4,8 @@ import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
 import az.ideanest.subscription.application.AlreadySubscribedException;
+import az.ideanest.subscription.application.InvalidPaymentCursorException;
+import az.ideanest.subscription.application.InvalidRevenuePeriodException;
 import az.ideanest.subscription.application.NoSubscriptionException;
 import az.ideanest.subscription.application.PaymentNotYetReceivedException;
 import az.ideanest.subscription.application.PlanCodeTakenException;
@@ -31,7 +33,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * console branch on it — a client parsing a human sentence to decide what to draw is a
  * client that breaks when the sentence is translated, and §21.1 has four languages.
  */
-@RestControllerAdvice(assignableTypes = {SubscriptionController.class, AdminSubscriptionController.class})
+@RestControllerAdvice(
+        assignableTypes = {
+            SubscriptionController.class,
+            AdminSubscriptionController.class,
+            SubscriptionRevenueController.class
+        })
 public class SubscriptionExceptionHandler {
 
     @ExceptionHandler(NotAModeratorException.class)
@@ -144,6 +151,41 @@ public class SubscriptionExceptionHandler {
         problem.setTitle("That date has not happened yet");
         problem.setDetail("A payment cannot be recorded as arriving in the future. Check the date.");
         problem.setProperty("code", "PAYMENT_NOT_YET_RECEIVED");
+        return problem;
+    }
+
+    /**
+     * 400: a revenue period the report will not answer for.
+     *
+     * <p>Ends the wrong way round, or longer than {@code RevenuePeriod.MAX_DAYS}. Its own
+     * code rather than {@code INVALID_PLAN}, because the console shows it beside a date
+     * picker — and refused rather than clamped, because a total for a window nobody asked
+     * about is a number somebody will act on anyway.
+     */
+    @ExceptionHandler(InvalidRevenuePeriodException.class)
+    public ProblemDetail handleInvalidPeriod(InvalidRevenuePeriodException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/invalid-revenue-period"));
+        problem.setTitle("That period cannot be reported on");
+        problem.setDetail(exception.getMessage());
+        problem.setProperty("code", "INVALID_REVENUE_PERIOD");
+        return problem;
+    }
+
+    /**
+     * 400: a page cursor this endpoint did not issue.
+     *
+     * <p>Not the first page again. A client paging wrongly that was quietly handed the top
+     * of the list would look like one that had reached the end, and on a revenue list that
+     * is a page counted twice.
+     */
+    @ExceptionHandler(InvalidPaymentCursorException.class)
+    public ProblemDetail handleInvalidCursor(InvalidPaymentCursorException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/invalid-cursor"));
+        problem.setTitle("That page is not available");
+        problem.setDetail("The list changed or the link is not one this page issued. Start from the first page.");
+        problem.setProperty("code", "INVALID_CURSOR");
         return problem;
     }
 

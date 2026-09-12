@@ -535,6 +535,22 @@ public enum AuditAction {
     SUBSCRIPTION_CANCELED("subscription.canceled", "subscription"),
 
     /**
+     * Somebody exported the subscription revenue report.
+     *
+     * <p>Privileged despite changing nothing, for {@link #ACCOUNT_EXPORTED}'s and
+     * {@link #PROJECT_BACKERS_EXPORTED}'s reason: the file leaves the platform, and what
+     * left it and when is the only thing anybody can answer afterwards. This one carries
+     * every paying creator's address and what they were charged, which is the whole
+     * subscriber list in one attachment.
+     *
+     * <p>The entity is the member of staff who took it — there is no revenue object to
+     * name, and the actor twice over is better than an invented identifier. The detail
+     * carries the period, the filter and the row count, and never a row: §17.4 keeps
+     * personal data out of the one table with no retention rule.
+     */
+    SUBSCRIPTION_REVENUE_EXPORTED("subscription.revenue_exported", "user"),
+
+    /**
      * A version of one of §22.2's legal documents was published.
      *
      * <p><strong>The most far-reaching thing anybody does from the console.</strong>
