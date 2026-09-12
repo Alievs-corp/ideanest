@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { STORY_COPY } from '../../test-editor-copy';
 import {
-  IMAGE_ALT_REQUIRED,
   blockProblem,
   describeBlock,
   headingAnchors,
@@ -349,13 +349,13 @@ describe('editing the block list', () => {
 describe('blockProblem', () => {
   it('refuses an image with no description', () => {
     expect(
-      blockProblem({ type: 'image', url: 'https://a.example/b.jpg', width: 4, height: 3, alt: '  ' }),
-    ).toBe(IMAGE_ALT_REQUIRED);
+      blockProblem({ type: 'image', url: 'https://a.example/b.jpg', width: 4, height: 3, alt: '  ' }, STORY_COPY.vocabulary),
+    ).toBe(STORY_COPY.vocabulary.problems.imageNeedsAlt);
   });
 
   it('refuses an unmeasured image', () => {
     expect(
-      blockProblem({ type: 'image', url: 'https://a.example/b.jpg', width: 0, height: 0, alt: 'A' }),
+      blockProblem({ type: 'image', url: 'https://a.example/b.jpg', width: 0, height: 0, alt: 'A' }, STORY_COPY.vocabulary),
     ).toContain('measured');
   });
 
@@ -364,23 +364,23 @@ describe('blockProblem', () => {
     // executed by whichever renderer interpolates it. The server refuses it too;
     // this is so the creator is told at the field rather than by a 400.
     expect(
-      blockProblem({ type: 'image', url: 'javascript:alert(1)', width: 4, height: 3, alt: 'A' }),
+      blockProblem({ type: 'image', url: 'javascript:alert(1)', width: 4, height: 3, alt: 'A' }, STORY_COPY.vocabulary),
     ).toContain('http://');
   });
 
   it('refuses an embed with no title', () => {
     expect(
-      blockProblem({ type: 'embed', provider: 'vimeo', url: 'https://v.example/1', title: '' }),
+      blockProblem({ type: 'embed', provider: 'vimeo', url: 'https://v.example/1', title: '' }, STORY_COPY.vocabulary),
     ).toContain('screen reader');
   });
 
   it('accepts an empty paragraph', () => {
     // Only what is WRONG, not what is missing. A creator has just added it.
-    expect(blockProblem({ type: 'paragraph', spans: [] })).toBeNull();
+    expect(blockProblem({ type: 'paragraph', spans: [] }, STORY_COPY.vocabulary)).toBeNull();
   });
 
   it('refuses a heading with no text', () => {
-    expect(blockProblem({ type: 'heading', level: 2, id: 'a', text: ' ' })).toContain('text');
+    expect(blockProblem({ type: 'heading', level: 2, id: 'a', text: ' ' }, STORY_COPY.vocabulary)).toContain('text');
   });
 });
 
@@ -391,6 +391,7 @@ describe('storyProblems', () => {
         { type: 'heading', level: 2, id: 'the-plan', text: 'The plan' },
         { type: 'heading', level: 3, id: 'the-plan', text: 'Again' },
       ]),
+      STORY_COPY.vocabulary,
     );
 
     expect(problems.get(0)).toBeUndefined();
@@ -400,7 +401,7 @@ describe('storyProblems', () => {
   it('finds an empty document saveable', () => {
     // The state the editor is in when a creator opens the tab. Refusing it would
     // make the first autosave fail.
-    expect(isSaveable(document([]))).toBe(true);
+    expect(isSaveable(document([]), STORY_COPY.vocabulary)).toBe(true);
   });
 });
 
@@ -450,19 +451,19 @@ describe('describeBlock', () => {
   it('names the kind, the position, and enough contents to tell blocks apart', () => {
     // "Move up" eleven times in a row is a screen reader reading out eleven
     // identical buttons. The position is what makes them distinguishable.
-    expect(describeBlock({ type: 'heading', level: 2, id: 'a', text: 'The plan' }, 0, 3)).toBe(
+    expect(describeBlock({ type: 'heading', level: 2, id: 'a', text: 'The plan' }, 0, 3, STORY_COPY.vocabulary)).toBe(
       'Heading 1 of 3: The plan',
     );
-    expect(describeBlock({ type: 'rule' }, 2, 3)).toBe('Divider 3 of 3');
+    expect(describeBlock({ type: 'rule' }, 2, 3, STORY_COPY.vocabulary)).toBe('Divider 3 of 3');
     expect(
-      describeBlock({ type: 'list', ordered: true, items: [[], []] }, 1, 3),
+      describeBlock({ type: 'list', ordered: true, items: [[], []] }, 1, 3, STORY_COPY.vocabulary),
     ).toBe('Numbered list 2 of 3, 2 items');
     expect(
-      describeBlock({ type: 'image', url: 'https://a/b', width: 4, height: 3, alt: '' }, 0, 1),
+      describeBlock({ type: 'image', url: 'https://a/b', width: 4, height: 3, alt: '' }, 0, 1, STORY_COPY.vocabulary),
     ).toContain('no description yet');
   });
 
   it('says "empty" rather than nothing for a block with no contents', () => {
-    expect(describeBlock({ type: 'paragraph', spans: [] }, 0, 1)).toBe('Paragraph 1 of 1: empty');
+    expect(describeBlock({ type: 'paragraph', spans: [] }, 0, 1, STORY_COPY.vocabulary)).toBe('Paragraph 1 of 1: empty');
   });
 });
