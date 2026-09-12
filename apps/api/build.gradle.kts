@@ -88,7 +88,7 @@ dependencies {
     // browsable version belongs wherever the documentation is hosted, not in the
     // deployed jar. 3.x is the line that supports Spring Boot 4; 2.x targets
     // Spring Framework 6 and does not start here.
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:3.1.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-api:3.1.1")
 
     // #86: the transport behind NotificationChannel.EMAIL. JavaMailSender and
     // its auto-configuration, which in Spring Boot 4 is its own module rather
