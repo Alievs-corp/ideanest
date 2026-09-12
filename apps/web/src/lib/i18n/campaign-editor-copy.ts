@@ -878,3 +878,140 @@ export function rewardsVocabularyCopyFrom(
     },
   };
 }
+
+/* -------------------------------------------------------------------------
+ * FAQ — §4.5's fourth tab
+ * ---------------------------------------------------------------------- */
+
+/** `FaqEntryEditor` — the drawer one question is written in. */
+export interface FaqEntryCopy {
+  readonly characterCount: CharacterCountCopy;
+  readonly locale: Locale;
+  readonly addTitle: string;
+  readonly editTitle: string;
+  readonly notSavedTitle: string;
+  readonly notSavedDetail: string;
+  readonly description: string;
+  readonly question: string;
+  /** Carries `{max}`. */
+  readonly questionHint: string;
+  readonly answer: string;
+  /** Carries `{max}`. */
+  readonly answerHint: string;
+}
+
+/**
+ * How a refused reorder is put into words.
+ *
+ * `FAQ_ORDER_INCOMPLETE` names identifiers, which a creator can act on only once they are
+ * turned back into the questions they belong to. The sentence is therefore assembled from
+ * three pieces and a joined list — and assembling a list in code is what put an English
+ * "and", and an English plural, in this file to begin with.
+ */
+export interface FaqOrderCopy {
+  /** Carries `{detail}`. */
+  readonly refusal: string;
+  /** Carries `{items}`. */
+  readonly missing: string;
+  /** Carries `{items}`. */
+  readonly unexpected: string;
+  readonly disagreed: string;
+  /** Carries `{question}`. */
+  readonly quoted: string;
+  /** Carries `{head}` and `{last}`. The conjunction is not "and" in every language. */
+  readonly joinAnd: string;
+  /** One form per category. Carries `{count}` — entries this page cannot name. */
+  readonly otherQuestions: AppPluralForms;
+}
+
+/** The FAQ tab. */
+export interface FaqPanelCopy {
+  readonly atLimitTitle: string;
+  readonly failedTitle: string;
+  readonly questionsFailedTitle: string;
+  readonly emptyTitle: string;
+  readonly loadingLabel: string;
+  readonly listLabel: string;
+  readonly description: string;
+  readonly add: string;
+  readonly addFirst: string;
+  readonly keepIt: string;
+  readonly delete: string;
+  readonly edit: string;
+  readonly deleteTitle: string;
+  /** Carries `{question}`. */
+  readonly deleteNamed: string;
+  readonly cannotBeUndone: string;
+  /** Each carries `{question}`, `{position}` and `{total}`. */
+  readonly moveUpLabel: string;
+  readonly moveDownLabel: string;
+  /** Carries `{question}`. */
+  readonly editLabel: string;
+  /** Carries `{question}`. */
+  readonly deleteLabel: string;
+  /** Carries `{question}`, `{position}` and `{total}`. */
+  readonly movedAnnouncement: string;
+  /** Carries `{question}`. */
+  readonly deletedAnnouncement: string;
+  readonly order: FaqOrderCopy;
+  readonly entry: FaqEntryCopy;
+  readonly characterCount: CharacterCountCopy;
+  readonly locale: Locale;
+}
+
+export function faqPanelCopyFrom(
+  t: CampaignEditorTranslator,
+  locale: Locale,
+  counter: CharacterCountCopy,
+): FaqPanelCopy {
+  const at = (key: string) => t(`faq.${key}`);
+  const tpl = (key: string) => template(t, `faq.${key}`);
+
+  return {
+    atLimitTitle: at('atLimitTitle'),
+    failedTitle: at('failedTitle'),
+    questionsFailedTitle: at('questionsFailedTitle'),
+    emptyTitle: at('emptyTitle'),
+    loadingLabel: at('loadingLabel'),
+    listLabel: at('listLabel'),
+    description: at('description'),
+    add: at('add'),
+    addFirst: at('addFirst'),
+    keepIt: at('keepIt'),
+    delete: at('delete'),
+    edit: at('edit'),
+    deleteTitle: at('deleteTitle'),
+    deleteNamed: tpl('deleteNamed'),
+    cannotBeUndone: at('cannotBeUndone'),
+    moveUpLabel: tpl('moveUpLabel'),
+    moveDownLabel: tpl('moveDownLabel'),
+    editLabel: tpl('editLabel'),
+    deleteLabel: tpl('deleteLabel'),
+    movedAnnouncement: tpl('movedAnnouncement'),
+    deletedAnnouncement: tpl('deletedAnnouncement'),
+    order: {
+      refusal: tpl('order.refusal'),
+      missing: tpl('order.missing'),
+      unexpected: tpl('order.unexpected'),
+      disagreed: at('order.disagreed'),
+      quoted: tpl('order.quoted'),
+      joinAnd: tpl('order.joinAnd'),
+      otherQuestions: t.raw('faq.order.otherQuestions') as AppPluralForms,
+    },
+    entry: {
+      characterCount: counter,
+      locale,
+      addTitle: at('entry.addTitle'),
+      editTitle: at('entry.editTitle'),
+      notSavedTitle: at('entry.notSavedTitle'),
+      notSavedDetail: at('entry.notSavedDetail'),
+      description: at('entry.description'),
+      question: at('entry.question'),
+      questionHint: tpl('entry.questionHint'),
+      answer: at('entry.answer'),
+      answerHint: tpl('entry.answerHint'),
+    },
+    characterCount: counter,
+    locale,
+  };
+}

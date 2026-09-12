@@ -3351,6 +3351,54 @@
       "cancel": "Ləğv et",
       "save": "Yadda saxla",
       "saving": "Yadda saxlanılır"
+    },
+    "faq": {
+      "atLimitTitle": "Kampaniya həddə çatıb",
+      "failedTitle": "Alınmadı",
+      "questionsFailedTitle": "Sualları yükləmək olmadı",
+      "emptyTitle": "Hələ sual yoxdur",
+      "loadingLabel": "Kampaniyanın sualları yüklənir",
+      "listLabel": "Suallar, dəstəkçilərin gördüyü sıra ilə",
+      "description": "Kampaniya səhifəsi bu siyahını ayrıca bölmədə göstərir. İçində nəsə olana qədər həmin bölmə dəstəkçiyə kampaniyanın hələ heç nəyə cavab vermədiyini deyir — bu doğrudur və başlamazdan əvvəl dəyişməyə dəyər.",
+      "add": "Sual əlavə et",
+      "addFirst": "İlk sualı əlavə et",
+      "keepIt": "Saxla",
+      "delete": "Sil",
+      "edit": "Dəyiş",
+      "deleteTitle": "Sualı sil",
+      "deleteNamed": "«{question}» silinsin?",
+      "cannotBeUndone": "Bunu geri qaytarmaq olmaz.",
+      "moveUpLabel": "«{question}» yuxarı, hazırda {total} sualdan {position}-ci",
+      "moveDownLabel": "«{question}» aşağı, hazırda {total} sualdan {position}-ci",
+      "editLabel": "«{question}» dəyiş",
+      "deleteLabel": "«{question}» sil",
+      "movedAnnouncement": "«{question}» {total} mövqedən {position}-ci mövqeyə keçirildi.",
+      "deletedAnnouncement": "«{question}» silindi.",
+      "order": {
+        "refusal": "Sıra qəbul edilmədi, çünki {detail}. Siyahı yenidən oxundu və indi kampaniya ilə uyğundur — istədiyiniz sıraya yenidən düzün.",
+        "missing": "bu səhifə {items} görməmişdi",
+        "unexpected": "{items} artıq mövcud deyil",
+        "disagreed": "iki siyahı uyğun gəlmədi",
+        "quoted": "«{question}»",
+        "joinAnd": "{head} və {last}",
+        "otherQuestions": {
+          "one": "daha {count} sual",
+          "few": "daha {count} sual",
+          "many": "daha {count} sual",
+          "other": "daha {count} sual"
+        }
+      },
+      "entry": {
+        "addTitle": "Sual əlavə et",
+        "editTitle": "Sualı dəyiş",
+        "notSavedTitle": "Bu sual yadda saxlanılmadı",
+        "notSavedDetail": "Yazdığınız heç nə itmədi — mətn aşağıdakı sahələrdə qalır.",
+        "description": "Suallar və cavablar kampaniya səhifəsində sizin düzdüyünüz sıra ilə görünür.",
+        "question": "Sual",
+        "questionHint": "Dəstəkçinin soruşacağı kimi. Ən çox {max} simvol.",
+        "answer": "Cavab",
+        "answerHint": "Adi mətn. Boş sətirlər kampaniya səhifəsində abzasa çevrilir, başqa formatlama yoxdur. Ən çox {max} simvol."
+      }
     }
   },
   "profile": {

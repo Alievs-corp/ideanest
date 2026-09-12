@@ -3351,6 +3351,54 @@
       "cancel": "İptal",
       "save": "Kaydet",
       "saving": "Kaydediliyor"
+    },
+    "faq": {
+      "atLimitTitle": "Bu kampanya sınıra ulaştı",
+      "failedTitle": "Bu işe yaramadı",
+      "questionsFailedTitle": "Sorular yüklenemedi",
+      "emptyTitle": "Henüz soru yok",
+      "loadingLabel": "Kampanyanın soruları yükleniyor",
+      "listLabel": "Sorular, destekçilerin gördüğü sırayla",
+      "description": "Kampanya sayfası bu listeyi kendi sekmesinde gösterir. İçinde bir şey olana dek o sekme destekçiye kampanyanın henüz hiçbir şeyi yanıtlamadığını söyler — bu doğrudur ve lansmandan önce değiştirmeye değer.",
+      "add": "Soru ekle",
+      "addFirst": "İlk soruyu ekle",
+      "keepIt": "Kalsın",
+      "delete": "Sil",
+      "edit": "Düzenle",
+      "deleteTitle": "Soruyu sil",
+      "deleteNamed": "«{question}» silinsin mi?",
+      "cannotBeUndone": "Bu geri alınamaz.",
+      "moveUpLabel": "«{question}» yukarı, şu anda {total} sorudan {position}.",
+      "moveDownLabel": "«{question}» aşağı, şu anda {total} sorudan {position}.",
+      "editLabel": "«{question}» düzenle",
+      "deleteLabel": "«{question}» sil",
+      "movedAnnouncement": "«{question}», {total} konumdan {position}. konuma taşındı.",
+      "deletedAnnouncement": "«{question}» silindi.",
+      "order": {
+        "refusal": "Sıra kabul edilmedi, çünkü {detail}. Liste yeniden okundu ve artık kampanyayla eşleşiyor — istediğiniz sıraya yeniden dizin.",
+        "missing": "bu sayfa {items} görmemişti",
+        "unexpected": "{items} artık mevcut değil",
+        "disagreed": "iki liste uyuşmadı",
+        "quoted": "«{question}»",
+        "joinAnd": "{head} ve {last}",
+        "otherQuestions": {
+          "one": "{count} soru daha",
+          "few": "{count} soru daha",
+          "many": "{count} soru daha",
+          "other": "{count} soru daha"
+        }
+      },
+      "entry": {
+        "addTitle": "Soru ekle",
+        "editTitle": "Soruyu düzenle",
+        "notSavedTitle": "Bu soru kaydedilmedi",
+        "notSavedDetail": "Yazdıklarınızdan hiçbiri kaybolmadı — metin aşağıdaki alanlarda duruyor.",
+        "description": "Sorular ve yanıtlar kampanya sayfasında, sizin dizdiğiniz sırayla görünür.",
+        "question": "Soru",
+        "questionHint": "Bir destekçinin soracağı gibi. En fazla {max} karakter.",
+        "answer": "Yanıt",
+        "answerHint": "Düz metin. Boş satırlar kampanya sayfasında paragraf olur, başka biçimlendirme yoktur. En fazla {max} karakter."
+      }
     }
   },
   "profile": {
