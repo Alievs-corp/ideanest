@@ -1422,7 +1422,31 @@
           "REFUNDED": "İade edildi",
           "CHARGEBACK": "Ters ibraz",
           "FULFILLED": "Teslim edildi"
-        }
+        },
+        "subscriptionsHeading": "Abonelikler",
+        "loadingSubscriptions": "Bu hesabın abonelikleri yükleniyor",
+        "subscriptionsFailed": "Bu hesabın abonelikleri okunamadı. Bu sayfadaki diğer her şey doğru.",
+        "noSubscriptionsTitle": "Abonelik yok",
+        "noSubscriptionsBody": "Bu hesap hiç plan seçmedi.",
+        "subscriptionState": {
+          "PENDING_PAYMENT": "Ödeme bekleniyor",
+          "ACTIVE": "Etkin",
+          "CANCELED": "İptal edildi",
+          "EXPIRED": "Süresi doldu"
+        },
+        "subscriptionWindow": "{from} – {to}",
+        "subscriptionChosen": "seçildi: {date}",
+        "notRenewing": "Yenilenmeyecek",
+        "paymentsHeading": "Alınan ödemeler",
+        "noPaymentsBody": "Bu hesapta abonelik için hiçbir ödeme yapılmadı.",
+        "paymentReceived": "geldi: {date}",
+        "paymentMethod": {
+          "BANK_TRANSFER": "Banka havalesi",
+          "CARD": "Kart",
+          "CASH": "Nakit",
+          "OTHER": "Diğer"
+        },
+        "reversal": "İade"
       },
       "support": {
         "subject": "destek kuyruğunu",

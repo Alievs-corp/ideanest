@@ -2,7 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
-import { readUser, readUserPledges, type AdminUser, type AdminUserPledge } from '../../lib/admin/api';
+import {
+  readAccountSubscriptions,
+  readUser,
+  readUserPledges,
+  type AdminAccountSubscriptions,
+  type AdminUser,
+  type AdminUserPledge,
+} from '../../lib/admin/api';
 import { listCampaigns, type DirectoryCampaign } from '../../lib/admin/campaigns';
 import { AccountDetail } from './AccountDetail';
 import { translatorFor } from '../../test-copy';
@@ -21,7 +28,7 @@ const COPY = accountDetailCopyFrom(
 
 vi.mock('../../lib/admin/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/admin/api')>();
-  return { ...actual, readUser: vi.fn(), readUserPledges: vi.fn() };
+  return { ...actual, readUser: vi.fn(), readUserPledges: vi.fn(), readAccountSubscriptions: vi.fn() };
 });
 
 vi.mock('../../lib/admin/campaigns', async (importOriginal) => {
@@ -31,6 +38,7 @@ vi.mock('../../lib/admin/campaigns', async (importOriginal) => {
 
 const readUserMock = vi.mocked(readUser);
 const readUserPledgesMock = vi.mocked(readUserPledges);
+const readAccountSubscriptionsMock = vi.mocked(readAccountSubscriptions);
 const listCampaignsMock = vi.mocked(listCampaigns);
 
 const USER_ID = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -91,6 +99,7 @@ beforeEach(() => {
   readUserMock.mockResolvedValue(ACCOUNT);
   listCampaignsMock.mockResolvedValue({ campaigns: [CAMPAIGN], nextCursor: null });
   readUserPledgesMock.mockResolvedValue({ pledges: [PLEDGE], nextCursor: null });
+  readAccountSubscriptionsMock.mockResolvedValue({ subscriptions: [], payments: [] });
 });
 
 describe('the account detail screen — issue #404', () => {
@@ -238,5 +247,96 @@ describe('the account detail screen — issue #404', () => {
      */
     expect(screen.getByRole('link', { name: COPY.backToDirectory })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /suspend/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('what the account held and paid — #23', () => {
+  const HELD: AdminAccountSubscriptions = {
+    subscriptions: [
+      {
+        id: 'eeeeeeee-0000-4000-8000-000000000001',
+        accountId: USER_ID,
+        state: 'ACTIVE',
+        entitled: true,
+        planCode: 'GROWTH',
+        planName: 'Growth',
+        price: '49.00',
+        currency: 'AZN',
+        billingPeriod: 'MONTHLY',
+        startedAt: '2026-09-01T09:00:00.000Z',
+        currentPeriodEnd: '2026-10-01T09:00:00.000Z',
+        cancelAtPeriodEnd: false,
+        activatedBy: null,
+        note: null,
+        createdAt: '2026-08-30T09:00:00.000Z',
+      },
+    ],
+    payments: [
+      {
+        id: 'ffffffff-0000-4000-8000-000000000001',
+        subscriptionId: 'eeeeeeee-0000-4000-8000-000000000001',
+        accountId: USER_ID,
+        accountEmail: null,
+        accountName: null,
+        planId: 'ffffffff-0000-4000-8000-0000000000aa',
+        planCode: 'GROWTH',
+        planName: 'Growth',
+        billingPeriod: 'MONTHLY',
+        amount: '49.00',
+        currency: 'AZN',
+        method: 'CASH',
+        reference: 'receipt 12',
+        note: null,
+        receivedAt: '2026-09-01T09:00:00.000Z',
+        recordedAt: '2026-09-01T09:00:00.000Z',
+        recordedBy: null,
+        reverses: null,
+        reversal: false,
+      },
+    ],
+  };
+
+  it('shows the plan, its state, its price and the payment behind it', async () => {
+    readAccountSubscriptionsMock.mockResolvedValue(HELD);
+
+    render(<AccountDetail userId={USER_ID} copy={COPY} />);
+    const section = await screen.findByRole('region', { name: COPY.subscriptionsHeading });
+
+    await waitFor(() => expect(within(section).getByText(COPY.subscriptionState.ACTIVE as string)).toBeInTheDocument());
+    expect(within(section).getAllByText('49.00 AZN')).toHaveLength(2);
+    expect(within(section).getByText(COPY.paymentsHeading)).toBeInTheDocument();
+    expect(within(section).getByText(new RegExp(COPY.paymentMethod.CASH as string))).toBeInTheDocument();
+    expect(readAccountSubscriptionsMock).toHaveBeenCalledWith(USER_ID, expect.anything());
+  });
+
+  it('reads an active subscription whose period has run out as expired', async () => {
+    const lapsed = HELD.subscriptions[0]!;
+    readAccountSubscriptionsMock.mockResolvedValue({
+      subscriptions: [{ ...lapsed, entitled: false }],
+      payments: [],
+    });
+
+    render(<AccountDetail userId={USER_ID} copy={COPY} />);
+    const section = await screen.findByRole('region', { name: COPY.subscriptionsHeading });
+
+    // `state` alone would say this person can publish. They cannot.
+    expect(await within(section).findByText(COPY.subscriptionState.EXPIRED as string)).toBeInTheDocument();
+    expect(within(section).queryByText(COPY.subscriptionState.ACTIVE as string)).toBeNull();
+  });
+
+  it('says it could not be read, and leaves the rest of the page alone', async () => {
+    readAccountSubscriptionsMock.mockRejectedValue(new Error('the subscription service is down'));
+
+    render(<AccountDetail userId={USER_ID} copy={COPY} />);
+
+    expect(await screen.findByText(COPY.subscriptionsFailed)).toBeInTheDocument();
+    expect(screen.getByText('Ayan Məmmədova')).toBeInTheDocument();
+    expect(await screen.findByText('Tumar Notebooks')).toBeInTheDocument();
+  });
+
+  it('says in words that the account never chose a plan', async () => {
+    render(<AccountDetail userId={USER_ID} copy={COPY} />);
+
+    expect(await screen.findByText(COPY.noSubscriptionsTitle)).toBeInTheDocument();
   });
 });

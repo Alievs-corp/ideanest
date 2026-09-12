@@ -1422,7 +1422,31 @@
           "REFUNDED": "Geri qaytarılıb",
           "CHARGEBACK": "Geri tələb edilib",
           "FULFILLED": "Yerinə yetirilib"
-        }
+        },
+        "subscriptionsHeading": "Abunəliklər",
+        "loadingSubscriptions": "Bu hesabın abunəlikləri yüklənir",
+        "subscriptionsFailed": "Bu hesabın abunəliklərini oxumaq mümkün olmadı. Səhifədəki qalan məlumat doğrudur.",
+        "noSubscriptionsTitle": "Abunəlik yoxdur",
+        "noSubscriptionsBody": "Bu hesab heç vaxt plan seçməyib.",
+        "subscriptionState": {
+          "PENDING_PAYMENT": "Ödəniş gözlənilir",
+          "ACTIVE": "Aktiv",
+          "CANCELED": "Ləğv edilib",
+          "EXPIRED": "Müddəti bitib"
+        },
+        "subscriptionWindow": "{from} — {to}",
+        "subscriptionChosen": "seçilib: {date}",
+        "notRenewing": "Yenilənməyəcək",
+        "paymentsHeading": "Daxil olan ödənişlər",
+        "noPaymentsBody": "Bu hesabda abunəlik üçün heç nə ödənilməyib.",
+        "paymentReceived": "daxil olub: {date}",
+        "paymentMethod": {
+          "BANK_TRANSFER": "Bank köçürməsi",
+          "CARD": "Kart",
+          "CASH": "Nağd",
+          "OTHER": "Digər"
+        },
+        "reversal": "Geri qaytarma"
       },
       "support": {
         "subject": "dəstək növbəsini",

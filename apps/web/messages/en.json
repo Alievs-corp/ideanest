@@ -1422,7 +1422,31 @@
           "REFUNDED": "Refunded",
           "CHARGEBACK": "Charged back",
           "FULFILLED": "Fulfilled"
-        }
+        },
+        "subscriptionsHeading": "Subscriptions",
+        "loadingSubscriptions": "Loading this account's subscriptions",
+        "subscriptionsFailed": "This account's subscriptions could not be read. Everything else on this page is what it says.",
+        "noSubscriptionsTitle": "No subscription",
+        "noSubscriptionsBody": "This account has never chosen a plan.",
+        "subscriptionState": {
+          "PENDING_PAYMENT": "Awaiting payment",
+          "ACTIVE": "Active",
+          "CANCELED": "Cancelled",
+          "EXPIRED": "Expired"
+        },
+        "subscriptionWindow": "{from} to {to}",
+        "subscriptionChosen": "chosen {date}",
+        "notRenewing": "Will not renew",
+        "paymentsHeading": "Payments received",
+        "noPaymentsBody": "Nothing has been paid for a subscription on this account.",
+        "paymentReceived": "received {date}",
+        "paymentMethod": {
+          "BANK_TRANSFER": "Bank transfer",
+          "CARD": "Card",
+          "CASH": "Cash",
+          "OTHER": "Other"
+        },
+        "reversal": "Reversal"
       },
       "support": {
         "subject": "the support queue",
