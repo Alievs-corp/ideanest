@@ -37,12 +37,17 @@ import { describeFailure, type SaveFailure } from './useAutosave';
  * messages land through the same `fieldErrorsFrom` both editors use, so a
  * refusal reads the same wherever in the editor it happened.
  */
-import type { ItemEditorCopy } from '../../lib/i18n/campaign-editor-copy';
+import type {
+  ItemEditorCopy,
+  ItemValidationCopy,
+} from '../../lib/i18n/campaign-editor-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 export interface ItemEditorProps {
   /** This drawer's words. */
   copy: ItemEditorCopy;
+  /** The vocabulary `validateItem` refuses in. */
+  validation: ItemValidationCopy;
   projectId: string;
   open: boolean;
   /** The item being edited, or null to create one. */
@@ -55,6 +60,7 @@ export interface ItemEditorProps {
 export function ItemEditor({
   projectId,
   copy,
+  validation,
   open,
   item,
   onOpenChange,
@@ -80,7 +86,7 @@ export function ItemEditor({
     setAttempted(false);
   }, [open, item]);
 
-  const errors = validateItem(draft);
+  const errors = validateItem(draft, validation);
   const serverErrors = fieldErrorsFrom(failure, isItemField);
 
   /*

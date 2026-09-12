@@ -3265,7 +3265,84 @@
         "many": "It is part of {tiers}. Take it out of those rewards first, then delete it.",
         "other": "It is part of {tiers}. Take it out of those rewards first, then delete it."
       },
-      "rewardHasBackers": "Hide it instead — the people who chose it keep the description of what they are owed, and it stops being offered to anybody else."
+      "rewardHasBackers": "Hide it instead — the people who chose it keep the description of what they are owed, and it stops being offered to anybody else.",
+      "vocabulary": {
+        "scopes": {
+          "NONE": {
+            "label": "Nothing is delivered",
+            "hint": "A credit, a thank-you, a name on a wall."
+          },
+          "DIGITAL": {
+            "label": "Digital delivery",
+            "hint": "A file or a licence. No address is asked for."
+          },
+          "LOCAL_PICKUP": {
+            "label": "Collected in person",
+            "hint": "No carrier and no rate, but the backer’s country is still asked for."
+          },
+          "DOMESTIC": {
+            "label": "Shipped domestically",
+            "hint": "Inside your own country only. Needs a rate per destination."
+          },
+          "INTERNATIONAL": {
+            "label": "Shipped internationally",
+            "hint": "Anywhere you have priced. A destination with no rate cannot be chosen."
+          }
+        },
+        "item": {
+          "nameRequired": "An item needs a name.",
+          "nameTooLong": "A name is {max} characters or fewer. Remove {over}.",
+          "skuTooLong": "A stock code is {max} characters or fewer.",
+          "weightOnDigital": "A digital item has no shipping weight. Clear the weight, or make it a physical item.",
+          "weightNotWhole": "Enter the weight as a whole number of grams.",
+          "weightNotPositive": "A weight is more than zero grams."
+        },
+        "price": {
+          "empty": "A reward needs a price.",
+          "notANumber": "Enter the price in digits, for example 19.99.",
+          "comma": "Use a full stop for the decimal point, for example 19.99.",
+          "tooManyDecimals": "A price has at most two decimal places.",
+          "tooLarge": "That price is larger than the platform can hold.",
+          "notPositive": "A reward price is more than zero."
+        },
+        "rate": {
+          "empty": "Enter what shipping to this destination costs.",
+          "notANumber": "Enter the rate in digits, for example 12.50.",
+          "comma": "Use a full stop for the decimal point, for example 12.50.",
+          "tooManyDecimals": "A rate has at most two decimal places.",
+          "tooLarge": "That rate is larger than the platform can hold.",
+          "notPositive": "A rate cannot be negative. Enter 0 for free shipping."
+        },
+        "reward": {
+          "titleRequired": "A reward needs a title.",
+          "titleTooLong": "A title is {max} characters or fewer. Remove {over}.",
+          "limitNotWhole": "Enter the number of places as a whole number, or leave it empty for unlimited.",
+          "limitBelowOne": "A limited reward offers at least one place. Clear the limit to make it unlimited.",
+          "limitBelowCommitted": {
+            "one": "That is below the {count} place already taken. A quantity may always be raised, and lowered only above what is claimed.",
+            "few": "That is below the {count} places already taken. A quantity may always be raised, and lowered only above what is claimed.",
+            "many": "That is below the {count} places already taken. A quantity may always be raised, and lowered only above what is claimed.",
+            "other": "That is below the {count} places already taken. A quantity may always be raised, and lowered only above what is claimed."
+          },
+          "secretAndFeatured": "A secret reward is not shown on the page, so it cannot also be featured.",
+          "earlyBirdNeedsLimit": "An early-bird reward needs either a closing date or a limited number of places.",
+          "dateInvalid": "Enter a date and time, or leave it empty.",
+          "closesBeforeOpens": "A reward closes after it opens, not before.",
+          "itemsDuplicate": "Each item appears once, with the quantity as its count.",
+          "itemsQuantity": "A reward contains at least one of every item it lists."
+        },
+        "rates": {
+          "notShipped": "Only a reward shipped domestically or internationally has per-country rates. Change the delivery method, or remove the rates.",
+          "badCountryCode": "A destination is a two-letter country code, for example AZ or TR.",
+          "duplicateDestination": "Each destination appears once: {code} is listed twice.",
+          "prefixed": "{code}: {message}"
+        },
+        "showBlockedEarlyBird": "This is an early-bird reward, and one needs either a closing date or a limited number of places. Set a limit, or turn off early bird, before showing it again.",
+        "stock": {
+          "unlimited": "Unlimited places",
+          "remaining": "{remaining} of {limit} places left"
+        }
+      }
     },
     "drawer": {
       "cancel": "Cancel",

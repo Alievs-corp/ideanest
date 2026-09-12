@@ -3265,7 +3265,84 @@
         "many": "O, {tiers} tərkibindədir. Əvvəlcə həmin mükafatlardan çıxarın, sonra silin.",
         "other": "O, {tiers} tərkibindədir. Əvvəlcə həmin mükafatlardan çıxarın, sonra silin."
       },
-      "rewardHasBackers": "Əvəzində onu gizlədin — seçmiş olanlar nəyin onlara borclu olduğunun təsvirini saxlayır, amma artıq başqasına təklif olunmur."
+      "rewardHasBackers": "Əvəzində onu gizlədin — seçmiş olanlar nəyin onlara borclu olduğunun təsvirini saxlayır, amma artıq başqasına təklif olunmur.",
+      "vocabulary": {
+        "scopes": {
+          "NONE": {
+            "label": "Heç nə göndərilmir",
+            "hint": "Ad çəkilməsi, təşəkkür, divarda bir ad."
+          },
+          "DIGITAL": {
+            "label": "Rəqəmsal çatdırılma",
+            "hint": "Fayl və ya lisenziya. Ünvan soruşulmur."
+          },
+          "LOCAL_PICKUP": {
+            "label": "Şəxsən götürülür",
+            "hint": "Nə daşıyıcı, nə tarif var, amma dəstəkçinin ölkəsi yenə soruşulur."
+          },
+          "DOMESTIC": {
+            "label": "Ölkə daxilində göndərilir",
+            "hint": "Yalnız öz ölkənizin daxilində. Hər istiqamət üçün tarif lazımdır."
+          },
+          "INTERNATIONAL": {
+            "label": "Beynəlxalq göndərilir",
+            "hint": "Qiymət verdiyiniz hər yerə. Tarifi olmayan istiqaməti seçmək olmaz."
+          }
+        },
+        "item": {
+          "nameRequired": "Əşyanın adı olmalıdır.",
+          "nameTooLong": "Ad ən çox {max} simvol olur. {over} simvol azaldın.",
+          "skuTooLong": "Anbar kodu ən çox {max} simvol olur.",
+          "weightOnDigital": "Rəqəmsal əşyanın çatdırılma çəkisi yoxdur. Çəkini silin və ya əşyanı fiziki edin.",
+          "weightNotWhole": "Çəkini tam qram sayı ilə yazın.",
+          "weightNotPositive": "Çəki sıfır qramdan çox olmalıdır."
+        },
+        "price": {
+          "empty": "Mükafatın qiyməti olmalıdır.",
+          "notANumber": "Qiyməti rəqəmlərlə yazın, məsələn 19.99.",
+          "comma": "Onluq ayırıcı kimi nöqtə işlədin, məsələn 19.99.",
+          "tooManyDecimals": "Qiymətdə ən çox iki onluq rəqəm olur.",
+          "tooLarge": "Bu qiymət platformanın saxlaya biləcəyindən böyükdür.",
+          "notPositive": "Mükafatın qiyməti sıfırdan böyük olmalıdır."
+        },
+        "rate": {
+          "empty": "Bu istiqamətə çatdırılmanın qiymətini yazın.",
+          "notANumber": "Tarifi rəqəmlərlə yazın, məsələn 12.50.",
+          "comma": "Onluq ayırıcı kimi nöqtə işlədin, məsələn 12.50.",
+          "tooManyDecimals": "Tarifdə ən çox iki onluq rəqəm olur.",
+          "tooLarge": "Bu tarif platformanın saxlaya biləcəyindən böyükdür.",
+          "notPositive": "Tarif mənfi ola bilməz. Pulsuz çatdırılma üçün 0 yazın."
+        },
+        "reward": {
+          "titleRequired": "Mükafatın başlığı olmalıdır.",
+          "titleTooLong": "Başlıq ən çox {max} simvol olur. {over} simvol azaldın.",
+          "limitNotWhole": "Yer sayını tam ədədlə yazın və ya məhdudiyyət olmasın deyə boş buraxın.",
+          "limitBelowOne": "Məhdud mükafatda ən azı bir yer olur. Məhdudiyyəti silin ki, limitsiz olsun.",
+          "limitBelowCommitted": {
+            "one": "Bu, artıq tutulmuş {count} yerdən azdır. Sayı həmişə artırmaq olar, azaltmaq isə yalnız tutulmuş həddən yuxarı.",
+            "few": "Bu, artıq tutulmuş {count} yerdən azdır. Sayı həmişə artırmaq olar, azaltmaq isə yalnız tutulmuş həddən yuxarı.",
+            "many": "Bu, artıq tutulmuş {count} yerdən azdır. Sayı həmişə artırmaq olar, azaltmaq isə yalnız tutulmuş həddən yuxarı.",
+            "other": "Bu, artıq tutulmuş {count} yerdən azdır. Sayı həmişə artırmaq olar, azaltmaq isə yalnız tutulmuş həddən yuxarı."
+          },
+          "secretAndFeatured": "Gizli mükafat səhifədə göstərilmir, ona görə eyni vaxtda önə də çıxarıla bilməz.",
+          "earlyBirdNeedsLimit": "Erkən qiymətli mükafata ya bağlanma tarixi, ya da məhdud yer sayı lazımdır.",
+          "dateInvalid": "Tarix və saat yazın və ya boş buraxın.",
+          "closesBeforeOpens": "Mükafat açıldıqdan sonra bağlanır, əvvəl yox.",
+          "itemsDuplicate": "Hər əşya bir dəfə görünür, sayı isə onun miqdarıdır.",
+          "itemsQuantity": "Mükafatda sadaladığı hər əşyadan ən azı bir dənə olur."
+        },
+        "rates": {
+          "notShipped": "Ölkə üzrə tariflər yalnız ölkə daxilində və ya beynəlxalq göndərilən mükafatda olur. Çatdırılma üsulunu dəyişin və ya tarifləri silin.",
+          "badCountryCode": "İstiqamət iki hərfli ölkə kodudur, məsələn AZ və ya TR.",
+          "duplicateDestination": "Hər istiqamət bir dəfə göstərilir: {code} iki dəfə yazılıb.",
+          "prefixed": "{code}: {message}"
+        },
+        "showBlockedEarlyBird": "Bu, erkən qiymətli mükafatdır, belələrinə isə ya bağlanma tarixi, ya da məhdud yer sayı lazımdır. Yenidən göstərməzdən əvvəl məhdudiyyət qoyun və ya erkən qiyməti söndürün.",
+        "stock": {
+          "unlimited": "Yer sayı limitsizdir",
+          "remaining": "{limit} yerdən {remaining} qalıb"
+        }
+      }
     },
     "drawer": {
       "cancel": "Ləğv et",

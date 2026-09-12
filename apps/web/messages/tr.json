@@ -3265,7 +3265,84 @@
         "many": "{tiers} içinde yer alıyor. Önce o ödüllerden çıkarın, sonra silin.",
         "other": "{tiers} içinde yer alıyor. Önce o ödüllerden çıkarın, sonra silin."
       },
-      "rewardHasBackers": "Bunun yerine gizleyin — onu seçmiş olanlar kendilerine borçlu olunan şeyin açıklamasını korur, ödül de artık başkasına sunulmaz."
+      "rewardHasBackers": "Bunun yerine gizleyin — onu seçmiş olanlar kendilerine borçlu olunan şeyin açıklamasını korur, ödül de artık başkasına sunulmaz.",
+      "vocabulary": {
+        "scopes": {
+          "NONE": {
+            "label": "Hiçbir şey gönderilmiyor",
+            "hint": "Bir anma, bir teşekkür, duvarda bir ad."
+          },
+          "DIGITAL": {
+            "label": "Dijital teslimat",
+            "hint": "Bir dosya ya da lisans. Adres sorulmaz."
+          },
+          "LOCAL_PICKUP": {
+            "label": "Elden teslim",
+            "hint": "Ne kargo ne ücret var, ama destekçinin ülkesi yine de sorulur."
+          },
+          "DOMESTIC": {
+            "label": "Yurt içine gönderilir",
+            "hint": "Yalnızca kendi ülkenizin içinde. Her varış yeri için ücret gerekir."
+          },
+          "INTERNATIONAL": {
+            "label": "Yurt dışına gönderilir",
+            "hint": "Ücretlendirdiğiniz her yere. Ücreti olmayan bir varış yeri seçilemez."
+          }
+        },
+        "item": {
+          "nameRequired": "Bir ürünün adı olmalı.",
+          "nameTooLong": "Ad en fazla {max} karakter olur. {over} karakter çıkarın.",
+          "skuTooLong": "Stok kodu en fazla {max} karakter olur.",
+          "weightOnDigital": "Dijital bir ürünün kargo ağırlığı yoktur. Ağırlığı temizleyin ya da ürünü fiziksel yapın.",
+          "weightNotWhole": "Ağırlığı tam gram sayısı olarak girin.",
+          "weightNotPositive": "Ağırlık sıfır gramdan büyük olmalı."
+        },
+        "price": {
+          "empty": "Bir ödülün fiyatı olmalı.",
+          "notANumber": "Fiyatı rakamla girin, örneğin 19.99.",
+          "comma": "Ondalık ayırıcı olarak nokta kullanın, örneğin 19.99.",
+          "tooManyDecimals": "Bir fiyatta en fazla iki ondalık basamak olur.",
+          "tooLarge": "Bu fiyat platformun tutabileceğinden büyük.",
+          "notPositive": "Ödül fiyatı sıfırdan büyük olmalı."
+        },
+        "rate": {
+          "empty": "Bu varış yerine kargonun ne tuttuğunu girin.",
+          "notANumber": "Ücreti rakamla girin, örneğin 12.50.",
+          "comma": "Ondalık ayırıcı olarak nokta kullanın, örneğin 12.50.",
+          "tooManyDecimals": "Bir ücrette en fazla iki ondalık basamak olur.",
+          "tooLarge": "Bu ücret platformun tutabileceğinden büyük.",
+          "notPositive": "Ücret negatif olamaz. Ücretsiz kargo için 0 girin."
+        },
+        "reward": {
+          "titleRequired": "Bir ödülün başlığı olmalı.",
+          "titleTooLong": "Başlık en fazla {max} karakter olur. {over} karakter çıkarın.",
+          "limitNotWhole": "Kontenjanı tam sayı olarak girin ya da sınırsız için boş bırakın.",
+          "limitBelowOne": "Sınırlı bir ödülde en az bir kontenjan olur. Sınırsız yapmak için sınırı temizleyin.",
+          "limitBelowCommitted": {
+            "one": "Bu, hâlihazırda alınmış {count} kontenjanın altında. Adet her zaman artırılabilir, yalnızca alınanın üstüne indirilebilir.",
+            "few": "Bu, hâlihazırda alınmış {count} kontenjanın altında. Adet her zaman artırılabilir, yalnızca alınanın üstüne indirilebilir.",
+            "many": "Bu, hâlihazırda alınmış {count} kontenjanın altında. Adet her zaman artırılabilir, yalnızca alınanın üstüne indirilebilir.",
+            "other": "Bu, hâlihazırda alınmış {count} kontenjanın altında. Adet her zaman artırılabilir, yalnızca alınanın üstüne indirilebilir."
+          },
+          "secretAndFeatured": "Gizli bir ödül sayfada gösterilmez, bu yüzden aynı anda öne de çıkarılamaz.",
+          "earlyBirdNeedsLimit": "Erken fiyatlı bir ödülün ya kapanış tarihi ya da sınırlı kontenjanı olmalı.",
+          "dateInvalid": "Bir tarih ve saat girin ya da boş bırakın.",
+          "closesBeforeOpens": "Bir ödül açıldıktan sonra kapanır, öncesinde değil.",
+          "itemsDuplicate": "Her ürün bir kez görünür, sayısı da adedidir.",
+          "itemsQuantity": "Bir ödülde, listelediği her üründen en az bir tane bulunur."
+        },
+        "rates": {
+          "notShipped": "Ülke bazlı ücretler yalnızca yurt içine ya da yurt dışına gönderilen ödüllerde olur. Teslimat yöntemini değiştirin ya da ücretleri kaldırın.",
+          "badCountryCode": "Varış yeri iki harfli bir ülke kodudur, örneğin AZ ya da TR.",
+          "duplicateDestination": "Her varış yeri bir kez görünür: {code} iki kez yazılmış.",
+          "prefixed": "{code}: {message}"
+        },
+        "showBlockedEarlyBird": "Bu erken fiyatlı bir ödül ve böylesinin ya kapanış tarihi ya da sınırlı kontenjanı olmalı. Yeniden göstermeden önce bir sınır koyun ya da erken fiyatı kapatın.",
+        "stock": {
+          "unlimited": "Kontenjan sınırsız",
+          "remaining": "{limit} kontenjandan {remaining} kaldı"
+        }
+      }
     },
     "drawer": {
       "cancel": "İptal",

@@ -1,7 +1,7 @@
 import type { CharacterCountCopy, PluralForms } from '@ideanest/ui';
 import type { PluralForms as AppPluralForms } from './plurals';
 import type { Locale } from './locale';
-import type { ProjectState } from '../projects/api';
+import type { ProjectState, ShippingType } from '../projects/api';
 import type { EditorTabKey } from '../../components/campaign-editor/tabs';
 
 /**
@@ -165,11 +165,11 @@ const EDITOR_TAB_KEYS = [
   'review',
 ] as const satisfies readonly EditorTabKey[];
 
-function record<K extends string>(
+function record<K extends string, V>(
   keys: readonly K[],
-  read: (key: K) => string,
-): Readonly<Record<K, string>> {
-  const out = {} as Record<K, string>;
+  read: (key: K) => V,
+): Readonly<Record<K, V>> {
+  const out = {} as Record<K, V>;
   for (const key of keys) out[key] = read(key);
   return out;
 }
@@ -553,6 +553,7 @@ export interface RewardsPanelCopy {
   readonly rewardHasBackers: string;
   /** The language whose plural rule picks the form above. */
   readonly locale: Locale;
+  readonly vocabulary: RewardsVocabularyCopy;
   readonly items: ItemsSectionCopy;
   readonly item: ItemEditorCopy;
   readonly tier: RewardTierEditorCopy;
@@ -623,6 +624,7 @@ export function rewardsPanelCopyFrom(
     itemInUse: t.raw('rewards.itemInUse') as AppPluralForms,
     rewardHasBackers: at('rewardHasBackers'),
     locale,
+    vocabulary: rewardsVocabularyCopyFrom(t, locale),
     items: {
       itemsHeading: at('items.itemsHeading'),
       description: at('items.description'),
@@ -714,6 +716,165 @@ export function rewardsPanelCopyFrom(
       shippingRateTo: tpl('rewards.tier.shippingRateTo'),
       additionalRateTo: tpl('rewards.tier.additionalRateTo'),
       removeNamed: tpl('rewards.tier.removeNamed'),
+    },
+  };
+}
+
+/* -------------------------------------------------------------------------
+ * The rewards vocabulary — what `lib/projects/rewards.ts` refuses in
+ * ---------------------------------------------------------------------- */
+
+/** The six ways an amount can be refused, shared by the price and the rates. */
+export interface AmountMessagesCopy {
+  readonly empty: string;
+  readonly notANumber: string;
+  readonly comma: string;
+  readonly tooManyDecimals: string;
+  readonly tooLarge: string;
+  readonly notPositive: string;
+}
+
+/** What `validateItem` refuses. */
+export interface ItemValidationCopy {
+  readonly nameRequired: string;
+  /** Carries `{max}` and `{over}`. */
+  readonly nameTooLong: string;
+  /** Carries `{max}`. */
+  readonly skuTooLong: string;
+  readonly weightOnDigital: string;
+  readonly weightNotWhole: string;
+  readonly weightNotPositive: string;
+}
+
+/** What `validateReward` and `validateShippingRates` refuse. */
+export interface RewardValidationCopy {
+  readonly titleRequired: string;
+  /** Carries `{max}` and `{over}`. */
+  readonly titleTooLong: string;
+  readonly limitNotWhole: string;
+  readonly limitBelowOne: string;
+  /** One form per category, each carrying `{count}` — the places already taken. */
+  readonly limitBelowCommitted: AppPluralForms;
+  readonly secretAndFeatured: string;
+  readonly earlyBirdNeedsLimit: string;
+  readonly dateInvalid: string;
+  readonly closesBeforeOpens: string;
+  readonly itemsDuplicate: string;
+  readonly itemsQuantity: string;
+  readonly price: AmountMessagesCopy;
+  readonly rate: AmountMessagesCopy;
+  readonly rates: {
+    readonly notShipped: string;
+    readonly badCountryCode: string;
+    /** Carries `{code}`. */
+    readonly duplicateDestination: string;
+    /**
+     * Carries `{code}` and `{message}`.
+     *
+     * The destination goes in front of the rate's own refusal because the table is validated
+     * as a whole and reports the first row it cannot accept — without the code, a creator
+     * with eight destinations is told a rate is wrong and not which one.
+     */
+    readonly prefixed: string;
+  };
+  /** The language whose plural rule picks the committed-places form. */
+  readonly locale: Locale;
+}
+
+/**
+ * The delivery scopes, named and explained.
+ *
+ * A record rather than the list `SHIPPING_SCOPES` used to carry, for the reason `tabs.ts`
+ * gives: the model keeps the values it is a model of, and the words belong to the catalogue.
+ */
+export interface ShippingScopeCopy {
+  readonly label: string;
+  readonly hint: string;
+}
+
+export interface RewardsVocabularyCopy {
+  readonly scopes: Readonly<Record<ShippingType, ShippingScopeCopy>>;
+  readonly item: ItemValidationCopy;
+  readonly reward: RewardValidationCopy;
+  readonly showBlockedEarlyBird: string;
+  readonly stock: {
+    readonly unlimited: string;
+    /** Carries `{remaining}` and `{limit}`. */
+    readonly remaining: string;
+  };
+}
+
+/** Every scope in §5.3. Listed so a new one fails to compile rather than rendering blank. */
+const SHIPPING_TYPES = [
+  'NONE',
+  'DIGITAL',
+  'LOCAL_PICKUP',
+  'DOMESTIC',
+  'INTERNATIONAL',
+] as const satisfies readonly ShippingType[];
+
+function amountMessages(
+  t: CampaignEditorTranslator,
+  where: string,
+): AmountMessagesCopy {
+  return {
+    empty: t(`${where}.empty`),
+    notANumber: t(`${where}.notANumber`),
+    comma: t(`${where}.comma`),
+    tooManyDecimals: t(`${where}.tooManyDecimals`),
+    tooLarge: t(`${where}.tooLarge`),
+    notPositive: t(`${where}.notPositive`),
+  };
+}
+
+export function rewardsVocabularyCopyFrom(
+  t: CampaignEditorTranslator,
+  locale: Locale,
+): RewardsVocabularyCopy {
+  const at = (key: string) => t(`rewards.vocabulary.${key}`);
+  const tpl = (key: string) => template(t, `rewards.vocabulary.${key}`);
+
+  return {
+    scopes: record(SHIPPING_TYPES, (scope) => ({
+      label: at(`scopes.${scope}.label`),
+      hint: at(`scopes.${scope}.hint`),
+    })),
+    item: {
+      nameRequired: at('item.nameRequired'),
+      nameTooLong: tpl('item.nameTooLong'),
+      skuTooLong: tpl('item.skuTooLong'),
+      weightOnDigital: at('item.weightOnDigital'),
+      weightNotWhole: at('item.weightNotWhole'),
+      weightNotPositive: at('item.weightNotPositive'),
+    },
+    reward: {
+      titleRequired: at('reward.titleRequired'),
+      titleTooLong: tpl('reward.titleTooLong'),
+      limitNotWhole: at('reward.limitNotWhole'),
+      limitBelowOne: at('reward.limitBelowOne'),
+      limitBelowCommitted: t.raw(
+        'rewards.vocabulary.reward.limitBelowCommitted',
+      ) as AppPluralForms,
+      secretAndFeatured: at('reward.secretAndFeatured'),
+      earlyBirdNeedsLimit: at('reward.earlyBirdNeedsLimit'),
+      dateInvalid: at('reward.dateInvalid'),
+      closesBeforeOpens: at('reward.closesBeforeOpens'),
+      itemsDuplicate: at('reward.itemsDuplicate'),
+      itemsQuantity: at('reward.itemsQuantity'),
+      price: amountMessages(t, 'rewards.vocabulary.price'),
+      rate: amountMessages(t, 'rewards.vocabulary.rate'),
+      rates: {
+        notShipped: at('rates.notShipped'),
+        badCountryCode: at('rates.badCountryCode'),
+        duplicateDestination: tpl('rates.duplicateDestination'),
+        prefixed: tpl('rates.prefixed'),
+      },
+      locale,
+    },
+    showBlockedEarlyBird: at('showBlockedEarlyBird'),
+    stock: {
+      unlimited: at('stock.unlimited'),
+      remaining: tpl('stock.remaining'),
     },
   };
 }

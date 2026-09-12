@@ -99,13 +99,18 @@ import { describeFailure, type SaveFailure } from './useAutosave';
  * repository holds a list of countries with their names, and a hard-coded one
  * in a drawer is a list that goes stale where nobody is looking.
  */
-import type { RewardTierEditorCopy } from '../../lib/i18n/campaign-editor-copy';
+import type {
+  RewardTierEditorCopy,
+  RewardsVocabularyCopy,
+} from '../../lib/i18n/campaign-editor-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 
 export interface RewardTierEditorProps {
   /** This drawer's words. */
   copy: RewardTierEditorCopy;
+  /** The vocabulary `validateReward` refuses in, and the delivery scopes' names. */
+  vocabulary: RewardsVocabularyCopy;
   project: ProjectEdit;
   open: boolean;
   /** The tier being edited, or null to create one. */
@@ -119,6 +124,7 @@ export interface RewardTierEditorProps {
 
 export function RewardTierEditor({
   copy,
+  vocabulary,
   project,
   open,
   reward,
@@ -188,7 +194,7 @@ export function RewardTierEditor({
   const committedQuantity =
     target === null ? 0 : target.claimedQuantity + target.reservedQuantity;
 
-  const errors = validateReward(draft, { committedQuantity });
+  const errors = validateReward(draft, vocabulary.reward, { committedQuantity });
   const serverErrors = fieldErrorsFrom(failure, isRewardField);
   const visible: RewardErrors = { ...(attempted ? errors : {}), ...serverErrors };
   const invalid = Object.keys(errors).length > 0;
@@ -436,7 +442,7 @@ export function RewardTierEditor({
 
         <Field
           label={copy.delivery}
-          hint={SHIPPING_SCOPES.find((scope) => scope.value === draft.shippingType)?.hint}
+          hint={vocabulary.scopes[draft.shippingType].hint}
           error={visible.shippingType}
         >
           <Select
@@ -450,8 +456,8 @@ export function RewardTierEditor({
             }}
           >
             {SHIPPING_SCOPES.map((scope) => (
-              <option key={scope.value} value={scope.value}>
-                {scope.label}
+              <option key={scope} value={scope}>
+                {vocabulary.scopes[scope].label}
               </option>
             ))}
           </Select>

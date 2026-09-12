@@ -544,6 +544,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
 
       <ItemEditor
         copy={words.item}
+        validation={words.vocabulary.item}
         projectId={projectId}
         open={itemEditor.open}
         item={itemEditor.item}
@@ -553,6 +554,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
 
       <RewardTierEditor
         copy={words.tier}
+        vocabulary={words.vocabulary}
         project={project}
         open={tierEditor.open}
         reward={tierEditor.reward}
@@ -678,7 +680,7 @@ function RewardCard({
   const hidden = isHiddenReward(reward);
   const scheduled = isScheduledReward(reward);
   const backed = reward.claimedQuantity > 0;
-  const blocked = showBlockedReason(reward);
+  const blocked = showBlockedReason(reward, words.vocabulary);
 
   return (
     <li className="rounded-lg border border-white/8 bg-surface-2 p-5">
@@ -692,9 +694,9 @@ function RewardCard({
                 `tabular-nums` so a column of prices lines up by place value. */}
             <span className="tabular-nums">{formatMoney(reward.price)}</span>
             {' · '}
-            {describeStock(reward)}
+            {describeStock(reward, words.vocabulary)}
             {' · '}
-            {shippingScopeLabel(reward.shippingType)}
+            {shippingScopeLabel(reward.shippingType, words.vocabulary.scopes)}
           </p>
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
