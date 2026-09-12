@@ -5,6 +5,7 @@ import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
 import az.ideanest.subscription.application.AlreadySubscribedException;
 import az.ideanest.subscription.application.NoSubscriptionException;
+import az.ideanest.subscription.application.PaymentNotYetReceivedException;
 import az.ideanest.subscription.application.PlanCodeTakenException;
 import az.ideanest.subscription.application.PlanNotOnSaleException;
 import az.ideanest.subscription.application.SubscriptionNotAwaitingPaymentException;
@@ -125,6 +126,24 @@ public class SubscriptionExceptionHandler {
         problem.setDetail("Its state changed while this page was open. Reload to see where it is now.");
         problem.setProperty("code", "SUBSCRIPTION_NOT_PENDING");
         problem.setProperty("state", exception.state().name());
+        return problem;
+    }
+
+    /**
+     * 400: the payment is dated in the future.
+     *
+     * <p>Its own refusal rather than {@code INVALID_PLAN}, because it is not about the
+     * plan and the console shows it beside a date field. {@link
+     * PaymentNotYetReceivedException} argues why this is refused instead of quietly
+     * moved to now.
+     */
+    @ExceptionHandler(PaymentNotYetReceivedException.class)
+    public ProblemDetail handleFuturePayment(PaymentNotYetReceivedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/payment-not-yet-received"));
+        problem.setTitle("That date has not happened yet");
+        problem.setDetail("A payment cannot be recorded as arriving in the future. Check the date.");
+        problem.setProperty("code", "PAYMENT_NOT_YET_RECEIVED");
         return problem;
     }
 

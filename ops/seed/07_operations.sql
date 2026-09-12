@@ -168,6 +168,143 @@ INSERT INTO fee_schedules (id, scope, scope_ref, platform_rate, processing_rate,
    now() - interval '130 days', seed_id('user:admin'))
 ON CONFLICT (id) DO NOTHING;
 
+-- ── Subscriptions ───────────────────────────────────────────────────────────
+
+-- One row per state the console has to render. An operator looking at an empty
+-- queue cannot tell it from a broken one, and the revenue report has nothing to
+-- add up.
+--
+-- THE PLANS ARE NOT SEEDED HERE. V62 ships the catalogue with the migration that
+-- opens the gate, for the reason its own header gives: a gate with nothing behind
+-- it is a platform nobody can publish on. These rows reference those by `code`,
+-- so an operator who reprices or renames a plan does not break the seed, and a
+-- seed that invented a fourth plan would be a catalogue the product does not have.
+
+INSERT INTO subscriptions (id, account_id, plan_id, state, price, currency, billing_period,
+                           started_at, current_period_end, cancel_at_period_end, canceled_at,
+                           activated_by, note, created_at)
+VALUES
+  -- Paid and running. The creator who owns most of the seeded campaigns.
+  (seed_id('sub:creator'), seed_id('user:creator'), (SELECT id FROM subscription_plans WHERE code = 'GROWTH'), 'ACTIVE',
+   49.00, 'AZN', 'MONTHLY', now() - interval '40 days', now() + interval '20 days',
+   false, NULL, seed_id('user:finance'), 'Bank köçürməsi, 12.08 tarixli çıxarış.',
+   now() - interval '40 days'),
+
+  (seed_id('sub:gunel'), seed_id('user:gunel'), (SELECT id FROM subscription_plans WHERE code = 'PRO'), 'ACTIVE',
+   149.00, 'AZN', 'MONTHLY', now() - interval '12 days', now() + interval '48 days',
+   false, NULL, seed_id('user:finance'), 'Bank köçürməsi.',
+   now() - interval '12 days'),
+
+  (seed_id('sub:orxan'), seed_id('user:orxan'), (SELECT id FROM subscription_plans WHERE code = 'STARTER'), 'ACTIVE',
+   19.00, 'AZN', 'MONTHLY', now() - interval '5 days', now() + interval '25 days',
+   false, NULL, seed_id('user:admin'), NULL,
+   now() - interval '5 days'),
+
+  -- Waiting on a transfer. This is the queue AD-11's second screen exists for.
+  (seed_id('sub:tural'), seed_id('user:tural'), (SELECT id FROM subscription_plans WHERE code = 'GROWTH'), 'PENDING_PAYMENT',
+   49.00, 'AZN', 'MONTHLY', NULL, NULL, false, NULL, NULL, NULL,
+   now() - interval '2 days'),
+
+  -- Ended by staff: the payment was reversed. Immediate, not at period end.
+  (seed_id('sub:spam'), seed_id('user:spammer'), (SELECT id FROM subscription_plans WHERE code = 'STARTER'), 'CANCELED',
+   19.00, 'AZN', 'MONTHLY', now() - interval '90 days', now() - interval '60 days',
+   false, now() - interval '61 days', seed_id('user:admin'),
+   'Ödəniş geri qaytarıldı, hesab dayandırıldı.',
+   now() - interval '90 days'),
+
+  -- Ran its course and was not renewed. What the report counts as past revenue.
+  (seed_id('sub:sevinc'), seed_id('user:sevinc'), (SELECT id FROM subscription_plans WHERE code = 'STARTER'), 'EXPIRED',
+   19.00, 'AZN', 'MONTHLY', now() - interval '75 days', now() - interval '45 days',
+   false, NULL, seed_id('user:finance'), 'Bank köçürməsi.',
+   now() - interval '75 days')
+ON CONFLICT DO NOTHING;
+
+-- ── Subscription payments ───────────────────────────────────────────────────
+
+-- V73's journal: what the platform was actually paid, which is what the revenue
+-- report adds up. Not derivable from the rows above -- a subscription carries a
+-- price, not a receipt -- and the distinction is the point of the table.
+--
+-- Six rows against five subscriptions, chosen so that every shape the report has
+-- to render appears at least once:
+--
+--   * three months of the same account, so a period filter has something to
+--     exclude and a per-account history has something to list;
+--   * one currency, AZN, on every row: that is what the platform charges in, and
+--     the column exists so that a total is never a figure with two currencies
+--     silently added together;
+--   * two methods, because a transfer and cash are both how the platform is paid
+--     while #60 is unanswered;
+--   * a payment and its reversal, which is how a correction is made on a table
+--     that refuses UPDATE. The pair nets to zero, so an operator who sums the
+--     journal gets what the platform kept rather than what passed through it.
+--
+-- The plan is written onto each row rather than referred to. An operator who
+-- reprices GROWTH tomorrow must not find that last month's report has changed,
+-- which is the argument V73's header makes at length.
+--
+-- `sub:tural` has no row at all: it is the queue, and nobody has paid yet.
+
+INSERT INTO subscription_payments (id, subscription_id, account_id, plan_id, plan_code, plan_name,
+                                   amount, currency, billing_period, method, reference, note,
+                                   received_at, recorded_by, reverses)
+VALUES
+  -- Three months from the creator who owns most of the seeded campaigns, so the
+  -- report has a history rather than a single figure.
+  (seed_id('pay:creator:1'), seed_id('sub:creator'), seed_id('user:creator'),
+   (SELECT id FROM subscription_plans WHERE code = 'GROWTH'), 'GROWTH', 'Growth',
+   49.00, 'AZN', 'MONTHLY', 'BANK_TRANSFER', 'KOC-2026-0431', 'Bank köçürməsi, 12.08 tarixli çıxarış.',
+   now() - interval '100 days', seed_id('user:finance'), NULL),
+
+  (seed_id('pay:creator:2'), seed_id('sub:creator'), seed_id('user:creator'),
+   (SELECT id FROM subscription_plans WHERE code = 'GROWTH'), 'GROWTH', 'Growth',
+   49.00, 'AZN', 'MONTHLY', 'BANK_TRANSFER', 'KOC-2026-0512', NULL,
+   now() - interval '70 days', seed_id('user:finance'), NULL),
+
+  (seed_id('pay:creator:3'), seed_id('sub:creator'), seed_id('user:creator'),
+   (SELECT id FROM subscription_plans WHERE code = 'GROWTH'), 'GROWTH', 'Growth',
+   49.00, 'AZN', 'MONTHLY', 'BANK_TRANSFER', 'KOC-2026-0588', NULL,
+   now() - interval '40 days', seed_id('user:finance'), NULL),
+
+  (seed_id('pay:gunel'), seed_id('sub:gunel'), seed_id('user:gunel'),
+   (SELECT id FROM subscription_plans WHERE code = 'PRO'), 'PRO', 'Pro',
+   149.00, 'AZN', 'MONTHLY', 'BANK_TRANSFER', 'KOC-2026-0644', NULL,
+   now() - interval '12 days', seed_id('user:finance'), NULL),
+
+  -- Handed over at the office. The method column exists because the platform is
+  -- paid in more than one way while #60 is unanswered.
+  (seed_id('pay:orxan'), seed_id('sub:orxan'), seed_id('user:orxan'),
+   (SELECT id FROM subscription_plans WHERE code = 'STARTER'), 'STARTER', 'Starter',
+   19.00, 'AZN', 'MONTHLY', 'CASH', 'QEB-114', 'Ofisdə nağd ödəniş.',
+   now() - interval '5 days', seed_id('user:admin'), NULL),
+
+  -- Ran its course. Past revenue, and the report must keep counting it.
+  (seed_id('pay:sevinc'), seed_id('sub:sevinc'), seed_id('user:sevinc'),
+   (SELECT id FROM subscription_plans WHERE code = 'STARTER'), 'STARTER', 'Starter',
+   19.00, 'AZN', 'MONTHLY', 'BANK_TRANSFER', 'KOC-2026-0203', NULL,
+   now() - interval '75 days', seed_id('user:finance'), NULL),
+
+  -- The reversed one, in two rows. `sub:spam` was ended by staff because the
+  -- payment was taken back; the row that recorded it cannot be edited, so the
+  -- correction is this negative beside it.
+  (seed_id('pay:spam'), seed_id('sub:spam'), seed_id('user:spammer'),
+   (SELECT id FROM subscription_plans WHERE code = 'STARTER'), 'STARTER', 'Starter',
+   19.00, 'AZN', 'MONTHLY', 'BANK_TRANSFER', 'KOC-2026-0161', NULL,
+   now() - interval '90 days', seed_id('user:finance'), NULL)
+ON CONFLICT DO NOTHING;
+
+-- Second statement, because `reverses` points at a row the statement above
+-- inserts and a single VALUES list has no ordering between its rows.
+INSERT INTO subscription_payments (id, subscription_id, account_id, plan_id, plan_code, plan_name,
+                                   amount, currency, billing_period, method, reference, note,
+                                   received_at, recorded_by, reverses)
+VALUES
+  (seed_id('pay:spam:reversal'), seed_id('sub:spam'), seed_id('user:spammer'),
+   (SELECT id FROM subscription_plans WHERE code = 'STARTER'), 'STARTER', 'Starter',
+   -19.00, 'AZN', 'MONTHLY', 'BANK_TRANSFER', 'KOC-2026-0161', 'Ödəniş geri qaytarıldı.',
+   now() - interval '61 days', seed_id('user:admin'), seed_id('pay:spam'))
+ON CONFLICT DO NOTHING;
+
 -- ── Feature flags ───────────────────────────────────────────────────────────
 
 INSERT INTO feature_flags (key, description, enabled, rollout_percentage, enabled_accounts, updated_at, updated_by) VALUES
