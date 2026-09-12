@@ -218,6 +218,26 @@ describe('the current section', () => {
   });
 });
 
+describe('the navigation pill', () => {
+  /**
+   * #19. Below `md` the links are in the drawer, and the pill they sit in used to stay
+   * behind: an empty white oval once the bar collapsed, holding 66px of a 390px row open and
+   * pushing the drawer's own button past the edge of the screen. jsdom resolves no media
+   * query, so what is asserted is that the decision is on the pill rather than on the list —
+   * which is the thing that regressed.
+   */
+  it('is what is hidden below md, not the list inside it', () => {
+    renderHeader();
+
+    const list = screen.getByRole('list', { name: en.shell.nav.label });
+    expect(list.className, 'the list itself is always displayed').not.toContain('hidden');
+
+    const pill = list.parentElement as HTMLElement;
+    expect(pill.className).toContain('hidden md:flex');
+    expect(pill.className, 'and it is still the pill §4.7 collapses').toContain('rounded-full');
+  });
+});
+
 describe('the language control', () => {
   /**
    * It is in the header as well as the footer now, and that is the point of it: somebody who

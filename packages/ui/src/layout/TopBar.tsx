@@ -16,6 +16,16 @@ export interface TopBarProps extends ComponentPropsWithoutRef<'header'> {
   logo?: ReactNode;
   /** Centre slot — the pill that collapses. */
   nav?: ReactNode;
+  /**
+   * On the pill itself, for a consumer whose navigation is not drawn at every width.
+   *
+   * The pill is a surface and a pair of 32px gutters, and both are paid whether or not
+   * anything inside it is displayed: a consumer that hid its own links with `hidden md:flex`
+   * was left with an empty white oval on a phone, holding 66px of a 390px row open. Hiding
+   * the pill is the consumer's decision to make — some navigation belongs on a phone — so it
+   * is a class rather than a breakpoint this component picks.
+   */
+  navClassName?: string;
   /** Right slot — actions. */
   actions?: ReactNode;
   /** Scroll offset in pixels at which the collapsed state engages. */
@@ -30,6 +40,7 @@ export interface TopBarProps extends ComponentPropsWithoutRef<'header'> {
 export function TopBar({
   logo,
   nav,
+  navClassName,
   actions,
   threshold = 24,
   forceScrolled,
@@ -72,6 +83,7 @@ export function TopBar({
               scrolled
                 ? 'mx-auto max-w-[445px] border border-white/8 bg-white text-on-white'
                 : 'max-w-full border border-transparent bg-transparent text-white',
+              navClassName,
             )}
           >
             {nav}

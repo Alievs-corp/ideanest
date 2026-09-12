@@ -77,13 +77,13 @@ export async function SiteFooter() {
   return (
     <footer className="mt-24 border-t border-white/6 bg-surface-1">
       {/*
-          THE BOTTOM PADDING CLEARS THE FLOATING WHATSAPP CONTROL. That button is fixed to the
-          bottom-right corner of the viewport, so at the very end of a page it sits over
-          whatever this row ends with — which is the currency statement. Padding here rather
-          than a rule in the launcher: the footer is the one surface that is guaranteed to be
-          under it, and a control that moved out of the way would move on every page.
-        */}
-        <div className="mx-auto w-full max-w-[1400px] px-5 pt-14 pb-24 sm:px-6">
+        THE BOTTOM PADDING CLEARS THE FLOATING WHATSAPP CONTROL. That button is fixed to the
+        bottom-right corner of the viewport, so at the very end of a page it sits over
+        whatever this row ends with — which is the currency statement. Padding here rather
+        than a rule in the launcher: the footer is the one surface that is guaranteed to be
+        under it, and a control that moved out of the way would move on every page.
+      */}
+      <div className="mx-auto w-full max-w-[1400px] px-5 pt-14 pb-24 sm:px-6">
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
           {/*
             The platform's own statement of what it is (WS-02). It says the funding model,
