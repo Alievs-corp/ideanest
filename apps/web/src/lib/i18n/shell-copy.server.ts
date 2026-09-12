@@ -21,10 +21,14 @@ import type { PluralForms } from '@ideanest/ui';
 import {
   type BasicsPanelCopy,
   type EditorChromeCopy,
+  type FaqPanelCopy,
   type RewardsPanelCopy,
+  type StoryPanelCopy,
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
+  faqPanelCopyFrom,
   rewardsPanelCopyFrom,
+  storyPanelCopyFrom,
 } from './campaign-editor-copy';
 import {
   type CampaignActionsCopy,
@@ -310,6 +314,32 @@ export async function rewardsPanelCopy(): Promise<RewardsPanelCopy> {
     getLocale(),
   ]);
   return rewardsPanelCopyFrom(editor, localeOrDefault(locale), {
+    remaining: counter.raw('remaining') as PluralForms,
+    tooMany: counter.raw('tooMany') as PluralForms,
+  });
+}
+
+/** The story tab, the block editor, the mark toolbar and the version history. */
+export async function storyPanelCopy(): Promise<StoryPanelCopy> {
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return storyPanelCopyFrom(editor, localeOrDefault(locale), {
+    remaining: counter.raw('remaining') as PluralForms,
+    tooMany: counter.raw('tooMany') as PluralForms,
+  });
+}
+
+/** The FAQ tab and the drawer one question is written in. */
+export async function faqPanelCopy(): Promise<FaqPanelCopy> {
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return faqPanelCopyFrom(editor, localeOrDefault(locale), {
     remaining: counter.raw('remaining') as PluralForms,
     tooMany: counter.raw('tooMany') as PluralForms,
   });
