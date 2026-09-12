@@ -20,9 +20,15 @@ jobs:
     permissions:
       contents: write
     steps:
+      # At the default ref rather than at `gh-pages`, for the reason `ci.yml`
+      # gives: the preview branch may not exist — nothing has published one
+      # yet, or this pull request was closed before its first build finished —
+      # and `ref:` on a missing branch fails the job rather than finding
+      # nothing to clean up. The step below moves onto it, and says so when
+      # there is nothing to move onto.
       - uses: actions/checkout@v7
         with:
-          ref: gh-pages
+          fetch-depth: 1
 
       - name: Remove
         env:
@@ -31,6 +37,11 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          if ! git ls-remote --exit-code --heads origin gh-pages >/dev/null; then
+            echo "::notice::No preview branch exists; nothing to remove."
+            exit 0
+          fi
 
           # Same retry as the publish step: a concurrent publish must not be
           # force-pushed away by a cleanup that started from a stale ref.
