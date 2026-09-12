@@ -21,6 +21,20 @@
       "discover": "Kəşf et",
       "categories": "Kateqoriyalar",
       "collections": "Kolleksiyalar"
+    },
+    "characterCount": {
+      "remaining": {
+        "one": "{count} simvol qalıb",
+        "few": "{count} simvol qalıb",
+        "many": "{count} simvol qalıb",
+        "other": "{count} simvol qalıb"
+      },
+      "tooMany": {
+        "one": "{count} simvol artıqdır",
+        "few": "{count} simvol artıqdır",
+        "many": "{count} simvol artıqdır",
+        "other": "{count} simvol artıqdır"
+      }
     }
   },
   "shell": {

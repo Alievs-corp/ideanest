@@ -21,6 +21,20 @@
       "discover": "Обзор",
       "categories": "Категории",
       "collections": "Подборки"
+    },
+    "characterCount": {
+      "remaining": {
+        "one": "Остался {count} символ",
+        "few": "Осталось {count} символа",
+        "many": "Осталось {count} символов",
+        "other": "Осталось {count} символа"
+      },
+      "tooMany": {
+        "one": "На {count} символ больше",
+        "few": "На {count} символа больше",
+        "many": "На {count} символов больше",
+        "other": "На {count} символа больше"
+      }
     }
   },
   "shell": {

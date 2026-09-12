@@ -21,6 +21,20 @@
       "discover": "Discover",
       "categories": "Categories",
       "collections": "Collections"
+    },
+    "characterCount": {
+      "remaining": {
+        "one": "{count} character remaining",
+        "few": "{count} characters remaining",
+        "many": "{count} characters remaining",
+        "other": "{count} characters remaining"
+      },
+      "tooMany": {
+        "one": "{count} character too many",
+        "few": "{count} characters too many",
+        "many": "{count} characters too many",
+        "other": "{count} characters too many"
+      }
     }
   },
   "shell": {

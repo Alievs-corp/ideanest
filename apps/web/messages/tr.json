@@ -21,6 +21,20 @@
       "discover": "Keşfet",
       "categories": "Kategoriler",
       "collections": "Koleksiyonlar"
+    },
+    "characterCount": {
+      "remaining": {
+        "one": "{count} karakter kaldı",
+        "few": "{count} karakter kaldı",
+        "many": "{count} karakter kaldı",
+        "other": "{count} karakter kaldı"
+      },
+      "tooMany": {
+        "one": "{count} karakter fazla",
+        "few": "{count} karakter fazla",
+        "many": "{count} karakter fazla",
+        "other": "{count} karakter fazla"
+      }
     }
   },
   "shell": {

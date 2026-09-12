@@ -2,6 +2,58 @@ import { useEffect, useState, type ComponentPropsWithoutRef } from 'react';
 import { cn } from '../../lib/cn';
 
 /**
+ * One sentence per plural category, each carrying `{count}`.
+ *
+ * ALL FOUR ARE REQUIRED, and a language that does not decline repeats one
+ * sentence across them. That is the web application's own encoding — see
+ * `lib/i18n/plurals.ts`, whose docblock gives the reason: its catalogue test
+ * requires the four languages to hold identical keys, so a form declared in
+ * Russian and omitted in Turkish would be a key set that differs by language.
+ * The repetition is the honest encoding of a language that does not decline.
+ *
+ * CLDR also defines `zero` and `two`; none of this platform's languages uses
+ * either, and `select` below falls back rather than assuming the set is closed.
+ */
+export type PluralForms = Readonly<Record<'one' | 'few' | 'many' | 'other', string>>;
+
+export interface CharacterCountCopy {
+  /** Under the limit. Carries `{count}`. */
+  remaining: PluralForms;
+  /** Over it. Carries `{count}`, which is how many too many. */
+  tooMany: PluralForms;
+}
+
+/** English, so the component works with no catalogue behind it. */
+export const CHARACTER_COUNT_COPY_EN: CharacterCountCopy = {
+  remaining: {
+    one: '{count} character remaining',
+    few: '{count} characters remaining',
+    many: '{count} characters remaining',
+    other: '{count} characters remaining',
+  },
+  tooMany: {
+    one: '{count} character too many',
+    few: '{count} characters too many',
+    many: '{count} characters too many',
+    other: '{count} characters too many',
+  },
+};
+
+export interface CharacterCountProps extends Omit<ComponentPropsWithoutRef<'p'>, 'children'> {
+  /** Characters used, already counted the way the storage counts them. */
+  count: number;
+  limit: number;
+  /** The two sentences, in the reader's language. */
+  copy?: CharacterCountCopy;
+  /** Which language's plural rule to select with. */
+  locale?: string;
+  /** Start announcing once this many characters or fewer remain. */
+  announceWithin?: number;
+  /** How long the count must be still before it is announced. */
+  announceDelayMs?: number;
+}
+
+/**
  * How much of a length limit is left. See docs/ui-kit.md §7.13.
  *
  * COLOUR IS NOT THE MESSAGE. Passing the limit changes the wording — "3
@@ -26,20 +78,30 @@ import { cn } from '../../lib/cn';
  * `'🙂'.length` is 2, and a counter that says 61 while the database is happy
  * with 60 is a counter that lies. The web application counts code points, which
  * is how Postgres counts `varchar(60)`.
+ *
+ * <h2>The sentence is the caller's too, and it has to be</h2>
+ *
+ * This used to build "3 characters too many" from an English plural rule in
+ * code — `value === 1 ? 'character' : 'characters'`. That rule is English's
+ * and no other language's: Russian selects between three forms by the last
+ * digit, Azerbaijani and Turkish take no plural agreement after a numeral at
+ * all, and a counter that is a sentence rather than a fraction (§7.13) cannot
+ * be assembled from a number and a noun handed over separately.
+ *
+ * So the caller supplies the forms, keyed by the categories `Intl.PluralRules`
+ * reports, and this picks between them for `locale`. `Intl.PluralRules` is in
+ * every browser this platform supports and costs nothing in the bundle — it is
+ * the platform internationalisation API §21.1 already asks for elsewhere.
+ *
+ * The library carries no catalogue, so the English forms stay as defaults: the
+ * component works standing alone in Storybook, and an application that has a
+ * catalogue passes its own.
  */
-export interface CharacterCountProps extends Omit<ComponentPropsWithoutRef<'p'>, 'children'> {
-  /** Characters used, already counted the way the storage counts them. */
-  count: number;
-  limit: number;
-  /** Start announcing once this many characters or fewer remain. */
-  announceWithin?: number;
-  /** How long the count must be still before it is announced. */
-  announceDelayMs?: number;
-}
-
 export function CharacterCount({
   count,
   limit,
+  copy = CHARACTER_COUNT_COPY_EN,
+  locale = 'en',
   announceWithin = 20,
   announceDelayMs = 1000,
   className,
@@ -48,9 +110,8 @@ export function CharacterCount({
   const remaining = limit - count;
   const over = remaining < 0;
 
-  const visible = over
-    ? `${-remaining} ${plural(-remaining)} too many`
-    : `${remaining} ${plural(remaining)} remaining`;
+  const value = over ? -remaining : remaining;
+  const visible = sentence(over ? copy.tooMany : copy.remaining, value, locale);
 
   const [announced, setAnnounced] = useState('');
 
@@ -90,6 +151,22 @@ export function CharacterCount({
   );
 }
 
-function plural(value: number): string {
-  return value === 1 ? 'character' : 'characters';
+/**
+ * The form `locale` selects for `value`, with `{count}` filled in.
+ *
+ * `other` is the fallback at every step — for a category the caller did not
+ * supply, and for a `locale` tag `Intl` cannot parse. A counter that throws
+ * would take the field down over a language tag; one that falls back reads
+ * slightly wrong in a language nobody configured, which is the cheaper failure.
+ */
+function sentence(forms: PluralForms, value: number, locale: string): string {
+  let category = 'other';
+  try {
+    category = new Intl.PluralRules(locale).select(value);
+  } catch {
+    /* An unparseable tag is not worth an exception in a character counter. */
+  }
+
+  const form = (forms as Readonly<Record<string, string | undefined>>)[category] ?? forms.other;
+  return form.replace('{count}', String(value));
 }

@@ -385,7 +385,12 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
               onChange={(event) => change('title', { ...draft, title: event.target.value })}
               onBlur={autosave.flush}
             />
-            <CharacterCount count={characterCount(draft.title)} limit={TITLE_MAX_CHARACTERS} />
+            <CharacterCount
+            count={characterCount(draft.title)}
+            limit={TITLE_MAX_CHARACTERS}
+            copy={copy.characterCount}
+            locale={copy.locale}
+          />
           </Field>
 
           <Field
@@ -399,7 +404,12 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
               onChange={(event) => change('blurb', { ...draft, blurb: event.target.value })}
               onBlur={autosave.flush}
             />
-            <CharacterCount count={characterCount(draft.blurb)} limit={BLURB_MAX_CHARACTERS} />
+            <CharacterCount
+            count={characterCount(draft.blurb)}
+            limit={BLURB_MAX_CHARACTERS}
+            copy={copy.characterCount}
+            locale={copy.locale}
+          />
           </Field>
 
           <CoverImageField

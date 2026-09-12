@@ -274,7 +274,12 @@ export async function graphContext(): Promise<{
  * refusals belong to that panel, so translating one tab does not touch the other five.
  */
 export async function editorChromeCopy(): Promise<EditorChromeCopy> {
-  return editorChromeCopyFrom(await getTranslations('campaignEditor'));
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return editorChromeCopyFrom(editor, counter, localeOrDefault(locale));
 }
 
 /** The basics tab's own words — the first of the six panels. */

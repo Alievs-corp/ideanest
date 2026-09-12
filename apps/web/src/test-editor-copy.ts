@@ -50,7 +50,21 @@ const read = Object.assign(
   { raw: at },
 );
 
-export const EDITOR_COPY: EditorChromeCopy = editorChromeCopyFrom(read);
+/* The counter's forms live under `common.characterCount`, a different root. */
+const counter = Object.assign(
+  (key: string): string => {
+    throw new Error(`common.characterCount.${key} is a set of plural forms — read it with raw()`);
+  },
+  {
+    raw(key: string): unknown {
+      let node: unknown = MESSAGES.common.characterCount;
+      for (const segment of key.split('.')) node = (node as Record<string, unknown>)[segment];
+      return node;
+    },
+  },
+);
+
+export const EDITOR_COPY: EditorChromeCopy = editorChromeCopyFrom(read, counter, 'en');
 
 /** The basics tab's own words, and the vocabulary `validateBasics` refuses in. */
 export const BASICS_COPY: BasicsPanelCopy = basicsPanelCopyFrom(read);

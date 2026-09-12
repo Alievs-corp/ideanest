@@ -6,7 +6,7 @@ import { Field } from './form/Field';
 import { TextInput } from './form/TextInput';
 import { Textarea } from './form/Textarea';
 import { Select } from './form/Select';
-import { CharacterCount } from './form/CharacterCount';
+import { CharacterCount, type CharacterCountCopy } from './form/CharacterCount';
 import { Checkbox } from './form/Checkbox';
 import { Radio, RadioGroup } from './form/Radio';
 import { Switch } from './form/Switch';
@@ -133,6 +133,73 @@ describe('Select', () => {
 
     await userEvent.selectOptions(select, 'art');
     expect(select).toHaveValue('art');
+  });
+});
+
+describe('CharacterCount in a language that declines', () => {
+  /*
+   * Russian picks between three forms by the last digit, which is the case an
+   * English singular/plural ternary gets wrong for most numbers with nothing on
+   * screen to say so. The forms are the ones `messages/ru.json` carries.
+   */
+  const RU: CharacterCountCopy = {
+    remaining: {
+      one: 'Остался {count} символ',
+      few: 'Осталось {count} символа',
+      many: 'Осталось {count} символов',
+      other: 'Осталось {count} символа',
+    },
+    tooMany: {
+      one: 'На {count} символ больше',
+      few: 'На {count} символа больше',
+      many: 'На {count} символов больше',
+      other: 'На {count} символа больше',
+    },
+  };
+
+  it.each([
+    [59, 'Остался 1 символ'],
+    [57, 'Осталось 3 символа'],
+    [55, 'Осталось 5 символов'],
+    [39, 'Остался 21 символ'],
+  ])('selects the Russian form for what is left after %i of 60', (count, expected) => {
+    const { unmount } = render(
+      <CharacterCount count={count} limit={60} copy={RU} locale="ru" />,
+    );
+    expect(screen.getByText(expected)).toBeInTheDocument();
+    unmount();
+  });
+
+  it('counts upwards past the limit, in the same three forms', () => {
+    render(<CharacterCount count={65} limit={60} copy={RU} locale="ru" />);
+    expect(screen.getByText('На 5 символов больше')).toBeInTheDocument();
+    expect(screen.queryByText(/Осталось/u)).toBeNull();
+  });
+
+  it('needs no declension in Azerbaijani, which repeats one form', () => {
+    const AZ: CharacterCountCopy = {
+      remaining: {
+        one: '{count} simvol qalıb',
+        few: '{count} simvol qalıb',
+        many: '{count} simvol qalıb',
+        other: '{count} simvol qalıb',
+      },
+      tooMany: {
+        one: '{count} simvol artıqdır',
+        few: '{count} simvol artıqdır',
+        many: '{count} simvol artıqdır',
+        other: '{count} simvol artıqdır',
+      },
+    };
+
+    render(<CharacterCount count={59} limit={60} copy={AZ} locale="az" />);
+    expect(screen.getByText('1 simvol qalıb')).toBeInTheDocument();
+  });
+
+  it('falls back rather than throwing on a language tag Intl cannot parse', () => {
+    /* A counter that took the field down over a locale string would be the worse failure. */
+    render(<CharacterCount count={57} limit={60} copy={RU} locale="not a locale" />);
+    expect(screen.getByText('Осталось 3 символа')).toBeInTheDocument();
   });
 });
 

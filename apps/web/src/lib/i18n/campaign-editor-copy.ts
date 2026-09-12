@@ -1,3 +1,4 @@
+import type { CharacterCountCopy, PluralForms } from '@ideanest/ui';
 import type { ProjectState } from '../projects/api';
 import type { EditorTabKey } from '../../components/campaign-editor/tabs';
 
@@ -70,6 +71,15 @@ export interface EditorChromeCopy {
   readonly notAvailable: string;
   readonly states: Readonly<Record<ProjectState, string>>;
   readonly save: SaveStatusCopy;
+  /**
+   * The length counter's sentences, and the language whose plural rule picks between them.
+   *
+   * It rides with the frame rather than with each panel because five of the six tabs count
+   * characters, and one spelling of "{count} characters remaining" is the point of §7.13's
+   * rule that a counter is a sentence.
+   */
+  readonly characterCount: CharacterCountCopy;
+  readonly locale: string;
 }
 
 /**
@@ -142,7 +152,18 @@ function record<K extends string>(
   return out;
 }
 
-export function editorChromeCopyFrom(t: CampaignEditorTranslator): EditorChromeCopy {
+/**
+ * The frame, plus the reader's language.
+ *
+ * `locale` is a value rather than a hook because `CharacterCount` needs it to select a plural
+ * form, and the panels that draw it are client components that would otherwise each reach for
+ * the route's parameters to learn something the server already knew.
+ */
+export function editorChromeCopyFrom(
+  t: CampaignEditorTranslator,
+  counter: CampaignEditorTranslator,
+  locale: string,
+): EditorChromeCopy {
   return {
     eyebrow: t('eyebrow'),
     loadingTitle: t('loadingTitle'),
@@ -156,6 +177,16 @@ export function editorChromeCopyFrom(t: CampaignEditorTranslator): EditorChromeC
       saved: t('save.saved'),
       notSaved: t('save.notSaved'),
     },
+    /*
+     * Read raw and cast, the way `card-copy.ts` reads `common.card.backers`: the forms carry
+     * `{count}`, so `t()` would format them as ICU and render the key's own path instead.
+     * `catalogue.test.ts` is what keeps all four categories present in all four languages.
+     */
+    characterCount: {
+      remaining: counter.raw('remaining') as PluralForms,
+      tooMany: counter.raw('tooMany') as PluralForms,
+    },
+    locale,
   };
 }
 
