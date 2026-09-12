@@ -22,11 +22,13 @@ import {
   type BasicsPanelCopy,
   type EditorChromeCopy,
   type FaqPanelCopy,
+  type PrelaunchPanelCopy,
   type RewardsPanelCopy,
   type StoryPanelCopy,
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
   faqPanelCopyFrom,
+  prelaunchPanelCopyFrom,
   rewardsPanelCopyFrom,
   storyPanelCopyFrom,
 } from './campaign-editor-copy';
@@ -328,6 +330,19 @@ export async function faqPanelCopy(): Promise<FaqPanelCopy> {
     getLocale(),
   ]);
   return faqPanelCopyFrom(editor, localeOrDefault(locale), {
+    remaining: counter.raw('remaining') as PluralForms,
+    tooMany: counter.raw('tooMany') as PluralForms,
+  });
+}
+
+/** The pre-launch tab — the page that goes public before the campaign does. */
+export async function prelaunchPanelCopy(): Promise<PrelaunchPanelCopy> {
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return prelaunchPanelCopyFrom(editor, localeOrDefault(locale), {
     remaining: counter.raw('remaining') as PluralForms,
     tooMany: counter.raw('tooMany') as PluralForms,
   });

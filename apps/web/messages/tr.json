@@ -3547,7 +3547,42 @@
         "answer": "Yanıt",
         "answerHint": "Düz metin. Boş satırlar kampanya sayfasında paragraf olur, başka biçimlendirme yoktur. En fazla {max} karakter."
       }
-    }
+    },
+      "prelaunch": {
+        "loadingLabel": "Kampanya yükleniyor",
+        "notSavedTitle": "Bu değişiklik kaydedilmedi",
+        "notOpenHeading": "Lansman öncesi sayfa henüz açık değil",
+        "notOpenBody": "Açtığınızda aşağıdaki başlık, özet ve kapak görseli paylaşabileceğiniz bir bağlantıda herkese açık olur ve insanlar kampanya başladığında haber verilmesini isteyebilir. Kampanyayla ilgili başka hiçbir şey açılmaz ve parayla ilgisi yoktur.",
+        "notOpenIrreversible": "Geri kapatılamaz — kampanya buradan yalnızca ileri gider: önce incelemeye, sonra lansmana.",
+        "openFailedTitle": "Sayfa açılmadı",
+        "open": "Lansman öncesi sayfayı aç",
+        "openHeading": "Lansman öncesi sayfa açık",
+        "followersFailed": "Bekleyen kişi sayısı yüklenemedi.",
+        "waiting": {
+          "one": "{count} kişi bu kampanyayı bekliyor.",
+          "few": "{count} kişi bu kampanyayı bekliyor.",
+          "many": "{count} kişi bu kampanyayı bekliyor.",
+          "other": "{count} kişi bu kampanyayı bekliyor."
+        },
+        "link": "Lansman öncesi bağlantı",
+        "linkHint": "Bunu istediğiniz yerde paylaşın. Açan herkes kampanya başladığında haber verilmesini isteyebilir.",
+        "copy": "Kopyala",
+        "copied": "Kopyalandı",
+        "copiedAnnouncement": "Bağlantı kopyalandı",
+        "closedTitle": "Lansman öncesi sayfa kapandı",
+        "closedBody": "Bu kampanya lansman öncesi aşamasını geçti. Hatırlatılmasını isteyen herkese bir kez — kampanya başladığında — haber verilir.",
+        "saysHeading": "Sayfada ne yazıyor",
+        "saysBody": "Bunlar kampanyanın başlığı, özeti ve kapak görselidir — «Temel bilgiler» sekmesindekilerin aynısı. Kampanyadan başka bir şey vaat eden bir lansman öncesi sayfa, bunu tam da farkı görecek kişilere vaat etmiş olurdu.",
+        "title": "Başlık",
+        "titleHint": "Lansman öncesi sayfadaki ve keşfet akışındaki ad. En fazla {max} karakter.",
+        "summary": "Özet",
+        "summaryHint": "Bir iki cümle. Takip etmeye karar vermeden önce insan tam olarak bunu okur. En fazla {max} karakter.",
+        "confirmTitle": "Lansman öncesi sayfa açılsın mı?",
+        "confirmBody": "Başlık, özet ve kapak görseli herkesin açabileceği bir bağlantıda herkese açık olur. Bu geri alınamaz.",
+        "cancel": "İptal",
+        "opening": "Açılıyor",
+        "confirmOpen": "Sayfayı aç"
+      }
   },
   "profile": {
     "notFound": "Profil bulunamadı",
