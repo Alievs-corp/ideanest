@@ -81,12 +81,21 @@ export interface AuthFailuresCopy {
   readonly refusedDetail: string;
 }
 
-/** The three fields more than one of these forms asks for. */
+/**
+ * The three fields more than one of these forms asks for.
+ *
+ * `showPassword` and `hidePassword` are the reveal toggle's accessible name in each of its
+ * two states. They live here rather than in the component because `@ideanest/ui` carries no
+ * catalogue — its English defaults are there so the component works standing alone, not so
+ * that an Azerbaijani sign-in form announces a button in English.
+ */
 export interface AuthFieldsCopy {
   readonly email: string;
   readonly emailPlaceholder: string;
   readonly password: string;
   readonly passwordHint: string;
+  readonly showPassword: string;
+  readonly hidePassword: string;
 }
 
 /** §4.1's A-04 and A-05 — the Google and Apple controls. */
@@ -285,6 +294,8 @@ function fieldsCopyFrom(t: AuthTranslator): AuthFieldsCopy {
     emailPlaceholder: t('fields.emailPlaceholder'),
     password: t('fields.password'),
     passwordHint: t('fields.passwordHint'),
+    showPassword: t('fields.showPassword'),
+    hidePassword: t('fields.hidePassword'),
   };
 }
 

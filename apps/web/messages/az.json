@@ -2306,7 +2306,9 @@
       "email": "E-poçt ünvanı",
       "emailPlaceholder": "you@example.com",
       "password": "Şifrə",
-      "passwordHint": "Uzun şifrə mürəkkəb şifrədən güclüdür. Dəqiq tələb, bu şifrə rədd edilərsə, xidmətin özündən gəlir."
+      "passwordHint": "Uzun şifrə mürəkkəb şifrədən güclüdür. Dəqiq tələb, bu şifrə rədd edilərsə, xidmətin özündən gəlir.",
+      "showPassword": "Şifrəni göstər",
+      "hidePassword": "Şifrəni gizlət"
     },
     "failures": {
       "unexpectedTitle": "Nəsə səhv getdi",

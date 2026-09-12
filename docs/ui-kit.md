@@ -664,6 +664,21 @@ keyboard, by switch control, and on every touch device. Dragging is the
 shortcut; the button is the control. Drag-over changes the instruction text as
 well as the border, because colour alone carries nothing.
 
+**A password field reveals on request, and forgets on unmount.** `PasswordInput`
+is the input skin with a toggle in the trailing slot. Masking exists so that
+somebody behind you cannot read the field; it is not a security property of the
+form, and paying for it with a password nobody can proofread costs a refusal on
+registration and an attempt against the rate limit on sign-in. The toggle is a
+real `<button type="button">` — a bare button inside a form submits it, and a
+reveal that signs you in is a wrong-password branch nobody asked for. It carries
+`aria-pressed` **and** renames itself between "Show password" and "Hide
+password", because the icon swap alone is shape-and-colour meaning, which §9.2
+forbids as the sole carrier. It stays in the tab order: the people most likely
+to need to proofread a password are the least likely to be holding a mouse. And
+it never persists — the field returns to masked on every mount, so a revealed
+password does not survive a navigation onto a screen its owner has walked away
+from.
+
 **A length limit is a sentence, not a fraction.** `CharacterCount` reads "48
 characters remaining", and past the limit "3 characters too many" — the wording
 changes before the colour does, because a counter that only turns red has said

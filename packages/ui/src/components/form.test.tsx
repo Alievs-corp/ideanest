@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 import { Field } from './form/Field';
 import { TextInput } from './form/TextInput';
+import { PasswordInput } from './form/PasswordInput';
 import { Textarea } from './form/Textarea';
 import { Select } from './form/Select';
 import { CharacterCount } from './form/CharacterCount';
@@ -100,6 +101,99 @@ describe('TextInput', () => {
     await userEvent.type(input, 'rowan@example.com');
     expect(input).toHaveValue('rowan@example.com');
     expect(onChange).toHaveBeenCalled();
+  });
+});
+
+describe('PasswordInput', () => {
+  /*
+   * A masked input has no `textbox` role, so every query here goes through the
+   * label the `Field` wired up rather than through a role.
+   */
+  it('masks the value until the toggle is pressed, and masks it again after', async () => {
+    render(
+      <Field label="Password">
+        <PasswordInput />
+      </Field>,
+    );
+
+    const input = screen.getByLabelText('Password');
+    expect(input).toHaveAttribute('type', 'password');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(input).toHaveAttribute('type', 'text');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(input).toHaveAttribute('type', 'password');
+  });
+
+  it('states the toggle in aria-pressed, not in the icon alone', async () => {
+    render(
+      <Field label="Password">
+        <PasswordInput />
+      </Field>,
+    );
+
+    const toggle = screen.getByRole('button', { name: 'Show password' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    await userEvent.click(toggle);
+    expect(screen.getByRole('button', { name: 'Hide password' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('does not submit the form it sits in', async () => {
+    const onSubmit = vi.fn((event: { preventDefault: () => void }) => event.preventDefault());
+    render(
+      <form onSubmit={onSubmit}>
+        <Field label="Password">
+          <PasswordInput />
+        </Field>
+      </form>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('is reachable by keyboard, because the people who need it may have no pointer', async () => {
+    render(
+      <Field label="Password">
+        <PasswordInput />
+      </Field>,
+    );
+
+    screen.getByLabelText('Password').focus();
+    await userEvent.tab();
+    expect(screen.getByRole('button', { name: 'Show password' })).toHaveFocus();
+  });
+
+  it('takes its accessible names from the caller, so they can be translated', () => {
+    render(
+      <Field label="Parol">
+        <PasswordInput showLabel="Parolu göstər" hideLabel="Parolu gizlət" />
+      </Field>,
+    );
+    expect(screen.getByRole('button', { name: 'Parolu göstər' })).toBeInTheDocument();
+  });
+
+  it('inherits the Field invalid wiring like any other control', () => {
+    render(
+      <Field label="Password" error="That password was refused.">
+        <PasswordInput />
+      </Field>,
+    );
+    expect(screen.getByLabelText('Password')).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('disables the toggle with the field, so a locked value cannot be read out', () => {
+    render(
+      <Field label="Password">
+        <PasswordInput disabled />
+      </Field>,
+    );
+    expect(screen.getByRole('button', { name: 'Show password' })).toBeDisabled();
   });
 });
 
