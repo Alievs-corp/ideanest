@@ -15,6 +15,8 @@ import az.ideanest.subscription.domain.SubscriptionState;
 import az.ideanest.subscription.infrastructure.SubscriptionPaymentRepository;
 import az.ideanest.subscription.infrastructure.SubscriptionPlanRepository;
 import az.ideanest.subscription.infrastructure.SubscriptionRepository;
+import az.ideanest.user.application.AccountNotFoundException;
+import az.ideanest.user.application.UserDirectory;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -76,6 +78,7 @@ public class Subscriptions {
     private final SubscriptionPlanRepository plans;
     private final SubscriptionPaymentRepository payments;
     private final PlatformStaff staff;
+    private final UserDirectory accounts;
     private final AuditLog audit;
     private final Clock clock;
 
@@ -84,12 +87,14 @@ public class Subscriptions {
             SubscriptionPlanRepository plans,
             SubscriptionPaymentRepository payments,
             PlatformStaff staff,
+            UserDirectory accounts,
             AuditLog audit,
             Clock clock) {
         this.subscriptions = subscriptions;
         this.plans = plans;
         this.payments = payments;
         this.staff = staff;
+        this.accounts = accounts;
         this.audit = audit;
         this.clock = clock;
     }
@@ -309,10 +314,49 @@ public class Subscriptions {
         return subscription;
     }
 
-    /** What this account has paid, newest first — V73's journal for one account. */
+    /**
+     * Everything one account has held and paid, for the console's account page.
+     *
+     * <p><strong>Any member of staff, not {@code CONFIGURE_PLATFORM}.</strong> The revenue
+     * report needs the capability because it is every subscriber at once; this is one person,
+     * on the page where somebody is deciding about that person, and it follows the account
+     * page's pledge list — {@code UserAdministrationService.pledgesOf} — which asks the same
+     * question and makes the same argument: a moderator weighing a suspension should see what
+     * the account has paid the platform, not a page with that section missing because their
+     * role does not administer plans.
+     *
+     * <p><strong>Recorded, and only as counts.</strong> The trail says a member of staff read
+     * this account's payments, which is the fact an investigation needs; copying amounts or
+     * plan names into {@code audit_logs} would make the row the disclosure it exists to record.
+     *
+     * <p><strong>Unpaged.</strong> A monthly plan is twelve subscriptions and twelve payments a
+     * year at the most. An account with enough rows to need a cursor is one somebody should be
+     * looking at for a different reason, which is {@code SubscriptionRepository.historyFor}'s
+     * argument too.
+     *
+     * @throws AccountNotFoundException for an identifier that names nothing and for a deleted
+     *     account — the answer the account page's other reads give, so the page fails in one way
+     */
     @Transactional(readOnly = true)
-    public List<SubscriptionPayment> paymentsBy(UUID accountId) {
-        return payments.forAccount(accountId);
+    public AccountSubscriptionHistory accountHistory(UUID staffId, UUID accountId) {
+        staff.requireStaff(staffId);
+        if (accounts.find(accountId).isEmpty()) {
+            throw new AccountNotFoundException(accountId);
+        }
+
+        List<Subscription> held = subscriptions.historyFor(accountId);
+        List<PaymentPage.Payment> paid = payments.forAccount(accountId).stream()
+                .map(PaymentPage.Payment::recorded)
+                .toList();
+
+        audit.recordIndependently(
+                AuditAction.ACCOUNTS_SEARCHED,
+                accountId,
+                AuditActor.moderator(staffId),
+                AuditOutcome.SUCCEEDED,
+                "subscriptions=%d; payments=%d".formatted(held.size(), paid.size()));
+
+        return new AccountSubscriptionHistory(held, paid);
     }
 
     /**

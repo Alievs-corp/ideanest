@@ -190,4 +190,19 @@ public final class SubscriptionResponses {
     /** The console's list. */
     public record ConsoleList(List<ConsoleRow> subscriptions) {
     }
+
+    /**
+     * One account's subscriptions and payments, for the console's account page — #23.
+     *
+     * <p>Named in full rather than {@code History}: springdoc names a schema by the record's
+     * simple name and silently keeps the first it meets, and {@code SubscriptionRevenueResponses}
+     * records what a short name cost that file.
+     *
+     * @param subscriptions newest first, every state
+     * @param payments newest first by when the money arrived. The payer's address is not on
+     *     these rows — the page is already about that one account
+     */
+    public record AccountSubscriptionHistoryResponse(
+            List<ConsoleRow> subscriptions, List<SubscriptionRevenueResponses.SubscriptionPaymentEntry> payments) {
+    }
 }
