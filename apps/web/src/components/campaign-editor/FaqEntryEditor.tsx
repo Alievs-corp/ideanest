@@ -54,7 +54,11 @@ import { describeFailure, type SaveFailure } from './useAutosave';
  * `prefers-reduced-motion`. Nothing here adds any: docs/motion-system.md §5
  * gives the campaign editor "none — autosave indicator only".
  */
-import type { EditorDrawerCopy } from '../../lib/i18n/campaign-editor-copy';
+import type {
+  EditorDrawerCopy,
+  FaqEntryCopy,
+} from '../../lib/i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 export interface FaqEntryEditorProps {
   projectId: string;
@@ -67,6 +71,8 @@ export interface FaqEntryEditorProps {
    * translated first looks like from the tab that follows it.
    */
   drawer: EditorDrawerCopy;
+  /** This drawer's own words. */
+  copy: FaqEntryCopy;
   open: boolean;
   /** The entry being edited, or null to add one. */
   faq: ProjectFaq | null;
@@ -78,6 +84,7 @@ export interface FaqEntryEditorProps {
 export function FaqEntryEditor({
   projectId,
   drawer,
+  copy,
   open,
   faq,
   onOpenChange,
@@ -142,25 +149,25 @@ export function FaqEntryEditor({
       copy={drawer}
       open={open}
       onOpenChange={onOpenChange}
-      title={faq === null ? 'Add a question' : 'Edit question'}
-      description="Questions and answers appear on the campaign page, in the order you put them in."
+      title={faq === null ? copy.addTitle : copy.editTitle}
+      description={copy.description}
       saving={saving}
       onSave={() => void save()}
     >
       <div className="flex flex-col gap-6">
         {failure !== null && (
-          <InlineAlert variant="danger" title="This question was not saved">
+          <InlineAlert variant="danger" title={copy.notSavedTitle}>
             <p>{failure.message}</p>
             <p className="mt-2 text-white/64">
-              Nothing you typed has been lost — it is still in the fields below.
+              {copy.notSavedDetail}
             </p>
           </InlineAlert>
         )}
 
         <Field
-          label="Question"
+          label={copy.question}
           required
-          hint={`As a backer would ask it. ${FAQ_QUESTION_MAX_CHARACTERS} characters or fewer.`}
+          hint={fillPlaceholders(copy.questionHint, { max: String(FAQ_QUESTION_MAX_CHARACTERS) })}
           error={visible.question}
         >
           {/*
@@ -176,13 +183,15 @@ export function FaqEntryEditor({
           <CharacterCount
             count={characterCount(draft.question)}
             limit={FAQ_QUESTION_MAX_CHARACTERS}
+            copy={copy.characterCount}
+            locale={copy.locale}
           />
         </Field>
 
         <Field
-          label="Answer"
+          label={copy.answer}
           required
-          hint={`Plain text. Blank lines become paragraph breaks on the campaign page; nothing else is formatting. ${FAQ_ANSWER_MAX_CHARACTERS} characters or fewer.`}
+          hint={fillPlaceholders(copy.answerHint, { max: String(FAQ_ANSWER_MAX_CHARACTERS) })}
           error={visible.answer}
         >
           {/*
@@ -196,7 +205,12 @@ export function FaqEntryEditor({
             value={draft.answer}
             onChange={(event) => setDraft({ ...draft, answer: event.target.value })}
           />
-          <CharacterCount count={characterCount(draft.answer)} limit={FAQ_ANSWER_MAX_CHARACTERS} />
+          <CharacterCount
+            count={characterCount(draft.answer)}
+            limit={FAQ_ANSWER_MAX_CHARACTERS}
+            copy={copy.characterCount}
+            locale={copy.locale}
+          />
         </Field>
       </div>
     </EditorDrawer>

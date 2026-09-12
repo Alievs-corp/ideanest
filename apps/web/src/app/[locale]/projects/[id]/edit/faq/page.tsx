@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { FaqPanel } from '../../../../../../components/campaign-editor/FaqPanel';
-import { editorChromeCopy } from '../../../../../../lib/i18n/shell-copy.server';
+import {
+  editorChromeCopy,
+  faqPanelCopy,
+} from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
 export const metadata: Metadata = privatePageMetadata({
@@ -23,7 +26,7 @@ export const metadata: Metadata = privatePageMetadata({
  */
 export default async function FaqPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const copy = await editorChromeCopy();
+  const [copy, faq] = await Promise.all([editorChromeCopy(), faqPanelCopy()]);
 
   /*
    * No `<main>` since #347. `app/projects/[id]/edit/layout.tsx` puts the editor inside
@@ -31,5 +34,5 @@ export default async function FaqPage({ params }: { params: Promise<{ id: string
    * `EditorShell` draws this page's own column and heading, so the element that was here
    * carried a landmark and nothing else.
    */
-  return <FaqPanel projectId={id} copy={copy} />;
+  return <FaqPanel projectId={id} copy={copy} faq={faq} />;
 }
