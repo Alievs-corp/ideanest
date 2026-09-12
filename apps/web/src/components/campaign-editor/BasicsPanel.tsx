@@ -168,8 +168,8 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
   if (status === 'signed-out') {
     return (
       <EditorShell projectId={projectId} copy={copy} active="basics">
-        <InlineAlert variant="info" title={basics.signedOutTitle}>
-          {basics.signedOutDetail}
+        <InlineAlert variant="info" title={copy.signedOutTitle}>
+          {copy.signedOutDetail}
         </InlineAlert>
       </EditorShell>
     );
@@ -180,11 +180,11 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
       <EditorShell projectId={projectId} copy={copy} active="basics">
         {status === 'failed' ? (
           <>
-            <InlineAlert variant="danger" title={basics.loadFailedTitle}>
+            <InlineAlert variant="danger" title={copy.loadFailedTitle}>
               {error}
             </InlineAlert>
             <Pill variant="ghost" size="sm" className="mt-4" onClick={reload}>
-              {basics.tryAgain}
+              {copy.tryAgain}
             </Pill>
           </>
         ) : (
@@ -233,7 +233,7 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
             <p>{failure.message}</p>
             <p className="mt-2 text-white/64">{basics.notSavedDetail}</p>
             <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
-              {basics.tryAgain}
+              {copy.tryAgain}
             </Pill>
           </InlineAlert>
         )}

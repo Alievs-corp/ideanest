@@ -36,7 +36,11 @@ import { Drawer } from '@ideanest/ui/motion';
  * under `prefers-reduced-motion`. Nothing here adds any (docs/motion-system.md
  * §5 gives the campaign editor "none").
  */
+import type { EditorDrawerCopy } from '../../lib/i18n/campaign-editor-copy';
+
 export interface EditorDrawerProps {
+  /** The two buttons' words. */
+  copy: EditorDrawerCopy;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -48,6 +52,7 @@ export interface EditorDrawerProps {
 }
 
 export function EditorDrawer({
+  copy,
   open,
   onOpenChange,
   title,
@@ -69,10 +74,10 @@ export function EditorDrawer({
       footer={
         <div className="flex flex-wrap justify-end gap-2">
           <Pill variant="ghost" disabled={saving} onClick={() => onOpenChange(false)}>
-            Cancel
+            {copy.cancel}
           </Pill>
           <Pill variant="primary" disabled={saving} onClick={onSave}>
-            {saving ? 'Saving' : 'Save'}
+            {saving ? copy.saving : copy.save}
           </Pill>
         </div>
       }

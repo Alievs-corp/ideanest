@@ -99,7 +99,13 @@ import { describeFailure, type SaveFailure } from './useAutosave';
  * repository holds a list of countries with their names, and a hard-coded one
  * in a drawer is a list that goes stale where nobody is looking.
  */
+import type { RewardTierEditorCopy } from '../../lib/i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralise } from '../../lib/i18n/plurals';
+
 export interface RewardTierEditorProps {
+  /** This drawer's words. */
+  copy: RewardTierEditorCopy;
   project: ProjectEdit;
   open: boolean;
   /** The tier being edited, or null to create one. */
@@ -112,6 +118,7 @@ export interface RewardTierEditorProps {
 }
 
 export function RewardTierEditor({
+  copy,
   project,
   open,
   reward,
@@ -304,10 +311,11 @@ export function RewardTierEditor({
 
   return (
     <EditorDrawer
+      copy={copy.drawer}
       open={open}
       onOpenChange={onOpenChange}
-      title={target === null ? 'Add a reward' : 'Edit reward'}
-      description="What a backer selects and pays for. It is made of the items above, in the quantities you choose."
+      title={target === null ? copy.addTitle : copy.editTitle}
+      description={copy.description}
       saving={saving}
       onSave={() => void save()}
     >
@@ -315,12 +323,12 @@ export function RewardTierEditor({
         {failure !== null && (
           <InlineAlert
             variant="danger"
-            title={ratesUnsaved ? 'The shipping rates were not saved' : 'This reward was not saved'}
+            title={ratesUnsaved ? copy.ratesNotSavedTitle : copy.notSavedTitle}
           >
             <p>{failure.message}</p>
             {ratesUnsaved ? (
               <p className="mt-2 text-white/64">
-                Everything else about the reward <strong className="text-white">was</strong> saved.
+                {copy.rest} <strong className="text-white">was</strong> saved.
                 Only the per-country rates were refused, so fix them and save again — the rest will
                 not be sent twice.
               </p>
@@ -333,9 +341,9 @@ export function RewardTierEditor({
         )}
 
         <Field
-          label="Title"
+          label={copy.title}
           required
-          hint={`What a backer sees in the reward list. ${REWARD_TITLE_MAX_CHARACTERS} characters or fewer.`}
+          hint={fillPlaceholders(copy.titleHint, { max: String(REWARD_TITLE_MAX_CHARACTERS) })}
           error={visible.title}
         >
           <TextInput
@@ -343,12 +351,17 @@ export function RewardTierEditor({
             autoComplete="off"
             onChange={(event) => setDraft({ ...draft, title: event.target.value })}
           />
-          <CharacterCount count={characterCount(draft.title)} limit={REWARD_TITLE_MAX_CHARACTERS} />
+          <CharacterCount
+            count={characterCount(draft.title)}
+            limit={REWARD_TITLE_MAX_CHARACTERS}
+            copy={copy.characterCount}
+            locale={copy.locale}
+          />
         </Field>
 
         <Field
-          label="Description"
-          hint="What they get, in a sentence or two."
+          label={copy.summary}
+          hint={copy.summaryHint}
           error={visible.description}
         >
           <Textarea
@@ -360,12 +373,12 @@ export function RewardTierEditor({
 
         <div className="grid gap-6 sm:grid-cols-2">
           <Field
-            label="Price"
+            label={copy.price}
             required
             hint={
               priceLocked
-                ? `The price cannot change once the campaign has launched. Priced in ${currency}.`
-                : `The amount a backer pays. Priced in ${currency}, the campaign’s currency.`
+                ? fillPlaceholders(copy.priceHintLocked, { currency })
+                : fillPlaceholders(copy.priceHint, { currency })
             }
             error={visible.price}
           >
@@ -387,8 +400,8 @@ export function RewardTierEditor({
           </Field>
 
           <Field
-            label="Estimated delivery"
-            hint="The month you expect to deliver in. Backers read this as a promise."
+            label={copy.estimatedDelivery}
+            hint={copy.estimatedDeliveryHint}
             error={visible.estimatedDelivery}
           >
             {/*
@@ -405,13 +418,11 @@ export function RewardTierEditor({
         </div>
 
         <Field
-          label="Number of places"
+          label={copy.places}
           hint={
             committedQuantity > 0
-              ? `Leave empty for unlimited. ${committedQuantity} ${
-                  committedQuantity === 1 ? 'place is' : 'places are'
-                } already taken, so the limit cannot go below that.`
-              : 'Leave empty for unlimited. A quantity may always be raised later; it may only be lowered above what is already taken.'
+              ? pluralise(copy.locale, copy.placesHintCommitted, committedQuantity)
+              : copy.placesHint
           }
           error={visible.limitQuantity}
         >
@@ -424,7 +435,7 @@ export function RewardTierEditor({
         </Field>
 
         <Field
-          label="Delivery"
+          label={copy.delivery}
           hint={SHIPPING_SCOPES.find((scope) => scope.value === draft.shippingType)?.hint}
           error={visible.shippingType}
         >
@@ -448,6 +459,7 @@ export function RewardTierEditor({
 
         {shipped && (
           <ShippingRates
+            copy={copy}
             rules={draft.shippingRules}
             currency={currency}
             error={visible.rules}
@@ -458,6 +470,7 @@ export function RewardTierEditor({
         )}
 
         <Composition
+            copy={copy}
           lines={draft.items}
           available={available}
           resolve={line}
@@ -469,8 +482,8 @@ export function RewardTierEditor({
 
         <div className="grid gap-6 sm:grid-cols-2">
           <Field
-            label="Opens"
-            hint="Optional. Leave it empty for a reward that is available as soon as the campaign is."
+            label={copy.opens}
+            hint={copy.opensHint}
             error={visible.availableFrom}
           >
             <TextInput
@@ -481,8 +494,8 @@ export function RewardTierEditor({
           </Field>
 
           <Field
-            label="Closes"
-            hint="Optional. A moment in the past hides the reward — which is what the Hide control in the list sets."
+            label={copy.closes}
+            hint={copy.closesHint}
             error={visible.availableUntil}
           >
             <TextInput
@@ -494,12 +507,12 @@ export function RewardTierEditor({
         </div>
 
         <fieldset className="flex flex-col gap-5 rounded-lg border border-white/8 bg-surface-2 p-5">
-          <legend className="px-1 text-sm font-medium text-white">How it is offered</legend>
+          <legend className="px-1 text-sm font-medium text-white">{copy.offering}</legend>
 
           <div>
             <Switch
               checked={draft.isEarlyBird}
-              label="Early bird"
+              label={copy.earlyBird}
               aria-describedby={earlyBirdHintId}
               onCheckedChange={(checked) => setDraft({ ...draft, isEarlyBird: checked })}
             />
@@ -518,12 +531,12 @@ export function RewardTierEditor({
           <div>
             <Switch
               checked={draft.isFeatured}
-              label="Featured"
+              label={copy.featured}
               aria-describedby={featuredHintId}
               onCheckedChange={(checked) => setDraft({ ...draft, isFeatured: checked })}
             />
             <p id={featuredHintId} className="mt-2 text-[13px] text-white/64">
-              Shown first on the campaign page.
+              {copy.featuredHint}
             </p>
             {visible.isFeatured !== undefined && (
               <InlineAlert variant="danger" className="mt-3">
@@ -535,7 +548,7 @@ export function RewardTierEditor({
           <div>
             <Switch
               checked={draft.isSecret}
-              label="Secret"
+              label={copy.secret}
               aria-describedby={secretHintId}
               onCheckedChange={(checked) => setDraft({ ...draft, isSecret: checked })}
             />
@@ -551,7 +564,7 @@ export function RewardTierEditor({
                 public again.
               */
               <p className="mt-2 rounded-md bg-surface-3 p-3 font-mono text-[13px] break-all text-white/64">
-                <span className="mr-2 font-sans text-white/40">Token</span>
+                <span className="mr-2 font-sans text-white/40">{copy.token}</span>
                 {target.secretToken}
               </p>
             )}
@@ -560,12 +573,12 @@ export function RewardTierEditor({
           <div>
             <Switch
               checked={draft.isAddon}
-              label="Sold as an add-on"
+              label={copy.addOn}
               aria-describedby={addonHintId}
               onCheckedChange={(checked) => setDraft({ ...draft, isAddon: checked })}
             />
             <p id={addonHintId} className="mt-2 text-[13px] text-white/64">
-              Offered alongside a reward rather than instead of one.
+              {copy.addOnHint}
             </p>
           </div>
         </fieldset>
@@ -591,6 +604,7 @@ export function RewardTierEditor({
  * times is four controls a screen-reader user cannot tell apart.
  */
 function Composition({
+  copy,
   lines,
   available,
   resolve,
@@ -599,6 +613,7 @@ function Composition({
   onChange,
   onRemove,
 }: {
+  copy: RewardTierEditorCopy;
   lines: readonly RewardLineDraft[];
   available: readonly Item[];
   resolve: (itemId: string) => Item | undefined;
@@ -610,8 +625,8 @@ function Composition({
   return (
     <Field
       grouped
-      label="What is in it"
-      hint="The items a backer receives. A reward with nothing in it is legitimate — a thank-you, a credit — and it is what an empty list means."
+      label={copy.contents}
+      hint={copy.contentsHint}
       error={error}
     >
       {lines.length > 0 && (
@@ -625,7 +640,7 @@ function Composition({
              * would silently drop the line from the composition on the next
              * save.
              */
-            const name = item?.name ?? 'An item that is no longer in this campaign';
+            const name = item?.name ?? copy.missingItem;
 
             return (
               <li
@@ -645,7 +660,7 @@ function Composition({
                     size="sm"
                     inputMode="numeric"
                     autoComplete="off"
-                    aria-label={`Quantity of ${name}`}
+                    aria-label={fillPlaceholders(copy.quantityOf, { name })}
                     className="w-16 text-center"
                     value={entry.quantity}
                     onChange={(event) =>
@@ -656,7 +671,7 @@ function Composition({
 
                 <IconButton
                   icon={<Trash2 />}
-                  label={`Remove ${name} from this reward`}
+                  label={fillPlaceholders(copy.removeFromReward, { name })}
                   variant="ghost"
                   size="sm"
                   onClick={() => onRemove(index)}
@@ -669,9 +684,9 @@ function Composition({
 
       {available.length > 0 ? (
         <Select
-          placeholder="Add an item…"
+          placeholder={copy.addItemPlaceholder}
           value=""
-          aria-label="Add an item to this reward"
+          aria-label={copy.addItem}
           onChange={(event) => onAdd(event.target.value)}
         >
           {available.map((item) => (
@@ -683,8 +698,8 @@ function Composition({
       ) : (
         <p className="text-[13px] text-white/40">
           {lines.length === 0
-            ? 'This campaign has no items yet. Add one in the list behind this panel, and it will appear here.'
-            : 'Every item in this campaign is already in this reward.'}
+            ? copy.noItemsYet
+            : copy.everyItemAdded}
         </p>
       )}
     </Field>
@@ -708,6 +723,7 @@ function Composition({
  * only honest thing to call it.
  */
 function ShippingRates({
+  copy,
   rules,
   currency,
   error,
@@ -715,6 +731,7 @@ function ShippingRates({
   onChange,
   onRemove,
 }: {
+  copy: RewardTierEditorCopy;
   rules: readonly ShippingRateDraft[];
   currency: string;
   error: string | undefined;
@@ -725,13 +742,13 @@ function ShippingRates({
   return (
     <Field
       grouped
-      label="Shipping rates"
-      hint={`One rate per destination, in ${currency}. A country with no rate cannot be chosen at checkout, and 0 is free shipping.`}
+      label={copy.shipping}
+      hint={fillPlaceholders(copy.ratesHint, { currency })}
       error={error}
     >
       {rules.length === 0 ? (
         <p className="text-[13px] text-white/40">
-          No destinations priced yet, so this reward cannot be shipped anywhere.
+          {copy.noDestinations}
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -760,8 +777,8 @@ function ShippingRates({
                   size="sm"
                   autoComplete="off"
                   maxLength={2}
-                  placeholder="AZ"
-                  aria-label={`Country code for ${named}`}
+                  placeholder={copy.countryPlaceholder}
+                  aria-label={fillPlaceholders(copy.countryCodeFor, { name: named })}
                   className="uppercase"
                   value={rule.countryCode}
                   onChange={(event) => onChange(index, { ...rule, countryCode: event.target.value })}
@@ -770,8 +787,8 @@ function ShippingRates({
                   size="sm"
                   inputMode="decimal"
                   autoComplete="off"
-                  placeholder="Rate"
-                  aria-label={`Shipping rate to ${named}`}
+                  placeholder={copy.ratePlaceholder}
+                  aria-label={fillPlaceholders(copy.shippingRateTo, { name: named })}
                   value={rule.amount}
                   onChange={(event) => onChange(index, { ...rule, amount: event.target.value })}
                 />
@@ -779,8 +796,8 @@ function ShippingRates({
                   size="sm"
                   inputMode="decimal"
                   autoComplete="off"
-                  placeholder="Each extra"
-                  aria-label={`Rate for each additional item to ${named}`}
+                  placeholder={copy.extraPlaceholder}
+                  aria-label={fillPlaceholders(copy.additionalRateTo, { name: named })}
                   value={rule.additionalItemAmount}
                   onChange={(event) =>
                     onChange(index, { ...rule, additionalItemAmount: event.target.value })
@@ -788,7 +805,7 @@ function ShippingRates({
                 />
                 <IconButton
                   icon={<Trash2 />}
-                  label={`Remove ${named}`}
+                  label={fillPlaceholders(copy.removeNamed, { name: named })}
                   variant="ghost"
                   size="sm"
                   onClick={() => onRemove(index)}
@@ -806,7 +823,7 @@ function ShippingRates({
         iconLeft={<Plus aria-hidden="true" className="size-4" />}
         onClick={onAdd}
       >
-        Add a destination
+        {copy.addDestination}
       </Pill>
     </Field>
   );

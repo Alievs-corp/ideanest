@@ -18,7 +18,12 @@ import type { Item } from '../../lib/projects/api';
  *
  * MOTION: none. Creators spend hours here (docs/motion-system.md §5).
  */
+import type { ItemsSectionCopy } from '../../lib/i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+
 export interface ItemsSectionProps {
+  /** This list's words. */
+  copy: ItemsSectionCopy;
   items: readonly Item[];
   loading: boolean;
   onAdd: () => void;
@@ -29,6 +34,7 @@ export interface ItemsSectionProps {
 }
 
 export function ItemsSection({
+  copy,
   items,
   loading,
   onAdd,
@@ -40,7 +46,7 @@ export function ItemsSection({
     <section aria-labelledby="items-heading" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="items-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
-          Items{' '}
+          {copy.itemsHeading}{' '}
           {/* The count is tertiary at 12px: present, never competing with the
               title (docs/ui-kit.md §7.12). */}
           <span className="text-xs font-normal text-white/40">({items.length})</span>
@@ -52,12 +58,12 @@ export function ItemsSection({
           iconLeft={<Plus aria-hidden="true" className="size-4" />}
           onClick={onAdd}
         >
-          Add an item
+          {copy.add}
         </Pill>
       </div>
 
       {loading ? (
-        <SkeletonGroup label="Loading this campaign’s items">
+        <SkeletonGroup label={copy.loadingLabel}>
           <div className="flex flex-col gap-2">
             {[0, 1].map((row) => (
               <Skeleton key={row} height="4.5rem" />
@@ -67,11 +73,11 @@ export function ItemsSection({
       ) : items.length === 0 ? (
         <EmptyState
           headingLevel={3}
-          title="No items yet"
-          description="An item is one physical or digital thing — a mug, a poster, a download. Rewards are built out of them, so this is where a campaign starts."
+          title={copy.emptyTitle}
+          description={copy.description}
           action={
             <Pill variant="ghost" size="sm" onClick={onAdd}>
-              Add the first item
+              {copy.addFirst}
             </Pill>
           }
         />
@@ -95,7 +101,7 @@ export function ItemsSection({
                     and it must not depend on telling two greys apart
                     (docs/ui-kit.md §9.2).
                   */}
-                  <Tag>{item.isDigital ? 'Digital' : 'Physical'}</Tag>
+                  <Tag>{item.isDigital ? copy.digital : copy.physical}</Tag>
                   {item.weightGrams != null && <Tag>{item.weightGrams} g</Tag>}
                   {item.sku != null && item.sku !== '' && <Tag>{item.sku}</Tag>}
                 </div>
@@ -106,19 +112,19 @@ export function ItemsSection({
                   variant="ghost"
                   size="sm"
                   disabled={busyId === item.id}
-                  aria-label={`Edit ${item.name}`}
+                  aria-label={fillPlaceholders(copy.editNamed, { name: item.name })}
                   onClick={() => onEdit(item)}
                 >
-                  Edit
+                  {copy.edit}
                 </Pill>
                 <Pill
                   variant="ghost"
                   size="sm"
                   disabled={busyId === item.id}
-                  aria-label={`Delete ${item.name}`}
+                  aria-label={fillPlaceholders(copy.deleteNamed, { name: item.name })}
                   onClick={() => onDelete(item)}
                 >
-                  Delete
+                  {copy.delete}
                 </Pill>
               </div>
             </li>

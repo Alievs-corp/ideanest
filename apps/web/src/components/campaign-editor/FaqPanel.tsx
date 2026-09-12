@@ -433,6 +433,7 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
 
       <FaqEntryEditor
         projectId={projectId}
+        drawer={copy.drawer}
         open={editor.open}
         faq={editor.faq}
         onOpenChange={(open) => setEditor((current) => ({ ...current, open }))}

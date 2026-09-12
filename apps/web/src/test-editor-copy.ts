@@ -2,8 +2,10 @@ import MESSAGES from '../messages/en.json';
 import {
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
+  rewardsPanelCopyFrom,
   type BasicsPanelCopy,
   type EditorChromeCopy,
+  type RewardsPanelCopy,
 } from './lib/i18n/campaign-editor-copy';
 
 /**
@@ -68,3 +70,6 @@ export const EDITOR_COPY: EditorChromeCopy = editorChromeCopyFrom(read, counter,
 
 /** The basics tab's own words, and the vocabulary `validateBasics` refuses in. */
 export const BASICS_COPY: BasicsPanelCopy = basicsPanelCopyFrom(read);
+
+/** The rewards tab, the items list, and the two drawers they open. */
+export const REWARDS_COPY: RewardsPanelCopy = rewardsPanelCopyFrom(read, 'en', EDITOR_COPY.characterCount);

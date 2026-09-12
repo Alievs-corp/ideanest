@@ -19,7 +19,7 @@ import {
   type Reward,
 } from '../../lib/projects/api';
 import { RewardsPanel } from './RewardsPanel';
-import { EDITOR_COPY } from '../../test-editor-copy';
+import { EDITOR_COPY, REWARDS_COPY } from '../../test-editor-copy';
 
 /**
  * Appearance is reviewed in Storybook. These cover what fails silently: the
@@ -146,7 +146,7 @@ async function openRewards({ project, items, rewards }: Fixture = {}): Promise<U
   listRewardsMock.mockResolvedValue(rewards ?? [FIRST, SECOND]);
 
   const user = userEvent.setup({ advanceTimers: (ms) => void vi.advanceTimersByTime(ms) });
-  render(<RewardsPanel projectId="project-1" copy={EDITOR_COPY} />);
+  render(<RewardsPanel projectId="project-1" copy={EDITOR_COPY} rewards={REWARDS_COPY} />);
 
   // The project, and the two lists that resolve together.
   await tick();
@@ -178,7 +178,7 @@ describe('RewardsPanel', () => {
     listItemsMock.mockReturnValue(new Promise<readonly Item[]>(() => {}));
     listRewardsMock.mockReturnValue(new Promise<readonly Reward[]>(() => {}));
 
-    render(<RewardsPanel projectId="project-1" copy={EDITOR_COPY} />);
+    render(<RewardsPanel projectId="project-1" copy={EDITOR_COPY} rewards={REWARDS_COPY} />);
     await tick();
 
     const label = screen.getByText('Loading this campaign’s items');
@@ -658,7 +658,7 @@ describe('RewardsPanel', () => {
       listItemsMock.mockResolvedValue([]);
       listRewardsMock.mockResolvedValue([]);
 
-      render(<RewardsPanel projectId="project-1" copy={EDITOR_COPY} />);
+      render(<RewardsPanel projectId="project-1" copy={EDITOR_COPY} rewards={REWARDS_COPY} />);
       await tick();
 
       expect(screen.getByText('You are signed out')).toBeInTheDocument();
@@ -670,7 +670,7 @@ describe('RewardsPanel', () => {
       listRewardsMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
 
       const user = userEvent.setup({ advanceTimers: (ms) => void vi.advanceTimersByTime(ms) });
-      render(<RewardsPanel projectId="project-1" copy={EDITOR_COPY} />);
+      render(<RewardsPanel projectId="project-1" copy={EDITOR_COPY} rewards={REWARDS_COPY} />);
       await tick();
       await tick();
 

@@ -17,11 +17,14 @@ import {
   verifyEmailCopyFrom,
 } from './auth-copy';
 import { type CheckoutCopy, checkoutCopyFrom } from './checkout-copy';
+import type { PluralForms } from '@ideanest/ui';
 import {
   type BasicsPanelCopy,
   type EditorChromeCopy,
+  type RewardsPanelCopy,
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
+  rewardsPanelCopyFrom,
 } from './campaign-editor-copy';
 import {
   type CampaignActionsCopy,
@@ -285,4 +288,17 @@ export async function editorChromeCopy(): Promise<EditorChromeCopy> {
 /** The basics tab's own words — the first of the six panels. */
 export async function basicsPanelCopy(): Promise<BasicsPanelCopy> {
   return basicsPanelCopyFrom(await getTranslations('campaignEditor'));
+}
+
+/** The rewards tab, the items list, and the two drawers they open. */
+export async function rewardsPanelCopy(): Promise<RewardsPanelCopy> {
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return rewardsPanelCopyFrom(editor, localeOrDefault(locale), {
+    remaining: counter.raw('remaining') as PluralForms,
+    tooMany: counter.raw('tooMany') as PluralForms,
+  });
 }

@@ -1,4 +1,6 @@
 import type { CharacterCountCopy, PluralForms } from '@ideanest/ui';
+import type { PluralForms as AppPluralForms } from './plurals';
+import type { Locale } from './locale';
 import type { ProjectState } from '../projects/api';
 import type { EditorTabKey } from '../../components/campaign-editor/tabs';
 
@@ -36,6 +38,13 @@ import type { EditorTabKey } from '../../components/campaign-editor/tabs';
  * the product says is a copy decision rather than a translation one, so it is reported rather
  * than quietly resolved here.
  */
+
+/** The two controls every editor drawer ends with. */
+export interface EditorDrawerCopy {
+  readonly cancel: string;
+  readonly save: string;
+  readonly saving: string;
+}
 
 /** Whether the work is safe — the three words `SaveStatus` can show. */
 export interface SaveStatusCopy {
@@ -80,6 +89,19 @@ export interface EditorChromeCopy {
    */
   readonly characterCount: CharacterCountCopy;
   readonly locale: string;
+  /**
+   * The three states every tab can be in besides "working", and the control that leaves them.
+   *
+   * They sit on the frame because all six panels render them with the same words. Six copies
+   * in the catalogue would be six sentences to keep in step, and the first to drift would be
+   * the one nobody reads in Turkish.
+   */
+  readonly signedOutTitle: string;
+  readonly signedOutDetail: string;
+  readonly loadFailedTitle: string;
+  readonly tryAgain: string;
+  /** The drawers open from three tabs, so their two buttons ride with the frame. */
+  readonly drawer: EditorDrawerCopy;
 }
 
 /**
@@ -187,6 +209,15 @@ export function editorChromeCopyFrom(
       tooMany: counter.raw('tooMany') as PluralForms,
     },
     locale,
+    signedOutTitle: t('signedOutTitle'),
+    signedOutDetail: t('signedOutDetail'),
+    loadFailedTitle: t('loadFailedTitle'),
+    tryAgain: t('tryAgain'),
+    drawer: {
+      cancel: t('drawer.cancel'),
+      save: t('drawer.save'),
+      saving: t('drawer.saving'),
+    },
   };
 }
 
@@ -234,10 +265,6 @@ export interface BasicsValidationCopy {
 
 /** The basics tab's own words. The frame's are in {@link EditorChromeCopy}. */
 export interface BasicsPanelCopy {
-  readonly signedOutTitle: string;
-  readonly signedOutDetail: string;
-  readonly loadFailedTitle: string;
-  readonly tryAgain: string;
   readonly loadingLabel: string;
   readonly notSavedTitle: string;
   readonly notSavedDetail: string;
@@ -297,10 +324,6 @@ export function basicsValidationCopyFrom(t: CampaignEditorTranslator): BasicsVal
 
 export function basicsPanelCopyFrom(t: CampaignEditorTranslator): BasicsPanelCopy {
   return {
-    signedOutTitle: t('basics.signedOutTitle'),
-    signedOutDetail: t('basics.signedOutDetail'),
-    loadFailedTitle: t('basics.loadFailedTitle'),
-    tryAgain: t('basics.tryAgain'),
     loadingLabel: t('basics.loadingLabel'),
     notSavedTitle: t('basics.notSavedTitle'),
     notSavedDetail: t('basics.notSavedDetail'),
@@ -331,5 +354,366 @@ export function basicsPanelCopyFrom(t: CampaignEditorTranslator): BasicsPanelCop
     latePledges: t('basics.latePledges'),
     latePledgesHint: t('basics.latePledgesHint'),
     validation: basicsValidationCopyFrom(t),
+  };
+}
+
+/* -------------------------------------------------------------------------
+ * Rewards — §4.5's second tab, and the items rewards are built from
+ * ---------------------------------------------------------------------- */
+
+/** `ItemEditor` — one physical or digital thing. */
+export interface ItemEditorCopy {
+  readonly drawer: EditorDrawerCopy;
+  readonly characterCount: CharacterCountCopy;
+  readonly locale: Locale;
+  readonly addTitle: string;
+  readonly editTitle: string;
+  readonly notSavedTitle: string;
+  readonly name: string;
+  /** Carries `{max}`. */
+  readonly nameHint: string;
+  readonly description: string;
+  readonly descriptionHint: string;
+  /** The drawer's own sentence, not the field label above. */
+  readonly drawerDescription: string;
+  readonly imageUrl: string;
+  readonly imageUrlHint: string;
+  readonly imageUrlPlaceholder: string;
+  readonly isDigital: string;
+  readonly isDigitalHint: string;
+  readonly weight: string;
+  readonly weightHintDigital: string;
+  readonly sku: string;
+  readonly skuHint: string;
+}
+
+/** `ItemsSection` — the list the rewards are assembled from. */
+export interface ItemsSectionCopy {
+  readonly itemsHeading: string;
+  readonly description: string;
+  readonly loadingLabel: string;
+  readonly emptyTitle: string;
+  readonly add: string;
+  readonly addFirst: string;
+  readonly delete: string;
+  readonly edit: string;
+  readonly digital: string;
+  readonly physical: string;
+  /** Carries `{name}`. */
+  readonly editNamed: string;
+  /** Carries `{name}`. */
+  readonly deleteNamed: string;
+}
+
+/** `RewardTierEditor` — the drawer one reward is edited in. */
+export interface RewardTierEditorCopy {
+  readonly drawer: EditorDrawerCopy;
+  readonly characterCount: CharacterCountCopy;
+  readonly addTitle: string;
+  readonly editTitle: string;
+  readonly description: string;
+  readonly notSavedTitle: string;
+  readonly ratesNotSavedTitle: string;
+  readonly title: string;
+  /** Carries `{max}`. */
+  readonly titleHint: string;
+  readonly summary: string;
+  readonly summaryHint: string;
+  readonly price: string;
+  /** Carries `{currency}`. */
+  readonly priceHint: string;
+  /** Carries `{currency}`. */
+  readonly priceHintLocked: string;
+  readonly estimatedDelivery: string;
+  readonly estimatedDeliveryHint: string;
+  readonly places: string;
+  readonly placesHint: string;
+  /** One form per category, each carrying `{count}` — places already taken. */
+  readonly placesHintCommitted: AppPluralForms;
+  /** The language whose plural rule picks between them. */
+  readonly locale: Locale;
+  readonly rest: string;
+  readonly offering: string;
+  readonly opens: string;
+  readonly opensHint: string;
+  readonly closes: string;
+  readonly closesHint: string;
+  readonly earlyBird: string;
+  readonly featured: string;
+  readonly featuredHint: string;
+  readonly secret: string;
+  readonly addOn: string;
+  readonly addOnHint: string;
+  readonly contents: string;
+  readonly contentsHint: string;
+  readonly addItem: string;
+  readonly addItemPlaceholder: string;
+  readonly missingItem: string;
+  readonly noItemsYet: string;
+  readonly everyItemAdded: string;
+  readonly shipping: string;
+  /** The scope select's own label, which is not the rates section's. */
+  readonly delivery: string;
+  /** Carries `{currency}`. */
+  readonly ratesHint: string;
+  readonly noDestinations: string;
+  readonly addDestination: string;
+  readonly countryPlaceholder: string;
+  readonly ratePlaceholder: string;
+  readonly extraPlaceholder: string;
+  readonly token: string;
+  /** Carries `{name}`. */
+  readonly quantityOf: string;
+  /** Carries `{name}`. */
+  readonly removeFromReward: string;
+  /** Carries `{name}`. */
+  readonly countryCodeFor: string;
+  /** Carries `{name}`. */
+  readonly shippingRateTo: string;
+  /** Carries `{name}`. */
+  readonly additionalRateTo: string;
+  /** Carries `{name}`. */
+  readonly removeNamed: string;
+}
+
+/** `RewardsPanel` — the tab itself. */
+export interface RewardsPanelCopy {
+  readonly loadingLabel: string;
+  readonly failedTitle: string;
+  readonly rewardsFailedTitle: string;
+  readonly listLabel: string;
+  readonly description: string;
+  readonly emptyTitle: string;
+  readonly add: string;
+  readonly addFirst: string;
+  readonly rewardsHeading: string;
+  /** Carries `{count}` and `{max}`. */
+  readonly countOf: string;
+  readonly atCapacityTitle: string;
+  readonly deleteItemTitle: string;
+  readonly deleteRewardTitle: string;
+  readonly cannotBeUndone: string;
+  readonly keepIt: string;
+  readonly delete: string;
+  readonly duplicate: string;
+  readonly edit: string;
+  readonly show: string;
+  readonly hide: string;
+  readonly hidden: string;
+  readonly opensLater: string;
+  readonly featured: string;
+  readonly secret: string;
+  readonly earlyBird: string;
+  readonly addOn: string;
+  /*
+   * The templates. Each carries the reward's or item's own name, because a control that says
+   * only "Delete" is a control a screen-reader user meets seven times on this page with no
+   * way to tell which row it belongs to.
+   */
+  /** Carries `{name}`. */
+  readonly deleteItemNamed: string;
+  /** Carries `{title}`. */
+  readonly deleteRewardNamed: string;
+  /** Carries `{title}`, `{position}` and `{total}`. */
+  readonly movedAnnouncement: string;
+  /** Carries `{title}` and `{position}`. */
+  readonly duplicatedAnnouncement: string;
+  /** Carries `{title}`. */
+  readonly hiddenAnnouncement: string;
+  /** Carries `{title}`. */
+  readonly shownAnnouncement: string;
+  /** Carries `{title}`. */
+  readonly rewardDeletedAnnouncement: string;
+  /** Carries `{name}`. */
+  readonly itemDeletedAnnouncement: string;
+  /** Carries `{title}`, `{position}` and `{total}`. */
+  readonly moveUpLabel: string;
+  /** Carries `{title}`, `{position}` and `{total}`. */
+  readonly moveDownLabel: string;
+  /** Carries `{title}`. */
+  readonly editLabel: string;
+  /** Carries `{title}`. */
+  readonly duplicateLabel: string;
+  /** Carries `{title}`. */
+  readonly showLabel: string;
+  /** Carries `{title}`. */
+  readonly hideLabel: string;
+  /** Carries `{title}`. */
+  readonly deleteLabel: string;
+  readonly containsNothing: string;
+  /** Carries `{items}`, already joined. */
+  readonly contains: string;
+  /** Carries `{name}` and `{quantity}`. */
+  readonly itemTimes: string;
+  readonly missingItemInline: string;
+  readonly aRewardInCampaign: string;
+  readonly aReward: string;
+  /** One form per category. Carries `{tiers}`, the reward titles already joined. */
+  readonly itemInUse: AppPluralForms;
+  readonly rewardHasBackers: string;
+  /** The language whose plural rule picks the form above. */
+  readonly locale: Locale;
+  readonly items: ItemsSectionCopy;
+  readonly item: ItemEditorCopy;
+  readonly tier: RewardTierEditorCopy;
+}
+
+export function rewardsPanelCopyFrom(
+  t: CampaignEditorTranslator,
+  locale: Locale,
+  counter: CharacterCountCopy,
+): RewardsPanelCopy {
+  const at = (key: string) => t(`rewards.${key}`);
+  /* Anything with a `{placeholder}` in it, for the reason `template` states. */
+  const tpl = (key: string) => template(t, key);
+  const drawer = (where: string) => ({
+    cancel: at(`${where}.drawer.cancel`),
+    save: at(`${where}.drawer.save`),
+    saving: at(`${where}.drawer.saving`),
+  });
+
+  return {
+    loadingLabel: at('loadingLabel'),
+    failedTitle: at('failedTitle'),
+    rewardsFailedTitle: at('rewardsFailedTitle'),
+    listLabel: at('listLabel'),
+    description: at('description'),
+    emptyTitle: at('emptyTitle'),
+    add: at('add'),
+    addFirst: at('addFirst'),
+    rewardsHeading: at('rewardsHeading'),
+    countOf: tpl('rewards.countOf'),
+    atCapacityTitle: at('atCapacityTitle'),
+    deleteItemTitle: at('deleteItemTitle'),
+    deleteRewardTitle: at('deleteRewardTitle'),
+    cannotBeUndone: at('cannotBeUndone'),
+    keepIt: at('keepIt'),
+    delete: at('delete'),
+    duplicate: at('duplicate'),
+    edit: at('edit'),
+    show: at('show'),
+    hide: at('hide'),
+    hidden: at('hidden'),
+    opensLater: at('opensLater'),
+    featured: at('featured'),
+    secret: at('secret'),
+    earlyBird: at('earlyBird'),
+    addOn: at('addOn'),
+    deleteItemNamed: tpl('rewards.deleteItemNamed'),
+    deleteRewardNamed: tpl('rewards.deleteRewardNamed'),
+    movedAnnouncement: tpl('rewards.movedAnnouncement'),
+    duplicatedAnnouncement: tpl('rewards.duplicatedAnnouncement'),
+    hiddenAnnouncement: tpl('rewards.hiddenAnnouncement'),
+    shownAnnouncement: tpl('rewards.shownAnnouncement'),
+    rewardDeletedAnnouncement: tpl('rewards.rewardDeletedAnnouncement'),
+    itemDeletedAnnouncement: tpl('rewards.itemDeletedAnnouncement'),
+    moveUpLabel: tpl('rewards.moveUpLabel'),
+    moveDownLabel: tpl('rewards.moveDownLabel'),
+    editLabel: tpl('rewards.editLabel'),
+    duplicateLabel: tpl('rewards.duplicateLabel'),
+    showLabel: tpl('rewards.showLabel'),
+    hideLabel: tpl('rewards.hideLabel'),
+    deleteLabel: tpl('rewards.deleteLabel'),
+    containsNothing: at('containsNothing'),
+    contains: tpl('rewards.contains'),
+    itemTimes: tpl('rewards.itemTimes'),
+    missingItemInline: at('missingItemInline'),
+    aRewardInCampaign: at('aRewardInCampaign'),
+    aReward: at('aReward'),
+    itemInUse: t.raw('rewards.itemInUse') as AppPluralForms,
+    rewardHasBackers: at('rewardHasBackers'),
+    locale,
+    items: {
+      itemsHeading: at('items.itemsHeading'),
+      description: at('items.description'),
+      loadingLabel: at('items.loadingLabel'),
+      emptyTitle: at('items.emptyTitle'),
+      add: at('items.add'),
+      addFirst: at('items.addFirst'),
+      delete: at('items.delete'),
+      edit: at('items.edit'),
+      digital: at('items.digital'),
+      physical: at('items.physical'),
+      editNamed: tpl('rewards.items.editNamed'),
+      deleteNamed: tpl('rewards.items.deleteNamed'),
+    },
+    item: {
+      drawer: drawer('item'),
+      characterCount: counter,
+      locale,
+      addTitle: at('item.addTitle'),
+      editTitle: at('item.editTitle'),
+      notSavedTitle: at('item.notSavedTitle'),
+      name: at('item.name'),
+      nameHint: tpl('rewards.item.nameHint'),
+      drawerDescription: at('item.drawerDescription'),
+      description: at('item.description'),
+      descriptionHint: at('item.descriptionHint'),
+      imageUrl: at('item.imageUrl'),
+      imageUrlHint: at('item.imageUrlHint'),
+      imageUrlPlaceholder: at('item.imageUrlPlaceholder'),
+      isDigital: at('item.isDigital'),
+      isDigitalHint: at('item.isDigitalHint'),
+      weight: at('item.weight'),
+      weightHintDigital: at('item.weightHintDigital'),
+      sku: at('item.sku'),
+      skuHint: at('item.skuHint'),
+    },
+    tier: {
+      drawer: drawer('tier'),
+      characterCount: counter,
+      addTitle: at('tier.addTitle'),
+      editTitle: at('tier.editTitle'),
+      description: at('tier.description'),
+      notSavedTitle: at('tier.notSavedTitle'),
+      ratesNotSavedTitle: at('tier.ratesNotSavedTitle'),
+      title: at('tier.title'),
+      titleHint: tpl('rewards.tier.titleHint'),
+      summary: at('tier.summary'),
+      summaryHint: at('tier.summaryHint'),
+      price: at('tier.price'),
+      priceHint: tpl('rewards.tier.priceHint'),
+      priceHintLocked: tpl('rewards.tier.priceHintLocked'),
+      estimatedDelivery: at('tier.estimatedDelivery'),
+      estimatedDeliveryHint: at('tier.estimatedDeliveryHint'),
+      places: at('tier.places'),
+      placesHint: at('tier.placesHint'),
+      placesHintCommitted: t.raw('rewards.tier.placesHintCommitted') as AppPluralForms,
+      locale,
+      rest: at('tier.rest'),
+      offering: at('tier.offering'),
+      opens: at('tier.opens'),
+      opensHint: at('tier.opensHint'),
+      closes: at('tier.closes'),
+      closesHint: at('tier.closesHint'),
+      earlyBird: at('tier.earlyBird'),
+      featured: at('tier.featured'),
+      featuredHint: at('tier.featuredHint'),
+      secret: at('tier.secret'),
+      addOn: at('tier.addOn'),
+      addOnHint: at('tier.addOnHint'),
+      contents: at('tier.contents'),
+      contentsHint: at('tier.contentsHint'),
+      addItem: at('tier.addItem'),
+      addItemPlaceholder: at('tier.addItemPlaceholder'),
+      missingItem: at('tier.missingItem'),
+      noItemsYet: at('tier.noItemsYet'),
+      everyItemAdded: at('tier.everyItemAdded'),
+      shipping: at('tier.shipping'),
+      delivery: at('tier.delivery'),
+      ratesHint: tpl('rewards.tier.ratesHint'),
+      noDestinations: at('tier.noDestinations'),
+      addDestination: at('tier.addDestination'),
+      countryPlaceholder: at('tier.countryPlaceholder'),
+      ratePlaceholder: at('tier.ratePlaceholder'),
+      extraPlaceholder: at('tier.extraPlaceholder'),
+      token: at('tier.token'),
+      quantityOf: tpl('rewards.tier.quantityOf'),
+      removeFromReward: tpl('rewards.tier.removeFromReward'),
+      countryCodeFor: tpl('rewards.tier.countryCodeFor'),
+      shippingRateTo: tpl('rewards.tier.shippingRateTo'),
+      additionalRateTo: tpl('rewards.tier.additionalRateTo'),
+      removeNamed: tpl('rewards.tier.removeNamed'),
+    },
   };
 }
