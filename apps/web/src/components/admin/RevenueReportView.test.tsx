@@ -190,17 +190,31 @@ describe('the period', () => {
     // from it now would replace their date with September's.
     await act(async () => answer(SEPTEMBER));
     await screen.findByText('98.00 AZN');
+    /*
+     * The fill runs in an effect one render after the figures appear, so asserting straight
+     * after `findByText` would pass whether or not the effect had run — a test of nothing. A
+     * macrotask inside `act` lets the effect and the render it causes happen first, so what is
+     * asserted below is the value after the fill has had its chance.
+     */
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
 
     expect(from.value).toBe('2026-08-10');
   });
 
   it('fills the fields from the period the service chose when the reader has not touched them', async () => {
     render(<RevenueReportView copy={COPY} />);
-    await screen.findByText('98.00 AZN');
 
-    // September in Baku: the echoed bounds are 20:00 UTC on the eve of each end, and the last
-    // day shown is the day before the exclusive one.
-    expect((screen.getByLabelText(COPY.fromLabel) as HTMLInputElement).value).toBe('2026-09-01');
+    /*
+     * Waited for rather than read after the figures appear. The fill is an effect that runs one
+     * render later, and CI — slower than a laptop — asserted in between and read an empty field.
+     * September in Baku: the echoed bounds are 20:00 UTC on the eve of each end, and the last
+     * day shown is the day before the exclusive one.
+     */
+    await waitFor(() =>
+      expect((screen.getByLabelText(COPY.fromLabel) as HTMLInputElement).value).toBe('2026-09-01'),
+    );
     expect((screen.getByLabelText(COPY.toLabel) as HTMLInputElement).value).toBe('2026-09-30');
   });
 });
