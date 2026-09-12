@@ -9474,7 +9474,7 @@
           },
           "goalCeiling" : {
             "type" : "number",
-            "minimum" : 0
+            "exclusiveMinimum" : 0
           },
           "maxActiveCampaigns" : {
             "type" : "integer",
@@ -10049,7 +10049,7 @@
           "byteSize" : {
             "type" : "integer",
             "format" : "int64",
-            "minimum" : 0
+            "exclusiveMinimum" : 0
           },
           "contentType" : {
             "type" : "string",
@@ -10527,7 +10527,7 @@
           },
           "goalCeiling" : {
             "type" : "number",
-            "minimum" : 0
+            "exclusiveMinimum" : 0
           },
           "listed" : {
             "type" : "boolean"
