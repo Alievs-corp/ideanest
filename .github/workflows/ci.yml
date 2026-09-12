@@ -87,10 +87,46 @@ jobs:
           name: storybook-static
           path: build
 
+      # THE PREVIEW BRANCH IS ORPHANED, AND UNTIL SOMETHING CREATES IT, IT DOES
+      # NOT EXIST. `ref: gh-pages` does not degrade when it is missing — the
+      # checkout fails outright — so this job was red on every pull request
+      # this repository has ever opened, for want of a branch nobody was told
+      # to create. A workflow that only runs once somebody has hand-seeded a
+      # branch is a workflow that is broken in a fresh clone and in every fork.
+      #
+      # So the repository is checked out at the commit under test, which is
+      # what wires up the credentials, and the step below either fetches the
+      # preview branch or starts it.
       - uses: actions/checkout@v7
         with:
-          ref: gh-pages
           path: pages
+          fetch-depth: 1
+
+      - name: Check out the preview branch, starting it the first time
+        working-directory: pages
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null; then
+            git fetch --depth=1 origin gh-pages
+            git checkout -B gh-pages origin/gh-pages
+            exit 0
+          fi
+
+          # Orphaned deliberately. The previews share no history with the source
+          # tree, and a branch that carried it would put a second copy of the
+          # repository behind every directory of built HTML.
+          echo '::notice::No preview branch yet — starting one.'
+          git checkout --orphan gh-pages
+          git rm -rf --quiet .
+          # Storybook emits directories beginning with an underscore, which
+          # Jekyll would strip before serving them.
+          touch .nojekyll
+          git add -A
+          git commit -q -m 'chore(ci): start the storybook preview branch'
+          git push origin gh-pages
 
       - name: Publish to the preview branch
         working-directory: pages

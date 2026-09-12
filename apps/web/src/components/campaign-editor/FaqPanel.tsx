@@ -19,7 +19,12 @@ import {
   type ProjectFaq,
 } from '../../lib/projects/api';
 import { movedTo } from '../../lib/projects/rewards';
-import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
+import type {
+  EditorChromeCopy,
+  FaqPanelCopy,
+} from '../../lib/i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralise } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
 import { FaqEntryEditor } from './FaqEntryEditor';
 import { describeFailure, type SaveFailure } from './useAutosave';
@@ -81,9 +86,11 @@ export interface FaqPanelProps {
   projectId: string;
   /** The editor frame's words, resolved by this tab's page. */
   copy: EditorChromeCopy;
+  /** This tab's own words, and the drawer's. */
+  faq: FaqPanelCopy;
 }
 
-export function FaqPanel({ projectId, copy }: FaqPanelProps) {
+export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
   const { project, status, error, reload } = useProjectEdit(projectId);
 
   const [faqs, setFaqs] = useState<readonly ProjectFaq[]>([]);
@@ -211,7 +218,13 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
 
     const next = movedTo(faqs, index, target);
     setFaqs(next);
-    setAnnouncement(`${moving.question} moved to position ${target + 1} of ${faqs.length}.`);
+    setAnnouncement(
+      fillPlaceholders(words.movedAnnouncement, {
+        question: moving.question,
+        position: String(target + 1),
+        total: String(faqs.length),
+      }),
+    );
 
     /*
      * Where focus should land once the list has re-rendered. An entry at either
@@ -248,7 +261,7 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
     try {
       await deleteFaq(faq.id);
       setFaqs((current) => current.filter((entry) => entry.id !== faq.id));
-      setAnnouncement(`${faq.question} was deleted.`);
+      setAnnouncement(fillPlaceholders(words.deletedAnnouncement, { question: faq.question }));
       setDeleting(null);
     } catch (cause) {
       setFailure(describeFailure(cause));
@@ -264,8 +277,8 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
   if (status === 'signed-out') {
     return (
       <EditorShell projectId={projectId} copy={copy} active="faq">
-        <InlineAlert variant="info" title="You are signed out">
-          This browser no longer has a session. Sign in again to keep editing this campaign.
+        <InlineAlert variant="info" title={copy.signedOutTitle}>
+          {copy.signedOutDetail}
         </InlineAlert>
       </EditorShell>
     );
@@ -276,15 +289,15 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
       <EditorShell projectId={projectId} copy={copy} active="faq">
         {status === 'failed' ? (
           <>
-            <InlineAlert variant="danger" title="This project could not be loaded">
+            <InlineAlert variant="danger" title={copy.loadFailedTitle}>
               {error}
             </InlineAlert>
             <Pill variant="ghost" size="sm" className="mt-4" onClick={reload}>
-              Try again
+              {copy.tryAgain}
             </Pill>
           </>
         ) : (
-          <SkeletonGroup label="Loading this campaign’s questions">
+          <SkeletonGroup label={words.loadingLabel}>
             <div className="flex flex-col gap-3">
               {LOADING_ROWS.map((row) => (
                 <Skeleton key={row} height="5rem" />
@@ -333,7 +346,7 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
             iconLeft={<Plus aria-hidden="true" className="size-4" />}
             onClick={() => setEditor({ open: true, faq: null })}
           >
-            Add a question
+            {words.add}
           </Pill>
         </div>
 
@@ -344,13 +357,13 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
             a bigger cap; either way a creator who cannot press "Add" is owed the
             reason.
           */
-          <InlineAlert variant="info" title="This campaign is at the limit">
+          <InlineAlert variant="info" title={words.atLimitTitle}>
             A campaign may publish {MAX_PROJECT_FAQS} questions. Delete one to add another.
           </InlineAlert>
         )}
 
         {failure !== null && (
-          <InlineAlert variant="danger" title="That did not work">
+          <InlineAlert variant="danger" title={words.failedTitle}>
             <p>{failure.message}</p>
             {failure.code === 'FAQ_ORDER_INCOMPLETE' && (
               /*
@@ -361,14 +374,14 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
                 already triggered, and what the creator needs is to be told which
                 questions the two lists disagreed about.
               */
-              <p className="mt-2 text-white/64">{describeOrderRefusal(failure, faqs)}</p>
+              <p className="mt-2 text-white/64">{describeOrderRefusal(failure, faqs, words)}</p>
             )}
           </InlineAlert>
         )}
 
         {listStatus === 'failed' && (
           <>
-            <InlineAlert variant="danger" title="The questions could not be loaded">
+            <InlineAlert variant="danger" title={words.questionsFailedTitle}>
               {listError}
             </InlineAlert>
             <Pill
@@ -377,13 +390,13 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
               className="self-start"
               onClick={() => setAttempt((n) => n + 1)}
             >
-              Try again
+              {copy.tryAgain}
             </Pill>
           </>
         )}
 
         {listStatus === 'loading' ? (
-          <SkeletonGroup label="Loading this campaign’s questions">
+          <SkeletonGroup label={words.loadingLabel}>
             <div className="flex flex-col gap-2">
               {LOADING_ROWS.map((row) => (
                 <Skeleton key={row} height="5rem" />
@@ -393,11 +406,11 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
         ) : faqs.length === 0 ? (
           <EmptyState
             headingLevel={3}
-            title="No questions yet"
-            description="The campaign page shows this list on its own tab. Until there is something in it, the tab tells a backer the campaign has not answered anything yet — which is true, and is worth changing before you launch."
+            title={words.emptyTitle}
+            description={words.description}
             action={
               <Pill variant="ghost" size="sm" onClick={() => setEditor({ open: true, faq: null })}>
-                Add the first question
+                {words.addFirst}
               </Pill>
             }
           />
@@ -410,12 +423,13 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
           */
           <ol
             ref={listRef}
-            aria-label="Questions, in the order backers see them"
+            aria-label={words.listLabel}
             className="flex flex-col gap-2"
           >
             {faqs.map((faq, index) => (
               <li key={faq.id}>
                 <FaqRow
+                  words={words}
                   faq={faq}
                   position={index + 1}
                   total={faqs.length}
@@ -434,6 +448,7 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
       <FaqEntryEditor
         projectId={projectId}
         drawer={copy.drawer}
+        copy={words.entry}
         open={editor.open}
         faq={editor.faq}
         onOpenChange={(open) => setEditor((current) => ({ ...current, open }))}
@@ -445,8 +460,8 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
         onOpenChange={(next) => {
           if (!next) setDeleting(null);
         }}
-        title={deleting === null ? 'Delete question' : `Delete “${deleting.question}”?`}
-        description="This cannot be undone."
+        title={deleting === null ? words.deleteTitle : fillPlaceholders(words.deleteNamed, { question: deleting.question })}
+        description={words.cannotBeUndone}
         // The creator has to choose. Dismissing a dialog about deletion by
         // clicking beside it is too easy a way to press the wrong thing.
         closeOnBackdropClick={false}
@@ -454,7 +469,7 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
         footer={
           <div className="flex flex-wrap justify-end gap-2">
             <Pill variant="ghost" disabled={busyId !== null} onClick={() => setDeleting(null)}>
-              Keep it
+              {words.keepIt}
             </Pill>
             <Pill
               variant="danger"
@@ -463,7 +478,7 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
                 if (deleting !== null) void remove(deleting);
               }}
             >
-              Delete
+              {words.delete}
             </Pill>
           </div>
         }
@@ -482,6 +497,7 @@ export function FaqPanel({ projectId, copy }: FaqPanelProps) {
  * ---------------------------------------------------------------------- */
 
 interface FaqRowProps {
+  words: FaqPanelCopy;
   faq: ProjectFaq;
   position: number;
   total: number;
@@ -493,6 +509,7 @@ interface FaqRowProps {
 }
 
 function FaqRow({
+  words,
   faq,
   position,
   total,
@@ -528,7 +545,7 @@ function FaqRow({
           */}
           <IconButton
             icon={<ChevronUp />}
-            label={`Move ${faq.question} up, currently ${position} of ${total}`}
+            label={fillPlaceholders(words.moveUpLabel, { question: faq.question, position: String(position), total: String(total) })}
             variant="ghost"
             size="sm"
             disabled={position === 1}
@@ -538,7 +555,7 @@ function FaqRow({
           />
           <IconButton
             icon={<ChevronDown />}
-            label={`Move ${faq.question} down, currently ${position} of ${total}`}
+            label={fillPlaceholders(words.moveDownLabel, { question: faq.question, position: String(position), total: String(total) })}
             variant="ghost"
             size="sm"
             disabled={position === total}
@@ -552,19 +569,19 @@ function FaqRow({
           variant="ghost"
           size="sm"
           disabled={busy}
-          aria-label={`Edit ${faq.question}`}
+          aria-label={fillPlaceholders(words.editLabel, { question: faq.question })}
           onClick={onEdit}
         >
-          Edit
+          {words.edit}
         </Pill>
         <Pill
           variant="ghost"
           size="sm"
           disabled={busy}
-          aria-label={`Delete ${faq.question}`}
+          aria-label={fillPlaceholders(words.deleteLabel, { question: faq.question })}
           onClick={onDelete}
         >
-          Delete
+          {words.delete}
         </Pill>
       </div>
     </div>
@@ -588,19 +605,28 @@ function FaqRow({
 export function describeOrderRefusal(
   failure: SaveFailure,
   faqs: readonly ProjectFaq[],
+  copy: FaqPanelCopy,
 ): string {
-  const missing = namesOf(failure.meta?.['missing'], faqs);
-  const unexpected = namesOf(failure.meta?.['unexpected'], faqs);
+  const missing = namesOf(failure.meta?.['missing'], faqs, copy);
+  const unexpected = namesOf(failure.meta?.['unexpected'], faqs, copy);
 
   const parts: string[] = [];
-  if (missing.length > 0) parts.push(`this page had not seen ${list(missing)}`);
-  if (unexpected.length > 0) parts.push(`${list(unexpected)} no longer exists`);
+  if (missing.length > 0) {
+    parts.push(fillPlaceholders(copy.order.missing, { items: list(missing, copy) }));
+  }
+  if (unexpected.length > 0) {
+    parts.push(fillPlaceholders(copy.order.unexpected, { items: list(unexpected, copy) }));
+  }
 
-  const detail = parts.length === 0 ? 'the two lists disagreed' : parts.join(', and ');
-  return `The order was refused because ${detail}. The list has been read again, so it now matches the campaign — put it back in the order you wanted.`;
+  const detail = parts.length === 0 ? copy.order.disagreed : parts.join(', ');
+  return fillPlaceholders(copy.order.refusal, { detail });
 }
 
-function namesOf(value: unknown, faqs: readonly ProjectFaq[]): readonly string[] {
+function namesOf(
+  value: unknown,
+  faqs: readonly ProjectFaq[],
+  copy: FaqPanelCopy,
+): readonly string[] {
   if (!Array.isArray(value)) return [];
 
   const named: string[] = [];
@@ -608,15 +634,18 @@ function namesOf(value: unknown, faqs: readonly ProjectFaq[]): readonly string[]
   for (const id of value as readonly unknown[]) {
     const known = typeof id === 'string' ? faqs.find((faq) => faq.id === id) : undefined;
     if (known === undefined) unnamed += 1;
-    else named.push(`“${known.question}”`);
+    else named.push(fillPlaceholders(copy.order.quoted, { question: known.question }));
   }
 
-  if (unnamed > 0) named.push(`${unnamed} other question${unnamed === 1 ? '' : 's'}`);
+  if (unnamed > 0) named.push(pluralise(copy.locale, copy.order.otherQuestions, unnamed));
   return named;
 }
 
 /** "a", "a and b", "a, b and c". */
-function list(items: readonly string[]): string {
+function list(items: readonly string[], copy: FaqPanelCopy): string {
   if (items.length <= 1) return items[0] ?? '';
-  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1] ?? ''}`;
+  return fillPlaceholders(copy.order.joinAnd, {
+    head: items.slice(0, -1).join(', '),
+    last: items[items.length - 1] ?? '',
+  });
 }

@@ -81,6 +81,46 @@ export interface ShellCopy {
   };
 }
 
+/**
+ * The floating WhatsApp control and the dialog behind it.
+ *
+ * <p>Its own interface rather than a branch of `ShellCopy`, for the reason that file's header
+ * gives: the header, the drawer and the account menu each take the vocabulary they draw, and
+ * handing the enquiry form's field labels to all three would put them in the flight payload of
+ * every route on the site whether or not the dialog is ever opened.
+ *
+ * <p>`handoff` is the state after the link has been followed, and it is deliberately not a
+ * success message. `lib/contact/whatsapp.ts` explains why nothing has been sent at that point:
+ * the visitor presses send in WhatsApp, from their own number, and an interface that said
+ * "sent" would be claiming something it cannot know.
+ */
+export interface WhatsAppCopy {
+  /** Names the icon-only trigger — §9.2 of `docs/ui-kit.md` requires it. */
+  readonly open: string;
+  readonly title: string;
+  /** Says that WhatsApp opens and who presses send. Read before the fields, not after. */
+  readonly intro: string;
+  readonly fields: {
+    readonly firstName: string;
+    readonly lastName: string;
+    readonly message: string;
+  };
+  /** One refusal per field, shown beside it. Colour never carries the message (§9.2). */
+  readonly errors: {
+    readonly firstName: string;
+    readonly lastName: string;
+    readonly message: string;
+  };
+  readonly submit: string;
+  readonly cancel: string;
+  readonly handoff: {
+    readonly title: string;
+    readonly detail: string;
+    /** The same link again, for a browser that refused to open the first one. */
+    readonly again: string;
+  };
+}
+
 /** The three words a failure page offers besides its own heading. */
 export interface FailureCopy {
   readonly elsewhere: string;
@@ -164,6 +204,31 @@ export function footerCopyFrom(t: ShellTranslator): FooterCopy {
         label: t(`footer.links.${link.key}`),
       })),
     })),
+  };
+}
+
+export function whatsappCopyFrom(t: ShellTranslator): WhatsAppCopy {
+  return {
+    open: t('whatsapp.open'),
+    title: t('whatsapp.title'),
+    intro: t('whatsapp.intro'),
+    fields: {
+      firstName: t('whatsapp.fields.firstName'),
+      lastName: t('whatsapp.fields.lastName'),
+      message: t('whatsapp.fields.message'),
+    },
+    errors: {
+      firstName: t('whatsapp.errors.firstName'),
+      lastName: t('whatsapp.errors.lastName'),
+      message: t('whatsapp.errors.message'),
+    },
+    submit: t('whatsapp.submit'),
+    cancel: t('whatsapp.cancel'),
+    handoff: {
+      title: t('whatsapp.handoff.title'),
+      detail: t('whatsapp.handoff.detail'),
+      again: t('whatsapp.handoff.again'),
+    },
   };
 }
 

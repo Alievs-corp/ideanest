@@ -21,12 +21,18 @@ import type { PluralForms } from '@ideanest/ui';
 import {
   type BasicsPanelCopy,
   type EditorChromeCopy,
+  type FaqPanelCopy,
+  type PrelaunchPanelCopy,
   type ReviewPanelCopy,
   type RewardsPanelCopy,
+  type StoryPanelCopy,
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
+  faqPanelCopyFrom,
+  prelaunchPanelCopyFrom,
   reviewPanelCopyFrom,
   rewardsPanelCopyFrom,
+  storyPanelCopyFrom,
 } from './campaign-editor-copy';
 import {
   type CampaignActionsCopy,
@@ -62,9 +68,11 @@ import {
   type FailureCopy,
   type FooterCopy,
   type ShellCopy,
+  type WhatsAppCopy,
   failureCopyFrom,
   footerCopyFrom,
   shellCopyFrom,
+  whatsappCopyFrom,
 } from './shell-copy';
 
 /**
@@ -85,6 +93,16 @@ export async function shellCopy(): Promise<ShellCopy> {
 
 export async function footerCopy(): Promise<FooterCopy> {
   return footerCopyFrom(await getTranslations('shell'));
+}
+
+/**
+ * The floating WhatsApp control's words — `shell-copy.ts` explains why they are their own object.
+ *
+ * Resolved by `SiteShell` beside `shellCopy`, and handed to the launcher whole. One extra
+ * lookup on a render that was already reading this namespace.
+ */
+export async function whatsappCopy(): Promise<WhatsAppCopy> {
+  return whatsappCopyFrom(await getTranslations('shell'));
 }
 
 export async function failureCopy(): Promise<FailureCopy> {
@@ -300,6 +318,45 @@ export async function rewardsPanelCopy(): Promise<RewardsPanelCopy> {
     getLocale(),
   ]);
   return rewardsPanelCopyFrom(editor, localeOrDefault(locale), {
+    remaining: counter.raw('remaining') as PluralForms,
+    tooMany: counter.raw('tooMany') as PluralForms,
+  });
+}
+
+/** The story tab, the block editor, the mark toolbar and the version history. */
+export async function storyPanelCopy(): Promise<StoryPanelCopy> {
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return storyPanelCopyFrom(editor, localeOrDefault(locale), {
+    remaining: counter.raw('remaining') as PluralForms,
+    tooMany: counter.raw('tooMany') as PluralForms,
+  });
+}
+
+/** The FAQ tab and the drawer one question is written in. */
+export async function faqPanelCopy(): Promise<FaqPanelCopy> {
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return faqPanelCopyFrom(editor, localeOrDefault(locale), {
+    remaining: counter.raw('remaining') as PluralForms,
+    tooMany: counter.raw('tooMany') as PluralForms,
+  });
+}
+
+/** The pre-launch tab — the page that goes public before the campaign does. */
+export async function prelaunchPanelCopy(): Promise<PrelaunchPanelCopy> {
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return prelaunchPanelCopyFrom(editor, localeOrDefault(locale), {
     remaining: counter.raw('remaining') as PluralForms,
     tooMany: counter.raw('tooMany') as PluralForms,
   });

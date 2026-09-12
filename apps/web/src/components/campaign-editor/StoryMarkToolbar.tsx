@@ -3,6 +3,8 @@
 import { Bold, Italic } from 'lucide-react';
 import { cn } from '@ideanest/ui';
 import { isMarkActive, toggleMark, type StoryMark } from '../../lib/projects/story';
+import type { StoryToolbarCopy } from '../../lib/i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * Bold and emphasis, applied to whatever is selected in one text control.
@@ -31,17 +33,15 @@ import { isMarkActive, toggleMark, type StoryMark } from '../../lib/projects/sto
  * indicator only" (docs/motion-system.md §5).
  */
 
-interface MarkControl {
-  mark: StoryMark;
-  label: string;
-  /** Announced as part of the name, so the shortcut is discoverable by ear. */
-  shortcut: string;
-  icon: typeof Bold;
-}
-
-const CONTROLS: readonly MarkControl[] = [
-  { mark: 'strong', label: 'Bold', shortcut: 'Control B', icon: Bold },
-  { mark: 'em', label: 'Italic', shortcut: 'Control I', icon: Italic },
+/**
+ * The two marks, in the order they are offered.
+ *
+ * NO `label` AND NO `shortcut` ANY MORE — issue #324. Both are catalogue copy, read from
+ * `copy`, so a control and the word announced with it cannot be spelled in two places.
+ */
+const CONTROLS: readonly { mark: StoryMark; icon: typeof Bold }[] = [
+  { mark: 'strong', icon: Bold },
+  { mark: 'em', icon: Italic },
 ];
 
 /** The keyboard shortcuts, so a control and its shortcut cannot disagree. */
@@ -53,6 +53,8 @@ export function markForShortcut(key: string): StoryMark | null {
 }
 
 export interface StoryMarkToolbarProps {
+  /** The two controls' words. */
+  copy: StoryToolbarCopy;
   /** The control's current value, in the inline mark syntax. */
   value: string;
   selectionStart: number;
@@ -64,6 +66,7 @@ export interface StoryMarkToolbarProps {
 }
 
 export function StoryMarkToolbar({
+  copy,
   value,
   selectionStart,
   selectionEnd,
@@ -79,9 +82,11 @@ export function StoryMarkToolbar({
       formatting expects. Promising the arrow keys and not implementing them is
       worse than not promising them.
     */
-    <div role="group" aria-label={`Formatting for ${label}`} className="flex items-center gap-1">
-      {CONTROLS.map(({ mark, label: name, shortcut, icon: Icon }) => {
+    <div role="group" aria-label={fillPlaceholders(copy.formattingFor, { label })} className="flex items-center gap-1">
+      {CONTROLS.map(({ mark, icon: Icon }) => {
         const active = isMarkActive(value, selectionStart, selectionEnd, mark);
+        const name = mark === 'strong' ? copy.bold : copy.italic;
+        const shortcut = mark === 'strong' ? copy.boldShortcut : copy.italicShortcut;
 
         return (
           <button

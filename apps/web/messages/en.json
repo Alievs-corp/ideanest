@@ -98,6 +98,28 @@
         "categories": "Categories",
         "search": "Search"
       }
+    },
+    "whatsapp": {
+      "open": "Message us on WhatsApp",
+      "title": "Write to us on WhatsApp",
+      "intro": "Fill this in and WhatsApp opens with the message ready. You press send there, so it arrives from your own number and we can reply to it.",
+      "fields": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "message": "Message"
+      },
+      "errors": {
+        "firstName": "Tell us your first name.",
+        "lastName": "Tell us your last name.",
+        "message": "Write the message you want to send."
+      },
+      "submit": "Send on WhatsApp",
+      "cancel": "Cancel",
+      "handoff": {
+        "title": "WhatsApp is open",
+        "detail": "Press send in WhatsApp to deliver it. Nothing has been sent from this page.",
+        "again": "Open WhatsApp again"
+      }
     }
   },
   "account": {
@@ -3351,6 +3373,237 @@
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving"
+    },
+    "story": {
+      "vocabulary": {
+        "blockLabel": {
+          "heading": "Heading",
+          "paragraph": "Paragraph",
+          "list": "List",
+          "quote": "Quote",
+          "rule": "Divider",
+          "image": "Image",
+          "embed": "Embed"
+        },
+        "describe": {
+          "position": "{index} of {total}",
+          "heading": "Heading {position}: {text}",
+          "headingEmpty": "empty",
+          "withPreview": "{label} {position}: {preview}",
+          "list": {
+            "one": "{style} list {position}, {count} item",
+            "few": "{style} list {position}, {count} items",
+            "many": "{style} list {position}, {count} items",
+            "other": "{style} list {position}, {count} items"
+          },
+          "rule": "Divider {position}",
+          "image": "Image {position}: {alt}",
+          "imageNoAlt": "no description yet",
+          "embed": "{provider} embed {position}: {title}",
+          "embedNoTitle": "no title yet",
+          "numbered": "Numbered",
+          "bulleted": "Bulleted"
+        },
+        "problems": {
+          "headingNeedsText": "A heading needs its text.",
+          "anchorUnusable": "This anchor is not usable in a link. Rename the heading to regenerate it.",
+          "anchorDuplicate": "Another heading already uses this anchor. Rename one of them.",
+          "imageNeedsUrl": "An image needs an address.",
+          "urlScheme": "An address has to begin with http:// or https://.",
+          "imageNotMeasured": "This image has not been measured yet. Use “Measure and add” so its size is recorded.",
+          "imageNeedsAlt": "A description is required. It is what a backer using a screen reader receives instead of the picture.",
+          "embedNeedsUrl": "An embed needs an address.",
+          "embedNeedsTitle": "An embed needs a title. It is what a screen reader announces instead of “frame”."
+        }
+      },
+      "panel": {
+        "readOnlyTitle": "This story cannot be edited by this page",
+        "notSavedTitle": "This change was not saved",
+        "notSavingTitle": "The story is not being saved yet",
+        "notSavingDetail": "One block is incomplete. The message beside it says what is missing, and saving resumes as soon as it is filled in.",
+        "loadingLabel": "Loading this campaign’s story",
+        "reload": "Reload",
+        "earlierVersions": "Earlier versions",
+        "anchorMenu": "Anchor menu on your project page",
+        "risks": "Risks and challenges",
+        "risksHint": "What could go wrong, and what you will do about it. At least {min} characters, and required before you can submit.",
+        "risksPlaceholder": "Manufacturing, shipping, and timing are the usual three. Say what is already settled and what is not.",
+        "charactersNeeded": "{count} of {min} characters needed to submit"
+      },
+      "blocks": {
+        "heading": "Story",
+        "add": "Add a block",
+        "addOne": "Add {kind}. {hint}",
+        "section": "Section",
+        "subsection": "Subsection",
+        "ruleHint": "A divider. It separates sections and carries no text.",
+        "bulleted": "Bulleted",
+        "numbered": "Numbered",
+        "addItem": "Add item",
+        "headingPlaceholder": "How it works",
+        "embedUrlPlaceholder": "https://www.youtube.com/watch?v=…",
+        "embedTitlePlaceholder": "What this video shows",
+        "imageUrlPlaceholder": "https://images.example.com/prototype.jpg",
+        "imageAltPlaceholder": "What the picture shows",
+        "nothingUploadedTitle": "Nothing is uploaded here",
+        "listHint": "Bulleted or numbered.",
+        "imageHint": "An image that is already published somewhere.",
+        "quoteHint": "Something somebody said about this project",
+        "paragraphHint": "Write a paragraph. Select text and use Bold or Italic, or type **bold** and *italic*.",
+        "needUrlFirst": "Enter the address of an image first.",
+        "notAnImage": "That address could not be loaded as an image.",
+        "measuring": "Measuring",
+        "measureAndAdd": "Measure and add",
+        "measured": "Added a {size} pixel image.",
+        "moveUp": "Move {name} up",
+        "moveDown": "Move {name} down",
+        "remove": "Remove {name}",
+        "levelOf": "Level of {name}",
+        "textOf": "Text of {name}",
+        "providerOf": "Provider of {name}",
+        "addressOf": "Address of {name}",
+        "titleOf": "Title of {name}",
+        "styleOf": "Style of {name}",
+        "descriptionOf": "Description of {name}",
+        "itemOf": "Item {at} of {count} in {name}",
+        "removeItemOf": "Remove item {at} of {count} in {name}",
+        "addItemTo": "Add an item to {name}",
+        "addedAnnouncement": "{label} added as block {position} of {total}.",
+        "movedAnnouncement": "{label} moved to {position} of {total}.",
+        "removedAnnouncement": {
+          "one": "{label} removed. {count} block left.",
+          "few": "{label} removed. {count} blocks left.",
+          "many": "{label} removed. {count} blocks left.",
+          "other": "{label} removed. {count} blocks left."
+        },
+        "hints": {
+          "paragraph": "A run of text, with bold and italics.",
+          "heading": "A section title. Headings become the anchor menu.",
+          "list": "Bulleted or numbered.",
+          "quote": "A pulled-out quotation.",
+          "image": "An image that is already published somewhere.",
+          "embed": "A YouTube or Vimeo video.",
+          "rule": "A horizontal divider."
+        },
+        "empty": "Nothing here yet. Add a paragraph to begin — most campaigns open with what the product is and who it is for."
+      },
+      "history": {
+        "title": "Earlier versions",
+        "failedTitle": "The history could not be loaded",
+        "emptyTitle": "No earlier versions yet",
+        "loadingLabel": "Loading earlier versions",
+        "description": "A version is kept each time the story changes, at most one every few minutes. The most recent fifty are here.",
+        "emptyDescription": "One is kept the first time the story changes, and then at most one every few minutes while you write.",
+        "replaceWarning": "The story you have now is replaced.",
+        "preview": "Preview",
+        "previewVersion": "Preview version {number}",
+        "restoreTitle": "Restore a version",
+        "restore": "Restore",
+        "restoring": "Restoring",
+        "restoreThis": "Restore this version",
+        "restoreVersion": "Restore version {number}",
+        "confirmTitle": "Restore version {number}?",
+        "keepMine": "Keep what I have",
+        "noBlocks": "This version has no blocks.",
+        "divider": "Divider",
+        "tryAgain": "Try again",
+        "previewSummary": {
+          "one": "{count} block · {characters} characters",
+          "few": "{count} blocks · {characters} characters",
+          "many": "{count} blocks · {characters} characters",
+          "other": "{count} blocks · {characters} characters"
+        }
+      },
+      "toolbar": {
+        "formattingFor": "Formatting for {label}",
+        "bold": "Bold",
+        "italic": "Italic",
+        "boldShortcut": "Control B",
+        "italicShortcut": "Control I"
+      }
+    },
+    "faq": {
+      "atLimitTitle": "This campaign is at the limit",
+      "failedTitle": "That did not work",
+      "questionsFailedTitle": "The questions could not be loaded",
+      "emptyTitle": "No questions yet",
+      "loadingLabel": "Loading this campaign’s questions",
+      "listLabel": "Questions, in the order backers see them",
+      "description": "The campaign page shows this list on its own tab. Until there is something in it, the tab tells a backer the campaign has not answered anything yet — which is true, and is worth changing before you launch.",
+      "add": "Add a question",
+      "addFirst": "Add the first question",
+      "keepIt": "Keep it",
+      "delete": "Delete",
+      "edit": "Edit",
+      "deleteTitle": "Delete question",
+      "deleteNamed": "Delete “{question}”?",
+      "cannotBeUndone": "This cannot be undone.",
+      "moveUpLabel": "Move {question} up, currently {position} of {total}",
+      "moveDownLabel": "Move {question} down, currently {position} of {total}",
+      "editLabel": "Edit {question}",
+      "deleteLabel": "Delete {question}",
+      "movedAnnouncement": "{question} moved to position {position} of {total}.",
+      "deletedAnnouncement": "{question} was deleted.",
+      "order": {
+        "refusal": "The order was refused because {detail}. The list has been read again, so it now matches the campaign — put it back in the order you wanted.",
+        "missing": "this page had not seen {items}",
+        "unexpected": "{items} no longer exists",
+        "disagreed": "the two lists disagreed",
+        "quoted": "“{question}”",
+        "joinAnd": "{head} and {last}",
+        "otherQuestions": {
+          "one": "{count} other question",
+          "few": "{count} other questions",
+          "many": "{count} other questions",
+          "other": "{count} other questions"
+        }
+      },
+      "entry": {
+        "addTitle": "Add a question",
+        "editTitle": "Edit question",
+        "notSavedTitle": "This question was not saved",
+        "notSavedDetail": "Nothing you typed has been lost — it is still in the fields below.",
+        "description": "Questions and answers appear on the campaign page, in the order you put them in.",
+        "question": "Question",
+        "questionHint": "As a backer would ask it. {max} characters or fewer.",
+        "answer": "Answer",
+        "answerHint": "Plain text. Blank lines become paragraph breaks on the campaign page; nothing else is formatting. {max} characters or fewer."
+      }
+    },
+    "prelaunch": {
+      "loadingLabel": "Loading this campaign",
+      "notSavedTitle": "This change was not saved",
+      "notOpenHeading": "The pre-launch page is not open yet",
+      "notOpenBody": "Opening it publishes the title, summary, and cover image below at a link you can share, and lets people ask to be told the moment the campaign opens. Nothing else about the campaign becomes public, and no money is involved.",
+      "notOpenIrreversible": "It cannot be closed again — the campaign moves forward from here, to review and then to launch.",
+      "openFailedTitle": "The page was not opened",
+      "open": "Open the pre-launch page",
+      "openHeading": "The pre-launch page is open",
+      "followersFailed": "The number of people waiting could not be loaded.",
+      "waiting": {
+        "one": "{count} person is waiting for this campaign.",
+        "few": "{count} people are waiting for this campaign.",
+        "many": "{count} people are waiting for this campaign.",
+        "other": "{count} people are waiting for this campaign."
+      },
+      "link": "Pre-launch link",
+      "linkHint": "Share this anywhere. Anybody who opens it can ask to be told when the campaign goes live.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copiedAnnouncement": "Link copied",
+      "closedTitle": "The pre-launch page has closed",
+      "closedBody": "This campaign has moved past its pre-launch page. Everybody who asked to be reminded is told once, when it goes live.",
+      "saysHeading": "What the page says",
+      "saysBody": "These are the campaign’s title, summary, and cover image — the same ones the Basics tab holds. A pre-launch page that promised something different from the campaign would be promising it to the people most likely to notice.",
+      "title": "Title",
+      "titleHint": "The name on the pre-launch page and on the discovery grid. {max} characters or fewer.",
+      "summary": "Summary",
+      "summaryHint": "One or two sentences. This is what somebody reads before deciding to follow. {max} characters or fewer.",
+      "confirmTitle": "Open the pre-launch page?",
+      "confirmBody": "The title, summary, and cover image become public at a link anyone can open. This cannot be undone.",
+      "cancel": "Cancel",
+      "opening": "Opening",
+      "confirmOpen": "Open the page"
     },
     "review": {
       "loadFailedTitle": "This campaign could not be loaded",
