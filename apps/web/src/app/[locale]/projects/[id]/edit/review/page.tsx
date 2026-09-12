@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { ReviewPanel } from '../../../../../../components/campaign-editor/ReviewPanel';
-import { editorChromeCopy, editorMetaCopy } from '../../../../../../lib/i18n/shell-copy.server';
+import {
+  editorChromeCopy,
+  editorMetaCopy,
+  reviewPanelCopy,
+} from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -18,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const copy = await editorChromeCopy();
+  const [copy, review] = await Promise.all([editorChromeCopy(), reviewPanelCopy()]);
 
   /*
    * No `<main>` since #347. `app/projects/[id]/edit/layout.tsx` puts the editor inside
@@ -26,5 +30,5 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
    * `EditorShell` draws this page's own column and heading, so the element that was here
    * carried a landmark and nothing else.
    */
-  return <ReviewPanel projectId={id} copy={copy} />;
+  return <ReviewPanel projectId={id} copy={copy} review={review} />;
 }

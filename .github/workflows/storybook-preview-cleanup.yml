@@ -20,9 +20,15 @@ jobs:
     permissions:
       contents: write
     steps:
+      # At the default ref rather than at `gh-pages`, for the reason `ci.yml`
+      # gives: the preview branch may not exist — nothing has published one
+      # yet, or this pull request was closed before its first build finished —
+      # and `ref:` on a missing branch fails the job rather than finding
+      # nothing to clean up. The step below moves onto it, and says so when
+      # there is nothing to move onto.
       - uses: actions/checkout@v7
         with:
-          ref: gh-pages
+          fetch-depth: 1
 
       - name: Remove
         env:
@@ -32,11 +38,25 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
+          if ! git ls-remote --exit-code --heads origin gh-pages >/dev/null; then
+            echo "::notice::No preview branch exists; nothing to remove."
+            exit 0
+          fi
+
           # Same retry as the publish step: a concurrent publish must not be
           # force-pushed away by a cleanup that started from a stale ref.
           for attempt in 1 2 3 4 5; do
             git fetch --depth=1 origin gh-pages
-            git reset --hard origin/gh-pages
+            # `checkout -B` rather than `reset --hard`: this job is checked out
+            # at the default branch, so a reset would move THAT branch onto the
+            # preview commit and leave no local ref named `gh-pages` — which is
+            # exactly what `git push origin gh-pages` needs, and what it failed
+            # on with `src refspec gh-pages does not match any`.
+            #
+            # From `FETCH_HEAD`, which the fetch above always writes, rather
+            # than from `origin/gh-pages`, which it only updates when the
+            # checkout's configured refspec happens to cover the branch.
+            git checkout -B gh-pages FETCH_HEAD
 
             if [ ! -d "$DIR" ]; then
               echo "::notice::No preview was published for ${DIR}."

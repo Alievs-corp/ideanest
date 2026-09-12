@@ -4,6 +4,7 @@ import {
   basicsPanelCopy,
   editorChromeCopy,
   editorMetaCopy,
+  prelaunchPanelCopy,
 } from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
@@ -26,7 +27,11 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function PrelaunchEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [copy, basics] = await Promise.all([editorChromeCopy(), basicsPanelCopy()]);
+  const [copy, basics, prelaunch] = await Promise.all([
+    editorChromeCopy(),
+    basicsPanelCopy(),
+    prelaunchPanelCopy(),
+  ]);
 
   /*
    * No `<main>` since #347. `app/projects/[id]/edit/layout.tsx` puts the editor inside
@@ -39,5 +44,6 @@ export default async function PrelaunchEditorPage({ params }: { params: Promise<
       copy={copy}
       validation={basics.validation}
       cover={basics.cover}
+      prelaunch={prelaunch}
     />;
 }

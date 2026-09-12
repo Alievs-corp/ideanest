@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { StoryPanel } from '../../../../../../components/campaign-editor/StoryPanel';
-import { editorChromeCopy, editorMetaCopy } from '../../../../../../lib/i18n/shell-copy.server';
+import {
+  editorChromeCopy,
+  editorMetaCopy,
+  storyPanelCopy,
+} from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -18,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function StoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const copy = await editorChromeCopy();
+  const [copy, story] = await Promise.all([editorChromeCopy(), storyPanelCopy()]);
 
   /*
    * No `<main>` since #347. `app/projects/[id]/edit/layout.tsx` puts the editor inside
@@ -26,5 +30,5 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
    * `EditorShell` draws this page's own column and heading, so the element that was here
    * carried a landmark and nothing else.
    */
-  return <StoryPanel projectId={id} copy={copy} />;
+  return <StoryPanel projectId={id} copy={copy} story={story} />;
 }

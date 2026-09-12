@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { EDITOR_TABS, editorTabHref } from '../../components/campaign-editor/tabs';
 import type { ChecklistItem, ProjectChecklist } from './api';
+import { EDITOR_COPY, REVIEW_COPY } from '../../test-editor-copy';
 import {
   CHECKLIST_SECTIONS,
-  SECTION_LABEL,
   describeProgress,
   isChecklistSection,
   progressOf,
@@ -47,7 +47,8 @@ describe('checklist sections', () => {
 
     for (const section of CHECKLIST_SECTIONS) {
       expect(segments).toContain(section);
-      expect(SECTION_LABEL[section]).toBeTruthy();
+      /* The section's name is the tab's own now, so this asserts the catalogue has one. */
+      expect(EDITOR_COPY.tabs[section]).toBeTruthy();
     }
   });
 
@@ -90,7 +91,10 @@ describe('progress', () => {
   });
 
   it('says the score in words, with the counts a bar cannot carry', () => {
-    const described = describeProgress(progressOf(checklist({ score: 83 })));
+    const described = describeProgress(
+      progressOf(checklist({ score: 83 })),
+      REVIEW_COPY.progressSummary,
+    );
 
     expect(described).toContain('83%');
     // The half that answers "is what is left optional".

@@ -16,6 +16,10 @@
  * doing what is convenient in JavaScript.
  */
 
+import type { StoryVocabularyCopy } from '../i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../i18n/placeholders';
+import { pluralise } from '../i18n/plurals';
+
 /* -------------------------------------------------------------------------
  * The document — contract §5, exactly
  * ---------------------------------------------------------------------- */
@@ -719,8 +723,7 @@ export function moveBlock(
  * What is wrong with a block
  * ---------------------------------------------------------------------- */
 
-export const IMAGE_ALT_REQUIRED =
-  'A description is required. It is what a backer using a screen reader receives instead of the picture.';
+
 
 /**
  * The client's copy of the server's rules, for immediate feedback.
@@ -734,29 +737,29 @@ export const IMAGE_ALT_REQUIRED =
  * An empty paragraph is not an error; a creator has just added it. An image with
  * no description is an error, because it is a picture that has been chosen.
  */
-export function blockProblem(block: StoryBlock): string | null {
+export function blockProblem(block: StoryBlock, copy: StoryVocabularyCopy): string | null {
   switch (block.type) {
     case 'heading': {
-      if (block.text.trim() === '') return 'A heading needs its text.';
+      if (block.text.trim() === '') return copy.problems.headingNeedsText;
       if (slugifyHeading(block.id) !== block.id || block.id === '') {
-        return 'This anchor is not usable in a link. Rename the heading to regenerate it.';
+        return copy.problems.anchorUnusable;
       }
       return null;
     }
     case 'image': {
-      if (block.url.trim() === '') return 'An image needs an address.';
-      if (!isWebUrl(block.url)) return 'An address has to begin with http:// or https://.';
+      if (block.url.trim() === '') return copy.problems.imageNeedsUrl;
+      if (!isWebUrl(block.url)) return copy.problems.urlScheme;
       if (block.width <= 0 || block.height <= 0) {
-        return 'This image has not been measured yet. Use “Measure and add” so its size is recorded.';
+        return copy.problems.imageNotMeasured;
       }
-      if (block.alt.trim() === '') return IMAGE_ALT_REQUIRED;
+      if (block.alt.trim() === '') return copy.problems.imageNeedsAlt;
       return null;
     }
     case 'embed': {
-      if (block.url.trim() === '') return 'An embed needs an address.';
-      if (!isWebUrl(block.url)) return 'An address has to begin with http:// or https://.';
+      if (block.url.trim() === '') return copy.problems.embedNeedsUrl;
+      if (!isWebUrl(block.url)) return copy.problems.urlScheme;
       if (block.title.trim() === '') {
-        return 'An embed needs a title. It is what a screen reader announces instead of “frame”.';
+        return copy.problems.embedNeedsTitle;
       }
       return null;
     }
@@ -779,12 +782,15 @@ export function isWebUrl(value: string): boolean {
 }
 
 /** Every problem in the document, with the block each belongs to. */
-export function storyProblems(document: StoryDocument): ReadonlyMap<number, string> {
+export function storyProblems(
+  document: StoryDocument,
+  copy: StoryVocabularyCopy,
+): ReadonlyMap<number, string> {
   const problems = new Map<number, string>();
   const anchors = new Set<string>();
 
   document.blocks.forEach((block, index) => {
-    const problem = blockProblem(block);
+    const problem = blockProblem(block, copy);
     if (problem !== null) {
       problems.set(index, problem);
       return;
@@ -793,7 +799,7 @@ export function storyProblems(document: StoryDocument): ReadonlyMap<number, stri
       // Duplicated anchors are the failure that looks like it works: every link in
       // the navigation resolves and half of them scroll to the wrong heading.
       if (anchors.has(block.id)) {
-        problems.set(index, 'Another heading already uses this anchor. Rename one of them.');
+        problems.set(index, copy.problems.anchorDuplicate);
         return;
       }
       anchors.add(block.id);
@@ -804,23 +810,15 @@ export function storyProblems(document: StoryDocument): ReadonlyMap<number, stri
 }
 
 /** Whether the document is one the server will accept. */
-export function isSaveable(document: StoryDocument): boolean {
-  return storyProblems(document).size === 0;
+export function isSaveable(document: StoryDocument, copy: StoryVocabularyCopy): boolean {
+  return storyProblems(document, copy).size === 0;
 }
 
 /* -------------------------------------------------------------------------
  * Naming a block
  * ---------------------------------------------------------------------- */
 
-export const BLOCK_LABEL: Record<StoryBlockType, string> = {
-  heading: 'Heading',
-  paragraph: 'Paragraph',
-  list: 'List',
-  quote: 'Quote',
-  rule: 'Divider',
-  image: 'Image',
-  embed: 'Embed',
-};
+
 
 /**
  * How a block is announced: what kind it is, where it is, and enough of its
@@ -832,27 +830,48 @@ export const BLOCK_LABEL: Record<StoryBlockType, string> = {
  * distinguishable — so the position is in the name rather than only in the
  * markup.
  */
-export function describeBlock(block: StoryBlock, index: number, total: number): string {
-  const position = `${index + 1} of ${total}`;
+export function describeBlock(
+  block: StoryBlock,
+  index: number,
+  total: number,
+  copy: StoryVocabularyCopy,
+): string {
+  const position = fillPlaceholders(copy.describe.position, {
+    index: String(index + 1),
+    total: String(total),
+  });
 
   switch (block.type) {
     case 'heading':
-      return `Heading ${position}: ${block.text.trim() === '' ? 'empty' : block.text}`;
+      return fillPlaceholders(copy.describe.heading, {
+        position,
+        text: block.text.trim() === '' ? copy.describe.headingEmpty : block.text,
+      });
     case 'paragraph':
     case 'quote':
-      return `${BLOCK_LABEL[block.type]} ${position}: ${preview(spansToText(block.spans))}`;
+      return fillPlaceholders(copy.describe.withPreview, {
+        label: copy.blockLabel[block.type],
+        position,
+        preview: preview(spansToText(block.spans)),
+      });
     case 'list':
-      return `${block.ordered ? 'Numbered' : 'Bulleted'} list ${position}, ${block.items.length} ${
-        block.items.length === 1 ? 'item' : 'items'
-      }`;
+      return fillPlaceholders(
+        pluralise(copy.locale, copy.describe.list, block.items.length),
+        { style: block.ordered ? copy.describe.numbered : copy.describe.bulleted, position },
+      );
     case 'rule':
-      return `Divider ${position}`;
+      return fillPlaceholders(copy.describe.rule, { position });
     case 'image':
-      return `Image ${position}: ${block.alt.trim() === '' ? 'no description yet' : block.alt}`;
+      return fillPlaceholders(copy.describe.image, {
+        position,
+        alt: block.alt.trim() === '' ? copy.describe.imageNoAlt : block.alt,
+      });
     case 'embed':
-      return `${block.provider} embed ${position}: ${
-        block.title.trim() === '' ? 'no title yet' : block.title
-      }`;
+      return fillPlaceholders(copy.describe.embed, {
+        provider: block.provider,
+        position,
+        title: block.title.trim() === '' ? copy.describe.embedNoTitle : block.title,
+      });
   }
 }
 

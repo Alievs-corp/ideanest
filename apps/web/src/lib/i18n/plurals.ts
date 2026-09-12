@@ -40,13 +40,18 @@ import { fillPlaceholders } from './placeholders';
 export type PluralForms = Readonly<Record<'one' | 'few' | 'many' | 'other', string>>;
 
 /**
- * The form for `count`, with `{count}` filled in.
+ * The form `locale` selects for `count`, WITH `{count}` STILL IN IT.
+ *
+ * For a sentence whose number is a node rather than a string — a bold count inside the
+ * sentence, say. `fillNodes` needs the placeholder to still be there, and {@link pluralise}
+ * has already replaced it, so a caller that reached for `pluralise` and then `fillNodes`
+ * silently got the plain text and no node. That happened; this is the half to reach for.
  *
  * The rules object is constructed per call rather than cached. It is built from a four-value
  * table, `Intl` implementations memoise their own, and a module-level cache keyed by locale
  * would be state in a module that is imported by both a server render and a client bundle.
  */
-export function pluralise(locale: Locale, forms: PluralForms, count: number): string {
+export function pluralForm(locale: Locale, forms: PluralForms, count: number): string {
   const category = new Intl.PluralRules(INTL_LOCALE[locale]).select(count);
 
   /*
@@ -54,7 +59,10 @@ export function pluralise(locale: Locale, forms: PluralForms, count: number): st
    * to reach it is a category a future language adds — and a slightly ungrammatical count is a
    * better answer than a component that does not render.
    */
-  const form = (forms as Readonly<Record<string, string | undefined>>)[category] ?? forms.other;
+  return (forms as Readonly<Record<string, string | undefined>>)[category] ?? forms.other;
+}
 
-  return fillPlaceholders(form, { count: String(count) });
+/** The form for `count`, with `{count}` filled in. The common case. */
+export function pluralise(locale: Locale, forms: PluralForms, count: number): string {
+  return fillPlaceholders(pluralForm(locale, forms, count), { count: String(count) });
 }
