@@ -24,6 +24,8 @@ import {
   type FaqPanelCopy,
   type PrelaunchPanelCopy,
   type ReviewPanelCopy,
+  type EditorMetaCopy,
+  type NewProjectCopy,
   type RewardsPanelCopy,
   type StoryPanelCopy,
   basicsPanelCopyFrom,
@@ -31,6 +33,8 @@ import {
   faqPanelCopyFrom,
   prelaunchPanelCopyFrom,
   reviewPanelCopyFrom,
+  editorMetaCopyFrom,
+  newProjectCopyFrom,
   rewardsPanelCopyFrom,
   storyPanelCopyFrom,
 } from './campaign-editor-copy';
@@ -366,4 +370,19 @@ export async function prelaunchPanelCopy(): Promise<PrelaunchPanelCopy> {
 export async function reviewPanelCopy(): Promise<ReviewPanelCopy> {
   const [editor, locale] = await Promise.all([getTranslations('campaignEditor'), getLocale()]);
   return reviewPanelCopyFrom(editor, localeOrDefault(locale));
+}
+
+/** The one field that starts a campaign. */
+export async function newProjectCopy(): Promise<NewProjectCopy> {
+  return newProjectCopyFrom(await getTranslations('campaignEditor'));
+}
+
+/**
+ * The six editor pages' descriptions.
+ *
+ * The titles are not here: they are the tabs' own names, so a page reads them from
+ * {@link editorChromeCopy} rather than carrying a second spelling of "Basics".
+ */
+export async function editorMetaCopy(): Promise<EditorMetaCopy> {
+  return editorMetaCopyFrom(await getTranslations('campaignEditor'));
 }

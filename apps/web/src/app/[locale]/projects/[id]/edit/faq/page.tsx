@@ -2,15 +2,18 @@ import type { Metadata } from 'next';
 import { FaqPanel } from '../../../../../../components/campaign-editor/FaqPanel';
 import {
   editorChromeCopy,
+  editorMetaCopy,
   faqPanelCopy,
 } from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
-export const metadata: Metadata = privatePageMetadata({
-  title: 'FAQ',
-  description:
-    'The questions your campaign answers on its own page, and the order backers read them in.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const [copy, meta] = await Promise.all([editorChromeCopy(), editorMetaCopy()]);
+  return privatePageMetadata({
+    title: copy.tabs.faq,
+    description: meta.descriptions.faq,
+  });
+}
 
 /**
  * The project is loaded with the account's bearer token from the browser, so

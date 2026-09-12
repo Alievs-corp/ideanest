@@ -3,13 +3,17 @@ import { BasicsPanel } from '../../../../../../components/campaign-editor/Basics
 import {
   basicsPanelCopy,
   editorChromeCopy,
+  editorMetaCopy,
 } from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Basics',
-  description: 'The title, summary, category, goal, duration, and cover image of your campaign.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const [copy, meta] = await Promise.all([editorChromeCopy(), editorMetaCopy()]);
+  return privatePageMetadata({
+    title: copy.tabs.basics,
+    description: meta.descriptions.basics,
+  });
+}
 
 /**
  * The project is loaded with the account's bearer token from the browser, so

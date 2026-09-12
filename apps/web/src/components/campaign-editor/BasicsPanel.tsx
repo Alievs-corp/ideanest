@@ -446,6 +446,7 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
         </div>
 
         <CoverImageField
+          copy={basics.cover}
           url={draft.coverImageUrl}
           cover={draft.coverImage}
           error={errors.coverImage}

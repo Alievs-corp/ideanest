@@ -3653,6 +3653,60 @@
         "other": "{count} mütləq bənd hələ tamamlanmayıb."
       },
       "moderatorNote": "Moderator kampaniyanı oxuyur və ya təsdiqləyir, ya dəyişiklik istəyir, ya da rədd edir. Baxış gedərkən redaktə etmək olar."
+    },
+    "cover": {
+      "label": "Üz qabığı",
+      "hint": "Layihələr lentində və layihə səhifəsinin yuxarısında göstərilir. Ən yaxşısı {minimum} piksel və daha böyük.",
+      "remove": "Üz qabığını sil",
+      "prompt": "Üz qabığı olsun deyə şəkli bura atın",
+      "dragPrompt": "Bu şəkli yükləmək üçün buraxın",
+      "buttonLabel": "Şəkil seçin",
+      "dropHint": "20 MB-a qədər. Şəkil burada çevrilir və kiçildilir, orijinal saxlanılmır. Ən yaxşısı {minimum} və daha böyük.",
+      "urlPlaceholder": "Və ya ünvanı yapışdırın: https://images.example.com/cover.jpg",
+      "needUrlFirst": "Əvvəlcə şəklin ünvanını yazın.",
+      "notUsedTitle": "Bu fayl istifadə olunmadı",
+      "unusable": "Bu şəkli işlətmək alınmadı.",
+      "softTitle": "Tam enində bulanıq görünəcək",
+      "set": "Üz qabığı {size} piksel şəkildən götürüldü.",
+      "setSmall": "Üz qabığı {size} piksel şəkildən götürüldü. Bu, tövsiyə olunan {minimum} ölçüdən kiçikdir, ona görə başlığı doldurmaq üçün böyüdüləcək və bulanıq görünəcək. Nisbətləri saxlanılır — çərçivə dartmır, kəsir. Kampaniyanı yenə də göndərmək olar.",
+      "stage": {
+        "preparing": "Hazırlanır",
+        "uploading": "Yüklənir",
+        "processing": "Emal olunur"
+      },
+      "failures": {
+        "TOO_SMALL": "Bu şəkil göstərmək üçün çox kiçikdir. {minimum} və yuxarısı yaxşı oxunur.",
+        "UNSUPPORTED_FORMAT": "Bu fayl platformanın oxuya biləcəyi şəkil deyil. JPEG, PNG, WebP, AVIF və HEIC işləyir.",
+        "TOO_LARGE": "Fayl çox böyükdür. Hədd 20 MB-dır.",
+        "EMPTY": "Fayl boşdur.",
+        "UNREADABLE": "Bu şəkli çevirmək alınmadı. Başqa fayl işləməlidir.",
+        "UPLOADS_UNAVAILABLE": "Bu mühitdə yükləmə aktiv deyil. Əvəzinə ünvan yapışdırın.",
+        "MEDIA_STORAGE_UNREACHABLE": "Şəkil anbarı cavab vermir. Bir azdan yenidən cəhd edin.",
+        "UPLOAD_STILL_PROCESSING": "Bu şəkil adətkindən uzun çəkir. Bu bölməyə qayıtsanız, görünə bilər.",
+        "UPLOAD_TRANSFER_FAILED": "Şəkil anbara çatmadı. Bağlantını yoxlayıb yenidən cəhd edin."
+      }
+    },
+    "newProject": {
+      "notCreatedTitle": "Qaralama yaradılmadı",
+      "notCreated": "Qaralamanı yaratmaq alınmadı. Yenidən cəhd edin.",
+      "title": "Layihənin adı",
+      "titleHint": "Kampaniya başlayana qədər istənilən vaxt dəyişmək olar. Ən çox {max} simvol.",
+      "creating": "Qaralama yaradılır",
+      "start": "Redaktəyə başla",
+      "signInFirst": "Layihəyə başlamaq üçün daxil olun.",
+      "notAllowed": "Bu hesabın layihə yaratmağa icazəsi yoxdur.",
+      "unreachable": "Xidmətlə əlaqə qurulmadı, qaralama yaradılmadı. Yenidən cəhd edin.",
+      "heading": "Layihəyə başla",
+      "intro": "Ona işçi ad verin. Redaktor siz yazdıqca yadda saxlayır, kampaniyanı baxışa göndərənə qədər isə onu sizdən başqa heç kim görmür.",
+      "metaDescription": "Kampaniyanıza ad verin və redaktəyə başlayın. Göndərənə qədər heç nə ictimai olmur."
+    },
+    "meta": {
+      "basics": "Kampaniyanızın başlığı, qısa təsviri, kateqoriyası, hədəfi, müddəti və üz qabığı.",
+      "rewards": "Kampaniyanızın istehsal etdiyi əşyalar və dəstəkçilərin seçdiyi mükafat səviyyələri — qiymətlər, sayı, çatdırılma və sıra.",
+      "story": "Kampaniyanızın geniş hekayəsi, riskləri və çətinlikləri, həmçinin əvvəlki versiyaları.",
+      "faq": "Kampaniyanızın öz səhifəsində cavablandırdığı suallar və dəstəkçilərin onları oxuduğu sıra.",
+      "prelaunch": "Başlanğıcdan əvvəlki səhifəni açın, linki paylaşın və kampaniyanızın açılışından xəbər tutmaq istəyənləri toplayın.",
+      "review": "Kampaniyanın nə qədər hazır olduğu, moderasiyanın onun haqqında dedikləri və baxışa göndərilməsi."
     }
   },
   "profile": {

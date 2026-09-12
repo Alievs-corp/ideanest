@@ -3,15 +3,18 @@ import { PrelaunchPanel } from '../../../../../../components/campaign-editor/Pre
 import {
   basicsPanelCopy,
   editorChromeCopy,
+  editorMetaCopy,
   prelaunchPanelCopy,
 } from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Pre-launch',
-  description:
-    'Open a pre-launch page, share the link, and collect the people who want to be told when your campaign opens.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const [copy, meta] = await Promise.all([editorChromeCopy(), editorMetaCopy()]);
+  return privatePageMetadata({
+    title: copy.tabs.prelaunch,
+    description: meta.descriptions.prelaunch,
+  });
+}
 
 /**
  * The project is loaded with the account's bearer token from the browser, so this
@@ -40,6 +43,7 @@ export default async function PrelaunchEditorPage({ params }: { params: Promise<
       projectId={id}
       copy={copy}
       validation={basics.validation}
+      cover={basics.cover}
       prelaunch={prelaunch}
     />;
 }

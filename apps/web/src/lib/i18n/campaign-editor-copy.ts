@@ -89,7 +89,14 @@ export interface EditorChromeCopy {
    * rule that a counter is a sentence.
    */
   readonly characterCount: CharacterCountCopy;
-  readonly locale: string;
+  /**
+   * The reader's language.
+   *
+   * A `Locale` rather than a `string`: `CharacterCount` only needs a tag it can hand to
+   * `Intl`, but `pluralise` needs one of §21.1's four, and one type for both means no
+   * narrowing at the call sites that do.
+   */
+  readonly locale: Locale;
   /**
    * The three states every tab can be in besides "working", and the control that leaves them.
    *
@@ -185,7 +192,7 @@ function record<K extends string, V>(
 export function editorChromeCopyFrom(
   t: CampaignEditorTranslator,
   counter: CampaignEditorTranslator,
-  locale: string,
+  locale: Locale,
 ): EditorChromeCopy {
   return {
     eyebrow: t('eyebrow'),
@@ -299,6 +306,7 @@ export interface BasicsPanelCopy {
   readonly latePledges: string;
   readonly latePledgesHint: string;
   readonly validation: BasicsValidationCopy;
+  readonly cover: CoverImageCopy;
 }
 
 export function basicsValidationCopyFrom(t: CampaignEditorTranslator): BasicsValidationCopy {
@@ -355,6 +363,7 @@ export function basicsPanelCopyFrom(t: CampaignEditorTranslator): BasicsPanelCop
     latePledges: t('basics.latePledges'),
     latePledgesHint: t('basics.latePledgesHint'),
     validation: basicsValidationCopyFrom(t),
+    cover: coverImageCopyFrom(t),
   };
 }
 
@@ -880,6 +889,7 @@ export function rewardsVocabularyCopyFrom(
   };
 }
 
+/* -------------------------------------------------------------------------
 /* -------------------------------------------------------------------------
  * Story — §4.5's third tab
  * ---------------------------------------------------------------------- */
@@ -1532,4 +1542,139 @@ export function reviewPanelCopyFrom(
     stateNote: record(REVIEW_NOTED_STATES, (state) => at(`stateNote.${state}`)),
     locale,
   };
+}
+
+/* -------------------------------------------------------------------------
+ * The cover image, the new-project form, and the six pages' metadata
+ * ---------------------------------------------------------------------- */
+
+/** The codes the media service refuses an upload with. */
+export const COVER_FAILURE_CODES = [
+  'TOO_SMALL',
+  'UNSUPPORTED_FORMAT',
+  'TOO_LARGE',
+  'EMPTY',
+  'UNREADABLE',
+  'UPLOADS_UNAVAILABLE',
+  'MEDIA_STORAGE_UNREACHABLE',
+  'UPLOAD_STILL_PROCESSING',
+  'UPLOAD_TRANSFER_FAILED',
+] as const;
+
+export type CoverFailureCode = (typeof COVER_FAILURE_CODES)[number];
+
+/**
+ * The reasons a file can be refused before it ever reaches storage.
+ *
+ * A record over the codes rather than an interface, so a code the service adds fails to
+ * compile here instead of rendering nothing under the drop zone. `TOO_SMALL` carries
+ * `{minimum}`.
+ */
+export type CoverFailureCopy = Readonly<Record<CoverFailureCode, string>>;
+
+/** `CoverImageField` — the basics tab's one upload. */
+export interface CoverImageCopy {
+  readonly label: string;
+  /** Carries `{minimum}`. */
+  readonly hint: string;
+  readonly remove: string;
+  readonly prompt: string;
+  readonly dragPrompt: string;
+  readonly buttonLabel: string;
+  /** Carries `{minimum}`. */
+  readonly dropHint: string;
+  readonly urlPlaceholder: string;
+  readonly needUrlFirst: string;
+  readonly notUsedTitle: string;
+  readonly unusable: string;
+  readonly softTitle: string;
+  /** Carries `{size}`. */
+  readonly set: string;
+  /** Carries `{size}` and `{minimum}`. */
+  readonly setSmall: string;
+  readonly stage: {
+    readonly preparing: string;
+    readonly uploading: string;
+    readonly processing: string;
+  };
+  readonly failures: CoverFailureCopy;
+}
+
+/** `NewProjectForm` — the one field that starts a campaign. */
+export interface NewProjectCopy {
+  readonly notCreatedTitle: string;
+  readonly notCreated: string;
+  readonly title: string;
+  /** Carries `{max}`. */
+  readonly titleHint: string;
+  readonly creating: string;
+  readonly start: string;
+  readonly signInFirst: string;
+  readonly notAllowed: string;
+  readonly unreachable: string;
+  readonly heading: string;
+  readonly intro: string;
+  readonly metaDescription: string;
+}
+
+/**
+ * The six pages' `<title>` and description.
+ *
+ * ONLY THE DESCRIPTIONS ARE HERE. The titles are the tabs' own names, read from
+ * `EditorChromeCopy.tabs`, because "Basics" in the browser tab and "Basics" on the section
+ * link are the same word and a second spelling is the drift this file keeps removing.
+ */
+export interface EditorMetaCopy {
+  readonly descriptions: Readonly<Record<EditorTabKey, string>>;
+}
+
+export function coverImageCopyFrom(t: CampaignEditorTranslator): CoverImageCopy {
+  const at = (key: string) => t(`cover.${key}`);
+  const tpl = (key: string) => template(t, `cover.${key}`);
+
+  return {
+    label: at('label'),
+    hint: tpl('hint'),
+    remove: at('remove'),
+    prompt: at('prompt'),
+    dragPrompt: at('dragPrompt'),
+    buttonLabel: at('buttonLabel'),
+    dropHint: tpl('dropHint'),
+    urlPlaceholder: at('urlPlaceholder'),
+    needUrlFirst: at('needUrlFirst'),
+    notUsedTitle: at('notUsedTitle'),
+    unusable: at('unusable'),
+    softTitle: at('softTitle'),
+    set: tpl('set'),
+    setSmall: tpl('setSmall'),
+    stage: {
+      preparing: at('stage.preparing'),
+      uploading: at('stage.uploading'),
+      processing: at('stage.processing'),
+    },
+    failures: record(COVER_FAILURE_CODES, (code) =>
+      code === 'TOO_SMALL' ? tpl(`failures.${code}`) : at(`failures.${code}`),
+    ),
+  };
+}
+
+export function newProjectCopyFrom(t: CampaignEditorTranslator): NewProjectCopy {
+  return {
+    notCreatedTitle: t('newProject.notCreatedTitle'),
+    notCreated: t('newProject.notCreated'),
+    title: t('newProject.title'),
+    titleHint: template(t, 'newProject.titleHint'),
+    creating: t('newProject.creating'),
+    start: t('newProject.start'),
+    signInFirst: t('newProject.signInFirst'),
+    notAllowed: t('newProject.notAllowed'),
+    unreachable: t('newProject.unreachable'),
+    heading: t('newProject.heading'),
+    intro: t('newProject.intro'),
+    metaDescription: t('newProject.metaDescription'),
+  };
+}
+
+export function editorMetaCopyFrom(t: CampaignEditorTranslator): EditorMetaCopy {
+  return { descriptions: record(EDITOR_TAB_KEYS, (key) => t(`meta.${key}`)) };
 }

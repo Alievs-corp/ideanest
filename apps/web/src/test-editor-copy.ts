@@ -5,6 +5,7 @@ import {
   faqPanelCopyFrom,
   prelaunchPanelCopyFrom,
   reviewPanelCopyFrom,
+  newProjectCopyFrom,
   rewardsPanelCopyFrom,
   storyPanelCopyFrom,
   type BasicsPanelCopy,
@@ -12,6 +13,7 @@ import {
   type FaqPanelCopy,
   type PrelaunchPanelCopy,
   type ReviewPanelCopy,
+  type NewProjectCopy,
   type RewardsPanelCopy,
   type StoryPanelCopy,
 } from './lib/i18n/campaign-editor-copy';
@@ -97,3 +99,5 @@ export const PRELAUNCH_COPY: PrelaunchPanelCopy = prelaunchPanelCopyFrom(
 
 /** The review tab. */
 export const REVIEW_COPY: ReviewPanelCopy = reviewPanelCopyFrom(read, 'en');
+/** The one field that starts a campaign. */
+export const NEW_PROJECT_COPY: NewProjectCopy = newProjectCopyFrom(read);

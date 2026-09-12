@@ -2,15 +2,18 @@ import type { Metadata } from 'next';
 import { ReviewPanel } from '../../../../../../components/campaign-editor/ReviewPanel';
 import {
   editorChromeCopy,
+  editorMetaCopy,
   reviewPanelCopy,
 } from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Review',
-  description:
-    'How complete your campaign is, what moderation has said about it, and submitting it for review.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const [copy, meta] = await Promise.all([editorChromeCopy(), editorMetaCopy()]);
+  return privatePageMetadata({
+    title: copy.tabs.review,
+    description: meta.descriptions.review,
+  });
+}
 
 /**
  * The checklist is read with the account's bearer token from the browser, so this

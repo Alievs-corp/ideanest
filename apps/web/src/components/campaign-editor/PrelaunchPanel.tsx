@@ -37,6 +37,7 @@ import {
 import { CoverImageField } from './CoverImageField';
 import type {
   BasicsValidationCopy,
+  CoverImageCopy,
   EditorChromeCopy,
   PrelaunchPanelCopy,
 } from '../../lib/i18n/campaign-editor-copy';
@@ -112,6 +113,14 @@ export interface PrelaunchPanelProps {
    * `validateBasics`, so it refuses in the same vocabulary rather than a second one.
    */
   validation: BasicsValidationCopy;
+  /**
+   * The cover field's words.
+   *
+   * From the basics copy, the way `validation` is: this tab edits the same three fields and
+   * draws the same upload, so it refuses and explains in the same vocabulary rather than a
+   * second one. The tab's own words are `prelaunch` below.
+   */
+  cover: CoverImageCopy;
   /** This tab's own words. */
   prelaunch: PrelaunchPanelCopy;
 }
@@ -120,6 +129,7 @@ export function PrelaunchPanel({
   projectId,
   copy,
   validation,
+  cover,
   prelaunch: words,
 }: PrelaunchPanelProps) {
   const { project, status, error, reload, apply } = useProjectEdit(projectId);
@@ -418,6 +428,7 @@ export function PrelaunchPanel({
           </Field>
 
           <CoverImageField
+            copy={cover}
             url={draft.coverImageUrl}
             cover={draft.coverImage}
             error={errors.coverImage}

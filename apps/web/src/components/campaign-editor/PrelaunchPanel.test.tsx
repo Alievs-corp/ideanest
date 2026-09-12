@@ -82,7 +82,15 @@ async function openPanel(overrides: Partial<ProjectEdit> = {}): Promise<UserEven
   getProjectEditMock.mockResolvedValue({ ...PROJECT, ...overrides });
 
   const user = userEvent.setup({ advanceTimers: (ms) => void vi.advanceTimersByTime(ms) });
-  render(<PrelaunchPanel projectId="project-1" copy={EDITOR_COPY} validation={BASICS_COPY.validation} prelaunch={PRELAUNCH_COPY} />);
+  render(
+    <PrelaunchPanel
+      projectId="project-1"
+      copy={EDITOR_COPY}
+      validation={BASICS_COPY.validation}
+      cover={BASICS_COPY.cover}
+      prelaunch={PRELAUNCH_COPY}
+    />,
+  );
 
   // The project and, when the page is open, the follower count resolve
   // independently.

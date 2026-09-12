@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
 import { NewProjectForm } from '../../../../components/campaign-editor/NewProjectForm';
+import {
+  editorChromeCopy,
+  newProjectCopy,
+} from '../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Start a project',
-  description: 'Name your campaign and start editing it. Nothing is public until you submit it.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const copy = await newProjectCopy();
+  return privatePageMetadata({ title: copy.heading, description: copy.metaDescription });
+}
 
 /**
  * A shell around a client form.
@@ -14,7 +18,9 @@ export const metadata: Metadata = privatePageMetadata({
  * the browser and nowhere else (`src/lib/api/access-token.ts`), so there is
  * nothing here a server render could do.
  */
-export default function NewProjectPage() {
+export default async function NewProjectPage() {
+  const [chrome, copy] = await Promise.all([editorChromeCopy(), newProjectCopy()]);
+
   return (
     /*
       A `<div>` and not a `<main>` since #347. `app/projects/new/layout.tsx` puts this page
@@ -23,14 +29,17 @@ export default function NewProjectPage() {
     */
     <div className="mx-auto w-full max-w-[560px] px-5 py-10 sm:px-6 sm:py-14">
       <h1 className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
-        Start a project
+        {copy.heading}
       </h1>
       <p className="mt-2 text-sm text-white/64">
-        Give it a working title. The editor saves as you type, and nothing is visible to anybody
-        else until you submit the campaign for review.
+        {copy.intro}
       </p>
 
-      <NewProjectForm />
+      <NewProjectForm
+        copy={copy}
+        counter={chrome.characterCount}
+        locale={chrome.locale}
+      />
     </div>
   );
 }

@@ -2,15 +2,18 @@ import type { Metadata } from 'next';
 import { StoryPanel } from '../../../../../../components/campaign-editor/StoryPanel';
 import {
   editorChromeCopy,
+  editorMetaCopy,
   storyPanelCopy,
 } from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Story',
-  description:
-    'The long-form story of your campaign, its risks and challenges, and its earlier versions.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const [copy, meta] = await Promise.all([editorChromeCopy(), editorMetaCopy()]);
+  return privatePageMetadata({
+    title: copy.tabs.story,
+    description: meta.descriptions.story,
+  });
+}
 
 /**
  * The project is loaded with the account's bearer token from the browser, so this

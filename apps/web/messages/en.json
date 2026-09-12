@@ -3653,6 +3653,60 @@
         "other": "{count} required items are not done yet."
       },
       "moderatorNote": "A moderator reads the campaign and either clears it, asks for changes, or refuses it. You can keep editing while it is in review."
+    },
+    "cover": {
+      "label": "Cover image",
+      "hint": "Shown on the discovery grid and at the top of the project page. {minimum} pixels or larger reads best.",
+      "remove": "Remove cover",
+      "prompt": "Drop an image here to use it as the cover",
+      "dragPrompt": "Release to upload this image",
+      "buttonLabel": "Choose an image",
+      "dropHint": "Up to 20 MB. It is converted and resized here, and the original is not kept. {minimum} or larger reads best.",
+      "urlPlaceholder": "Or paste an address: https://images.example.com/cover.jpg",
+      "needUrlFirst": "Enter the address of an image first.",
+      "notUsedTitle": "That file was not used",
+      "unusable": "That image could not be used.",
+      "softTitle": "This will look soft at full width",
+      "set": "Cover set from a {size} pixel image.",
+      "setSmall": "Cover set from a {size} pixel image. It is below the recommended {minimum}, so it will be scaled up to fill the header and will look soft. Its proportions are kept — the frame crops rather than stretches. The campaign can still be submitted.",
+      "stage": {
+        "preparing": "Preparing",
+        "uploading": "Uploading",
+        "processing": "Processing"
+      },
+      "failures": {
+        "TOO_SMALL": "That image is too small to display. Anything from {minimum} upwards reads well.",
+        "UNSUPPORTED_FORMAT": "That file is not an image this platform can read. JPEG, PNG, WebP, AVIF and HEIC all work.",
+        "TOO_LARGE": "That file is too large. The limit is 20 MB.",
+        "EMPTY": "That file is empty.",
+        "UNREADABLE": "That image could not be converted. A different file should work.",
+        "UPLOADS_UNAVAILABLE": "Uploading is not switched on for this environment. Paste an address instead.",
+        "MEDIA_STORAGE_UNREACHABLE": "Image storage is not answering. Please try again shortly.",
+        "UPLOAD_STILL_PROCESSING": "That image is taking longer than usual. It may appear if you come back to this tab.",
+        "UPLOAD_TRANSFER_FAILED": "The image did not reach storage. Check the connection and try again."
+      }
+    },
+    "newProject": {
+      "notCreatedTitle": "The draft was not created",
+      "notCreated": "The draft could not be created. Try again.",
+      "title": "Project title",
+      "titleHint": "It can be changed at any time before the campaign launches. {max} characters or fewer.",
+      "creating": "Creating the draft",
+      "start": "Start editing",
+      "signInFirst": "Sign in to start a project.",
+      "notAllowed": "This account is not allowed to create projects.",
+      "unreachable": "The service could not be reached, so no draft was created. Try again.",
+      "heading": "Start a project",
+      "intro": "Give it a working title. The editor saves as you type, and nothing is visible to anybody else until you submit the campaign for review.",
+      "metaDescription": "Name your campaign and start editing it. Nothing is public until you submit it."
+    },
+    "meta": {
+      "basics": "The title, summary, category, goal, duration, and cover image of your campaign.",
+      "rewards": "The items your campaign produces, and the reward tiers backers choose from — prices, quantities, delivery, and order.",
+      "story": "The long-form story of your campaign, its risks and challenges, and its earlier versions.",
+      "faq": "The questions your campaign answers on its own page, and the order backers read them in.",
+      "prelaunch": "Open a pre-launch page, share the link, and collect the people who want to be told when your campaign opens.",
+      "review": "How complete your campaign is, what moderation has said about it, and submitting it for review."
     }
   },
   "profile": {
