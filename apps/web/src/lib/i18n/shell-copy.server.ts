@@ -66,9 +66,11 @@ import {
   type FailureCopy,
   type FooterCopy,
   type ShellCopy,
+  type WhatsAppCopy,
   failureCopyFrom,
   footerCopyFrom,
   shellCopyFrom,
+  whatsappCopyFrom,
 } from './shell-copy';
 
 /**
@@ -89,6 +91,16 @@ export async function shellCopy(): Promise<ShellCopy> {
 
 export async function footerCopy(): Promise<FooterCopy> {
   return footerCopyFrom(await getTranslations('shell'));
+}
+
+/**
+ * The floating WhatsApp control's words — `shell-copy.ts` explains why they are their own object.
+ *
+ * Resolved by `SiteShell` beside `shellCopy`, and handed to the launcher whole. One extra
+ * lookup on a render that was already reading this namespace.
+ */
+export async function whatsappCopy(): Promise<WhatsAppCopy> {
+  return whatsappCopyFrom(await getTranslations('shell'));
 }
 
 export async function failureCopy(): Promise<FailureCopy> {

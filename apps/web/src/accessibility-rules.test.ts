@@ -111,11 +111,12 @@ describe('the static half of the accessibility rules', () => {
     ).toEqual([]);
   });
 
-  /** Pinned, so a third backdrop is something somebody looks at rather than a count that grew. */
-  it('has exactly the two modal backdrops as its exception', () => {
+  /** Pinned, so a fourth backdrop is something somebody looks at rather than a count that grew. */
+  it('has exactly the three modal backdrops as its exception', () => {
     expect(clickHandlers.map((handler) => handler.file).sort()).toEqual([
       join('components', 'moderation', 'ReportControl.tsx'),
       join('components', 'shell', 'MobileNavDrawer.tsx'),
+      join('components', 'shell', 'WhatsAppLauncher.tsx'),
     ]);
   });
 

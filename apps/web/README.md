@@ -207,6 +207,40 @@ somebody reads" — and it is not in `ACCOUNT_GROUPS`, so the account rail would
 have drawn thirteen entries with none of them marked `aria-current="page"`. It
 gave up a `<main>` of its own for the same reason the two screens above did.
 
+**The site shell carries a floating WhatsApp control**
+(`components/shell/WhatsAppLauncher.tsx`). It opens a dialog asking for a first
+name, a last name and a message, and hands all three to WhatsApp as a `wa.me`
+deep link on `+421 952 480 349`.
+
+**Nothing is sent from this application.** The link opens WhatsApp with the
+message written and waiting, and the visitor presses send there, so it arrives
+from their own number and the reply goes back to a person. That is a deliberate
+choice rather than a shortcut: sending on the platform's behalf means the
+WhatsApp Business Cloud API, a Meta application, a permanent token and a
+template approved in advance for any message a business starts, none of which
+exists here. `lib/contact/whatsapp.ts` holds the number, the text, and the
+reasoning; the copy tells the reader who presses send, and the panel afterwards
+says WhatsApp is open rather than claiming delivery. It also keeps the link as a
+real anchor, because a blocked `window.open` would otherwise be a form that
+swallowed somebody's message in silence.
+
+Two things about it are worth knowing before the next change to the shell:
+
+- **It is the second animation on a frame `docs/motion-system.md` §5 budgets at
+  one.** The halo and the glyph's wave are CSS keyframes in `app/globals.css`
+  (written rather than imported, for the reason the drawer's are: the shell
+  cannot pay 116 kB of animation runtime on every route). The movement stops on
+  the surfaces §5 gives "None" — `/projects/new` and the six editor tabs — and
+  the checkout never carries this shell at all, so "motion decreases as money
+  gets closer" is kept by the route table rather than by a condition. **Whether
+  the frame keeps a second animation is a design decision and is not settled
+  here.**
+- **Its dialog is dark, where §7.14 says a modal is white.** `inputSkin` fills a
+  field with `--surface-3` and `Field` labels it in `--text-primary`; both are
+  invisible on white, and there is no `on-white` variant of `TextInput`,
+  `Textarea` or `Field` to switch to. A white panel means adding those to the
+  kit. `ReportControl` met the same wall and resolved it the same way.
+
 **Every route is served under a `[locale]` segment (#123).** `/az/discover`, `/ru/discover`
 and so on; `proxy.ts` answers a bare path with a 307 to the language the reader last
 chose. `src/i18n/routing.ts` declares the shape, `src/i18n/request.ts` resolves the catalogue

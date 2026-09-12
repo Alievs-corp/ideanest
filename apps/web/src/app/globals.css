@@ -88,3 +88,51 @@
     opacity: 1;
   }
 }
+
+/**
+ * The floating WhatsApp control's movement — `components/shell/WhatsAppLauncher.tsx`.
+ *
+ * WRITTEN HERE, for the reason the two above it are. The launcher is in `SiteShell`, so it is
+ * on every route that carries the site chrome — including the campaign editor, which imports
+ * no animation runtime at all. `@ideanest/ui/motion` is 116 kB (`packages/ui/src/motion.ts`
+ * has the measurement), and a halo does not need a library.
+ *
+ * `transform` and `opacity` ONLY, which is the rule in `docs/motion-system.md` §2: anything
+ * else forces layout on every frame, and this one never stops.
+ *
+ * THE RING MOVES AND THE BUTTON DOES NOT. The halo is a sibling of the control, behind it and
+ * `aria-hidden`, so the thing a reader has to hit stays exactly where they aimed. A pulse
+ * applied to the button itself is a target that grows and shrinks under the cursor, which is
+ * hardest on precisely the people least able to chase it.
+ *
+ * The glyph's own tilt is the second half and is deliberately slow and mostly still: a wave
+ * every six seconds reads as alive, and the same movement every second reads as a banner.
+ *
+ * `prefers-reduced-motion` removes both. The token file collapses every animation to 0.01ms
+ * (docs/ui-kit.md §9.4) and the `motion-safe:` prefix on the elements keeps a browser that
+ * reads the preference through the variant from starting them at all.
+ */
+@keyframes whatsapp-halo {
+  from {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@keyframes whatsapp-wave {
+  0%,
+  76%,
+  100% {
+    transform: rotate(0deg);
+  }
+  84% {
+    transform: rotate(-11deg);
+  }
+  92% {
+    transform: rotate(9deg);
+  }
+}

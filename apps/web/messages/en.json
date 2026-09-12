@@ -98,6 +98,28 @@
         "categories": "Categories",
         "search": "Search"
       }
+    },
+    "whatsapp": {
+      "open": "Message us on WhatsApp",
+      "title": "Write to us on WhatsApp",
+      "intro": "Fill this in and WhatsApp opens with the message ready. You press send there, so it arrives from your own number and we can reply to it.",
+      "fields": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "message": "Message"
+      },
+      "errors": {
+        "firstName": "Tell us your first name.",
+        "lastName": "Tell us your last name.",
+        "message": "Write the message you want to send."
+      },
+      "submit": "Send on WhatsApp",
+      "cancel": "Cancel",
+      "handoff": {
+        "title": "WhatsApp is open",
+        "detail": "Press send in WhatsApp to deliver it. Nothing has been sent from this page.",
+        "again": "Open WhatsApp again"
+      }
     }
   },
   "account": {
