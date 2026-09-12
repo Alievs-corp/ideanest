@@ -2,12 +2,16 @@ import MESSAGES from '../messages/en.json';
 import {
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
+  faqPanelCopyFrom,
   prelaunchPanelCopyFrom,
   rewardsPanelCopyFrom,
+  storyPanelCopyFrom,
   type BasicsPanelCopy,
   type EditorChromeCopy,
+  type FaqPanelCopy,
   type PrelaunchPanelCopy,
   type RewardsPanelCopy,
+  type StoryPanelCopy,
 } from './lib/i18n/campaign-editor-copy';
 
 /**
@@ -75,6 +79,12 @@ export const BASICS_COPY: BasicsPanelCopy = basicsPanelCopyFrom(read);
 
 /** The rewards tab, the items list, and the two drawers they open. */
 export const REWARDS_COPY: RewardsPanelCopy = rewardsPanelCopyFrom(read, 'en', EDITOR_COPY.characterCount);
+
+/** The story tab, the block editor, the mark toolbar and the version history. */
+export const STORY_COPY: StoryPanelCopy = storyPanelCopyFrom(read, 'en', EDITOR_COPY.characterCount);
+
+/** The FAQ tab and its drawer. */
+export const FAQ_COPY: FaqPanelCopy = faqPanelCopyFrom(read, 'en', EDITOR_COPY.characterCount);
 
 /** The pre-launch tab. */
 export const PRELAUNCH_COPY: PrelaunchPanelCopy = prelaunchPanelCopyFrom(
