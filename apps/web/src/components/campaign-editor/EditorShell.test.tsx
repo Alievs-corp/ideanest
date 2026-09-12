@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditorShell } from './EditorShell';
 import { EDITOR_TABS } from './tabs';
+import { EDITOR_COPY } from '../../test-editor-copy';
 
 /**
  * Appearance is reviewed in Storybook. These cover the navigation contract: the
@@ -12,7 +13,7 @@ import { EDITOR_TABS } from './tabs';
 
 function renderShell() {
   return render(
-    <EditorShell projectId="project-1" active="basics" title="A field recorder" state="DRAFT">
+    <EditorShell projectId="project-1" copy={EDITOR_COPY} active="basics" title="A field recorder" state="DRAFT">
       <p>The basics form</p>
     </EditorShell>
   );
@@ -22,11 +23,11 @@ describe('EditorShell', () => {
   it('names the navigation and lists every section once', () => {
     renderShell();
 
-    const nav = screen.getByRole('navigation', { name: 'Campaign sections' });
+    const nav = screen.getByRole('navigation', { name: EDITOR_COPY.sectionsLabel });
     expect(nav).toBeInTheDocument();
 
     for (const tab of EDITOR_TABS) {
-      expect(screen.getByText(tab.label)).toBeInTheDocument();
+      expect(screen.getByText(EDITOR_COPY.tabs[tab.key])).toBeInTheDocument();
     }
   });
 
@@ -86,8 +87,9 @@ describe('EditorShell', () => {
      */
     for (const tab of EDITOR_TABS) {
       await user.tab();
+      const name = EDITOR_COPY.tabs[tab.key];
       expect(document.activeElement).toHaveAccessibleName(
-        tab.available ? tab.label : `${tab.label}, not available yet`,
+        tab.available ? name : `${name}${EDITOR_COPY.notAvailable}`,
       );
     }
   });

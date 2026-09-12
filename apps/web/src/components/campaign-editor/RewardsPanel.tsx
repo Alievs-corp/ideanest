@@ -35,6 +35,7 @@ import {
   showBlockedReason,
   showPatch,
 } from '../../lib/projects/rewards';
+import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
 import { EditorShell } from './EditorShell';
 import { ItemEditor } from './ItemEditor';
 import { ItemsSection } from './ItemsSection';
@@ -97,9 +98,11 @@ type ListStatus = 'loading' | 'ready' | 'failed';
 
 export interface RewardsPanelProps {
   projectId: string;
+  /** The editor frame's words, resolved by this tab's page. */
+  copy: EditorChromeCopy;
 }
 
-export function RewardsPanel({ projectId }: RewardsPanelProps) {
+export function RewardsPanel({ projectId, copy }: RewardsPanelProps) {
   const { project, status, error, reload } = useProjectEdit(projectId);
 
   const [items, setItems] = useState<readonly Item[]>([]);
@@ -340,7 +343,7 @@ export function RewardsPanel({ projectId }: RewardsPanelProps) {
 
   if (status === 'signed-out') {
     return (
-      <EditorShell projectId={projectId} active="rewards">
+      <EditorShell projectId={projectId} copy={copy} active="rewards">
         <InlineAlert variant="info" title="You are signed out">
           This browser no longer has a session. Sign in again to keep editing this campaign.
         </InlineAlert>
@@ -350,7 +353,7 @@ export function RewardsPanel({ projectId }: RewardsPanelProps) {
 
   if (status === 'failed' || project === null) {
     return (
-      <EditorShell projectId={projectId} active="rewards">
+      <EditorShell projectId={projectId} copy={copy} active="rewards">
         {status === 'failed' ? (
           <>
             <InlineAlert variant="danger" title="This project could not be loaded">
@@ -378,6 +381,7 @@ export function RewardsPanel({ projectId }: RewardsPanelProps) {
   return (
     <EditorShell
       projectId={projectId}
+      copy={copy}
       active="rewards"
       title={project.title}
       state={project.state}

@@ -3005,6 +3005,44 @@
       "keep": "Keep it"
     }
   },
+  "campaignEditor": {
+    "eyebrow": "Campaign editor",
+    "loadingTitle": "Loading",
+    "sectionsLabel": "Campaign sections",
+    "soon": "soon",
+    "notAvailable": ", not available yet",
+    "tabs": {
+      "basics": "Basics",
+      "rewards": "Rewards",
+      "story": "Story",
+      "faq": "FAQ",
+      "prelaunch": "Pre-launch",
+      "review": "Review"
+    },
+    "save": {
+      "saving": "Saving",
+      "saved": "Saved",
+      "notSaved": "Not saved"
+    },
+    "state": {
+      "DRAFT": "Draft",
+      "PRELAUNCH": "Pre-launch",
+      "SUBMITTED": "In review",
+      "CHANGES_REQUESTED": "Changes requested",
+      "REJECTED": "Rejected",
+      "APPROVED": "Approved",
+      "SCHEDULED": "Scheduled",
+      "LIVE": "Live",
+      "SUSPENDED": "Suspended",
+      "CANCELED": "Canceled",
+      "SUCCESSFUL": "Funded",
+      "UNSUCCESSFUL": "Not funded",
+      "COLLECTING": "Collecting",
+      "LATE_PLEDGE": "Late pledges",
+      "FULFILLING": "Fulfilling",
+      "COMPLETED": "Completed"
+    }
+  },
   "profile": {
     "notFound": "Profile not found",
     "metaDescription": "{name} on IdeaNest — the campaigns they have created and backed.",

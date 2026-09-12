@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { RewardsPanel } from '../../../../../../components/campaign-editor/RewardsPanel';
+import { editorChromeCopy } from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
 export const metadata: Metadata = privatePageMetadata({
@@ -15,6 +16,7 @@ export const metadata: Metadata = privatePageMetadata({
  */
 export default async function RewardsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const copy = await editorChromeCopy();
 
   /*
    * No `<main>` since #347. `app/projects/[id]/edit/layout.tsx` puts the editor inside
@@ -22,5 +24,5 @@ export default async function RewardsPage({ params }: { params: Promise<{ id: st
    * `EditorShell` draws this page's own column and heading, so the element that was here
    * carried a landmark and nothing else.
    */
-  return <RewardsPanel projectId={id} />;
+  return <RewardsPanel projectId={id} copy={copy} />;
 }

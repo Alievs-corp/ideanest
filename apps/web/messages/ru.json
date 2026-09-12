@@ -3005,6 +3005,44 @@
       "keep": "Оставить"
     }
   },
+  "campaignEditor": {
+    "eyebrow": "Редактор кампании",
+    "loadingTitle": "Загрузка",
+    "sectionsLabel": "Разделы кампании",
+    "soon": "скоро",
+    "notAvailable": ", раздел ещё не доступен",
+    "tabs": {
+      "basics": "Основное",
+      "rewards": "Вознаграждения",
+      "story": "История",
+      "faq": "Вопросы",
+      "prelaunch": "Предзапуск",
+      "review": "Проверка"
+    },
+    "save": {
+      "saving": "Сохранение",
+      "saved": "Сохранено",
+      "notSaved": "Не сохранено"
+    },
+    "state": {
+      "DRAFT": "Черновик",
+      "PRELAUNCH": "До запуска",
+      "SUBMITTED": "На проверке",
+      "CHANGES_REQUESTED": "Запрошены правки",
+      "REJECTED": "Отклонена",
+      "APPROVED": "Одобрена",
+      "SCHEDULED": "Запланирована",
+      "LIVE": "Идёт сбор",
+      "SUSPENDED": "Приостановлена",
+      "CANCELED": "Отменена",
+      "SUCCESSFUL": "Собрана",
+      "UNSUCCESSFUL": "Не собрана",
+      "COLLECTING": "Списание",
+      "LATE_PLEDGE": "Поздние взносы",
+      "FULFILLING": "Отправка",
+      "COMPLETED": "Завершена"
+    }
+  },
   "profile": {
     "notFound": "Профиль не найден",
     "metaDescription": "{name} на IdeaNest — созданные и поддержанные кампании.",

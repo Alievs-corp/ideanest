@@ -13,6 +13,7 @@ import {
   type ProjectFaq,
 } from '../../lib/projects/api';
 import { FaqPanel } from './FaqPanel';
+import { EDITOR_COPY } from '../../test-editor-copy';
 
 /**
  * §4.4's creator-managed question and answer list — the editor half of #283.
@@ -94,7 +95,7 @@ async function openFaqs(faqs: readonly ProjectFaq[] = [SHIPPING, DELIVERY]): Pro
   listFaqsMock.mockResolvedValue(faqs);
 
   const user = userEvent.setup({ advanceTimers: (ms) => void vi.advanceTimersByTime(ms) });
-  render(<FaqPanel projectId="project-1" />);
+  render(<FaqPanel projectId="project-1" copy={EDITOR_COPY} />);
 
   // The project, then the list.
   await tick();
@@ -150,7 +151,7 @@ describe('FaqPanel', () => {
     getProjectEditMock.mockResolvedValue(PROJECT);
     listFaqsMock.mockRejectedValue(new ApiError(500, { status: 500, title: 'Server error' }));
 
-    render(<FaqPanel projectId="project-1" />);
+    render(<FaqPanel projectId="project-1" copy={EDITOR_COPY} />);
     await tick();
     await tick();
 

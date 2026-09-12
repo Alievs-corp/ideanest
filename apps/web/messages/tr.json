@@ -3005,6 +3005,44 @@
       "keep": "Kalsın"
     }
   },
+  "campaignEditor": {
+    "eyebrow": "Kampanya düzenleyici",
+    "loadingTitle": "Yükleniyor",
+    "sectionsLabel": "Kampanya bölümleri",
+    "soon": "yakında",
+    "notAvailable": ", bölüm henüz kullanılamıyor",
+    "tabs": {
+      "basics": "Temel bilgiler",
+      "rewards": "Ödüller",
+      "story": "Hikâye",
+      "faq": "Sorular",
+      "prelaunch": "Lansman öncesi",
+      "review": "İnceleme"
+    },
+    "save": {
+      "saving": "Kaydediliyor",
+      "saved": "Kaydedildi",
+      "notSaved": "Kaydedilmedi"
+    },
+    "state": {
+      "DRAFT": "Taslak",
+      "PRELAUNCH": "Lansman öncesi",
+      "SUBMITTED": "İncelemede",
+      "CHANGES_REQUESTED": "Değişiklik istendi",
+      "REJECTED": "Reddedildi",
+      "APPROVED": "Onaylandı",
+      "SCHEDULED": "Planlandı",
+      "LIVE": "Etkin",
+      "SUSPENDED": "Askıya alındı",
+      "CANCELED": "İptal edildi",
+      "SUCCESSFUL": "Fonlandı",
+      "UNSUCCESSFUL": "Fonlanmadı",
+      "COLLECTING": "Tahsilat",
+      "LATE_PLEDGE": "Geç destekler",
+      "FULFILLING": "Gönderim",
+      "COMPLETED": "Tamamlandı"
+    }
+  },
   "profile": {
     "notFound": "Profil bulunamadı",
     "metaDescription": "IdeaNest üzerinde {name} — oluşturduğu ve desteklediği kampanyalar.",

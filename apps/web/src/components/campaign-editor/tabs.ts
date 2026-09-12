@@ -28,7 +28,12 @@ export type EditorTabKey = 'basics' | 'rewards' | 'story' | 'faq' | 'prelaunch' 
 
 export interface EditorTab {
   key: EditorTabKey;
-  label: string;
+  /*
+   * NO `label`. The section's name is catalogue copy, read by `EditorShell` as
+   * `copy.tabs[tab.key]` — issue #324. A spelling here as well would be a second
+   * one, and this file's own warning about two declarations drifting applies to
+   * it first.
+   */
   /** Path segment under `/projects/[id]/edit`. */
   segment: EditorTabKey;
   /** Whether the route exists. Flip it in the pull request that adds the page. */
@@ -38,9 +43,9 @@ export interface EditorTab {
 }
 
 export const EDITOR_TABS: readonly EditorTab[] = [
-  { key: 'basics', label: 'Basics', segment: 'basics', available: true, issue: 33 },
-  { key: 'rewards', label: 'Rewards', segment: 'rewards', available: true, issue: 34 },
-  { key: 'story', label: 'Story', segment: 'story', available: true, issue: 35 },
+  { key: 'basics', segment: 'basics', available: true, issue: 33 },
+  { key: 'rewards', segment: 'rewards', available: true, issue: 34 },
+  { key: 'story', segment: 'story', available: true, issue: 35 },
   /*
    * AFTER STORY, BEFORE PRE-LAUNCH, because that is when a creator writes it.
    * The questions are answered once the campaign says what it is and before it
@@ -48,9 +53,9 @@ export const EDITOR_TABS: readonly EditorTab[] = [
    * so a creator who reaches Pre-launch without passing it launches with a tab
    * that tells backers the campaign has answered nothing.
    */
-  { key: 'faq', label: 'FAQ', segment: 'faq', available: true, issue: 283 },
-  { key: 'prelaunch', label: 'Pre-launch', segment: 'prelaunch', available: true, issue: 39 },
-  { key: 'review', label: 'Review', segment: 'review', available: true, issue: 37 },
+  { key: 'faq', segment: 'faq', available: true, issue: 283 },
+  { key: 'prelaunch', segment: 'prelaunch', available: true, issue: 39 },
+  { key: 'review', segment: 'review', available: true, issue: 37 },
 ];
 
 export function editorTabHref(projectId: string, tab: EditorTab): string {

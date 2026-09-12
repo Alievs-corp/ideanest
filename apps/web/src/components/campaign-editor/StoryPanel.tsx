@@ -23,6 +23,7 @@ import {
   storyProblems,
   type StoryDocument,
 } from '../../lib/projects/story';
+import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
 import { EditorShell } from './EditorShell';
 import { SaveStatus } from './SaveStatus';
 import { StoryBlockEditor } from './StoryBlockEditor';
@@ -103,9 +104,11 @@ function blockIndexFrom(failure: SaveFailure | null): number | null {
 
 export interface StoryPanelProps {
   projectId: string;
+  /** The editor frame's words, resolved by this tab's page. */
+  copy: EditorChromeCopy;
 }
 
-export function StoryPanel({ projectId }: StoryPanelProps) {
+export function StoryPanel({ projectId, copy }: StoryPanelProps) {
   const { project, status, error, reload, apply } = useProjectEdit(projectId);
 
   /**
@@ -195,7 +198,7 @@ export function StoryPanel({ projectId }: StoryPanelProps) {
 
   if (status === 'signed-out') {
     return (
-      <EditorShell projectId={projectId} active="story">
+      <EditorShell projectId={projectId} copy={copy} active="story">
         <InlineAlert variant="info" title="You are signed out">
           This browser no longer has a session. Sign in again to keep editing this campaign.
         </InlineAlert>
@@ -207,6 +210,7 @@ export function StoryPanel({ projectId }: StoryPanelProps) {
     return (
       <EditorShell
         projectId={projectId}
+        copy={copy}
         active="story"
         title={project.title}
         state={project.state}
@@ -224,7 +228,7 @@ export function StoryPanel({ projectId }: StoryPanelProps) {
 
   if (status === 'failed' || document === null || project === null) {
     return (
-      <EditorShell projectId={projectId} active="story">
+      <EditorShell projectId={projectId} copy={copy} active="story">
         {status === 'failed' ? (
           <>
             <InlineAlert variant="danger" title="This project could not be loaded">
@@ -257,10 +261,11 @@ export function StoryPanel({ projectId }: StoryPanelProps) {
   return (
     <EditorShell
       projectId={projectId}
+      copy={copy}
       active="story"
       title={project.title}
       state={project.state}
-      status={<SaveStatus state={autosave.state} />}
+      status={<SaveStatus state={autosave.state} copy={copy.save} />}
     >
       <div className="flex flex-col gap-8">
         {failure !== null && (

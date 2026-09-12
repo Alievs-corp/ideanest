@@ -3005,6 +3005,44 @@
       "keep": "Qalsın"
     }
   },
+  "campaignEditor": {
+    "eyebrow": "Kampaniya redaktoru",
+    "loadingTitle": "Yüklənir",
+    "sectionsLabel": "Kampaniya bölmələri",
+    "soon": "tezliklə",
+    "notAvailable": ", bölmə hələ əlçatan deyil",
+    "tabs": {
+      "basics": "Əsas",
+      "rewards": "Mükafatlar",
+      "story": "Hekayə",
+      "faq": "Suallar",
+      "prelaunch": "Başlanğıcdan əvvəl",
+      "review": "Baxış"
+    },
+    "save": {
+      "saving": "Yadda saxlanılır",
+      "saved": "Yadda saxlanıldı",
+      "notSaved": "Yadda saxlanılmadı"
+    },
+    "state": {
+      "DRAFT": "Qaralama",
+      "PRELAUNCH": "Başlanğıcdan əvvəl",
+      "SUBMITTED": "Baxışdadır",
+      "CHANGES_REQUESTED": "Dəyişiklik tələb olunub",
+      "REJECTED": "Rədd edilib",
+      "APPROVED": "Təsdiqlənib",
+      "SCHEDULED": "Planlaşdırılıb",
+      "LIVE": "Aktiv",
+      "SUSPENDED": "Dayandırılıb",
+      "CANCELED": "Ləğv edildi",
+      "SUCCESSFUL": "Maliyyələşdi",
+      "UNSUCCESSFUL": "Maliyyələşmədi",
+      "COLLECTING": "Yığılır",
+      "LATE_PLEDGE": "Gecikmiş dəstəklər",
+      "FULFILLING": "İcra olunur",
+      "COMPLETED": "Tamamlandı"
+    }
+  },
   "profile": {
     "notFound": "Profil tapılmadı",
     "metaDescription": "IdeaNest-də {name} — yaratdığı və dəstəklədiyi kampaniyalar.",
