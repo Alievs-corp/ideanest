@@ -340,6 +340,27 @@ export interface AccountDetailCopy extends ConsoleChromeCopy {
   readonly campaignGone: string;
   /** Keyed by §6.2's twelve, worded for a moderator. Falls back to the wire spelling. */
   readonly pledgeState: Readonly<Record<string, string>>;
+
+  /* What they held and paid — #23. */
+  readonly subscriptionsHeading: string;
+  readonly loadingSubscriptions: string;
+  readonly subscriptionsFailed: string;
+  readonly noSubscriptionsTitle: string;
+  readonly noSubscriptionsBody: string;
+  /** Keyed by V62's four states. `ACTIVE` with `entitled: false` is drawn as `EXPIRED`. */
+  readonly subscriptionState: Readonly<Record<string, string>>;
+  /** Carries `{from}` and `{to}`. */
+  readonly subscriptionWindow: string;
+  /** Carries `{date}`. A plan chosen and not yet paid for has no window to show. */
+  readonly subscriptionChosen: string;
+  readonly notRenewing: string;
+  readonly paymentsHeading: string;
+  readonly noPaymentsBody: string;
+  /** Carries `{date}`. */
+  readonly paymentReceived: string;
+  /** Keyed by the service's own spelling of the method. */
+  readonly paymentMethod: Readonly<Record<string, string>>;
+  readonly reversal: string;
 }
 
 export function accountDetailCopyFrom(
@@ -379,6 +400,20 @@ export function accountDetailCopyFrom(
     neverConfirmed: t(at('neverConfirmed')),
     campaignGone: t(at('campaignGone')),
     pledgeState: t.raw(at('pledgeState')) as Readonly<Record<string, string>>,
+    subscriptionsHeading: t(at('subscriptionsHeading')),
+    loadingSubscriptions: t(at('loadingSubscriptions')),
+    subscriptionsFailed: t(at('subscriptionsFailed')),
+    noSubscriptionsTitle: t(at('noSubscriptionsTitle')),
+    noSubscriptionsBody: t(at('noSubscriptionsBody')),
+    subscriptionState: t.raw(at('subscriptionState')) as Readonly<Record<string, string>>,
+    subscriptionWindow: String(t.raw(at('subscriptionWindow'))),
+    subscriptionChosen: String(t.raw(at('subscriptionChosen'))),
+    notRenewing: t(at('notRenewing')),
+    paymentsHeading: t(at('paymentsHeading')),
+    noPaymentsBody: t(at('noPaymentsBody')),
+    paymentReceived: String(t.raw(at('paymentReceived'))),
+    paymentMethod: t.raw(at('paymentMethod')) as Readonly<Record<string, string>>,
+    reversal: t(at('reversal')),
   };
 }
 

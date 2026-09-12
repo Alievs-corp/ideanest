@@ -1422,7 +1422,31 @@
           "REFUNDED": "Возвращён",
           "CHARGEBACK": "Оспорен",
           "FULFILLED": "Исполнен"
-        }
+        },
+        "subscriptionsHeading": "Подписки",
+        "loadingSubscriptions": "Загружаем подписки этого аккаунта",
+        "subscriptionsFailed": "Подписки этого аккаунта не удалось прочитать. Всё остальное на этой странице верно.",
+        "noSubscriptionsTitle": "Подписки нет",
+        "noSubscriptionsBody": "Этот аккаунт ни разу не выбирал тариф.",
+        "subscriptionState": {
+          "PENDING_PAYMENT": "Ожидает оплаты",
+          "ACTIVE": "Активна",
+          "CANCELED": "Отменена",
+          "EXPIRED": "Истекла"
+        },
+        "subscriptionWindow": "{from} — {to}",
+        "subscriptionChosen": "выбрана {date}",
+        "notRenewing": "Не продлится",
+        "paymentsHeading": "Полученные платежи",
+        "noPaymentsBody": "За подписку на этом аккаунте ничего не платили.",
+        "paymentReceived": "поступил {date}",
+        "paymentMethod": {
+          "BANK_TRANSFER": "Банковский перевод",
+          "CARD": "Карта",
+          "CASH": "Наличные",
+          "OTHER": "Другое"
+        },
+        "reversal": "Возврат"
       },
       "support": {
         "subject": "очередь поддержки",

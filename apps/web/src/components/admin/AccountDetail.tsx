@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
-import { readUser, readUserPledges, type AdminUser, type AdminUserPledge } from '../../lib/admin/api';
+import {
+  readAccountSubscriptions,
+  readUser,
+  readUserPledges,
+  type AdminAccountSubscriptions,
+  type AdminUser,
+  type AdminUserPledge,
+} from '../../lib/admin/api';
+import type { ConsoleSubscription } from '../../lib/admin/plans';
 import {
   DIRECTORY_PAGE_SIZE,
   listCampaigns,
@@ -171,6 +179,12 @@ export function AccountDetail({ userId, copy }: AccountDetailProps) {
           */}
           <CreatedCampaigns key={`campaigns-${account.id}`} userId={account.id} locale={locale} copy={copy} />
           <BackedPledges key={`pledges-${account.id}`} userId={account.id} locale={locale} copy={copy} />
+          <HeldSubscriptions
+            key={`subscriptions-${account.id}`}
+            userId={account.id}
+            locale={locale}
+            copy={copy}
+          />
         </>
       )}
     </div>
@@ -558,4 +572,163 @@ function BackedPledges({
       )}
     </section>
   );
+}
+
+/**
+ * What the account has held and paid the platform — #23.
+ *
+ * <p><strong>Its own read, and its own failure.</strong> The same arrangement as the pledges
+ * above: a moderator deciding about somebody's account must not lose the standing panel
+ * because the subscription service answered badly, so this section says it could not be read
+ * and the rest of the page stays what it is.
+ *
+ * <p><strong>`entitled` decides the label, not `state` alone.</strong> A subscription whose
+ * period has run out is still `ACTIVE` in the table until something retires it — V62 argues
+ * why no job does — so an `ACTIVE` row that no longer entitles is drawn as expired. Reading
+ * `state` alone would tell a moderator that somebody can publish who cannot.
+ *
+ * <p>Unpaged, because the service is: a monthly plan is twelve of each a year.
+ */
+function HeldSubscriptions({
+  userId,
+  locale,
+  copy,
+}: {
+  readonly userId: string;
+  readonly locale: Locale;
+  readonly copy: AccountDetailCopy;
+}) {
+  const [history, setHistory] = useState<AdminAccountSubscriptions | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function load(): Promise<void> {
+      try {
+        const found = await readAccountSubscriptions(userId, controller.signal);
+        if (controller.signal.aborted) return;
+
+        setHistory(found);
+        setFailed(false);
+      } catch (cause) {
+        if (controller.signal.aborted || wasAborted(cause)) return;
+        setFailed(true);
+      }
+    }
+
+    void load();
+    return () => controller.abort();
+  }, [userId]);
+
+  const nothing = history !== null && history.subscriptions.length === 0 && history.payments.length === 0;
+
+  return (
+    <section aria-labelledby="account-subscriptions-heading" className="mt-8">
+      <h2
+        id="account-subscriptions-heading"
+        className="text-base font-medium tracking-[-0.02em] text-white"
+      >
+        {copy.subscriptionsHeading}
+      </h2>
+
+      {failed && (
+        <InlineAlert variant="warning" className="mt-3">
+          {copy.subscriptionsFailed}
+        </InlineAlert>
+      )}
+
+      {!failed && history === null && (
+        <SkeletonGroup label={copy.loadingSubscriptions} className="mt-3">
+          <div className="rounded-lg border border-white/8 bg-surface-1 p-4">
+            <Skeleton height="1rem" width="40%" />
+            <Skeleton height="0.875rem" width="30%" className="mt-2" />
+          </div>
+        </SkeletonGroup>
+      )}
+
+      {!failed && nothing && (
+        <EmptyState
+          className="mt-3"
+          variant="empty"
+          title={copy.noSubscriptionsTitle}
+          description={copy.noSubscriptionsBody}
+        />
+      )}
+
+      {!failed && history !== null && !nothing && (
+        <>
+          {history.subscriptions.length > 0 && (
+            <ul className="mt-3 flex list-none flex-col gap-2">
+              {history.subscriptions.map((subscription) => (
+                <li key={subscription.id} className="rounded-lg border border-white/8 bg-surface-1 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[15px] font-medium text-white">
+                        {subscription.planName ?? subscription.planCode ?? subscription.id}
+                      </p>
+                      <p className="mt-1 text-sm text-white/48">{windowOf(subscription, locale, copy)}</p>
+                      {subscription.cancelAtPeriodEnd && subscription.entitled && (
+                        <p className="mt-1 text-sm text-white/48">{copy.notRenewing}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Tag>{stateLabelOf(subscription, copy)}</Tag>
+                      <span className="text-sm text-white/64">
+                        {formatMoney({ amount: subscription.price, currency: subscription.currency })}
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <h3 className="mt-5 text-sm font-medium text-white">{copy.paymentsHeading}</h3>
+          {history.payments.length === 0 ? (
+            <p className="mt-2 text-sm text-white/48">{copy.noPaymentsBody}</p>
+          ) : (
+            <ul className="mt-2 flex list-none flex-col gap-2">
+              {history.payments.map((payment) => (
+                <li
+                  key={payment.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/8 bg-surface-1 px-4 py-3"
+                >
+                  <span className="min-w-0 text-sm text-white/64">
+                    {payment.planName} · {copy.paymentMethod[payment.method] ?? payment.method} ·{' '}
+                    {fillPlaceholders(copy.paymentReceived, {
+                      date: day(payment.receivedAt, locale) ?? copy.unknownDate,
+                    })}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    {/* The word, beside the negative amount, so a reversal is not carried by a sign alone. */}
+                    {payment.reversal && <Tag>{copy.reversal}</Tag>}
+                    <span className="text-sm text-white">
+                      {formatMoney({ amount: payment.amount, currency: payment.currency })}
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+/** The state a moderator should read: an `ACTIVE` row that no longer entitles has expired. */
+function stateLabelOf(subscription: ConsoleSubscription, copy: AccountDetailCopy): string {
+  const state = subscription.state === 'ACTIVE' && !subscription.entitled ? 'EXPIRED' : subscription.state;
+  return copy.subscriptionState[state] ?? state;
+}
+
+/** The period it covers, or when it was chosen if nothing has been paid yet. */
+function windowOf(subscription: ConsoleSubscription, locale: Locale, copy: AccountDetailCopy): string {
+  const from = day(subscription.startedAt, locale);
+  const to = day(subscription.currentPeriodEnd, locale);
+  if (from !== null && to !== null) {
+    return fillPlaceholders(copy.subscriptionWindow, { from, to });
+  }
+  return fillPlaceholders(copy.subscriptionChosen, { date: day(subscription.createdAt, locale) ?? copy.unknownDate });
 }

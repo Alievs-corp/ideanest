@@ -1,5 +1,7 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
+import type { ConsoleSubscription } from './plans';
+import type { SubscriptionPayment } from './revenue';
 
 /**
  * ONE MODULE, ONE PLACE for everything the account directory asks the service.
@@ -208,4 +210,36 @@ export async function reinstateUser(id: string, signal?: AbortSignal): Promise<A
   if (!response.ok) throw await errorFrom(response);
 
   return (await response.json()) as AdminUser;
+}
+
+/**
+ * What one account has held and paid — #23, for the account page.
+ *
+ * Two lists rather than payments nested under subscriptions, because they do not line up one
+ * to one: a lapsed plan bought again is two subscriptions, a reversal is a second payment
+ * against one, and a payment outlives a subscription row that was removed with a closed
+ * account. Each row carries the identifiers that join them where a join exists.
+ */
+export interface AdminAccountSubscriptions {
+  /** Newest first, every state. Branch on `entitled`, never on `state` alone. */
+  readonly subscriptions: readonly ConsoleSubscription[];
+  /** Newest first by when the money arrived. Signed: a reversal is negative. */
+  readonly payments: readonly SubscriptionPayment[];
+}
+
+/**
+ * One account's subscriptions and payments. Unpaged — a monthly plan is twelve of each a year.
+ *
+ * <p>Any member of staff may read it, as with the account's pledges, and the service records
+ * that it was read. 404 for an identifier that names nothing or a deleted account, the same
+ * answer the page's other reads give.
+ */
+export async function readAccountSubscriptions(
+  id: string,
+  signal?: AbortSignal,
+): Promise<AdminAccountSubscriptions> {
+  const response = await authorizedFetch(`/v1/admin/users/${encodeURIComponent(id)}/subscriptions`, { signal });
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as AdminAccountSubscriptions;
 }
