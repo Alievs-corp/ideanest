@@ -21,9 +21,11 @@ import type { PluralForms } from '@ideanest/ui';
 import {
   type BasicsPanelCopy,
   type EditorChromeCopy,
+  type PrelaunchPanelCopy,
   type RewardsPanelCopy,
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
+  prelaunchPanelCopyFrom,
   rewardsPanelCopyFrom,
 } from './campaign-editor-copy';
 import {
@@ -298,6 +300,19 @@ export async function rewardsPanelCopy(): Promise<RewardsPanelCopy> {
     getLocale(),
   ]);
   return rewardsPanelCopyFrom(editor, localeOrDefault(locale), {
+    remaining: counter.raw('remaining') as PluralForms,
+    tooMany: counter.raw('tooMany') as PluralForms,
+  });
+}
+
+/** The pre-launch tab — the page that goes public before the campaign does. */
+export async function prelaunchPanelCopy(): Promise<PrelaunchPanelCopy> {
+  const [editor, counter, locale] = await Promise.all([
+    getTranslations('campaignEditor'),
+    getTranslations('common.characterCount'),
+    getLocale(),
+  ]);
+  return prelaunchPanelCopyFrom(editor, localeOrDefault(locale), {
     remaining: counter.raw('remaining') as PluralForms,
     tooMany: counter.raw('tooMany') as PluralForms,
   });

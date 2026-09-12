@@ -878,3 +878,92 @@ export function rewardsVocabularyCopyFrom(
     },
   };
 }
+
+/* -------------------------------------------------------------------------
+ * Pre-launch — §4.5's fifth tab
+ * ---------------------------------------------------------------------- */
+
+/** The pre-launch tab: the page that goes public before the campaign does. */
+export interface PrelaunchPanelCopy {
+  readonly loadingLabel: string;
+  readonly notSavedTitle: string;
+  readonly notOpenHeading: string;
+  readonly notOpenBody: string;
+  readonly notOpenIrreversible: string;
+  readonly openFailedTitle: string;
+  readonly open: string;
+  readonly openHeading: string;
+  readonly followersFailed: string;
+  /**
+   * One form per category, carrying `{count}`.
+   *
+   * The count is rendered inside the sentence rather than beside it, so this is filled with
+   * `fillNodes` — the number stays bold where the sentence puts it, which is not the same
+   * place in every language.
+   */
+  readonly waiting: AppPluralForms;
+  readonly link: string;
+  readonly linkHint: string;
+  readonly copy: string;
+  readonly copied: string;
+  readonly copiedAnnouncement: string;
+  readonly closedTitle: string;
+  readonly closedBody: string;
+  readonly saysHeading: string;
+  readonly saysBody: string;
+  readonly title: string;
+  /** Carries `{max}`. */
+  readonly titleHint: string;
+  readonly summary: string;
+  /** Carries `{max}`. */
+  readonly summaryHint: string;
+  readonly confirmTitle: string;
+  readonly confirmBody: string;
+  readonly cancel: string;
+  readonly opening: string;
+  readonly confirmOpen: string;
+  readonly characterCount: CharacterCountCopy;
+  readonly locale: Locale;
+}
+
+export function prelaunchPanelCopyFrom(
+  t: CampaignEditorTranslator,
+  locale: Locale,
+  counter: CharacterCountCopy,
+): PrelaunchPanelCopy {
+  const at = (key: string) => t(`prelaunch.${key}`);
+  const tpl = (key: string) => template(t, `prelaunch.${key}`);
+
+  return {
+    loadingLabel: at('loadingLabel'),
+    notSavedTitle: at('notSavedTitle'),
+    notOpenHeading: at('notOpenHeading'),
+    notOpenBody: at('notOpenBody'),
+    notOpenIrreversible: at('notOpenIrreversible'),
+    openFailedTitle: at('openFailedTitle'),
+    open: at('open'),
+    openHeading: at('openHeading'),
+    followersFailed: at('followersFailed'),
+    waiting: t.raw('prelaunch.waiting') as AppPluralForms,
+    link: at('link'),
+    linkHint: at('linkHint'),
+    copy: at('copy'),
+    copied: at('copied'),
+    copiedAnnouncement: at('copiedAnnouncement'),
+    closedTitle: at('closedTitle'),
+    closedBody: at('closedBody'),
+    saysHeading: at('saysHeading'),
+    saysBody: at('saysBody'),
+    title: at('title'),
+    titleHint: tpl('titleHint'),
+    summary: at('summary'),
+    summaryHint: tpl('summaryHint'),
+    confirmTitle: at('confirmTitle'),
+    confirmBody: at('confirmBody'),
+    cancel: at('cancel'),
+    opening: at('opening'),
+    confirmOpen: at('confirmOpen'),
+    characterCount: counter,
+    locale,
+  };
+}

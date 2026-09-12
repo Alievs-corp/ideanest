@@ -3351,6 +3351,41 @@
       "cancel": "Ləğv et",
       "save": "Yadda saxla",
       "saving": "Yadda saxlanılır"
+    },
+    "prelaunch": {
+      "loadingLabel": "Kampaniya yüklənir",
+      "notSavedTitle": "Dəyişiklik yadda saxlanılmadı",
+      "notOpenHeading": "Başlanğıcdan əvvəlki səhifə hələ açıq deyil",
+      "notOpenBody": "Onu açanda aşağıdakı başlıq, qısa təsvir və üz qabığı paylaşa biləcəyiniz bir linkdə ictimai olur, insanlar isə kampaniya başlayanda xəbər verilməsini istəyə bilir. Kampaniya haqqında başqa heç nə açılmır və pulla bağlı deyil.",
+      "notOpenIrreversible": "Geri bağlamaq olmaz — kampaniya buradan yalnız irəli gedir: baxışa, sonra isə başlanğıca.",
+      "openFailedTitle": "Səhifə açılmadı",
+      "open": "Başlanğıcdan əvvəlki səhifəni aç",
+      "openHeading": "Başlanğıcdan əvvəlki səhifə açıqdır",
+      "followersFailed": "Gözləyənlərin sayını yükləmək olmadı.",
+      "waiting": {
+        "one": "{count} nəfər bu kampaniyanı gözləyir.",
+        "few": "{count} nəfər bu kampaniyanı gözləyir.",
+        "many": "{count} nəfər bu kampaniyanı gözləyir.",
+        "other": "{count} nəfər bu kampaniyanı gözləyir."
+      },
+      "link": "Başlanğıcdan əvvəlki link",
+      "linkHint": "Bu linki istənilən yerdə paylaşın. Onu açan hər kəs kampaniya başlayanda xəbər verilməsini istəyə bilər.",
+      "copy": "Kopyala",
+      "copied": "Kopyalandı",
+      "copiedAnnouncement": "Link kopyalandı",
+      "closedTitle": "Başlanğıcdan əvvəlki səhifə bağlanıb",
+      "closedBody": "Bu kampaniya başlanğıcdan əvvəlki mərhələni keçib. Xatırladılmasını istəyən hər kəsə bir dəfə — kampaniya başlayanda — xəbər verilir.",
+      "saysHeading": "Səhifədə nə yazılır",
+      "saysBody": "Bunlar kampaniyanın başlığı, qısa təsviri və üz qabığıdır — «Əsas» bölməsindəkilərin eynisi. Kampaniyadan fərqli bir şey vəd edən başlanğıc səhifəsi bunu məhz fərqi görəcək adamlara vəd etmiş olardı.",
+      "title": "Başlıq",
+      "titleHint": "Başlanğıc səhifəsindəki və layihələr lentindəki ad. Ən çox {max} simvol.",
+      "summary": "Qısa təsvir",
+      "summaryHint": "Bir-iki cümlə. İzləməyə qərar verməzdən əvvəl insan məhz bunu oxuyur. Ən çox {max} simvol.",
+      "confirmTitle": "Başlanğıcdan əvvəlki səhifə açılsın?",
+      "confirmBody": "Başlıq, qısa təsvir və üz qabığı hər kəsin aça biləcəyi bir linkdə ictimai olur. Bunu geri qaytarmaq olmaz.",
+      "cancel": "Ləğv et",
+      "opening": "Açılır",
+      "confirmOpen": "Səhifəni aç"
     }
   },
   "profile": {

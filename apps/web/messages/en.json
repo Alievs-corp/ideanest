@@ -3351,6 +3351,41 @@
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving"
+    },
+    "prelaunch": {
+      "loadingLabel": "Loading this campaign",
+      "notSavedTitle": "This change was not saved",
+      "notOpenHeading": "The pre-launch page is not open yet",
+      "notOpenBody": "Opening it publishes the title, summary, and cover image below at a link you can share, and lets people ask to be told the moment the campaign opens. Nothing else about the campaign becomes public, and no money is involved.",
+      "notOpenIrreversible": "It cannot be closed again — the campaign moves forward from here, to review and then to launch.",
+      "openFailedTitle": "The page was not opened",
+      "open": "Open the pre-launch page",
+      "openHeading": "The pre-launch page is open",
+      "followersFailed": "The number of people waiting could not be loaded.",
+      "waiting": {
+        "one": "{count} person is waiting for this campaign.",
+        "few": "{count} people are waiting for this campaign.",
+        "many": "{count} people are waiting for this campaign.",
+        "other": "{count} people are waiting for this campaign."
+      },
+      "link": "Pre-launch link",
+      "linkHint": "Share this anywhere. Anybody who opens it can ask to be told when the campaign goes live.",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copiedAnnouncement": "Link copied",
+      "closedTitle": "The pre-launch page has closed",
+      "closedBody": "This campaign has moved past its pre-launch page. Everybody who asked to be reminded is told once, when it goes live.",
+      "saysHeading": "What the page says",
+      "saysBody": "These are the campaign’s title, summary, and cover image — the same ones the Basics tab holds. A pre-launch page that promised something different from the campaign would be promising it to the people most likely to notice.",
+      "title": "Title",
+      "titleHint": "The name on the pre-launch page and on the discovery grid. {max} characters or fewer.",
+      "summary": "Summary",
+      "summaryHint": "One or two sentences. This is what somebody reads before deciding to follow. {max} characters or fewer.",
+      "confirmTitle": "Open the pre-launch page?",
+      "confirmBody": "The title, summary, and cover image become public at a link anyone can open. This cannot be undone.",
+      "cancel": "Cancel",
+      "opening": "Opening",
+      "confirmOpen": "Open the page"
     }
   },
   "profile": {

@@ -38,7 +38,10 @@ import { CoverImageField } from './CoverImageField';
 import type {
   BasicsValidationCopy,
   EditorChromeCopy,
+  PrelaunchPanelCopy,
 } from '../../lib/i18n/campaign-editor-copy';
+import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralForm } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
 import { SaveStatus } from './SaveStatus';
 import { useAutosave, describeFailure, type SaveFailure } from './useAutosave';
@@ -109,9 +112,16 @@ export interface PrelaunchPanelProps {
    * `validateBasics`, so it refuses in the same vocabulary rather than a second one.
    */
   validation: BasicsValidationCopy;
+  /** This tab's own words. */
+  prelaunch: PrelaunchPanelCopy;
 }
 
-export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelProps) {
+export function PrelaunchPanel({
+  projectId,
+  copy,
+  validation,
+  prelaunch: words,
+}: PrelaunchPanelProps) {
   const { project, status, error, reload, apply } = useProjectEdit(projectId);
 
   /** Seeded once, for the reason `BasicsPanel` gives: re-seeding eats keystrokes. */
@@ -196,8 +206,8 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
   if (status === 'signed-out') {
     return (
       <EditorShell projectId={projectId} copy={copy} active="prelaunch">
-        <InlineAlert variant="info" title="You are signed out">
-          This browser no longer has a session. Sign in again to keep editing this campaign.
+        <InlineAlert variant="info" title={copy.signedOutTitle}>
+          {copy.signedOutDetail}
         </InlineAlert>
       </EditorShell>
     );
@@ -208,15 +218,15 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
       <EditorShell projectId={projectId} copy={copy} active="prelaunch">
         {status === 'failed' ? (
           <>
-            <InlineAlert variant="danger" title="This project could not be loaded">
+            <InlineAlert variant="danger" title={copy.loadFailedTitle}>
               {error}
             </InlineAlert>
             <Pill variant="ghost" size="sm" className="mt-4" onClick={reload}>
-              Try again
+              {copy.tryAgain}
             </Pill>
           </>
         ) : (
-          <SkeletonGroup label="Loading this campaign">
+          <SkeletonGroup label={words.loadingLabel}>
             <div className="flex flex-col gap-6">
               {LOADING_ROWS.map((row) => (
                 <div key={row} className="flex flex-col gap-2">
@@ -246,14 +256,14 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
     >
       <div className="flex flex-col gap-7">
         {autosave.failure !== null && (
-          <InlineAlert variant="danger" title="This change was not saved">
+          <InlineAlert variant="danger" title={words.notSavedTitle}>
             <p>{autosave.failure.message}</p>
             <p className="mt-2 text-white/64">
               Nothing you typed has been lost — it is still in the fields below and will be sent
               again.
             </p>
             <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
-              Try again
+              {copy.tryAgain}
             </Pill>
           </InlineAlert>
         )}
@@ -268,24 +278,21 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
             className="rounded-lg border border-white/8 bg-surface-2 p-5"
           >
             <h2 id="prelaunch-open-heading" className="text-base font-semibold text-white">
-              The pre-launch page is not open yet
+              {words.notOpenHeading}
             </h2>
             <p className="mt-2 text-[13px] text-white/64">
-              Opening it publishes the title, summary, and cover image below at a link you can
-              share, and lets people ask to be told the moment the campaign opens. Nothing else
-              about the campaign becomes public, and no money is involved.
+              {words.notOpenBody}
             </p>
             <p className="mt-2 text-[13px] text-white/64">
-              It cannot be closed again — the campaign moves forward from here, to review and then
-              to launch.
+              {words.notOpenIrreversible}
             </p>
             {openFailure !== null && (
-              <InlineAlert variant="danger" title="The page was not opened" className="mt-4">
+              <InlineAlert variant="danger" title={words.openFailedTitle} className="mt-4">
                 {openFailure.message}
               </InlineAlert>
             )}
             <Pill className="mt-4" onClick={() => setConfirming(true)}>
-              Open the pre-launch page
+              {words.open}
             </Pill>
           </section>
         )}
@@ -296,7 +303,7 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
             className="rounded-lg border border-white/8 bg-surface-2 p-5"
           >
             <h2 id="prelaunch-live-heading" className="text-base font-semibold text-white">
-              The pre-launch page is open
+              {words.openHeading}
             </h2>
 
             <div className="mt-4 flex items-center gap-2 text-sm text-white">
@@ -306,19 +313,20 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
               <Users aria-hidden="true" className="size-4 text-white/64" />
               {followerCount === null ? (
                 <span className="text-white/64">
-                  The number of people waiting could not be loaded.
+                  {words.followersFailed}
                 </span>
               ) : (
                 <span>
-                  <strong className="font-semibold">{followerCount}</strong>{' '}
-                  {followerCount === 1 ? 'person is' : 'people are'} waiting for this campaign.
+                  {fillNodes(pluralForm(words.locale, words.waiting, followerCount), {
+                    count: <strong className="font-semibold">{followerCount}</strong>,
+                  })}
                 </span>
               )}
             </div>
 
             <Field
-              label="Pre-launch link"
-              hint="Share this anywhere. Anybody who opens it can ask to be told when the campaign goes live."
+              label={words.link}
+              hint={words.linkHint}
               className="mt-5"
             >
               <div className="flex gap-2">
@@ -338,23 +346,22 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
                     )
                   }
                 >
-                  {copied ? 'Copied' : 'Copy'}
+                  {copied ? words.copied : words.copy}
                 </Pill>
               </div>
               {/* Announced rather than only shown, so that a keyboard user who
                   pressed Copy is told it worked. Present from the first render so
                   the region is registered before anything is put in it. */}
               <span role="status" aria-live="polite" className="sr-only">
-                {copied ? 'Link copied' : ''}
+                {copied ? words.copiedAnnouncement : ''}
               </span>
             </Field>
           </section>
         )}
 
         {closed && (
-          <InlineAlert variant="info" title="The pre-launch page has closed">
-            This campaign has moved past its pre-launch page. Everybody who asked to be reminded is
-            told once, when it goes live.
+          <InlineAlert variant="info" title={words.closedTitle}>
+            {words.closedBody}
           </InlineAlert>
         )}
 
@@ -365,18 +372,16 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
 
         <form className="flex flex-col gap-7" onSubmit={(event) => event.preventDefault()}>
           <div>
-            <h2 className="text-base font-semibold text-white">What the page says</h2>
+            <h2 className="text-base font-semibold text-white">{words.saysHeading}</h2>
             <p className="mt-1 text-[13px] text-white/64">
-              These are the campaign&rsquo;s title, summary, and cover image — the same ones the
-              Basics tab holds. A pre-launch page that promised something different from the
-              campaign would be promising it to the people most likely to notice.
+              {words.saysBody}
             </p>
           </div>
 
           <Field
-            label="Title"
+            label={words.title}
             required
-            hint={`The name on the pre-launch page and on the discovery grid. ${TITLE_MAX_CHARACTERS} characters or fewer.`}
+            hint={fillPlaceholders(words.titleHint, { max: String(TITLE_MAX_CHARACTERS) })}
             error={errors.title}
           >
             <TextInput
@@ -394,8 +399,8 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
           </Field>
 
           <Field
-            label="Summary"
-            hint={`One or two sentences. This is what somebody reads before deciding to follow. ${BLURB_MAX_CHARACTERS} characters or fewer.`}
+            label={words.summary}
+            hint={fillPlaceholders(words.summaryHint, { max: String(BLURB_MAX_CHARACTERS) })}
             error={errors.blurb}
           >
             <Textarea
@@ -429,15 +434,15 @@ export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelPr
         open={confirming}
         onOpenChange={setConfirming}
         size="sm"
-        title="Open the pre-launch page?"
-        description="The title, summary, and cover image become public at a link anyone can open. This cannot be undone."
+        title={words.confirmTitle}
+        description={words.confirmBody}
         footer={
           <div className="flex justify-end gap-2">
             <Pill variant="outline" onClick={() => setConfirming(false)} disabled={opening}>
-              Cancel
+              {words.cancel}
             </Pill>
             <Pill onClick={() => void open()} disabled={opening}>
-              {opening ? 'Opening' : 'Open the page'}
+              {opening ? words.opening : words.confirmOpen}
             </Pill>
           </div>
         }
