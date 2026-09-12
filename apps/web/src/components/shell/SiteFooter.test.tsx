@@ -19,11 +19,13 @@ import { expectNoViolations } from '../../test-axe';
  *   - every group in `navigation.ts` is rendered **in each of the four languages**, so a link
  *     added there cannot be silently dropped by this component and a key added there cannot
  *     ship with three languages translated.
- *   - the language line names the language being read, in itself. It was the constant
- *     `'English'` before #123, which was honest with one language and a lie at the bottom of
- *     every Russian page once there were four.
- *   - currency is STATED and not offered. #280 is blocked, and a `<select>` that changed
- *     nothing would be a control that lies — the worst of the three options available.
+ *   - the language is a CONTROL, and every language in it is named in itself. It was the
+ *     constant `'English'` before #123, then the endonym of the language being read, and it
+ *     is four links now that a locale-prefixed URL makes switching a navigation rather than
+ *     a cookie read. `LanguageSwitcher.test.tsx` covers the control itself; what is asserted
+ *     here is that the footer carries it, in every language.
+ *   - currency is STATED and not offered, and that is now a decision of its own rather than
+ *     one shared with the language: a display currency has nothing in the URL to carry it.
  *   - there is no legal column, because §22 has not written the pages and #293 is
  *     `status: needs-decision`. A Terms link resolving to a 404 is a promise about a document
  *     that does not exist.
@@ -32,6 +34,15 @@ import { expectNoViolations } from '../../test-axe';
  */
 
 const CATALOGUES: Record<Locale, typeof en> = { az, en, ru, tr };
+
+/** Each language's name in itself. Never "Russian": a reader scanning for their own language
+ *  recognises the endonym, and the English name is a word they may not read. */
+const NAMES: Record<Locale, string> = {
+  az: 'Azərbaycan dili',
+  en: 'English',
+  ru: 'Русский',
+  tr: 'Türkçe',
+};
 
 /** Swapped per render, then read by the mocked server helpers below. */
 let locale: Locale = 'en';
@@ -149,16 +160,32 @@ describe('the footer', () => {
      * has to follow the route rather than a build-time constant, which is what the line was
      * before #123.
      */
-    const NAMES: Record<Locale, string> = {
-      az: 'Azərbaycan dili',
-      en: 'English',
-      ru: 'Русский',
-      tr: 'Türkçe',
-    };
-
     const { unmount } = await renderFooter(at);
 
     expect(screen.getByText(NAMES[at])).toBeInTheDocument();
+
+    unmount();
+  });
+
+  it.each(SUPPORTED_LOCALES)('carries the language control, in %s', async (at) => {
+    /*
+     * The footer's own assertion is presence and reach: a signed-out reader must be able to
+     * leave the language they landed in without editing the address bar, which before this
+     * control meant reaching `/settings/language` behind a sign-in they may not have.
+     */
+    const { unmount } = await renderFooter(at);
+    const catalogue = CATALOGUES[at];
+
+    const group = screen.getByRole('navigation', {
+      name: catalogue.shell.footer.languageSwitcherLabel,
+    });
+
+    for (const target of SUPPORTED_LOCALES) {
+      expect(
+        within(group).getByRole('link', { name: NAMES[target] }),
+        `${at} offers ${target}`,
+      ).toHaveAttribute('href', `/${target}`);
+    }
 
     unmount();
   });

@@ -51,6 +51,7 @@
     "footer": {
       "label": "Altlıq",
       "languageHeading": "Dil",
+      "languageSwitcherLabel": "Dil seçin",
       "currencyHeading": "Valyuta",
       "currencyValue": "Azərbaycan manatı (AZN)",
       "groups": {
