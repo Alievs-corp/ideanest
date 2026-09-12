@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { PrelaunchPanel } from '../../../../../../components/campaign-editor/PrelaunchPanel';
-import { editorChromeCopy } from '../../../../../../lib/i18n/shell-copy.server';
+import {
+  basicsPanelCopy,
+  editorChromeCopy,
+} from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
 export const metadata: Metadata = privatePageMetadata({
@@ -20,7 +23,7 @@ export const metadata: Metadata = privatePageMetadata({
  */
 export default async function PrelaunchEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const copy = await editorChromeCopy();
+  const [copy, basics] = await Promise.all([editorChromeCopy(), basicsPanelCopy()]);
 
   /*
    * No `<main>` since #347. `app/projects/[id]/edit/layout.tsx` puts the editor inside
@@ -28,5 +31,5 @@ export default async function PrelaunchEditorPage({ params }: { params: Promise<
    * `EditorShell` draws this page's own column and heading, so the element that was here
    * carried a landmark and nothing else.
    */
-  return <PrelaunchPanel projectId={id} copy={copy} />;
+  return <PrelaunchPanel projectId={id} copy={copy} validation={basics.validation} />;
 }

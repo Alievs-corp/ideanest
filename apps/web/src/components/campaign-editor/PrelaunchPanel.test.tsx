@@ -10,7 +10,7 @@ import {
   type ProjectEdit,
 } from '../../lib/projects/api';
 import { PrelaunchPanel } from './PrelaunchPanel';
-import { EDITOR_COPY } from '../../test-editor-copy';
+import { BASICS_COPY, EDITOR_COPY } from '../../test-editor-copy';
 
 /**
  * The creator's pre-launch tab.
@@ -82,7 +82,7 @@ async function openPanel(overrides: Partial<ProjectEdit> = {}): Promise<UserEven
   getProjectEditMock.mockResolvedValue({ ...PROJECT, ...overrides });
 
   const user = userEvent.setup({ advanceTimers: (ms) => void vi.advanceTimersByTime(ms) });
-  render(<PrelaunchPanel projectId="project-1" copy={EDITOR_COPY} />);
+  render(<PrelaunchPanel projectId="project-1" copy={EDITOR_COPY} validation={BASICS_COPY.validation} />);
 
   // The project and, when the page is open, the follower count resolve
   // independently.

@@ -17,7 +17,12 @@ import {
   verifyEmailCopyFrom,
 } from './auth-copy';
 import { type CheckoutCopy, checkoutCopyFrom } from './checkout-copy';
-import { type EditorChromeCopy, editorChromeCopyFrom } from './campaign-editor-copy';
+import {
+  type BasicsPanelCopy,
+  type EditorChromeCopy,
+  basicsPanelCopyFrom,
+  editorChromeCopyFrom,
+} from './campaign-editor-copy';
 import {
   type CampaignActionsCopy,
   type CommentCopy,
@@ -270,4 +275,9 @@ export async function graphContext(): Promise<{
  */
 export async function editorChromeCopy(): Promise<EditorChromeCopy> {
   return editorChromeCopyFrom(await getTranslations('campaignEditor'));
+}
+
+/** The basics tab's own words — the first of the six panels. */
+export async function basicsPanelCopy(): Promise<BasicsPanelCopy> {
+  return basicsPanelCopyFrom(await getTranslations('campaignEditor'));
 }

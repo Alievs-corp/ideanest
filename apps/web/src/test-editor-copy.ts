@@ -1,5 +1,10 @@
 import MESSAGES from '../messages/en.json';
-import { editorChromeCopyFrom, type EditorChromeCopy } from './lib/i18n/campaign-editor-copy';
+import {
+  basicsPanelCopyFrom,
+  editorChromeCopyFrom,
+  type BasicsPanelCopy,
+  type EditorChromeCopy,
+} from './lib/i18n/campaign-editor-copy';
 
 /**
  * The editor frame's copy, as the server would have resolved it — issue #324.
@@ -21,9 +26,31 @@ import { editorChromeCopyFrom, type EditorChromeCopy } from './lib/i18n/campaign
  * four times would be four times the suite to learn nothing the parity test does not
  * already know.
  */
-export const EDITOR_COPY: EditorChromeCopy = editorChromeCopyFrom((key: string) => {
+function at(key: string): unknown {
   let node: unknown = MESSAGES.campaignEditor;
   for (const segment of key.split('.')) node = (node as Record<string, unknown>)[segment];
-  if (typeof node !== 'string') throw new Error(`no message at campaignEditor.${key}`);
   return node;
-});
+}
+
+/*
+ * `raw` alongside `t`, because the builders read every placeholder-carrying template through
+ * it. A fixture with only `t` would be MORE PERMISSIVE THAN THE APPLICATION: next-intl throws
+ * a FORMATTING_ERROR on `t('…{max}…')` and this walk does not, so the suite would pass on
+ * exactly the hints that render a key path in the browser. It happened; this is the fix.
+ */
+const read = Object.assign(
+  (key: string): string => {
+    const node = at(key);
+    if (typeof node !== 'string') throw new Error(`no message at campaignEditor.${key}`);
+    if (/\{\w+\}/u.test(node)) {
+      throw new Error(`campaignEditor.${key} carries a placeholder — read it with raw()`);
+    }
+    return node;
+  },
+  { raw: at },
+);
+
+export const EDITOR_COPY: EditorChromeCopy = editorChromeCopyFrom(read);
+
+/** The basics tab's own words, and the vocabulary `validateBasics` refuses in. */
+export const BASICS_COPY: BasicsPanelCopy = basicsPanelCopyFrom(read);

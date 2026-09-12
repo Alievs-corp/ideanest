@@ -35,7 +35,10 @@ import {
   type BasicsField,
 } from '../../lib/projects/basics';
 import { CoverImageField } from './CoverImageField';
-import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
+import type {
+  BasicsValidationCopy,
+  EditorChromeCopy,
+} from '../../lib/i18n/campaign-editor-copy';
 import { EditorShell } from './EditorShell';
 import { SaveStatus } from './SaveStatus';
 import { useAutosave, describeFailure, type SaveFailure } from './useAutosave';
@@ -101,9 +104,14 @@ export interface PrelaunchPanelProps {
   projectId: string;
   /** The editor frame's words, resolved by this tab's page. */
   copy: EditorChromeCopy;
+  /**
+   * The basics form's refusals. This tab edits the same fields through the same
+   * `validateBasics`, so it refuses in the same vocabulary rather than a second one.
+   */
+  validation: BasicsValidationCopy;
 }
 
-export function PrelaunchPanel({ projectId, copy }: PrelaunchPanelProps) {
+export function PrelaunchPanel({ projectId, copy, validation }: PrelaunchPanelProps) {
   const { project, status, error, reload, apply } = useProjectEdit(projectId);
 
   /** Seeded once, for the reason `BasicsPanel` gives: re-seeding eats keystrokes. */
@@ -223,7 +231,7 @@ export function PrelaunchPanel({ projectId, copy }: PrelaunchPanelProps) {
     );
   }
 
-  const errors: BasicsErrors = { ...validateBasics(draft), ...serverErrors(autosave.failure) };
+  const errors: BasicsErrors = { ...validateBasics(draft, validation), ...serverErrors(autosave.failure) };
   const canOpen = project.state === 'DRAFT';
   const closed = !canOpen && !collecting;
 
