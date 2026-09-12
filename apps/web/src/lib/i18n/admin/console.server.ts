@@ -39,6 +39,7 @@ import {
   feeEditorCopyFrom,
   ledgerExplorerCopyFrom,
   planManagerCopyFrom,
+  revenueReportCopyFrom,
   paymentLogCopyFrom,
   payoutQueueCopyFrom,
   reconciliationCopyFrom,
@@ -47,6 +48,7 @@ import {
   type FeeEditorCopy,
   type LedgerExplorerCopy,
   type PlanManagerCopy,
+  type RevenueReportCopy,
   type PaymentLogCopy,
   type PayoutQueueCopy,
   type ReconciliationCopy,
@@ -219,6 +221,10 @@ export async function feeEditorCopy(): Promise<FeeEditorCopy> {
 /** AD-11's other screen: the plan catalogue and the payments waiting to be recorded. */
 export async function planManagerCopy(): Promise<PlanManagerCopy> {
   return planManagerCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+export async function revenueReportCopy(): Promise<RevenueReportCopy> {
+  return revenueReportCopyFrom(await getTranslations('admin'), await consoleChrome());
 }
 
 export async function moderationQueueCopy(): Promise<ModerationQueueCopy> {

@@ -470,7 +470,8 @@
       "/admin/health": "Sistem sağlığı",
       "/admin/legal": "Hukuki belgeler",
       "/admin/moderation/submissions": "İncelemedeki kampanyalar",
-      "/admin/campaigns": "Tüm kampanyalar"
+      "/admin/campaigns": "Tüm kampanyalar",
+      "/admin/revenue": "Gelir"
     },
     "states": {
       "built": "Hazır",
@@ -790,6 +791,12 @@
         "metaDescription": "§22.2 gerektirdiği sekiz belge, sürümleri ve yayımlanmaları.",
         "title": "Hukuki belgeler",
         "intro": "Yayımlanmış bir sürüm düzenlenmez. Düzeltme yeni bir sürümdür ve eskisi okunabilir kalır, çünkü bir kabul kaydı sürümü adlandırır."
+      },
+      "revenue": {
+        "metaTitle": "Gelir",
+        "metaDescription": "Aboneliklerin getirdiği gelir; döneme, plana ve ödeme yöntemine göre.",
+        "title": "Gelir",
+        "intro": "Planlar için yapılan ödemeler, paranın geldiği tarihe göre gruplanmış hâlde. Her para birimi ayrı gösterilir ve asla bir başkasıyla toplanmaz."
       }
     },
     "screens": {
@@ -2096,6 +2103,72 @@
           "ru": "Rusça",
           "tr": "Türkçe"
         }
+      },
+      "revenue": {
+        "subject": "gelir raporu",
+        "noticeTitle": "İadeler gizlenmez, gösterilir",
+        "noticeBody": "«Gelen» ulaşan tutar, «iade edilen» geri verilen tutar, «kalan» ise aradaki farktır. «Gelen» tutarı banka ekstresiyle karşılaştırın; ayı kapatırken «kalan» tutarı kullanın.",
+        "periodLegend": "Dönem",
+        "fromLabel": "Başlangıç",
+        "toLabel": "Bitiş",
+        "toHint": "Bu gün dahil. Günler Bakü saatine göre sayılır.",
+        "thisMonth": "Bu ay",
+        "lastMonth": "Geçen ay",
+        "show": "Göster",
+        "planLabel": "Plan kodu",
+        "planHint": "Tüm planlar için boş bırakın.",
+        "methodLabel": "Ödeme yöntemi",
+        "anyMethod": "Tüm yöntemler",
+        "method": {
+          "BANK_TRANSFER": "Banka havalesi",
+          "CARD": "Kart",
+          "CASH": "Nakit",
+          "OTHER": "Diğer"
+        },
+        "periodCaption": "{from} – {to}",
+        "totalsHeading": "Toplamlar",
+        "loadingTotals": "Toplamlar yükleniyor",
+        "gross": "Gelen",
+        "reversed": "İade edilen",
+        "net": "Kalan",
+        "payments": {
+          "one": "{count} ödeme",
+          "few": "{count} ödeme",
+          "many": "{count} ödeme",
+          "other": "{count} ödeme"
+        },
+        "reversals": {
+          "one": "{count} iade",
+          "few": "{count} iade",
+          "many": "{count} iade",
+          "other": "{count} iade"
+        },
+        "byPlanHeading": "Plana göre",
+        "byMethodHeading": "Ödeme yöntemine göre",
+        "entries": {
+          "one": "{count} kayıt",
+          "few": "{count} kayıt",
+          "many": "{count} kayıt",
+          "other": "{count} kayıt"
+        },
+        "emptyTitle": "Bu dönemde ödeme yapılmadı",
+        "emptyBody": "Bu tarihler arasında hiçbir abonelik ödemesi gelmedi. Bir ödeme, Planlar ekranında kaydedildiğinde burada görünür.",
+        "listHeading": "Ödemeler",
+        "loadingList": "Ödemeler yükleniyor",
+        "reversal": "İade",
+        "closedAccount": "Kapatılmış hesap",
+        "receivedOn": "Geldi: {date}",
+        "recordedOn": "kaydedildi: {date}",
+        "reference": "Referans: {reference}",
+        "exportCsv": "CSV indir",
+        "exporting": "Dosya hazırlanıyor",
+        "exported": {
+          "one": "{count} ödeme indirildi.",
+          "few": "{count} ödeme indirildi.",
+          "many": "{count} ödeme indirildi.",
+          "other": "{count} ödeme indirildi."
+        },
+        "truncated": "Dosya eksik: dönemin ödemelerinden yalnızca ilk {count} tanesini içeriyor. Dönemi daraltın ve kalanını ayrıca indirin."
       }
     },
     "moderation": {

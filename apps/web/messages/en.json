@@ -470,7 +470,8 @@
       "/admin/health": "System health",
       "/admin/legal": "Legal documents",
       "/admin/moderation/submissions": "Campaigns for review",
-      "/admin/campaigns": "All campaigns"
+      "/admin/campaigns": "All campaigns",
+      "/admin/revenue": "Revenue"
     },
     "states": {
       "built": "Built",
@@ -790,6 +791,12 @@
         "metaDescription": "The eight documents §22.2 requires, their versions, and publishing them.",
         "title": "Legal documents",
         "intro": "A published version is never edited. A correction is a new version and the old one stays readable, because an acceptance names a version."
+      },
+      "revenue": {
+        "metaTitle": "Revenue",
+        "metaDescription": "What subscriptions brought in, by period, plan and payment method.",
+        "title": "Revenue",
+        "intro": "What creators paid for their plans, grouped by when the money arrived. Each currency is reported on its own and never added to another."
       }
     },
     "screens": {
@@ -2096,6 +2103,72 @@
           "ru": "Russian",
           "tr": "Turkish"
         }
+      },
+      "revenue": {
+        "subject": "the revenue report",
+        "noticeTitle": "A reversal is shown, not hidden",
+        "noticeBody": "Received is what arrived, reversed is what was given back, and kept is the difference. Check received against the bank statement, and use kept to close the month.",
+        "periodLegend": "Period",
+        "fromLabel": "From",
+        "toLabel": "To",
+        "toHint": "Inclusive. Days are counted in Baku time.",
+        "thisMonth": "This month",
+        "lastMonth": "Last month",
+        "show": "Show",
+        "planLabel": "Plan code",
+        "planHint": "Leave empty for every plan.",
+        "methodLabel": "Payment method",
+        "anyMethod": "Every method",
+        "method": {
+          "BANK_TRANSFER": "Bank transfer",
+          "CARD": "Card",
+          "CASH": "Cash",
+          "OTHER": "Other"
+        },
+        "periodCaption": "{from} to {to}",
+        "totalsHeading": "Totals",
+        "loadingTotals": "Loading the totals",
+        "gross": "Received",
+        "reversed": "Reversed",
+        "net": "Kept",
+        "payments": {
+          "one": "{count} payment",
+          "few": "{count} payments",
+          "many": "{count} payments",
+          "other": "{count} payments"
+        },
+        "reversals": {
+          "one": "{count} reversal",
+          "few": "{count} reversals",
+          "many": "{count} reversals",
+          "other": "{count} reversals"
+        },
+        "byPlanHeading": "By plan",
+        "byMethodHeading": "By payment method",
+        "entries": {
+          "one": "{count} entry",
+          "few": "{count} entries",
+          "many": "{count} entries",
+          "other": "{count} entries"
+        },
+        "emptyTitle": "Nothing was paid in this period",
+        "emptyBody": "No subscription payment arrived between these dates. A payment appears here once it is recorded on the Plans screen.",
+        "listHeading": "Payments",
+        "loadingList": "Loading the payments",
+        "reversal": "Reversal",
+        "closedAccount": "Closed account",
+        "receivedOn": "Received {date}",
+        "recordedOn": "recorded {date}",
+        "reference": "Reference {reference}",
+        "exportCsv": "Download CSV",
+        "exporting": "Preparing the file",
+        "exported": {
+          "one": "Downloaded {count} payment.",
+          "few": "Downloaded {count} payments.",
+          "many": "Downloaded {count} payments.",
+          "other": "Downloaded {count} payments."
+        },
+        "truncated": "The file is incomplete: it holds only the first {count} payments of the period. Narrow the period and download the rest separately."
       }
     },
     "moderation": {
