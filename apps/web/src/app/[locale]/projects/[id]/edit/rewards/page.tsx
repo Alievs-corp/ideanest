@@ -2,15 +2,18 @@ import type { Metadata } from 'next';
 import { RewardsPanel } from '../../../../../../components/campaign-editor/RewardsPanel';
 import {
   editorChromeCopy,
+  editorMetaCopy,
   rewardsPanelCopy,
 } from '../../../../../../lib/i18n/shell-copy.server';
 import { privatePageMetadata } from '../../../../../../lib/seo/metadata';
 
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Rewards',
-  description:
-    'The items your campaign produces, and the reward tiers backers choose from — prices, quantities, delivery, and order.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const [copy, meta] = await Promise.all([editorChromeCopy(), editorMetaCopy()]);
+  return privatePageMetadata({
+    title: copy.tabs.rewards,
+    description: meta.descriptions.rewards,
+  });
+}
 
 /**
  * The project is loaded with the account's bearer token from the browser, so

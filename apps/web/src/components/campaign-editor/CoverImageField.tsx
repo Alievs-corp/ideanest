@@ -31,7 +31,16 @@ import { UploadFailed, uploadImage, type UploadStage } from '../../lib/media/upl
  * the dimensions are read here in the browser and are the client's word — which is one of the
  * two reasons the size rule stopped blocking.
  */
+import {
+  COVER_FAILURE_CODES,
+  type CoverFailureCode,
+  type CoverImageCopy,
+} from '../../lib/i18n/campaign-editor-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+
 export interface CoverImageFieldProps {
+  /** This field's words, including what a refused upload is called. */
+  copy: CoverImageCopy;
   /** The address as typed, which may not yet be a saved cover. */
   url: string;
   cover: CoverImage | null;
@@ -55,27 +64,9 @@ const MINIMUM = `${COVER_MIN_WIDTH}×${COVER_MIN_HEIGHT}`;
  * not translated yet (#324 scopes that separately); when it is, this table is what moves to
  * the catalogue.
  */
-const REFUSALS: Record<string, string> = {
-  UNSUPPORTED_FORMAT: 'That file is not an image this platform can read. JPEG, PNG, WebP, AVIF and HEIC all work.',
-  TOO_LARGE: 'That file is too large. The limit is 20 MB.',
-  TOO_SMALL: `That image is too small to display. Anything from ${MINIMUM} upwards reads well.`,
-  EMPTY: 'That file is empty.',
-  UNREADABLE: 'That image could not be converted. A different file should work.',
-  UPLOADS_UNAVAILABLE: 'Uploading is not switched on for this environment. Paste an address instead.',
-  MEDIA_STORAGE_UNREACHABLE: 'Image storage is not answering. Please try again shortly.',
-  UPLOAD_STILL_PROCESSING: 'That image is taking longer than usual. It may appear if you come back to this tab.',
-  UPLOAD_TRANSFER_FAILED: 'The image did not reach storage. Check the connection and try again.',
-};
-
-const STAGES: Record<UploadStage, string> = {
-  preparing: 'Preparing',
-  uploading: 'Uploading',
-  // Its own word rather than a spinner stuck at the end of the upload: the bytes have
-  // arrived and the conversion has not run yet, and on a large photograph that is seconds.
-  processing: 'Processing',
-};
 
 export function CoverImageField({
+  copy,
   url,
   cover,
   disabled = false,
@@ -100,12 +91,12 @@ export function CoverImageField({
 
   function sizeAdvice(size: { width: number; height: number }): Note {
     return meetsCoverMinimum(size)
-      ? { tone: 'success', text: `Cover set from a ${describeSize(size)} pixel image.` }
+      ? { tone: 'success', text: fillPlaceholders(copy.set, { size: describeSize(size) }) }
       : {
           // Not `danger`. The image is saved and the campaign can be submitted; this is the
           // one thing the creator might want to change and not a thing they must.
           tone: 'info',
-          title: 'This will look soft at full width',
+          title: copy.softTitle,
           /*
            * "Soft", not "stretched", and the distinction is the whole of what a creator
            * needs to know. Every surface that renders a cover uses `object-cover` --
@@ -115,21 +106,24 @@ export function CoverImageField({
            * distorted, and telling somebody their photograph will be squashed would send
            * them to fix a problem they do not have.
            */
-          text: `Cover set from a ${describeSize(size)} pixel image. It is below the recommended ${MINIMUM}, so it will be scaled up to fill the header and will look soft. Its proportions are kept — the frame crops rather than stretches. The campaign can still be submitted.`,
+          text: fillPlaceholders(copy.setSmall, {
+            size: describeSize(size),
+            minimum: MINIMUM,
+          }),
         };
   }
 
   function describeFailure(cause: unknown): string {
     if (cause instanceof UploadFailed) {
-      return REFUSALS[cause.code] ?? cause.message;
+      return refusalFor(copy, cause.code) ?? cause.message;
     }
-    return cause instanceof Error ? cause.message : 'That image could not be used.';
+    return cause instanceof Error ? cause.message : copy.unusable;
   }
 
   async function useAddress(): Promise<void> {
     const address = url.trim();
     if (address === '') {
-      setNote({ tone: 'danger', text: 'Enter the address of an image first.' });
+      setNote({ tone: 'danger', text: copy.needUrlFirst });
       return;
     }
 
@@ -176,7 +170,7 @@ export function CoverImageField({
       setNote(sizeAdvice(image));
     } catch (cause) {
       if (cause instanceof DOMException && cause.name === 'AbortError') return;
-      setNote({ tone: 'danger', title: 'That file was not used', text: describeFailure(cause) });
+      setNote({ tone: 'danger', title: copy.notUsedTitle, text: describeFailure(cause) });
     } finally {
       if (inFlight.current === controller) inFlight.current = null;
       setStage(null);
@@ -187,8 +181,8 @@ export function CoverImageField({
   return (
     <Field
       grouped
-      label="Cover image"
-      hint={`Shown on the discovery grid and at the top of the project page. ${MINIMUM} pixels or larger reads best.`}
+      label={copy.label}
+      hint={fillPlaceholders(copy.hint, { minimum: MINIMUM })}
       error={error}
     >
       <div className="flex flex-col gap-3">
@@ -232,7 +226,7 @@ export function CoverImageField({
                   onRemove();
                 }}
               >
-                Remove cover
+                {copy.remove}
               </Pill>
             </figcaption>
           </figure>
@@ -241,10 +235,10 @@ export function CoverImageField({
         <FileDropZone
           accept="image/*"
           disabled={disabled || checking}
-          prompt="Drop an image here to use it as the cover"
-          dragPrompt="Release to upload this image"
-          buttonLabel="Choose an image"
-          hint={`Up to 20 MB. It is converted and resized here, and the original is not kept. ${MINIMUM} or larger reads best.`}
+          prompt={copy.prompt}
+          dragPrompt={copy.dragPrompt}
+          buttonLabel={copy.buttonLabel}
+          hint={fillPlaceholders(copy.dropHint, { minimum: MINIMUM })}
           onFiles={(files) => {
             const [first] = files;
             if (first) void upload(first);
@@ -261,7 +255,7 @@ export function CoverImageField({
             // control; without a label of its own the input would be announced
             // as "edit text" and nothing else.
             aria-label="Cover image address"
-            placeholder="Or paste an address: https://images.example.com/cover.jpg"
+            placeholder={copy.urlPlaceholder}
             className="sm:flex-1"
             onChange={(event) => onUrlChange(event.target.value)}
           />
@@ -283,7 +277,7 @@ export function CoverImageField({
         */}
         <div role="status" aria-live="polite" className="empty:hidden">
           {stage !== null && (
-            <InlineAlert variant="info">{STAGES[stage]} the image…</InlineAlert>
+            <InlineAlert variant="info">{copy.stage[stage]} the image…</InlineAlert>
           )}
           {stage === null && note !== null && note.tone !== 'danger' && (
             <InlineAlert variant={note.tone} title={note.title}>
@@ -300,4 +294,19 @@ export function CoverImageField({
       </div>
     </Field>
   );
+}
+
+/**
+ * The sentence for an upload refusal this build knows, or `null`.
+ *
+ * A lookup on a `Record` keyed by the service's own codes. An unknown code falls through to
+ * the service's own message rather than to nothing: the deployment may refuse for a reason
+ * this build has never heard of, and its sentence is better than silence.
+ */
+function refusalFor(copy: CoverImageCopy, code: string): string | null {
+  return isKnownCode(code) ? copy.failures[code] : null;
+}
+
+function isKnownCode(code: string): code is CoverFailureCode {
+  return (COVER_FAILURE_CODES as readonly string[]).includes(code);
 }

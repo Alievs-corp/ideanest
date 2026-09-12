@@ -6,6 +6,10 @@ import { CharacterCount, Field, InlineAlert, Pill, TextInput } from '@ideanest/u
 import { ApiError } from '../../lib/api/problem';
 import { createProject } from '../../lib/projects/api';
 import { TITLE_MAX_CHARACTERS, characterCount } from '../../lib/projects/basics';
+import type { CharacterCountCopy } from '@ideanest/ui';
+import type { NewProjectCopy } from '../../lib/i18n/campaign-editor-copy';
+import type { Locale } from '../../lib/i18n/locale';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * Starting a campaign: one field, then the editor.
@@ -21,20 +25,33 @@ import { TITLE_MAX_CHARACTERS, characterCount } from '../../lib/projects/basics'
  * Everything else about the project is edited afterwards, with autosave. This is
  * the only place in the editor with a button that submits.
  */
-function messageFor(cause: unknown): string {
+function messageFor(cause: unknown, copy: NewProjectCopy): string {
   if (cause instanceof ApiError) {
-    if (cause.status === 401) return 'Sign in to start a project.';
-    if (cause.status === 403) return 'This account is not allowed to create projects.';
+    if (cause.status === 401) return copy.signInFirst;
+    if (cause.status === 403) return copy.notAllowed;
     return (
       cause.problem?.detail ??
       cause.problem?.title ??
-      'The draft could not be created. Try again.'
+      copy.notCreated
     );
   }
-  return 'The service could not be reached, so no draft was created. Try again.';
+  return copy.unreachable;
 }
 
-export function NewProjectForm() {
+export interface NewProjectFormProps {
+  /** This form's words, resolved by the page. */
+  copy: NewProjectCopy;
+  /**
+   * The counter's sentences, and the language whose plural rule picks between them.
+   *
+   * Named `counter` rather than `characterCount`, which is already the counting function this
+   * file imports from `lib/projects/basics`.
+   */
+  counter: CharacterCountCopy;
+  locale: Locale;
+}
+
+export function NewProjectForm({ copy, counter, locale }: NewProjectFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [creating, setCreating] = useState(false);
@@ -63,7 +80,7 @@ export function NewProjectForm() {
        */
       router.replace(`/projects/${encodeURIComponent(project.id)}/edit/basics`);
     } catch (cause) {
-      setFailure(messageFor(cause));
+      setFailure(messageFor(cause, copy));
       setCreating(false);
     }
   }
@@ -77,15 +94,15 @@ export function NewProjectForm() {
       }}
     >
       {failure !== null && (
-        <InlineAlert variant="danger" title="The draft was not created">
+        <InlineAlert variant="danger" title={copy.notCreatedTitle}>
           {failure}
         </InlineAlert>
       )}
 
       <Field
-        label="Project title"
+        label={copy.title}
         required
-        hint={`It can be changed at any time before the campaign launches. ${TITLE_MAX_CHARACTERS} characters or fewer.`}
+        hint={fillPlaceholders(copy.titleHint, { max: String(TITLE_MAX_CHARACTERS) })}
         error={error}
       >
         <TextInput
@@ -94,7 +111,12 @@ export function NewProjectForm() {
           disabled={creating}
           onChange={(event) => setTitle(event.target.value)}
         />
-        <CharacterCount count={characterCount(title)} limit={TITLE_MAX_CHARACTERS} />
+        <CharacterCount
+          count={characterCount(title)}
+          limit={TITLE_MAX_CHARACTERS}
+          copy={counter}
+          locale={locale}
+        />
       </Field>
 
       {/*
@@ -103,7 +125,7 @@ export function NewProjectForm() {
       */}
       <div>
         <Pill type="submit" disabled={trimmed === '' || tooLong || creating}>
-          {creating ? 'Creating the draft' : 'Start editing'}
+          {creating ? copy.creating : copy.start}
         </Pill>
       </div>
     </form>

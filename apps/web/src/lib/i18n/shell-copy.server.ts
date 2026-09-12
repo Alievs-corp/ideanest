@@ -21,9 +21,13 @@ import type { PluralForms } from '@ideanest/ui';
 import {
   type BasicsPanelCopy,
   type EditorChromeCopy,
+  type EditorMetaCopy,
+  type NewProjectCopy,
   type RewardsPanelCopy,
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
+  editorMetaCopyFrom,
+  newProjectCopyFrom,
   rewardsPanelCopyFrom,
 } from './campaign-editor-copy';
 import {
@@ -301,4 +305,19 @@ export async function rewardsPanelCopy(): Promise<RewardsPanelCopy> {
     remaining: counter.raw('remaining') as PluralForms,
     tooMany: counter.raw('tooMany') as PluralForms,
   });
+}
+
+/** The one field that starts a campaign. */
+export async function newProjectCopy(): Promise<NewProjectCopy> {
+  return newProjectCopyFrom(await getTranslations('campaignEditor'));
+}
+
+/**
+ * The six editor pages' descriptions.
+ *
+ * The titles are not here: they are the tabs' own names, so a page reads them from
+ * {@link editorChromeCopy} rather than carrying a second spelling of "Basics".
+ */
+export async function editorMetaCopy(): Promise<EditorMetaCopy> {
+  return editorMetaCopyFrom(await getTranslations('campaignEditor'));
 }

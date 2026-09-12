@@ -2,9 +2,11 @@ import MESSAGES from '../messages/en.json';
 import {
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
+  newProjectCopyFrom,
   rewardsPanelCopyFrom,
   type BasicsPanelCopy,
   type EditorChromeCopy,
+  type NewProjectCopy,
   type RewardsPanelCopy,
 } from './lib/i18n/campaign-editor-copy';
 
@@ -73,3 +75,6 @@ export const BASICS_COPY: BasicsPanelCopy = basicsPanelCopyFrom(read);
 
 /** The rewards tab, the items list, and the two drawers they open. */
 export const REWARDS_COPY: RewardsPanelCopy = rewardsPanelCopyFrom(read, 'en', EDITOR_COPY.characterCount);
+
+/** The one field that starts a campaign. */
+export const NEW_PROJECT_COPY: NewProjectCopy = newProjectCopyFrom(read);

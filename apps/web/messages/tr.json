@@ -3351,6 +3351,60 @@
       "cancel": "İptal",
       "save": "Kaydet",
       "saving": "Kaydediliyor"
+    },
+    "cover": {
+      "label": "Kapak görseli",
+      "hint": "Keşfet akışında ve proje sayfasının üstünde gösterilir. En iyisi {minimum} piksel ve üzeri.",
+      "remove": "Kapağı kaldır",
+      "prompt": "Kapak olarak kullanmak için buraya bir görsel bırakın",
+      "dragPrompt": "Bu görseli yüklemek için bırakın",
+      "buttonLabel": "Bir görsel seçin",
+      "dropHint": "20 MB'a kadar. Görsel burada dönüştürülüp küçültülür, orijinali saklanmaz. En iyisi {minimum} ve üzeri.",
+      "urlPlaceholder": "Ya da bir adres yapıştırın: https://images.example.com/cover.jpg",
+      "needUrlFirst": "Önce bir görselin adresini girin.",
+      "notUsedTitle": "Bu dosya kullanılmadı",
+      "unusable": "Bu görsel kullanılamadı.",
+      "softTitle": "Tam genişlikte bulanık görünecek",
+      "set": "Kapak, {size} piksellik bir görselden alındı.",
+      "setSmall": "Kapak, {size} piksellik bir görselden alındı. Bu, önerilen {minimum} ölçüsünün altında, bu yüzden başlığı doldurmak için büyütülecek ve bulanık görünecek. Oranları korunur — çerçeve germez, kırpar. Kampanya yine de gönderilebilir.",
+      "stage": {
+        "preparing": "Hazırlanıyor",
+        "uploading": "Yükleniyor",
+        "processing": "İşleniyor"
+      },
+      "failures": {
+        "TOO_SMALL": "Bu görsel göstermek için fazla küçük. {minimum} ve üzeri iyi okunur.",
+        "UNSUPPORTED_FORMAT": "Bu dosya platformun okuyabileceği bir görsel değil. JPEG, PNG, WebP, AVIF ve HEIC çalışır.",
+        "TOO_LARGE": "Dosya fazla büyük. Sınır 20 MB.",
+        "EMPTY": "Dosya boş.",
+        "UNREADABLE": "Bu görsel dönüştürülemedi. Başka bir dosya işe yarayacaktır.",
+        "UPLOADS_UNAVAILABLE": "Bu ortamda yükleme açık değil. Bunun yerine bir adres yapıştırın.",
+        "MEDIA_STORAGE_UNREACHABLE": "Görsel deposu yanıt vermiyor. Birazdan yeniden deneyin.",
+        "UPLOAD_STILL_PROCESSING": "Bu görsel her zamankinden uzun sürüyor. Bu sekmeye dönerseniz görünebilir.",
+        "UPLOAD_TRANSFER_FAILED": "Görsel depoya ulaşmadı. Bağlantınızı denetleyip yeniden deneyin."
+      }
+    },
+    "newProject": {
+      "notCreatedTitle": "Taslak oluşturulmadı",
+      "notCreated": "Taslak oluşturulamadı. Yeniden deneyin.",
+      "title": "Proje başlığı",
+      "titleHint": "Kampanya başlayana dek istediğiniz zaman değiştirilebilir. En fazla {max} karakter.",
+      "creating": "Taslak oluşturuluyor",
+      "start": "Düzenlemeye başla",
+      "signInFirst": "Bir projeye başlamak için giriş yapın.",
+      "notAllowed": "Bu hesabın proje oluşturma izni yok.",
+      "unreachable": "Servise ulaşılamadı, taslak oluşturulmadı. Yeniden deneyin.",
+      "heading": "Bir projeye başla",
+      "intro": "Ona bir çalışma başlığı verin. Düzenleyici siz yazdıkça kaydeder ve kampanyayı incelemeye göndermeden onu sizden başkası göremez.",
+      "metaDescription": "Kampanyanıza ad verin ve düzenlemeye başlayın. Siz göndermeden hiçbir şey herkese açık olmaz."
+    },
+    "meta": {
+      "basics": "Kampanyanızın başlığı, özeti, kategorisi, hedefi, süresi ve kapak görseli.",
+      "rewards": "Kampanyanızın ürettiği ürünler ve destekçilerin seçtiği ödül kademeleri — fiyatlar, adetler, teslimat ve sıra.",
+      "story": "Kampanyanızın uzun hikâyesi, riskleri ve zorlukları, ayrıca önceki sürümleri.",
+      "faq": "Kampanyanızın kendi sayfasında yanıtladığı sorular ve destekçilerin bunları okuduğu sıra.",
+      "prelaunch": "Lansman öncesi sayfayı açın, bağlantıyı paylaşın ve kampanyanızın açılışından haberdar olmak isteyenleri toplayın.",
+      "review": "Kampanyanın ne kadar hazır olduğu, moderasyonun onun hakkında söyledikleri ve incelemeye gönderilmesi."
     }
   },
   "profile": {

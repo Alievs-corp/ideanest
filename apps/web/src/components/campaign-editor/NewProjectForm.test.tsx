@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import { createProject, type ProjectEdit } from '../../lib/projects/api';
 import { NewProjectForm } from './NewProjectForm';
+import { EDITOR_COPY, NEW_PROJECT_COPY } from '../../test-editor-copy';
 
 /**
  * The one form in the editor with a submit button, so the things worth testing
@@ -52,13 +53,21 @@ beforeEach(() => {
 
 describe('NewProjectForm', () => {
   it('will not create anything until a title has been typed', () => {
-    render(<NewProjectForm />);
+    render(<NewProjectForm
+        copy={NEW_PROJECT_COPY}
+        counter={EDITOR_COPY.characterCount}
+        locale={EDITOR_COPY.locale}
+      />);
     expect(start()).toBeDisabled();
   });
 
   it('creates the draft and goes straight into the editor', async () => {
     const user = userEvent.setup();
-    render(<NewProjectForm />);
+    render(<NewProjectForm
+        copy={NEW_PROJECT_COPY}
+        counter={EDITOR_COPY.characterCount}
+        locale={EDITOR_COPY.locale}
+      />);
 
     await user.type(screen.getByRole('textbox', { name: 'Project title' }), 'A field recorder');
     await user.click(start());
@@ -73,7 +82,11 @@ describe('NewProjectForm', () => {
 
   it('refuses a title over sixty characters instead of letting the service do it', async () => {
     const user = userEvent.setup();
-    render(<NewProjectForm />);
+    render(<NewProjectForm
+        copy={NEW_PROJECT_COPY}
+        counter={EDITOR_COPY.characterCount}
+        locale={EDITOR_COPY.locale}
+      />);
 
     await user.type(screen.getByRole('textbox', { name: 'Project title' }), 'a'.repeat(61));
 
@@ -85,7 +98,11 @@ describe('NewProjectForm', () => {
   it('stays where it is and explains itself when the draft cannot be created', async () => {
     const user = userEvent.setup();
     createProjectMock.mockRejectedValue(new ApiError(401, null));
-    render(<NewProjectForm />);
+    render(<NewProjectForm
+        copy={NEW_PROJECT_COPY}
+        counter={EDITOR_COPY.characterCount}
+        locale={EDITOR_COPY.locale}
+      />);
 
     await user.type(screen.getByRole('textbox', { name: 'Project title' }), 'A field recorder');
     await user.click(start());
@@ -99,7 +116,11 @@ describe('NewProjectForm', () => {
   it('does not create a second draft when the button is pressed twice', async () => {
     const user = userEvent.setup();
     createProjectMock.mockReturnValue(new Promise<ProjectEdit>(() => {}));
-    render(<NewProjectForm />);
+    render(<NewProjectForm
+        copy={NEW_PROJECT_COPY}
+        counter={EDITOR_COPY.characterCount}
+        locale={EDITOR_COPY.locale}
+      />);
 
     await user.type(screen.getByRole('textbox', { name: 'Project title' }), 'A field recorder');
     await user.click(start());
