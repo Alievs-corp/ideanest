@@ -45,8 +45,10 @@
 
 A **reward-based crowdfunding platform**. Creators publish projects; backers
 pledge money and receive a physical or digital reward in return. The platform
-operates an **all-or-nothing** funding model: if a project does not reach its
-goal by the deadline, nobody is charged.
+operates a **threshold** funding model (IDN-EXT-01, §5.1): a backer is charged when
+they pledge, a campaign succeeds at **80% of its goal**, a creator may extend the
+deadline once, and if a campaign ends below 80% every backer is refunded in full.
+It is not all-or-nothing, and must not be described as such.
 
 > **This is not investment.** A backer receives no equity, no share, and no
 > interest — only a product or an experience. That distinction is decisive under
@@ -494,6 +496,14 @@ and each entry needs a translation per supported locale.
 > `APPROVED`, `SCHEDULED`, and `SUSPENDED` are never returned by discovery, under
 > any filter or sort.**
 >
+> **IDN-EXT-01 changes the statuses (#37).** *Late pledge* is withdrawn. Two badges are
+> added, and a campaign can carry both: **Extended** — every extended campaign — and
+> **Closing soon** — 14 days or fewer to its deadline, extended ones included, and every
+> campaign inside the 7 days after its first deadline. **A campaign that ended without
+> succeeding is hidden from the catalogue and from search only**: by direct link, and in a
+> backer's account, its page stays, with its updates, tracking numbers and the creator's
+> history.
+>
 > **Bands are closed below and open above** — `[lower, upper)` — so that the five
 > partition the line rather than overlapping at four boundaries. A campaign at
 > exactly its goal is "over 100%": the question is "did it make it", and it did. The
@@ -709,14 +719,19 @@ and each entry needs a translation per supported locale.
 
 **Header:** media player (poster-first, no autoplay), editorial badge,
 subcategory and location links, amount raised, backer count, live countdown,
-progress bar, primary call to action, reminder control, share, save, and an
-explicit all-or-nothing statement with the deadline in the viewer's timezone.
+progress bar, primary call to action, reminder control, share, save, and the
+**success rule beside the progress bar** — success from 80% of the goal, with a possible
+one-time extension (§5.1) — with the deadline in the viewer's timezone.
 
 **Trust block** — fixed copy on every project:
 
 > The platform connects creators with backers. Rewards are not guaranteed, but
-> creators must keep backers informed. You are only charged if the project
-> reaches its goal by the deadline.
+> creators must keep backers informed. You are charged when you pledge; if the
+> campaign ends below 80% of its goal, you are refunded in full.
+
+The last sentence changed with IDN-EXT-01. `CampaignTrustBlock` and `wording.test.ts` still
+carry the all-or-nothing sentence until stage 3 (#44) — which is why this is written down
+before the code rather than after it.
 
 **Tabs**
 
@@ -776,9 +791,9 @@ sequenceDiagram
     W->>PSP: 3-D Secure (hosted or SDK)
     PSP-->>W: Card token
     W->>API: POST /pledges/:id/confirm
-    API->>PSP: Verification authorisation, then void
-    PSP-->>API: Approved, stored card token
-    API->>DB: Pledge CONFIRMED, stock committed
+    API->>PSP: Charge the pledge (IDN-EXT-01)
+    PSP-->>API: Approved, charged
+    API->>DB: Pledge COLLECTED, stock committed, ledger posted
     API-->>B: Confirmation
 ```
 
@@ -792,15 +807,20 @@ sequenceDiagram
 | PL-06 | Total calculation | Reward + add-ons + shipping + tax |
 | PL-07 | Card entry or stored card | Card data never reaches our servers |
 | PL-08 | 3-D Secure | Mandatory |
-| PL-09 | Edit a pledge | Until the deadline |
-| PL-10 | Cancel a pledge | Releases reserved stock |
-| PL-11 | Replace the card | After a failed collection |
+| PL-09 | Edit a pledge | **Upward only**, while the campaign takes pledges (IDN-EXT-01) |
+| PL-10 | ~~Cancel a pledge~~ | **Withdrawn by IDN-EXT-01**: a backer cannot cancel; refunds are campaign-level (§9.7). Removal is #35 |
+| PL-11 | ~~Replace the card~~ | **Withdrawn**: the charge is at confirmation, so there is no later collection to fail |
 | PL-12 | Anonymous pledging | Hidden from public lists |
 | PL-13 | Stock reservation | A DRAFT pledge, expiring five minutes after it is made |
 | PL-14 | Idempotency | `Idempotency-Key` prevents duplicates |
 | PL-15 | Secret rewards | Reachable only by a private URL |
-| PL-16 | Late pledge | If the creator enables it. Built (#81) |
+| PL-16 | ~~Late pledge~~ | **Withdrawn by IDN-EXT-01**: withdrawal closes the campaign. Built by #81; switched off by #36, removed by #45 |
 
+> **Everything below about PL-10 and PL-16 records what was built, and IDN-EXT-01 has
+> withdrawn both.** Pledges are accepted while the campaign is live, during the 7-day
+> window after the first deadline, and during an extension — and at no other time (#36).
+> The notes stay because the code does until stage 4 (#45) removes it.
+>
 > **PL-16, as #81 built it.** A campaign takes pledges in two windows and not one:
 > while it is `LIVE` and before its deadline, and again while it is `LATE_PLEDGE` and
 > inside a window its creator opened. **Three facts have to be true**, and each is a
@@ -1717,24 +1737,72 @@ Preferences are per category and per channel, with a digest option.
 
 ## 5. Business rules
 
-### 5.1 All-or-nothing
+### 5.1 Funding threshold, the 7-day window, and one extension
+
+> **IDN-EXT-01, edition 6 (13.09.2026), epic #29.** This section replaced
+> all-or-nothing. It is the product owner's approved rule set and it has no open
+> questions; where the code still does the old thing, the note on each built
+> behaviour says so and names the sub-issue that changes it.
+
+**The pledge.** A backer's card is charged when the pledge is confirmed, and the
+money is held on the platform's account. A backer **cannot cancel** a pledge; they
+may only **raise** it (a higher tier or more add-ons), and only before the campaign
+stops taking pledges. Every refund is for the **full** amount.
+
+**The thresholds**, measured against the goal, which never changes after launch:
+
+| Collected | What the creator may do |
+|---|---|
+| **80% or more** | The campaign **succeeds**. Withdraw at any time — before the first deadline included — or extend |
+| **50% to 79%** | Extend only |
+| **Below 50%** | Nothing, unless it reaches 50% inside the 7-day window below |
+
+**The 7 days after the first deadline — one rule for every campaign.** Written `D`
+for the first deadline:
 
 ```
-IF pledged_total >= goal AND now >= deadline
-    → SUCCESSFUL
-    → collect every confirmed pledge
-    → open a 7-day retry window for failures
-    → after 7 days, compute the payout
-
-ELSE IF pledged_total < goal AND now >= deadline
-    → UNSUCCESSFUL
-    → collect nothing
-    → delete stored card tokens within 30 days
-    → charge no fee
+D-7 .. D+7   the Extend control is available, at 50% or more
+D .. D+7     the campaign still takes pledges and is badged "Closing soon"
+D+8          not extended AND below 80%   → UNSUCCESSFUL → every backer refunded in full
+             not extended AND 80% or more → SUCCESSFUL; the 30 days to withdraw run from D
 ```
+
+**The extension.**
+
+- **Once.** There is no second extension.
+- The creator chooses its length, ending **no later than D+60** — sixty days from the
+  *first* deadline, even when they extend on D+7.
+- Backers are **notified** of the new deadline; they are not asked.
+- Funding has **no upper limit** — past 100% — until the creator withdraws.
+- When the extension ends: **80% or more** → SUCCESSFUL, and the 30 days to withdraw run
+  from the end of the *extension*; **below 80%** → UNSUCCESSFUL, every backer refunded.
+
+**Withdrawal closes the campaign.** No pledge is accepted after it, so there are no
+late pledges (PL-16 is withdrawn, §4.5). §9's withdrawal section carries the money:
+the 14-day hold, the automatic payout on day 30 + 14, and disputes.
+
+**Everyone is refunded in full** when: D+8 passes unextended below 80%; an extension
+ends below 80%; a moderator suspends the campaign; the creator cancels it.
+
+**A campaign that has withdrawn at 80% or more owes every reward to every backer**
+(§5.5), whatever percentage between 80 and 100 it closed at.
+
+**Accepted risks, recorded rather than rediscovered.** Success is no longer
+"all or nothing", and the previous marketing promise may not be used. Backers' money
+sits on the platform's account for up to roughly 120 days, which is a question for
+§22.1's payment-institution analysis. No cancellation plus an extension without
+consent is a consumer-protection exposure. §5.3's "deadline immutable after launch"
+is withdrawn.
+
+> **What the code does today is the old rule** — `CampaignOutcome.of` compares
+> `pledged >= goal`, the finaliser runs at `D`, and a card is stored and charged at
+> the close. Stage 1 (#31–#37) moves the rules; stage 2 (#38–#43) moves the money.
 
 > **This is applied by §8.4's `campaign-finalizer` (#63), and the decision is
-> frozen when it is taken.** V29 gives `projects` four columns — `finalized_at`,
+> frozen when it is taken.** Under IDN-EXT-01 it is taken on D+8 or when an extension
+> ends, rather than at `D` (#33) — and the freezing is exactly what the new rule needs:
+> an approved dispute refund reduces the payout and never the outcome, even when it
+> takes the total below 80%. V29 gives `projects` four columns — `finalized_at`,
 > `outcome_goal_amount`, `outcome_pledged_amount`, `outcome_backers_count` —
 > written once, in the same transaction as the `LIVE → SUCCESSFUL` or
 > `LIVE → UNSUCCESSFUL` edge and the `project.succeeded` / `project.unsuccessful`
@@ -1759,10 +1827,15 @@ ELSE IF pledged_total < goal AND now >= deadline
 
 | Component | Rate | When |
 |---|---|---|
-| Platform fee | 5% of the amount raised | Successful projects only |
-| Processing fee | Roughly 2.5–3% plus a fixed amount per pledge | Per successful collection |
-| Small pledge fee | An alternative rate below a threshold | Optional |
-| Unsuccessful project | **Zero** | No fee of any kind |
+| Platform fee | **15% of any withdrawal, bank and provider fees included** | Every withdrawal (IDN-EXT-01) |
+| Processing fee | **Inside the 15%** — `processing_rate = 0` | Never charged separately |
+| Small pledge fee | None | — |
+| Unsuccessful project | **Zero** to the creator | The cost of refunding backers is the platform's, on its own expense account |
+
+> **15% including the bank replaced "5% plus the bank"** (IDN-EXT-01). A creator reads one
+> number and receives 85% of what they withdraw. The schedule change is #42: `platform_rate =
+> 0.15`, `processing_rate = 0`, and refund costs posted to a separate platform expense account
+> rather than netted against anybody's payout.
 
 Rates are configuration, not code — a `fee_schedules` table, so a category or an
 individual agreement can differ without a deployment.
@@ -1780,7 +1853,8 @@ individual agreement can differ without a deployment.
 | Risks and challenges | **Required**, minimum 200 characters |
 | Reward tiers | 0–100 |
 | Reward price | At least the smallest chargeable amount |
-| Goal or deadline after launch | **Immutable** |
+| Goal after launch | **Immutable** |
+| Deadline after launch | **Extends once** — §5.1, no later than 60 days after the first deadline (IDN-EXT-01; this row used to say immutable) |
 | Delete a reward with backers | **Forbidden** — it may only be hidden |
 | Reward price after launch | **Immutable** |
 | Increase reward quantity | Permitted |
@@ -2176,12 +2250,22 @@ stateDiagram-v2
     SCHEDULED --> LIVE
     LIVE --> SUSPENDED
     LIVE --> CANCELED
-    LIVE --> SUCCESSFUL: deadline, pledged >= goal
-    LIVE --> UNSUCCESSFUL: deadline, pledged < goal
-    SUCCESSFUL --> COLLECTING
-    COLLECTING --> LATE_PLEDGE
-    COLLECTING --> FULFILLING
-    LATE_PLEDGE --> FULFILLING
+    LIVE --> CLOSING_WINDOW: first deadline D
+    LIVE --> EXTENDED: creator extends, D-7..D, 50% or more
+    CLOSING_WINDOW --> EXTENDED: creator extends, by D+7, 50% or more
+    LIVE --> WITHDRAWN: creator withdraws, 80% or more
+    CLOSING_WINDOW --> WITHDRAWN: creator withdraws, 80% or more
+    EXTENDED --> WITHDRAWN: creator withdraws, 80% or more
+    CLOSING_WINDOW --> SUCCESSFUL: D+8, 80% or more
+    CLOSING_WINDOW --> UNSUCCESSFUL: D+8, below 80%
+    EXTENDED --> SUCCESSFUL: extension ends, 80% or more
+    EXTENDED --> UNSUCCESSFUL: extension ends, below 80%
+    SUCCESSFUL --> WITHDRAWN: requested, or automatic after 30 days
+    CLOSING_WINDOW --> SUSPENDED
+    CLOSING_WINDOW --> CANCELED
+    EXTENDED --> SUSPENDED
+    EXTENDED --> CANCELED
+    WITHDRAWN --> FULFILLING
     FULFILLING --> COMPLETED
     REJECTED --> [*]
     CANCELED --> [*]
@@ -2190,6 +2274,17 @@ stateDiagram-v2
     COMPLETED --> [*]
 ```
 
+> **This diagram is IDN-EXT-01's (#32), and it is the target rather than the code.**
+> `CLOSING_WINDOW`, `EXTENDED` and `WITHDRAWN` are new; `COLLECTING` and `LATE_PLEDGE` are
+> gone from the diagram. The migration that adds the new states only *adds* — V74 adds the
+> states and `extended_until`, `extension_used_at` — and the old two stay in the database
+> until stage 4 (#45), because expand-then-contract (CLAUDE.md) forbids both in one release.
+>
+> Pledges are accepted in `LIVE`, `CLOSING_WINDOW` and `EXTENDED`, and in no other state.
+> `SUCCESSFUL` means the outcome is decided and the 30 days to withdraw are running;
+> `WITHDRAWN` means the creator has taken the money, and the campaign is closed. `SUSPENDED`
+> and `CANCELED` refund every backer (§9.7). `UNSUCCESSFUL` does too.
+>
 > **`SUBMITTED → CHANGES_REQUESTED → SUBMITTED` needs the note to be readable.**
 > The moderator's reason is written on the `project_state_transitions` row, and the
 > creator reads it back on `GET /v1/projects/{id}/checklist` as `moderation`: the
@@ -2214,22 +2309,22 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     [*] --> DRAFT
-    DRAFT --> CONFIRMED: card verified
+    DRAFT --> COLLECTED: charged at confirmation
     DRAFT --> EXPIRED: reservation TTL
-    DRAFT --> CANCELED_BY_BACKER: backer abandons
-    CONFIRMED --> CANCELED_BY_BACKER
-    CONFIRMED --> CANCELED_BY_PROJECT
-    CONFIRMED --> CHARGE_PENDING: campaign succeeded
-    CHARGE_PENDING --> COLLECTED
-    CHARGE_PENDING --> CHARGE_FAILED
-    CHARGE_FAILED --> CHARGE_PENDING: retry
-    CHARGE_FAILED --> DROPPED: window elapsed
-    COLLECTED --> REFUNDED
+    DRAFT --> CANCELED_BY_BACKER: backer abandons checkout, nothing charged
+    DRAFT --> CANCELED_BY_PROJECT
+    COLLECTED --> REFUNDED: campaign unsuccessful, suspended or cancelled, or dispute upheld
     COLLECTED --> CHARGEBACK
     COLLECTED --> FULFILLED
     FULFILLED --> [*]
 ```
 
+> **IDN-EXT-01 redrew this diagram (#35, #39).** A confirmed pledge is a charged one, so
+> `CONFIRMED`, `CHARGE_PENDING`, `CHARGE_FAILED` and `DROPPED` leave the diagram, and there is
+> no edge from a paid pledge to `CANCELED_BY_BACKER`: a backer cannot cancel. A raise is not
+> an edge — the pledge stays `COLLECTED` and gains a supplement. The removed states remain in
+> the code until stage 4 (#45); the notes below record why each was added.
+>
 > **`DRAFT --> CANCELED_BY_BACKER` is new, and #56 added it while building
 > PL-10.** The diagram had one edge out of a draft that ends it —
 > `DRAFT --> EXPIRED: reservation TTL` — and that edge is about nobody doing
@@ -2261,10 +2356,38 @@ stateDiagram-v2
 ### 6.3 Payout
 
 ```
-PENDING → HOLD (14 days) → APPROVED → PROCESSING → PAID
-                              ↓
-                           BLOCKED (fraud or dispute)
+REQUESTED (by the creator, or automatically 30 days after the outcome)
+    → HOLD (14 days: every backer notified, disputes open)
+    → APPROVED (VÖEN real, business card belongs to the VÖEN's holder)
+    → PROCESSING → PAID
+HOLD → WAITING_FOR_DESTINATION (no VÖEN or business card: weekly reminder)
+HOLD → BLOCKED (fraud)
 ```
+
+> **IDN-EXT-01 (#41).** Withdrawal is the creator's to request, at 80% or more, at any time;
+> if they have not requested it 30 days after the outcome (the end of the first deadline, or
+> of the extension), it is requested for them and the money arrives 14 days later — day 44.
+> **VÖEN and a business card are not asked for at creation or moderation.** The creator is
+> warned twice — when creating the campaign and before submitting it — and gives both at the
+> withdrawal screen. They are §9.5's payout destination (V72): visible to administrators,
+> never public. The business card is registered on Epoint's own page with `refund=1`, never
+> in an IdeaNest form (§9.2).
+>
+> **At every withdrawal request, automatic ones included, every backer is notified**: "the
+> creator has requested a withdrawal; until DATE you may dispute your payment". An
+> administrator decides each dispute; an upheld one refunds that backer and reduces the
+> payout, and the campaign stays successful even if the remainder is below 80%. **After the
+> payout, nothing is refunded through the platform** — a chargeback through the bank is
+> recovered from the creator's future payouts, and the account is blocked until it is repaid
+> (§9.8).
+>
+> **The decision edition 6 left to this specification: the dispute window when a payout waits
+> for VÖEN.** It stays open **until the money is actually sent**, not only for the 14 days.
+> The rule is that disputes are possible until payout and that nothing is refunded through
+> the platform after it; a payout held back by the creator's own missing details has not
+> happened, and closing the window on day 14 would take a backer's remedy away because of a
+> delay that was not theirs. The notification's DATE is therefore "until the payout is sent,
+> and no earlier than" the end of the hold.
 
 **The hold is also where identity verification fits** — #431. A payout does not
 leave `HOLD` unless the creator's verification stands at `APPROVED`, and the gate
@@ -3365,10 +3488,23 @@ collecting it.
 | Approach | Problem |
 |---|---|
 | **Card authorisation hold** | Holds typically expire after 7 days, occasionally 30. A 30–60 day campaign outlives them. **Unworkable.** |
-| **Charge immediately, refund on failure** | Mass refunds on unsuccessful campaigns: high cost, poor experience, and it makes us hold client funds |
-| **Stored card, charge at close** | ✅ **The selected approach.** |
+| **Charge immediately, refund on failure** | ✅ **The selected approach since IDN-EXT-01.** Its costs are accepted rather than avoided: mass refunds on unsuccessful campaigns (paid by the platform, §5.2), and holding backers' money for up to ~120 days (§22.1) |
+| **Stored card, charge at close** | **Superseded.** Built (#64, #65) and retired by #39; removed by #45 |
 
 ### 9.2 Card-on-file with merchant-initiated collection
+
+> **Superseded by IDN-EXT-01.** The pledge is charged at confirmation through **Epoint.az**
+> (API v1.0.3, AZN only), and posted to the ledger at once (#39). The collection at close,
+> the stored card and §9.6's retries are retired by #39 and removed by #45; everything below
+> records what was built and why.
+>
+> **Epoint, as the owner decided it.** A backer's payment is an ordinary charge. A refund to
+> a backer is `/reverse` — which has **no duplicate protection of its own**, so the platform
+> keeps its own (#40). A payout to a creator is `/refund-request` against a `card_id` — a
+> payout, despite the name — to a business card registered through `/card-registration` with
+> `refund=1`, entered on Epoint's page and never in an IdeaNest form (#38, #41). **Questions
+> for Epoint, owned by the product owner:** how long after a payment `/reverse` stays
+> available (believed to be about 120 days), and the limits on payouts to a card.
 
 ```mermaid
 sequenceDiagram
@@ -3643,6 +3779,10 @@ for the reason §9.2 gives — a stub "would make this path look finished".
 
 ### 9.6 Failed collections
 
+> **Withdrawn by IDN-EXT-01.** A card is charged at confirmation, so a declined card fails
+> the checkout in front of the backer rather than a collection weeks later, and there is
+> nothing to retry. The schedule below was built (#65) and is retired by #39.
+
 Industry experience puts failure at **5–15%** of pledges at campaign close —
 expired cards, limits, and issuer declines.
 
@@ -3688,15 +3828,20 @@ expired cards, limits, and issuer declines.
 
 ### 9.7 Refund policy
 
-| Scenario | Outcome |
+| Scenario | Outcome (IDN-EXT-01) |
 |---|---|
-| Campaign unsuccessful | Nothing was collected |
-| Creator cancels | Full refund of collected pledges. **The halt itself is built (#103)**: every `DRAFT` and `CONFIRMED` pledge becomes `CANCELED_BY_PROJECT` and gives its place back. A *collected* pledge is deliberately left alone, because reversing one is a refund and refunds are #67's |
-| Moderator suspends | Full refund. The same release, from the same event — §4.11's AD-02 |
+| D+8 passes unextended below 80% | **Full refund to every backer** |
+| An extension ends below 80% | **Full refund to every backer** |
+| Creator cancels | **Full refund to every backer.** The halt is built (#103); the refund of charged pledges is #40 |
+| Moderator suspends | **Full refund to every backer.** The same release, from the same event — §4.11's AD-02 |
+| Backer disputes during the payout hold | An administrator decides; an upheld dispute refunds that backer in full and reduces the payout (#43) |
+| Backer changes their mind | **No cancellation.** A pledge may only be raised (§5.1) |
+| After the creator is paid | Nothing is refunded through the platform; a bank chargeback is recovered from the creator (§9.8) |
 | Creator cannot deliver | Creator offers a refund; the platform mediates |
-| Backer changes their mind while live | Cancel — nothing was collected (built: #56) |
-| Backer changes their mind after collection | Creator's decision; not compelled |
 | Fraud established | Full refund and account action |
+
+Refunds go out in batches through Epoint's `/reverse`, with the platform's own protection
+against refunding twice, reconciled against the provider's `returned` status (#40).
 
 ### 9.8 Chargebacks
 
@@ -3706,6 +3851,12 @@ expired cards, limits, and issuer declines.
 4. Evidence is submitted to the provider
 5. The outcome is recorded as a reversal either way
 6. If lost, the amount and any fee are deducted from the payout
+
+> **After the payout (IDN-EXT-01, #43).** A chargeback that arrives once the creator has been
+> paid is withheld from the creator's future payouts, and the account is blocked until the
+> amount is repaid. The rule "nothing is refunded through the platform after payout" does not
+> stop a bank chargeback; if the creator never has another payout, the loss is the platform's.
+> That risk is accepted in §5.1.
 
 ---
 
@@ -3839,8 +3990,10 @@ POST   /v1/projects/{id}/prelaunch
 POST   /v1/projects/{id}/submit
 POST   /v1/projects/{id}/launch
 POST   /v1/projects/{id}/cancel
-POST   /v1/projects/{id}/late-pledges        # PL-16 (#81); COLLECTING -> LATE_PLEDGE, names the window
-POST   /v1/projects/{id}/late-pledges/close  # LATE_PLEDGE -> FULFILLING; no edge back
+POST   /v1/projects/{id}/late-pledges        # WITHDRAWN by IDN-EXT-01 (#36): built by #81, removed by #45
+POST   /v1/projects/{id}/late-pledges/close  # WITHDRAWN by IDN-EXT-01, as above
+POST   /v1/projects/{id}/extension           # IDN-EXT-01 (#34): once, D-7..D+7, 50%+, ends no later than D+60. Not built
+POST   /v1/projects/{id}/withdrawal          # IDN-EXT-01 (#41): 80%+, closes the campaign, opens the 14-day hold. Not built
 GET    /v1/projects/{id}/checklist
 GET    /v1/projects/{id}/items
 POST   /v1/projects/{id}/items
@@ -3871,7 +4024,7 @@ POST   /v1/pledges/draft
 GET    /v1/pledges/{id}
 POST   /v1/pledges/{id}/confirm
 PATCH  /v1/pledges/{id}
-DELETE /v1/pledges/{id}
+DELETE /v1/pledges/{id}   # WITHDRAWN by IDN-EXT-01 (#35): a backer cannot cancel
 GET    /v1/pledges/{id}/receipt
 
 # Payment methods
@@ -6228,8 +6381,9 @@ These reduce legal exposure and are product requirements, not legal boilerplate:
 | The creator's project history visible | **Built** — §5.5's clock (#437), surfaced on the campaign page and the creator's profile (#439) |
 | A reporting mechanism | Built — `ReportControl`. **Its copy is still hard-coded English**: the component reaches no catalogue at all, so a Russian reader is offered the reasons in a language they may not read. #439 checked this rather than assuming it, and #324's remainder is where it is fixed |
 | Clear fee disclosure | **Built** — `GET /v1/fees/disclosure`, derived from `fee_schedules` (#439) |
+| The success rule — from 80% of the goal, with a possible extension — **beside the progress bar and before the pay button** | **Not built** — IDN-EXT-01 makes it mandatory; stage 3 (#44) |
 
-All six are built. This is the issue that gets to say so, and each was checked against
+The first six are built; the seventh arrived with IDN-EXT-01 and is #44's. This is the issue that gets to say so, and each was checked against
 what is on screen rather than against what was intended.
 
 **Fee disclosure was the one still open, and the reason is worth keeping.** The platform's
@@ -6245,7 +6399,9 @@ not, and `FeeDisclosureApiTests` asserts that the answer changes when the schedu
 
 **§5.2's fee and the payment provider's fee stay distinguishable**, and are never summed
 for the reader: a creator reading "5%" and receiving 94.2% will ask, and the answer needs
-to already be on the page. `creatorReceivesRate` is computed on the server for the same
+to already be on the page. IDN-EXT-01 removes the second fee — 15% with the bank inside, so
+`processing_rate` is zero and the two numbers are one (§5.2) — but the distinction stays in
+the response for a schedule that ever sets it again. `creatorReceivesRate` is computed on the server for the same
 reason `open` is on a fee schedule — three clients deriving it would round it three ways.
 
 **No schedule in force answers `configured: false`, not zeros.** The two are different
