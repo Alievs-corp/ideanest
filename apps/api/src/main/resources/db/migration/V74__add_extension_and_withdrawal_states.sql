@@ -26,6 +26,16 @@
 -- ---------------------------------------------------------------------------
 --
 -- ---------------------------------------------------------------------------
+-- Contract: none, and the DROP CONSTRAINT and DROP INDEX statements below are
+-- not one -- V47's and V69's argument, unchanged. Every constraint dropped here
+-- is added back in the same transaction accepting strictly more than before, and
+-- every index is recreated with a strictly wider predicate. A CHECK cannot be
+-- widened in place, so drop-and-add is the only way to say "accept three more
+-- states"; no row that satisfied the old constraint fails the new one, and no
+-- request sees the table unconstrained.
+-- ---------------------------------------------------------------------------
+--
+-- ---------------------------------------------------------------------------
 -- EXPAND ONLY
 -- ---------------------------------------------------------------------------
 --
