@@ -14,10 +14,13 @@ Creators publish a project, backers pledge, and money only moves if the goal is 
 
 ## What it is
 
-IdeaNest funds creative projects on an **all-or-nothing** model. A creator sets
-a goal and a deadline. Backers pledge against reward tiers. If the goal is met
-by the deadline, every pledge is collected and the creator is paid. If it is
-not, nobody is charged and no fee is taken.
+IdeaNest funds creative projects on a **threshold** model (IDN-EXT-01). A creator
+sets a goal and a deadline. Backers pledge against reward tiers and are charged
+when they pledge. A campaign succeeds at **80% of its goal**, the creator may
+extend the deadline once, and withdrawing the money closes the campaign. If it
+ends below 80%, every backer is refunded in full. The platform's fee is 15% of a
+withdrawal, bank fees included. It is not all-or-nothing, and must not be
+described that way.
 
 This is not investment. A backer receives a product or an experience, never
 equity, interest, or a share of revenue.
@@ -32,8 +35,8 @@ equity, interest, or a share of revenue.
 |---|---|
 | **Discovery** | Fifteen categories, roughly a hundred subcategories, faceted filtering by status, location, goal, amount raised, and completion, with seven sort orders |
 | **Campaign** | Story, reward tiers built from atomic items, add-ons, FAQ, updates, comments, and a mandatory risks section |
-| **Pledging** | Reward selection, add-ons, shipping destination, and a card stored for collection at close |
-| **All-or-nothing** | Success is determined at the deadline and frozen. Later collection failures reduce the payout, never the outcome |
+| **Pledging** | Reward selection, add-ons, shipping destination, and payment at the moment of pledging. A pledge can be raised, never cancelled |
+| **Funding threshold** | Success from 80% of the goal, a 7-day window after the deadline, one extension, and full refunds below 80%. The outcome is frozen when decided (`docs/architecture.md` §5.1) |
 | **Pledge manager** | Post-campaign surveys, address collection, upgrades, shipping rates, tax, backer reports, and tracking |
 | **Creator tools** | Live funding figures, referral attribution, backer segmentation, bulk messaging, and a financial summary |
 | **Trust and safety** | Pre-launch review, reporting, suspension, identity verification, and a full audit trail |
@@ -253,13 +256,14 @@ work, because the answer changes the design.
 
 These are tracked as issues and block real design decisions:
 
-- **Payment provider capabilities.** The all-or-nothing model requires storing a
-  card at pledge time and charging it weeks later, without the backer present.
-  Card authorisation holds expire long before a campaign closes, so this is the
-  only workable approach — and it depends on written confirmation from the
-  provider that merchant-initiated transactions are supported.
-- **Holding third-party funds.** Whether money sitting between collection and
-  payout requires a payment services licence.
+- **Payment provider limits.** The provider is Epoint.az. Backers are charged at
+  pledge time, refunded with `/reverse`, and creators are paid to a registered
+  business card. Still to confirm with Epoint: how long `/reverse` stays available
+  after a payment (believed to be about 120 days), and the limits on payouts to a
+  card.
+- **Holding third-party funds.** Backers' money now sits on the platform's account
+  from the pledge until a withdrawal or refund, up to about 120 days — which makes
+  the payment services licence question sharper, not smaller.
 - **Merchant of record.** Determines who owes tax on a reward, and therefore how
   the ledger is structured.
 
