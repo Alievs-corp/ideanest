@@ -45,7 +45,7 @@ public enum DiscoveryStatus {
      * <p>Only {@code LIVE}. This is the state §5.1's all-or-nothing arithmetic is
      * still open in.
      */
-    LIVE("live", "LIVE"),
+    LIVE("live", "LIVE", "CLOSING_WINDOW", "EXTENDED"),
 
     /**
      * "I missed the deadline and can still get one."
@@ -68,7 +68,7 @@ public enum DiscoveryStatus {
      * wants to see what this platform has actually funded, and excluding the four
      * that came after would show them the newest tenth of it.
      */
-    SUCCESSFUL("successful", "SUCCESSFUL", "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED"),
+    SUCCESSFUL("successful", "SUCCESSFUL", "COLLECTING", "LATE_PLEDGE", "WITHDRAWN", "FULFILLING", "COMPLETED"),
 
     /**
      * "It did not make it."
@@ -110,7 +110,9 @@ public enum DiscoveryStatus {
      */
     public static final Set<String> PUBLIC_STATES = Set.of(
             "PRELAUNCH", "LIVE", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL",
-            "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED");
+            "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED",
+            // IDN-EXT-01 (#32): still taking pledges, and closed by withdrawal.
+            "CLOSING_WINDOW", "EXTENDED", "WITHDRAWN");
 
     /**
      * The seven that must never be returned by anything in this module.

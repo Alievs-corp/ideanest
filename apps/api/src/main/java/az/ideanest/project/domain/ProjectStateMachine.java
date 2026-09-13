@@ -70,11 +70,38 @@ public final class ProjectStateMachine {
                         ProjectState.SUSPENDED,
                         ProjectState.CANCELED,
                         ProjectState.SUCCESSFUL,
-                        ProjectState.UNSUCCESSFUL));
+                        ProjectState.UNSUCCESSFUL,
+                        // IDN-EXT-01 (#32). The direct edges above stay until #33 moves the
+                        // decision to D+8; these are the ones that replace them.
+                        ProjectState.CLOSING_WINDOW,
+                        ProjectState.EXTENDED,
+                        ProjectState.WITHDRAWN));
 
         // Collection, then delivery. LATE_PLEDGE sits beside FULFILLING rather
         // than before it because a project may skip it entirely.
-        edges.put(ProjectState.SUCCESSFUL, EnumSet.of(ProjectState.COLLECTING));
+        // The seven days after the first deadline: extend, withdraw, or be decided on D+8.
+        edges.put(
+                ProjectState.CLOSING_WINDOW,
+                EnumSet.of(
+                        ProjectState.EXTENDED,
+                        ProjectState.WITHDRAWN,
+                        ProjectState.SUCCESSFUL,
+                        ProjectState.UNSUCCESSFUL,
+                        ProjectState.SUSPENDED,
+                        ProjectState.CANCELED));
+        // Extended once: withdraw, or be decided when the extension ends. No second EXTENDED.
+        edges.put(
+                ProjectState.EXTENDED,
+                EnumSet.of(
+                        ProjectState.WITHDRAWN,
+                        ProjectState.SUCCESSFUL,
+                        ProjectState.UNSUCCESSFUL,
+                        ProjectState.SUSPENDED,
+                        ProjectState.CANCELED));
+        // COLLECTING stays until stage 2 retires collection at close (#39) and stage 4
+        // removes it (#45); WITHDRAWN is where a successful campaign goes under IDN-EXT-01.
+        edges.put(ProjectState.SUCCESSFUL, EnumSet.of(ProjectState.COLLECTING, ProjectState.WITHDRAWN));
+        edges.put(ProjectState.WITHDRAWN, EnumSet.of(ProjectState.FULFILLING));
         edges.put(ProjectState.COLLECTING, EnumSet.of(ProjectState.LATE_PLEDGE, ProjectState.FULFILLING));
         edges.put(ProjectState.LATE_PLEDGE, EnumSet.of(ProjectState.FULFILLING));
         edges.put(ProjectState.FULFILLING, EnumSet.of(ProjectState.COMPLETED));

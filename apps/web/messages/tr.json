@@ -2048,7 +2048,10 @@
           "COMPLETED": "Tamamlandı",
           "REJECTED": "Reddedildi",
           "SUSPENDED": "Askıya alındı",
-          "CANCELED": "İptal edildi"
+          "CANCELED": "İptal edildi",
+          "CLOSING_WINDOW": "Yakında kapanıyor",
+          "EXTENDED": "Uzatıldı",
+          "WITHDRAWN": "Fonlar çekildi"
         }
       },
       "campaignPreview": {
@@ -3182,7 +3185,10 @@
       "COLLECTING": "Tahsilat",
       "LATE_PLEDGE": "Geç destekler",
       "FULFILLING": "Gönderim",
-      "COMPLETED": "Tamamlandı"
+      "COMPLETED": "Tamamlandı",
+      "CLOSING_WINDOW": "Yakında kapanıyor",
+      "EXTENDED": "Uzatıldı",
+      "WITHDRAWN": "Fonlar çekildi"
     },
     "basics": {
       "loadingLabel": "Kampanya yükleniyor",

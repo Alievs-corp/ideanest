@@ -70,6 +70,11 @@ export const RENDERABLE_STATES: readonly ProjectState[] = [
   'LATE_PLEDGE',
   'FULFILLING',
   'COMPLETED',
+  // IDN-EXT-01 (#32): public like their siblings — two still take pledges, and a withdrawn
+  // campaign is a successful one that owes its backers every reward.
+  'CLOSING_WINDOW',
+  'EXTENDED',
+  'WITHDRAWN',
 ];
 
 export interface CampaignCreator {

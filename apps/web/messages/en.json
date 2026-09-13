@@ -2048,7 +2048,10 @@
           "COMPLETED": "Completed",
           "REJECTED": "Rejected",
           "SUSPENDED": "Suspended",
-          "CANCELED": "Cancelled"
+          "CANCELED": "Cancelled",
+          "CLOSING_WINDOW": "Closing soon",
+          "EXTENDED": "Extended",
+          "WITHDRAWN": "Funds withdrawn"
         }
       },
       "campaignPreview": {
@@ -3182,7 +3185,10 @@
       "COLLECTING": "Collecting",
       "LATE_PLEDGE": "Late pledges",
       "FULFILLING": "Fulfilling",
-      "COMPLETED": "Completed"
+      "COMPLETED": "Completed",
+      "CLOSING_WINDOW": "Closing soon",
+      "EXTENDED": "Extended",
+      "WITHDRAWN": "Funds withdrawn"
     },
     "basics": {
       "loadingLabel": "Loading this campaign",

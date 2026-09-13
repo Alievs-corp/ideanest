@@ -158,7 +158,7 @@ public class PlatformRollupRepository {
         List<Outcomes> rows = jdbc.query(
                 """
                 SELECT COALESCE(SUM(CASE WHEN p.state IN
-                           ('SUCCESSFUL', 'COLLECTING', 'LATE_PLEDGE', 'FULFILLING', 'COMPLETED')
+                           ('SUCCESSFUL', 'COLLECTING', 'LATE_PLEDGE', 'WITHDRAWN', 'FULFILLING', 'COMPLETED')
                        THEN 1 ELSE 0 END), 0) AS succeeded,
                        COALESCE(SUM(CASE WHEN p.state = 'UNSUCCESSFUL' THEN 1 ELSE 0 END), 0) AS failed
                   FROM projects p

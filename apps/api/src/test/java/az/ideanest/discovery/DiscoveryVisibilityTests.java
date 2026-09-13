@@ -71,7 +71,7 @@ class DiscoveryVisibilityTests extends DiscoveryTestSupport {
                             .tags("visibility")
                             .insert());
         }
-        assertThat(campaigns).hasSize(16);
+        assertThat(campaigns).hasSize(ProjectState.values().length);
     }
 
     @Test
@@ -306,7 +306,9 @@ class DiscoveryVisibilityTests extends DiscoveryTestSupport {
 
         assertThat(count(facets, "categories", "games")).isEqualTo(publicSlugs().size());
         assertThat(count(facets, "tags", "visibility")).isEqualTo(publicSlugs().size());
-        assertThat(count(facets, "status", "live")).isEqualTo(1);
+        // One campaign per state is seeded, and since IDN-EXT-01 (#32) "live" groups LIVE,
+        // CLOSING_WINDOW and EXTENDED: every one of them is still taking pledges.
+        assertThat(count(facets, "status", "live")).isEqualTo(DiscoveryStatus.LIVE.states().size());
     }
 
     @Test
@@ -340,7 +342,9 @@ class DiscoveryVisibilityTests extends DiscoveryTestSupport {
 
         assertThat(count(facets, "categories", "games")).isEqualTo(publicSlugs().size());
         assertThat(count(facets, "completion", "50_to_75")).isEqualTo(publicSlugs().size());
-        assertThat(count(facets, "status", "live")).isEqualTo(1);
+        // One campaign per state is seeded, and since IDN-EXT-01 (#32) "live" groups LIVE,
+        // CLOSING_WINDOW and EXTENDED: every one of them is still taking pledges.
+        assertThat(count(facets, "status", "live")).isEqualTo(DiscoveryStatus.LIVE.states().size());
         assertThat(count(facets, "tags", "visibility")).isEqualTo(publicSlugs().size());
     }
 

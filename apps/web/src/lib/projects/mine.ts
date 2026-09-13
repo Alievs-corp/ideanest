@@ -40,6 +40,10 @@ const PUBLIC_STATES: ReadonlySet<string> = new Set([
   'LATE_PLEDGE',
   'FULFILLING',
   'COMPLETED',
+  // IDN-EXT-01 (#32): still taking pledges, and closed by withdrawal.
+  'CLOSING_WINDOW',
+  'EXTENDED',
+  'WITHDRAWN',
 ]);
 
 /** Whether this campaign has an address a backer could open. */

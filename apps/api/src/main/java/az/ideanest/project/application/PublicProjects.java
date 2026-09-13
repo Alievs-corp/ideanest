@@ -76,7 +76,11 @@ public class PublicProjects {
             ProjectState.COLLECTING,
             ProjectState.LATE_PLEDGE,
             ProjectState.FULFILLING,
-            ProjectState.COMPLETED);
+            ProjectState.COMPLETED,
+            // IDN-EXT-01 (#32).
+            ProjectState.CLOSING_WINDOW,
+            ProjectState.EXTENDED,
+            ProjectState.WITHDRAWN);
 
     private final ProjectRepository projects;
     private final PublicProjectPages pages;

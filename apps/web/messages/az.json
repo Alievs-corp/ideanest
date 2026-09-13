@@ -2048,7 +2048,10 @@
           "COMPLETED": "Tamamlandı",
           "REJECTED": "Rədd edilib",
           "SUSPENDED": "Dayandırılıb",
-          "CANCELED": "Ləğv edildi"
+          "CANCELED": "Ləğv edildi",
+          "CLOSING_WINDOW": "Tezliklə bağlanır",
+          "EXTENDED": "Uzadılıb",
+          "WITHDRAWN": "Vəsait çıxarılıb"
         }
       },
       "campaignPreview": {
@@ -3182,7 +3185,10 @@
       "COLLECTING": "Yığılır",
       "LATE_PLEDGE": "Gecikmiş dəstəklər",
       "FULFILLING": "İcra olunur",
-      "COMPLETED": "Tamamlandı"
+      "COMPLETED": "Tamamlandı",
+      "CLOSING_WINDOW": "Tezliklə bağlanır",
+      "EXTENDED": "Uzadılıb",
+      "WITHDRAWN": "Vəsait çıxarılıb"
     },
     "basics": {
       "loadingLabel": "Kampaniya yüklənir",
