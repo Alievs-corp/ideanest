@@ -268,9 +268,12 @@ public class Project {
      * <p>Asked before the transition rather than derived from it, so that the state a
      * campaign is moved to and the numbers frozen against it are one reading of one row
      * — see {@link #freezeOutcome}.
+     *
+     * @param successThreshold the share of the goal that succeeds, from configuration. Passed
+     *     in rather than read here because this is an entity and the number is an operator's
      */
-    public CampaignOutcome outcome() {
-        return CampaignOutcome.of(pledgedAmount, goalAmount);
+    public CampaignOutcome outcome(BigDecimal successThreshold) {
+        return CampaignOutcome.of(pledgedAmount, goalAmount, successThreshold);
     }
 
     /**

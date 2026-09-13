@@ -1,5 +1,6 @@
 package az.ideanest.project.application;
 
+import az.ideanest.project.domain.CampaignOutcome;
 import az.ideanest.project.domain.Project;
 import az.ideanest.shared.outbox.Outbox;
 import java.time.Instant;
@@ -96,7 +97,9 @@ public class CampaignFinalizer {
         UUID eventId = outbox.record(
                 CampaignFinalisedEvent.AGGREGATE_TYPE,
                 project.getId(),
-                CampaignFinalisedEvent.eventTypeFor(project.outcome()),
+                // The state the transition wrote, not the rule applied again: the threshold is
+                // configuration, and a second reading of it could disagree with the first.
+                CampaignFinalisedEvent.eventTypeFor(CampaignOutcome.decidedBy(project.getState())),
                 CampaignFinalisedEvent.of(project));
 
         // The two identifiers and the state, which is what lets somebody trace a backer's

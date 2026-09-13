@@ -113,19 +113,21 @@ class CampaignOutcomeNotificationTests extends AbstractIntegrationTest {
      * The message can say what the campaign raised, and it says the frozen number.
      *
      * <p>The rendering document is what a template reads, so an absent {@code pledged}
-     * would make "you raised 8,400 ₼ of your 10,000 ₼ goal" unwritable — the sentence a
+     * would make "you raised 7,400 ₼ of your 10,000 ₼ goal" unwritable — the sentence a
      * creator whose campaign failed most needs to see. Money as §10.3's object with a
      * string amount, all the way into {@code notifications.params}.
      */
     @Test
     @DisplayName("the notification carries the frozen numbers, as money")
     void theNotificationCarriesTheOutcome() {
-        closed("10000.00", "8400.00", 21);
+        // 74%: below IDN-EXT-01's eighty (#31). This row was 8,400 under all-or-nothing, which
+        // now succeeds and would announce CAMPAIGN_SUCCEEDED instead.
+        closed("10000.00", "7400.00", 21);
 
         close();
 
         assertThat(paramsOf("CAMPAIGN_UNSUCCESSFUL"))
-                .contains("\"amount\": \"8400.00\"")
+                .contains("\"amount\": \"7400.00\"")
                 .contains("\"amount\": \"10000.00\"")
                 .contains("\"backersCount\": 21");
     }

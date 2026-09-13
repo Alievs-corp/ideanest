@@ -1794,9 +1794,12 @@ sits on the platform's account for up to roughly 120 days, which is a question f
 consent is a consumer-protection exposure. §5.3's "deadline immutable after launch"
 is withdrawn.
 
-> **What the code does today is the old rule** — `CampaignOutcome.of` compares
-> `pledged >= goal`, the finaliser runs at `D`, and a card is stored and charged at
-> the close. Stage 1 (#31–#37) moves the rules; stage 2 (#38–#43) moves the money.
+> **What the code does today.** The threshold is built (#31): `CampaignOutcome.of`
+> succeeds at `pledged >= goal × ideanest.project.finalisation.success-threshold`, which is
+> `0.80`, and a threshold outside `(0, 1]` stops the service at start-up. The rest is still
+> the old rule — the finaliser runs at `D` rather than D+8 (#33), there is no extension
+> (#34), and a card is stored and charged at the close. Stage 1 (#32–#37) moves the rules;
+> stage 2 (#38–#43) moves the money.
 
 > **This is applied by §8.4's `campaign-finalizer` (#63), and the decision is
 > frozen when it is taken.** Under IDN-EXT-01 it is taken on D+8 or when an extension

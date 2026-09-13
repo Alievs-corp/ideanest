@@ -103,13 +103,53 @@ class CampaignFinalisationTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("a campaign that did not reach its goal by its deadline does not")
+    @DisplayName("a campaign below 80% of its goal by its deadline does not succeed")
     void anUnderfundedCampaignDoesNot() {
-        UUID projectId = closed("10000.00", "9999.99", 30);
+        // 79.99%. Under all-or-nothing this row was 9,999.99 — which now succeeds, and is
+        // asserted to below.
+        UUID projectId = closed("10000.00", "7999.00", 30);
 
         assertThat(job.finaliseClosedCampaigns(now())).isEqualTo(1);
 
         assertThat(state(projectId)).isEqualTo(ProjectState.UNSUCCESSFUL);
+    }
+
+    /**
+     * IDN-EXT-01's boundary, through the sweep rather than beside it (#31): the threshold is
+     * read from {@code ProjectProperties} by the service that closes campaigns, and a test on
+     * {@code CampaignOutcome} alone could not notice that service passing the wrong number.
+     */
+    @Test
+    @DisplayName("a campaign at exactly 80% of its goal succeeds, and one qapik under does not")
+    void eightyPerCentIsTheBoundary() {
+        assertThat(properties.finalisation().successThreshold()).isEqualByComparingTo("0.80");
+
+        UUID atEighty = closed("10000.00", "8000.00", 20);
+        UUID justOver = closed("10000.00", "8001.00", 20);
+        UUID justUnder = closed("10000.00", "7999.99", 20);
+
+        // Passes until nothing is left rather than one pass: the test profile bounds a pass at
+        // two campaigns (see `aPassIsBounded`), and a single pass would close whichever two
+        // it reached first — which is the bound working, not the threshold failing.
+        int closed = 0;
+        for (int pass = job.finaliseClosedCampaigns(now()); pass > 0; pass = job.finaliseClosedCampaigns(now())) {
+            closed += pass;
+        }
+        assertThat(closed).isEqualTo(3);
+
+        assertThat(state(atEighty)).isEqualTo(ProjectState.SUCCESSFUL);
+        assertThat(state(justOver)).isEqualTo(ProjectState.SUCCESSFUL);
+        assertThat(state(justUnder)).isEqualTo(ProjectState.UNSUCCESSFUL);
+    }
+
+    @Test
+    @DisplayName("a campaign that raised 99.99% of its goal succeeds, which all-or-nothing failed")
+    void whatAllOrNothingFailedNowSucceeds() {
+        UUID projectId = closed("10000.00", "9999.99", 30);
+
+        job.finaliseClosedCampaigns(now());
+
+        assertThat(state(projectId)).isEqualTo(ProjectState.SUCCESSFUL);
     }
 
     /**

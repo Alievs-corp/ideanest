@@ -6,6 +6,7 @@ import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -287,7 +288,7 @@ class ProfileProjectApiTests extends AbstractIntegrationTest {
 
     /** A campaign slug per state; {@code projects_slug_shape} wants lowercase and hyphens. */
     private static String slug(String state) {
-        return state.toLowerCase().replace('_', '-') + "-campaign";
+        return state.toLowerCase(Locale.ROOT).replace('_', '-') + "-campaign";
     }
 
     // -----------------------------------------------------------------------
