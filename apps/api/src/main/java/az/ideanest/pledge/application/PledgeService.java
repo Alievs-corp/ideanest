@@ -1,6 +1,7 @@
 package az.ideanest.pledge.application;
 
 import az.ideanest.pledge.domain.Pledge;
+import az.ideanest.pledge.domain.PledgeState;
 import az.ideanest.pledge.domain.PledgeAddon;
 import az.ideanest.pledge.infrastructure.PledgeAddonRepository;
 import az.ideanest.pledge.infrastructure.PledgeRepository;
@@ -371,6 +372,7 @@ public class PledgeService {
      * column was counting them.
      *
      * @throws PledgeNotFoundException when the pledge is not this backer's
+     * @throws PledgeCannotBeCancelledException for anything past {@code DRAFT} — IDN-EXT-01
      * @throws PledgeNotEditableException when its state has moved past withdrawing
      * @throws az.ideanest.project.application.ProjectNotAcceptingPledgesException
      *     when the campaign has closed
@@ -384,6 +386,13 @@ public class PledgeService {
 
         if (pledge.isCanceledByBacker()) {
             return;
+        }
+
+        // IDN-EXT-01 (#35): a backer cannot cancel a pledge. What is left of PL-10 is abandoning
+        // a checkout — a DRAFT charged nothing, and its place goes back as before. Checked after
+        // the idempotent return, so a replayed cancellation of a draft still answers 204.
+        if (pledge.getState() != PledgeState.DRAFT) {
+            throw new PledgeCannotBeCancelledException(pledgeId, pledge.getState());
         }
 
         requireEditable(pledge, now, false);

@@ -196,6 +196,28 @@ const WORDING: Record<string, Wording> = {
     detail: 'It may have closed, or it may not have opened yet. Nothing has changed.',
     recovery: 'none',
   },
+  PLEDGE_CANNOT_BE_CANCELLED: {
+    /*
+     * IDN-EXT-01 (#35): a backer cannot withdraw a confirmed pledge. The web no longer offers
+     * the control, so this is reached from an old tab or another client. The sentence names
+     * the two things that are still true — it can be raised, and refunds are campaign-level —
+     * because "no" alone would read as a fault.
+     */
+    title: 'A confirmed pledge cannot be withdrawn',
+    detail:
+      'You can raise this pledge, but not cancel it. Nothing has changed. If the campaign ends below its success threshold, is suspended, or is cancelled, every backer is refunded.',
+    recovery: 'none',
+  },
+  PLEDGE_DECREASE_NOT_ALLOWED: {
+    /*
+     * IDN-EXT-01 (#35): a confirmed pledge may only go up. `meta.current` and
+     * `meta.requested` carry the two totals; this sentence is true without them.
+     */
+    title: 'A confirmed pledge can only be raised',
+    detail:
+      'This change would lower your pledge, and a confirmed pledge can only go up. Nothing has changed.',
+    recovery: 'none',
+  },
   PLEDGE_NOT_EDITABLE: {
     /*
      * §4.5's PL-09 and PL-10, refused by the PLEDGE's own state rather than the campaign's —

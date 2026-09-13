@@ -232,7 +232,10 @@ public class PledgeController {
     }
 
     /**
-     * §4.5's PL-10: the backer withdraws, and the reward's place goes back.
+     * §4.5's PL-10, as IDN-EXT-01 (#35) leaves it: a backer abandons an unpaid checkout, and the
+     * reward's place goes back. <strong>A confirmed pledge cannot be cancelled</strong> — it is
+     * refused with {@code PLEDGE_CANNOT_BE_CANCELLED} — because a backer may only raise a pledge and
+     * every refund is campaign-level (§9.7). The route stays for the draft.
      *
      * <p><strong>{@code 204 No Content}, and a retry is {@code 204} too.</strong> The
      * ordinary retry carries the same key and is replayed from

@@ -116,14 +116,13 @@ const LOOKUP_PAGE_LIMIT = 3;
  *
  * `GET /v1/pledges/{id}` is the authority on a pledge and says nothing about its campaign
  * beyond an identifier (see the module comment). The pledge page needs the campaign's **name**
- * for a reason that is not decoration: it offers to cancel a pledge, and a destructive
- * confirmation that cannot say what it is cancelling is a confirmation that has not confirmed
- * anything. §4.5's PL-10 releases reserved stock; a backer must know whose stock.
+ * because a backer editing money must be able to see which campaign it goes to. (It first
+ * existed for PL-10's cancel confirmation, which IDN-EXT-01, #35, withdrew.)
  *
  * So the page asks the one endpoint that knows, and asks it the only way it can be asked.
  * The proper fix is a campaign projection on `PledgeResponse`; until then this is bounded, it
  * is honest about being bounded, and **`null` is not a failure** — the page renders the pledge
- * without a campaign heading and still names the reward and the amount in the confirmation.
+ * without a campaign heading and still names the reward and the amount.
  * Refusing to show a pledge because its campaign could not be named would be a worse answer
  * than showing it.
  *
