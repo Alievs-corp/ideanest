@@ -12,6 +12,8 @@
 --     ALTER TABLE projects DROP CONSTRAINT projects_extension_recorded_together;
 --     ALTER TABLE projects DROP COLUMN extension_used_at;
 --     ALTER TABLE projects DROP COLUMN extended_until;
+--     and restore V6's projects_public_states_are_fully_specified and
+--     project_state_transitions_states_known, with their original lists;
 --     ALTER TABLE projects DROP CONSTRAINT projects_state_known;
 --     ALTER TABLE projects ADD CONSTRAINT projects_state_known CHECK (state IN
 --       ('DRAFT', 'PRELAUNCH', 'SUBMITTED', 'CHANGES_REQUESTED', 'REJECTED',
@@ -64,6 +66,57 @@ ALTER TABLE projects ADD CONSTRAINT projects_state_known CHECK (
         'LATE_PLEDGE',        -- until stage 4 (#45)
         'FULFILLING',
         'COMPLETED'
+    )
+);
+
+-- ---------------------------------------------------------------------------
+-- THE TWO OTHER PLACES V6 WROTE THE STATES DOWN
+-- ---------------------------------------------------------------------------
+--
+-- projects_state_known is not the only list. V6 repeats the vocabulary in two
+-- more constraints, "rather than shared through a domain type", and a state
+-- added to one and not the others is refused at whichever one it meets first.
+-- The first draft of this migration widened only the first: a campaign could
+-- have been moved into CLOSING_WINDOW and the history row recording the move
+-- would have been refused -- which the next pull request (#33) found, as every
+-- finalisation failing inside a sweep that swallows the error per campaign.
+
+-- A public campaign must have what decides it. The three new states are past
+-- LIVE and are decided on exactly those four columns.
+ALTER TABLE projects DROP CONSTRAINT projects_public_states_are_fully_specified;
+ALTER TABLE projects ADD CONSTRAINT projects_public_states_are_fully_specified CHECK (
+    state NOT IN (
+        'LIVE', 'SUSPENDED', 'CANCELED', 'SUCCESSFUL', 'UNSUCCESSFUL',
+        'COLLECTING', 'LATE_PLEDGE', 'FULFILLING', 'COMPLETED',
+        'CLOSING_WINDOW', 'EXTENDED', 'WITHDRAWN'
+    )
+    OR (
+        goal_amount IS NOT NULL
+        AND duration_days IS NOT NULL
+        AND launched_at IS NOT NULL
+        AND deadline IS NOT NULL
+    )
+);
+
+-- The history of a campaign names the same nineteen states as the campaign.
+ALTER TABLE project_state_transitions DROP CONSTRAINT project_state_transitions_states_known;
+ALTER TABLE project_state_transitions ADD CONSTRAINT project_state_transitions_states_known CHECK (
+    to_state IN (
+        'DRAFT', 'PRELAUNCH', 'SUBMITTED', 'CHANGES_REQUESTED', 'REJECTED',
+        'APPROVED', 'SCHEDULED', 'LIVE', 'SUSPENDED', 'CANCELED',
+        'SUCCESSFUL', 'UNSUCCESSFUL', 'COLLECTING', 'LATE_PLEDGE',
+        'FULFILLING', 'COMPLETED',
+        'CLOSING_WINDOW', 'EXTENDED', 'WITHDRAWN'
+    )
+    AND (
+        from_state IS NULL
+        OR from_state IN (
+            'DRAFT', 'PRELAUNCH', 'SUBMITTED', 'CHANGES_REQUESTED', 'REJECTED',
+            'APPROVED', 'SCHEDULED', 'LIVE', 'SUSPENDED', 'CANCELED',
+            'SUCCESSFUL', 'UNSUCCESSFUL', 'COLLECTING', 'LATE_PLEDGE',
+            'FULFILLING', 'COMPLETED',
+            'CLOSING_WINDOW', 'EXTENDED', 'WITHDRAWN'
+        )
     )
 );
 
