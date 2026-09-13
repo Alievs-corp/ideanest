@@ -44,4 +44,19 @@ public class CampaignTotals {
                     "Campaign " + projectId + " in " + amount.currency() + " could not be credited with a paid pledge");
         }
     }
+
+    /**
+     * Takes one fully refunded pledge out of the totals — IDN-EXT-01 (#40).
+     *
+     * <p>Never below zero: a campaign's totals can have been seeded before this class existed, and a
+     * refund of money counted nowhere must not produce a negative amount raised.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void subtractRefunded(UUID projectId, Money amount) {
+        int updated = projects.subtractFromTotals(projectId, amount.amount(), amount.currency());
+        if (updated != 1) {
+            throw new IllegalStateException(
+                    "Campaign " + projectId + " in " + amount.currency() + " could not be debited with a refund");
+        }
+    }
 }

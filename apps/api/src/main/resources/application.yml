@@ -655,6 +655,17 @@ ideanest:
       private-key: ${EPOINT_PRIVATE_KEY:}
       # The payment page's language when a request names none: az, en or ru.
       language: ${EPOINT_LANGUAGE:az}
+    # IDN-EXT-01 (#40): `campaign-refunds`. Every backer of a campaign that ends below its
+    # threshold, or is suspended or cancelled, is refunded in full, a batch at a time.
+    refunds:
+      # Every ten minutes: refunds are owed promptly, and a pass is bounded, so a campaign of
+      # four thousand backers clears in a few hours without one pass holding the provider.
+      schedule: "0 */10 * * * *"
+      per-pass: 100
+      # A refused refund is sent again after this, not on the next pass.
+      retry-after: PT6H
+      # A refund with no recorded outcome this old is settled from the provider's status.
+      unresolved-after: PT1H
     collection:
       # §8.4: charge-processor, every minute. The pass that opens the collection of
       # campaigns that closed above goal and makes §9.6's first attempt against

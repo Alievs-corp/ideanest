@@ -1,5 +1,6 @@
 package az.ideanest.payment.application;
 
+import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.payment.domain.PaymentProvider;
 import az.ideanest.payment.domain.PaymentTransaction;
 import az.ideanest.payment.domain.ProviderOutcome;
@@ -162,5 +163,55 @@ public class RefundService {
         }
 
         return records.settleSuccess(refund, charge, result);
+    }
+
+    /**
+     * IDN-EXT-01 (#40): refund a paid pledge in full because its campaign failed or was halted.
+     *
+     * <p><strong>The platform's own protection against refunding twice</strong>, since Epoint's
+     * {@code /reverse} has none: the sweep only offers a pledge with no refund requested or succeeded,
+     * a {@code REQUESTED} row blocks every later attempt until it is settled, and the key is unique per
+     * attempt. A refund whose outcome was lost is never re-sent blind — {@link #reconcile} asks the
+     * provider what the payment is first.
+     *
+     * @return the settled refund, or empty when nothing remained to refund
+     */
+    public Optional<Refund> issueForCampaign(UUID pledgeId, RefundReason reason) {
+        String key = "campaign-refund:" + pledgeId + ":" + (refunds.forPledge(pledgeId).size() + 1);
+        return records.recordForCampaign(pledgeId, reason, key).map(this::send);
+    }
+
+    /**
+     * IDN-EXT-01 (#40): settle a platform refund whose outcome was never recorded — a crash between
+     * asking the provider and writing the answer — from the provider's own status.
+     *
+     * <p>{@code returned} is the refund having happened. A payment the provider still calls paid was
+     * not refunded, and the row is failed so the next pass sends it again. Anything else — pending, or
+     * a provider that cannot look payments up — is left for a later pass.
+     */
+    public Refund reconcile(Refund refund) {
+        PaymentTransaction charge = transactions
+                .findById(refund.chargeTransactionId())
+                .orElseThrow(() -> new NothingToRefundException(refund.pledgeId()));
+        PaymentProvider provider = providers
+                .byName(charge.getProvider())
+                .orElseThrow(() -> new UnconfiguredProviderException(charge.getProvider()));
+
+        PaymentLookup lookup;
+        try {
+            lookup = provider.lookUpPayment(charge.getProviderTransactionId());
+        } catch (UnsupportedOperationException | ProviderUnavailableException e) {
+            log.info("Refund {} stays unresolved: {}", refund.id(), e.getMessage());
+            return refund;
+        }
+        return switch (lookup.state()) {
+            case RETURNED -> records.settleSuccess(
+                    refund,
+                    charge,
+                    new RefundResult(ProviderOutcome.APPROVED, null, null, null, lookup.rawResponse()));
+            case SUCCEEDED -> records.settleFailure(
+                    refund, "reverse_not_confirmed", "The provider still reports the payment as paid.");
+            case PENDING, FAILED -> refund;
+        };
     }
 }

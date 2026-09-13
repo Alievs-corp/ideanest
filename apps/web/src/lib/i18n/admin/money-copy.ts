@@ -489,6 +489,8 @@ export interface RefundConsoleCopy extends ConsoleChromeCopy {
   readonly reasonAndDetail: string;
   /** Carries `{by}`, `{date}`. */
   readonly requestedBy: string;
+  /** Who issued a refund the platform issued itself (#40). */
+  readonly platform: string;
   /** Carries `{code}`. */
   readonly refused: string;
   readonly state: Readonly<Record<RefundState, string>>;
@@ -530,6 +532,7 @@ export function refundConsoleCopyFrom(
     onPledge: String(t.raw('screens.refunds.onPledge')),
     reasonAndDetail: String(t.raw('screens.refunds.reasonAndDetail')),
     requestedBy: String(t.raw('screens.refunds.requestedBy')),
+    platform: String(t.raw('screens.refunds.platform')),
     refused: String(t.raw('screens.refunds.refused')),
     state: t.raw('screens.refunds.state') as Readonly<Record<RefundState, string>>,
     reason: t.raw('screens.refunds.reason') as Readonly<Record<RefundReason, string>>,

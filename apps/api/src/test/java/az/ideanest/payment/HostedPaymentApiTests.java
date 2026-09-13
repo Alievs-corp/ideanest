@@ -6,12 +6,14 @@ import az.ideanest.payment.domain.HostedPaymentRequest;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
+import az.ideanest.support.PaymentRows;
 import az.ideanest.support.ScriptedPaymentProvider;
 import az.ideanest.support.ScriptedWebhooks;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,9 +73,14 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
      * left here would be the first one it finds. Transactions and ledger rows are append-only by
      * trigger and stay, as every payment suite's do.
      */
+    /** The pledges this suite paid for, whose payment rows it removes — see {@code PaymentRows}. */
+    private final List<UUID> paidPledges = new ArrayList<>();
+
     @AfterEach
     void clearDeliveries() {
         jdbc().update("DELETE FROM provider_webhook_events");
+        PaymentRows.clearPledges(dataSource, paidPledges);
+        paidPledges.clear();
     }
 
     @Test
@@ -224,7 +231,9 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
         ResponseEntity<Map<String, Object>> draft = exchange(
                 "/v1/pledges/draft", HttpMethod.POST, backer.accessToken(), UUID.randomUUID().toString(), body);
         assertThat(draft.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        return new Checkout(backer, projectId, UUID.fromString((String) draft.getBody().get("id")));
+        UUID pledgeId = UUID.fromString((String) draft.getBody().get("id"));
+        paidPledges.add(pledgeId);
+        return new Checkout(backer, projectId, pledgeId);
     }
 
     private ResponseEntity<Map<String, Object>> pay(Checkout checkout, String key) {

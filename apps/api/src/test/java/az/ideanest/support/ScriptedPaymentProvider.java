@@ -3,6 +3,7 @@ package az.ideanest.support;
 import az.ideanest.payment.domain.ChargeResult;
 import az.ideanest.payment.domain.HostedPaymentRequest;
 import az.ideanest.payment.domain.HostedPaymentSession;
+import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.payment.domain.PaymentEvent;
 import az.ideanest.payment.domain.PaymentEventType;
 import az.ideanest.payment.domain.PaymentProvider;
@@ -172,6 +173,8 @@ public class ScriptedPaymentProvider implements PaymentProvider {
      * would look like a bug in the code under test rather than in the fixture.
      */
     public void reset() {
+        refundRefusal = null;
+        lookups.clear();
         scripted.clear();
         charges.clear();
         standing = ProviderOutcome.APPROVED;
@@ -273,9 +276,52 @@ public class ScriptedPaymentProvider implements PaymentProvider {
         throw new UnsupportedOperationException("Tokenisation is #55; no test drives it yet");
     }
 
+    /** IDN-EXT-01 (#40): every reversal the platform asked for, in order. */
+    private final List<RefundRequest> refunds = Collections.synchronizedList(new ArrayList<>());
+
+    private volatile String refundRefusal;
+
+    /** What {@link #lookUpPayment} answers, by provider transaction; {@code SUCCEEDED} when unscripted. */
+    private final Map<String, PaymentLookup.State> lookups = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public List<RefundRequest> refunds() {
+        synchronized (refunds) {
+            return List.copyOf(refunds);
+        }
+    }
+
+    /** The next refunds are refused with this code, until {@link #willRefund()}. */
+    public void willRefuseRefunds(String code) {
+        refundRefusal = code;
+    }
+
+    public void willRefund() {
+        refundRefusal = null;
+    }
+
+    public void willLookUp(String providerTransactionId, PaymentLookup.State state) {
+        lookups.put(providerTransactionId, state);
+    }
+
     @Override
     public RefundResult refund(RefundRequest request) {
-        throw new UnsupportedOperationException("Refunds are #67; no test drives them yet");
+        refunds.add(request);
+        String refusal = refundRefusal;
+        if (refusal != null) {
+            return new RefundResult(ProviderOutcome.DECLINED, null, refusal, "Scripted refusal", "{\"scripted\":true}");
+        }
+        // Like Epoint's /reverse: no transaction of its own.
+        return new RefundResult(ProviderOutcome.APPROVED, null, null, null, "{\"scripted\":true}");
+    }
+
+    @Override
+    public PaymentLookup lookUpPayment(String providerTransactionId) {
+        return new PaymentLookup(
+                lookups.getOrDefault(providerTransactionId, PaymentLookup.State.SUCCEEDED),
+                providerTransactionId,
+                null,
+                null,
+                "{\"scripted\":true}");
     }
 
     @Override

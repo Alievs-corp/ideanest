@@ -212,12 +212,12 @@ public class EpointPaymentProvider implements PaymentProvider {
         JsonNode answer = call("/reverse", parameters, "reverse a payment");
         String status = lower(text(answer, "status"));
         return switch (status) {
-            case "success" ->
-                new RefundResult(ProviderOutcome.APPROVED, request.providerTransactionId(), null, null, redacted(answer));
+            // /reverse answers no transaction of its own, so the result carries none (#40).
+            case "success" -> new RefundResult(ProviderOutcome.APPROVED, null, null, null, redacted(answer));
             case "error", "failed" ->
                 new RefundResult(
                         ProviderOutcome.DECLINED,
-                        request.providerTransactionId(),
+                        null,
                         codeOr(answer, "reverse_refused"),
                         text(answer, "message"),
                         redacted(answer));

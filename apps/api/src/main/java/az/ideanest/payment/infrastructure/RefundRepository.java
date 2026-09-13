@@ -81,6 +81,44 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     BigDecimal refundedOnProject(@Param("projectId") UUID projectId);
 
     /** Every refund against one pledge, for the detail a support conversation needs. */
+    /**
+     * IDN-EXT-01 (#40): paid pledges on campaigns that ended below their threshold or were halted,
+     * with no refund in flight or done, and no failed one more recent than the retry interval.
+     *
+     * <p>Rows of pledge id and campaign state, oldest collection first. Native because it reads three
+     * modules' tables in one statement; nothing here names their classes.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT CAST(pl.id AS text) AS pledge_id, p.state AS project_state
+                      FROM pledges pl
+                      JOIN projects p ON p.id = pl.project_id
+                     WHERE pl.state = 'COLLECTED'
+                       AND p.state IN ('UNSUCCESSFUL', 'CANCELED', 'SUSPENDED')
+                       AND EXISTS (SELECT 1 FROM transactions t
+                                    WHERE t.pledge_id = pl.id AND t.type = 'CHARGE' AND t.status = 'SUCCEEDED')
+                       AND NOT EXISTS (SELECT 1 FROM refunds r
+                                        WHERE r.pledge_id = pl.id AND r.state <> 'FAILED')
+                       AND NOT EXISTS (SELECT 1 FROM refunds r
+                                        WHERE r.pledge_id = pl.id AND r.state = 'FAILED' AND r.settled_at > :retryBefore)
+                     ORDER BY pl.collected_at NULLS LAST, pl.id
+                     LIMIT :limit
+                    """,
+            nativeQuery = true)
+    List<Object[]> owedCampaignRefunds(@Param("retryBefore") java.time.Instant retryBefore, @Param("limit") int limit);
+
+    /** IDN-EXT-01 (#40): platform refunds whose outcome was never recorded, oldest first. */
+    @Query(
+            """
+            SELECT r FROM Refund r
+            WHERE r.state = az.ideanest.payment.domain.RefundState.REQUESTED
+              AND r.requestedBy IS NULL
+              AND r.requestedAt < :before
+            ORDER BY r.requestedAt ASC
+            """)
+    List<Refund> unresolvedCampaignRefunds(@Param("before") java.time.Instant before, Pageable page);
+
     @Query("SELECT r FROM Refund r WHERE r.pledgeId = :pledgeId ORDER BY r.requestedAt DESC")
     List<Refund> forPledge(@Param("pledgeId") UUID pledgeId);
 }

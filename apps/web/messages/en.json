@@ -1791,6 +1791,7 @@
         "onPledge": "{fullness} on pledge {id}",
         "reasonAndDetail": "{reason} — {detail}",
         "requestedBy": "Requested by {by} on {date}",
+        "platform": "the platform",
         "refused": "refused: {code}",
         "state": {
           "REQUESTED": "Requested",
