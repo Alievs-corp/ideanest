@@ -187,7 +187,8 @@ class CampaignOutcomeNotificationTests extends AbstractIntegrationTest {
 
     /** A closed, funded campaign with a title worth printing. Answers its slug. */
     private String named(String title) {
-        Instant deadline = Instant.now().minus(Duration.ofDays(1));
+        // Past the first deadline and its seven-day window, so one pass decides (#33).
+        Instant deadline = Instant.now().minus(Duration.ofDays(8));
         String projectSlug = handle + "-" + SEQUENCE.incrementAndGet();
 
         Campaigns.seed(dataSource, creatorId, projectSlug)
@@ -217,7 +218,8 @@ class CampaignOutcomeNotificationTests extends AbstractIntegrationTest {
     }
 
     private UUID closed(String goal, String pledged, int backers) {
-        Instant deadline = Instant.now().minus(Duration.ofDays(1));
+        // Past the first deadline and its seven-day window, so one pass decides (#33).
+        Instant deadline = Instant.now().minus(Duration.ofDays(8));
         return Campaigns.seed(dataSource, creatorId, handle + "-" + SEQUENCE.incrementAndGet())
                 .state("LIVE")
                 .goal(goal)

@@ -226,8 +226,15 @@ public record ProjectProperties(
      *     has already moved once, from one hundred per cent; refused at start-up outside
      *     {@code (0, 1]} by the same check {@code CampaignOutcome} applies, so a mistyped
      *     {@code 80} stops the service instead of failing every campaign on the platform
+     * @param closingWindow how long after the first deadline a campaign is decided — §5.1's
+     *     seven days, IDN-EXT-01 (#33). During it the campaign is {@code CLOSING_WINDOW}, the
+     *     creator may extend or withdraw, and on its end (D+8 counted in days) the outcome is
+     *     frozen. Configuration for the reason the threshold is; refused unless positive,
+     *     because a zero window would decide every campaign at its deadline — the rule this
+     *     setting exists to replace — without anybody having chosen that
      */
-    public record Finalisation(String schedule, int batchSize, BigDecimal successThreshold) {
+    public record Finalisation(
+            String schedule, int batchSize, BigDecimal successThreshold, Duration closingWindow) {
 
         /** Every minute, which is what §8.4 says {@code campaign-finalizer} runs at. */
         private static final String DEFAULT_SCHEDULE = "0 * * * * *";
@@ -237,8 +244,12 @@ public record ProjectProperties(
         /** IDN-EXT-01: success from eighty per cent of the goal. */
         private static final BigDecimal DEFAULT_SUCCESS_THRESHOLD = new BigDecimal("0.80");
 
+        /** IDN-EXT-01: the seven days after the first deadline. */
+        private static final Duration DEFAULT_CLOSING_WINDOW = Duration.ofDays(7);
+
         static Finalisation defaults() {
-            return new Finalisation(DEFAULT_SCHEDULE, DEFAULT_BATCH_SIZE, DEFAULT_SUCCESS_THRESHOLD);
+            return new Finalisation(
+                    DEFAULT_SCHEDULE, DEFAULT_BATCH_SIZE, DEFAULT_SUCCESS_THRESHOLD, DEFAULT_CLOSING_WINDOW);
         }
 
         public Finalisation {
@@ -246,6 +257,11 @@ public record ProjectProperties(
             batchSize = batchSize == 0 ? DEFAULT_BATCH_SIZE : batchSize;
             successThreshold = CampaignOutcome.requireThreshold(
                     successThreshold == null ? DEFAULT_SUCCESS_THRESHOLD : successThreshold);
+            closingWindow = closingWindow == null ? DEFAULT_CLOSING_WINDOW : closingWindow;
+            if (closingWindow.isNegative() || closingWindow.isZero()) {
+                throw new IllegalArgumentException(
+                        "A closing window is some length of time after the deadline, and " + closingWindow + " is not");
+            }
 
             if (batchSize < 1) {
                 // A sweep that closes no campaigns is the feature switched off, and it

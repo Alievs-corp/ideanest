@@ -69,10 +69,9 @@ public final class ProjectStateMachine {
                 EnumSet.of(
                         ProjectState.SUSPENDED,
                         ProjectState.CANCELED,
-                        ProjectState.SUCCESSFUL,
-                        ProjectState.UNSUCCESSFUL,
-                        // IDN-EXT-01 (#32). The direct edges above stay until #33 moves the
-                        // decision to D+8; these are the ones that replace them.
+                        // IDN-EXT-01. A LIVE campaign is never decided directly: its deadline
+                        // opens the seven days (#33), and even one found after they ended walks
+                        // through CLOSING_WINDOW. The direct edges to an outcome left with #33.
                         ProjectState.CLOSING_WINDOW,
                         ProjectState.EXTENDED,
                         ProjectState.WITHDRAWN));

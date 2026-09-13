@@ -157,6 +157,18 @@ public class Project {
      *
      * <p>All four or none, which the database also states.
      */
+    /**
+     * IDN-EXT-01 (#32, V74): where the one extension ends. {@link #deadline} stays the first
+     * deadline, because the seven-day window and the D+60 limit are both measured from it.
+     * Read by the finaliser (#33); written only by the extension (#34).
+     */
+    @Column(name = "extended_until")
+    private Instant extendedUntil;
+
+    /** IDN-EXT-01 (#32, V74): when the creator extended. Set once, with {@link #extendedUntil}. */
+    @Column(name = "extension_used_at")
+    private Instant extensionUsedAt;
+
     @Column(name = "finalized_at")
     private Instant finalizedAt;
 
@@ -427,6 +439,16 @@ public class Project {
 
     public Instant getDeadline() {
         return deadline;
+    }
+
+    /** Where the one extension ends, or null when the campaign was never extended. */
+    public Instant getExtendedUntil() {
+        return extendedUntil;
+    }
+
+    /** When the creator extended, or null. */
+    public Instant getExtensionUsedAt() {
+        return extensionUsedAt;
     }
 
     public String getStory() {

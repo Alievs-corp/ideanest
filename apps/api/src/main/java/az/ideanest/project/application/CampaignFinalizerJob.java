@@ -116,7 +116,9 @@ public class CampaignFinalizerJob implements ScheduledJob {
      */
     public int finaliseClosedCampaigns(Instant now) {
         List<UUID> closed = projects.findClosedCampaigns(
-                now, PageRequest.ofSize(properties.finalisation().batchSize()));
+                now,
+                now.minus(properties.finalisation().closingWindow()),
+                PageRequest.ofSize(properties.finalisation().batchSize()));
 
         int finalised = 0;
         for (UUID projectId : closed) {

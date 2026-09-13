@@ -291,16 +291,92 @@ class CampaignFinalisationTests extends AbstractIntegrationTest {
 
         job.finaliseClosedCampaigns(now());
 
-        Map<String, Object> transition = new JdbcTemplate(dataSource)
-                .queryForMap(
+        List<Map<String, Object>> transitions = new JdbcTemplate(dataSource)
+                .queryForList(
                         "SELECT from_state, to_state, actor_role, actor_id, note"
-                                + " FROM project_state_transitions WHERE project_id = ?",
+                                + " FROM project_state_transitions WHERE project_id = ? ORDER BY created_at, id",
                         projectId);
-        assertThat(transition.get("from_state")).isEqualTo("LIVE");
-        assertThat(transition.get("to_state")).isEqualTo("SUCCESSFUL");
-        assertThat(transition.get("actor_role")).isEqualTo("SYSTEM");
-        assertThat(transition.get("actor_id")).as("no person decided this").isNull();
-        assertThat((String) transition.get("note")).contains("12500.00", "10000.00", "AZN", "42");
+
+        // Two edges, not one: a campaign found after its window ended still walks through the
+        // window rather than skipping it, because §6.1 draws no edge from LIVE to an outcome.
+        assertThat(transitions)
+                .extracting(row -> row.get("from_state"), row -> row.get("to_state"))
+                .containsExactly(tuple("LIVE", "CLOSING_WINDOW"), tuple("CLOSING_WINDOW", "SUCCESSFUL"));
+        assertThat(transitions).allSatisfy(row -> {
+            assertThat(row.get("actor_role")).isEqualTo("SYSTEM");
+            assertThat(row.get("actor_id")).as("no person decided this").isNull();
+            assertThat((String) row.get("note")).contains("12500.00", "10000.00", "AZN", "42");
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // The seven days after the first deadline — IDN-EXT-01 (#33)
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("the first deadline opens the seven-day window, and decides, freezes and announces nothing")
+    void theDeadlineOpensTheWindow() {
+        UUID projectId = live("10000.00", "12500.00", 42, Duration.ofDays(1).negated());
+
+        assertThat(job.finaliseClosedCampaigns(now())).isEqualTo(1);
+
+        assertThat(state(projectId)).isEqualTo(ProjectState.CLOSING_WINDOW);
+        // Not decided: the creator may still extend or withdraw, so there is no outcome to
+        // freeze and nobody to tell. finalized_at staying null is also what lets the sweep find
+        // the campaign again when the window ends.
+        assertThat(finalisedAt(projectId)).isNull();
+        assertThat(events()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a campaign in its window is left alone until the window ends, then decided")
+    void theWindowIsDecidedWhenItEnds() {
+        Instant deadline = now().minus(Duration.ofDays(1));
+        UUID projectId = liveWithDeadline("10000.00", "8500.00", 17, deadline);
+        job.finaliseClosedCampaigns(now());
+        assertThat(state(projectId)).isEqualTo(ProjectState.CLOSING_WINDOW);
+
+        // Five days after the deadline: still inside the seven, and not even selected.
+        assertThat(job.finaliseClosedCampaigns(deadline.plus(Duration.ofDays(5)))).isZero();
+        assertThat(state(projectId)).isEqualTo(ProjectState.CLOSING_WINDOW);
+
+        // The window ends seven days after the deadline — the start of D+8.
+        Instant windowEnds = deadline.plus(properties.finalisation().closingWindow());
+        assertThat(job.finaliseClosedCampaigns(windowEnds)).isEqualTo(1);
+
+        assertThat(state(projectId)).isEqualTo(ProjectState.SUCCESSFUL);
+        assertThat(finalisedAt(projectId)).isEqualTo(windowEnds);
+        assertThat(events()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("an extended campaign is decided when its extension ends, not when its window would have")
+    void anExtensionIsDecidedAtItsEnd() {
+        Instant deadline = now().minus(Duration.ofDays(20));
+        Instant extensionEnds = now().plus(Duration.ofDays(2));
+        UUID projectId = Campaigns.seed(dataSource, creatorId, handle + "-" + SEQUENCE.incrementAndGet())
+                .state("EXTENDED")
+                .goal("10000.00")
+                .pledged("7000.00")
+                .backers(9)
+                .launchedAt(deadline.minus(CAMPAIGN_LENGTH))
+                .deadline(deadline)
+                .insert();
+        new JdbcTemplate(dataSource)
+                .update(
+                        "UPDATE projects SET extended_until = ?, extension_used_at = ? WHERE id = ?",
+                        java.sql.Timestamp.from(extensionEnds),
+                        java.sql.Timestamp.from(deadline.plus(Duration.ofDays(3))),
+                        projectId);
+
+        // Its first deadline was twenty days ago, far past any window; the extension is what counts.
+        assertThat(job.finaliseClosedCampaigns(now())).isZero();
+        assertThat(state(projectId)).isEqualTo(ProjectState.EXTENDED);
+
+        assertThat(job.finaliseClosedCampaigns(extensionEnds)).isEqualTo(1);
+        // 70%: below 80% when the extension ends.
+        assertThat(state(projectId)).isEqualTo(ProjectState.UNSUCCESSFUL);
+        assertThat(finalisedAt(projectId)).isEqualTo(extensionEnds.truncatedTo(ChronoUnit.MICROS));
     }
 
     // ------------------------------------------------------------------
@@ -327,7 +403,7 @@ class CampaignFinalisationTests extends AbstractIntegrationTest {
                 .isZero();
 
         assertThat(finalisedAt(projectId)).isEqualTo(first);
-        assertThat(transitionCount(projectId)).isEqualTo(1);
+        assertThat(transitionCount(projectId)).as("into the window, then decided").isEqualTo(2);
         assertThat(events()).hasSize(1);
     }
 
@@ -359,9 +435,10 @@ class CampaignFinalisationTests extends AbstractIntegrationTest {
     @Test
     @DisplayName("a pass closes the campaign that has been waiting longest first")
     void theOldestDeadlineIsClosedFirst() {
-        UUID recent = closedAt(Duration.ofMinutes(5));
-        UUID oldest = closedAt(Duration.ofDays(3));
-        UUID middle = closedAt(Duration.ofHours(6));
+        // All three past their seven-day window, so the pass decides each it reaches.
+        UUID recent = closedAt(Duration.ofDays(8).plusMinutes(5));
+        UUID oldest = closedAt(Duration.ofDays(11));
+        UUID middle = closedAt(Duration.ofDays(8).plusHours(6));
 
         job.finaliseClosedCampaigns(now());
 
@@ -435,7 +512,21 @@ class CampaignFinalisationTests extends AbstractIntegrationTest {
 
     /** A live campaign whose deadline passed a day ago. */
     private UUID closed(String goal, String pledged, int backers) {
-        return live(goal, pledged, backers, Duration.ofDays(1).negated());
+        // Eight days: past the first deadline and past the seven-day window after it, so one
+        // pass decides (IDN-EXT-01, #33). A day would only open the window.
+        return live(goal, pledged, backers, Duration.ofDays(8).negated());
+    }
+
+    /** A live campaign with a deadline at exactly this instant. */
+    private UUID liveWithDeadline(String goal, String pledged, int backers, Instant deadline) {
+        return Campaigns.seed(dataSource, creatorId, handle + "-" + SEQUENCE.incrementAndGet())
+                .state("LIVE")
+                .goal(goal)
+                .pledged(pledged)
+                .backers(backers)
+                .launchedAt(deadline.minus(CAMPAIGN_LENGTH))
+                .deadline(deadline)
+                .insert();
     }
 
     /** A funded campaign whose deadline passed a given time ago. */

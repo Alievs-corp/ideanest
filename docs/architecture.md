@@ -1797,8 +1797,11 @@ is withdrawn.
 > **What the code does today.** The threshold is built (#31): `CampaignOutcome.of`
 > succeeds at `pledged >= goal × ideanest.project.finalisation.success-threshold`, which is
 > `0.80`, and a threshold outside `(0, 1]` stops the service at start-up. The rest is still
-> the old rule — the finaliser runs at `D` rather than D+8 (#33), there is no extension
-> (#34), and a card is stored and charged at the close. Stage 1 (#32–#37) moves the rules;
+> the old rule — there is no extension (#34), pledges stop at the first deadline rather
+> than at the end of the window (#36), and a card is stored and charged at the close.
+> **The timing is built (#33):** at `D` a campaign enters `CLOSING_WINDOW` and nothing is
+> frozen; on D+8 — `ideanest.project.finalisation.closing-window`, seven days — or when an
+> extension ends, it is decided and the outcome frozen. Stage 1 (#32–#37) moves the rules;
 > stage 2 (#38–#43) moves the money.
 
 > **This is applied by §8.4's `campaign-finalizer` (#63), and the decision is
@@ -2279,10 +2282,11 @@ stateDiagram-v2
 
 > **This diagram is IDN-EXT-01's (#32).** `CLOSING_WINDOW`, `EXTENDED` and `WITHDRAWN` are
 > new; `COLLECTING` and `LATE_PLEDGE` are gone from the diagram. **The states and their edges
-> exist in the code since #32, and nothing moves a campaign into them yet**: the finaliser
-> still takes the direct `LIVE → SUCCESSFUL` and `LIVE → UNSUCCESSFUL` edges at `D` until #33,
-> the extension is #34 and the withdrawal #41. `ProjectStateMachine` therefore allows both the
-> old edges and the new ones, and each old edge leaves with the PR that stops using it.
+> exist in the code since #32.** Since #33 the finaliser moves `LIVE → CLOSING_WINDOW` at the
+> deadline and decides on D+8, and the direct `LIVE → SUCCESSFUL`/`UNSUCCESSFUL` edges are gone
+> from `ProjectStateMachine` — a campaign the sweep finds after its window already ended walks
+> both edges in one transaction rather than skipping the window. The extension is #34 and the
+> withdrawal #41; `SUCCESSFUL → COLLECTING` stays until #39.
 > V74 only *adds* — the three states, `extended_until` and `extension_used_at` — and the old
 > two stay in the database until stage 4 (#45), because expand-then-contract (CLAUDE.md)
 > forbids both in one release. `deadline` stays the *first* deadline: the seven-day window

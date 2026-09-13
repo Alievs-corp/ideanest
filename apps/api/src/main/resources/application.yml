@@ -464,6 +464,9 @@ ideanest:
       # in (0, 1], not a percentage — `80` is refused at start-up rather than failing
       # every campaign on the platform.
       success-threshold: 0.80
+      # §5.1, IDN-EXT-01 (#33): how long after the first deadline a campaign is decided.
+      # During it the campaign is CLOSING_WINDOW and the creator may extend or withdraw.
+      closing-window: 7d
 
     submission:
       # The three bounds §5.3 states as somebody else's decision rather than as a

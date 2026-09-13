@@ -511,9 +511,14 @@ public class ProjectTransitionService {
     }
 
     /**
-     * Applies §5.1 to a campaign whose deadline has passed: {@code LIVE} →
-     * {@code SUCCESSFUL} or {@code LIVE} → {@code UNSUCCESSFUL}, and freezes the numbers
-     * that decided it.
+     * Applies §5.1 as IDN-EXT-01 (#33) times it: a {@code LIVE} campaign past its deadline
+     * enters {@code CLOSING_WINDOW}; a campaign whose window or extension has ended is decided
+     * — {@code SUCCESSFUL} or {@code UNSUCCESSFUL} — and the numbers that decided it are frozen.
+     *
+     * <p><strong>Entering the window freezes nothing.</strong> The campaign is not decided, the
+     * creator may still extend or withdraw, and a frozen outcome written now would be the
+     * evidence for a decision that has not been taken. {@code finalized_at} stays null, which
+     * is also what lets the sweep find the campaign again when the window ends.
      *
      * <p><strong>The first transition performed by nobody</strong>, which is what the
      * {@link ActorRole#SYSTEM} parameter on {@link #apply} has been waiting for since this
@@ -553,19 +558,52 @@ public class ProjectTransitionService {
         Project project =
                 projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
 
-        if (project.getState() != ProjectState.LIVE) {
-            log.debug("Campaign {} is in {} and is not this pass's to finalise.", projectId, project.getState());
+        Instant deadline = project.getDeadline();
+        if (deadline == null) {
+            // A campaign past LIVE always has a deadline — applyTransition computes one on the
+            // edge into LIVE and refuses the edge without a duration — so this branch is
+            // unreachable through this service. It is here because "unreachable" describes
+            // today's callers, and the alternative is a NullPointerException inside a sweep
+            // that then stops closing everybody else's campaigns.
+            log.debug("Campaign {} has no deadline and is not this pass's to finalise.", projectId);
             return Optional.empty();
         }
-        Instant deadline = project.getDeadline();
-        if (deadline == null || deadline.isAfter(now)) {
-            // A LIVE campaign always has a deadline — applyTransition computes one on the
-            // edge into LIVE and refuses the edge without a duration — so the null branch
-            // is unreachable through this service. It is here because "unreachable"
-            // describes today's callers, and the alternative is a NullPointerException
-            // inside a sweep that then stops closing everybody else's campaigns.
-            log.debug("Campaign {} closes at {}, which is not yet.", projectId, deadline);
-            return Optional.empty();
+        Instant windowEnds = deadline.plus(properties.finalisation().closingWindow());
+
+        switch (project.getState()) {
+            case LIVE -> {
+                if (deadline.isAfter(now)) {
+                    log.debug("Campaign {} closes at {}, which is not yet.", projectId, deadline);
+                    return Optional.empty();
+                }
+                // IDN-EXT-01 (#33): the first deadline opens the seven days, it does not decide.
+                apply(project, ProjectState.CLOSING_WINDOW, ActorRole.SYSTEM, null, windowOpened(project, windowEnds));
+                if (windowEnds.isAfter(now)) {
+                    log.info("Campaign {} reached its deadline; it is decided at {}.", projectId, windowEnds);
+                    return Optional.of(project);
+                }
+                // Found after its window had already ended — a sweep that was down for a week.
+                // The window happened whether or not the job saw it, so the campaign walks both
+                // edges in this transaction rather than skipping one: §6.1 draws no edge from
+                // LIVE to an outcome, and the history should not either.
+            }
+            case CLOSING_WINDOW -> {
+                if (windowEnds.isAfter(now)) {
+                    log.debug("Campaign {} is in its window until {}.", projectId, windowEnds);
+                    return Optional.empty();
+                }
+            }
+            case EXTENDED -> {
+                Instant extensionEnds = project.getExtendedUntil();
+                if (extensionEnds == null || extensionEnds.isAfter(now)) {
+                    log.debug("Campaign {} is extended until {}.", projectId, extensionEnds);
+                    return Optional.empty();
+                }
+            }
+            default -> {
+                log.debug("Campaign {} is in {} and is not this pass's to finalise.", projectId, project.getState());
+                return Optional.empty();
+            }
         }
 
         // Read before the transition and used for both halves, so the state a campaign is
@@ -641,8 +679,18 @@ public class ProjectTransitionService {
      * decision was actually taken on; {@link Project#freezeOutcome} then stores the same
      * two numbers.
      */
+    private static String windowOpened(Project project, Instant windowEnds) {
+        return "Raised %s of %s %s from %d backers by the deadline; decided at %s unless extended or withdrawn."
+                .formatted(
+                        project.getPledgedAmount(),
+                        project.getGoalAmount(),
+                        project.getCurrency(),
+                        project.getBackersCount(),
+                        windowEnds);
+    }
+
     private static String decision(Project project) {
-        return "Raised %s of %s %s from %d backers at the deadline."
+        return "Raised %s of %s %s from %d backers when decided."
                 .formatted(
                         project.getPledgedAmount(),
                         project.getGoalAmount(),
