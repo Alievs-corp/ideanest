@@ -371,6 +371,14 @@ public class ReservationService {
         PledgeQuote quote = PledgeQuote.of(
                 selectionFor(projectId, rewardTierId, addonSelections, contribution, shippingCountry));
 
+        // IDN-EXT-01 (#35): a confirmed pledge may only be raised. Checked against the quote and
+        // before any place moves, so a refused edit leaves the pledge and every counter exactly as
+        // they were. A draft is still being chosen and is not held to it.
+        if (pledge.getState() == PledgeState.CONFIRMED
+                && quote.totalAmount().compareTo(pledge.getTotalAmount()) < 0) {
+            throw new PledgeDecreaseNotAllowedException(pledge.getId(), pledge.getTotalAmount(), quote.totalAmount());
+        }
+
         moveThePlaces(pledge, HeldPlaces.of(rewardTierId, addonSelections), existingAddons);
 
         pledge.edit(quote, rewardTierId, shippingCountry, anonymous, paymentMethodId);

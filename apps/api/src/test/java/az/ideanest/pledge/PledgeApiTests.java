@@ -1273,6 +1273,63 @@ class PledgeApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("IDN-EXT-01: a confirmed pledge may be raised")
+    void aConfirmedPledgeMayBeRaised() {
+        Account creator = account("creator");
+        UUID projectId = project(creator);
+        Campaigns.launch(dataSource, projectId);
+
+        Account backer = account("backer");
+        UUID pledgeId = id(parse(post("/v1/pledges/draft", backer, newKey(), draftBody(projectId, null, "25.00"))));
+        assertThat(post("/v1/pledges/" + pledgeId + "/confirm", backer, newKey(), Map.of())
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        Map<String, Object> more = new LinkedHashMap<>();
+        more.put("contribution", Map.of("amount", "40.00", "currency", "AZN"));
+        ResponseEntity<String> raised = patch("/v1/pledges/" + pledgeId, backer, newKey(), more);
+
+        assertThat(raised.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(parse(raised).get("state")).isEqualTo("CONFIRMED");
+        assertThat(totalAmountOf(pledgeId)).isEqualByComparingTo("40.00");
+    }
+
+    @Test
+    @DisplayName("IDN-EXT-01: an edit that would lower a confirmed pledge is refused before any place moves")
+    void loweringAConfirmedPledgeIsRefused() {
+        Account creator = account("creator");
+        UUID projectId = project(creator);
+        UUID deluxe = reward(creator, projectId, "The deluxe one", "70.00", tier -> tier.put("limitQuantity", 3));
+        UUID cheaper = reward(creator, projectId, "A boxed set", "45.00", tier -> tier.put("limitQuantity", 3));
+        Campaigns.launch(dataSource, projectId);
+
+        Account backer = account("backer");
+        UUID pledgeId = id(parse(post("/v1/pledges/draft", backer, newKey(), draftBody(projectId, deluxe, "70.00"))));
+        assertThat(post("/v1/pledges/" + pledgeId + "/confirm", backer, newKey(), Map.of())
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        Map<String, Object> down = new LinkedHashMap<>();
+        down.put("rewardTierId", cheaper.toString());
+        down.put("contribution", Map.of("amount", "45.00", "currency", "AZN"));
+        ResponseEntity<String> refused = patch("/v1/pledges/" + pledgeId, backer, newKey(), down);
+
+        // A decrease is a partial cancellation under another verb, so it is refused on
+        // the same ground. Both amounts are on the body, as strings.
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(code(refused)).isEqualTo("PLEDGE_DECREASE_NOT_ALLOWED");
+        assertThat(meta(refused).get("current")).isEqualTo("70.00");
+        assertThat(meta(refused).get("requested")).isEqualTo("45.00");
+
+        // Nothing moved: the pledge, its amount and both tiers are as they were.
+        assertThat(state(pledgeId)).isEqualTo("CONFIRMED");
+        assertThat(totalAmountOf(pledgeId)).isEqualByComparingTo("70.00");
+        assertThat(claimedQuantity(deluxe)).isEqualTo(1);
+        assertThat(claimedQuantity(cheaper)).isZero();
+        assertThat(reservedQuantity(cheaper)).isZero();
+    }
+
+    @Test
     @DisplayName("an edit to a sold-out tier is refused and the backer keeps the pledge and the place they had")
     void aRefusedEditCostsTheBackerNothing() {
         Account creator = account("creator");
@@ -1571,8 +1628,8 @@ class PledgeApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("cancelling a confirmed pledge gives back a claimed place")
-    void cancellingAConfirmedPledgeReleasesAClaimedPlace() {
+    @DisplayName("IDN-EXT-01: a confirmed pledge cannot be cancelled, and keeps its claimed place")
+    void aConfirmedPledgeCannotBeCancelled() {
         Account creator = account("creator");
         UUID projectId = project(creator);
         UUID rewardId = reward(creator, projectId, "A boxed set", "45.00", tier -> tier.put("limitQuantity", 3));
@@ -1586,26 +1643,24 @@ class PledgeApiTests extends AbstractIntegrationTest {
         assertThat(claimedQuantity(rewardId)).isEqualTo(1);
         assertThat(reservedQuantity(rewardId)).isZero();
 
-        assertThat(delete("/v1/pledges/" + pledgeId, backer, newKey()).getStatusCode())
-                .isEqualTo(HttpStatus.NO_CONTENT);
+        ResponseEntity<String> refused = delete("/v1/pledges/" + pledgeId, backer, newKey());
 
-        // **A different column from the draft above, and that is the point.** A
-        // confirmed pledge holds a claimed place; releasing the reserved one instead
-        // would leave the tier counting a place nobody holds while short of one
-        // somebody does -- and the sum, which is what the limit is checked against,
-        // would still look right.
-        assertThat(state(pledgeId)).isEqualTo("CANCELED_BY_BACKER");
-        assertThat(claimedQuantity(rewardId)).isZero();
+        // **A backer cannot cancel a pledge** (IDN-EXT-01, #35). A confirmed pledge is a
+        // charged one, it may only be raised, and every refund is campaign-level (§9.7).
+        // Its own code rather than PLEDGE_NOT_EDITABLE: the pledge can still be raised.
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(code(refused)).isEqualTo("PLEDGE_CANNOT_BE_CANCELLED");
+        assertThat(meta(refused).get("state")).isEqualTo("CONFIRMED");
+
+        // Nothing moved: the pledge stands and still holds its claimed place.
+        assertThat(state(pledgeId)).isEqualTo("CONFIRMED");
+        assertThat(canceledAtOf(pledgeId)).isNull();
+        assertThat(claimedQuantity(rewardId)).isEqualTo(1);
         assertThat(reservedQuantity(rewardId)).isZero();
-        assertThat(committedQuantity(rewardId)).isZero();
-
-        // §9.7: nothing was collected, so nothing is refunded and no transaction is
-        // written. The refund of a pledge that really was collected is #67's.
-        assertThat(collectedAtOf(pledgeId)).isNull();
     }
 
     @Test
-    @DisplayName("cancelling gives back the add-on's places from whichever column was holding them")
+    @DisplayName("abandoning a draft gives back its add-on places, and a confirmed pledge keeps its own")
     void cancellingReleasesTheAddonPlacesToo() {
         Account creator = account("creator");
         UUID projectId = project(creator);
@@ -1628,10 +1683,8 @@ class PledgeApiTests extends AbstractIntegrationTest {
         assertThat(reservedQuantity(addonId)).isZero();
         assertThat(claimedQuantity(addonId)).isZero();
 
-        // A confirmed pledge gives back claimed ones, which is a different statement
-        // against a different column -- releasing the reserved ones instead would leave
-        // the add-on counting places nobody holds while short of ones somebody does,
-        // and the sum the limit is checked against would still look right.
+        // IDN-EXT-01 (#35): a confirmed pledge cannot be cancelled, so its claimed
+        // add-on places stay exactly where they are.
         Account second = account("backer");
         UUID confirmed = id(parse(post("/v1/pledges/draft", second, newKey(), body)));
         assertThat(post("/v1/pledges/" + confirmed + "/confirm", second, newKey(), Map.of())
@@ -1639,13 +1692,14 @@ class PledgeApiTests extends AbstractIntegrationTest {
                 .isEqualTo(HttpStatus.OK);
         assertThat(claimedQuantity(addonId)).isEqualTo(2);
 
-        assertThat(delete("/v1/pledges/" + confirmed, second, newKey()).getStatusCode())
-                .isEqualTo(HttpStatus.NO_CONTENT);
+        ResponseEntity<String> refused = delete("/v1/pledges/" + confirmed, second, newKey());
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(code(refused)).isEqualTo("PLEDGE_CANNOT_BE_CANCELLED");
 
-        assertThat(claimedQuantity(addonId)).isZero();
+        assertThat(state(confirmed)).isEqualTo("CONFIRMED");
+        assertThat(claimedQuantity(addonId)).isEqualTo(2);
         assertThat(reservedQuantity(addonId)).isZero();
-        assertThat(committedQuantity(addonId)).isZero();
-        assertThat(committedQuantity(rewardId)).isZero();
+        assertThat(claimedQuantity(rewardId)).isEqualTo(1);
     }
 
     @Test
@@ -2018,7 +2072,8 @@ class PledgeApiTests extends AbstractIntegrationTest {
         return jdbc().queryForObject("SELECT canceled_at FROM pledges WHERE id = ?", Instant.class, pledgeId);
     }
 
-    private Instant collectedAtOf(UUID pledgeId) {
-        return jdbc().queryForObject("SELECT collected_at FROM pledges WHERE id = ?", Instant.class, pledgeId);
+    private BigDecimal totalAmountOf(UUID pledgeId) {
+        return jdbc().queryForObject(
+                "SELECT total_amount FROM pledges WHERE id = ?", BigDecimal.class, pledgeId);
     }
 }

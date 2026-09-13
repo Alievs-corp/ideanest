@@ -15,13 +15,15 @@ import {
 import { describeFailure, type CheckoutFailure } from '../../lib/pledges/failure';
 import { formatExactTime } from '../../lib/time';
 import { approximate, formatMoney, type ExchangeRate } from '../../lib/money';
-import { CancelPledgePanel } from './CancelPledgePanel';
 import { PledgeEditor } from './PledgeEditor';
 import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
 /**
- * One of the caller's own pledges, with §4.5's PL-09 edit and PL-10 withdrawal. Issue #287.
+ * One of the caller's own pledges, with §4.5's PL-09 edit. Issue #287.
+ *
+ * IDN-EXT-01 (#35) withdrew PL-10: a backer cannot cancel a pledge, and a confirmed one may only
+ * be raised. The withdrawal panel that used to sit under the editor is gone.
  *
  * <h2>Two reads, and only one of them is the authority</h2>
  *
@@ -32,8 +34,7 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
  * this?** `PledgeResponse` carries a `projectId` and no title and no slugs, and there is no
  * public read keyed on a campaign id alone, so the caller's own list is the only projection
  * that can name it (`lib/pledges/backer.ts` carries the argument and the bound). It is
- * best-effort: a pledge whose campaign could not be named still renders, still edits, and
- * still withdraws, because refusing to show somebody their own pledge over a missing heading
+ * best-effort: a pledge whose campaign could not be named still renders and still edits, because refusing to show somebody their own pledge over a missing heading
  * would be the worse failure.
  *
  * <h2>Whether the controls appear is decided by the PLEDGE's state, and not by the
@@ -47,8 +48,8 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
  * campaign before its deadline and also a `LATE_PLEDGE` one inside a window it opened (PL-16),
  * and the summary above carries a state and a deadline but not the late-pledge window. A
  * client-side approximation of that rule would be a second rule, free to drift from the
- * service's, and its failure mode is the bad one: hiding the withdrawal control from somebody
- * who is still entitled to withdraw.
+ * service's, and its failure mode is the bad one: hiding the edit controls from somebody who is
+ * still entitled to raise their pledge.
  *
  * So the controls are shown and the service decides. A campaign that has closed answers
  * `PROJECT_NOT_LIVE` — the same code, body and `meta.deadline` the draft endpoint gives — and
@@ -59,8 +60,7 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
  * <h2>Motion: none</h2>
  *
  * docs/motion-system.md §5: pledge and checkout are "near zero — every animation here reads as
- * hesitation". Nothing on this screen enters, fades or slides, including the withdrawal
- * confirmation, which is an inline disclosure rather than a modal for that reason.
+ * hesitation". Nothing on this screen enters, fades or slides.
  */
 
 /** §6.2's two editable states. The service's `PledgeState.EDITABLE`, and nothing more. */
@@ -163,7 +163,6 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
 
   const editable = EDITABLE.has(pledge.state);
   const rewardTitle = summary?.rewardTitle ?? null;
-  const campaignTitle = summary?.project.title ?? null;
   const destination =
     pledge.shippingCountry == null ? null : countryName(pledge.shippingCountry, display);
 
@@ -271,21 +270,14 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
 
       {editable ? (
         <>
+          {/* No cancel control: IDN-EXT-01 (#35) — a backer cannot withdraw a pledge, only raise it. */}
           <PledgeEditor pledge={pledge} onSaved={setPledge} copy={copy} />
-          <CancelPledgePanel
-            pledge={pledge}
-            campaignTitle={campaignTitle}
-            rewardTitle={rewardTitle}
-            /* Re-read rather than patch a state in: a cancellation answers 204 with no body,
-               so the only way to know what the pledge is now is to ask. */
-            onCancelled={() => void load()}
-          />
         </>
       ) : (
         <InlineAlert variant="info" title="This pledge can no longer be changed here">
           <p>
-            A pledge can be edited or withdrawn while it is being made and after it is confirmed,
-            up to the campaign’s deadline. This one is{' '}
+            A pledge can be changed while it is being made, and raised — never lowered or
+            withdrawn — after it is confirmed, while the campaign takes pledges. This one is{' '}
             {pledgeStateLabel(pledge.state).toLowerCase()}, so those controls are not offered. If
             something about it is wrong, the campaign’s creator is who to ask.
           </p>

@@ -5,6 +5,8 @@ import az.ideanest.pledge.application.ContributionBelowRewardPriceException;
 import az.ideanest.pledge.application.PledgeAlreadyExistsException;
 import az.ideanest.pledge.application.PledgeNotDraftException;
 import az.ideanest.pledge.application.BackerAgreementRequiredException;
+import az.ideanest.pledge.application.PledgeCannotBeCancelledException;
+import az.ideanest.pledge.application.PledgeDecreaseNotAllowedException;
 import az.ideanest.pledge.application.PledgeNotEditableException;
 import az.ideanest.pledge.application.PledgeNotFoundException;
 import az.ideanest.pledge.application.PledgeNotSupplementableException;
@@ -261,6 +263,41 @@ public class PledgeExceptionHandler {
      * {@code EXPIRED} draft is started again, a {@code COLLECTED} pledge is a
      * conversation with the creator rather than a button.
      */
+    /**
+     * 409: IDN-EXT-01 (#35) — a backer cannot cancel a pledge. Only an unpaid checkout can be
+     * abandoned. The state is on the body so a client can tell which one it is holding.
+     */
+    @ExceptionHandler(PledgeCannotBeCancelledException.class)
+    public ProblemDetail handleCannotBeCancelled(PledgeCannotBeCancelledException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/pledge-cannot-be-cancelled"));
+        problem.setTitle("A pledge cannot be cancelled");
+        problem.setDetail("A confirmed pledge can be raised, but not withdrawn. Refunds happen only if the campaign ends"
+                + " below its success threshold, is suspended, or is cancelled by its creator.");
+        problem.setProperty("code", "PLEDGE_CANNOT_BE_CANCELLED");
+        problem.setProperty("meta", Map.of("state", exception.state().name()));
+        return problem;
+    }
+
+    /**
+     * 409: IDN-EXT-01 (#35) — a confirmed pledge may only be raised. Both amounts are on the body,
+     * as strings, so a client can say what the pledge is and what the edit would have made it.
+     */
+    @ExceptionHandler(PledgeDecreaseNotAllowedException.class)
+    public ProblemDetail handleDecreaseNotAllowed(PledgeDecreaseNotAllowedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/pledge-decrease-not-allowed"));
+        problem.setTitle("A confirmed pledge can only be raised");
+        problem.setDetail("This pledge is confirmed, and an edit may raise it but not lower it.");
+        problem.setProperty("code", "PLEDGE_DECREASE_NOT_ALLOWED");
+        problem.setProperty(
+                "meta",
+                Map.of(
+                        "current", exception.current().toPlainString(),
+                        "requested", exception.requested().toPlainString()));
+        return problem;
+    }
+
     @ExceptionHandler(PledgeNotEditableException.class)
     public ProblemDetail handleNotEditable(PledgeNotEditableException exception) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);

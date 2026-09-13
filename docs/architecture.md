@@ -807,8 +807,8 @@ sequenceDiagram
 | PL-06 | Total calculation | Reward + add-ons + shipping + tax |
 | PL-07 | Card entry or stored card | Card data never reaches our servers |
 | PL-08 | 3-D Secure | Mandatory |
-| PL-09 | Edit a pledge | **Upward only**, while the campaign takes pledges (IDN-EXT-01) |
-| PL-10 | ~~Cancel a pledge~~ | **Withdrawn by IDN-EXT-01**: a backer cannot cancel; refunds are campaign-level (§9.7). Removal is #35 |
+| PL-09 | Edit a pledge | **Upward only**, while the campaign takes pledges (IDN-EXT-01). Built (#35): an edit that would lower a confirmed pledge is refused with `PLEDGE_DECREASE_NOT_ALLOWED`; a draft is still being chosen and may go either way |
+| PL-10 | ~~Cancel a pledge~~ | **Withdrawn by IDN-EXT-01**: a backer cannot cancel; refunds are campaign-level (§9.7). Built (#35): `DELETE /v1/pledges/{id}` answers `PLEDGE_CANNOT_BE_CANCELLED` for anything past `DRAFT`, and only abandoning an unpaid checkout remains. The web's cancel panel is gone |
 | PL-11 | ~~Replace the card~~ | **Withdrawn**: the charge is at confirmation, so there is no later collection to fail |
 | PL-12 | Anonymous pledging | Hidden from public lists |
 | PL-13 | Stock reservation | A DRAFT pledge, expiring five minutes after it is made |
@@ -4037,7 +4037,7 @@ POST   /v1/pledges/draft
 GET    /v1/pledges/{id}
 POST   /v1/pledges/{id}/confirm
 PATCH  /v1/pledges/{id}
-DELETE /v1/pledges/{id}   # WITHDRAWN by IDN-EXT-01 (#35): a backer cannot cancel
+DELETE /v1/pledges/{id}   # IDN-EXT-01 (#35): abandons an unpaid DRAFT only; PLEDGE_CANNOT_BE_CANCELLED otherwise
 GET    /v1/pledges/{id}/receipt
 
 # Payment methods

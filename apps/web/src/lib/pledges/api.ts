@@ -558,6 +558,10 @@ export interface PledgeEdit {
  *     (409), carrying `meta.deadline`, which is the same code and body the draft endpoint
  *     gives, so one fact has one answer wherever it is asked.
  *
+ * And IDN-EXT-01 (#35) adds one rule of its own: a `CONFIRMED` pledge may only be raised. An edit
+ * that would lower its total is `PLEDGE_DECREASE_NOT_ALLOWED` (409), carrying `meta.current` and
+ * `meta.requested`. There is no cancel call here any more — a backer cannot withdraw a pledge.
+ *
  * A draft whose five minutes have run out is `RESERVATION_EXPIRED` (409): editing it would
  * re-price a place the tier has already promised to give back. Every one of these is worded
  * for a backer in `./failure`.
@@ -584,40 +588,6 @@ export async function editPledge(
       signal,
     }),
   );
-}
-
-/**
- * §4.5's PL-10 — `DELETE /v1/pledges/{id}`. The backer withdraws.
- *
- * **What it releases is the point, and the confirmation on screen has to say so.** Every place
- * the pledge held goes back: the reward tier's, and each add-on's quantity (#203), from
- * whichever counter was holding them. That is stock another backer can then take, which is why
- * this is not a reversible action even though nothing was charged.
- *
- * **Nothing is refunded, because nothing was collected** (§9.7). There is no refund path here
- * and there must not be one: money that really was collected comes back through #67.
- *
- * `204`, and a retry is `204` too — the ordinary retry carries the same key and is replayed
- * from `idempotency_keys`, and a client that lost its key and sent a fresh one is answered
- * `204` as well, because "it is cancelled" is true either way. So this function returns
- * nothing: there is no body to read and no state to reconcile beyond re-reading the pledge.
- *
- * **A lapsed draft may still be cancelled**, unlike edited. The backer is asking for the place
- * to go back and the sweep is about to do the same thing; refusing would be our scheduling
- * getting in their way.
- */
-export async function cancelPledge(
-  id: string,
-  idempotencyKey: string,
-  signal?: AbortSignal,
-): Promise<void> {
-  const response = await authorizedFetch(`/v1/pledges/${encodeURIComponent(id)}`, {
-    method: 'DELETE',
-    headers: mutationHeaders(idempotencyKey),
-    signal,
-  });
-
-  if (!response.ok) throw await errorFrom(response);
 }
 
 /* -------------------------------------------------------------------------
