@@ -33,10 +33,11 @@ import { withoutAbsent, type JsonLdNode } from './document';
  *
  * <h2>`PreOrder`, and why nothing else is honest</h2>
  *
- * IdeaNest is all or nothing: nobody is charged unless the campaign reaches its
- * goal by its deadline (docs/architecture.md §4.5). A backer who selects a tier
- * has not bought anything and may never be charged at all. `InStock` would say
- * the opposite of that to every consumer that reads it. `PreOrder` is the one
+ * A backer who selects a tier has not bought anything. Under IDN-EXT-01 the
+ * pledge is charged when it is made, but it is money held towards a thing that
+ * may never exist: a campaign below 80% of its goal refunds every backer in full
+ * (docs/architecture.md §5.1). `InStock` would say the opposite of that to every
+ * consumer that reads it. `PreOrder` is the one
  * value in `ItemAvailability` that describes money committed now for a thing
  * that does not exist yet — which is the literal definition of a pledge. A tier
  * whose last place is taken is `SoldOut`, which is true in any funding model.

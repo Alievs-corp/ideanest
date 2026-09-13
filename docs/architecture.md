@@ -1752,6 +1752,17 @@ Preferences are per category and per channel, with a digest option.
 > all-or-nothing. It is the product owner's approved rule set and it has no open
 > questions; where the code still does the old thing, the note on each built
 > behaviour says so and names the sub-issue that changes it.
+>
+> **Built (#44), the words.** The web states this rule wherever it used to state
+> all-or-nothing: the trust block names the amount a campaign must raise (80% of the
+> goal, rounded up to the cent) and says every backer is refunded in full below it; the
+> rule is printed beside the progress bar on the campaign page and on every catalogue
+> card; a closed campaign that did not succeed says its backers are refunded rather than
+> that nobody was charged; the campaign page badges `CLOSING_WINDOW`, `EXTENDED` and
+> `WITHDRAWN`. The tagline, home, about, how-it-works, editor hint and metadata say the
+> same in all four languages. The 80% is written down in `lib/projects/threshold.ts` for
+> the sentences only; the campaign's state decides every outcome. The checkout's own
+> wording changes with the payment page it describes.
 
 **The pledge.** A backer's card is charged when the pledge is confirmed, and the
 money is held on the platform's account. A backer **cannot cancel** a pledge; they

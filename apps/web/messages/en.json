@@ -12,7 +12,8 @@
         "few": "{count} backers",
         "many": "{count} backers",
         "other": "{count} backers"
-      }
+      },
+      "rule": "Succeeds at 80% of the goal"
     },
     "saving": "Saving…",
     "tryAgain": "Try again",
@@ -39,7 +40,7 @@
   },
   "shell": {
     "skipToContent": "Skip to content",
-    "tagline": "Reward-based crowdfunding. Creators publish campaigns, backers pledge, and nobody is charged unless a campaign reaches its goal by its deadline.",
+    "tagline": "Reward-based crowdfunding. Creators publish campaigns, backers pledge, and a campaign that does not raise 80% of its goal refunds every backer in full.",
     "nav": {
       "label": "Primary",
       "discover": "Discover",
@@ -195,7 +196,7 @@
         "metaTitle": "Your pledges",
         "metaDescription": "Every campaign you have backed, and what you chose.",
         "title": "Your pledges",
-        "intro": "Every campaign you have backed. Nothing has been charged yet — a pledge is collected when its campaign closes successfully, and you can change or withdraw one until then."
+        "intro": "Every campaign you have backed. A pledge is charged when you make it and refunded in full if its campaign does not succeed. While a campaign is taking pledges you can raise yours, but not withdraw it."
       },
       "campaigns": {
         "metaTitle": "My campaigns",
@@ -2445,7 +2446,7 @@
   },
   "auth": {
     "layout": {
-      "footer": "Reward-based crowdfunding. Nobody is charged unless a campaign reaches its goal by its deadline."
+      "footer": "Reward-based crowdfunding. A campaign that does not raise 80% of its goal refunds every backer in full."
     },
     "loadingForm": "Loading the form…",
     "checkingLink": "Checking the link…",
@@ -2620,13 +2621,13 @@
     "metaTitle": "IdeaNest — reward-based crowdfunding",
     "hero": {
       "title": "Fund what does not exist yet",
-      "standfirst": "Creators publish a campaign with a goal and a deadline. Backers pledge. Nobody is charged unless the goal is reached in time — and if it is not, nothing is collected at all.",
+      "standfirst": "Creators publish a campaign with a goal and a deadline. Backers pledge. A campaign succeeds at 80% of its goal — and if it does not get there, every backer is refunded in full.",
       "browse": "Browse campaigns",
       "start": "Start a campaign"
     },
     "closing": {
       "heading": "Ending soon",
-      "standfirst": "Campaigns whose deadline is closest. All-or-nothing means these are the ones a pledge still changes.",
+      "standfirst": "Campaigns whose deadline is closest. A campaign succeeds at 80% of its goal, so these are the ones a pledge still changes.",
       "link": "See everything ending soon",
       "gridLabel": "Campaigns ending soon"
     },
@@ -3072,7 +3073,10 @@
       "FULFILLING": "Fulfilling",
       "COMPLETED": "Completed",
       "UNSUCCESSFUL": "Did not fund",
-      "CANCELED": "Cancelled"
+      "CANCELED": "Cancelled",
+      "CLOSING_WINDOW": "Closing soon",
+      "EXTENDED": "Extended",
+      "WITHDRAWN": "Funded"
     },
     "daysLeft": "{days, plural, =0 {Last day} one {# day left} other {# days left}}",
     "backers": "{count, plural, =0 {No backers} one {# backer} other {# backers}}",
@@ -3100,7 +3104,10 @@
     },
     "trust": {
       "heading": "How funding works here",
-      "body": "The platform connects creators with backers. Rewards are not guaranteed, but creators must keep backers informed. You are only charged if the project reaches its goal by the deadline."
+      "body": "The platform connects creators with backers. Rewards are not guaranteed, but creators must keep backers informed. You are charged when you pledge, and refunded in full if the project does not raise 80% of its goal.",
+      "open": "This campaign succeeds if it raises <b>{threshold}</b>, 80% of its {goal} goal, by <deadline></deadline>. If it does not, and is not extended, every backer is refunded in full.",
+      "openNoGoal": "This campaign succeeds if it raises 80% of its goal by <deadline></deadline>. If it does not, and is not extended, every backer is refunded in full.",
+      "closed": "This campaign’s deadline was <deadline></deadline>. A campaign that does not raise 80% of its goal by its deadline, or by the end of its one extension, refunds every backer in full."
     },
     "obligation": {
       "lateHeading": "This creator owes an update",
@@ -3112,13 +3119,13 @@
     },
     "outcome": {
       "funded": "This campaign was funded",
-      "notFunded": "This campaign did not reach its goal",
-      "reached": "It reached its goal before the deadline.",
-      "notReached": "It did not reach its goal before the deadline.",
+      "notFunded": "This campaign was not funded",
+      "reached": "It raised at least 80% of its goal.",
+      "notReached": "It did not raise 80% of its goal in time.",
       "raised": "It raised",
       "closedOn": "on {date}",
-      "settling": "The figures above are what the campaign raised at its deadline. Every confirmed pledge is collected after it closes, so the amount shown elsewhere on this page may change as those collections settle.",
-      "nobodyCharged": "Nobody was charged. On IdeaNest a campaign that does not reach its goal collects nothing and pays no fee."
+      "settling": "The figures above are what the campaign had raised when it closed. A refund after that lowers what the creator is paid; it does not change the outcome.",
+      "refunded": "Every backer is refunded in full. A campaign that does not raise 80% of its goal pays no fee."
     },
     "faqs": {
       "heading": "Frequently asked questions",
@@ -3150,7 +3157,8 @@
       "withdraw": "Withdraw",
       "withdrawWarning": "Withdrawing leaves a note saying the comment was removed. Any replies to it stay, and it cannot be edited or restored.",
       "keep": "Keep it"
-    }
+    },
+    "rule": "A campaign succeeds at 80% of its goal. Its creator may extend the deadline once."
   },
   "campaignEditor": {
     "eyebrow": "Campaign editor",
@@ -3215,7 +3223,7 @@
       "subcategoryHintNone": "This category has no subcategories.",
       "subcategoryHint": "Optional, and more specific.",
       "goal": "Funding goal",
-      "goalHint": "All or nothing: nothing is collected unless this figure is reached.",
+      "goalHint": "The campaign succeeds at 80% of this figure. Below that, every backer is refunded in full.",
       "goalHintLocked": "The goal cannot change once the campaign has launched.",
       "currency": "Currency",
       "currencyHint": "Fixed once the campaign launches.",
@@ -3875,14 +3883,14 @@
   "static": {
     "about": {
       "metaTitle": "About",
-      "metaDescription": "What IdeaNest is, how all-or-nothing funding works, and what it costs.",
+      "metaDescription": "What IdeaNest is, how success at 80% of the goal works, and what it costs.",
       "title": "About IdeaNest",
       "summary": "A place to fund things that do not exist yet, on terms that are the same for everybody.",
-      "intro": "IdeaNest is a reward-based crowdfunding platform. A creator publishes a campaign with a goal and a deadline; people who want the thing to exist pledge towards it; and if the goal is met by the deadline, the pledges are collected and the creator makes the thing. If it is not, nobody is charged at all.",
+      "intro": "IdeaNest is a reward-based crowdfunding platform. A creator publishes a campaign with a goal and a deadline; people who want the thing to exist pledge towards it and are charged when they do; and if the campaign raises at least 80% of its goal, the creator withdraws the money and makes the thing. If it does not, every backer is refunded in full.",
       "allOrNothing": {
-        "heading": "All or nothing, and why it is not a detail",
-        "first": "A partly funded campaign is worse than an unfunded one. It leaves a creator holding money that is not enough to finish with and backers holding a promise nobody can keep. So a campaign that misses its goal collects nothing, costs its creator no fee, and leaves every card untouched.",
-        "second": "The consequence is that a deadline means something. A campaign at 90% on its last day is genuinely at risk, and the platform says so rather than dressing it up."
+        "heading": "Success at 80%, and why the line is there",
+        "first": "A campaign that raises 80% of its goal succeeds, and its creator owes every reward to every backer whatever percentage it closed at. Below that the money is not enough to rely on, so the campaign fails, costs its creator no fee, and every backer is refunded in full.",
+        "second": "A deadline still means something. A creator may extend it once, to no more than sixty days after the first deadline, and backers are told the new date. A campaign below 80% at the end of that is refunded, and the platform says so rather than dressing it up."
       },
       "cost": {
         "heading": "What it costs",
@@ -3906,9 +3914,9 @@
       "summary": "What happens between finding a campaign and holding the thing it funded.",
       "backing": {
         "heading": "If you are backing something",
-        "first": "Choose a reward tier, or pledge without one. Your card is authorised and <b>nothing is taken</b> while the campaign is running — you can change your pledge, move to a different tier, add an extra, or cancel outright until the deadline.",
-        "second": "At the deadline one of two things happens. If the campaign reached its goal, every confirmed pledge is collected and the campaign moves into fulfilment. If it did not, nothing is collected, no fee is charged, and the stored card tokens are deleted within thirty days.",
-        "third": "A card can fail at collection — expired, out of funds, refused by a bank. There is a seven-day window in which it is retried before the pledge is given up on."
+        "first": "Choose a reward tier, or pledge without one. <b>You are charged when you pledge</b>, and the money is held on the platform’s account. A pledge cannot be cancelled; while the campaign is taking pledges you can raise it with a higher tier or an extra.",
+        "second": "A campaign succeeds at 80% of its goal. From then on its creator can withdraw the money, or extend the deadline once. If the campaign has not reached 80% by its deadline, or by the end of the extension, every backer is refunded in full and no fee is charged.",
+        "third": "Once a creator withdraws, the payout is held for fourteen days. In that time a backer can dispute their payment and an administrator decides; an upheld dispute is refunded in full."
       },
       "surveys": {
         "heading": "Then the creator asks you some questions",

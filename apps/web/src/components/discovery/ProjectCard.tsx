@@ -299,6 +299,13 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
                 {fillPlaceholders(copy.funded, { percent: completion.toFixed(0) })}
               </span>
             </div>
+            {/*
+              IDN-EXT-01 §9 (#44): the rule beside the bar. A card at 82% has funded under it,
+              and the card is where a reader first reads that number. Text, not a tick on the
+              track: a mark at 80% would be a second meaning the bar carries in colour and
+              position alone (ui-kit §9.2), and the discovery budget allows no motion to explain it.
+            */}
+            <p className="text-xs text-white/64">{copy.rule}</p>
             {card.goal != null && (
               <p className="text-xs text-white/40 tabular-nums">
                 {fillPlaceholders(copy.ofGoal, { amount: formatMoney(card.goal) })}

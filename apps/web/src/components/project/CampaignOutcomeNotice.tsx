@@ -10,8 +10,8 @@ import { getTranslations } from 'next-intl/server';
  *
  * `CampaignSummary` shows what the campaign has raised <em>now</em>. This shows what it had
  * raised when it closed, and V29 is the argument for the difference: the live total keeps
- * moving after the deadline as cards are refused, pledges are dropped and charges are
- * refunded, so a campaign that funded at 125% drifts downwards for weeks afterwards. #63's
+ * moving after the deadline as charges are refunded, so a campaign that funded at 125% can
+ * drift downwards for weeks afterwards. #63's
  * rule is that a later collection failure reduces the payout and never the outcome — a page
  * that showed only the live total would eventually contradict the word "Funded" printed
  * beside it.
@@ -63,15 +63,15 @@ export async function CampaignOutcomeNotice({ campaign }: CampaignOutcomeNoticeP
         ) : (
           <CircleSlash aria-hidden="true" className="size-5 text-white/64" />
         )}
-        {funded ? 'This campaign was funded' : 'This campaign did not reach its goal'}
+        {funded ? t('funded') : t('notFunded')}
       </h2>
 
       <p className="text-sm text-reading">
         {outcome.pledged === null || outcome.goal === null ? (
           funded ? (
-            'It reached its goal before the deadline.'
+            t('reached')
           ) : (
-            'It did not reach its goal before the deadline.'
+            t('notReached')
           )
         ) : (
           <>{t('raised')}<strong className="font-medium text-white">{formatMoney(outcome.pledged)}</strong> of a{' '}
@@ -86,13 +86,18 @@ export async function CampaignOutcomeNotice({ campaign }: CampaignOutcomeNoticeP
         {funded
           ? /*
              * §5.1's successful branch, stated plainly because it is the sentence a backer
-             * most wants after the deadline. The figures above are frozen at the deadline;
-             * collection happens afterwards and may fail for individual cards, which is why
-             * the two numbers on this page are allowed to differ.
+             * most wants after the deadline. The figures above are frozen when the campaign
+             * closed; a refund afterwards — an upheld dispute during the payout hold — lowers
+             * the payout and never the outcome (IDN-EXT-01, §9.7), which is why the two numbers
+             * on this page are allowed to differ.
              */
-            'The figures above are what the campaign raised at its deadline. Every confirmed pledge is collected after it closes, so the amount shown elsewhere on this page may change as those collections settle.'
-          : /* §5.1's unsuccessful branch: nothing is collected and no fee of any kind. */
-            'Nobody was charged. On IdeaNest a campaign that does not reach its goal collects nothing and pays no fee.'}
+            t('settling')
+          : /*
+             * §5.1's unsuccessful branch under IDN-EXT-01 (#44): a pledge was charged when it
+             * was made, so the honest sentence is that it comes back in full, not that nothing
+             * was taken.
+             */
+            t('refunded')}
       </p>
     </section>
   );

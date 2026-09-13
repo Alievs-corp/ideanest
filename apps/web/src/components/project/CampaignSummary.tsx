@@ -1,4 +1,4 @@
-import { CalendarClock, CircleCheck, CircleDot, CircleSlash, Clock, Hourglass } from 'lucide-react';
+import { CalendarClock, CalendarPlus, CircleCheck, CircleDot, CircleSlash, Clock, Hourglass } from 'lucide-react';
 import { Link } from '../../i18n/navigation';
 import type { ReactNode } from 'react';
 import { Tag } from '@ideanest/ui/server';
@@ -70,13 +70,20 @@ interface StateBadge {
 }
 
 /**
- * The nine public states, as a word a reader recognises.
+ * The twelve public states, as a word a reader recognises.
  *
  * Deliberately not the raw state name. `COLLECTING` and `FULFILLING` are internal facts
  * about where a campaign is in §6.1; what a visitor needs to know is that it funded and
  * the money is being taken. `CANCELED` is its own word rather than "unsuccessful", because
  * a campaign somebody stopped and a campaign that missed its goal are different things and
  * the backers of each were told different things.
+ *
+ * IDN-EXT-01 (#44) adds three. `CLOSING_WINDOW` is the week after the first deadline, when the
+ * campaign still takes pledges and the catalogue badges it "Closing soon" (#37) — the same word
+ * here, so a card and the page it opens agree. `EXTENDED` is the one extension. `WITHDRAWN` is a
+ * campaign whose creator has taken the money: to a backer it funded, and it shares
+ * `SUCCESSFUL`'s word for `COLLECTING`'s reason. Each key is its own in the catalogue so a
+ * translator can tell them apart.
  */
 const BADGES: Partial<Record<ProjectState, StateBadge>> = {
   PRELAUNCH: { labelKey: 'PRELAUNCH', icon: <CalendarClock className="size-3.5" />, variant: 'default' },
@@ -88,6 +95,9 @@ const BADGES: Partial<Record<ProjectState, StateBadge>> = {
   COMPLETED: { labelKey: 'COMPLETED', icon: <CircleCheck className="size-3.5" />, variant: 'success' },
   UNSUCCESSFUL: { labelKey: 'UNSUCCESSFUL', icon: <CircleSlash className="size-3.5" />, variant: 'default' },
   CANCELED: { labelKey: 'CANCELED', icon: <CircleSlash className="size-3.5" />, variant: 'default' },
+  CLOSING_WINDOW: { labelKey: 'CLOSING_WINDOW', icon: <Hourglass className="size-3.5" />, variant: 'warning' },
+  EXTENDED: { labelKey: 'EXTENDED', icon: <CalendarPlus className="size-3.5" />, variant: 'default' },
+  WITHDRAWN: { labelKey: 'WITHDRAWN', icon: <CircleCheck className="size-3.5" />, variant: 'success' },
 };
 
 /*
@@ -247,6 +257,14 @@ export async function CampaignSummary({
               of {formatMoney(campaign.goal)} goal
               {showDays && campaign.daysLeft !== null && ` · ${t('daysLeft', { days: campaign.daysLeft })}`}
             </p>
+
+            {/*
+              IDN-EXT-01 §9: the rule is stated BESIDE the progress bar, not only in the trust
+              block further down. A bar that reads 82% means "funded" under this rule and did not
+              under the last one, and the reader deciding whether to pledge is looking here.
+              Plain text and no motion, like the figures above it.
+            */}
+            <p className="text-sm text-white/64">{t('rule')}</p>
           </div>
         )}
 

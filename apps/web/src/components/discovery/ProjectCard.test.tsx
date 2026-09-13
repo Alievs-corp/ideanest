@@ -282,3 +282,11 @@ describe('ProjectCard', () => {
     });
   });
 });
+
+describe('ProjectCard under IDN-EXT-01 (#44)', () => {
+  it('states the 80% rule beside the progress bar', () => {
+    renderCard();
+
+    expect(screen.getByText('Succeeds at 80% of the goal')).toBeInTheDocument();
+  });
+});

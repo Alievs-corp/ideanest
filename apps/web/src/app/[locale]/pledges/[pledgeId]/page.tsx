@@ -6,7 +6,7 @@ import { checkoutCopy } from '../../../../lib/i18n/shell-copy.server';
 
 export const metadata: Metadata = privatePageMetadata({
   title: 'Your pledge',
-  description: 'What you chose, what it comes to, and how to change or withdraw it.',
+  description: 'What you chose, what it comes to, and how to raise it.',
 });
 
 /**
@@ -47,8 +47,8 @@ export default async function PledgePage({
   return (
     <>
       <AccountPageHeader title="Your pledge">
-        What you chose, what it comes to, and how to change or withdraw it. Nothing has been
-        charged — a pledge is collected when its campaign closes successfully.
+        What you chose, what it comes to, and how to raise it. A pledge is charged when it is
+        made, and refunded in full if its campaign does not succeed.
       </AccountPageHeader>
 
       <div className="mt-8">
