@@ -18,7 +18,8 @@ public record PaymentProperties(
         Collection collection,
         CircuitBreaker circuitBreaker,
         Webhooks webhooks,
-        Reconciliation reconciliation) {
+        Reconciliation reconciliation,
+        Epoint epoint) {
 
     public PaymentProperties {
         // A deployment that configures none of these still starts, for ProjectProperties'
@@ -30,6 +31,7 @@ public record PaymentProperties(
         circuitBreaker = circuitBreaker == null ? CircuitBreaker.defaults() : circuitBreaker;
         webhooks = webhooks == null ? Webhooks.defaults() : webhooks;
         reconciliation = reconciliation == null ? Reconciliation.defaults() : reconciliation;
+        epoint = epoint == null ? Epoint.defaults() : epoint;
     }
 
     /**
@@ -41,6 +43,43 @@ public record PaymentProperties(
      *     and a reconciliation that competes with the nightly backup for the same connections
      *     is a reconciliation that is slow for a reason nobody will find
      */
+    /**
+     * The Epoint.az adapter, API v1.0.3 — IDN-EXT-01 (#38).
+     *
+     * <p>Used only when {@code provider.primary} is {@code EPOINT}, and then all three of the base
+     * URL and the two keys are required at start-up: a deployment naming a provider it cannot sign
+     * requests for is discovered on a backer's first payment otherwise.
+     *
+     * @param baseUrl Epoint's API root, {@code https://epoint.az/api/1}
+     * @param publicKey the merchant identifier Epoint issues
+     * @param privateKey the signing key. Never printed — see {@link #toString()}
+     * @param language the payment page's language when a request names none: az, en or ru
+     */
+    public record Epoint(String baseUrl, String publicKey, String privateKey, String language) {
+
+        public static Epoint defaults() {
+            return new Epoint("", "", "", "az");
+        }
+
+        public Epoint {
+            baseUrl = baseUrl == null ? "" : baseUrl.trim();
+            publicKey = publicKey == null ? "" : publicKey.trim();
+            privateKey = privateKey == null ? "" : privateKey.trim();
+            language = language == null || language.isBlank() ? "az" : language.trim();
+        }
+
+        public boolean isComplete() {
+            return !baseUrl.isBlank() && !publicKey.isBlank() && !privateKey.isBlank();
+        }
+
+        /** A record prints every component, and the private key would reach a log with it. */
+        @Override
+        public String toString() {
+            return "Epoint[baseUrl=" + baseUrl + ", publicKey=" + publicKey + ", privateKey=<redacted>, language="
+                    + language + "]";
+        }
+    }
+
     public record Reconciliation(String schedule) {
 
         private static final String DEFAULT_SCHEDULE = "0 30 2 * * *";

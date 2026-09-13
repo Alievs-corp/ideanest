@@ -46,7 +46,11 @@ class PaymentProviderBoundaryTests {
     }
 
     /**
-     * <strong>No adapter ships, and that is the state #60 leaves the platform in.</strong>
+     * <strong>One adapter ships, Epoint's (IDN-EXT-01, #38).</strong> This used to assert that no
+     * adapter shipped at all, §9.2's refusal of a stub; it now names the one real adapter, so a
+     * convenient fake added to get a demo working still fails the build.
+     *
+     * <p>What it replaced said:
      *
      * <p>§9.2 says why no stub is written in the meantime: one that returned an approval
      * "would make this path look finished and would have told clients that cards were
@@ -59,8 +63,8 @@ class PaymentProviderBoundaryTests {
      * to create.
      */
     @Test
-    @DisplayName("no payment provider adapter is shipped, because #60 has not chosen one")
-    void noAdapterShips() {
+    @DisplayName("IDN-EXT-01: the only payment provider adapter is Epoint's")
+    void onlyEpointShips() {
         List<String> implementations = PRODUCTION_CLASSES.stream()
                 .filter(candidate -> candidate.isAssignableTo(PaymentProvider.class))
                 .filter(candidate -> !candidate.isInterface())
@@ -69,12 +73,11 @@ class PaymentProviderBoundaryTests {
 
         assertThat(implementations)
                 .withFailMessage(
-                        "A PaymentProvider adapter is on the production classpath: %s.%n"
-                                + "§9.2 refuses a stub, and #60 has not chosen a provider. If this is a real"
-                                + " adapter, delete this test in the same change — having confirmed §9.3's"
-                                + " fourteen requirements in writing.",
+                        "The production PaymentProvider adapters are %s.%n"
+                                + "§9.2 refuses a stub. If this is a second real adapter, name it here in the"
+                                + " same change.",
                         String.join(", ", implementations))
-                .isEmpty();
+                .containsExactly("az.ideanest.payment.infrastructure.EpointPaymentProvider");
     }
 
     /**

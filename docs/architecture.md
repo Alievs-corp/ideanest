@@ -3709,6 +3709,25 @@ single-file change.
 > production classpath, and that no module outside `payment` names a request or result
 > type, which is the checkable form of "changing provider is a single-file change".
 >
+> **The first adapter: Epoint (#38, IDN-EXT-01).** `EpointPaymentProvider` speaks API
+> v1.0.3 — every call a form POST of `data` (base64 JSON) and `signature`
+> (`base64(sha1(private_key + data + private_key))` over the raw digest), callbacks verified the
+> same way. The port gains three default methods for the charge-now model:
+> `beginHostedPayment` (`/request`, the backer pays on Epoint's page), `lookUpPayment`
+> (`/get-status`: `new`, `success`, `returned`, `error`; `server_error` is Epoint unable to
+> answer, never a failed payment) and `beginPayoutCardRegistration` (`/card-registration` with
+> `refund=1`). `refund` is `/reverse`, which has no duplicate protection of its own (#40 keeps
+> it); `payout` is `/refund-request` against the card. Amounts go on the wire from the
+> `BigDecimal`, AZN only, and the cardholder's name is removed from every stored response.
+> **The start-up refusal above is lifted**: an adapter that cannot do R-01 to R-03 now
+> registers, and `PaymentProviders.collecting()` — not `primary()` — is what `CollectionRun`
+> uses, so the retired stored-card collection stays inert behind Epoint until #39 and #45
+> remove it. Configured as `ideanest.payment.provider.primary: EPOINT` with
+> `ideanest.payment.epoint.{base-url,public-key,private-key,language}`; unset by default.
+> Epoint's callback carries no event id or timestamp, so a delivery is identified by
+> transaction, status and operation code, and deduplication rather than a replay window is
+> what refuses a repeat.
+>
 > Two departures from the sketch above, both small. `ProviderCapabilities` gains
 > `schemeChaining`, because R-03 is one of the three the design cannot work without and
 > the record had no field for it; `preAuthHoldDays` stays, as the number that records

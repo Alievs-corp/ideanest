@@ -2,7 +2,6 @@ package az.ideanest.payment.application;
 
 import az.ideanest.payment.PaymentProperties;
 import az.ideanest.payment.domain.PaymentProvider;
-import az.ideanest.payment.domain.ProviderCapabilities;
 import az.ideanest.payment.domain.ProviderName;
 import java.util.EnumMap;
 import java.util.List;
@@ -53,16 +52,10 @@ public class PaymentProviders {
 
     public PaymentProviders(List<PaymentProvider> discovered, PaymentProperties properties) {
         for (PaymentProvider adapter : discovered) {
-            ProviderCapabilities capabilities = adapter.capabilities();
-            if (!capabilities.supportsStoredCardCollection()) {
-                // Refused, not warned about. §9.1 establishes that without these three the
-                // model collapses: the platform would hold a payment obligation for sixty
-                // days and then find it cannot collect. A service that will not start is a
-                // deployment somebody fixes; a warning is a line in a log nobody reads.
-                throw new IllegalStateException(
-                        "Provider adapter %s cannot do %s, which §9.3 requires before it can be used"
-                                .formatted(adapter.name(), String.join(", ", capabilities.missing())));
-            }
+            // IDN-EXT-01 (#38): an adapter that cannot collect stored cards is no longer refused.
+            // The platform charges when a pledge is confirmed, and stored-card collection at close
+            // is retired by #39 — so R-01 to R-03 decide only whether collecting() hands the
+            // adapter to CollectionRun, which is checked there rather than as a start-up failure.
             PaymentProvider clash = adapters.put(adapter.name(), adapter);
             if (clash != null) {
                 // Two adapters for one provider is not a merge to resolve: `provider` is
@@ -78,8 +71,13 @@ public class PaymentProviders {
             log.info(
                     "No payment provider is configured; nothing will be collected. "
                             + "#60 chooses one and §9.2 says why no stub ships in the meantime.");
+        } else if (primary.capabilities().supportsStoredCardCollection()) {
+            log.info("Charging and collecting through {}.", primary.name());
         } else {
-            log.info("Collecting through {}.", primary.name());
+            log.info(
+                    "Charging through {}; it cannot do {}, so the retired stored-card collection stays inert.",
+                    primary.name(),
+                    String.join(", ", primary.capabilities().missing()));
         }
     }
 
@@ -91,6 +89,17 @@ public class PaymentProviders {
      */
     public Optional<PaymentProvider> primary() {
         return Optional.ofNullable(primary);
+    }
+
+    /**
+     * The primary, when it can collect stored cards — the one {@code CollectionRun} may use.
+     *
+     * <p>Empty for a primary that cannot do R-01, R-02 and R-03, which is Epoint's case: under
+     * IDN-EXT-01 the pledge is charged at confirmation, and the collection at close is retired
+     * (#39) and must not start merely because a provider is configured.
+     */
+    public Optional<PaymentProvider> collecting() {
+        return primary().filter(provider -> provider.capabilities().supportsStoredCardCollection());
     }
 
     /**
