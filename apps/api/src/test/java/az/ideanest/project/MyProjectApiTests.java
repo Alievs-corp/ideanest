@@ -7,6 +7,7 @@ import az.ideanest.support.Campaigns;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -243,7 +244,7 @@ class MyProjectApiTests extends AbstractIntegrationTest {
 
     /** A campaign slug per state; {@code projects_slug_shape} wants lowercase and hyphens. */
     private static String slug(String state) {
-        return state.toLowerCase().replace('_', '-') + "-of-mine";
+        return state.toLowerCase(Locale.ROOT).replace('_', '-') + "-of-mine";
     }
 
     private static HttpHeaders jsonHeaders() {
