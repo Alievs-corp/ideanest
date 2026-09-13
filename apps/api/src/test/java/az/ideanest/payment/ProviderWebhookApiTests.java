@@ -63,6 +63,9 @@ class ProviderWebhookApiTests extends AbstractIntegrationTest {
         // The replay window is five minutes wide, so a free-running clock would make the
         // stale and future tests depend on how long the suite before them took.
         clock.freeze();
+        // Cleared before as well as after: this suite reads the table as its own, and another suite
+        // that delivered webhooks may have run first.
+        new JdbcTemplate(dataSource).update("DELETE FROM provider_webhook_events");
     }
 
     @AfterEach
@@ -201,14 +204,16 @@ class ProviderWebhookApiTests extends AbstractIntegrationTest {
     @Test
     @DisplayName("an event nothing handles is recorded as ignored, not refused")
     void anUnhandledEventIsRecordedAndIgnored() {
-        assertThat(post(body(PaymentEventType.CHARGE_SUCCEEDED), ScriptedWebhooks.headers())
+        // PAYOUT_PAID rather than CHARGE_SUCCEEDED since IDN-EXT-01 (#39), whose handler settles
+        // a payment made on the provider's page and so handles every CHARGE_SUCCEEDED.
+        assertThat(post(body(PaymentEventType.PAYOUT_PAID), ScriptedWebhooks.headers())
                         .getStatusCode())
                 .isEqualTo(HttpStatus.OK);
 
         List<Map<String, Object>> recorded = deliveries();
         assertThat(recorded).hasSize(1);
         assertThat(recorded.getFirst().get("state")).isEqualTo("IGNORED");
-        assertThat(recorded.getFirst().get("event_type")).isEqualTo(PaymentEventType.CHARGE_SUCCEEDED.name());
+        assertThat(recorded.getFirst().get("event_type")).isEqualTo(PaymentEventType.PAYOUT_PAID.name());
     }
 
     /**

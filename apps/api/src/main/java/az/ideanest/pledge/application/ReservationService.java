@@ -446,6 +446,27 @@ public class ReservationService {
     }
 
     /**
+     * IDN-EXT-01 (#39): a paid draft commits the places it was holding and becomes {@code COLLECTED}.
+     *
+     * <p>The same commit {@link #confirm} makes — a draft holds <em>reserved</em> places and a paid
+     * pledge holds <em>claimed</em> ones — without the stop at {@code CONFIRMED}, because under the
+     * charge-now model a pledge is confirmed by being paid for.
+     */
+    public Pledge collect(Pledge pledge, List<PledgeAddon> heldAddons, Instant now) {
+        for (Map.Entry<UUID, Integer> line : HeldPlaces.heldBy(pledge, heldAddons).entrySet()) {
+            if (!stock.commitPlaces(line.getKey(), line.getValue())) {
+                log.error(
+                        "Pledge {} was paid for against reward tier {}, which had no {} reserved places to commit.",
+                        pledge.getId(),
+                        line.getKey(),
+                        line.getValue());
+            }
+        }
+        pledge.paid(now);
+        return pledge;
+    }
+
+    /**
      * §4.5's PL-10: the backer withdraws, and every place they held goes back. #56,
      * extended by #203.
      *

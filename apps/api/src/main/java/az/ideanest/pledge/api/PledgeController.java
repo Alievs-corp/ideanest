@@ -1,6 +1,7 @@
 package az.ideanest.pledge.api;
 
 import az.ideanest.pledge.PledgeProperties;
+import az.ideanest.pledge.application.PledgeCheckout;
 import az.ideanest.pledge.application.PledgeService;
 import az.ideanest.pledge.application.PledgeSupplementService;
 import az.ideanest.shared.idempotency.IdempotencyKey;
@@ -80,6 +81,8 @@ public class PledgeController {
 
     private static final String CONFIRM = "pledge.confirm";
 
+    private static final String PAY = "pledge.pay";
+
     private static final String EDIT = "pledge.edit";
 
     private static final String CANCEL = "pledge.cancel";
@@ -100,6 +103,7 @@ public class PledgeController {
     private static final Object NO_BODY = Map.of();
 
     private final PledgeService pledges;
+    private final PledgeCheckout checkout;
     private final PledgeSupplementService supplements;
     private final IdempotentRequests idempotency;
     private final RateLimiter rateLimiter;
@@ -107,11 +111,13 @@ public class PledgeController {
 
     public PledgeController(
             PledgeService pledges,
+            PledgeCheckout checkout,
             PledgeSupplementService supplements,
             IdempotentRequests idempotency,
             RateLimiter rateLimiter,
             PledgeProperties properties) {
         this.pledges = pledges;
+        this.checkout = checkout;
         this.supplements = supplements;
         this.idempotency = idempotency;
         this.rateLimiter = rateLimiter;
@@ -194,6 +200,48 @@ public class PledgeController {
                 HttpStatus.OK.value(),
                 () -> PledgeResponse.of(pledges.confirm(
                         id, backerId, request.paymentMethodId(), request.acknowledgedAgreementVersion()))));
+    }
+
+    /**
+     * IDN-EXT-01 (#39): pay for a draft on the provider's page — §6.2's {@code DRAFT → COLLECTED}.
+     *
+     * <p>Answers where to send the backer. Nothing is charged by this request and the pledge stays a
+     * {@code DRAFT}, held for the payment window; the provider's confirmation of the payment is what
+     * collects it. Idempotent on the key like every payment mutation, so a retried request returns
+     * the page it opened rather than opening a second one — and the key is sent to the provider as
+     * the order, so a second key is a second payment attempt.
+     *
+     * <p>{@code confirm} stays beside it for the retired stored-card model until the web checkout
+     * moves here (#44) and stage 4 removes it (#45).
+     */
+    @PostMapping(path = "/v1/pledges/{id}/payment", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> pay(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable UUID id,
+            @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestBody(required = false) PayPledgeRequest body) {
+
+        UUID backerId = callerOf(accessToken);
+        enforcePledgeRateLimit(backerId);
+
+        PayPledgeRequest request = PayPledgeRequest.orEmpty(body);
+        IdempotencyKey key = IdempotencyKey.of(idempotencyKey);
+        return recorded(idempotency.execute(
+                backerId,
+                PAY + ":" + id,
+                key,
+                request,
+                HttpStatus.OK.value(),
+                () -> PaymentPageResponse.of(
+                        id,
+                        checkout.pay(
+                                id,
+                                backerId,
+                                request.acknowledgedAgreementVersion(),
+                                request.language(),
+                                request.successUrl(),
+                                request.errorUrl(),
+                                key.value()))));
     }
 
     /**

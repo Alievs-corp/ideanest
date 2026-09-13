@@ -160,7 +160,7 @@ public record PledgeProperties(Reservation reservation, RateLimit rateLimit, Rep
      *     closed with thousands of drafts in flight must not be one transaction;
      *     the sweep returns a minute later for the rest
      */
-    public record Reservation(Duration ttl, String cleanupSchedule, int cleanupBatchSize) {
+    public record Reservation(Duration ttl, String cleanupSchedule, int cleanupBatchSize, Duration paymentWindow) {
 
         /** §4.5's sequence diagram: "Reserve stock (5 min TTL)". */
         private static final Duration DEFAULT_TTL = Duration.ofMinutes(5);
@@ -170,8 +170,11 @@ public record PledgeProperties(Reservation reservation, RateLimit rateLimit, Rep
 
         private static final int DEFAULT_BATCH_SIZE = 200;
 
+        /** IDN-EXT-01 (#39): how long a draft is held once its backer is on the payment page. */
+        private static final Duration DEFAULT_PAYMENT_WINDOW = Duration.ofMinutes(15);
+
         static Reservation defaults() {
-            return new Reservation(DEFAULT_TTL, DEFAULT_SCHEDULE, DEFAULT_BATCH_SIZE);
+            return new Reservation(DEFAULT_TTL, DEFAULT_SCHEDULE, DEFAULT_BATCH_SIZE, DEFAULT_PAYMENT_WINDOW);
         }
 
         public Reservation {
@@ -179,6 +182,10 @@ public record PledgeProperties(Reservation reservation, RateLimit rateLimit, Rep
             // who sets the schedule and not the TTL gets the documented default
             // rather than a reservation that has already expired when it is made.
             ttl = ttl == null ? DEFAULT_TTL : ttl;
+            paymentWindow = paymentWindow == null ? DEFAULT_PAYMENT_WINDOW : paymentWindow;
+            if (!paymentWindow.isPositive()) {
+                throw new IllegalArgumentException("A payment window is a positive duration");
+            }
             cleanupSchedule = cleanupSchedule == null || cleanupSchedule.isBlank()
                     ? DEFAULT_SCHEDULE
                     : cleanupSchedule;

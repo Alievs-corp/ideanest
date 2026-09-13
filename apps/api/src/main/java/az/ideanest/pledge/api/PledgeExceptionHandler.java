@@ -10,6 +10,7 @@ import az.ideanest.pledge.application.PledgeDecreaseNotAllowedException;
 import az.ideanest.pledge.application.PledgeNotEditableException;
 import az.ideanest.pledge.application.PledgeNotFoundException;
 import az.ideanest.pledge.application.PledgeNotSupplementableException;
+import az.ideanest.pledge.application.PaymentPageUnavailableException;
 import az.ideanest.pledge.application.ReservationExpiredException;
 import az.ideanest.pledge.application.RewardSoldOutException;
 import az.ideanest.pledge.application.ShippingDestinationUnpricedException;
@@ -381,6 +382,20 @@ public class PledgeExceptionHandler {
      * page apart from a missing field, which are the two ways to arrive here and have
      * different fixes.
      */
+    /**
+     * 503: IDN-EXT-01 (#39) — no payment page can be opened now. Nothing was charged, and the draft
+     * keeps its places until its hold ends, so trying again shortly is the right move.
+     */
+    @ExceptionHandler(PaymentPageUnavailableException.class)
+    public ProblemDetail handlePaymentPageUnavailable(PaymentPageUnavailableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        problem.setType(URI.create("https://ideanest.az/problems/payment-unavailable"));
+        problem.setTitle("Payments are not available right now");
+        problem.setDetail("Nothing was charged. Your pledge is still held; try again in a moment.");
+        problem.setProperty("code", "PAYMENT_UNAVAILABLE");
+        return problem;
+    }
+
     @ExceptionHandler(BackerAgreementRequiredException.class)
     public ProblemDetail handleAgreementRequired(BackerAgreementRequiredException exception) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);

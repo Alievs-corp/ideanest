@@ -2,6 +2,7 @@ package az.ideanest.project.infrastructure;
 
 import az.ideanest.project.domain.Project;
 import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -9,6 +10,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -303,4 +305,24 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
             ORDER BY p.scheduledLaunchAt ASC
             """)
     List<UUID> findDueForLaunch(@Param("now") Instant now, Pageable page);
+
+    /**
+     * IDN-EXT-01 (#39): add one paid pledge to a campaign's totals — see {@code CampaignTotals}.
+     *
+     * <p>Native, and an addition inside the statement, so concurrent payments cannot lose each
+     * other's increments. The currency is part of the match: a pledge in another currency updates
+     * nothing, and the caller refuses.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(
+            value =
+                    """
+                    UPDATE projects
+                       SET pledged_amount = pledged_amount + :amount,
+                           backers_count = backers_count + 1
+                     WHERE id = :id
+                       AND currency = :currency
+                    """,
+            nativeQuery = true)
+    int addToTotals(@Param("id") UUID id, @Param("amount") BigDecimal amount, @Param("currency") String currency);
 }
