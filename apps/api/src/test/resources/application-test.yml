@@ -139,7 +139,15 @@ ideanest:
     reminder-lead: P7D
     per-pass: 50
 
+  payout:
+    # `-`, like every other job's schedule in this profile; PayoutDestinationReminderTests drives it.
+    destination-reminder-schedule: "-"
+
   project:
+    withdrawal:
+      # `-`, like every other job's schedule in this profile; AutomaticWithdrawalTests drives it.
+      automatic-schedule: "-"
+
     story:
       # The production value. The window itself is what the tests are checking, so
       # shortening it here would mean asserting a rule against a configuration

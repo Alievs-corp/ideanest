@@ -339,4 +339,17 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
                     """,
             nativeQuery = true)
     int subtractFromTotals(@Param("id") UUID id, @Param("amount") BigDecimal amount, @Param("currency") String currency);
+
+    /**
+     * IDN-EXT-01 (#41): successful campaigns whose funding ended — the extension's end, or the first
+     * deadline — at or before {@code endedBefore}, and that nobody has withdrawn.
+     */
+    @Query(
+            """
+            SELECT p.id FROM Project p
+            WHERE p.state = az.ideanest.project.domain.ProjectState.SUCCESSFUL
+              AND COALESCE(p.extendedUntil, p.deadline) <= :endedBefore
+            ORDER BY p.deadline ASC
+            """)
+    List<UUID> findDueForAutomaticWithdrawal(@Param("endedBefore") Instant endedBefore, Pageable page);
 }

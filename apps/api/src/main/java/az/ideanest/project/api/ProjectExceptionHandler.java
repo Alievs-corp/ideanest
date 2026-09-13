@@ -3,6 +3,7 @@ package az.ideanest.project.api;
 import az.ideanest.project.application.AgreementRequiredException;
 import az.ideanest.project.application.CapabilityNotGrantedException;
 import az.ideanest.project.application.ExtensionNotAvailableException;
+import az.ideanest.project.application.WithdrawalNotAvailableException;
 import az.ideanest.project.application.LatePledgesNotEnabledException;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
@@ -405,6 +406,21 @@ public class ProjectExceptionHandler {
      * the correction is one switch in the campaign editor. The code says which switch,
      * because "conflict" on its own would send a creator looking at §6.1.
      */
+    @ExceptionHandler(WithdrawalNotAvailableException.class)
+    public ProblemDetail handleWithdrawalNotAvailable(WithdrawalNotAvailableException exception) {
+        // IDN-EXT-01 (#41). A 409 with the reason: below the threshold a creator can still extend;
+        // in the wrong state there is nothing left to withdraw from.
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/withdrawal-not-available"));
+        problem.setTitle("This campaign's funds cannot be withdrawn now");
+        problem.setDetail(exception.reason() == WithdrawalNotAvailableException.Reason.BELOW_THRESHOLD
+                ? "Funds can be withdrawn once the campaign has raised at least its success threshold."
+                : "Funds can be withdrawn only from a campaign that is live, in its closing window, extended or successful.");
+        problem.setProperty("code", "WITHDRAWAL_NOT_AVAILABLE");
+        problem.setProperty("meta", java.util.Map.of("reason", exception.reason().name()));
+        return problem;
+    }
+
     @ExceptionHandler(ExtensionNotAvailableException.class)
     public ProblemDetail handleExtensionNotAvailable(ExtensionNotAvailableException exception) {
         // IDN-EXT-01 (#34). A 409 with the reason: each one sends a creator somewhere different.

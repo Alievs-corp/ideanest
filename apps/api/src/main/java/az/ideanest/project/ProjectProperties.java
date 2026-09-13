@@ -32,7 +32,8 @@ public record ProjectProperties(
         Submissions submissions,
         Directory directory,
         Launches launches,
-        Extension extension) {
+        Extension extension,
+        Withdrawal withdrawal) {
 
     public ProjectProperties {
         // A deployment that configures neither section still starts. Nested records
@@ -49,6 +50,7 @@ public record ProjectProperties(
         directory = directory == null ? Directory.defaults() : directory;
         launches = launches == null ? Launches.defaults() : launches;
         extension = extension == null ? Extension.defaults() : extension;
+        withdrawal = withdrawal == null ? Withdrawal.defaults() : withdrawal;
     }
 
     /**
@@ -255,6 +257,32 @@ public record ProjectProperties(
      *     "even if the creator presses it on the seventh day after", so it is measured from the
      *     deadline and never from the moment of extending
      */
+    /**
+     * §5.1's withdrawal — IDN-EXT-01 (#41).
+     *
+     * @param automaticAfter how long after funding ends — the first deadline, or the extension's end
+     *     — a successful campaign the creator has not withdrawn is withdrawn for them
+     * @param automaticSchedule when {@code automatic-withdrawal} fires, or {@code -}
+     */
+    public record Withdrawal(Duration automaticAfter, String automaticSchedule) {
+
+        private static final Duration DEFAULT_AUTOMATIC_AFTER = Duration.ofDays(30);
+
+        private static final String DEFAULT_SCHEDULE = "0 15 * * * *";
+
+        static Withdrawal defaults() {
+            return new Withdrawal(DEFAULT_AUTOMATIC_AFTER, DEFAULT_SCHEDULE);
+        }
+
+        public Withdrawal {
+            automaticAfter = automaticAfter == null ? DEFAULT_AUTOMATIC_AFTER : automaticAfter;
+            automaticSchedule = automaticSchedule == null || automaticSchedule.isBlank() ? DEFAULT_SCHEDULE : automaticSchedule;
+            if (automaticAfter.isNegative()) {
+                throw new IllegalArgumentException("An automatic withdrawal does not come before funding ends");
+            }
+        }
+    }
+
     public record Extension(Duration opensBefore, BigDecimal threshold, Duration limit) {
 
         private static final Duration DEFAULT_OPENS_BEFORE = Duration.ofDays(7);

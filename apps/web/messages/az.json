@@ -332,7 +332,9 @@
         "LAUNCH_REMINDER": "{campaign} başlamaq üzrədir",
         "SAVED_PROJECT_ENDING_SOON": "Saxladığınız {campaign} tezliklə bitir",
         "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni cihazdan daxil olundu",
-        "CAMPAIGN_EXTENDED": "{campaign} kampaniyasının yeni müddəti var"
+        "CAMPAIGN_EXTENDED": "{campaign} kampaniyasının yeni müddəti var",
+        "WITHDRAWAL_REQUESTED": "{campaign} kampaniyasının müəllifi vəsaitin çıxarılmasını tələb edib",
+        "PAYOUT_DETAILS_NEEDED": "{campaign} kampaniyası üzrə ödənişiniz rekvizitlərinizi gözləyir"
       },
       "unnamed": {
         "PLEDGE_CONFIRMED": "Bir kampaniyaya {amount} məbləğində dəstəyiniz təsdiqləndi",
@@ -357,7 +359,9 @@
         "LAUNCH_REMINDER": "Bir kampaniya başlamaq üzrədir",
         "SAVED_PROJECT_ENDING_SOON": "Saxladığınız bir kampaniya tezliklə bitir",
         "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni cihazdan daxil olundu",
-        "CAMPAIGN_EXTENDED": "Dəstəklədiyiniz kampaniyanın yeni müddəti var"
+        "CAMPAIGN_EXTENDED": "Dəstəklədiyiniz kampaniyanın yeni müddəti var",
+        "WITHDRAWAL_REQUESTED": "Dəstəklədiyiniz kampaniyanın müəllifi vəsaitin çıxarılmasını tələb edib",
+        "PAYOUT_DETAILS_NEEDED": "Ödənişiniz VÖEN və biznes kartınızı gözləyir"
       },
       "amount": {
         "total": "seçdiyiniz məbləğ",

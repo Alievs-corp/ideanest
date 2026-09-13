@@ -10,6 +10,8 @@ import az.ideanest.notification.application.NotificationEvents.PledgeConfirmed;
 import az.ideanest.notification.application.NotificationEvents.PledgeEdited;
 import az.ideanest.notification.application.NotificationEvents.ProjectApproved;
 import az.ideanest.notification.application.NotificationEvents.CampaignExtended;
+import az.ideanest.notification.application.NotificationEvents.PayoutDetailsNeeded;
+import az.ideanest.notification.application.NotificationEvents.PayoutRequested;
 import az.ideanest.notification.application.NotificationEvents.ProjectLaunched;
 import az.ideanest.notification.application.NotificationEvents.UpdateDueSoon;
 import az.ideanest.notification.domain.NotificationType;
@@ -334,6 +336,33 @@ public class NotificationEventListener {
                                 "extendedUntil",
                                 dueDate(event.extendedUntil())),
                         at(event.extendedAt(), message));
+            }
+            case PayoutRequested.EVENT_TYPE -> {
+                PayoutRequested event = read(message, PayoutRequested.class);
+                UUID projectId = required(event.projectId(), "projectId", message);
+                UUID creatorId = required(event.creatorId(), "creatorId", message);
+                // Every backer, and not the creator: the creator withdrew, and a backer who is the
+                // creator is excluded by the same rule. The date is the end of the hold — the least
+                // the window stays open; §6.3 keeps it open until the money is sent.
+                yield everybody(
+                        audienceOf(projectId, ProjectAudience.BACKERS, message).stream()
+                                .filter(recipient -> !recipient.equals(creatorId))
+                                .toList(),
+                        NotificationType.WITHDRAWAL_REQUESTED,
+                        projectId,
+                        about(projectId, "disputeUntil", dueDate(event.payableAt())),
+                        at(event.requestedAt(), message));
+            }
+            case PayoutDetailsNeeded.EVENT_TYPE -> {
+                PayoutDetailsNeeded event = read(message, PayoutDetailsNeeded.class);
+                UUID projectId = required(event.projectId(), "projectId", message);
+                yield List.of(NotificationRequest.about(
+                        required(event.creatorId(), "creatorId", message),
+                        NotificationType.PAYOUT_DETAILS_NEEDED,
+                        PROJECT,
+                        projectId,
+                        about(projectId, "payableAt", dueDate(event.payableAt())),
+                        at(event.remindedAt(), message)));
             }
             case ProjectLaunched.EVENT_TYPE -> {
                 ProjectLaunched event = read(message, ProjectLaunched.class);

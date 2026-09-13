@@ -28,7 +28,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "ideanest.payout")
 public record PayoutProperties(
-        Duration hold, BigDecimal dualApprovalThreshold, short approvalsAboveThreshold, String currency) {
+        Duration hold,
+        BigDecimal dualApprovalThreshold,
+        short approvalsAboveThreshold,
+        String currency,
+        String destinationReminderSchedule) {
 
     private static final Duration DEFAULT_HOLD = Duration.ofDays(14);
 
@@ -43,6 +47,11 @@ public record PayoutProperties(
         dualApprovalThreshold = dualApprovalThreshold == null ? DEFAULT_THRESHOLD : dualApprovalThreshold;
         approvalsAboveThreshold = approvalsAboveThreshold == 0 ? DEFAULT_APPROVALS : approvalsAboveThreshold;
         currency = currency == null ? DEFAULT_CURRENCY : currency;
+        // IDN-EXT-01 (#41): the daily pass that reminds a creator, weekly, that their payout waits
+        // for their VÖEN and business card.
+        destinationReminderSchedule = destinationReminderSchedule == null || destinationReminderSchedule.isBlank()
+                ? "0 0 9 * * *"
+                : destinationReminderSchedule;
 
         if (hold.isNegative()) {
             // A negative hold is a payout that was payable before the campaign closed.

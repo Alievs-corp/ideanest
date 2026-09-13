@@ -101,4 +101,17 @@ public interface PayoutRepository extends JpaRepository<Payout, UUID> {
               AND p.payableAt <= :now
             """)
     List<Payout> nowPayable(@Param("now") Instant now);
+
+    /** IDN-EXT-01 (#41): payouts still in flight whose hold is over, oldest first. */
+    @Query(
+            """
+            SELECT p FROM Payout p
+            WHERE p.state IN (
+                  az.ideanest.payout.domain.PayoutState.CALCULATED,
+                  az.ideanest.payout.domain.PayoutState.PENDING_APPROVAL,
+                  az.ideanest.payout.domain.PayoutState.APPROVED)
+              AND p.payableAt <= :now
+            ORDER BY p.payableAt ASC
+            """)
+    java.util.List<Payout> inFlightPastHold(@Param("now") java.time.Instant now, org.springframework.data.domain.Pageable page);
 }

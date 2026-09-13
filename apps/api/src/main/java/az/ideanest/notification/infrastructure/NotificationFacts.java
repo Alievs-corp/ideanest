@@ -113,6 +113,8 @@ public class NotificationFacts {
             // its future event will carry where an amount is the point of the message, and
             // nothing where it is not.
             case PAYOUT_SENT -> facts.withAmount(money(params, "amount"));
+            case WITHDRAWAL_REQUESTED -> facts.withDetail(text(params, "disputeUntil"));
+            case PAYOUT_DETAILS_NEEDED -> facts.withDetail(text(params, "payableAt"));
             case NEW_UPDATE_PUBLISHED,
                     COMMENT_REPLY,
                     DIRECT_MESSAGE,

@@ -339,6 +339,24 @@ public final class NotificationEvents {
         public static final String EVENT_TYPE = "project.extended";
     }
 
+    /**
+     * {@code payout.requested} — IDN-EXT-01 (#41). Recipient: every backer of the campaign, not the
+     * creator, who withdrew or was withdrawn for.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record PayoutRequested(
+            UUID projectId, UUID creatorId, UUID payoutId, Instant payableAt, boolean automatic, Instant requestedAt) {
+
+        public static final String EVENT_TYPE = "payout.requested";
+    }
+
+    /** {@code payout.details_needed} — IDN-EXT-01 (#41). Recipient: the creator alone. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record PayoutDetailsNeeded(UUID projectId, UUID creatorId, UUID payoutId, Instant payableAt, Instant remindedAt) {
+
+        public static final String EVENT_TYPE = "payout.details_needed";
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ProjectLaunched(UUID projectId, UUID creatorId, Instant launchedAt, Instant deadline) {
 

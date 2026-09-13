@@ -207,6 +207,18 @@ public class ProjectController {
     }
 
     /**
+     * IDN-EXT-01 (#41), §5.1: withdraw the funds, which closes the campaign.
+     *
+     * <p>The creator's alone, at 80% of the goal or above. The payout is requested from the event this
+     * records, with its fourteen-day hold, and every backer is told until when they may dispute. 409
+     * {@code WITHDRAWAL_NOT_AVAILABLE} with {@code meta.reason} when it cannot be withdrawn now.
+     */
+    @PostMapping("/{id}/withdrawal")
+    public ProjectEdit withdraw(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id) {
+        return responses.of(transitions.withdraw(id, callerOf(accessToken)));
+    }
+
+    /**
      * Stops taking late pledges and starts delivering.
      *
      * <p>{@code POST} to {@code /close} rather than {@code DELETE} on the resource

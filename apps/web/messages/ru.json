@@ -332,7 +332,9 @@
         "LAUNCH_REMINDER": "{campaign} вот-вот запустится",
         "SAVED_PROJECT_ENDING_SOON": "Сохранённая вами кампания {campaign} скоро закроется",
         "NEW_DEVICE_SIGN_IN": "В ваш аккаунт вошли с нового устройства",
-        "CAMPAIGN_EXTENDED": "У кампании {campaign} новый срок"
+        "CAMPAIGN_EXTENDED": "У кампании {campaign} новый срок",
+        "WITHDRAWAL_REQUESTED": "Автор кампании {campaign} запросил вывод средств",
+        "PAYOUT_DETAILS_NEEDED": "Выплата по кампании {campaign} ждёт ваши реквизиты"
       },
       "unnamed": {
         "PLEDGE_CONFIRMED": "Ваш взнос на сумму {amount} в кампанию подтверждён",
@@ -357,7 +359,9 @@
         "LAUNCH_REMINDER": "Кампания вот-вот запустится",
         "SAVED_PROJECT_ENDING_SOON": "Сохранённая вами кампания скоро закроется",
         "NEW_DEVICE_SIGN_IN": "В ваш аккаунт вошли с нового устройства",
-        "CAMPAIGN_EXTENDED": "У кампании, которую вы поддержали, новый срок"
+        "CAMPAIGN_EXTENDED": "У кампании, которую вы поддержали, новый срок",
+        "WITHDRAWAL_REQUESTED": "Автор поддержанной вами кампании запросил вывод средств",
+        "PAYOUT_DETAILS_NEEDED": "Выплата ждёт ваш VÖEN и бизнес-карту"
       },
       "amount": {
         "total": "выбранную вами сумму",

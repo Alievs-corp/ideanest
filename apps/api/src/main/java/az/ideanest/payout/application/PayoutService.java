@@ -206,7 +206,8 @@ public class PayoutService {
      * an uncomparable amount as below the threshold, would make every foreign-currency
      * payout the one that needs no second opinion.
      */
-    private short approvalsRequiredFor(Money net) {
+    /** Package-visible for {@link WithdrawalPayouts}, which prices a withdrawal by the same rule. */
+    short approvalsRequiredFor(Money net) {
         if (!net.currency().equals(properties.currency())) {
             return properties.approvalsAboveThreshold();
         }

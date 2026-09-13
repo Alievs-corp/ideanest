@@ -2411,6 +2411,20 @@ HOLD → BLOCKED (fraud)
 > happened, and closing the window on day 14 would take a backer's remedy away because of a
 > delay that was not theirs. The notification's DATE is therefore "until the payout is sent,
 > and no earlier than" the end of the hold.
+>
+> **Built (#41).** `POST /v1/projects/{id}/withdrawal` is the creator's, at the success threshold,
+> from `LIVE`, `CLOSING_WINDOW`, `EXTENDED` or `SUCCESSFUL` (409 `WITHDRAWAL_NOT_AVAILABLE` with
+> `WRONG_STATE` or `BELOW_THRESHOLD`); it moves the campaign to `WITHDRAWN`, freezes its outcome if
+> no deadline did, and records `project.withdrawn`. `automatic-withdrawal` does the same as the
+> system for a `SUCCESSFUL` campaign 30 days (`ideanest.project.withdrawal.automatic-after`) after
+> funding ended. The payout module requests the payout from the event — the figure `calculate`
+> produces, with `payable_at` fourteen days out, audited as the system, idempotent on the campaign
+> — and records `payout.requested`, from which every backer but the creator is sent
+> `WITHDRAWAL_REQUESTED` with the end of the hold as the dispute date. `payout-destination-reminders`
+> runs daily and sends the creator `PAYOUT_DETAILS_NEEDED` on each whole week after the hold ended
+> while their destination standing asks them for something. **Approval and sending stay with
+> staff**: the hold is when an administrator checks the VÖEN and business card, and approval
+> refuses until both stand; an automatic *send* on day 44 is not built.
 
 **The hold is also where identity verification fits** — #431. A payout does not
 leave `HOLD` unless the creator's verification stands at `APPROVED`, and the gate
@@ -4065,7 +4079,7 @@ POST   /v1/projects/{id}/cancel
 POST   /v1/projects/{id}/late-pledges        # WITHDRAWN by IDN-EXT-01: refused for every campaign since #36 (PROJECT_TRANSITION_NOT_ALLOWED); removed by #45
 POST   /v1/projects/{id}/late-pledges/close  # WITHDRAWN by IDN-EXT-01: still moves a campaign already in LATE_PLEDGE to FULFILLING; removed by #45
 POST   /v1/projects/{id}/extension           # IDN-EXT-01 (#34): creator only; once, D-7..D+7, 50%+, ends after D and no later than D+60. 409 EXTENSION_NOT_AVAILABLE {reason}; backers get CAMPAIGN_EXTENDED
-POST   /v1/projects/{id}/withdrawal          # IDN-EXT-01 (#41): 80%+, closes the campaign, opens the 14-day hold. Not built
+POST   /v1/projects/{id}/withdrawal          # IDN-EXT-01 (#41): 80%+, closes the campaign, requests the payout with the 14-day hold
 GET    /v1/projects/{id}/checklist
 GET    /v1/projects/{id}/items
 POST   /v1/projects/{id}/items

@@ -332,7 +332,9 @@
         "LAUNCH_REMINDER": "{campaign} is about to launch",
         "SAVED_PROJECT_ENDING_SOON": "{campaign}, which you saved, is ending soon",
         "NEW_DEVICE_SIGN_IN": "A new device signed in to your account",
-        "CAMPAIGN_EXTENDED": "{campaign} has a new deadline"
+        "CAMPAIGN_EXTENDED": "{campaign} has a new deadline",
+        "WITHDRAWAL_REQUESTED": "The creator of {campaign} requested their payout",
+        "PAYOUT_DETAILS_NEEDED": "Your payout for {campaign} is waiting for your details"
       },
       "unnamed": {
         "PLEDGE_CONFIRMED": "Your pledge of {amount} to a campaign is confirmed",
@@ -357,7 +359,9 @@
         "LAUNCH_REMINDER": "A campaign is about to launch",
         "SAVED_PROJECT_ENDING_SOON": "A campaign, which you saved, is ending soon",
         "NEW_DEVICE_SIGN_IN": "A new device signed in to your account",
-        "CAMPAIGN_EXTENDED": "A campaign you backed has a new deadline"
+        "CAMPAIGN_EXTENDED": "A campaign you backed has a new deadline",
+        "WITHDRAWAL_REQUESTED": "The creator of a campaign you backed requested their payout",
+        "PAYOUT_DETAILS_NEEDED": "Your payout is waiting for your VÖEN and business card"
       },
       "amount": {
         "total": "your chosen amount",
