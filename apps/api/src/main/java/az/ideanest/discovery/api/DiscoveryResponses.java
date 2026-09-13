@@ -47,6 +47,9 @@ public final class DiscoveryResponses {
      *     covers — a cancelled campaign
      * @param state the internal state (§6.1), so a client can be specific without this
      *     module having to invent a sixth word
+     * @param closingSoon §4.3's "Closing soon" (IDN-EXT-01): in the seven days after the first
+     *     deadline, or fourteen days or fewer from the end of funding
+     * @param extended §4.3's "Extended": the campaign was extended and is still funding
      */
     public record Card(
             String id,
@@ -63,7 +66,9 @@ public final class DiscoveryResponses {
             String badge,
             String state,
             Instant launchedAt,
-            Instant deadline) {
+            Instant deadline,
+            boolean closingSoon,
+            boolean extended) {
     }
 
     public record Creator(String name, String slug, String avatarUrl) {
@@ -163,7 +168,9 @@ public final class DiscoveryResponses {
                 badge == null ? null : badge.wireValue(),
                 card.state(),
                 card.launchedAt(),
-                card.deadline());
+                card.deadline(),
+                card.closingSoon(),
+                card.extended());
     }
 
     public static Facets facets(FacetCounts counts) {

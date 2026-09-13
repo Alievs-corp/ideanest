@@ -352,8 +352,13 @@ class DiscoveryVisibilityTests extends DiscoveryTestSupport {
         return slugsFor(DiscoveryStatus.HIDDEN_STATES);
     }
 
+    /**
+     * The campaigns a feed may return: {@code LISTED_STATES}, which since IDN-EXT-01 (#37) leaves
+     * out UNSUCCESSFUL — public by link, not listed. The fixture seeds one, so every
+     * "exactly these" assertion below also proves it is not listed.
+     */
     private Set<String> publicSlugs() {
-        return slugsFor(DiscoveryStatus.PUBLIC_STATES);
+        return slugsFor(DiscoveryStatus.LISTED_STATES);
     }
 
     private static Set<String> slugsFor(Set<String> states) {

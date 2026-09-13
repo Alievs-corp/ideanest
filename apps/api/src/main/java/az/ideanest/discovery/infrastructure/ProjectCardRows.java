@@ -36,7 +36,7 @@ final class ProjectCardRows {
             """
             p.id, p.slug, p.title, p.state, p.currency,
             p.goal_amount, p.pledged_amount, p.backers_count,
-            p.launched_at, p.deadline,
+            p.launched_at, p.deadline, p.extended_until,
             p.cover_image_url, p.cover_image_width, p.cover_image_height,
             u.name AS creator_name, u.slug AS creator_slug, u.avatar_url AS creator_avatar_url
             """;
@@ -58,6 +58,8 @@ final class ProjectCardRows {
         BigDecimal pledgedAmount = resultSet.getBigDecimal("pledged_amount");
         Instant launchedAt = instantOf(resultSet, "launched_at");
         Instant deadline = instantOf(resultSet, "deadline");
+        Instant extendedUntil = instantOf(resultSet, "extended_until");
+        String state = resultSet.getString("state");
 
         String coverUrl = resultSet.getString("cover_image_url");
         // The three cover columns are written together or not at all —
@@ -81,11 +83,15 @@ final class ProjectCardRows {
                 Money.of(pledgedAmount, currency),
                 ProjectCard.completionPercent(pledgedAmount, goalAmount),
                 resultSet.getInt("backers_count"),
-                ProjectCard.daysLeft(deadline, asOf),
-                DiscoveryStatus.badgeFor(resultSet.getString("state")).orElse(null),
-                resultSet.getString("state"),
+                // An extended campaign counts down to its extension's end, which is when it
+                // stops taking pledges; `deadline` stays the first one (V74).
+                ProjectCard.daysLeft("EXTENDED".equals(state) && extendedUntil != null ? extendedUntil : deadline, asOf),
+                DiscoveryStatus.badgeFor(state).orElse(null),
+                state,
                 launchedAt,
-                deadline);
+                deadline,
+                ProjectCard.closingSoon(state, deadline, extendedUntil, asOf),
+                "EXTENDED".equals(state));
     }
 
     /**

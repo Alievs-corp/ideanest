@@ -40,7 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>There are two of them and they compose, which is the thing to keep hold of while
  * reading this class. A <strong>collection</strong> is visible when it is published
  * and {@code now()} is inside its window; a <strong>campaign inside it</strong> is
- * visible under {@code DiscoveryStatus.PUBLIC_STATES}, exactly as everywhere else in
+ * visible under {@code DiscoveryStatus.LISTED_STATES}, exactly as everywhere else in
  * discovery. Neither implies the other, and the second is the one that is easy to
  * forget: a curator adds a campaign, trust and safety suspends it a week later, and
  * the membership row is still there. It stays there deliberately — deleting it would
@@ -282,7 +282,7 @@ public class PostgresCuratedCollections implements CuratedCollections {
 
     private static MapSqlParameterSource publicStates() {
         MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("states", List.copyOf(DiscoveryStatus.PUBLIC_STATES));
+        params.addValue("states", List.copyOf(DiscoveryStatus.LISTED_STATES));
         return params;
     }
 

@@ -4195,6 +4195,7 @@ export interface components {
             /** Format: int32 */
             backersCount?: number;
             badge?: string;
+            closingSoon?: boolean;
             completionPercent?: string;
             creator?: components["schemas"]["Creator"];
             creatorSlug?: string;
@@ -4202,6 +4203,7 @@ export interface components {
             daysLeft?: number;
             /** Format: date-time */
             deadline?: string;
+            extended?: boolean;
             goal?: components["schemas"]["Money"];
             id?: string;
             image?: components["schemas"]["Image"];
@@ -10328,7 +10330,7 @@ export interface operations {
                 /** @description Free text. §11.3 folds diacritics, so "kitab" matches "kitаb". */
                 q?: string;
                 /** @description Which of §6.1's states a campaign may be in. Repeat or comma-separate. */
-                status?: ("upcoming" | "live" | "late_pledge" | "successful" | "unsuccessful")[];
+                status?: ("upcoming" | "live" | "extended" | "successful")[];
                 /** @description Category slugs. An open vocabulary: an unknown slug is an empty feed, not a 400, so a link shared after a rename still resolves. */
                 category?: string[];
                 /** @description Subcategory slugs, under the categories above. */
@@ -10393,7 +10395,7 @@ export interface operations {
                 /** @description Free text. §11.3 folds diacritics, so "kitab" matches "kitаb". */
                 q?: string;
                 /** @description Which of §6.1's states a campaign may be in. Repeat or comma-separate. */
-                status?: ("upcoming" | "live" | "late_pledge" | "successful" | "unsuccessful")[];
+                status?: ("upcoming" | "live" | "extended" | "successful")[];
                 /** @description Category slugs. An open vocabulary: an unknown slug is an empty feed, not a 400, so a link shared after a rename still resolves. */
                 category?: string[];
                 /** @description Subcategory slugs, under the categories above. */
@@ -13337,7 +13339,7 @@ export interface operations {
                 /** @description Free text. §11.3 folds diacritics, so "kitab" matches "kitаb". */
                 q?: string;
                 /** @description Which of §6.1's states a campaign may be in. Repeat or comma-separate. */
-                status?: ("upcoming" | "live" | "late_pledge" | "successful" | "unsuccessful")[];
+                status?: ("upcoming" | "live" | "extended" | "successful")[];
                 /** @description Category slugs. An open vocabulary: an unknown slug is an empty feed, not a 400, so a link shared after a rename still resolves. */
                 category?: string[];
                 /** @description Subcategory slugs, under the categories above. */

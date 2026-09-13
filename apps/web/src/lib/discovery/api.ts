@@ -58,12 +58,19 @@ export interface ProjectCard {
   backersCount: number;
   /** Absent when there is no deadline; zero once it has passed. */
   daysLeft?: number | null;
-  /** One of §4.3's five status words, or absent — a cancelled campaign. */
+  /** One of §4.3's status words, or absent — a cancelled campaign. */
   badge?: DiscoveryStatus | null;
   /** The internal state (§6.1), so a client can be specific without a sixth word. */
   state: string;
   launchedAt?: string | null;
   deadline?: string | null;
+  /**
+   * §4.3's "Closing soon" (IDN-EXT-01, #37): in the seven days after the first deadline, or
+   * fourteen days or fewer from the end of funding. Optional so an older response still renders.
+   */
+  closingSoon?: boolean;
+  /** §4.3's "Extended": extended once and still funding. A card can carry both. */
+  extended?: boolean;
 }
 
 export interface DiscoveryFeed {

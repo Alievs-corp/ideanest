@@ -23,9 +23,8 @@ function facets(overrides: Partial<DiscoveryFacets> = {}): DiscoveryFacets {
     status: [
       { value: 'live', count: 3 },
       { value: 'upcoming', count: 0 },
-      { value: 'late_pledge', count: 0 },
+      { value: 'extended', count: 0 },
       { value: 'successful', count: 1 },
-      { value: 'unsuccessful', count: 0 },
     ],
     categories: [
       { slug: 'games', name: 'Games', count: 2, subcategories: [] },

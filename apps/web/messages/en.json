@@ -2650,9 +2650,9 @@
       "badges": {
         "upcoming": "Upcoming",
         "live": "Live",
-        "late_pledge": "Late pledge",
-        "successful": "Successful",
-        "unsuccessful": "Unsuccessful"
+        "extended": "Extended",
+        "closing_soon": "Closing soon",
+        "successful": "Successful"
       },
       "by": "by {creator}",
       "lastDay": "Last day",
@@ -2668,9 +2668,8 @@
       "status": {
         "upcoming": "Upcoming",
         "live": "Live",
-        "late_pledge": "Late pledge",
-        "successful": "Successful",
-        "unsuccessful": "Unsuccessful"
+        "extended": "Extended",
+        "successful": "Successful"
       },
       "sort": {
         "best_match": "Best match",

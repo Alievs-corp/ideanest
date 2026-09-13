@@ -459,7 +459,7 @@ and each entry needs a translation per supported locale.
 
 | Filter | Values |
 |---|---|
-| Status | Upcoming, live, late pledge, successful, unsuccessful |
+| Status | Upcoming, live, extended, successful (IDN-EXT-01, #37) |
 | Category | 15 primary plus subcategories, each with a live count |
 | Location | Country, city, or proximity |
 | Goal amount | Bands plus a custom range |
@@ -503,6 +503,15 @@ and each entry needs a translation per supported locale.
 > succeeding is hidden from the catalogue and from search only**: by direct link, and in a
 > backer's account, its page stays, with its updates, tracking numbers and the creator's
 > history.
+>
+> **Built (#37).** The status filter is *upcoming*, *live* (`LIVE`, `CLOSING_WINDOW`,
+> `EXTENDED`), *extended* (`EXTENDED`, also inside *live*) and *successful*; *late pledge*
+> and *unsuccessful* are no longer filter values, and a campaign left in `LATE_PLEDGE`
+> badges as *successful*. A card carries `closingSoon` and `extended` beside its badge;
+> an extended card counts `daysLeft` to the extension's end. `UNSUCCESSFUL` stays in
+> `DiscoveryStatus.PUBLIC_STATES` — its page and rewards resolve — and is not in
+> `LISTED_STATES`, which every feed, search, suggestion, facet, explanation and collection
+> read applies. The description of the five words above is the pre-IDN-EXT-01 design.
 >
 > **Bands are closed below and open above** — `[lower, upper)` — so that the five
 > partition the line rather than overlapping at four boundaries. A campaign at

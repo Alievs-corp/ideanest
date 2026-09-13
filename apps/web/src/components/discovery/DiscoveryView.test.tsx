@@ -161,9 +161,8 @@ const FACETS: DiscoveryFacets = {
   status: [
     { value: 'upcoming', count: 4 },
     { value: 'live', count: 12 },
-    { value: 'late_pledge', count: 1 },
+    { value: 'extended', count: 0 },
     { value: 'successful', count: 7 },
-    { value: 'unsuccessful', count: 0 },
   ],
   categories: [
     {
@@ -402,17 +401,17 @@ describe('facet counts', () => {
     expect(art).toBeDisabled();
     expect(art.closest('div')).toHaveTextContent('None');
 
-    const unsuccessful = screen.getByRole('checkbox', { name: 'Unsuccessful' });
-    expect(unsuccessful).toBeDisabled();
-    expect(unsuccessful.closest('li')).toHaveTextContent('None');
+    const extended = screen.getByRole('checkbox', { name: 'Extended' });
+    expect(extended).toBeDisabled();
+    expect(extended.closest('li')).toHaveTextContent('None');
   });
 
   it('keeps a chosen value operable even once it counts zero', async () => {
     // Otherwise the reader is left holding a filter they cannot remove from the
     // control that applied it.
-    await open('status=unsuccessful');
+    await open('status=extended');
 
-    expect(screen.getByRole('checkbox', { name: 'Unsuccessful' })).toBeEnabled();
+    expect(screen.getByRole('checkbox', { name: 'Extended' })).toBeEnabled();
   });
 
   it('never shows an unknown count as zero', async () => {

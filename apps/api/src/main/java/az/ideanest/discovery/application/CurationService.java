@@ -177,7 +177,7 @@ public class CurationService {
      * A curator preparing next month's theme picks campaigns that are still in
      * moderation, and refusing them would make the feature unusable a week before every
      * launch. What protects the reader is the read, which filters by
-     * {@code DiscoveryStatus.PUBLIC_STATES} — see {@code PostgresCuratedCollections}.
+     * {@code DiscoveryStatus.LISTED_STATES} — see {@code PostgresCuratedCollections}.
      */
     @Transactional
     public AdminCollection addProject(String slug, UUID projectId, String note, UUID curatorId) {

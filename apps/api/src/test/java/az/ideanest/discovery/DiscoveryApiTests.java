@@ -43,7 +43,7 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
      *   <tr><td>bravo</td><td>LIVE</td><td>games/video</td><td>1000</td><td>250</td><td>25</td><td>2</td><td>-4d</td><td>+10d</td><td>handmade, ceramics</td></tr>
      *   <tr><td>charlie</td><td>LIVE</td><td>art/painting</td><td>5000</td><td>2500</td><td>50</td><td>3</td><td>-3d</td><td>+20d</td><td>ceramics</td></tr>
      *   <tr><td>delta</td><td>SUCCESSFUL</td><td>music/albums</td><td>20000</td><td>20000</td><td>100</td><td>4</td><td>-40d</td><td>-1d</td><td>—</td></tr>
-     *   <tr><td>echo</td><td>UNSUCCESSFUL</td><td>film/short</td><td>50000</td><td>37500</td><td>75</td><td>5</td><td>-60d</td><td>-2d</td><td>—</td></tr>
+     *   <tr><td>echo</td><td>CANCELED</td><td>film/short</td><td>50000</td><td>37500</td><td>75</td><td>5</td><td>-60d</td><td>-2d</td><td>—</td></tr>
      *   <tr><td>foxtrot</td><td>PRELAUNCH</td><td>comics</td><td>—</td><td>0</td><td>—</td><td>0</td><td>—</td><td>—</td><td>—</td></tr>
      *   <tr><td>golf</td><td>LATE_PLEDGE</td><td>games/tabletop</td><td>1000</td><td>3000</td><td>300</td><td>6</td><td>-50d</td><td>-5d</td><td>—</td></tr>
      * </table>
@@ -104,8 +104,10 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
                 .launchedAt(now.minus(40, ChronoUnit.DAYS))
                 .deadline(now.minus(1, ChronoUnit.DAYS))
                 .insert();
+        // CANCELED rather than UNSUCCESSFUL since IDN-EXT-01 (#37): an unsuccessful campaign is
+        // not listed, and echo is the row every sort and band test counts on seeing.
         Campaigns.seed(dataSource, creator, "echo")
-                .state("UNSUCCESSFUL")
+                .state("CANCELED")
                 .subcategory("film", "short")
                 .goal("50000.00")
                 .pledged("37500.00")
@@ -204,15 +206,12 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
     void theStatusFilterMapsGroupings() {
         assertThat(slugs(feed("?limit=100&status=live"))).containsExactlyInAnyOrder("alpha", "bravo", "charlie");
         assertThat(slugs(feed("?limit=100&status=upcoming"))).containsExactly("foxtrot");
-        assertThat(slugs(feed("?limit=100&status=unsuccessful"))).containsExactly("echo");
-        assertThat(slugs(feed("?limit=100&status=late_pledge"))).containsExactly("golf");
-        // A late-pledging campaign reached its goal, so it is successful too. The two
-        // groupings overlap on purpose; they answer different questions.
+        // A campaign left in LATE_PLEDGE reached its goal, so it is successful.
         assertThat(slugs(feed("?limit=100&status=successful"))).containsExactlyInAnyOrder("delta", "golf");
         // Several statuses are OR'd: a campaign is in one state, so AND would return
         // nothing.
-        assertThat(slugs(feed("?limit=100&status=upcoming,unsuccessful")))
-                .containsExactlyInAnyOrder("foxtrot", "echo");
+        assertThat(slugs(feed("?limit=100&status=upcoming,successful")))
+                .containsExactlyInAnyOrder("foxtrot", "delta", "golf");
     }
 
     @Test
@@ -618,6 +617,77 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
     }
 
     @Test
+    @DisplayName("IDN-EXT-01: a campaign that ended without succeeding is not listed, and its old filter words are refused")
+    void anUnsuccessfulCampaignIsNotListed() {
+        UUID creator = Campaigns.creator(dataSource, "unsuccessful-creator");
+        Campaigns.seed(dataSource, creator, "india")
+                .state("UNSUCCESSFUL")
+                .category("games")
+                .launchedAt(now.minus(40, ChronoUnit.DAYS))
+                .deadline(now.minus(9, ChronoUnit.DAYS))
+                .insert();
+
+        assertThat(slugs(feed("?limit=100"))).doesNotContain("india").hasSize(7);
+        assertThat(slugs(search("?limit=100&q={q}", "india"))).doesNotContain("india");
+        // Late pledge and unsuccessful are no longer filter words, so asking for them is a
+        // 400 like any other unknown word rather than a filter that quietly matches nothing.
+        assertThat(get("/v1/discover?status=unsuccessful", new HttpHeaders()).getStatusCode().value())
+                .isEqualTo(400);
+        assertThat(get("/v1/discover?status=late_pledge", new HttpHeaders()).getStatusCode().value())
+                .isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("IDN-EXT-01: cards carry closingSoon and extended, and a card can carry both")
+    void cardsCarryTheTwoLabels() {
+        UUID creator = Campaigns.creator(dataSource, "labelled-creator");
+        Campaigns.seed(dataSource, creator, "window")
+                .state("CLOSING_WINDOW")
+                .category("games")
+                .launchedAt(now.minus(40, ChronoUnit.DAYS))
+                .deadline(now.minus(2, ChronoUnit.DAYS))
+                .insert();
+        Campaigns.seed(dataSource, creator, "extended-soon")
+                .state("EXTENDED")
+                .category("games")
+                .launchedAt(now.minus(40, ChronoUnit.DAYS))
+                .deadline(now.minus(5, ChronoUnit.DAYS))
+                .extendedUntil(now.plus(10, ChronoUnit.DAYS).plus(12, ChronoUnit.HOURS))
+                .insert();
+        Campaigns.seed(dataSource, creator, "extended-later")
+                .state("EXTENDED")
+                .category("games")
+                .launchedAt(now.minus(40, ChronoUnit.DAYS))
+                .deadline(now.minus(5, ChronoUnit.DAYS))
+                .extendedUntil(now.plus(40, ChronoUnit.DAYS))
+                .insert();
+
+        Map<String, Map<String, Object>> cards = new java.util.HashMap<>();
+        for (Map<String, Object> item : items(feed("?limit=100"))) {
+            cards.put((String) item.get("slug"), item);
+        }
+
+        // In the seven days after the first deadline: closing soon, whatever the clock says.
+        assertThat(cards.get("window")).containsEntry("closingSoon", true).containsEntry("extended", false);
+        assertThat(cards.get("window")).containsEntry("badge", "live");
+        // Extended with ten and a half days to go: both labels, counted to the extension's end.
+        assertThat(cards.get("extended-soon")).containsEntry("closingSoon", true).containsEntry("extended", true);
+        assertThat(cards.get("extended-soon")).containsEntry("daysLeft", 11).containsEntry("badge", "live");
+        // Extended with forty days to go: extended, not closing soon.
+        assertThat(cards.get("extended-later")).containsEntry("closingSoon", false).containsEntry("extended", true);
+        // Live: ten days (bravo) is closing soon, twenty (charlie) is not.
+        assertThat(cards.get("bravo")).containsEntry("closingSoon", true);
+        assertThat(cards.get("charlie")).containsEntry("closingSoon", false);
+        // Successful campaigns are not.
+        assertThat(cards.get("delta")).containsEntry("closingSoon", false).containsEntry("extended", false);
+
+        assertThat(slugs(feed("?limit=100&status=extended")))
+                .containsExactlyInAnyOrder("extended-soon", "extended-later");
+        assertThat(slugs(feed("?limit=100&status=live")))
+                .contains("window", "extended-soon", "extended-later");
+    }
+
+    @Test
     @DisplayName("a campaign with no goal, no deadline, and no image still renders as a card")
     void aPrelaunchCardOmitsWhatItDoesNotHave() {
         Map<String, Object> card = items(feed("?status=upcoming")).getFirst();
@@ -647,12 +717,10 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
                 .orElseThrow();
 
         // §4.3 has no word for it, so it is reachable by browsing and cannot be
-        // singled out by a filter. Inventing a sixth word, or folding it into
-        // "unsuccessful", would tell a reader that a withdrawn campaign failed to
-        // find backers.
+        // singled out by a filter. Inventing a word for it would tell a reader
+        // something about a withdrawn campaign that is not true.
         assertThat(card).doesNotContainKey("badge");
         assertThat(card.get("state")).isEqualTo("CANCELED");
-        assertThat(slugs(feed("?limit=100&status=unsuccessful"))).doesNotContain("hotel");
     }
 
     @Test

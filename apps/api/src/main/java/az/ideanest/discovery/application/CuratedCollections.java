@@ -30,7 +30,7 @@ import java.util.Optional;
  * campaign that is later suspended, and the membership row stays — removing it would
  * rewrite the editorial history to say the campaign was never chosen. What changes is
  * that it stops being returned and stops being counted, by the same
- * {@code DiscoveryStatus.PUBLIC_STATES} predicate every other read in this module
+ * {@code DiscoveryStatus.LISTED_STATES} predicate every other read in this module
  * applies.
  */
 public interface CuratedCollections {

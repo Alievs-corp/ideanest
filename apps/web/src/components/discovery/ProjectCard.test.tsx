@@ -153,14 +153,39 @@ describe('ProjectCard', () => {
   });
 
   it('renders a cancelled campaign without a badge rather than with a wrong one', () => {
-    // §4.3 has no word for it. Inventing a sixth, or folding it into
-    // "unsuccessful", would tell a reader a withdrawn campaign failed to find
-    // backers.
+    // §4.3 has no word for it, and inventing one would tell a reader something
+    // about a withdrawn campaign that is not true.
     renderCard({ badge: null, state: 'CANCELED' });
 
-    for (const word of ['Live', 'Upcoming', 'Successful', 'Unsuccessful', 'Late pledge']) {
+    for (const word of ['Live', 'Upcoming', 'Successful', 'Extended', 'Closing soon']) {
       expect(screen.queryByText(word)).not.toBeInTheDocument();
     }
+  });
+
+  /**
+   * IDN-EXT-01 (#37): two labels beside the badge, and a card can carry both. Each is a word as
+   * well as a hue and an icon, so colour never carries the meaning alone.
+   */
+  it('labels an extended campaign that is closing soon with both words', () => {
+    renderCard({ state: 'EXTENDED', extended: true, closingSoon: true, daysLeft: 9 });
+
+    expect(screen.getByText('Live')).toBeInTheDocument();
+    expect(screen.getByText('Extended')).toBeInTheDocument();
+    expect(screen.getByText('Closing soon')).toBeInTheDocument();
+  });
+
+  it('labels neither when the service says neither', () => {
+    renderCard({ extended: false, closingSoon: false });
+
+    expect(screen.queryByText('Extended')).not.toBeInTheDocument();
+    expect(screen.queryByText('Closing soon')).not.toBeInTheDocument();
+  });
+
+  it('labels a campaign in its seven days after the deadline as closing soon without calling it extended', () => {
+    renderCard({ state: 'CLOSING_WINDOW', closingSoon: true, extended: false, daysLeft: 0 });
+
+    expect(screen.getByText('Closing soon')).toBeInTheDocument();
+    expect(screen.queryByText('Extended')).not.toBeInTheDocument();
   });
 
   it('hides the cover from assistive technology', () => {
