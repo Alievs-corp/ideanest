@@ -4590,7 +4590,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "upcoming", "live", "late_pledge", "successful", "unsuccessful" ]
+              "enum" : [ "upcoming", "live", "extended", "successful" ]
             }
           }
         }, {
@@ -4825,7 +4825,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "upcoming", "live", "late_pledge", "successful", "unsuccessful" ]
+              "enum" : [ "upcoming", "live", "extended", "successful" ]
             }
           }
         }, {
@@ -8805,7 +8805,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "upcoming", "live", "late_pledge", "successful", "unsuccessful" ]
+              "enum" : [ "upcoming", "live", "extended", "successful" ]
             }
           }
         }, {
@@ -10604,6 +10604,9 @@
           "badge" : {
             "type" : "string"
           },
+          "closingSoon" : {
+            "type" : "boolean"
+          },
           "completionPercent" : {
             "type" : "string"
           },
@@ -10620,6 +10623,9 @@
           "deadline" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "extended" : {
+            "type" : "boolean"
           },
           "goal" : {
             "$ref" : "#/components/schemas/Money"

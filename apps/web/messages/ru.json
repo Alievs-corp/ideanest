@@ -2650,9 +2650,9 @@
       "badges": {
         "upcoming": "Скоро",
         "live": "Идёт сбор",
-        "late_pledge": "Поздние взносы",
-        "successful": "Успешна",
-        "unsuccessful": "Не собрана"
+        "extended": "Продлена",
+        "closing_soon": "Скоро закроется",
+        "successful": "Успешна"
       },
       "by": "автор: {creator}",
       "lastDay": "Последний день",
@@ -2668,9 +2668,8 @@
       "status": {
         "upcoming": "Скоро",
         "live": "Идёт сбор",
-        "late_pledge": "Поздние взносы",
-        "successful": "Успешна",
-        "unsuccessful": "Не собрана"
+        "extended": "Продлённые",
+        "successful": "Успешна"
       },
       "sort": {
         "best_match": "По совпадению",

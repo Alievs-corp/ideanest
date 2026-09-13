@@ -6,7 +6,7 @@ import type { PluralForms } from './plurals';
  * <h2>Why the vocabularies moved out of `lib/discovery/vocabulary.ts`</h2>
  *
  * That module pairs each value of a closed vocabulary with the word a reader sees:
- * `{ value: 'late_pledge', label: 'Late pledge' }`. The values are the service's and must not
+ * `{ value: 'successful', label: 'Successful' }`. The values are the service's and must not
  * move — a typo there is `400 DISCOVERY_VALUE_UNKNOWN` and a feed that never loads. The labels
  * are copy, and they were the only English left on the platform's front door.
  *

@@ -2650,9 +2650,9 @@
       "badges": {
         "upcoming": "Yakında",
         "live": "Etkin",
-        "late_pledge": "Geç destek",
-        "successful": "Başarılı",
-        "unsuccessful": "Başarısız"
+        "extended": "Uzatıldı",
+        "closing_soon": "Yakında kapanıyor",
+        "successful": "Başarılı"
       },
       "by": "hazırlayan: {creator}",
       "lastDay": "Son gün",
@@ -2668,9 +2668,8 @@
       "status": {
         "upcoming": "Yakında",
         "live": "Etkin",
-        "late_pledge": "Geç destek",
-        "successful": "Başarılı",
-        "unsuccessful": "Başarısız"
+        "extended": "Uzatılmış",
+        "successful": "Başarılı"
       },
       "sort": {
         "best_match": "En uygun",

@@ -323,7 +323,7 @@ public class CollectionRepository {
             copy.put(translation.locale(), translation.copy());
         }
 
-        params.addValue("states", List.copyOf(DiscoveryStatus.PUBLIC_STATES));
+        params.addValue("states", List.copyOf(DiscoveryStatus.LISTED_STATES));
         List<AdminCollection.Member> members = jdbc.query(
                 """
                 SELECT p.id, p.slug, p.title, p.state, cp.position,

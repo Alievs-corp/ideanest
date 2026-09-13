@@ -40,6 +40,9 @@ import java.util.UUID;
  *     state no word covers — {@code CANCELED}
  * @param state the internal state, so a client can render something specific
  *     without this module having to invent a sixth word for it
+ * @param closingSoon §4.3's "Closing soon" (IDN-EXT-01, #37) — see {@link #closingSoon}
+ * @param extended §4.3's "Extended": the campaign is in {@code EXTENDED}. A card can carry
+ *     both, and both beside its badge
  */
 public record ProjectCard(
         UUID id,
@@ -56,7 +59,12 @@ public record ProjectCard(
         DiscoveryStatus badge,
         String state,
         Instant launchedAt,
-        Instant deadline) {
+        Instant deadline,
+        boolean closingSoon,
+        boolean extended) {
+
+    /** How near its end a funding campaign is badged "Closing soon" — IDN-EXT-01 (#37). */
+    public static final Duration CLOSING_SOON = Duration.ofDays(14);
 
     /** @param avatarUrl null for an account that never uploaded one */
     public record Creator(String name, String slug, String avatarUrl) {
@@ -89,6 +97,27 @@ public record ProjectCard(
             return null;
         }
         return pledged.multiply(new BigDecimal("100")).divide(goal, 2, RoundingMode.DOWN);
+    }
+
+    /**
+     * Whether a card is badged "Closing soon" — IDN-EXT-01 (#37), §4.3.
+     *
+     * <p>Every campaign in the seven days after its first deadline, and a live or extended one
+     * with {@link #CLOSING_SOON} or less to go — measured to the extension's end for an
+     * extended campaign, so it can be extended and closing soon at once. A live campaign past
+     * its deadline that the finaliser has not reached yet is closing soon too: it is.
+     */
+    public static boolean closingSoon(String state, Instant deadline, Instant extendedUntil, Instant now) {
+        return switch (state) {
+            case "CLOSING_WINDOW" -> true;
+            case "LIVE" -> endsWithin(deadline, now);
+            case "EXTENDED" -> endsWithin(extendedUntil, now);
+            default -> false;
+        };
+    }
+
+    private static boolean endsWithin(Instant end, Instant now) {
+        return end != null && !Duration.between(now, end).minus(CLOSING_SOON).isPositive();
     }
 
     /**

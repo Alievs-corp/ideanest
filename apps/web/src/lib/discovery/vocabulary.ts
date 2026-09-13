@@ -41,14 +41,19 @@
  */
 
 /* -------------------------------------------------------------------------
- * Status — the five words §4.3 gives a backer for where a campaign is
+ * Status — the words §4.3 gives a backer for where a campaign is
  * ---------------------------------------------------------------------- */
 
-export const STATUS_VALUES = ['upcoming', 'live', 'late_pledge', 'successful', 'unsuccessful'] as const;
+/*
+ * IDN-EXT-01 (#37): `late_pledge` and `unsuccessful` are gone — late pledges are switched off, and a
+ * campaign that ended without succeeding is hidden from the catalogue and search (its page stays).
+ * `extended` is new, and is also inside `live`.
+ */
+export const STATUS_VALUES = ['upcoming', 'live', 'extended', 'successful'] as const;
 
 export type DiscoveryStatus = (typeof STATUS_VALUES)[number];
 
-/** The five, in the order the rail lists them. `discovery.filters.status` names them. */
+/** In the order the rail lists them. `discovery.filters.status` names them. */
 export const STATUSES: readonly DiscoveryStatus[] = STATUS_VALUES;
 
 /* -------------------------------------------------------------------------

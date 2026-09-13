@@ -99,8 +99,9 @@ class SearchTextApiTests extends DiscoveryTestSupport {
                 .launchedAt(now.minus(40, ChronoUnit.DAYS))
                 .deadline(now.minus(1, ChronoUnit.DAYS))
                 .insert();
+        // CANCELED since IDN-EXT-01 (#37), which stopped listing an unsuccessful campaign.
         Campaigns.seed(dataSource, creator, "echo")
-                .state("UNSUCCESSFUL")
+                .state("CANCELED")
                 .title("Üzüm bağı")
                 .blurb("Bağçılıq təcrübəsi")
                 .story("Bu layihə üzümlük salır")

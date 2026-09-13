@@ -3,9 +3,9 @@ import Image from 'next/image';
 import { Link } from '../../i18n/navigation';
 import {
   CalendarClock,
+  CalendarPlus,
   CircleCheck,
   CircleDot,
-  CircleSlash,
   Clock,
   Hourglass,
   Users,
@@ -76,20 +76,29 @@ interface BadgeSpec {
 }
 
 /**
- * The five status words' icon and hue. The words themselves are `discovery.card.badges`.
+ * The status words' icon and hue. The words themselves are `discovery.card.badges`.
  *
- * `successful` is `--success` and `late_pledge` is `--warning`: a late-pledge window is a clock
- * running, which is what warning means here, and reaching the goal is the achievement
- * `--success` exists for. Neither is lime — a backer who reads lime as "done" has been told the
- * opposite of the truth (§2.4).
+ * `successful` is `--success`: reaching the goal is the achievement `--success` exists for. It is
+ * never lime — a backer who reads lime as "done" has been told the opposite of the truth (§2.4).
+ * `extended` is a filter word the service never sends as a badge (an extended campaign badges as
+ * `live`); it is here because the record is keyed by every status, and it matches the tag below.
  */
 const BADGES: Record<DiscoveryStatus, BadgeSpec> = {
   upcoming: { icon: <CalendarClock className="size-3" />, variant: 'default' },
   live: { icon: <CircleDot className="size-3" />, variant: 'default' },
-  late_pledge: { icon: <Hourglass className="size-3" />, variant: 'warning' },
+  extended: { icon: <CalendarPlus className="size-3" />, variant: 'default' },
   successful: { icon: <CircleCheck className="size-3" />, variant: 'success' },
-  unsuccessful: { icon: <CircleSlash className="size-3" />, variant: 'default' },
 };
+
+/**
+ * IDN-EXT-01's two catalogue labels (#37), drawn beside the badge. A card can carry both.
+ *
+ * "Closing soon" is `--warning`: a clock running, which is what warning means here — and not
+ * lime, which stays the one "hurry" element on the card, the last-48-hours countdown. Each is an
+ * icon plus a word, so colour never carries the meaning alone.
+ */
+const CLOSING_SOON: BadgeSpec = { icon: <Hourglass className="size-3" />, variant: 'warning' };
+const EXTENDED: BadgeSpec = { icon: <CalendarPlus className="size-3" />, variant: 'default' };
 
 /**
  * The completion figure, read as a decimal and never as a number.
@@ -212,6 +221,24 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
                 {badge.icon}
               </span>
               {copy.badges[card.badge as string]}
+            </Tag>
+          )}
+
+          {card.extended === true && (
+            <Tag variant={EXTENDED.variant} className="gap-1.5">
+              <span aria-hidden="true" className="flex items-center">
+                {EXTENDED.icon}
+              </span>
+              {copy.badges['extended']}
+            </Tag>
+          )}
+
+          {card.closingSoon === true && (
+            <Tag variant={CLOSING_SOON.variant} className="gap-1.5">
+              <span aria-hidden="true" className="flex items-center">
+                {CLOSING_SOON.icon}
+              </span>
+              {copy.badges['closing_soon']}
             </Tag>
           )}
 

@@ -28,7 +28,7 @@ import java.util.Set;
  *
  * <ol>
  *   <li><strong>It returns only publicly visible campaigns.</strong>
- *       {@code DiscoveryStatus.PUBLIC_STATES}, always, before any caller filter. For
+ *       {@code DiscoveryStatus.LISTED_STATES}, always, before any caller filter. For
  *       an external index this is harder than it is for a query, because a campaign
  *       that is suspended after it was indexed stays in the index until something
  *       removes it — so tier 2 needs an eviction path on every state transition, and

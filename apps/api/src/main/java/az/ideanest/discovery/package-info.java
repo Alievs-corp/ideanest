@@ -24,7 +24,7 @@
  * between the two is pinned by {@code DiscoveryStatusTests}, which may import both.
  *
  * <p><strong>Only campaigns the public may see are ever returned.</strong>
- * {@link az.ideanest.discovery.domain.DiscoveryStatus#PUBLIC_STATES} is applied to
+ * {@link az.ideanest.discovery.domain.DiscoveryStatus#LISTED_STATES} is applied to
  * every query this module issues, before any filter the caller sent. A filter can
  * narrow that set and can never widen it.
  */

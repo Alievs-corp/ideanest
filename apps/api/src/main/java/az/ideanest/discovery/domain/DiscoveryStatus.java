@@ -7,9 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * The five words a backer uses for where a campaign is, and the internal states
+ * The words a backer uses for where a campaign is, and the internal states
  * each of them covers.
  *
  * <p>§4.3 offers five status filters. §6.1 has sixteen states. They are not the
@@ -42,20 +43,21 @@ public enum DiscoveryStatus {
     /**
      * "I can back it right now, and the clock is running."
      *
-     * <p>Only {@code LIVE}. This is the state §5.1's all-or-nothing arithmetic is
-     * still open in.
+     * <p>{@code LIVE}, and since IDN-EXT-01 the seven days after its first deadline and its
+     * extension: all three are still taking pledges, and the campaign is not decided until
+     * the last of them ends.
      */
     LIVE("live", "LIVE", "CLOSING_WINDOW", "EXTENDED"),
 
     /**
-     * "I missed the deadline and can still get one."
+     * "It was extended, and it is still taking pledges" — IDN-EXT-01 (#37).
      *
-     * <p>Only {@code LATE_PLEDGE}. Deliberately also inside {@link #SUCCESSFUL}
-     * below — a campaign in a late-pledge window did reach its goal, and a backer
-     * filtering for successful campaigns would be surprised to find it missing.
-     * The two groupings overlap on purpose; they answer different questions.
+     * <p>Only {@code EXTENDED}. Deliberately also inside {@link #LIVE}: an extended campaign
+     * is still funding, and a backer filtering for live campaigns would be surprised to find
+     * it missing. Its card badges as {@code live} and says it was extended separately, because
+     * a campaign can be extended and closing soon at once — see {@code ProjectCard}.
      */
-    LATE_PLEDGE("late_pledge", "LATE_PLEDGE"),
+    EXTENDED("extended", "EXTENDED"),
 
     /**
      * "It made it."
@@ -68,18 +70,7 @@ public enum DiscoveryStatus {
      * wants to see what this platform has actually funded, and excluding the four
      * that came after would show them the newest tenth of it.
      */
-    SUCCESSFUL("successful", "SUCCESSFUL", "COLLECTING", "LATE_PLEDGE", "WITHDRAWN", "FULFILLING", "COMPLETED"),
-
-    /**
-     * "It did not make it."
-     *
-     * <p>Only {@code UNSUCCESSFUL}: the deadline passed below goal, nothing was
-     * charged, and §5.1 closed it. {@code CANCELED} is deliberately not here — the
-     * creator stopped it, which is not the same claim about the campaign or about
-     * the people who backed it, and folding the two would tell a reader that a
-     * withdrawn campaign failed to find backers.
-     */
-    UNSUCCESSFUL("unsuccessful", "UNSUCCESSFUL");
+    SUCCESSFUL("successful", "SUCCESSFUL", "COLLECTING", "LATE_PLEDGE", "WITHDRAWN", "FULFILLING", "COMPLETED");
 
     /**
      * The nine states a campaign may be listed in, whatever was asked for.
@@ -104,15 +95,31 @@ public enum DiscoveryStatus {
      * may have pledged to it, and its page still resolves; hiding it from discovery
      * while it remains readable by URL would be a different answer to the same
      * question depending on how it was asked. It belongs to no status grouping,
-     * which is a deliberate consequence of the one on {@link #UNSUCCESSFUL}: it can
-     * be reached by browsing and cannot be singled out by a filter, because §4.3
-     * offers no word for it.
+     * which is deliberate: it can be reached by browsing and cannot be singled out by a
+     * filter, because §4.3 offers no word for it.
+     *
+     * <p>{@code UNSUCCESSFUL} is here too, and is <em>not</em> listed — see
+     * {@link #LISTED_STATES}. This set is "the page is public", which the reward list and
+     * {@code PublicProjects} answer for as well.
      */
     public static final Set<String> PUBLIC_STATES = Set.of(
             "PRELAUNCH", "LIVE", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL",
             "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED",
             // IDN-EXT-01 (#32): still taking pledges, and closed by withdrawal.
             "CLOSING_WINDOW", "EXTENDED", "WITHDRAWN");
+
+    /**
+     * The states the catalogue and search list a campaign in — IDN-EXT-01 (#37).
+     *
+     * <p>{@link #PUBLIC_STATES} without {@code UNSUCCESSFUL}. A campaign that ended without
+     * succeeding is hidden from browsing and from search <em>only</em>: its page, its rewards
+     * and its updates still resolve by link and from a backer's account, which is why
+     * {@code PUBLIC_STATES} keeps it. Every read in this module that returns, suggests or
+     * counts campaigns applies this set, before any caller filter.
+     */
+    public static final Set<String> LISTED_STATES = PUBLIC_STATES.stream()
+            .filter(state -> !"UNSUCCESSFUL".equals(state))
+            .collect(Collectors.toUnmodifiableSet());
 
     /**
      * The seven that must never be returned by anything in this module.
@@ -127,12 +134,11 @@ public enum DiscoveryStatus {
     /**
      * Which grouping a card's badge shows, for a state that is in more than one.
      *
-     * <p>Narrowest first. A campaign in {@code LATE_PLEDGE} is both late-pledging
-     * and successful, and the badge that helps a reader is the one that says what
-     * they can still do about it.
+     * <p>{@link #EXTENDED} is not a badge: an extended campaign badges as {@code live}, and
+     * the card carries {@code extended} beside it. A campaign left in {@code LATE_PLEDGE}
+     * badges as successful, which is what it is.
      */
-    private static final List<DiscoveryStatus> BADGE_ORDER =
-            List.of(UPCOMING, LIVE, LATE_PLEDGE, UNSUCCESSFUL, SUCCESSFUL);
+    private static final List<DiscoveryStatus> BADGE_ORDER = List.of(UPCOMING, LIVE, SUCCESSFUL);
 
     private static final Map<String, DiscoveryStatus> BY_WIRE_VALUE = byWireValue();
 
@@ -149,7 +155,7 @@ public enum DiscoveryStatus {
         return wireValue;
     }
 
-    /** The internal states this grouping covers. Always a subset of {@link #PUBLIC_STATES}. */
+    /** The internal states this grouping covers. Always a subset of {@link #LISTED_STATES}. */
     public Set<String> states() {
         return states;
     }
@@ -186,17 +192,17 @@ public enum DiscoveryStatus {
      * "a filter can narrow the public set and can never widen it" true no matter what
      * a future grouping is defined to contain.
      *
-     * @param statuses empty for "no status filter", which is every public state
+     * @param statuses empty for "no status filter", which is every listed state
      */
     public static Set<String> statesFor(Set<DiscoveryStatus> statuses) {
         if (statuses == null || statuses.isEmpty()) {
-            return PUBLIC_STATES;
+            return LISTED_STATES;
         }
         Set<String> states = new LinkedHashSet<>();
         for (DiscoveryStatus status : statuses) {
             states.addAll(status.states);
         }
-        states.retainAll(PUBLIC_STATES);
+        states.retainAll(LISTED_STATES);
         return Collections.unmodifiableSet(states);
     }
 

@@ -314,6 +314,7 @@ public final class Campaigns {
         private int backers;
         private Instant launchedAt;
         private Instant deadline;
+        private Instant extendedUntil;
         private boolean withCover = true;
         private final List<String> tags = new ArrayList<>();
 
@@ -406,6 +407,12 @@ public final class Campaigns {
             return this;
         }
 
+        /** IDN-EXT-01: where the one extension ends. Written with {@code extension_used_at}, as V74 requires. */
+        public Seed extendedUntil(Instant value) {
+            this.extendedUntil = value;
+            return this;
+        }
+
         /** No cover image, for the card that has to render without one. */
         public Seed withoutCover() {
             this.withCover = false;
@@ -440,7 +447,7 @@ public final class Campaigns {
                         id, creator_id, slug, title, blurb, story, category_id, subcategory_id,
                         location_id, state,
                         goal_amount, pledged_amount, backers_count, duration_days,
-                        launched_at, deadline,
+                        launched_at, deadline, extended_until, extension_used_at,
                         cover_image_url, cover_image_width, cover_image_height)
                     VALUES (
                         ?, ?, ?, ?, ?, CAST(? AS jsonb),
@@ -448,7 +455,7 @@ public final class Campaigns {
                         (SELECT s.id FROM subcategories s JOIN categories c ON c.id = s.parent_id
                           WHERE c.slug = ? AND s.slug = ?),
                         (SELECT id FROM locations WHERE slug = ?),
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     id,
                     creatorId,
@@ -467,6 +474,8 @@ public final class Campaigns {
                     launchedAt == null ? null : DEFAULT_DURATION_DAYS,
                     launchedAt == null ? null : OffsetDateTime.ofInstant(launchedAt, ZoneOffset.UTC),
                     deadline == null ? null : OffsetDateTime.ofInstant(deadline, ZoneOffset.UTC),
+                    extendedUntil == null ? null : OffsetDateTime.ofInstant(extendedUntil, ZoneOffset.UTC),
+                    extendedUntil == null ? null : OffsetDateTime.ofInstant(now, ZoneOffset.UTC),
                     withCover ? "https://cdn.example.com/" + slug + ".jpg" : null,
                     withCover ? Integer.valueOf(1600) : null,
                     withCover ? Integer.valueOf(900) : null);

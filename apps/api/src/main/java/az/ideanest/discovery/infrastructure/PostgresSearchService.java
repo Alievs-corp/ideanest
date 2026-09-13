@@ -550,7 +550,7 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
         // query would be describing a different result set from the one on screen —
         // see SearchService.facets.
         String publicStates = and(
-                statePredicate("p", DiscoveryStatus.PUBLIC_STATES, params),
+                statePredicate("p", DiscoveryStatus.LISTED_STATES, params),
                 textPredicate("p", query, exactTierMatches(query.text()), params));
 
         String matchesStatus = query.statuses().isEmpty()
@@ -718,7 +718,7 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("fragment", likePattern(query.text()));
         params.addValue("limit", query.limit());
-        params.addValue("states", List.copyOf(DiscoveryStatus.PUBLIC_STATES));
+        params.addValue("states", List.copyOf(DiscoveryStatus.LISTED_STATES));
         // The same visibility predicate as everything else in this class, and for the
         // same reason: a suggestion is a campaign's title shown to whoever is typing,
         // so a draft leaking here leaks exactly as much as one leaking into the feed.
@@ -803,7 +803,7 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
      * window rather than one measured a few hundred milliseconds later.
      *
      * <p>Visibility is the same predicate as everything else in this class. A moderator
-     * tool is still not a way to read a draft — {@code DiscoveryStatus.PUBLIC_STATES},
+     * tool is still not a way to read a draft — {@code DiscoveryStatus.LISTED_STATES},
      * always — and a campaign that is not in a feed has no position in one to explain.
      */
     @Override
@@ -814,7 +814,7 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("asOf", OffsetDateTime.ofInstant(asOf, ZoneOffset.UTC));
         params.addValue("slug", slug);
-        params.addValue("states", List.copyOf(DiscoveryStatus.PUBLIC_STATES));
+        params.addValue("states", List.copyOf(DiscoveryStatus.LISTED_STATES));
         if (text != null) {
             params.addValue("text", text);
         }
@@ -983,7 +983,7 @@ public class PostgresSearchService implements SearchService, RankingDiagnostics 
         }
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("text", text);
-        params.addValue("states", List.copyOf(DiscoveryStatus.PUBLIC_STATES));
+        params.addValue("states", List.copyOf(DiscoveryStatus.LISTED_STATES));
         Boolean matched = jdbc.queryForObject(
                 "SELECT EXISTS (SELECT 1 FROM projects p WHERE p.state IN (:states)"
                         + " AND p.search_vector @@ " + TEXT_QUERY + ")",

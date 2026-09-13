@@ -49,7 +49,9 @@ class DiscoveryFacetsApiTests extends DiscoveryTestSupport {
         seed(creator, "games-two", "games", "video", "LIVE", "300.00", launched, "ceramics");
         seed(creator, "comics-one", "comics", "manga", "LIVE", "600.00", launched, "handmade");
         seed(creator, "comics-two", "comics", "manga", "SUCCESSFUL", "1000.00", launched);
-        seed(creator, "art-one", "art", "painting", "UNSUCCESSFUL", "800.00", launched);
+        // CANCELED since IDN-EXT-01 (#37): listed, in no status grouping, as UNSUCCESSFUL used
+        // to be — an unsuccessful campaign is no longer listed or counted at all.
+        seed(creator, "art-one", "art", "painting", "CANCELED", "800.00", launched);
     }
 
     private void seed(
@@ -84,7 +86,6 @@ class DiscoveryFacetsApiTests extends DiscoveryTestSupport {
         assertThat(count(facets, "categories", "art")).isEqualTo(1);
         assertThat(count(facets, "status", "live")).isEqualTo(3);
         assertThat(count(facets, "status", "successful")).isEqualTo(1);
-        assertThat(count(facets, "status", "unsuccessful")).isEqualTo(1);
         assertThat(count(facets, "completion", "under_25")).isEqualTo(1);
         assertThat(count(facets, "completion", "25_to_50")).isEqualTo(1);
         assertThat(count(facets, "completion", "50_to_75")).isEqualTo(1);
@@ -111,7 +112,6 @@ class DiscoveryFacetsApiTests extends DiscoveryTestSupport {
 
         assertThat(count(facets, "status", "live")).isEqualTo(3);
         assertThat(count(facets, "status", "successful")).isEqualTo(1);
-        assertThat(count(facets, "status", "unsuccessful")).isEqualTo(1);
     }
 
     @Test
@@ -134,7 +134,7 @@ class DiscoveryFacetsApiTests extends DiscoveryTestSupport {
 
         assertThat(count(facets, "status", "live")).isEqualTo(1);
         assertThat(count(facets, "status", "successful")).isEqualTo(1);
-        assertThat(count(facets, "status", "unsuccessful")).isZero();
+        assertThat(count(facets, "status", "extended")).isZero();
     }
 
     @Test
@@ -177,7 +177,7 @@ class DiscoveryFacetsApiTests extends DiscoveryTestSupport {
         String filters = "?category=comics";
         Map<String, Object> facets = facets(filters);
 
-        for (String status : List.of("upcoming", "live", "late_pledge", "successful", "unsuccessful")) {
+        for (String status : List.of("upcoming", "live", "extended", "successful")) {
             assertThat(count(facets, "status", status))
                     .withFailMessage("the '%s' facet disagrees with the feed", status)
                     .isEqualTo(items(feed(filters + "&status=" + status + "&limit=100")).size());
@@ -192,7 +192,8 @@ class DiscoveryFacetsApiTests extends DiscoveryTestSupport {
         // A control that disappears when its count reaches zero is a control that
         // moves under the reader's cursor. §4.3 also asks for a live count on every
         // category, which means on all fifteen.
-        assertThat(counts(facets, "status")).hasSize(5);
+        // Four status words since IDN-EXT-01 (#37): upcoming, live, extended, successful.
+        assertThat(counts(facets, "status")).hasSize(4);
         assertThat(counts(facets, "completion")).hasSize(5);
         assertThat(counts(facets, "goalAmount")).hasSize(5);
         assertThat(counts(facets, "amountRaised")).hasSize(5);
