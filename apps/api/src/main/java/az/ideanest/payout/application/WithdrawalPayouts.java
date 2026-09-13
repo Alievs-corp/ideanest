@@ -7,6 +7,7 @@ import az.ideanest.audit.AuditOutcome;
 import az.ideanest.fee.application.FeeBreakdown;
 import az.ideanest.fee.application.FeeSchedules;
 import az.ideanest.payment.application.CampaignFunds;
+import az.ideanest.payment.application.CreatorDebts;
 import az.ideanest.payment.application.PayoutGateway;
 import az.ideanest.payout.PayoutProperties;
 import az.ideanest.payout.domain.Payout;
@@ -46,6 +47,7 @@ public class WithdrawalPayouts {
     private final ProjectSummaries projects;
     private final AuditLog audit;
     private final Outbox outbox;
+    private final CreatorDebts debts;
     private final PayoutProperties properties;
     private final Clock clock;
 
@@ -57,6 +59,7 @@ public class WithdrawalPayouts {
             ProjectSummaries projects,
             AuditLog audit,
             Outbox outbox,
+            CreatorDebts debts,
             PayoutProperties properties,
             Clock clock) {
         this.payouts = payouts;
@@ -66,6 +69,7 @@ public class WithdrawalPayouts {
         this.projects = projects;
         this.audit = audit;
         this.outbox = outbox;
+        this.debts = debts;
         this.properties = properties;
         this.clock = clock;
     }
@@ -113,6 +117,11 @@ public class WithdrawalPayouts {
         return price(projectId, clock.instant().truncatedTo(ChronoUnit.MICROS), payableAt, "recalculated", false);
     }
 
+    private Money withheldFrom(UUID creatorId, Money net) {
+        Money owed = debts.outstandingFor(creatorId, net.currency());
+        return owed.isGreaterThan(net) ? net : owed;
+    }
+
     private Optional<Payout> price(UUID projectId, Instant now, Instant payableAt, String why, boolean automatic) {
         ProjectSummary campaign = projects
                 .summaryOf(projectId)
@@ -130,7 +139,15 @@ public class WithdrawalPayouts {
             return Optional.empty();
         }
 
-        Payout priced = payouts.save(Payout.calculated(
+        // IDN-EXT-01 (#43): a creator who owes for a chargeback lost after an earlier payout has it withheld.
+        Money withheld = withheldFrom(campaign.creatorId(), net);
+        if (withheld.equals(net)) {
+            Money left = debts.recover(campaign.creatorId(), withheld, now);
+            log.info("Campaign {}'s payout went entirely towards its creator's debts ({} unapplied).", projectId, left);
+            return Optional.empty();
+        }
+
+        Payout priced = Payout.calculated(
                 projectId,
                 campaign.creatorId(),
                 funds.collected(),
@@ -141,7 +158,11 @@ public class WithdrawalPayouts {
                 breakdown.scheduleId(),
                 payableAt,
                 service.approvalsRequiredFor(net),
-                why + "-" + projectId + "-" + now.toEpochMilli()));
+                why + "-" + projectId + "-" + now.toEpochMilli());
+        if (withheld.isPositive()) {
+            priced.withholdDebt(withheld);
+        }
+        priced = payouts.save(priced);
 
         audit.record(
                 AuditAction.PAYOUT_CALCULATED,

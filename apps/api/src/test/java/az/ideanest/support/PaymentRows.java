@@ -40,8 +40,41 @@ public final class PaymentRows {
                     "DELETE FROM ledger_entries WHERE transaction_id IN"
                             + " (SELECT id FROM transactions WHERE pledge_id IN (" + in + "))",
                     ids);
+            jdbc.update(
+                    "DELETE FROM creator_debts WHERE dispute_id IN (SELECT id FROM disputes WHERE pledge_id IN (" + in + "))",
+                    ids);
+            jdbc.update("DELETE FROM disputes WHERE pledge_id IN (" + in + ")", ids);
             jdbc.update("DELETE FROM refunds WHERE pledge_id IN (" + in + ")", ids);
             jdbc.update("DELETE FROM transactions WHERE pledge_id IN (" + in + ")", ids);
+        } finally {
+            jdbc.execute("ALTER TABLE transactions ENABLE TRIGGER USER");
+            jdbc.execute("ALTER TABLE refunds ENABLE TRIGGER USER");
+            jdbc.execute("ALTER TABLE ledger_entries ENABLE TRIGGER USER");
+        }
+    }
+
+    /**
+     * The payment rows about whole campaigns: {@link #clearPledges}' rows, and a payout's own transaction and
+     * postings, which name no pledge. IDN-EXT-01 (#43).
+     */
+    public static void clearProjects(DataSource dataSource, Collection<UUID> projectIds) {
+        if (projectIds.isEmpty()) {
+            return;
+        }
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        Object[] ids = projectIds.toArray();
+        String in = projectIds.stream().map(id -> "?").collect(Collectors.joining(", "));
+        jdbc.update("DELETE FROM creator_debts WHERE project_id IN (" + in + ")", ids);
+        jdbc.update("DELETE FROM payout_approvals WHERE payout_id IN (SELECT id FROM payouts WHERE project_id IN (" + in + "))", ids);
+        jdbc.update("DELETE FROM payouts WHERE project_id IN (" + in + ")", ids);
+        jdbc.execute("ALTER TABLE ledger_entries DISABLE TRIGGER USER");
+        jdbc.execute("ALTER TABLE refunds DISABLE TRIGGER USER");
+        jdbc.execute("ALTER TABLE transactions DISABLE TRIGGER USER");
+        try {
+            jdbc.update("DELETE FROM ledger_entries WHERE project_id IN (" + in + ")", ids);
+            jdbc.update("DELETE FROM disputes WHERE project_id IN (" + in + ")", ids);
+            jdbc.update("DELETE FROM refunds WHERE project_id IN (" + in + ")", ids);
+            jdbc.update("DELETE FROM transactions WHERE project_id IN (" + in + ")", ids);
         } finally {
             jdbc.execute("ALTER TABLE transactions ENABLE TRIGGER USER");
             jdbc.execute("ALTER TABLE refunds ENABLE TRIGGER USER");

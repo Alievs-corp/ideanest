@@ -18,6 +18,8 @@ import az.ideanest.payment.domain.RefundResult;
 import az.ideanest.payment.infrastructure.DisputeEvidenceRepository;
 import az.ideanest.payment.infrastructure.DisputeRepository;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
+import az.ideanest.project.application.CampaignCollections;
+import az.ideanest.user.application.UserDirectory;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.shared.money.Money;
@@ -74,6 +76,9 @@ public class DisputeService {
     private final PlatformStaff staff;
     private final AuditLog audit;
     private final Clock clock;
+    private final CampaignCollections campaigns;
+    private final CreatorDebts creatorDebts;
+    private final UserDirectory users;
 
     public DisputeService(
             DisputeRepository disputes,
@@ -82,7 +87,10 @@ public class DisputeService {
             Ledger ledger,
             PlatformStaff staff,
             AuditLog audit,
-            Clock clock) {
+            Clock clock,
+            CampaignCollections campaigns,
+            CreatorDebts creatorDebts,
+            UserDirectory users) {
         this.disputes = disputes;
         this.evidence = evidence;
         this.transactions = transactions;
@@ -90,6 +98,9 @@ public class DisputeService {
         this.staff = staff;
         this.audit = audit;
         this.clock = clock;
+        this.campaigns = campaigns;
+        this.creatorDebts = creatorDebts;
+        this.users = users;
     }
 
     /**
@@ -252,6 +263,7 @@ public class DisputeService {
 
         if (outcome != DisputeState.WON) {
             postLoss(dispute);
+            recoverFromCreatorIfPaidOut(dispute, staffId, now);
         }
 
         audit.record(
@@ -301,5 +313,35 @@ public class DisputeService {
      * @param evidence oldest first, because an argument is read in the order it was built
      */
     public record DisputeCase(Dispute dispute, List<DisputeEvidence> evidence) {
+    }
+
+    /**
+     * IDN-EXT-01 (#43), §9.8: a chargeback lost after the creator was paid is the creator's to repay.
+     *
+     * <p>The platform has already returned the money above; the creator kept it. So the amount and its fee
+     * become the creator's debt, withheld from their future payouts, and their account is suspended until
+     * it is repaid — by the member of staff who resolved the dispute, because a suspension has an author
+     * (V40). Before the payout nothing of this happens: the loss reduces the payout instead.
+     */
+    private void recoverFromCreatorIfPaidOut(Dispute dispute, UUID staffId, Instant now) {
+        if (!transactions.hasPaidOut(dispute.projectId())) {
+            return;
+        }
+        UUID creatorId = campaigns
+                .describe(dispute.projectId())
+                .orElseThrow(() -> new IllegalStateException("Dispute " + dispute.id() + " names a campaign that is gone"))
+                .creatorId();
+        Money owed = dispute.amount().plus(dispute.fee());
+        creatorDebts.record(creatorId, dispute.projectId(), dispute.id(), owed, now);
+        if (creatorId.equals(staffId)) {
+            log.warn("Dispute {} was resolved by its own creator; the account is not suspended by itself.", dispute.id());
+            return;
+        }
+        users.suspend(
+                creatorId,
+                staffId,
+                "A chargeback of %s on your campaign was lost after your payout. The account is blocked until it is repaid."
+                        .formatted(owed));
+        log.info("Creator {} suspended until {} is repaid (dispute {}).", creatorId, owed, dispute.id());
     }
 }

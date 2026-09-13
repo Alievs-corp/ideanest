@@ -55,6 +55,10 @@ public class Payout {
     @Column(name = "refunded_amount", nullable = false, updatable = false)
     private BigDecimal refundedAmount;
 
+    /** IDN-EXT-01 (#43): withheld towards the creator's chargeback debts. See V80. */
+    @Column(name = "debt_withheld", nullable = false, updatable = false)
+    private BigDecimal debtWithheld = BigDecimal.ZERO;
+
     @Column(name = "net_amount", nullable = false, updatable = false)
     private BigDecimal netAmount;
 
@@ -221,6 +225,26 @@ public class Payout {
         this.failureCode = Objects.requireNonNull(failureCode, "failureCode");
         this.failureMessage = failureMessage;
         this.sentAt = Objects.requireNonNull(at, "at");
+    }
+
+    /**
+     * IDN-EXT-01 (#43): withholds part of the net towards the creator's debts, before the payout is saved.
+     * The net is what actually leaves, so it goes down by what is withheld.
+     */
+    public void withholdDebt(Money debt) {
+        if (state != PayoutState.CALCULATED) {
+            throw new IllegalStateException("Debt is withheld when a payout is priced, not in " + state);
+        }
+        if (!debt.isPositive() || debt.amount().compareTo(netAmount) > 0) {
+            throw new IllegalArgumentException("Withholding " + debt + " from a net of " + netAmount);
+        }
+        this.debtWithheld = debtWithheld.add(debt.amount());
+        this.netAmount = netAmount.subtract(debt.amount());
+    }
+
+    /** What was withheld towards the creator's debts. */
+    public Money debtWithheld() {
+        return Money.of(debtWithheld, currency);
     }
 
     /** Withdrawn before it was sent. */
