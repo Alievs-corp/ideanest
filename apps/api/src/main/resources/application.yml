@@ -460,6 +460,10 @@ ideanest:
       # the ends of months; the pass takes the oldest and returns a minute later
       # rather than becoming a run that overlaps its own next tick.
       batch-size: 200
+      # §5.1, IDN-EXT-01 (#31): a campaign succeeds at this share of its goal. A share
+      # in (0, 1], not a percentage — `80` is refused at start-up rather than failing
+      # every campaign on the platform.
+      success-threshold: 0.80
 
     submission:
       # The three bounds §5.3 states as somebody else's decision rather than as a

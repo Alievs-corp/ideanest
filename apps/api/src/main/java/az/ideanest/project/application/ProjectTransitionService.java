@@ -570,7 +570,7 @@ public class ProjectTransitionService {
 
         // Read before the transition and used for both halves, so the state a campaign is
         // moved to and the numbers frozen against it are one reading of one locked row.
-        CampaignOutcome outcome = project.outcome();
+        CampaignOutcome outcome = project.outcome(properties.finalisation().successThreshold());
 
         apply(project, outcome.state(), ActorRole.SYSTEM, null, decision(project));
         project.freezeOutcome(now);

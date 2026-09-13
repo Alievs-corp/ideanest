@@ -1,5 +1,7 @@
 package az.ideanest.project;
 
+import az.ideanest.project.domain.CampaignOutcome;
+
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
@@ -219,21 +221,31 @@ public record ProjectProperties(
      *     {@link Reminders#sendBatchSize()}, because both are one short transaction per row
      *     against an indexed lookup and there is no reason for the platform to hold two
      *     different opinions about how big a sweep is
+     * @param successThreshold the share of the goal at which a campaign succeeds — §5.1,
+     *     IDN-EXT-01 (#31). {@code 0.80}. Configuration because it is a product decision that
+     *     has already moved once, from one hundred per cent; refused at start-up outside
+     *     {@code (0, 1]} by the same check {@code CampaignOutcome} applies, so a mistyped
+     *     {@code 80} stops the service instead of failing every campaign on the platform
      */
-    public record Finalisation(String schedule, int batchSize) {
+    public record Finalisation(String schedule, int batchSize, BigDecimal successThreshold) {
 
         /** Every minute, which is what §8.4 says {@code campaign-finalizer} runs at. */
         private static final String DEFAULT_SCHEDULE = "0 * * * * *";
 
         private static final int DEFAULT_BATCH_SIZE = 200;
 
+        /** IDN-EXT-01: success from eighty per cent of the goal. */
+        private static final BigDecimal DEFAULT_SUCCESS_THRESHOLD = new BigDecimal("0.80");
+
         static Finalisation defaults() {
-            return new Finalisation(DEFAULT_SCHEDULE, DEFAULT_BATCH_SIZE);
+            return new Finalisation(DEFAULT_SCHEDULE, DEFAULT_BATCH_SIZE, DEFAULT_SUCCESS_THRESHOLD);
         }
 
         public Finalisation {
             schedule = schedule == null || schedule.isBlank() ? DEFAULT_SCHEDULE : schedule;
             batchSize = batchSize == 0 ? DEFAULT_BATCH_SIZE : batchSize;
+            successThreshold = CampaignOutcome.requireThreshold(
+                    successThreshold == null ? DEFAULT_SUCCESS_THRESHOLD : successThreshold);
 
             if (batchSize < 1) {
                 // A sweep that closes no campaigns is the feature switched off, and it
