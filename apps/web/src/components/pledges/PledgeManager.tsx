@@ -15,6 +15,7 @@ import {
 import { describeFailure, type CheckoutFailure } from '../../lib/pledges/failure';
 import { formatExactTime } from '../../lib/time';
 import { approximate, formatMoney, type ExchangeRate } from '../../lib/money';
+import { BackerDisputeForm } from './BackerDisputeForm';
 import { PledgeEditor } from './PledgeEditor';
 import { paymentReturnHint, type PaymentReturnHint } from '../../lib/pledges/payment';
 import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
@@ -318,6 +319,9 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
           </p>
         </InlineAlert>
       )}
+
+      {/* IDN-EXT-01 (#44): a paid pledge may be disputed while the creator's payout is held. */}
+      {pledge.state === 'COLLECTED' && <BackerDisputeForm pledgeId={pledge.id} copy={copy.dispute} />}
 
       <div>
         <Link href="/pledges">

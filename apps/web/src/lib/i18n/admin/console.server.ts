@@ -35,6 +35,7 @@ import {
   type TaxonomyManagerCopy,
 } from './curation-copy';
 import {
+  backerDisputeQueueCopyFrom,
   disputeConsoleCopyFrom,
   feeEditorCopyFrom,
   ledgerExplorerCopyFrom,
@@ -44,6 +45,7 @@ import {
   payoutQueueCopyFrom,
   reconciliationCopyFrom,
   refundConsoleCopyFrom,
+  type BackerDisputeQueueCopy,
   type DisputeConsoleCopy,
   type FeeEditorCopy,
   type LedgerExplorerCopy,
@@ -208,6 +210,11 @@ export async function payoutQueueCopy(): Promise<PayoutQueueCopy> {
 
 export async function refundConsoleCopy(): Promise<RefundConsoleCopy> {
   return refundConsoleCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+/** IDN-EXT-01 (#44): the backer dispute queue, below the chargebacks. */
+export async function backerDisputeQueueCopy(): Promise<BackerDisputeQueueCopy> {
+  return backerDisputeQueueCopyFrom(await getTranslations('admin'), await consoleChrome());
 }
 
 export async function disputeConsoleCopy(): Promise<DisputeConsoleCopy> {

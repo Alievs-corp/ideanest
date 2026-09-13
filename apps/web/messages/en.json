@@ -2204,6 +2204,25 @@
           "other": "Downloaded {count} payments."
         },
         "truncated": "The file is incomplete: it holds only the first {count} payments of the period. Narrow the period and download the rest separately."
+      },
+      "backerDisputes": {
+        "subject": "the backer dispute queue",
+        "heading": "Backer disputes",
+        "intro": "Opened by backers while a payout is held. Upholding refunds the backer in full and recalculates the payout without them; the campaign stays successful. Rejecting moves nothing.",
+        "loadingList": "Loading the backer dispute queue",
+        "emptyTitle": "No open backer disputes",
+        "emptyBody": "Nothing is waiting for a decision. Backers can dispute only while a payout for their campaign is held.",
+        "pledgeLine": "Pledge {pledge} · campaign {project} · opened {date}",
+        "noteLabel": "Note",
+        "noteHint": "Recorded with the decision, and in the audit log.",
+        "uphold": "Uphold and refund",
+        "reject": "Reject",
+        "confirmUphold": "Refund this backer in full and recalculate the payout?",
+        "confirmNow": "Refund in full",
+        "deciding": "Deciding…",
+        "alreadyDecided": "Somebody has already decided this dispute. The list has been reloaded.",
+        "refundFailed": "The refund was refused, so the dispute is still open. Try again, or look at the refund on the refunds screen.",
+        "failedTitle": "That did not work"
       }
     },
     "moderation": {
@@ -3007,6 +3026,19 @@
       "waitingBody": "The payment provider has not told us the outcome yet. This page checks again for a minute; you do not need to pay a second time.",
       "failedTitle": "The payment did not go through",
       "failedBody": "Nothing was taken. Your reward stays held until the hold ends, and you can pay again from the campaign."
+    },
+    "dispute": {
+      "heading": "Dispute this payment",
+      "intro": "While the creator’s payout is held, you can ask for your payment back. An administrator reads your reason and decides; if they agree, you are refunded in full.",
+      "reasonLabel": "What went wrong",
+      "reasonHint": "Up to 2,000 characters. Say what you were promised and what happened.",
+      "submit": "Send the dispute",
+      "sending": "Sending…",
+      "cancel": "Cancel",
+      "opened": "Your dispute is open. An administrator will decide it before the payout is sent.",
+      "windowClosed": "This payment can no longer be disputed through IdeaNest: no payout is being held for the campaign.",
+      "nothing": "There is nothing left of this payment to refund.",
+      "failed": "That did not work. Try again in a moment."
     }
   },
   "pricing": {

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { BackerDisputeQueue } from '../../../../components/admin/BackerDisputeQueue';
 import { DisputeConsole } from '../../../../components/admin/DisputeConsole';
-import { disputeConsoleCopy } from '../../../../lib/i18n/admin/console.server';
+import { backerDisputeQueueCopy, disputeConsoleCopy } from '../../../../lib/i18n/admin/console.server';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 
 /**
@@ -29,6 +30,11 @@ export default async function DisputesPage() {
 
       <div className="mt-8">
         <DisputeConsole copy={await disputeConsoleCopy()} />
+      </div>
+
+      {/* IDN-EXT-01 (#44): disputes backers opened while a payout was held, below the chargebacks. */}
+      <div className="mt-12">
+        <BackerDisputeQueue copy={await backerDisputeQueueCopy()} />
       </div>
     </div>
   );

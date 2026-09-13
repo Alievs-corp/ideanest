@@ -148,6 +148,20 @@ export interface CheckoutCopy {
     readonly failedTitle: string;
     readonly failedBody: string;
   };
+  /** IDN-EXT-01 (#44): a backer disputing a paid pledge while the creator's payout is held. */
+  readonly dispute: {
+    readonly heading: string;
+    readonly intro: string;
+    readonly reasonLabel: string;
+    readonly reasonHint: string;
+    readonly submit: string;
+    readonly sending: string;
+    readonly cancel: string;
+    readonly opened: string;
+    readonly windowClosed: string;
+    readonly nothing: string;
+    readonly failed: string;
+  };
   readonly errors: {
     readonly amountMissing: string;
     readonly amountPrecision: string;
@@ -307,6 +321,19 @@ export function checkoutCopyFrom(t: CheckoutTranslator): CheckoutCopy {
       waitingBody: t('returned.waitingBody'),
       failedTitle: t('returned.failedTitle'),
       failedBody: t('returned.failedBody'),
+    },
+    dispute: {
+      heading: t('dispute.heading'),
+      intro: t('dispute.intro'),
+      reasonLabel: t('dispute.reasonLabel'),
+      reasonHint: t('dispute.reasonHint'),
+      submit: t('dispute.submit'),
+      sending: t('dispute.sending'),
+      cancel: t('dispute.cancel'),
+      opened: t('dispute.opened'),
+      windowClosed: t('dispute.windowClosed'),
+      nothing: t('dispute.nothing'),
+      failed: t('dispute.failed'),
     },
     errors: {
       amountMissing: t('errors.amountMissing'),

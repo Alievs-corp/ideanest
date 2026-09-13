@@ -591,6 +591,55 @@ export interface DisputeConsoleCopy extends ConsoleChromeCopy {
   readonly evidenceKind: Readonly<Record<EvidenceKind, string>>;
 }
 
+/**
+ * The backer dispute queue — IDN-EXT-01 (#43, #44), below the chargebacks on `/admin/disputes`.
+ *
+ * <p>`pledgeLine` carries `{pledge}`, `{project}` and `{date}`.
+ */
+export interface BackerDisputeQueueCopy extends ConsoleChromeCopy {
+  readonly subject: string;
+  readonly heading: string;
+  readonly intro: string;
+  readonly loadingList: string;
+  readonly emptyTitle: string;
+  readonly emptyBody: string;
+  readonly pledgeLine: string;
+  readonly noteLabel: string;
+  readonly noteHint: string;
+  readonly uphold: string;
+  readonly reject: string;
+  readonly confirmUphold: string;
+  readonly confirmNow: string;
+  readonly deciding: string;
+  readonly alreadyDecided: string;
+  readonly refundFailed: string;
+  readonly failedTitle: string;
+}
+
+export function backerDisputeQueueCopyFrom(t: AdminTranslator, chrome: ConsoleChromeCopy): BackerDisputeQueueCopy {
+  const at = (key: string) => String(t.raw(`screens.backerDisputes.${key}`));
+  return {
+    ...chrome,
+    subject: at('subject'),
+    heading: at('heading'),
+    intro: at('intro'),
+    loadingList: at('loadingList'),
+    emptyTitle: at('emptyTitle'),
+    emptyBody: at('emptyBody'),
+    pledgeLine: at('pledgeLine'),
+    noteLabel: at('noteLabel'),
+    noteHint: at('noteHint'),
+    uphold: at('uphold'),
+    reject: at('reject'),
+    confirmUphold: at('confirmUphold'),
+    confirmNow: at('confirmNow'),
+    deciding: at('deciding'),
+    alreadyDecided: at('alreadyDecided'),
+    refundFailed: at('refundFailed'),
+    failedTitle: at('failedTitle'),
+  };
+}
+
 export function disputeConsoleCopyFrom(
   t: AdminTranslator,
   chrome: ConsoleChromeCopy,
