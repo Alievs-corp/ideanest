@@ -53,8 +53,26 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     Optional<Project> findByIdForUpdate(@Param("id") UUID id);
 
     /**
-     * Campaigns whose deadline has passed and which §5.1 has not yet decided — §8.4's
-     * {@code campaign-finalizer}, one page at a time.
+     * Campaigns the finaliser has something to do to — §8.4's {@code campaign-finalizer},
+     * one page at a time.
+     *
+     * <p><strong>Three kinds since IDN-EXT-01 (#33)</strong>, each with its own instant:
+     *
+     * <ul>
+     *   <li>{@code LIVE} past its first deadline — enters the seven-day window;
+     *   <li>{@code CLOSING_WINDOW} past the end of that window — is decided;
+     *   <li>{@code EXTENDED} past the end of its extension — is decided.
+     * </ul>
+     *
+     * <p>A campaign in the window is <em>not</em> selected again until its window has ended,
+     * which is why the second condition takes {@code windowStart} rather than {@code now}: a
+     * predicate on {@code deadline <= now} would return the same thousand campaigns every
+     * minute for a week, each claimed, locked and found to have nothing to do.
+     *
+     * <p>Ordered by the first deadline for all three, so the campaign that has been waiting
+     * longest is served first. An extension ends later than its deadline by construction
+     * (V74), so ordering by it would only move extended campaigns to the back of a queue they
+     * are already behind.
      *
      * <p><strong>Identifiers, not entities, and no lock.</strong> The finaliser opens a
      * transaction per campaign, so entities loaded here would belong to a transaction
@@ -75,17 +93,23 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
      * picked up for ever if that invariant were ever broken.
      *
      * @param now the pass's instant; a campaign whose deadline is exactly now has closed
+     * @param windowStart {@code now} minus the closing window: a campaign whose first deadline
+     *     is at or before this has had its seven days
      * @param page the bound, from {@code ideanest.project.finalisation.batch-size}
      */
     @Query(
             """
             SELECT p.id FROM Project p
-            WHERE p.state = az.ideanest.project.domain.ProjectState.LIVE
-              AND p.deadline <= :now
-              AND p.finalizedAt IS NULL
+            WHERE p.finalizedAt IS NULL
+              AND ((p.state = az.ideanest.project.domain.ProjectState.LIVE AND p.deadline <= :now)
+                   OR (p.state = az.ideanest.project.domain.ProjectState.CLOSING_WINDOW
+                       AND p.deadline <= :windowStart)
+                   OR (p.state = az.ideanest.project.domain.ProjectState.EXTENDED
+                       AND p.extendedUntil <= :now))
             ORDER BY p.deadline ASC
             """)
-    List<UUID> findClosedCampaigns(@Param("now") Instant now, Pageable page);
+    List<UUID> findClosedCampaigns(
+            @Param("now") Instant now, @Param("windowStart") Instant windowStart, Pageable page);
 
     /**
      * Campaigns §5.1 decided in favour of and whose collection has not started — §8.4's

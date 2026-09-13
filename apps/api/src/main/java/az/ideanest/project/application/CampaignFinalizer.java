@@ -2,6 +2,7 @@ package az.ideanest.project.application;
 
 import az.ideanest.project.domain.CampaignOutcome;
 import az.ideanest.project.domain.Project;
+import az.ideanest.project.domain.ProjectState;
 import az.ideanest.shared.outbox.Outbox;
 import java.time.Instant;
 import java.util.Optional;
@@ -90,6 +91,13 @@ public class CampaignFinalizer {
         }
 
         Project project = finalised.get();
+        if (project.getState() == ProjectState.CLOSING_WINDOW) {
+            // IDN-EXT-01 (#33): the deadline opened the seven days and decided nothing, so there
+            // is nothing to announce. The page's "Closing soon" badge is read from the state;
+            // an event here would be a message about a decision nobody has taken.
+            log.debug("Campaign {} entered its closing window.", project.getId());
+            return true;
+        }
         // Recorded from the row after the freeze, never from the numbers this method was
         // handed, so a redelivery eight hours later reproduces the message the deadline
         // would have produced. CampaignFinalisedEvent says why the outcome is the event

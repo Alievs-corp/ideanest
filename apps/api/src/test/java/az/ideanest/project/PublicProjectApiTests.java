@@ -382,7 +382,8 @@ class PublicProjectApiTests extends AbstractIntegrationTest {
 
     /** The same campaign, a day past its deadline. */
     private UUID closed(String slug) {
-        return campaign(slug, Duration.ofDays(1).negated());
+        // Past the first deadline and its seven-day window (#33), so the finaliser decides it.
+        return campaign(slug, Duration.ofDays(8).negated());
     }
 
     private UUID campaign(String slug, Duration deadlineFromNow) {
