@@ -82,24 +82,55 @@ public class WithdrawalPayouts {
         if (existing.isPresent()) {
             return existing;
         }
+        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        Optional<Payout> requested = price(projectId, now, now.plus(properties.hold()), "withdrawal", automatic);
+        requested.ifPresent(payout -> outbox.record(
+                PayoutRequestedEvent.AGGREGATE_TYPE,
+                payout.id(),
+                PayoutRequestedEvent.EVENT_TYPE,
+                new PayoutRequestedEvent(projectId, payout.creatorId(), payout.id(), payout.payableAt(), automatic, now)));
+        return requested;
+    }
+
+    /**
+     * Recalculates the payout in flight after its figures moved — IDN-EXT-01 (#43), an upheld dispute.
+     *
+     * <p>The payout in flight is cancelled and a new one priced from the funds as they now stand,
+     * <strong>keeping the hold's end</strong>: a dispute refunds one backer and does not restart the
+     * fourteen days for everybody else. Nobody is told again; the backers were told when it was
+     * requested. Empty when nothing is left to pay.
+     */
+    @Transactional
+    public Optional<Payout> recalculate(UUID projectId) {
+        Optional<Payout> inFlight = payouts.inFlightFor(projectId);
+        if (inFlight.isEmpty()) {
+            return Optional.empty();
+        }
+        Payout held = payouts.findAndLock(inFlight.get().id()).orElseThrow();
+        Instant payableAt = held.payableAt();
+        held.cancelled();
+        payouts.saveAndFlush(held);
+        return price(projectId, clock.instant().truncatedTo(ChronoUnit.MICROS), payableAt, "recalculated", false);
+    }
+
+    private Optional<Payout> price(UUID projectId, Instant now, Instant payableAt, String why, boolean automatic) {
         ProjectSummary campaign = projects
                 .summaryOf(projectId)
                 .orElseThrow(() -> new UnknownPayoutCampaignException(projectId));
 
-        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         CampaignFunds funds = gateway.fundsOf(projectId, properties.currency());
         if (!funds.net().isPositive()) {
-            log.warn("Campaign {} was withdrawn with nothing collected to pay out.", projectId);
+            log.warn("Campaign {} has nothing collected left to pay out ({}).", projectId, why);
             return Optional.empty();
         }
         FeeBreakdown breakdown = fees.priceOf(funds.collected(), now, projectId);
         Money net = breakdown.net().minus(funds.refunded());
         if (!net.isPositive()) {
-            log.warn("Campaign {} was withdrawn with nothing left to pay out after fees and refunds.", projectId);
+            log.warn("Campaign {} has nothing left to pay out after fees and refunds ({}).", projectId, why);
             return Optional.empty();
         }
 
-        Payout requested = payouts.save(Payout.calculated(
+        Payout priced = payouts.save(Payout.calculated(
                 projectId,
                 campaign.creatorId(),
                 funds.collected(),
@@ -108,23 +139,18 @@ public class WithdrawalPayouts {
                 funds.refunded(),
                 net,
                 breakdown.scheduleId(),
-                now.plus(properties.hold()),
+                payableAt,
                 service.approvalsRequiredFor(net),
-                "withdrawal-" + projectId + "-" + now.toEpochMilli()));
+                why + "-" + projectId + "-" + now.toEpochMilli()));
 
         audit.record(
                 AuditAction.PAYOUT_CALCULATED,
-                requested.id(),
+                priced.id(),
                 AuditActor.system(),
                 AuditOutcome.SUCCEEDED,
-                "withdrawal; automatic=%s; project=%s; gross=%s; fees=%s; refunded=%s; net=%s"
-                        .formatted(automatic, projectId, funds.collected(), breakdown.totalFees(), funds.refunded(), net));
-        outbox.record(
-                PayoutRequestedEvent.AGGREGATE_TYPE,
-                requested.id(),
-                PayoutRequestedEvent.EVENT_TYPE,
-                new PayoutRequestedEvent(projectId, campaign.creatorId(), requested.id(), requested.payableAt(), automatic, now));
-        log.info("Payout {} requested by the withdrawal of campaign {}; payable at {}.", requested.id(), projectId, requested.payableAt());
-        return Optional.of(requested);
+                "%s; automatic=%s; project=%s; gross=%s; fees=%s; refunded=%s; net=%s"
+                        .formatted(why, automatic, projectId, funds.collected(), breakdown.totalFees(), funds.refunded(), net));
+        log.info("Payout {} {} for campaign {}; payable at {}.", priced.id(), why, projectId, priced.payableAt());
+        return Optional.of(priced);
     }
 }

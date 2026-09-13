@@ -214,4 +214,17 @@ public class RefundService {
             case PENDING, FAILED -> refund;
         };
     }
+
+    /**
+     * IDN-EXT-01 (#43): refund a pledge in full because an administrator upheld the backer's dispute.
+     *
+     * <p>For the payout module, which may not name this module's domain: the refund goes through
+     * {@link #issue} with {@code DISPUTE_CONCEDED}, and the answer is only whether it went through.
+     *
+     * @return the refund's identifier when it succeeded, empty when the provider refused it
+     */
+    public Optional<UUID> refundForDispute(UUID staffId, UUID pledgeId, String detail, String idempotencyKey) {
+        Refund refund = issue(staffId, pledgeId, null, RefundReason.DISPUTE_CONCEDED, detail, idempotencyKey);
+        return refund.state() == RefundState.SUCCEEDED ? Optional.of(refund.id()) : Optional.empty();
+    }
 }
