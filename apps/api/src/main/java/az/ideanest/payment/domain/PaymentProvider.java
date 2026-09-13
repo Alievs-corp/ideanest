@@ -139,6 +139,38 @@ public interface PaymentProvider {
     PaymentEvent parseWebhook(byte[] rawBody, Map<String, String> headers);
 
     /**
+     * IDN-EXT-01's payment (#38): begin a charge the backer makes on the provider's own page.
+     *
+     * <p>A default that refuses, so an adapter for the retired stored-card model need not
+     * pretend to support it. #39 is the caller.
+     *
+     * @throws ProviderUnavailableException when the provider could not be reached, or refused to
+     *     begin — which, before a card has been seen, is a configuration fault and not a decline
+     */
+    default HostedPaymentSession beginHostedPayment(HostedPaymentRequest request) {
+        throw new UnsupportedOperationException(name() + " does not take payments on a hosted page");
+    }
+
+    /**
+     * What a payment is now, asked of the provider. Safe to ask repeatedly.
+     *
+     * @throws ProviderUnavailableException when the provider could not be reached or answered
+     *     something that cannot be read
+     */
+    default PaymentLookup lookUpPayment(String providerTransactionId) {
+        throw new UnsupportedOperationException(name() + " does not look up hosted payments");
+    }
+
+    /**
+     * Begin registering the business card a creator's payout goes to (#41).
+     *
+     * @throws ProviderUnavailableException when the provider could not be reached or refused
+     */
+    default PayoutCardSession beginPayoutCardRegistration(PayoutCardRequest request) {
+        throw new UnsupportedOperationException(name() + " does not register payout cards");
+    }
+
+    /**
      * What this provider can do, from §9.3's table.
      *
      * <p>Read at start-up by {@code PaymentProviders}, which refuses an adapter that

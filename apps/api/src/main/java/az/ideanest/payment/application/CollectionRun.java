@@ -151,7 +151,9 @@ public class CollectionRun {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public CollectionOutcome collectNext(CollectionStage stage, Instant now) {
-        Optional<PaymentProvider> configured = providers.primary();
+        // collecting() and not primary(): under IDN-EXT-01 a configured provider that cannot
+        // collect stored cards (Epoint) charges at confirmation, and must not start this.
+        Optional<PaymentProvider> configured = providers.collecting();
         if (configured.isEmpty()) {
             return CollectionOutcome.NO_PROVIDER;
         }
@@ -336,7 +338,7 @@ public class CollectionRun {
                 NO_PAYMENT_METHOD,
                 "The pledge has no stored card; §9.2's phase one is #55, blocked on #60.",
                 null);
-        return recordDeclined(pledge, providers.primary().orElseThrow(), refusal, key, now);
+        return recordDeclined(pledge, providers.collecting().orElseThrow(), refusal, key, now);
     }
 
     private CollectionOutcome recordUnresolved(

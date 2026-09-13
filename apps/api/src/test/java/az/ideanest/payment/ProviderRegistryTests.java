@@ -52,27 +52,25 @@ class ProviderRegistryTests {
     }
 
     @Test
-    @DisplayName("an adapter that cannot do R-01, R-02 and R-03 is refused at start-up")
-    void anIncapableAdapterIsRefused() {
-        // §9.1: without merchant-initiated transactions "the model collapses". A service
-        // that will not start is a deployment somebody fixes; a warning is a line in a
-        // log nobody reads.
-        PaymentProvider incapable = new FakeProvider(ProviderName.PAYRIFF, capabilities(true, false, true));
+    @DisplayName("IDN-EXT-01: an adapter that cannot collect stored cards registers, and is never the collecting one")
+    void anAdapterThatCannotCollectRegistersButDoesNotCollect() {
+        // The charge-now model (#38): Epoint charges at confirmation and cannot do R-02 and R-03.
+        // It is the primary, and CollectionRun -- which asks collecting() -- must not start.
+        PaymentProvider epoint = new FakeProvider(ProviderName.EPOINT, capabilities(true, false, false));
 
-        assertThatThrownBy(() -> new PaymentProviders(List.of(incapable), properties("payriff")))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("R-02");
+        PaymentProviders providers = new PaymentProviders(List.of(epoint), properties("epoint"));
+
+        assertThat(providers.primary()).containsSame(epoint);
+        assertThat(providers.collecting()).isEmpty();
     }
 
     @Test
-    @DisplayName("the refusal names every capability that is missing, not just the first")
-    void theRefusalNamesEveryMissingCapability() {
-        PaymentProvider incapable = new FakeProvider(ProviderName.EPOINT, capabilities(false, false, false));
-
-        assertThatThrownBy(() -> new PaymentProviders(List.of(incapable), properties("")))
-                .hasMessageContaining("R-01")
-                .hasMessageContaining("R-02")
-                .hasMessageContaining("R-03");
+    @DisplayName("what is missing names every capability, not just the first")
+    void everyMissingCapabilityIsNamed() {
+        assertThat(String.join(", ", capabilities(false, false, false).missing()))
+                .contains("R-01")
+                .contains("R-02")
+                .contains("R-03");
     }
 
     @Test
@@ -115,6 +113,7 @@ class ProviderRegistryTests {
         PaymentProviders providers = new PaymentProviders(List.of(payriff, epoint), properties("PAYRIFF"));
 
         assertThat(providers.primary()).containsSame(payriff);
+        assertThat(providers.collecting()).containsSame(payriff);
         assertThat(providers.registered()).containsExactlyInAnyOrder(ProviderName.PAYRIFF, ProviderName.EPOINT);
         // byName and not primary(): #66's webhooks must still verify deliveries about
         // charges made through a provider the platform has stopped charging with.
@@ -135,7 +134,7 @@ class ProviderRegistryTests {
     // ------------------------------------------------------------------
 
     private static PaymentProperties properties(String primary) {
-        return new PaymentProperties(new PaymentProperties.Provider(primary), null, null, null, null);
+        return new PaymentProperties(new PaymentProperties.Provider(primary), null, null, null, null, null);
     }
 
     private static ProviderCapabilities capabilities(

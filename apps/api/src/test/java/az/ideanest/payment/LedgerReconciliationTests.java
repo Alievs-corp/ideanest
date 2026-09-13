@@ -214,7 +214,7 @@ class LedgerReconciliationTests {
 
         LedgerReconciliationJob job = new LedgerReconciliationJob(
                 reconciliation,
-                new PaymentProperties(null, null, null, null, new PaymentProperties.Reconciliation("-")));
+                new PaymentProperties(null, null, null, null, new PaymentProperties.Reconciliation("-"), null));
 
         // Throwing is how a ScheduledJob reports that it could not run: the runner counts the
         // attempt, backs off, and eventually stops scheduling. A pass that ran and found
@@ -231,7 +231,7 @@ class LedgerReconciliationTests {
     void neverHavingRunIsItsOwnAnswer() {
         LedgerReconciliationJob job = new LedgerReconciliationJob(
                 reconciliation,
-                new PaymentProperties(null, null, null, null, new PaymentProperties.Reconciliation("-")));
+                new PaymentProperties(null, null, null, null, new PaymentProperties.Reconciliation("-"), null));
 
         assertThat(job.lastReport().hasRun()).isFalse();
         assertThat(job.lastReport().balanced()).isTrue();
@@ -242,7 +242,7 @@ class LedgerReconciliationTests {
     void theScheduleHasADefault() {
         assertThat(PaymentProperties.Reconciliation.defaults().schedule()).isNotBlank();
         assertThat(new PaymentProperties.Reconciliation(null).schedule()).isNotBlank();
-        assertThat(new PaymentProperties(null, null, null, null, null).reconciliation()).isNotNull();
+        assertThat(new PaymentProperties(null, null, null, null, null, null).reconciliation()).isNotNull();
     }
 
     /* ---------------------------------------------------------------------- */
