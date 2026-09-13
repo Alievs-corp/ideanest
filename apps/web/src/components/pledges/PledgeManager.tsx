@@ -16,6 +16,7 @@ import { describeFailure, type CheckoutFailure } from '../../lib/pledges/failure
 import { formatExactTime } from '../../lib/time';
 import { approximate, formatMoney, type ExchangeRate } from '../../lib/money';
 import { PledgeEditor } from './PledgeEditor';
+import { paymentReturnHint, type PaymentReturnHint } from '../../lib/pledges/payment';
 import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
@@ -65,6 +66,17 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
 /** §6.2's two editable states. The service's `PledgeState.EDITABLE`, and nothing more. */
 const EDITABLE = new Set(['DRAFT', 'CONFIRMED']);
+
+/**
+ * IDN-EXT-01 (#44): how long a page the payment provider returned to keeps asking.
+ *
+ * The provider's webhook settles the pledge and may land after the browser does. Twenty reads,
+ * three seconds apart, is a minute: long enough for an ordinary webhook, short enough that a
+ * page left open does not poll for ever. After that the page stops and says it is still waiting,
+ * which is true, rather than guessing either way.
+ */
+const PAYMENT_CHECKS = 20;
+const PAYMENT_CHECK_INTERVAL_MS = 3000;
 
 type Status = 'loading' | 'ready' | 'failed';
 
@@ -126,6 +138,27 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
     return () => controller.abort();
   }, [load]);
 
+  /*
+   * Read from the address once, after hydration, rather than through `useSearchParams`: the hint
+   * changes nothing the server renders, and reading it here keeps this component free of a
+   * Suspense boundary for one query parameter.
+   */
+  const [returned, setReturned] = useState<PaymentReturnHint | null>(null);
+  const [checks, setChecks] = useState(0);
+  useEffect(() => {
+    setReturned(paymentReturnHint(window.location.search));
+  }, []);
+
+  useEffect(() => {
+    if (returned !== 'returned' || pledge === null || pledge.state !== 'DRAFT') return;
+    if (checks >= PAYMENT_CHECKS) return;
+    const timer = setTimeout(() => {
+      setChecks((count) => count + 1);
+      void load();
+    }, PAYMENT_CHECK_INTERVAL_MS);
+    return () => clearTimeout(timer);
+  }, [returned, pledge, checks, load]);
+
   const display = useMemo(() => {
     try {
       return new Intl.DisplayNames(['en'], { type: 'region' });
@@ -168,6 +201,8 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
 
   return (
     <div className="flex flex-col gap-6">
+      {returned !== null && <PaymentReturnNotice hint={returned} state={pledge.state} copy={copy} />}
+
       <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
@@ -312,4 +347,45 @@ function quotedRate(pledge: PledgeResponse): ExchangeRate | null {
   const currency = pledge.displayCurrency;
   const rate = pledge.displayRate;
   return currency == null || rate == null ? null : { currency, rate, publishedFor: '' };
+}
+
+/**
+ * What a backer the payment provider sent back is told — IDN-EXT-01 (#44).
+ *
+ * The pledge's state decides it, not the word in the address (`lib/pledges/payment.ts`): `COLLECTED`
+ * is paid whichever door they came through, a `DRAFT` after a successful return is a webhook still
+ * on its way, and anything else — a failed return, or a hold that ran out — took nothing. Words and
+ * an icon-bearing alert rather than colour alone (ui-kit §9.2), and no motion: this is money.
+ */
+function PaymentReturnNotice({
+  hint,
+  state,
+  copy,
+}: {
+  readonly hint: PaymentReturnHint;
+  readonly state: PledgeResponse['state'];
+  readonly copy: CheckoutCopy;
+}) {
+  if (state === 'COLLECTED') {
+    return (
+      <InlineAlert variant="success" title={copy.returned.paidTitle}>
+        <p>{copy.returned.paidBody}</p>
+      </InlineAlert>
+    );
+  }
+  if (hint === 'returned' && state === 'DRAFT') {
+    return (
+      <InlineAlert variant="info" title={copy.returned.waitingTitle}>
+        <p>{copy.returned.waitingBody}</p>
+      </InlineAlert>
+    );
+  }
+  if (state === 'DRAFT' || state === 'EXPIRED') {
+    return (
+      <InlineAlert variant="warning" title={copy.returned.failedTitle}>
+        <p>{copy.returned.failedBody}</p>
+      </InlineAlert>
+    );
+  }
+  return null;
 }

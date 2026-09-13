@@ -3,9 +3,10 @@ import { act, cleanup, render, screen, waitFor, within } from '@testing-library/
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import {
-  confirmPledge,
   createPledgeDraft,
   getPublicRewards,
+  payForPledge,
+  type PaymentPageResponse,
   type PledgeResponse,
   type PublicReward,
 } from '../../lib/pledges/api';
@@ -13,6 +14,7 @@ import { expectNoViolations } from '../../test-axe';
 import { CheckoutView } from './CheckoutView';
 import MESSAGES from '../../../messages/en.json';
 import { checkoutCopyFrom } from '../../lib/i18n/checkout-copy';
+import { leaveForPaymentPage } from '../../lib/pledges/payment';
 
 /*
  * The copy the server would have resolved, built from `messages/en.json` by the same function
@@ -72,12 +74,30 @@ vi.mock('../../lib/pledges/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../lib/pledges/api')>()),
   getPublicRewards: vi.fn(),
   createPledgeDraft: vi.fn(),
-  confirmPledge: vi.fn(),
+  payForPledge: vi.fn(),
+}));
+
+/*
+ * The navigation, observed rather than attempted: jsdom implements none, and a test that failed
+ * to leave silently would pass for the wrong reason. The return addresses stay real, because
+ * what they say is part of what is under test.
+ */
+vi.mock('../../lib/pledges/payment', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/pledges/payment')>()),
+  leaveForPaymentPage: vi.fn(),
 }));
 
 const rewardsMock = vi.mocked(getPublicRewards);
 const draftMock = vi.mocked(createPledgeDraft);
-const confirmMock = vi.mocked(confirmPledge);
+const payMock = vi.mocked(payForPledge);
+const leaveMock = vi.mocked(leaveForPaymentPage);
+
+/** What the service answers when it has opened the provider's page for `pledge-1`. */
+const PAGE: PaymentPageResponse = {
+  pledgeId: 'pledge-1',
+  providerTransactionId: 'provider-transaction-1',
+  redirectUrl: 'https://payments.test/page/provider-transaction-1',
+};
 
 /* -------------------------------------------------------------------------
  * Fixtures
@@ -581,7 +601,7 @@ describe('reserving', () => {
     await reserveTheMug(user);
 
     expect(await screen.findByText(/Your reward is held for/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Confirm pledge' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Continue to payment' })).toBeEnabled();
   });
 
   it('offers a new reservation once the hold has run out', async () => {
@@ -597,7 +617,7 @@ describe('reserving', () => {
     expect(await screen.findByText(/Your reward is no longer held/)).toBeInTheDocument();
     // Confirming an expired reservation would be refused; the interface does not
     // offer it as though it might work.
-    expect(screen.getByRole('button', { name: 'Confirm pledge' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Continue to payment' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Reserve again' })).toBeEnabled();
   });
 });
@@ -653,10 +673,10 @@ describe('a refusal', () => {
   it('makes an expired reservation recoverable, with a new key', async () => {
     const user = await open();
     await reserveTheMug(user);
-    await screen.findByRole('button', { name: 'Confirm pledge' });
+    await screen.findByRole('button', { name: 'Continue to payment' });
 
-    confirmMock.mockRejectedValue(refusal('RESERVATION_EXPIRED', 409));
-    await user.click(screen.getByRole('button', { name: 'Confirm pledge' }));
+    payMock.mockRejectedValue(refusal('RESERVATION_EXPIRED', 409));
+    await user.click(screen.getByRole('button', { name: 'Continue to payment' }));
 
     expect(await screen.findByText('Your reward was only held for five minutes')).toBeInTheDocument();
 
@@ -708,13 +728,13 @@ describe('a refusal', () => {
     expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
     expect(screen.queryByText(/did not say why/)).not.toBeInTheDocument();
     // Nothing was reserved, so nothing moved on from the form.
-    expect(screen.queryByRole('button', { name: 'Confirm pledge' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Continue to payment' })).not.toBeInTheDocument();
   });
 
   it('recovers from a pledge that was changed underneath the confirmation', async () => {
     const user = await open();
     await reserveTheMug(user);
-    await screen.findByRole('button', { name: 'Confirm pledge' });
+    await screen.findByRole('button', { name: 'Continue to payment' });
 
     /*
      * §8.4's sweep expiring the draft in the moment its backer confirms it. The
@@ -722,8 +742,8 @@ describe('a refusal', () => {
      * this arrives as `PLEDGE_MODIFIED` and not as `RESERVATION_EXPIRED` — and
      * it is a recovery either way rather than a dead end.
      */
-    confirmMock.mockRejectedValue(refusal('PLEDGE_MODIFIED', 409));
-    await user.click(screen.getByRole('button', { name: 'Confirm pledge' }));
+    payMock.mockRejectedValue(refusal('PLEDGE_MODIFIED', 409));
+    await user.click(screen.getByRole('button', { name: 'Continue to payment' }));
 
     expect(
       await screen.findByText('This pledge changed while you were confirming it'),
@@ -803,7 +823,7 @@ describe('a request whose first attempt is still running', () => {
     expect(draftKey(1)).toBe(draftKey(0));
 
     // And it succeeded, so the backer never saw the collision at all.
-    expect(await screen.findByRole('button', { name: 'Confirm pledge' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Continue to payment' })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
@@ -844,28 +864,28 @@ describe('a request whose first attempt is still running', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeEnabled();
   });
 
-  it('does the same for the confirmation, and retries the confirmation rather than the draft', async () => {
+  it('does the same for the payment, and retries the payment rather than the draft', async () => {
     const user = await openWithTimers();
     await reserveTheMug(user);
-    await screen.findByRole('button', { name: 'Confirm pledge' });
+    await screen.findByRole('button', { name: 'Continue to payment' });
 
-    confirmMock
+    payMock
       .mockRejectedValueOnce(inProgress(2))
-      .mockResolvedValue(draft({ state: 'CONFIRMED', reservationExpiresAt: null }));
+      .mockResolvedValue(PAGE);
 
-    await user.click(screen.getByRole('button', { name: 'Confirm pledge' }));
-    expect(confirmMock).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole('button', { name: 'Continue to payment' }));
+    expect(payMock).toHaveBeenCalledTimes(1);
 
     await tick(2000);
 
-    expect(confirmMock).toHaveBeenCalledTimes(2);
-    // The confirm intent's key, unchanged — and the draft was not sent again,
+    expect(payMock).toHaveBeenCalledTimes(2);
+    // The payment intent's key, unchanged — and the draft was not sent again,
     // which would have been a second reservation for a pledge that already has
     // one.
-    expect(confirmMock.mock.calls[1]?.[2]).toBe(confirmMock.mock.calls[0]?.[2]);
+    expect(payMock.mock.calls[1]?.[2]).toBe(payMock.mock.calls[0]?.[2]);
     expect(draftMock).toHaveBeenCalledTimes(1);
 
-    expect(await screen.findByText('Your pledge is confirmed')).toBeInTheDocument();
+    await waitFor(() => expect(leaveMock).toHaveBeenCalledWith(PAGE.redirectUrl));
   });
 });
 
@@ -874,11 +894,11 @@ describe('a request whose first attempt is still running', () => {
  * ---------------------------------------------------------------------- */
 
 describe('the payment step', () => {
-  it('takes no card, and says so', async () => {
+  it('takes no card, and says where it is taken', async () => {
     const user = await open();
     await reserveTheMug(user);
 
-    expect(await screen.findByText('No card is collected yet')).toBeInTheDocument();
+    expect(await screen.findByText('You pay on the payment provider’s page')).toBeInTheDocument();
     // Not a disabled card form, not a placeholder that looks like one: nothing
     // on this page may teach somebody that a card number goes here (§17.2).
     expect(screen.queryByLabelText(/card number/i)).not.toBeInTheDocument();
@@ -907,26 +927,21 @@ describe('the risk statement §22.3 requires inside the pledge flow', () => {
      * evidence and is also friction on the platform's most important conversion; a control
      * whose words say what pressing it means cannot be clicked past.
      */
-    expect(screen.getByRole('button', { name: 'I understand — confirm my pledge' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Confirm pledge' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'I understand — continue to payment' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Continue to payment' })).not.toBeInTheDocument();
   });
 
   it('sends the version it showed, so a stale page is refused rather than recorded', async () => {
-    confirmMock.mockResolvedValue(
-      draft({ state: 'CONFIRMED', reservationExpiresAt: null, confirmedAt: '2026-08-17T10:00:00Z' }),
-    );
+    payMock.mockResolvedValue(PAGE);
 
     const user = await open(null, 3);
     await reserveTheMug(user);
-    await user.click(await screen.findByRole('button', { name: 'I understand — confirm my pledge' }));
+    await user.click(await screen.findByRole('button', { name: 'I understand — continue to payment' }));
 
-    await screen.findByText('Your pledge is confirmed');
+    await waitFor(() => expect(leaveMock).toHaveBeenCalledWith(PAGE.redirectUrl));
     // The number, not a boolean. A boolean would say "the client ticked something"; what has
     // to be recorded is which sentence the person read.
-    expect(confirmMock.mock.calls[0]?.[1]).toEqual({
-      paymentMethodId: null,
-      acknowledgedAgreementVersion: 3,
-    });
+    expect(payMock.mock.calls[0]?.[1]).toMatchObject({ acknowledgedAgreementVersion: 3 });
   });
 
   it('is absent, and asks for nothing, while no agreement is published', async () => {
@@ -938,102 +953,72 @@ describe('the risk statement §22.3 requires inside the pledge flow', () => {
     const user = await open();
     await reserveTheMug(user);
 
-    await screen.findByRole('button', { name: 'Confirm pledge' });
+    await screen.findByRole('button', { name: 'Continue to payment' });
     expect(screen.queryByRole('region', { name: 'What backing means' })).not.toBeInTheDocument();
   });
 });
 
-describe('confirming', () => {
-  it('states plainly that nothing has been charged', async () => {
-    confirmMock.mockResolvedValue(
-      draft({ state: 'CONFIRMED', reservationExpiresAt: null, confirmedAt: '2026-08-17T10:00:00Z' }),
-    );
+describe('paying', () => {
+  it('opens the provider’s page and leaves for it, and claims nothing was paid', async () => {
+    payMock.mockResolvedValue(PAGE);
 
     const user = await open();
     await reserveTheMug(user);
-    await user.click(await screen.findByRole('button', { name: 'Confirm pledge' }));
+    await user.click(await screen.findByRole('button', { name: 'Continue to payment' }));
 
-    expect(await screen.findByText('Your pledge is confirmed')).toBeInTheDocument();
+    await waitFor(() => expect(leaveMock).toHaveBeenCalledWith(PAGE.redirectUrl));
+    // IDN-EXT-01 (#44): the provider returns the backer to the pledge's own page, in the
+    // language the checkout was read in, and says which door they came through.
+    const page = `${window.location.origin}/en/pledges/pledge-1`;
+    expect(payMock.mock.calls[0]?.[1]).toEqual({
+      // #427: null because no backer agreement is published in this fixture.
+      acknowledgedAgreementVersion: null,
+      language: 'en',
+      successUrl: `${page}?payment=returned`,
+      errorUrl: `${page}?payment=failed`,
+    });
+    // Its own key, not the draft's.
+    expect(payMock.mock.calls[0]?.[2]).toBeTruthy();
+    expect(payMock.mock.calls[0]?.[2]).not.toBe(draftKey(0));
 
-    const outcome = within(screen.getByRole('region', { name: 'What happens now' }));
-    expect(outcome.getByText(/No card has been charged/)).toBeInTheDocument();
-    expect(outcome.getByText(/nothing is taken unless the campaign reaches its goal/)).toBeInTheDocument();
-    // And nothing anywhere claims a payment was taken.
+    // Nothing is settled on this screen, so nothing here says it is.
     expect(screen.queryByText(/thank you for your payment/i)).not.toBeInTheDocument();
-
-    // The confirm request carried its own key and a null payment method.
-    expect(confirmMock.mock.calls[0]?.[1]).toEqual({
-      paymentMethodId: null,
-      // #427: null because no backer agreement is published in this fixture, which is what
-      // the service reads as "nothing to acknowledge".
-      acknowledgedAgreementVersion: null,
-    });
-    expect(confirmMock.mock.calls[0]?.[2]).toBeTruthy();
-    expect(confirmMock.mock.calls[0]?.[2]).not.toBe(draftKey(0));
+    expect(screen.queryByText(/is paid/i)).not.toBeInTheDocument();
+    // And the control cannot open a second page while the browser is on its way.
+    expect(screen.queryByRole('button', { name: 'Continue to payment' })).not.toBeInTheDocument();
   });
 
-  it('READS whether a card was verified rather than claiming it was not', async () => {
-    /*
-     * `cardVerified` is false on every pledge this build can make, and the two
-     * sentences below used to be written into the screen. #55 is precisely the
-     * change that makes the first one false, and a hard-coded claim is one
-     * nobody is told to go and update. So the response decides the wording, and
-     * this case is the day #55 lands.
-     */
-    confirmMock.mockResolvedValue(
-      draft({
-        state: 'CONFIRMED',
-        reservationExpiresAt: null,
-        paymentMethodId: 'payment-method-1',
-        cardVerified: true,
-      }),
-    );
+  it('states the rule and where the charge happens before the control, and takes no card', async () => {
+    const user = await open();
+    await reserveTheMug(user);
+    await screen.findByRole('button', { name: 'Continue to payment' });
+
+    expect(screen.getByText(COPY.review.rule)).toBeInTheDocument();
+    expect(screen.getByText(COPY.review.charged)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/card number/i)).not.toBeInTheDocument();
+  });
+
+  it('stays on the review step, with nothing opened, when the service refuses', async () => {
+    payMock.mockRejectedValue(refusal('RESERVATION_EXPIRED', 409));
 
     const user = await open();
     await reserveTheMug(user);
-    await user.click(await screen.findByRole('button', { name: 'Confirm pledge' }));
+    await user.click(await screen.findByRole('button', { name: 'Continue to payment' }));
 
-    const outcome = within(await screen.findByRole('region', { name: 'What happens now' }));
-    expect(outcome.getByText('Your card was checked and released, not charged.')).toBeInTheDocument();
-    expect(outcome.getByText(/The payment method you gave is kept for later/)).toBeInTheDocument();
-
-    // The claims that are no longer true are gone, and the one that never stops
-    // being true is not.
-    expect(screen.queryByText(/No card has been charged/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/No payment method was collected/)).not.toBeInTheDocument();
-    expect(outcome.getByText(/nothing is taken unless the campaign reaches its goal/)).toBeInTheDocument();
+    expect(await screen.findByText('Your reward was only held for five minutes')).toBeInTheDocument();
+    expect(leaveMock).not.toHaveBeenCalled();
   });
 
-  it('sends back the payment method the pledge already carries', async () => {
-    draftMock.mockResolvedValue(draft({ paymentMethodId: 'payment-method-1' }));
-    confirmMock.mockResolvedValue(
-      draft({ state: 'CONFIRMED', reservationExpiresAt: null, paymentMethodId: 'payment-method-1' }),
-    );
+  it('announces leaving politely rather than stealing focus to a toast', async () => {
+    payMock.mockResolvedValue(PAGE);
 
     const user = await open();
     await reserveTheMug(user);
-    await user.click(await screen.findByRole('button', { name: 'Confirm pledge' }));
-
-    await waitFor(() => expect(confirmMock).toHaveBeenCalledTimes(1));
-    // Echoed from the draft rather than written as a literal null: the day a
-    // draft carries a payment method, the confirmation sends it instead of
-    // silently dropping it.
-    expect(confirmMock.mock.calls[0]?.[1]).toEqual({
-      paymentMethodId: 'payment-method-1',
-      acknowledgedAgreementVersion: null,
-    });
-  });
-
-  it('announces the outcome politely rather than stealing focus to a toast', async () => {
-    confirmMock.mockResolvedValue(draft({ state: 'CONFIRMED', reservationExpiresAt: null }));
-
-    const user = await open();
-    await reserveTheMug(user);
-    await user.click(await screen.findByRole('button', { name: 'Confirm pledge' }));
+    await user.click(await screen.findByRole('button', { name: 'Continue to payment' }));
 
     const status = await screen.findByRole('status');
     expect(status).toHaveAttribute('aria-live', 'polite');
-    await waitFor(() => expect(status).toHaveTextContent(/No card has been charged/));
+    await waitFor(() => expect(status).toHaveTextContent(COPY.review.confirming));
   });
 });
 
@@ -1071,7 +1056,7 @@ describe('by keyboard alone', () => {
   });
 
   it('completes the flow from the keyboard', async () => {
-    confirmMock.mockResolvedValue(draft({ state: 'CONFIRMED', reservationExpiresAt: null }));
+    payMock.mockResolvedValue(PAGE);
     const user = await open();
 
     // Reach the group, choose within it with an arrow key, and drive the rest
@@ -1085,11 +1070,12 @@ describe('by keyboard alone', () => {
     screen.getByRole('button', { name: 'Reserve and review' }).focus();
     await user.keyboard('{Enter}');
 
-    const confirmButton = await screen.findByRole('button', { name: 'Confirm pledge' });
-    confirmButton.focus();
+    payMock.mockResolvedValue(PAGE);
+    const payButton = await screen.findByRole('button', { name: 'Continue to payment' });
+    payButton.focus();
     await user.keyboard('{Enter}');
 
-    expect(await screen.findByText('Your pledge is confirmed')).toBeInTheDocument();
+    await waitFor(() => expect(leaveMock).toHaveBeenCalledWith(PAGE.redirectUrl));
   });
 
   it('moves focus to the heading when the step changes', async () => {

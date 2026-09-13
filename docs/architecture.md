@@ -3575,6 +3575,17 @@ collecting it.
 > arrives for a pledge whose hold already ended is posted and logged for a refund (#40).
 > `confirm` stays for the retired model until the web checkout moves (#44) and #45 removes it;
 > the collection jobs stay inert behind any provider that cannot collect stored cards.
+>
+> **Built (#44), the checkout.** The review step's control now reads "Continue to payment"
+> (with §22.3's acknowledgement in its label when an agreement is published) and calls
+> `/payment` with the page's language and two return addresses, `/{locale}/pledges/{id}` with
+> `?payment=returned` or `?payment=failed`. The browser leaves for the provider's page; no card
+> is ever entered in IdeaNest. The rule — success at 80%, one extension — and "you are charged
+> on the next page; an unfinished payment takes nothing" are printed above the control, with no
+> motion. The pledge page the provider returns to decides what to say from the pledge's state,
+> not from the word in the address: `COLLECTED` is paid; a `DRAFT` after a successful return is
+> a webhook still on its way, re-read every three seconds for a minute; anything else took
+> nothing. The web no longer calls `confirm`.
 
 ```mermaid
 sequenceDiagram
