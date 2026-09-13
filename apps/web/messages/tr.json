@@ -2899,7 +2899,7 @@
     "steps": {
       "choose": "Ödülünüzü seçin",
       "review": "Gözden geçirin ve onaylayın",
-      "confirmed": "Onaylandı"
+      "confirmed": "Ödeme"
     },
     "intro": "Bir ödül seçin ya da ödülsüz destek olun — ikisi de destektir.",
     "loading": "Ödüller yükleniyor",
@@ -2953,9 +2953,9 @@
     },
     "payment": {
       "heading": "Ödeme",
-      "none": "Henüz kart alınmıyor",
-      "body": "Bu kampanya, bir ödeme yöntemi almadan desteğinizi kaydeder. Bu sayfanın hiçbir yerinde kart bilgisi toplanmaz ve burada onayladığınız hiçbir şey sizden ücret tahsil etmez.",
-      "later": "Para yalnızca kampanya hedefine ulaşırsa tahsil edilir ve bu gerçekleşmeden önce size bildirilir."
+      "none": "Ödemeyi ödeme sağlayıcısının sayfasında yaparsınız",
+      "body": "Devam ettiğinizde ödeme sağlayıcısının güvenli sayfası açılır ve kartınızı orada girersiniz. Kart bilgileri hiçbir zaman IdeaNest'te girilmez ve desteğiniz orada bir kez tahsil edilir.",
+      "later": "Kampanya hedefinin %80'ini toplayamazsa, iptal edilirse ya da askıya alınırsa desteğinizin tamamı iade edilir."
     },
     "anonymous": {
       "label": "Anonim destek olun",
@@ -2971,29 +2971,20 @@
       "noReward": "Ödülsüz — yalnızca destek",
       "deliveredTo": "Teslimat adresi",
       "listedAs": "Herkese açık olarak görünen ad",
-      "notCharged": "Onaylamak desteğinizi kaydeder. Sizden ücret tahsil etmez.",
       "change": "Seçimimi değiştireceğim",
       "reserve": "Rezerve edin ve gözden geçirin",
-      "confirm": "Desteği onaylayın",
-      "confirming": "Onaylanıyor…"
+      "confirm": "Ödemeye geç",
+      "confirming": "Ödeme sayfası açılıyor…",
+      "charged": "Ücret bir sonraki sayfada tahsil edilir. Ödemeyi tamamlamazsanız hiçbir şey tahsil edilmez ve ayırma süresi dolduğunda ödül serbest bırakılır.",
+      "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Üretici son tarihi bir kez uzatabilir ve bunun için size sorulmaz."
     },
     "risk": {
       "heading": "Destek olmak ne demek",
       "body": "Destek satın almak değildir. Bir denemeyi finanse ediyorsunuz ve ödül garanti değildir — kampanya gecikebilir, değişebilir ya da hiç ulaşmayabilir. Ödülü size IdeaNest değil, kampanyayı açan kişi borçludur.",
-      "confirm": "Anladım — desteğimi onayla",
+      "confirm": "Anlıyorum — ödemeye geç",
       "stale": "Bu sayfa açıkken metin güncellendi. Yeniden okuyun, sonra onaylayın."
     },
     "done": {
-      "announced": "Desteğiniz onaylandı",
-      "heading": "Kampanya desteğinizi aldı ve hedefine ulaşırsa ödül sizin.",
-      "next": "Şimdi ne olacak",
-      "backed": "Neyi desteklediniz",
-      "reference": "Destek numarası",
-      "keepReference": "Bu destekle ilgili kampanyaya yazmanız gerekirse yukarıdaki numarayı saklayın.",
-      "released": "Kartınız kontrol edilip serbest bırakıldı, tahsilat yapılmadı.",
-      "noCard": "Hiçbir karttan tahsilat yapılmadı.",
-      "noMethod": "Ödeme yöntemi alınmadı ve kampanya son tarihine kadar hedefine ulaşmazsa hiçbir tutar tahsil edilmez.",
-      "methodKept": "Verdiğiniz ödeme yöntemi sonrası için saklanır ve kampanya son tarihine kadar hedefine ulaşmazsa hiçbir tutar tahsil edilmez.",
       "expired": "Ödülünüz artık tutulmuyor"
     },
     "errors": {
@@ -3008,6 +2999,14 @@
       "amountNotANumber": "Tutarlar rakamlardan ve en fazla bir noktadan oluşur, örneğin 45.00.",
       "belowRewardPrice": "Bu ödül {price} değerinde. Bu kadar ya da daha fazlasını verin veya daha ucuz bir ödül seçin.",
       "destinationUnpriced": "Üretici bu varış noktası için {lines} teslimat ücreti belirlememiş. Başka bir yer seçin ya da bunu desteğinizden çıkarın."
+    },
+    "returned": {
+      "paidTitle": "Desteğiniz ödendi",
+      "paidBody": "Ödeme gerçekleşti ve kampanya desteğinizi aldı. Kampanya başarılı olmazsa tutarın tamamı iade edilir.",
+      "waitingTitle": "Ödemenin onaylanması bekleniyor",
+      "waitingBody": "Ödeme sağlayıcısı sonucu henüz bildirmedi. Bu sayfa bir dakika boyunca yeniden kontrol eder; ikinci kez ödeme yapmanız gerekmez.",
+      "failedTitle": "Ödeme gerçekleşmedi",
+      "failedBody": "Hiçbir tutar tahsil edilmedi. Ödülünüz ayırma süresi dolana kadar ayrılmış kalır ve kampanya sayfasından yeniden ödeyebilirsiniz."
     }
   },
   "pricing": {

@@ -21,11 +21,11 @@ import type { Money } from '../money';
  * Every optional field is typed `?: T | null` so the two readings are the same
  * thing to a caller — the same decision both existing clients took.
  *
- * NOTHING HERE CHARGES A CARD, and nothing here can. §9.2's phase 1 —
- * verification authorisation, 3-D Secure, store the token, void — belongs to
- * #55, which is blocked on #60 (`status: needs-decision`), so there is no
- * provider to call. Confirmation performs the state transition and commits the
- * stock, and that is all it does.
+ * NOTHING HERE TAKES A CARD. Under IDN-EXT-01 a pledge is charged on the
+ * payment provider's own page: `payForPledge` asks the service to open one and
+ * returns where to send the browser, and the provider's webhook — not this
+ * client — settles the pledge. `confirmPledge` is the retired model's call and
+ * goes with #45.
  */
 
 export type { Money } from '../money';
@@ -498,6 +498,54 @@ export async function confirmPledge(
       signal,
     }),
   );
+}
+
+/* -------------------------------------------------------------------------
+ * The payment page — POST /v1/pledges/{id}/payment (IDN-EXT-01, #39 and #44)
+ * ---------------------------------------------------------------------- */
+
+/**
+ * What paying for a draft sends.
+ *
+ * The same acknowledgement `ConfirmPledgeRequest` carries, because the payment endpoint makes
+ * confirmation's refusals and records the backer agreement in its place. `successUrl` and
+ * `errorUrl` are where the provider sends the backer back; `language` is the page's, so the
+ * provider's page speaks the one the backer was reading.
+ */
+export interface PayPledgeRequest {
+  acknowledgedAgreementVersion: number | null;
+  language: string;
+  successUrl: string;
+  errorUrl: string;
+}
+
+/**
+ * The provider's page for this pledge.
+ *
+ * `redirectUrl` is the whole answer: the browser goes there and the card is entered on the
+ * provider's page, never here (§17.2's SAQ A). The pledge stays `DRAFT` until the provider's
+ * webhook settles it `COLLECTED`, so nothing on this side may read the response as "paid".
+ */
+export interface PaymentPageResponse {
+  pledgeId: string;
+  providerTransactionId: string;
+  redirectUrl: string;
+}
+
+export async function payForPledge(
+  id: string,
+  body: PayPledgeRequest,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+): Promise<PaymentPageResponse> {
+  const response = await authorizedFetch(`/v1/pledges/${encodeURIComponent(id)}/payment`, {
+    method: 'POST',
+    headers: mutationHeaders(idempotencyKey),
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!response.ok) throw await errorFrom(response);
+  return (await response.json()) as PaymentPageResponse;
 }
 
 /* -------------------------------------------------------------------------

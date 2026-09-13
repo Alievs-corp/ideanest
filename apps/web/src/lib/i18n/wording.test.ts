@@ -60,14 +60,18 @@ describe('the English catalogue against the wording it replaced', () => {
     expect(source).toContain('copy.body');
     expect(source).toContain('copy.later');
 
-    /* And the English must still say the thing §9.2 requires it to say. */
-    expect(en.checkout.payment.body).toMatch(/nothing you confirm here charges you/u);
-    expect(en.checkout.payment.later).toMatch(/only ever collected if the campaign reaches/u);
-    expect(en.checkout.done.noMethod).toMatch(/unless the campaign reaches its goal/u);
-    expect(en.checkout.review.notCharged).toMatch(/does not charge you/u);
+    /*
+     * And the English must still say what IDN-EXT-01 requires it to say (#44): the pledge is
+     * charged on the provider's page, once; a card is never typed into IdeaNest; an
+     * unfinished payment takes nothing; and a campaign that does not succeed refunds in full.
+     */
+    expect(en.checkout.payment.body).toMatch(/charged there, once/u);
+    expect(en.checkout.payment.body).toMatch(/never entered on IdeaNest/u);
+    expect(en.checkout.payment.later).toMatch(/refunded in full/u);
+    expect(en.checkout.review.charged).toMatch(/If you do not finish paying, nothing is taken/u);
   });
 
-  it('never softens a charge statement into a thank-you', () => {
+  it('never softens a charge statement into a thank-you for a purchase', () => {
     /*
      * `cardStatement` in `CheckoutView` carries this rule in a comment: neither sentence may
      * become "thank you for your payment", because §9.2 collects nothing until the campaign
@@ -75,9 +79,14 @@ describe('the English catalogue against the wording it replaced', () => {
      * that has not left their account. Asserted here across all four languages rather than
      * in English alone, because a translator with no context is exactly who would write it.
      */
-    const FORBIDDEN = /thank you for your (payment|purchase)|payment received|paid/iu;
+    /*
+     * IDN-EXT-01 (#44) made "paid" true: the pledge is charged on the provider's page, and the
+     * pledge page says so once the provider confirms it. What stays forbidden is the shop's
+     * vocabulary — a thank-you for a purchase is a receipt for a thing, and a pledge is not one.
+     */
+    const FORBIDDEN = /thank you for your (payment|purchase)|order (placed|confirmed)/iu;
 
-    for (const message of Object.values(en.checkout.done)) {
+    for (const message of [...Object.values(en.checkout.done), ...Object.values(en.checkout.returned)]) {
       expect(message, message).not.toMatch(FORBIDDEN);
     }
   });

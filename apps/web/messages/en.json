@@ -2899,7 +2899,7 @@
     "steps": {
       "choose": "Choose your reward",
       "review": "Review and confirm",
-      "confirmed": "Confirmed"
+      "confirmed": "Pay"
     },
     "intro": "Pick a reward, or choose to pledge without one — both are pledges.",
     "loading": "Loading the rewards",
@@ -2953,9 +2953,9 @@
     },
     "payment": {
       "heading": "Payment",
-      "none": "No card is collected yet",
-      "body": "This campaign records your pledge without taking a payment method. Card details are not collected anywhere on this page, and nothing you confirm here charges you.",
-      "later": "Money is only ever collected if the campaign reaches its goal, and you will be told before that happens."
+      "none": "You pay on the payment provider’s page",
+      "body": "Continuing opens the payment provider’s secure page, where you enter your card. Card details are never entered on IdeaNest, and your pledge is charged there, once.",
+      "later": "Your pledge is refunded in full if the campaign does not raise 80% of its goal, or if it is cancelled or suspended."
     },
     "anonymous": {
       "label": "Pledge anonymously",
@@ -2971,29 +2971,20 @@
       "noReward": "No reward — support only",
       "deliveredTo": "Delivered to",
       "listedAs": "Listed publicly as",
-      "notCharged": "Confirming records your pledge. It does not charge you.",
       "change": "Change what I chose",
       "reserve": "Reserve and review",
-      "confirm": "Confirm pledge",
-      "confirming": "Confirming…"
+      "confirm": "Continue to payment",
+      "confirming": "Opening the payment page…",
+      "charged": "You are charged on the next page. If you do not finish paying, nothing is taken and the reward is released when the hold ends.",
+      "rule": "A campaign succeeds at 80% of its goal. Its creator may extend the deadline once, and you are not asked."
     },
     "risk": {
       "heading": "What backing means",
       "body": "A pledge is not a purchase. You are funding an attempt, and a reward is not guaranteed — the campaign may be delayed, may change, or may never arrive. The creator owes you the reward, not IdeaNest.",
-      "confirm": "I understand — confirm my pledge",
+      "confirm": "I understand — continue to payment",
       "stale": "This statement was updated while this page was open. Read it again, then confirm."
     },
     "done": {
-      "announced": "Your pledge is confirmed",
-      "heading": "The campaign has your pledge and your reward is yours if it reaches its goal.",
-      "next": "What happens now",
-      "backed": "What you backed",
-      "reference": "Pledge reference",
-      "keepReference": "Keep the reference above if you need to write to the campaign about this pledge.",
-      "released": "Your card was checked and released, not charged.",
-      "noCard": "No card has been charged.",
-      "noMethod": "No payment method was collected, and nothing is taken unless the campaign reaches its goal by its deadline.",
-      "methodKept": "The payment method you gave is kept for later, and nothing is taken unless the campaign reaches its goal by its deadline.",
       "expired": "Your reward is no longer held"
     },
     "errors": {
@@ -3008,6 +2999,14 @@
       "amountNotANumber": "Amounts are digits and at most one full stop, like 45.00.",
       "belowRewardPrice": "This reward costs {price}. Give that or more, or choose a cheaper reward.",
       "destinationUnpriced": "The creator has not set a delivery cost to this destination for {lines}. Choose somewhere else, or take that out of your pledge."
+    },
+    "returned": {
+      "paidTitle": "Your pledge is paid",
+      "paidBody": "The payment went through and the campaign has your pledge. It is refunded in full if the campaign does not succeed.",
+      "waitingTitle": "Waiting for the payment to be confirmed",
+      "waitingBody": "The payment provider has not told us the outcome yet. This page checks again for a minute; you do not need to pay a second time.",
+      "failedTitle": "The payment did not go through",
+      "failedBody": "Nothing was taken. Your reward stays held until the hold ends, and you can pay again from the campaign."
     }
   },
   "pricing": {

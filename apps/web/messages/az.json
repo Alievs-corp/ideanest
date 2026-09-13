@@ -2899,7 +2899,7 @@
     "steps": {
       "choose": "Mükafatınızı seçin",
       "review": "Yoxlayın və təsdiqləyin",
-      "confirmed": "Təsdiqləndi"
+      "confirmed": "Ödəniş"
     },
     "intro": "Mükafat seçin və ya mükafatsız dəstək olun — hər ikisi dəstəkdir.",
     "loading": "Mükafatlar yüklənir",
@@ -2953,9 +2953,9 @@
     },
     "payment": {
       "heading": "Ödəniş",
-      "none": "Hələlik kart alınmır",
-      "body": "Bu kampaniya ödəniş vasitəsi almadan dəstəyinizi qeyd edir. Bu səhifənin heç bir yerində kart məlumatları toplanmır və burada təsdiqlədiyiniz heç nə sizdən pul tutmur.",
-      "later": "Pul yalnız kampaniya hədəfinə çatdıqda alınır və bu baş verməzdən əvvəl sizə xəbər verilir."
+      "none": "Ödənişi ödəniş provayderinin səhifəsində edirsiniz",
+      "body": "Davam etdikdə ödəniş provayderinin təhlükəsiz səhifəsi açılır və kartınızı orada daxil edirsiniz. Kart məlumatları heç vaxt IdeaNest-də daxil edilmir və dəstəyinizin məbləği orada bir dəfə tutulur.",
+      "later": "Kampaniya hədəfinin 80%-ini toplamasa, ləğv edilsə və ya dayandırılsa, dəstəyiniz sizə tam qaytarılır."
     },
     "anonymous": {
       "label": "Anonim dəstək olun",
@@ -2971,29 +2971,20 @@
       "noReward": "Mükafatsız — yalnız dəstək",
       "deliveredTo": "Çatdırılma ünvanı",
       "listedAs": "İctimai siyahıda görünən ad",
-      "notCharged": "Təsdiq dəstəyinizi qeyd edir. Sizdən pul tutmur.",
       "change": "Seçdiyimi dəyişim",
       "reserve": "Rezerv edin və yoxlayın",
-      "confirm": "Dəstəyi təsdiqləyin",
-      "confirming": "Təsdiqlənir…"
+      "confirm": "Ödənişə keçin",
+      "confirming": "Ödəniş səhifəsi açılır…",
+      "charged": "Pul növbəti səhifədə tutulur. Ödənişi başa çatdırmasanız, heç nə tutulmur və saxlama müddəti bitəndə mükafat buraxılır.",
+      "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Müəllif son tarixi bir dəfə uzada bilər və bunun üçün sizdən razılıq istənmir."
     },
     "risk": {
       "heading": "Dəstək olmaq nə deməkdir",
       "body": "Dəstək satın almaq deyil. Siz bir cəhdi maliyyələşdirirsiniz və mükafata zəmanət yoxdur — kampaniya gecikə, dəyişə və ya heç çatmaya bilər. Mükafatı sizə IdeaNest deyil, kampaniyanın müəllifi borcludur.",
-      "confirm": "Başa düşdüm — dəstəyimi təsdiqləyin",
+      "confirm": "Başa düşürəm — ödənişə keçin",
       "stale": "Bu səhifə açıq ikən mətn yeniləndi. Yenidən oxuyun, sonra təsdiqləyin."
     },
     "done": {
-      "announced": "Dəstəyiniz təsdiqləndi",
-      "heading": "Kampaniya dəstəyinizi aldı və hədəfinə çatsa, mükafat sizindir.",
-      "next": "İndi nə olacaq",
-      "backed": "Nəyi dəstəklədiniz",
-      "reference": "Dəstək nömrəsi",
-      "keepReference": "Bu dəstək barədə kampaniyaya yazmaq lazım gəlsə, yuxarıdakı nömrəni saxlayın.",
-      "released": "Kartınız yoxlanıldı və buraxıldı, ondan pul tutulmadı.",
-      "noCard": "Heç bir kartdan pul tutulmayıb.",
-      "noMethod": "Ödəniş vasitəsi alınmadı və kampaniya son tarixinədək hədəfinə çatmasa, heç nə tutulmayacaq.",
-      "methodKept": "Verdiyiniz ödəniş vasitəsi sonrası üçün saxlanılır və kampaniya son tarixinədək hədəfinə çatmasa, heç nə tutulmayacaq.",
       "expired": "Mükafatınız artıq saxlanılmır"
     },
     "errors": {
@@ -3008,6 +2999,14 @@
       "amountNotANumber": "Məbləğ rəqəmlərdən və ən çox bir nöqtədən ibarət olur, məsələn 45.00.",
       "belowRewardPrice": "Bu mükafat {price} dəyərindədir. Bu qədər və ya daha çox verin, ya da daha ucuz mükafat seçin.",
       "destinationUnpriced": "Müəllif bu istiqamət üçün {lines} çatdırılma qiyməti təyin etməyib. Başqa yer seçin və ya onu dəstəyinizdən çıxarın."
+    },
+    "returned": {
+      "paidTitle": "Dəstəyiniz ödənildi",
+      "paidBody": "Ödəniş keçdi və kampaniya dəstəyinizi aldı. Kampaniya uğurlu olmasa, məbləğ sizə tam qaytarılır.",
+      "waitingTitle": "Ödənişin təsdiqi gözlənilir",
+      "waitingBody": "Ödəniş provayderi hələ nəticəni bildirməyib. Bu səhifə bir dəqiqə ərzində yenidən yoxlayır; ikinci dəfə ödəməyiniz lazım deyil.",
+      "failedTitle": "Ödəniş keçmədi",
+      "failedBody": "Heç nə tutulmadı. Mükafatınız saxlama müddəti bitənədək saxlanılır və kampaniya səhifəsindən yenidən ödəyə bilərsiniz."
     }
   },
   "pricing": {

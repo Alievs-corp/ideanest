@@ -4,36 +4,23 @@ import { InlineAlert } from '@ideanest/ui';
 import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
 
 /**
- * PL-07 and PL-08 — and this is where this issue stops.
+ * PL-07 and PL-08, as IDN-EXT-01 built them (#39, #44).
  *
- * <h2>There is no card form here, and adding one would be a defect</h2>
+ * <h2>There is still no card form here, and there never will be</h2>
  *
- * Card entry and 3-D Secure are #55, and #55 is blocked on #60, which carries
- * `status: needs-decision` because no payment provider has been chosen. CLAUDE.md
- * §5 is explicit about what that means: "Do not implement around them — the
- * decision changes the design." There is no provider, so there is no hosted
- * field, no SDK, no tokenisation endpoint and no 3-D Secure flow to call.
+ * The pledge is charged on the payment provider's own page. Continuing from the review step
+ * asks the service to open that page (`POST /v1/pledges/{id}/payment`) and sends the browser
+ * to it; the card is entered there, 3-D Secure happens there, and the provider tells the
+ * service the outcome by webhook. Nothing about the card ever reaches this application, which
+ * is what keeps §17.2's assessment at SAQ A — and a field here that looked as though it took a
+ * card would teach somebody that this is where a card goes on this site, which is the lesson a
+ * phishing page relies on.
  *
- * A card input that posted to nothing would be worse than this empty space, for
- * two reasons that outlive the placeholder:
+ * <h2>What the step says</h2>
  *
- *   - §17.2 targets SAQ A, which is only available while card data never touches
- *     our servers. The moment a `<input name="card">` exists in this application,
- *     the scope of that assessment includes it — including the browser
- *     autofilling a real number into it
- *   - a field that looks like it takes a card teaches somebody that this is where
- *     a card goes on this site. That lesson is what a phishing page relies on
- *
- * <h2>What confirmation does today</h2>
- *
- * `POST /v1/pledges/{id}/confirm` performs the state transition and commits the
- * reserved stock; the provider call is a named seam that is not yet implemented,
- * and `paymentMethodId` is sent as null. §9.2 is in any case explicit that NO
- * MONEY MOVES AT CONFIRMATION even once the provider exists — phase 1 is a
- * verification authorisation that is immediately voided, and collection is phase
- * 2, at campaign close. So the pledge below is a commitment and not a payment,
- * and the interface says exactly that rather than implying a charge that has not
- * happened and will not happen for weeks.
+ * Where the payment happens, that it happens once, and what happens to the money if the
+ * campaign does not succeed. `info`, not `warning`: nothing is wrong, and docs/ui-kit.md §7.15
+ * keeps `role="alert"` for the variants that must interrupt.
  */
 export interface PaymentStepProps {
   /**
@@ -50,19 +37,9 @@ export function PaymentStep({ copy }: PaymentStepProps) {
         {copy.heading}
       </h3>
 
-      {/*
-        `info`, not `warning`. Nothing is wrong and nothing needs the backer's
-        attention interrupted — this is a statement about what this build does,
-        and docs/ui-kit.md §7.15 keeps `role="alert"` for the two variants that
-        genuinely need to interrupt.
-      */}
       <InlineAlert variant="info" title={copy.none}>
-        <p>
-          {copy.body}
-        </p>
-        <p className="mt-2">
-          {copy.later}
-        </p>
+        <p>{copy.body}</p>
+        <p className="mt-2">{copy.later}</p>
       </InlineAlert>
     </section>
   );

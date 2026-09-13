@@ -11,7 +11,7 @@ import {
   TextInput,
 } from '@ideanest/ui';
 import { formatMoney, type AmountRejection } from '../../lib/money';
-import type { PledgeResponse, PublicReward } from '../../lib/pledges/api';
+import type { PublicReward } from '../../lib/pledges/api';
 import type { CheckoutFailure } from '../../lib/pledges/failure';
 import { destinationOptions, toAmounts, type QuoteRefusal } from '../../lib/pledges/quote';
 import { AddonChoice } from './AddonChoice';
@@ -124,37 +124,6 @@ function refusalMessage(refusal: QuoteRefusal, copy: CheckoutCopy): string {
     case 'nothing-pledged':
       return copy.errors.totalTooSmall;
   }
-}
-
-/**
- * What the confirmation says about the card, READ FROM THE PLEDGE.
- *
- * Both sentences used to be written here, and both were true — no card is
- * collected anywhere in this build and §9.2 moves no money at confirmation in
- * any case. Written here they are claims this screen makes about a service it
- * cannot see, and they stay on the screen until somebody remembers to change
- * them; #55 is exactly the change that would make the first one false. So the
- * response's `cardVerified` and `paymentMethodId` decide the wording, and the
- * day the service starts verifying cards the screen stops saying it does not.
- *
- * NEITHER SENTENCE MAY SOFTEN INTO "THANK YOU FOR YOUR PAYMENT". §9.2 collects
- * nothing until the campaign succeeds, whatever these two fields say, and a
- * confirmation that implied otherwise would have somebody budgeting for money
- * that has not left their account.
- */
-function cardStatement(
-  pledge: PledgeResponse,
-  copy: CheckoutCopy,
-): { readonly card: string; readonly method: string } {
-  return {
-    card: pledge.cardVerified
-      ? copy.done.released
-      : copy.done.noCard,
-    method:
-      pledge.paymentMethodId == null
-        ? copy.done.noMethod
-        : copy.done.methodKept,
-  };
 }
 
 /** The failure banner, with whatever the recovery for this code happens to be. */
@@ -281,10 +250,10 @@ export function CheckoutView({
    * request and take the reader's focus with it.
    */
   const step: Step =
-    checkout.phase === 'confirmed'
+    checkout.phase === 'redirecting'
       ? 3
       : checkout.phase === 'reserved' ||
-          checkout.phase === 'confirming' ||
+          checkout.phase === 'paying' ||
           (checkout.phase === 'reserving' && checkout.pledge !== null)
         ? 2
         : 1;
@@ -345,7 +314,6 @@ export function CheckoutView({
         ? toAmounts(quote.quote)
         : null;
 
-  const statement = checkout.pledge === null ? null : cardStatement(checkout.pledge, copy);
 
   const stepName = stepNames(copy);
 
@@ -418,8 +386,8 @@ export function CheckoutView({
       <p role="status" aria-live="polite" className="sr-only">
         {checkout.phase === 'reserved'
           ? copy.reserved
-          : checkout.phase === 'confirmed' && statement !== null
-            ? `Your pledge is confirmed. ${statement.card}`
+          : checkout.phase === 'redirecting'
+            ? copy.review.confirming
             : ''}
       </p>
 
@@ -602,58 +570,14 @@ export function CheckoutView({
             </>
           )}
 
-          {step === 3 && checkout.pledge !== null && statement !== null && (
-            <>
-              <InlineAlert variant="success" title={copy.done.announced}>
-                <p>
-                  {copy.done.heading}
-                </p>
-              </InlineAlert>
-
-              {/*
-                THE SENTENCE THAT MUST NOT BE SOFTENED. §9.2: nothing is collected
-                until the campaign succeeds. A confirmation screen that says
-                "thank you for your payment" would have somebody budgeting for
-                money that has not left their account, and would have them looking
-                for a refund that has nothing to refund.
-
-                Both halves of it are READ FROM THE PLEDGE — see `cardStatement`.
-              */}
-              <section aria-labelledby="checkout-what-happens" className="flex flex-col gap-2">
-                <h2 id="checkout-what-happens" className="text-sm font-medium text-white">
-                  {copy.done.next}
-                </h2>
-                <p className="text-sm text-white/64">
-                  <strong className="text-white">{statement.card}</strong> {statement.method} If it
-                  does, you will be told before anything is collected. If it does not, nothing
-                  happens at all.
-                </p>
-              </section>
-
-              <section aria-labelledby="checkout-confirmed-selection" className="flex flex-col gap-2">
-                <h2 id="checkout-confirmed-selection" className="text-sm font-medium text-white">
-                  {copy.done.backed}
-                </h2>
-                <dl className="flex flex-col gap-1 text-sm text-white/64">
-                  <div className="flex gap-2">
-                    <dt>{copy.review.reward}</dt>
-                    <dd className="text-white">{rewardTitle ?? copy.review.noReward}</dd>
-                  </div>
-                  {checkout.pledge.shippingCountry != null && (
-                    <div className="flex gap-2">
-                      <dt>{copy.review.deliveredTo}</dt>
-                      <dd className="text-white">
-                        {countryName(checkout.pledge.shippingCountry, regionNames)}
-                      </dd>
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <dt>{copy.done.reference}</dt>
-                    <dd className="text-white">{checkout.pledge.id}</dd>
-                  </div>
-                </dl>
-              </section>
-            </>
+          {step === 3 && (
+            /*
+              IDN-EXT-01 (#44): the third step happens on the payment provider's page. This is
+              the moment between the service answering and the browser arriving there — a
+              sentence, not an animation (docs/motion-system.md §5: checkout is near zero), and
+              no claim that anything has been paid, because nothing has been yet.
+            */
+            <p className="text-sm text-white/64">{copy.review.confirming}</p>
           )}
         </div>
 
@@ -733,12 +657,19 @@ export function CheckoutView({
                   </section>
                 )}
 
+                {/*
+                  IDN-EXT-01 §9: the rule, BEFORE the pay control and not behind a link. The same
+                  reasoning as the risk statement below it — what matters is what a person saw
+                  before paying — and the same absence of motion.
+                */}
+                <p className="text-[13px] text-on-white/64">{copy.review.rule}</p>
+
                 {/* The one lime element on the screen (§8.5). */}
                 <Pill
                   fullWidth
                   variant="accent"
-                  onClick={checkout.confirm}
-                  disabled={checkout.phase === 'confirming' || clock.expired}
+                  onClick={checkout.pay}
+                  disabled={checkout.phase === 'paying' || checkout.phase === 'redirecting' || clock.expired}
                 >
                   {/*
                     THE LABEL CARRIES THE ACCEPTANCE — #427.
@@ -752,14 +683,14 @@ export function CheckoutView({
                     claiming an understanding the service is not recording would be worse
                     than either.
                   */}
-                  {checkout.phase === 'confirming'
+                  {checkout.phase === 'paying' || checkout.phase === 'redirecting'
                     ? copy.review.confirming
                     : backerAgreementVersion !== null
                       ? copy.risk.confirm
                       : copy.review.confirm}
                 </Pill>
                 <p className="text-[13px] text-on-white/64">
-                  {copy.review.notCharged}
+                  {copy.review.charged}
                 </p>
                 <Pill fullWidth variant="ghost" onClick={checkout.startOver}>
                   {copy.review.change}
@@ -767,11 +698,6 @@ export function CheckoutView({
               </>
             )}
 
-            {step === 3 && (
-              <p className="text-[13px] text-on-white/64">
-                {copy.done.keepReference}
-              </p>
-            )}
           </PledgeSummary>
         </aside>
       </div>

@@ -6,8 +6,8 @@ import { parseAmount, toMoney, type AmountParse } from '../../lib/money';
 import { describeFailure, type CheckoutFailure } from '../../lib/pledges/failure';
 import { IdempotencyKeyring } from '../../lib/pledges/idempotency';
 import {
-  confirmPledge,
   createPledgeDraft,
+  payForPledge,
   getPublicRewards,
   isSoldOut,
   type DraftPledgeRequest,
@@ -21,6 +21,7 @@ import {
   type QuoteResult,
   type Selection,
 } from '../../lib/pledges/quote';
+import { leaveForPaymentPage, paymentReturnFor } from '../../lib/pledges/payment';
 
 /**
  * The checkout, as one hook: what the backer chose, what it costs, and the two
@@ -145,7 +146,15 @@ export type CatalogueStatus = 'loading' | 'ready' | 'failed';
  * the same screen with a message on it. `reserved` is the only state in which
  * stock is held and the clock is running.
  */
-export type CheckoutPhase = 'selecting' | 'reserving' | 'reserved' | 'confirming' | 'confirmed';
+/**
+ * Where the checkout has got to.
+ *
+ * IDN-EXT-01 (#44) replaced `confirming` and `confirmed`: the review step now asks the service
+ * for the payment provider's page (`paying`) and sends the browser there (`redirecting`). There
+ * is no "confirmed" on this screen any more, because nothing is settled here — the provider's
+ * webhook settles the pledge, and the pledge page the provider returns to reads the outcome.
+ */
+export type CheckoutPhase = 'selecting' | 'reserving' | 'reserved' | 'paying' | 'redirecting';
 
 export interface CheckoutState {
   readonly catalogueStatus: CatalogueStatus;
@@ -193,7 +202,8 @@ export interface CheckoutState {
 
   /** Reserve stock and quote. `fresh` retires the key first — see the file comment. */
   readonly reserve: (options?: { readonly fresh?: boolean }) => void;
-  readonly confirm: () => void;
+  /** Opens the payment provider's page for the reserved pledge and leaves for it. */
+  readonly pay: () => void;
   /**
    * Send the request that failed again, whichever it was.
    *
@@ -257,7 +267,7 @@ export function useCheckout(
    * rather than state: nothing on the screen depends on it, and re-rendering
    * when a request starts would be a render nobody asked for.
    */
-  const lastMutation = useRef<'reserve' | 'confirm'>('reserve');
+  const lastMutation = useRef<'reserve' | 'pay'>('reserve');
 
   /*
    * The secret tokens, serialised, so the effect below depends on their VALUE
@@ -482,53 +492,48 @@ export function useCheckout(
     [draftBody],
   );
 
-  const confirm = useCallback(() => {
+  const pay = useCallback(() => {
     const current = pledge;
     const body = draftBody;
     if (current === null) return;
 
-    lastMutation.current = 'confirm';
+    lastMutation.current = 'pay';
 
     /*
-     * WHAT THE PLEDGE ALREADY CARRIES, echoed back. Null today and null on
-     * everything this build can make — there is no provider to produce a payment
-     * method id, #55 owns the card and is blocked on #60 — but read from the
-     * response rather than written here, so that the day a draft carries one the
-     * confirmation sends it instead of quietly discarding it.
-     */
-    const paymentMethodId = current.paymentMethodId ?? null;
-
-    /*
-     * §22.3's acknowledgement — #427. The version this page showed, resolved on the server
-     * and sent back so the service can tell "the reader saw the sentence in force" from "the
-     * reader saw a sentence that has since been replaced". The second is refused with
-     * AGREEMENT_REQUIRED and the answer is a reload, which `describeFailure` words.
+     * §22.3's acknowledgement — #427. The payment endpoint makes confirmation's refusals and
+     * records the agreement in its place (#39), so the version this page showed travels with
+     * the request exactly as it did with confirmation, and a stale page is still refused with
+     * AGREEMENT_REQUIRED.
      */
     const acknowledgedAgreementVersion = backerAgreementVersion;
 
     /*
-     * The confirm intent is the pledge AND the body. Keying it on the body alone
-     * would let two different pledges — the one that expired and the one made to
-     * replace it — share a key, and the second confirmation would be answered
-     * with the first one's result.
+     * The intent is the pledge AND the acknowledgement, as confirmation's was. A retry of the
+     * same intent reuses its key, so a double click or a lost response opens one payment page
+     * and records one PENDING charge rather than two.
      */
-    const intent = { pledgeId: current.id, paymentMethodId, acknowledgedAgreementVersion };
+    const intent = { pledgeId: current.id, pay: true, acknowledgedAgreementVersion };
 
-    setPhase('confirming');
+    setPhase('paying');
     setFailure(null);
 
     void (async () => {
       const outcome = await attemptWithRetry(() =>
-        confirmPledge(
+        payForPledge(
           current.id,
-          { paymentMethodId, acknowledgedAgreementVersion },
+          { acknowledgedAgreementVersion, ...paymentReturnFor(current.id) },
           keyring.current.keyFor(intent),
         ),
       );
 
       if (outcome.ok) {
-        setPledge(outcome.value);
-        setPhase('confirmed');
+        /*
+         * Leaving, not done. The pledge is still DRAFT and stays so until the provider's
+         * webhook settles it; the page the provider returns to reads that. The phase exists so
+         * the control cannot be pressed again while the browser is on its way.
+         */
+        setPhase('redirecting');
+        leaveForPaymentPage(outcome.value.redirectUrl);
         return;
       }
 
@@ -537,11 +542,11 @@ export function useCheckout(
 
       if (described.recovery === 'redraft') {
         // The reservation is gone, so the draft it belonged to is gone with
-        // it. Both keys are retired: the confirm's above, and the draft's here,
+        // it. Both keys are retired: the payment's above, and the draft's here,
         // so that reserving again asks for a new pledge rather than replaying
         // the expired one. `PLEDGE_MODIFIED` arrives here too: whatever wrote to
         // the pledge, this client's copy of it is stale and the honest move is
-        // to start the reservation again rather than to confirm from memory.
+        // to start the reservation again rather than to pay from memory.
         if (body !== null) keyring.current.retire(body);
         setPledge(null);
         setPhase('selecting');
@@ -562,9 +567,9 @@ export function useCheckout(
    * moved and a pledge that is still unconfirmed.
    */
   const retry = useCallback(() => {
-    if (lastMutation.current === 'confirm') confirm();
+    if (lastMutation.current === 'pay') pay();
     else reserve();
-  }, [confirm, reserve]);
+  }, [pay, reserve]);
 
   /**
    * Back to the form, with the reservation left where it is.
@@ -621,7 +626,7 @@ export function useCheckout(
     quote,
 
     reserve,
-    confirm,
+    pay,
     retry,
     startOver,
   };
