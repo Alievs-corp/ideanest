@@ -468,6 +468,14 @@ ideanest:
       # During it the campaign is CLOSING_WINDOW and the creator may extend or withdraw.
       closing-window: 7d
 
+    extension:
+      # §5.1, IDN-EXT-01 (#34). The Extend control opens this long before the first
+      # deadline and stays open until the closing window ends; a campaign needs this
+      # share of its goal; and the extension may reach this far past the FIRST deadline.
+      opens-before: 7d
+      threshold: 0.50
+      limit: 60d
+
     submission:
       # The three bounds §5.3 states as somebody else's decision rather than as a
       # number. Everything else in §5.3 is a literal and lives in

@@ -331,7 +331,8 @@
         "FOLLOWED_CREATOR_LAUNCHED": "İzlediğiniz bir üretici {campaign} kampanyasını başlattı",
         "LAUNCH_REMINDER": "{campaign} başlamak üzere",
         "SAVED_PROJECT_ENDING_SOON": "Kaydettiğiniz {campaign} yakında bitiyor",
-        "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni bir cihazdan giriş yapıldı"
+        "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni bir cihazdan giriş yapıldı",
+        "CAMPAIGN_EXTENDED": "{campaign} kampanyasının yeni bir bitiş tarihi var"
       },
       "unnamed": {
         "PLEDGE_CONFIRMED": "Bir kampanyaya {amount} tutarındaki desteğiniz onaylandı",
@@ -355,7 +356,8 @@
         "FOLLOWED_CREATOR_LAUNCHED": "İzlediğiniz bir üretici kampanya başlattı",
         "LAUNCH_REMINDER": "Bir kampanya başlamak üzere",
         "SAVED_PROJECT_ENDING_SOON": "Kaydettiğiniz bir kampanya yakında bitiyor",
-        "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni bir cihazdan giriş yapıldı"
+        "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni bir cihazdan giriş yapıldı",
+        "CAMPAIGN_EXTENDED": "Desteklediğiniz kampanyanın yeni bir bitiş tarihi var"
       },
       "amount": {
         "total": "seçtiğiniz tutar",

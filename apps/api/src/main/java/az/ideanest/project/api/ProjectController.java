@@ -189,6 +189,24 @@ public class ProjectController {
     }
 
     /**
+     * Extends the campaign's deadline, once — IDN-EXT-01 (#34), §5.1.
+     *
+     * <p>{@code POST} to a sub-resource, for {@code openLatePledges}' reason: it moves the
+     * campaign's state, and every state change goes through an endpoint that does nothing else.
+     * Refused with {@code EXTENSION_NOT_AVAILABLE} and the reason when the campaign may not be
+     * extended now, and with {@code PROJECT_FIELD_INVALID} on {@code until} when the date is
+     * outside what §5.1 allows.
+     */
+    @PostMapping("/{id}/extension")
+    public ProjectEdit extend(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable UUID id,
+            @Valid @RequestBody ExtendCampaignRequest request) {
+
+        return responses.of(transitions.extend(id, callerOf(accessToken), request.until()));
+    }
+
+    /**
      * Stops taking late pledges and starts delivering.
      *
      * <p>{@code POST} to {@code /close} rather than {@code DELETE} on the resource

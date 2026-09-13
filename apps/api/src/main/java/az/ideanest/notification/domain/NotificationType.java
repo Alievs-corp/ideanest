@@ -67,6 +67,13 @@ public enum NotificationType {
             NotificationChannel.IN_APP),
 
     /**
+     * IDN-EXT-01 (#34): the creator extended the deadline once. Every backer is told the new
+     * date and asked nothing — §5.1 — so it goes by every channel a funding outcome does.
+     */
+    CAMPAIGN_EXTENDED(NotificationCategory.CAMPAIGN, NotificationChannel.EMAIL, NotificationChannel.PUSH,
+            NotificationChannel.IN_APP),
+
+    /**
      * §5.5's monthly update is nearly due — issue #437.
      *
      * <p><strong>The only message the obligation clock sends, and it is a warning rather than a

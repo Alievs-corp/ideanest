@@ -1797,7 +1797,8 @@ is withdrawn.
 > **What the code does today.** The threshold is built (#31): `CampaignOutcome.of`
 > succeeds at `pledged >= goal × ideanest.project.finalisation.success-threshold`, which is
 > `0.80`, and a threshold outside `(0, 1]` stops the service at start-up. The rest is still
-> the old rule — there is no extension (#34), pledges stop at the first deadline rather
+> the old rule — the extension is built (#34: `POST …/extension`, creator only, and every backer
+> is told the new date), but pledges stop at the first deadline rather
 > than at the end of the window (#36), and a card is stored and charged at the close.
 > **The timing is built (#33):** at `D` a campaign enters `CLOSING_WINDOW` and nothing is
 > frozen; on D+8 — `ideanest.project.finalisation.closing-window`, seven days — or when an
@@ -4005,7 +4006,7 @@ POST   /v1/projects/{id}/launch
 POST   /v1/projects/{id}/cancel
 POST   /v1/projects/{id}/late-pledges        # WITHDRAWN by IDN-EXT-01 (#36): built by #81, removed by #45
 POST   /v1/projects/{id}/late-pledges/close  # WITHDRAWN by IDN-EXT-01, as above
-POST   /v1/projects/{id}/extension           # IDN-EXT-01 (#34): once, D-7..D+7, 50%+, ends no later than D+60. Not built
+POST   /v1/projects/{id}/extension           # IDN-EXT-01 (#34): creator only; once, D-7..D+7, 50%+, ends after D and no later than D+60. 409 EXTENSION_NOT_AVAILABLE {reason}; backers get CAMPAIGN_EXTENDED
 POST   /v1/projects/{id}/withdrawal          # IDN-EXT-01 (#41): 80%+, closes the campaign, opens the 14-day hold. Not built
 GET    /v1/projects/{id}/checklist
 GET    /v1/projects/{id}/items

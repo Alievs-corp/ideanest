@@ -549,6 +549,18 @@ public class Project {
      * campaign that has not enabled the feature, which is why the caller checks that
      * first and answers with something a client can act on.
      */
+    public void extendUntil(Instant until, Instant at) {
+        // IDN-EXT-01 (#34). Only ever written beside the edge into EXTENDED, by
+        // `ProjectTransitionService.extend`, which is the one place that checks the window, the
+        // threshold and the D+60 limit. Both columns together: V74 refuses one without the other,
+        // and `extensionUsedAt` is what makes "once" a fact on the row.
+        if (this.extensionUsedAt != null) {
+            throw new IllegalStateException("A campaign is extended once");
+        }
+        this.extendedUntil = Objects.requireNonNull(until, "An extension ends at some point");
+        this.extensionUsedAt = Objects.requireNonNull(at, "An extension happens at some instant");
+    }
+
     public void openLatePledgesUntil(Instant endsAt) {
         this.latePledgeEndsAt = Objects.requireNonNull(endsAt, "A late-pledge window ends at some point");
     }

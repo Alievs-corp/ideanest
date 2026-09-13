@@ -457,6 +457,80 @@ public class ProjectTransitionService {
      * @throws ProjectFieldRejectedException when the window is in the past or beyond
      *     the platform's bound
      */
+    /**
+     * Extends a campaign's deadline, once — IDN-EXT-01 (#34), §5.1: {@code LIVE} or
+     * {@code CLOSING_WINDOW} → {@code EXTENDED}.
+     *
+     * <p><strong>The creator alone</strong>, through the two-argument {@code requireTransitionable}
+     * that {@link #cancel} uses. It moves the date every backer committed to, without asking them,
+     * and no grant confers that.
+     *
+     * <p><strong>The conditions, in the order a creator can act on them:</strong> the campaign is
+     * live or in its window; it has not been extended; it is between seven days before and seven
+     * days after its first deadline; it has raised at least half its goal. The date then has to
+     * end after the first deadline and in the future, and no later than sixty days after the first
+     * deadline — "even if extended on the seventh day after", so the limit is measured from the
+     * deadline and never from now. Each bound is configuration under
+     * {@code ideanest.project.extension}.
+     *
+     * <p>Backers are told, not asked: the {@code project.extended} event is recorded in this
+     * transaction and the notification module sends {@code CAMPAIGN_EXTENDED} to every backer.
+     *
+     * @throws ExtensionNotAvailableException when the campaign may not be extended now, with the
+     *     reason
+     * @throws ProjectFieldRejectedException on {@code until} when the date is outside §5.1's bounds
+     */
+    @Transactional
+    public Project extend(UUID projectId, UUID accountId, Instant until) {
+        Project project = access.requireTransitionable(projectId, accountId);
+        ProjectProperties.Extension rules = properties.extension();
+
+        if (project.getExtensionUsedAt() != null || project.getState() == ProjectState.EXTENDED) {
+            throw new ExtensionNotAvailableException(projectId, ExtensionNotAvailableException.Reason.ALREADY_EXTENDED);
+        }
+        if (project.getState() != ProjectState.LIVE && project.getState() != ProjectState.CLOSING_WINDOW) {
+            throw new ExtensionNotAvailableException(projectId, ExtensionNotAvailableException.Reason.WRONG_STATE);
+        }
+
+        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        Instant deadline = project.getDeadline();
+        Instant opens = deadline.minus(rules.opensBefore());
+        Instant closes = deadline.plus(properties.finalisation().closingWindow());
+        if (now.isBefore(opens) || !now.isBefore(closes)) {
+            throw new ExtensionNotAvailableException(projectId, ExtensionNotAvailableException.Reason.OUTSIDE_WINDOW);
+        }
+        if (project.getGoalAmount() == null
+                || project.getPledgedAmount().compareTo(project.getGoalAmount().multiply(rules.threshold())) < 0) {
+            throw new ExtensionNotAvailableException(projectId, ExtensionNotAvailableException.Reason.BELOW_THRESHOLD);
+        }
+
+        if (until == null || !until.isAfter(deadline) || !until.isAfter(now)) {
+            throw new ProjectFieldRejectedException(
+                    "until", "An extension has to end after the first deadline and in the future.");
+        }
+        Instant furthest = deadline.plus(rules.limit());
+        if (until.isAfter(furthest)) {
+            throw new ProjectFieldRejectedException(
+                    "until",
+                    "An extension may end at most " + rules.limit().toDays() + " days after the first deadline.");
+        }
+
+        project.extendUntil(until.truncatedTo(ChronoUnit.MICROS), now);
+        Project extended = apply(
+                project,
+                ProjectState.EXTENDED,
+                access.roleOf(project, accountId),
+                accountId,
+                "Extended once, until " + project.getExtendedUntil() + "; first deadline " + deadline);
+
+        outbox.record(
+                CampaignExtendedEvent.AGGREGATE_TYPE,
+                extended.getId(),
+                CampaignExtendedEvent.EVENT_TYPE,
+                CampaignExtendedEvent.of(extended));
+        return extended;
+    }
+
     @Transactional
     public Project openLatePledges(UUID projectId, UUID accountId, Instant endsAt) {
         Project project = access.requireTransitionable(projectId, accountId);
