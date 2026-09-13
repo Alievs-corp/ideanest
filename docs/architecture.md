@@ -3586,6 +3586,17 @@ collecting it.
 > not from the word in the address: `COLLECTED` is paid; a `DRAFT` after a successful return is
 > a webhook still on its way, re-read every three seconds for a minute; anything else took
 > nothing. The web no longer calls `confirm`.
+>
+> **Built (#44), the payout card.** `POST /v1/me/payout-destination/card-registration` asks the
+> primary provider for its card page (`/card-registration`, `refund=1`) and records the card
+> identifier it answers as `PENDING` in V81's `payout_card_registrations`; 503
+> `PAYOUT_CARDS_UNAVAILABLE` when no provider can. The card is entered on the provider's page. Its
+> callback (`operation_code` `001`) is `PAYOUT_CARD_REGISTERED` or `PAYOUT_CARD_FAILED`, carrying the
+> card, its mask and the holder's name on the event — the name is still removed from the stored body.
+> Registered, `payout-card.registered` goes through the outbox to compliance, which files the card as
+> the creator's payout destination through the same `record` as before: matched against the legal
+> name, `AWAITING_VERIFICATION` until a person verifies it, hint `**` and the last four digits. A
+> callback about a card nobody began, or one already settled, moves nothing.
 
 ```mermaid
 sequenceDiagram

@@ -2,9 +2,12 @@ package az.ideanest.compliance.api;
 
 import az.ideanest.compliance.application.CreatorPayoutDestinations;
 import az.ideanest.compliance.domain.PayoutDestination;
+import az.ideanest.payment.application.PayoutCardPage;
+import az.ideanest.payment.application.PayoutCardRegistrations;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.net.URI;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -12,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,9 +47,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class MyPayoutDestinationController {
 
     private final CreatorPayoutDestinations destinations;
+    private final PayoutCardRegistrations cards;
 
-    public MyPayoutDestinationController(CreatorPayoutDestinations destinations) {
+    public MyPayoutDestinationController(CreatorPayoutDestinations destinations, PayoutCardRegistrations cards) {
         this.destinations = destinations;
+        this.cards = cards;
     }
 
     @GetMapping(path = "/v1/me/payout-destination", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -73,6 +79,37 @@ public class MyPayoutDestinationController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(PayoutDestinationResponses.Mine.of(saved, destinations.standingOf(accountId)));
+    }
+
+    /**
+     * IDN-EXT-01 (#44): open the provider's page for registering a business card as the payout
+     * destination.
+     *
+     * <p>The card is entered there and never here. When the provider confirms it, the card is filed
+     * as this account's destination and waits for verification like any other; until then nothing on
+     * file changes. {@code successUrl} and {@code errorUrl} are where the provider returns the creator,
+     * and {@code language} is the page's.
+     */
+    @PostMapping(
+            path = "/v1/me/payout-destination/card-registration",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CardRegistrationResponse> registerCard(
+            @AuthenticationPrincipal Jwt accessToken, @Valid @RequestBody CardRegistrationRequest request) {
+
+        PayoutCardPage page = cards.begin(
+                callerOf(accessToken), request.language(), request.successUrl(), request.errorUrl());
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(new CardRegistrationResponse(page.provider(), page.redirectUrl()));
+    }
+
+    /** Where the provider returns the creator, and in which language its page speaks. */
+    public record CardRegistrationRequest(@Size(max = 8) String language, URI successUrl, URI errorUrl) {
+    }
+
+    /** The provider that will hold the card, and its page. */
+    public record CardRegistrationResponse(String provider, URI redirectUrl) {
     }
 
     /**

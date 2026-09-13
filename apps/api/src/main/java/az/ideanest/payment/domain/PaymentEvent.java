@@ -35,6 +35,8 @@ import java.util.Objects;
  * @param rawBody the bytes as they arrived, as text. Stored verbatim in
  *     {@code provider_webhook_events.payload}, because in a dispute what matters is
  *     what was signed
+ * @param payoutCard IDN-EXT-01 (#44): the card a payout card registration event is about. Null on
+ *     every other event
  */
 public record PaymentEvent(
         ProviderName provider,
@@ -43,7 +45,8 @@ public record PaymentEvent(
         String providerTransactionId,
         Money amount,
         Instant signedAt,
-        String rawBody) {
+        String rawBody,
+        PayoutCard payoutCard) {
 
     public PaymentEvent {
         Objects.requireNonNull(provider, "A verified event knows which adapter verified it");
@@ -56,5 +59,17 @@ public record PaymentEvent(
         if (rawBody == null || rawBody.isBlank()) {
             throw new IllegalArgumentException("An empty body is not evidence of anything");
         }
+    }
+
+    /** Every event that is not about a payout card. */
+    public PaymentEvent(
+            ProviderName provider,
+            String providerEventId,
+            PaymentEventType type,
+            String providerTransactionId,
+            Money amount,
+            Instant signedAt,
+            String rawBody) {
+        this(provider, providerEventId, type, providerTransactionId, amount, signedAt, rawBody, null);
     }
 }

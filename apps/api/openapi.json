@@ -5941,6 +5941,34 @@
         "tags" : [ "my-payout-destination-controller" ]
       }
     },
+    "/v1/me/payout-destination/card-registration" : {
+      "post" : {
+        "operationId" : "myPayoutDestinationRegisterCard",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CardRegistrationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CardRegistrationResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "my-payout-destination-controller" ]
+      }
+    },
     "/v1/me/pledges" : {
       "get" : {
         "operationId" : "backerArchiveMine",
@@ -10826,6 +10854,36 @@
           },
           "title" : {
             "type" : "string"
+          }
+        }
+      },
+      "CardRegistrationRequest" : {
+        "type" : "object",
+        "properties" : {
+          "errorUrl" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "language" : {
+            "type" : "string",
+            "maxLength" : 8,
+            "minLength" : 0
+          },
+          "successUrl" : {
+            "type" : "string",
+            "format" : "uri"
+          }
+        }
+      },
+      "CardRegistrationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "provider" : {
+            "type" : "string"
+          },
+          "redirectUrl" : {
+            "type" : "string",
+            "format" : "uri"
           }
         }
       },
