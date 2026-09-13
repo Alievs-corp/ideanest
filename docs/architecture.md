@@ -1852,6 +1852,14 @@ is withdrawn.
 > number and receives 85% of what they withdraw. The schedule change is #42: `platform_rate =
 > 0.15`, `processing_rate = 0`, and refund costs posted to a separate platform expense account
 > rather than netted against anybody's payout.
+>
+> **Built (#42).** With no row in force, `FeeSchedules` prices at `ideanest.fee` — 15% platform,
+> 0 processing — instead of zero fees, and `/v1/fees/disclosure` discloses those terms
+> (`configured: true`, no `effectiveFrom`); a schedule staff create still takes precedence, and the
+> admin editor now starts from 0.15 and 0. V78 adds `platform_expense` to the ledger's accounts,
+> apart from `refunds` (backers' money going back). **Nothing posts to it yet**: Epoint's `/reverse`
+> reports no fee, and a cost posted without a transaction would put escrow out of agreement with
+> reconciliation's record of what moved — the amount a refund costs is a question for Epoint.
 
 Rates are configuration, not code — a `fee_schedules` table, so a category or an
 individual agreement can differ without a deployment.

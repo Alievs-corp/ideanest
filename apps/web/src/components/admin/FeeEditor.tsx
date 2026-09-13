@@ -71,8 +71,8 @@ export function FeeEditor({ copy }: FeeEditorProps) {
 
   const [scope, setScope] = useState<FeeScope>('PLATFORM');
   const [scopeRef, setScopeRef] = useState('');
-  const [platformRate, setPlatformRate] = useState('0.05');
-  const [processingRate, setProcessingRate] = useState('0.029');
+  const [platformRate, setPlatformRate] = useState('0.15');
+  const [processingRate, setProcessingRate] = useState('0');
   const [processingFixed, setProcessingFixed] = useState('0.30');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);

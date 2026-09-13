@@ -2334,7 +2334,8 @@
         "platform_fee": "Platforma komissiyası",
         "psp_fee": "Emal komissiyası",
         "tax_payable": "Ödəniləcək vergi",
-        "refunds": "Geri qaytarmalar"
+        "refunds": "Geri qaytarmalar",
+        "platform_expense": "Platforma xərcləri"
       },
       "creatorAccount": "Yaradıcı {id}",
       "creatorNamed": "{name}, yaradıcı hesabı"
@@ -3885,7 +3886,7 @@
       },
       "cost": {
         "heading": "Nəyə başa gəlir",
-        "successful": "<b>Uğurlu kampaniya</b> topladığı məbləğin 5 faizini, üstəlik ödəniş provayderinin öz komissiyasını ödəyir — təxminən 2,5–3 faiz və hər dəstək üzrə kiçik sabit məbləğ.",
+        "successful": "<b>Uğurlu kampaniya</b> hər vəsait çıxarışının 15 faizini ödəyir — bankın və ödəniş provayderinin komissiyaları buraya daxildir — müəllif isə 85 faizini alır.",
         "unsuccessful": "<b>Uğursuz kampaniya</b> heç nə ödəmir. Nə yerləşdirmə haqqı, nə platforma komissiyası, nə də emal haqqı.",
         "note": "Dərəcələr kodda deyil, konfiqurasiyada saxlanılır, ona görə ayrıca kateqoriya və ya fərdi razılaşma başqa dərəcə daşıya bilər. Yuxarıdakı dərəcə standart cedvəldir."
       },

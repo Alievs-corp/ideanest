@@ -2334,7 +2334,8 @@
         "platform_fee": "Platform fee",
         "psp_fee": "Processing fee",
         "tax_payable": "Tax payable",
-        "refunds": "Refunds"
+        "refunds": "Refunds",
+        "platform_expense": "Platform expenses"
       },
       "creatorAccount": "Creator {id}",
       "creatorNamed": "{name}, creator account"
@@ -3885,7 +3886,7 @@
       },
       "cost": {
         "heading": "What it costs",
-        "successful": "<b>A successful campaign</b> pays 5% of what it raised, plus the payment processor’s own fee — roughly 2.5–3% and a small fixed amount per pledge.",
+        "successful": "<b>A successful campaign</b> pays 15% of every withdrawal — the bank’s and the payment provider’s fees are inside it — and the creator receives 85%.",
         "unsuccessful": "<b>An unsuccessful campaign</b> pays nothing. No listing fee, no platform fee, no processing fee.",
         "note": "Rates are configuration rather than code, so a category or an individual agreement can carry a different one. The rate above is the standard schedule."
       },
