@@ -401,6 +401,11 @@ ideanest:
     # and /admin/staff says so.
     bootstrap-emails: ${MODERATOR_EMAILS:}
 
+  payout:
+    # IDN-EXT-01 (#41): `payout-destination-reminders`. Daily; a creator whose payout waits for their
+    # VÖEN and business card is reminded on the days that are whole weeks after the hold ended.
+    destination-reminder-schedule: "0 0 9 * * *"
+
   project:
     collaborators:
       # Seven days. An invitation nobody has accepted in a week is a typo or
@@ -475,6 +480,14 @@ ideanest:
       opens-before: 7d
       threshold: 0.50
       limit: 60d
+
+    withdrawal:
+      # §5.1, IDN-EXT-01 (#41). A successful campaign whose creator has not withdrawn is withdrawn
+      # for them this long after funding ended -- the first deadline, or the extension's end --
+      # and the payout's fourteen-day hold then makes it day 44.
+      automatic-after: 30d
+      # Hourly: the day a campaign becomes due is what matters, not the minute.
+      automatic-schedule: "0 15 * * * *"
 
     submission:
       # The three bounds §5.3 states as somebody else's decision rather than as a

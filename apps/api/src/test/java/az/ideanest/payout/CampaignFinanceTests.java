@@ -88,7 +88,7 @@ class CampaignFinanceTests {
                 fees,
                 payouts,
                 ledger,
-                new PayoutProperties(Duration.ofDays(14), new BigDecimal("5000.00"), (short) 2, AZN),
+                new PayoutProperties(Duration.ofDays(14), new BigDecimal("5000.00"), (short) 2, AZN, null),
                 Clock.fixed(NOW, ZoneOffset.UTC));
     }
 

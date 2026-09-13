@@ -332,7 +332,9 @@
         "LAUNCH_REMINDER": "{campaign} başlamak üzere",
         "SAVED_PROJECT_ENDING_SOON": "Kaydettiğiniz {campaign} yakında bitiyor",
         "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni bir cihazdan giriş yapıldı",
-        "CAMPAIGN_EXTENDED": "{campaign} kampanyasının yeni bir bitiş tarihi var"
+        "CAMPAIGN_EXTENDED": "{campaign} kampanyasının yeni bir bitiş tarihi var",
+        "WITHDRAWAL_REQUESTED": "{campaign} kampanyasının sahibi ödeme talep etti",
+        "PAYOUT_DETAILS_NEEDED": "{campaign} kampanyası için ödemeniz bilgilerinizi bekliyor"
       },
       "unnamed": {
         "PLEDGE_CONFIRMED": "Bir kampanyaya {amount} tutarındaki desteğiniz onaylandı",
@@ -357,7 +359,9 @@
         "LAUNCH_REMINDER": "Bir kampanya başlamak üzere",
         "SAVED_PROJECT_ENDING_SOON": "Kaydettiğiniz bir kampanya yakında bitiyor",
         "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni bir cihazdan giriş yapıldı",
-        "CAMPAIGN_EXTENDED": "Desteklediğiniz kampanyanın yeni bir bitiş tarihi var"
+        "CAMPAIGN_EXTENDED": "Desteklediğiniz kampanyanın yeni bir bitiş tarihi var",
+        "WITHDRAWAL_REQUESTED": "Desteklediğiniz kampanyanın sahibi ödeme talep etti",
+        "PAYOUT_DETAILS_NEEDED": "Ödemeniz VÖEN ve işletme kartınızı bekliyor"
       },
       "amount": {
         "total": "seçtiğiniz tutar",

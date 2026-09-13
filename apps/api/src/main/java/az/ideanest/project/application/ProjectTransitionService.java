@@ -531,6 +531,82 @@ public class ProjectTransitionService {
         return extended;
     }
 
+    /**
+     * IDN-EXT-01 (#41), §5.1: the creator withdraws the funds, which closes the campaign.
+     *
+     * <p>At the success threshold or above, at any time: while live, in the seven days after the
+     * deadline, during an extension, or once decided successful. The creator's alone, as extending is.
+     * The campaign's numbers are frozen now if no deadline froze them, because withdrawal is the
+     * decision — a later approved dispute reduces the payout and never the outcome.
+     *
+     * @throws WithdrawalNotAvailableException when the campaign is in no state to withdraw from, or
+     *     below the threshold
+     */
+    @Transactional
+    public Project withdraw(UUID projectId, UUID accountId) {
+        Project project = access.requireTransitionable(projectId, accountId);
+        return withdrawNow(project, access.roleOf(project, accountId), accountId, false);
+    }
+
+    /**
+     * IDN-EXT-01 (#41): withdraw a successful campaign whose creator has not, once
+     * {@code withdrawal.automatic-after} has passed since funding ended.
+     *
+     * <p>Under the row lock and re-checked, for the finaliser's reason: the sweep's query ran before
+     * the lock, and the creator may have withdrawn in between.
+     *
+     * @return the withdrawn campaign, or empty when it was no longer this pass's to withdraw
+     */
+    @Transactional
+    public Optional<Project> withdrawAutomatically(UUID projectId, Instant now) {
+        Project project =
+                projects.findByIdForUpdate(projectId).orElseThrow(() -> new ProjectNotFoundException(projectId));
+        if (project.getState() != ProjectState.SUCCESSFUL) {
+            return Optional.empty();
+        }
+        Instant ended = project.getExtendedUntil() != null ? project.getExtendedUntil() : project.getDeadline();
+        if (ended == null || ended.plus(properties.withdrawal().automaticAfter()).isAfter(now)) {
+            return Optional.empty();
+        }
+        return Optional.of(withdrawNow(project, ActorRole.SYSTEM, null, true));
+    }
+
+    private Project withdrawNow(Project project, ActorRole role, UUID actorId, boolean automatic) {
+        ProjectState state = project.getState();
+        if (state != ProjectState.LIVE
+                && state != ProjectState.CLOSING_WINDOW
+                && state != ProjectState.EXTENDED
+                && state != ProjectState.SUCCESSFUL) {
+            throw new WithdrawalNotAvailableException(project.getId(), WithdrawalNotAvailableException.Reason.WRONG_STATE);
+        }
+        // A campaign already decided successful passed the threshold when it was decided; a later
+        // dispute refund lowering the live total does not take its withdrawal away.
+        if (!project.isFinalised()
+                && project.outcome(properties.finalisation().successThreshold()) != CampaignOutcome.SUCCESSFUL) {
+            throw new WithdrawalNotAvailableException(project.getId(), WithdrawalNotAvailableException.Reason.BELOW_THRESHOLD);
+        }
+
+        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        Project withdrawn = apply(
+                project,
+                ProjectState.WITHDRAWN,
+                role,
+                actorId,
+                automatic
+                        ? "Withdrawn automatically, " + properties.withdrawal().automaticAfter().toDays()
+                                + " days after funding ended"
+                        : "Withdrawn by the creator");
+        if (!withdrawn.isFinalised()) {
+            withdrawn.freezeOutcome(now);
+        }
+        outbox.record(
+                CampaignWithdrawnEvent.AGGREGATE_TYPE,
+                withdrawn.getId(),
+                CampaignWithdrawnEvent.EVENT_TYPE,
+                CampaignWithdrawnEvent.of(withdrawn, now, automatic));
+        return withdrawn;
+    }
+
     @Transactional
     public Project openLatePledges(UUID projectId, UUID accountId, Instant endsAt) {
         // IDN-EXT-01 (#36): late pledges are switched off. No state has an edge into

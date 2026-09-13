@@ -66,7 +66,9 @@ class EmailCopyTests extends AbstractIntegrationTest {
               "backersCount": 184,
               "attempt": 2,
               "dueAt": "2026-10-05",
-              "extendedUntil": "2026-11-12"
+              "extendedUntil": "2026-11-12",
+              "disputeUntil": "2026-12-01",
+              "payableAt": "2026-12-01"
             }""";
 
     private static final String TITLE = "Xari Bulbul Ceramics";
@@ -91,7 +93,9 @@ class EmailCopyTests extends AbstractIntegrationTest {
               "backersCount": 184,
               "attempt": 2,
               "dueAt": "2026-10-05",
-              "extendedUntil": "2026-11-12"
+              "extendedUntil": "2026-11-12",
+              "disputeUntil": "2026-12-01",
+              "payableAt": "2026-12-01"
             }""";
 
     /** The suffix on a key that names the campaign, as {@code EmailComposer} spells it. */

@@ -109,6 +109,13 @@ public enum NotificationType {
     PAYOUT_SENT(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.PUSH,
             NotificationChannel.IN_APP),
 
+    /** IDN-EXT-01 (#41): to every backer — the creator's payout was requested; dispute until the date. */
+    WITHDRAWAL_REQUESTED(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.PUSH,
+            NotificationChannel.IN_APP),
+
+    /** IDN-EXT-01 (#41): to the creator, weekly — the payout waits for their VÖEN and business card. */
+    PAYOUT_DETAILS_NEEDED(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.IN_APP),
+
     /** A campaign published an update — §5.5 and #83. */
     NEW_UPDATE_PUBLISHED(NotificationCategory.COMMUNITY, NotificationChannel.EMAIL, NotificationChannel.PUSH,
             NotificationChannel.IN_APP),

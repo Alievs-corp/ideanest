@@ -309,7 +309,9 @@ public class Project {
     public void freezeOutcome(Instant at) {
         Objects.requireNonNull(at, "A frozen outcome needs the moment it was decided");
 
-        if (state != ProjectState.SUCCESSFUL && state != ProjectState.UNSUCCESSFUL) {
+        // WITHDRAWN too since IDN-EXT-01 (#41): a creator at 80% may withdraw before the deadline,
+        // and withdrawal is the decision — its numbers are frozen as a deadline's would be.
+        if (state != ProjectState.SUCCESSFUL && state != ProjectState.UNSUCCESSFUL && state != ProjectState.WITHDRAWN) {
             throw new IllegalStateException(
                     "A campaign in " + state + " has no outcome to freeze; §5.1 decides only at the deadline");
         }
