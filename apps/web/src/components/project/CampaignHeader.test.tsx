@@ -225,17 +225,19 @@ describe('the trust block', () => {
     expect(screen.getByText(TRUST_COPY)).toBeInTheDocument();
     expect(TRUST_COPY).toBe(
       'The platform connects creators with backers. Rewards are not guaranteed, but creators ' +
-        'must keep backers informed. You are only charged if the project reaches its goal by ' +
-        'the deadline.',
+        'must keep backers informed. You are charged when you pledge, and refunded in full if the ' +
+        'project does not raise 80% of its goal.',
     );
   });
 
-  it('states all or nothing with the goal and the deadline as a machine-readable instant', async () => {
+  it('states the 80% rule with the amount, the goal and the deadline as a machine-readable instant', async () => {
     const { container } = render(await resolveServerTree(<CampaignTrustBlock campaign={campaign()} />));
 
-    expect(screen.getByText(/All or nothing/u)).toBeInTheDocument();
-    expect(screen.getByText('10,000.00 AZN')).toBeInTheDocument();
-    expect(screen.getByText(/nobody is charged anything/u)).toBeInTheDocument();
+    // IDN-EXT-01 (#44): the amount to raise is 80% of the goal, and the goal is named beside it.
+    expect(screen.getByText('8,000.00 AZN')).toBeInTheDocument();
+    expect(container.textContent).toContain('80% of its 10,000.00 AZN goal');
+    expect(container.textContent).toContain('every backer is refunded in full');
+    expect(container.textContent).not.toMatch(/all or nothing/iu);
 
     // The words are a presentation of the instant; the `datetime` is the fact.
     const time = container.querySelector('time');
@@ -251,8 +253,8 @@ describe('the trust block', () => {
       ),
     );
 
-    expect(screen.getByText(/closed on/u)).toBeInTheDocument();
-    expect(screen.queryByText(/nobody is charged anything/u)).not.toBeInTheDocument();
+    expect(document.body.textContent).toContain('deadline was');
+    expect(document.body.textContent).not.toContain('is not extended');
   });
 
   /**
@@ -270,7 +272,7 @@ describe('the trust block', () => {
     );
 
     expect(screen.getByText(TRUST_COPY)).toBeInTheDocument();
-    expect(screen.queryByText(/All or nothing/u)).not.toBeInTheDocument();
+    expect(document.body.textContent).not.toContain('succeeds if it raises');
   });
 });
 

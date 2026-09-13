@@ -284,8 +284,8 @@ describe('the outcome notice', () => {
       ),
     );
 
-    expect(screen.getByRole('heading', { name: /did not reach its goal/ })).toBeInTheDocument();
-    expect(screen.getByText(/Nobody was charged/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /was not funded/ })).toBeInTheDocument();
+    expect(screen.getByText(/Every backer is refunded in full/)).toBeInTheDocument();
   });
 
   it('renders nothing while the campaign is still running', async () => {
@@ -481,5 +481,25 @@ describe('accessibility', () => {
     );
 
     await expectNoViolations(container);
+  });
+});
+
+describe('IDN-EXT-01 on the campaign header (#44)', () => {
+  it('states the 80% rule beside the funding figures', async () => {
+    await renderSummary(campaign());
+
+    expect(
+      screen.getByText('A campaign succeeds at 80% of its goal. Its creator may extend the deadline once.'),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ['CLOSING_WINDOW', 'Closing soon'],
+    ['EXTENDED', 'Extended'],
+    ['WITHDRAWN', 'Funded'],
+  ] as const)('badges %s as “%s”', async (state, word) => {
+    await renderSummary(campaign({ state }));
+
+    expect(screen.getByText(word)).toBeInTheDocument();
   });
 });

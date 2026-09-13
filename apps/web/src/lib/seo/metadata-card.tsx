@@ -47,7 +47,7 @@ export const OG_IMAGE_CONTENT_TYPE = 'image/png';
  * an unnamed image (CLAUDE.md §2 — an icon-only control needs an accessible name,
  * and this is the same rule).
  */
-export const OG_SITE_ALT = `${SITE_NAME} — reward-based crowdfunding, funded all or nothing`;
+export const OG_SITE_ALT = `${SITE_NAME} — reward-based crowdfunding, where a campaign succeeds at 80% of its goal`;
 
 /**
  * `og:image:alt` for a campaign card, and it names no campaign.
@@ -195,7 +195,7 @@ export function projectSocialCard(project: {
           letterSpacing: tracking(BLURB_FONT_SIZE, -0.01),
         }}
       >
-        {blurb === '' ? 'A crowdfunding campaign, funded all or nothing.' : blurb}
+        {blurb === '' ? 'A crowdfunding campaign that succeeds at 80% of its goal.' : blurb}
       </div>
     </div>,
   ]);

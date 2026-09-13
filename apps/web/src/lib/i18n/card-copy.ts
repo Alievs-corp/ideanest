@@ -43,6 +43,8 @@ export interface SharedCardCopy {
   /** Carries `{amount}`, already formatted by `lib/money.ts` against the campaign's currency. */
   readonly ofGoal: string;
   readonly backers: PluralForms;
+  /** IDN-EXT-01 §9: "succeeds at 80% of the goal", printed under the progress bar (#44). */
+  readonly rule: string;
 }
 
 export interface ProjectCardCopy extends SharedCardCopy {
@@ -62,6 +64,7 @@ export function sharedCardCopyFrom(common: CardTranslator): SharedCardCopy {
     funded: String(common.raw('card.funded')),
     ofGoal: String(common.raw('card.ofGoal')),
     backers: common.raw('card.backers') as PluralForms,
+    rule: String(common.raw('card.rule')),
   };
 }
 

@@ -96,7 +96,7 @@ describe('rewardProductNodes', () => {
     expect(offerOf(nodes({ tiers })[0]).price).toBe('85.00');
   });
 
-  it('offers a tier as a pre-order, because nobody is charged until the goal is met', () => {
+  it('offers a tier as a pre-order, because a pledge funds a thing that does not exist yet', () => {
     expect(offerOf(nodes()[0]).availability).toBe('https://schema.org/PreOrder');
   });
 

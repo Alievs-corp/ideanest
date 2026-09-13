@@ -12,7 +12,8 @@
         "few": "{count} dəstəkçi",
         "many": "{count} dəstəkçi",
         "other": "{count} dəstəkçi"
-      }
+      },
+      "rule": "Hədəfin 80%-ində uğurlu sayılır"
     },
     "saving": "Yadda saxlanılır…",
     "tryAgain": "Yenidən cəhd edin",
@@ -39,7 +40,7 @@
   },
   "shell": {
     "skipToContent": "Məzmuna keç",
-    "tagline": "Mükafat əsaslı kütləvi maliyyələşdirmə. Müəlliflər kampaniyalarını yerləşdirir, dəstəkçilər dəstək olur və kampaniya son tarixinədək hədəfinə çatmasa, heç kimdən pul alınmır.",
+    "tagline": "Mükafat əsaslı kütləvi maliyyələşdirmə. Müəlliflər kampaniyalarını yerləşdirir, dəstəkçilər dəstək olur, hədəfinin 80%-ini toplamayan kampaniya isə hər dəstəkçiyə məbləği tam qaytarır.",
     "nav": {
       "label": "Əsas",
       "discover": "Kəşf et",
@@ -195,7 +196,7 @@
         "metaTitle": "Dəstəkləriniz",
         "metaDescription": "Dəstəklədiyiniz bütün kampaniyalar və seçdikləriniz.",
         "title": "Dəstəkləriniz",
-        "intro": "Dəstəklədiyiniz bütün kampaniyalar. Hələ heç bir məbləğ alınmayıb — dəstək yalnız kampaniya uğurla başa çatdıqda hesabınızdan çıxılır, o vaxta qədər isə onu dəyişə və ya geri götürə bilərsiniz."
+        "intro": "Dəstəklədiyiniz bütün kampaniyalar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, tam qaytarılır. Kampaniya dəstək qəbul etdiyi müddətdə dəstəyinizi artıra bilərsiniz, lakin geri götürə bilməzsiniz."
       },
       "campaigns": {
         "metaTitle": "Kampaniyalarım",
@@ -2445,7 +2446,7 @@
   },
   "auth": {
     "layout": {
-      "footer": "Mükafat əsaslı kollektiv maliyyələşdirmə. Kampaniya son tarixinədək hədəfinə çatmasa, heç kimdən pul alınmır."
+      "footer": "Mükafat əsaslı kollektiv maliyyələşdirmə. Hədəfinin 80%-ini toplamayan kampaniya hər dəstəkçiyə məbləği tam qaytarır."
     },
     "loadingForm": "Forma yüklənir…",
     "checkingLink": "Keçid yoxlanılır…",
@@ -2620,13 +2621,13 @@
     "metaTitle": "IdeaNest — mükafat əsaslı kütləvi maliyyələşdirmə",
     "hero": {
       "title": "Hələ mövcud olmayanı maliyyələşdirin",
-      "standfirst": "Müəlliflər hədəfi və son tarixi olan kampaniya yerləşdirir. Dəstəkçilər dəstək olur. Hədəfə vaxtında çatılmasa, heç kimdən pul alınmır — çatılmadıqda isə heç bir məbləğ tutulmur.",
+      "standfirst": "Müəlliflər hədəfi və son tarixi olan kampaniya yerləşdirir. Dəstəkçilər dəstək olur. Kampaniya hədəfinin 80%-ində uğurlu sayılır — ora çatmasa, hər dəstəkçiyə məbləğ tam qaytarılır.",
       "browse": "Kampaniyalara baxın",
       "start": "Kampaniya başladın"
     },
     "closing": {
       "heading": "Tezliklə bitənlər",
-      "standfirst": "Son tarixi ən yaxın olan kampaniyalar. «Ya hamısı, ya heç nə» qaydası deməkdir ki, dəstəyiniz ən çox məhz bunlarda nəyisə dəyişir.",
+      "standfirst": "Son tarixi ən yaxın olan kampaniyalar. Kampaniya hədəfinin 80%-ində uğurlu sayılır, ona görə dəstəyiniz ən çox məhz bunlarda nəyisə dəyişir.",
       "link": "Tezliklə bitənlərin hamısına baxın",
       "gridLabel": "Tezliklə bitən kampaniyalar"
     },
@@ -3072,7 +3073,10 @@
       "FULFILLING": "Yerinə yetirilir",
       "COMPLETED": "Tamamlandı",
       "UNSUCCESSFUL": "Maliyyələşmədi",
-      "CANCELED": "Ləğv edildi"
+      "CANCELED": "Ləğv edildi",
+      "CLOSING_WINDOW": "Tezliklə bağlanır",
+      "EXTENDED": "Uzadılıb",
+      "WITHDRAWN": "Maliyyələşdi"
     },
     "daysLeft": "{days, plural, =0 {Son gün} other {# gün qaldı}}",
     "backers": "{count, plural, =0 {Dəstəkçi yoxdur} other {# dəstəkçi}}",
@@ -3100,7 +3104,10 @@
     },
     "trust": {
       "heading": "Maliyyələşdirmə burada necə işləyir",
-      "body": "Platforma müəlliflərlə dəstəkçiləri bir araya gətirir. Mükafatlar zəmanətli deyil, lakin müəlliflər dəstəkçiləri məlumatlandırmalıdır. Sizdən pul yalnız layihə son tarixədək hədəfinə çatdıqda tutulur."
+      "body": "Platforma müəlliflərlə dəstəkçiləri bir araya gətirir. Mükafatlar zəmanətli deyil, lakin müəlliflər dəstəkçiləri məlumatlandırmalıdır. Pul dəstək olduğunuz anda tutulur və layihə hədəfinin 80%-ini toplamasa, sizə tam qaytarılır.",
+      "open": "Bu kampaniya <deadline></deadline> tarixinədək <b>{threshold}</b> — {goal} hədəfinin 80%-i — toplasa, uğurlu sayılır. Toplamasa və uzadılmasa, hər dəstəkçiyə məbləğ tam qaytarılır.",
+      "openNoGoal": "Bu kampaniya <deadline></deadline> tarixinədək hədəfinin 80%-ini toplasa, uğurlu sayılır. Toplamasa və uzadılmasa, hər dəstəkçiyə məbləğ tam qaytarılır.",
+      "closed": "Bu kampaniyanın son tarixi <deadline></deadline> idi. Son tarixinədək və ya yeganə uzadılmasının sonunadək hədəfinin 80%-ini toplamayan kampaniya hər dəstəkçiyə məbləği tam qaytarır."
     },
     "obligation": {
       "lateHeading": "Bu yaradıcının yenilənmə borcu var",
@@ -3112,13 +3119,13 @@
     },
     "outcome": {
       "funded": "Bu kampaniya maliyyələşdi",
-      "notFunded": "Bu kampaniya hədəfinə çatmadı",
-      "reached": "Son tarixdən əvvəl hədəfinə çatdı.",
-      "notReached": "Son tarixədək hədəfinə çata bilmədi.",
+      "notFunded": "Bu kampaniya maliyyələşmədi",
+      "reached": "Hədəfinin ən azı 80%-ini topladı.",
+      "notReached": "Vaxtında hədəfinin 80%-ini toplaya bilmədi.",
       "raised": "Topladığı",
       "closedOn": "{date} tarixində",
-      "settling": "Yuxarıdakı rəqəmlər kampaniyanın son tarixədək topladığıdır. Təsdiqlənmiş hər dəstək kampaniya bağlandıqdan sonra alınır, ona görə bu səhifənin başqa yerində görünən məbləğ həmin alınmalar tamamlandıqca dəyişə bilər.",
-      "nobodyCharged": "Heç kimdən pul tutulmadı. IdeaNest-də hədəfinə çatmayan kampaniya heç nə toplamır və heç bir komissiya ödəmir."
+      "settling": "Yuxarıdakı rəqəmlər kampaniyanın bağlandığı anda topladığı məbləğdir. Ondan sonrakı geri qaytarma müəllifə ödəniləni azaldır, nəticəni isə dəyişmir.",
+      "refunded": "Hər dəstəkçiyə məbləğ tam qaytarılır. Hədəfinin 80%-ini toplamayan kampaniya heç bir komissiya ödəmir."
     },
     "faqs": {
       "heading": "Tez-tez verilən suallar",
@@ -3150,7 +3157,8 @@
       "withdraw": "Geri götür",
       "withdrawWarning": "Geri götürmək şərhin silindiyini bildirən qeyd buraxır. Ona yazılmış cavablar qalır və şərhi nə redaktə etmək, nə də geri qaytarmaq olur.",
       "keep": "Qalsın"
-    }
+    },
+    "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Müəllif son tarixi bir dəfə uzada bilər."
   },
   "campaignEditor": {
     "eyebrow": "Kampaniya redaktoru",
@@ -3215,7 +3223,7 @@
       "subcategoryHintNone": "Bu kateqoriyanın alt kateqoriyası yoxdur.",
       "subcategoryHint": "İstəyə bağlı, amma daha dəqiq.",
       "goal": "Maliyyə hədəfi",
-      "goalHint": "Ya hamısı, ya heç nə: bu məbləğ yığılmayana qədər heç nə tutulmur.",
+      "goalHint": "Kampaniya bu məbləğin 80%-ində uğurlu sayılır. Ondan az olarsa, hər dəstəkçiyə məbləğ tam qaytarılır.",
       "goalHintLocked": "Kampaniya başladıqdan sonra hədəfi dəyişmək olmaz.",
       "currency": "Valyuta",
       "currencyHint": "Kampaniya başlayanda sabitlənir.",
@@ -3875,14 +3883,14 @@
   "static": {
     "about": {
       "metaTitle": "Haqqımızda",
-      "metaDescription": "IdeaNest nədir, «ya hamısı, ya heç nə» maliyyələşdirmə necə işləyir və nəyə başa gəlir.",
+      "metaDescription": "IdeaNest nədir, hədəfin 80%-ində uğur necə işləyir və nəyə başa gəlir.",
       "title": "IdeaNest haqqında",
       "summary": "Hələ mövcud olmayan şeyləri maliyyələşdirmək üçün yer — şərtlər hamı üçün eynidir.",
-      "intro": "IdeaNest mükafat əsaslı kütləvi maliyyələşdirmə platformasıdır. Müəllif hədəfi və son tarixi olan kampaniya yerləşdirir; həmin şeyin var olmasını istəyənlər ona dəstək olur; və hədəfə son tarixədək çatılırsa, dəstəklər toplanır və müəllif həmin şeyi hazırlayır. Çatılmırsa, heç kimdən pul tutulmur.",
+      "intro": "IdeaNest mükafat əsaslı kütləvi maliyyələşdirmə platformasıdır. Müəllif hədəfi və son tarixi olan kampaniya yerləşdirir; həmin şeyin var olmasını istəyənlər ona dəstək olur və pul elə o an tutulur; kampaniya hədəfinin ən azı 80%-ini toplasa, müəllif vəsaiti çıxarır və həmin şeyi hazırlayır. Toplamasa, hər dəstəkçiyə məbləğ tam qaytarılır.",
       "allOrNothing": {
-        "heading": "Ya hamısı, ya heç nə — və bu, xurdalaşa deyil",
-        "first": "Yarımıq maliyyələşən kampaniya heç maliyyələşməyəndən pisdir. Müəllifin əlində işi bitirməyə çatmayan pul, dəstəkçilərin əlində isə heç kəsin yerinə yetirə bilməyəcəyi vəd qalır. Ona görə hədəfinə çatmayan kampaniya heç nə toplamır, müəllifinə heç bir komissiya başa gəlmir və heç bir karta toxunulmur.",
-        "second": "Bunun nəticəsində son tarix real məna daşıyır. Son günündə 90 faizdə olan kampaniya həqiqətən risk altındadır və platforma bunu bəzəmədən beləcə deyir."
+        "heading": "80%-də uğur və bu həddin səbəbi",
+        "first": "Hədəfinin 80%-ini toplayan kampaniya uğurlu sayılır və müəllif kampaniyanın neçə faizlə bağlanmasından asılı olmayaraq bütün mükafatları bütün dəstəkçilərə çatdırmalıdır. Ondan az məbləğə arxalanmaq olmaz, ona görə belə kampaniya uğursuz sayılır, müəllifinə heç bir komissiyaya başa gəlmir və hər dəstəkçiyə məbləğ tam qaytarılır.",
+        "second": "Son tarix yenə də məna daşıyır. Müəllif onu bir dəfə, ilk son tarixdən ən çoxu altmış gün sonrasınadək uzada bilər və dəstəkçilərə yeni tarix bildirilir. Bunun sonunda 80%-dən aşağı qalan kampaniyanın vəsaiti qaytarılır və platforma bunu bəzəmədən deyir."
       },
       "cost": {
         "heading": "Nəyə başa gəlir",
@@ -3906,9 +3914,9 @@
       "summary": "Kampaniyanı tapmaqla onun maliyyələşdirdiyi şeyi əldə etmək arasında nə baş verir.",
       "backing": {
         "heading": "Əgər nəyisə dəstəkləyirsinizsə",
-        "first": "Mükafat pilləsi seçin və ya mükafatsız dəstək olun. Kartınız avtorizə edilir, lakin kampaniya davam etdiyi müddətdə <b>heç nə tutulmur</b> — son tarixədək dəstəyinizi dəyişə, başqa pilləyə keçə, əlavə seçə və ya tamamilə imtina edə bilərsiniz.",
-        "second": "Son tarixdə iki şeydən biri baş verir. Kampaniya hədəfinə çatıbsa, təsdiqlənmiş hər dəstək alınır və kampaniya yerinə yetirmə mərhələsinə keçir. Çatmayıbsa, heç nə alınmır, heç bir komissiya tutulmur və saxlanmış kart tokenləri otuz gün ərzində silinir.",
-        "third": "Kart alınma anında uyğunsuz çıxa bilər — müddəti bitib, vəsaiti çatmır və ya bank imtina edib. Dəstəkdən əl çəkilməzdən əvvəl yeddi gün ərzində təkrar cəhdlər edilir."
+        "first": "Mükafat pilləsi seçin və ya mükafatsız dəstək olun. <b>Pul dəstək olduğunuz anda tutulur</b> və platformanın hesabında saxlanılır. Dəstəyi ləğv etmək olmur; kampaniya dəstək qəbul etdiyi müddətdə onu daha yüksək pillə və ya əlavə ilə artıra bilərsiniz.",
+        "second": "Kampaniya hədəfinin 80%-ində uğurlu sayılır. Müəllif o andan vəsaiti çıxara və ya son tarixi bir dəfə uzada bilər. Kampaniya son tarixinədək və ya uzadılmanın sonunadək 80%-ə çatmasa, hər dəstəkçiyə məbləğ tam qaytarılır və heç bir komissiya tutulmur.",
+        "third": "Müəllif vəsaiti çıxardıqdan sonra ödəniş on dörd gün saxlanılır. Bu müddətdə dəstəkçi ödənişinə etiraz edə bilər və qərarı administrator verir; qəbul edilən etiraz üzrə məbləğ tam qaytarılır."
       },
       "surveys": {
         "heading": "Sonra müəllif sizə bir neçə sual verir",

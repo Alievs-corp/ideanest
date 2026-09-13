@@ -12,7 +12,8 @@
         "few": "{count} destekçi",
         "many": "{count} destekçi",
         "other": "{count} destekçi"
-      }
+      },
+      "rule": "Hedefin %80'inde başarılı"
     },
     "saving": "Kaydediliyor…",
     "tryAgain": "Tekrar deneyin",
@@ -39,7 +40,7 @@
   },
   "shell": {
     "skipToContent": "İçeriğe geç",
-    "tagline": "Ödül temelli kitlesel fonlama. Üreticiler kampanyalarını yayımlar, destekçiler söz verir ve bir kampanya son tarihine kadar hedefine ulaşmazsa kimseden ücret alınmaz.",
+    "tagline": "Ödül temelli kitlesel fonlama. Üreticiler kampanyalarını yayımlar, destekçiler destek verir; hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarın tamamını iade eder.",
     "nav": {
       "label": "Birincil",
       "discover": "Keşfet",
@@ -195,7 +196,7 @@
         "metaTitle": "Destekleriniz",
         "metaDescription": "Desteklediğiniz tüm kampanyalar ve seçtikleriniz.",
         "title": "Destekleriniz",
-        "intro": "Desteklediğiniz tüm kampanyalar. Henüz hiçbir tutar tahsil edilmedi — destek, kampanya başarıyla kapandığında tahsil edilir; o zamana kadar desteğinizi değiştirebilir veya geri çekebilirsiniz."
+        "intro": "Desteklediğiniz tüm kampanyalar. Destek verildiği anda tahsil edilir ve kampanya başarısız olursa tamamı iade edilir. Kampanya destek kabul ettiği sürece desteğinizi artırabilir, ancak geri çekemezsiniz."
       },
       "campaigns": {
         "metaTitle": "Kampanyalarım",
@@ -2445,7 +2446,7 @@
   },
   "auth": {
     "layout": {
-      "footer": "Ödüle dayalı kitlesel fonlama. Bir kampanya süresi dolmadan hedefine ulaşmazsa kimseden para alınmaz."
+      "footer": "Ödüle dayalı kitlesel fonlama. Hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarın tamamını iade eder."
     },
     "loadingForm": "Form yükleniyor…",
     "checkingLink": "Bağlantı denetleniyor…",
@@ -2620,13 +2621,13 @@
     "metaTitle": "IdeaNest — ödül temelli kitlesel fonlama",
     "hero": {
       "title": "Henüz var olmayanı fonlayın",
-      "standfirst": "Üreticiler hedefi ve son tarihi olan bir kampanya yayımlar. Destekçiler söz verir. Hedefe zamanında ulaşılmadıkça kimseden ücret alınmaz — ulaşılamazsa da hiçbir tutar tahsil edilmez.",
+      "standfirst": "Üreticiler hedefi ve son tarihi olan bir kampanya yayımlar. Destekçiler destek verir. Bir kampanya hedefinin %80'inde başarılı sayılır — oraya ulaşamazsa her destekçiye tutarın tamamı iade edilir.",
       "browse": "Kampanyalara göz atın",
       "start": "Kampanya başlatın"
     },
     "closing": {
       "heading": "Yakında bitenler",
-      "standfirst": "Son tarihi en yakın olan kampanyalar. Ya hep ya hiç kuralı, desteğinizin en çok bunlarda bir şeyi değiştirdiği anlamına gelir.",
+      "standfirst": "Son tarihi en yakın olan kampanyalar. Bir kampanya hedefinin %80'inde başarılı sayıldığı için desteğiniz en çok bunlarda bir şeyi değiştirir.",
       "link": "Yakında bitenlerin tümünü görün",
       "gridLabel": "Yakında biten kampanyalar"
     },
@@ -3072,7 +3073,10 @@
       "FULFILLING": "Yerine getiriliyor",
       "COMPLETED": "Tamamlandı",
       "UNSUCCESSFUL": "Fonlanamadı",
-      "CANCELED": "İptal edildi"
+      "CANCELED": "İptal edildi",
+      "CLOSING_WINDOW": "Yakında kapanıyor",
+      "EXTENDED": "Uzatıldı",
+      "WITHDRAWN": "Fonlandı"
     },
     "daysLeft": "{days, plural, =0 {Son gün} other {# gün kaldı}}",
     "backers": "{count, plural, =0 {Destekçi yok} other {# destekçi}}",
@@ -3100,7 +3104,10 @@
     },
     "trust": {
       "heading": "Burada fonlama nasıl işler",
-      "body": "Platform üreticilerle destekçileri bir araya getirir. Ödüller garanti değildir, ancak üreticiler destekçileri bilgilendirmek zorundadır. Sizden ücret yalnızca proje son tarihe kadar hedefine ulaşırsa tahsil edilir."
+      "body": "Platform üreticilerle destekçileri bir araya getirir. Ödüller garanti değildir, ancak üreticiler destekçileri bilgilendirmek zorundadır. Destek verdiğinizde ücret tahsil edilir ve proje hedefinin %80'ini toplayamazsa tutarın tamamı iade edilir.",
+      "open": "Bu kampanya <deadline></deadline> tarihine kadar <b>{threshold}</b> — {goal} hedefinin %80'i — toplarsa başarılı sayılır. Toplayamazsa ve uzatılmazsa her destekçiye tutarın tamamı iade edilir.",
+      "openNoGoal": "Bu kampanya <deadline></deadline> tarihine kadar hedefinin %80'ini toplarsa başarılı sayılır. Toplayamazsa ve uzatılmazsa her destekçiye tutarın tamamı iade edilir.",
+      "closed": "Bu kampanyanın son tarihi <deadline></deadline> idi. Son tarihine ya da tek uzatmasının sonuna kadar hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarın tamamını iade eder."
     },
     "obligation": {
       "lateHeading": "Bu yaratıcının bir güncelleme borcu var",
@@ -3112,13 +3119,13 @@
     },
     "outcome": {
       "funded": "Bu kampanya fonlandı",
-      "notFunded": "Bu kampanya hedefine ulaşamadı",
-      "reached": "Son tarihten önce hedefine ulaştı.",
-      "notReached": "Son tarihe kadar hedefine ulaşamadı.",
+      "notFunded": "Bu kampanya fonlanamadı",
+      "reached": "Hedefinin en az %80'ini topladı.",
+      "notReached": "Zamanında hedefinin %80'ini toplayamadı.",
       "raised": "Topladığı",
       "closedOn": "{date} tarihinde",
-      "settling": "Yukarıdaki rakamlar kampanyanın son tarihine kadar topladığı tutardır. Onaylanan her destek kampanya kapandıktan sonra tahsil edilir; bu nedenle bu sayfanın başka yerlerinde görünen tutar, tahsilatlar tamamlandıkça değişebilir.",
-      "nobodyCharged": "Kimseden ücret alınmadı. IdeaNest'te hedefine ulaşamayan bir kampanya hiçbir tutar toplamaz ve komisyon ödemez."
+      "settling": "Yukarıdaki rakamlar kampanyanın kapandığı anda topladığı tutardır. Sonrasındaki bir iade üreticiye ödenen tutarı azaltır, sonucu değiştirmez.",
+      "refunded": "Her destekçiye tutarın tamamı iade edilir. Hedefinin %80'ini toplayamayan bir kampanya komisyon ödemez."
     },
     "faqs": {
       "heading": "Sıkça sorulan sorular",
@@ -3150,7 +3157,8 @@
       "withdraw": "Geri çek",
       "withdrawWarning": "Geri çekmek, yorumun kaldırıldığını belirten bir not bırakır. Ona verilen yanıtlar kalır ve yorum ne düzenlenebilir ne de geri getirilebilir.",
       "keep": "Kalsın"
-    }
+    },
+    "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Üretici son tarihi bir kez uzatabilir."
   },
   "campaignEditor": {
     "eyebrow": "Kampanya düzenleyici",
@@ -3215,7 +3223,7 @@
       "subcategoryHintNone": "Bu kategorinin alt kategorisi yok.",
       "subcategoryHint": "İsteğe bağlı, daha belirgin.",
       "goal": "Fonlama hedefi",
-      "goalHint": "Ya hep ya hiç: bu tutara ulaşılmadıkça hiçbir şey tahsil edilmez.",
+      "goalHint": "Kampanya bu tutarın %80'inde başarılı sayılır. Altında kalırsa her destekçiye tutarın tamamı iade edilir.",
       "goalHintLocked": "Kampanya başladıktan sonra hedef değiştirilemez.",
       "currency": "Para birimi",
       "currencyHint": "Kampanya başlayınca sabitlenir.",
@@ -3875,14 +3883,14 @@
   "static": {
     "about": {
       "metaTitle": "Hakkımızda",
-      "metaDescription": "IdeaNest nedir, «ya hep ya hiç» fonlama nasıl işler ve maliyeti nedir.",
+      "metaDescription": "IdeaNest nedir, hedefin %80'inde başarı nasıl işler ve maliyeti nedir.",
       "title": "IdeaNest hakkında",
       "summary": "Henüz var olmayan şeyleri fonlamak için bir yer — koşullar herkes için aynı.",
-      "intro": "IdeaNest, ödül temelli bir kitlesel fonlama platformudur. Bir üretici hedefi ve son tarihi olan bir kampanya yayımlar; o şeyin var olmasını isteyenler destek verir; hedefe son tarihe kadar ulaşılırsa destekler tahsil edilir ve üretici o şeyi yapar. Ulaşılamazsa kimseden hiçbir ücret alınmaz.",
+      "intro": "IdeaNest, ödül temelli bir kitlesel fonlama platformudur. Bir üretici hedefi ve son tarihi olan bir kampanya yayımlar; o şeyin var olmasını isteyenler destek verir ve ücret o anda tahsil edilir; kampanya hedefinin en az %80'ini toplarsa üretici parayı çeker ve o şeyi yapar. Toplayamazsa her destekçiye tutarın tamamı iade edilir.",
       "allOrNothing": {
-        "heading": "Ya hep ya hiç — ve bu neden bir ayrıntı değil",
-        "first": "Kısmen fonlanmış bir kampanya, hiç fonlanmamış olandan kötüdür. Üreticinin elinde işi bitirmeye yetmeyen bir para, destekçilerin elinde ise kimsenin tutamayacağı bir söz kalır. Bu yüzden hedefine ulaşamayan bir kampanya hiçbir tutar toplamaz, üreticisine hiçbir komisyona mal olmaz ve hiçbir karta dokunmaz.",
-        "second": "Bunun sonucu olarak son tarih gerçekten bir şey ifade eder. Son gününde yüzde 90'da olan bir kampanya gerçekten risk altındadır ve platform bunu süsleyerek değil, olduğu gibi söyler."
+        "heading": "%80'de başarı — ve bu çizginin nedeni",
+        "first": "Hedefinin %80'ini toplayan bir kampanya başarılıdır ve üretici, kampanya hangi yüzdeyle kapanmış olursa olsun tüm ödülleri tüm destekçilere teslim etmek zorundadır. Bunun altındaki bir tutara güvenilemez; bu yüzden kampanya başarısız sayılır, üreticisine hiçbir komisyona mal olmaz ve her destekçiye tutarın tamamı iade edilir.",
+        "second": "Son tarih yine de bir şey ifade eder. Üretici onu bir kez, ilk son tarihten en fazla altmış gün sonrasına kadar uzatabilir ve destekçilere yeni tarih bildirilir. Bunun sonunda %80'in altında kalan bir kampanyanın destekleri iade edilir ve platform bunu süslemeden söyler."
       },
       "cost": {
         "heading": "Maliyeti nedir",
@@ -3906,9 +3914,9 @@
       "summary": "Bir kampanyayı bulmakla onun fonladığı şeyi elinize almak arasında neler olur.",
       "backing": {
         "heading": "Bir şeye destek oluyorsanız",
-        "first": "Bir ödül seviyesi seçin ya da ödülsüz destek olun. Kartınız provizyona alınır ve kampanya sürerken <b>hiçbir tutar tahsil edilmez</b> — son tarihe kadar desteğinizi değiştirebilir, başka bir seviyeye geçebilir, ek seçebilir ya da tamamen iptal edebilirsiniz.",
-        "second": "Son tarihte iki şeyden biri olur. Kampanya hedefine ulaştıysa onaylanan her destek tahsil edilir ve kampanya yerine getirme aşamasına geçer. Ulaşamadıysa hiçbir tutar tahsil edilmez, komisyon alınmaz ve saklanan kart tokenları otuz gün içinde silinir.",
-        "third": "Tahsilat sırasında kart başarısız olabilir — süresi dolmuş, bakiyesi yetersiz ya da banka reddetmiş olabilir. Destekten vazgeçilmeden önce yedi günlük bir süre boyunca yeniden denenir."
+        "first": "Bir ödül seviyesi seçin ya da ödülsüz destek olun. <b>Ücret destek verdiğiniz anda tahsil edilir</b> ve platformun hesabında tutulur. Destek iptal edilemez; kampanya destek kabul ettiği sürece daha yüksek bir seviye ya da ek seçerek desteğinizi artırabilirsiniz.",
+        "second": "Bir kampanya hedefinin %80'inde başarılı sayılır. Üretici o andan itibaren parayı çekebilir ya da son tarihi bir kez uzatabilir. Kampanya son tarihine ya da uzatmanın sonuna kadar %80'e ulaşmazsa her destekçiye tutarın tamamı iade edilir ve komisyon alınmaz.",
+        "third": "Üretici parayı çekmek istedikten sonra ödeme on dört gün bekletilir. Bu süre içinde bir destekçi ödemesine itiraz edebilir ve kararı bir yönetici verir; kabul edilen bir itirazda tutarın tamamı iade edilir."
       },
       "surveys": {
         "heading": "Sonra üretici size birkaç soru sorar",

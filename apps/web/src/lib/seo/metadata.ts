@@ -250,7 +250,7 @@ export function projectSocialDescription(project: {
   if (blurb !== '') return blurb;
 
   return truncateAtWord(
-    `${project.title} — a crowdfunding campaign on ${SITE_NAME}, funded all or nothing.`,
+    `${project.title} — a crowdfunding campaign on ${SITE_NAME} that succeeds at 80% of its goal.`,
   );
 }
 
