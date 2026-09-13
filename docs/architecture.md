@@ -3912,7 +3912,7 @@ expired cards, limits, and issuer declines.
 | An extension ends below 80% | **Full refund to every backer** |
 | Creator cancels | **Full refund to every backer.** The halt is built (#103); the refund of charged pledges is #40 |
 | Moderator suspends | **Full refund to every backer.** The same release, from the same event — §4.11's AD-02 |
-| Backer disputes during the payout hold | An administrator decides; an upheld dispute refunds that backer in full and reduces the payout (#43) |
+| Backer disputes during the payout hold | An administrator decides; an upheld dispute refunds that backer in full and reduces the payout. **Built (#43)**: `POST /v1/pledges/{id}/disputes` while a payout for the campaign is in flight (409 `DISPUTE_WINDOW_CLOSED` otherwise); `/v1/admin/backer-disputes` queue and `…/{id}/decision` (UPHOLD refunds with `DISPUTE_CONCEDED` and recalculates the payout keeping its hold end; REJECT moves nothing); V79 `backer_disputes`, one open per pledge |
 | Backer changes their mind | **No cancellation.** A pledge may only be raised (§5.1) |
 | After the creator is paid | Nothing is refunded through the platform; a bank chargeback is recovered from the creator (§9.8) |
 | Creator cannot deliver | Creator offers a refund; the platform mediates |

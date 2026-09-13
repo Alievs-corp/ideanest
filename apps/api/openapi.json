@@ -411,6 +411,74 @@
         "tags" : [ "audit-trail-controller" ]
       }
     },
+    "/v1/admin/backer-disputes" : {
+      "get" : {
+        "operationId" : "backerDisputeQueue",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/DisputeBody"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "backer-dispute-controller" ]
+      }
+    },
+    "/v1/admin/backer-disputes/{disputeId}/decision" : {
+      "post" : {
+        "operationId" : "backerDisputeDecide",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "disputeId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DecisionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DisputeBody"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "backer-dispute-controller" ]
+      }
+    },
     "/v1/admin/collections" : {
       "get" : {
         "operationId" : "adminCurationList",
@@ -6595,6 +6663,43 @@
         "tags" : [ "pledge-controller" ]
       }
     },
+    "/v1/pledges/{pledgeId}/disputes" : {
+      "post" : {
+        "operationId" : "backerDisputeOpen",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pledgeId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/OpenDisputeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DisputeBody"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "backer-dispute-controller" ]
+      }
+    },
     "/v1/pledges/{pledgeId}/shipping-address" : {
       "get" : {
         "operationId" : "shippingAddressRead",
@@ -11622,6 +11727,21 @@
           }
         }
       },
+      "DecisionRequest" : {
+        "type" : "object",
+        "properties" : {
+          "note" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          },
+          "outcome" : {
+            "type" : "string",
+            "enum" : [ "UPHOLD", "REJECT" ]
+          }
+        },
+        "required" : [ "outcome" ]
+      },
       "DeleteAccountRequest" : {
         "type" : "object",
         "properties" : {
@@ -11815,6 +11935,45 @@
           "state" : {
             "type" : "string",
             "enum" : [ "OPEN", "UNDER_REVIEW", "WON", "LOST", "CONCEDED" ]
+          }
+        }
+      },
+      "DisputeBody" : {
+        "type" : "object",
+        "properties" : {
+          "decidedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "openedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "payoutId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "pledgeId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "projectId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "refundId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "state" : {
+            "type" : "string"
           }
         }
       },
@@ -13390,6 +13549,17 @@
             "type" : "string"
           }
         }
+      },
+      "OpenDisputeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "reason" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "reason" ]
       },
       "OpenLatePledgesRequest" : {
         "type" : "object",

@@ -164,6 +164,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/backer-disputes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["backerDisputeQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/backer-disputes/{disputeId}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["backerDisputeDecide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/collections": {
         parameters: {
             query?: never;
@@ -2788,6 +2820,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/pledges/{pledgeId}/disputes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["backerDisputeOpen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/pledges/{pledgeId}/shipping-address": {
         parameters: {
             query?: never;
@@ -4574,6 +4622,11 @@ export interface components {
             pledgeCount?: number;
             timeZone?: string;
         };
+        DecisionRequest: {
+            note?: string;
+            /** @enum {string} */
+            outcome: "UPHOLD" | "REJECT";
+        };
         DeleteAccountRequest: {
             password: string;
         };
@@ -4642,6 +4695,24 @@ export interface components {
             resolvedAt?: string;
             /** @enum {string} */
             state?: "OPEN" | "UNDER_REVIEW" | "WON" | "LOST" | "CONCEDED";
+        };
+        DisputeBody: {
+            /** Format: date-time */
+            decidedAt?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            openedAt?: string;
+            /** Format: uuid */
+            payoutId?: string;
+            /** Format: uuid */
+            pledgeId?: string;
+            /** Format: uuid */
+            projectId?: string;
+            reason?: string;
+            /** Format: uuid */
+            refundId?: string;
+            state?: string;
         };
         DisputePage: {
             disputes?: components["schemas"]["Dispute"][];
@@ -5215,6 +5286,9 @@ export interface components {
             /** Format: uuid */
             projectId?: string;
             state?: string;
+        };
+        OpenDisputeRequest: {
+            reason: string;
         };
         OpenLatePledgesRequest: {
             /** Format: date-time */
@@ -6760,6 +6834,7 @@ export type SchemaCurrencyRequest = components['schemas']['CurrencyRequest'];
 export type SchemaDailyPoint = components['schemas']['DailyPoint'];
 export type SchemaDashboardResponse = components['schemas']['DashboardResponse'];
 export type SchemaDay = components['schemas']['Day'];
+export type SchemaDecisionRequest = components['schemas']['DecisionRequest'];
 export type SchemaDeleteAccountRequest = components['schemas']['DeleteAccountRequest'];
 export type SchemaDeletionScheduledResponse = components['schemas']['DeletionScheduledResponse'];
 export type SchemaDestinationRequest = components['schemas']['DestinationRequest'];
@@ -6768,6 +6843,7 @@ export type SchemaDirectory = components['schemas']['Directory'];
 export type SchemaDisableTwoFactorRequest = components['schemas']['DisableTwoFactorRequest'];
 export type SchemaDisclosure = components['schemas']['Disclosure'];
 export type SchemaDispute = components['schemas']['Dispute'];
+export type SchemaDisputeBody = components['schemas']['DisputeBody'];
 export type SchemaDisputePage = components['schemas']['DisputePage'];
 export type SchemaDocument = components['schemas']['Document'];
 export type SchemaDraft = components['schemas']['Draft'];
@@ -6835,6 +6911,7 @@ export type SchemaNotificationPreferencesResponse = components['schemas']['Notif
 export type SchemaNotificationResponse = components['schemas']['NotificationResponse'];
 export type SchemaOAuthSignInRequest = components['schemas']['OAuthSignInRequest'];
 export type SchemaObligation = components['schemas']['Obligation'];
+export type SchemaOpenDisputeRequest = components['schemas']['OpenDisputeRequest'];
 export type SchemaOpenLatePledgesRequest = components['schemas']['OpenLatePledgesRequest'];
 export type SchemaOutcome = components['schemas']['Outcome'];
 export type SchemaOutcomes = components['schemas']['Outcomes'];
@@ -7259,6 +7336,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TrailPage"];
+                };
+            };
+        };
+    };
+    backerDisputeQueue: {
+        parameters: {
+            query?: {
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisputeBody"][];
+                };
+            };
+        };
+    };
+    backerDisputeDecide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                disputeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisputeBody"];
                 };
             };
         };
@@ -11796,6 +11921,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": string;
+                };
+            };
+        };
+    };
+    backerDisputeOpen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pledgeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenDisputeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisputeBody"];
                 };
             };
         };
