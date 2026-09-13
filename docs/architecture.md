@@ -1801,6 +1801,12 @@ D+8          not extended AND below 80%   → UNSUCCESSFUL → every backer refu
 late pledges (PL-16 is withdrawn, §4.5). §9's withdrawal section carries the money:
 the 14-day hold, the automatic payout on day 30 + 14, and disputes.
 
+> **Built (#44), the creator's controls.** The dashboard overview offers **Withdraw** at 80%
+> or more (live, closing window, extended or successful) and **Extend** while the campaign takes
+> pledges and has raised 50%, to a day after the deadline and no later than D+60, keeping the
+> deadline's time of day. Each asks before acting and states what it closes or promises; the
+> service applies the window and the thresholds and its `meta.reason` is worded, never guessed.
+
 **Everyone is refunded in full** when: D+8 passes unextended below 80%; an extension
 ends below 80%; a moderator suspends the campaign; the creator cancels it.
 
