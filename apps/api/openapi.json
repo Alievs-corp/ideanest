@@ -6508,6 +6508,49 @@
         "tags" : [ "pledge-controller" ]
       }
     },
+    "/v1/pledges/{id}/payment" : {
+      "post" : {
+        "operationId" : "pledgePay",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "header",
+          "name" : "Idempotency-Key",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PayPledgeRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "pledge-controller" ]
+      }
+    },
     "/v1/pledges/{id}/upgrade" : {
       "post" : {
         "operationId" : "pledgeUpgrade",
@@ -13466,6 +13509,26 @@
           },
           "shippingCountry" : {
             "type" : "string"
+          }
+        }
+      },
+      "PayPledgeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "acknowledgedAgreementVersion" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "errorUrl" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "successUrl" : {
+            "type" : "string",
+            "format" : "uri"
           }
         }
       },

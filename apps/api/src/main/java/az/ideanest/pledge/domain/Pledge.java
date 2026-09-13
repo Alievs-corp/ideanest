@@ -356,6 +356,42 @@ public class Pledge {
     }
 
     /**
+     * IDN-EXT-01 (#39): keep a draft's places while the backer is on the provider's payment page.
+     *
+     * <p>Only ever later. The reservation is what stops §8.4's sweep giving the places back, and a
+     * backer typing a card number must not lose the reward they chose to a five-minute timer set
+     * before they reached the card form. A second attempt that asks for less time does not shorten
+     * the first one's hold.
+     */
+    public void holdForPayment(Instant until) {
+        if (state != PledgeState.DRAFT) {
+            throw new IllegalStateException("A pledge in " + state + " holds nothing to keep");
+        }
+        Objects.requireNonNull(until, "A hold ends at some point");
+        if (reservationExpiresAt == null || until.isAfter(reservationExpiresAt)) {
+            this.reservationExpiresAt = until;
+        }
+    }
+
+    /**
+     * §6.2's {@code DRAFT → COLLECTED}, as IDN-EXT-01 draws it (#39): the provider says the backer
+     * paid.
+     *
+     * <p>One instant for both columns, because under the charge-now model they are one event: the
+     * pledge is confirmed by being paid for. {@code CONFIRMED} is never passed through.
+     */
+    public void paid(Instant at) {
+        if (state != PledgeState.DRAFT) {
+            throw new IllegalStateException("A pledge in " + state + " cannot be paid for");
+        }
+        Objects.requireNonNull(at, "A payment happened at a time");
+        this.state = PledgeState.COLLECTED;
+        this.confirmedAt = at;
+        this.collectedAt = at;
+        this.chargeAttempts = chargeAttempts + 1;
+    }
+
+    /**
      * §4.5's PL-09: a new selection, re-quoted, on a pledge that keeps its state.
      *
      * <p><strong>The state does not move and must not.</strong> A draft that is

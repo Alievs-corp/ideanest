@@ -3528,6 +3528,20 @@ collecting it.
 > `refund=1`, entered on Epoint's page and never in an IdeaNest form (#38, #41). **Questions
 > for Epoint, owned by the product owner:** how long after a payment `/reverse` stays
 > available (believed to be about 120 days), and the limits on payouts to a card.
+>
+> **Built (#39): charged at confirmation.** `POST /v1/pledges/{id}/payment` makes
+> `confirm`'s refusals, records the backer agreement, holds the draft's places for
+> `ideanest.pledge.reservation.payment-window` (15 minutes) and opens the provider's payment
+> page, recording a `PENDING` charge. The pledge stays `DRAFT`. The provider's
+> `CHARGE_SUCCEEDED` settles it in one transaction: a `SUCCEEDED` charge row, the ledger posting
+> escrow → creator, §6.2's `DRAFT → COLLECTED` with the places committed, the campaign's totals,
+> and `pledge.confirmed` plus `pledge.collected`. `CHARGE_FAILED` writes a `FAILED` row and leaves
+> the draft to its hold. **`projects.pledged_amount` and `backers_count` are written for the
+> first time here** — nothing in production moved them before, so §5.1 had been deciding on a
+> number no pledge changed; `CampaignTotals` adds a paid pledge in one statement. A payment that
+> arrives for a pledge whose hold already ended is posted and logged for a refund (#40).
+> `confirm` stays for the retired model until the web checkout moves (#44) and #45 removes it;
+> the collection jobs stay inert behind any provider that cannot collect stored cards.
 
 ```mermaid
 sequenceDiagram
@@ -4065,6 +4079,7 @@ POST   /v1/collaborators/invitations/{token}/accept
 POST   /v1/pledges/draft
 GET    /v1/pledges/{id}
 POST   /v1/pledges/{id}/confirm
+POST   /v1/pledges/{id}/payment          # IDN-EXT-01 (#39): hold the draft, open the payment page; paid → COLLECTED by webhook
 PATCH  /v1/pledges/{id}
 DELETE /v1/pledges/{id}   # IDN-EXT-01 (#35): abandons an unpaid DRAFT only; PLEDGE_CANNOT_BE_CANCELLED otherwise
 GET    /v1/pledges/{id}/receipt

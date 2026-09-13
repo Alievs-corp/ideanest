@@ -2756,6 +2756,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/pledges/{id}/payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["pledgePay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/pledges/{id}/upgrade": {
         parameters: {
             query?: never;
@@ -5243,6 +5259,15 @@ export interface components {
             rewardTierId?: string;
             shippingCountry?: string;
         };
+        PayPledgeRequest: {
+            /** Format: int32 */
+            acknowledgedAgreementVersion?: number;
+            /** Format: uri */
+            errorUrl?: string;
+            language?: string;
+            /** Format: uri */
+            successUrl?: string;
+        };
         PayoutFile: {
             approvals?: components["schemas"]["Approval"][];
             payout?: components["schemas"]["PayoutSummary"];
@@ -6800,6 +6825,7 @@ export type SchemaOutcomes = components['schemas']['Outcomes'];
 export type SchemaOverride = components['schemas']['Override'];
 export type SchemaOwnProfileResponse = components['schemas']['OwnProfileResponse'];
 export type SchemaPatchPledgeRequest = components['schemas']['PatchPledgeRequest'];
+export type SchemaPayPledgeRequest = components['schemas']['PayPledgeRequest'];
 export type SchemaPayoutFile = components['schemas']['PayoutFile'];
 export type SchemaPayoutPage = components['schemas']['PayoutPage'];
 export type SchemaPayoutRecord = components['schemas']['PayoutRecord'];
@@ -11688,6 +11714,34 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["ConfirmPledgeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    pledgePay: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PayPledgeRequest"];
             };
         };
         responses: {

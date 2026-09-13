@@ -864,6 +864,11 @@ ideanest:
       # and its worst. The right number comes from watching real checkouts, and it
       # should not need a deployment.
       ttl: ${RESERVATION_TTL:5m}
+      # IDN-EXT-01 (#39): once the backer opens the provider's payment page, the draft is held
+      # this long instead, so a place is not given back while somebody is typing a card
+      # number. Long enough for 3-D Secure and a bank app; a payment that arrives after it is
+      # a paid pledge with no place, which is logged for a refund (#40).
+      payment-window: ${PAYMENT_WINDOW:15m}
       # §8.4: reservation-cleaner, every minute. PostgreSQL has no TTL, so a
       # reservation lapses because this notices that it has -- see V17 for why the
       # reservation is in the database and not in Redis. A minute late is a minute

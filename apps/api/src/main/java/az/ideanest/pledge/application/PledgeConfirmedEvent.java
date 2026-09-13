@@ -1,6 +1,7 @@
 package az.ideanest.pledge.application;
 
 import az.ideanest.pledge.domain.Pledge;
+import az.ideanest.pledge.domain.PledgeState;
 import az.ideanest.shared.money.Money;
 import java.time.Instant;
 import java.util.UUID;
@@ -95,7 +96,8 @@ public record PledgeConfirmedEvent(
      *     that did not happen
      */
     public static PledgeConfirmedEvent of(Pledge pledge) {
-        if (!pledge.isConfirmed() || pledge.getConfirmedAt() == null) {
+        // COLLECTED too since IDN-EXT-01 (#39): a paid-for pledge is confirmed by being paid for.
+        if (!(pledge.isConfirmed() || pledge.getState() == PledgeState.COLLECTED) || pledge.getConfirmedAt() == null) {
             throw new IllegalStateException("A pledge in " + pledge.getState() + " has not been confirmed");
         }
         return new PledgeConfirmedEvent(
