@@ -296,6 +296,9 @@ ideanest:
       cooldown: PT1M
     webhooks:
       tolerance: PT5M
+    refunds:
+      # `-`, like every other job's schedule in this profile; CampaignRefundTests drives it.
+      schedule: "-"
 
   pledge:
     reservation:

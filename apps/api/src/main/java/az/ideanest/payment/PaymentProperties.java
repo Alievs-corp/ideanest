@@ -19,7 +19,8 @@ public record PaymentProperties(
         CircuitBreaker circuitBreaker,
         Webhooks webhooks,
         Reconciliation reconciliation,
-        Epoint epoint) {
+        Epoint epoint,
+        Refunds refunds) {
 
     public PaymentProperties {
         // A deployment that configures none of these still starts, for ProjectProperties'
@@ -32,6 +33,7 @@ public record PaymentProperties(
         webhooks = webhooks == null ? Webhooks.defaults() : webhooks;
         reconciliation = reconciliation == null ? Reconciliation.defaults() : reconciliation;
         epoint = epoint == null ? Epoint.defaults() : epoint;
+        refunds = refunds == null ? Refunds.defaults() : refunds;
     }
 
     /**
@@ -77,6 +79,28 @@ public record PaymentProperties(
         public String toString() {
             return "Epoint[baseUrl=" + baseUrl + ", publicKey=" + publicKey + ", privateKey=<redacted>, language="
                     + language + "]";
+        }
+    }
+
+    /**
+     * §8.4's {@code campaign-refunds} — IDN-EXT-01 (#40).
+     *
+     * @param schedule when the sweep fires, or {@code -} to register it without scheduling
+     * @param perPass how many paid pledges one pass may refund, and how many lost outcomes it settles
+     * @param retryAfter how long a refused refund waits before it is sent again
+     * @param unresolvedAfter how old a refund with no recorded outcome is before the provider is asked
+     */
+    public record Refunds(String schedule, int perPass, Duration retryAfter, Duration unresolvedAfter) {
+
+        public static Refunds defaults() {
+            return new Refunds("0 */10 * * * *", 100, Duration.ofHours(6), Duration.ofHours(1));
+        }
+
+        public Refunds {
+            schedule = schedule == null || schedule.isBlank() ? "0 */10 * * * *" : schedule;
+            perPass = perPass < 1 ? 100 : perPass;
+            retryAfter = retryAfter == null ? Duration.ofHours(6) : retryAfter;
+            unresolvedAfter = unresolvedAfter == null ? Duration.ofHours(1) : unresolvedAfter;
         }
     }
 

@@ -1791,6 +1791,7 @@
         "onPledge": "{fullness} по взносу {id}",
         "reasonAndDetail": "{reason} — {detail}",
         "requestedBy": "Запрошено {by} {date}",
+        "platform": "платформой",
         "refused": "отказано: {code}",
         "state": {
           "REQUESTED": "Запрошен",

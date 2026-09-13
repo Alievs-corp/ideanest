@@ -380,6 +380,16 @@ public class Pledge {
      * <p>One instant for both columns, because under the charge-now model they are one event: the
      * pledge is confirmed by being paid for. {@code CONFIRMED} is never passed through.
      */
+    /**
+     * §6.2's {@code COLLECTED → REFUNDED} (IDN-EXT-01, #40): the backer's money went back in full.
+     */
+    public void refunded() {
+        if (state != PledgeState.COLLECTED) {
+            throw new IllegalStateException("A pledge in " + state + " has nothing collected to refund");
+        }
+        this.state = PledgeState.REFUNDED;
+    }
+
     public void paid(Instant at) {
         if (state != PledgeState.DRAFT) {
             throw new IllegalStateException("A pledge in " + state + " cannot be paid for");

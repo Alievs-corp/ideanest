@@ -51,7 +51,8 @@ export interface Refund {
   state: RefundState;
   failureCode?: string | null;
   failureMessage?: string | null;
-  requestedBy: string;
+  /** The staff account that issued it; absent for a refund the platform issued itself (#40). */
+  requestedBy?: string | null;
   requestedAt: string;
   settledAt?: string | null;
 }

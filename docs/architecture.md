@@ -3899,6 +3899,22 @@ expired cards, limits, and issuer declines.
 Refunds go out in batches through Epoint's `/reverse`, with the platform's own protection
 against refunding twice, reconciled against the provider's `returned` status (#40).
 
+> **Built (#40).** `campaign-refunds` (every ten minutes, `ideanest.payment.refunds`) finds paid
+> (`COLLECTED`) pledges on `UNSUCCESSFUL`, `SUSPENDED` and `CANCELED` campaigns and refunds each in
+> full, a bounded batch per pass, each refund in its own transactions. The reason is
+> `CAMPAIGN_FAILED` or `CAMPAIGN_HALTED`, and the refund has no staff author — V76 lets
+> `requested_by` be null for exactly those two reasons, and the audit row names the system. **Double
+> refunds**: a pledge is offered only with no refund `REQUESTED` or `SUCCEEDED`; a `REQUESTED` row
+> blocks every later attempt; the idempotency key is unique per attempt; and a refund whose outcome
+> was lost is never re-sent blind — after `unresolved-after` the provider's payment status decides it
+> (`returned` settles it as succeeded, still `success` fails it so the next pass re-sends). A refused
+> refund waits `retry-after` (six hours) before it is sent again. A full refund moves the pledge to
+> `REFUNDED` and takes it out of the campaign's totals, never below zero; the campaign's frozen
+> outcome is untouched. The admin refund console shows such refunds as requested by the platform.
+> A refund's transaction row carries no provider transaction identifier when the provider issues
+> none — Epoint's `/reverse` does not — because V41 admits one settled row per provider transaction
+> and the charge is that row; the refund reaches its charge through `refunds.charge_transaction_id`.
+
 ### 9.8 Chargebacks
 
 1. The provider notifies us by webhook

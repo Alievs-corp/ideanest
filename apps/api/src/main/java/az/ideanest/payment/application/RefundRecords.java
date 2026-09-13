@@ -13,10 +13,12 @@ import az.ideanest.payment.domain.RefundReason;
 import az.ideanest.payment.domain.RefundResult;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.payment.infrastructure.RefundRepository;
+import az.ideanest.pledge.application.PledgeRefunds;
 import az.ideanest.shared.money.Money;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +52,7 @@ public class RefundRecords {
     private final RefundRepository refunds;
     private final PaymentTransactionRepository transactions;
     private final Ledger ledger;
+    private final PledgeRefunds pledges;
     private final AuditLog audit;
     private final Clock clock;
 
@@ -57,11 +60,13 @@ public class RefundRecords {
             RefundRepository refunds,
             PaymentTransactionRepository transactions,
             Ledger ledger,
+            PledgeRefunds pledges,
             AuditLog audit,
             Clock clock) {
         this.refunds = refunds;
         this.transactions = transactions;
         this.ledger = ledger;
+        this.pledges = pledges;
         this.audit = audit;
         this.clock = clock;
     }
@@ -131,14 +136,63 @@ public class RefundRecords {
      * would mean a payment adapter deciding the platform's revenue. What the ledger says
      * instead is true and narrow: this much went back to a backer.
      */
+    /**
+     * IDN-EXT-01 (#40): the platform refunds a paid pledge in full because its campaign failed or was
+     * halted. No member of staff asked, so there is no author and no capability check; the reason is
+     * the author, and the audit row says the system acted.
+     *
+     * @return empty when nothing collected remains to refund
+     */
+    @Transactional
+    Optional<Refund> recordForCampaign(UUID pledgeId, RefundReason reason, String idempotencyKey) {
+        List<PaymentTransaction> charges = transactions.settledChargesOf(pledgeId);
+        if (charges.isEmpty()) {
+            return Optional.empty();
+        }
+        PaymentTransaction charge = charges.getFirst();
+        String currency = charge.getAmount().currency();
+        Money collected = Money.of(transactions.collectedOn(pledgeId), currency);
+        Money remaining = collected.minus(Money.of(refunds.refundedAgainst(pledgeId), currency));
+        if (!remaining.isPositive()) {
+            return Optional.empty();
+        }
+        Refund refund = refunds.save(Refund.requested(
+                pledgeId,
+                charge.getProjectId(),
+                charge.getId(),
+                remaining,
+                remaining.equals(collected),
+                reason,
+                reason == RefundReason.CAMPAIGN_FAILED
+                        ? "The campaign ended below its success threshold; every backer is refunded in full."
+                        : "The campaign was suspended or cancelled; every backer is refunded in full.",
+                null,
+                idempotencyKey));
+        audit.record(
+                AuditAction.REFUND_ISSUED,
+                refund.id(),
+                AuditActor.system(),
+                AuditOutcome.SUCCEEDED,
+                "pledge=%s; amount=%s; reason=%s; full=%s".formatted(pledgeId, remaining, reason, refund.fullRefund()));
+        return Optional.of(refund);
+    }
+
     @Transactional
     Refund settleSuccess(Refund refund, PaymentTransaction charge, RefundResult result) {
+        // A reversal the provider gave no identifier of its own — Epoint's /reverse gives none — is
+        // recorded without one rather than under the charge's. V41 allows one settled row per
+        // provider transaction, and the charge already is that row; the refund reaches its charge
+        // through refunds.charge_transaction_id instead (IDN-EXT-01, #40).
+        RefundResult stored = result.providerTransactionId() != null
+                        && result.providerTransactionId().equals(charge.getProviderTransactionId())
+                ? new RefundResult(result.outcome(), null, result.failureCode(), result.failureMessage(), result.rawResponse())
+                : result;
         PaymentTransaction recorded = transactions.save(PaymentTransaction.refund(
                 refund.pledgeId(),
                 refund.projectId(),
                 refund.amount(),
                 charge.getProvider(),
-                result,
+                stored,
                 refund.idempotencyKey()));
 
         ledger.post(Posting.of(recorded.getId(), refund.projectId())
@@ -148,6 +202,11 @@ public class RefundRecords {
 
         Refund attached = refunds.findById(refund.id()).orElseThrow();
         attached.succeeded(recorded.getId(), clock.instant().truncatedTo(ChronoUnit.MICROS));
+        // IDN-EXT-01 (#40): a pledge refunded in full is REFUNDED and leaves its campaign's totals, in
+        // this transaction. A partial refund leaves the pledge standing.
+        if (attached.fullRefund()) {
+            pledges.recordRefunded(refund.pledgeId(), refund.amount());
+        }
 
         log.info("Refund {} of {} settled on pledge {}", refund.id(), refund.amount(), refund.pledgeId());
         return refunds.save(attached);

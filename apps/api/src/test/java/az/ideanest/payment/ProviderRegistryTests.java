@@ -134,7 +134,7 @@ class ProviderRegistryTests {
     // ------------------------------------------------------------------
 
     private static PaymentProperties properties(String primary) {
-        return new PaymentProperties(new PaymentProperties.Provider(primary), null, null, null, null, null);
+        return new PaymentProperties(new PaymentProperties.Provider(primary), null, null, null, null, null, null);
     }
 
     private static ProviderCapabilities capabilities(

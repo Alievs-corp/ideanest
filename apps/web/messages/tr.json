@@ -1791,6 +1791,7 @@
         "onPledge": "{id} desteğinde {fullness}",
         "reasonAndDetail": "{reason} — {detail}",
         "requestedBy": "{by} tarafından {date} tarihinde talep edildi",
+        "platform": "platform",
         "refused": "reddedildi: {code}",
         "state": {
           "REQUESTED": "Talep edildi",

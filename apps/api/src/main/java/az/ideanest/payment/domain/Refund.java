@@ -109,7 +109,12 @@ public class Refund {
         this.reason = Objects.requireNonNull(reason, "reason");
         this.detail = Objects.requireNonNull(detail, "detail");
         this.state = RefundState.REQUESTED;
-        this.requestedBy = Objects.requireNonNull(requestedBy, "requestedBy");
+        // Null only for a refund the platform issued itself, which V76 limits to the two campaign
+        // reasons (IDN-EXT-01, #40).
+        if (requestedBy == null && reason != RefundReason.CAMPAIGN_FAILED && reason != RefundReason.CAMPAIGN_HALTED) {
+            throw new IllegalArgumentException("Only a campaign refund may be issued by the platform itself");
+        }
+        this.requestedBy = requestedBy;
         this.idempotencyKey = Objects.requireNonNull(idempotencyKey, "idempotencyKey");
     }
 
@@ -214,6 +219,11 @@ public class Refund {
 
     public String failureMessage() {
         return failureMessage;
+    }
+
+    /** Whether the platform issued this refund itself rather than a member of staff. #40. */
+    public boolean isSystemRefund() {
+        return requestedBy == null;
     }
 
     public UUID requestedBy() {

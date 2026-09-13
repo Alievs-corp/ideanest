@@ -88,7 +88,9 @@ export function RefundConsole({ copy }: RefundConsoleProps) {
   /* Who asked for each refund — #402. A refund is a privileged act, and "requested by
      4a10278a" is a record nobody can read back. */
   const names = useDirectoryNames(
-    (refunds.data?.refunds ?? []).map((refund) => refund.requestedBy),
+    (refunds.data?.refunds ?? [])
+      .map((refund) => refund.requestedBy)
+      .filter((id): id is string => id != null),
     [],
   );
 
@@ -334,14 +336,18 @@ function RefundRow({
 
       <p className="mt-2 text-xs text-white/40">
         {fillNodes(copy.requestedBy, {
-          by: (
-            <EntityName
-              id={refund.requestedBy}
-              names={names}
-              kind="account"
-              copy={copy.identity}
-            />
-          ),
+          /* IDN-EXT-01 (#40): a campaign refund has no staff author; the platform issued it. */
+          by:
+            refund.requestedBy == null ? (
+              copy.platform
+            ) : (
+              <EntityName
+                id={refund.requestedBy}
+                names={names}
+                kind="account"
+                copy={copy.identity}
+              />
+            ),
           date: new Date(refund.requestedAt).toISOString().slice(0, 10),
         })}
         {refund.failureCode

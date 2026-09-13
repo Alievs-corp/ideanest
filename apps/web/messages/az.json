@@ -1791,6 +1791,7 @@
         "onPledge": "{id} dəstəyində {fullness}",
         "reasonAndDetail": "{reason} — {detail}",
         "requestedBy": "{by} tərəfindən {date} tarixində tələb olunub",
+        "platform": "platforma",
         "refused": "rədd edildi: {code}",
         "state": {
           "REQUESTED": "Tələb olunub",
