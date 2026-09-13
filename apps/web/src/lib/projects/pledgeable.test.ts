@@ -32,19 +32,24 @@ describe('acceptsPledges', () => {
   });
 
   /**
-   * A `LATE_PLEDGE` campaign is past its funding deadline by definition, so applying the
-   * deadline check to it would close the one window the state exists to open. Whether that
-   * window is still open is `latePledgeEndsAt`, which the public projection does not carry.
+   * IDN-EXT-01 (#36): the seven days after the first deadline and an extension both still take
+   * pledges, and both are past the first deadline by definition. Whether they are still open is
+   * the window's or the extension's end, which the public projection does not carry.
    */
-  it('offers a late-pledge campaign despite its funding deadline having passed', () => {
-    expect(acceptsPledges('LATE_PLEDGE', '2026-07-01T12:00:00Z', NOW)).toBe(true);
-  });
+  it.each<ProjectState>(['CLOSING_WINDOW', 'EXTENDED'])(
+    'offers a %s campaign despite its first deadline having passed',
+    (state) => {
+      expect(acceptsPledges(state, '2026-08-15T12:00:00Z', NOW)).toBe(true);
+    },
+  );
 
   it.each<ProjectState>([
     'PRELAUNCH',
     'SUCCESSFUL',
     'UNSUCCESSFUL',
     'COLLECTING',
+    'LATE_PLEDGE',
+    'WITHDRAWN',
     'FULFILLING',
     'COMPLETED',
     'CANCELED',
@@ -63,8 +68,8 @@ describe('acceptsPledges', () => {
 });
 
 describe('PLEDGEABLE_PROJECT_STATES', () => {
-  it('is the two states in which a pledge can be taken', () => {
-    expect([...PLEDGEABLE_PROJECT_STATES]).toEqual(['LIVE', 'LATE_PLEDGE']);
+  it('is the three states in which a pledge can be taken', () => {
+    expect([...PLEDGEABLE_PROJECT_STATES]).toEqual(['LIVE', 'CLOSING_WINDOW', 'EXTENDED']);
   });
 
   /**

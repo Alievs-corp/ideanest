@@ -63,7 +63,7 @@ class ProjectStateMachineTests {
             SUCCESSFUL        -> COLLECTING, WITHDRAWN
             UNSUCCESSFUL      ->
             WITHDRAWN         -> FULFILLING
-            COLLECTING        -> LATE_PLEDGE, FULFILLING
+            COLLECTING        -> FULFILLING
             LATE_PLEDGE       -> FULFILLING
             FULFILLING        -> COMPLETED
             COMPLETED         ->

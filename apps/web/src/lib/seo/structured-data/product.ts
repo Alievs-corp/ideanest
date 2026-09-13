@@ -161,8 +161,8 @@ function collapsed(text: string): string {
  * The moment the offers stop standing, as a date, or `undefined`.
  *
  * `priceValidUntil` IN THE PAST IS WORSE THAN NONE: Google treats an expired
- * offer as a reason to drop the markup, and a campaign in `LATE_PLEDGE` is past
- * its deadline by definition. A deadline that does not parse is treated as
+ * offer as a reason to drop the markup, and a campaign in `CLOSING_WINDOW` or
+ * `EXTENDED` is past its first deadline by definition. A deadline that does not parse is treated as
  * absent rather than guessed at.
  */
 function priceValidUntil(deadline: string | null, now: Date): string | undefined {

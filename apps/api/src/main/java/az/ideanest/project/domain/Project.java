@@ -535,20 +535,6 @@ public class Project {
         return latePledgeEndsAt;
     }
 
-    /**
-     * §4.8's PM-23: when late pledging stops.
-     *
-     * <p>Only ever written beside the edge into {@link ProjectState#LATE_PLEDGE} —
-     * {@code ProjectTransitionService.openLatePledges} is the one caller, and it is
-     * the one place that checks the window is in the future and inside the platform's
-     * bound. A setter reachable from the editor would let a creator extend a window
-     * after it had closed, which is a campaign that stopped taking pledges and started
-     * again with nothing recorded about either moment.
-     *
-     * <p>{@code projects_late_pledge_window_needs_the_feature} refuses a window on a
-     * campaign that has not enabled the feature, which is why the caller checks that
-     * first and answers with something a client can act on.
-     */
     public void extendUntil(Instant until, Instant at) {
         // IDN-EXT-01 (#34). Only ever written beside the edge into EXTENDED, by
         // `ProjectTransitionService.extend`, which is the one place that checks the window, the
@@ -559,27 +545,6 @@ public class Project {
         }
         this.extendedUntil = Objects.requireNonNull(until, "An extension ends at some point");
         this.extensionUsedAt = Objects.requireNonNull(at, "An extension happens at some instant");
-    }
-
-    public void openLatePledgesUntil(Instant endsAt) {
-        this.latePledgeEndsAt = Objects.requireNonNull(endsAt, "A late-pledge window ends at some point");
-    }
-
-    /**
-     * Whether this campaign is taking a late pledge at {@code now}.
-     *
-     * <p>All three conditions, and each is a different fact: the campaign is in the
-     * state that accepts them, the creator still offers them, and the window has not
-     * run out. {@code PledgeAcceptance} is the only caller — the rule lives on the
-     * entity because it is a statement about this row and nothing else, and it is
-     * asked through the application layer because the pledge module may not read
-     * {@code projects}.
-     */
-    public boolean isTakingLatePledges(Instant now) {
-        return state == ProjectState.LATE_PLEDGE
-                && latePledgeEnabled
-                && latePledgeEndsAt != null
-                && latePledgeEndsAt.isAfter(now);
     }
 
     public Instant getFinalizedAt() {

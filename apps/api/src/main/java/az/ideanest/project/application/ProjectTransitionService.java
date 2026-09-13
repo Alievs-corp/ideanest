@@ -438,7 +438,7 @@ public class ProjectTransitionService {
      * questions.</strong> The campaign must have <em>enabled</em> late pledges — the
      * editor's switch, which is the creator saying they offer them at all — and the
      * window must end in the future and within
-     * {@link az.ideanest.project.ProjectProperties.LatePledges#maxWindow()}. Enabling
+     * {@code late-pledges.max-window} (removed by #36). Enabling
      * is a standing decision and the window is this one; keeping them apart is what
      * lets a creator who runs out of stock switch the feature off and stop taking
      * pledges on the next request, without a transition they cannot reverse.
@@ -533,35 +533,14 @@ public class ProjectTransitionService {
 
     @Transactional
     public Project openLatePledges(UUID projectId, UUID accountId, Instant endsAt) {
+        // IDN-EXT-01 (#36): late pledges are switched off. No state has an edge into
+        // LATE_PLEDGE any more, so this refuses every campaign with
+        // PROJECT_TRANSITION_NOT_ALLOWED — after the same access check as before, so a
+        // stranger is still answered 404 rather than told what state the campaign is in.
+        // The route stays until stage 4 (#45) removes it.
         Project project = access.requireTransitionable(projectId, accountId);
         requireEdge(project.getState(), ProjectState.LATE_PLEDGE);
-
-        if (!project.isLatePledgeEnabled()) {
-            throw new LatePledgesNotEnabledException(projectId);
-        }
-        Instant now = clock.instant();
-        if (endsAt == null || !endsAt.isAfter(now)) {
-            throw new ProjectFieldRejectedException(
-                    "endsAt", "A late-pledge window has to end in the future.");
-        }
-        Instant furthest = now.plus(properties.latePledges().maxWindow());
-        if (endsAt.isAfter(furthest)) {
-            throw new ProjectFieldRejectedException(
-                    "endsAt",
-                    "A late-pledge window may run for at most "
-                            + properties.latePledges().maxWindow().toDays() + " days.");
-        }
-
-        // The window and the state, in one transaction. A campaign in LATE_PLEDGE with
-        // no window would refuse every pledge -- PledgeAcceptance requires all three
-        // facts -- and would look, to its creator, like a feature that does not work.
-        project.openLatePledgesUntil(endsAt.truncatedTo(ChronoUnit.MICROS));
-        return apply(
-                project,
-                ProjectState.LATE_PLEDGE,
-                access.roleOf(project, accountId),
-                accountId,
-                "Late pledges accepted until " + endsAt);
+        throw new IllegalStateException("The state machine has an edge into LATE_PLEDGE again");
     }
 
     /**

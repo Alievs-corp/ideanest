@@ -76,8 +76,6 @@ public final class ProjectStateMachine {
                         ProjectState.EXTENDED,
                         ProjectState.WITHDRAWN));
 
-        // Collection, then delivery. LATE_PLEDGE sits beside FULFILLING rather
-        // than before it because a project may skip it entirely.
         // The seven days after the first deadline: extend, withdraw, or be decided on D+8.
         edges.put(
                 ProjectState.CLOSING_WINDOW,
@@ -101,7 +99,10 @@ public final class ProjectStateMachine {
         // removes it (#45); WITHDRAWN is where a successful campaign goes under IDN-EXT-01.
         edges.put(ProjectState.SUCCESSFUL, EnumSet.of(ProjectState.COLLECTING, ProjectState.WITHDRAWN));
         edges.put(ProjectState.WITHDRAWN, EnumSet.of(ProjectState.FULFILLING));
-        edges.put(ProjectState.COLLECTING, EnumSet.of(ProjectState.LATE_PLEDGE, ProjectState.FULFILLING));
+        // Collection, then delivery. IDN-EXT-01 (#36) took away the edge into LATE_PLEDGE:
+        // late pledges are switched off. The edge out stays, so a campaign already there
+        // can still start delivering; stage 4 (#45) removes the state.
+        edges.put(ProjectState.COLLECTING, EnumSet.of(ProjectState.FULFILLING));
         edges.put(ProjectState.LATE_PLEDGE, EnumSet.of(ProjectState.FULFILLING));
         edges.put(ProjectState.FULFILLING, EnumSet.of(ProjectState.COMPLETED));
 
