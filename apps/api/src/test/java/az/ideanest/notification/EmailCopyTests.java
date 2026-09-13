@@ -52,7 +52,8 @@ class EmailCopyTests extends AbstractIntegrationTest {
      * {@code UPDATE_DUE_SOON}, and it is a date rather than an instant because
      * {@code NotificationEventListener} formats it before it reaches a person — an ISO timestamp
      * with a Z on the end in the middle of an Azerbaijani sentence is the platform showing its
-     * plumbing.
+     * plumbing. {@code extendedUntil} joined with IDN-EXT-01's {@code CAMPAIGN_EXTENDED}, a date
+     * for the same reason.
      */
     private static final String PARAMS =
             """
@@ -64,7 +65,8 @@ class EmailCopyTests extends AbstractIntegrationTest {
               "pledged": {"amount": "6250.00", "currency": "AZN"},
               "backersCount": 184,
               "attempt": 2,
-              "dueAt": "2026-10-05"
+              "dueAt": "2026-10-05",
+              "extendedUntil": "2026-11-12"
             }""";
 
     private static final String TITLE = "Xari Bulbul Ceramics";
@@ -88,7 +90,8 @@ class EmailCopyTests extends AbstractIntegrationTest {
               "pledged": {"amount": "6250.00", "currency": "AZN"},
               "backersCount": 184,
               "attempt": 2,
-              "dueAt": "2026-10-05"
+              "dueAt": "2026-10-05",
+              "extendedUntil": "2026-11-12"
             }""";
 
     /** The suffix on a key that names the campaign, as {@code EmailComposer} spells it. */

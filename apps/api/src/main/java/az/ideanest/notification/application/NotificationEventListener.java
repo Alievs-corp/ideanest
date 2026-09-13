@@ -9,6 +9,7 @@ import az.ideanest.notification.application.NotificationEvents.PaymentFailed;
 import az.ideanest.notification.application.NotificationEvents.PledgeConfirmed;
 import az.ideanest.notification.application.NotificationEvents.PledgeEdited;
 import az.ideanest.notification.application.NotificationEvents.ProjectApproved;
+import az.ideanest.notification.application.NotificationEvents.CampaignExtended;
 import az.ideanest.notification.application.NotificationEvents.ProjectLaunched;
 import az.ideanest.notification.application.NotificationEvents.UpdateDueSoon;
 import az.ideanest.notification.domain.NotificationType;
@@ -312,6 +313,27 @@ public class NotificationEventListener {
                         // an Azerbaijani sentence is the platform showing its plumbing.
                         about(projectId, "dueAt", dueDate(event.dueAt())),
                         at(event.dueAt(), message)));
+            }
+            case CampaignExtended.EVENT_TYPE -> {
+                CampaignExtended event = read(message, CampaignExtended.class);
+                UUID projectId = required(event.projectId(), "projectId", message);
+                // Backers only. The creator extended it and needs no message about their own
+                // decision; a creator who also backed the campaign is excluded by the same rule.
+                UUID creatorId = required(event.creatorId(), "creatorId", message);
+                yield everybody(
+                        audienceOf(projectId, ProjectAudience.BACKERS, message).stream()
+                                .filter(recipient -> !recipient.equals(creatorId))
+                                .toList(),
+                        NotificationType.CAMPAIGN_EXTENDED,
+                        projectId,
+                        // Dates, not instants, for dueAt's reason: the email prints them in a sentence.
+                        about(
+                                projectId,
+                                "deadline",
+                                dueDate(event.deadline()),
+                                "extendedUntil",
+                                dueDate(event.extendedUntil())),
+                        at(event.extendedAt(), message));
             }
             case ProjectLaunched.EVENT_TYPE -> {
                 ProjectLaunched event = read(message, ProjectLaunched.class);

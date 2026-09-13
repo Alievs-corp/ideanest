@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param submissions how much of the moderation submission queue one request may read
  * @param directory how much of the console's campaign directory one request may read
  * @param launches how often campaigns whose launch time has arrived are taken live
+ * @param extension when and how far a creator may extend a campaign once — IDN-EXT-01 (#34)
  */
 @ConfigurationProperties(prefix = "ideanest.project")
 public record ProjectProperties(
@@ -31,7 +32,8 @@ public record ProjectProperties(
         LatePledges latePledges,
         Submissions submissions,
         Directory directory,
-        Launches launches) {
+        Launches launches,
+        Extension extension) {
 
     public ProjectProperties {
         // A deployment that configures neither section still starts. Nested records
@@ -48,6 +50,7 @@ public record ProjectProperties(
         submissions = submissions == null ? Submissions.defaults() : submissions;
         directory = directory == null ? Directory.defaults() : directory;
         launches = launches == null ? Launches.defaults() : launches;
+        extension = extension == null ? Extension.defaults() : extension;
     }
 
     /**
@@ -269,6 +272,47 @@ public record ProjectProperties(
                 // deadline, with nothing in the log saying why. An operator sees this at
                 // start-up instead.
                 throw new IllegalArgumentException("A finalisation pass that closes no campaigns never closes any");
+            }
+        }
+    }
+
+    /**
+     * §5.1's one extension — IDN-EXT-01 (#34).
+     *
+     * @param opensBefore how long before the first deadline the Extend control becomes available.
+     *     Seven days. It stays available until the seven-day window after the deadline ends,
+     *     which is {@link Finalisation#closingWindow()} and deliberately not a second setting: the
+     *     window in which a creator may extend and the window before a campaign is decided are the
+     *     same seven days, and two settings could disagree about them
+     * @param threshold the share of the goal a campaign must have raised to be extended. {@code
+     *     0.50}. Refused outside {@code (0, 1]}, by the same check the success threshold uses
+     * @param limit how far after the <em>first</em> deadline an extension may reach. Sixty days —
+     *     "even if the creator presses it on the seventh day after", so it is measured from the
+     *     deadline and never from the moment of extending
+     */
+    public record Extension(Duration opensBefore, BigDecimal threshold, Duration limit) {
+
+        private static final Duration DEFAULT_OPENS_BEFORE = Duration.ofDays(7);
+
+        private static final BigDecimal DEFAULT_THRESHOLD = new BigDecimal("0.50");
+
+        private static final Duration DEFAULT_LIMIT = Duration.ofDays(60);
+
+        static Extension defaults() {
+            return new Extension(DEFAULT_OPENS_BEFORE, DEFAULT_THRESHOLD, DEFAULT_LIMIT);
+        }
+
+        public Extension {
+            opensBefore = opensBefore == null ? DEFAULT_OPENS_BEFORE : opensBefore;
+            threshold = CampaignOutcome.requireThreshold(threshold == null ? DEFAULT_THRESHOLD : threshold);
+            limit = limit == null ? DEFAULT_LIMIT : limit;
+            if (opensBefore.isNegative()) {
+                throw new IllegalArgumentException("The Extend control cannot open after the deadline it extends");
+            }
+            if (limit.isNegative() || limit.isZero()) {
+                // A zero limit is an extension that ends where the campaign already did, which is
+                // the feature switched off without anybody having said so.
+                throw new IllegalArgumentException("An extension reaches some time past the first deadline");
             }
         }
     }

@@ -331,7 +331,8 @@
         "FOLLOWED_CREATOR_LAUNCHED": "İzlədiyiniz müəllif {campaign} kampaniyasını başladıb",
         "LAUNCH_REMINDER": "{campaign} başlamaq üzrədir",
         "SAVED_PROJECT_ENDING_SOON": "Saxladığınız {campaign} tezliklə bitir",
-        "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni cihazdan daxil olundu"
+        "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni cihazdan daxil olundu",
+        "CAMPAIGN_EXTENDED": "{campaign} kampaniyasının yeni müddəti var"
       },
       "unnamed": {
         "PLEDGE_CONFIRMED": "Bir kampaniyaya {amount} məbləğində dəstəyiniz təsdiqləndi",
@@ -355,7 +356,8 @@
         "FOLLOWED_CREATOR_LAUNCHED": "İzlədiyiniz müəllif bir kampaniya başladıb",
         "LAUNCH_REMINDER": "Bir kampaniya başlamaq üzrədir",
         "SAVED_PROJECT_ENDING_SOON": "Saxladığınız bir kampaniya tezliklə bitir",
-        "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni cihazdan daxil olundu"
+        "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni cihazdan daxil olundu",
+        "CAMPAIGN_EXTENDED": "Dəstəklədiyiniz kampaniyanın yeni müddəti var"
       },
       "amount": {
         "total": "seçdiyiniz məbləğ",

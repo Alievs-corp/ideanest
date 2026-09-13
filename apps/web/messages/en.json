@@ -331,7 +331,8 @@
         "FOLLOWED_CREATOR_LAUNCHED": "A creator you follow launched {campaign}",
         "LAUNCH_REMINDER": "{campaign} is about to launch",
         "SAVED_PROJECT_ENDING_SOON": "{campaign}, which you saved, is ending soon",
-        "NEW_DEVICE_SIGN_IN": "A new device signed in to your account"
+        "NEW_DEVICE_SIGN_IN": "A new device signed in to your account",
+        "CAMPAIGN_EXTENDED": "{campaign} has a new deadline"
       },
       "unnamed": {
         "PLEDGE_CONFIRMED": "Your pledge of {amount} to a campaign is confirmed",
@@ -355,7 +356,8 @@
         "FOLLOWED_CREATOR_LAUNCHED": "A creator you follow launched a campaign",
         "LAUNCH_REMINDER": "A campaign is about to launch",
         "SAVED_PROJECT_ENDING_SOON": "A campaign, which you saved, is ending soon",
-        "NEW_DEVICE_SIGN_IN": "A new device signed in to your account"
+        "NEW_DEVICE_SIGN_IN": "A new device signed in to your account",
+        "CAMPAIGN_EXTENDED": "A campaign you backed has a new deadline"
       },
       "amount": {
         "total": "your chosen amount",

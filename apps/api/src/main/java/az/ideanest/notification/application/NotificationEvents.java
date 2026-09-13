@@ -322,6 +322,23 @@ public final class NotificationEvents {
      * @param creatorId whose campaign it is, and the account whose followers are the audience
      * @param deadline when it closes, so the message can say how long there is
      */
+    /**
+     * The creator extended the deadline once — IDN-EXT-01 (#34), {@code project.extended}.
+     *
+     * <p>Recipient: <strong>every backer</strong>, and not the creator, who pressed the button.
+     * §5.1 is explicit that a backer is notified and not asked, which is why this is a message
+     * and not a request for consent.
+     *
+     * @param deadline the first deadline, which an extension does not move
+     * @param extendedUntil the new end, which is what the message is about
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record CampaignExtended(
+            UUID projectId, UUID creatorId, Instant deadline, Instant extendedUntil, Instant extendedAt) {
+
+        public static final String EVENT_TYPE = "project.extended";
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ProjectLaunched(UUID projectId, UUID creatorId, Instant launchedAt, Instant deadline) {
 

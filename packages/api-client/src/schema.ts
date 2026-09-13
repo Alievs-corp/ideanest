@@ -2900,6 +2900,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/projects/{id}/extension": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["projectExtend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/projects/{id}/late-pledges": {
         parameters: {
             query?: never;
@@ -4619,7 +4635,7 @@ export interface components {
             shippedBody?: string;
             shippedSubject?: string;
             /** @enum {string} */
-            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
         };
         DraftPledgeRequest: {
             addons?: components["schemas"]["PledgeAddonBody"][];
@@ -4698,6 +4714,10 @@ export interface components {
             filter?: components["schemas"]["BackerFilterBody"];
             /** Format: uuid */
             segmentId?: string;
+        };
+        ExtendCampaignRequest: {
+            /** Format: date-time */
+            until: string;
         };
         Facets: {
             amountRaised?: components["schemas"]["ValueCount"][];
@@ -5137,7 +5157,7 @@ export interface components {
             subjectId?: string;
             subjectType?: string;
             /** @enum {string} */
-            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
         };
         OAuthSignInRequest: {
             deviceLabel?: string;
@@ -6718,6 +6738,7 @@ export type SchemaEscalation = components['schemas']['Escalation'];
 export type SchemaEvidence = components['schemas']['Evidence'];
 export type SchemaExplanationResponse = components['schemas']['ExplanationResponse'];
 export type SchemaExportBackersRequest = components['schemas']['ExportBackersRequest'];
+export type SchemaExtendCampaignRequest = components['schemas']['ExtendCampaignRequest'];
 export type SchemaFacets = components['schemas']['Facets'];
 export type SchemaFaqPatchRequest = components['schemas']['FaqPatchRequest'];
 export type SchemaFeed = components['schemas']['Feed'];
@@ -7610,7 +7631,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -7632,7 +7653,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -7658,7 +7679,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -7680,7 +7701,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -7703,7 +7724,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -7723,7 +7744,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -11910,6 +11931,32 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectEdit"];
+                };
+            };
+        };
+    };
+    projectExtend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtendCampaignRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
