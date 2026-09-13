@@ -3962,6 +3962,16 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > amount is repaid. The rule "nothing is refunded through the platform after payout" does not
 > stop a bank chargeback; if the creator never has another payout, the loss is the platform's.
 > That risk is accepted in §5.1.
+>
+> **Built (#43).** Resolving a dispute `LOST` or `CONCEDED` still posts the loss (the backer's money
+> returns from escrow). When the campaign already has a settled `PAYOUT` transaction, the amount and
+> its fee become a `creator_debts` row (V80, one per dispute) and the creator's account is suspended
+> by the administrator who resolved it, with a reason saying why. Every later payout — requested by a
+> withdrawal or calculated by finance — withholds what is outstanding into `payouts.debt_withheld`,
+> lowering the net, and the amount is applied to the debts, oldest first, when that payout is sent. A
+> debt as large as the payout leaves no payout: a withdrawal applies it all at once, and finance's
+> calculation answers nothing to pay. Reinstating the account once the debt is settled is a staff
+> action. Epoint documents no chargeback webhook, so how its chargebacks reach `disputes` is still open.
 
 ---
 

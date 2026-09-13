@@ -7,6 +7,7 @@ import az.ideanest.audit.AuditOutcome;
 import az.ideanest.fee.application.FeeBreakdown;
 import az.ideanest.fee.application.FeeSchedules;
 import az.ideanest.payment.application.CampaignFunds;
+import az.ideanest.payment.application.CreatorDebts;
 import az.ideanest.payment.application.NoPayoutProviderException;
 import az.ideanest.payment.application.PayoutGateway;
 import az.ideanest.payout.PayoutProperties;
@@ -93,6 +94,7 @@ public class PayoutService {
     private final AuditLog audit;
     private final PayoutProperties properties;
     private final Clock clock;
+    private final CreatorDebts debts;
 
     public PayoutService(
             PayoutRepository payouts,
@@ -105,7 +107,8 @@ public class PayoutService {
             PayoutDestinations destinations,
             AuditLog audit,
             PayoutProperties properties,
-            Clock clock) {
+            Clock clock,
+            CreatorDebts debts) {
         this.payouts = payouts;
         this.approvals = approvals;
         this.gateway = gateway;
@@ -117,6 +120,7 @@ public class PayoutService {
         this.audit = audit;
         this.properties = properties;
         this.clock = clock;
+        this.debts = debts;
     }
 
     /**
@@ -164,9 +168,17 @@ public class PayoutService {
             throw new NothingToPayException(projectId);
         }
 
+        // IDN-EXT-01 (#43): withhold the creator's chargeback debts. A debt as large as the payout leaves
+        // nothing to calculate; the withdrawal path recovers it instead.
+        Money owed = debts.outstandingFor(campaign.creatorId(), net.currency());
+        Money withheld = owed.isGreaterThan(net) ? net : owed;
+        if (withheld.equals(net)) {
+            throw new NothingToPayException(projectId);
+        }
+
         short required = approvalsRequiredFor(net);
 
-        Payout calculated = payouts.save(Payout.calculated(
+        Payout calculating = Payout.calculated(
                 projectId,
                 campaign.creatorId(),
                 funds.collected(),
@@ -177,7 +189,11 @@ public class PayoutService {
                 breakdown.scheduleId(),
                 now.plus(properties.hold()),
                 required,
-                "payout-" + projectId + "-" + now.toEpochMilli()));
+                "payout-" + projectId + "-" + now.toEpochMilli());
+        if (withheld.isPositive()) {
+            calculating.withholdDebt(withheld);
+        }
+        Payout calculated = payouts.save(calculating);
 
         audit.record(
                 AuditAction.PAYOUT_CALCULATED,
@@ -577,6 +593,10 @@ public class PayoutService {
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         if (sent.moved()) {
             payout.paid(sent.transactionId(), now);
+            // IDN-EXT-01 (#43): what this payout withheld now goes towards the creator's debts.
+            if (payout.debtWithheld().isPositive()) {
+                debts.recover(payout.creatorId(), payout.debtWithheld(), now);
+            }
         } else {
             payout.failed(sent.failureCode(), sent.failureMessage(), now);
         }

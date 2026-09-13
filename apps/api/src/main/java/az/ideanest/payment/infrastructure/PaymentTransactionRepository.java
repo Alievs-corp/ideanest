@@ -38,6 +38,16 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
      */
     boolean existsByIdempotencyKey(String idempotencyKey);
 
+    /** IDN-EXT-01 (#43): whether money has been paid out for a campaign — a settled PAYOUT row. */
+    @Query(
+            """
+            SELECT COUNT(t) > 0 FROM PaymentTransaction t
+            WHERE t.projectId = :projectId
+              AND t.type = az.ideanest.payment.domain.TransactionType.PAYOUT
+              AND t.status = az.ideanest.payment.domain.TransactionStatus.SUCCEEDED
+            """)
+    boolean hasPaidOut(@Param("projectId") UUID projectId);
+
     /** IDN-EXT-01 (#39): the charge a payment page opened, by the provider's name for it. */
     Optional<PaymentTransaction> findFirstByProviderAndProviderTransactionIdAndTypeAndStatus(
             ProviderName provider, String providerTransactionId, TransactionType type, TransactionStatus status);
