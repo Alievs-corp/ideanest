@@ -241,16 +241,27 @@ class EpointPaymentProviderTests {
     }
 
     @Test
-    @DisplayName("a returned payment is a refund, and a card registration is not a charge")
+    @DisplayName("a returned payment is a refund, and a card registration settles the card rather than a charge")
     void returnedAndCardRegistration() {
         String returned = encoded("{\"transaction\":\"te001234\",\"status\":\"returned\",\"operation_code\":\"100\"}");
         assertThat(adapter().parseWebhook(form(returned, signatureOf(returned)), Map.of()).type())
                 .isEqualTo(PaymentEventType.REFUND_SUCCEEDED);
 
-        String registered = encoded("{\"card_id\":\"cev000123\",\"status\":\"success\",\"operation_code\":\"001\"}");
+        String registered = encoded(
+                "{\"card_id\":\"cev000123\",\"status\":\"success\",\"operation_code\":\"001\","
+                        + "\"card_mask\":\"416973******1234\",\"card_name\":\"AYSEL M\"}");
         PaymentEvent card = adapter().parseWebhook(form(registered, signatureOf(registered)), Map.of());
-        assertThat(card.type()).isEqualTo(PaymentEventType.UNRECOGNISED);
+        assertThat(card.type()).isEqualTo(PaymentEventType.PAYOUT_CARD_REGISTERED);
         assertThat(card.providerEventId()).isEqualTo("cev000123:success:001");
+        assertThat(card.payoutCard().cardId()).isEqualTo("cev000123");
+        assertThat(card.payoutCard().cardMask()).isEqualTo("416973******1234");
+        // The name reaches the destination match on the event, and is still not in the stored body.
+        assertThat(card.payoutCard().holderName()).isEqualTo("AYSEL M");
+        assertThat(card.rawBody()).doesNotContain("AYSEL");
+
+        String refused = encoded("{\"card_id\":\"cev000124\",\"status\":\"error\",\"operation_code\":\"001\"}");
+        assertThat(adapter().parseWebhook(form(refused, signatureOf(refused)), Map.of()).type())
+                .isEqualTo(PaymentEventType.PAYOUT_CARD_FAILED);
     }
 
     // ------------------------------------------------------------------

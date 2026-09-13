@@ -49,5 +49,11 @@ public enum PaymentEventType {
      * <p>Not an error and not a gap to be filled in later: most of what a provider
      * emits is about products the platform does not use. See the class comment.
      */
+    /** IDN-EXT-01 (#44): the provider registered a creator's payout card. */
+    PAYOUT_CARD_REGISTERED,
+
+    /** IDN-EXT-01 (#44): the provider did not register it. */
+    PAYOUT_CARD_FAILED,
+
     UNRECOGNISED
 }
