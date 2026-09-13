@@ -401,14 +401,23 @@ describe('backing the campaign', () => {
   });
 
   /**
-   * A late pledge is a different offer and does not borrow the funding campaign's words. The
-   * decision the campaign was asking for has already been made.
+   * IDN-EXT-01 (#36): the seven days after the first deadline and an extension are the same
+   * funding as the campaign, and are offered in the same words — even though the first deadline
+   * has passed. Late pledges are switched off, so a LATE_PLEDGE campaign is offered nothing.
    */
-  it('names a late pledge as a late pledge', async () => {
+  it.each(['CLOSING_WINDOW', 'EXTENDED'] as const)(
+    'offers backing to a %s campaign past its first deadline',
+    async (state) => {
+      await renderSummary(campaign({ state, deadline: '2026-08-15T12:00:00Z' }));
+
+      expect(screen.getByRole('link', { name: 'Back this campaign' })).toBeInTheDocument();
+    },
+  );
+
+  it('offers nothing on a campaign left in LATE_PLEDGE', async () => {
     await renderSummary(campaign({ state: 'LATE_PLEDGE' }));
 
-    expect(screen.getByRole('link', { name: 'Make a late pledge' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Back this campaign' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /back this campaign|late pledge/iu })).toBeNull();
   });
 
   it('offers nothing on a campaign that has finished', async () => {

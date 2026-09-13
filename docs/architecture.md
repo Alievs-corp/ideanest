@@ -814,7 +814,7 @@ sequenceDiagram
 | PL-13 | Stock reservation | A DRAFT pledge, expiring five minutes after it is made |
 | PL-14 | Idempotency | `Idempotency-Key` prevents duplicates |
 | PL-15 | Secret rewards | Reachable only by a private URL |
-| PL-16 | ~~Late pledge~~ | **Withdrawn by IDN-EXT-01**: withdrawal closes the campaign. Built by #81; switched off by #36, removed by #45 |
+| PL-16 | ~~Late pledge~~ | **Withdrawn by IDN-EXT-01**: withdrawal closes the campaign. Built by #81; switched off by #36 — `PledgeAcceptance` takes a pledge only while `LIVE` before the first deadline, in `CLOSING_WINDOW` before the seven days end, and `EXTENDED` before the extension ends, and the edge into `LATE_PLEDGE` is gone; removed by #45 |
 
 > **Everything below about PL-10 and PL-16 records what was built, and IDN-EXT-01 has
 > withdrawn both.** Pledges are accepted while the campaign is live, during the 7-day
@@ -841,7 +841,7 @@ sequenceDiagram
 > re-stamps the flag, so a backer changing their shirt size in the late window does not
 > move their original pledge into the late column.
 >
-> **The window is bounded** by `ideanest.project.late-pledges.max-window`, ninety days.
+> **The window was bounded** by `ideanest.project.late-pledges.max-window`, ninety days, until #36 removed the setting with the edge.
 > That is a bound on a promise rather than a technical limit: a campaign still taking
 > money nine months after it closed has customers rather than backers, and it has no
 > stock to sell them.
@@ -1131,7 +1131,7 @@ The most valuable and most complex module. It begins when funding closes.
 > introduce one. **No pledge state moves either** — §6.2's `FULFILLED` is reached from
 > `COLLECTED`, and marking a parcel delivered must not skip the charge.
 >
-> **#81 built late pledges (PM-23).** §4.5's PL-16 carries the design; what belongs
+> **#81 built late pledges (PM-23), and #36 switched them off** — the edge into `LATE_PLEDGE` is gone, so opening a window is refused. §4.5's PL-16 carries the design; what belongs
 > here is the shape of the creator's side. `POST /projects/{id}/late-pledges` takes the
 > `COLLECTING → LATE_PLEDGE` edge and names the date the window closes, and
 > `POST …/late-pledges/close` takes `LATE_PLEDGE → FULFILLING` and stops them. The
@@ -4004,8 +4004,8 @@ POST   /v1/projects/{id}/prelaunch
 POST   /v1/projects/{id}/submit
 POST   /v1/projects/{id}/launch
 POST   /v1/projects/{id}/cancel
-POST   /v1/projects/{id}/late-pledges        # WITHDRAWN by IDN-EXT-01 (#36): built by #81, removed by #45
-POST   /v1/projects/{id}/late-pledges/close  # WITHDRAWN by IDN-EXT-01, as above
+POST   /v1/projects/{id}/late-pledges        # WITHDRAWN by IDN-EXT-01: refused for every campaign since #36 (PROJECT_TRANSITION_NOT_ALLOWED); removed by #45
+POST   /v1/projects/{id}/late-pledges/close  # WITHDRAWN by IDN-EXT-01: still moves a campaign already in LATE_PLEDGE to FULFILLING; removed by #45
 POST   /v1/projects/{id}/extension           # IDN-EXT-01 (#34): creator only; once, D-7..D+7, 50%+, ends after D and no later than D+60. 409 EXTENSION_NOT_AVAILABLE {reason}; backers get CAMPAIGN_EXTENDED
 POST   /v1/projects/{id}/withdrawal          # IDN-EXT-01 (#41): 80%+, closes the campaign, opens the 14-day hold. Not built
 GET    /v1/projects/{id}/checklist

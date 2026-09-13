@@ -29,7 +29,6 @@ public record ProjectProperties(
         Submission submission,
         Reminders reminders,
         Finalisation finalisation,
-        LatePledges latePledges,
         Submissions submissions,
         Directory directory,
         Launches launches,
@@ -46,7 +45,6 @@ public record ProjectProperties(
         submission = submission == null ? Submission.defaults() : submission;
         reminders = reminders == null ? Reminders.defaults() : reminders;
         finalisation = finalisation == null ? Finalisation.defaults() : finalisation;
-        latePledges = latePledges == null ? LatePledges.defaults() : latePledges;
         submissions = submissions == null ? Submissions.defaults() : submissions;
         directory = directory == null ? Directory.defaults() : directory;
         launches = launches == null ? Launches.defaults() : launches;
@@ -169,39 +167,6 @@ public record ProjectProperties(
                 // Otherwise every request naming no size is refused by the ceiling --
                 // a start-up problem wearing a runtime costume.
                 throw new IllegalArgumentException("The default queue page cannot exceed the maximum");
-            }
-        }
-    }
-
-    /**
-     * §4.5's PL-16 and §4.8's PM-23 (#81): the window a creator may keep open after
-     * their campaign has closed.
-     *
-     * @param maxWindow the furthest ahead a late-pledge window may end, measured from
-     *     the moment it is opened. Ninety days, which is a bound on a promise rather
-     *     than a technical limit: a late pledge is a commitment to send somebody a
-     *     reward, and a campaign still taking money nine months after it closed is one
-     *     whose backers are indistinguishable from customers of a shop that has no
-     *     stock. A creator who needs longer reopens the window, which is one decision
-     *     they have to take again rather than one they took once
-     */
-    public record LatePledges(Duration maxWindow) {
-
-        private static final Duration DEFAULT_MAX_WINDOW = Duration.ofDays(90);
-
-        public static LatePledges defaults() {
-            return new LatePledges(DEFAULT_MAX_WINDOW);
-        }
-
-        public LatePledges {
-            maxWindow = maxWindow == null ? DEFAULT_MAX_WINDOW : maxWindow;
-
-            if (maxWindow.isZero() || maxWindow.isNegative()) {
-                // Zero would mean a window that is closed the moment it opens, which
-                // is a campaign that offers late pledges and refuses every one of
-                // them. Switching the feature off is `latePledgeEnabled`, per
-                // campaign, and it is the creator's rather than an operator's.
-                throw new IllegalArgumentException("A late-pledge window is some length of time");
             }
         }
     }

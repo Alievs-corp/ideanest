@@ -20,7 +20,7 @@ import type { ProjectState } from './api';
  *
  * `RENDERABLE_STATES` in `publicPage.ts` is nine states long: a `SUCCESSFUL` campaign is
  * public, indexable, and closed. Its rewards are still printed, and they are still not for
- * sale. Backing is two of those nine.
+ * sale. Backing is three of the public states — IDN-EXT-01 (#36).
  *
  * <h2>It is a prediction, not a permission</h2>
  *
@@ -32,9 +32,9 @@ import type { ProjectState } from './api';
  * a hidden control reports nothing at all:
  *
  * <ul>
- *   <li>a `LATE_PLEDGE` campaign whose creator switched the window off, or whose window ran
- *       out this morning. `latePledgeEndsAt` is not on the public projection, so this cannot
- *       be known here;</li>
+ *   <li>an `EXTENDED` campaign whose extension ended this minute, or a `CLOSING_WINDOW` one
+ *       whose seven days did. Neither end is on the public projection, so this cannot be
+ *       known here;</li>
  *   <li>a campaign suspended in the second between this render and the click.</li>
  * </ul>
  *
@@ -42,7 +42,11 @@ import type { ProjectState } from './api';
  * turns into a sentence. The opposite mistake — hiding the control from a campaign that is
  * taking pledges — has no such recovery, because there is nothing on screen to click.
  */
-export const PLEDGEABLE_PROJECT_STATES: readonly string[] = Object.freeze(['LIVE', 'LATE_PLEDGE']);
+export const PLEDGEABLE_PROJECT_STATES: readonly string[] = Object.freeze([
+  'LIVE',
+  'CLOSING_WINDOW',
+  'EXTENDED',
+]);
 
 /**
  * Whether to offer the pledge flow for a campaign in this state at this instant.
@@ -53,8 +57,9 @@ export const PLEDGEABLE_PROJECT_STATES: readonly string[] = Object.freeze(['LIVE
  * that "the difference between a deadline and a suggestion". A control offered in that minute
  * would send a backer to a checkout that cannot take their pledge.
  *
- * <p>A `LATE_PLEDGE` campaign is past its funding deadline by definition, so the same check
- * would close the one window that state exists to open.
+ * <p>A `CLOSING_WINDOW` or `EXTENDED` campaign is past its first deadline by definition —
+ * IDN-EXT-01 (#36) keeps taking pledges in both — so the same check would refuse exactly the
+ * pledges those states exist for. There are no late pledges any more.
  *
  * @param state the campaign's state, as the public projection reports it
  * @param deadline the funding deadline as an ISO instant, or `null` when there is none

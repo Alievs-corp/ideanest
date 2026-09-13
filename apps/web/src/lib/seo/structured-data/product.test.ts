@@ -56,8 +56,8 @@ function offerOf(node: JsonLdNode | undefined): Offer {
 }
 
 describe('PLEDGEABLE_PROJECT_STATES', () => {
-  it('is the two states in which a pledge can actually be taken', () => {
-    expect([...PLEDGEABLE_PROJECT_STATES]).toEqual(['LIVE', 'LATE_PLEDGE']);
+  it('is the three states in which a pledge can actually be taken', () => {
+    expect([...PLEDGEABLE_PROJECT_STATES]).toEqual(['LIVE', 'CLOSING_WINDOW', 'EXTENDED']);
   });
 });
 
@@ -120,7 +120,7 @@ describe('rewardProductNodes', () => {
   });
 
   it('claims no expiry for a campaign whose deadline has passed', () => {
-    const passed = nodes({ campaignState: 'LATE_PLEDGE', deadline: '2026-08-01T20:59:59Z' });
+    const passed = nodes({ campaignState: 'CLOSING_WINDOW', deadline: '2026-08-01T20:59:59Z' });
     expect(offerOf(passed[0])).not.toHaveProperty('priceValidUntil');
   });
 
@@ -133,13 +133,22 @@ describe('rewardProductNodes', () => {
   });
 
   it('offers nothing for a campaign that is not taking pledges', () => {
-    for (const state of ['DRAFT', 'PRELAUNCH', 'SCHEDULED', 'SUCCESSFUL', 'CANCELED', 'COMPLETED']) {
+    for (const state of [
+      'DRAFT',
+      'PRELAUNCH',
+      'SCHEDULED',
+      'SUCCESSFUL',
+      'CANCELED',
+      'COMPLETED',
+      'LATE_PLEDGE',
+    ]) {
       expect(nodes({ campaignState: state })).toEqual([]);
     }
   });
 
-  it('offers a tier during late pledging, which is a pledge like any other', () => {
-    expect(nodes({ campaignState: 'LATE_PLEDGE' })).toHaveLength(1);
+  it('offers a tier in the seven-day window and during an extension, which are funding like any other', () => {
+    expect(nodes({ campaignState: 'CLOSING_WINDOW' })).toHaveLength(1);
+    expect(nodes({ campaignState: 'EXTENDED' })).toHaveLength(1);
   });
 
   it('offers nothing for a state this build has never heard of', () => {

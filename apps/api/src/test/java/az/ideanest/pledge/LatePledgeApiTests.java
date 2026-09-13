@@ -28,29 +28,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * §4.5's PL-16 and §4.8's PM-23 (#81): a campaign that goes on taking pledges after it
- * closed.
+ * When a campaign takes pledges — IDN-EXT-01 (#36), which switched §4.5's PL-16 off.
  *
- * <p>The tests that carry the design:
+ * <p>A campaign takes pledges while it is {@code LIVE} and before its first deadline, in
+ * {@code CLOSING_WINDOW} for the seven days after it, and {@code EXTENDED} until its extension
+ * ends — and at no other time. Every pledge in those periods counts towards the goal the
+ * campaign is judged on, so none is stamped {@code is_late_pledge}.
  *
- * <ul>
- *   <li>{@link #aLatePledgeIsRecordedAsALateOne()} — the whole reason the feature is
- *       not just "accept a pledge in one more state". A campaign's two totals have to
- *       stay apart, and {@code is_late_pledge} is what keeps them apart.
- *   <li>{@link #switchingTheFeatureOffStopsThePledgesImmediately()} — the reason
- *       enabling and the window are two facts rather than one: a creator who runs out
- *       of stock needs a switch, not a transition they cannot undo.
- *   <li>{@link #theWindowIsWhatTheRefusalNames()} — a backer refused after a
- *       late-pledge window closed must not be told about a deadline months earlier.
- *   <li>{@link #aWindowBeyondThePlatformsBoundIsRefused()} — a campaign still taking
- *       money nine months after it closed has customers, not backers.
- *   <li>{@link #closingTheWindowStartsFulfilment()} — and refuses the next pledge.
- * </ul>
+ * <p>Late pledges (#81) are switched off: no state has an edge into {@code LATE_PLEDGE}, so
+ * opening a window is refused, and a campaign already in that state takes no pledge but can
+ * still start delivering. Stage 4 (#45) removes the routes, the state and the columns.
  *
- * <p><strong>The fixture reaches {@code COLLECTING} by writing the row</strong>, and
- * {@code Campaigns.collecting} says why there is no honest alternative: the edge into
- * it is epic #59's batched collection, which is blocked on choosing a payment provider.
- * Everything after that point is exercised through the API.
+ * <p><strong>The fixtures write the row</strong> for the states past {@code LIVE}: the edges
+ * into them are the finaliser's and the extension's, which have their own tests, and what is
+ * asserted here is only what a backer is told.
  */
 class LatePledgeApiTests extends AbstractIntegrationTest {
 
@@ -75,85 +66,26 @@ class LatePledgeApiTests extends AbstractIntegrationTest {
     }
 
     // ------------------------------------------------------------------
-    // Opening the window
+    // Late pledges are switched off
     // ------------------------------------------------------------------
 
     @Test
-    @DisplayName("a creator opens a late-pledge window and the campaign starts taking pledges again")
-    void aCreatorOpensTheWindow() {
+    @DisplayName("IDN-EXT-01: opening a late-pledge window is refused, even for a campaign that enabled them")
+    void openingALatePledgeWindowIsRefused() {
         Account creator = account("late-open");
         UUID project = collectingCampaign(creator, true);
-        Instant closes = Instant.now().plus(Duration.ofDays(14));
-
-        ResponseEntity<Map<String, Object>> opened = open(project, creator, closes);
-
-        assertThat(opened.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(opened.getBody()).containsEntry("state", "LATE_PLEDGE");
-        assertThat(opened.getBody().get("latePledgeEndsAt")).isNotNull();
-
-        assertThat(draft(project, account("late-open-backer")).getStatusCode())
-                .isEqualTo(HttpStatus.CREATED);
-    }
-
-    @Test
-    @DisplayName("a campaign that has not enabled late pledges cannot open a window")
-    void theFeatureHasToBeSwitchedOnFirst() {
-        Account creator = account("late-off");
-        UUID project = collectingCampaign(creator, false);
-
-        ResponseEntity<Map<String, Object>> refused = open(project, creator, Instant.now().plus(Duration.ofDays(7)));
-
-        // A 409 rather than a 400: the request is well formed and the creator is
-        // entitled to make it. What is missing is a decision, and the code names the
-        // switch that takes it.
-        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(refused.getBody()).containsEntry("code", "LATE_PLEDGES_NOT_ENABLED");
-    }
-
-    @Test
-    @DisplayName("a live campaign cannot open a late-pledge window")
-    void theWindowOpensFromCollectingOnly() {
-        Account creator = account("late-live");
-        UUID project = project(creator);
-        enableLatePledges(project, creator);
-        Campaigns.launch(dataSource, project);
 
         ResponseEntity<Map<String, Object>> refused = open(project, creator, Instant.now().plus(Duration.ofDays(7)));
 
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(refused.getBody()).containsEntry("code", "PROJECT_TRANSITION_NOT_ALLOWED");
+        assertThat(state(project)).isEqualTo("COLLECTING");
     }
 
     @Test
-    @DisplayName("a window that ends in the past is refused")
-    void aWindowInThePastIsRefused() {
-        Account creator = account("late-past");
-        UUID project = collectingCampaign(creator, true);
-
-        ResponseEntity<Map<String, Object>> refused = open(project, creator, Instant.now().minusSeconds(60));
-
-        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(meta(refused.getBody())).containsEntry("field", "endsAt");
-    }
-
-    @Test
-    @DisplayName("a window beyond the platform's bound is refused")
-    void aWindowBeyondThePlatformsBoundIsRefused() {
-        Account creator = account("late-long");
-        UUID project = collectingCampaign(creator, true);
-
-        // Ninety days by default. A campaign still taking money nine months after it
-        // closed has customers rather than backers, and no stock to sell them.
-        ResponseEntity<Map<String, Object>> refused = open(project, creator, Instant.now().plus(Duration.ofDays(200)));
-
-        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(meta(refused.getBody())).containsEntry("field", "endsAt");
-    }
-
-    @Test
-    @DisplayName("somebody who is not the creator cannot open the window")
-    void onlyTheCreatorOpensTheWindow() {
-        Account creator = account("late-guard");
+    @DisplayName("somebody who is not the creator is still answered 404, not told the campaign's state")
+    void aStrangerIsStillNotFound() {
+        Account creator = account("late-owner");
         UUID project = collectingCampaign(creator, true);
 
         ResponseEntity<Map<String, Object>> refused =
@@ -162,114 +94,106 @@ class LatePledgeApiTests extends AbstractIntegrationTest {
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    // ------------------------------------------------------------------
-    // What a late pledge is
-    // ------------------------------------------------------------------
-
     @Test
-    @DisplayName("a late pledge is recorded as a late one")
-    void aLatePledgeIsRecordedAsALateOne() {
-        Account creator = account("late-flag");
-        UUID project = collectingCampaign(creator, true);
-        open(project, creator, Instant.now().plus(Duration.ofDays(7)));
+    @DisplayName("a campaign already in LATE_PLEDGE takes no pledge")
+    void aCampaignAlreadyInLatePledgeTakesNoPledge() {
+        Account creator = account("late-already");
+        UUID project = alreadyInLatePledge(creator);
 
-        ResponseEntity<Map<String, Object>> created = draft(project, account("late-flag-backer"));
-        UUID pledge = UUID.fromString((String) created.getBody().get("id"));
-
-        // The flag is the whole feature: §5.1 judged this campaign against its goal at
-        // its deadline, and money taken afterwards must not silently join the number
-        // that decision was made from.
-        assertThat(isLate(pledge)).isTrue();
-    }
-
-    @Test
-    @DisplayName("a pledge taken while the campaign was running is not")
-    void anOrdinaryPledgeIsNotLate() {
-        Account creator = account("late-normal");
-        UUID project = project(creator);
-        Campaigns.launch(dataSource, project);
-
-        UUID pledge = UUID.fromString(
-                (String) draft(project, account("late-normal-backer")).getBody().get("id"));
-
-        assertThat(isLate(pledge)).isFalse();
-    }
-
-    @Test
-    @DisplayName("switching the feature off stops the pledges immediately")
-    void switchingTheFeatureOffStopsThePledgesImmediately() {
-        Account creator = account("late-switch");
-        UUID project = collectingCampaign(creator, true);
-        open(project, creator, Instant.now().plus(Duration.ofDays(7)));
-        assertThat(draft(project, account("late-switch-first")).getStatusCode()).isEqualTo(HttpStatus.CREATED);
-
-        patch(project, creator, Map.of("latePledgeEnabled", false));
-
-        // No transition, and no window to edit: a creator who has run out of stock
-        // needs the pledges to stop on the next request, and the campaign stays in
-        // LATE_PLEDGE until they decide to start delivering.
-        ResponseEntity<Map<String, Object>> refused = draft(project, account("late-switch-second"));
-        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(refused.getBody()).containsEntry("code", "PROJECT_NOT_LIVE");
-        assertThat(state(project)).isEqualTo("LATE_PLEDGE");
-    }
-
-    @Test
-    @DisplayName("the refusal names the late-pledge window rather than the funding deadline")
-    void theWindowIsWhatTheRefusalNames() {
-        Account creator = account("late-expired");
-        UUID project = collectingCampaign(creator, true);
-        Instant closes = Instant.now().plus(Duration.ofDays(3));
-        open(project, creator, closes);
-
-        // Moved by hand rather than by waiting three days. What is asserted is which
-        // date the refusal reports, and the campaign's funding deadline is a day in the
-        // past -- so a client rendering the wrong one would tell a backer the campaign
-        // closed before it opened its window.
-        new JdbcTemplate(dataSource)
-                .update("UPDATE projects SET late_pledge_ends_at = now() - interval '1 hour' WHERE id = ?", project);
-
-        ResponseEntity<Map<String, Object>> refused = draft(project, account("late-expired-backer"));
+        ResponseEntity<Map<String, Object>> refused = draft(project, account("late-already-backer"));
 
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(refused.getBody()).containsEntry("code", "PROJECT_NOT_LIVE");
         assertThat(meta(refused.getBody())).containsEntry("state", "LATE_PLEDGE");
-        assertThat(meta(refused.getBody()).get("deadline"))
-                .as("the date a backer was counting down to is the window's, not the campaign's")
-                .isNotNull();
     }
 
     @Test
-    @DisplayName("closing the window starts fulfilment and refuses the next pledge")
-    void closingTheWindowStartsFulfilment() {
+    @DisplayName("a campaign already in LATE_PLEDGE can still start delivering")
+    void aCampaignAlreadyInLatePledgeCanStillClose() {
         Account creator = account("late-close");
-        UUID project = collectingCampaign(creator, true);
-        open(project, creator, Instant.now().plus(Duration.ofDays(7)));
+        UUID project = alreadyInLatePledge(creator);
 
         ResponseEntity<Map<String, Object>> closed = exchange(
                 "/v1/projects/" + project + "/late-pledges/close", HttpMethod.POST, creator.accessToken(), null);
 
         assertThat(closed.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(closed.getBody()).containsEntry("state", "FULFILLING");
-        assertThat(closed.getBody().get("latePledgeEndsAt"))
-                .as("the window this campaign accepted late pledges in is a true statement about it")
-                .isNotNull();
+    }
 
-        assertThat(draft(project, account("late-close-backer")).getStatusCode())
-                .isEqualTo(HttpStatus.CONFLICT);
+    // ------------------------------------------------------------------
+    // The three periods that take pledges
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a live campaign before its deadline takes a pledge, and it is not a late one")
+    void aLiveCampaignTakesAPledge() {
+        Account creator = account("late-normal");
+        UUID project = project(creator);
+        Campaigns.launch(dataSource, project);
+
+        ResponseEntity<Map<String, Object>> created = draft(project, account("late-normal-backer"));
+
+        assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(isLate(UUID.fromString((String) created.getBody().get("id")))).isFalse();
     }
 
     @Test
-    @DisplayName("the public page carries the window, so a visitor arriving late knows there is still a way in")
-    void thePublicPageCarriesTheWindow() {
-        Account creator = account("late-public");
-        UUID project = collectingCampaign(creator, true);
-        open(project, creator, Instant.now().plus(Duration.ofDays(7)));
+    @DisplayName("a campaign in its seven days after the deadline takes a pledge, and it is not a late one")
+    void theClosingWindowTakesAPledge() {
+        Account creator = account("window-open");
+        UUID project = inClosingWindow(creator, Duration.ofDays(1));
 
-        Map<String, Object> page = publicPage(creator, project);
+        ResponseEntity<Map<String, Object>> created = draft(project, account("window-open-backer"));
 
-        assertThat(page).containsEntry("state", "LATE_PLEDGE").containsEntry("latePledgeEnabled", true);
-        assertThat(page.get("latePledgeEndsAt")).isNotNull();
+        assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(isLate(UUID.fromString((String) created.getBody().get("id")))).isFalse();
+    }
+
+    @Test
+    @DisplayName("once the seven days have ended a pledge is refused, naming the window's end")
+    void anEndedClosingWindowRefusesAPledge() {
+        Account creator = account("window-over");
+        // Eight days past the deadline: the window ended a day ago, and the finaliser has not
+        // reached the campaign yet.
+        UUID project = inClosingWindow(creator, Duration.ofDays(8));
+
+        ResponseEntity<Map<String, Object>> refused = draft(project, account("window-over-backer"));
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody()).containsEntry("code", "PROJECT_NOT_LIVE");
+        assertThat(meta(refused.getBody())).containsEntry("state", "CLOSING_WINDOW");
+        Instant ends = Instant.parse((String) meta(refused.getBody()).get("deadline"));
+        assertThat(ends)
+                .as("the window's end, a day ago, and not the deadline eight days ago")
+                .isBetween(Instant.now().minus(Duration.ofDays(1)).minus(Duration.ofMinutes(5)), Instant.now());
+    }
+
+    @Test
+    @DisplayName("an extended campaign takes a pledge until its extension ends")
+    void anExtendedCampaignTakesAPledge() {
+        Account creator = account("extended-open");
+        UUID project = extended(creator, Instant.now().plus(Duration.ofDays(10)));
+
+        ResponseEntity<Map<String, Object>> created = draft(project, account("extended-open-backer"));
+
+        assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(isLate(UUID.fromString((String) created.getBody().get("id")))).isFalse();
+    }
+
+    @Test
+    @DisplayName("after the extension ends a pledge is refused, naming the extension's end")
+    void anEndedExtensionRefusesAPledge() {
+        Account creator = account("extended-over");
+        Instant until = Instant.now().minus(Duration.ofHours(1));
+        UUID project = extended(creator, until);
+
+        ResponseEntity<Map<String, Object>> refused = draft(project, account("extended-over-backer"));
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody()).containsEntry("code", "PROJECT_NOT_LIVE");
+        assertThat(meta(refused.getBody())).containsEntry("state", "EXTENDED");
+        Instant ends = Instant.parse((String) meta(refused.getBody()).get("deadline"));
+        assertThat(ends).isBetween(until.minus(Duration.ofSeconds(1)), until.plus(Duration.ofSeconds(1)));
     }
 
     // ------------------------------------------------------------------
@@ -320,6 +244,55 @@ class LatePledgeApiTests extends AbstractIntegrationTest {
         patch(project, creator, Map.of("latePledgeEnabled", true));
     }
 
+    /** A campaign that entered LATE_PLEDGE before #36, with its window still open — written by hand. */
+    private UUID alreadyInLatePledge(Account creator) {
+        UUID project = collectingCampaign(creator, true);
+        new JdbcTemplate(dataSource)
+                .update(
+                        "UPDATE projects SET state = 'LATE_PLEDGE', late_pledge_ends_at = now() + interval '7 days'"
+                                + " WHERE id = ?",
+                        project);
+        return project;
+    }
+
+    /** A launched campaign whose first deadline was {@code sinceDeadline} ago, in CLOSING_WINDOW. */
+    private UUID inClosingWindow(Account creator, Duration sinceDeadline) {
+        UUID project = project(creator);
+        Campaigns.launch(dataSource, project);
+        new JdbcTemplate(dataSource)
+                .update(
+                        """
+                        UPDATE projects
+                           SET state = 'CLOSING_WINDOW',
+                               launched_at = now() - interval '40 days',
+                               deadline = now() - make_interval(secs => ?)
+                         WHERE id = ?
+                        """,
+                        sinceDeadline.toSeconds(),
+                        project);
+        return project;
+    }
+
+    /** A launched campaign extended until {@code until}, its first deadline twelve days ago. */
+    private UUID extended(Account creator, Instant until) {
+        UUID project = project(creator);
+        Campaigns.launch(dataSource, project);
+        new JdbcTemplate(dataSource)
+                .update(
+                        """
+                        UPDATE projects
+                           SET state = 'EXTENDED',
+                               launched_at = now() - interval '40 days',
+                               deadline = now() - interval '12 days',
+                               extended_until = ?,
+                               extension_used_at = now() - interval '6 days'
+                         WHERE id = ?
+                        """,
+                        java.sql.Timestamp.from(until),
+                        project);
+        return project;
+    }
+
     private ResponseEntity<Map<String, Object>> patch(UUID project, Account creator, Map<String, Object> body) {
         return exchange("/v1/projects/" + project, HttpMethod.PATCH, creator.accessToken(), body);
     }
@@ -344,17 +317,6 @@ class LatePledgeApiTests extends AbstractIntegrationTest {
                 HttpMethod.POST,
                 new HttpEntity<>(body, headers),
                 new ParameterizedTypeReference<Map<String, Object>>() {});
-    }
-
-    private Map<String, Object> publicPage(Account creator, UUID project) {
-        String slug = new JdbcTemplate(dataSource)
-                .queryForObject("SELECT slug FROM projects WHERE id = ?", String.class, project);
-        return rest.exchange(
-                        "/v1/projects/" + creator.slug() + "/" + slug,
-                        HttpMethod.GET,
-                        new HttpEntity<>(null, jsonHeaders()),
-                        new ParameterizedTypeReference<Map<String, Object>>() {})
-                .getBody();
     }
 
     private boolean isLate(UUID pledgeId) {

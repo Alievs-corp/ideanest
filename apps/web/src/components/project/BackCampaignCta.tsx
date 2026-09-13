@@ -70,13 +70,9 @@ export async function BackCampaignCta({ projectId, state, deadline, now }: BackC
 
   const t = await getTranslations('campaign.back');
 
-  /*
-   * A late pledge is not the same offer and does not get the same word. The campaign has
-   * closed and funded; what is open is §4.5's post-campaign window, and a backer told "back
-   * this campaign" there would reasonably think they were joining the funding that decides
-   * whether it happens. That decision has been made.
-   */
-  const label = state === 'LATE_PLEDGE' ? t('late') : t('cta');
+  // One offer in every state that takes pledges: IDN-EXT-01 (#36) switched late pledges off,
+  // so the seven-day window and an extension are the same funding as the campaign itself.
+  const label = t('cta');
 
   return (
     <Link
