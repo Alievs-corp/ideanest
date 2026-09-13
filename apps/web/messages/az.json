@@ -189,6 +189,10 @@
       "language": {
         "label": "Dil və valyuta",
         "summary": "IdeaNest-in sizə yazdığı dil və məbləğlərin göstərildiyi valyuta."
+      },
+      "payout": {
+        "label": "Ödəniş məlumatları",
+        "summary": "VÖEN-iniz və ödənişlərin göndərildiyi biznes kartı."
       }
     },
     "pages": {
@@ -2406,6 +2410,12 @@
         "metaDescription": "Profilinizi kimin görə biləcəyini seçin, IdeaNest məlumatlarınızın surətini yükləyin və ya hesabınızı bağlayın.",
         "title": "Məxfilik, məlumatlar və hesabın bağlanması",
         "intro": "Sizi kimlərin görə biləcəyi, IdeaNest-in sizin haqqınızda saxladığı hər şey və siz ayrılsanız onlarla nə olacağı."
+      },
+      "payout": {
+        "metaTitle": "Ödəniş məlumatları",
+        "metaDescription": "VÖEN-iniz və kampaniya ödənişlərinin göndərildiyi biznes kartı.",
+        "title": "Ödəniş məlumatları",
+        "intro": "Vəsaitini çıxardığınız kampaniyanın pulunun göndərildiyi yer. Bu məlumatlar tamamlanıb yoxlanılana qədər ödənişlər saxlanılır."
       }
     },
     "panels": {
@@ -2441,6 +2451,40 @@
         "mismatchTitle": "İki yeni şifrə uyğun gəlmir",
         "mismatchDetail": "Hər iki xanaya eyni şifrəni yazıb yenidən cəhd edin.",
         "mismatchField": "Bu, yuxarıdakı şifrə ilə uyğun gəlmir."
+      },
+      "payout": {
+        "loading": "Ödəniş məlumatlarınız yüklənir",
+        "subjectHeading": "Kimə ödənilir",
+        "subjectIntro": "IdeaNest burada göstərilən şəxsə və ya şirkətə ödəyir. Hər hansı ödəniş göndərilməzdən əvvəl administrator VÖEN-in həqiqi olduğunu və biznes kartının onun sahibinə məxsus olduğunu yoxlayır.",
+        "kind": "Siz",
+        "kindIndividual": "Fiziki şəxssiniz",
+        "kindEntity": "Şirkətsiniz",
+        "legalName": "Hüquqi ad",
+        "legalNameHint": "VÖEN qeydiyyatında olduğu kimi.",
+        "taxId": "VÖEN",
+        "taxIdHint": "On rəqəm.",
+        "registeredAddress": "Qeydiyyat ünvanı",
+        "registrationNumber": "Qeydiyyat nömrəsi",
+        "save": "Yadda saxla",
+        "saving": "Saxlanılır…",
+        "saved": "Yadda saxlanıldı.",
+        "cardHeading": "Biznes kartı",
+        "cardIntro": "Ödənişlər ödəniş provayderinin səhifəsində qeydiyyatdan keçirdiyiniz biznes kartına göndərilir. Kart nömrəsi heç vaxt IdeaNest-də daxil edilmir.",
+        "cardNone": "Hələ kart yoxdur.",
+        "cardOnFile": "{hint}, sahibi: {holder}",
+        "standingAwaiting": "Yoxlama gözlənilir",
+        "standingVerified": "Yoxlanılıb",
+        "standingWaived": "Yoxlamadan azad edilib",
+        "standingMismatch": "Kartdakı ad hüquqi adınızla uyğun gəlmir",
+        "standingRejected": "Rədd edilib",
+        "register": "Biznes kartını qeydiyyatdan keçirin",
+        "replace": "Başqa kart qeydiyyatdan keçirin",
+        "opening": "Ödəniş provayderinin səhifəsi açılır…",
+        "waiting": "Provayderin kartınızı təsdiqləməsi gözlənilir. Bu səhifə bir dəqiqə ərzində yenidən yoxlayır.",
+        "cardFailed": "Kart qeydiyyatdan keçmədi. Qeyddə heç nə dəyişmədi və yenidən cəhd edə bilərsiniz.",
+        "unavailable": "Hazırda kartı qeydiyyatdan keçirmək mümkün deyil. Heç nə qeyd olunmadı; sonra yenidən cəhd edin.",
+        "malformedTaxId": "VÖEN on rəqəmdən ibarətdir.",
+        "failed": "Alınmadı. Bir azdan yenidən cəhd edin."
       }
     }
   },

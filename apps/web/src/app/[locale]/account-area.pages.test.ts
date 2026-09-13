@@ -32,6 +32,7 @@ const SCREENS: ReadonlyArray<readonly [namespace: string, route: string]> = [
   ['settings.pages.password', 'settings/password'],
   ['settings.pages.security', 'settings/security'],
   ['settings.pages.privacy', 'settings/privacy'],
+  ['settings.pages.payout', 'settings/payout'],
   ['account.pages.saved', 'account/saved'],
   ['account.pages.following', 'account/following'],
   ['account.pages.surveys', 'account/surveys'],

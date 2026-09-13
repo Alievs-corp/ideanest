@@ -155,6 +155,8 @@ export const ACCOUNT_GROUPS: readonly AccountGroup[] = Object.freeze([
       { href: '/settings/password', key: 'password' },
       { href: '/settings/security', key: 'security' },
       { href: '/settings/privacy', key: 'privacy' },
+      // IDN-EXT-01 (#44): the VÖEN and the business card a creator's payouts go to.
+      { href: '/settings/payout', key: 'payout' },
       /*
        * LAST, BELOW "Data and closure" — #280.
        *

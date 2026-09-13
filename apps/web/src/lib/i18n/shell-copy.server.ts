@@ -17,6 +17,7 @@ import {
   verifyEmailCopyFrom,
 } from './auth-copy';
 import { type CheckoutCopy, checkoutCopyFrom } from './checkout-copy';
+import { type PayoutPanelCopy, payoutPanelCopyFrom } from './payout-copy';
 import type { PluralForms } from '@ideanest/ui';
 import {
   type BasicsPanelCopy,
@@ -245,6 +246,11 @@ export async function notificationPreferencesCopy(): Promise<PreferencesCopy> {
 /** The checkout's words. `checkout-copy.ts` explains why the whole of it is one prop. */
 export async function checkoutCopy(): Promise<CheckoutCopy> {
   return checkoutCopyFrom(await getTranslations('checkout'));
+}
+
+/** The creator's payout details panel — IDN-EXT-01 (#44). */
+export async function payoutPanelCopy(): Promise<PayoutPanelCopy> {
+  return payoutPanelCopyFrom(await getTranslations('settings.panels.payout'));
 }
 
 /** The pricing page and the plan chooser on it. */
