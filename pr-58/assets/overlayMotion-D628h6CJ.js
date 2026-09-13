@@ -1,1 +1,0 @@
-import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{i as t,t as n}from"./react-DwOSFKmy.js";function r(e){return t()?{}:{initial:e,animate:{opacity:1,x:0,y:0},transition:{duration:200/1e3,ease:[.4,0,.2,1]}}}function i(){return(i=e((()=>{n()})))()}export{r as n,i as t};
