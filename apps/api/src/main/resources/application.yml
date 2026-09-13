@@ -628,6 +628,13 @@ ideanest:
     # hour of freshness.
     request-timeout: ${IDEANEST_FX_REQUEST_TIMEOUT:PT10S}
 
+  fee:
+    # §5.2, IDN-EXT-01 (#42): 15% of any withdrawal, the bank's and the provider's fees included,
+    # when no row in fee_schedules is in force. A schedule created by staff still wins.
+    default-platform-rate: 0.15
+    default-processing-rate: 0
+    default-currency: AZN
+
   payment:
     # §8.4's `ledger-reconciliation` -- issue #70. A daily pass that asks whether the
     # platform's money adds up: the books balance, no account holds a sign it cannot,

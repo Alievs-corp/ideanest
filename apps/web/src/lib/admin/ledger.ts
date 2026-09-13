@@ -23,9 +23,9 @@ import type { Money } from './payments';
 export type EntryDirection = 'DEBIT' | 'CREDIT';
 
 /**
- * §7.2's six accounts.
+ * §7.2's seven accounts.
  *
- * <p>Five are fixed names and the sixth is parameterised — `creator:{id}` is one account per
+ * <p>Six are fixed names and the seventh is parameterised — `creator:{id}` is one account per
  * creator — so this is not an enumeration of every value the column can hold. It is the set a
  * screen can offer as a filter, which is the five: a chooser over every creator on the
  * platform is a list that grows without bound, and the way to one creator's account is the
@@ -37,6 +37,8 @@ export const LEDGER_ACCOUNTS: readonly string[] = Object.freeze([
   'psp_fee',
   'tax_payable',
   'refunds',
+  // IDN-EXT-01 (#42): the platform's own costs, kept apart from backers' refunds.
+  'platform_expense',
 ]);
 
 /** One side of one posting. */

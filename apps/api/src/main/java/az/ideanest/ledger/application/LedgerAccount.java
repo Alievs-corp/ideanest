@@ -38,7 +38,7 @@ public record LedgerAccount(String name) {
      */
     public static final LedgerAccount ESCROW = new LedgerAccount("escrow");
 
-    /** §5.2's 5% of the amount raised, on successful campaigns only. */
+    /** §5.2's platform fee: 15% of a withdrawal, the bank's fee inside it (IDN-EXT-01). */
     public static final LedgerAccount PLATFORM_FEE = new LedgerAccount("platform_fee");
 
     /** §5.2's processing fee: what the provider keeps out of each successful collection. */
@@ -53,6 +53,13 @@ public record LedgerAccount(String name) {
 
     /** What has gone back to backers. #67's and #68's. */
     public static final LedgerAccount REFUNDS = new LedgerAccount("refunds");
+
+    /**
+     * The platform's own costs, such as what refunding backers costs — §5.2, IDN-EXT-01 (#42). Kept
+     * apart from {@link #REFUNDS}, which is backers' money going back, so a cost is never netted
+     * against a payout. Nothing posts to it until a provider reports such a cost.
+     */
+    public static final LedgerAccount PLATFORM_EXPENSE = new LedgerAccount("platform_expense");
 
     private static final String CREATOR_PREFIX = "creator:";
 
@@ -69,7 +76,7 @@ public record LedgerAccount(String name) {
         Objects.requireNonNull(name, "An entry belongs to an account");
         if (!isKnown(name)) {
             throw new IllegalArgumentException(
-                    "'" + name + "' is not one of §7.2's accounts. See LedgerAccount for the six.");
+                    "'" + name + "' is not one of §7.2's accounts. See LedgerAccount for the seven.");
         }
     }
 
@@ -108,7 +115,7 @@ public record LedgerAccount(String name) {
 
     private static boolean isKnown(String candidate) {
         return switch (candidate) {
-            case "escrow", "platform_fee", "psp_fee", "tax_payable", "refunds" -> true;
+            case "escrow", "platform_fee", "psp_fee", "tax_payable", "refunds", "platform_expense" -> true;
             default -> CREATOR.matcher(candidate).matches();
         };
     }

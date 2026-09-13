@@ -4,6 +4,7 @@ import az.ideanest.audit.AuditAction;
 import az.ideanest.audit.AuditActor;
 import az.ideanest.audit.AuditLog;
 import az.ideanest.audit.AuditOutcome;
+import az.ideanest.fee.FeeProperties;
 import az.ideanest.fee.domain.FeeSchedule;
 import az.ideanest.fee.domain.FeeScope;
 import az.ideanest.fee.infrastructure.FeeScheduleRepository;
@@ -63,18 +64,21 @@ public class FeeSchedules {
     private final PlatformStaff staff;
     private final AuditLog audit;
     private final Clock clock;
+    private final FeeProperties properties;
 
     public FeeSchedules(
             FeeScheduleRepository schedules,
             CampaignCategories categories,
             PlatformStaff staff,
             AuditLog audit,
-            Clock clock) {
+            Clock clock,
+            FeeProperties properties) {
         this.schedules = schedules;
         this.categories = categories;
         this.staff = staff;
         this.audit = audit;
         this.clock = clock;
+        this.properties = properties;
     }
 
     /**
@@ -93,11 +97,28 @@ public class FeeSchedules {
         Optional<FeeSchedule> schedule = resolve(at, projectId);
 
         if (schedule.isEmpty()) {
-            log.warn("No fee schedule in force at {}; pricing {} at zero fees", at, gross.currency());
-            return FeeBreakdown.free(gross);
+            // IDN-EXT-01 (#42): §5.2's default — 15%, the bank inside it — rather than zero fees.
+            log.debug("No fee schedule in force at {}; pricing {} at the default terms", at, gross.currency());
+            return applyDefault(gross);
         }
 
         return apply(gross, schedule.get());
+    }
+
+    /** §5.2's fee when no schedule is in force: {@code ideanest.fee}. IDN-EXT-01 (#42). */
+    public DefaultFeeTerms defaultTerms() {
+        return new DefaultFeeTerms(
+                properties.defaultPlatformRate(), properties.defaultProcessingRate(), properties.defaultCurrency());
+    }
+
+    /**
+     * The default terms' arithmetic, with the net as the remainder for {@link #apply}'s reason: a
+     * third multiplication could disagree with the two fees by a minor unit.
+     */
+    FeeBreakdown applyDefault(Money gross) {
+        Money platformFee = gross.times(properties.defaultPlatformRate());
+        Money processingFee = gross.times(properties.defaultProcessingRate());
+        return new FeeBreakdown(gross, platformFee, processingFee, gross.minus(platformFee.plus(processingFee)), null);
     }
 
     /**

@@ -1,5 +1,6 @@
 package az.ideanest.fee.api;
 
+import az.ideanest.fee.application.DefaultFeeTerms;
 import az.ideanest.fee.application.FeeSchedules;
 import az.ideanest.fee.domain.FeeSchedule;
 import java.math.BigDecimal;
@@ -84,7 +85,11 @@ public class FeeDisclosureController {
     private ResponseEntity<Disclosure> disclosure(UUID projectId) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(CACHE_FOR).cachePublic())
-                .body(fees.inForceFor(projectId).map(Disclosure::of).orElseGet(Disclosure::unconfigured));
+                // IDN-EXT-01 (#42): with no schedule the default terms are what applies, so they are
+                // what is disclosed — a page may not say "nothing to disclose" while charging 15%.
+                .body(fees.inForceFor(projectId)
+                        .map(Disclosure::of)
+                        .orElseGet(() -> Disclosure.ofDefault(fees.defaultTerms())));
     }
 
     /**
@@ -112,6 +117,22 @@ public class FeeDisclosureController {
             String creatorReceivesRate,
             String currency,
             java.time.Instant effectiveFrom) {
+
+        static Disclosure ofDefault(DefaultFeeTerms terms) {
+            BigDecimal keeps = BigDecimal.ONE
+                    .subtract(terms.platformRate())
+                    .subtract(terms.processingRate())
+                    .max(BigDecimal.ZERO)
+                    .setScale(5, RoundingMode.DOWN);
+            return new Disclosure(
+                    true,
+                    terms.platformRate().toPlainString(),
+                    terms.processingRate().toPlainString(),
+                    "0",
+                    keeps.toPlainString(),
+                    terms.currency(),
+                    null);
+        }
 
         static Disclosure of(FeeSchedule schedule) {
             BigDecimal keeps = BigDecimal.ONE

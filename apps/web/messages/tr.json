@@ -2334,7 +2334,8 @@
         "platform_fee": "Platform ücreti",
         "psp_fee": "İşlem ücreti",
         "tax_payable": "Ödenecek vergi",
-        "refunds": "İadeler"
+        "refunds": "İadeler",
+        "platform_expense": "Platform giderleri"
       },
       "creatorAccount": "Yaratıcı {id}",
       "creatorNamed": "{name}, kurucu hesabı"
@@ -3885,7 +3886,7 @@
       },
       "cost": {
         "heading": "Maliyeti nedir",
-        "successful": "<b>Başarılı bir kampanya</b> topladığı tutarın yüzde 5'ini, ayrıca ödeme sağlayıcısının kendi komisyonunu öder — yaklaşık yüzde 2,5–3 ve destek başına küçük bir sabit tutar.",
+        "successful": "<b>Başarılı bir kampanya</b> her para çekiminin yüzde 15’ini öder — bankanın ve ödeme sağlayıcısının ücretleri buna dahildir — ve kampanya sahibi yüzde 85’ini alır.",
         "unsuccessful": "<b>Başarısız bir kampanya</b> hiçbir şey ödemez. Ne listeleme ücreti, ne platform komisyonu, ne de işleme ücreti.",
         "note": "Oranlar kodda değil yapılandırmada tutulur; bu nedenle bir kategori ya da bireysel bir anlaşma farklı bir oran taşıyabilir. Yukarıdaki oran standart tarifedir."
       },

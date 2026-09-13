@@ -56,7 +56,8 @@ class FeeArithmeticTests {
      * <p>{@code apply} touches none of them — it takes the schedule it is handed — so nulls
      * are honest here in a way they would not be if this were testing {@code priceOf}.
      */
-    private static final FeeSchedules FEES = new FeeSchedules(null, null, null, null, null);
+    private static final FeeSchedules FEES =
+            new FeeSchedules(null, null, null, null, null, new az.ideanest.fee.FeeProperties(null, null, null));
 
     @Test
     @DisplayName("the parts add up to the whole")
@@ -124,7 +125,19 @@ class FeeArithmeticTests {
     }
 
     @Test
-    @DisplayName("no configured schedule prices at zero fees rather than refusing")
+    @DisplayName("IDN-EXT-01: with no schedule a withdrawal pays 15%, the bank inside it, and the creator receives 85%")
+    void theDefaultIsFifteenPercent() {
+        FeeBreakdown breakdown = FEES.applyDefault(Money.of(new BigDecimal("1000.00"), "AZN"));
+
+        assertThat(breakdown.platformFee()).isEqualTo(Money.of(new BigDecimal("150.00"), "AZN"));
+        assertThat(breakdown.processingFee()).isEqualTo(Money.zero("AZN"));
+        assertThat(breakdown.net()).isEqualTo(Money.of(new BigDecimal("850.00"), "AZN"));
+        assertThat(breakdown.balances()).isTrue();
+        assertThat(breakdown.scheduleId()).isNull();
+    }
+
+    @Test
+    @DisplayName("a free breakdown still balances, for a caller that has decided to charge nothing")
     void unconfiguredIsFree() {
         // The decision FeeSchedules argues at length: the payout run is a scheduled job over
         // every campaign that closed, so an exception there means nobody is paid rather than

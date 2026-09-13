@@ -63,15 +63,17 @@ class FeeDisclosureApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("with no schedule the platform says it has nothing to disclose, not that it is free")
-    void nothingConfiguredIsNotZero() {
+    @DisplayName("IDN-EXT-01: with no schedule the platform discloses the default — 15%, the bank inside it")
+    void nothingConfiguredDisclosesTheDefault() {
         Map<String, Object> disclosure = disclosure();
 
-        assertThat(disclosure.get("configured")).isEqualTo(false);
-        // Nulls and not zeros. A client branches on `configured`, and a null is what stops that
-        // branch being optional.
-        assertThat(disclosure.get("platformRate")).isNull();
-        assertThat(disclosure.get("creatorReceivesRate")).isNull();
+        // The default terms are what a withdrawal is priced at, so they are what is disclosed. A page
+        // may not say "nothing to disclose" while the payout run charges 15%.
+        assertThat(disclosure.get("configured")).isEqualTo(true);
+        assertThat(disclosure.get("platformRate")).isEqualTo("0.15");
+        assertThat(disclosure.get("processingRate")).isEqualTo("0");
+        assertThat(disclosure.get("creatorReceivesRate")).isEqualTo("0.85000");
+        assertThat(disclosure.get("effectiveFrom")).isNull();
     }
 
     @Test
