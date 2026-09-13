@@ -29,7 +29,9 @@ export type { Money } from '../money';
  * ---------------------------------------------------------------------- */
 
 /**
- * Exactly the sixteen states of docs/architecture.md §6.1, no more.
+ * Exactly the nineteen states of docs/architecture.md §6.1, no more. IDN-EXT-01 added
+ * `CLOSING_WINDOW`, `EXTENDED` and `WITHDRAWN` (#32); `COLLECTING` and `LATE_PLEDGE` stay
+ * until stage 4 removes them (#45).
  *
  * The editor only ever renders these; the transitions themselves are the
  * server's business and there is deliberately no client-side copy of the
@@ -44,10 +46,13 @@ export type ProjectState =
   | 'APPROVED'
   | 'SCHEDULED'
   | 'LIVE'
+  | 'CLOSING_WINDOW'
+  | 'EXTENDED'
   | 'SUSPENDED'
   | 'CANCELED'
   | 'SUCCESSFUL'
   | 'UNSUCCESSFUL'
+  | 'WITHDRAWN'
   | 'COLLECTING'
   | 'LATE_PLEDGE'
   | 'FULFILLING'

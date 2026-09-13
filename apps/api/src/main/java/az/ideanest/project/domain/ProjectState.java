@@ -56,6 +56,20 @@ public enum ProjectState {
     LIVE,
 
     /**
+     * IDN-EXT-01 (#32): the seven days after the first deadline. Still taking pledges and
+     * badged "Closing soon"; the creator may extend at 50% or more and withdraw at 80% or
+     * more. On D+8 it is decided. Nothing moves a campaign here until #33.
+     */
+    CLOSING_WINDOW,
+
+    /**
+     * IDN-EXT-01 (#32): the creator extended the deadline once, to no later than 60 days
+     * after the first. Still taking pledges, with no ceiling on funding. Nothing moves a
+     * campaign here until #34.
+     */
+    EXTENDED,
+
+    /**
      * Terminal. Stopped by trust and safety, with pledges left uncollected.
      * Terminal by design: a suspension that could be lifted back into
      * {@link #LIVE} would restart a funding window whose deadline has moved on.
@@ -70,6 +84,13 @@ public enum ProjectState {
 
     /** Terminal. The deadline passed below goal. Nothing is charged and no fee is due. */
     UNSUCCESSFUL,
+
+    /**
+     * IDN-EXT-01 (#32): the creator withdrew the money, which closes the campaign — no pledge
+     * is accepted after it. Decided and successful, and owes every reward. Nothing moves a
+     * campaign here until #41.
+     */
+    WITHDRAWN,
 
     /** Charging the confirmed pledges, including the seven-day retry window. */
     COLLECTING,

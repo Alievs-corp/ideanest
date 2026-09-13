@@ -111,6 +111,11 @@ public final class ProjectEditLocks {
         // deadline. Moving any of the three afterwards changes what a backer agreed
         // to without asking them.
         locked.put(ProjectState.LIVE, afterLaunch());
+        // IDN-EXT-01 (#32). The deadline does move once, but only through the extension's own
+        // edge (#34) — never through the editor — so the lock is the same as LIVE's.
+        locked.put(ProjectState.CLOSING_WINDOW, afterLaunch());
+        locked.put(ProjectState.EXTENDED, afterLaunch());
+        locked.put(ProjectState.WITHDRAWN, afterLaunch());
         locked.put(ProjectState.SUSPENDED, afterLaunch());
         locked.put(ProjectState.CANCELED, afterLaunch());
         locked.put(ProjectState.SUCCESSFUL, afterLaunch());

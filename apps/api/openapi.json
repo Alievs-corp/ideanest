@@ -1601,7 +1601,7 @@
           "schema" : {
             "type" : "string",
             "default" : "SUBMITTED",
-            "enum" : [ "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "LIVE", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED" ]
+            "enum" : [ "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "LIVE", "CLOSING_WINDOW", "EXTENDED", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "WITHDRAWN", "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED" ]
           }
         }, {
           "in" : "query",
@@ -2142,7 +2142,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "enum" : [ "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "LIVE", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED" ]
+            "enum" : [ "DRAFT", "PRELAUNCH", "SUBMITTED", "CHANGES_REQUESTED", "REJECTED", "APPROVED", "SCHEDULED", "LIVE", "CLOSING_WINDOW", "EXTENDED", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL", "WITHDRAWN", "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED" ]
           }
         }, {
           "in" : "query",

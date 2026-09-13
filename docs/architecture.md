@@ -2277,11 +2277,17 @@ stateDiagram-v2
     COMPLETED --> [*]
 ```
 
-> **This diagram is IDN-EXT-01's (#32), and it is the target rather than the code.**
-> `CLOSING_WINDOW`, `EXTENDED` and `WITHDRAWN` are new; `COLLECTING` and `LATE_PLEDGE` are
-> gone from the diagram. The migration that adds the new states only *adds* — V74 adds the
-> states and `extended_until`, `extension_used_at` — and the old two stay in the database
-> until stage 4 (#45), because expand-then-contract (CLAUDE.md) forbids both in one release.
+> **This diagram is IDN-EXT-01's (#32).** `CLOSING_WINDOW`, `EXTENDED` and `WITHDRAWN` are
+> new; `COLLECTING` and `LATE_PLEDGE` are gone from the diagram. **The states and their edges
+> exist in the code since #32, and nothing moves a campaign into them yet**: the finaliser
+> still takes the direct `LIVE → SUCCESSFUL` and `LIVE → UNSUCCESSFUL` edges at `D` until #33,
+> the extension is #34 and the withdrawal #41. `ProjectStateMachine` therefore allows both the
+> old edges and the new ones, and each old edge leaves with the PR that stops using it.
+> V74 only *adds* — the three states, `extended_until` and `extension_used_at` — and the old
+> two stay in the database until stage 4 (#45), because expand-then-contract (CLAUDE.md)
+> forbids both in one release. `deadline` stays the *first* deadline: the seven-day window
+> and the D+60 limit are both measured from it, so an extension is its own column rather
+> than an overwrite.
 >
 > Pledges are accepted in `LIVE`, `CLOSING_WINDOW` and `EXTENDED`, and in no other state.
 > `SUCCESSFUL` means the outcome is decided and the 30 days to withdraw are running;

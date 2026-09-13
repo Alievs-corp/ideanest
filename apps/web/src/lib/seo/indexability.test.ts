@@ -28,10 +28,13 @@ const ALL_STATES = [
   'APPROVED',
   'SCHEDULED',
   'LIVE',
+  'CLOSING_WINDOW',
+  'EXTENDED',
   'SUSPENDED',
   'CANCELED',
   'SUCCESSFUL',
   'UNSUCCESSFUL',
+  'WITHDRAWN',
   'COLLECTING',
   'LATE_PLEDGE',
   'FULFILLING',
@@ -39,7 +42,7 @@ const ALL_STATES = [
 ] as const;
 
 describe('the state table', () => {
-  it('answers for exactly the sixteen states of §6.1', () => {
+  it('answers for exactly the nineteen states of §6.1', () => {
     expect(Object.keys(PROJECT_STATE_INDEXABILITY).sort()).toEqual([...ALL_STATES].sort());
   });
 

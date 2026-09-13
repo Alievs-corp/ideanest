@@ -148,7 +148,9 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
                               az.ideanest.project.domain.ProjectState.SCHEDULED,
                               az.ideanest.project.domain.ProjectState.LIVE,
                               az.ideanest.project.domain.ProjectState.COLLECTING,
-                              az.ideanest.project.domain.ProjectState.LATE_PLEDGE)
+                              az.ideanest.project.domain.ProjectState.LATE_PLEDGE,
+                              az.ideanest.project.domain.ProjectState.CLOSING_WINDOW,
+                              az.ideanest.project.domain.ProjectState.EXTENDED)
             """)
     long countInPlatformHands(@Param("creatorId") UUID creatorId, @Param("excluding") UUID excluding);
 

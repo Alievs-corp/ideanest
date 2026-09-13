@@ -8094,7 +8094,7 @@ export interface operations {
     submissionQueueSubmissions: {
         parameters: {
             query?: {
-                state?: "DRAFT" | "PRELAUNCH" | "SUBMITTED" | "CHANGES_REQUESTED" | "REJECTED" | "APPROVED" | "SCHEDULED" | "LIVE" | "SUSPENDED" | "CANCELED" | "SUCCESSFUL" | "UNSUCCESSFUL" | "COLLECTING" | "LATE_PLEDGE" | "FULFILLING" | "COMPLETED";
+                state?: "DRAFT" | "PRELAUNCH" | "SUBMITTED" | "CHANGES_REQUESTED" | "REJECTED" | "APPROVED" | "SCHEDULED" | "LIVE" | "CLOSING_WINDOW" | "EXTENDED" | "SUSPENDED" | "CANCELED" | "SUCCESSFUL" | "UNSUCCESSFUL" | "WITHDRAWN" | "COLLECTING" | "LATE_PLEDGE" | "FULFILLING" | "COMPLETED";
                 after?: string;
                 limit?: number;
             };
@@ -8495,7 +8495,7 @@ export interface operations {
     campaignDirectoryCampaigns: {
         parameters: {
             query?: {
-                state?: "DRAFT" | "PRELAUNCH" | "SUBMITTED" | "CHANGES_REQUESTED" | "REJECTED" | "APPROVED" | "SCHEDULED" | "LIVE" | "SUSPENDED" | "CANCELED" | "SUCCESSFUL" | "UNSUCCESSFUL" | "COLLECTING" | "LATE_PLEDGE" | "FULFILLING" | "COMPLETED";
+                state?: "DRAFT" | "PRELAUNCH" | "SUBMITTED" | "CHANGES_REQUESTED" | "REJECTED" | "APPROVED" | "SCHEDULED" | "LIVE" | "CLOSING_WINDOW" | "EXTENDED" | "SUSPENDED" | "CANCELED" | "SUCCESSFUL" | "UNSUCCESSFUL" | "WITHDRAWN" | "COLLECTING" | "LATE_PLEDGE" | "FULFILLING" | "COMPLETED";
                 creatorId?: string;
                 query?: string;
                 after?: string;

@@ -293,7 +293,9 @@ public final class Campaigns {
         /** Everything from LIVE onwards; §6.1 and projects_public_states_are_fully_specified. */
         private static final List<String> LAUNCHED_STATES = List.of(
                 "LIVE", "SUSPENDED", "CANCELED", "SUCCESSFUL", "UNSUCCESSFUL",
-                "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED");
+                "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED",
+                // IDN-EXT-01 (#32): past LIVE, so V74 holds them to the same four columns.
+                "CLOSING_WINDOW", "EXTENDED", "WITHDRAWN");
 
         private final JdbcTemplate jdbc;
         private final UUID creatorId;

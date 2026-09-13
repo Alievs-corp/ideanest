@@ -69,6 +69,9 @@ export const PROJECT_STATE_INDEXABILITY: Readonly<Record<ProjectState, Indexabil
   /* Public, moderated, and stable. The canonical project page of §4.4 exists
    * for each, and it is the page a backer is looking for. */
   LIVE: 'INDEXABLE',
+  CLOSING_WINDOW: 'INDEXABLE',
+  EXTENDED: 'INDEXABLE',
+  WITHDRAWN: 'INDEXABLE',
   LATE_PLEDGE: 'INDEXABLE',
   SUCCESSFUL: 'INDEXABLE',
   COLLECTING: 'INDEXABLE',

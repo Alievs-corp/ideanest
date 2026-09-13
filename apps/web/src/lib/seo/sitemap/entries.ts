@@ -143,9 +143,12 @@ export function lastModifiedOf(project: SitemapProject, now: Date): Date | undef
 function changeFrequencyFor(state: string): ChangeFrequency {
   switch (state) {
     case 'LIVE':
+    case 'CLOSING_WINDOW':
+    case 'EXTENDED':
     case 'LATE_PLEDGE':
       return 'daily';
     case 'SUCCESSFUL':
+    case 'WITHDRAWN':
     case 'COLLECTING':
     case 'FULFILLING':
       return 'monthly';

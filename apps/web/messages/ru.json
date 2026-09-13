@@ -2048,7 +2048,10 @@
           "COMPLETED": "Завершена",
           "REJECTED": "Отклонена",
           "SUSPENDED": "Приостановлена",
-          "CANCELED": "Отменена"
+          "CANCELED": "Отменена",
+          "CLOSING_WINDOW": "Скоро закроется",
+          "EXTENDED": "Продлена",
+          "WITHDRAWN": "Средства выведены"
         }
       },
       "campaignPreview": {
@@ -3182,7 +3185,10 @@
       "COLLECTING": "Списание",
       "LATE_PLEDGE": "Поздние взносы",
       "FULFILLING": "Отправка",
-      "COMPLETED": "Завершена"
+      "COMPLETED": "Завершена",
+      "CLOSING_WINDOW": "Скоро закроется",
+      "EXTENDED": "Продлена",
+      "WITHDRAWN": "Средства выведены"
     },
     "basics": {
       "loadingLabel": "Загрузка кампании",

@@ -42,7 +42,8 @@ class DiscoveryStatusTests {
         // And nothing in both, or the two statements would not be a partition and
         // one of them would be decorative.
         assertThat(DiscoveryStatus.PUBLIC_STATES).doesNotContainAnyElementsOf(DiscoveryStatus.HIDDEN_STATES);
-        assertThat(ALL_STATES).hasSize(16);
+        // Nineteen since IDN-EXT-01 (#32) added CLOSING_WINDOW, EXTENDED and WITHDRAWN.
+        assertThat(ALL_STATES).hasSize(19);
     }
 
     @Test
@@ -80,7 +81,10 @@ class DiscoveryStatusTests {
         for (DiscoveryStatus status : DiscoveryStatus.values()) {
             assertThat(DiscoveryStatus.statesFor(Set.of(status))).isSubsetOf(DiscoveryStatus.PUBLIC_STATES);
         }
-        assertThat(DiscoveryStatus.statesFor(Set.of(DiscoveryStatus.LIVE))).containsExactly("LIVE");
+        // IDN-EXT-01 (#32): a campaign in its seven-day window or its extension is still taking
+        // pledges, and "live" is the filter a backer looking for something to back uses.
+        assertThat(DiscoveryStatus.statesFor(Set.of(DiscoveryStatus.LIVE)))
+                .containsExactlyInAnyOrder("LIVE", "CLOSING_WINDOW", "EXTENDED");
     }
 
     @Test
@@ -89,7 +93,8 @@ class DiscoveryStatusTests {
         // A backer filtering for successful campaigns wants what this platform has
         // funded, not the newest tenth of it.
         assertThat(DiscoveryStatus.SUCCESSFUL.states())
-                .containsExactlyInAnyOrder("SUCCESSFUL", "COLLECTING", "LATE_PLEDGE", "FULFILLING", "COMPLETED");
+                .containsExactlyInAnyOrder(
+                        "SUCCESSFUL", "COLLECTING", "LATE_PLEDGE", "WITHDRAWN", "FULFILLING", "COMPLETED");
     }
 
     @Test

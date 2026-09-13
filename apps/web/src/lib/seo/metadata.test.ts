@@ -372,8 +372,11 @@ describe('isPubliclyVisible', () => {
     'PRELAUNCH',
     'SCHEDULED',
     'LIVE',
+    'CLOSING_WINDOW',
+    'EXTENDED',
     'SUCCESSFUL',
     'UNSUCCESSFUL',
+    'WITHDRAWN',
     'COLLECTING',
     'LATE_PLEDGE',
     'FULFILLING',
@@ -392,7 +395,7 @@ describe('isPubliclyVisible', () => {
 
   it('covers every state of the machine and nothing else', () => {
     expect([...PUBLIC, ...PRIVATE].sort()).toEqual([...PROJECT_STATES].sort());
-    expect(PROJECT_STATES).toHaveLength(16);
+    expect(PROJECT_STATES).toHaveLength(19);
   });
 
   it.each(PUBLIC)('shows %s', (state) => {
