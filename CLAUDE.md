@@ -96,9 +96,23 @@ worse than one that names it.
 - Delete the branch after merge
 - If CI fails, fix the cause. Do not disable the check or mark the test skipped
 
-**Branch protection on `main`** currently requires: both CI checks passing, the
-branch up to date with `main`, conversations resolved, and no force pushes or
-deletions. It requires **zero** approving reviews.
+**Branch protection on `main`** requires: `CI complete` passing, the branch up
+to date with `main`, conversations resolved, and no force pushes or deletions.
+It requires **zero** approving reviews.
+
+`CI complete` is one check and it is deliberately the only one. `ci.yml` skips
+the jobs a change does not concern — a pull request touching only `apps/web`
+does not build the Java service — and **a required status check that never runs
+is reported as pending, not as passed**, so requiring `Frontend (typecheck,
+test, storybook)` and `Backend (Java)` by name would leave those pull requests
+unmergeable for ever. `CI complete` always runs, waits for the rest, and fails
+if any job that had work to do did not succeed. Issue #67 has the reasoning.
+
+> Anyone adding a job to `ci.yml` that should be able to block a merge adds it
+> to `ci-complete`'s `needs` **and** to the list its script checks. Adding it to
+> `needs` alone makes `CI complete` wait for a job it will then pass regardless
+> of. Adding a required context in the branch protection settings instead is the
+> mistake this whole arrangement exists to prevent.
 
 That last setting is deliberate but temporary. GitHub does not permit anyone to
 approve their own pull request, so on a single-maintainer repository a review

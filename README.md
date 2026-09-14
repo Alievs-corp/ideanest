@@ -113,7 +113,11 @@ ideanest/
 │   └── seed/                 Local demo data. Development only
 ├── CLAUDE.md                 Contribution and workflow rules
 └── .github/workflows/
-    ├── ci.yml                Typecheck, tests, Storybook build and preview
+    ├── ci.yml                Typecheck, tests, Storybook build and preview, and
+    │                         the First Load JS budgets. Each job runs only when
+    │                         the change touches it; `CI complete` reports for
+    │                         all of them and is the required check
+    ├── mobile-release.yml    Mobile typecheck and tests, and the EAS build
     ├── release.yml           Build once, deploy that build: staging on merge,
     │                         production on a tag, rollback by digest
     ├── deploy.yml            One environment's rollout. Called by release.yml
