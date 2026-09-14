@@ -2,10 +2,15 @@
 
 Two things live here, and only one of them can fail a pull request.
 
-| Layer | What it measures | Blocking |
-|---|---|---|
-| **First Load JS budgets** | The JavaScript each route makes a browser download before it is interactive | **Yes** |
-| **Lab Core Web Vitals** | LCP, CLS and TBT from a headless Lighthouse run against the built app | No — advisory |
+| Layer | What it measures | Blocking | Runs |
+|---|---|---|---|
+| **First Load JS budgets** | The JavaScript each route makes a browser download before it is interactive | **Yes** | Every pull request that touches `apps/web` or `packages` |
+| **Lab Core Web Vitals** | LCP, CLS and TBT from a headless Lighthouse run against the built app | No — advisory | Weekly, and on request |
+
+The two halves live in two workflows because they answer to two different
+costs. `ci.yml`'s `Performance budgets` job builds the application and checks
+the budgets; `lighthouse.yml` runs the measurement on a Monday schedule and on
+`workflow_dispatch`. Why they were separated is the last section of this file.
 
 That split is the whole design. A bundle size is a property of the build: the
 same commit produces the same bytes on every machine, so a failure is always
@@ -138,6 +143,19 @@ of pages nobody can find.
 `summarise-lighthouse.mjs` reduces a directory of Lighthouse JSON reports to
 one table in the job summary and always exits zero.
 
+**It runs in `.github/workflows/lighthouse.yml`, not on your pull request.**
+Weekly at 05:00 UTC on a Monday, and whenever somebody starts it from the
+Actions tab. If you are changing something that moves load performance and want
+the numbers against your work, start it by hand before and after — or run it
+locally, which is the same three commands:
+
+```bash
+pnpm --filter @ideanest/web build
+pnpm --filter @ideanest/web start &
+pnpm dlx lighthouse@13.4.1 http://localhost:3000/discover   --only-categories=performance --output=json --output-path=/tmp/lh.json   --chrome-flags='--headless=new'
+node apps/web/performance/summarise-lighthouse.mjs /tmp
+```
+
 Three runs per route, median per metric. Thresholds are Google's published
 good / needs-improvement boundaries rather than anything chosen here, so
 "amber" in the table means what it means in Search Console:
@@ -162,16 +180,33 @@ describe considerably fewer of the people who use the site.
 
 ## Cost
 
-About four minutes of runner time per pull request, in a job that runs
-alongside the existing ones rather than inside them:
-
-| Step | Roughly |
-|---|---|
-| Install | 40 s |
-| `next build` | 60 s — the web application was not built in CI before this job existed |
-| Budget check | under a second |
-| Six Lighthouse runs, two routes | 2 min |
-
-The blocking half is the first three rows. If the Lighthouse half ever stops
+**The Lighthouse half was taken off pull requests in #67, on the terms this
+section used to set out.** What it said was: "if the Lighthouse half ever stops
 being worth two minutes, delete those steps: nothing depends on them and the
-gate keeps working.
+gate keeps working". It stopped being worth two minutes when the repository
+spent 1,642 of a 2,000 minute monthly allowance in two days and Actions were
+switched off.
+
+The estimate above was close. Measured across ten consecutive runs of the job
+on the Actions API rather than guessed:
+
+| Step | Estimated | Measured |
+|---|---|---|
+| Install (with the pnpm cache warm) | 40 s | 13 s |
+| `next build` | 60 s | 44 s |
+| Budget check | under a second | under a second |
+| Nine Lighthouse runs, three routes | 2 min | 105 s |
+| Job total, including runner setup | ~4 min | 199 s |
+
+So the advisory half was **105 of 199 seconds, on every pull request** — and,
+before the same change, on every pull request whether or not it contained any
+JavaScript at all. The blocking half is roughly 77 seconds and stays where it
+was, because a bundle size is a property of the build and a pull request is
+where a property of the build should be checked.
+
+Nothing was deleted. The measurement moved to `lighthouse.yml` on a weekly
+schedule, which costs about 16 billable minutes a month against the 352 the
+Lighthouse steps cost over the two days measured in #67. A trend is read over
+weeks; sampling it nine times a pull request never made it a better trend, and
+the noise measured further up this file is not something more samples of a
+differently-loaded runner average away.

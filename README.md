@@ -118,6 +118,8 @@ ideanest/
     │                         the change touches it; `CI complete` reports for
     │                         all of them and is the required check
     ├── mobile-release.yml    Mobile typecheck and tests, and the EAS build
+    ├── lighthouse.yml        Lab Core Web Vitals. Weekly and on request —
+    │                         advisory, and never able to fail a pull request
     ├── release.yml           Build once, deploy that build: staging on merge,
     │                         production on a tag, rollback by digest
     ├── deploy.yml            One environment's rollout. Called by release.yml

@@ -359,78 +359,23 @@ jobs:
       - name: Build the web application
         run: pnpm --filter @ideanest/web build
 
-      # The gate. Everything below this step reports; only this step fails.
+      # THE GATE, AND NOW THE WHOLE JOB. Everything that used to sit below this
+      # step was the Lighthouse half: nine headless runs whose summariser always
+      # exits zero, next to a budget check that is the only thing here able to
+      # fail. `apps/web/performance/README.md` set out the terms under which
+      # that half should go -- "if the Lighthouse half ever stops being worth two
+      # minutes, delete those steps: nothing depends on them and the gate keeps
+      # working" -- and #67 is that moment: measured over 96 runs it was 105 of
+      # the job's 199 seconds, on every pull request, for a number the same file
+      # documents as moving further between two runs of unchanged code than most
+      # regressions worth catching would move it.
+      #
+      # It has not been deleted. It runs weekly and on request in
+      # `lighthouse.yml`, which is the cadence an advisory trend actually wants;
+      # a table nobody gates on is not worth measuring three times a day and is
+      # worth measuring more than never.
       - name: Check First Load JS against budgets
         run: node apps/web/performance/check-first-load-js.mjs
-
-      # A production build that does not serve a page is a defect and not
-      # runner noise, so this one is allowed to fail the job even though the
-      # measurement it exists for is not.
-      - name: Start the production server
-        env:
-          LOG: ${{ runner.temp }}/next-start.log
-        run: |
-          pnpm --filter @ideanest/web start > "$LOG" 2>&1 &
-          for _ in $(seq 1 30); do
-            if curl -sfo /dev/null http://localhost:3000/; then
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "::error::The production server did not answer within 30 seconds."
-          cat "$LOG"
-          exit 1
-
-      # The home page is the platform's front door and the one route whose motion
-      # budget is Full (motion-system.md §5); discovery is the surface with the most
-      # on screen, and the editor the one with the most form. The root route was
-      # absent from this list with a comment saying it did not exist -- #264 built
-      # it, and the page a first-time visitor meets is the one worth watching most.
-      #
-      # Lighthouse is fetched with `pnpm dlx` at a pinned version rather than
-      # installed, because a tool that runs twice a day in CI does not belong in
-      # the dependency graph of an application nobody installs it with.
-      #
-      # Three runs each. A single Lighthouse run on a shared runner is a sample,
-      # not a measurement, and one that fails is one missing sample rather than
-      # a broken pull request.
-      - name: Measure lab Core Web Vitals
-        env:
-          REPORTS: ${{ runner.temp }}/lighthouse
-        run: |
-          mkdir -p "$REPORTS"
-          # An empty entry is the home page. Quoted, so the shell keeps it as an
-          # argument rather than dropping it from the list.
-          for route in "" discover projects/new; do
-            # The report file name: the home page is `home`, and a nested route
-            # flattens its slashes, because a report written to a directory that
-            # does not exist is a run that silently produced nothing.
-            name="${route:-home}"
-            name="${name//\//-}"
-            for run in 1 2 3; do
-              pnpm dlx lighthouse@13.4.1 "http://localhost:3000/${route}" \
-                --only-categories=performance \
-                --output=json \
-                --output-path="${REPORTS}/${name}-${run}.json" \
-                --chrome-flags='--headless=new --no-sandbox' \
-                --quiet \
-                || echo "::warning title=Lighthouse::${name} run ${run} did not complete."
-            done
-          done
-
-      - name: Summarise lab Core Web Vitals
-        run: node apps/web/performance/summarise-lighthouse.mjs "${{ runner.temp }}/lighthouse"
-
-      # The table in the job summary is the median. The reports are what you
-      # read when the median is surprising and you want to know which run moved.
-      - name: Upload the Lighthouse reports
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: lighthouse-reports
-          path: ${{ runner.temp }}/lighthouse
-          if-no-files-found: ignore
-          retention-days: 7
 
   backend:
     name: Backend (Java)
