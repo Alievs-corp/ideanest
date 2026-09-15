@@ -1,0 +1,157 @@
+name: Lab Core Web Vitals
+
+# The advisory half of `apps/web/performance`, on its own schedule — issue #67.
+#
+# WHY IT IS NOT ON PULL REQUESTS ANY MORE.
+#
+# It used to be the back half of `ci.yml`'s `Performance budgets` job, and over
+# the 96 runs measured in #67 it was 105 of that job's 199 seconds — on every
+# pull request, including the ones that changed no JavaScript at all. What those
+# 105 seconds bought was a table. `summarise-lighthouse.mjs` always exits zero,
+# deliberately and for a reason its own header states: lab Core Web Vitals on a
+# shared runner move between two runs of unchanged code by more than most
+# regressions worth catching would move them.
+#
+# `apps/web/performance/README.md` measured that spread rather than assuming it,
+# and wrote down the condition for this file existing: "if the Lighthouse half
+# ever stops being worth two minutes, delete those steps: nothing depends on
+# them and the gate keeps working". Deleting them outright was the other option
+# and it was the worse one — the numbers are the only ones the repository has
+# about how the application actually loads, and a signal nobody measures is a
+# signal that decays quietly into an opinion.
+#
+# WHY WEEKLY. The value of an advisory number is the trend, and a trend is read
+# over weeks. Sampling it nine times a pull request did not produce a better
+# trend, only a more expensive one, and the noise the README documents is not
+# averaged away by taking more samples of a different runner under a different
+# load. Weekly is ~16 billable minutes a month against the 352 this job's
+# Lighthouse half was costing.
+#
+# WHY `workflow_dispatch` AS WELL. Because a pull request that is *about* load
+# performance still wants the numbers, and the answer to "you cannot have them
+# on your branch" has to be something other than reverting this file. Run it
+# from the Actions tab before and after; it reports on whatever `main` holds,
+# which is the honest comparison a two-sample-on-different-runners diff was not.
+#
+# WHAT THIS DOES NOT DO: fail. Nothing here can fail the repository, by design.
+# The blocking check — First Load JS against `budgets.json` — stayed on the pull
+# request in `ci.yml`, because a bundle size is a property of the build and the
+# same commit produces the same bytes on every machine. Gate on that; report
+# this.
+
+on:
+  schedule:
+    # 05:00 UTC on Mondays. Early enough that the week's first reader has the
+    # numbers, and on a day somebody is around to act on a surprise.
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  # No ref in the group. A scheduled run and a hand-started one are measuring
+  # the same branch, and two of them on two runners at once measure each other's
+  # contention as much as the application.
+  group: lighthouse
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  measure:
+    name: Lab Core Web Vitals
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the web application
+        run: pnpm --filter @ideanest/web build
+
+      # A production build that does not serve a page is a defect and not
+      # runner noise, so this one is allowed to fail the job even though the
+      # measurement it exists for is not.
+      - name: Start the production server
+        env:
+          LOG: ${{ runner.temp }}/next-start.log
+        run: |
+          pnpm --filter @ideanest/web start > "$LOG" 2>&1 &
+          for _ in $(seq 1 30); do
+            if curl -sfo /dev/null http://localhost:3000/; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::The production server did not answer within 30 seconds."
+          cat "$LOG"
+          exit 1
+
+      # The home page is the platform's front door and the one route whose motion
+      # budget is Full (motion-system.md §5); discovery is the surface with the most
+      # on screen, and the editor the one with the most form. The root route was
+      # absent from this list with a comment saying it did not exist -- #264 built
+      # it, and the page a first-time visitor meets is the one worth watching most.
+      #
+      # Lighthouse is fetched with `pnpm dlx` at a pinned version rather than
+      # installed, because a tool that runs once a week in CI does not belong in
+      # the dependency graph of an application nobody installs it with.
+      #
+      # Three runs each. A single Lighthouse run on a shared runner is a sample,
+      # not a measurement, and one that fails is one missing sample rather than
+      # a broken job.
+      - name: Measure lab Core Web Vitals
+        env:
+          REPORTS: ${{ runner.temp }}/lighthouse
+        run: |
+          mkdir -p "$REPORTS"
+          # An empty entry is the home page. Quoted, so the shell keeps it as an
+          # argument rather than dropping it from the list.
+          for route in "" discover projects/new; do
+            # The report file name: the home page is `home`, and a nested route
+            # flattens its slashes, because a report written to a directory that
+            # does not exist is a run that silently produced nothing.
+            name="${route:-home}"
+            name="${name//\//-}"
+            for run in 1 2 3; do
+              pnpm dlx lighthouse@13.4.1 "http://localhost:3000/${route}" \
+                --only-categories=performance \
+                --output=json \
+                --output-path="${REPORTS}/${name}-${run}.json" \
+                --chrome-flags='--headless=new --no-sandbox' \
+                --quiet \
+                || echo "::warning title=Lighthouse::${name} run ${run} did not complete."
+            done
+          done
+
+      - name: Summarise lab Core Web Vitals
+        run: node apps/web/performance/summarise-lighthouse.mjs "${{ runner.temp }}/lighthouse"
+
+      # The table in the job summary is the median. The reports are what you
+      # read when the median is surprising and you want to know which run moved.
+      #
+      # Retained for 90 days rather than the 7 this used per pull request. A
+      # weekly series is only a series if last month's point is still there, and
+      # a run that happens 4 times a month keeps far fewer artifacts than one
+      # that happened 96 times in two days.
+      - name: Upload the Lighthouse reports
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lighthouse-reports
+          path: ${{ runner.temp }}/lighthouse
+          if-no-files-found: ignore
+          retention-days: 90

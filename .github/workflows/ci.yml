@@ -1,5 +1,33 @@
 name: CI
 
+# WHY THE JOBS ARE GATED AND THIS WORKFLOW IS NOT — issue #67.
+#
+# This repository is a monorepo and CI was not. Every job here ran on every
+# pull request, so a CSS change under `apps/web` ran the full Java suite and a
+# typo in `docs/` ran the entire pipeline. Over the two days after the
+# repository was created that came to 1,642 billable minutes out of a 2,000
+# minute monthly allowance, and Actions were switched off mid-week.
+#
+# The obvious fix is the one `mobile-release.yml` uses: a `paths:` filter on
+# `on:`. IT WOULD BREAK THE REPOSITORY. Branch protection on `main` names status
+# checks -- it named `Frontend (typecheck, test, storybook)` and `Backend (Java)`
+# when this was written -- and A REQUIRED CHECK THAT NEVER RUNS IS REPORTED AS
+# *PENDING*, NOT AS *PASSED*. A workflow-level `paths:` filter would therefore
+# leave every pull request that did not happen to touch those paths waiting for
+# ever on a check that was never going to arrive. There is no timeout on that
+# wait and no message saying what happened. Whoever reaches for `paths:` here
+# next: this is what you are about to do.
+#
+# So the shape here is: always run the workflow, conditionally do the work,
+# always report. A cheap `changes` job classifies the diff, each heavy job
+# carries an `if:` on the result, and `CI complete` runs whatever happened and
+# is the check branch protection is meant to require. A skipped job is a job
+# `CI complete` reports as skipped and passes on; a failed one fails it.
+#
+# The same reasoning is already written down one job below, where `backend`
+# detects `apps/api` in a step rather than a job-level condition "to keep the
+# check name stable as a required check". This generalises that.
+
 on:
   pull_request:
     branches: [main]
@@ -18,9 +46,106 @@ env:
   NODE_VERSION: '22'
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # What changed. Everything below reads this.
+  # ---------------------------------------------------------------------------
+  changes:
+    name: Changed paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # `dorny/paths-filter` reads a pull request's file list from the REST API
+      # rather than from a working tree, and that read needs saying out loud:
+      # the workflow-level grant above is `contents: read` alone.
+      pull-requests: read
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      api: ${{ steps.filter.outputs.api }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      # A pull request needs no working tree — the file list comes from the API.
+      # A push does: it is diffed with git against the commit `main` pointed at
+      # before the push, and git cannot diff against a commit it never fetched.
+      # So the checkout happens for pushes only, and the common case stays a
+      # job that finishes in seconds.
+      - uses: actions/checkout@v7
+        if: github.event_name != 'pull_request'
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          # WHAT BELONGS IN WHICH FILTER, AND WHY IT IS NOT ONE DIRECTORY EACH.
+          #
+          # `packages/**` is consumed by `apps/web` and by `apps/mobile`, and a
+          # change to a lockfile can move a transitive dependency under either,
+          # so the JavaScript filters share an anchor rather than pretending the
+          # workspace is separable. `apps/api` is a Gradle build that shares
+          # none of it, which is exactly why it is worth skipping: it is the
+          # 547 minutes that had the least reason to be spent.
+          #
+          # `.github/workflows/ci.yml` is in both. Editing this file has to run
+          # everything it describes, or the edit is unreviewable.
+          filters: |
+            shared: &shared
+              - 'packages/**'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
+            web:
+              - *shared
+              - 'apps/web/**'
+            mobile:
+              - *shared
+              - 'apps/mobile/**'
+            api:
+              - 'apps/api/**'
+              - '.github/workflows/ci.yml'
+            docs:
+              - 'docs/**'
+              - '**/*.md'
+
+      # A grey check with no explanation is a check people stop trusting. This
+      # puts the reason in the run summary, next to the jobs it explains, so
+      # "why did the backend not run" is answerable without reading this file.
+      - name: Say what will run, and what will not
+        env:
+          WEB: ${{ steps.filter.outputs.web }}
+          API: ${{ steps.filter.outputs.api }}
+          MOBILE: ${{ steps.filter.outputs.mobile }}
+          DOCS: ${{ steps.filter.outputs.docs }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## What this run will do'
+            echo
+            echo '| Component | Changed | Jobs |'
+            echo '|---|---|---|'
+            echo "| Web and shared packages | ${WEB} | Frontend, Storybook preview, Performance budgets |"
+            echo "| Backend (\`apps/api\`) | ${API} | Backend (Java) |"
+            echo "| Mobile (\`apps/mobile\`) | ${MOBILE} | covered by \`mobile-release.yml\` |"
+            echo "| Documentation | ${DOCS} | none of its own |"
+            echo
+            echo "A job listed against an unchanged component is skipped, and \`CI complete\`"
+            echo "passes on a skip. See the header comment in \`.github/workflows/ci.yml\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   frontend:
     name: Frontend (typecheck, test, storybook)
     runs-on: ubuntu-latest
+    needs: changes
+    # `pnpm -r` walks the whole workspace, so this job is the typecheck and the
+    # test run for `apps/mobile` as well as for `apps/web` — which is why the
+    # gate is `web` (shared packages included) rather than `apps/web/**`. A
+    # change that touches only `apps/mobile` skips this and is checked by
+    # `mobile-release.yml`'s `Mobile (typecheck, test, config)` instead, which
+    # runs the same two commands against the same package. Nothing stops being
+    # checked; it stops being checked twice.
+    if: needs.changes.outputs.web == 'true'
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -213,6 +338,8 @@ jobs:
   performance:
     name: Performance budgets
     runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -232,82 +359,32 @@ jobs:
       - name: Build the web application
         run: pnpm --filter @ideanest/web build
 
-      # The gate. Everything below this step reports; only this step fails.
+      # THE GATE, AND NOW THE WHOLE JOB. Everything that used to sit below this
+      # step was the Lighthouse half: nine headless runs whose summariser always
+      # exits zero, next to a budget check that is the only thing here able to
+      # fail. `apps/web/performance/README.md` set out the terms under which
+      # that half should go -- "if the Lighthouse half ever stops being worth two
+      # minutes, delete those steps: nothing depends on them and the gate keeps
+      # working" -- and #67 is that moment: measured over 96 runs it was 105 of
+      # the job's 199 seconds, on every pull request, for a number the same file
+      # documents as moving further between two runs of unchanged code than most
+      # regressions worth catching would move it.
+      #
+      # It has not been deleted. It runs weekly and on request in
+      # `lighthouse.yml`, which is the cadence an advisory trend actually wants;
+      # a table nobody gates on is not worth measuring three times a day and is
+      # worth measuring more than never.
       - name: Check First Load JS against budgets
         run: node apps/web/performance/check-first-load-js.mjs
-
-      # A production build that does not serve a page is a defect and not
-      # runner noise, so this one is allowed to fail the job even though the
-      # measurement it exists for is not.
-      - name: Start the production server
-        env:
-          LOG: ${{ runner.temp }}/next-start.log
-        run: |
-          pnpm --filter @ideanest/web start > "$LOG" 2>&1 &
-          for _ in $(seq 1 30); do
-            if curl -sfo /dev/null http://localhost:3000/; then
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "::error::The production server did not answer within 30 seconds."
-          cat "$LOG"
-          exit 1
-
-      # The home page is the platform's front door and the one route whose motion
-      # budget is Full (motion-system.md §5); discovery is the surface with the most
-      # on screen, and the editor the one with the most form. The root route was
-      # absent from this list with a comment saying it did not exist -- #264 built
-      # it, and the page a first-time visitor meets is the one worth watching most.
-      #
-      # Lighthouse is fetched with `pnpm dlx` at a pinned version rather than
-      # installed, because a tool that runs twice a day in CI does not belong in
-      # the dependency graph of an application nobody installs it with.
-      #
-      # Three runs each. A single Lighthouse run on a shared runner is a sample,
-      # not a measurement, and one that fails is one missing sample rather than
-      # a broken pull request.
-      - name: Measure lab Core Web Vitals
-        env:
-          REPORTS: ${{ runner.temp }}/lighthouse
-        run: |
-          mkdir -p "$REPORTS"
-          # An empty entry is the home page. Quoted, so the shell keeps it as an
-          # argument rather than dropping it from the list.
-          for route in "" discover projects/new; do
-            # The report file name: the home page is `home`, and a nested route
-            # flattens its slashes, because a report written to a directory that
-            # does not exist is a run that silently produced nothing.
-            name="${route:-home}"
-            name="${name//\//-}"
-            for run in 1 2 3; do
-              pnpm dlx lighthouse@13.4.1 "http://localhost:3000/${route}" \
-                --only-categories=performance \
-                --output=json \
-                --output-path="${REPORTS}/${name}-${run}.json" \
-                --chrome-flags='--headless=new --no-sandbox' \
-                --quiet \
-                || echo "::warning title=Lighthouse::${name} run ${run} did not complete."
-            done
-          done
-
-      - name: Summarise lab Core Web Vitals
-        run: node apps/web/performance/summarise-lighthouse.mjs "${{ runner.temp }}/lighthouse"
-
-      # The table in the job summary is the median. The reports are what you
-      # read when the median is surprising and you want to know which run moved.
-      - name: Upload the Lighthouse reports
-        uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: lighthouse-reports
-          path: ${{ runner.temp }}/lighthouse
-          if-no-files-found: ignore
-          retention-days: 7
 
   backend:
     name: Backend (Java)
     runs-on: ubuntu-latest
+    needs: changes
+    # The Gradle build shares nothing with the JavaScript workspace, which is
+    # what makes this the cheapest 500 minutes in the file to stop spending:
+    # over the 96 runs measured in #67 it had a reason to run on 44 of them.
+    if: needs.changes.outputs.api == 'true'
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -352,3 +429,69 @@ jobs:
         if: steps.detect.outputs.present == 'true'
         working-directory: apps/api
         run: ./gradlew --no-daemon build
+
+  # ---------------------------------------------------------------------------
+  # The single check branch protection should require.
+  #
+  # WHY THIS EXISTS AT ALL. A required status check that never runs is reported
+  # as pending and blocks the merge for ever, so the moment any job above became
+  # conditional, `Frontend (typecheck, test, storybook)` and `Backend (Java)`
+  # stopped being safe things to require by name. This job is not conditional
+  # and cannot be: `if: always()` runs it after a success, a failure, a skip and
+  # a cancellation alike, so there is always exactly one context to require and
+  # it always arrives.
+  #
+  # WHAT IT BLOCKS ON, AND WHY THAT LIST IS SHORTER THAN `needs`. It waits for
+  # every job, and it fails on the two that branch protection required before
+  # this change. `Performance budgets` and `Storybook preview` report and do not
+  # block, which is what they already did -- neither has ever been a required
+  # context. Making the budget check blocking here would be a good idea and it
+  # would also be a change to what may be merged, which is not a thing to slip
+  # into a pull request about billing. #67 puts it to the administrator who has
+  # to touch branch protection anyway; the change is one entry in the list below.
+  # ---------------------------------------------------------------------------
+  ci-complete:
+    name: CI complete
+    runs-on: ubuntu-latest
+    needs: [changes, frontend, storybook-preview, performance, backend]
+    if: always()
+    timeout-minutes: 5
+    steps:
+      - name: Report on the jobs this change needed
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          FRONTEND: ${{ needs.frontend.result }}
+          BACKEND: ${{ needs.backend.result }}
+          PERFORMANCE: ${{ needs.performance.result }}
+          STORYBOOK: ${{ needs['storybook-preview'].result }}
+        run: |
+          set -euo pipefail
+
+          # `skipped` is a pass. That is the entire point of the job: a backend
+          # that did not run because nothing under `apps/api` changed has not
+          # failed to verify anything, and saying otherwise would re-create the
+          # stuck pull request this job exists to prevent.
+          #
+          # `cancelled` is not a pass. A superseded run is cancelled by the
+          # concurrency group above and must not report green on a commit whose
+          # tests were killed half way through.
+          failed=0
+          for entry in "Frontend (typecheck, test, storybook):${FRONTEND}"                        "Backend (Java):${BACKEND}"                        "Changed paths:${CHANGES}"; do
+            job="${entry%:*}"
+            result="${entry##*:}"
+            case "$result" in
+              success|skipped) echo "::notice::${job}: ${result}" ;;
+              *)               echo "::error::${job}: ${result}"; failed=1 ;;
+            esac
+          done
+
+          # Reported, not judged. Both of these are visible as their own checks
+          # on the pull request and a reviewer can see them there.
+          echo "::notice::Performance budgets: ${PERFORMANCE} (advisory here)"
+          echo "::notice::Storybook preview: ${STORYBOOK} (advisory here)"
+
+          if [ "$failed" -ne 0 ]; then
+            echo "::error title=CI::A job this change needed did not succeed."
+            exit 1
+          fi
+          echo 'Every job this change needed either passed or had nothing to do.'
