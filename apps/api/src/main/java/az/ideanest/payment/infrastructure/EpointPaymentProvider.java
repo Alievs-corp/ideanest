@@ -9,6 +9,7 @@ import az.ideanest.payment.domain.PaymentEventType;
 import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.payment.domain.PaymentProvider;
 import az.ideanest.payment.domain.PayoutCardRequest;
+import az.ideanest.payment.domain.PayoutCard;
 import az.ideanest.payment.domain.PayoutCardSession;
 import az.ideanest.payment.domain.PayoutRequest;
 import az.ideanest.payment.domain.PayoutResult;
@@ -283,9 +284,14 @@ public class EpointPaymentProvider implements PaymentProvider {
             throw new WebhookVerificationException(NAME, "An Epoint callback names no transaction, card or order.");
         }
 
-        PaymentEventType type = CARD_REGISTRATION.equals(operation)
-                // A payout card being registered is #41's to handle, and not a charge.
-                ? PaymentEventType.UNRECOGNISED
+        boolean card = CARD_REGISTRATION.equals(operation);
+        PaymentEventType type = card
+                // A payout card being registered is not a charge: it settles a registration (#44).
+                ? switch (status) {
+                    case "success" -> PaymentEventType.PAYOUT_CARD_REGISTERED;
+                    case "error", "failed" -> PaymentEventType.PAYOUT_CARD_FAILED;
+                    default -> PaymentEventType.UNRECOGNISED;
+                }
                 : switch (status) {
                     case "success" -> PaymentEventType.CHARGE_SUCCEEDED;
                     case "error", "failed" -> PaymentEventType.CHARGE_FAILED;
@@ -298,7 +304,11 @@ public class EpointPaymentProvider implements PaymentProvider {
         // duplicate and a transaction's later "returned" is not; with no signing time there is no
         // replay window to check, and deduplication is what refuses a replay.
         String eventId = subject + ":" + (status.isEmpty() ? "unknown" : status) + ":" + (operation == null ? "" : operation);
-        return new PaymentEvent(NAME, eventId, type, transaction, amountOf(decoded), null, redacted(decoded));
+        // The holder's name travels on the event and never in the stored body, which is redacted.
+        PayoutCard payoutCard = card && !isBlank(text(decoded, "card_id"))
+                ? new PayoutCard(text(decoded, "card_id"), text(decoded, "card_mask"), text(decoded, CARDHOLDER_NAME))
+                : null;
+        return new PaymentEvent(NAME, eventId, type, transaction, amountOf(decoded), null, redacted(decoded), payoutCard);
     }
 
     @Override

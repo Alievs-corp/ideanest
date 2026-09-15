@@ -2,6 +2,7 @@ package az.ideanest.support;
 
 import az.ideanest.payment.domain.PaymentEvent;
 import az.ideanest.payment.domain.PaymentEventType;
+import az.ideanest.payment.domain.PayoutCard;
 import az.ideanest.payment.domain.ProviderName;
 import az.ideanest.payment.domain.WebhookVerificationException;
 import java.nio.charset.StandardCharsets;
@@ -51,6 +52,9 @@ public final class ScriptedWebhooks {
     private static final Pattern TYPE = Pattern.compile("\"type\"\\s*:\\s*\"([^\"]+)\"");
     private static final Pattern SIGNED_AT = Pattern.compile("\"signedAt\"\\s*:\\s*\"([^\"]+)\"");
     private static final Pattern TRANSACTION = Pattern.compile("\"providerTransactionId\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern CARD_ID = Pattern.compile("\"cardId\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern CARD_MASK = Pattern.compile("\"cardMask\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern HOLDER_NAME = Pattern.compile("\"holderName\"\\s*:\\s*\"([^\"]+)\"");
 
     private ScriptedWebhooks() {}
 
@@ -89,6 +93,9 @@ public final class ScriptedWebhooks {
         }
 
         String rawType = group(TYPE, body);
+        // IDN-EXT-01 (#44): a delivery naming a card is about a payout card registration.
+        String cardId = group(CARD_ID, body);
+        PayoutCard card = cardId == null ? null : new PayoutCard(cardId, group(CARD_MASK, body), group(HOLDER_NAME, body));
         return new PaymentEvent(
                 provider,
                 id,
@@ -96,7 +103,8 @@ public final class ScriptedWebhooks {
                 group(TRANSACTION, body),
                 null,
                 instantOrNull(group(SIGNED_AT, body)),
-                body);
+                body,
+                card);
     }
 
     /**

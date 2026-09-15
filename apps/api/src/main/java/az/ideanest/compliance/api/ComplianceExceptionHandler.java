@@ -8,6 +8,7 @@ import az.ideanest.compliance.application.UnknownPayoutDestinationException;
 import az.ideanest.compliance.application.UnknownOverrideException;
 import az.ideanest.compliance.domain.MalformedTaxIdentifierException;
 import az.ideanest.compliance.domain.SelfGrantedOverrideException;
+import az.ideanest.payment.application.PayoutCardsUnavailableException;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
@@ -95,6 +96,22 @@ public class ComplianceExceptionHandler {
                         "expiresAt", exception.expiresAt().toString(),
                         "now", exception.now().toString(),
                         "longestSeconds", exception.longest().toSeconds()));
+        return problem;
+    }
+
+    /**
+     * <strong>503: no provider can register a payout card now</strong> — IDN-EXT-01 (#44).
+     *
+     * <p>Nothing was recorded, so trying again later is the whole answer. The detail does not say
+     * which of the three causes it was: a creator can act on none of them.
+     */
+    @ExceptionHandler(PayoutCardsUnavailableException.class)
+    public ProblemDetail handlePayoutCardsUnavailable(PayoutCardsUnavailableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-cards-unavailable"));
+        problem.setTitle("A payout card cannot be registered right now");
+        problem.setDetail("Nothing was recorded. Try again later.");
+        problem.setProperty("code", "PAYOUT_CARDS_UNAVAILABLE");
         return problem;
     }
 

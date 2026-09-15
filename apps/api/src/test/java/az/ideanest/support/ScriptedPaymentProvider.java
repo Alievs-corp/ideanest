@@ -7,6 +7,8 @@ import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.payment.domain.PaymentEvent;
 import az.ideanest.payment.domain.PaymentEventType;
 import az.ideanest.payment.domain.PaymentProvider;
+import az.ideanest.payment.domain.PayoutCardRequest;
+import az.ideanest.payment.domain.PayoutCardSession;
 import az.ideanest.payment.domain.PayoutRequest;
 import az.ideanest.payment.domain.PayoutResult;
 import az.ideanest.payment.domain.ProviderCapabilities;
@@ -239,6 +241,23 @@ public class ScriptedPaymentProvider implements PaymentProvider {
      * <p>{@code preAuthHoldDays} is 7, which is §9.1's whole problem: a hold that expires
      * before a thirty-day campaign closes is why the platform stores a card instead.
      */
+    /** IDN-EXT-01 (#44): every payout card registration the platform began, in order. */
+    private final List<PayoutCardRequest> payoutCardRegistrations = Collections.synchronizedList(new ArrayList<>());
+
+    public List<PayoutCardRequest> payoutCardRegistrations() {
+        synchronized (payoutCardRegistrations) {
+            return List.copyOf(payoutCardRegistrations);
+        }
+    }
+
+    /** A card entry page on a host nothing resolves; the registration is settled by a scripted webhook. */
+    @Override
+    public PayoutCardSession beginPayoutCardRegistration(PayoutCardRequest request) {
+        payoutCardRegistrations.add(request);
+        String card = "scripted-card-" + providerTransactionCounter.incrementAndGet();
+        return new PayoutCardSession(card, URI.create("https://pay.scripted.invalid/card/" + card));
+    }
+
     /** IDN-EXT-01 (#39): every payment page the platform asked for, in order. */
     private final List<HostedPaymentRequest> hostedPayments = Collections.synchronizedList(new ArrayList<>());
 

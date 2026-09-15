@@ -2532,6 +2532,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/payout-destination/card-registration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["myPayoutDestinationRegisterCard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/pledges": {
         parameters: {
             query?: never;
@@ -4293,6 +4309,18 @@ export interface components {
             slug?: string;
             state?: string;
             title?: string;
+        };
+        CardRegistrationRequest: {
+            /** Format: uri */
+            errorUrl?: string;
+            language?: string;
+            /** Format: uri */
+            successUrl?: string;
+        };
+        CardRegistrationResponse: {
+            provider?: string;
+            /** Format: uri */
+            redirectUrl?: string;
         };
         Catalogue: {
             documents?: components["schemas"]["Summary"][];
@@ -6795,6 +6823,8 @@ export type SchemaCancelProjectRequest = components['schemas']['CancelProjectReq
 export type SchemaCancelRequest = components['schemas']['CancelRequest'];
 export type SchemaCaptureVisitRequest = components['schemas']['CaptureVisitRequest'];
 export type SchemaCard = components['schemas']['Card'];
+export type SchemaCardRegistrationRequest = components['schemas']['CardRegistrationRequest'];
+export type SchemaCardRegistrationResponse = components['schemas']['CardRegistrationResponse'];
 export type SchemaCatalogue = components['schemas']['Catalogue'];
 export type SchemaCategory = components['schemas']['Category'];
 export type SchemaCategoryCount = components['schemas']['CategoryCount'];
@@ -11352,6 +11382,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Mine"];
+                };
+            };
+        };
+    };
+    myPayoutDestinationRegisterCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CardRegistrationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardRegistrationResponse"];
                 };
             };
         };
