@@ -78,6 +78,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      # GHCR refuses a tag whose repository name has a capital in it, and
+      # `github.repository` is the owner's spelling verbatim — `Alievs-corp/…`.
+      # Folded to lower case once here rather than at each of the two tags, so
+      # a third image cannot be added with the bug back in it.
+      - name: Name the images
+        id: name
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: echo "prefix=${REGISTRY}/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       # `IDEANEST_SITE_URL` is baked into the web image, because
       # `lib/seo/metadata.ts` writes every canonical URL, sitemap entry and
       # `og:url` against it and the statically rendered pages hold it. One image
@@ -91,7 +101,7 @@ jobs:
           context: apps/api
           file: apps/api/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository }}/api:${{ github.sha }}
+          tags: ${{ steps.name.outputs.prefix }}/api:${{ github.sha }}
           cache-from: type=gha,scope=api
           cache-to: type=gha,scope=api,mode=max
 
@@ -105,7 +115,7 @@ jobs:
           context: .
           file: apps/web/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository }}/web:${{ github.sha }}
+          tags: ${{ steps.name.outputs.prefix }}/web:${{ github.sha }}
           build-args: |
             IDEANEST_SITE_URL=${{ vars.SITE_URL || 'http://localhost:3000' }}
           cache-from: type=gha,scope=web
