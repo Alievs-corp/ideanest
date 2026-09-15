@@ -189,6 +189,10 @@
       "language": {
         "label": "Language and currency",
         "summary": "The language IdeaNest writes to you in, and the currency amounts are shown in."
+      },
+      "payout": {
+        "label": "Payout details",
+        "summary": "Your VÖEN and the business card payouts go to."
       }
     },
     "pages": {
@@ -2425,6 +2429,12 @@
         "metaDescription": "Choose who can see your profile, download a copy of your IdeaNest data, or close your account.",
         "title": "Privacy, data and closure",
         "intro": "Who can see you, everything IdeaNest holds about you, and what happens to it if you leave."
+      },
+      "payout": {
+        "metaTitle": "Payout details",
+        "metaDescription": "Your VÖEN and the business card your campaign payouts go to.",
+        "title": "Payout details",
+        "intro": "Where the money from a campaign you withdraw is sent. Payouts are held until this is complete and verified."
       }
     },
     "panels": {
@@ -2460,6 +2470,40 @@
         "mismatchTitle": "The two new passwords do not match",
         "mismatchDetail": "Type the same password in both boxes, then try again.",
         "mismatchField": "This does not match the password above."
+      },
+      "payout": {
+        "loading": "Loading your payout details",
+        "subjectHeading": "Who is paid",
+        "subjectIntro": "IdeaNest pays the person or company named here. Before any payout is sent, an administrator checks that the VÖEN is real and that the business card belongs to its holder.",
+        "kind": "You are",
+        "kindIndividual": "An individual",
+        "kindEntity": "A company",
+        "legalName": "Legal name",
+        "legalNameHint": "Exactly as on your VÖEN registration.",
+        "taxId": "VÖEN",
+        "taxIdHint": "Ten digits.",
+        "registeredAddress": "Registered address",
+        "registrationNumber": "Registration number",
+        "save": "Save",
+        "saving": "Saving…",
+        "saved": "Saved.",
+        "cardHeading": "Business card",
+        "cardIntro": "Payouts go to a business card you register on the payment provider’s page. The card number is never entered on IdeaNest.",
+        "cardNone": "No card on file yet.",
+        "cardOnFile": "{hint}, held by {holder}",
+        "standingAwaiting": "Waiting for verification",
+        "standingVerified": "Verified",
+        "standingWaived": "Verification waived",
+        "standingMismatch": "The name on the card does not match your legal name",
+        "standingRejected": "Rejected",
+        "register": "Register a business card",
+        "replace": "Register a different card",
+        "opening": "Opening the payment provider’s page…",
+        "waiting": "Waiting for the provider to confirm your card. This page checks again for a minute.",
+        "cardFailed": "The card was not registered. Nothing on file changed, and you can try again.",
+        "unavailable": "A card cannot be registered right now. Nothing was recorded; try again later.",
+        "malformedTaxId": "A VÖEN is ten digits.",
+        "failed": "That did not work. Try again in a moment."
       }
     }
   },

@@ -53,6 +53,8 @@ const ROUTES_THAT_EXIST = new Set([
   '/settings/password',
   '/settings/security',
   '/settings/privacy',
+  // IDN-EXT-01 (#44): the payout details page.
+  '/settings/payout',
   // #280's language preference, P-10's half that a system with one currency can actually offer.
   '/settings/language',
 ]);

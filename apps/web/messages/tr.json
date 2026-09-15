@@ -189,6 +189,10 @@
       "language": {
         "label": "Dil ve para birimi",
         "summary": "IdeaNest'in size yazdığı dil ve tutarların gösterildiği para birimi."
+      },
+      "payout": {
+        "label": "Ödeme bilgileri",
+        "summary": "VÖEN'iniz ve ödemelerin gönderildiği iş kartı."
       }
     },
     "pages": {
@@ -2425,6 +2429,12 @@
         "metaDescription": "Profilinizi kimin görebileceğini seçin, IdeaNest verilerinizin bir kopyasını indirin veya hesabınızı kapatın.",
         "title": "Gizlilik, veriler ve hesap kapatma",
         "intro": "Sizi kimlerin görebileceği, IdeaNest'in sizinle ilgili tuttuğu her şey ve siz ayrılırsanız bunlara ne olacağı."
+      },
+      "payout": {
+        "metaTitle": "Ödeme bilgileri",
+        "metaDescription": "VÖEN'iniz ve kampanya ödemelerinin gönderildiği iş kartı.",
+        "title": "Ödeme bilgileri",
+        "intro": "Parasını çektiğiniz bir kampanyanın parasının gönderildiği yer. Bu bilgiler tamamlanıp doğrulanana kadar ödemeler bekletilir."
       }
     },
     "panels": {
@@ -2460,6 +2470,40 @@
         "mismatchTitle": "İki yeni parola birbirini tutmuyor",
         "mismatchDetail": "Her iki kutuya aynı parolayı yazıp yeniden deneyin.",
         "mismatchField": "Bu, yukarıdaki parolayla aynı değil."
+      },
+      "payout": {
+        "loading": "Ödeme bilgileriniz yükleniyor",
+        "subjectHeading": "Kime ödenir",
+        "subjectIntro": "IdeaNest burada adı geçen kişiye ya da şirkete öder. Herhangi bir ödeme gönderilmeden önce bir yönetici VÖEN'in gerçek olduğunu ve iş kartının sahibine ait olduğunu kontrol eder.",
+        "kind": "Siz",
+        "kindIndividual": "Bireysiniz",
+        "kindEntity": "Şirketsiniz",
+        "legalName": "Yasal ad",
+        "legalNameHint": "VÖEN kaydındaki haliyle.",
+        "taxId": "VÖEN",
+        "taxIdHint": "On haneli.",
+        "registeredAddress": "Kayıtlı adres",
+        "registrationNumber": "Sicil numarası",
+        "save": "Kaydet",
+        "saving": "Kaydediliyor…",
+        "saved": "Kaydedildi.",
+        "cardHeading": "İş kartı",
+        "cardIntro": "Ödemeler, ödeme sağlayıcısının sayfasında kaydettiğiniz iş kartına gönderilir. Kart numarası hiçbir zaman IdeaNest'te girilmez.",
+        "cardNone": "Henüz kayıtlı kart yok.",
+        "cardOnFile": "{hint}, sahibi: {holder}",
+        "standingAwaiting": "Doğrulama bekleniyor",
+        "standingVerified": "Doğrulandı",
+        "standingWaived": "Doğrulamadan muaf",
+        "standingMismatch": "Karttaki ad yasal adınızla eşleşmiyor",
+        "standingRejected": "Reddedildi",
+        "register": "İş kartı kaydet",
+        "replace": "Başka bir kart kaydet",
+        "opening": "Ödeme sağlayıcısının sayfası açılıyor…",
+        "waiting": "Sağlayıcının kartınızı onaylaması bekleniyor. Bu sayfa bir dakika boyunca yeniden kontrol eder.",
+        "cardFailed": "Kart kaydedilmedi. Kayıtlı bilgilerde hiçbir şey değişmedi ve yeniden deneyebilirsiniz.",
+        "unavailable": "Şu anda kart kaydedilemiyor. Hiçbir şey kaydedilmedi; daha sonra yeniden deneyin.",
+        "malformedTaxId": "VÖEN on haneden oluşur.",
+        "failed": "Olmadı. Birazdan yeniden deneyin."
       }
     }
   },

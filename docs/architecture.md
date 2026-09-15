@@ -3603,6 +3603,12 @@ collecting it.
 > the creator's payout destination through the same `record` as before: matched against the legal
 > name, `AWAITING_VERIFICATION` until a person verifies it, hint `**` and the last four digits. A
 > callback about a card nobody began, or one already settled, moves nothing.
+>
+> **Built (#44), the page.** `/settings/payout`, linked from the account's settings, holds both halves:
+> the legal subject form (individual or company, legal name, VÖEN) saved to `/v1/me/legal-subject`,
+> and the card on file with its standing in words and a control that opens the provider's page,
+> returning to `/{locale}/settings/payout?card=returned|failed`. A return re-reads the destination
+> every three seconds for a minute until it changes. No card number is entered on the page.
 
 ```mermaid
 sequenceDiagram
