@@ -4098,5 +4098,32 @@
       "twoFees": "Bunlar iki ayrı kesintidir. IdeaNest’in ücreti platformun aldığıdır; işlem ücreti parayı taşıyan şirkete gider ve IdeaNest onu hiçbir zaman almaz. Yürürlükteki oranlar yukarıdakilerdir ve ödeme tam olarak bunlarla hesaplanır.",
       "unconfigured": "IdeaNest henüz bir ücret tarifesi belirlemedi, bu yüzden bugün desteklerden hiçbir şey kesilmiyor. Bu kalıcı bir taahhüt değildir: herhangi bir oran belirlendiği anda burada yayımlanır, koşullar ise yaratıcı sözleşmesinde belirtilir."
     }
+  },
+  "dashboardControls": {
+    "heading": "Uzatın ya da parayı çekin",
+    "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Hedefin en az %50'si toplandıysa son tarihi bir kez, ilk son tarihten en fazla altmış gün sonrasına kadar uzatabilirsiniz. Parayı çekmek kampanyayı kapatır.",
+    "extend": "Son tarihi uzat",
+    "extendLabel": "Yeni son tarih",
+    "extendHint": "En geç {latest}. Destekçilere yeni tarih bildirilir; onlara sorulmaz.",
+    "extendConfirmTitle": "Kampanya {date} tarihine kadar uzatılsın mı?",
+    "extendConfirmBody": "Yalnızca bir kez uzatabilirsiniz ve yeni son tarih bir daha değiştirilemez. Her destekçiye bildirim gönderilir.",
+    "extendNow": "Bu tarihe kadar uzat",
+    "extending": "Uzatılıyor…",
+    "extended": "Son tarih artık {date}. Destekçilere bildiriliyor.",
+    "withdraw": "Parayı çek",
+    "withdrawConfirmTitle": "Para çekilsin ve kampanya kapatılsın mı?",
+    "withdrawConfirmBody": "Kampanya destek kabul etmeyi hemen durdurur ve yeniden açılmaz. Ödeme on dört gün bekletilir; bu süre içinde destekçiler ödemelerine itiraz edebilir. Tüm ödülleri tüm destekçilere teslim etmek zorundasınız.",
+    "withdrawNow": "Çek ve kapat",
+    "withdrawing": "Çekiliyor…",
+    "withdrawn": "Kampanya kapandı ve ödeme talep edildi. Ödeme gönderilmeden önce VÖEN'inizi ve iş kartınızı isteyeceğiz.",
+    "cancel": "Vazgeç",
+    "belowThreshold": "Kampanya hedefinin %80'ini topladığında parayı çekebilirsiniz.",
+    "extendWrongState": "Bu kampanya mevcut durumunda uzatılamaz.",
+    "extendAlready": "Bu kampanya zaten bir kez uzatıldı.",
+    "extendOutsideWindow": "Bir kampanya ilk son tarihten yedi gün öncesinden yedi gün sonrasına kadar uzatılabilir.",
+    "extendBelow": "Bir kampanya hedefinin en az %50'si toplandığında uzatılabilir.",
+    "extendDate": "Mevcut son tarihten sonra ve en geç {latest} olan bir tarih seçin.",
+    "withdrawWrongState": "Para yalnızca etkin, son haftasında, uzatılmış ya da başarılı bir kampanyadan çekilebilir.",
+    "failed": "Olmadı. Birazdan yeniden deneyin."
   }
 }

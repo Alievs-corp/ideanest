@@ -4098,5 +4098,32 @@
       "twoFees": "These are two separate charges. IdeaNest’s fee is what the platform keeps; the processing fee goes to the company that moves the money, and IdeaNest never receives it. The rates in force are the ones above, and they are the rates a payout is calculated with.",
       "unconfigured": "IdeaNest has not set a fee schedule, so nothing is being deducted from pledges today. This is not a permanent commitment: the rates are published here the moment any are set, and the creator agreement is where the terms are stated."
     }
+  },
+  "dashboardControls": {
+    "heading": "Extend or withdraw",
+    "rule": "A campaign succeeds at 80% of its goal. While it has raised at least 50%, you may extend its deadline once, to no later than sixty days after the first deadline. Withdrawing closes the campaign.",
+    "extend": "Extend the deadline",
+    "extendLabel": "New deadline",
+    "extendHint": "No later than {latest}. Backers are told the new date; they are not asked.",
+    "extendConfirmTitle": "Extend this campaign to {date}?",
+    "extendConfirmBody": "You can extend only once, and the new deadline cannot be moved again. Every backer is notified.",
+    "extendNow": "Extend to this date",
+    "extending": "Extending…",
+    "extended": "The deadline is now {date}. Backers are being told.",
+    "withdraw": "Withdraw the funds",
+    "withdrawConfirmTitle": "Withdraw and close this campaign?",
+    "withdrawConfirmBody": "The campaign stops taking pledges at once and cannot reopen. The payout is held for fourteen days, during which backers may dispute their payment. You owe every reward to every backer.",
+    "withdrawNow": "Withdraw and close",
+    "withdrawing": "Withdrawing…",
+    "withdrawn": "The campaign is closed and the payout is requested. We will ask for your VÖEN and business card before it is sent.",
+    "cancel": "Cancel",
+    "belowThreshold": "Funds can be withdrawn once the campaign has raised 80% of its goal.",
+    "extendWrongState": "This campaign cannot be extended in its current state.",
+    "extendAlready": "This campaign has already been extended once.",
+    "extendOutsideWindow": "A campaign can be extended from seven days before its first deadline until seven days after it.",
+    "extendBelow": "A campaign can be extended once it has raised at least 50% of its goal.",
+    "extendDate": "Choose a date after the current deadline and no later than {latest}.",
+    "withdrawWrongState": "Funds can be withdrawn only from a campaign that is live, in its closing week, extended or successful.",
+    "failed": "That did not work. Try again in a moment."
   }
 }

@@ -4098,5 +4098,32 @@
       "twoFees": "Bunlar iki ayrı tutulmadır. IdeaNest-in komissiyası platformanın saxladığıdır; emal komissiyası isə pulu hərəkət etdirən şirkətə gedir və IdeaNest onu heç vaxt almır. Qüvvədə olan dərəcələr yuxarıdakılardır və ödəniş məhz onlarla hesablanır.",
       "unconfigured": "IdeaNest hələ komissiya cədvəli təyin etməyib, ona görə də bu gün dəstəklərdən heç nə tutulmur. Bu daimi öhdəlik deyil: hər hansı dərəcə təyin olunan kimi burada dərc olunacaq, şərtlər isə yaradıcı müqaviləsində göstərilir."
     }
+  },
+  "dashboardControls": {
+    "heading": "Uzatmaq və ya vəsaiti çıxarmaq",
+    "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Hədəfin ən azı 50%-i toplanıbsa, son tarixi bir dəfə, ilk son tarixdən ən çoxu altmış gün sonrasınadək uzada bilərsiniz. Vəsaiti çıxarmaq kampaniyanı bağlayır.",
+    "extend": "Son tarixi uzatmaq",
+    "extendLabel": "Yeni son tarix",
+    "extendHint": "Ən gec {latest}. Dəstəkçilərə yeni tarix bildirilir, onlardan razılıq istənmir.",
+    "extendConfirmTitle": "Kampaniya {date} tarixinədək uzadılsın?",
+    "extendConfirmBody": "Yalnız bir dəfə uzada bilərsiniz və yeni son tarixi bir daha dəyişmək olmaz. Hər dəstəkçiyə bildiriş göndərilir.",
+    "extendNow": "Bu tarixədək uzatmaq",
+    "extending": "Uzadılır…",
+    "extended": "Son tarix artıq {date}. Dəstəkçilərə bildirilir.",
+    "withdraw": "Vəsaiti çıxarmaq",
+    "withdrawConfirmTitle": "Vəsait çıxarılsın və kampaniya bağlansın?",
+    "withdrawConfirmBody": "Kampaniya dərhal dəstək qəbul etməyi dayandırır və yenidən açılmır. Ödəniş on dörd gün saxlanılır və bu müddətdə dəstəkçilər ödənişlərinə etiraz edə bilər. Bütün mükafatları bütün dəstəkçilərə çatdırmalısınız.",
+    "withdrawNow": "Çıxarmaq və bağlamaq",
+    "withdrawing": "Çıxarılır…",
+    "withdrawn": "Kampaniya bağlandı və ödəniş tələb olundu. Ödəniş göndərilməzdən əvvəl sizdən VÖEN və biznes kartı istəniləcək.",
+    "cancel": "Ləğv et",
+    "belowThreshold": "Vəsaiti kampaniya hədəfinin 80%-ini topladıqdan sonra çıxarmaq olar.",
+    "extendWrongState": "Bu kampaniyanı hazırkı vəziyyətində uzatmaq olmaz.",
+    "extendAlready": "Bu kampaniya artıq bir dəfə uzadılıb.",
+    "extendOutsideWindow": "Kampaniyanı ilk son tarixdən yeddi gün əvvəldən yeddi gün sonrasınadək uzatmaq olar.",
+    "extendBelow": "Kampaniyanı hədəfinin ən azı 50%-ini topladıqdan sonra uzatmaq olar.",
+    "extendDate": "Hazırkı son tarixdən sonrakı və ən gec {latest} olan tarix seçin.",
+    "withdrawWrongState": "Vəsaiti yalnız aktiv, son həftəsində olan, uzadılmış və ya uğurlu kampaniyadan çıxarmaq olar.",
+    "failed": "Alınmadı. Bir azdan yenidən cəhd edin."
   }
 }

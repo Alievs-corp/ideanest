@@ -18,6 +18,7 @@ import {
 } from './auth-copy';
 import { type CheckoutCopy, checkoutCopyFrom } from './checkout-copy';
 import { type PayoutPanelCopy, payoutPanelCopyFrom } from './payout-copy';
+import { type CampaignControlsCopy, campaignControlsCopyFrom } from './campaign-controls-copy';
 import type { PluralForms } from '@ideanest/ui';
 import {
   type BasicsPanelCopy,
@@ -251,6 +252,11 @@ export async function checkoutCopy(): Promise<CheckoutCopy> {
 /** The creator's payout details panel — IDN-EXT-01 (#44). */
 export async function payoutPanelCopy(): Promise<PayoutPanelCopy> {
   return payoutPanelCopyFrom(await getTranslations('settings.panels.payout'));
+}
+
+/** The creator's Extend and Withdraw controls on the dashboard — IDN-EXT-01 (#44). */
+export async function campaignControlsCopy(): Promise<CampaignControlsCopy> {
+  return campaignControlsCopyFrom(await getTranslations('dashboardControls'));
 }
 
 /** The pricing page and the plan chooser on it. */

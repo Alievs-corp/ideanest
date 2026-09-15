@@ -8,6 +8,8 @@ import { getDashboard, type CampaignDashboard } from '../../lib/dashboard/api';
 import { clockSkewMs } from '../../lib/dashboard/clock';
 import { formatMoney } from '../../lib/money';
 import { CampaignClock } from './CampaignClock';
+import { CampaignControls } from './CampaignControls';
+import type { CampaignControlsCopy } from '../../lib/i18n/campaign-controls-copy';
 
 /**
  * §4.7's CD-01: raised, backers, completion, and time remaining.
@@ -64,14 +66,21 @@ export interface DashboardOverviewProps {
   readonly load?: (projectId: string) => Promise<CampaignDashboard>;
   /** Injected by tests, so the skew measurement can be asserted. */
   readonly nowImpl?: () => number;
+  /**
+   * IDN-EXT-01 (#44): the creator's Extend and Withdraw controls, with their words and the page's
+   * locale. Absent, the panel is the read-only overview it always was.
+   */
+  readonly controls?: { readonly copy: CampaignControlsCopy; readonly locale: string };
 }
 
-export function DashboardOverview({ projectId, load, nowImpl }: DashboardOverviewProps) {
+export function DashboardOverview({ projectId, load, nowImpl, controls }: DashboardOverviewProps) {
   const now = nowImpl ?? Date.now;
   const [status, setStatus] = useState<Status>('loading');
   const [dashboard, setDashboard] = useState<CampaignDashboard | null>(null);
   const [skewMs, setSkewMs] = useState(0);
   const [failure, setFailure] = useState<string>('');
+  // Bumped after the creator extends or withdraws, so the figures and the state are read again.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,7 +105,7 @@ export function DashboardOverview({ projectId, load, nowImpl }: DashboardOvervie
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId]);
+  }, [projectId, attempt]);
 
   if (status === 'loading') {
     return (
@@ -165,6 +174,18 @@ export function DashboardOverview({ projectId, load, nowImpl }: DashboardOvervie
             ) : null}
           </p>
         </div>
+      )}
+
+      {controls !== undefined && (
+        <CampaignControls
+          projectId={projectId}
+          state={dashboard.state}
+          percentFunded={percent}
+          deadline={dashboard.deadline}
+          copy={controls.copy}
+          locale={controls.locale}
+          onChanged={() => setAttempt((n) => n + 1)}
+        />
       )}
 
       {dashboard.outcome ? (

@@ -355,6 +355,39 @@ export async function launchProject(id: string, signal?: AbortSignal): Promise<P
   );
 }
 
+/**
+ * Extends a campaign's deadline, once — IDN-EXT-01 §5.1 (#34, #44).
+ *
+ * `until` is an instant no later than sixty days after the first deadline. The service decides
+ * everything else — the window, the 50% floor, that there has been no extension before — and
+ * refuses with `EXTENSION_NOT_AVAILABLE` and a `meta.reason`, which the dashboard words.
+ */
+export async function extendProject(id: string, until: string, signal?: AbortSignal): Promise<ProjectEdit> {
+  return readProject(
+    await authorizedFetch(`/v1/projects/${encodeURIComponent(id)}/extension`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ until }),
+      signal,
+    }),
+  );
+}
+
+/**
+ * Withdraws the funds and closes the campaign — IDN-EXT-01 §5.1 (#41, #44).
+ *
+ * No body: the payout is priced by the service from what the campaign collected. A campaign below
+ * 80%, or in a state with nothing to withdraw from, is refused with `WITHDRAWAL_NOT_AVAILABLE`.
+ */
+export async function withdrawProject(id: string, signal?: AbortSignal): Promise<ProjectEdit> {
+  return readProject(
+    await authorizedFetch(`/v1/projects/${encodeURIComponent(id)}/withdrawal`, {
+      method: 'POST',
+      signal,
+    }),
+  );
+}
+
 /* -------------------------------------------------------------------------
  * Taxonomy
  *
