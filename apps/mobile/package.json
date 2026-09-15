@@ -20,7 +20,7 @@
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-query-persist-client": "^5.102.8",
     "decimal.js": "^10.6.0",
-    "expo": "~57.0.21",
+    "expo": "~57.0.22",
     "expo-application": "~57.0.3",
     "expo-constants": "~57.0.18",
     "expo-device": "~57.0.2",
