@@ -67,7 +67,7 @@ dependencies {
     // BouncyCastle, which is pure Java — unlike argon2-jvm, which binds a
     // native library through JNA and turns "does the container have libargon2"
     // into a start-up question.
-    implementation("org.bouncycastle:bcprov-jdk18on:1.85.2")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.86")
 
     // The starter rather than flyway-core alone. Spring Boot 4 broke
     // spring-boot-autoconfigure into per-technology modules, so Flyway's
