@@ -2204,6 +2204,25 @@
           "other": "{count} ödəniş yükləndi."
         },
         "truncated": "Fayl natamamdır: dövrün ödənişlərindən yalnız ilk {count} ödəniş daxildir. Dövrü daraldın və qalanını ayrıca yükləyin."
+      },
+      "backerDisputes": {
+        "subject": "dəstəkçi etirazları növbəsi",
+        "heading": "Dəstəkçi etirazları",
+        "intro": "Ödəniş saxlanılarkən dəstəkçilər tərəfindən açılır. Qəbul etmək dəstəkçiyə məbləği tam qaytarır və ödənişi onsuz yenidən hesablayır; kampaniya uğurlu olaraq qalır. Rədd etmək heç nəyi dəyişmir.",
+        "loadingList": "Dəstəkçi etirazları növbəsi yüklənir",
+        "emptyTitle": "Açıq dəstəkçi etirazı yoxdur",
+        "emptyBody": "Qərar gözləyən heç nə yoxdur. Dəstəkçilər yalnız kampaniyalarının ödənişi saxlanılarkən etiraz edə bilər.",
+        "pledgeLine": "Dəstək {pledge} · kampaniya {project} · açılıb {date}",
+        "noteLabel": "Qeyd",
+        "noteHint": "Qərarla birlikdə və audit jurnalında saxlanılır.",
+        "uphold": "Qəbul et və qaytar",
+        "reject": "Rədd et",
+        "confirmUphold": "Bu dəstəkçiyə məbləğ tam qaytarılsın və ödəniş yenidən hesablansın?",
+        "confirmNow": "Tam qaytar",
+        "deciding": "Qərar verilir…",
+        "alreadyDecided": "Bu etiraz üzrə artıq qərar verilib. Siyahı yeniləndi.",
+        "refundFailed": "Geri qaytarma rədd edildi, ona görə etiraz hələ açıqdır. Yenidən cəhd edin və ya qaytarmaya geri qaytarmalar ekranında baxın.",
+        "failedTitle": "Alınmadı"
       }
     },
     "moderation": {
@@ -3007,6 +3026,19 @@
       "waitingBody": "Ödəniş provayderi hələ nəticəni bildirməyib. Bu səhifə bir dəqiqə ərzində yenidən yoxlayır; ikinci dəfə ödəməyiniz lazım deyil.",
       "failedTitle": "Ödəniş keçmədi",
       "failedBody": "Heç nə tutulmadı. Mükafatınız saxlama müddəti bitənədək saxlanılır və kampaniya səhifəsindən yenidən ödəyə bilərsiniz."
+    },
+    "dispute": {
+      "heading": "Bu ödənişə etiraz edin",
+      "intro": "Müəllifin ödənişi saxlanılarkən pulunuzun qaytarılmasını istəyə bilərsiniz. Administrator səbəbinizi oxuyub qərar verir; razılaşsa, məbləğ sizə tam qaytarılır.",
+      "reasonLabel": "Nə səhv getdi",
+      "reasonHint": "2 000 simvola qədər. Sizə nə vəd edildiyini və nə baş verdiyini yazın.",
+      "submit": "Etirazı göndərin",
+      "sending": "Göndərilir…",
+      "cancel": "Ləğv et",
+      "opened": "Etirazınız açıqdır. Administrator ödəniş göndərilməzdən əvvəl qərar verəcək.",
+      "windowClosed": "Bu ödənişə artıq IdeaNest vasitəsilə etiraz etmək olmaz: kampaniya üzrə saxlanılan ödəniş yoxdur.",
+      "nothing": "Bu ödənişdən qaytarılacaq heç nə qalmayıb.",
+      "failed": "Alınmadı. Bir azdan yenidən cəhd edin."
     }
   },
   "pricing": {

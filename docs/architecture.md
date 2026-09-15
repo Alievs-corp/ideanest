@@ -4000,6 +4000,13 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > debt as large as the payout leaves no payout: a withdrawal applies it all at once, and finance's
 > calculation answers nothing to pay. Reinstating the account once the debt is settled is a staff
 > action. Epoint documents no chargeback webhook, so how its chargebacks reach `disputes` is still open.
+>
+> **Built (#44), the screens.** A paid pledge's page offers "Dispute this payment" behind one press;
+> the reason goes to `POST /v1/pledges/{id}/disputes`, and `DISPUTE_WINDOW_CLOSED` and
+> `NOTHING_TO_DISPUTE` are worded rather than pre-judged. Administrators decide on `/admin/disputes`,
+> below the chargebacks: each open dispute shows the backer's reason and takes a note; upholding asks
+> first, because it refunds in full and recalculates the payout, and rejecting is one press. A refund
+> the provider refuses leaves the dispute open and says so.
 
 ---
 

@@ -2204,6 +2204,25 @@
           "other": "{count} ödeme indirildi."
         },
         "truncated": "Dosya eksik: dönemin ödemelerinden yalnızca ilk {count} tanesini içeriyor. Dönemi daraltın ve kalanını ayrıca indirin."
+      },
+      "backerDisputes": {
+        "subject": "destekçi itirazları kuyruğu",
+        "heading": "Destekçi itirazları",
+        "intro": "Bir ödeme bekletilirken destekçiler tarafından açılır. Kabul etmek destekçiye tutarın tamamını iade eder ve ödemeyi onsuz yeniden hesaplar; kampanya başarılı kalır. Reddetmek hiçbir şeyi değiştirmez.",
+        "loadingList": "Destekçi itirazları kuyruğu yükleniyor",
+        "emptyTitle": "Açık destekçi itirazı yok",
+        "emptyBody": "Karar bekleyen bir şey yok. Destekçiler yalnızca kampanyalarının ödemesi bekletilirken itiraz edebilir.",
+        "pledgeLine": "Destek {pledge} · kampanya {project} · açıldı {date}",
+        "noteLabel": "Not",
+        "noteHint": "Kararla birlikte ve denetim kaydında saklanır.",
+        "uphold": "Kabul et ve iade et",
+        "reject": "Reddet",
+        "confirmUphold": "Bu destekçiye tutarın tamamı iade edilsin ve ödeme yeniden hesaplansın mı?",
+        "confirmNow": "Tamamını iade et",
+        "deciding": "Karar veriliyor…",
+        "alreadyDecided": "Bu itiraz için zaten karar verildi. Liste yenilendi.",
+        "refundFailed": "İade reddedildi, bu yüzden itiraz hâlâ açık. Yeniden deneyin ya da iadeye iadeler ekranından bakın.",
+        "failedTitle": "Olmadı"
       }
     },
     "moderation": {
@@ -3007,6 +3026,19 @@
       "waitingBody": "Ödeme sağlayıcısı sonucu henüz bildirmedi. Bu sayfa bir dakika boyunca yeniden kontrol eder; ikinci kez ödeme yapmanız gerekmez.",
       "failedTitle": "Ödeme gerçekleşmedi",
       "failedBody": "Hiçbir tutar tahsil edilmedi. Ödülünüz ayırma süresi dolana kadar ayrılmış kalır ve kampanya sayfasından yeniden ödeyebilirsiniz."
+    },
+    "dispute": {
+      "heading": "Bu ödemeye itiraz et",
+      "intro": "Üreticinin ödemesi bekletilirken paranızın iadesini isteyebilirsiniz. Bir yönetici gerekçenizi okur ve karar verir; kabul ederse tutarın tamamı iade edilir.",
+      "reasonLabel": "Ne ters gitti",
+      "reasonHint": "En fazla 2.000 karakter. Size ne vaat edildiğini ve ne olduğunu yazın.",
+      "submit": "İtirazı gönder",
+      "sending": "Gönderiliyor…",
+      "cancel": "Vazgeç",
+      "opened": "İtirazınız açıldı. Bir yönetici ödeme gönderilmeden önce karar verecek.",
+      "windowClosed": "Bu ödemeye artık IdeaNest üzerinden itiraz edilemez: kampanya için bekletilen bir ödeme yok.",
+      "nothing": "Bu ödemeden iade edilecek bir şey kalmadı.",
+      "failed": "Olmadı. Birazdan yeniden deneyin."
     }
   },
   "pricing": {
