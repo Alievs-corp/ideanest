@@ -44,7 +44,8 @@
     "nav": {
       "label": "Birincil",
       "discover": "Keşfet",
-      "categories": "Kategoriler"
+      "categories": "Kategoriler",
+      "pricing": "Fiyatlandırma"
     },
     "drawer": {
       "open": "Menüyü aç",

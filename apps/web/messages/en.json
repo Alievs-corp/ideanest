@@ -44,7 +44,8 @@
     "nav": {
       "label": "Primary",
       "discover": "Discover",
-      "categories": "Categories"
+      "categories": "Categories",
+      "pricing": "Pricing"
     },
     "drawer": {
       "open": "Open navigation",

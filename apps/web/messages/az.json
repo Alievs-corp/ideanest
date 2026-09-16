@@ -44,7 +44,8 @@
     "nav": {
       "label": "Əsas",
       "discover": "Kəşf et",
-      "categories": "Kateqoriyalar"
+      "categories": "Kateqoriyalar",
+      "pricing": "Planlar"
     },
     "drawer": {
       "open": "Naviqasiyanı aç",
