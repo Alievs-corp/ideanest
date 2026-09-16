@@ -47,15 +47,23 @@ export interface ResolvedNavigationLink {
  * The primary navigation — the pill in the middle of the header, and the top of the mobile
  * drawer.
  *
- * TWO ENTRIES, AND THAT IS THE POINT. Discovery is the front door and the categories are the
- * indexable way into it (WS-05); everything else a visitor wants is either behind the search
- * field beside these or is an account surface, which lives in the actions on the right. A
- * header that grew a third and a fourth entry would be a header that no longer collapses to
- * the width §8.6 specifies.
+ * THREE ENTRIES, AND THE THIRD IS THE LAST ONE THAT FITS. Discovery is the front door and
+ * the categories are the indexable way into it (WS-05); everything else a visitor wants is
+ * either behind the search field beside these or is an account surface, which lives in the
+ * actions on the right.
+ *
+ * Pricing is the exception, and it is here rather than in the footer because it answers the
+ * question somebody asks before they are a creator — what the platform takes — and a footer
+ * column is where that question goes unanswered. It is the one destination outside discovery
+ * that decides whether a campaign is started at all.
+ *
+ * §8.6 gives the collapsed header a 445-pixel pill and three short labels is what it holds,
+ * so a fourth entry belongs in the footer rather than here.
  */
 export const PRIMARY_NAVIGATION: readonly NavigationLink[] = Object.freeze([
   { href: '/discover', key: 'discover' },
   { href: '/categories', key: 'categories' },
+  { href: '/pricing', key: 'pricing' },
 ]);
 
 export interface FooterGroup {

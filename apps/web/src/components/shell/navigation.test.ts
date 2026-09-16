@@ -39,6 +39,7 @@ const ROUTES_THAT_EXIST = new Set([
   '/',
   '/discover',
   '/categories',
+  '/pricing',
   '/collections',
   '/search',
   '/notifications',
@@ -71,8 +72,14 @@ describe('the navigation lists', () => {
     }
   });
 
-  it('keep the header to the two entries §8.6’s collapsed pill has room for', () => {
-    expect(PRIMARY_NAVIGATION).toHaveLength(2);
+  it('keep the header to the three entries §8.6’s collapsed pill has room for', () => {
+    expect(PRIMARY_NAVIGATION).toHaveLength(3);
+  });
+
+  it('carry pricing in the header, where a creator asks what the platform takes', () => {
+    // The one destination outside discovery that decides whether a campaign is started, so
+    // the footer is the wrong place for it — see `PRIMARY_NAVIGATION`.
+    expect(PRIMARY_NAVIGATION.map((link) => link.href)).toContain('/pricing');
   });
 
   it('carry the static content pages #292 built', () => {
@@ -86,7 +93,7 @@ describe('the navigation lists', () => {
 
   it('carry the collections index #266 built, and only in the footer', () => {
     // D-08's pages are public and indexable, so reachable from the sitemap alone would be a
-    // set of pages a crawler finds and a reader never does. The header stays at two entries —
+    // set of pages a crawler finds and a reader never does. The header stays at three entries —
     // the assertion above — because that is what §8.6's collapsed pill has room for.
     const targets = FOOTER_GROUPS.flatMap((group) => group.links.map((link) => link.href));
     expect(targets).toContain('/collections');
