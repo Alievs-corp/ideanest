@@ -5,6 +5,7 @@ import az.ideanest.audit.AuditActor;
 import az.ideanest.audit.AuditLog;
 import az.ideanest.audit.AuditOutcome;
 import az.ideanest.shared.access.PlatformStaff;
+import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.verification.VerificationProperties;
 import az.ideanest.verification.domain.DocumentKind;
 import az.ideanest.verification.domain.IdentityDocument;
@@ -191,7 +192,7 @@ public class IdentityVerifications {
     /** The review queue: submitted, oldest first. */
     @Transactional(readOnly = true)
     public List<IdentityVerification> queue(UUID staffId, int limit) {
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.REVIEW_IDENTITY_VERIFICATION);
         return verifications.findByStateOrderByCreatedAtAsc(VerificationState.SUBMITTED, PageRequest.ofSize(limit));
     }
 
@@ -210,7 +211,14 @@ public class IdentityVerifications {
      */
     @Transactional(readOnly = true)
     public OpenedDocument openDocument(UUID staffId, UUID verificationId, UUID documentId) {
-        staff.requireStaff(staffId);
+        /*
+         * OPEN_IDENTITY_DOCUMENT, and not merely staff. StaffCapability calls this "the most
+         * sensitive read on the platform" and StaffRole gives it to COMPLIANCE and to nobody
+         * else — while this method asked only whether the caller worked here, so every
+         * moderator and every curator could open somebody's passport scan. The narrow
+         * capability existed; this is the call site that was not using it.
+         */
+        staff.requireCapability(staffId, StaffCapability.OPEN_IDENTITY_DOCUMENT);
 
         IdentityDocument document = documents.findByIdAndVerificationId(documentId, verificationId)
                 .orElseThrow(VerificationNotFoundException::new);
@@ -253,7 +261,7 @@ public class IdentityVerifications {
 
     private IdentityVerification decide(
             UUID staffId, UUID verificationId, java.util.function.Function<IdentityVerification, AuditAction> decision) {
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.REVIEW_IDENTITY_VERIFICATION);
 
         IdentityVerification verification =
                 verifications.findById(verificationId).orElseThrow(VerificationNotFoundException::new);

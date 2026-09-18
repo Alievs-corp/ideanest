@@ -107,6 +107,14 @@ export interface ConsoleCountCopy {
 }
 
 export interface ConsoleRefusalsCopy {
+  /**
+   * The console itself, as the noun the two shell refusals take - `ConsoleGate`.
+   *
+   * <p>It is here rather than on the shell's own copy because it is a `subject` like every
+   * other: already inflected for its position in the two languages that inflect it, and read
+   * by the one refusal that is about the whole console rather than about a screen.
+   */
+  readonly consoleSubject: string;
   readonly signedOutTitle: string;
   /** Carries `{subject}`. */
   readonly signedOutBody: string;
@@ -198,6 +206,7 @@ export function consoleIdentityCopyFrom(t: AdminTranslator): ConsoleIdentityCopy
 
 export function consoleRefusalsCopyFrom(t: AdminTranslator): ConsoleRefusalsCopy {
   return {
+    consoleSubject: t('refusals.consoleSubject'),
     signedOutTitle: t('refusals.signedOutTitle'),
     /* `raw`, because next-intl renders a template's own key when it is read with `t()` and
        has no value for the argument — `src/test-copy.ts` refuses the same mistake in tests. */

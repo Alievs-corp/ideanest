@@ -21,7 +21,19 @@ import { EntityName } from './ConsoleIdentity';
 import { useConsoleResource } from './useConsoleResource';
 import { useDirectoryNames } from './useDirectoryNames';
 
-const ROLES: readonly StaffRole[] = ['MODERATOR', 'CURATOR', 'FINANCE', 'ADMINISTRATOR'];
+/*
+ * The five the service has, in its own order. `COMPLIANCE` was missing, so the one role that
+ * can open an identity document was the one role no administrator could grant from this
+ * screen — the grant existed at `PUT /v1/admin/staff/{id}/roles/COMPLIANCE` and the only way
+ * to reach it was curl.
+ */
+const ROLES: readonly StaffRole[] = [
+  'MODERATOR',
+  'CURATOR',
+  'FINANCE',
+  'COMPLIANCE',
+  'ADMINISTRATOR',
+];
 
 /**
  * §4.11's role model, as a screen — issue #295.

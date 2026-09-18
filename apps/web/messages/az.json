@@ -573,6 +573,7 @@
       }
     },
     "refusals": {
+      "consoleSubject": "idarəetmə konsolunu",
       "signedOutTitle": "Sessiyanız bitib",
       "signedOutBody": "Bu brauzerin artıq sessiyası yoxdur. {subject} oxumaq üçün yenidən daxil olun.",
       "forbiddenTitle": "Siz burada işləmirsiniz",

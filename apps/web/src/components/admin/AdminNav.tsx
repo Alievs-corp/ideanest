@@ -2,18 +2,39 @@
 
 import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
-import { CONSOLE_GROUPS, isCurrentConsoleLink } from '../../lib/admin/navigation';
+import { isCurrentConsoleLink, visibleConsoleGroups } from '../../lib/admin/navigation';
 import type { AdminShellCopy } from '../../lib/i18n/admin-copy';
+import { useConsoleMembership } from './ConsoleMembership';
 
 /**
  * The console's own navigation — §4.11, issue #294.
  *
- * <h2>A client boundary, and only for `usePathname`</h2>
+ * <h2>A client boundary, for the path and now for the reader</h2>
  *
  * Nothing here has state and nothing fetches. What it needs is the current path, to mark one
  * entry `aria-current="page"`, and that is not knowable in a layout on the server without
  * every page threading its own path down — a rule somebody eventually forgets and nothing
  * catches. `AccountNav` draws the same boundary for the same reason.
+ *
+ * <p>The second thing it needs is who is reading, and that has the same shape: the answer is
+ * `GET /v1/admin/me`, the session it needs lives in this process, and the shell already reads
+ * it once for the gate and the reader line. `ConsoleMembership` is that one read.
+ *
+ * <h2>It draws the entries this reader can open — issue #295</h2>
+ *
+ * <p>`visibleConsoleGroups` is the rule and `lib/admin/navigation.ts` carries the argument,
+ * including the earlier decision to show everybody everything and why it was reversed. Two
+ * consequences are this component's own.
+ *
+ * <p><strong>Nothing is drawn until the membership arrives.</strong> Not the full rail, not a
+ * skeleton: a rail drawn from a guess is a rail that visibly rearranges itself a beat later,
+ * which is movement on a surface docs/motion-system.md §5 gives none — and the guess that
+ * reads worst is the generous one, where entries a curator may not open appear and then
+ * vanish.
+ *
+ * <p><strong>A `<nav>` with no entries is not rendered at all.</strong> An empty landmark is
+ * one an assistive technology still announces and offers to jump to, and there would be
+ * nothing there when it did.
  *
  * <h2>The entries are read from the module list rather than passed in</h2>
  *
@@ -59,6 +80,17 @@ export interface AdminNavProps {
 
 export function AdminNav({ copy }: AdminNavProps) {
   const pathname = usePathname();
+  const { membership } = useConsoleMembership();
+
+  /*
+   * `null` and not `[]` for a reader whose membership has not arrived: the two are different
+   * questions — "we do not know yet" and "nothing" — and `visibleConsoleGroups` answers both
+   * with an empty rail on purpose. A reader who is not staff has no entries either, and gets
+   * `ConsoleGate`'s sentence in the place the screen would have been.
+   */
+  const groups = visibleConsoleGroups(membership?.capabilities ?? null);
+
+  if (groups.length === 0) return null;
 
   return (
     <nav
@@ -81,7 +113,7 @@ export function AdminNav({ copy }: AdminNavProps) {
       ].join(' ')}
     >
       <ul className="flex list-none gap-x-6 gap-y-8 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-1">
-        {CONSOLE_GROUPS.map((group) => (
+        {groups.map((group) => (
           <li key={group.heading} className="min-w-max lg:min-w-0">
             <h2 className="px-3 text-xs font-medium tracking-[0.08em] text-white/40 uppercase">
               {copy.groups[group.heading]}

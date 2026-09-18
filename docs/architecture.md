@@ -1485,22 +1485,42 @@ Preferences are per category and per channel, with a digest option.
 > is nine screens, and the seven become something a new member of staff discovers by asking.
 >
 > The screens sit under `app/admin/layout.tsx` with a shell of their own rather than the
-> public one. **No route among them is a gate**, and that is still deliberate after #295
-> gave the platform a role model. `GET /v1/admin/me` now tells the console what the reader
-> may do, so the console renders honestly instead of drawing a grid of refusals — but the
-> route itself is not gated, for a reason that is about the session rather than about
-> authorisation: the web client holds its access token in a module variable and its refresh
-> token in a `SameSite=Strict` `HttpOnly` cookie that rotates on every use, so a Server
-> Component could only authenticate by spending that cookie and would end the session it was
-> trying to check. A layout gate would therefore be a second, weaker copy of a check the
-> service already makes correctly, and the dangerous direction is the one where the browser
-> says yes.
+> public one. **No route among them is a gate on the server**, and that part is unchanged:
+> the web client holds its access token in a module variable and its refresh token in a
+> `SameSite=Strict` `HttpOnly` cookie that rotates on every use, so a Server Component could
+> only authenticate by spending that cookie and would end the session it was trying to check.
+> The service refuses every read behind every screen, and **that check is the one that
+> matters** — anything the browser decides is a courtesy on top of it, and the dangerous
+> direction is the one where the browser says yes.
 >
-> **The rail does not vary by capability either.** Hiding the screens somebody cannot use is
-> available since #295 and is not done: a member of staff who cannot see the fee screen has
-> no way to learn it exists, and the first thing they do is ask whether the console is
-> broken. Every screen refuses and names the capability it wanted, which is a better answer
-> than an absence.
+> **The shell reads `GET /v1/admin/me` once and three things use it.** `ConsoleGate` tells a
+> signed-in visitor who does not work here so in one sentence, rather than drawing a rail of
+> twenty-eight destinations and a refusal on each one they try; `ConsoleReader` names who is
+> signed in and with what roles; and `AdminNav` draws the entries the reader can open. One
+> read, because three copies of it would be three chances for the shell to disagree with
+> itself about the reader. A failed read opens the console rather than closing it: a network
+> blip is not evidence that somebody does not work here, and every screen behind it refuses
+> on its own.
+>
+> **The rail varies by capability, and it used to argue that it should not.** The earlier
+> argument was that a member of staff who cannot see the fee screen has no way to learn it
+> exists. That cost is real and it is the smaller one: a curator signing in met twenty-eight
+> entries of which twenty-three refused them, six of those being the platform's books. So
+> `CONSOLE_LINK_CAPABILITIES` gives every entry the capability its screen's first read
+> requires, an entry is drawn when the reader holds one of them, and a group whose entries
+> are all gone goes with them. The objection is answered rather than dismissed: `/admin/staff`
+> lists every capability and what it is for, in the reader's own language, and every screen
+> still refuses honestly and names the capability it wanted for anybody who follows a URL.
+>
+> **The endpoints behind those entries were tightened to match.** Six console surfaces asked
+> only whether the caller was staff — the ledger, the payment log, the audit trail, account
+> administration, the report queues and curation — which made a hidden rail entry worth less
+> than the rail it was hidden from. They now require `VIEW_FINANCE`, `VIEW_FINANCE`,
+> `VIEW_AUDIT`, `ADMINISTER_ACCOUNTS`, `MODERATE_CONTENT` and `CURATE`. Two reads outside the
+> console moved with them: the email template preview is `CONFIGURE_PLATFORM`, and identity
+> review is `REVIEW_IDENTITY_VERIFICATION` with the document itself behind
+> `OPEN_IDENTITY_DOCUMENT` — the narrowest capability in the enum, which until then guarded
+> nothing, while every moderator and curator could open somebody's passport scan.
 >
 > **The console can name what it shows, since #402.** Every list under this prefix returns
 > identifiers and none of them returned a name, so the payout file paid `18844dbc`, the audit

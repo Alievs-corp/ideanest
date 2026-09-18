@@ -573,6 +573,7 @@
       }
     },
     "refusals": {
+      "consoleSubject": "yönetim konsolunu",
       "signedOutTitle": "Oturumunuz kapalı",
       "signedOutBody": "Bu tarayıcının artık bir oturumu yok. {subject} okumak için yeniden giriş yapın.",
       "forbiddenTitle": "Burada çalışmıyorsunuz",

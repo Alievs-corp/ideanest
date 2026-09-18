@@ -8,6 +8,7 @@ import az.ideanest.audit.AuditEntryRepository;
 import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.shared.Identifiers;
+import az.ideanest.staff.domain.StaffRole;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.support.Ledgers;
@@ -71,6 +72,9 @@ class ConsoleReadApiTests extends AbstractIntegrationTest {
     /** The single address {@code application-test.yml} lists as a moderator. */
     private static final String MODERATOR_EMAIL = "moderator@ideanest.test";
 
+    /** What this suite's own role grants are marked with, so teardown can find them. */
+    private static final String ROLE_FIXTURE_NOTE = "console capability fixture";
+
     private static Account staff;
 
     @Autowired
@@ -102,6 +106,13 @@ class ConsoleReadApiTests extends AbstractIntegrationTest {
     void clearTheMoney() {
         Ledgers.clear(dataSource);
         Campaigns.clear(dataSource);
+        /*
+         * And the one role grant this suite makes. `staff_role_grants.granted_by` references
+         * `users`, so a row left behind makes the next suite's `DELETE FROM users` fail with a
+         * foreign key violation twenty tests wide and nothing pointing back here.
+         * `BackerDisputeApiTests` deletes its own by note for the same reason.
+         */
+        new JdbcTemplate(dataSource).update("DELETE FROM staff_role_grants WHERE note = ?", ROLE_FIXTURE_NOTE);
     }
 
     // ------------------------------------------------------------------
@@ -492,6 +503,39 @@ class ConsoleReadApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("a colleague without VIEW_FINANCE is refused the books, and told which capability")
+    void theBooksAreFinancesRatherThanEveryStaffMembers() {
+        /*
+         * The check above is the older half: a stranger is refused. This is the half #295's
+         * role model makes possible and these three endpoints did not make - they asked only
+         * whether the caller was staff, so a curator whose whole role is CURATE could read
+         * every posting in the platform's ledger and every card decline in the payment log.
+         *
+         * The audit trail is deliberately in the same test and deliberately allowed: every
+         * role holds VIEW_AUDIT, and a test that only asserted refusals would pass just as
+         * well if somebody replaced the three capabilities with ADMINISTER_STAFF.
+         */
+        Account curator = staff("console-curator", StaffRole.CURATOR);
+
+        assertThat(get("/v1/admin/audit", curator.accessToken()).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<Map<String, Object>> ledger = get("/v1/admin/ledger", curator.accessToken());
+        assertThat(ledger.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        /*
+         * And not NOT_A_MODERATOR, which is the refusal that cannot be fixed by the person
+         * reading it. The console renders the capability out of `meta` and says which
+         * authority the screen wanted; the rail hides the entry on the same fact.
+         */
+        assertThat(ledger.getBody()).containsEntry("code", "INSUFFICIENT_STAFF_CAPABILITY");
+        assertThat(ledger.getBody()).extracting("meta").hasToString("{capability=VIEW_FINANCE}");
+
+        ResponseEntity<Map<String, Object>> payments = get("/v1/admin/payments", curator.accessToken());
+        assertThat(payments.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(payments.getBody()).containsEntry("code", "INSUFFICIENT_STAFF_CAPABILITY");
+    }
+
+    @Test
     @DisplayName("every console read is audited, with counts and no rows")
     void everyConsoleReadIsAudited() {
         Fixture fixture = campaignWithPledge("console-audit");
@@ -655,6 +699,51 @@ class ConsoleReadApiTests extends AbstractIntegrationTest {
 
         staff = new Account(accessToken, id);
         return staff;
+    }
+
+    /**
+     * A member of staff holding exactly one role.
+     *
+     * <p>Granted with SQL rather than through `PUT /v1/admin/staff/{id}/roles/{role}`, which
+     * is {@code CreatorPayoutDestinationTests}' argument and holds here: driving the grant
+     * through the API would make a suite about three read endpoints depend on the staff
+     * administration endpoint, its audit write and its own refusals.
+     *
+     * <p>The token is minted rather than signed in for, for the reason {@link #staff()} gives:
+     * {@code sign-ins-per-email} is left at its real value, and a suite that spends one makes
+     * somebody else's tests fail with a 401 that has nothing to do with them.
+     */
+    private Account staff(String slug, StaffRole role) {
+        EmailAddress email = EmailAddress.of(slug + "@ideanest.test");
+        if (users.findByEmailAndDeletedAtIsNull(email).isEmpty()) {
+            rest.postForEntity(
+                    "/v1/auth/register",
+                    Map.of("email", email.value(), "password", PASSWORD, "name", "Test " + role.name()),
+                    String.class);
+        }
+
+        UUID id = users.findByEmailAndDeletedAtIsNull(email).orElseThrow().getId();
+        new JdbcTemplate(dataSource)
+                .update(
+                        """
+                        INSERT INTO staff_role_grants (account_id, role, granted_by, note)
+                        VALUES (?, ?, ?, ?)
+                        ON CONFLICT DO NOTHING
+                        """,
+                        id,
+                        role.name(),
+                        staff().id(),
+                        ROLE_FIXTURE_NOTE);
+
+        String accessToken = tokens.issue(
+                        id,
+                        UUID.randomUUID(),
+                        new AccessTokenIssuer.AccountStanding(true, false),
+                        false,
+                        Instant.now())
+                .value();
+
+        return new Account(accessToken, id);
     }
 
     private Account signIn(EmailAddress email) {

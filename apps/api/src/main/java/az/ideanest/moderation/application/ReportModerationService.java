@@ -11,6 +11,7 @@ import az.ideanest.moderation.domain.TargetReportCount;
 import az.ideanest.moderation.infrastructure.ContentReportRepository;
 import az.ideanest.staff.application.NotAModeratorException;
 import az.ideanest.shared.access.PlatformStaff;
+import az.ideanest.shared.access.StaffCapability;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +88,7 @@ public class ReportModerationService {
     public ReportQueuePage queue(
             UUID moderatorId, ReportState state, ReportTargetType targetType, UUID after, int limit) {
 
-        staff.requireStaff(moderatorId);
+        staff.requireCapability(moderatorId, StaffCapability.MODERATE_CONTENT);
 
         PageRequest page = PageRequest.ofSize(limit);
         List<ContentReport> rows = pageOf(state, targetType, after, page);
@@ -145,7 +146,7 @@ public class ReportModerationService {
      */
     @Transactional
     public QueuedReport resolve(UUID reportId, UUID moderatorId, ReportState outcome, String note) {
-        staff.requireStaff(moderatorId);
+        staff.requireCapability(moderatorId, StaffCapability.MODERATE_CONTENT);
         if (!outcome.isResolution()) {
             // Unreachable from the two endpoints, which name the outcome themselves.
             // Here so that a third one cannot quietly re-open a decided report.
@@ -196,7 +197,7 @@ public class ReportModerationService {
      */
     @Transactional(readOnly = true)
     public QueuedReport report(UUID reportId, UUID moderatorId) {
-        staff.requireStaff(moderatorId);
+        staff.requireCapability(moderatorId, StaffCapability.MODERATE_CONTENT);
         ContentReport report = reports.findById(reportId).orElseThrow(() -> new ReportNotFoundException(reportId));
         return QueuedReport.of(report, openReportsOn(report));
     }

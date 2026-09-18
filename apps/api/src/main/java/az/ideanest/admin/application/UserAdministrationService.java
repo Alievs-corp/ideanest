@@ -8,6 +8,7 @@ import az.ideanest.auth.application.SessionRevoker;
 import az.ideanest.pledge.application.BackerArchive;
 import az.ideanest.pledge.application.BackerCursor;
 import az.ideanest.shared.access.PlatformStaff;
+import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.user.application.AccountNotFoundException;
 import az.ideanest.user.application.AdministeredAccount;
 import az.ideanest.user.application.UserDirectory;
@@ -93,7 +94,7 @@ public class UserAdministrationService {
     public List<AdministeredAccount> search(
             UUID staffId, String term, boolean suspendedOnly, UUID after, Integer limit) {
 
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.ADMINISTER_ACCOUNTS);
         List<AdministeredAccount> found = accounts.search(term, suspendedOnly, after, limit);
 
         // What was asked and how much came back, never who came back and never the term:
@@ -120,7 +121,7 @@ public class UserAdministrationService {
      *     deleted account — deliberately the same answer
      */
     public AdministeredAccount inspect(UUID staffId, UUID userId) {
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.ADMINISTER_ACCOUNTS);
         AdministeredAccount account = accounts.find(userId).orElseThrow(() -> new AccountNotFoundException(userId));
 
         audit.recordIndependently(
@@ -179,7 +180,7 @@ public class UserAdministrationService {
      *     platform staff
      */
     public BackerArchive.PledgePage pledgesOf(UUID staffId, UUID userId, BackerCursor cursor, Integer limit) {
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.ADMINISTER_ACCOUNTS);
         if (accounts.find(userId).isEmpty()) {
             throw new AccountNotFoundException(userId);
         }
@@ -213,7 +214,7 @@ public class UserAdministrationService {
      */
     @Transactional
     public AdministeredAccount suspend(UUID staffId, UUID userId, String reason) {
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.ADMINISTER_ACCOUNTS);
 
         AdministeredAccount suspended = accounts.suspend(userId, staffId, reason);
         Instant at = clock.instant().truncatedTo(ChronoUnit.MICROS);
@@ -240,7 +241,7 @@ public class UserAdministrationService {
      */
     @Transactional
     public AdministeredAccount reinstate(UUID staffId, UUID userId) {
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.ADMINISTER_ACCOUNTS);
         AdministeredAccount reinstated = accounts.reinstate(userId);
 
         audit.record(
