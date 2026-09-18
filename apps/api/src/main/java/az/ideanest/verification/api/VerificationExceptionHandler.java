@@ -1,5 +1,7 @@
 package az.ideanest.verification.api;
 
+import az.ideanest.staff.api.StaffRefusals;
+import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
 import az.ideanest.verification.application.DocumentRefusedException;
 import az.ideanest.verification.application.DocumentStorageUnavailableException;
@@ -36,6 +38,21 @@ public class VerificationExceptionHandler {
         problem.setDetail("Identity documents are reviewed by platform staff.");
         problem.setProperty("code", "NOT_A_MODERATOR");
         return problem;
+    }
+
+    /**
+     * 403 for a colleague on a surface that is not theirs.
+     *
+     * <p>A different refusal from the one above and deliberately not collapsed into it: that
+     * one says "you do not work here", this one names the capability the caller is short of,
+     * and only the second can be fixed by asking an administrator for a role. The console
+     * reads {@code meta.capability} off this body and says which — and it is what the rail
+     * hides an entry on, so the two agree about identity review, which is {@code StaffRole.COMPLIANCE}'s and holds the narrowest
+     * reads on the platform.
+     */
+    @ExceptionHandler(InsufficientStaffCapabilityException.class)
+    public ProblemDetail handleInsufficient(InsufficientStaffCapabilityException exception) {
+        return StaffRefusals.insufficient(exception);
     }
 
     /**

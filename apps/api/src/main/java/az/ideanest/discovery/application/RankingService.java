@@ -3,6 +3,7 @@ package az.ideanest.discovery.application;
 import az.ideanest.discovery.domain.RankingTerm;
 import az.ideanest.discovery.infrastructure.RankingWeightRepository;
 import az.ideanest.shared.access.PlatformStaff;
+import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.staff.application.NotAModeratorException;
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -158,10 +159,20 @@ public class RankingService {
                         "slug", "There is no publicly visible campaign with that slug."));
     }
 
+    /**
+     * CURATE, and not merely staff — the rail hides what a reader may not open.
+     *
+     * <p>This asked whether the caller worked here, which made the ranking weights behind every feed everybody's to edit: a
+     * moderator clearing a report queue held the same authority over the front page as
+     * {@code StaffRole.CURATOR}, whose whole definition is that one capability.
+     *
+     * <p>{@code requireCapability} keeps both refusals rather than replacing one with the
+     * other. A stranger still gets {@link NotAModeratorException} — "you do not work here" —
+     * and a colleague gets the capability they are short of, which is the one an administrator
+     * can grant. Collapsing them would send a moderator looking for a bug.
+     */
     private void requireCurator(UUID accountId) {
-        if (!moderators.isStaff(accountId)) {
-            throw new NotAModeratorException(accountId);
-        }
+        moderators.requireCapability(accountId, StaffCapability.CURATE);
     }
 
     private static void requireNote(String note) {

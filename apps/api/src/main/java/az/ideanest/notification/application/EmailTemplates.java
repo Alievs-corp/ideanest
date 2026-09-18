@@ -8,6 +8,7 @@ import az.ideanest.notification.infrastructure.MimeEmails;
 import az.ideanest.notification.infrastructure.RenderedEmail;
 import az.ideanest.shared.Identifiers;
 import az.ideanest.shared.access.PlatformStaff;
+import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.user.application.UserAccount;
 import az.ideanest.user.application.UserAccounts;
 import jakarta.mail.MessagingException;
@@ -134,7 +135,7 @@ public class EmailTemplates {
      * and this is where it is left out.
      */
     public List<NotificationType> previewable(UUID staffAccountId) {
-        staff.requireStaff(staffAccountId);
+        staff.requireCapability(staffAccountId, StaffCapability.CONFIGURE_PLATFORM);
         return List.of(NotificationType.values()).stream()
                 .filter(type -> type.channels().contains(NotificationChannel.EMAIL))
                 .toList();
@@ -143,7 +144,7 @@ public class EmailTemplates {
     /** One template, rendered against the sample document. */
     @Transactional(readOnly = true)
     public RenderedEmail preview(UUID staffAccountId, NotificationType type) {
-        staff.requireStaff(staffAccountId);
+        staff.requireCapability(staffAccountId, StaffCapability.CONFIGURE_PLATFORM);
         requireEmail(type);
 
         /*
@@ -169,7 +170,7 @@ public class EmailTemplates {
      *     request, so a failure belongs in the response rather than in a retry queue
      */
     public void testSend(UUID staffAccountId, NotificationType type) throws MessagingException {
-        staff.requireStaff(staffAccountId);
+        staff.requireCapability(staffAccountId, StaffCapability.CONFIGURE_PLATFORM);
         requireEmail(type);
 
         UserAccount recipient = users.findById(staffAccountId)

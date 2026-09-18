@@ -7,6 +7,8 @@ import az.ideanest.moderation.application.ReportTargetNotFoundException;
 import az.ideanest.moderation.application.SelfReportException;
 import az.ideanest.moderation.application.UnsupportedReportTargetException;
 import az.ideanest.moderation.domain.ReportState;
+import az.ideanest.staff.api.StaffRefusals;
+import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -182,6 +184,20 @@ public class ReportExceptionHandler {
         problem.setDetail("The report queue is read and cleared by platform staff.");
         problem.setProperty("code", "NOT_A_MODERATOR");
         return problem;
+    }
+
+    /**
+     * 403 for a colleague on a surface that is not theirs.
+     *
+     * <p>A different refusal from the one above and deliberately not collapsed into it: that
+     * one says "you do not work here", this one names the capability the caller is short of,
+     * and only the second can be fixed by asking an administrator for a role. The console
+     * reads {@code meta.capability} off this body and says which — and it is what the rail
+     * hides an entry on, so the two agree about the report queues, which are a moderator's work and not a curator's.
+     */
+    @ExceptionHandler(InsufficientStaffCapabilityException.class)
+    public ProblemDetail handleInsufficient(InsufficientStaffCapabilityException exception) {
+        return StaffRefusals.insufficient(exception);
     }
 
     private static List<String> names(List<ReportState> states) {

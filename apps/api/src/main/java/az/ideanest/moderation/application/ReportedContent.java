@@ -7,6 +7,7 @@ import az.ideanest.moderation.domain.ContentReport;
 import az.ideanest.moderation.domain.ReportTargetType;
 import az.ideanest.moderation.infrastructure.ContentReportRepository;
 import az.ideanest.shared.access.PlatformStaff;
+import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.shared.project.ProjectSummaries;
 import az.ideanest.shared.project.ProjectSummary;
 import java.util.UUID;
@@ -76,7 +77,7 @@ public class ReportedContent {
      */
     @Transactional(readOnly = true)
     public ReportedItem of(UUID reportId, UUID moderatorId) {
-        staff.requireStaff(moderatorId);
+        staff.requireCapability(moderatorId, StaffCapability.MODERATE_CONTENT);
 
         ContentReport report = reports.findById(reportId).orElseThrow(() -> new ReportNotFoundException(reportId));
 

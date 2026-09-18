@@ -339,7 +339,7 @@ public class Subscriptions {
      */
     @Transactional(readOnly = true)
     public AccountSubscriptionHistory accountHistory(UUID staffId, UUID accountId) {
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.CONFIGURE_PLATFORM);
         if (accounts.find(accountId).isEmpty()) {
             throw new AccountNotFoundException(accountId);
         }

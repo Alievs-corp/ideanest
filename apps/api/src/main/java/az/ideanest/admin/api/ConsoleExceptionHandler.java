@@ -3,6 +3,8 @@ package az.ideanest.admin.api;
 import az.ideanest.audit.InvalidAuditCursorException;
 import az.ideanest.payment.application.InvalidPaymentLogCursorException;
 import az.ideanest.payment.application.UnknownTransactionOutcomeException;
+import az.ideanest.staff.api.StaffRefusals;
+import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
 import java.net.URI;
 import java.util.Map;
@@ -45,6 +47,21 @@ public class ConsoleExceptionHandler {
         problem.setDetail("The administration console is read by platform staff.");
         problem.setProperty("code", "NOT_A_MODERATOR");
         return problem;
+    }
+
+    /**
+     * 403 for a colleague on a surface that is not theirs.
+     *
+     * <p>A different refusal from the one above and deliberately not collapsed into it: that
+     * one says "you do not work here", this one names the capability the caller is short of,
+     * and only the second can be fixed by asking an administrator for a role. The console
+     * reads {@code meta.capability} off this body and says which — and it is what the rail
+     * hides an entry on, so the two agree about the three read surfaces a role model now separates: the trail is every role's to read,
+     * and the ledger and the payment log are finance's.
+     */
+    @ExceptionHandler(InsufficientStaffCapabilityException.class)
+    public ProblemDetail handleInsufficient(InsufficientStaffCapabilityException exception) {
+        return StaffRefusals.insufficient(exception);
     }
 
     /**

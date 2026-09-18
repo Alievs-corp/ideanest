@@ -16,6 +16,7 @@ import az.ideanest.payment.application.PaymentLogCursor;
 import az.ideanest.payment.application.PaymentLogPage;
 import az.ideanest.payment.application.PaymentLogScope;
 import az.ideanest.shared.access.PlatformStaff;
+import az.ideanest.shared.access.StaffCapability;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
@@ -78,11 +79,21 @@ public class ConsoleReadService {
     /**
      * AD-14's trail: what has been done, by whom, to what.
      *
+     * <p><strong>{@code VIEW_AUDIT} rather than any staff member.</strong> Being staff was the
+     * only question this asked until the console started hiding what a reader may not open, and
+     * the two have to be the same question: a rail that drops the audit entry for somebody who
+     * can still read the trail through the API is a rail that lies in the safe direction and
+     * tells nobody. Every role in {@code StaffRole} holds {@code VIEW_AUDIT}, so this refuses
+     * nobody who could read it before — and the capability is now the thing a future role
+     * without it is measured against, rather than its mere membership.
+     *
      * @throws az.ideanest.staff.application.NotAModeratorException for a caller who is not
      *     platform staff
+     * @throws az.ideanest.staff.application.InsufficientStaffCapabilityException for a member of
+     *     staff whose roles do not include {@code VIEW_AUDIT}
      */
     public AuditTrailPage auditTrail(UUID staffId, AuditTrailFilter filter, AuditCursor before, int limit) {
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.VIEW_AUDIT);
         AuditTrailPage page = trail.page(filter, before, limit);
 
         record(
@@ -107,11 +118,19 @@ public class ConsoleReadService {
     /**
      * AD-05's payment log: every charge, its provider reference, and why it failed.
      *
+     * <p><strong>{@code VIEW_FINANCE}, which a curator does not hold.</strong> This screen is
+     * what a card was charged and what the provider said about it, beside the provider's own
+     * reference — the same subject the ledger below is, and the one {@code StaffRole.FINANCE}
+     * exists to name. It asked only for staff until the console began hiding the entry, and a
+     * hidden entry over an open endpoint is worth less than no gate at all.
+     *
      * @throws az.ideanest.staff.application.NotAModeratorException for a caller who is not
      *     platform staff
+     * @throws az.ideanest.staff.application.InsufficientStaffCapabilityException for a member of
+     *     staff whose roles do not include {@code VIEW_FINANCE}
      */
     public PaymentLogPage paymentLog(UUID staffId, PaymentLogScope scope, PaymentLogCursor before, int limit) {
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.VIEW_FINANCE);
         PaymentLogPage page = payments.page(scope, before, limit);
 
         record(
@@ -135,11 +154,17 @@ public class ConsoleReadService {
     /**
      * AD-05's ledger: both sides of every posting, and what each account holds.
      *
+     * <p><strong>{@code VIEW_FINANCE}.</strong> The platform's books are the narrowest read in
+     * the console and were behind the widest check in it; a moderator clearing a report queue
+     * has no business with what the escrow account holds, and until now had it.
+     *
      * @throws az.ideanest.staff.application.NotAModeratorException for a caller who is not
      *     platform staff
+     * @throws az.ideanest.staff.application.InsufficientStaffCapabilityException for a member of
+     *     staff whose roles do not include {@code VIEW_FINANCE}
      */
     public LedgerView ledger(UUID staffId, LedgerScope scope, Long before, int limit) {
-        staff.requireStaff(staffId);
+        staff.requireCapability(staffId, StaffCapability.VIEW_FINANCE);
         LedgerView view = ledger.page(scope, before, limit);
 
         record(
