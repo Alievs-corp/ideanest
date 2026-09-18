@@ -1,17 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { listUsers } from '../../lib/admin/api';
 import { lookUpNames } from '../../lib/admin/directory';
 import { readHealth } from '../../lib/admin/health';
 import { readPayout, readPayoutQueue } from '../../lib/admin/payouts';
-import { grantRole, readMembership, readRoster } from '../../lib/admin/staff';
+import {
+  grantRole,
+  readMembership,
+  readRoster,
+  ROLE_CAPABILITIES,
+  STAFF_CAPABILITIES,
+} from '../../lib/admin/staff';
 import type { PlatformHealth } from '../../lib/admin/health';
 import type { PayoutFile, PayoutPage } from '../../lib/admin/payouts';
 import { HealthDashboard } from './HealthDashboard';
 import { PayoutQueue } from './PayoutQueue';
 import { StaffRoles } from './StaffRoles';
 import { ConsoleIndex } from './ConsoleIndex';
+import { ConsoleMembershipProvider } from './ConsoleMembership';
+import { CONSOLE_MODULES, visibleConsoleModules } from '../../lib/admin/navigation';
+import type { StaffCapability } from '../../lib/admin/staff';
 import { EntityName } from './ConsoleIdentity';
 import { translatorFor } from '../../test-copy';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
@@ -430,11 +439,31 @@ describe('the health dashboard', () => {
 });
 
 /**
- * A console index that describes the console — issue #405.
+ * A console index that describes the console — issue #405, and the reader's half of it, #295.
  */
 describe('the console index', () => {
+  /** The index renders inside `ConsoleGate`, so a membership is always in hand by then. */
+  function renderIndex(capabilities: readonly StaffCapability[]): void {
+    render(
+      <ConsoleMembershipProvider
+        given={{
+          status: 'ready',
+          membership: {
+            accountId: '0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0',
+            staff: true,
+            bootstrapped: false,
+            roles: [],
+            capabilities: [...capabilities],
+          },
+        }}
+      >
+        <ConsoleIndex copy={INDEX} />
+      </ConsoleMembershipProvider>,
+    );
+  }
+
   it('says how many modules are finished and how many are partly built', () => {
-    render(<ConsoleIndex copy={INDEX} />);
+    renderIndex(STAFF_CAPABILITIES);
 
     /*
      * It used to say sixteen of sixteen have a screen and that "the rest say what they are
@@ -443,6 +472,61 @@ describe('the console index', () => {
      */
     const standfirst = screen.getByText(/16 modules/);
     expect(standfirst.textContent).not.toContain('16 of them have a screen');
-    expect(standfirst.textContent).toMatch(/7 of them are finished and 9 are partly built/);
+    expect(standfirst.textContent).toMatch(/finished: 7, partly built: 9/);
+  });
+
+  it('counts what the reader is looking at, not what §4.11 has', () => {
+    // A standfirst saying "sixteen modules" over four rows would be describing a different
+    // page from the one under it.
+    renderIndex(ROLE_CAPABILITIES.CURATOR);
+
+    const modules = visibleConsoleModules(ROLE_CAPABILITIES.CURATOR);
+    expect(modules.length).toBeLessThan(CONSOLE_MODULES.length);
+    expect(screen.getByText(new RegExp(`The ${modules.length} modules`, 'u'))).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(modules.length);
+  });
+
+  it('lists a module the reader can open and leaves out one they cannot', () => {
+    renderIndex(ROLE_CAPABILITIES.CURATOR);
+
+    // AD-03 is curation; AD-05 is the ledger and the payout queue.
+    expect(screen.getByText('AD-03')).toBeInTheDocument();
+    expect(screen.queryByText('AD-05')).not.toBeInTheDocument();
+  });
+
+  it('says how many modules are not theirs, and where to read what a role holds', () => {
+    renderIndex(ROLE_CAPABILITIES.CURATOR);
+
+    const hidden = CONSOLE_MODULES.length - visibleConsoleModules(ROLE_CAPABILITIES.CURATOR).length;
+    // The answer to the objection the old always-everything rail was built on: somebody who
+    // cannot see a screen still has somewhere to learn that it exists.
+    expect(screen.getByText(new RegExp(`: ${hidden}\\.`, 'u'))).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: INDEX.rolesLink })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/admin/staff'),
+    );
+  });
+
+  it('says nothing about hidden modules to somebody who can open all of them', () => {
+    renderIndex(STAFF_CAPABILITIES);
+
+    expect(screen.queryByRole('link', { name: INDEX.rolesLink })).not.toBeInTheDocument();
+  });
+
+  it('points a row at a screen of the module the reader can actually open', () => {
+    /*
+     * AD-04 is two capabilities under one module: `/admin/users` wants ADMINISTER_ACCOUNTS and
+     * `/admin/staff` wants ADMINISTER_STAFF. Somebody holding only the second gets the row, and
+     * a link they can follow rather than the module's own href.
+     */
+    renderIndex(['ADMINISTER_STAFF']);
+
+    const row = screen.getByText('AD-04').closest('li');
+    expect(row).not.toBeNull();
+    // Two links in a part-built row: the module's, and the issue its waiting-on note cites.
+    expect(within(row as HTMLElement).getAllByRole('link')[0]).toHaveAttribute(
+      'href',
+      expect.stringContaining('/admin/staff'),
+    );
   });
 });

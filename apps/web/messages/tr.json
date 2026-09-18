@@ -493,9 +493,11 @@
     "index": {
       "title": "Yönetim konsolu",
       "metaDescription": "Platform modülleri, hangilerinin ekranı var ve geri kalanı neyi bekliyor.",
-      "standfirst": "§4.11’in tanımladığı {total} modül. Bunlardan {complete} tanesi tamamlandı, {partial} tanesi kısmen kuruldu; bunların her biri neyi beklediğini söylüyor, çünkü konsolun neredeyse bittiği izlenimini veren bir liste, boşluğu adıyla anan bir listeden kötüdür.",
+      "standfirst": "Rollerinizin açtığı {total} modül — tamamlandı: {complete}, kısmen kuruldu: {partial}. Bunlardan ikincilerin her biri neyi beklediğini söylüyor, çünkü konsolun neredeyse bittiği izlenimini veren bir liste, boşluğu adıyla anan bir listeden kötüdür.",
       "issue": "Konu #{issue}",
-      "footnote": "Buradaki hiçbir ekran bir kapı değil. Konsolun çağırdığı her uç nokta çağıranı kendisi denetler — yabancıyı yabancı olarak, çalışanı ise ekranın istediği yetkiye göre reddeder — ve her ekran bu reddi geldiği gibi gösterir. Tarayıcıdaki bir denetim, servisin zaten doğru yaptığı denetimin ikinci ve daha zayıf bir kopyası olurdu."
+      "notYours": "Rollerinizin açmadığı modüller burada listelenmiyor: {count}.",
+      "rolesLink": "Hangi rol neyi taşır",
+      "footnote": "Konsol rollerinizin açtığını listeler; bu bir kilit değil, bir nezakettir. Çağırdığı her uç nokta çağıranı kendisi denetler — yabancıyı yabancı olarak, çalışanı ise ekranın istediği yetkiye göre reddeder — ve her ekran bu reddi geldiği gibi gösterir. Tarayıcı burada yetke olamaz: denetlemek için harcaması gereken oturum, denetlediği oturumun ta kendisidir."
     },
     "modules": {
       "AD-01": {

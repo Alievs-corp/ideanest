@@ -493,9 +493,11 @@
     "index": {
       "title": "İdarəetmə konsolu",
       "metaDescription": "Platforma modulları, hansılarının ekranı var və qalanların nəyi gözlədiyi.",
-      "standfirst": "§4.11-in təsvir etdiyi {total} modul. Onlardan {complete} ədədi tamamlanıb, {partial} ədədi isə qismən qurulub; hər biri nəyi gözlədiyini bildirir, çünki konsolun az qala bitdiyi təəssüratını yaradan siyahı, boşluğu adı ilə çağıran siyahıdan pisdir.",
+      "standfirst": "Rollarınızın açdığı {total} modul — tamamlanıb: {complete}, qismən qurulub: {partial}. Sonuncuların hər biri nəyi gözlədiyini bildirir, çünki konsolun az qala bitdiyi təəssüratını yaradan siyahı, boşluğu adı ilə çağıran siyahıdan pisdir.",
       "issue": "Məsələ #{issue}",
-      "footnote": "Buradakı heç bir ekran keçid nəzarəti deyil. Konsolun müraciət etdiyi hər son nöqtə çağırışı özü yoxlayır — işçi olmayanı rədd edir, işçini isə ekranın tələb etdiyi səlahiyyətə görə — və hər ekran həmin rəddi olduğu kimi göstərir. Brauzerdəki yoxlama, xidmətin onsuz da düzgün etdiyi yoxlamanın ikinci, daha zəif surəti olardı."
+      "notYours": "Rollarınızın açmadığı modullar burada sadalanmır: {count}.",
+      "rolesLink": "Hansı rol nəyi daşıyır",
+      "footnote": "Konsol rollarınızın açdığını sadalayır və bu, qıfıl deyil, nəzakətdir. Müraciət etdiyi hər son nöqtə çağırışı özü yoxlayır — işçi olmayanı işçi olmayan kimi rədd edir, işçini isə ekranın tələb etdiyi səlahiyyətə görə — və hər ekran həmin rəddi olduğu kimi göstərir. Brauzer burada səlahiyyət sahibi ola bilməz: yoxlamaq üçün xərcləməli olduğu sessiya elə yoxladığı sessiyadır."
     },
     "modules": {
       "AD-01": {

@@ -81,6 +81,17 @@ export interface ConsoleIndexCopy {
   /** Carries `{issue}`. */
   readonly issue: string;
   readonly footnote: string;
+  /**
+   * How many of §4.11's modules this reader's roles do not open. Carries `{count}` — #295.
+   *
+   * <p>Worded so that the number can be any number. The catalogue has ICU plurals elsewhere and
+   * cannot use one here: console copy is read with `t.raw` and filled by `fillPlaceholders`,
+   * which is placeholder substitution and not a message formatter — an ICU form would render as
+   * its own source.
+   */
+  readonly notYours: string;
+  /** The link beside it, to the screen that says what each role holds. */
+  readonly rolesLink: string;
   /** Keyed by `ModuleState`. Never the only carrier of the state — a tone sits beside it. */
   readonly states: Readonly<Record<string, string>>;
   /** Keyed by §4.11's module code. */
@@ -107,6 +118,10 @@ export function consoleIndexCopyFrom(t: AdminTranslator): ConsoleIndexCopy {
     standfirst: String(t.raw('index.standfirst')),
     issue: String(t.raw('index.issue')),
     footnote: t('index.footnote'),
+    /* `raw` on the first, because next-intl renders a template's own key when it is read with
+       `t()` and has no value for the argument — `src/test-copy.ts` refuses the same in tests. */
+    notYours: String(t.raw('index.notYours')),
+    rolesLink: t('index.rolesLink'),
     states: t.raw('states') as Readonly<Record<string, string>>,
     modules: t.raw('modules') as Readonly<Record<string, ModuleCopy>>,
   };

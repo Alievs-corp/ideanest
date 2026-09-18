@@ -1,13 +1,16 @@
+'use client';
+
 import { Link } from '../../i18n/navigation';
 import type { ConsoleIndexCopy } from '../../lib/i18n/admin-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import {
   CONSOLE_MODULES,
-  completeModuleCount,
-  partialModuleCount,
+  firstOpenableScreen,
+  visibleConsoleModules,
   type ConsoleModule,
   type ModuleState,
 } from '../../lib/admin/navigation';
+import { useConsoleMembership } from './ConsoleMembership';
 
 /**
  * §4.11's sixteen modules, and the state of each — issue #294.
@@ -35,19 +38,34 @@ import {
  * `--lime-500` means "act now" (docs/ui-kit.md), and a module that is blocked on somebody
  * else's issue is the opposite of something to act on.
  *
- * <h2>Static, and therefore free — and it imports nothing from the kit</h2>
+ * <h2>It lists the modules this reader can open — issue #295</h2>
  *
- * Nothing on this page fetches. It is a server component over a frozen list, so it costs the
- * browser no JavaScript at all beyond what the shell already carries — which is the right
- * shape for the one console screen that is read most often and acted on least.
+ * <p>The rail draws the entries somebody may open and this page is the same rule applied to
+ * subjects rather than destinations: a module is listed when any one of its screens is theirs,
+ * and the row links to the first of them that is — which is not always the module's own
+ * `href`, because AD-04's account administration and its staff roster are two capabilities
+ * under one module.
  *
- * <p><strong>Which is why the state label is markup rather than the kit's `Tag`.</strong>
- * `@ideanest/ui`'s root barrel re-exports `Table`, `Field`, `Radio` and `Combobox`, and every
- * one of them calls `createContext` — so a server component that imports <em>anything</em>
- * from that barrel does not merely pay for it, it fails to build. `MinimalShell` records the
- * measurement of the same mechanism from the other side: a barrel in a `transpilePackages`
- * source package lands in one shared chunk, and it cost this application 83.3 KiB on every
- * route the last time somebody imported it somewhere it did not belong.
+ * <p><strong>What is hidden is counted and said out loud.</strong> One line under the list
+ * gives the number of §4.11's modules that this reader's roles do not open, and links to
+ * `/admin/staff`, where every capability is named and explained. The objection the rail's old
+ * behaviour was built on — that somebody who cannot see a screen has no way to learn it exists
+ * — is answered there rather than by listing twenty-three dead ends.
+ *
+ * <h2>A client component, which it did not use to be, and what that cost</h2>
+ *
+ * <p>It was a server component over a frozen list and cost the browser nothing. Filtering by
+ * capability needs the membership, the membership lives in the browser — `staff.ts` records
+ * why it cannot live anywhere else — so this became a client component and `/[locale]/admin`
+ * gained the weight of its own markup. `apps/web/performance/budgets.json` is where that shows
+ * up, and the check that guards it is the reason the number is in the pull request rather than
+ * in somebody's memory.
+ *
+ * <p><strong>It still imports nothing from the kit, and now for a second reason.</strong>
+ * `@ideanest/ui`'s root barrel re-exports `Table`, `Field`, `Radio` and `Combobox`; a barrel in
+ * a `transpilePackages` source package lands in one shared chunk, and `ConsoleGate` records it
+ * costing this route 47.2 KiB the one time the console shell reached for it. The state label
+ * is `Tag`'s classes copied deliberately.
  *
  * <p>The three spans below are `Tag`'s own variant classes, copied deliberately and not
  * abstracted: three class strings in one file is a smaller thing to keep in step than a
@@ -82,9 +100,18 @@ function issueHref(issue: number): string {
 
 function ModuleRow({
   module,
+  href,
   copy,
 }: {
   readonly module: ConsoleModule;
+  /**
+   * Where this reader's copy of the row points — `firstOpenableScreen`, not `module.href`.
+   *
+   * <p>Null for a module with no screen at all, which is the row that is text rather than a
+   * link and has been since #294: a disabled link is still in the tab order, still reads as a
+   * destination, and teaches people to click things that do nothing.
+   */
+  readonly href: string | null;
   readonly copy: ConsoleIndexCopy;
 }) {
   const words = copy.modules[module.code];
@@ -98,11 +125,11 @@ function ModuleRow({
   return (
     <li className="rounded-xl border border-white/8 bg-surface-1 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        {module.href === null ? (
+        {href === null ? (
           heading
         ) : (
           <Link
-            href={module.href}
+            href={href}
             className="rounded-lg transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
           >
             {heading}
@@ -136,15 +163,25 @@ export interface ConsoleIndexProps {
 }
 
 export function ConsoleIndex({ copy }: ConsoleIndexProps) {
+  const { membership } = useConsoleMembership();
+  const capabilities = membership?.capabilities ?? null;
+
+  const modules = visibleConsoleModules(capabilities);
+
   /*
    * #405: this sentence used to say how many modules have a screen and then promise that
    * "the rest say what they are waiting for". All sixteen have a screen, so there was no
    * rest and the second clause described nothing — while nine of the sixteen are partly
    * built and do carry a waiting-on note, which is the fact it was reaching for. It says
    * how many are finished and how many are not.
+   *
+   * The three numbers count what this reader is looking at rather than what §4.11 has. A
+   * standfirst that said "sixteen modules" over five rows would be describing a different
+   * page from the one below it; the eleven that are missing are counted on their own line.
    */
-  const complete = completeModuleCount();
-  const partial = partialModuleCount();
+  const complete = modules.filter((module) => module.state === 'built').length;
+  const partial = modules.filter((module) => module.state === 'partial').length;
+  const hidden = CONSOLE_MODULES.length - modules.length;
 
   return (
     <div>
@@ -153,17 +190,38 @@ export function ConsoleIndex({ copy }: ConsoleIndexProps) {
       </h1>
       <p className="mt-2 max-w-[68ch] text-sm text-white/64">
         {fillPlaceholders(copy.standfirst, {
-          total: String(CONSOLE_MODULES.length),
+          total: String(modules.length),
           complete: String(complete),
           partial: String(partial),
         })}
       </p>
 
       <ul className="mt-8 flex list-none flex-col gap-3">
-        {CONSOLE_MODULES.map((module) => (
-          <ModuleRow key={module.code} module={module} copy={copy} />
+        {modules.map((module) => (
+          <ModuleRow
+            key={module.code}
+            module={module}
+            href={firstOpenableScreen(module, capabilities)}
+            copy={copy}
+          />
         ))}
       </ul>
+
+      {hidden === 0 ? null : (
+        <p className="mt-8 max-w-[68ch] text-sm text-white/48">
+          {fillPlaceholders(copy.notYours, { count: String(hidden) })}{' '}
+          {/*
+            The answer to the objection the old rail was built on. What each role holds is a
+            screen rather than a sentence, and it is one click away.
+          */}
+          <Link
+            href="/admin/staff"
+            className="text-white/64 underline underline-offset-2 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          >
+            {copy.rolesLink}
+          </Link>
+        </p>
+      )}
 
       <p className="mt-8 max-w-[68ch] text-sm text-white/48">{copy.footnote}</p>
     </div>
