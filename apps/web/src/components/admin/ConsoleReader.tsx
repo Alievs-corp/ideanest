@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { lookUpNames } from '../../lib/admin/directory';
-import { readMembership, type StaffMembership } from '../../lib/admin/staff';
 import { wasAborted } from '../../lib/admin/refusals';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { AdminShellCopy } from '../../lib/i18n/admin-copy';
+import { useConsoleMembership } from './ConsoleMembership';
 
 /**
  * Who is reading the console, and with what authority — issue #405.
@@ -28,7 +28,17 @@ import type { AdminShellCopy } from '../../lib/i18n/admin-copy';
  * <p><strong>It imports nothing from `@ideanest/ui`.</strong> `AdminArea` records the
  * measurement: the kit's root barrel lands in one shared chunk and cost this application
  * 83.3 KiB on every route the last time somebody imported it where it did not belong. This
- * component is on all thirty console routes, so it is markup and two reads.
+ * component is on all thirty console routes, so it is markup and one read.
+ *
+ * <h2>The membership is the shell's read, not this component's — issue #295</h2>
+ *
+ * <p>It used to fetch `GET /v1/admin/me` itself, which was right while it was the only thing
+ * that wanted it. The gate and the rail want the same answer, so the read moved up to
+ * `ConsoleMembershipProvider` and this consumes it: one request per navigation instead of
+ * three, and no way for the line to name a role the rail has stopped believing in.
+ *
+ * <p>The name lookup stays here. It is this line's own question — `/v1/admin/directory`
+ * turning an identifier into a name — and neither the gate nor the rail has any use for it.
  *
  * <h2>It renders nothing until it can say something true</h2>
  *
@@ -47,40 +57,42 @@ export interface ConsoleReaderProps {
 }
 
 export function ConsoleReader({ copy }: ConsoleReaderProps) {
-  const [membership, setMembership] = useState<StaffMembership | null>(null);
+  const { membership } = useConsoleMembership();
   const [name, setName] = useState<string | null>(null);
 
+  // Only staff get a name looked up: the directory refuses everybody else, and asking would
+  // be a 403 in the log for a header that is not going to be drawn.
+  const accountId = membership?.staff === true ? membership.accountId : null;
+
   useEffect(() => {
+    if (accountId === null) {
+      setName(null);
+      return;
+    }
+
     const controller = new AbortController();
 
     async function load(): Promise<void> {
       try {
-        const who = await readMembership(controller.signal);
-        if (controller.signal.aborted) return;
-        setMembership(who);
-
-        // Only staff get a name looked up: the directory refuses everybody else, and asking
-        // would be a 403 in the log for a header that is not going to be drawn.
-        if (!who.staff) return;
-
-        const directory = await lookUpNames([who.accountId], [], controller.signal);
+        const directory = await lookUpNames([accountId as string], [], controller.signal);
         if (controller.signal.aborted) return;
         setName(directory.accounts[0]?.name ?? null);
       } catch (cause) {
         if (controller.signal.aborted || wasAborted(cause)) return;
         /*
-         * Swallowed. This is a statement about the reader on a shell wrapped around every
-         * console screen; a failure to make it must not put an error above a payout queue
-         * that loaded correctly. The screens themselves refuse honestly, and the service
-         * refuses every read regardless of what this line says.
+         * Swallowed, and the line still renders — with the shortened identifier, which is the
+         * same fallback every console screen uses. This is a statement about the reader on a
+         * shell wrapped around every console screen; a failed name lookup must not put an
+         * error above a payout queue that loaded correctly, and must not take the roles off
+         * the bar either.
          */
-        setMembership(null);
+        setName(null);
       }
     }
 
     void load();
     return () => controller.abort();
-  }, []);
+  }, [accountId]);
 
   if (membership === null || !membership.staff) return null;
 

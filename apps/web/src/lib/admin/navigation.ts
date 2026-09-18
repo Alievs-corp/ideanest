@@ -40,6 +40,8 @@
  * unfinished has one in every language.
  */
 
+import type { StaffCapability } from './staff';
+
 /** What the platform can actually offer for a module today. */
 export type ModuleState =
   /** A screen exists and this entry links to it. */
@@ -302,12 +304,24 @@ export interface ConsoleGroup {
  * room to say what it is waiting for. A rail entry that opened a page saying "not built"
  * would be a destination in a navigation whose whole purpose is to take somebody somewhere.
  *
- * <p><strong>The rail does not vary by capability, and that is deliberate.</strong> Since
- * #295 the console knows what the reader may do, so hiding the screens they cannot use is
- * available and is not done: a member of staff who cannot see the fees screen has no way to
- * find out that it exists, and the first thing they do is ask somebody whether the console
- * is broken. Every screen refuses honestly and says which capability it wanted, which is a
- * better answer than an absence.
+ * <p><strong>The rail varies by capability, and it used to argue that it should not.</strong>
+ * The argument was that a member of staff who cannot see the fees screen has no way to find
+ * out that it exists, and would ask whether the console was broken. That is a real cost and
+ * it is the smaller one. A curator signing in met twenty-eight entries, twenty-three of which
+ * refused them - so the rail's job, which is to take somebody to the screen they need, was
+ * being done by a list where four fifths of the entries were dead ends. Six of those entries
+ * are the platform's books.
+ *
+ * <p>So an entry is drawn when the reader holds a capability that opens it, and
+ * {@link CONSOLE_LINK_CAPABILITIES} is where each entry says which. The earlier objection is
+ * answered rather than dismissed: `/admin/staff` lists all nineteen capabilities and what
+ * each one is for, in the reader's own language, so "which screens exist and who holds them"
+ * is a question the console answers on a screen made for it - and the refusals stay, because
+ * a URL somebody was sent still has to say what it wanted rather than nothing.
+ *
+ * <p><strong>The rail is not the gate.</strong> `ConsoleGate` decides whether the console
+ * opens at all and the service decides every read behind every screen; this decides what is
+ * <em>offered</em>, which is a different question with a much lower cost of being wrong.
  */
 export const CONSOLE_GROUPS: readonly ConsoleGroup[] = Object.freeze([
   {
@@ -364,6 +378,134 @@ export const CONSOLE_GROUPS: readonly ConsoleGroup[] = Object.freeze([
     ],
   },
 ]);
+
+/**
+ * What a console entry needs before it is worth offering - §4.11's role model, issue #295.
+ *
+ * <h2>Why a table here rather than a field on the module</h2>
+ *
+ * <p>Because the unit a reader holds is a screen, not a module. AD-11 is one module and its
+ * four screens want two different capabilities - a fee schedule and a plan are
+ * `CONFIGURE_PLATFORM`, the creator agreement is `PUBLISH_LEGAL_DOCUMENT` - and AD-04's two
+ * are `ADMINISTER_ACCOUNTS` and `ADMINISTER_STAFF`, which is the difference between reading
+ * somebody's account and granting them the authority to read everybody's. A capability per
+ * module would have to pick the loosest of them, and the loosest is the wrong answer.
+ *
+ * <h2>Each entry names what the service actually asks for</h2>
+ *
+ * <p>Read off the guard on the first read each screen makes, not invented here. Where the two
+ * could drift they now cannot in the direction that matters: every screen still refuses on
+ * its own, so a table that is too generous shows an entry that refuses honestly, and one that
+ * is too strict hides a screen somebody could have used. The second is the failure worth a
+ * test, and `navigation.test.ts` asserts that every rail entry appears here exactly once.
+ *
+ * <p><strong>Two capabilities means either, not both.</strong> `/admin/disputes` is one page
+ * over two reads the service guards separately - the chargeback queue is `VIEW_FINANCE` and
+ * the backer disputes below it are `MANAGE_DISPUTES` - and somebody who can work half of it
+ * needs the entry. `holdsAny` in `staff.ts` is that rule.
+ */
+export const CONSOLE_LINK_CAPABILITIES: Readonly<Record<string, readonly StaffCapability[]>> =
+  Object.freeze({
+    // Content - the report queues, the submission queue and the campaign directory are all
+    // one authority: MODERATE_CONTENT, which is what StaffRole.MODERATOR is mostly made of.
+    '/admin/moderation': ['MODERATE_CONTENT'],
+    '/admin/moderation/submissions': ['MODERATE_CONTENT'],
+    '/admin/campaigns': ['MODERATE_CONTENT'],
+    '/admin/moderation/content': ['MODERATE_CONTENT'],
+    '/admin/moderation/profiles': ['MODERATE_CONTENT'],
+
+    // Curation - CURATE is the whole of StaffRole.CURATOR, and the taxonomy is filed with it
+    // because a category is what a collection is assembled out of.
+    '/admin/curation': ['CURATE'],
+    '/admin/curation/badges': ['CURATE'],
+    '/admin/curation/open-calls': ['CURATE'],
+    '/admin/curation/placements': ['CURATE'],
+    '/admin/taxonomy': ['CURATE'],
+
+    // People - and the third of these is not the same authority as the other two. Granting a
+    // role is how somebody gets every capability in this table, so ADMINISTER_STAFF is an
+    // administrator's alone.
+    '/admin/users': ['ADMINISTER_ACCOUNTS'],
+    '/admin/support': ['HANDLE_SUPPORT'],
+    '/admin/staff': ['ADMINISTER_STAFF'],
+
+    /*
+     * Money - VIEW_FINANCE reads, and the two narrower capabilities act rather than open.
+     * The refund console and the payout queue are VIEW_FINANCE to read: ISSUE_REFUND and
+     * APPROVE_PAYOUT are what the buttons on them need, and hiding the screen from somebody
+     * who can read it would hide the queue from the person about to be asked to sign.
+     */
+    '/admin/payments': ['VIEW_FINANCE'],
+    '/admin/ledger': ['VIEW_FINANCE'],
+    '/admin/reconciliation': ['VIEW_FINANCE'],
+    '/admin/payouts': ['VIEW_FINANCE'],
+    '/admin/refunds': ['VIEW_FINANCE'],
+    '/admin/disputes': ['VIEW_FINANCE', 'MANAGE_DISPUTES'],
+    '/admin/fees': ['CONFIGURE_PLATFORM'],
+    '/admin/plans': ['CONFIGURE_PLATFORM'],
+    '/admin/revenue': ['CONFIGURE_PLATFORM'],
+
+    /*
+     * Platform - four different authorities, which is why this group is the one that proves
+     * the table was worth writing. The platform figures are finance's, the trail is every
+     * role's, the queue depths are VIEW_HEALTH, and §22.2's documents are the one thing on
+     * this rail that only an administrator may publish.
+     */
+    '/admin/analytics': ['VIEW_FINANCE'],
+    '/admin/audit': ['VIEW_AUDIT'],
+    '/admin/email-templates': ['CONFIGURE_PLATFORM'],
+    '/admin/flags': ['CONFIGURE_PLATFORM'],
+    '/admin/health': ['VIEW_HEALTH'],
+    '/admin/legal': ['PUBLISH_LEGAL_DOCUMENT'],
+  });
+
+/**
+ * Whether a reader holding these capabilities has any business with this entry.
+ *
+ * <p>Takes the capabilities rather than the membership, and that is what keeps this module
+ * free of everything `staff.ts` imports: the type is erased at compile time, so the rail's
+ * structure stays a file of facts that a server component can read without pulling the API
+ * client in behind it.
+ *
+ * <p><strong>An entry that is not in the table is not drawn.</strong> Fail closed, in the one
+ * direction where the cost is a member of staff asking a colleague where a screen went rather
+ * than a curator reading the platform's books. The test that every entry is in the table is
+ * what stops that being a way to lose a screen quietly.
+ */
+export function mayOpenConsoleLink(
+  href: string,
+  capabilities: readonly StaffCapability[] | null,
+): boolean {
+  if (capabilities === null) return false;
+
+  const wanted = CONSOLE_LINK_CAPABILITIES[href];
+  if (wanted === undefined) return false;
+
+  return wanted.some((capability) => capabilities.includes(capability));
+}
+
+/**
+ * The rail this reader gets: their entries, in the console's order, and no empty headings.
+ *
+ * <p>A group whose every entry is gone goes with them. "Money" over nothing is a heading that
+ * tells a curator there is money in here somewhere and they are not allowed to see it, which
+ * is both true and useless; the staff screen is where what somebody holds is explained.
+ *
+ * <p>Returns nothing at all for `null` - a reader whose membership has not arrived yet, and
+ * one who is not staff. The first is a beat during which a rail drawn from a guess would have
+ * to be redrawn when the answer came, which is movement on a surface docs/motion-system.md §5
+ * gives none; the second gets `ConsoleGate`'s sentence instead of a navigation.
+ */
+export function visibleConsoleGroups(
+  capabilities: readonly StaffCapability[] | null,
+): readonly ConsoleGroup[] {
+  if (capabilities === null) return [];
+
+  return CONSOLE_GROUPS.map((group) => ({
+    heading: group.heading,
+    links: group.links.filter((link) => mayOpenConsoleLink(link, capabilities)),
+  })).filter((group) => group.links.length > 0);
+}
 
 /**
  * Whether a navigation entry names the page being rendered.

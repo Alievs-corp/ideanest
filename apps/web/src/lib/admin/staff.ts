@@ -35,9 +35,18 @@ import { errorFrom } from '../api/problem';
 /**
  * What a member of staff may do, as the service names them.
  *
- * The same twelve as `shared.access.StaffCapability`, and deliberately a union of string
- * literals rather than an enum: it is compared against strings that arrive over the wire,
- * and `@ideanest/api-client` generates exactly this shape from `openapi.json`.
+ * The same nineteen as `shared.access.StaffCapability`, in the service's own order, and
+ * deliberately a union of string literals rather than an enum: they are compared against
+ * strings that arrive over the wire, and `@ideanest/api-client` generates exactly this shape
+ * from `openapi.json`.
+ *
+ * <p><strong>It said twelve until the rail started reading it.</strong> The service had grown
+ * seven more — the legal documents, the two acceptance reads, identity review, the document
+ * itself, a payout destination, and a compliance waiver — and the catalogue had a sentence for
+ * every one of them on `/admin/staff` while this union had eleven of nineteen. Nothing broke,
+ * because the only thing anybody did with a capability was print it. A rail that hides an
+ * entry the reader cannot open is the thing that would have broken, silently and in the
+ * direction where somebody loses a screen that is theirs.
  */
 export type StaffCapability =
   | 'MODERATE_CONTENT'
@@ -51,10 +60,23 @@ export type StaffCapability =
   | 'CONFIGURE_PLATFORM'
   | 'VIEW_AUDIT'
   | 'VIEW_HEALTH'
+  | 'PUBLISH_LEGAL_DOCUMENT'
+  | 'READ_ACCEPTANCE_RECORD'
+  | 'READ_SIGNED_AGREEMENT'
+  | 'REVIEW_IDENTITY_VERIFICATION'
+  | 'OPEN_IDENTITY_DOCUMENT'
+  | 'VERIFY_PAYOUT_DESTINATION'
+  | 'GRANT_COMPLIANCE_OVERRIDE'
   | 'ADMINISTER_STAFF';
 
-/** The four kinds of person who work here. */
-export type StaffRole = 'MODERATOR' | 'CURATOR' | 'FINANCE' | 'ADMINISTRATOR';
+/**
+ * The five kinds of person who work here.
+ *
+ * <p>`COMPLIANCE` is the one this type was missing: §22's identity review is its own authority
+ * in the service and on `/admin/staff`, and a compliance officer arriving here as a role no
+ * type admitted was a reader the console could not describe.
+ */
+export type StaffRole = 'MODERATOR' | 'CURATOR' | 'FINANCE' | 'COMPLIANCE' | 'ADMINISTRATOR';
 
 /**
  * What the console is told about whoever is reading it.
@@ -173,6 +195,13 @@ export const STAFF_CAPABILITIES: readonly StaffCapability[] = Object.freeze([
   'CONFIGURE_PLATFORM',
   'VIEW_AUDIT',
   'VIEW_HEALTH',
+  'PUBLISH_LEGAL_DOCUMENT',
+  'READ_ACCEPTANCE_RECORD',
+  'READ_SIGNED_AGREEMENT',
+  'REVIEW_IDENTITY_VERIFICATION',
+  'OPEN_IDENTITY_DOCUMENT',
+  'VERIFY_PAYOUT_DESTINATION',
+  'GRANT_COMPLIANCE_OVERRIDE',
   'ADMINISTER_STAFF',
 ]);
 
@@ -186,6 +215,21 @@ export const ROLE_CAPABILITIES: Readonly<Record<StaffRole, readonly StaffCapabil
       'ISSUE_REFUND',
       'MANAGE_DISPUTES',
       'HANDLE_SUPPORT',
+      'VIEW_AUDIT',
+    ],
+    /*
+     * §22's own role, and narrow on purpose. It holds neither MODERATE_CONTENT nor
+     * VIEW_FINANCE: opening somebody's identity document is not moderation, and confirming
+     * that a payout destination belongs to its creator is not a finance decision — the
+     * service's `StaffRole` makes both arguments at length and this mirrors them rather
+     * than restating them.
+     */
+    COMPLIANCE: [
+      'REVIEW_IDENTITY_VERIFICATION',
+      'OPEN_IDENTITY_DOCUMENT',
+      'VERIFY_PAYOUT_DESTINATION',
+      'READ_ACCEPTANCE_RECORD',
+      'READ_SIGNED_AGREEMENT',
       'VIEW_AUDIT',
     ],
     ADMINISTRATOR: STAFF_CAPABILITIES,
@@ -203,4 +247,21 @@ export function holds(
   capability: StaffCapability,
 ): boolean {
   return membership?.capabilities.includes(capability) ?? false;
+}
+
+/**
+ * Whether a membership holds any of several capabilities — issue #295's rail, #4xx.
+ *
+ * <p>`CONSOLE_LINK_CAPABILITIES` needs it and {@link holds} could not answer it: a couple of
+ * console screens are one page over two reads that the service guards separately — the
+ * chargeback console is `VIEW_FINANCE` for the queue and `MANAGE_DISPUTES` for the decision —
+ * and an entry worth showing to somebody who can work half of it is an entry that has to be
+ * shown to somebody who holds either. The alternative is hiding a screen from the person whose
+ * job it is.
+ */
+export function holdsAny(
+  membership: StaffMembership | null,
+  capabilities: readonly StaffCapability[],
+): boolean {
+  return capabilities.some((capability) => holds(membership, capability));
 }

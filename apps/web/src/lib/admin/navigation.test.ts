@@ -8,11 +8,15 @@ import tr from '../../../messages/tr.json';
 const CATALOGUES = [az, en, ru, tr];
 import {
   CONSOLE_GROUPS,
+  CONSOLE_LINK_CAPABILITIES,
   CONSOLE_MODULES,
   builtModuleCount,
   isCurrentConsoleLink,
+  mayOpenConsoleLink,
   screensOf,
+  visibleConsoleGroups,
 } from './navigation';
+import { ROLE_CAPABILITIES, STAFF_CAPABILITIES, type StaffCapability } from './staff';
 
 /**
  * The console's own contents page — §4.11, issue #294.
@@ -210,5 +214,121 @@ describe('isCurrentConsoleLink', () => {
     // generalised rule must not start marking two things current on those.
     expect(isCurrentConsoleLink('/admin/moderation', '/admin/moderation/content')).toBe(false);
     expect(isCurrentConsoleLink('/admin/moderation/content', '/admin/moderation/content')).toBe(true);
+  });
+});
+
+/**
+ * What the rail offers a reader, by capability — §4.11's role model, issue #295.
+ *
+ * <p>The rail used to draw all twenty-eight entries for everybody and argue that it should;
+ * `navigation.ts` records that argument and why it was reversed. These are the two failures
+ * the reversal can produce, one in each direction: a curator offered the platform's books,
+ * and a member of staff losing a screen that is theirs because nobody filed its capability.
+ */
+describe('what the rail offers', () => {
+  const railed = CONSOLE_GROUPS.flatMap((group) => group.links);
+
+  it('names a capability for every destination, and none for anything else', () => {
+    // `mayOpenConsoleLink` fails closed, so an entry missing from the table disappears from
+    // every rail and nothing else says so. The other direction is a line somebody forgot to
+    // delete when a screen moved.
+    expect(Object.keys(CONSOLE_LINK_CAPABILITIES).sort()).toEqual([...railed].sort());
+  });
+
+  it('names capabilities the service actually has', () => {
+    // A typo here is a screen nobody can reach: the capability would match nothing a
+    // membership ever carries, and the entry would simply never be drawn.
+    for (const [href, capabilities] of Object.entries(CONSOLE_LINK_CAPABILITIES)) {
+      expect(capabilities.length, `${href} names no capability`).toBeGreaterThan(0);
+      for (const capability of capabilities) {
+        expect(
+          STAFF_CAPABILITIES,
+          `${href} wants ${capability}, which the service does not have`,
+        ).toContain(capability);
+      }
+    }
+  });
+
+  it('offers nothing before the membership has arrived', () => {
+    // `null` is "we do not know yet", and a rail drawn from a guess is one that rearranges
+    // itself a beat later. `AdminNav` renders no navigation at all for this.
+    expect(visibleConsoleGroups(null)).toHaveLength(0);
+    expect(mayOpenConsoleLink('/admin/audit', null)).toBe(false);
+  });
+
+  it('offers nothing to a member of staff who holds nothing', () => {
+    // An account mid-revocation. `[]` is a different answer from `null` and the same rail.
+    expect(visibleConsoleGroups([])).toHaveLength(0);
+  });
+
+  it('offers every destination to a reader who holds every capability', () => {
+    const links = visibleConsoleGroups(STAFF_CAPABILITIES).flatMap((group) => group.links);
+
+    expect([...links].sort()).toEqual([...railed].sort());
+  });
+
+  it('keeps a curator out of the money and the people screens', () => {
+    const curator = ROLE_CAPABILITIES.CURATOR;
+
+    expect(mayOpenConsoleLink('/admin/curation', curator)).toBe(true);
+    expect(mayOpenConsoleLink('/admin/taxonomy', curator)).toBe(true);
+    // Every role holds VIEW_AUDIT, which is the one entry a curator shares with finance.
+    expect(mayOpenConsoleLink('/admin/audit', curator)).toBe(true);
+
+    expect(mayOpenConsoleLink('/admin/ledger', curator)).toBe(false);
+    expect(mayOpenConsoleLink('/admin/payouts', curator)).toBe(false);
+    expect(mayOpenConsoleLink('/admin/users', curator)).toBe(false);
+    // The one that decides what the rest of the table is worth.
+    expect(mayOpenConsoleLink('/admin/staff', curator)).toBe(false);
+  });
+
+  it('keeps a moderator out of the books and finance out of the queues', () => {
+    expect(mayOpenConsoleLink('/admin/moderation', ROLE_CAPABILITIES.MODERATOR)).toBe(true);
+    expect(mayOpenConsoleLink('/admin/ledger', ROLE_CAPABILITIES.MODERATOR)).toBe(false);
+
+    expect(mayOpenConsoleLink('/admin/ledger', ROLE_CAPABILITIES.FINANCE)).toBe(true);
+    expect(mayOpenConsoleLink('/admin/moderation', ROLE_CAPABILITIES.FINANCE)).toBe(false);
+  });
+
+  it('gives only an administrator the screens that change the platform', () => {
+    // Fees, plans, flags, email copy and §22.2's documents are CONFIGURE_PLATFORM and
+    // PUBLISH_LEGAL_DOCUMENT, and no other role holds either.
+    for (const role of ['MODERATOR', 'CURATOR', 'FINANCE', 'COMPLIANCE'] as const) {
+      for (const href of ['/admin/fees', '/admin/flags', '/admin/legal', '/admin/staff']) {
+        expect(
+          mayOpenConsoleLink(href, ROLE_CAPABILITIES[role]),
+          `${role} must not be offered ${href}`,
+        ).toBe(false);
+      }
+    }
+
+    for (const href of ['/admin/fees', '/admin/flags', '/admin/legal', '/admin/staff']) {
+      expect(mayOpenConsoleLink(href, ROLE_CAPABILITIES.ADMINISTRATOR)).toBe(true);
+    }
+  });
+
+  it('offers a two-capability screen to somebody who holds either', () => {
+    // `/admin/disputes` is one page over two reads the service guards separately: the
+    // chargeback queue is VIEW_FINANCE and the backer disputes below it are MANAGE_DISPUTES.
+    expect(mayOpenConsoleLink('/admin/disputes', ['VIEW_FINANCE'])).toBe(true);
+    expect(mayOpenConsoleLink('/admin/disputes', ['MANAGE_DISPUTES'])).toBe(true);
+    expect(mayOpenConsoleLink('/admin/disputes', ['CURATE'])).toBe(false);
+  });
+
+  it('drops a group whose every entry is gone, and keeps the rail order', () => {
+    const headings = visibleConsoleGroups(ROLE_CAPABILITIES.FINANCE).map((group) => group.heading);
+
+    expect(headings).toContain('money');
+    expect(headings).not.toContain('curation');
+    // Whatever survives is still in CONSOLE_GROUPS' own order: the rail is not re-sorted per
+    // reader, so somebody who gains a role finds the entries where they expected them.
+    const order = CONSOLE_GROUPS.map((group) => group.heading);
+    expect(headings).toEqual(order.filter((heading) => headings.includes(heading)));
+  });
+
+  it('never offers an entry the table does not know about', () => {
+    const everything: readonly StaffCapability[] = STAFF_CAPABILITIES;
+
+    expect(mayOpenConsoleLink('/admin/not-a-screen', everything)).toBe(false);
   });
 });

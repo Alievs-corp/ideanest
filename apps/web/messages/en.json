@@ -573,6 +573,7 @@
       }
     },
     "refusals": {
+      "consoleSubject": "the administration console",
       "signedOutTitle": "You are signed out",
       "signedOutBody": "This browser no longer has a session. Sign in again to read {subject}.",
       "forbiddenTitle": "You do not work here",
