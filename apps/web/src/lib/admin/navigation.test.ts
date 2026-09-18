@@ -12,9 +12,11 @@ import {
   CONSOLE_MODULES,
   builtModuleCount,
   isCurrentConsoleLink,
+  firstOpenableScreen,
   mayOpenConsoleLink,
   screensOf,
   visibleConsoleGroups,
+  visibleConsoleModules,
 } from './navigation';
 import { ROLE_CAPABILITIES, STAFF_CAPABILITIES, type StaffCapability } from './staff';
 
@@ -330,5 +332,51 @@ describe('what the rail offers', () => {
     const everything: readonly StaffCapability[] = STAFF_CAPABILITIES;
 
     expect(mayOpenConsoleLink('/admin/not-a-screen', everything)).toBe(false);
+  });
+});
+
+/**
+ * The console index, filtered the same way the rail is — issue #295.
+ *
+ * <p>Same rule, different unit: the rail lists destinations and the index lists subjects, so a
+ * module belongs to a reader who can open any one of its screens.
+ */
+describe('what the index lists', () => {
+  it('lists a module the reader holds one screen of', () => {
+    // AD-04 owns `/admin/users` (ADMINISTER_ACCOUNTS) and `/admin/staff` (ADMINISTER_STAFF).
+    const codes = visibleConsoleModules(['ADMINISTER_STAFF']).map((module) => module.code);
+
+    expect(codes).toContain('AD-04');
+    expect(codes).not.toContain('AD-05');
+  });
+
+  it('points a row at a screen that reader can open, not at the module href', () => {
+    const module = CONSOLE_MODULES.find((candidate) => candidate.code === 'AD-04');
+
+    expect(module?.href).toBe('/admin/users');
+    expect(firstOpenableScreen(module!, ['ADMINISTER_STAFF'])).toBe('/admin/staff');
+    expect(firstOpenableScreen(module!, ['ADMINISTER_ACCOUNTS'])).toBe('/admin/users');
+    expect(firstOpenableScreen(module!, ['CURATE'])).toBeNull();
+  });
+
+  it('lists every module for a reader who holds every capability', () => {
+    expect(visibleConsoleModules(STAFF_CAPABILITIES)).toHaveLength(CONSOLE_MODULES.length);
+  });
+
+  it('lists nothing before the membership arrives', () => {
+    expect(visibleConsoleModules(null)).toHaveLength(0);
+  });
+
+  it('keeps a module that has no screen at all', () => {
+    /*
+     * A blocked module is an announcement rather than a destination — there is nothing behind
+     * it to be refused from, and dropping it would leave the page claiming the console is
+     * smaller than the platform. Every module has an href today, so this guards the case
+     * rather than observing it.
+     */
+    const blocked = { code: 'AD-99', state: 'blocked', href: null, issue: 1 } as const;
+
+    expect(screensOf(blocked)).toHaveLength(0);
+    expect(firstOpenableScreen(blocked, ['CURATE'])).toBeNull();
   });
 });

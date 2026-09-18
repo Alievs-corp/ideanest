@@ -1522,6 +1522,21 @@ Preferences are per category and per channel, with a digest option.
 > `OPEN_IDENTITY_DOCUMENT` — the narrowest capability in the enum, which until then guarded
 > nothing, while every moderator and curator could open somebody's passport scan.
 >
+> **The index lists the modules the reader can open, and counts the rest.** `/admin` is the
+> front door and listed all sixteen of §4.11's modules to everybody, which made it the one
+> surface still handing a curator twenty-three screens that refuse them. A module is listed
+> when any one of its screens is theirs — AD-04 belongs to somebody who holds the staff roster
+> and not account administration, and the row then links to the roster rather than to the
+> module's own href — and one line under the list says how many modules their roles do not
+> open, with a link to `/admin/staff`, where each capability is named and explained. That line
+> is what answers the old objection: somebody who cannot see a screen still has somewhere to
+> learn that it exists. A module with no screen at all stays listed for everybody, because it
+> is an announcement rather than a destination and the page exists to say the platform has it.
+>
+> It cost the page its server rendering: the membership lives in the browser, so the index is
+> a client component and `/[locale]/admin` carries its own markup — 496.8 KiB against a 510 KiB
+> ceiling, measured by `Performance budgets` rather than remembered.
+>
 > **The console can name what it shows, since #402.** Every list under this prefix returns
 > identifiers and none of them returned a name, so the payout file paid `18844dbc`, the audit
 > trail recorded that `4ae450ba` suspended somebody, `/admin/staff` told the operator they

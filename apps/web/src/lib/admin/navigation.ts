@@ -508,6 +508,50 @@ export function visibleConsoleGroups(
 }
 
 /**
+ * The first screen of a module this reader may open, or null if none of them is theirs.
+ *
+ * <p>The module's own `href` where it is permitted, and one of `otherScreens` where it is not:
+ * AD-04 is the case that needs it. Its row points at `/admin/users`, which wants
+ * `ADMINISTER_ACCOUNTS`, while `/admin/staff` under the same module wants `ADMINISTER_STAFF` —
+ * so an administrator of staff who is not an administrator of accounts holds half of one module
+ * and would otherwise be handed a link that refuses them.
+ */
+export function firstOpenableScreen(
+  module: ConsoleModule,
+  capabilities: readonly StaffCapability[] | null,
+): string | null {
+  return screensOf(module).find((screen) => mayOpenConsoleLink(screen, capabilities)) ?? null;
+}
+
+/**
+ * The modules worth listing on the console index for this reader — the rail's rule, by module.
+ *
+ * <p>A module is listed when any one of its screens is, which is not the same question the rail
+ * asks: the rail is a list of destinations and this is a list of *subjects*, so AD-11 belongs
+ * here for somebody who may open the plans screen and not the creator agreement.
+ *
+ * <p><strong>A module with no screen at all stays.</strong> §4.11's table is sixteen rows and
+ * this page exists to say that every one of them has either a screen or a stated blocker — a
+ * blocked module is an announcement rather than a destination, there is nothing behind it to
+ * be refused from, and dropping it would leave the page quietly claiming the console is
+ * smaller than the platform. Every module has an `href` today, so this branch guards a case
+ * that does not exist yet and is the reason it will not be got wrong when it does.
+ *
+ * <p>`null` — a membership that has not arrived — lists nothing, as everywhere else. In
+ * practice the index never renders in that state: `ConsoleGate` is above it and draws nothing
+ * until the answer is in.
+ */
+export function visibleConsoleModules(
+  capabilities: readonly StaffCapability[] | null,
+): readonly ConsoleModule[] {
+  if (capabilities === null) return [];
+
+  return CONSOLE_MODULES.filter(
+    (module) => screensOf(module).length === 0 || firstOpenableScreen(module, capabilities) !== null,
+  );
+}
+
+/**
  * Whether a navigation entry names the page being rendered.
  *
  * <p>An exact match, and deliberately not a prefix match, because the console's paths nest:
@@ -566,24 +610,16 @@ export function builtModuleCount(): number {
   return CONSOLE_MODULES.filter((module) => module.href !== null).length;
 }
 
-/**
- * How many modules are finished, for the sentence the console index opens with — #405.
+/*
+ * COMPLETE AND PARTIAL COUNTS LIVED HERE AND ARE GONE — #295.
  *
- * <p>Complete means `built`: a screen exists and nothing about the module is outstanding.
+ * They answered "how many of §4.11's sixteen are finished", which is what the console index
+ * opened with until the index started describing the reader's own list instead. It counts the
+ * modules it is showing, over a subset this file cannot compute without a membership, so a
+ * platform-wide count is now a second answer to a question the page does not ask. Deleted
+ * rather than left: `builtModuleCount` below stays because a test asserts the rail invariant
+ * through it, and that is the difference between a fact nothing records and code nothing runs.
  */
-export function completeModuleCount(): number {
-  return CONSOLE_MODULES.filter((module) => module.state === 'built').length;
-}
-
-/**
- * How many are partly built — a screen, and a note saying which part is missing.
- *
- * <p>This is the number the standfirst was reaching for. Nine of sixteen is a fact about
- * the state of the console; "sixteen of sixteen have a screen" is a fact about routing.
- */
-export function partialModuleCount(): number {
-  return CONSOLE_MODULES.filter((module) => module.state === 'partial').length;
-}
 
 /** Every path a module owns, for a check that the rail lists nothing that is not one. */
 export function screensOf(module: ConsoleModule): readonly string[] {

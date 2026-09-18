@@ -493,9 +493,11 @@
     "index": {
       "title": "Administration console",
       "metaDescription": "The platform modules, which of them have a screen, and what the rest wait on.",
-      "standfirst": "The {total} modules §4.11 describes. {complete} of them are finished and {partial} are partly built; each of those says what it is still waiting for, because a backlog that reads as though the console were nearly done is worse than one that names the gap.",
+      "standfirst": "The {total} modules your roles open — finished: {complete}, partly built: {partial}. Each of the latter says what it is still waiting for, because a list that reads as though the console were nearly done is worse than one that names the gap.",
       "issue": "Issue #{issue}",
-      "footnote": "No screen here is a gate. Every endpoint the console calls checks the caller itself — refusing a stranger as a stranger, and a colleague by the capability the screen wanted — and each screen renders that refusal as it arrived. A check in the browser would be a second, weaker copy of one the service already makes correctly."
+      "notYours": "Modules your roles do not open are not listed here: {count}.",
+      "rolesLink": "What each role holds",
+      "footnote": "The console lists what your roles open, and that is a courtesy rather than a lock. Every endpoint it calls checks the caller itself — refusing a stranger as a stranger, and a colleague by the capability the screen wanted — and each screen renders that refusal as it arrived. The browser cannot be the authority here: the session it would have to spend to check is the one it is checking."
     },
     "modules": {
       "AD-01": {
