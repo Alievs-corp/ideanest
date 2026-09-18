@@ -1,8 +1,9 @@
 'use client';
 
+import { Info } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { ConsoleRefusalsCopy } from '../../lib/i18n/admin/common-copy';
-import { ConsoleRefusal } from './ConsoleRefusal';
 import { useConsoleMembership } from './ConsoleMembership';
 
 /**
@@ -28,16 +29,28 @@ import { useConsoleMembership } from './ConsoleMembership';
  * "the service is down" — and a reader who does not work here is told that once, instead of
  * meeting it on each screen they try.
  *
- * <h2>The refusal is `ConsoleRefusal`, and deliberately not a second one</h2>
+ * <h2>The panel is `InlineAlert`'s markup, copied, and the copy is measured</h2>
  *
- * <p>The two sentences a console screen can meet before it has anything to draw are exactly
- * the two this gate can meet, and they are already written, already translated and already
- * argued about — including why neither is `danger`. A second panel here would be a second
- * place to keep the same refusal correct, and `ConsoleReader` records what a shell component
- * that reaches for `@ideanest/ui`'s root barrel costs a route that draws no controls.
+ * <p>The obvious version of this file renders `ConsoleRefusal`, which is the same two sentences
+ * already written and already argued about. It was written that way and it broke the
+ * performance budget: `ConsoleRefusal` imports `InlineAlert` from `@ideanest/ui`'s root barrel,
+ * this component is on all thirty console routes, and a barrel in a `transpilePackages` source
+ * package lands in one shared chunk — so `/admin`, which is a server component over a frozen
+ * list and had no client kit code at all, went <strong>47.2 KiB over its 510 KiB ceiling</strong>.
+ * `apps/web/performance/README.md` records the same mechanism costing the site shell 83 KiB
+ * across twenty-three routes, and `ConsoleIndex` copies `Tag`'s classes for the same reason.
  *
- * <p>The subject it takes is the console itself — `refusals.consoleSubject`, already inflected
- * for its position in the two languages that inflect it, like every other screen's noun.
+ * <p>So the info variant is fifteen lines of markup here: `border-l-info` on `surface-2`, the
+ * title in white, the body at 64%. The screens keep using `ConsoleRefusal` — they have already
+ * paid for the barrel — and this is the one component that is drawn before any of them.
+ *
+ * <p>The icon is `lucide-react`'s, imported by name rather than through a barrel, and it is
+ * `aria-hidden`: docs/ui-kit.md §9.2 forbids colour as the only signal, and what carries the
+ * meaning here is the sentence.
+ *
+ * <p><strong>Not `danger`, for either refusal.</strong> `ConsoleRefusal` makes the argument:
+ * a session that expired is ordinary, and somebody who followed a URL they were sent has not
+ * done anything wrong. Red would be the interface shouting at them for it.
  *
  * <h2>A failed read does not become a wall</h2>
  *
@@ -66,7 +79,11 @@ export function ConsoleGate({ copy, children }: ConsoleGateProps) {
   if (status === 'loading') return null;
 
   if (status === 'signed-out') {
-    return <ConsoleRefusal status="signed-out" subject={copy.consoleSubject} copy={copy} />;
+    return (
+      <Notice title={copy.signedOutTitle}>
+        {fillPlaceholders(copy.signedOutBody, { subject: copy.consoleSubject })}
+      </Notice>
+    );
   }
 
   /*
@@ -75,14 +92,27 @@ export function ConsoleGate({ copy, children }: ConsoleGateProps) {
    * than with a branch asserting that it cannot happen. If the route ever does start refusing,
    * the console says the true thing instead of drawing itself.
    *
-   * `capability` is deliberately absent on both: there is no capability that opens the console
-   * as a whole, so the sentence is the one about standing rather than the one about authority.
+   * Neither sentence names a capability: there is none that opens the console as a whole.
    * Which screens a member of staff may open is the rail's answer, and `/admin/staff` explains
    * what each capability is for.
    */
   if (status === 'forbidden' || (status === 'ready' && membership?.staff !== true)) {
-    return <ConsoleRefusal status="forbidden" subject={copy.consoleSubject} copy={copy} />;
+    return <Notice title={copy.forbiddenTitle}>{copy.forbiddenBody}</Notice>;
   }
 
   return <>{children}</>;
+}
+
+/** `InlineAlert`'s info variant, in markup. The docblock above records what importing it cost. */
+function Notice({ title, children }: { readonly title: string; readonly children: ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 rounded-md border-l-2 border-l-info bg-surface-2 p-4 text-sm">
+      <Info aria-hidden="true" className="mt-px size-4 shrink-0 text-info" />
+
+      <div className="min-w-0 flex-1">
+        <p className="font-medium text-white">{title}</p>
+        <div className="mt-1 text-white/64">{children}</div>
+      </div>
+    </div>
+  );
 }
