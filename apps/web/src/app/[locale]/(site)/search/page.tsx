@@ -10,7 +10,7 @@ import { SEARCH_QUERY_PARAM, readSearchQuery } from '../../../../lib/search/quer
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
-import { projectCardCopy } from '../../../../lib/i18n/shell-copy.server';
+import { projectCardCopy, searchFieldCopy } from '../../../../lib/i18n/shell-copy.server';
 
 /**
  * `/search` — §4.13 WS-06, issue #262.
@@ -59,6 +59,7 @@ export default async function SearchPage({
   const t = await getTranslations('discovery.search');
   const locale = localeOrDefault(await getLocale());
   const cardCopy = await projectCardCopy();
+  const searchCopy = await searchFieldCopy();
   const query = readSearchQuery(searchParamsOf(await searchParams));
 
   /*
@@ -85,7 +86,7 @@ export default async function SearchPage({
           shared link is opened or the back button is pressed — the rule `SearchBox` states
           for the same pair on discovery.
         */}
-        <SearchField fullWidth initialQuery={query} />
+        <SearchField copy={searchCopy} fullWidth initialQuery={query} />
       </div>
 
       {query === '' ? (

@@ -53,6 +53,17 @@ export interface ShellCopy {
   readonly language: {
     readonly label: string;
   };
+  /**
+   * The search box, which is in the bar and in the drawer and is the same control in both.
+   *
+   * One key rather than three, because the form's landmark name, the input's own label and
+   * its placeholder all said the same words before this was translated and there is no
+   * reason for them to start disagreeing now. `/search` resolves it from the server too,
+   * since the box at the top of the results page is this component as well.
+   */
+  readonly search: {
+    readonly label: string;
+  };
   readonly actions: {
     readonly signIn: string;
     readonly register: string;
@@ -162,6 +173,16 @@ export interface FooterCopy {
  */
 export type ShellTranslator = (key: string) => string;
 
+/**
+ * Just the search box's words.
+ *
+ * `/search` renders `SearchField` outside the shell and needs nothing else from the
+ * namespace. `shellCopyFrom` reads the same key, so the two cannot say different things.
+ */
+export function shellSearchCopyFrom(t: ShellTranslator): ShellCopy['search'] {
+  return { label: t('search.label') };
+}
+
 export function shellCopyFrom(t: ShellTranslator): ShellCopy {
   return {
     skipToContent: t('skipToContent'),
@@ -184,6 +205,7 @@ export function shellCopyFrom(t: ShellTranslator): ShellCopy {
       label: t('drawer.label'),
     },
     language: { label: t('language.label') },
+    search: shellSearchCopyFrom(t),
     actions: {
       signIn: t('actions.signIn'),
       register: t('actions.register'),

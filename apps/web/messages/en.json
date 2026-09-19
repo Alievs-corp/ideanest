@@ -101,6 +101,34 @@
         "browse": "Browse campaigns",
         "categories": "Categories",
         "search": "Search"
+      },
+      "pages": {
+        "notFound": {
+          "metaTitle": "Page not found",
+          "metaDescription": "There is nothing at this address.",
+          "title": "There is nothing at this address",
+          "description": "The page may have moved, or the link that brought you here may be wrong. Campaigns are also removed when a creator cancels them or when moderation takes them down.",
+          "action": "Go to the home page"
+        },
+        "profileNotFound": {
+          "title": "There is no profile at this address",
+          "description": "The link may be wrong, or the person may have closed their account. Profiles also stop being public when somebody chooses to hide theirs.",
+          "action": "Browse campaigns"
+        },
+        "maintenance": {
+          "metaTitle": "Down for maintenance",
+          "metaDescription": "IdeaNest is briefly unavailable while we make a change.",
+          "title": "IdeaNest is down for a short while",
+          "description": "We are making a planned change and the platform is unavailable while it finishes. No pledge is affected: nothing is collected during a maintenance window, and every campaign deadline is unchanged.",
+          "action": "Try the home page"
+        },
+        "error": {
+          "title": "Something went wrong on our side",
+          "description": "This page could not be rendered. It is usually temporary — trying again is worth one press before anything else.",
+          "referenceLabel": "Reference",
+          "referenceHint": "Quoting it lets us find the exact failure in the log.",
+          "retry": "Try again"
+        }
       }
     },
     "whatsapp": {
@@ -124,6 +152,9 @@
         "detail": "Press send in WhatsApp to deliver it. Nothing has been sent from this page.",
         "again": "Open WhatsApp again"
       }
+    },
+    "search": {
+      "label": "Search campaigns"
     }
   },
   "account": {
@@ -246,6 +277,12 @@
         "metaDescription": "Everything IdeaNest has told you, newest first.",
         "title": "Notifications",
         "intro": "Everything the platform has told you, newest first. Opening one marks it read. <settings>Change what you are sent</settings>."
+      },
+      "pledgeDetail": {
+        "metaTitle": "Your pledge",
+        "metaDescription": "What you chose, what it comes to, and how to raise it.",
+        "title": "Your pledge",
+        "intro": "What you chose, what it comes to, and how to raise it. A pledge is charged when it is made, and refunded in full if its campaign does not succeed."
       }
     },
     "fulfilment": {
@@ -3002,7 +3039,9 @@
     },
     "contribution": {
       "legend": "Your contribution",
-      "hint": "Every amount goes to the campaign."
+      "hint": "Every amount goes to the campaign.",
+      "legendNoReward": "How much would you like to give?",
+      "rewardHint": "This reward costs {amount}. Give more if you would like to; the extra is bonus support."
     },
     "summary": {
       "label": "Pledge summary",
@@ -3235,9 +3274,44 @@
       "replyLabel": "Your reply",
       "withdraw": "Withdraw",
       "withdrawWarning": "Withdrawing leaves a note saying the comment was removed. Any replies to it stay, and it cannot be edited or restored.",
-      "keep": "Keep it"
+      "keep": "Keep it",
+      "postComment": "Post comment",
+      "postReply": "Post reply",
+      "posting": "Posting"
     },
-    "rule": "A campaign succeeds at 80% of its goal. Its creator may extend the deadline once."
+    "rule": "A campaign succeeds at 80% of its goal. Its creator may extend the deadline once.",
+    "prelaunch": {
+      "loading": "Loading this campaign",
+      "unavailableTitle": "Nothing to see here yet",
+      "unavailable": "There is no pre-launch page here. It may not be open yet, or the campaign may already have launched.",
+      "alreadyOpen": "This campaign has already opened, so there is nothing left to be reminded about.",
+      "failedTitle": "This page could not be loaded",
+      "comingSoon": "Coming soon",
+      "waiting": {
+        "one": "{count} person is waiting for this campaign.",
+        "few": "{count} people are waiting for this campaign.",
+        "many": "{count} people are waiting for this campaign.",
+        "other": "{count} people are waiting for this campaign."
+      },
+      "formTitle": "Get told when this opens",
+      "formIntro": "One email, on the day the campaign goes live.",
+      "accountAddress": "We will use the address on your account.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "emailInvalid": "Enter an email address, for example you@example.com.",
+      "submit": "Remind me",
+      "submitting": "Adding you",
+      "onListTitle": "You are on the list",
+      "onListSignedIn": "We will write to the address on your account, once, the day this campaign opens. Nothing else.",
+      "onListGuest": "We will write to you once, the day this campaign opens. Nothing else, and every message has a link to stop.",
+      "onListAnnouncement": "You are on the list. We will email you when this campaign opens.",
+      "errors": {
+        "rateLimited": "Too many attempts from here. Try again in a few minutes.",
+        "rateLimitedIn": "Too many attempts from here. Try again in about {minutes} minutes.",
+        "notSaved": "That could not be saved. Try again.",
+        "unreachable": "The service could not be reached. Check your connection and try again."
+      }
+    }
   },
   "campaignEditor": {
     "eyebrow": "Campaign editor",

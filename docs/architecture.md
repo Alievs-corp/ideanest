@@ -6348,7 +6348,18 @@ it was written in.
 > **What is still English, stated rather than left to be found.** The campaign editor,
 > the creator dashboard, the eleven panels under the account headings, and
 > `components/moderation/ReportControl` — the dialog a member of the public opens to
-> report a campaign. **The administration console is finished**: its frame, its
+> report a campaign.
+>
+> **Four surfaces were on that list by accident rather than by decision, and are not
+> any more.** The shell's search box, the failure pages' own headings — both 404s, the
+> profile 404, `/maintenance` and the two error boundaries — one pledge's own screen,
+> and the public pre-launch page were each drawing English literals inside a shell that
+> was translated around them. None of them had a reason recorded anywhere, which is what
+> separates them from the four above: a surface left in English on purpose is written
+> down here, and a surface nobody wrote down was missed. `apps/web/README.md` lists what
+> the catalogue covers, and the pre-launch page's own `lib/i18n/prelaunch-copy.ts` and
+> the pledge screen's row in `app/[locale]/account-area.pages.test.ts` are what stop each
+> of them drifting back. **The administration console is finished**: its frame, its
 > twenty-eight routes and all twenty-six screens inside them, including the moderation
 > queue, the ledger, the payouts and the fee schedules. `lib/i18n/admin/` carries the
 > reversal of the earlier decision to leave staff-facing surfaces English, and the

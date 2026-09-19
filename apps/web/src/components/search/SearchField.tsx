@@ -5,6 +5,7 @@ import { useRouter } from '../../i18n/navigation';
 import { Search } from 'lucide-react';
 import { cn } from '@ideanest/ui';
 import { searchHref } from '../../lib/search/query';
+import type { ShellCopy } from '../../lib/i18n/shell-copy';
 
 /**
  * The search entry — §4.13 WS-01's field in the header, WS-03's in the drawer, and the one at
@@ -36,6 +37,14 @@ import { searchHref } from '../../lib/search/query';
  */
 
 export interface SearchFieldProps {
+  /**
+   * The words it draws, resolved on the server — `lib/i18n/shell-copy.ts` explains why every
+   * word in the shell arrives as a prop rather than through `useTranslations`.
+   *
+   * This component is in the header, in the drawer and at the top of `/search`. The first two
+   * are handed `ShellCopy` already; the third is a server component and calls `shellCopy()`.
+   */
+  readonly copy: ShellCopy['search'];
   readonly className?: string;
   /** The drawer and the results page render it full-width; the header does not. */
   readonly fullWidth?: boolean;
@@ -53,6 +62,7 @@ export interface SearchFieldProps {
 }
 
 export function SearchField({
+  copy,
   className,
   fullWidth = false,
   initialQuery = '',
@@ -80,12 +90,12 @@ export function SearchField({
   return (
     <form
       role="search"
-      aria-label="Search campaigns"
+      aria-label={copy.label}
       onSubmit={submit}
       className={cn(fullWidth ? 'w-full' : 'w-[240px]', className)}
     >
       <label className="relative block">
-        <span className="sr-only">Search campaigns</span>
+        <span className="sr-only">{copy.label}</span>
         <Search
           aria-hidden="true"
           className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-white/40"
@@ -95,7 +105,7 @@ export function SearchField({
           name="q"
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
-          placeholder="Search campaigns"
+          placeholder={copy.label}
           className={cn(
             'h-10 w-full rounded-full border border-white/8 bg-surface-3 pl-10 pr-4',
             'text-sm text-white placeholder:text-white/40',

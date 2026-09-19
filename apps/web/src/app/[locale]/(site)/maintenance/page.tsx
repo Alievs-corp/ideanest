@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { FailureAction, FailureState } from '../../../../components/shell/FailureState';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 import { failureCopy } from '../../../../lib/i18n/shell-copy.server';
+import { getTranslations } from 'next-intl/server';
 
 /**
  * `/maintenance` — §4.13 WS-09's third failure state, issue #263.
@@ -30,27 +31,23 @@ import { failureCopy } from '../../../../lib/i18n/shell-copy.server';
  * The only failure state that hides them. Offering "Browse campaigns" from a page that exists
  * because browsing campaigns is unavailable is an invitation into the outage.
  */
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Down for maintenance',
-  description: 'IdeaNest is briefly unavailable while we make a change.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('shell.failure.pages.maintenance');
+
+  return privatePageMetadata({ title: t('metaTitle'), description: t('metaDescription') });
+}
 
 export default async function MaintenancePage() {
   const failure = await failureCopy();
+  const t = await getTranslations('shell.failure.pages.maintenance');
 
   return (
     <FailureState
-        copy={failure}
+      copy={failure}
       showLinks={false}
-      title="IdeaNest is down for a short while"
-      description={
-        <p>
-          We are making a planned change and the platform is unavailable while it finishes. No
-          pledge is affected: nothing is collected during a maintenance window, and every
-          campaign deadline is unchanged.
-        </p>
-      }
-      action={<FailureAction href="/">Try the home page</FailureAction>}
+      title={t('title')}
+      description={<p>{t('description')}</p>}
+      action={<FailureAction href="/">{t('action')}</FailureAction>}
     />
   );
 }

@@ -1,5 +1,6 @@
 import { FailureAction, FailureState } from '../../../components/shell/FailureState';
 import { failureCopy } from '../../../lib/i18n/shell-copy.server';
+import { getTranslations } from 'next-intl/server';
 
 /**
  * The 404 for a route inside the public site — §4.13 WS-09, issue #263.
@@ -27,18 +28,14 @@ import { failureCopy } from '../../../lib/i18n/shell-copy.server';
  */
 export default async function SiteNotFound() {
   const failure = await failureCopy();
+  const t = await getTranslations('shell.failure.pages.notFound');
 
   return (
     <FailureState
-        copy={failure}
-      title="There is nothing at this address"
-      description={
-        <p>
-          The page may have moved, or the link that brought you here may be wrong. Campaigns are
-          also removed when a creator cancels them or when moderation takes them down.
-        </p>
-      }
-      action={<FailureAction href="/">Go to the home page</FailureAction>}
+      copy={failure}
+      title={t('title')}
+      description={<p>{t('description')}</p>}
+      action={<FailureAction href="/">{t('action')}</FailureAction>}
     />
   );
 }

@@ -101,6 +101,34 @@
         "browse": "Kampaniyalara baxın",
         "categories": "Kateqoriyalar",
         "search": "Axtarış"
+      },
+      "pages": {
+        "notFound": {
+          "metaTitle": "Səhifə tapılmadı",
+          "metaDescription": "Bu ünvanda heç nə yoxdur.",
+          "title": "Bu ünvanda heç nə yoxdur",
+          "description": "Səhifə köçürülmüş ola bilər, ya da sizi bura gətirən keçid səhvdir. Müəllif kampaniyasını ləğv etdikdə və ya moderasiya onu götürdükdə də kampaniya silinir.",
+          "action": "Ana səhifəyə keçin"
+        },
+        "profileNotFound": {
+          "title": "Bu ünvanda profil yoxdur",
+          "description": "Keçid səhv ola bilər, ya da şəxs hesabını bağlamışdır. Kimsə profilini gizlətməyi seçdikdə də profil ictimai olmaqdan çıxır.",
+          "action": "Kampaniyalara baxın"
+        },
+        "maintenance": {
+          "metaTitle": "Texniki xidmət",
+          "metaDescription": "Dəyişiklik etdiyimiz müddətdə IdeaNest qısa vaxt əlçatan deyil.",
+          "title": "IdeaNest qısa müddətə əlçatan deyil",
+          "description": "Planlı dəyişiklik edirik və o bitənə qədər platforma əlçatan deyil. Heç bir dəstəyə təsir etmir: texniki xidmət zamanı heç nə tutulmur və hər kampaniyanın son tarixi olduğu kimi qalır.",
+          "action": "Ana səhifəni yoxlayın"
+        },
+        "error": {
+          "title": "Bizim tərəfdə nəsə səhv getdi",
+          "description": "Bu səhifə göstərilə bilmədi. Bu, adətən müvəqqətidir — hər şeydən əvvəl bir dəfə yenidən cəhd etməyə dəyər.",
+          "referenceLabel": "İstinad",
+          "referenceHint": "Onu bizə bildirsəniz, jurnalda dəqiq nasazlığı tapa bilərik.",
+          "retry": "Yenidən cəhd edin"
+        }
       }
     },
     "whatsapp": {
@@ -124,6 +152,9 @@
         "detail": "Mesajın çatması üçün WhatsApp-da Göndər düyməsini basın. Bu səhifədən heç nə göndərilmir.",
         "again": "WhatsApp-ı yenidən açın"
       }
+    },
+    "search": {
+      "label": "Kampaniyaları axtarın"
     }
   },
   "account": {
@@ -246,6 +277,12 @@
         "metaDescription": "IdeaNest-in sizə bildirdiyi hər şey, ən yenisi əvvəldə.",
         "title": "Bildirişlər",
         "intro": "Platformanın sizə bildirdiyi hər şey, ən yenisi əvvəldə. Birini açmağınız onu oxunmuş kimi işarələyir. <settings>Sizə nə göndərildiyini dəyişin</settings>."
+      },
+      "pledgeDetail": {
+        "metaTitle": "Dəstəyiniz",
+        "metaDescription": "Nə seçdiniz, məbləği nə qədərdir və onu necə artırmaq olar.",
+        "title": "Dəstəyiniz",
+        "intro": "Nə seçdiniz, məbləği nə qədərdir və onu necə artırmaq olar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, tam qaytarılır."
       }
     },
     "fulfilment": {
@@ -3002,7 +3039,9 @@
     },
     "contribution": {
       "legend": "Sizin töhfəniz",
-      "hint": "Məbləğin hamısı kampaniyaya gedir."
+      "hint": "Məbləğin hamısı kampaniyaya gedir.",
+      "legendNoReward": "Nə qədər vermək istəyirsiniz?",
+      "rewardHint": "Bu mükafat {amount} təşkil edir. İstəsəniz daha çox verin; artıq məbləğ əlavə dəstəkdir."
     },
     "summary": {
       "label": "Dəstəyin xülasəsi",
@@ -3235,9 +3274,44 @@
       "replyLabel": "Cavabınız",
       "withdraw": "Geri götür",
       "withdrawWarning": "Geri götürmək şərhin silindiyini bildirən qeyd buraxır. Ona yazılmış cavablar qalır və şərhi nə redaktə etmək, nə də geri qaytarmaq olur.",
-      "keep": "Qalsın"
+      "keep": "Qalsın",
+      "postComment": "Şərhi göndər",
+      "postReply": "Cavabı göndər",
+      "posting": "Göndərilir"
     },
-    "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Müəllif son tarixi bir dəfə uzada bilər."
+    "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Müəllif son tarixi bir dəfə uzada bilər.",
+    "prelaunch": {
+      "loading": "Bu kampaniya yüklənir",
+      "unavailableTitle": "Hələ baxmağa bir şey yoxdur",
+      "unavailable": "Burada başlanğıcdan əvvəlki səhifə yoxdur. O, hələ açılmamış ola bilər, ya da kampaniya artıq başlamışdır.",
+      "alreadyOpen": "Bu kampaniya artıq açılıb, ona görə xatırlatmağa bir şey qalmayıb.",
+      "failedTitle": "Bu səhifə yüklənə bilmədi",
+      "comingSoon": "Tezliklə",
+      "waiting": {
+        "one": "{count} nəfər bu kampaniyanı gözləyir.",
+        "few": "{count} nəfər bu kampaniyanı gözləyir.",
+        "many": "{count} nəfər bu kampaniyanı gözləyir.",
+        "other": "{count} nəfər bu kampaniyanı gözləyir."
+      },
+      "formTitle": "Açılanda xəbər verək",
+      "formIntro": "Kampaniya başlayan gün bir e-məktub.",
+      "accountAddress": "Hesabınızdakı ünvandan istifadə edəcəyik.",
+      "emailLabel": "E-poçt ünvanı",
+      "emailPlaceholder": "siz@example.com",
+      "emailInvalid": "E-poçt ünvanı yazın, məsələn siz@example.com.",
+      "submit": "Mənə xatırlat",
+      "submitting": "Əlavə olunursunuz",
+      "onListTitle": "Siyahıdasınız",
+      "onListSignedIn": "Bu kampaniya açılan gün hesabınızdakı ünvana bir dəfə yazacağıq. Başqa heç nə.",
+      "onListGuest": "Bu kampaniya açılan gün sizə bir dəfə yazacağıq. Başqa heç nə; hər məktubda dayandırmaq üçün keçid var.",
+      "onListAnnouncement": "Siyahıdasınız. Bu kampaniya açılanda sizə e-məktub göndərəcəyik.",
+      "errors": {
+        "rateLimited": "Buradan çox cəhd edildi. Bir neçə dəqiqə sonra yenidən cəhd edin.",
+        "rateLimitedIn": "Buradan çox cəhd edildi. Təxminən {minutes} dəqiqə sonra yenidən cəhd edin.",
+        "notSaved": "Yadda saxlanıla bilmədi. Yenidən cəhd edin.",
+        "unreachable": "Xidmətə çatmaq olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin."
+      }
+    }
   },
   "campaignEditor": {
     "eyebrow": "Kampaniya redaktoru",

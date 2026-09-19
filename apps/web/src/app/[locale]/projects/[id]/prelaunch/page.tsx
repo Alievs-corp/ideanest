@@ -3,6 +3,8 @@ import { PrelaunchView } from '../../../../../components/prelaunch/PrelaunchView
 import { projectPageMetadata } from '../../../../../lib/seo/metadata';
 import { fetchPublicProjectPreview } from '../../../../../lib/seo/metadata-source';
 import { localeOrDefault } from '../../../../../lib/i18n/locale';
+import { prelaunchCopy } from '../../../../../lib/i18n/shell-copy.server';
+import { getLocale } from 'next-intl/server';
 
 /**
  * The title, description, canonical, and social card of one campaign's public
@@ -57,5 +59,11 @@ export default async function PublicPrelaunchPage({ params }: { params: Promise<
    * `PrelaunchView` draws its own column and padding — so the element that was here carried
    * a landmark and nothing else.
    */
-  return <PrelaunchView projectId={id} />;
+  return (
+    <PrelaunchView
+      projectId={id}
+      copy={await prelaunchCopy()}
+      locale={localeOrDefault(await getLocale())}
+    />
+  );
 }

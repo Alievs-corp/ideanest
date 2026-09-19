@@ -5,6 +5,15 @@ import { ApiError } from '../../lib/api/problem';
 import { PRELAUNCH_COVER_SIZES } from '../../lib/images/sizes';
 import { getPrelaunchPage, remindMe, type PrelaunchPage } from '../../lib/projects/api';
 import { PrelaunchView } from './PrelaunchView';
+import { prelaunchCopyFrom } from '../../lib/i18n/prelaunch-copy';
+import { translatorFor } from '../../test-copy';
+
+/*
+ * Built from `messages/en.json` with the function the route calls, rather than retyped:
+ * `test-copy.ts` carries the argument, and it is the reason these assertions are still
+ * about the wiring after the page stopped carrying its own English.
+ */
+const COPY = prelaunchCopyFrom(translatorFor('campaign.prelaunch'));
 
 /**
  * The public pre-launch page. Appearance is reviewed in Storybook; these cover
@@ -49,14 +58,15 @@ async function openPage(overrides: Partial<PrelaunchPage> = {}): Promise<UserEve
   getPrelaunchPageMock.mockResolvedValue({ ...PAGE, ...overrides });
 
   const user = userEvent.setup();
-  render(<PrelaunchView projectId="project-1" />);
+  render(<PrelaunchView projectId="project-1" copy={COPY} locale="en" />);
   await tick();
 
   return user;
 }
 
-const emailField = (): HTMLElement => screen.getByRole('textbox', { name: 'Email address' });
-const submit = (): HTMLElement => screen.getByRole('button', { name: 'Remind me' });
+const emailField = (): HTMLElement =>
+  screen.getByRole('textbox', { name: COPY.emailLabel });
+const submit = (): HTMLElement => screen.getByRole('button', { name: COPY.submit });
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -70,9 +80,9 @@ afterEach(() => {
 describe('PrelaunchView', () => {
   it('announces that it is loading rather than showing an empty page', () => {
     getPrelaunchPageMock.mockReturnValue(new Promise<PrelaunchPage>(() => {}));
-    render(<PrelaunchView projectId="project-1" />);
+    render(<PrelaunchView projectId="project-1" copy={COPY} locale="en" />);
 
-    const label = screen.getByText('Loading this campaign');
+    const label = screen.getByText(COPY.loading);
     expect(label.closest('[aria-busy]')).toHaveAttribute('aria-busy', 'true');
   });
 
@@ -108,11 +118,11 @@ describe('PrelaunchView', () => {
     await user.click(submit());
 
     expect(remindMeMock).not.toHaveBeenCalled();
-    expect(screen.getByText('Enter an email address, for example you@example.com.')).toBeInTheDocument();
+    expect(screen.getByText(COPY.emailInvalid)).toBeInTheDocument();
     // Wired to the control rather than floating near it, so the message is read
     // out when the field is focused.
     expect(emailField()).toHaveAccessibleDescription(
-      'Enter an email address, for example you@example.com.',
+      COPY.emailInvalid,
     );
   });
 
@@ -127,8 +137,8 @@ describe('PrelaunchView', () => {
 
     // The form is gone. Leaving it on screen invites a second press and the
     // question "am I on this list twice now".
-    expect(screen.queryByRole('textbox', { name: 'Email address' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'You are on the list' })).toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: COPY.emailLabel })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: COPY.onListTitle })).toBeInTheDocument();
 
     // Announced, not merely shown.
     expect(screen.getByRole('status')).toHaveTextContent(
@@ -160,13 +170,13 @@ describe('PrelaunchView', () => {
   it('says nothing is here when the campaign has no pre-launch page', async () => {
     getPrelaunchPageMock.mockRejectedValue(new ApiError(404, null));
 
-    render(<PrelaunchView projectId="project-1" />);
+    render(<PrelaunchView projectId="project-1" copy={COPY} locale="en" />);
     await tick();
 
     // 404 covers "no such campaign", "still a draft", and "already launched" — the
     // service will not say which, so neither does this.
     expect(screen.getByText(/There is no pre-launch page here/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Remind me' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.submit })).not.toBeInTheDocument();
   });
 
   it('tells the visitor when the campaign opened while they were reading', async () => {

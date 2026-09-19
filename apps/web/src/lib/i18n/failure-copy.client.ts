@@ -60,10 +60,71 @@ const SKIP_TO_CONTENT: Record<Locale, string> = {
   tr: 'İçeriğe geç',
 };
 
+/**
+ * The error boundaries' own heading and body, carried for the same two surfaces.
+ *
+ * <p>`FailureCopy` above is the link rail every failure page shares, and it is asserted to
+ * hold exactly those keys. These are the words only an error boundary draws — the heading, the
+ * sentence under it, the digest line and the retry button — and they are here rather than in a
+ * prop for the reason this file exists: Next renders these two components itself, so there is
+ * no server parent to hand them anything, and the provider that would let them look the words
+ * up was measured at +24.7 KiB on every route on the site.
+ *
+ * <p>`failure-copy.client.test.ts` asserts every one of them against `shell.failure.pages.error`
+ * in all four catalogues, so this cannot drift from the language the rest of the page is in.
+ */
+export interface ErrorPageCopy {
+  readonly title: string;
+  readonly description: string;
+  /** Precedes the digest. Never a sentence: the digest is what follows it. */
+  readonly referenceLabel: string;
+  readonly referenceHint: string;
+  readonly retry: string;
+}
+
+const ERROR_PAGE_COPY: Record<Locale, ErrorPageCopy> = {
+  az: {
+    title: 'Bizim tərəfdə nəsə səhv getdi',
+    description:
+      'Bu səhifə göstərilə bilmədi. Bu, adətən müvəqqətidir — hər şeydən əvvəl bir dəfə yenidən cəhd etməyə dəyər.',
+    referenceLabel: 'İstinad',
+    referenceHint: 'Onu bizə bildirsəniz, jurnalda dəqiq nasazlığı tapa bilərik.',
+    retry: 'Yenidən cəhd edin',
+  },
+  en: {
+    title: 'Something went wrong on our side',
+    description:
+      'This page could not be rendered. It is usually temporary — trying again is worth one press before anything else.',
+    referenceLabel: 'Reference',
+    referenceHint: 'Quoting it lets us find the exact failure in the log.',
+    retry: 'Try again',
+  },
+  ru: {
+    title: 'Что-то пошло не так на нашей стороне',
+    description:
+      'Эту страницу не удалось отрисовать. Обычно это временно — прежде всего стоит один раз попробовать ещё раз.',
+    referenceLabel: 'Код',
+    referenceHint: 'Если вы его назовёте, мы найдём в журнале точную ошибку.',
+    retry: 'Попробуйте ещё раз',
+  },
+  tr: {
+    title: 'Bizim tarafta bir şeyler ters gitti',
+    description:
+      'Bu sayfa oluşturulamadı. Bu genellikle geçicidir — her şeyden önce bir kez tekrar denemeye değer.',
+    referenceLabel: 'Referans',
+    referenceHint: 'Bunu bize bildirirseniz, kayıtlarda tam hatayı bulabiliriz.',
+    retry: 'Tekrar deneyin',
+  },
+};
+
 export function failureCopyOf(locale: Locale): FailureCopy {
   return FAILURE_COPY[locale];
 }
 
 export function skipToContentOf(locale: Locale): string {
   return SKIP_TO_CONTENT[locale];
+}
+
+export function errorPageCopyOf(locale: Locale): ErrorPageCopy {
+  return ERROR_PAGE_COPY[locale];
 }
