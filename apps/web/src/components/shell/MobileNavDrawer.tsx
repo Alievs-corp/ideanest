@@ -137,7 +137,7 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
                 because a 240-pixel field does not fit beside a wordmark on a 360-pixel
                 screen.
               */}
-              <SearchField fullWidth onNavigate={close} />
+              <SearchField copy={copy.search} fullWidth onNavigate={close} />
             </div>
 
             <nav aria-label={copy.nav.label} className="flex-1 overflow-y-auto px-3 py-4">

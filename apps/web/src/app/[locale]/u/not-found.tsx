@@ -1,5 +1,6 @@
 import { FailureAction, FailureState } from '../../../components/shell/FailureState';
 import { failureCopy } from '../../../lib/i18n/shell-copy.server';
+import { getTranslations } from 'next-intl/server';
 
 /**
  * The 404 for `/u/{slug}` — §4.2 P-07, issue #274.
@@ -29,18 +30,14 @@ import { failureCopy } from '../../../lib/i18n/shell-copy.server';
  */
 export default async function ProfileNotFound() {
   const failure = await failureCopy();
+  const t = await getTranslations('shell.failure.pages.profileNotFound');
 
   return (
     <FailureState
-        copy={failure}
-      title="There is no profile at this address"
-      description={
-        <p>
-          The link may be wrong, or the person may have closed their account. Profiles also stop
-          being public when somebody chooses to hide theirs.
-        </p>
-      }
-      action={<FailureAction href="/discover">Browse campaigns</FailureAction>}
+      copy={failure}
+      title={t('title')}
+      description={<p>{t('description')}</p>}
+      action={<FailureAction href="/discover">{t('action')}</FailureAction>}
     />
   );
 }

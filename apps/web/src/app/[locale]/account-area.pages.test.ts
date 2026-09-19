@@ -38,6 +38,7 @@ const SCREENS: ReadonlyArray<readonly [namespace: string, route: string]> = [
   ['account.pages.surveys', 'account/surveys'],
   ['account.pages.deliveries', 'account/deliveries'],
   ['account.pages.pledges', 'pledges'],
+  ['account.pages.pledgeDetail', 'pledges/[pledgeId]'],
   ['account.pages.inbox', 'notifications'],
 ];
 

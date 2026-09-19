@@ -18,6 +18,10 @@ import { PRELAUNCH_COVER_SIZES } from '../../lib/images/sizes';
 import { canOptimise, intrinsicSize } from '../../lib/images/source';
 import { ApiError } from '../../lib/api/problem';
 import { getPrelaunchPage, remindMe, type PrelaunchPage } from '../../lib/projects/api';
+import type { PrelaunchCopy } from '../../lib/i18n/prelaunch-copy';
+import type { Locale } from '../../lib/i18n/locale';
+import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralForm } from '../../lib/i18n/plurals';
 
 /**
  * A campaign's public pre-launch page: what is coming, and the one control that
@@ -73,28 +77,34 @@ function looksLikeAnAddress(value: string): boolean {
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value.trim());
 }
 
-function messageFor(cause: unknown): string {
+function messageFor(cause: unknown, copy: PrelaunchCopy): string {
   if (cause instanceof ApiError) {
     if (cause.status === 429) {
       const seconds = cause.problem?.retryAfterSeconds;
       return seconds === undefined
-        ? 'Too many attempts from here. Try again in a few minutes.'
-        : `Too many attempts from here. Try again in about ${Math.ceil(seconds / 60)} minutes.`;
+        ? copy.errors.rateLimited
+        : fillPlaceholders(copy.errors.rateLimitedIn, {
+            minutes: String(Math.ceil(seconds / 60)),
+          });
     }
     // The service's own wording wherever there is one: the endpoint knows which
     // of its rules refused the request and this function cannot.
     return (
-      cause.problem?.detail ?? cause.problem?.title ?? 'That could not be saved. Try again.'
+      cause.problem?.detail ?? cause.problem?.title ?? copy.errors.notSaved
     );
   }
-  return 'The service could not be reached. Check your connection and try again.';
+  return copy.errors.unreachable;
 }
 
 export interface PrelaunchViewProps {
   projectId: string;
+  /** Resolved by the route. See `lib/i18n/prelaunch-copy.ts`. */
+  readonly copy: PrelaunchCopy;
+  /** The reader's language, for the one plural on the page. */
+  readonly locale: Locale;
 }
 
-export function PrelaunchView({ projectId }: PrelaunchViewProps) {
+export function PrelaunchView({ projectId, copy, locale }: PrelaunchViewProps) {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
   const [email, setEmail] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
@@ -131,11 +141,11 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
            */
           setPhase({
             kind: 'unavailable',
-            message: 'There is no pre-launch page here. It may not be open yet, or the campaign may already have launched.',
+            message: copy.unavailable,
           });
           return;
         }
-        setPhase({ kind: 'failed', message: messageFor(cause) });
+        setPhase({ kind: 'failed', message: messageFor(cause, copy) });
       }
     })();
 
@@ -146,7 +156,7 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
     setFailure(null);
 
     if (!signedIn && !looksLikeAnAddress(email)) {
-      setFieldError('Enter an email address, for example you@example.com.');
+      setFieldError(copy.emailInvalid);
       return;
     }
     setFieldError(null);
@@ -165,11 +175,11 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
         // is now a campaign to look at.
         setPhase({
           kind: 'unavailable',
-          message: 'This campaign has already opened, so there is nothing left to be reminded about.',
+          message: copy.alreadyOpen,
         });
         return;
       }
-      setFailure(messageFor(cause));
+      setFailure(messageFor(cause, copy));
     } finally {
       setSubmitting(false);
     }
@@ -178,7 +188,7 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
   if (phase.kind === 'loading') {
     return (
       <div className="mx-auto w-full max-w-[720px] px-5 py-14 sm:px-6">
-        <SkeletonGroup label="Loading this campaign">
+        <SkeletonGroup label={copy.loading}>
           <div className="flex flex-col gap-5">
             <Skeleton height="14rem" />
             {LOADING_ROWS.map((row) => (
@@ -195,7 +205,7 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
       <div className="mx-auto w-full max-w-[720px] px-5 py-14 sm:px-6">
         <InlineAlert
           variant={phase.kind === 'unavailable' ? 'info' : 'danger'}
-          title={phase.kind === 'unavailable' ? 'Nothing to see here yet' : 'This page could not be loaded'}
+          title={phase.kind === 'unavailable' ? copy.unavailableTitle : copy.failedTitle}
         >
           {phase.message}
         </InlineAlert>
@@ -253,7 +263,9 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
           </MediaFrame>
         )}
 
-        <p className="text-xs font-medium tracking-[0.06em] text-white/40 uppercase">Coming soon</p>
+        <p className="text-xs font-medium tracking-[0.06em] text-white/40 uppercase">
+          {copy.comingSoon}
+        </p>
         <h1
           id={headingId}
           className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white sm:text-4xl"
@@ -268,8 +280,11 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
         <p className="mt-6 flex items-center gap-2 text-sm text-white/64">
           <Users aria-hidden="true" className="size-4" />
           <span>
-            <strong className="font-semibold text-white">{page.followerCount}</strong>{' '}
-            {page.followerCount === 1 ? 'person is' : 'people are'} waiting for this campaign.
+            {fillNodes(pluralForm(locale, copy.waiting, page.followerCount), {
+              count: (
+                <strong className="font-semibold text-white">{page.followerCount}</strong>
+              ),
+            })}
           </span>
         </p>
         </FadeUp>
@@ -285,11 +300,9 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
             <div className="flex items-start gap-3">
               <CircleCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-success" />
               <div>
-                <h2 className="text-base font-semibold text-white">You are on the list</h2>
+                <h2 className="text-base font-semibold text-white">{copy.onListTitle}</h2>
                 <p className="mt-1 text-sm text-white/64">
-                  {signedIn
-                    ? 'We will write to the address on your account, once, the day this campaign opens. Nothing else.'
-                    : 'We will write to you once, the day this campaign opens. Nothing else, and every message has a link to stop.'}
+                  {signedIn ? copy.onListSignedIn : copy.onListGuest}
                 </p>
               </div>
               {/*
@@ -298,7 +311,7 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
                 interruption.
               */}
               <span role="status" aria-live="polite" className="sr-only">
-                You are on the list. We will email you when this campaign opens.
+                {copy.onListAnnouncement}
               </span>
             </div>
           ) : (
@@ -323,12 +336,8 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
               }}
             >
               <div>
-                <h2 className="text-base font-semibold text-white">
-                  Get told when this opens
-                </h2>
-                <p className="mt-1 text-sm text-white/64">
-                  One email, on the day the campaign goes live.
-                </p>
+                <h2 className="text-base font-semibold text-white">{copy.formTitle}</h2>
+                <p className="mt-1 text-sm text-white/64">{copy.formIntro}</p>
               </div>
 
               {failure !== null && (
@@ -346,16 +355,14 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
               )}
 
               {signedIn ? (
-                <p className="text-sm text-white/64">
-                  We will use the address on your account.
-                </p>
+                <p className="text-sm text-white/64">{copy.accountAddress}</p>
               ) : (
-                <Field label="Email address" required error={fieldError ?? undefined}>
+                <Field label={copy.emailLabel} required error={fieldError ?? undefined}>
                   <TextInput
                     type="email"
                     inputMode="email"
                     autoComplete="email"
-                    placeholder="you@example.com"
+                    placeholder={copy.emailPlaceholder}
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                   />
@@ -369,7 +376,7 @@ export function PrelaunchView({ projectId }: PrelaunchViewProps) {
                   the other way round.
                 */}
                 <Pill type="submit" variant="accent" disabled={submitting}>
-                  {submitting ? 'Adding you' : 'Remind me'}
+                  {submitting ? copy.submitting : copy.submit}
                 </Pill>
               </div>
             </form>

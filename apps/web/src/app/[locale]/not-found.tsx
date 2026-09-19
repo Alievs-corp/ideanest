@@ -4,6 +4,7 @@ import { MinimalShell } from '../../components/shell/MinimalShell';
 import { privatePageMetadata } from '../../lib/seo/metadata';
 import { failureCopy } from '../../lib/i18n/shell-copy.server';
 import { shellCopy } from '../../lib/i18n/shell-copy.server';
+import { getTranslations } from 'next-intl/server';
 
 /**
  * The 404 for a request that matched no route at all — §4.13 WS-09, issue #263.
@@ -35,27 +36,24 @@ import { shellCopy } from '../../lib/i18n/shell-copy.server';
  * page is how a 404 becomes a reflected-content surface. So the copy is about what to do next
  * rather than about what was typed.
  */
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Page not found',
-  description: 'There is nothing at this address.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('shell.failure.pages.notFound');
+
+  return privatePageMetadata({ title: t('metaTitle'), description: t('metaDescription') });
+}
 
 export default async function NotFound() {
   const { skipToContent } = await shellCopy();
   const failure = await failureCopy();
+  const t = await getTranslations('shell.failure.pages.notFound');
 
   return (
     <MinimalShell skipToContent={skipToContent}>
       <FailureState
         copy={failure}
-        title="There is nothing at this address"
-        description={
-          <p>
-            The page may have moved, or the link that brought you here may be wrong. Campaigns
-            are also removed when a creator cancels them or when moderation takes them down.
-          </p>
-        }
-        action={<FailureAction href="/">Go to the home page</FailureAction>}
+        title={t('title')}
+        description={<p>{t('description')}</p>}
+        action={<FailureAction href="/">{t('action')}</FailureAction>}
       />
     </MinimalShell>
   );

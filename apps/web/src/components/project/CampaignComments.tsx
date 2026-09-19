@@ -135,7 +135,7 @@ export async function CampaignComments({
           target={{ kind: 'campaign', projectId }}
           returnTo={returnTo}
           label={copy.composerLabel}
-          submitLabel="Post comment"
+          submitLabel={copy.postComment}
         />
       )}
 

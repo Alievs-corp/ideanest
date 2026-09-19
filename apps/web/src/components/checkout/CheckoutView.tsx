@@ -446,12 +446,18 @@ export function CheckoutView({
 
                   {checkout.choice !== null && (
                     <Field
-                      label={checkout.choice === NO_REWARD ? 'How much would you like to give?' : copy.contribution.legend}
+                      label={
+                        checkout.choice === NO_REWARD
+                          ? copy.contribution.legendNoReward
+                          : copy.contribution.legend
+                      }
                       required
                       hint={
                         checkout.reward === null
                           ? copy.contribution.hint
-                          : `This reward costs ${formatMoney(checkout.reward.price)}. Give more if you would like to; the extra is bonus support.`
+                          : fillPlaceholders(copy.contribution.rewardHint, {
+                              amount: formatMoney(checkout.reward.price),
+                            })
                       }
                       error={contributionError}
                     >

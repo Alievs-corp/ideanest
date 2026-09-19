@@ -189,7 +189,7 @@ export function CommentComposer({
 
       <div className="flex flex-wrap items-center gap-3">
         <Pill type="submit" size="sm" disabled={busy}>
-          {busy ? 'Posting' : submitLabel}
+          {busy ? copy.posting : submitLabel}
         </Pill>
 
         {onCancel !== undefined && (

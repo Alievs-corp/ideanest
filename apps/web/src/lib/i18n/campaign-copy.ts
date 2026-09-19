@@ -23,6 +23,11 @@ export interface CommentCopy {
   readonly notPosted: string;
   readonly reply: string;
   readonly replyLabel: string;
+  /** The composer's submit button: one word for a comment, one for a reply. */
+  readonly postComment: string;
+  readonly postReply: string;
+  /** What the button says while the request is in flight. */
+  readonly posting: string;
   readonly withdraw: string;
   readonly withdrawWarning: string;
   readonly keep: string;
@@ -43,6 +48,9 @@ export function commentCopyFrom(t: CampaignTranslator): CommentCopy {
     notPosted: t('notPosted'),
     reply: t('reply'),
     replyLabel: t('replyLabel'),
+    postComment: t('postComment'),
+    postReply: t('postReply'),
+    posting: t('posting'),
     withdraw: t('withdraw'),
     withdrawWarning: t('withdrawWarning'),
     keep: t('keep'),

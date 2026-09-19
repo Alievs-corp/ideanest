@@ -198,7 +198,7 @@ export function CommentControls({
           target={{ kind: 'reply', commentId }}
           returnTo={returnTo}
           label={copy.replyLabel}
-          submitLabel="Post reply"
+          submitLabel={copy.postReply}
           onPosted={() => setReplying(false)}
           onCancel={() => setReplying(false)}
         />

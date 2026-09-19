@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { FailureState } from '../../../components/shell/FailureState';
-import { failureCopyOf } from '../../../lib/i18n/failure-copy.client';
+import { errorPageCopyOf, failureCopyOf } from '../../../lib/i18n/failure-copy.client';
 import { useLocale } from '../../../i18n/navigation';
 
 /**
@@ -39,6 +39,7 @@ export default function SiteError({
    * the site, paid by every page for the benefit of this one.
    */
   const locale = useLocale();
+  const copy = errorPageCopyOf(locale);
 
   useEffect(() => {
     console.error('A page in the public site failed to render.', error);
@@ -46,18 +47,16 @@ export default function SiteError({
 
   return (
     <FailureState
-        copy={failureCopyOf(locale)}
-      title="Something went wrong on our side"
+      copy={failureCopyOf(locale)}
+      title={copy.title}
       description={
         <>
-          <p>
-            This page could not be rendered. It is usually temporary — trying again is worth one
-            press before anything else.
-          </p>
+          <p>{copy.description}</p>
           {error.digest !== undefined && (
             <p className="mt-4 text-sm text-white/40">
-              Reference <span className="font-mono tabular-nums text-white/64">{error.digest}</span>
-              . Quoting it lets us find the exact failure in the log.
+              {copy.referenceLabel}{' '}
+              <span className="font-mono tabular-nums text-white/64">{error.digest}</span>
+              {`. ${copy.referenceHint}`}
             </p>
           )}
         </>
@@ -68,7 +67,7 @@ export default function SiteError({
           onClick={reset}
           className="inline-flex h-12 items-center rounded-full bg-white px-6 text-base font-medium text-on-white transition-colors duration-150 ease-in-out hover:bg-[var(--white-muted)]"
         >
-          Try again
+          {copy.retry}
         </button>
       }
     />

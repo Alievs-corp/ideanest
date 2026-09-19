@@ -3,7 +3,7 @@ import az from '../../../messages/az.json';
 import en from '../../../messages/en.json';
 import ru from '../../../messages/ru.json';
 import tr from '../../../messages/tr.json';
-import { failureCopyOf, skipToContentOf } from './failure-copy.client';
+import { errorPageCopyOf, failureCopyOf, skipToContentOf } from './failure-copy.client';
 import { SUPPORTED_LOCALES, type Locale } from './locale';
 
 /**
@@ -49,6 +49,25 @@ describe('the client-side failure copy', () => {
       expect(failureCopyOf(locale).elsewhere).not.toBe('');
       expect(skipToContentOf(locale)).not.toBe('');
     }
+  });
+
+  it.each(SUPPORTED_LOCALES)('matches the %s error-page copy word for word', (locale) => {
+    /*
+     * The heading, the sentence under it, the digest line and the retry button. Asserted for
+     * the same reason as the link rail above: the words are spelled twice, once in the
+     * catalogue for every other surface and once here for the two Next renders itself, and a
+     * reader who meets a Turkish page whose error boundary is in English has met the defect
+     * this pair of tests exists to prevent.
+     */
+    const catalogue = CATALOGUES[locale].shell.failure.pages.error;
+
+    expect(errorPageCopyOf(locale)).toEqual({
+      title: catalogue.title,
+      description: catalogue.description,
+      referenceLabel: catalogue.referenceLabel,
+      referenceHint: catalogue.referenceHint,
+      retry: catalogue.retry,
+    });
   });
 
   it('carries nothing beyond the two boundaries that need it', () => {

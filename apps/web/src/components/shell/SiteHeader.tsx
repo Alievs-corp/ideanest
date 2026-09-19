@@ -124,7 +124,7 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
       }
       actions={
         <>
-          <SearchField className="hidden lg:block" />
+          <SearchField copy={copy.search} className="hidden lg:block" />
 
           {/*
             THE LANGUAGE CONTROL IS HERE AND NOT ONLY IN THE FOOTER. Somebody who landed in a

@@ -55,6 +55,7 @@ import {
   preferencesCopyFrom,
 } from './notifications-copy';
 import { type ProjectCardCopy, projectCardCopyFrom } from './card-copy';
+import { type PrelaunchCopy, prelaunchCopyFrom } from './prelaunch-copy';
 import { type FeedCopy, feedCopyFrom } from './feed-copy';
 import {
   type AdminShellCopy,
@@ -78,6 +79,7 @@ import {
   failureCopyFrom,
   footerCopyFrom,
   shellCopyFrom,
+  shellSearchCopyFrom,
   whatsappCopyFrom,
 } from './shell-copy';
 
@@ -113,6 +115,18 @@ export async function whatsappCopy(): Promise<WhatsAppCopy> {
 
 export async function failureCopy(): Promise<FailureCopy> {
   return failureCopyFrom(await getTranslations('shell'));
+}
+
+/**
+ * The search box's own words, for the one place it is not inside the shell.
+ *
+ * `SiteHeader` and `MobileNavDrawer` already hold a whole `ShellCopy` and pass
+ * `copy.search` from it. `/search` renders the same component at the top of its results
+ * and needs nothing else from the namespace, so it resolves the one key rather than the
+ * shell's entire vocabulary.
+ */
+export async function searchFieldCopy(): Promise<ShellCopy['search']> {
+  return shellSearchCopyFrom(await getTranslations('shell'));
 }
 
 /* -------------------------------------------------------------------------
@@ -397,4 +411,14 @@ export async function newProjectCopy(): Promise<NewProjectCopy> {
  */
 export async function editorMetaCopy(): Promise<EditorMetaCopy> {
   return editorMetaCopyFrom(await getTranslations('campaignEditor'));
+}
+
+/**
+ * The public pre-launch page's words.
+ *
+ * Resolved by the route rather than the component, which is a client one: it reads the
+ * campaign in the browser and holds a draft address. `prelaunch-copy.ts` carries the rest.
+ */
+export async function prelaunchCopy(): Promise<PrelaunchCopy> {
+  return prelaunchCopyFrom(await getTranslations('campaign.prelaunch'));
 }

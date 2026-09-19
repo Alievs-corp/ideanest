@@ -290,16 +290,18 @@ percentage is a formatter's job and never a template's.
 **Which routes are key-based, and which are still English literals (#324).** The
 message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
 
-- the site shell — header, mobile drawer, account menu, footer, skip link, failure links;
+- the site shell — header, mobile drawer, account menu, footer, skip link, the search box
+  in the bar and the drawer, and the failure pages in full: the two 404s, the profile 404,
+  `/maintenance`, the two error boundaries and the link rail they share;
 - every public route: the home page, the feed and its filter rail, the search box and its
   suggestions, the category and subcategory landings, the collection index and the
   collection pages, the three editorial pages, the public profile, and the campaign card
   those six surfaces all render;
 - the six authentication screens under `app/[locale]/(auth)`, and the two credential
   panels under `/settings` that share their refusal vocabulary;
-- the checkout, and the public campaign page;
-- the account area: the frame, all thirteen screens' headings, the notifications inbox and
-  its settings, and the two fulfilment screens;
+- the checkout, the public campaign page and the public pre-launch page;
+- the account area: the frame, all thirteen screens' headings, one pledge's own screen, the
+  notifications inbox and its settings, and the two fulfilment screens;
 - the administration console, **in full** — the bar, the rail, the index that lists §4.11's
   sixteen modules, the metadata and standfirst of all twenty-eight routes, and the twenty-six
   screens inside them. `lib/i18n/admin/` holds the copy, grouped as `CONSOLE_GROUPS` groups
@@ -366,10 +368,12 @@ are against the words the application draws rather than words retyped into a tes
 **The one exception, and it is measured rather than assumed.** `app/[locale]/error.tsx` and
 `app/[locale]/(site)/error.tsx` are error boundaries, which Next requires to be client
 components and renders itself — no server parent can hand them anything.
-`src/lib/i18n/failure-copy.client.ts` carries their eight strings in all four languages, under
-a kilobyte, and `failure-copy.client.test.ts` asserts every one of them against the catalogue
-so the two cannot drift. A third such surface should re-measure the provider rather than
-extend that file.
+`src/lib/i18n/failure-copy.client.ts` carries their strings in all four languages — the link
+rail and the skip link they share with the other failure pages, and since these two stopped
+carrying English literals their own heading, body, digest line and retry button as well. Still
+comfortably under two kilobytes, and `failure-copy.client.test.ts` asserts every one of them
+against the catalogue so the two cannot drift. A **third such surface** should re-measure the
+provider rather than extend that file; a word these two already draw belongs in it.
 
 **The console is in scope now, and #294's exemption is withdrawn.** That issue argued that
 §21.1's catalogue exists for the product's readers while the console's readers are the

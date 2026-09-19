@@ -67,7 +67,17 @@ export interface CheckoutCopy {
   };
   readonly contribution: {
     readonly legend: string;
+    /**
+     * The same field when nothing was chosen from the reward list.
+     *
+     * A legend of its own rather than `legend` reused: with no reward there is no price to
+     * compare an amount against, so the question is open rather than a top-up, and the two
+     * read differently in every language here.
+     */
+    readonly legendNoReward: string;
     readonly hint: string;
+    /** Carries `{amount}`, formatted against the campaign's currency in the browser. */
+    readonly rewardHint: string;
   };
   readonly summary: {
     readonly label: string;
@@ -262,7 +272,9 @@ export function checkoutCopyFrom(t: CheckoutTranslator): CheckoutCopy {
     },
     contribution: {
       legend: t('contribution.legend'),
+      legendNoReward: t('contribution.legendNoReward'),
       hint: t('contribution.hint'),
+      rewardHint: String(t.raw('contribution.rewardHint')),
     },
     summary: {
       label: t('summary.label'),
