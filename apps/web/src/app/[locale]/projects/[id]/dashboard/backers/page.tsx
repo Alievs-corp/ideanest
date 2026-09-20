@@ -1,4 +1,5 @@
 import { BackerReport } from '../../../../../../components/dashboard/BackerReport';
+import { backerReportCopy } from '../../../../../../lib/i18n/shell-copy.server';
 
 /**
  * The dashboard's backer panel — §4.7's CD-10 and CD-11, issues 97 and 79.
@@ -20,7 +21,9 @@ export default async function BackerReportPage({
 }: {
   readonly params: Promise<{ readonly id: string }>;
 }) {
-  const { id } = await params;
+  // Words, not data: the report is a client island, so the route resolves its sentences — the
+  // chips, the table's headings and the five pledge states — and hands them down.
+  const [{ id }, copy] = await Promise.all([params, backerReportCopy()]);
 
-  return <BackerReport projectId={id} />;
+  return <BackerReport projectId={id} copy={copy} />;
 }

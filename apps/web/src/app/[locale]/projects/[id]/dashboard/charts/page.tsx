@@ -1,4 +1,5 @@
 import { FundingCharts } from '../../../../../../components/dashboard/FundingCharts';
+import { fundingChartsCopy } from '../../../../../../lib/i18n/shell-copy.server';
 
 /**
  * The dashboard's charts panel — §4.7's CD-02, CD-07 and CD-08, issue 96.
@@ -16,7 +17,9 @@ export default async function FundingChartsPage({
 }: {
   readonly params: Promise<{ readonly id: string }>;
 }) {
-  const { id } = await params;
+  // Words, not data: both charts are drawn by a client island, so the route resolves their
+  // sentences and hands them down — `lib/i18n/dashboard-copy.ts` carries the reasoning.
+  const [{ id }, copy] = await Promise.all([params, fundingChartsCopy()]);
 
-  return <FundingCharts projectId={id} />;
+  return <FundingCharts projectId={id} copy={copy} />;
 }

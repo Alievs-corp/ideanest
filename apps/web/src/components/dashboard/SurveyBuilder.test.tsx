@@ -2,7 +2,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SurveyBuilder } from './SurveyBuilder';
+import { surveyBuilderCopyFrom } from '../../lib/i18n/dashboard-copy';
+import { translatorFor } from '../../test-copy';
 import type { Survey } from '../../lib/dashboard/surveys';
+
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #79.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = surveyBuilderCopyFrom(translatorFor('dashboard'));
+
 
 /**
  * §4.8's PM-01 to PM-04 in the browser (#73).
@@ -28,7 +39,7 @@ function survey(overrides: Partial<Survey> = {}): Survey {
 
 describe('SurveyBuilder', () => {
   it('lists the campaign surveys and says which are drafts', async () => {
-    render(<SurveyBuilder projectId="p1" load={async () => [survey()]} />);
+    render(<SurveyBuilder projectId="p1" load={async () => [survey()]} copy={COPY} />);
 
     expect(await screen.findByRole('button', { name: 'Reward details' })).toBeInTheDocument();
     expect(screen.getByText('Draft')).toBeInTheDocument();
@@ -39,6 +50,7 @@ describe('SurveyBuilder', () => {
       <SurveyBuilder
         projectId="p1"
         load={async () => [survey({ sent: true, sentTo: 412, responseCount: 87 })]}
+        copy={COPY}
       />,
     );
 
@@ -54,7 +66,7 @@ describe('SurveyBuilder', () => {
    */
   it('freezes the questions of a sent survey and leaves the covering note editable', async () => {
     const user = userEvent.setup();
-    render(<SurveyBuilder projectId="p1" load={async () => [survey({ sent: true, sentTo: 3 })]} />);
+    render(<SurveyBuilder projectId="p1" load={async () => [survey({ sent: true, sentTo: 3 })]} copy={COPY} />);
 
     await user.click(await screen.findByRole('button', { name: 'Reward details' }));
 
@@ -67,7 +79,7 @@ describe('SurveyBuilder', () => {
     const user = userEvent.setup();
     const update = vi.fn(async () => survey({ title: 'Reward details v2' }));
 
-    render(<SurveyBuilder projectId="p1" load={async () => [survey()]} update={update} />);
+    render(<SurveyBuilder projectId="p1" load={async () => [survey()]} update={update} copy={COPY} />);
 
     await user.click(await screen.findByRole('button', { name: 'Reward details' }));
     await user.clear(screen.getByLabelText(/^Title/));
@@ -86,7 +98,7 @@ describe('SurveyBuilder', () => {
     const user = userEvent.setup();
     const send = vi.fn(async () => survey({ sent: true, sentTo: 2 }));
 
-    render(<SurveyBuilder projectId="p1" load={async () => [survey()]} send={send} />);
+    render(<SurveyBuilder projectId="p1" load={async () => [survey()]} send={send} copy={COPY} />);
 
     await user.click(await screen.findByRole('button', { name: 'Reward details' }));
     await user.click(screen.getByRole('button', { name: /Send to backers/ }));
@@ -101,7 +113,7 @@ describe('SurveyBuilder', () => {
 
   it('shows the options control only for the types that have options', async () => {
     const user = userEvent.setup();
-    render(<SurveyBuilder projectId="p1" load={async () => []} />);
+    render(<SurveyBuilder projectId="p1" load={async () => []} copy={COPY} />);
 
     await waitFor(() => expect(screen.getByLabelText(/Answer type/)).toBeInTheDocument());
     expect(screen.queryByLabelText(/^Options/)).not.toBeInTheDocument();
@@ -116,7 +128,7 @@ describe('SurveyBuilder', () => {
    */
   it('replaces the required checkbox with an explanation for an address question', async () => {
     const user = userEvent.setup();
-    render(<SurveyBuilder projectId="p1" load={async () => []} />);
+    render(<SurveyBuilder projectId="p1" load={async () => []} copy={COPY} />);
 
     await waitFor(() => expect(screen.getByLabelText(/Answer type/)).toBeInTheDocument());
     await user.selectOptions(screen.getByLabelText(/Answer type/), 'ADDRESS');
@@ -131,6 +143,7 @@ describe('SurveyBuilder', () => {
         projectId="p1"
         load={async () => []}
         rewardTiers={[{ id: 'tier-1', title: 'Boxed set' }]}
+        copy={COPY}
       />,
     );
 
@@ -145,6 +158,7 @@ describe('SurveyBuilder', () => {
         load={async () => {
           throw Object.assign(new Error('nope'), { name: 'ApiError' });
         }}
+        copy={COPY}
       />,
     );
 

@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import type { Backer, BackerPage, BackerSegment } from '../../lib/dashboard/backers';
 import { BackerReport } from './BackerReport';
+import { backerReportCopyFrom } from '../../lib/i18n/dashboard-copy';
+import { translatorFor } from '../../test-copy';
 
 /**
  * §4.7's CD-10 and CD-11 as a screen.
@@ -40,6 +42,14 @@ function segment(overrides: Partial<BackerSegment> & Pick<BackerSegment, 'id' | 
   };
 }
 
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #79.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = backerReportCopyFrom(translatorFor('dashboard'));
+
 const NOBODY = vi.fn();
 
 function renderReport(overrides: Partial<Parameters<typeof BackerReport>[0]> = {}) {
@@ -52,6 +62,7 @@ function renderReport(overrides: Partial<Parameters<typeof BackerReport>[0]> = {
       remove={NOBODY}
       download={NOBODY}
       offerFile={NOBODY}
+      copy={COPY}
       {...overrides}
     />,
   );
@@ -108,6 +119,7 @@ describe('the list', () => {
         remove={NOBODY}
         download={NOBODY}
         offerFile={NOBODY}
+        copy={COPY}
       />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'Collected' }));
@@ -265,7 +277,9 @@ describe('the table', () => {
     const load = vi.fn().mockResolvedValue(page({ backers: [backer({ pledgeId: 'p1' })], matched: 1 }));
     renderReport({ load });
 
-    const region = await screen.findByRole('region', { name: "This campaign's backers" });
+    // The name from the catalogue rather than retyped: a straight apostrophe here and a
+    // typographic one in `messages/en.json` is a test that fails on a character nobody can see.
+    const region = await screen.findByRole('region', { name: COPY.tableLabel });
     expect(region).toHaveAttribute('tabindex', '0');
     expect(within(region).getByRole('table')).toBeInTheDocument();
   });

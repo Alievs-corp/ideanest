@@ -3,6 +3,8 @@
 import Decimal from 'decimal.js';
 import { formatMoney } from '../../lib/money';
 import type { TrendDay } from '../../lib/dashboard/analytics';
+import type { TrendChartCopy } from '../../lib/i18n/dashboard-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * §4.7's CD-02: what the campaign has raised, over the days it has been running.
@@ -48,11 +50,13 @@ export interface TrendChartProps {
   readonly from: string;
   /** The last day, inclusive. Where it ends. */
   readonly to: string;
-  /** Names the figure. */
+  /** Names the figure. Resolved by the panel above, which knows the range and the zone. */
   readonly label: string;
+  /** The figure's caption and the table folded behind it — #79. */
+  readonly copy: TrendChartCopy;
 }
 
-export function TrendChart({ days, from, to, label }: TrendChartProps) {
+export function TrendChart({ days, from, to, label, copy }: TrendChartProps) {
   const points = pointsOf(days, from, to);
   const peak = days[days.length - 1];
   // A single point, held separately: `noUncheckedIndexedAccess` is on, and the narrowing
@@ -98,18 +102,21 @@ export function TrendChart({ days, from, to, label }: TrendChartProps) {
         <span>{label}</span>
         {peak !== undefined ? (
           <span className="text-white">
-            {formatMoney(peak.cumulativeAmount)} by {peak.day}
+            {fillPlaceholders(copy.peak, {
+              amount: formatMoney(peak.cumulativeAmount),
+              day: peak.day,
+            })}
           </span>
         ) : null}
       </figcaption>
 
       <details className="mt-3">
         <summary className="cursor-pointer text-sm text-white/64 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]">
-          Show the daily figures
+          {copy.showDaily}
         </summary>
         <div
           role="region"
-          aria-label="Daily funding figures"
+          aria-label={copy.dailyLabel}
           tabIndex={0}
           className="mt-3 overflow-x-auto rounded-[14px] border border-white/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
         >
@@ -118,16 +125,16 @@ export function TrendChart({ days, from, to, label }: TrendChartProps) {
             <thead>
               <tr className="border-b border-white/8 text-left text-white/64">
                 <th scope="col" className="px-4 py-3 font-medium">
-                  Day
+                  {copy.day}
                 </th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">
-                  Backers
+                  {copy.backers}
                 </th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">
-                  Pledged
+                  {copy.pledged}
                 </th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">
-                  Running total
+                  {copy.runningTotal}
                 </th>
               </tr>
             </thead>

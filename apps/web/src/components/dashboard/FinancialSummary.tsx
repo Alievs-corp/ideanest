@@ -5,6 +5,8 @@ import { InlineAlert, Skeleton, SkeletonGroup, StatBlock, StatRow, Tag } from '@
 import { ApiError } from '../../lib/api/problem';
 import { getFinance, type CampaignFinance, type FinancePayout } from '../../lib/dashboard/finance';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { FinanceCopy, PayoutStatesCopy } from '../../lib/i18n/dashboard-copy';
+import { fillNodes } from '../../lib/i18n/placeholders';
 import { formatMoney } from '../../lib/money';
 import { formatExactTime } from '../../lib/time';
 
@@ -42,38 +44,24 @@ import { formatExactTime } from '../../lib/time';
 type Status = 'loading' | 'ready' | 'failed';
 
 /** Turns a refusal into something a creator can act on. */
-function messageFor(cause: unknown): string {
+function messageFor(cause: unknown, copy: FinanceCopy): string {
   if (cause instanceof ApiError) {
-    if (cause.status === 401) {
-      return 'Your session has expired. Sign in again to see this campaign.';
-    }
-    if (cause.status === 403) {
-      return 'Your collaborator grant on this campaign does not include the finances, so these figures are not yours to see.';
-    }
-    if (cause.status === 404) {
-      return 'That campaign does not exist, or it is not one you work on.';
-    }
+    if (cause.status === 401) return copy.failures.signedOut;
+    if (cause.status === 403) return copy.notGranted;
+    if (cause.status === 404) return copy.failures.noCampaign;
   }
-  return 'The financial summary could not be loaded. It is the service rather than your campaign — try again shortly.';
+  return copy.unavailable;
 }
-
-/** §9.5's payout states, as words. A state this list has not met renders as its own name. */
-const PAYOUT_STATES: Readonly<Record<string, string>> = {
-  CALCULATED: 'Calculated',
-  PENDING_APPROVAL: 'Waiting for approval',
-  APPROVED: 'Approved',
-  PAID: 'Paid',
-  FAILED: 'Failed',
-  CANCELLED: 'Cancelled',
-};
 
 export interface FinancialSummaryProps {
   readonly projectId: string;
   /** Injected by tests. Defaults to the real reader. */
   readonly load?: (projectId: string) => Promise<CampaignFinance>;
+  /** Every word this panel draws, resolved on the server — #79. */
+  readonly copy: FinanceCopy;
 }
 
-export function FinancialSummary({ projectId, load }: FinancialSummaryProps) {
+export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProps) {
   const locale = useRouteLocale();
   const [status, setStatus] = useState<Status>('loading');
   const [finance, setFinance] = useState<CampaignFinance | null>(null);
@@ -91,7 +79,7 @@ export function FinancialSummary({ projectId, load }: FinancialSummaryProps) {
       })
       .catch((cause: unknown) => {
         if (cancelled) return;
-        setFailure(messageFor(cause));
+        setFailure(messageFor(cause, copy));
         setStatus('failed');
       });
 
@@ -103,7 +91,7 @@ export function FinancialSummary({ projectId, load }: FinancialSummaryProps) {
 
   if (status === 'loading') {
     return (
-      <SkeletonGroup label="Loading the campaign's finances">
+      <SkeletonGroup label={copy.loading}>
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-40 w-full" />
@@ -124,40 +112,39 @@ export function FinancialSummary({ projectId, load }: FinancialSummaryProps) {
           id="finance-heading"
           className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl"
         >
-          Financial summary
+          {copy.heading}
         </h1>
         {/*
           The badge is a word, not a colour. §9.2: colour alone never carries meaning, and
           "these numbers can still move" is meaning.
         */}
-        <Tag>{projected ? 'Projected' : 'Settled'}</Tag>
+        <Tag>{projected ? copy.projected : copy.settled}</Tag>
       </div>
 
       <p className="mt-3 max-w-[62ch] text-sm text-white/64">
-        {projected
-          ? 'No payout has been calculated yet, so the fees below are what today’s schedule would charge. They are priced again, against the schedule in force on the day, when the payout is prepared.'
-          : 'These are the figures your payout was priced at, read from the payout itself rather than worked out again.'}
+        {projected ? copy.projectedIntro : copy.settledIntro}
       </p>
 
       <StatRow className="mt-8">
-        <StatBlock label="Gross" value={formatMoney(finance.gross)} />
-        <StatBlock label={projected ? 'Net, projected' : 'Net'} value={formatMoney(finance.net)} />
-        <StatBlock label="Paid out" value={formatMoney(finance.paidOut)} />
+        <StatBlock label={copy.gross} value={formatMoney(finance.gross)} />
+        <StatBlock
+          label={projected ? copy.netProjected : copy.net}
+          value={formatMoney(finance.net)}
+        />
+        <StatBlock label={copy.paidOut} value={formatMoney(finance.paidOut)} />
       </StatRow>
 
       <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-white">
-        What came off the gross
+        {copy.deductionsHeading}
       </h2>
       <table className="mt-4 w-full border-collapse text-sm">
-        <caption className="sr-only">
-          Every deduction between what this campaign took and what is payable
-        </caption>
+        <caption className="sr-only">{copy.deductionsCaption}</caption>
         <tbody>
-          <Row label="Gross collected" amount={formatMoney(finance.gross)} />
-          <Row label="Platform fee" amount={`− ${formatMoney(finance.platformFee)}`} />
-          <Row label="Processing fee" amount={`− ${formatMoney(finance.processingFee)}`} />
+          <Row label={copy.grossCollected} amount={formatMoney(finance.gross)} />
+          <Row label={copy.platformFee} amount={`− ${formatMoney(finance.platformFee)}`} />
+          <Row label={copy.processingFee} amount={`− ${formatMoney(finance.processingFee)}`} />
           <Row
-            label="Tax withheld"
+            label={copy.taxWithheld}
             amount={`− ${formatMoney(finance.taxWithheld)}`}
             note={
               finance.taxCollected
@@ -167,36 +154,35 @@ export function FinancialSummary({ projectId, load }: FinancialSummaryProps) {
                    * not something this platform is in a position to say. §4.10 is unbuilt and
                    * blocked on a legal answer, so what is true is that we withhold none.
                    */
-                  'IdeaNest withholds no tax. What you owe is between you and your tax authority.'
+                  copy.taxNote
             }
           />
-          <Row label="Refunded to backers" amount={`− ${formatMoney(finance.refunded)}`} />
-          <Row label={projected ? 'Payable, projected' : 'Payable'} amount={formatMoney(finance.net)} total />
+          <Row label={copy.refunded} amount={`− ${formatMoney(finance.refunded)}`} />
+          <Row
+            label={projected ? copy.payableProjected : copy.payable}
+            amount={formatMoney(finance.net)}
+            total
+          />
         </tbody>
       </table>
 
-      <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-white">Payouts</h2>
+      <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-white">
+        {copy.payoutsHeading}
+      </h2>
       {finance.payouts.length === 0 ? (
-        <p className="mt-3 max-w-[62ch] text-sm text-white/64">
-          None yet. A payout is prepared after §5.4’s hold, and every one of them appears here
-          — including any that were cancelled.
-        </p>
+        <p className="mt-3 max-w-[62ch] text-sm text-white/64">{copy.payoutsEmpty}</p>
       ) : (
         <ul className="mt-4 flex list-none flex-col gap-3">
           {finance.payouts.map((payout) => (
-            <PayoutRow key={payout.id} payout={payout} locale={locale} />
+            <PayoutRow key={payout.id} payout={payout} locale={locale} states={copy.payoutStates} />
           ))}
         </ul>
       )}
 
       <h2 className="mt-10 text-lg font-medium tracking-[-0.02em] text-white">
-        What the books say
+        {copy.booksHeading}
       </h2>
-      <p className="mt-3 max-w-[62ch] text-sm text-white/64">
-        §7.2’s accounts, for this campaign. Published so the totals above can be checked
-        against something rather than taken on trust. A negative balance on your account is
-        money the platform is holding for you.
-      </p>
+      <p className="mt-3 max-w-[62ch] text-sm text-white/64">{copy.booksIntro}</p>
 
       {!finance.reconciled && (
         <div className="mt-4">
@@ -205,30 +191,24 @@ export function FinancialSummary({ projectId, load }: FinancialSummaryProps) {
             appear for a row that arrived past both the application and the trigger. It is
             therefore never noise, and it is addressed to somebody who can act on it.
           */}
-          <InlineAlert variant="warning" title="These books do not balance">
-            <p>
-              The entries for this campaign do not sum to zero. Nothing you can do explains
-              this — please contact support, quoting this campaign, before relying on the
-              figures above.
-            </p>
+          <InlineAlert variant="warning" title={copy.unbalancedTitle}>
+            <p>{copy.unbalancedBody}</p>
           </InlineAlert>
         </div>
       )}
 
       {finance.ledger.length === 0 ? (
-        <p className="mt-4 text-sm text-white/64">
-          Nothing has been posted for this campaign yet.
-        </p>
+        <p className="mt-4 text-sm text-white/64">{copy.ledgerEmpty}</p>
       ) : (
         <table className="mt-4 w-full border-collapse text-sm">
-          <caption className="sr-only">Ledger balances for this campaign, by account</caption>
+          <caption className="sr-only">{copy.ledgerCaption}</caption>
           <thead>
             <tr className="border-b border-white/8 text-left text-white/64">
               <th scope="col" className="py-2 font-medium">
-                Account
+                {copy.account}
               </th>
               <th scope="col" className="py-2 text-right font-medium">
-                Balance
+                {copy.balance}
               </th>
             </tr>
           </thead>
@@ -247,7 +227,18 @@ export function FinancialSummary({ projectId, load }: FinancialSummaryProps) {
 
       {finance.computedAt !== null && (
         <p className="mt-6 text-sm text-white/64">
-          As of <time dateTime={finance.computedAt}>{formatExactTime(finance.computedAt, locale)}</time>.
+          {/*
+            The instant is a `<time>` rather than a string, so the sentence is filled with
+            nodes. Splitting it into a "before" and an "after" key would buy the element at
+            the cost of word order, which is exactly what a translation is entitled to change.
+          */}
+          {fillNodes(copy.asOf, {
+            time: (
+              <time dateTime={finance.computedAt}>
+                {formatExactTime(finance.computedAt, locale)}
+              </time>
+            ),
+          })}
         </p>
       )}
     </section>
@@ -279,14 +270,22 @@ function Row({
   );
 }
 
-function PayoutRow({ payout, locale }: { readonly payout: FinancePayout; readonly locale: Parameters<typeof formatExactTime>[1] }) {
+function PayoutRow({
+  payout,
+  locale,
+  states,
+}: {
+  readonly payout: FinancePayout;
+  readonly locale: Parameters<typeof formatExactTime>[1];
+  readonly states: PayoutStatesCopy;
+}) {
   const when = payout.sentAt ?? payout.calculatedAt;
 
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-white/8 bg-surface-2 px-4 py-3">
       <span className="flex flex-wrap items-center gap-3">
         {/* The state as a word. A coloured dot alone says nothing to a screen reader. */}
-        <Tag>{PAYOUT_STATES[payout.state] ?? payout.state}</Tag>
+        <Tag>{states[payout.state] ?? payout.state}</Tag>
         {when !== null && (
           <span className="text-sm text-white/64">
             <time dateTime={when}>{formatExactTime(when, locale)}</time>

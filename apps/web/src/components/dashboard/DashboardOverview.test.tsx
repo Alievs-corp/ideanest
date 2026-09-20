@@ -3,6 +3,8 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { ApiError } from '../../lib/api/problem';
 import type { CampaignDashboard } from '../../lib/dashboard/api';
 import { DashboardOverview } from './DashboardOverview';
+import { dashboardOverviewCopyFrom } from '../../lib/i18n/dashboard-copy';
+import { translatorFor } from '../../test-copy';
 
 /**
  * What the creator dashboard says, and what it must never say.
@@ -41,6 +43,14 @@ function dashboard(overrides: Partial<CampaignDashboard> = {}): CampaignDashboar
   } as CampaignDashboard;
 }
 
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #79.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = dashboardOverviewCopyFrom(translatorFor('dashboard'));
+
 function readerAt(iso: string): () => number {
   const fixed = Date.parse(iso);
   return () => fixed;
@@ -52,6 +62,7 @@ function renderPanel(body: CampaignDashboard, readerNow = readerAt(SERVER_TIME))
       projectId={PROJECT_ID}
       load={() => Promise.resolve(body)}
       nowImpl={readerNow}
+      copy={COPY}
     />,
   );
 }
@@ -192,6 +203,7 @@ describe('refusals', () => {
         projectId={PROJECT_ID}
         load={() => Promise.reject(new ApiError(status, { status, title: 'no' }))}
         nowImpl={readerAt(SERVER_TIME)}
+        copy={COPY}
       />,
     );
   }

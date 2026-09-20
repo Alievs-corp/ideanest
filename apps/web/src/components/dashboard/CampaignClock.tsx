@@ -9,6 +9,8 @@ import {
   splitRemaining,
   tickIntervalMs,
 } from '../../lib/dashboard/clock';
+import type { CampaignClockCopy } from '../../lib/i18n/dashboard-copy';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
 /**
  * "Time remaining" — the last quarter of §4.7's CD-01.
@@ -44,9 +46,18 @@ export interface CampaignClockProps {
   readonly skewMs: number;
   /** Injected by tests so the boundaries can be asserted without waiting for them. */
   readonly nowImpl?: () => number;
+  /**
+   * The countdown's four sentences, resolved on the server — #79.
+   *
+   * The locale is not a prop beside them: this is a client component under `[locale]`, so
+   * `useRouteLocale` reads the segment the router already matched, and `pluralise` needs the
+   * language rather than a sentence.
+   */
+  readonly copy: CampaignClockCopy;
 }
 
-export function CampaignClock({ deadline, skewMs, nowImpl }: CampaignClockProps) {
+export function CampaignClock({ deadline, skewMs, nowImpl, copy }: CampaignClockProps) {
+  const locale = useRouteLocale();
   const now = nowImpl ?? Date.now;
   const [remaining, setRemaining] = useState<number | null>(() => remainingMs(deadline, now(), skewMs));
 
@@ -75,16 +86,12 @@ export function CampaignClock({ deadline, skewMs, nowImpl }: CampaignClockProps)
   }, [deadline, skewMs]);
 
   if (remaining === null) {
-    return (
-      <p className="text-sm text-white/64">
-        No deadline yet — the countdown starts when the campaign launches.
-      </p>
-    );
+    return <p className="text-sm text-white/64">{copy.none}</p>;
   }
 
   const parts = splitRemaining(remaining);
   const urgent = isUrgent(remaining);
-  const label = describeRemaining(parts);
+  const label = describeRemaining(parts, copy, locale);
 
   return (
     <div
@@ -105,7 +112,7 @@ export function CampaignClock({ deadline, skewMs, nowImpl }: CampaignClockProps)
       </span>
       {urgent ? (
         // The word, not only the colour. ui-kit §9.2.
-        <span className="text-xs font-semibold uppercase tracking-[0.08em]">Closing soon</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.08em]">{copy.urgent}</span>
       ) : null}
     </div>
   );

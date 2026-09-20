@@ -10,6 +10,8 @@ import { getBreakdown, type BackerBreakdown } from '../../lib/dashboard/backers'
 import { ShareBars, type ShareBar } from './ShareBars';
 import { TrendChart } from './TrendChart';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { FundingChartsCopy } from '../../lib/i18n/dashboard-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * §4.7's CD-02, CD-07 and CD-08 — issue 96: the funding trend, the reward mix, and where
@@ -37,15 +39,25 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
 type Status = 'loading' | 'ready' | 'failed';
 
-function messageFor(cause: unknown, subject: string): string {
+/**
+ * What a refusal means, in the words of the read that was refused.
+ *
+ * The two refusals used to share one sentence with the subject interpolated into it. They are
+ * written out now, once per read: "does not include the funding trend" declines its object in
+ * three of the four languages this platform ships, and a translator handed a hole in the
+ * middle of a sentence cannot put a case ending on whatever lands in it.
+ */
+function messageFor(
+  cause: unknown,
+  copy: FundingChartsCopy,
+  subject: { readonly notGranted: string; readonly unavailable: string },
+): string {
   if (cause instanceof ApiError) {
-    if (cause.status === 401) return 'Your session has expired. Sign in again to see this campaign.';
-    if (cause.status === 403) {
-      return `Your collaborator grant on this campaign does not include ${subject}.`;
-    }
-    if (cause.status === 404) return 'That campaign does not exist, or it is not one you work on.';
+    if (cause.status === 401) return copy.failures.signedOut;
+    if (cause.status === 403) return subject.notGranted;
+    if (cause.status === 404) return copy.failures.noCampaign;
   }
-  return `${subject} could not be loaded. It is the service rather than your campaign — try again shortly.`;
+  return subject.unavailable;
 }
 
 export interface FundingChartsProps {
@@ -55,6 +67,8 @@ export interface FundingChartsProps {
   readonly loadBreakdown?: typeof getBreakdown;
   /** Injected by tests, so "computed 4 minutes ago" is assertable. */
   readonly nowImpl?: () => Date;
+  /** Every word this panel, its trend chart and its bars draw — #79. */
+  readonly copy: FundingChartsCopy;
 }
 
 export function FundingCharts({
@@ -62,6 +76,7 @@ export function FundingCharts({
   loadTrend,
   loadBreakdown,
   nowImpl,
+  copy,
 }: FundingChartsProps) {
   const locale = useRouteLocale();
   const [trendStatus, setTrendStatus] = useState<Status>('loading');
@@ -82,7 +97,12 @@ export function FundingCharts({
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
-        setTrendFailure(messageFor(cause, 'the funding trend'));
+        setTrendFailure(
+          messageFor(cause, copy, {
+            notGranted: copy.trendNotGranted,
+            unavailable: copy.trendUnavailable,
+          }),
+        );
         setTrendStatus('failed');
       });
 
@@ -93,7 +113,12 @@ export function FundingCharts({
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
-        setSplitFailure(messageFor(cause, 'the backer breakdown'));
+        setSplitFailure(
+          messageFor(cause, copy, {
+            notGranted: copy.splitNotGranted,
+            unavailable: copy.splitUnavailable,
+          }),
+        );
         setSplitStatus('failed');
       });
 
@@ -104,16 +129,13 @@ export function FundingCharts({
   return (
     <section aria-labelledby="charts-heading">
       <h1 id="charts-heading" className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
-        Funding and backers
+        {copy.heading}
       </h1>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">
-        How this campaign has raised what it has raised, which rewards backers chose, and
-        where they are.
-      </p>
+      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.intro}</p>
 
-      <h2 className="mt-8 text-lg font-semibold text-white">Funding over time</h2>
+      <h2 className="mt-8 text-lg font-semibold text-white">{copy.trendHeading}</h2>
       {trendStatus === 'loading' ? (
-        <SkeletonGroup label="Loading the funding trend">
+        <SkeletonGroup label={copy.trendLoading}>
           <Skeleton className="h-[220px] w-full" />
         </SkeletonGroup>
       ) : null}
@@ -121,8 +143,7 @@ export function FundingCharts({
       {trendStatus === 'ready' && trend !== null ? (
         trend.days.length === 0 ? (
           <p className="mt-4 max-w-[62ch] text-sm text-white/64">
-            Nothing has been pledged between {trend.from} and {trend.to}. The chart appears with
-            the first confirmed pledge.
+            {fillPlaceholders(copy.trendEmpty, { from: trend.from, to: trend.to })}
           </p>
         ) : (
           <>
@@ -130,7 +151,12 @@ export function FundingCharts({
               days={trend.days}
               from={trend.from}
               to={trend.to}
-              label={`Running total, ${trend.from} to ${trend.to} (${trend.zone})`}
+              label={fillPlaceholders(copy.trendLabel, {
+                from: trend.from,
+                to: trend.to,
+                zone: trend.zone,
+              })}
+              copy={copy.trend}
             />
             {/*
               The freshness, printed rather than assumed. This series is only ever as
@@ -139,62 +165,67 @@ export function FundingCharts({
             */}
             {trend.computedAt !== undefined ? (
               <p className="mt-2 text-sm text-white/64">
-                Aggregated {formatRelativeTime(trend.computedAt, (nowImpl ?? (() => new Date()))(), locale)}. The
-                live totals on the overview are read at the moment you ask for them.
+                {fillPlaceholders(copy.aggregated, {
+                  when: formatRelativeTime(
+                    trend.computedAt,
+                    (nowImpl ?? (() => new Date()))(),
+                    locale,
+                  ),
+                })}
               </p>
             ) : null}
           </>
         )
       ) : null}
 
-      <h2 className="mt-10 text-lg font-semibold text-white">Rewards and destinations</h2>
+      <h2 className="mt-10 text-lg font-semibold text-white">{copy.splitHeading}</h2>
       {splitStatus === 'loading' ? (
-        <SkeletonGroup label="Loading the reward and destination split">
+        <SkeletonGroup label={copy.splitLoading}>
           <Skeleton className="h-24 w-full" />
         </SkeletonGroup>
       ) : null}
       {splitStatus === 'failed' ? <InlineAlert variant="danger">{splitFailure}</InlineAlert> : null}
       {splitStatus === 'ready' && breakdown !== null ? (
         breakdown.backerCount === 0 ? (
-          <p className="mt-4 max-w-[62ch] text-sm text-white/64">
-            Nobody has backed this campaign yet, so there is nothing to split.
-          </p>
+          <p className="mt-4 max-w-[62ch] text-sm text-white/64">{copy.splitEmpty}</p>
         ) : (
           <>
             <StatRow className="mt-4">
-              <StatBlock label="Backers" value={String(breakdown.backerCount)} />
+              <StatBlock label={copy.backers} value={String(breakdown.backerCount)} />
               <StatBlock
-                label="Pledged"
-                value={breakdown.total ? formatMoney(breakdown.total) : 'Nothing yet'}
+                label={copy.pledged}
+                value={breakdown.total ? formatMoney(breakdown.total) : copy.nothingYet}
               />
             </StatRow>
 
-            <h3 className="mt-8 text-sm font-semibold text-white">By reward tier</h3>
+            <h3 className="mt-8 text-sm font-semibold text-white">{copy.rewardHeading}</h3>
             {breakdown.rewards.length === 0 ? (
-              <p className="mt-2 max-w-[62ch] text-sm text-white/64">
-                Every backer so far pledged without taking a reward.
-              </p>
+              <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.rewardEmpty}</p>
             ) : (
               <>
-                <ShareBars label="Backers by reward tier" rows={breakdown.rewards.map(rewardRow)} />
+                <ShareBars
+                  label={copy.rewardLabel}
+                  rows={breakdown.rewards.map((slice) => rewardRow(slice, copy.removedTier))}
+                  backers={copy.shareBackers}
+                  locale={locale}
+                />
                 {/*
                   Said rather than left to be noticed. These bars sum to at most the
                   campaign's total, and the difference is support that took no reward —
                   a creator who added them up and found a shortfall would be right.
                 */}
-                <p className="mt-3 max-w-[62ch] text-sm text-white/64">
-                  These cover the backers who chose a tier. A pledge with no reward is not
-                  listed here, which is why the tiers can add up to less than the total above.
-                </p>
+                <p className="mt-3 max-w-[62ch] text-sm text-white/64">{copy.rewardNote}</p>
               </>
             )}
 
-            <h3 className="mt-8 text-sm font-semibold text-white">By destination</h3>
-            <ShareBars label="Backers by destination" rows={breakdown.countries.map(countryRow)} />
-            <p className="mt-3 max-w-[62ch] text-sm text-white/64">
-              A pledge that named no destination — a digital reward, or support with no reward
-              — is counted under “No destination” rather than left out.
-            </p>
+            <h3 className="mt-8 text-sm font-semibold text-white">{copy.destinationHeading}</h3>
+            <ShareBars
+              label={copy.destinationLabel}
+              rows={breakdown.countries.map((slice) => countryRow(slice, copy.noDestination))}
+              backers={copy.shareBackers}
+              locale={locale}
+            />
+            <p className="mt-3 max-w-[62ch] text-sm text-white/64">{copy.destinationNote}</p>
           </>
         )
       ) : null}
@@ -203,9 +234,9 @@ export function FundingCharts({
 }
 
 /** A tier's row. A tier the campaign has since removed keeps its pledges and loses its name. */
-function rewardRow(slice: BackerBreakdown['rewards'][number]): ShareBar {
+function rewardRow(slice: BackerBreakdown['rewards'][number], removedTier: string): ShareBar {
   return {
-    label: slice.title ?? 'A removed tier',
+    label: slice.title ?? removedTier,
     backerCount: slice.backerCount,
     amount: slice.amount,
   };
@@ -219,9 +250,9 @@ function rewardRow(slice: BackerBreakdown['rewards'][number]): ShareBar {
  * campaign can be in, and nothing maps ISO codes to names in a locale. A code a creator can
  * look up beats a name this screen would have to invent.
  */
-function countryRow(slice: BackerBreakdown['countries'][number]): ShareBar {
+function countryRow(slice: BackerBreakdown['countries'][number], noDestination: string): ShareBar {
   return {
-    label: slice.country ?? 'No destination',
+    label: slice.country ?? noDestination,
     backerCount: slice.backerCount,
     amount: slice.amount,
   };

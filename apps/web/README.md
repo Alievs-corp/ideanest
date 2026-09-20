@@ -305,14 +305,20 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
 - the administration console, **in full** — the bar, the rail, the index that lists §4.11's
   sixteen modules, the metadata and standfirst of all twenty-eight routes, and the twenty-six
   screens inside them. `lib/i18n/admin/` holds the copy, grouped as `CONSOLE_GROUPS` groups
-  the rail; `lib/i18n/admin/console.server.ts` is where a route resolves it.
+  the rail; `lib/i18n/admin/console.server.ts` is where a route resolves it;
+- the creator dashboard, **in full** (#79) — the five panels under
+  `/projects/[id]/dashboard`, their navigation and their metadata: the overview and its
+  countdown, the funding trend and the two share charts, the backer report with its filter
+  chips, its saved segments and its table, the financial summary down to §7.2's ledger, and
+  §4.8's survey builder with the five answer types PM-03 offers.
+  `lib/i18n/dashboard-copy.ts` holds the shape and one accessor per panel;
+  `lib/i18n/shell-copy.server.ts` is where a route resolves it.
 
 What is still English:
 
 | Surface | Where |
 |---|---|
 | The campaign editor | `components/campaign-editor` |
-| The creator dashboard | `components/dashboard` |
 | The panels below eleven account headings | `components/settings`, `components/sessions`, `components/surveys`, `components/pledges`, `components/profile`'s editor |
 | The public report dialog | `components/moderation/ReportControl` |
 

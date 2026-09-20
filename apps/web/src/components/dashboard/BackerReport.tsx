@@ -19,6 +19,10 @@ import {
   type ReportedState,
 } from '../../lib/dashboard/backers';
 import { BackerTable } from './BackerTable';
+import type { BackerReportCopy } from '../../lib/i18n/dashboard-copy';
+import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralForm, pluralise } from '../../lib/i18n/plurals';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
 /**
  * §4.7's CD-10 and CD-11: the backer report, its saved segments, and its export.
@@ -50,26 +54,20 @@ import { BackerTable } from './BackerTable';
 type Status = 'loading' | 'ready' | 'failed';
 
 /** What a refusal means, branched on status rather than on the service's prose. */
-function messageFor(cause: unknown): string {
+function messageFor(cause: unknown, copy: BackerReportCopy): string {
   if (cause instanceof ApiError) {
-    if (cause.status === 401) return 'Your session has expired. Sign in again to see this campaign.';
-    if (cause.status === 403) {
-      return 'Your collaborator grant on this campaign does not include the backer report.';
-    }
-    if (cause.status === 404) return 'That campaign does not exist, or it is not one you work on.';
-    if (cause.status === 429) {
-      return 'That is more exports than this account may take in a minute. Try again shortly.';
-    }
+    if (cause.status === 401) return copy.failures.signedOut;
+    if (cause.status === 403) return copy.notGranted;
+    if (cause.status === 404) return copy.failures.noCampaign;
+    if (cause.status === 429) return copy.tooManyExports;
   }
-  return 'The backer report could not be loaded. It is the service rather than your campaign — try again shortly.';
+  return copy.unavailable;
 }
 
 /** What a refused save means. 409 is the only one a creator can act on directly. */
-function saveMessageFor(cause: unknown): string {
-  if (cause instanceof ApiError && cause.status === 409) {
-    return 'This campaign already has a segment by that name, or has as many as the report holds.';
-  }
-  return 'That segment could not be saved. Try again shortly.';
+function saveMessageFor(cause: unknown, copy: BackerReportCopy): string {
+  if (cause instanceof ApiError && cause.status === 409) return copy.saveConflict;
+  return copy.saveFailed;
 }
 
 export interface BackerReportProps {
@@ -82,6 +80,8 @@ export interface BackerReportProps {
   readonly download?: typeof exportBackers;
   /** Injected by tests: how a file is offered. Defaults to an object URL and a click. */
   readonly offerFile?: (filename: string, csv: string) => void;
+  /** Every word this report, its chips and its table draw — #79. */
+  readonly copy: BackerReportCopy;
 }
 
 export function BackerReport({
@@ -92,7 +92,9 @@ export function BackerReport({
   remove,
   download,
   offerFile,
+  copy,
 }: BackerReportProps) {
+  const locale = useRouteLocale();
   const [status, setStatus] = useState<Status>('loading');
   const [page, setPage] = useState<BackerPage | null>(null);
   const [failure, setFailure] = useState('');
@@ -118,7 +120,7 @@ export function BackerReport({
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
-        setFailure(messageFor(cause));
+        setFailure(messageFor(cause, copy));
         setStatus('failed');
       });
 
@@ -167,9 +169,9 @@ export function BackerReport({
       const saved = await (save ?? saveSegment)(projectId, segmentName.trim(), filter);
       setSegments([saved, ...segments]);
       setSegmentName('');
-      setNotice(`Saved “${saved.name}”.`);
+      setNotice(fillPlaceholders(copy.saved, { name: saved.name }));
     } catch (cause) {
-      setNotice(saveMessageFor(cause));
+      setNotice(saveMessageFor(cause, copy));
     } finally {
       setBusy(false);
     }
@@ -181,9 +183,9 @@ export function BackerReport({
       await (remove ?? deleteSegment)(projectId, segment.id);
       setSegments(segments.filter((each) => each.id !== segment.id));
       if (segmentId === segment.id) setSegmentId(undefined);
-      setNotice(`Deleted “${segment.name}”.`);
+      setNotice(fillPlaceholders(copy.deleted, { name: segment.name }));
     } catch {
-      setNotice('That segment could not be deleted. Try again shortly.');
+      setNotice(copy.deleteFailed);
     } finally {
       setBusy(false);
     }
@@ -197,11 +199,11 @@ export function BackerReport({
       (offerFile ?? offerDownload)(file.filename, file.csv);
       setNotice(
         file.truncated
-          ? `Exported the first ${file.rows} backers. This campaign has more than one file holds — filter it and export the parts.`
-          : `Exported ${file.rows} ${file.rows === 1 ? 'backer' : 'backers'}.`,
+          ? fillPlaceholders(copy.exportedTruncated, { count: String(file.rows) })
+          : pluralise(locale, copy.exported, file.rows),
       );
     } catch (cause) {
-      setNotice(messageFor(cause));
+      setNotice(messageFor(cause, copy));
     } finally {
       setBusy(false);
     }
@@ -210,16 +212,13 @@ export function BackerReport({
   return (
     <section aria-labelledby="backers-heading">
       <h1 id="backers-heading" className="text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
-        Backers
+        {copy.heading}
       </h1>
-      <p className="mt-2 max-w-[62ch] text-sm text-white/64">
-        Everybody who has backed this campaign, and how to reach them. The export carries the
-        same people as the list below it.
-      </p>
+      <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.intro}</p>
 
       <form onSubmit={search} className="mt-6 flex flex-wrap items-end gap-3">
         <div className="min-w-[240px] flex-1">
-          <Field label="Search backers" hint="A name or an email address, or part of one.">
+          <Field label={copy.searchLabel} hint={copy.searchHint}>
             <TextInput value={term} onChange={(event) => setTerm(event.target.value)} />
           </Field>
         </div>
@@ -228,7 +227,7 @@ export function BackerReport({
           className="inline-flex items-center gap-2 rounded-full border border-white/16 px-4 py-2.5 text-sm font-medium text-white hover:bg-[--surface-3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
         >
           <Search className="size-4" aria-hidden />
-          Search
+          {copy.search}
         </button>
         <button
           type="button"
@@ -237,18 +236,18 @@ export function BackerReport({
           className="inline-flex items-center gap-2 rounded-full border border-white/16 px-4 py-2.5 text-sm font-medium text-white hover:bg-[--surface-3] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
         >
           <Download className="size-4" aria-hidden />
-          Export CSV
+          {copy.export}
         </button>
       </form>
 
       <fieldset className="mt-6">
-        <legend className="text-sm font-medium text-white">Pledge state</legend>
+        <legend className="text-sm font-medium text-white">{copy.stateLegend}</legend>
         <div className="mt-3 flex flex-wrap gap-2">
           {REPORTED_STATES.map((state) => {
             const on = filter.states.includes(state);
             return (
               <Chip key={state} active={on} onClick={() => toggleState(state)}>
-                {STATE_LABELS[state]}
+                {copy.states[state]}
               </Chip>
             );
           })}
@@ -257,7 +256,7 @@ export function BackerReport({
 
       {segments.length > 0 ? (
         <fieldset className="mt-6">
-          <legend className="text-sm font-medium text-white">Saved segments</legend>
+          <legend className="text-sm font-medium text-white">{copy.segmentsLegend}</legend>
           <div className="mt-3 flex flex-wrap gap-2">
             {segments.map((segment) => (
               <span key={segment.id} className="inline-flex items-center gap-1">
@@ -277,7 +276,7 @@ export function BackerReport({
                   type="button"
                   onClick={() => onDelete(segment)}
                   disabled={busy}
-                  aria-label={`Delete the segment ${segment.name}`}
+                  aria-label={fillPlaceholders(copy.deleteSegment, { name: segment.name })}
                   className="rounded-full p-1 text-white/64 hover:text-white disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
                 >
                   <X className="size-4" aria-hidden />
@@ -291,11 +290,11 @@ export function BackerReport({
       {isNarrowed(filter) ? (
         <form onSubmit={onSave} className="mt-6 flex flex-wrap items-end gap-3">
           <div className="min-w-[240px] flex-1">
-            <Field label="Save this filter as" hint="Eighty characters or fewer.">
+            <Field label={copy.saveLabel} hint={copy.saveHint}>
               <TextInput
                 value={segmentName}
                 onChange={(event) => setSegmentName(event.target.value)}
-                placeholder="Our German backers"
+                placeholder={copy.savePlaceholder}
                 maxLength={80}
               />
             </Field>
@@ -305,7 +304,7 @@ export function BackerReport({
             disabled={busy || segmentName.trim() === ''}
             className="inline-flex items-center gap-2 rounded-full bg-[--lime-500] px-4 py-2.5 text-sm font-semibold text-[--text-on-lime] hover:bg-[--lime-400] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]"
           >
-            Save segment
+            {copy.saveSegment}
           </button>
         </form>
       ) : null}
@@ -318,7 +317,7 @@ export function BackerReport({
       </p>
 
       {status === 'loading' ? (
-        <SkeletonGroup label="Loading this campaign's backers">
+        <SkeletonGroup label={copy.loading}>
           <Skeleton className="h-6 w-1/3" />
           <Skeleton className="h-40 w-full" />
         </SkeletonGroup>
@@ -329,18 +328,22 @@ export function BackerReport({
       {status === 'ready' && page !== null ? (
         <>
           <p className="mt-6 text-sm text-white">
-            <span className="tabular-nums">{page.matched}</span>{' '}
-            {page.matched === 1 ? 'backer' : 'backers'} match this filter.
+            {/*
+              The figure is its own node so it keeps `tabular-nums`, and the sentence is
+              filled around it rather than split into two keys: where the number falls in
+              the sentence is exactly what a translation is entitled to change.
+            */}
+            {fillNodes(pluralForm(locale, copy.matched, page.matched), {
+              count: <span className="tabular-nums">{page.matched}</span>,
+            })}
           </p>
 
           {page.backers.length === 0 ? (
             <p className="mt-4 max-w-[62ch] text-sm text-white/64">
-              {isNarrowed(filter) || segmentId !== undefined
-                ? 'Nothing matches this filter. Clear a chip or widen the search.'
-                : 'Nobody has backed this campaign yet. Backers appear here as soon as they confirm.'}
+              {isNarrowed(filter) || segmentId !== undefined ? copy.emptyFiltered : copy.emptyNone}
             </p>
           ) : (
-            <BackerTable backers={page.backers} label="This campaign's backers" />
+            <BackerTable backers={page.backers} label={copy.tableLabel} copy={copy.table} />
           )}
 
           {page.nextCursor !== undefined ? (
@@ -349,8 +352,7 @@ export function BackerReport({
             // answers "I want all of them" — a browser holding forty thousand rows in
             // memory is the wrong tool for the same question.
             <p className="mt-4 text-sm text-white/64">
-              Showing the most recent {page.backers.length}. Narrow the filter, or export the
-              file, to see the rest.
+              {fillPlaceholders(copy.more, { count: String(page.backers.length) })}
             </p>
           ) : null}
         </>
@@ -358,15 +360,6 @@ export function BackerReport({
     </section>
   );
 }
-
-/** The five states in the words a creator uses, matching the table's own labels. */
-const STATE_LABELS: Record<ReportedState, string> = {
-  CONFIRMED: 'Confirmed',
-  CHARGE_PENDING: 'Awaiting collection',
-  CHARGE_FAILED: 'Payment failed',
-  COLLECTED: 'Collected',
-  FULFILLED: 'Fulfilled',
-};
 
 /**
  * Hands the file to the browser.

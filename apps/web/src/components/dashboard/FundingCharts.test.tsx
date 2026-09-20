@@ -5,6 +5,8 @@ import { ApiError } from '../../lib/api/problem';
 import type { Trend } from '../../lib/dashboard/analytics';
 import type { BackerBreakdown } from '../../lib/dashboard/backers';
 import { FundingCharts } from './FundingCharts';
+import { fundingChartsCopyFrom } from '../../lib/i18n/dashboard-copy';
+import { translatorFor } from '../../test-copy';
 
 /**
  * §4.7's CD-02, CD-07 and CD-08 as a screen.
@@ -50,6 +52,14 @@ const DAYS: Trend['days'] = [
   },
 ];
 
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #79.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = fundingChartsCopyFrom(translatorFor('dashboard'));
+
 function renderCharts(overrides: Partial<Parameters<typeof FundingCharts>[0]> = {}) {
   return render(
     <FundingCharts
@@ -57,6 +67,7 @@ function renderCharts(overrides: Partial<Parameters<typeof FundingCharts>[0]> = 
       loadTrend={vi.fn().mockResolvedValue(trend())}
       loadBreakdown={vi.fn().mockResolvedValue(breakdown())}
       nowImpl={() => new Date('2026-08-18T09:04:00.000Z')}
+      copy={COPY}
       {...overrides}
     />,
   );
