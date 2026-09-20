@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { privatePageMetadata } from '../../../../../lib/seo/metadata';
 import { DashboardNav } from '../../../../../components/dashboard/DashboardNav';
+import { dashboardMetaCopy, dashboardNavCopy } from '../../../../../lib/i18n/shell-copy.server';
 
 /**
  * §4.7's creator dashboard — the shell #93 asks for.
@@ -16,10 +17,15 @@ import { DashboardNav } from '../../../../../components/dashboard/DashboardNav';
  *
  * <h2>The navigation lists only what exists</h2>
  *
- * Three items today, and "Finance" is not one of them: #99 needs a ledger that epic #59 has
- * not built, and an entry greyed out or linked to a 404 would be an interface advertising a
- * product the platform does not have. Each issue adds its own entry when it adds its own
- * route.
+ * Five items, and each arrived with its own route: an entry greyed out or linked to a 404
+ * would be an interface advertising a product the platform does not have. `DashboardNav`
+ * records the order they are read in and why the money sits after the people.
+ *
+ * <h2>Its words, and the metadata's, come from the catalogue</h2>
+ *
+ * #79. The title and the description are resolved in `generateMetadata` rather than written
+ * as a constant `metadata` object, because a constant is evaluated once for every language
+ * at build time and there is no request under it to read a locale from.
  *
  * <h2>Not indexed, and not a gate</h2>
  *
@@ -30,10 +36,10 @@ import { DashboardNav } from '../../../../../components/dashboard/DashboardNav';
  * second, weaker copy of one the service already makes correctly, and the two would
  * eventually disagree.
  */
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Campaign dashboard',
-  description: 'Live totals, progress and time remaining for a campaign you run.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const copy = await dashboardMetaCopy();
+  return privatePageMetadata({ title: copy.title, description: copy.description });
+}
 
 export default async function DashboardLayout({
   children,
@@ -42,11 +48,11 @@ export default async function DashboardLayout({
   readonly children: ReactNode;
   readonly params: Promise<{ readonly id: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, nav] = await Promise.all([params, dashboardNavCopy()]);
 
   return (
     <main className="mx-auto w-full max-w-[1080px] px-5 py-10 sm:px-6 sm:py-14">
-      <DashboardNav projectId={id} />
+      <DashboardNav projectId={id} copy={nav} />
       <div className="mt-8">{children}</div>
     </main>
   );

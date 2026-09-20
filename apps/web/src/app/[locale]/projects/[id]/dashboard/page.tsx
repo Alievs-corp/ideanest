@@ -1,6 +1,9 @@
 import { getLocale } from 'next-intl/server';
 import { DashboardOverview } from '../../../../../components/dashboard/DashboardOverview';
-import { campaignControlsCopy } from '../../../../../lib/i18n/shell-copy.server';
+import {
+  campaignControlsCopy,
+  dashboardOverviewCopy,
+} from '../../../../../lib/i18n/shell-copy.server';
 
 /**
  * The dashboard's first panel — §4.7's CD-01.
@@ -24,9 +27,20 @@ export default async function DashboardOverviewPage({
   readonly params: Promise<{ readonly id: string }>;
 }) {
   const { id } = await params;
-  // Words, not data: the creator's Extend and Withdraw controls (IDN-EXT-01, #44) need their
-  // sentences in the page's language, and resolving them here keeps the catalogue off the client.
-  const [copy, locale] = await Promise.all([campaignControlsCopy(), getLocale()]);
+  // Words, not data: the panel's own figures and the creator's Extend and Withdraw controls
+  // (IDN-EXT-01, #44) both need their sentences in the page's language, and resolving them here
+  // keeps the catalogue off the client.
+  const [overview, controlsCopy, locale] = await Promise.all([
+    dashboardOverviewCopy(),
+    campaignControlsCopy(),
+    getLocale(),
+  ]);
 
-  return <DashboardOverview projectId={id} controls={{ copy, locale }} />;
+  return (
+    <DashboardOverview
+      projectId={id}
+      copy={overview}
+      controls={{ copy: controlsCopy, locale }}
+    />
+  );
 }

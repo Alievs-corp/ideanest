@@ -1,3 +1,8 @@
+import type { CampaignClockCopy } from '../i18n/dashboard-copy';
+import type { Locale } from '../i18n/locale';
+import { fillPlaceholders } from '../i18n/placeholders';
+import { pluralise } from '../i18n/plurals';
+
 /**
  * The countdown the dashboard draws, and the clock-skew correction it needs.
  *
@@ -85,7 +90,7 @@ export function splitRemaining(ms: number): Remaining {
 }
 
 /**
- * The countdown as a sentence.
+ * The countdown as a sentence, in the page's language.
  *
  * <h2>The unit shown changes with how much is left, and that is the point</h2>
  *
@@ -96,19 +101,41 @@ export function splitRemaining(ms: number): Remaining {
  *
  * So: days while there are days, hours and minutes inside a day, and seconds only in the
  * last hour, when they are the thing being watched.
+ *
+ * <h2>The words are an argument (#79)</h2>
+ *
+ * This used to spell its four sentences in English, which made a module of pure arithmetic
+ * the last English literal on a translated screen. It takes them now, the way
+ * `lib/moderation/describe.ts` takes its reasons: `lib/i18n/dashboard-copy.ts` holds the
+ * shape, the route resolves it, and `CampaignClock` passes it down with the locale.
+ *
+ * <p>The day count is a plural rather than a ternary — one day against two is the whole of
+ * English and none of Russian, which picks between three forms by the last digit. The other
+ * three sentences carry two numbers each and no language declines for either, so they are
+ * templates.
  */
-export function describeRemaining(remaining: Remaining): string {
-  if (remaining.expired) return 'Closed';
+export function describeRemaining(
+  remaining: Remaining,
+  copy: CampaignClockCopy,
+  locale: Locale,
+): string {
+  if (remaining.expired) return copy.closed;
   if (remaining.days > 0) {
-    return remaining.days === 1 ? '1 day left' : `${remaining.days} days left`;
+    return pluralise(locale, copy.days, remaining.days);
   }
   if (remaining.hours > 0) {
-    return `${remaining.hours}h ${remaining.minutes}m left`;
+    return fillPlaceholders(copy.hours, {
+      hours: String(remaining.hours),
+      minutes: String(remaining.minutes),
+    });
   }
   if (remaining.minutes > 0) {
-    return `${remaining.minutes}m ${remaining.seconds}s left`;
+    return fillPlaceholders(copy.minutes, {
+      minutes: String(remaining.minutes),
+      seconds: String(remaining.seconds),
+    });
   }
-  return `${remaining.seconds}s left`;
+  return fillPlaceholders(copy.seconds, { seconds: String(remaining.seconds) });
 }
 
 /**

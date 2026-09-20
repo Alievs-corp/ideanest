@@ -6346,16 +6346,26 @@ it was written in.
 > are not.
 >
 > **What is still English, stated rather than left to be found.** The campaign editor,
-> the creator dashboard, the eleven panels under the account headings, and
+> the eleven panels under the account headings, and
 > `components/moderation/ReportControl` — the dialog a member of the public opens to
-> report a campaign.
+> report a campaign. Epic #78 is the list of them with a count against each.
+>
+> **The creator dashboard came off that list in #79.** All five panels under
+> `/projects/[id]/dashboard` draw from the catalogue: the overview and its countdown,
+> the funding trend and the two share charts, the backer report with its chips, its
+> segments and its table, the financial summary down to §7.2's ledger, and §4.8's
+> survey builder. Two label maps moved with them — `lib/dashboard/clock.ts` spelled its
+> countdown in English and `lib/dashboard/surveys.ts` owned PM-03's five answer types —
+> and both take the words as an argument now, the shape `lib/moderation/describe.ts` is
+> already in: a module-level constant is evaluated before any request exists and cannot
+> read a catalogue. `lib/i18n/dashboard-copy.ts` holds the shape.
 >
 > **Four surfaces were on that list by accident rather than by decision, and are not
 > any more.** The shell's search box, the failure pages' own headings — both 404s, the
 > profile 404, `/maintenance` and the two error boundaries — one pledge's own screen,
 > and the public pre-launch page were each drawing English literals inside a shell that
 > was translated around them. None of them had a reason recorded anywhere, which is what
-> separates them from the four above: a surface left in English on purpose is written
+> separates them from the three above: a surface left in English on purpose is written
 > down here, and a surface nobody wrote down was missed. `apps/web/README.md` lists what
 > the catalogue covers, and the pre-launch page's own `lib/i18n/prelaunch-copy.ts` and
 > the pledge screen's row in `app/[locale]/account-area.pages.test.ts` are what stop each

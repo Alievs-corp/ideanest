@@ -10,6 +10,10 @@ import { formatMoney } from '../../lib/money';
 import { CampaignClock } from './CampaignClock';
 import { CampaignControls } from './CampaignControls';
 import type { CampaignControlsCopy } from '../../lib/i18n/campaign-controls-copy';
+import type { DashboardOverviewCopy } from '../../lib/i18n/dashboard-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralise } from '../../lib/i18n/plurals';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
 /**
  * §4.7's CD-01: raised, backers, completion, and time remaining.
@@ -45,19 +49,13 @@ type Status = 'loading' | 'ready' | 'failed';
  * Branches on the status rather than on prose. The service's wording is free to change;
  * what it means is not.
  */
-function messageFor(cause: unknown): string {
+function messageFor(cause: unknown, copy: DashboardOverviewCopy): string {
   if (cause instanceof ApiError) {
-    if (cause.status === 401) {
-      return 'Your session has expired. Sign in again to see this campaign.';
-    }
-    if (cause.status === 403) {
-      return 'Your collaborator grant on this campaign does not include the finances, so these figures are not yours to see.';
-    }
-    if (cause.status === 404) {
-      return 'That campaign does not exist, or it is not one you work on.';
-    }
+    if (cause.status === 401) return copy.failures.signedOut;
+    if (cause.status === 403) return copy.notGranted;
+    if (cause.status === 404) return copy.failures.noCampaign;
   }
-  return 'The dashboard could not be loaded. It is the service rather than your campaign — try again shortly.';
+  return copy.unavailable;
 }
 
 export interface DashboardOverviewProps {
@@ -71,9 +69,18 @@ export interface DashboardOverviewProps {
    * locale. Absent, the panel is the read-only overview it always was.
    */
   readonly controls?: { readonly copy: CampaignControlsCopy; readonly locale: string };
+  /** Every word this panel and its clock draw, resolved on the server — #79. */
+  readonly copy: DashboardOverviewCopy;
 }
 
-export function DashboardOverview({ projectId, load, nowImpl, controls }: DashboardOverviewProps) {
+export function DashboardOverview({
+  projectId,
+  load,
+  nowImpl,
+  controls,
+  copy,
+}: DashboardOverviewProps) {
+  const locale = useRouteLocale();
   const now = nowImpl ?? Date.now;
   const [status, setStatus] = useState<Status>('loading');
   const [dashboard, setDashboard] = useState<CampaignDashboard | null>(null);
@@ -97,7 +104,7 @@ export function DashboardOverview({ projectId, load, nowImpl, controls }: Dashbo
       })
       .catch((cause: unknown) => {
         if (cancelled) return;
-        setFailure(messageFor(cause));
+        setFailure(messageFor(cause, copy));
         setStatus('failed');
       });
 
@@ -109,7 +116,7 @@ export function DashboardOverview({ projectId, load, nowImpl, controls }: Dashbo
 
   if (status === 'loading') {
     return (
-      <SkeletonGroup label="Loading the campaign's totals">
+      <SkeletonGroup label={copy.loading}>
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-24 w-full" />
       </SkeletonGroup>
@@ -133,13 +140,18 @@ export function DashboardOverview({ projectId, load, nowImpl, controls }: Dashbo
       </h1>
 
       <div className="mt-6">
-        <CampaignClock deadline={dashboard.deadline ?? null} skewMs={skewMs} nowImpl={nowImpl} />
+        <CampaignClock
+          deadline={dashboard.deadline ?? null}
+          skewMs={skewMs}
+          nowImpl={nowImpl}
+          copy={copy.clock}
+        />
       </div>
 
       <StatRow className="mt-8">
-        <StatBlock label="Raised" value={formatMoney(dashboard.raised)} />
+        <StatBlock label={copy.raised} value={formatMoney(dashboard.raised)} />
         <StatBlock
-          label="Backers"
+          label={copy.backers}
           value={
             <span className="inline-flex items-center gap-2">
               <Users className="size-5" aria-hidden />
@@ -148,28 +160,31 @@ export function DashboardOverview({ projectId, load, nowImpl, controls }: Dashbo
           }
         />
         <StatBlock
-          label="Goal"
-          value={dashboard.goal ? formatMoney(dashboard.goal) : 'Not set yet'}
+          label={copy.goal}
+          value={dashboard.goal ? formatMoney(dashboard.goal) : copy.goalUnset}
         />
       </StatRow>
 
       {percent === undefined || percent === null ? (
         // Not a bar at zero. A campaign with no goal has not raised none of it — it has
         // not asked for anything, and a bar at the far left says the opposite.
-        <p className="mt-6 text-sm text-white/64">
-          This campaign has no funding goal yet, so there is no progress to show.
-        </p>
+        <p className="mt-6 text-sm text-white/64">{copy.noGoal}</p>
       ) : (
         <div className="mt-6">
-          <ProgressBar value={percent} label={`Funding: ${percent} percent of the goal`} />
+          <ProgressBar
+            value={percent}
+            label={fillPlaceholders(copy.progressLabel, { percent: String(percent) })}
+          />
           <p className="mt-2 flex items-center gap-2 text-sm text-white">
             {/* Printed as text as well as drawn, because a bar that only changes colour
                 has said nothing to a screen reader. ui-kit §9.2. */}
-            <span className="tabular-nums">{percent}% funded</span>
+            <span className="tabular-nums">
+              {fillPlaceholders(copy.percentFunded, { percent: String(percent) })}
+            </span>
             {funded ? (
               <span className="inline-flex items-center gap-1 text-[--success]">
                 <CircleCheck className="size-4" aria-hidden />
-                Goal reached
+                {copy.goalReached}
               </span>
             ) : null}
           </p>
@@ -190,13 +205,17 @@ export function DashboardOverview({ projectId, load, nowImpl, controls }: Dashbo
 
       {dashboard.outcome ? (
         <div className="mt-8 rounded-[16px] border border-white/8 p-5">
-          <h2 className="text-sm font-semibold text-white">At the deadline</h2>
+          <h2 className="text-sm font-semibold text-white">{copy.outcomeHeading}</h2>
           <p className="mt-2 max-w-[62ch] text-sm text-white/64">
-            This campaign closed with {formatMoney(dashboard.outcome.pledged)} from{' '}
-            {dashboard.outcome.backersCount} backers, against a goal of{' '}
-            {formatMoney(dashboard.outcome.goal)}. These figures are frozen: a payment that
-            fails during collection reduces what is paid out, never what the campaign
-            raised.
+            {fillPlaceholders(copy.outcome, {
+              pledged: formatMoney(dashboard.outcome.pledged),
+              // The count declines with the sentence rather than being dropped into it as a
+              // bare number: Russian has three forms of "backer" and the last digit picks.
+              // `?? 0`: springdoc marks the field optional, and "from backers" with the
+              // number missing is a worse sentence than "from 0 backers".
+              backers: pluralise(locale, copy.outcomeBackers, dashboard.outcome.backersCount ?? 0),
+              goal: formatMoney(dashboard.outcome.goal),
+            })}
           </p>
         </div>
       ) : null}

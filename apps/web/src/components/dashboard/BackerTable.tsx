@@ -5,6 +5,7 @@ import { formatExactTime } from '../../lib/time';
 import { formatMoney } from '../../lib/money';
 import type { Backer } from '../../lib/dashboard/backers';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { BackerTableCopy } from '../../lib/i18n/dashboard-copy';
 
 /**
  * §4.7's CD-10 as a table: who backed the campaign, and what each of them took.
@@ -38,9 +39,11 @@ export interface BackerTableProps {
   readonly backers: readonly Backer[];
   /** Names the scroll region, so the tab stop it introduces is explained. */
   readonly label: string;
+  /** The six column headings, the anonymity note and the five pledge states — #79. */
+  readonly copy: BackerTableCopy;
 }
 
-export function BackerTable({ backers, label }: BackerTableProps) {
+export function BackerTable({ backers, label, copy }: BackerTableProps) {
   const locale = useRouteLocale();
   return (
     <div
@@ -54,22 +57,22 @@ export function BackerTable({ backers, label }: BackerTableProps) {
         <thead>
           <tr className="border-b border-white/8 text-left text-white/64">
             <th scope="col" className="px-4 py-3 font-medium">
-              Backer
+              {copy.backer}
             </th>
             <th scope="col" className="px-4 py-3 font-medium">
-              Reward
+              {copy.reward}
             </th>
             <th scope="col" className="px-4 py-3 text-right font-medium">
-              Pledged
+              {copy.pledged}
             </th>
             <th scope="col" className="px-4 py-3 font-medium">
-              State
+              {copy.state}
             </th>
             <th scope="col" className="px-4 py-3 font-medium">
-              Destination
+              {copy.destination}
             </th>
             <th scope="col" className="px-4 py-3 font-medium">
-              Backed
+              {copy.backed}
             </th>
           </tr>
         </thead>
@@ -82,17 +85,18 @@ export function BackerTable({ backers, label }: BackerTableProps) {
                 {backer.anonymous ? (
                   <span className="mt-1 inline-flex items-center gap-1 text-white/64">
                     <EyeOff className="size-3.5" aria-hidden />
-                    Not named publicly
+                    {copy.anonymous}
                   </span>
                 ) : null}
               </th>
               <td className="px-4 py-3 text-white/64">
                 {/* A pledge that took no reward is §4.5's PL-02 — support, which is a
                     thing a backer chose and not a blank cell. */}
-                {backer.rewardTitle ?? (backer.rewardTierId === undefined ? 'No reward' : 'A removed tier')}
+                {backer.rewardTitle ??
+                  (backer.rewardTierId === undefined ? copy.noReward : copy.removedTier)}
               </td>
               <td className="px-4 py-3 text-right tabular-nums text-white">{formatMoney(backer.amount)}</td>
-              <td className="px-4 py-3 text-white/64">{stateLabel(backer.state)}</td>
+              <td className="px-4 py-3 text-white/64">{copy.states[backer.state]}</td>
               <td className="px-4 py-3 text-white/64">{backer.country ?? '—'}</td>
               <td className="px-4 py-3 text-white/64">
                 <time dateTime={backer.backedAt}>{formatExactTime(backer.backedAt, locale)}</time>
@@ -105,25 +109,13 @@ export function BackerTable({ backers, label }: BackerTableProps) {
   );
 }
 
-/**
- * A pledge state in words a creator uses.
+/*
+ * A pledge state in words a creator uses used to be a `switch` here, in English — #79.
  *
- * The wire constant is `CHARGE_FAILED`; what a creator needs to read is "Payment failed".
- * Mapped here rather than prettified generically, because "collected" and "fulfilled" are
- * different facts about money and a transformation that upper-cased the first letter would
- * make them look like the same kind of thing.
+ * It is `dashboard.states` in the catalogue now, and the report's filter chips read the same
+ * five words: the wire constant is `CHARGE_FAILED`, what a creator needs to read is "Payment
+ * failed", and a second spelling of that beside the first is how a filter stops looking like
+ * it selects what this column says. Not prettified generically, then or now — "collected" and
+ * "fulfilled" are different facts about money, and upper-casing a first letter would make
+ * them look like the same kind of thing.
  */
-function stateLabel(state: Backer['state']): string {
-  switch (state) {
-    case 'CONFIRMED':
-      return 'Confirmed';
-    case 'CHARGE_PENDING':
-      return 'Awaiting collection';
-    case 'CHARGE_FAILED':
-      return 'Payment failed';
-    case 'COLLECTED':
-      return 'Collected';
-    case 'FULFILLED':
-      return 'Fulfilled';
-  }
-}

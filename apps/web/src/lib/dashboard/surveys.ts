@@ -33,14 +33,15 @@ export const QUESTION_TYPES = ['TEXT', 'CHOICE', 'MULTI_CHOICE', 'DATE', 'ADDRES
 
 export type QuestionType = (typeof QUESTION_TYPES)[number];
 
-/** What each type is called on screen. The wire names are shouted; these are not. */
-export const QUESTION_TYPE_LABELS: Readonly<Record<QuestionType, string>> = {
-  TEXT: 'Short text',
-  CHOICE: 'Choose one',
-  MULTI_CHOICE: 'Choose several',
-  DATE: 'A date',
-  ADDRESS: 'Postal address',
-};
+/*
+ * What each type is called on screen used to be a constant here, in English — #79.
+ *
+ * It is `dashboard.surveys.types` in the catalogue now, resolved by the route and handed to
+ * the builder as part of its copy. A module-level map cannot read a catalogue: it is
+ * evaluated before any request exists, which is the same reason `lib/moderation/describe.ts`
+ * takes its reasons as an argument rather than owning them. The wire names are shouted and
+ * stay that way; only the words a creator reads moved.
+ */
 
 /** Whether this type carries a list of options. Mirrors `QuestionType.hasChoices()`. */
 export function hasChoices(type: QuestionType): boolean {

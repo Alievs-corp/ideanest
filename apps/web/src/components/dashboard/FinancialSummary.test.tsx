@@ -4,6 +4,8 @@ import { ApiError } from '../../lib/api/problem';
 import { expectNoViolations } from '../../test-axe';
 import type { CampaignFinance } from '../../lib/dashboard/finance';
 import { FinancialSummary } from './FinancialSummary';
+import { financeCopyFrom } from '../../lib/i18n/dashboard-copy';
+import { translatorFor } from '../../test-copy';
 
 /**
  * §4.7's CD-16 — the creator's financial summary. Issue #99.
@@ -53,12 +55,24 @@ function finance(overrides: Partial<CampaignFinance> = {}): CampaignFinance {
   };
 }
 
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #79.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = financeCopyFrom(translatorFor('dashboard'));
+
 function renderPanel(body: CampaignFinance) {
-  return render(<FinancialSummary projectId={PROJECT_ID} load={() => Promise.resolve(body)} />);
+  return render(
+    <FinancialSummary projectId={PROJECT_ID} load={() => Promise.resolve(body)} copy={COPY} />,
+  );
 }
 
 function refusing(cause: unknown) {
-  return render(<FinancialSummary projectId={PROJECT_ID} load={() => Promise.reject(cause)} />);
+  return render(
+    <FinancialSummary projectId={PROJECT_ID} load={() => Promise.reject(cause)} copy={COPY} />,
+  );
 }
 
 /** The row of the deduction table with this heading. */

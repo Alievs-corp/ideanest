@@ -8,6 +8,8 @@ import {
   splitRemaining,
   tickIntervalMs,
 } from './clock';
+import { dashboardOverviewCopyFrom } from '../i18n/dashboard-copy';
+import { translatorFor } from '../../test-copy';
 
 /**
  * The arithmetic behind "time remaining", tested where it can be tested exactly.
@@ -90,14 +92,22 @@ describe('splitting a duration', () => {
   });
 });
 
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #79.
+ *
+ * Retyping "27 days left" here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = dashboardOverviewCopyFrom(translatorFor('dashboard')).clock;
+
 describe('the sentence a countdown reads as', () => {
   it('shows days while there are days', () => {
-    expect(describeRemaining(splitRemaining(27 * DAY))).toBe('27 days left');
-    expect(describeRemaining(splitRemaining(DAY + HOUR))).toBe('1 day left');
+    expect(describeRemaining(splitRemaining(27 * DAY), COPY, 'en')).toBe('27 days left');
+    expect(describeRemaining(splitRemaining(DAY + HOUR), COPY, 'en')).toBe('1 day left');
   });
 
   it('shows hours and minutes inside a day', () => {
-    expect(describeRemaining(splitRemaining(5 * HOUR + 12 * MINUTE))).toBe('5h 12m left');
+    expect(describeRemaining(splitRemaining(5 * HOUR + 12 * MINUTE), COPY, 'en')).toBe('5h 12m left');
   });
 
   /**
@@ -105,13 +115,13 @@ describe('the sentence a countdown reads as', () => {
    * them three weeks out would be a number that changes every second and says nothing.
    */
   it('shows seconds only in the last hour', () => {
-    expect(describeRemaining(splitRemaining(2 * MINUTE + 30 * SECOND))).toBe('2m 30s left');
-    expect(describeRemaining(splitRemaining(45 * SECOND))).toBe('45s left');
-    expect(describeRemaining(splitRemaining(90 * MINUTE))).not.toContain('s left');
+    expect(describeRemaining(splitRemaining(2 * MINUTE + 30 * SECOND), COPY, 'en')).toBe('2m 30s left');
+    expect(describeRemaining(splitRemaining(45 * SECOND), COPY, 'en')).toBe('45s left');
+    expect(describeRemaining(splitRemaining(90 * MINUTE), COPY, 'en')).not.toContain('s left');
   });
 
   it('says the campaign closed rather than counting past zero', () => {
-    expect(describeRemaining(splitRemaining(0))).toBe('Closed');
+    expect(describeRemaining(splitRemaining(0), COPY, 'en')).toBe('Closed');
   });
 });
 

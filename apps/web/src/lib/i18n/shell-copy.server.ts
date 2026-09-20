@@ -17,6 +17,22 @@ import {
   verifyEmailCopyFrom,
 } from './auth-copy';
 import { type CheckoutCopy, checkoutCopyFrom } from './checkout-copy';
+import {
+  type BackerReportCopy,
+  type DashboardMetaCopy,
+  type DashboardNavCopy,
+  type DashboardOverviewCopy,
+  type FinanceCopy,
+  type FundingChartsCopy,
+  type SurveyBuilderCopy,
+  backerReportCopyFrom,
+  dashboardMetaCopyFrom,
+  dashboardNavCopyFrom,
+  dashboardOverviewCopyFrom,
+  financeCopyFrom,
+  fundingChartsCopyFrom,
+  surveyBuilderCopyFrom,
+} from './dashboard-copy';
 import { type PayoutPanelCopy, payoutPanelCopyFrom } from './payout-copy';
 import { type CampaignControlsCopy, campaignControlsCopyFrom } from './campaign-controls-copy';
 import type { PluralForms } from '@ideanest/ui';
@@ -271,6 +287,50 @@ export async function payoutPanelCopy(): Promise<PayoutPanelCopy> {
 /** The creator's Extend and Withdraw controls on the dashboard — IDN-EXT-01 (#44). */
 export async function campaignControlsCopy(): Promise<CampaignControlsCopy> {
   return campaignControlsCopyFrom(await getTranslations('dashboardControls'));
+}
+
+/* -------------------------------------------------------------------------
+ * The creator dashboard — issue #79, under epic #78
+ *
+ * One accessor per panel rather than one for the namespace. The five routes under
+ * `/projects/[id]/dashboard` each render one client island, and handing the charts page the
+ * survey builder's vocabulary would put every word of §4.8 into the flight payload of a
+ * screen that draws a line and two bar charts. `dashboard-copy.ts` carries the rest.
+ * ---------------------------------------------------------------------- */
+
+/** The layout's metadata. `noindex, nofollow` — one creator's view of their own money. */
+export async function dashboardMetaCopy(): Promise<DashboardMetaCopy> {
+  return dashboardMetaCopyFrom(await getTranslations('dashboard'));
+}
+
+/** The way between the five panels, resolved by the layout that draws it. */
+export async function dashboardNavCopy(): Promise<DashboardNavCopy> {
+  return dashboardNavCopyFrom(await getTranslations('dashboard'));
+}
+
+/** CD-01: raised, backers, completion, and the countdown beneath them. */
+export async function dashboardOverviewCopy(): Promise<DashboardOverviewCopy> {
+  return dashboardOverviewCopyFrom(await getTranslations('dashboard'));
+}
+
+/** CD-02, CD-07 and CD-08: the funding trend, the reward mix, and where the backers are. */
+export async function fundingChartsCopy(): Promise<FundingChartsCopy> {
+  return fundingChartsCopyFrom(await getTranslations('dashboard'));
+}
+
+/** CD-10 and CD-11: the backer report, its saved segments, its table and its export. */
+export async function backerReportCopy(): Promise<BackerReportCopy> {
+  return backerReportCopyFrom(await getTranslations('dashboard'));
+}
+
+/** CD-16: gross, fees, tax, refunds, net, and §7.2's accounts under them. */
+export async function financeCopy(): Promise<FinanceCopy> {
+  return financeCopyFrom(await getTranslations('dashboard'));
+}
+
+/** §4.8's PM-01 to PM-04: the survey builder. */
+export async function surveyBuilderCopy(): Promise<SurveyBuilderCopy> {
+  return surveyBuilderCopyFrom(await getTranslations('dashboard'));
 }
 
 /** The pricing page and the plan chooser on it. */

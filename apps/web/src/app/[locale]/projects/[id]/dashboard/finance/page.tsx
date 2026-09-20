@@ -1,4 +1,5 @@
 import { FinancialSummary } from '../../../../../../components/dashboard/FinancialSummary';
+import { financeCopy } from '../../../../../../lib/i18n/shell-copy.server';
 
 /**
  * The dashboard's financial summary — §4.7's CD-16, issue 99.
@@ -17,7 +18,9 @@ export default async function FinancialSummaryPage({
 }: {
   readonly params: Promise<{ readonly id: string }>;
 }) {
-  const { id } = await params;
+  // Words, not data: the panel is a client island, so the route resolves its sentences and
+  // hands them down — `lib/i18n/dashboard-copy.ts` carries the reasoning.
+  const [{ id }, copy] = await Promise.all([params, financeCopy()]);
 
-  return <FinancialSummary projectId={id} />;
+  return <FinancialSummary projectId={id} copy={copy} />;
 }

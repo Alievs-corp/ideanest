@@ -1,4 +1,5 @@
 import { SurveyBuilder } from '../../../../../../components/dashboard/SurveyBuilder';
+import { surveyBuilderCopy } from '../../../../../../lib/i18n/shell-copy.server';
 
 /**
  * The dashboard's survey panel — §4.8's PM-01 to PM-04, issue 73.
@@ -19,7 +20,9 @@ export default async function SurveysPage({
 }: {
   readonly params: Promise<{ readonly id: string }>;
 }) {
-  const { id } = await params;
+  // Words, not data: the builder is a client island, so the route resolves its sentences and
+  // the five answer types §4.8's PM-03 offers, and hands them down.
+  const [{ id }, copy] = await Promise.all([params, surveyBuilderCopy()]);
 
-  return <SurveyBuilder projectId={id} />;
+  return <SurveyBuilder projectId={id} copy={copy} />;
 }

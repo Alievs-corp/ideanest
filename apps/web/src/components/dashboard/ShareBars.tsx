@@ -3,6 +3,8 @@
 import Decimal from 'decimal.js';
 import { formatMoney } from '../../lib/money';
 import type { Money } from '../../lib/money';
+import type { Locale } from '../../lib/i18n/locale';
+import { pluralise, type PluralForms } from '../../lib/i18n/plurals';
 
 /**
  * A magnitude-by-identity chart: one horizontal bar per thing, longest first.
@@ -50,9 +52,19 @@ export interface ShareBarsProps {
   readonly rows: readonly ShareBar[];
   /** Names the list for a screen reader — "Backers by reward tier". */
   readonly label: string;
+  /**
+   * The counted half of each row, carrying `{count}` — #79.
+   *
+   * A plural rather than a ternary on `=== 1`: Russian picks between three forms of "backer"
+   * by the last digit, so a singular/plural split is wrong for most numbers in one of the
+   * four languages and there is nothing on screen to say so.
+   */
+  readonly backers: PluralForms;
+  /** Which language to select that form in. The count arrives with the fetch, not the render. */
+  readonly locale: Locale;
 }
 
-export function ShareBars({ rows, label }: ShareBarsProps) {
+export function ShareBars({ rows, label, backers, locale }: ShareBarsProps) {
   const largest = widestOf(rows);
 
   return (
@@ -62,7 +74,7 @@ export function ShareBars({ rows, label }: ShareBarsProps) {
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
             <span className="text-white">{row.label}</span>
             <span className="tabular-nums text-white/64">
-              {row.backerCount} {row.backerCount === 1 ? 'backer' : 'backers'} ·{' '}
+              {pluralise(locale, backers, row.backerCount)} ·{' '}
               <span className="text-white">{formatMoney(row.amount)}</span>
             </span>
           </div>

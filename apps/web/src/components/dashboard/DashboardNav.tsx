@@ -3,6 +3,7 @@
 import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
 import { cn } from '@ideanest/ui/server';
+import type { DashboardNavCopy } from '../../lib/i18n/dashboard-copy';
 
 /**
  * The way between the dashboard's panels.
@@ -45,27 +46,29 @@ interface Panel {
   readonly label: string;
 }
 
-function panelsFor(projectId: string): readonly Panel[] {
+function panelsFor(projectId: string, copy: DashboardNavCopy): readonly Panel[] {
   const base = `/projects/${encodeURIComponent(projectId)}/dashboard`;
   return [
-    { href: base, label: 'Overview' },
-    { href: `${base}/charts`, label: 'Funding and backers' },
-    { href: `${base}/backers`, label: 'Backers' },
-    { href: `${base}/finance`, label: 'Finance' },
-    { href: `${base}/surveys`, label: 'Surveys' },
+    { href: base, label: copy.overview },
+    { href: `${base}/charts`, label: copy.charts },
+    { href: `${base}/backers`, label: copy.backers },
+    { href: `${base}/finance`, label: copy.finance },
+    { href: `${base}/surveys`, label: copy.surveys },
   ];
 }
 
 export interface DashboardNavProps {
   readonly projectId: string;
+  /** Resolved by the layout — `lib/i18n/dashboard-copy.ts` explains why it is a prop. */
+  readonly copy: DashboardNavCopy;
 }
 
-export function DashboardNav({ projectId }: DashboardNavProps) {
+export function DashboardNav({ projectId, copy }: DashboardNavProps) {
   const pathname = usePathname();
-  const panels = panelsFor(projectId);
+  const panels = panelsFor(projectId, copy);
 
   return (
-    <nav aria-label="Dashboard sections" className="border-b border-white/8">
+    <nav aria-label={copy.label} className="border-b border-white/8">
       <ul className="flex gap-1">
         {panels.map((panel) => {
           const current = pathname === panel.href;
