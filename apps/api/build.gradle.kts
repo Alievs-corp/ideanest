@@ -150,7 +150,7 @@ dependencies {
     // "Multiple HTTP implementations were found on the classpath". One is named here,
     // and `S3ObjectStore` additionally passes it to the builder, so neither this file
     // nor a future transitive dependency decides the transport by accident.
-    implementation(platform("software.amazon.awssdk:bom:2.54.16"))
+    implementation(platform("software.amazon.awssdk:bom:2.55.0"))
     implementation("software.amazon.awssdk:s3")
     implementation("software.amazon.awssdk:apache5-client")
 
