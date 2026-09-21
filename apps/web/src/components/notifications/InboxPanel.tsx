@@ -255,7 +255,7 @@ export function InboxPanel({ copy }: InboxPanelProps) {
       </ChipRow>
 
       {error && (
-        <InlineAlert variant="danger" title="Something went wrong" className="mt-4">
+        <InlineAlert variant="danger" title={copy.errorTitle} className="mt-4">
           {error}
         </InlineAlert>
       )}

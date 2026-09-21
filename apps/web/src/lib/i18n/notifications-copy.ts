@@ -51,6 +51,8 @@ export interface InboxCopy extends NotificationsCopy {
   readonly signedOut: string;
   readonly signedOutBody: string;
   readonly loadingList: string;
+  /** The title over a load refusal. `refused` and `unreachable` are its body — #86. */
+  readonly errorTitle: string;
   readonly emptyTitle: string;
   readonly emptyBody: string;
   readonly filteredTitle: string;
@@ -107,6 +109,7 @@ export function inboxCopyFrom(t: NotificationsTranslator): InboxCopy {
     signedOut: t('inbox.signedOut'),
     signedOutBody: t('inbox.signedOutBody'),
     loadingList: t('inbox.loadingList'),
+    errorTitle: t('inbox.errorTitle'),
     emptyTitle: t('inbox.emptyTitle'),
     emptyBody: t('inbox.emptyBody'),
     filteredTitle: t('inbox.filteredTitle'),

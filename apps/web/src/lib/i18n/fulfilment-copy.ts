@@ -58,6 +58,8 @@ export interface ShippingAddressFormCopy {
   readonly phone: string;
   readonly phoneHint: string;
   readonly requiredField: string;
+  /** The skeleton's accessible name, which says what is being waited for — #86. */
+  readonly loading: string;
   readonly loadFailedTitle: string;
   readonly notFound: string;
   readonly unreachable: string;
@@ -111,6 +113,7 @@ export function shippingAddressFormCopyFrom(t: FulfilmentTranslator): ShippingAd
     phone: t('form.phone'),
     phoneHint: t('form.phoneHint'),
     requiredField: t('form.requiredField'),
+    loading: t('form.loading'),
     loadFailedTitle: t('form.loadFailedTitle'),
     notFound: t('form.notFound'),
     unreachable: t('form.unreachable'),

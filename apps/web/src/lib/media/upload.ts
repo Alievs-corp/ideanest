@@ -113,7 +113,7 @@ async function requestAddress(file: File, signal?: AbortSignal): Promise<UploadT
     signal,
   });
 
-  if (!response.ok) throw await refusal(response, 'UPLOAD_REFUSED', 'That file was refused.');
+  if (!response.ok) throw await refusal(response, 'UPLOAD_REFUSED');
   return (await response.json()) as UploadTicket;
 }
 
@@ -140,7 +140,7 @@ async function announceArrival(mediaId: string, signal?: AbortSignal): Promise<v
   // Safe to repeat: the server refuses the transition from anything but PENDING and answers
   // with the current state, so a retry after a dropped response does not queue a second pass.
   const response = await authorizedFetch(`/v1/media/${mediaId}/complete`, { method: 'POST', signal });
-  if (!response.ok) throw await refusal(response, 'UPLOAD_REFUSED', 'That upload could not be finished.');
+  if (!response.ok) throw await refusal(response, 'UPLOAD_UNFINISHED');
 }
 
 async function waitUntilReady(mediaId: string, signal?: AbortSignal): Promise<UploadedImage> {
@@ -169,20 +169,26 @@ async function waitUntilReady(mediaId: string, signal?: AbortSignal): Promise<Up
 
 async function readState(mediaId: string, signal?: AbortSignal): Promise<MediaState> {
   const response = await authorizedFetch(`/v1/media/${mediaId}`, { signal });
-  if (!response.ok) throw await refusal(response, 'MEDIA_NOT_FOUND', 'That upload could not be read.');
+  if (!response.ok) throw await refusal(response, 'MEDIA_NOT_FOUND');
   return (await response.json()) as MediaState;
 }
 
 /**
  * The server's refusal, as one of ours.
  *
- * The `code` is what the caller branches on and what a translated message is looked up from;
- * the sentence is a fallback for a log and for the cases where the server sent no problem
- * body at all -- a proxy answering 502, most realistically.
+ * The `code` is what the caller branches on and what a translated message is looked up from.
+ * The message is whatever the SERVER said and nothing else: it used to fall back to an
+ * English sentence written here, which reached a creator's screen through
+ * `CoverImageField`'s `describeFailure` whenever the code was one the editor had no copy for
+ * -- an untranslatable sentence from a library, on the one surface #78 is emptying of them.
+ *
+ * <p>So an empty message is a real answer now, and it means "the server said nothing" -- a
+ * proxy answering 502, most realistically. The caller draws its own words for the code, and
+ * `campaignEditor.cover.failures` carries the three codes below in four languages since #86.
  */
-async function refusal(response: Response, fallbackCode: string, fallbackText: string): Promise<UploadFailed> {
+async function refusal(response: Response, fallbackCode: string): Promise<UploadFailed> {
   const error = await errorFrom(response);
-  return new UploadFailed(error.problem?.code ?? fallbackCode, error.message || fallbackText);
+  return new UploadFailed(error.problem?.code ?? fallbackCode, error.message);
 }
 
 function pause(milliseconds: number, signal?: AbortSignal): Promise<void> {

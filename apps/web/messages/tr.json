@@ -341,6 +341,7 @@
         "phoneHint": "Bazı taşıyıcılar bu olmadan teslim etmez.",
         "requiredField": "Bir paket bu olmadan adreslenemez.",
         "loadFailedTitle": "Bu adres yüklenemedi",
+        "loading": "Adresiniz yükleniyor",
         "notFound": "O destek bulunamadı ya da size ait değil.",
         "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
         "refused": "Adres reddedildi.",
@@ -584,6 +585,7 @@
         "signedOut": "Oturumunuz kapalı",
         "signedOutBody": "Bu tarayıcının artık bir oturumu yok. Bildirimlerinizi okumak için yeniden girin.",
         "loadingList": "Bildirimleriniz yükleniyor",
+        "errorTitle": "Bir şeyler ters gitti",
         "emptyTitle": "Henüz bir şey yok",
         "emptyBody": "Desteklediğiniz bir kampanya hedefine ulaştığında, kapandığında ya da bir ödeme aldığında burada görünecek.",
         "filteredTitle": "Yüklenenler arasında bir şey yok",
@@ -4002,6 +4004,7 @@
         "failedTitle": "Sürüm geçmişi yüklenemedi",
         "emptyTitle": "Henüz önceki sürüm yok",
         "loadingLabel": "Önceki sürümler yükleniyor",
+        "loadingVersion": "Bu sürüm yükleniyor…",
         "description": "Hikâye her değiştiğinde bir sürüm saklanır, ama birkaç dakikada birden fazla değil. En son ellisi burada.",
         "emptyDescription": "İlki hikâye ilk değiştiğinde saklanır, sonra siz yazdıkça birkaç dakikada birden fazla olmamak üzere.",
         "replaceWarning": "Şu anki hikâyeniz değiştirilir.",
@@ -4173,16 +4176,21 @@
       "buttonLabel": "Bir görsel seçin",
       "dropHint": "20 MB'a kadar. Görsel burada dönüştürülüp küçültülür, orijinali saklanmaz. En iyisi {minimum} ve üzeri.",
       "urlPlaceholder": "Ya da bir adres yapıştırın: https://images.example.com/cover.jpg",
+      "urlLabel": "Kapak görselinin adresi",
+      "checking": "Denetleniyor",
+      "useAddress": "Bu adresi kullan",
       "needUrlFirst": "Önce bir görselin adresini girin.",
       "notUsedTitle": "Bu dosya kullanılmadı",
       "unusable": "Bu görsel kullanılamadı.",
       "softTitle": "Tam genişlikte bulanık görünecek",
       "set": "Kapak, {size} piksellik bir görselden alındı.",
       "setSmall": "Kapak, {size} piksellik bir görselden alındı. Bu, önerilen {minimum} ölçüsünün altında, bu yüzden başlığı doldurmak için büyütülecek ve bulanık görünecek. Oranları korunur — çerçeve germez, kırpar. Kampanya yine de gönderilebilir.",
+      "size": "Kapak {size} piksel",
+      "sizeUploaded": "Kapak {size} piksel · yüklendi",
       "stage": {
-        "preparing": "Hazırlanıyor",
-        "uploading": "Yükleniyor",
-        "processing": "İşleniyor"
+        "preparing": "Görsel hazırlanıyor…",
+        "uploading": "Görsel yükleniyor…",
+        "processing": "Görsel işleniyor…"
       },
       "failures": {
         "TOO_SMALL": "Bu görsel göstermek için fazla küçük. {minimum} ve üzeri iyi okunur.",
@@ -4193,7 +4201,10 @@
         "UPLOADS_UNAVAILABLE": "Bu ortamda yükleme açık değil. Bunun yerine bir adres yapıştırın.",
         "MEDIA_STORAGE_UNREACHABLE": "Görsel deposu yanıt vermiyor. Birazdan yeniden deneyin.",
         "UPLOAD_STILL_PROCESSING": "Bu görsel her zamankinden uzun sürüyor. Bu sekmeye dönerseniz görünebilir.",
-        "UPLOAD_TRANSFER_FAILED": "Görsel depoya ulaşmadı. Bağlantınızı denetleyip yeniden deneyin."
+        "UPLOAD_TRANSFER_FAILED": "Görsel depoya ulaşmadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "UPLOAD_REFUSED": "Bu dosya reddedildi.",
+        "UPLOAD_UNFINISHED": "Bu yükleme tamamlanamadı.",
+        "MEDIA_NOT_FOUND": "Bu yükleme okunamadı."
       }
     },
     "newProject": {

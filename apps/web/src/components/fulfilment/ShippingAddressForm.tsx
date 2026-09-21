@@ -191,7 +191,7 @@ export function ShippingAddressForm({ pledgeId, copy }: ShippingAddressFormProps
 
   if (status === 'loading') {
     return (
-      <SkeletonGroup label="Loading your address" className="flex flex-col gap-4">
+      <SkeletonGroup label={copy.loading} className="flex flex-col gap-4">
         {[0, 1, 2, 3].map((row) => (
           <Skeleton key={row} height="3.5rem" />
         ))}

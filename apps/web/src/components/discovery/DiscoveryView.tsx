@@ -269,7 +269,7 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
           </p>
 
           <div className="mt-6">
-            {feed.status === 'loading' && <DiscoverySkeleton />}
+            {feed.status === 'loading' && <DiscoverySkeleton label={copy.loading} />}
 
             {feed.status === 'failed' && (
               <InlineAlert variant="danger" title={problem.title}>
