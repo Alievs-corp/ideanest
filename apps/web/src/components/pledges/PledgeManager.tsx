@@ -20,6 +20,8 @@ import { PledgeEditor } from './PledgeEditor';
 import { paymentReturnHint, type PaymentReturnHint } from '../../lib/pledges/payment';
 import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { PledgeManagerCopy } from '../../lib/i18n/pledges-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * One of the caller's own pledges, with §4.5's PL-09 edit. Issue #287.
@@ -92,9 +94,11 @@ export interface PledgeManagerProps {
    * screens that are visibly the same form.
    */
   readonly copy: CheckoutCopy;
+  /** This screen's own words — #81. `lib/i18n/pledges-copy.ts` says which are not here. */
+  readonly pledges: PledgeManagerCopy;
 }
 
-export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
+export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
   const locale = useRouteLocale();
   const [status, setStatus] = useState<Status>('loading');
   const [pledge, setPledge] = useState<PledgeResponse | null>(null);
@@ -171,7 +175,7 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
 
   if (status === 'loading') {
     return (
-      <SkeletonGroup label="Loading this pledge" className="flex flex-col gap-4">
+      <SkeletonGroup label={pledges.loading} className="flex flex-col gap-4">
         <Skeleton height="8rem" />
         <Skeleton height="14rem" />
       </SkeletonGroup>
@@ -181,13 +185,13 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
   if (status === 'failed' || pledge === null) {
     return (
       <div className="flex flex-col gap-6">
-        <InlineAlert variant="danger" title={failure?.title ?? 'This pledge could not be read'}>
-          <p>{failure?.detail ?? 'The service did not answer. Try again in a moment.'}</p>
+        <InlineAlert variant="danger" title={failure?.title ?? pledges.unreadableTitle}>
+          <p>{failure?.detail ?? pledges.unreadableBody}</p>
         </InlineAlert>
         <div>
           <Link href="/pledges">
             <Pill type="button" variant="outline">
-              All your pledges
+              {pledges.allPledges}
             </Pill>
           </Link>
         </div>
@@ -211,7 +215,7 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
               {summary === null ? (
                 /* The campaign could not be named — see the module comment. Saying so is
                    better than printing an identifier nobody can read. */
-                'This pledge’s campaign could not be loaded'
+                pledges.campaignUnnamed
               ) : (
                 <Link
                   href={pledgeCampaignHref(summary.project)}
@@ -223,19 +227,23 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
             </h2>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <Tag>{pledgeStateLabel(pledge.state)}</Tag>
-              {pledge.isAnonymous && <Tag>Anonymous</Tag>}
-              {pledge.latePledge && <Tag>Late pledge</Tag>}
+              <Tag>{pledgeStateLabel(pledge.state, pledges.states)}</Tag>
+              {pledge.isAnonymous && <Tag>{pledges.anonymous}</Tag>}
+              {pledge.latePledge && <Tag>{pledges.latePledge}</Tag>}
             </div>
 
             {pledge.confirmedAt != null && (
               <p className="mt-3 text-sm text-white/40">
-                Confirmed {formatExactTime(pledge.confirmedAt, locale)}
+                {fillPlaceholders(pledges.confirmedAt, {
+                  time: formatExactTime(pledge.confirmedAt, locale),
+                })}
               </p>
             )}
             {pledge.canceledAt != null && (
               <p className="mt-3 text-sm text-white/40">
-                Withdrawn {formatExactTime(pledge.canceledAt, locale)}
+                {fillPlaceholders(pledges.withdrawnAt, {
+                  time: formatExactTime(pledge.canceledAt, locale),
+                })}
               </p>
             )}
           </div>
@@ -270,7 +278,7 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
                   href={`/pledges/${encodeURIComponent(pledge.id)}/address`}
                   className="rounded-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
                 >
-                  Where this reward is going
+                  {pledges.whereGoing}
                 </Link>
               </p>
             )}
@@ -279,7 +287,7 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
 
         {pledge.supplements.length > 0 && (
           <div className="mt-6 border-t border-white/6 pt-6">
-            <h3 className="text-[15px] font-medium text-white">Bought after the campaign closed</h3>
+            <h3 className="text-[15px] font-medium text-white">{pledges.supplementsHeading}</h3>
             {/*
               §4.8's PM-09 and PM-10 are charged separately and are NOT part of the total above:
               V29 froze the comparison §5.1 made at the deadline, so a later purchase cannot be
@@ -290,16 +298,14 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
               {pledge.supplements.map((supplement) => (
                 <li key={supplement.id} className="flex items-baseline justify-between gap-4">
                   <span className="text-white/64">
-                    {supplement.kind === 'UPGRADE' ? 'Reward upgrade' : 'Extra add-ons'} ·{' '}
+                    {supplement.kind === 'UPGRADE' ? pledges.upgrade : pledges.extraAddons} ·{' '}
                     {formatExactTime(supplement.createdAt, locale)}
                   </span>
                   <span className="tabular-nums text-white">{formatMoney(supplement.amount)}</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-xs text-white/40">
-              Charged separately from the pledge above, and not yet charged at all.
-            </p>
+            <p className="mt-3 text-xs text-white/40">{pledges.supplementsNote}</p>
           </div>
         )}
       </section>
@@ -307,15 +313,20 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
       {editable ? (
         <>
           {/* No cancel control: IDN-EXT-01 (#35) — a backer cannot withdraw a pledge, only raise it. */}
-          <PledgeEditor pledge={pledge} onSaved={setPledge} copy={copy} />
+          <PledgeEditor pledge={pledge} onSaved={setPledge} copy={copy} pledges={pledges.editor} />
         </>
       ) : (
-        <InlineAlert variant="info" title="This pledge can no longer be changed here">
+        <InlineAlert variant="info" title={pledges.lockedTitle}>
           <p>
-            A pledge can be changed while it is being made, and raised — never lowered or
-            withdrawn — after it is confirmed, while the campaign takes pledges. This one is{' '}
-            {pledgeStateLabel(pledge.state).toLowerCase()}, so those controls are not offered. If
-            something about it is wrong, the campaign’s creator is who to ask.
+            {/*
+              The state goes in as it is written rather than lower-cased. `toLowerCase()`
+              without a locale maps Turkish İ to i rather than to ı, which is a different
+              letter and a different word — and the sentence names the state rather than
+              running it into a clause, so the capital is not wrong anywhere.
+            */}
+            {fillPlaceholders(pledges.lockedBody, {
+              state: pledgeStateLabel(pledge.state, pledges.states),
+            })}
           </p>
         </InlineAlert>
       )}
@@ -326,7 +337,7 @@ export function PledgeManager({ pledgeId, copy }: PledgeManagerProps) {
       <div>
         <Link href="/pledges">
           <Pill type="button" variant="outline">
-            All your pledges
+            {pledges.allPledges}
           </Pill>
         </Link>
       </div>

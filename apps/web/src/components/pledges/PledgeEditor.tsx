@@ -35,7 +35,9 @@ import {
   type Selection,
 } from '../../lib/pledges/quote';
 import { formatMoney, parseAmount, toMoney, type AmountParse } from '../../lib/money';
-import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
+import { type CheckoutCopy, fillPlaceholders } from '../../lib/i18n/checkout-copy';
+import type { PledgeEditorCopy } from '../../lib/i18n/pledges-copy';
+import { contributionMessage, refusalMessage } from '../checkout/refusals';
 
 /**
  * §4.5's PL-09 — the backer changes their mind while the campaign runs. Issue #287.
@@ -183,14 +185,14 @@ export interface PledgeEditorProps {
    * screens that are visibly the same form.
    */
   readonly copy: CheckoutCopy;
+  /** The editor's own words — #81. Its field, its hints and its refusals are the checkout's. */
+  readonly pledges: PledgeEditorCopy;
   readonly pledge: PledgeResponse;
   /** Called with the whole pledge the service answered with. Never a merge. */
   readonly onSaved: (next: PledgeResponse) => void;
 }
 
-export function PledgeEditor({ pledge, onSaved,
-  copy,
-}: PledgeEditorProps) {
+export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorProps) {
   const [catalogue, setCatalogue] = useState<PublicRewardList | null>(null);
   const [catalogueFailure, setCatalogueFailure] = useState<CheckoutFailure | null>(null);
   const [draft, setDraft] = useState<Draft>(() => draftOf(pledge));
@@ -298,7 +300,7 @@ export function PledgeEditor({ pledge, onSaved,
 
   if (catalogue === null) {
     return (
-      <SkeletonGroup label="Loading the rewards" className="flex flex-col gap-3">
+      <SkeletonGroup label={pledges.loadingRewards} className="flex flex-col gap-3">
         {[0, 1, 2].map((row) => (
           <Skeleton key={row} height="5rem" />
         ))}
@@ -309,28 +311,28 @@ export function PledgeEditor({ pledge, onSaved,
   const needsDestination = selection !== null && requiresDestination(selection);
   const options = selection === null ? [] : destinationOptions(selection);
 
+  /*
+   * The checkout's own two functions, over the checkout's own vocabulary — #81.
+   *
+   * Both used to be English literals here, beside four controls imported from
+   * `components/checkout` precisely so there would be one sold-out rule and one destination
+   * union. `components/checkout/refusals.ts` is now the one home for the sentences those
+   * controls refuse with; a second wording would be the one nobody looks at, on the screen a
+   * backer reaches weeks after the checkout.
+   */
   const contributionError =
     parsed.ok || draft.contributionText === ''
       ? null
-      : 'Enter an amount using digits and a full stop, such as 25.00.';
+      : contributionMessage(parsed.reason, null, copy);
 
   const quoteRefusal =
-    quote !== null && !quote.ok
-      ? quote.refusal.reason === 'contribution-below-price'
-        ? 'That is less than the reward costs. Give at least its price, or choose a cheaper tier.'
-        : quote.refusal.reason === 'destination-missing'
-          ? 'Choose where this is going before the total can be worked out.'
-          : quote.refusal.reason === 'destination-unpriced'
-            ? 'The creator has not priced delivery to that destination for everything you chose.'
-            : 'A pledge has to be for more than nothing.'
-      : null;
+    quote !== null && !quote.ok ? refusalMessage(quote.refusal, copy) : null;
 
   return (
     <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">Change this pledge</h2>
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{pledges.heading}</h2>
       <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">
-        You can change what you chose until the campaign’s deadline. Nothing has been charged
-        yet, so an edit re-prices the whole pledge rather than billing a difference.
+        {pledges.intro}
       </p>
 
       <div className="mt-6 flex flex-col gap-6">
@@ -343,12 +345,16 @@ export function PledgeEditor({ pledge, onSaved,
         />
 
         <Field
-          label={draft.choice === NO_REWARD ? 'How much would you like to give?' : 'Your contribution'}
+          /* The checkout's field, because it is the checkout's field: same legend, same two
+             hints, already written in four languages. */
+          label={draft.choice === NO_REWARD ? copy.contribution.legendNoReward : copy.contribution.legend}
           required
           hint={
             reward === null
-              ? 'Every amount goes to the campaign.'
-              : `This reward costs ${formatMoney(reward.price)}. Give more if you would like to; the extra is bonus support.`
+              ? copy.contribution.hint
+              : fillPlaceholders(copy.contribution.rewardHint, {
+                  amount: formatMoney(reward.price),
+                })
           }
           error={contributionError}
         >
@@ -401,11 +407,11 @@ export function PledgeEditor({ pledge, onSaved,
           onChange={(event) =>
             setDraft((current) => ({ ...current, isAnonymous: event.currentTarget.checked }))
           }
-          label="Pledge anonymously"
+          label={copy.anonymous.label}
           /* PL-12 says what it does and does not overstate it: anonymous means hidden from the
              campaign's public backer list and from §4.2's public backed archive. The creator
              still sees who backed them — they have to, in order to post what was promised. */
-          description="Your name is kept off the campaign’s public backer list and off your profile. The creator still sees it, because they have to post your reward."
+          description={pledges.anonymousHint}
         />
 
         <PledgeSummary
@@ -426,21 +432,18 @@ export function PledgeEditor({ pledge, onSaved,
               disabled={saving || isEmpty(edit) || !parsed.ok}
               onClick={() => void save()}
             >
-              {saving ? 'Saving' : 'Save changes'}
+              {saving ? pledges.saving : pledges.save}
             </Pill>
 
             {isEmpty(edit) && !saved && (
-              <p className="text-sm text-on-white/64">Nothing has been changed yet.</p>
+              <p className="text-sm text-on-white/64">{pledges.noChanges}</p>
             )}
           </div>
         </PledgeSummary>
 
         {saved && failure === null && (
-          <InlineAlert variant="success" title="Your pledge was updated">
-            <p>
-              The figures above are the service’s, not this page’s arithmetic. Nothing has been
-              charged — collection happens when the campaign closes successfully.
-            </p>
+          <InlineAlert variant="success" title={pledges.savedTitle}>
+            <p>{pledges.savedBody}</p>
           </InlineAlert>
         )}
 

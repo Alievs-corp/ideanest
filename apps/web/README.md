@@ -318,15 +318,27 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   export and account closure, and `/settings/sessions`' device list and its row. All four
   read their refusals from `auth.failures` rather than carrying a second spelling of them,
   which is what the email and password panels beside them already did.
-  `lib/i18n/settings-copy.ts` holds the shape.
+  `lib/i18n/settings-copy.ts` holds the shape;
+- the pledge panels (#81) — the list under `/pledges`, one pledge's own screen and the
+  editor on it, and §6.2's twelve pledge states, which both screens now read from one
+  group. The editor's field, its two hints and its four quote refusals are the
+  **checkout's** words rather than pledge-specific copies of them:
+  `components/checkout/refusals.ts` is the one function that turns a refusal into a
+  sentence, and both screens call it. `lib/i18n/pledges-copy.ts` holds the rest.
 
 What is still English:
 
 | Surface | Where |
 |---|---|
 | The campaign editor | `components/campaign-editor` |
-| The panels below seven account headings | `components/surveys`, `components/pledges`, `components/profile`'s editor, and the saved and following lists |
+| The panels below five account headings | `components/surveys`, `components/profile`'s editor, and the saved and following lists |
+| The checkout and pledge refusal table | `lib/pledges/failure.ts` — twenty refusals the checkout and both pledge screens render (#91) |
 | The public report dialog | `components/moderation/ReportControl` |
+
+`lib/pledges/failure.ts` is the one row here that is **not** a screen. It reads as
+translated from both ends and is not: `checkout.errors` covers the form's own validation,
+so the checkout looked finished, while the service's refusals — "That reward has just
+gone", "This campaign is not taking pledges" — stayed English. #91 carries it.
 
 `ReportControl` is the reason `lib/moderation/describe.ts` still exports `REASON_LABELS`: the
 console reads the same nine reasons from `admin.moderation.reason`, and the two say the same

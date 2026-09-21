@@ -3,6 +3,7 @@ import { AccountPageHeader } from '../../../components/account/AccountPageHeader
 import { PledgeList } from '../../../components/pledges/PledgeList';
 import { privatePageMetadata } from '../../../lib/seo/metadata';
 import { getTranslations } from 'next-intl/server';
+import { pledgeListCopy } from '../../../lib/i18n/shell-copy.server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('account.pages.pledges');
@@ -54,7 +55,12 @@ export async function generateMetadata(): Promise<Metadata> {
  * a heading and a boundary — the same shape every other account screen takes.
  */
 export default async function PledgesPage() {
-  const t = await getTranslations('account.pages.pledges');
+  // Words, not data: the list is a client island behind a bearer token, so the route resolves
+  // its sentences and the twelve pledge states, and hands them down.
+  const [t, copy] = await Promise.all([
+    getTranslations('account.pages.pledges'),
+    pledgeListCopy(),
+  ]);
 
   return (
     <>
@@ -63,7 +69,7 @@ export default async function PledgesPage() {
       </AccountPageHeader>
 
       <div className="mt-8">
-        <PledgeList />
+        <PledgeList copy={copy} />
       </div>
     </>
   );

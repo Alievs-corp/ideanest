@@ -18,6 +18,12 @@ import {
 } from './auth-copy';
 import { type CheckoutCopy, checkoutCopyFrom } from './checkout-copy';
 import {
+  type PledgeListCopy,
+  type PledgeManagerCopy,
+  pledgeListCopyFrom,
+  pledgeManagerCopyFrom,
+} from './pledges-copy';
+import {
   type BackerReportCopy,
   type DashboardMetaCopy,
   type DashboardNavCopy,
@@ -321,6 +327,22 @@ export async function notificationPreferencesCopy(): Promise<PreferencesCopy> {
 /** The checkout's words. `checkout-copy.ts` explains why the whole of it is one prop. */
 export async function checkoutCopy(): Promise<CheckoutCopy> {
   return checkoutCopyFrom(await getTranslations('checkout'));
+}
+
+/**
+ * The panels below `/pledges` — issue #81.
+ *
+ * Two accessors because two routes render two panels, and the detail screen needs the editor's
+ * words as well as its own. Neither carries the checkout's vocabulary: `/pledges/{id}` resolves
+ * {@link checkoutCopy} beside this, because the editor is the checkout's own form over a pledge
+ * that already exists and draws its field, its hints and its refusals from there.
+ */
+export async function pledgeListCopy(): Promise<PledgeListCopy> {
+  return pledgeListCopyFrom(await getTranslations('account.pledges'));
+}
+
+export async function pledgeManagerCopy(): Promise<PledgeManagerCopy> {
+  return pledgeManagerCopyFrom(await getTranslations('account.pledges'));
 }
 
 /** The creator's payout details panel — IDN-EXT-01 (#44). */
