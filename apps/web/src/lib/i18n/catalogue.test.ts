@@ -212,4 +212,86 @@ describe('the message catalogues', () => {
       }
     }
   });
+
+  it('declines "бэкер" the same way everywhere it is counted', () => {
+    /*
+     * ISSUE #94. `dashboard.overview.outcomeBackers` read `{count} бэкера` for `one` and
+     * `{count} бэкеров` for `few`: the whole table shifted by one category, so a campaign that
+     * closed with one backer reported "1 бэкера" and one that closed with two reported
+     * "2 бэкеров". Neither is Russian, and it is the sentence a creator reads about how their
+     * campaign finished.
+     *
+     * <h2>Why this pins one noun rather than stating a rule about plural groups</h2>
+     *
+     * Because there is no rule about plural groups to state, and a check that looked like one
+     * would be worse than none. The obvious candidates both fail: `one` differed from `few`
+     * in the shifted table, and `few` equalling `many` is CORRECT in four groups here —
+     * `у {count} проводок` and `Отправлено {count} бэкерам` take the same case from two
+     * numeral forms, which is a fact about the preposition rather than about the noun. A test
+     * that passed on the defect it cites would be the skipped test CLAUDE.md calls a bug
+     * report nobody filed.
+     *
+     * <p>What is checkable is the one noun this platform counts. "бэкер" is declined in five
+     * plural groups on five surfaces — the two campaign cards, the funding block, the campaign
+     * outcome and the backer report — and the nominative table is the same in all five or one
+     * of them is wrong. The dative groups (`бэкеру` / `бэкерам`) are a different table and are
+     * left alone.
+     */
+    const NOMINATIVE = /бэкеров$/u;
+    let checked = 0;
+
+    const walk = (value: unknown, path: string) => {
+      if (typeof value !== 'object' || value === null) return;
+      const node = value as Record<string, unknown>;
+      const forms = ['one', 'few', 'many'].map((key) => node[key]);
+
+      if (forms.every((form) => typeof form === 'string')) {
+        /* The noun is the last word, so the sentence's own full stop is not part of it. */
+        const bare = (form: string) => form.trimEnd().replace(/[.!?…]+$/u, '');
+        const [rawOne, rawFew, rawMany] = forms as [string, string, string];
+        const one = bare(rawOne);
+        const few = bare(rawFew);
+        const many = bare(rawMany);
+
+        if (NOMINATIVE.test(many)) {
+          expect(one, `ru ${path}: one is not the nominative singular`).toMatch(/бэкер$/u);
+          expect(few, `ru ${path}: few is not the genitive singular`).toMatch(/бэкера$/u);
+          checked += 1;
+        }
+
+        return;
+      }
+
+      for (const [key, child] of Object.entries(node)) walk(child, path === '' ? key : `${path}.${key}`);
+    };
+
+    walk(CATALOGUES['ru'], '');
+
+    expect(checked, 'no group counting бэкеры was found, so this test is checking nothing')
+      .toBeGreaterThan(3);
+  });
+
+  it('keeps Turkish "denetlemek" for auditing, which is the only thing it means', () => {
+    /*
+     * ISSUE #94, and the shape `CONFUSIONS` above exists for: a word that reads as fluent and
+     * means something else. `denetlemek` is to AUDIT or to INSPECT OFFICIALLY. Twenty-nine
+     * strings used it for English's "check" — `Bağlantınızı denetleyip yeniden deneyin` tells
+     * somebody to audit their internet connection, and `E-postanızı denetleyin` to audit their
+     * inbox. `kontrol etmek` is the verb, and every one of those now uses it.
+     *
+     * <h2>Why the rule is a namespace rather than a word list</h2>
+     *
+     * Because the word is right where the meaning is right, and that is one place: the
+     * administration console genuinely audits. `admin.moderation.decision.dismiss.body` says
+     * dismissals are audited, `admin.screens.audit.footnote` is about an audit surface, and
+     * `admin.index.footnote` describes authorisation — `yetki denetimi` is what that is called
+     * in Turkish. Outside `admin.`, nothing on this platform audits anything.
+     */
+    for (const [key, message] of entries(CATALOGUES['tr'])) {
+      if (key.startsWith('admin.')) continue;
+
+      expect(/denetl/iu.test(message), `tr ${key}: use kontrol etmek — denetlemek is to audit`)
+        .toBe(false);
+    }
+  });
 });

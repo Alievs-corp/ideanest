@@ -6365,11 +6365,24 @@ it was written in.
 > arrived through #79 to #82 without anybody reading the three non-English languages as a
 > first language, and the reading found what it was aimed at: the creator's financial summary
 > and the console's ledger printed two different Turkish words for one §7.2 account, a Russian
-> checkbox label was written in the masculine, and two of the twelve pledge states named the
-> bank as the party that had disputed a payment rather than the person who did. Two of those
-> are now rules in `lib/i18n/catalogue.test.ts` — one ledger account has one name in each
-> language, and each language quotes a phrase its own way. #102 carries the one finding too
-> large to fix under a review: three languages carry two words each for "creator".
+> checkbox label was written in the masculine, two of the twelve pledge states named the bank
+> as the party that had disputed a payment rather than the person who did, and the campaign
+> outcome declined "бэкер" one category out, so a campaign that closed with one backer
+> reported "1 бэкера".
+>
+> **Two of the findings were words rather than sentences.** An Azerbaijani button said "sign
+> out everywhere" above a confirmation promising to keep this device signed in; and Turkish
+> used `denetlemek` — to AUDIT — for English's "check" in twenty-nine places, telling somebody
+> to audit their internet connection and their inbox. The second is the shape
+> `catalogue.test.ts`'s `CONFUSIONS` table exists for, and the rule that followed is a
+> namespace rather than a word list: auditing is what the administration console does, so
+> `denetlemek` outside `admin.` is the wrong verb.
+>
+> **Four rules came out of the reading**, all in `lib/i18n/catalogue.test.ts`: one ledger
+> account has one name in each language; each language quotes a phrase its own way;
+> "бэкер" is declined the same everywhere it is counted; and `denetlemek` stays in the
+> console. Three findings were too large to fix under a review and are their own issues —
+> #101, #102 and #104.
 >
 > **The refusal table came off it in #91.** The twenty sentences the service says no with
 > are `checkout.failures` now, read by the checkout, the pledge editor and the pledge
