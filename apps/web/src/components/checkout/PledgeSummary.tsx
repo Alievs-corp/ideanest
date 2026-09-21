@@ -6,6 +6,7 @@ import { FloatingPanel } from '@ideanest/ui';
 import { formatApproximate, formatMoney, type Money } from '../../lib/money';
 import type { PledgeAmounts } from '../../lib/pledges/api';
 import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * PL-06: what this pledge comes to, broken into its lines, always on screen.
@@ -160,7 +161,9 @@ export function PledgeSummary({
             {approximateTotal != null && (
               <p
                 className="mt-1 text-right text-[13px] tabular-nums text-on-white/64"
-                aria-label={`Approximately ${formatMoney(approximateTotal)}`}
+                aria-label={fillPlaceholders(copy.approximately, {
+                  amount: formatMoney(approximateTotal),
+                })}
               >
                 {formatApproximate(approximateTotal)}
               </p>

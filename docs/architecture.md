@@ -6345,9 +6345,19 @@ it was written in.
 > is asking. `apps/web/README.md` records exactly which routes are key-based and which
 > are not.
 >
-> **What is still English, stated rather than left to be found.** The campaign editor, and
-> the save, share and reminder controls under §4.4's header (#101). Epic #78 is the list of
-> what was on this line and how each surface came off it.
+> **What is still English, stated rather than left to be found.** The campaign editor. Epic
+> #78 is the list of what was on this line and how each surface came off it.
+>
+> **The names and notices only a screen reader meets came off it in #101.** The save, share
+> and reminder controls, the live countdown and the checkout's approximate total: twenty-four
+> strings, fourteen of them invisible to anybody reviewing those pages. Nine are a polite live
+> region, which is the whole of what a reader is told when a save landed in a table row, a
+> share in an operating-system sheet, or a link on a clipboard. `CampaignActions` had been
+> handed three of its words as a prop since #324 and drew two of them only on the signed-out
+> branch, so one pill said a translated word to a stranger and an English one to the reader
+> about to press it. The rule that followed completes #86's: an `aria-label` may not be built
+> from a template carrying words, only from values that were words before they got there —
+> and that rule, not a list, is what found the countdown and the checkout total.
 >
 > **The funding block came off it in #99, and the count it draws was wrong as well as
 > English.** `LiveFunding` is the one client component beneath the campaign page, and four

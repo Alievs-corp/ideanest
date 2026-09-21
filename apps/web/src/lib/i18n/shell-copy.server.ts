@@ -71,9 +71,11 @@ import {
 } from './campaign-editor-copy';
 import {
   type CampaignActionsCopy,
+  type CampaignCountdownCopy,
   type CommentCopy,
   type LiveFundingCopy,
   campaignActionsCopyFrom,
+  campaignCountdownCopyFrom,
   commentCopyFrom,
   liveFundingCopyFrom,
 } from './campaign-copy';
@@ -489,7 +491,7 @@ export async function pricingCopy(): Promise<PricingCopy> {
   return pricingCopyFrom(await getTranslations('pricing'));
 }
 
-/** The save, share and reminder controls. */
+/** The save, share and reminder controls, and everything they announce (#101). */
 export async function campaignActionsCopy(): Promise<CampaignActionsCopy> {
   return campaignActionsCopyFrom(await getTranslations('campaign.actions'));
 }
@@ -504,6 +506,11 @@ export async function campaignActionsCopy(): Promise<CampaignActionsCopy> {
  */
 export async function liveFundingCopy(): Promise<LiveFundingCopy> {
   return liveFundingCopyFrom(await getTranslations('campaign'));
+}
+
+/** §4.4's live countdown, which ticks in the browser and so cannot read a catalogue (#101). */
+export async function campaignCountdownCopy(): Promise<CampaignCountdownCopy> {
+  return campaignCountdownCopyFrom(await getTranslations('campaign'));
 }
 
 /** The composer and the two comment controls, which share one section. */

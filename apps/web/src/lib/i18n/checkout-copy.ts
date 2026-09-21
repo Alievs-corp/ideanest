@@ -91,6 +91,8 @@ export interface CheckoutCopy {
     readonly delivery: string;
     readonly tax: string;
     readonly total: string;
+    /** Carries `{amount}`. §21.2's approximate total, as a screen reader hears it (#101). */
+    readonly approximately: string;
     /** The three the panel prints on its own lines rather than in the review block. */
     readonly noReward: string;
     readonly yourSupport: string;
@@ -348,6 +350,7 @@ export function checkoutCopyFrom(t: CheckoutTranslator): CheckoutCopy {
       delivery: t('summary.delivery'),
       tax: t('summary.tax'),
       total: t('summary.total'),
+      approximately: String(t.raw('summary.approximately')),
       noReward: t('summary.noReward'),
       yourSupport: t('summary.yourSupport'),
       rewardLine: t('summary.rewardLine'),

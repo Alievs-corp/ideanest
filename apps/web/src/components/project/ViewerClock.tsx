@@ -10,6 +10,8 @@ import {
   remainingUntil,
   viewerTimeZone,
 } from '../../lib/projects/deadline';
+import type { CampaignCountdownCopy } from '../../lib/i18n/campaign-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
 /**
@@ -68,6 +70,8 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
  */
 
 export interface CampaignCountdownProps {
+  /** Resolved by `CampaignSummary`, which is a Server Component. */
+  readonly copy: CampaignCountdownCopy;
   /** The campaign's deadline, ISO-8601. */
   readonly deadline: string;
   /**
@@ -80,7 +84,7 @@ export interface CampaignCountdownProps {
   readonly initialLabel: string | null;
 }
 
-export function CampaignCountdown({ deadline, initialLabel }: CampaignCountdownProps) {
+export function CampaignCountdown({ copy, deadline, initialLabel }: CampaignCountdownProps) {
   const [label, setLabel] = useState<string | null>(initialLabel);
 
   useEffect(() => {
@@ -121,11 +125,11 @@ export function CampaignCountdown({ deadline, initialLabel }: CampaignCountdownP
     <span
       role="timer"
       aria-live="off"
-      aria-label={`Time left to back this campaign: ${label}`}
+      aria-label={fillPlaceholders(copy.label, { time: label })}
       className="inline-flex items-center gap-1.5 text-sm text-white/64 tabular-nums"
     >
       <Clock aria-hidden="true" className="size-3.5" />
-      <span aria-hidden="true">{label} left</span>
+      <span aria-hidden="true">{fillPlaceholders(copy.left, { time: label })}</span>
     </span>
   );
 }

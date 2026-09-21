@@ -13,7 +13,11 @@ import { LiveFunding } from './LiveFunding';
 import { CampaignCountdown } from './ViewerClock';
 import { getTranslations } from 'next-intl/server';
 import { fillNodes } from '../../lib/i18n/placeholders';
-import { campaignActionsCopy, liveFundingCopy } from '../../lib/i18n/shell-copy.server';
+import {
+  campaignActionsCopy,
+  campaignCountdownCopy,
+  liveFundingCopy,
+} from '../../lib/i18n/shell-copy.server';
 
 /**
  * §4.4's header: the cover, the title, who made it, and how the funding stands.
@@ -150,6 +154,7 @@ export async function CampaignSummary({
   const common = await getTranslations('common');
   const actions = await campaignActionsCopy();
   const funding = await liveFundingCopy();
+  const clock = await campaignCountdownCopy();
   const badge = BADGES[campaign.state];
 
   /*
@@ -308,7 +313,7 @@ export async function CampaignSummary({
           states that as the invariant.
         */}
         {campaign.deadline !== null && countdown !== null && (
-          <CampaignCountdown deadline={campaign.deadline} initialLabel={countdown} />
+          <CampaignCountdown copy={clock} deadline={campaign.deadline} initialLabel={countdown} />
         )}
 
         {/*
