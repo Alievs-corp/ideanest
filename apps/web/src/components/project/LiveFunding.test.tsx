@@ -1,6 +1,11 @@
 import { act } from 'react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { createTranslator } from 'next-intl';
+import EN from '../../../messages/en.json';
+import RU from '../../../messages/ru.json';
+import { type FundingTranslator, liveFundingCopyFrom } from '../../lib/i18n/campaign-copy';
+import type { Locale } from '../../lib/i18n/locale';
 import { LiveFunding } from './LiveFunding';
 
 /**
@@ -15,7 +20,43 @@ import { LiveFunding } from './LiveFunding';
  * - **A window moves the amount and the percentage together.** A percentage frozen at the
  *   server's value while the amount beside it moved would be two numbers disagreeing on one
  *   page, which is worse than no live counter at all.
+ * - **The words are the catalogue's and the backer count is declined** (#99). Both are
+ *   asserted against `messages/*.json` rather than against a string typed here, because a
+ *   test that repeated the English would have passed on the day this component was still
+ *   printing it to a reader who had chosen Russian.
  */
+
+/*
+ * The `[locale]` segment, which `useRouteLocale` reads and nothing else here needs.
+ *
+ * Spread first so the real module survives: `i18n/navigation.ts` builds its wrappers at
+ * import time off `redirect` and `permanentRedirect`, and a factory that replaced the module
+ * wholesale leaves those undefined — a TypeError inside next-intl, nowhere near its cause.
+ */
+let routeLocale = 'en';
+
+vi.mock('next/navigation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/navigation')>()),
+  useParams: () => ({ locale: routeLocale }),
+}));
+
+/**
+ * The real catalogue, through the builder the server uses.
+ *
+ * The cast is at this edge, for the reason the campaign page's own suite casts `namespace`:
+ * next-intl types a translator against the literal keys of the catalogue it was built from,
+ * and `FundingTranslator` is the narrow shape a server component hands across the boundary. A
+ * key that does not exist still fails, as the missing message it is.
+ */
+function copyFor(locale: Locale) {
+  return liveFundingCopyFrom(
+    createTranslator({
+      locale,
+      messages: locale === 'ru' ? RU : EN,
+      namespace: 'campaign',
+    }) as unknown as FundingTranslator,
+  );
+}
 
 const PROJECT = '0193f2a1-0000-7000-8000-000000000001';
 
@@ -56,6 +97,7 @@ const originalWebSocket = globalThis.WebSocket;
 type WebSocketGlobal = { WebSocket: unknown };
 
 beforeEach(() => {
+  routeLocale = 'en';
   FakeSocket.last = null;
   (globalThis as unknown as WebSocketGlobal).WebSocket = FakeSocket;
 });
@@ -65,14 +107,15 @@ afterEach(() => {
   (globalThis as unknown as WebSocketGlobal).WebSocket = originalWebSocket;
 });
 
-function renderFunding(realtimeOrigin: string | undefined) {
+function renderFunding(realtimeOrigin: string | undefined, backersCount = 40) {
   return render(
     <LiveFunding
       projectId={PROJECT}
       goal={{ amount: '10000.00', currency: 'AZN' }}
       pledged={{ amount: '5000.00', currency: 'AZN' }}
-      backersCount={40}
+      backersCount={backersCount}
       realtimeOrigin={realtimeOrigin}
+      copy={copyFor(routeLocale as Locale)}
     />,
   );
 }
@@ -165,5 +208,52 @@ describe('LiveFunding', () => {
     view.unmount();
 
     expect(socket?.closed).toBe(true);
+  });
+
+  /*
+   * ISSUE #99. Four words were typed here in English — the bar's accessible name and the
+   * three labels under the figures — on a page whose every other component read the
+   * catalogue, so a reader who chose Azerbaijani met a translated campaign whose funding
+   * block said "pledged" and "backers".
+   */
+  it('draws its labels from the catalogue rather than from the component', () => {
+    renderFunding(undefined);
+
+    expect(screen.getByText(EN.campaign.funding.pledged)).toBeTruthy();
+    expect(screen.getByText(EN.campaign.funding.ofGoal)).toBeTruthy();
+    expect(screen.getByLabelText('Funding: 50 percent of the goal')).toBeTruthy();
+  });
+
+  it('says "funded" rather than "of goal" once the goal is reached', () => {
+    render(
+      <LiveFunding
+        projectId={PROJECT}
+        goal={{ amount: '10000.00', currency: 'AZN' }}
+        pledged={{ amount: '10000.00', currency: 'AZN' }}
+        backersCount={40}
+        realtimeOrigin={undefined}
+        copy={copyFor('en')}
+      />,
+    );
+
+    expect(screen.getByText(EN.campaign.funding.funded)).toBeTruthy();
+    expect(screen.queryByText(EN.campaign.funding.ofGoal)).toBeNull();
+  });
+
+  /*
+   * THE DEFECT #99 NAMES. The ternary that stood here chose between "backer" and "backers",
+   * which is the whole of English and none of Russian: 1 бэкер, 2 бэкера, 5 бэкеров. Three
+   * counts, because a rule that only distinguished one from many would pass on two of them.
+   */
+  it.each([
+    [1, RU.campaign.funding.backers.one],
+    [2, RU.campaign.funding.backers.few],
+    [40, RU.campaign.funding.backers.many],
+  ])('declines the backer count in Russian: %i', (count, expected) => {
+    routeLocale = 'ru';
+
+    renderFunding(undefined, count);
+
+    expect(screen.getByText(expected)).toBeTruthy();
   });
 });

@@ -299,7 +299,9 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   those six surfaces all render;
 - the six authentication screens under `app/[locale]/(auth)`, and the two credential
   panels under `/settings` that share their refusal vocabulary;
-- the checkout, the public campaign page and the public pre-launch page;
+- the checkout, the public campaign page and the public pre-launch page — **except the
+  save, share and reminder controls**, which are the row of pills under §4.4's header and
+  are the one thing on that page still typed in English. They are listed below;
 - the account area: the frame, all thirteen screens' headings, one pledge's own screen, the
   notifications inbox and its settings, and the two fulfilment screens;
 - the administration console, **in full** — the bar, the rail, the index that lists §4.11's
@@ -372,12 +374,32 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   recovery belongs to a code, which control it is about, whether the idempotency key must
   be retired — because those are decisions and they are the same in four languages. The
   sentences are `checkout.failures`.
+- the funding block under §4.4's header (#99) — the progress bar's accessible name and the
+  three words under the figures. They survived seven surfaces of translation because
+  `LiveFunding` is a client island and a `StatBlock` label is a word nobody proofreads: the
+  block was drawn from the server's own numbers, so nothing about it looked untranslated
+  except four words. One of the four was also **wrong**, and not only in English — the
+  count picked between "backer" and "backers" with a ternary, which is the whole of English
+  and none of Russian. It is a plural group and `pluralForm` now, for the reason
+  `lib/i18n/plurals.ts` gives. `campaign.funding` holds the words and
+  `src/components/accessible-names.test.ts` holds the rule that followed: no literal label
+  on a `ProgressBar` or a `StatBlock`, anywhere under `src`. The byline above the figures
+  and the goal line below them came off the same pass — the second is `common.card.ofGoal`,
+  word for word what both campaign cards already print under their own bars.
 
 What is still English:
 
 | Surface | Where |
 |---|---|
 | The campaign editor | `components/campaign-editor` |
+| The save, share and reminder controls | `components/project/CampaignActions.tsx` (#101) |
+
+**The second row was found by closing #99 and is stated rather than quietly fixed.** That
+component already takes three words as a prop and types about twenty more: the two state
+words on each pill, five accessible names built by template, and the twelve sentences its
+live region announces after a save, a share or a reminder. It is a surface rather than a
+stray, so it is its own issue — and until it is closed, the claim that the public campaign
+page is covered in full is the claim this table exists to stop anybody making.
 
 **Three kinds of value in the console stay in the service's own spelling, deliberately.** A
 provider name (`PAYRIFF`), a card network's reason code and a staff capability
@@ -690,6 +712,16 @@ top of them: the socket carries "40.50 arrived since I last spoke", never a
 total, so the component starts from the server's figure and adds each delta. A
 client component that *fetched* these numbers would break #119; one that starts
 from them does not.
+
+**Its five words arrive as a prop, and the backer count is declined rather than
+switched (#99).** `CampaignSummary` resolves `campaign.funding` and hands it
+down, because there is no `NextIntlClientProvider` on this platform and a client
+component cannot read a catalogue. The count is the interesting half: it picked
+between "backer" and "backers" with a ternary until #99, which is right in
+English, wrong for most numbers in Russian, and invisible to everybody reviewing
+the page in English. `pluralForm` asks `Intl.PluralRules` instead — the locale
+comes from the `[locale]` segment through `useRouteLocale`, which is the one
+thing on this block the server could not send a finished sentence for.
 
 **It is opt-in and unset by default.** `next.config.mjs` says the browser never
 learns the API's real origin — it talks to this application, and `/v1` is

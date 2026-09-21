@@ -7,6 +7,10 @@ import { ProgressBar, StatBlock } from '@ideanest/ui/server';
 import type { Money } from '../../lib/money';
 import { formatMoney } from '../../lib/money';
 import { completionOf } from '../../lib/projects/completion';
+import type { LiveFundingCopy } from '../../lib/i18n/campaign-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralForm } from '../../lib/i18n/plurals';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { counterChannel, realtimeUrl, addToTotal } from '../../lib/realtime/updates';
 import { useCampaignUpdates } from '../../lib/realtime/useCampaignUpdates';
 
@@ -48,6 +52,22 @@ import { useCampaignUpdates } from '../../lib/realtime/useCampaignUpdates';
  * {@code lib/projects/publicPage}, which reasonably imports every reader the campaign page
  * needs. {@code lib/projects/completion} exists because of the second one.
  *
+ * <h2>Its words are a prop, and the count is declined rather than switched</h2>
+ *
+ * <p>Four expressions were typed here in English until #99 — the bar's accessible name and
+ * the three labels under the figures — on a page every other component of which reads the
+ * catalogue. A reader who chose Azerbaijani met a translated campaign whose funding block
+ * said "pledged" and "backers", and `apps/web/README.md` claimed the opposite. They arrive
+ * as a prop for the reason `lib/i18n/campaign-copy.ts` sets out: there is no
+ * `NextIntlClientProvider` on this platform, so a client component is handed its words by
+ * whichever server component mounted it.
+ *
+ * <p><strong>The backer count picks a form rather than a plural.</strong> The ternary that
+ * stood here chose between "backer" and "backers", which is the whole of English and none of
+ * Russian — 1 бэкер, 2 бэкера, 5 бэкеров. `pluralForm` asks `Intl.PluralRules` instead, and
+ * `lib/i18n/plurals.ts` explains why the browser decides this one and the server decides
+ * nearly every other counted sentence on the platform.
+ *
  * <p><strong>The backer count is deliberately not live.</strong> A window carries how many
  * pledges were confirmed, and a pledge is not always a new backer: somebody who raises their
  * pledge confirms again. Adding it would make the count drift upwards over a campaign's life
@@ -66,6 +86,8 @@ export interface LiveFundingProps {
    * variable and so the page decides once. Undefined — the default — means no socket.
    */
   readonly realtimeOrigin: string | undefined;
+  /** Resolved by `CampaignSummary`, which is a Server Component. */
+  readonly copy: LiveFundingCopy;
 }
 
 export function LiveFunding({
@@ -74,7 +96,14 @@ export function LiveFunding({
   pledged,
   backersCount,
   realtimeOrigin,
+  copy,
 }: LiveFundingProps) {
+  /*
+   * The language itself rather than a sentence, because `pluralForm` needs `Intl.PluralRules`
+   * and the count it declines against is the one number on this block the server did not send
+   * a word for. `useRouteLocale` reads the `[locale]` segment the router already matched.
+   */
+  const locale = useRouteLocale();
   const url = useMemo(
     () => realtimeUrl(realtimeOrigin, counterChannel(projectId)),
     [realtimeOrigin, projectId],
@@ -109,11 +138,13 @@ export function LiveFunding({
          * rather than an amount: the width of a track in pixels. Everything a reader is told is
          * rendered from the Decimal.
          */
-        label={`Funding: ${completion === null ? 0 : completion.toFixed(0)} percent of the goal`}
+        label={fillPlaceholders(copy.progressLabel, {
+          percent: completion === null ? '0' : completion.toFixed(0),
+        })}
       />
 
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
-        <StatBlock size="md" value={formatMoney(total)} label="pledged" />
+        <StatBlock size="md" value={formatMoney(total)} label={copy.pledged} />
         {completion !== null && (
           <StatBlock
             size="md"
@@ -123,7 +154,7 @@ export function LiveFunding({
              * "act now".
              */
             value={<span className={funded ? 'text-success' : undefined}>{completion.toFixed(0)}%</span>}
-            label={funded ? 'funded' : 'of goal'}
+            label={funded ? copy.funded : copy.ofGoal}
           />
         )}
         <StatBlock
@@ -134,7 +165,7 @@ export function LiveFunding({
               {backersCount}
             </span>
           }
-          label={backersCount === 1 ? 'backer' : 'backers'}
+          label={pluralForm(locale, copy.backers, backersCount)}
         />
       </div>
     </div>

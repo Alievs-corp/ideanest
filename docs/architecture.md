@@ -6345,8 +6345,31 @@ it was written in.
 > is asking. `apps/web/README.md` records exactly which routes are key-based and which
 > are not.
 >
-> **What is still English, stated rather than left to be found.** The campaign editor.
-> Epic #78 is the list of what was on this line and how each surface came off it.
+> **What is still English, stated rather than left to be found.** The campaign editor, and
+> the save, share and reminder controls under §4.4's header (#101). Epic #78 is the list of
+> what was on this line and how each surface came off it.
+>
+> **The funding block came off it in #99, and the count it draws was wrong as well as
+> English.** `LiveFunding` is the one client component beneath the campaign page, and four
+> of its words were typed: the progress bar's accessible name and the three labels under the
+> figures. They are `campaign.funding` now, handed across the boundary as a prop like every
+> other island's on that route. The backer count is the part worth recording — it chose
+> between "backer" and "backers" with a ternary, which is the whole of English and none of
+> Russian, so a Russian reader was shown a form that is right for one number in three.
+> `Intl.PluralRules` picks it now, the way `lib/i18n/plurals.ts` says a count only known in
+> the browser has to be picked. `accessible-names.test.ts` gained the rule that would have
+> caught it from the file rather than from the screen: no label typed onto a `ProgressBar`
+> or a `StatBlock`, anywhere under `src`.
+>
+> **The four catalogues were read for what a test cannot check (#94).** Roughly 450 strings
+> arrived through #79 to #82 without anybody reading the three non-English languages as a
+> first language, and the reading found what it was aimed at: the creator's financial summary
+> and the console's ledger printed two different Turkish words for one §7.2 account, a Russian
+> checkbox label was written in the masculine, and two of the twelve pledge states named the
+> bank as the party that had disputed a payment rather than the person who did. Two of those
+> are now rules in `lib/i18n/catalogue.test.ts` — one ledger account has one name in each
+> language, and each language quotes a phrase its own way. #102 carries the one finding too
+> large to fix under a review: three languages carry two words each for "creator".
 >
 > **The refusal table came off it in #91.** The twenty sentences the service says no with
 > are `checkout.failures` now, read by the checkout, the pledge editor and the pledge
