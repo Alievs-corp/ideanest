@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { AccountPageHeader } from '../../../../components/account/AccountPageHeader';
 import { FollowingPanel } from '../../../../components/account/FollowingPanel';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
+import { followingListCopy } from '../../../../lib/i18n/shell-copy.server';
 import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,6 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function FollowingPage() {
   const t = await getTranslations('account.pages.following');
+  const copy = await followingListCopy();
 
   return (
     <>
@@ -31,7 +33,7 @@ export default async function FollowingPage() {
       </AccountPageHeader>
 
       <div className="mt-8">
-        <FollowingPanel />
+        <FollowingPanel copy={copy} />
       </div>
     </>
   );

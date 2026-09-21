@@ -39,6 +39,11 @@ import {
   fundingChartsCopyFrom,
   surveyBuilderCopyFrom,
 } from './dashboard-copy';
+import {
+  type SignalListCopy,
+  followingListCopyFrom,
+  savedListCopyFrom,
+} from './signals-copy';
 import { type PayoutPanelCopy, payoutPanelCopyFrom } from './payout-copy';
 import { type CampaignControlsCopy, campaignControlsCopyFrom } from './campaign-controls-copy';
 import type { PluralForms } from '@ideanest/ui';
@@ -368,6 +373,27 @@ export async function pledgeListCopy(): Promise<PledgeListCopy> {
 
 export async function pledgeManagerCopy(): Promise<PledgeManagerCopy> {
   return pledgeManagerCopyFrom(await getTranslations('account.pledges'));
+}
+
+/**
+ * The two lists under `/account/saved` and `/account/following` — issue #83.
+ *
+ * Each reads `common` as well as its own namespace, because the paginator's three words and
+ * the way back to discovery belong to every list on the platform rather than to these two.
+ * `signals-copy.ts` carries the rest of that decision.
+ */
+export async function savedListCopy(): Promise<SignalListCopy> {
+  return savedListCopyFrom(
+    await getTranslations('account.signals'),
+    await getTranslations('common'),
+  );
+}
+
+export async function followingListCopy(): Promise<SignalListCopy> {
+  return followingListCopyFrom(
+    await getTranslations('account.signals'),
+    await getTranslations('common'),
+  );
 }
 
 /** The creator's payout details panel — IDN-EXT-01 (#44). */

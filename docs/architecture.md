@@ -6346,10 +6346,18 @@ it was written in.
 > are not.
 >
 > **What is still English, stated rather than left to be found.** The campaign editor,
-> the three panels left under the account headings, `lib/pledges/failure.ts`'s twenty
-> service refusals, and `components/moderation/ReportControl` — the dialog a member of
-> the public opens to report a campaign. Epic #78 is the list of them with a count
-> against each.
+> the backer survey screens, `lib/pledges/failure.ts`'s twenty service refusals, and
+> `components/moderation/ReportControl` — the dialog a member of the public opens to
+> report a campaign. Epic #78 is the list of them with a count against each.
+>
+> **The saved-campaigns and following lists came off it in #83.** The two panels under
+> `/account/saved` and `/account/following` are one panel twice — a cursor-paginated list
+> with an empty state, a "show more" button, a load refusal and an optimistic removal that
+> reverts — so they are handed one copy shape with the nouns as the only difference, rather
+> than two objects that agree until one is edited. Three of those words are not theirs:
+> "Show more", its waiting label and "The next page did not load" belong to every paginated
+> list on the platform and now sit under `common.list`, beside `common.browseCampaigns`,
+> which is the way out of every empty one. `lib/i18n/signals-copy.ts` holds the shape.
 >
 > **The profile editor came off it in #82**, which closed the last English half of a pair
 > whose public side was already key-based. Both halves read `profile` rather than the
