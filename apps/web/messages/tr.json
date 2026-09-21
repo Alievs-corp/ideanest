@@ -46,7 +46,7 @@
   },
   "shell": {
     "skipToContent": "İçeriğe geç",
-    "tagline": "Ödül temelli kitlesel fonlama. Üreticiler kampanyalarını yayımlar, destekçiler destek verir; hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarın tamamını iade eder.",
+    "tagline": "Ödül temelli kitlesel fonlama. Yaratıcılar kampanyalarını yayımlar, destekçiler destek verir; hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarın tamamını iade eder.",
     "nav": {
       "label": "Birincil",
       "discover": "Keşfet",
@@ -80,7 +80,7 @@
       "currencyValue": "Azerbaycan manatı (AZN)",
       "groups": {
         "explore": "Keşfet",
-        "creators": "Üreticiler",
+        "creators": "Yaratıcılar",
         "yourAccount": "Hesabınız",
         "about": "Hakkında"
       },
@@ -258,25 +258,25 @@
         "metaTitle": "Kaydedilen projeler",
         "metaDescription": "Geri dönmek için kaydettiğiniz kampanyalar.",
         "title": "Kaydedilen projeler",
-        "intro": "Geri dönmek için kaydettiğiniz kampanyalar. Kaydetmek gizlidir — üreticiye bildirilmez."
+        "intro": "Geri dönmek için kaydettiğiniz kampanyalar. Kaydetmek gizlidir — yaratıcıya bildirilmez."
       },
       "following": {
         "metaTitle": "Takip edilenler",
-        "metaDescription": "Yeni kampanyalarından haberdar edildiğiniz üreticiler.",
+        "metaDescription": "Yeni kampanyalarından haberdar edildiğiniz yaratıcılar.",
         "title": "Takip edilenler",
-        "intro": "Takip ettiğiniz üreticiler. Her biri yeni bir şey başlattığında size mesaj gönderir."
+        "intro": "Takip ettiğiniz yaratıcılar. Her biri yeni bir şey başlattığında size mesaj gönderir."
       },
       "surveys": {
         "metaTitle": "Anketler",
-        "metaDescription": "Üreticilerin ödüllerinizi gönderebilmek için sizden hâlâ ihtiyaç duyduğu bilgiler.",
+        "metaDescription": "Yaratıcıların ödüllerinizi gönderebilmek için sizden hâlâ ihtiyaç duyduğu bilgiler.",
         "title": "Anketler",
-        "intro": "Bir kampanya fonlandıktan sonra üretici, ödülünüzü gönderebilmek için nelere ihtiyacı olduğunu sorar — bir beden, bir renk, bir baskı. Anket açık olduğu sürece yanıtınızı değiştirebilirsiniz."
+        "intro": "Bir kampanya fonlandıktan sonra yaratıcı, ödülünüzü gönderebilmek için nelere ihtiyacı olduğunu sorar — bir beden, bir renk, bir baskı. Anket açık olduğu sürece yanıtınızı değiştirebilirsiniz."
       },
       "deliveries": {
         "metaTitle": "Teslimatlar",
         "metaDescription": "Ödüllerinizin her birinin nerede olduğu ve nereye gittiği.",
         "title": "Teslimatlar",
-        "intro": "Size borçlu olunan her ödül için bir satır. Üretici paketlerken kargo firmasını ve takip numarasını kaydeder; dolayısıyla altı boş olan bir satır henüz gönderilmemiş demektir."
+        "intro": "Size borçlu olunan her ödül için bir satır. Yaratıcı paketlerken kargo firmasını ve takip numarasını kaydeder; dolayısıyla altı boş olan bir satır henüz gönderilmemiş demektir."
       },
       "inbox": {
         "metaTitle": "Bildirimler",
@@ -296,7 +296,7 @@
         "metaTitle": "Teslimat adresi",
         "metaDescription": "Bu desteğin ödülünün nereye gideceği.",
         "title": "Teslimat adresi",
-        "intro": "Bu desteğin ödülünün nereye gideceği. Her desteğin kendi adresi var, bu yüzden burayı değiştirmek başka hiçbir şeyi taşımaz. Adres saklanırken şifrelenir ve üretici onu yalnızca paketi hazırlarken görür.",
+        "intro": "Bu desteğin ödülünün nereye gideceği. Her desteğin kendi adresi var, bu yüzden burayı değiştirmek başka hiçbir şeyi taşımaz. Adres saklanırken şifrelenir ve yaratıcı onu yalnızca paketi hazırlarken görür.",
         "back": "Teslimatlarınıza dönün"
       },
       "deliveries": {
@@ -305,7 +305,7 @@
         "refused": "Servis isteği reddetti.",
         "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "emptyTitle": "Yolda bir şey yok",
-        "emptyBody": "Desteklediğiniz bir kampanya fonlandığında ve üretici paketlemeye başladığında her ödül, takip bilgisiyle birlikte burada görünür.",
+        "emptyBody": "Desteklediğiniz bir kampanya fonlandığında ve yaratıcı paketlemeye başladığında her ödül, takip bilgisiyle birlikte burada görünür.",
         "emptyAction": "Kampanyalara göz at",
         "unlisted": "Artık listelenmeyen bir kampanya",
         "carrier": "Taşıyıcı",
@@ -322,10 +322,10 @@
         "RETURNED": "Geri döndü"
       },
       "statusDetail": {
-        "PREPARING": "Üretici bunu henüz göndermedi.",
+        "PREPARING": "Yaratıcı bunu henüz göndermedi.",
         "SHIPPED": "Taşıyıcıda.",
         "DELIVERED": "Taşıyıcı ulaştığını söylüyor.",
-        "RETURNED": "Teslim edilemedi ve üreticiye döndü. Adresinizi kontrol edin.",
+        "RETURNED": "Teslim edilemedi ve yaratıcıya döndü. Adresinizi kontrol edin.",
         "unknown": "Bu platformda o durum için henüz bir açıklama yok."
       },
       "form": {
@@ -346,10 +346,10 @@
         "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "refused": "Adres reddedildi.",
         "lockedTitle": "Bu adres kilitli",
-        "lockedBody": "Üretici değişiklikleri kapattı, bu genellikle etiketlerin basıldığı anlamına gelir. Yanlışsa kampanya üzerinden onlara yazın.",
-        "lockedBodyAt": "Üretici değişiklikleri {at} tarihinde kapattı, bu genellikle etiketlerin basıldığı anlamına gelir. Yanlışsa kampanya üzerinden onlara yazın.",
+        "lockedBody": "Yaratıcı değişiklikleri kapattı, bu genellikle etiketlerin basıldığı anlamına gelir. Yanlışsa kampanya üzerinden onlara yazın.",
+        "lockedBodyAt": "Yaratıcı değişiklikleri {at} tarihinde kapattı, bu genellikle etiketlerin basıldığı anlamına gelir. Yanlışsa kampanya üzerinden onlara yazın.",
         "noAddressTitle": "Henüz adres yok",
-        "noAddressBody": "Bu doldurulmadan üretici hiçbir şey gönderemez.",
+        "noAddressBody": "Bu doldurulmadan yaratıcı hiçbir şey gönderemez.",
         "saveFailedTitle": "Kaydedilmedi",
         "savedTitle": "Kaydedildi",
         "savedBody": "Ödül buraya gidiyor.",
@@ -364,23 +364,23 @@
         "failedTitle": "Kaydettiğiniz kampanyalar yüklenemedi",
         "emptyTitle": "Henüz hiçbir şey kaydetmediniz",
         "emptyBody": "Kaydettiğiniz kampanya burada kalır, kapanmadan önce ona geri dönebilirsiniz.",
-        "meta": "{time} kaydedildi · üretici: {creator}",
+        "meta": "{time} kaydedildi · yaratıcı: {creator}",
         "remove": "Çıkar",
         "removeLabel": "{name} kampanyasını kaydedilenlerden çıkar",
         "removalFailedTitle": "Çıkarılamadı",
         "removalFailedBody": "«{name}» çıkarılamadı. Kampanya hâlâ kaydedilmiş durumda — birazdan tekrar deneyin."
       },
       "following": {
-        "loading": "Takip ettiğiniz üreticiler yükleniyor",
+        "loading": "Takip ettiğiniz yaratıcılar yükleniyor",
         "failedTitle": "Liste yüklenemedi",
         "emptyTitle": "Henüz kimseyi takip etmiyorsunuz",
-        "emptyBody": "Bir üreticiyi takip etmek, yeni bir şey başlattığında size mesaj gelmesi demektir.",
-        "emptyAction": "Üretici bul",
+        "emptyBody": "Bir yaratıcıyı takip etmek, yeni bir şey başlattığında size mesaj gelmesi demektir.",
+        "emptyAction": "Yaratıcı bul",
         "meta": "{creator} · {time} tarihinden beri takip ediyorsunuz",
         "remove": "Takibi bırak",
-        "removeLabel": "{name} adlı üreticiyi takip etmeyi bırak",
+        "removeLabel": "{name} adlı yaratıcıyı takip etmeyi bırak",
         "removalFailedTitle": "Değişiklik olmadı",
-        "removalFailedBody": "{name} adlı üreticiyi hâlâ takip ediyorsunuz. Değişiklik servise ulaşmadı — birazdan tekrar deneyin."
+        "removalFailedBody": "{name} adlı yaratıcıyı hâlâ takip ediyorsunuz. Değişiklik servise ulaşmadı — birazdan tekrar deneyin."
       }
     },
     "pledges": {
@@ -389,7 +389,7 @@
         "CONFIRMED": "Onaylandı",
         "EXPIRED": "Süresi doldu",
         "CANCELED_BY_BACKER": "Sizin tarafınızdan iptal edildi",
-        "CANCELED_BY_PROJECT": "Üretici tarafından iptal edildi",
+        "CANCELED_BY_PROJECT": "Yaratıcı tarafından iptal edildi",
         "CHARGE_PENDING": "Ödeme sürüyor",
         "CHARGE_FAILED": "Ödeme başarısız",
         "COLLECTED": "Ödendi",
@@ -407,7 +407,7 @@
         "emptyBody": "Verdiğiniz her destek burada görünür — ne seçtiğiniz ve kampanya kapandığında ne kadar tahsil edileceğiyle birlikte.",
         "browse": "Kampanyalara göz at",
         "noReward": "Ödülsüz destek",
-        "byCreator": "üretici: {creator}",
+        "byCreator": "yaratıcı: {creator}",
         "cancelledAt": "{time} tarihinde iptal edildi",
         "confirmedAt": "{time} tarihinde onaylandı",
         "collected": "tahsil edildi",
@@ -430,13 +430,13 @@
         "extraAddons": "Ek seçenekler",
         "supplementsNote": "Yukarıdaki destekten ayrı tahsil edilir ve henüz hiç tahsil edilmedi.",
         "lockedTitle": "Bu destek burada artık değiştirilemez",
-        "lockedBody": "Bir destek verilirken değiştirilebilir, onaylandıktan sonra ise — kampanya destek aldığı sürece — yalnızca yükseltilebilir; düşürülemez ve geri çekilemez. Bunun durumu: {state}, bu yüzden o denetimler sunulmuyor. Bir şey yanlışsa sormanız gereken kişi kampanyanın üreticisidir."
+        "lockedBody": "Bir destek verilirken değiştirilebilir, onaylandıktan sonra ise — kampanya destek aldığı sürece — yalnızca yükseltilebilir; düşürülemez ve geri çekilemez. Bunun durumu: {state}, bu yüzden o denetimler sunulmuyor. Bir şey yanlışsa sormanız gereken kişi kampanyanın yaratıcısıdır."
       },
       "editor": {
         "loadingRewards": "Ödüller yükleniyor",
         "heading": "Bu desteği değiştir",
         "intro": "Seçtiklerinizi kampanyanın son tarihine kadar değiştirebilirsiniz. Henüz hiçbir tahsilat yapılmadı, bu yüzden bir düzenleme farkı faturalamaz, desteğin tamamını yeniden fiyatlar.",
-        "anonymousHint": "Adınız kampanyanın herkese açık destekçi listesinde ve profilinizde görünmez. Üretici yine de görür, çünkü ödülünüzü göndermesi gerekir.",
+        "anonymousHint": "Adınız kampanyanın herkese açık destekçi listesinde ve profilinizde görünmez. Yaratıcı yine de görür, çünkü ödülünüzü göndermesi gerekir.",
         "saving": "Kaydediliyor",
         "save": "Değişiklikleri kaydet",
         "noChanges": "Henüz hiçbir şey değiştirilmedi.",
@@ -451,12 +451,12 @@
         "refused": "Servis isteği reddetti.",
         "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "emptyTitle": "Yanıtlanacak bir şey yok",
-        "emptyBody": "Üretici, kampanyası fonlandıktan sonra bir anket gönderir — hangi beden, hangi renk ve nereye göndereceğini öğrenmek için.",
+        "emptyBody": "Yaratıcı, kampanyası fonlandıktan sonra bir anket gönderir — hangi beden, hangi renk ve nereye göndereceğini öğrenmek için.",
         "waitingTitle": {
-          "one": "Bir üretici sizi bekliyor",
-          "few": "{count} üretici sizi bekliyor",
-          "many": "{count} üretici sizi bekliyor",
-          "other": "{count} üretici sizi bekliyor"
+          "one": "Bir yaratıcı sizi bekliyor",
+          "few": "{count} yaratıcı sizi bekliyor",
+          "many": "{count} yaratıcı sizi bekliyor",
+          "other": "{count} yaratıcı sizi bekliyor"
         },
         "waitingBody": "Yanıtlar gelmeden kampanya paketlenemez."
       },
@@ -468,12 +468,12 @@
         "noDate": "Bunun için bir tarih belirlenmedi.",
         "answeredOn": "{time} tarihinde yanıtladınız.",
         "closedTitle": "Bu anket kapandı",
-        "closedBody": "Üreticinin ihtiyacı olan bilgi elinde ve artık değişiklik almıyor. Yanıtlarınız, kaydedildikleri hâliyle aşağıda.",
+        "closedBody": "Yaratıcının ihtiyacı olan bilgi elinde ve artık değişiklik almıyor. Yanıtlarınız, kaydedildikleri hâliyle aşağıda.",
         "failedTitle": "Yanıtlarınız kaydedilmedi",
         "refused": "Servis yanıtları reddetti.",
         "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "savedTitle": "Kaydedildi",
-        "savedBody": "Üretici yanıtlarınızı görebilir. Anket açık olduğu sürece onları değiştirebilirsiniz.",
+        "savedBody": "Yaratıcı yanıtlarınızı görebilir. Anket açık olduğu sürece onları değiştirebilirsiniz.",
         "required": "Bu soru zorunludur.",
         "saving": "Kaydediliyor",
         "submit": "Yanıtları kaydet"
@@ -503,7 +503,7 @@
         "SURVEY_AVAILABLE": "{campaign} için ödül anketiniz hazır",
         "SURVEY_OVERDUE": "{campaign} için ödül anketiniz hâlâ yanıtlanmadı",
         "REWARD_SHIPPED": "{campaign} kampanyasından ödülünüz gönderildi",
-        "FOLLOWED_CREATOR_LAUNCHED": "İzlediğiniz bir üretici {campaign} kampanyasını başlattı",
+        "FOLLOWED_CREATOR_LAUNCHED": "İzlediğiniz bir yaratıcı {campaign} kampanyasını başlattı",
         "LAUNCH_REMINDER": "{campaign} başlamak üzere",
         "SAVED_PROJECT_ENDING_SOON": "Kaydettiğiniz {campaign} yakında bitiyor",
         "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni bir cihazdan giriş yapıldı",
@@ -530,7 +530,7 @@
         "SURVEY_AVAILABLE": "Bir kampanya için ödül anketiniz hazır",
         "SURVEY_OVERDUE": "Bir kampanya için ödül anketiniz hâlâ yanıtlanmadı",
         "REWARD_SHIPPED": "Bir kampanyadan ödülünüz gönderildi",
-        "FOLLOWED_CREATOR_LAUNCHED": "İzlediğiniz bir üretici kampanya başlattı",
+        "FOLLOWED_CREATOR_LAUNCHED": "İzlediğiniz bir yaratıcı kampanya başlattı",
         "LAUNCH_REMINDER": "Bir kampanya başlamak üzere",
         "SAVED_PROJECT_ENDING_SOON": "Kaydettiğiniz bir kampanya yakında bitiyor",
         "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni bir cihazdan giriş yapıldı",
@@ -561,7 +561,7 @@
         "PAYMENTS": "Bir ödeme alınır, reddedilir ya da bir gönderim yapılır.",
         "COMMUNITY": "Birisi size yanıt verir ya da ileti gönderir.",
         "REWARDS": "Bir anket bekliyordur ya da bir ödül yoldadır.",
-        "DISCOVERY": "İzlediğiniz bir üretici kampanya başlatır ya da kaydettiğiniz bir şey biter.",
+        "DISCOVERY": "İzlediğiniz bir yaratıcı kampanya başlatır ya da kaydettiğiniz bir şey biter.",
         "SECURITY": "Hesabınıza yeni bir cihazdan giriş yapılır."
       },
       "channel": {
@@ -690,7 +690,7 @@
       },
       "AD-05": {
         "title": "Finans",
-        "summary": "Her tahsilat ve kayıt, her üreticiye ne borçlu olunduğu, hepsinin tutup tutmadığı ve para çıkmadan önceki imzalar."
+        "summary": "Her tahsilat ve kayıt, her yaratıcıya ne borçlu olunduğu, hepsinin tutup tutmadığı ve para çıkmadan önceki imzalar."
       },
       "AD-06": {
         "title": "İadeler",
@@ -2596,7 +2596,7 @@
         "metaTitle": "İki aşamalı doğrulama",
         "metaDescription": "IdeaNest girişinize telefonunuzdan gelen bir kod ekleyin.",
         "title": "İki aşamalı doğrulama",
-        "intro": "Şifrenizin üstüne, telefonunuzdan gelen bir kod. §4.1 bunu ödemeden önce zorunlu kılar, dolayısıyla bir üretici er ya da geç bununla karşılaşır. Hangi tarayıcılarda oturum açıldığını görmek için <devices>cihazlar</devices> bölümüne gidin."
+        "intro": "Şifrenizin üstüne, telefonunuzdan gelen bir kod. §4.1 bunu ödemeden önce zorunlu kılar, dolayısıyla bir yaratıcı er ya da geç bununla karşılaşır. Hangi tarayıcılarda oturum açıldığını görmek için <devices>cihazlar</devices> bölümüne gidin."
       },
       "privacy": {
         "metaTitle": "Gizlilik, veriler ve hesap kapatma",
@@ -2686,7 +2686,7 @@
         "codesHeading": "Kurtarma kodlarınızı saklayın",
         "disableHeading": "İki adımlı doğrulamayı kapatın",
         "fromService": "Servisten",
-        "intro": "Parolanızın üstüne telefonunuzdan gelen bir kod. §4.1 bunu {emphasis} kılıyor, yani bir üreticiden er ya da geç istenecek — şimdi açmak daha ucuz andır.",
+        "intro": "Parolanızın üstüne telefonunuzdan gelen bir kod. §4.1 bunu {emphasis} kılıyor, yani bir yaratıcıdan er ya da geç istenecek — şimdi açmak daha ucuz andır.",
         "introEmphasis": "ödemeden önce zorunlu",
         "setUp": "Kur",
         "turnOff": "Kapat",
@@ -2836,9 +2836,9 @@
       "metaTitle": "Hesap oluşturun",
       "metaDescription": "Bir IdeaNest hesabı oluşturun.",
       "title": "Hesap oluşturun",
-      "intro": "Kampanyaları destekleyin, üreticileri izleyin ve kendi kampanyanızı başlatın. Bunun için bir e-posta adresi ve bir parola yeterli.",
+      "intro": "Kampanyaları destekleyin, yaratıcıları izleyin ve kendi kampanyanızı başlatın. Bunun için bir e-posta adresi ve bir parola yeterli.",
       "name": "Ad",
-      "nameHint": "Destekçilere ve üreticilere böyle görünürsünüz. Sonradan değiştirebilirsiniz.",
+      "nameHint": "Destekçilere ve yaratıcılara böyle görünürsünüz. Sonradan değiştirebilirsiniz.",
       "submit": "Hesap oluştur",
       "submitting": "Hesabınız oluşturuluyor",
       "haveAccount": "Zaten hesabınız var mı?",
@@ -2965,7 +2965,7 @@
     "metaTitle": "IdeaNest — ödül temelli kitlesel fonlama",
     "hero": {
       "title": "Henüz var olmayanı fonlayın",
-      "standfirst": "Üreticiler hedefi ve son tarihi olan bir kampanya yayımlar. Destekçiler destek verir. Bir kampanya hedefinin %80'inde başarılı sayılır — oraya ulaşamazsa her destekçiye tutarın tamamı iade edilir.",
+      "standfirst": "Yaratıcılar hedefi ve son tarihi olan bir kampanya yayımlar. Destekçiler destek verir. Bir kampanya hedefinin %80'inde başarılı sayılır — oraya ulaşamazsa her destekçiye tutarın tamamı iade edilir.",
       "browse": "Kampanyalara göz atın",
       "start": "Kampanya başlatın"
     },
@@ -3005,7 +3005,7 @@
         "closing_soon": "Yakında kapanıyor",
         "successful": "Başarılı"
       },
-      "by": "hazırlayan: {creator}",
+      "by": "yaratıcı: {creator}",
       "lastDay": "Son gün",
       "daysLeft": {
         "one": "{count} gün kaldı",
@@ -3177,7 +3177,7 @@
       "notFound": "Derleme bulunamadı",
       "socialDescription": "{title} — IdeaNest üzerinde seçilmiş kitlesel fonlama kampanyaları derlemesi.",
       "title": "Derlemeler",
-      "intro": "IdeaNest ekibinin seçtiği kampanyalar, bir mevsim ya da konu çevresinde kurulmuş derlemeler ve bir üreticinin hâlâ katılabileceği açık çağrılar. Her birinin kendi sayfası var.",
+      "intro": "IdeaNest ekibinin seçtiği kampanyalar, bir mevsim ya da konu çevresinde kurulmuş derlemeler ve bir yaratıcının hâlâ katılabileceği açık çağrılar. Her birinin kendi sayfası var.",
       "listLabel": "Derlemeler",
       "emptyTitle": "Şu anda derleme yok",
       "emptyBody": "Şu anda platformda derlenmiş bir şey yok ya da liste yüklenemedi. Her iki durumda da akış bütün kampanyaları taşır.",
@@ -3228,7 +3228,7 @@
     "search": {
       "title": "Arama",
       "resultsTitle": "«{query}» için sonuçlar",
-      "prompt": "Aradığınızı yazın — bir kampanya, bir kategori ya da bir üretici. Ya da <feed>tüm akışa göz atın</feed> ve filtrelerle daraltın.",
+      "prompt": "Aradığınızı yazın — bir kampanya, bir kategori ya da bir yaratıcı. Ya da <feed>tüm akışa göz atın</feed> ve filtrelerle daraltın.",
       "count": "{count, plural, =0 {Hiçbir kampanya eşleşmedi} other {# kampanya}}",
       "countMore": "{count, plural, =0 {Hiçbir kampanya eşleşmedi} other {# kampanya, akışta daha fazlası var}}",
       "emptyTitle": "«{query}» ile hiçbir şey eşleşmedi",
@@ -3274,7 +3274,7 @@
     },
     "destination": {
       "label": "Bu nereye gitsin?",
-      "hint": "Teslimat her varış noktasına göre hesaplanır ve tarifeyi üretici belirler.",
+      "hint": "Teslimat her varış noktasına göre hesaplanır ve tarifeyi yaratıcı belirler.",
       "placeholder": "Bir varış noktası seçin"
     },
     "contribution": {
@@ -3323,7 +3323,7 @@
       "confirm": "Ödemeye geç",
       "confirming": "Ödeme sayfası açılıyor…",
       "charged": "Ücret bir sonraki sayfada tahsil edilir. Ödemeyi tamamlamazsanız hiçbir şey tahsil edilmez ve ayırma süresi dolduğunda ödül serbest bırakılır.",
-      "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Üretici son tarihi bir kez uzatabilir ve bunun için size sorulmaz."
+      "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Yaratıcı son tarihi bir kez uzatabilir ve bunun için size sorulmaz."
     },
     "risk": {
       "heading": "Destek olmak ne demek",
@@ -3345,7 +3345,7 @@
       "amountComma": "Ondalık ayırıcı olarak nokta kullanın: 45,50 değil 45.50.",
       "amountNotANumber": "Tutarlar rakamlardan ve en fazla bir noktadan oluşur, örneğin 45.00.",
       "belowRewardPrice": "Bu ödül {price} değerinde. Bu kadar ya da daha fazlasını verin veya daha ucuz bir ödül seçin.",
-      "destinationUnpriced": "Üretici bu varış noktası için {lines} teslimat ücreti belirlememiş. Başka bir yer seçin ya da bunu desteğinizden çıkarın."
+      "destinationUnpriced": "Yaratıcı bu varış noktası için {lines} teslimat ücreti belirlememiş. Başka bir yer seçin ya da bunu desteğinizden çıkarın."
     },
     "failures": {
       "unreachable": {
@@ -3374,7 +3374,7 @@
           "detail": "Hiçbir şey rezerve edilmedi. Yeniden deneyin."
         },
         "SHIPPING_DESTINATION_UNPRICED": {
-          "title": "Üretici oraya gönderim yapmıyor",
+          "title": "Yaratıcı oraya gönderim yapmıyor",
           "detail": "Orası için bir teslimat ücreti belirlenmemiş, dolayısıyla sizden tahsil edilecek dürüst bir tutar yok. Başka bir yer seçin ya da kargoyla giden ürünü çıkarın."
         },
         "CONTRIBUTION_BELOW_REWARD_PRICE": {
@@ -3395,7 +3395,7 @@
         },
         "PLEDGE_NOT_EDITABLE": {
           "title": "Bu destek artık değiştirilemez",
-          "detail": "Bir destekçinin düzenleyebileceği ya da geri çekebileceği aşamayı geçti. Hiçbir şey değişmedi. Bir terslik varsa sorulacak kişi kampanyanın üreticisidir."
+          "detail": "Bir destekçinin düzenleyebileceği ya da geri çekebileceği aşamayı geçti. Hiçbir şey değişmedi. Bir terslik varsa sorulacak kişi kampanyanın yaratıcısıdır."
         },
         "PLEDGE_NOT_FOUND": {
           "title": "Böyle bir destek burada yok",
@@ -3403,7 +3403,7 @@
         },
         "REWARD_NOT_FOUND": {
           "title": "Bu ödül artık sunulmuyor",
-          "detail": "Üretici seçtiğiniz kademeyi kaldırmış. Başka birini seçin ya da ödülsüz devam edin. Hiçbir şey değişmedi."
+          "detail": "Yaratıcı seçtiğiniz kademeyi kaldırmış. Başka birini seçin ya da ödülsüz devam edin. Hiçbir şey değişmedi."
         },
         "RESERVATION_EXPIRED": {
           "title": "Ödülünüz yalnızca beş dakika tutuldu",
@@ -3445,7 +3445,7 @@
     },
     "dispute": {
       "heading": "Bu ödemeye itiraz et",
-      "intro": "Üreticinin ödemesi bekletilirken paranızın iadesini isteyebilirsiniz. Bir yönetici gerekçenizi okur ve karar verir; kabul ederse tutarın tamamı iade edilir.",
+      "intro": "Yaratıcının ödemesi bekletilirken paranızın iadesini isteyebilirsiniz. Bir yönetici gerekçenizi okur ve karar verir; kabul ederse tutarın tamamı iade edilir.",
       "reasonLabel": "Ne ters gitti",
       "reasonHint": "En fazla 2.000 karakter. Size ne vaat edildiğini ve ne olduğunu yazın.",
       "submit": "İtirazı gönder",
@@ -3507,7 +3507,7 @@
     "tabs": {
       "label": "Kampanya bölümleri",
       "campaign": "Kampanya",
-      "creator": "Üretici",
+      "creator": "Yaratıcı",
       "faq": "Sorular",
       "updates": "Güncellemeler",
       "comments": "Yorumlar"
@@ -3527,7 +3527,7 @@
     },
     "daysLeft": "{days, plural, =0 {Son gün} other {# gün kaldı}}",
     "backers": "{count, plural, =0 {Destekçi yok} other {# destekçi}}",
-    "by": "hazırlayan: {creator}",
+    "by": "yaratıcı: {creator}",
     "funding": {
       "progressLabel": "Finansman: hedefin yüzde {percent} kadarı",
       "pledged": "toplanan destek",
@@ -3586,12 +3586,12 @@
       "hasVideo": "Bu kampanyanın videosu var."
     },
     "creator": {
-      "heading": "Üretici hakkında",
+      "heading": "Yaratıcı hakkında",
       "others": "Diğer kampanyaları"
     },
     "trust": {
       "heading": "Burada fonlama nasıl işler",
-      "body": "Platform üreticilerle destekçileri bir araya getirir. Ödüller garanti değildir, ancak üreticiler destekçileri bilgilendirmek zorundadır. Destek verdiğinizde ücret tahsil edilir ve proje hedefinin %80'ini toplayamazsa tutarın tamamı iade edilir.",
+      "body": "Platform yaratıcılarla destekçileri bir araya getirir. Ödüller garanti değildir, ancak yaratıcılar destekçileri bilgilendirmek zorundadır. Destek verdiğinizde ücret tahsil edilir ve proje hedefinin %80'ini toplayamazsa tutarın tamamı iade edilir.",
       "open": "Bu kampanya <deadline></deadline> tarihine kadar <b>{threshold}</b> — {goal} hedefinin %80'i — toplarsa başarılı sayılır. Toplayamazsa ve uzatılmazsa her destekçiye tutarın tamamı iade edilir.",
       "openNoGoal": "Bu kampanya <deadline></deadline> tarihine kadar hedefinin %80'ini toplarsa başarılı sayılır. Toplayamazsa ve uzatılmazsa her destekçiye tutarın tamamı iade edilir.",
       "closed": "Bu kampanyanın son tarihi <deadline></deadline> idi. Son tarihine ya da tek uzatmasının sonuna kadar hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarın tamamını iade eder."
@@ -3611,13 +3611,13 @@
       "notReached": "Zamanında hedefinin %80'ini toplayamadı.",
       "raised": "Topladığı",
       "closedOn": "{date} tarihinde",
-      "settling": "Yukarıdaki rakamlar kampanyanın kapandığı anda topladığı tutardır. Sonrasındaki bir iade üreticiye ödenen tutarı azaltır, sonucu değiştirmez.",
+      "settling": "Yukarıdaki rakamlar kampanyanın kapandığı anda topladığı tutardır. Sonrasındaki bir iade yaratıcıya ödenen tutarı azaltır, sonucu değiştirmez.",
       "refunded": "Her destekçiye tutarın tamamı iade edilir. Hedefinin %80'ini toplayamayan bir kampanya komisyon ödemez."
     },
     "faqs": {
       "heading": "Sıkça sorulan sorular",
       "failed": "Sorular ve yanıtlar şu anda yüklenemedi. Yeniden denemek için sayfayı yenileyin.",
-      "empty": "Bu kampanya henüz hiçbir soruyu yanıtlamadı. Yorumlarda bir soru sorun, üretici yanıtı buraya ekleyebilir."
+      "empty": "Bu kampanya henüz hiçbir soruyu yanıtlamadı. Yorumlarda bir soru sorun, yaratıcı yanıtı buraya ekleyebilir."
     },
     "updates": {
       "heading": "Güncellemeler",
@@ -3635,7 +3635,7 @@
       "withdrawn": "Bu yorum geri çekildi.",
       "fromCreator": "Kampanyadan",
       "composerLabel": "Yorum yazın",
-      "signedOut": "Yorum yapmak için bir hesap gerekir. Platform bir kişiyi aynı kişinin beş kopyasından böyle ayırt eder ve üretici size böyle yanıt verebilir.",
+      "signedOut": "Yorum yapmak için bir hesap gerekir. Platform bir kişiyi aynı kişinin beş kopyasından böyle ayırt eder ve yaratıcı size böyle yanıt verebilir.",
       "signIn": "Yorum yapmak için giriş yapın",
       "cancel": "İptal",
       "notPosted": "Gönderilemedi",
@@ -3648,7 +3648,7 @@
       "postReply": "Yanıtı gönder",
       "posting": "Gönderiliyor"
     },
-    "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Üretici son tarihi bir kez uzatabilir.",
+    "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Yaratıcı son tarihi bir kez uzatabilir.",
     "prelaunch": {
       "loading": "Bu kampanya yükleniyor",
       "unavailableTitle": "Burada henüz görülecek bir şey yok",
@@ -4390,7 +4390,7 @@
       "descriptions": {
         "PROHIBITED_ITEM": "Platformun fonlanmasına izin vermediği bir şey sunuyor.",
         "MISREPRESENTATION": "Kendisi hakkında doğru olmayan bir şey söylüyor.",
-        "NOT_ORIGINAL": "Çalışma başkasının, üreticinin kendi işiymiş gibi sunuluyor.",
+        "NOT_ORIGINAL": "Çalışma başkasının, yaratıcının kendi işiymiş gibi sunuluyor.",
         "INTELLECTUAL_PROPERTY": "Bir markayı, tasarımı veya eseri buna hakkı olmadan kullanıyor.",
         "OFFENSIVE": "Materyalin kendisi rahatsız edici.",
         "DISCRIMINATION": "İnsanları oldukları kişi oldukları için hedef alıyor.",
@@ -4536,11 +4536,11 @@
       "metaDescription": "IdeaNest nedir, hedefin %80'inde başarı nasıl işler ve maliyeti nedir.",
       "title": "IdeaNest hakkında",
       "summary": "Henüz var olmayan şeyleri fonlamak için bir yer — koşullar herkes için aynı.",
-      "intro": "IdeaNest, ödül temelli bir kitlesel fonlama platformudur. Bir üretici hedefi ve son tarihi olan bir kampanya yayımlar; o şeyin var olmasını isteyenler destek verir ve ücret o anda tahsil edilir; kampanya hedefinin en az %80'ini toplarsa üretici parayı çeker ve o şeyi yapar. Toplayamazsa her destekçiye tutarın tamamı iade edilir.",
+      "intro": "IdeaNest, ödül temelli bir kitlesel fonlama platformudur. Bir yaratıcı hedefi ve son tarihi olan bir kampanya yayımlar; o şeyin var olmasını isteyenler destek verir ve ücret o anda tahsil edilir; kampanya hedefinin en az %80'ini toplarsa yaratıcı parayı çeker ve o şeyi yapar. Toplayamazsa her destekçiye tutarın tamamı iade edilir.",
       "allOrNothing": {
         "heading": "%80'de başarı — ve bu çizginin nedeni",
-        "first": "Hedefinin %80'ini toplayan bir kampanya başarılıdır ve üretici, kampanya hangi yüzdeyle kapanmış olursa olsun tüm ödülleri tüm destekçilere teslim etmek zorundadır. Bunun altındaki bir tutara güvenilemez; bu yüzden kampanya başarısız sayılır, üreticisine hiçbir komisyona mal olmaz ve her destekçiye tutarın tamamı iade edilir.",
-        "second": "Son tarih yine de bir şey ifade eder. Üretici onu bir kez, ilk son tarihten en fazla altmış gün sonrasına kadar uzatabilir ve destekçilere yeni tarih bildirilir. Bunun sonunda %80'in altında kalan bir kampanyanın destekleri iade edilir ve platform bunu süslemeden söyler."
+        "first": "Hedefinin %80'ini toplayan bir kampanya başarılıdır ve yaratıcı, kampanya hangi yüzdeyle kapanmış olursa olsun tüm ödülleri tüm destekçilere teslim etmek zorundadır. Bunun altındaki bir tutara güvenilemez; bu yüzden kampanya başarısız sayılır, yaratıcısına hiçbir komisyona mal olmaz ve her destekçiye tutarın tamamı iade edilir.",
+        "second": "Son tarih yine de bir şey ifade eder. Yaratıcı onu bir kez, ilk son tarihten en fazla altmış gün sonrasına kadar uzatabilir ve destekçilere yeni tarih bildirilir. Bunun sonunda %80'in altında kalan bir kampanyanın destekleri iade edilir ve platform bunu süslemeden söyler."
       },
       "cost": {
         "heading": "Maliyeti nedir",
@@ -4550,7 +4550,7 @@
       },
       "notAPurchase": {
         "heading": "Destek bir satın alma değildir",
-        "body": "Bu, iki kez okunmaya en çok değen cümledir. Bir kampanyayı desteklemek, bir denemeyi fonlamaktır. Üretici hem bu denemeden hem de işlerin nasıl gittiğini destekçilere dürüstçe anlatmaktan sorumludur; o, ürünü depoda hazır bekleyen bir mağaza değildir. Her kampanya, incelemeye gönderilmeden önce kendi risklerini ve zorluklarını yayımlamak zorundadır; bu bölüm önerilen değil, zorunludur."
+        "body": "Bu, iki kez okunmaya en çok değen cümledir. Bir kampanyayı desteklemek, bir denemeyi fonlamaktır. Yaratıcı hem bu denemeden hem de işlerin nasıl gittiğini destekçilere dürüstçe anlatmaktan sorumludur; o, ürünü depoda hazır bekleyen bir mağaza değildir. Her kampanya, incelemeye gönderilmeden önce kendi risklerini ve zorluklarını yayımlamak zorundadır; bu bölüm önerilen değil, zorunludur."
       },
       "next": {
         "heading": "Sonraki adım",
@@ -4565,11 +4565,11 @@
       "backing": {
         "heading": "Bir şeye destek oluyorsanız",
         "first": "Bir ödül seviyesi seçin ya da ödülsüz destek olun. <b>Ücret destek verdiğiniz anda tahsil edilir</b> ve platformun hesabında tutulur. Destek iptal edilemez; kampanya destek kabul ettiği sürece daha yüksek bir seviye ya da ek seçerek desteğinizi artırabilirsiniz.",
-        "second": "Bir kampanya hedefinin %80'inde başarılı sayılır. Üretici o andan itibaren parayı çekebilir ya da son tarihi bir kez uzatabilir. Kampanya son tarihine ya da uzatmanın sonuna kadar %80'e ulaşmazsa her destekçiye tutarın tamamı iade edilir ve komisyon alınmaz.",
-        "third": "Üretici parayı çekmek istedikten sonra ödeme on dört gün bekletilir. Bu süre içinde bir destekçi ödemesine itiraz edebilir ve kararı bir yönetici verir; kabul edilen bir itirazda tutarın tamamı iade edilir."
+        "second": "Bir kampanya hedefinin %80'inde başarılı sayılır. Yaratıcı o andan itibaren parayı çekebilir ya da son tarihi bir kez uzatabilir. Kampanya son tarihine ya da uzatmanın sonuna kadar %80'e ulaşmazsa her destekçiye tutarın tamamı iade edilir ve komisyon alınmaz.",
+        "third": "Yaratıcı parayı çekmek istedikten sonra ödeme on dört gün bekletilir. Bu süre içinde bir destekçi ödemesine itiraz edebilir ve kararı bir yönetici verir; kabul edilen bir itirazda tutarın tamamı iade edilir."
       },
       "surveys": {
-        "heading": "Sonra üretici size birkaç soru sorar",
+        "heading": "Sonra yaratıcı size birkaç soru sorar",
         "first": "Ödüllerin çoğu, kampanya sayfasının bilemeyeceği bir bilgiye ihtiyaç duyar: bir beden, bir renk, bir baskı ve nereye gönderileceği. Bu bir anket olarak gelir ve hesabınızdaki <surveys>anketler</surveys> bölümünde görünür. Teslimat adresiniz yanıtlarınızdan ayrı tutulur ve şifreli saklanır; ayrıca hesabınıza değil desteğinize aittir — böylece iki kampanya iki farklı yere gidebilir.",
         "second": "Kargolar yola çıktıkça <deliveries>teslimatlar</deliveries> bölümü her biri için kargo firmasını ve takip numarasını gösterir."
       },
@@ -4583,7 +4583,7 @@
       },
       "agreeing": {
         "heading": "Destekçi olarak neyi kabul ediyorsunuz",
-        "first": "Bir destek, bitmiş bir ürünü satın almak değil bir denemeyi fonlamaktır. Üretici size işlerin nasıl gittiğine dair dürüst bir anlatım borçludur — kampanya güncellemeleri tam da bunun içindir — platform ise size bunu görme ve dürüst davranmayan bir kampanyayı bildirme araçlarını borçludur. Bunların hiçbiri, şeyin ulaşacağına dair bir garanti ile aynı şey değildir.",
+        "first": "Bir destek, bitmiş bir ürünü satın almak değil bir denemeyi fonlamaktır. Yaratıcı size işlerin nasıl gittiğine dair dürüst bir anlatım borçludur — kampanya güncellemeleri tam da bunun içindir — platform ise size bunu görme ve dürüst davranmayan bir kampanyayı bildirme araçlarını borçludur. Bunların hiçbiri, şeyin ulaşacağına dair bir garanti ile aynı şey değildir.",
         "second": "<trustSafety>Güven ve güvenlik</trustSafety>, nelerin kontrol edildiğini ve bir şey yanlış göründüğünde ne yapılacağını anlatır."
       }
     },
@@ -4595,13 +4595,13 @@
       "review": {
         "heading": "Her kampanya yayına girmeden önce okunur",
         "first": "Bir kampanya kendini yayımlayamaz. İncelemeye gönderilir, bir insan onu aşağıdaki kurallara göre değerlendirir ve kampanya onaylanır, değişiklik için geri gönderilir ya da gerekçesiyle reddedilir. Platformda hiçbir şey bundan geçmeden herkese açık hale gelmez.",
-        "second": "İnceleme, doğrulama değildir. İnceleyen kişi kampanyanın kendini anlattığı gibi olup olmadığını, fonlanmasına izin verilip verilmediğini ve başkasının işi olup olmadığını kontrol eder. Üreticinin çizdiği şeyi üretebileceğini teyit edecek konumda değildir — destek bu platformda her yerde bir denemeyi fonlamak olarak tanımlanır, işte bu yüzden."
+        "second": "İnceleme, doğrulama değildir. İnceleyen kişi kampanyanın kendini anlattığı gibi olup olmadığını, fonlanmasına izin verilip verilmediğini ve başkasının işi olup olmadığını kontrol eder. Yaratıcının çizdiği şeyi üretebileceğini teyit edecek konumda değildir — destek bu platformda her yerde bir denemeyi fonlamak olarak tanımlanır, işte bu yüzden."
       },
       "notAllowed": {
         "heading": "Neye izin verilmez",
         "prohibited": "Yasaklı şeyler — platformun fonlanmasına hiç izin vermediği şeyler.",
         "misrepresentation": "Yanlış tanıtım — kendisi hakkında gerçek dışı bir şey söyleyen kampanya.",
-        "notOwn": "Üreticiye ait olmayan ya da başkasının fikri mülkiyetini kullanan işler.",
+        "notOwn": "Yaratıcıya ait olmayan ya da başkasının fikri mülkiyetini kullanan işler.",
         "offensive": "Rahatsız edici materyal ve insanları kim oldukları için hedef alan içerik.",
         "spam": "Spam ve başka bir şeyin reklamını yapmak için açılmış kampanyalar.",
         "fraud": "Dolandırıcılık — kimsenin teslim etmeye niyeti olmadığını düşünmek için sebep varsa."
@@ -4620,13 +4620,13 @@
         "heading": "Hesabınız ve verileriniz",
         "twoFactor": "<b>İki aşamalı doğrulama</b> her hesapta kullanılabilir ve ödemeden önce zorunludur. <security>iki aşamalı doğrulama</security> bölümünden kurun.",
         "devices": "<b>Oturum açmış her cihaz</b> <sessions>cihazlar</sessions> bölümünde listelenir ve herhangi biri bir diğerinden kapatılabilir.",
-        "addresses": "<b>Teslimat adresleri</b> şifreli saklanır ve bir üreticiye yalnızca desteklediğiniz kampanya için görünür.",
+        "addresses": "<b>Teslimat adresleri</b> şifreli saklanır ve bir yaratıcıya yalnızca desteklediğiniz kampanya için görünür.",
         "data": "<b>Verilerinizin bir kopyası</b> indirilebilir; hesabınızı kapattığınızda ise veriler anonimleştirilmeden önce otuz gün saklanır — böylece öfkeyle ya da başkası tarafından yapılmış bir kapatma geri alınabilir. İkisi de <privacy>veriler ve hesap kapatma</privacy> bölümündedir."
       },
       "limits": {
         "heading": "Yapamadıklarımız",
         "first": "IdeaNest bir kampanyayı teslim etmeye zorlayamaz. Yapabileceği şey kaydı dürüst tutmaktır: bir kampanyanın güncellemeleri, yorumları ve onu bildirme yolu — hepsi kampanyanın kendi sayfasında, onu destekleyip desteklemeyeceğine karar veren kişinin göreceği yerde.",
-        "second": "Bir üretici kendi kampanyasındaki yorumları yönetebilir ve kaldırılan bir yorum yok olmaz — satır kalır, kaldırıldı olarak işaretlenir. Temizlenmiş bir yorum başlığı bu yüzden hâlâ temizlenmiş görünür; mesele de budur: üzerinde hiçbir şey olmayan bir sayfa ile on iki kaldırma bulunan bir sayfa farklı şeylerdir ve okuyucunun bunları ayırt etmeye hakkı vardır."
+        "second": "Bir yaratıcı kendi kampanyasındaki yorumları yönetebilir ve kaldırılan bir yorum yok olmaz — satır kalır, kaldırıldı olarak işaretlenir. Temizlenmiş bir yorum başlığı bu yüzden hâlâ temizlenmiş görünür; mesele de budur: üzerinde hiçbir şey olmayan bir sayfa ile on iki kaldırma bulunan bir sayfa farklı şeylerdir ve okuyucunun bunları ayırt etmeye hakkı vardır."
       }
     }
   },

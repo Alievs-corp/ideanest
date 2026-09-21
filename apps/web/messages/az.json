@@ -907,7 +907,7 @@
       },
       "payouts": {
         "metaTitle": "Ödənişlər",
-        "metaDescription": "Hər yaradıcıya nə borcludur, hansı saxlama altındadır və getməzdən əvvəl hansı imzalar lazımdır.",
+        "metaDescription": "Hər müəllifə nə borcludur, hansı saxlama altındadır və getməzdən əvvəl hansı imzalar lazımdır.",
         "title": "Ödənişlər",
         "intro": "Rəqəmlər ödəniş hesablananda dondurulur və heç vaxt yenidən hesablanmır — iki nəfərin təsdiqlədiyi ödəniş göndərilən ödəniş olmalıdır. Təsdiq üçün APPROVE_PAYOUT lazımdır və maliyyə rolu bunu bilərəkdən vermir."
       },
@@ -955,9 +955,9 @@
       },
       "submissions": {
         "metaTitle": "Baxış gözləyən kampaniyalar",
-        "metaDescription": "Yaradıcılarının təqdim etdiyi, qərar gözləyən kampaniyalar.",
+        "metaDescription": "Müəlliflərinin təqdim etdiyi, qərar gözləyən kampaniyalar.",
         "title": "Baxış gözləyən kampaniyalar",
-        "intro": "Yaradıcılarının təqdim etdiyi kampaniyalar, ən köhnəsi əvvəldə. Qərar kampaniyanın öz vəziyyətini dəyişir: təsdiq onu başlanğıca hazırlayır, dəyişiklik tələbi qeydlə birlikdə geri qaytarır, rədd isə qəti olur."
+        "intro": "Müəlliflərinin təqdim etdiyi kampaniyalar, ən köhnəsi əvvəldə. Qərar kampaniyanın öz vəziyyətini dəyişir: təsdiq onu başlanğıca hazırlayır, dəyişiklik tələbi qeydlə birlikdə geri qaytarır, rədd isə qəti olur."
       },
       "campaigns": {
         "metaTitle": "Kampaniyalar",
@@ -981,7 +981,7 @@
         "metaTitle": "Gəlir",
         "metaDescription": "Abunəliklərin gətirdiyi gəlir — dövr, plan və ödəniş üsulu üzrə.",
         "title": "Gəlir",
-        "intro": "Yaradıcıların planlar üçün ödədikləri, pulun daxil olduğu tarixə görə qruplaşdırılıb. Hər valyuta ayrıca göstərilir və heç vaxt başqası ilə toplanmır."
+        "intro": "Müəlliflərin planlar üçün ödədikləri, pulun daxil olduğu tarixə görə qruplaşdırılıb. Hər valyuta ayrıca göstərilir və heç vaxt başqası ilə toplanmır."
       }
     },
     "screens": {
@@ -1515,8 +1515,8 @@
         "newSubcategoryLabel": "Yeni alt kateqoriya",
         "newSubcategoryHint": "Qısa ad, daimidir.",
         "tagsHeading": "Teqlər",
-        "tagsIntro": "Yalnız oxunur. §4.3 teqlərə redaksiya lüğəti vermir — onları yaradıcılar yazır — ona görə birinin adını dəyişmək kiminsə öz kampaniyası haqqında dediyini yenidən yazmaq olardı. Bu siyahı hansı teqlərin kateqoriya olacaq qədər ağır olduğunu görmək üçündür.",
-        "noTags": "Hələ heç bir yaradıcı teq istifadə etməyib."
+        "tagsIntro": "Yalnız oxunur. §4.3 teqlərə redaksiya lüğəti vermir — onları müəlliflər yazır — ona görə birinin adını dəyişmək kiminsə öz kampaniyası haqqında dediyini yenidən yazmaq olardı. Bu siyahı hansı teqlərin kateqoriya olacaq qədər ağır olduğunu görmək üçündür.",
+        "noTags": "Hələ heç bir müəllif teq istifadə etməyib."
       },
       "users": {
         "subject": "hesab kataloqunu",
@@ -1739,7 +1739,7 @@
           "READ_SIGNED_AGREEMENT": "Hesabın imzaladığı yaradıcı müqaviləsini — sertifikatdakı ad və FİN ilə — oxumaq",
           "REVIEW_IDENTITY_VERIFICATION": "Şəxsiyyət təsdiqini qəbul və ya rədd etmək",
           "OPEN_IDENTITY_DOCUMENT": "Şəxsiyyət sənədini açmaq — platformadakı ən həssas oxu",
-          "VERIFY_PAYOUT_DESTINATION": "Ödəniş ünvanının yaradıcıya aid olduğunu təsdiqləmək",
+          "VERIFY_PAYOUT_DESTINATION": "Ödəniş ünvanının müəllifə aid olduğunu təsdiqləmək",
           "GRANT_COMPLIANCE_OVERRIDE": "Bir hesab üçün uyğunluq tələbini məhdud müddətə ləğv etmək",
           "ADMINISTER_STAFF": "Rol vermək və geri almaq"
         },
@@ -1850,7 +1850,7 @@
         "findingsHeading": "Nə səhvdir",
         "finding": {
           "LEDGER_NOT_ZERO": "{currency} üzrə baş kitab sıfıra bərabər deyil: xalis {amount}.",
-          "CREATOR_OVERPAID": "{account} müsbətdir: {amount}. Bu, qazandığından çox ödənilmiş yaradıcıdır.",
+          "CREATOR_OVERPAID": "{account} müsbətdir: {amount}. Bu, qazandığından çox ödənilmiş müəllifdir.",
           "PLATFORM_ACCOUNT_NEGATIVE": "{account} mənfidir: {amount}. Bu, heç vaxt alınmamış, amma verilmiş puldur.",
           "DISAGREES_WITH_PAYMENTS": "Baş kitab {amount} saxlayır, tranzaksiyalar isə {other} deyir."
         },
@@ -1864,7 +1864,7 @@
         },
         "findingMeaning": {
           "UNBALANCED": "PostgreSQL debetləri və kreditləri fərqlənən yazılışı rədd edir, deməli bir sətir həm tətbiqi, həm də həmin triggeri keçib. Bu platformada başqa heç nə bunu yarada bilməz.",
-          "IMPOSSIBLE_SIGN": "Sıfırdan aşağı eskrou heç vaxt alınmamış, amma ödənilmiş puldur; sıfırdan yuxarı yaradıcı hesabı qazandığından çox ödənilmiş yaradıcıdır. Heç biri cəm tərəfindən tutulmur, çünki əks işarəli iki səhv mükəmməl balanslaşır.",
+          "IMPOSSIBLE_SIGN": "Sıfırdan aşağı eskrou heç vaxt alınmamış, amma ödənilmiş puldur; sıfırdan yuxarı müəllif hesabı qazandığından çox ödənilmiş müəllifdir. Heç biri cəm tərəfindən tutulmur, çünki əks işarəli iki səhv mükəmməl balanslaşır.",
           "DISAGREES_WITH_PAYMENTS": "Baş kitabın saxladığı və tranzaksiyaların hərəkət etdiyini dediyi eyni rəqəm deyil. Bu, tətbiqin heç vaxt etmədiyi yazılışı tutan yeganə yoxlamadır."
         }
       },
@@ -1920,28 +1920,28 @@
         "youHaveSigned": "Bu ödənişi artıq imzalamısınız. İkinci imza başqa şəxsə aiddir.",
         "awaitingHold": "{date} tarixində saxlama müddəti bitənə qədər imzalana bilməz.",
         "verificationHeld": "Kimlik gözlənilir",
-        "destinationHeldTitle": "Yaradıcının ödəniş təyinatı təsdiqlənməyib",
-        "destinationHeldBody": "Bu ödəniş {standing}. Pul yalnız yaradıcının özünün göstərdiyi və uyğunluq baxıcısının təsdiqlədiyi hesaba gedir — burada yazılan bir hesaba heç vaxt.",
+        "destinationHeldTitle": "Müəllifin ödəniş təyinatı təsdiqlənməyib",
+        "destinationHeldBody": "Bu ödəniş {standing}. Pul yalnız müəllifin özünün göstərdiyi və uyğunluq baxıcısının təsdiqlədiyi hesaba gedir — burada yazılan bir hesaba heç vaxt.",
         "destinationHeld": "Təyinat gözlənilir",
         "destinationStanding": {
           "WAIVED": "verilmiş istisna ilə buraxılıb",
           "VERIFIED": "təsdiqlənmiş hesaba gedir",
-          "NONE": "gözləyir — yaradıcı hara ödəniş alacağını bildirməyib",
+          "NONE": "gözləyir — müəllif hara ödəniş alacağını bildirməyib",
           "AWAITING_VERIFICATION": "hesabın uyğunluq baxıcısı tərəfindən təsdiqlənməsini gözləyir",
           "NAME_MISMATCH": "gözləyir — hesab başqa adlı şəxsə aiddir",
-          "REJECTED": "gözləyir — hesab rədd edilib, yaradıcı başqasını göstərməlidir"
+          "REJECTED": "gözləyir — hesab rədd edilib, müəllif başqasını göstərməlidir"
         },
-        "verificationHeldTitle": "Yaradıcının kimliyi təsdiqlənməyib",
-        "verificationHeldBody": "Bu ödəniş {standing}. Pul yalnız platformanın kim olduğunu təsdiqlədiyi şəxsə gedir; yaradıcıdan lazım olan sənəd artıq istənilib.",
+        "verificationHeldTitle": "Müəllifin kimliyi təsdiqlənməyib",
+        "verificationHeldBody": "Bu ödəniş {standing}. Pul yalnız platformanın kim olduğunu təsdiqlədiyi şəxsə gedir; müəllifdən lazım olan sənəd artıq istənilib.",
         "standing": {
           "NOT_REQUIRED": "kimlik təsdiqi tələb olunmur",
           "WAIVED": "əl ilə verilmiş istisna ilə buraxılıb",
           "VERIFIED": "təsdiqlənib",
-          "NEVER_REQUESTED": "yaradıcıdan hələ heç nə istənilməyib — indi istənildi",
-          "AWAITING_DOCUMENTS": "yaradıcının sənəd göndərməsini gözləyir",
+          "NEVER_REQUESTED": "müəllifdən hələ heç nə istənilməyib — indi istənildi",
+          "AWAITING_DOCUMENTS": "müəllifin sənəd göndərməsini gözləyir",
           "UNDER_REVIEW": "sənədlər baxış növbəsindədir",
-          "REJECTED": "sənədlər rədd edilib — yaradıcı yenidən göndərməlidir",
-          "EXPIRED": "təsdiq müddəti bitib — yaradıcı yenidən təsdiqləməlidir"
+          "REJECTED": "sənədlər rədd edilib — müəllif yenidən göndərməlidir",
+          "EXPIRED": "təsdiq müddəti bitib — müəllif yenidən təsdiqləməlidir"
         }
       },
       "refunds": {
@@ -1985,7 +1985,7 @@
           "BACKER_REQUEST": "Dəstəkçi istədi",
           "CAMPAIGN_HALTED": "Kampaniya dayandırıldı",
           "CAMPAIGN_FAILED": "Kampaniya hədəfinə çatmadı",
-          "FULFILMENT_FAILURE": "Yaradıcı çatdırmadı",
+          "FULFILMENT_FAILURE": "Müəllif çatdırmadı",
           "DUPLICATE_CHARGE": "İki dəfə tutuldu",
           "PLATFORM_ERROR": "Bizim səhvimiz",
           "DISPUTE_CONCEDED": "Mübahisə etmədiyimiz geri tələb",
@@ -2058,7 +2058,7 @@
         "inForceHeading": "Qüvvədə",
         "loadingList": "Komissiya cədvəlləri yüklənir",
         "emptyTitle": "Komissiya cədvəli konfiqurasiya edilməyib",
-        "emptyBody": "Platforma hazırda hər ödənişi sıfır komissiya ilə qiymətləndirir. Bu bilərəkdəndir — ödəniş işi kimsə sətir yazmadığına görə dayanmamalıdır — amma bu o deməkdir ki, yaradıcılara yığılan tam məbləğ ödənilir.",
+        "emptyBody": "Platforma hazırda hər ödənişi sıfır komissiya ilə qiymətləndirir. Bu bilərəkdəndir — ödəniş işi kimsə sətir yazmadığına görə dayanmamalıdır — amma bu o deməkdir ki, müəlliflərə yığılan tam məbləğ ödənilir.",
         "replaceHeading": "Yeni şərtlər aç",
         "scopeLabel": "Əhatə",
         "categoryLabel": "Kateqoriya",
@@ -2162,7 +2162,7 @@
         "unreachable": "Xidmətə çata bilmədik. Yenidən cəhd edin.",
         "heading": {
           "SUBMITTED": "Qərar gözləyir",
-          "CHANGES_REQUESTED": "Yaradıcılarına geri qaytarılıb",
+          "CHANGES_REQUESTED": "Müəlliflərinə geri qaytarılıb",
           "APPROVED": "Başlanğıca hazırdır",
           "REJECTED": "Rədd edilib"
         },
@@ -2182,7 +2182,7 @@
         },
         "emptyBody": {
           "SUBMITTED": "İndiyədək təqdim edilmiş bütün kampaniyalar barədə qərar verilib.",
-          "CHANGES_REQUESTED": "Hazırda yaradıcısında dəyişiklik gözləyən kampaniya yoxdur.",
+          "CHANGES_REQUESTED": "Hazırda müəllifində dəyişiklik gözləyən kampaniya yoxdur.",
           "APPROVED": "Təsdiqlənmiş kampaniyalar başlayanadək burada görünür.",
           "REJECTED": "Rədd edilmiş kampaniyalar burada qalır ki, qərar sonradan oxuna bilsin."
         },
@@ -2190,7 +2190,7 @@
         "goalLabel": "Hədəf",
         "noGoal": "Hədəf təyin edilməyib",
         "stateLabel": "Vəziyyət",
-        "creatorGone": "Yaradıcının hesabı bağlanıb",
+        "creatorGone": "Müəllifin hesabı bağlanıb",
         "decideHeading": "Bu kampaniya barədə qərar verin",
         "decideGroup": "{title} barədə qərar ver",
         "notice": "{title} indi {state} vəziyyətindədir."
@@ -2209,7 +2209,7 @@
         "emptyBody": "Kampaniya yaradılan kimi, baxışa göndərilməsindən çox əvvəl burada görünür.",
         "filteredTitle": "Uyğun kampaniya yoxdur",
         "filteredBody": "Bu axtarışa və bu vəziyyətə uyğun heç nə yoxdur. Başqa vəziyyət seçin və ya axtarışı qısaldın.",
-        "creatorGone": "Yaradıcının hesabı bağlanıb",
+        "creatorGone": "Müəllifin hesabı bağlanıb",
         "goalLabel": "Hədəf",
         "noGoal": "Hədəf təyin edilməyib",
         "raisedLabel": "Toplanıb",
@@ -2464,7 +2464,7 @@
       },
       "decision": {
         "errorTitle": "Qərar qeyd olunmadı",
-        "noteRequired": "Səbəbini yazın. Yaradıcıya bu qeyd göstərilir və o, buna əsasən hərəkət etməlidir.",
+        "noteRequired": "Səbəbini yazın. Müəllifə bu qeyd göstərilir və o, buna əsasən hərəkət etməlidir.",
         "tooLong": "Qeyd {limit} simvoldan çox ola bilməz.",
         "uphold": {
           "title": "Bu şikayət təsdiqlənsin?",
@@ -2495,11 +2495,11 @@
         },
         "request-changes": {
           "title": "Bu kampaniya geri göndərilsin?",
-          "description": "{name} yaradıcısına qayıdır, o da düzəldib yenidən göndərə bilər.",
+          "description": "{name} müəllifinə qayıdır, o da düzəldib yenidən göndərə bilər.",
           "confirmLabel": "Dəyişiklik istə",
           "busyLabel": "Geri göndərilir",
           "noteLabel": "Nə dəyişməlidir",
-          "noteHint": "Məcburi. Yaradıcıya bu göstərilir və o, buna əsasən hərəkət etməlidir — vəziyyətin bütün məzmunu budur."
+          "noteHint": "Məcburi. Müəllifə bu göstərilir və o, buna əsasən hərəkət etməlidir — vəziyyətin bütün məzmunu budur."
         },
         "reject": {
           "title": "Bu kampaniya rədd edilsin?",
@@ -2507,7 +2507,7 @@
           "confirmLabel": "Kampaniyanı rədd et",
           "busyLabel": "Rədd edilir",
           "noteLabel": "Səbəb",
-          "noteHint": "Məcburi. Yaradıcıya bu göstərilir. Problem düzəldilə biləndirsə, kampaniyanı geri göndərin."
+          "noteHint": "Məcburi. Müəllifə bu göstərilir. Problem düzəldilə biləndirsə, kampaniyanı geri göndərin."
         }
       }
     },
@@ -2535,8 +2535,8 @@
         "refunds": "Geri qaytarmalar",
         "platform_expense": "Platforma xərcləri"
       },
-      "creatorAccount": "Yaradıcı {id}",
-      "creatorNamed": "{name}, yaradıcı hesabı"
+      "creatorAccount": "Müəllif {id}",
+      "creatorNamed": "{name}, müəllif hesabı"
     },
     "signedInAs": "{name} kimi daxil olmusunuz — {roles}"
   },
@@ -3597,12 +3597,12 @@
       "closed": "Bu kampaniyanın son tarixi <deadline></deadline> idi. Son tarixinədək və ya yeganə uzadılmasının sonunadək hədəfinin 80%-ini toplamayan kampaniya hər dəstəkçiyə məbləği tam qaytarır."
     },
     "obligation": {
-      "lateHeading": "Bu yaradıcının yenilənmə borcu var",
+      "lateHeading": "Bu müəllifin yenilənmə borcu var",
       "completeHeading": "İcra tamamlanıb",
       "neverUpdatedBody": "Kampaniya bağlandıqdan sonra burada heç nə dərc olunmayıb. Yenilənmə {due} tarixinədək gözlənilirdi.",
       "lateBody": "Son yenilənmə {lastUpdate} tarixində dərc olunub. Növbətisi {due} tarixinədək gözlənilirdi.",
-      "completeBody": "Yaradıcı bu kampaniyanı icra olunmuş kimi qeyd edib, ona görə də aylıq yenilənmələr artıq gözlənilmir.",
-      "rule": "Yaradıcılar kampaniyaları icra olunana qədər ayda ən azı bir dəfə yenilənmə dərc etməyə razılıq verirlər. IdeaNest baş verənləri bildirir və yaradıcılarla dəstəkçilər arasında vasitəçilik edir; mükafatları çatdırmır və mübahisələri həll etmir."
+      "completeBody": "Müəllif bu kampaniyanı icra olunmuş kimi qeyd edib, ona görə də aylıq yenilənmələr artıq gözlənilmir.",
+      "rule": "Müəlliflər kampaniyaları icra olunana qədər ayda ən azı bir dəfə yenilənmə dərc etməyə razılıq verirlər. IdeaNest baş verənləri bildirir və müəlliflərlə dəstəkçilər arasında vasitəçilik edir; mükafatları çatdırmır və mübahisələri həll etmir."
     },
     "outcome": {
       "funded": "Bu kampaniya maliyyələşdi",
@@ -4412,8 +4412,8 @@
     },
     "obligations": {
       "heading": "{count, plural, one {Bir kampaniya yenilənmədə gecikir} other {# kampaniya yenilənmədə gecikir}}",
-      "body": "{count, plural, one {{name} adlı yaradıcının bir kampaniyası növbəti dəstəkçi yenilənməsinin gözlənildiyi tarixi keçib.} other {{name} adlı yaradıcının # kampaniyası növbəti dəstəkçi yenilənməsinin gözlənildiyi tarixi keçib.}}",
-      "rule": "Yaradıcılar kampaniyaları icra olunana qədər ayda ən azı bir dəfə yenilənmə dərc etməyə razılıq verirlər. Bu, soruşa bilməniz üçün bildirilir; IdeaNest vasitəçilik edir və mübahisələri həll etmir."
+      "body": "{count, plural, one {{name} adlı müəllifin bir kampaniyası növbəti dəstəkçi yenilənməsinin gözlənildiyi tarixi keçib.} other {{name} adlı müəllifin # kampaniyası növbəti dəstəkçi yenilənməsinin gözlənildiyi tarixi keçib.}}",
+      "rule": "Müəlliflər kampaniyaları icra olunana qədər ayda ən azı bir dəfə yenilənmə dərc etməyə razılıq verirlər. Bu, soruşa bilməniz üçün bildirilir; IdeaNest vasitəçilik edir və mübahisələri həll etmir."
     },
     "about": {
       "heading": "{name} haqqında",
@@ -4679,7 +4679,7 @@
       },
       "creator-agreement": {
         "title": "Yaradıcı müqaviləsi",
-        "summary": "Yaradıcının öhdəlikləri: vəzifələr, ödəniş şərtləri, komissiya və təminat."
+        "summary": "Müəllifin öhdəlikləri: vəzifələr, ödəniş şərtləri, komissiya və təminat."
       },
       "backer-agreement": {
         "title": "Dəstəkçi müqaviləsi",
@@ -4699,7 +4699,7 @@
     "disclosure": {
       "backerHeading": "Dəstəyinizə nə tətbiq olunur",
       "creatorHeading": "Sizə nə çatır",
-      "backerBody": "Sizdən yalnız dəstək məbləği tutulur, üstünə heç nə əlavə olunmur. Həmin məbləğdən IdeaNest {platform}, ödəniş provayderi isə {processing} saxlayır; qalanı yaradıcıya gedir.",
+      "backerBody": "Sizdən yalnız dəstək məbləği tutulur, üstünə heç nə əlavə olunmur. Həmin məbləğdən IdeaNest {platform}, ödəniş provayderi isə {processing} saxlayır; qalanı müəllifə gedir.",
       "creatorBody": "Yığılan hər dəstəkdən IdeaNest {platform}, ödəniş provayderi isə {processing} saxlayır, beləliklə dəstəkçilərinizin verdiyi məbləğin {keeps} hissəsi sizə çatır.",
       "fixedFee": "Ödəniş provayderi hər əməliyyat üçün əlavə olaraq {amount} tutur.",
       "twoFees": "Bunlar iki ayrı tutulmadır. IdeaNest-in komissiyası platformanın saxladığıdır; emal komissiyası isə pulu hərəkət etdirən şirkətə gedir və IdeaNest onu heç vaxt almır. Qüvvədə olan dərəcələr yuxarıdakılardır və ödəniş məhz onlarla hesablanır.",
