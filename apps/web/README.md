@@ -345,6 +345,15 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   answer that is not in the form is held separately and encrypted. "How many creators are
   waiting" is a plural group rather than a ternary — the count is only known in the
   browser, so `pluralise` picks the form. `lib/i18n/surveys-copy.ts` holds the shape.
+- the public report dialog (#85) — the only surface on this list a signed-out stranger
+  can reach, mounted on the campaign page and under every comment. It is also the one
+  child of #78 that **deleted** more than it added: `lib/moderation/describe.ts`'s
+  `REASON_LABELS`, `lib/moderation/report.ts`'s `TARGET_NOUNS` and `REASON_DESCRIPTIONS`,
+  and the rule in `lib/i18n/wording.test.ts` that existed to hold the first of those level
+  with the console's copy of the same nine reasons. Both surfaces read
+  `admin.moderation.reason` now. The three target kinds are three whole phrases rather
+  than a noun in a slot, because "Report this campaign" is a sentence only English builds
+  that way. `lib/i18n/report-copy.ts` holds the shape.
 
 What is still English:
 
@@ -352,17 +361,11 @@ What is still English:
 |---|---|
 | The campaign editor | `components/campaign-editor` |
 | The checkout and pledge refusal table | `lib/pledges/failure.ts` — twenty refusals the checkout and both pledge screens render (#91) |
-| The public report dialog | `components/moderation/ReportControl` |
 
 `lib/pledges/failure.ts` is the one row here that is **not** a screen. It reads as
 translated from both ends and is not: `checkout.errors` covers the form's own validation,
 so the checkout looked finished, while the service's refusals — "That reward has just
 gone", "This campaign is not taking pledges" — stayed English. #91 carries it.
-
-`ReportControl` is the reason `lib/moderation/describe.ts` still exports `REASON_LABELS`: the
-console reads the same nine reasons from `admin.moderation.reason`, and the two say the same
-words in English until that dialog is translated too. `lib/i18n/wording.test.ts` asserts they
-match, so the duplication cannot drift while it lasts.
 
 **Three kinds of value in the console stay in the service's own spelling, deliberately.** A
 provider name (`PAYRIFF`), a card network's reason code and a staff capability

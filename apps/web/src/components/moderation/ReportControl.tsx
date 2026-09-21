@@ -15,17 +15,16 @@ import {
   useScrollLock,
 } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
-import { REASON_LABELS } from '../../lib/moderation/describe';
 import type { ReportReason } from '../../lib/moderation/api';
 import {
   DETAIL_MAX_LENGTH,
-  REASON_DESCRIPTIONS,
   REPORT_REASONS,
-  TARGET_NOUNS,
   requiresDetail,
   submitReport,
   type ReportTarget,
 } from '../../lib/moderation/report';
+import type { ReportControlCopy } from '../../lib/i18n/report-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { signInHref } from '../../lib/auth/redirect';
 import { useSession } from '../session/SessionProvider';
 import { localeHref, useLocale } from '../../i18n/navigation';
@@ -66,6 +65,14 @@ import { localeHref, useLocale } from '../../i18n/navigation';
  * V23's partial unique index means reporting the same target twice returns the report already
  * on file, as a 202. There is no way to tell the two apart from here and no reason to: the
  * acknowledgement says the platform has the complaint, which is true either way.
+ *
+ * <h2>Every word is a prop, and the three targets are three sentences</h2>
+ *
+ * This is a client component and cannot read the catalogue — issue #85, and
+ * `lib/i18n/report-copy.ts` carries the rest. What is worth knowing here is that nothing is
+ * assembled from a noun: "Report this campaign" and "Nothing about the comment changes" are
+ * whole phrases keyed by target kind, because a template with a noun dropped into it is an
+ * English sentence the other three languages cannot decline.
  */
 
 export interface ReportControlProps {
@@ -76,6 +83,8 @@ export interface ReportControlProps {
   readonly returnTo: string;
   /** `link` on a campaign page's meta row, `button` where the control stands alone. */
   readonly appearance?: 'link' | 'button';
+  /** The words this dialog draws, resolved on the server. See `lib/i18n/report-copy.ts`. */
+  readonly copy: ReportControlCopy;
 }
 
 export function ReportControl({
@@ -83,6 +92,7 @@ export function ReportControl({
   name,
   returnTo,
   appearance = 'link',
+  copy,
 }: ReportControlProps) {
   const { status } = useSession();
   /*
@@ -110,14 +120,14 @@ export function ReportControl({
   useScrollLock(open);
   useFocusTrap(open, panel);
 
-  const noun = TARGET_NOUNS[target.kind];
+  const about = copy.triggerOn[target.kind];
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     if (busy || reason === '') return;
 
     if (requiresDetail(reason) && detail.trim() === '') {
-      setError('“Other” needs a sentence, or a moderator has nothing to look at.');
+      setError(copy.detailRequired);
       return;
     }
 
@@ -129,8 +139,8 @@ export function ReportControl({
     } catch (cause) {
       setError(
         cause instanceof ApiError
-          ? (cause.problem?.detail ?? cause.problem?.title ?? 'The report was refused.')
-          : 'The service could not be reached. Check your connection and try again.',
+          ? (cause.problem?.detail ?? cause.problem?.title ?? copy.refused)
+          : copy.unreachable,
       );
     } finally {
       setBusy(false);
@@ -152,7 +162,7 @@ export function ReportControl({
         onClick={() => setOpen(true)}
         iconLeft={<Flag aria-hidden="true" className="size-4" />}
       >
-        Report
+        {copy.trigger}
       </Pill>
     ) : (
       <button
@@ -161,7 +171,7 @@ export function ReportControl({
         className="inline-flex items-center gap-2 rounded-sm text-sm text-white/40 transition-colors duration-150 ease-in-out hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
       >
         <Flag aria-hidden="true" className="size-4" />
-        Report this {noun}
+        {about}
       </button>
     );
 
@@ -181,7 +191,7 @@ export function ReportControl({
             ref={panel}
             role="dialog"
             aria-modal="true"
-            aria-label={`Report ${name}`}
+            aria-label={fillPlaceholders(copy.dialogLabel, { name })}
             tabIndex={-1}
             className={cn(
               'relative flex w-full max-w-[32rem] flex-col gap-5',
@@ -189,48 +199,40 @@ export function ReportControl({
               'motion-safe:animate-[dialog-panel_200ms_ease-out]',
             )}
           >
-            <h2 className="text-lg font-medium tracking-[-0.02em] text-white">
-              Report this {noun}
-            </h2>
+            <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{about}</h2>
 
             {status === 'signed-out' ? (
               <>
-                <p className="text-[15px] leading-relaxed text-white/64">
-                  Reporting needs an account. It is how the platform can tell one complaint from
-                  five copies of the same one, and how a moderator can come back to you.
-                </p>
+                <p className="text-[15px] leading-relaxed text-white/64">{copy.signedOutBody}</p>
                 <div className="flex flex-wrap gap-3">
                   <a href={localeHref(signInHref(returnTo), locale)}>
-                    <Pill type="button">Sign in</Pill>
+                    <Pill type="button">{copy.signIn}</Pill>
                   </a>
                   <Pill type="button" variant="ghost" onClick={close}>
-                    Cancel
+                    {copy.cancel}
                   </Pill>
                 </div>
               </>
             ) : filed ? (
               <>
-                <InlineAlert variant="success" title="A moderator will look at this">
-                  <p>
-                    We have your report. Nothing about the {noun} changes because of it — a
-                    report is a request for a person to look, not a vote.
-                  </p>
+                <InlineAlert variant="success" title={copy.filedTitle}>
+                  <p>{copy.filedBody[target.kind]}</p>
                 </InlineAlert>
                 <div>
                   <Pill type="button" onClick={close}>
-                    Close
+                    {copy.close}
                   </Pill>
                 </div>
               </>
             ) : (
               <form onSubmit={submit} noValidate className="flex flex-col gap-5">
                 {error !== null && (
-                  <InlineAlert variant="danger" title="It was not sent">
+                  <InlineAlert variant="danger" title={copy.errorTitle}>
                     <p>{error}</p>
                   </InlineAlert>
                 )}
 
-                <Field label="What is wrong with it?" required grouped>
+                <Field label={copy.reasonLabel} required grouped>
                   <RadioGroup
                     value={reason}
                     onValueChange={(next) => {
@@ -243,17 +245,17 @@ export function ReportControl({
                       <Radio
                         key={option}
                         value={option}
-                        label={REASON_LABELS[option]}
-                        description={REASON_DESCRIPTIONS[option]}
+                        label={copy.reasons[option]}
+                        description={copy.descriptions[option]}
                       />
                     ))}
                   </RadioGroup>
                 </Field>
 
                 <Field
-                  label="Anything else a moderator should know"
+                  label={copy.detailLabel}
                   required={reason !== '' && requiresDetail(reason)}
-                  hint="Optional, except for “Other”. What you saw, and where."
+                  hint={copy.detailHint}
                 >
                   <Textarea
                     rows={4}
@@ -265,10 +267,10 @@ export function ReportControl({
 
                 <div className="flex flex-wrap gap-3">
                   <Pill type="submit" disabled={busy || reason === ''}>
-                    {busy ? 'Sending' : 'Send report'}
+                    {busy ? copy.sending : copy.submit}
                   </Pill>
                   <Pill type="button" variant="ghost" onClick={close}>
-                    Cancel
+                    {copy.cancel}
                   </Pill>
                 </div>
               </form>

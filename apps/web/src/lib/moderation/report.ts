@@ -46,12 +46,13 @@ const PATHS: Readonly<Record<ReportTarget['kind'], (id: string) => string>> = {
   comment: (id) => `/v1/comments/${encodeURIComponent(id)}/report`,
 };
 
-/** What the dialog calls the thing being reported, in the sentence it writes. */
-export const TARGET_NOUNS: Readonly<Record<ReportTarget['kind'], string>> = {
-  campaign: 'campaign',
-  account: 'account',
-  comment: 'comment',
-};
+/*
+ * `TARGET_NOUNS` WAS HERE. It was three English nouns the dialog dropped into "Report this
+ * ___", which is a sentence only English builds that way: Russian declines the noun after
+ * the preposition and agrees the demonstrative with its gender. #85 replaced it with three
+ * whole phrases per language under `moderation.report.triggerOn`, keyed by the same three
+ * kinds — the shape `admin/content-copy.ts` had already reached for the queue.
+ */
 
 /**
  * The reasons, in the order they are offered.
@@ -71,24 +72,13 @@ export const REPORT_REASONS: readonly ReportReason[] = Object.freeze([
   'OTHER',
 ]);
 
-/**
- * A sentence per reason, for the person choosing one.
- *
- * `REASON_LABELS` in `./describe.ts` names them for a moderator who already knows the
- * taxonomy. A reporter does not, and "Not original work" is not self-explanatory to somebody
- * deciding whether it fits. These are the same nine values said in full.
+/*
+ * `REASON_DESCRIPTIONS` WAS HERE — a sentence per reason, for the person choosing one, since
+ * "Not original work" is self-explanatory to a moderator who knows §5.4's taxonomy and to
+ * nobody else. The nine sentences are `moderation.report.descriptions` in four languages
+ * since #85. One of them states a protected-characteristic clause, which is why they are
+ * translated rather than transliterated.
  */
-export const REASON_DESCRIPTIONS: Readonly<Record<ReportReason, string>> = {
-  PROHIBITED_ITEM: 'It offers something the platform does not allow to be funded.',
-  MISREPRESENTATION: 'It states something about itself that is not true.',
-  NOT_ORIGINAL: 'The work is somebody else’s, presented as the creator’s own.',
-  INTELLECTUAL_PROPERTY: 'It uses a trademark, a design or a work without the right to.',
-  OFFENSIVE: 'The material itself is offensive.',
-  DISCRIMINATION: 'It targets people for who they are.',
-  SPAM: 'It exists to advertise something else.',
-  FRAUD: 'There is reason to believe nobody intends to deliver.',
-  OTHER: 'Something else — say what below.',
-};
 
 /** §5.4's `OTHER` is the one reason a moderator cannot act on without a sentence. */
 export function requiresDetail(reason: ReportReason): boolean {

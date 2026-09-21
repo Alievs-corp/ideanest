@@ -9,6 +9,8 @@ import { ReportControl } from '../moderation/ReportControl';
 import { useSession } from '../session/SessionProvider';
 import { CommentComposer } from './CommentComposer';
 import type { CommentCopy } from '../../lib/i18n/campaign-copy';
+import type { ReportControlCopy } from '../../lib/i18n/report-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * What a signed-in reader may do about one comment — §4.9's C-03, C-07 and the withdrawal.
@@ -65,6 +67,8 @@ export interface CommentControlsProps {
   readonly returnTo: string;
   /** The campaign's title, for the report dialog's heading. */
   readonly campaignTitle: string;
+  /** The report dialog's own words. Resolved beside {@link CommentCopy}, on the server. */
+  readonly reportCopy: ReportControlCopy;
 }
 
 export function CommentControls({
@@ -74,6 +78,7 @@ export function CommentControls({
   returnTo,
   campaignTitle,
   copy,
+  reportCopy,
 }: CommentControlsProps) {
   const router = useRouter();
   const { status, session } = useSession();
@@ -149,8 +154,9 @@ export function CommentControls({
         */}
         <ReportControl
           target={{ kind: 'comment', id: commentId }}
-          name={`a comment on ${campaignTitle}`}
+          name={fillPlaceholders(reportCopy.commentOn, { title: campaignTitle })}
           returnTo={returnTo}
+          copy={reportCopy}
         />
       </div>
 

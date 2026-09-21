@@ -4219,6 +4219,47 @@
       "review": "Kampanyanın ne kadar hazır olduğu, moderasyonun onun hakkında söyledikleri ve incelemeye gönderilmesi."
     }
   },
+  "moderation": {
+    "report": {
+      "trigger": "Şikayet et",
+      "triggerOn": {
+        "campaign": "Bu kampanyayı şikayet et",
+        "account": "Bu hesabı şikayet et",
+        "comment": "Bu yorumu şikayet et"
+      },
+      "dialogLabel": "{name} hakkında şikayet",
+      "commentOn": "{title} kampanyasındaki bir yorum",
+      "signedOutBody": "Şikayet etmek için bir hesap gerekir. Platform bir şikayeti aynı şikayetin beş kopyasından böyle ayırt eder ve moderatör size böyle dönebilir.",
+      "signIn": "Giriş yap",
+      "filedTitle": "Bir moderatör buna bakacak",
+      "filedBody": {
+        "campaign": "Şikayetiniz bizde. Bu yüzden kampanyada hiçbir şey değişmez — şikayet, bir insanın bakması için yapılan bir istektir, oy değil.",
+        "account": "Şikayetiniz bizde. Bu yüzden hesapta hiçbir şey değişmez — şikayet, bir insanın bakması için yapılan bir istektir, oy değil.",
+        "comment": "Şikayetiniz bizde. Bu yüzden yorumda hiçbir şey değişmez — şikayet, bir insanın bakması için yapılan bir istektir, oy değil."
+      },
+      "close": "Kapat",
+      "errorTitle": "Gönderilmedi",
+      "refused": "Şikayet reddedildi.",
+      "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+      "detailRequired": "“Diğer” için bir cümle gerekir, yoksa moderatörün bakacağı bir şey olmaz.",
+      "reasonLabel": "Nesi yanlış?",
+      "detailLabel": "Moderatörün bilmesi gereken başka bir şey",
+      "detailHint": "“Diğer” dışında isteğe bağlı. Ne gördünüz ve nerede.",
+      "sending": "Gönderiliyor",
+      "submit": "Şikayeti gönder",
+      "descriptions": {
+        "PROHIBITED_ITEM": "Platformun fonlanmasına izin vermediği bir şey sunuyor.",
+        "MISREPRESENTATION": "Kendisi hakkında doğru olmayan bir şey söylüyor.",
+        "NOT_ORIGINAL": "Çalışma başkasının, üreticinin kendi işiymiş gibi sunuluyor.",
+        "INTELLECTUAL_PROPERTY": "Bir markayı, tasarımı veya eseri buna hakkı olmadan kullanıyor.",
+        "OFFENSIVE": "Materyalin kendisi rahatsız edici.",
+        "DISCRIMINATION": "İnsanları oldukları kişi oldukları için hedef alıyor.",
+        "SPAM": "Başka bir şeyin reklamı için var.",
+        "FRAUD": "Kimsenin teslim etme niyetinde olmadığını düşündüren nedenler var.",
+        "OTHER": "Başka bir şey — aşağıda yazın."
+      }
+    }
+  },
   "profile": {
     "notFound": "Profil bulunamadı",
     "metaDescription": "IdeaNest üzerinde {name} — oluşturduğu ve desteklediği kampanyalar.",
