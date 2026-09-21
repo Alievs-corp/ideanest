@@ -1,4 +1,5 @@
 import { ApiError, type Problem } from '../api/problem';
+import type { PledgeFailureCopy } from '../i18n/checkout-copy';
 
 /**
  * A refusal from the pledge module, in words a backer can act on.
@@ -34,6 +35,20 @@ import { ApiError, type Problem } from '../api/problem';
  * `CheckoutFailure` keeps its name, because roughly a dozen files import it and renaming a
  * type is a large diff whose only effect is to make a later reader wonder what changed about
  * the error handling. Nothing did.
+ *
+ * <h2>The words are the caller's and the recoveries are this module's — #91</h2>
+ *
+ * This table used to hold both. It is a module-level constant, evaluated before any request
+ * exists, so it could not read a catalogue and the twenty refusals stayed English on three
+ * screens that were otherwise translated — a backer who chose Azerbaijani met a translated
+ * form that refused them in English at the moment something went wrong with their money.
+ *
+ * <p>So what is left here is the half that is behaviour: which recovery belongs to a code,
+ * which control it is about, whether the idempotency key must be retired, and whether the
+ * refusal means this client is broken. Those are decisions rather than prose and they are the
+ * same in four languages. The sentences come in as {@link PledgeFailureCopy}, resolved on the
+ * server beside the rest of `checkout` — `lib/dashboard/clock.ts` and `lib/pledges/backer.ts`
+ * are the same shape for the same reason.
  */
 
 /** What the interface should offer next. */
@@ -127,9 +142,8 @@ function retryAfterMsIn(problem: Problem | null): number | null {
   return Math.round(seconds * 1000);
 }
 
-interface Wording {
-  title: string;
-  detail: string;
+/** What a code means for the interface. Prose is `checkout.failures.codes` — #91. */
+interface Behaviour {
   recovery: Recovery;
   field?: 'contribution' | 'destination';
   retireKey?: boolean;
@@ -137,193 +151,129 @@ interface Wording {
 }
 
 /**
+ * The codes this module has a considered answer for.
+ *
+ * Exported because `lib/i18n/checkout-copy.ts` builds its record of wordings over exactly
+ * this list: a code added here without a sentence beside it is a compile error rather than a
+ * refusal that renders nothing.
+ */
+export const PLEDGE_FAILURE_CODES = [
+  'REWARD_SOLD_OUT',
+  'PLEDGE_ALREADY_EXISTS',
+  'IDEMPOTENCY_KEY_REUSED',
+  'SHIPPING_DESTINATION_UNPRICED',
+  'CONTRIBUTION_BELOW_REWARD_PRICE',
+  'PROJECT_NOT_LIVE',
+  'PLEDGE_CANNOT_BE_CANCELLED',
+  'PLEDGE_DECREASE_NOT_ALLOWED',
+  'PLEDGE_NOT_EDITABLE',
+  'PLEDGE_NOT_FOUND',
+  'REWARD_NOT_FOUND',
+  'RESERVATION_EXPIRED',
+  'AGREEMENT_REQUIRED',
+  'PLEDGE_NOT_DRAFT',
+  'IDEMPOTENT_REQUEST_IN_PROGRESS',
+  'IDEMPOTENCY_KEY_REQUIRED',
+  'IDEMPOTENCY_KEY_INVALID',
+  'PLEDGE_MODIFIED',
+] as const;
+
+export type PledgeFailureCode = (typeof PLEDGE_FAILURE_CODES)[number];
+
+/**
  * The contract's codes, each with the recovery that belongs to it.
  *
  * A record rather than a switch so that a code with no entry is obvious — it
  * falls through to the service's own prose, which is the honest answer for a
  * refusal this build has never heard of, rather than to a sentence that guesses.
+ *
+ * <p>The sentences moved to `checkout.failures.codes` in #91 and the reasoning about WHAT
+ * each one says moved with them. What stays here is why the recovery is what it is, which is
+ * the decision this module actually makes.
  */
-const WORDING: Record<string, Wording> = {
-  REWARD_SOLD_OUT: {
-    title: 'That reward has just gone',
-    detail: 'Somebody took the last one while you were choosing. Nothing has been reserved.',
-    recovery: 'change-selection',
-  },
-  PLEDGE_ALREADY_EXISTS: {
-    /*
-     * The recovery changed with #287 and the sentence changed with it. It used to end "which
-     * is not something this build can do yet", which was true while the pledge manager did
-     * not exist; `/pledges/{id}` is now where a backer changes what they chose, so the
-     * refusal points at it instead of at a dead end.
-     */
-    title: 'You are already backing this campaign',
-    detail:
-      'One pledge per campaign. To change what you chose, open the pledge you already have and edit it.',
-    recovery: 'none',
-  },
-  IDEMPOTENCY_KEY_REUSED: {
-    // Not the backer's mistake, and the wording does not imply it is. It means
-    // this client sent one key for two different bodies, which is a bug in the
-    // client; retiring the key makes the next attempt work rather than loop.
-    title: 'That request did not match the one before it',
-    detail: 'Nothing was reserved. Try again.',
-    recovery: 'retry',
-    retireKey: true,
-  },
-  SHIPPING_DESTINATION_UNPRICED: {
-    title: 'The creator does not post to that destination',
-    detail:
-      'They have not set a delivery cost for it, so there is no honest amount to charge you. Choose somewhere else, or drop the item that is posted.',
-    recovery: 'change-selection',
-    field: 'destination',
-  },
-  CONTRIBUTION_BELOW_REWARD_PRICE: {
-    title: 'That is less than the reward costs',
-    detail: 'Give at least the price of the tier you chose, or choose a cheaper one.',
-    recovery: 'change-selection',
-    field: 'contribution',
-  },
-  PROJECT_NOT_LIVE: {
-    /*
-     * Reachable from four endpoints since #287 — the draft, the confirm, the edit and the
-     * cancel — because `PledgeService#requireEditable` deliberately answers a closed campaign
-     * with the code the draft endpoint already gives. So the sentence says "nothing has
-     * changed" rather than "nothing was reserved": on a cancellation there was never anything
-     * to reserve, and a message about a reservation on that screen would be about a request
-     * the backer did not make.
-     */
-    title: 'This campaign is not taking pledges',
-    detail: 'It may have closed, or it may not have opened yet. Nothing has changed.',
-    recovery: 'none',
-  },
-  PLEDGE_CANNOT_BE_CANCELLED: {
-    /*
-     * IDN-EXT-01 (#35): a backer cannot withdraw a confirmed pledge. The web no longer offers
-     * the control, so this is reached from an old tab or another client. The sentence names
-     * the two things that are still true — it can be raised, and refunds are campaign-level —
-     * because "no" alone would read as a fault.
-     */
-    title: 'A confirmed pledge cannot be withdrawn',
-    detail:
-      'You can raise this pledge, but not cancel it. Nothing has changed. If the campaign ends below its success threshold, is suspended, or is cancelled, every backer is refunded.',
-    recovery: 'none',
-  },
-  PLEDGE_DECREASE_NOT_ALLOWED: {
-    /*
-     * IDN-EXT-01 (#35): a confirmed pledge may only go up. `meta.current` and
-     * `meta.requested` carry the two totals; this sentence is true without them.
-     */
-    title: 'A confirmed pledge can only be raised',
-    detail:
-      'This change would lower your pledge, and a confirmed pledge can only go up. Nothing has changed.',
-    recovery: 'none',
-  },
-  PLEDGE_NOT_EDITABLE: {
-    /*
-     * §4.5's PL-09 and PL-10, refused by the PLEDGE's own state rather than the campaign's —
-     * the service is explicit that a closed campaign is `PROJECT_NOT_LIVE` instead, so this
-     * code means only the thing it alone can mean.
-     *
-     * `meta.state` says which state, and the screen prints it separately: an EXPIRED draft and
-     * a COLLECTED pledge are the same refusal and completely different next moves, and this
-     * sentence is deliberately the half that is true of both.
-     */
-    title: 'This pledge can no longer be changed',
-    detail:
-      'It has moved past the point where a backer can edit or withdraw it. Nothing has changed. If something about it is wrong, the campaign’s creator is who to ask.',
-    recovery: 'none',
-  },
-  PLEDGE_NOT_FOUND: {
-    /*
-     * 404 for a pledge that does not exist AND for one belonging to somebody else,
-     * deliberately indistinguishable — the endpoint must not be usable to ask whether a
-     * pledge id is real. The wording keeps that promise rather than guessing which it was.
-     */
-    title: 'That pledge is not here',
-    detail:
-      'It may have been cancelled, or the link may be wrong. Your own pledges are listed on your pledges page.',
-    recovery: 'none',
-  },
-  REWARD_NOT_FOUND: {
-    title: 'That reward is no longer offered',
-    detail:
-      'The creator has removed the tier you chose. Pick another one, or continue without a reward. Nothing has changed.',
-    recovery: 'change-selection',
-  },
-  RESERVATION_EXPIRED: {
-    title: 'Your reward was only held for five minutes',
-    detail:
-      'The hold has ended and the stock has gone back to the campaign. Nothing was confirmed and no card was involved. Reserve it again to carry on.',
-    recovery: 'redraft',
-    retireKey: true,
-  },
-  AGREEMENT_REQUIRED: {
-    /*
-     * §22.3's acknowledgement, refused — #427. Two ways to arrive and one recovery, which is
-     * why they share a descriptor: either this page showed no risk statement at all, which
-     * is a fault in this site, or it showed one that has since been replaced, which is a
-     * page left open across a publication. Both are answered by loading the page again, and
-     * the sentence says the true thing about both — nothing was confirmed.
-     *
-     * `clientBug` is deliberately NOT set. The common case is the honest one: a checkout tab
-     * open while an administrator published a new version, which is nobody's mistake.
-     */
-    title: 'What backing means has changed',
-    detail:
-      'This page was showing an older statement of what a pledge is and is not. Nothing was confirmed and no card was involved. Load the page again, read it, and confirm.',
-    recovery: 'none',
-  },
-  PLEDGE_NOT_DRAFT: {
-    title: 'This pledge has already been dealt with',
-    detail: 'It is confirmed or cancelled, so there is nothing left to confirm.',
-    recovery: 'none',
-  },
+const BEHAVIOUR: Record<PledgeFailureCode, Behaviour> = {
+  REWARD_SOLD_OUT: { recovery: 'change-selection' },
   /*
-   * The four #52 answered that the contract did not specify, and that this
-   * client was merged without (#204). All four are reachable from both payment
-   * mutations, which is why they are here beside the ones the contract named
-   * rather than in a second table keyed by endpoint.
+   * The recovery changed with #287: it used to be a dead end, and `/pledges/{id}` is now
+   * where a backer changes what they chose, so the refusal points at it. The sentence in the
+   * catalogue says so and is the half that has to be kept true if this ever changes back.
    */
-  IDEMPOTENT_REQUEST_IN_PROGRESS: {
-    // What a double-click produces: the first request still holds the claim on
-    // the key and the second is told to ask again. Nothing is wrong, nothing is
-    // duplicated, and the work the backer asked for is already being done — so
-    // this is worded as a wait rather than as a failure, and the caller does the
-    // waiting rather than putting the sentence on the screen for a state that
-    // usually lasts a few hundred milliseconds.
-    title: 'Your first attempt is still going',
-    detail:
-      'The same request is already being carried out. Nothing has been pledged twice, and waiting a moment and asking again is safe.',
-    recovery: 'wait-and-retry',
-  },
-  IDEMPOTENCY_KEY_REQUIRED: {
-    title: 'This page sent an incomplete request',
-    detail:
-      'A header this request needs was missing, which is a fault in this site rather than anything you did. Nothing was reserved and no card was involved. Reloading the page is the only thing that will help.',
-    recovery: 'none',
-    clientBug: true,
-  },
-  IDEMPOTENCY_KEY_INVALID: {
-    title: 'This page sent a malformed request',
-    detail:
-      'A header this request needs was not in the form the service accepts, which is a fault in this site rather than anything you did. Nothing was reserved and no card was involved. Reloading the page is the only thing that will help.',
-    recovery: 'none',
-    clientBug: true,
-  },
-  PLEDGE_MODIFIED: {
-    /*
-     * §8.4's sweep expiring a draft in the very moment its backer confirms it.
-     * The service refuses to report a cause it has inferred rather than
-     * observed, so this wording does not claim the hold expired either — it says
-     * what is certainly true, and offers the recovery that is right whether the
-     * sweep or something else wrote to the pledge.
-     */
-    title: 'This pledge changed while you were confirming it',
-    detail:
-      'Something else wrote to it first — most often the five-minute hold running out as you confirmed. Nothing was confirmed and no card was involved. Reserve it again to carry on.',
-    recovery: 'redraft',
-  },
+  PLEDGE_ALREADY_EXISTS: { recovery: 'none' },
+  /*
+   * Not the backer's mistake. It means this client sent one key for two different bodies,
+   * which is a bug in the client; retiring the key makes the next attempt work rather than
+   * loop.
+   */
+  IDEMPOTENCY_KEY_REUSED: { recovery: 'retry', retireKey: true },
+  SHIPPING_DESTINATION_UNPRICED: { recovery: 'change-selection', field: 'destination' },
+  CONTRIBUTION_BELOW_REWARD_PRICE: { recovery: 'change-selection', field: 'contribution' },
+  /*
+   * Reachable from four endpoints since #287 — the draft, the confirm, the edit and the
+   * cancel — because `PledgeService#requireEditable` deliberately answers a closed campaign
+   * with the code the draft endpoint already gives. Which is why the catalogue's sentence
+   * says "nothing has changed" rather than "nothing was reserved": on a cancellation there
+   * was never anything to reserve.
+   */
+  PROJECT_NOT_LIVE: { recovery: 'none' },
+  /*
+   * IDN-EXT-01 (#35): a backer cannot withdraw a confirmed pledge. The web no longer offers
+   * the control, so this is reached from an old tab or another client.
+   */
+  PLEDGE_CANNOT_BE_CANCELLED: { recovery: 'none' },
+  /* IDN-EXT-01 (#35): a confirmed pledge may only go up. */
+  PLEDGE_DECREASE_NOT_ALLOWED: { recovery: 'none' },
+  /*
+   * §4.5's PL-09 and PL-10, refused by the PLEDGE's own state rather than the campaign's —
+   * the service is explicit that a closed campaign is `PROJECT_NOT_LIVE` instead, so this
+   * code means only the thing it alone can mean. `meta.state` says which state, and the
+   * screen prints it separately.
+   */
+  PLEDGE_NOT_EDITABLE: { recovery: 'none' },
+  /*
+   * 404 for a pledge that does not exist AND for one belonging to somebody else, deliberately
+   * indistinguishable — the endpoint must not be usable to ask whether a pledge id is real.
+   * The wording keeps that promise rather than guessing which it was.
+   */
+  PLEDGE_NOT_FOUND: { recovery: 'none' },
+  REWARD_NOT_FOUND: { recovery: 'change-selection' },
+  RESERVATION_EXPIRED: { recovery: 'redraft', retireKey: true },
+  /*
+   * §22.3's acknowledgement, refused — #427. Two ways to arrive and one recovery: either this
+   * page showed no risk statement at all, which is a fault in this site, or it showed one that
+   * has since been replaced, which is a page left open across a publication. Both are answered
+   * by loading the page again.
+   *
+   * `clientBug` is deliberately NOT set. The common case is the honest one: a checkout tab
+   * open while an administrator published a new version, which is nobody's mistake.
+   */
+  AGREEMENT_REQUIRED: { recovery: 'none' },
+  PLEDGE_NOT_DRAFT: { recovery: 'none' },
+  /*
+   * The four #52 answered that the contract did not specify, and that this client was merged
+   * without (#204). All four are reachable from both payment mutations, which is why they are
+   * here beside the ones the contract named rather than in a second table keyed by endpoint.
+   *
+   * What a double-click produces: the first request still holds the claim on the key and the
+   * second is told to ask again. Nothing is wrong and the work is already being done — so the
+   * caller waits rather than putting a sentence on screen for a state that usually lasts a few
+   * hundred milliseconds.
+   */
+  IDEMPOTENT_REQUEST_IN_PROGRESS: { recovery: 'wait-and-retry' },
+  IDEMPOTENCY_KEY_REQUIRED: { recovery: 'none', clientBug: true },
+  IDEMPOTENCY_KEY_INVALID: { recovery: 'none', clientBug: true },
+  /*
+   * §8.4's sweep expiring a draft in the very moment its backer confirms it. The service
+   * refuses to report a cause it has inferred rather than observed, so the catalogue's
+   * sentence does not claim the hold expired either — and this recovery is right whether the
+   * sweep or something else wrote to the pledge.
+   */
+  PLEDGE_MODIFIED: { recovery: 'redraft' },
 };
+
+/** Whether this build has a considered answer for a code the service sent. */
+function known(code: string | null): code is PledgeFailureCode {
+  return code !== null && code in BEHAVIOUR;
+}
 
 /**
  * Anything a checkout request can throw, as something to render.
@@ -334,14 +284,13 @@ const WORDING: Record<string, Wording> = {
  * refused your pledge" and "your connection dropped" call for opposite next
  * moves, and only one of them is safe to repeat without thinking.
  */
-export function describeFailure(cause: unknown): CheckoutFailure {
+export function describeFailure(cause: unknown, copy: PledgeFailureCopy): CheckoutFailure {
   if (!(cause instanceof ApiError)) {
     return {
       code: null,
       status: null,
-      title: 'The service could not be reached',
-      detail:
-        'Nothing was sent, or nothing came back. Check your connection and try again — trying again is safe, and cannot pledge twice.',
+      title: copy.unreachable.title,
+      detail: copy.unreachable.detail,
       recovery: 'retry',
       alternatives: [],
       field: null,
@@ -353,15 +302,14 @@ export function describeFailure(cause: unknown): CheckoutFailure {
 
   const problem = cause.problem;
   const code = problem?.code ?? null;
-  const wording = code === null ? undefined : WORDING[code];
 
-  if (wording === undefined) {
+  if (!known(code)) {
     if (cause.status === 401) {
       return {
         code,
         status: cause.status,
-        title: 'You are not signed in',
-        detail: 'Sign in and start again. Nothing was reserved.',
+        title: copy.signedOut.title,
+        detail: copy.signedOut.detail,
         recovery: 'none',
         alternatives: [],
         field: null,
@@ -374,10 +322,15 @@ export function describeFailure(cause: unknown): CheckoutFailure {
     return {
       code,
       status: cause.status,
-      title: problem?.title ?? 'That did not work',
-      detail:
-        problem?.detail ??
-        'The service refused the request and did not say why. Nothing was reserved.',
+      /*
+       * THE SERVICE'S OWN WORDS WHEN IT WROTE ANY, and they are not translated: the endpoint
+       * knows which of its rules refused a request this build has never heard of, and a
+       * client that replaced that sentence with a generic one of its own would be hiding the
+       * only information anybody has. The fallback pair below is what is left when the
+       * service sent no problem body at all.
+       */
+      title: problem?.title ?? copy.unknown.title,
+      detail: problem?.detail ?? copy.unknown.detail,
       recovery: 'retry',
       alternatives: alternativesIn(problem),
       field: null,
@@ -386,6 +339,9 @@ export function describeFailure(cause: unknown): CheckoutFailure {
       clientBug: false,
     };
   }
+
+  const behaviour = BEHAVIOUR[code];
+  const wording = copy.codes[code];
 
   return {
     code,
@@ -400,13 +356,17 @@ export function describeFailure(cause: unknown): CheckoutFailure {
      * and on the screen where somebody is trying to give money that is the only
      * half worth the space. An unknown code still falls through to the
      * service's own words above, because there the fact is all anybody has.
+     *
+     * <p>Since #91 "ours" means the reader's language rather than English, which is what
+     * made this override defensible in the first place: a sentence chosen for its recovery
+     * is only better than the service's if the person reading it can read it.
      */
     detail: wording.detail,
-    recovery: wording.recovery,
+    recovery: behaviour.recovery,
     alternatives: alternativesIn(problem),
-    field: wording.field ?? null,
-    retireKey: wording.retireKey ?? false,
+    field: behaviour.field ?? null,
+    retireKey: behaviour.retireKey ?? false,
     retryAfterMs: retryAfterMsIn(problem),
-    clientBug: wording.clientBug ?? false,
+    clientBug: behaviour.clientBug ?? false,
   };
 }

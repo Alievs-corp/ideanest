@@ -363,18 +363,21 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   `lib/media/upload.ts`'s refusals came off the same pass: a library cannot read a
   catalogue, so it answers with a code and the editor draws the words
   (`campaignEditor.cover.failures`).
+- the pledge module's refusal table (#91) — the twenty sentences the **service** says no
+  with, rendered by the checkout, the pledge editor and the pledge manager. It was the one
+  entry on this list that was not a screen, and the one nobody found by reading the list:
+  `checkout.errors` covers the form's own validation, so both ends read as translated while
+  a backer who chose Azerbaijani was refused in English at the moment something went wrong
+  with their money. `lib/pledges/failure.ts` keeps the half that is behaviour — which
+  recovery belongs to a code, which control it is about, whether the idempotency key must
+  be retired — because those are decisions and they are the same in four languages. The
+  sentences are `checkout.failures`.
 
 What is still English:
 
 | Surface | Where |
 |---|---|
 | The campaign editor | `components/campaign-editor` |
-| The checkout and pledge refusal table | `lib/pledges/failure.ts` — twenty refusals the checkout and both pledge screens render (#91) |
-
-`lib/pledges/failure.ts` is the one row here that is **not** a screen. It reads as
-translated from both ends and is not: `checkout.errors` covers the form's own validation,
-so the checkout looked finished, while the service's refusals — "That reward has just
-gone", "This campaign is not taking pledges" — stayed English. #91 carries it.
 
 **Three kinds of value in the console stay in the service's own spelling, deliberately.** A
 provider name (`PAYRIFF`), a card network's reason code and a staff capability
@@ -1208,7 +1211,7 @@ reads is PL-15's `?token=`, repeatable, which unlocks secret tiers.
 | `lib/pledges/api.ts` | The public reward list, the draft, the read, and the confirm |
 | `lib/pledges/quote.ts` | PL-06's total, mirroring `PledgeQuote` in `pledge/domain` |
 | `lib/pledges/idempotency.ts` | What "the same intent" means, and when a key is retired |
-| `lib/pledges/failure.ts` | Each contract refusal, with the recovery that belongs to it |
+| `lib/pledges/failure.ts` | Each contract refusal, with the recovery that belongs to it. The words are `checkout.failures` (#91) |
 | `components/checkout/useCheckout.ts` | The selection, the two requests, and the phase |
 | `components/checkout/useReservationClock.ts` | PL-13's five minutes, counted down and not animated |
 

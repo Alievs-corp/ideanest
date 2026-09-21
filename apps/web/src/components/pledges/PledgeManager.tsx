@@ -119,7 +119,7 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
         setStatus('ready');
       } catch (cause) {
         if (abandoned()) return;
-        setFailure(describeFailure(cause));
+        setFailure(describeFailure(cause, copy.failures));
         setStatus('failed');
         return;
       }
