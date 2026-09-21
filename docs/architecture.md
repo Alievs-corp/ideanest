@@ -6348,6 +6348,19 @@ it was written in.
 > **What is still English, stated rather than left to be found.** The campaign editor. Epic
 > #78 is the list of what was on this line and how each surface came off it.
 >
+> **The catalogue settled on one word per concept in #102.** All three non-English languages
+> carried two words for "creator" and Russian two for "backer" — the administration console
+> was translated first and set one vocabulary, #79 to #86 set another, and nothing compared
+> them because the catalogues are checked by key and never by word. It was not two registers
+> for two readers: the pledge list and the console's account detail named the same
+> cancellation `Отменён вами` and `Отменён спонсором`, which is one support conversation away
+> from being a question about which word is real. The creator is `müəllif`, `автор` and
+> `yaratıcı`; a backer is `бэкер`. The words that lost were wrong rather than unpopular —
+> `üretici` is a manufacturer and `спонсор` is a sponsor, which §22.1 exists to not imply.
+> `lib/i18n/catalogue.test.ts` holds all four, with one exception carried in the rule itself:
+> `müəllif müqaviləsi` is a copyright licence in Azerbaijani law, so §22's creator agreement
+> keeps the name `yaradıcı müqaviləsi`.
+>
 > **The names and notices only a screen reader meets came off it in #101.** The save, share
 > and reminder controls, the live countdown and the checkout's approximate total: twenty-four
 > strings, fourteen of them invisible to anybody reviewing those pages. Nine are a polite live

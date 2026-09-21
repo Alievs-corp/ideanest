@@ -405,6 +405,31 @@ What is still English:
 |---|---|
 | The campaign editor | `components/campaign-editor` |
 
+**One word per concept, console included (#102).** Every non-English language carried two
+words for *creator* and Russian carried two for *backer*, split roughly along `admin.` against
+everything else — the console was translated first and set one vocabulary, the reader-facing
+surfaces set another, and nothing could compare them because the catalogues are checked by key
+and never by word. It was not two registers for two readers: `account.pledges.states` and
+`admin.screens.accountDetail.pledgeState` named the same cancellation `Отменён вами` and
+`Отменён спонсором`, and one Russian sentence used both words for two different people.
+
+| Concept | az | en | ru | tr |
+|---|---|---|---|---|
+| creator | `müəllif` | creator | `автор` | `yaratıcı` |
+| backer | `dəstəkçi` | backer | `бэкер` | `destekçi` |
+| pledge (noun) | `dəstək` | pledge | `взнос` | `destek` |
+
+The losing words were not merely less popular. `üretici` is a **manufacturer**, and English
+never names one anywhere in this catalogue; `спонсор` is a **sponsor**, which is a different
+relationship from a backer and the one §22.1 is careful not to imply; `yaradıcı` reads as the
+adjective "creative" as often as the noun. `lib/i18n/catalogue.test.ts` holds all four now,
+in the `CONFUSIONS` table that already existed for `təhsil`.
+
+**The one exception is a document's name.** `müəllif müqaviləsi` is a copyright licence in
+Azerbaijani law — a different instrument from the agreement somebody signs here — so the
+creator agreement keeps `yaradıcı müqaviləsi`, for the same reason the three kinds of value
+below keep theirs. The test's rule carries that exception and no other.
+
 **Three kinds of value in the console stay in the service's own spelling, deliberately.** A
 provider name (`PAYRIFF`), a card network's reason code and a staff capability
 (`ISSUE_REFUND`) are each quoted into a support conversation, a dispute or a request to an

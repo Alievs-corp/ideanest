@@ -139,9 +139,44 @@ describe('the message catalogues', () => {
      *
      * This is not a spell-checker and is not trying to be. It is a note-to-self with teeth,
      * for the specific errors that have actually happened here.
+     *
+     * <h2>The four below are #102's, and they are a decision rather than a typo</h2>
+     *
+     * Every non-English language carried TWO words for "creator" and Russian carried two for
+     * "backer", split roughly along the administration console against everything else: the
+     * console was translated first (#324) and set one vocabulary, #79 to #86 translated the
+     * surfaces a reader meets and set another, and nothing could compare them because the
+     * catalogues are checked by key and never by word. `account.pledges.states` and
+     * `admin.screens.accountDetail.pledgeState` named the same cancellation `Отменён вами` and
+     * `Отменён спонсором`; one Russian sentence used both words for two different people.
+     *
+     * <p>#102 settled it as one word per concept, because these are the same people in the
+     * same rows read from two sides, and a support conversation is those two screens read
+     * aloud to each other. The words it settled on, and why the other one loses:
+     *
+     * <ul>
+     *   <li><strong>tr `üretici`</strong> is a MANUFACTURER. English never says manufacturer
+     *       or producer anywhere in this catalogue, and the word would be wrong for a
+     *       documentary or a novel. `yaratıcı` is what `fees.disclosure` and the creator
+     *       agreement already said.</li>
+     *   <li><strong>ru `создатель`</strong> is a literal calque; `автор` is what Russian
+     *       crowdfunding calls the person and what 124 strings here already said.</li>
+     *   <li><strong>ru `спонсор`</strong> is a SPONSOR, which is a different relationship
+     *       from a backer and precisely the one §22.1 is careful not to imply.</li>
+     *   <li><strong>az `yaradıcı`</strong> reads as the adjective "creative" as often as the
+     *       noun; `müəllif` is unambiguously a person, and "layihə müəllifi" is what a project
+     *       owner is called. The exception is the creator agreement: `müəllif müqaviləsi` is a
+     *       COPYRIGHT LICENCE in Azerbaijani law, a different instrument from the one signed
+     *       here, so that document keeps its own name the way `PAYRIFF` keeps its spelling.
+     *       The lookahead below is that exception and nothing else.</li>
+     * </ul>
      */
     const CONFUSIONS: ReadonlyArray<readonly [Locale, RegExp, string]> = [
       ['az', /təhsil/iu, 'means education — for money use tutulur, çıxılır or alınır'],
+      ['az', /yaradıcı(?! müqavilə)/iu, 'the creator is müəllif — yaradıcı only names the agreement'],
+      ['ru', /создател/iu, 'the creator is автор on every surface, console included'],
+      ['ru', /спонсор/iu, 'a backer is a бэкер — a спонсор is a different relationship (§22.1)'],
+      ['tr', /üretici/iu, 'üretici is a manufacturer — the creator is yaratıcı'],
     ];
 
     for (const [locale, pattern, why] of CONFUSIONS) {
