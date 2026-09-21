@@ -3346,6 +3346,94 @@
       "belowRewardPrice": "Bu mükafat {price} dəyərindədir. Bu qədər və ya daha çox verin, ya da daha ucuz mükafat seçin.",
       "destinationUnpriced": "Müəllif bu istiqamət üçün {lines} çatdırılma qiyməti təyin etməyib. Başqa yer seçin və ya onu dəstəyinizdən çıxarın."
     },
+    "failures": {
+      "unreachable": {
+        "title": "Xidmətə çıxmaq mümkün olmadı",
+        "detail": "Ya sorğu getmədi, ya da cavab gəlmədi. Bağlantınızı yoxlayıb yenidən cəhd edin — yenidən cəhd etmək təhlükəsizdir və iki dəfə dəstək göndərə bilməz."
+      },
+      "signedOut": {
+        "title": "Hesaba daxil olmamısınız",
+        "detail": "Daxil olub yenidən başlayın. Heç nə rezerv edilmədi."
+      },
+      "unknown": {
+        "title": "Alınmadı",
+        "detail": "Xidmət sorğunu rədd etdi və səbəbini bildirmədi. Heç nə rezerv edilmədi."
+      },
+      "codes": {
+        "REWARD_SOLD_OUT": {
+          "title": "Bu mükafat indicə bitdi",
+          "detail": "Siz seçərkən sonuncunu başqası götürdü. Heç nə rezerv edilmədi."
+        },
+        "PLEDGE_ALREADY_EXISTS": {
+          "title": "Bu kampaniyanı artıq dəstəkləyirsiniz",
+          "detail": "Hər kampaniya üçün bir dəstək. Seçiminizi dəyişmək üçün mövcud dəstəyinizi açıb redaktə edin."
+        },
+        "IDEMPOTENCY_KEY_REUSED": {
+          "title": "Bu sorğu əvvəlkinə uyğun gəlmədi",
+          "detail": "Heç nə rezerv edilmədi. Yenidən cəhd edin."
+        },
+        "SHIPPING_DESTINATION_UNPRICED": {
+          "title": "Müəllif bu istiqamətə göndərmir",
+          "detail": "Onun üçün çatdırılma qiyməti təyin edilməyib, ona görə sizdən tutulacaq düzgün məbləğ yoxdur. Başqa yer seçin və ya göndərilən əşyanı çıxarın."
+        },
+        "CONTRIBUTION_BELOW_REWARD_PRICE": {
+          "title": "Bu, mükafatın qiymətindən azdır",
+          "detail": "Ən azı seçdiyiniz pilləyə görə qiyməti verin və ya daha ucuzunu seçin."
+        },
+        "PROJECT_NOT_LIVE": {
+          "title": "Bu kampaniya dəstək qəbul etmir",
+          "detail": "Bağlanmış ola bilər, ya da hələ açılmayıb. Heç nə dəyişmədi."
+        },
+        "PLEDGE_CANNOT_BE_CANCELLED": {
+          "title": "Təsdiqlənmiş dəstək geri götürülə bilməz",
+          "detail": "Bu dəstəyi artıra bilərsiniz, amma ləğv edə bilməzsiniz. Heç nə dəyişmədi. Kampaniya uğur həddinin altında bitsə, dayandırılsa və ya ləğv edilsə, hər dəstəkçiyə pul qaytarılır."
+        },
+        "PLEDGE_DECREASE_NOT_ALLOWED": {
+          "title": "Təsdiqlənmiş dəstək yalnız artırıla bilər",
+          "detail": "Bu dəyişiklik dəstəyinizi azaldardı, təsdiqlənmiş dəstək isə yalnız arta bilər. Heç nə dəyişmədi."
+        },
+        "PLEDGE_NOT_EDITABLE": {
+          "title": "Bu dəstək artıq dəyişdirilə bilməz",
+          "detail": "O, dəstəkçinin redaktə və ya geri götürə biləcəyi mərhələni keçib. Heç nə dəyişmədi. Onunla bağlı nəsə səhvdirsə, kampaniyanın müəllifinə müraciət edin."
+        },
+        "PLEDGE_NOT_FOUND": {
+          "title": "Belə bir dəstək yoxdur",
+          "detail": "Ləğv edilmiş ola bilər, ya da keçid səhvdir. Öz dəstəkləriniz dəstəklər səhifənizdə sadalanır."
+        },
+        "REWARD_NOT_FOUND": {
+          "title": "Bu mükafat artıq təklif olunmur",
+          "detail": "Müəllif seçdiyiniz pilləni silib. Başqasını seçin və ya mükafatsız davam edin. Heç nə dəyişmədi."
+        },
+        "RESERVATION_EXPIRED": {
+          "title": "Mükafatınız cəmi beş dəqiqə saxlanılırdı",
+          "detail": "Rezervin vaxtı bitdi və ehtiyat kampaniyaya qaytarıldı. Heç nə təsdiqlənmədi və heç bir kart istifadə olunmadı. Davam etmək üçün yenidən rezerv edin."
+        },
+        "AGREEMENT_REQUIRED": {
+          "title": "Dəstəyin nə demək olduğu dəyişdi",
+          "detail": "Bu səhifə dəstəyin nə olduğunu və nə olmadığını izah edən köhnə mətni göstərirdi. Heç nə təsdiqlənmədi və heç bir kart istifadə olunmadı. Səhifəni yenidən yükləyin, mətni oxuyun və təsdiqləyin."
+        },
+        "PLEDGE_NOT_DRAFT": {
+          "title": "Bu dəstək artıq nəticələnib",
+          "detail": "O, təsdiqlənib və ya ləğv edilib, ona görə təsdiqləyəcək bir şey qalmayıb."
+        },
+        "IDEMPOTENT_REQUEST_IN_PROGRESS": {
+          "title": "İlk cəhdiniz hələ gedir",
+          "detail": "Eyni sorğu artıq icra olunur. Heç nə iki dəfə dəstəklənmədi; bir az gözləyib yenidən soruşmaq təhlükəsizdir."
+        },
+        "IDEMPOTENCY_KEY_REQUIRED": {
+          "title": "Bu səhifə natamam sorğu göndərdi",
+          "detail": "Sorğunun ehtiyacı olan bir başlıq çatışmırdı — bu, sizin deyil, saytın nöqsanıdır. Heç nə rezerv edilmədi və heç bir kart istifadə olunmadı. Kömək edəcək yeganə şey səhifəni yenidən yükləməkdir."
+        },
+        "IDEMPOTENCY_KEY_INVALID": {
+          "title": "Bu səhifə səhv formalı sorğu göndərdi",
+          "detail": "Sorğunun ehtiyacı olan bir başlıq xidmətin qəbul etdiyi formada deyildi — bu, sizin deyil, saytın nöqsanıdır. Heç nə rezerv edilmədi və heç bir kart istifadə olunmadı. Kömək edəcək yeganə şey səhifəni yenidən yükləməkdir."
+        },
+        "PLEDGE_MODIFIED": {
+          "title": "Siz təsdiqləyərkən bu dəstək dəyişdi",
+          "detail": "Ona əvvəlcə başqa bir şey yazdı — ən çox rast gəlinəni, siz təsdiqləyərkən beşdəqiqəlik rezervin bitməsidir. Heç nə təsdiqlənmədi və heç bir kart istifadə olunmadı. Davam etmək üçün yenidən rezerv edin."
+        }
+      }
+    },
     "returned": {
       "paidTitle": "Dəstəyiniz ödənildi",
       "paidBody": "Ödəniş keçdi və kampaniya dəstəyinizi aldı. Kampaniya uğurlu olmasa, məbləğ sizə tam qaytarılır.",

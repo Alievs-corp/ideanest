@@ -3346,6 +3346,94 @@
       "belowRewardPrice": "This reward costs {price}. Give that or more, or choose a cheaper reward.",
       "destinationUnpriced": "The creator has not set a delivery cost to this destination for {lines}. Choose somewhere else, or take that out of your pledge."
     },
+    "failures": {
+      "unreachable": {
+        "title": "The service could not be reached",
+        "detail": "Nothing was sent, or nothing came back. Check your connection and try again — trying again is safe, and cannot pledge twice."
+      },
+      "signedOut": {
+        "title": "You are not signed in",
+        "detail": "Sign in and start again. Nothing was reserved."
+      },
+      "unknown": {
+        "title": "That did not work",
+        "detail": "The service refused the request and did not say why. Nothing was reserved."
+      },
+      "codes": {
+        "REWARD_SOLD_OUT": {
+          "title": "That reward has just gone",
+          "detail": "Somebody took the last one while you were choosing. Nothing has been reserved."
+        },
+        "PLEDGE_ALREADY_EXISTS": {
+          "title": "You are already backing this campaign",
+          "detail": "One pledge per campaign. To change what you chose, open the pledge you already have and edit it."
+        },
+        "IDEMPOTENCY_KEY_REUSED": {
+          "title": "That request did not match the one before it",
+          "detail": "Nothing was reserved. Try again."
+        },
+        "SHIPPING_DESTINATION_UNPRICED": {
+          "title": "The creator does not post to that destination",
+          "detail": "They have not set a delivery cost for it, so there is no honest amount to charge you. Choose somewhere else, or drop the item that is posted."
+        },
+        "CONTRIBUTION_BELOW_REWARD_PRICE": {
+          "title": "That is less than the reward costs",
+          "detail": "Give at least the price of the tier you chose, or choose a cheaper one."
+        },
+        "PROJECT_NOT_LIVE": {
+          "title": "This campaign is not taking pledges",
+          "detail": "It may have closed, or it may not have opened yet. Nothing has changed."
+        },
+        "PLEDGE_CANNOT_BE_CANCELLED": {
+          "title": "A confirmed pledge cannot be withdrawn",
+          "detail": "You can raise this pledge, but not cancel it. Nothing has changed. If the campaign ends below its success threshold, is suspended, or is cancelled, every backer is refunded."
+        },
+        "PLEDGE_DECREASE_NOT_ALLOWED": {
+          "title": "A confirmed pledge can only be raised",
+          "detail": "This change would lower your pledge, and a confirmed pledge can only go up. Nothing has changed."
+        },
+        "PLEDGE_NOT_EDITABLE": {
+          "title": "This pledge can no longer be changed",
+          "detail": "It has moved past the point where a backer can edit or withdraw it. Nothing has changed. If something about it is wrong, the campaign’s creator is who to ask."
+        },
+        "PLEDGE_NOT_FOUND": {
+          "title": "That pledge is not here",
+          "detail": "It may have been cancelled, or the link may be wrong. Your own pledges are listed on your pledges page."
+        },
+        "REWARD_NOT_FOUND": {
+          "title": "That reward is no longer offered",
+          "detail": "The creator has removed the tier you chose. Pick another one, or continue without a reward. Nothing has changed."
+        },
+        "RESERVATION_EXPIRED": {
+          "title": "Your reward was only held for five minutes",
+          "detail": "The hold has ended and the stock has gone back to the campaign. Nothing was confirmed and no card was involved. Reserve it again to carry on."
+        },
+        "AGREEMENT_REQUIRED": {
+          "title": "What backing means has changed",
+          "detail": "This page was showing an older statement of what a pledge is and is not. Nothing was confirmed and no card was involved. Load the page again, read it, and confirm."
+        },
+        "PLEDGE_NOT_DRAFT": {
+          "title": "This pledge has already been dealt with",
+          "detail": "It is confirmed or cancelled, so there is nothing left to confirm."
+        },
+        "IDEMPOTENT_REQUEST_IN_PROGRESS": {
+          "title": "Your first attempt is still going",
+          "detail": "The same request is already being carried out. Nothing has been pledged twice, and waiting a moment and asking again is safe."
+        },
+        "IDEMPOTENCY_KEY_REQUIRED": {
+          "title": "This page sent an incomplete request",
+          "detail": "A header this request needs was missing, which is a fault in this site rather than anything you did. Nothing was reserved and no card was involved. Reloading the page is the only thing that will help."
+        },
+        "IDEMPOTENCY_KEY_INVALID": {
+          "title": "This page sent a malformed request",
+          "detail": "A header this request needs was not in the form the service accepts, which is a fault in this site rather than anything you did. Nothing was reserved and no card was involved. Reloading the page is the only thing that will help."
+        },
+        "PLEDGE_MODIFIED": {
+          "title": "This pledge changed while you were confirming it",
+          "detail": "Something else wrote to it first — most often the five-minute hold running out as you confirmed. Nothing was confirmed and no card was involved. Reserve it again to carry on."
+        }
+      }
+    },
     "returned": {
       "paidTitle": "Your pledge is paid",
       "paidBody": "The payment went through and the campaign has your pledge. It is refunded in full if the campaign does not succeed.",

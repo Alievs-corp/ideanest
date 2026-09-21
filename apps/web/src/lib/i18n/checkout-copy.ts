@@ -1,3 +1,5 @@
+import { PLEDGE_FAILURE_CODES, type PledgeFailureCode } from '../pledges/failure';
+
 /**
  * Every word the checkout draws — issue #324.
  *
@@ -195,6 +197,66 @@ export interface CheckoutCopy {
     readonly belowRewardPrice: string;
     readonly destinationUnpriced: string;
   };
+  /** What the SERVICE says no with — #91. `lib/pledges/failure.ts` turns a code into one. */
+  readonly failures: PledgeFailureCopy;
+}
+
+/** A refusal, as the two halves every alert on these screens renders. */
+export interface FailureWording {
+  readonly title: string;
+  readonly detail: string;
+}
+
+/**
+ * The twenty refusals the pledge module can meet — issue #91, under epic #78.
+ *
+ * <h2>Why these are the checkout's copy and not the pledge screens' own</h2>
+ *
+ * One table, three screens. `lib/pledges/failure.ts` explains why the codes belong to the
+ * pledge module rather than to the endpoint that raised them — `PROJECT_NOT_LIVE` from a
+ * cancellation means what `PROJECT_NOT_LIVE` from a draft means — and the sentences follow
+ * the codes. The checkout, the pledge editor and the pledge manager all already hold a
+ * {@link CheckoutCopy}, so this is where they can all reach it without a second accessor.
+ *
+ * <h2>Why a record over the codes rather than an interface</h2>
+ *
+ * A code added to `PLEDGE_FAILURE_CODES` without a sentence beside it is then a compile
+ * error here, not a refusal that renders an empty alert on the screen where the money is.
+ * That is the same argument `CheckoutCopy`'s header makes about being exhaustive and typed,
+ * and it matters more for these: a validation message that does not appear leaves a form
+ * that will not submit, and a refusal that does not appear leaves a backer who cannot tell
+ * whether they were charged.
+ */
+export interface PledgeFailureCopy {
+  /** Not a refusal at all: the service was never reached. */
+  readonly unreachable: FailureWording;
+  readonly signedOut: FailureWording;
+  /**
+   * For a code this build has never heard of, AND ONLY WHEN THE SERVICE SENT NO PROSE.
+   *
+   * Its own `title` and `detail` are preferred where it wrote them — see `describeFailure`,
+   * which carries the reasoning: an unknown refusal is one where the service knows something
+   * the client does not.
+   */
+  readonly unknown: FailureWording;
+  readonly codes: Readonly<Record<PledgeFailureCode, FailureWording>>;
+}
+
+/** Every code's pair, read from `checkout.failures.codes`. */
+function failureCopyFrom(t: CheckoutTranslator): PledgeFailureCopy {
+  const pair = (path: string): FailureWording => ({
+    title: t(`${path}.title`),
+    detail: t(`${path}.detail`),
+  });
+
+  return {
+    unreachable: pair('failures.unreachable'),
+    signedOut: pair('failures.signedOut'),
+    unknown: pair('failures.unknown'),
+    codes: Object.fromEntries(
+      PLEDGE_FAILURE_CODES.map((code) => [code, pair(`failures.codes.${code}`)]),
+    ) as Readonly<Record<PledgeFailureCode, FailureWording>>,
+  };
 }
 
 /**
@@ -361,5 +423,6 @@ export function checkoutCopyFrom(t: CheckoutTranslator): CheckoutCopy {
       belowRewardPrice: String(t.raw('errors.belowRewardPrice')),
       destinationUnpriced: String(t.raw('errors.destinationUnpriced')),
     },
+    failures: failureCopyFrom(t),
   };
 }

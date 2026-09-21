@@ -3346,6 +3346,94 @@
       "belowRewardPrice": "Bu ödül {price} değerinde. Bu kadar ya da daha fazlasını verin veya daha ucuz bir ödül seçin.",
       "destinationUnpriced": "Üretici bu varış noktası için {lines} teslimat ücreti belirlememiş. Başka bir yer seçin ya da bunu desteğinizden çıkarın."
     },
+    "failures": {
+      "unreachable": {
+        "title": "Servise ulaşılamadı",
+        "detail": "İstek gitmedi ya da yanıt gelmedi. Bağlantınızı denetleyip yeniden deneyin — yeniden denemek güvenlidir ve iki kez destek gönderemez."
+      },
+      "signedOut": {
+        "title": "Giriş yapmadınız",
+        "detail": "Giriş yapıp yeniden başlayın. Hiçbir şey rezerve edilmedi."
+      },
+      "unknown": {
+        "title": "Bu işe yaramadı",
+        "detail": "Servis isteği reddetti ve nedenini söylemedi. Hiçbir şey rezerve edilmedi."
+      },
+      "codes": {
+        "REWARD_SOLD_OUT": {
+          "title": "Bu ödül az önce tükendi",
+          "detail": "Siz seçerken sonuncusunu bir başkası aldı. Hiçbir şey rezerve edilmedi."
+        },
+        "PLEDGE_ALREADY_EXISTS": {
+          "title": "Bu kampanyayı zaten destekliyorsunuz",
+          "detail": "Kampanya başına bir destek. Seçiminizi değiştirmek için hâlihazırdaki desteğinizi açıp düzenleyin."
+        },
+        "IDEMPOTENCY_KEY_REUSED": {
+          "title": "Bu istek bir öncekiyle örtüşmedi",
+          "detail": "Hiçbir şey rezerve edilmedi. Yeniden deneyin."
+        },
+        "SHIPPING_DESTINATION_UNPRICED": {
+          "title": "Üretici oraya gönderim yapmıyor",
+          "detail": "Orası için bir teslimat ücreti belirlenmemiş, dolayısıyla sizden tahsil edilecek dürüst bir tutar yok. Başka bir yer seçin ya da kargoyla giden ürünü çıkarın."
+        },
+        "CONTRIBUTION_BELOW_REWARD_PRICE": {
+          "title": "Bu, ödülün fiyatından az",
+          "detail": "En azından seçtiğiniz kademenin fiyatını verin ya da daha ucuz birini seçin."
+        },
+        "PROJECT_NOT_LIVE": {
+          "title": "Bu kampanya destek almıyor",
+          "detail": "Kapanmış ya da henüz açılmamış olabilir. Hiçbir şey değişmedi."
+        },
+        "PLEDGE_CANNOT_BE_CANCELLED": {
+          "title": "Onaylanmış bir destek geri çekilemez",
+          "detail": "Bu desteği artırabilirsiniz ama iptal edemezsiniz. Hiçbir şey değişmedi. Kampanya başarı eşiğinin altında biterse, askıya alınırsa ya da iptal edilirse her destekçiye iade yapılır."
+        },
+        "PLEDGE_DECREASE_NOT_ALLOWED": {
+          "title": "Onaylanmış bir destek yalnızca artırılabilir",
+          "detail": "Bu değişiklik desteğinizi düşürürdü; onaylanmış bir destek ise yalnızca yükselebilir. Hiçbir şey değişmedi."
+        },
+        "PLEDGE_NOT_EDITABLE": {
+          "title": "Bu destek artık değiştirilemez",
+          "detail": "Bir destekçinin düzenleyebileceği ya da geri çekebileceği aşamayı geçti. Hiçbir şey değişmedi. Bir terslik varsa sorulacak kişi kampanyanın üreticisidir."
+        },
+        "PLEDGE_NOT_FOUND": {
+          "title": "Böyle bir destek burada yok",
+          "detail": "İptal edilmiş olabilir ya da bağlantı yanlış olabilir. Kendi destekleriniz destekler sayfanızda listelenir."
+        },
+        "REWARD_NOT_FOUND": {
+          "title": "Bu ödül artık sunulmuyor",
+          "detail": "Üretici seçtiğiniz kademeyi kaldırmış. Başka birini seçin ya da ödülsüz devam edin. Hiçbir şey değişmedi."
+        },
+        "RESERVATION_EXPIRED": {
+          "title": "Ödülünüz yalnızca beş dakika tutuldu",
+          "detail": "Rezervasyon sona erdi ve stok kampanyaya geri döndü. Hiçbir şey onaylanmadı ve hiçbir kart kullanılmadı. Devam etmek için yeniden rezerve edin."
+        },
+        "AGREEMENT_REQUIRED": {
+          "title": "Desteklemenin ne demek olduğu değişti",
+          "detail": "Bu sayfa, bir desteğin ne olduğu ve ne olmadığına dair eski bir metni gösteriyordu. Hiçbir şey onaylanmadı ve hiçbir kart kullanılmadı. Sayfayı yeniden yükleyin, metni okuyun ve onaylayın."
+        },
+        "PLEDGE_NOT_DRAFT": {
+          "title": "Bu destek çoktan sonuçlanmış",
+          "detail": "Onaylanmış ya da iptal edilmiş, dolayısıyla onaylanacak bir şey kalmamış."
+        },
+        "IDEMPOTENT_REQUEST_IN_PROGRESS": {
+          "title": "İlk denemeniz hâlâ sürüyor",
+          "detail": "Aynı istek zaten yürütülüyor. Hiçbir şey iki kez desteklenmedi; biraz bekleyip yeniden sormak güvenlidir."
+        },
+        "IDEMPOTENCY_KEY_REQUIRED": {
+          "title": "Bu sayfa eksik bir istek gönderdi",
+          "detail": "Bu isteğin gereksindiği bir başlık eksikti; bu sizin değil, sitenin kusuru. Hiçbir şey rezerve edilmedi ve hiçbir kart kullanılmadı. İşe yarayacak tek şey sayfayı yeniden yüklemek."
+        },
+        "IDEMPOTENCY_KEY_INVALID": {
+          "title": "Bu sayfa bozuk bir istek gönderdi",
+          "detail": "Bu isteğin gereksindiği bir başlık, servisin kabul ettiği biçimde değildi; bu sizin değil, sitenin kusuru. Hiçbir şey rezerve edilmedi ve hiçbir kart kullanılmadı. İşe yarayacak tek şey sayfayı yeniden yüklemek."
+        },
+        "PLEDGE_MODIFIED": {
+          "title": "Siz onaylarken bu destek değişti",
+          "detail": "Ona önce başka bir şey yazdı — en sık görüleni, siz onaylarken beş dakikalık rezervasyonun dolmasıdır. Hiçbir şey onaylanmadı ve hiçbir kart kullanılmadı. Devam etmek için yeniden rezerve edin."
+        }
+      }
+    },
     "returned": {
       "paidTitle": "Desteğiniz ödendi",
       "paidBody": "Ödeme gerçekleşti ve kampanya desteğinizi aldı. Kampanya başarılı olmazsa tutarın tamamı iade edilir.",

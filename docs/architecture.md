@@ -6345,9 +6345,16 @@ it was written in.
 > is asking. `apps/web/README.md` records exactly which routes are key-based and which
 > are not.
 >
-> **What is still English, stated rather than left to be found.** The campaign editor and
-> `lib/pledges/failure.ts`'s twenty service refusals. Epic #78 is the list of them with a
-> count against each.
+> **What is still English, stated rather than left to be found.** The campaign editor.
+> Epic #78 is the list of what was on this line and how each surface came off it.
+>
+> **The refusal table came off it in #91.** The twenty sentences the service says no with
+> are `checkout.failures` now, read by the checkout, the pledge editor and the pledge
+> manager. `lib/pledges/failure.ts` keeps what is behaviour rather than prose — the recovery
+> each code calls for, the control it is about, whether the idempotency key must be retired
+> — because a module-level table is evaluated before any request exists and cannot read a
+> catalogue. It takes the words as an argument, which is the shape `lib/dashboard/clock.ts`
+> and `lib/pledges/backer.ts` already had.
 >
 > **The public report dialog came off it in #85, by deleting rather than translating.** It
 > is the one surface on that list a signed-out stranger reaches, and the nine reasons it
@@ -6379,14 +6386,13 @@ it was written in.
 > editor getting a `settings.profile` group of its own: they describe the same six
 > fields, and two vocabularies for one thing drift the first time either is edited.
 >
-> **The refusal table is the one entry on that list that is not a screen, and the one
-> that was not found by reading the list.** `checkout.errors` covers the checkout form's
-> own validation, so both ends read as translated; what neither covers is what the
-> **service** says when it refuses — "That reward has just gone", "This campaign is not
-> taking pledges" — which three screens render in English. A backer who chose
-> Azerbaijani meets a translated form that refuses them in English at the moment
-> something went wrong with their money. #91 carries it; it surfaced while #81 was
-> translating the panels that draw it.
+> **It was the one entry on that list that was not a screen, and the one that was not
+> found by reading the list.** `checkout.errors` covers the checkout form's own validation,
+> so both ends read as translated; what neither covered was what the **service** says when
+> it refuses — "That reward has just gone", "This campaign is not taking pledges" — which
+> three screens rendered in English. A backer who chose Azerbaijani met a translated form
+> that refused them in English at the moment something went wrong with their money. It
+> surfaced while #81 was translating the panels that draw it.
 >
 > **The screens somebody secures or closes an account with came off it in #80.** Two-factor
 > enrolment — including "this is the only time these are shown", the sentence standing

@@ -220,7 +220,7 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorPro
         setCatalogueFailure(null);
       } catch (cause) {
         if (controller.signal.aborted) return;
-        setCatalogueFailure(describeFailure(cause));
+        setCatalogueFailure(describeFailure(cause, copy.failures));
       }
     })();
 
@@ -279,7 +279,7 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorPro
       onSaved(next);
       setSaved(true);
     } catch (cause) {
-      const described = describeFailure(cause);
+      const described = describeFailure(cause, copy.failures);
       /* Only ever for the two cases `lib/pledges/idempotency.ts` names — a spent key, or a
          reservation that has gone. Retiring anywhere else turns a safe retry into a second
          write. */

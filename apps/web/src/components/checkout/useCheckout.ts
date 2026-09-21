@@ -4,6 +4,7 @@ import Decimal from 'decimal.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { parseAmount, toMoney, type AmountParse } from '../../lib/money';
 import { describeFailure, type CheckoutFailure } from '../../lib/pledges/failure';
+import type { PledgeFailureCopy } from '../../lib/i18n/checkout-copy';
 import { IdempotencyKeyring } from '../../lib/pledges/idempotency';
 import {
   createPledgeDraft,
@@ -122,12 +123,15 @@ function wait(ms: number): Promise<void> {
  * the same and nothing retires it here. That is the whole guarantee: a retry
  * under a fresh key would be a second pledge.
  */
-async function attemptWithRetry<T>(run: () => Promise<T>): Promise<Attempted<T>> {
+async function attemptWithRetry<T>(
+  run: () => Promise<T>,
+  copy: PledgeFailureCopy,
+): Promise<Attempted<T>> {
   for (let retries = 0; ; retries += 1) {
     try {
       return { ok: true, value: await run() };
     } catch (cause) {
-      const failure = describeFailure(cause);
+      const failure = describeFailure(cause, copy);
       if (failure.recovery !== 'wait-and-retry' || retries >= IN_PROGRESS_RETRY_LIMIT) {
         return { ok: false, failure };
       }
@@ -236,6 +240,15 @@ export function useCheckout(
    * scrolled past.
    */
   backerAgreementVersion: number | null = null,
+  /**
+   * The words a refusal is rendered with — `checkout.failures`, resolved on the server (#91).
+   *
+   * A parameter rather than a lookup, for the reason every client component in this
+   * application takes its copy as a prop: a hook cannot call `getTranslations`, and
+   * `lib/pledges/failure.ts` is a module-level table that is evaluated before any request
+   * exists. `CheckoutView` already holds the whole `CheckoutCopy` and passes this half down.
+   */
+  failures: PledgeFailureCopy,
 ): CheckoutState {
   const [catalogue, setCatalogue] = useState<PublicRewardList | null>(null);
   const [catalogueStatus, setCatalogueStatus] = useState<CatalogueStatus>('loading');
@@ -300,7 +313,7 @@ export function useCheckout(
       } catch (cause) {
         if (controller.signal.aborted || wasAborted(cause)) return;
 
-        setCatalogueFailure(describeFailure(cause));
+        setCatalogueFailure(describeFailure(cause, failures));
         setCatalogueStatus('failed');
       }
     })();
@@ -473,8 +486,9 @@ export function useCheckout(
       setFailure(null);
 
       void (async () => {
-        const outcome = await attemptWithRetry(() =>
-          createPledgeDraft(body, keyring.current.keyFor(body)),
+        const outcome = await attemptWithRetry(
+          () => createPledgeDraft(body, keyring.current.keyFor(body)),
+          failures,
         );
 
         if (outcome.ok) {
@@ -518,12 +532,14 @@ export function useCheckout(
     setFailure(null);
 
     void (async () => {
-      const outcome = await attemptWithRetry(() =>
-        payForPledge(
-          current.id,
-          { acknowledgedAgreementVersion, ...paymentReturnFor(current.id) },
-          keyring.current.keyFor(intent),
-        ),
+      const outcome = await attemptWithRetry(
+        () =>
+          payForPledge(
+            current.id,
+            { acknowledgedAgreementVersion, ...paymentReturnFor(current.id) },
+            keyring.current.keyFor(intent),
+          ),
+        failures,
       );
 
       if (outcome.ok) {

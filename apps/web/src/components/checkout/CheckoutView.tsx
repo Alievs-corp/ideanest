@@ -200,7 +200,13 @@ export function CheckoutView({
   copy,
   backerAgreementVersion = null,
 }: CheckoutViewProps) {
-  const checkout = useCheckout(projectId, secretTokens, initialRewardId, backerAgreementVersion);
+  const checkout = useCheckout(
+    projectId,
+    secretTokens,
+    initialRewardId,
+    backerAgreementVersion,
+    copy.failures,
+  );
   const clock = useReservationClock(checkout.pledge?.reservationExpiresAt);
 
   /*
