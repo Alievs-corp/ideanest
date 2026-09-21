@@ -3,6 +3,7 @@
 import { Link } from '../../i18n/navigation';
 import { Checkbox, Field, Radio, RadioGroup, TextInput, Textarea } from '@ideanest/ui';
 import type { SurveyQuestion } from '../../lib/surveys/api';
+import type { SurveyQuestionCopy } from '../../lib/i18n/surveys-copy';
 
 /**
  * One question, drawn as whatever its type is — §4.8 PM-05.
@@ -25,6 +26,13 @@ import type { SurveyQuestion } from '../../lib/surveys/api';
  * reaches the right question with the wrong control; dropping the question means a backer who
  * cannot see what they are being asked and a creator who never finds out why. The first is
  * recoverable and the second is silent.
+ *
+ * <h2>The question is the creator's words; everything around it is the catalogue's</h2>
+ *
+ * A prompt, its help text and its choices were typed by a creator in whatever language they
+ * campaign in, and nothing here translates them. The two sentences this component supplies
+ * itself — why an address is not asked for here, and where it is asked for instead — come from
+ * the catalogue like every other word on the screen (issue #84).
  */
 
 export interface SurveyQuestionFieldProps {
@@ -35,6 +43,7 @@ export interface SurveyQuestionFieldProps {
   readonly error?: string | undefined;
   /** Where an ADDRESS question sends somebody. */
   readonly addressHref: string;
+  readonly copy: SurveyQuestionCopy;
 }
 
 export function SurveyQuestionField({
@@ -44,6 +53,7 @@ export function SurveyQuestionField({
   disabled,
   error,
   addressHref,
+  copy,
 }: SurveyQuestionFieldProps) {
   const hint = question.helpText ?? undefined;
   const single = value[0] ?? '';
@@ -53,14 +63,12 @@ export function SurveyQuestionField({
       <div className="rounded-xl border border-white/8 bg-surface-1 p-5">
         <p className="text-[15px] font-medium text-white">{question.prompt}</p>
         {hint !== undefined && <p className="mt-1 text-sm text-white/64">{hint}</p>}
-        <p className="mt-3 text-sm text-white/40">
-          A shipping address is not part of this form — it is held separately and encrypted.
-        </p>
+        <p className="mt-3 text-sm text-white/40">{copy.addressNote}</p>
         <Link
           href={addressHref}
           className="mt-3 inline-block rounded-sm text-[15px] text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
         >
-          Add or change your address
+          {copy.addressLink}
         </Link>
       </div>
     );

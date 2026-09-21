@@ -336,13 +336,21 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   campaigns" moved to `common.list` and `common.browseCampaigns`, because every list on
   the platform ends with the first and every empty one offers the second.
   `lib/i18n/signals-copy.ts` holds the shape and its two builders.
+- the backer survey screens (#84) — the list under `/account/surveys`, the card that
+  answers one survey, and the field that draws a question. One `SurveysCopy` is resolved
+  for the three of them, because they are one screen and three accessors would be three
+  reads of one namespace threaded through one tree. Two of the sentences are the reason
+  this group was worth more than its size: `card.savedBody` tells somebody that the
+  creator can see what they have just typed, and `question.addressNote` says why the one
+  answer that is not in the form is held separately and encrypted. "How many creators are
+  waiting" is a plural group rather than a ternary — the count is only known in the
+  browser, so `pluralise` picks the form. `lib/i18n/surveys-copy.ts` holds the shape.
 
 What is still English:
 
 | Surface | Where |
 |---|---|
 | The campaign editor | `components/campaign-editor` |
-| The backer survey screens | `components/surveys` (#84) |
 | The checkout and pledge refusal table | `lib/pledges/failure.ts` — twenty refusals the checkout and both pledge screens render (#91) |
 | The public report dialog | `components/moderation/ReportControl` |
 

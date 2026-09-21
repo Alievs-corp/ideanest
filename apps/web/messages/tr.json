@@ -443,6 +443,45 @@
         "savedBody": "Yukarıdaki rakamlar bu sayfanın aritmetiği değil, servisin kendisinindir. Hiçbir tahsilat yapılmadı — tahsilat kampanya başarıyla kapandığında olur."
       }
     },
+    "surveys": {
+      "list": {
+        "loading": "Anketleriniz yükleniyor",
+        "failedTitle": "Anketleriniz yüklenemedi",
+        "refused": "Servis isteği reddetti.",
+        "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "emptyTitle": "Yanıtlanacak bir şey yok",
+        "emptyBody": "Üretici, kampanyası fonlandıktan sonra bir anket gönderir — hangi beden, hangi renk ve nereye göndereceğini öğrenmek için.",
+        "waitingTitle": {
+          "one": "Bir üretici sizi bekliyor",
+          "few": "{count} üretici sizi bekliyor",
+          "many": "{count} üretici sizi bekliyor",
+          "other": "{count} üretici sizi bekliyor"
+        },
+        "waitingBody": "Yanıtlar gelmeden kampanya paketlenemez."
+      },
+      "card": {
+        "needsAnAnswer": "Yanıt bekliyor",
+        "answered": "Yanıtlandı",
+        "closed": "Kapandı",
+        "respondBy": "{time} tarihine kadar isteniyor.",
+        "noDate": "Bunun için bir tarih belirlenmedi.",
+        "answeredOn": "{time} tarihinde yanıtladınız.",
+        "closedTitle": "Bu anket kapandı",
+        "closedBody": "Üreticinin ihtiyacı olan bilgi elinde ve artık değişiklik almıyor. Yanıtlarınız, kaydedildikleri hâliyle aşağıda.",
+        "failedTitle": "Yanıtlarınız kaydedilmedi",
+        "refused": "Servis yanıtları reddetti.",
+        "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "savedTitle": "Kaydedildi",
+        "savedBody": "Üretici yanıtlarınızı görebilir. Anket açık olduğu sürece onları değiştirebilirsiniz.",
+        "required": "Bu soru zorunludur.",
+        "saving": "Kaydediliyor",
+        "submit": "Yanıtları kaydet"
+      },
+      "question": {
+        "addressNote": "Teslimat adresi bu formun parçası değil — ayrı ve şifrelenmiş olarak saklanır.",
+        "addressLink": "Adresinizi ekleyin veya değiştirin"
+      }
+    },
     "notifications": {
       "headline": {
         "PLEDGE_CONFIRMED": "{campaign} kampanyasına {amount} tutarındaki desteğiniz onaylandı",

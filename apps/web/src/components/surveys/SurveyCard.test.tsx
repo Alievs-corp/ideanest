@@ -4,6 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import { respondToSurvey, type BackerSurvey, type SurveyQuestion } from '../../lib/surveys/api';
 import { SurveyCard } from './SurveyCard';
+import { surveysCopyFrom } from '../../lib/i18n/surveys-copy';
+import { translatorFor } from '../../test-copy';
+
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #84.
+ *
+ * Retyping them here would give a test that passes whatever the catalogue says, and would
+ * still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = surveysCopyFrom(translatorFor('account.surveys'), translatorFor('common')).card;
 
 /**
  * §4.8's PM-05 and PM-06 — issue #289.
@@ -19,6 +29,9 @@ import { SurveyCard } from './SurveyCard';
  *   - **a closed survey is readable and not editable.** Hiding it would leave a backer unable
  *     to check what they said about a reward that has not arrived.
  *   - the control says "Save answers" both times, because PM-06 makes this one row that moves.
+ *   - **the privacy sentence is drawn rather than typed.** "The creator can see your answers"
+ *     tells somebody who reads what they have just written, and it comes out of the catalogue
+ *     so that it is there in four languages rather than in English alone (#84).
  */
 
 vi.mock('../../lib/surveys/api', async (importOriginal) => ({
@@ -67,8 +80,8 @@ afterEach(cleanup);
 
 describe('SurveyCard', () => {
   it('says in words, not only in colour, that an answer is owed', () => {
-    render(<SurveyCard survey={survey()} />);
-    expect(screen.getByText('Needs an answer')).toBeInTheDocument();
+    render(<SurveyCard survey={survey()} copy={COPY} />);
+    expect(screen.getByText(COPY.needsAnAnswer)).toBeInTheDocument();
   });
 
   it('sends the answers against the pledge the survey belongs to', async () => {
@@ -79,11 +92,12 @@ describe('SurveyCard', () => {
           pledgeId: 'pledge-9',
           questions: [question({ id: 'q1', prompt: 'Which colour?', type: 'CHOICE', choices: ['Blue', 'Red'] })],
         })}
+        copy={COPY}
       />,
     );
 
     await user.click(screen.getByRole('radio', { name: 'Blue' }));
-    await user.click(screen.getByRole('button', { name: 'Save answers' }));
+    await user.click(screen.getByRole('button', { name: COPY.submit }));
 
     expect(respondMock).toHaveBeenCalledWith('survey-1', 'pledge-9', [
       { questionId: 'q1', value: ['Blue'] },
@@ -97,12 +111,13 @@ describe('SurveyCard', () => {
         survey={survey({
           questions: [question({ id: 'q1', prompt: 'Your name for the credits', required: true })],
         })}
+        copy={COPY}
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Save answers' }));
+    await user.click(screen.getByRole('button', { name: COPY.submit }));
 
-    expect(screen.getByText('This one is required.')).toBeInTheDocument();
+    expect(screen.getByText(COPY.required)).toBeInTheDocument();
     expect(respondMock).not.toHaveBeenCalled();
   });
 
@@ -117,12 +132,16 @@ describe('SurveyCard', () => {
             question({ id: 'q2', prompt: 'Anything else?' }),
           ],
         })}
+        copy={COPY}
       />,
     );
 
-    expect(screen.getByRole('link', { name: /Add or change your address/u })).toHaveAttribute('href', '/en/pledges/pledge-9/address');
+    expect(screen.getByRole('link', { name: COPY.question.addressLink })).toHaveAttribute(
+      'href',
+      '/en/pledges/pledge-9/address',
+    );
 
-    await user.click(screen.getByRole('button', { name: 'Save answers' }));
+    await user.click(screen.getByRole('button', { name: COPY.submit }));
 
     // Only the answerable question travels. A row of empty values would be a record that
     // somebody answered nothing, which is a different claim from having no row.
@@ -140,11 +159,12 @@ describe('SurveyCard', () => {
           questions: [question({ id: 'q1', prompt: 'Which colour?' })],
           answers: [{ questionId: 'q1', value: ['Blue'] }],
         })}
+        copy={COPY}
       />,
     );
 
-    expect(screen.getByText('This survey is closed')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Save answers' })).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.closedTitle)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.submit })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Which colour?')).toBeDisabled();
     expect(screen.getByLabelText('Which colour?')).toHaveValue('Blue');
   });
@@ -153,11 +173,14 @@ describe('SurveyCard', () => {
     respondMock.mockRejectedValue(new ApiError(409, { detail: 'This survey has just closed.' }));
     const user = userEvent.setup();
     render(
-      <SurveyCard survey={survey({ questions: [question({ id: 'q1', prompt: 'Anything else?' })] })} />,
+      <SurveyCard
+        survey={survey({ questions: [question({ id: 'q1', prompt: 'Anything else?' })] })}
+        copy={COPY}
+      />,
     );
 
     await user.type(screen.getByLabelText('Anything else?'), 'A note');
-    await user.click(screen.getByRole('button', { name: 'Save answers' }));
+    await user.click(screen.getByRole('button', { name: COPY.submit }));
 
     expect(await screen.findByText('This survey has just closed.')).toBeInTheDocument();
     expect(screen.getByLabelText('Anything else?')).toHaveValue('A note');
@@ -166,12 +189,16 @@ describe('SurveyCard', () => {
   it('still says “Save answers” after a save, because this is one row that moves', async () => {
     const user = userEvent.setup();
     render(
-      <SurveyCard survey={survey({ questions: [question({ id: 'q1', prompt: 'Anything else?' })] })} />,
+      <SurveyCard
+        survey={survey({ questions: [question({ id: 'q1', prompt: 'Anything else?' })] })}
+        copy={COPY}
+      />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Save answers' }));
+    await user.click(screen.getByRole('button', { name: COPY.submit }));
 
-    expect(await screen.findByText('Saved')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save answers' })).toBeInTheDocument();
+    expect(await screen.findByText(COPY.savedTitle)).toBeInTheDocument();
+    expect(await screen.findByText(COPY.savedBody)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.submit })).toBeInTheDocument();
   });
 });
