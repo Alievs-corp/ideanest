@@ -351,6 +351,67 @@
         "saving": "Yadda saxlanılır"
       }
     },
+    "pledges": {
+      "states": {
+        "DRAFT": "Tamamlanmayıb",
+        "CONFIRMED": "Təsdiqlənib",
+        "EXPIRED": "Vaxtı bitib",
+        "CANCELED_BY_BACKER": "Sizin tərəfinizdən ləğv edilib",
+        "CANCELED_BY_PROJECT": "Müəllif tərəfindən ləğv edilib",
+        "CHARGE_PENDING": "Ödəniş gedir",
+        "CHARGE_FAILED": "Ödəniş alınmadı",
+        "COLLECTED": "Ödənilib",
+        "DROPPED": "Kənarlaşdırılıb",
+        "REFUNDED": "Geri qaytarılıb",
+        "CHARGEBACK": "Geri tələb edilib",
+        "FULFILLED": "Çatdırılıb"
+      },
+      "latePledge": "Gecikmiş dəstək",
+      "anonymous": "Anonim",
+      "list": {
+        "loading": "Dəstəkləriniz yüklənir",
+        "failedTitle": "Dəstəkləriniz yüklənə bilmədi",
+        "emptyTitle": "Hələ heç nəyi dəstəkləməmisiniz",
+        "emptyBody": "Etdiyiniz hər dəstək burada görünür — nə seçdiyiniz və kampaniya bağlananda nə qədər tutulacağı ilə birlikdə.",
+        "browse": "Kampaniyalara bax",
+        "noReward": "Mükafatsız dəstək",
+        "byCreator": "müəllif: {creator}",
+        "cancelledAt": "{time} tarixində ləğv edilib",
+        "confirmedAt": "{time} tarixində təsdiqlənib",
+        "collected": "tutulub",
+        "toBeCollected": "kampaniya bağlananda tutulacaq",
+        "loadingMore": "Yüklənir",
+        "showMore": "Daha çox göstər",
+        "nextPageFailed": "Növbəti səhifə yüklənmədi"
+      },
+      "manager": {
+        "loading": "Bu dəstək yüklənir",
+        "unreadableTitle": "Bu dəstək oxuna bilmədi",
+        "unreadableBody": "Xidmət cavab vermədi. Bir azdan yenidən cəhd edin.",
+        "allPledges": "Bütün dəstəkləriniz",
+        "campaignUnnamed": "Bu dəstəyin kampaniyası yüklənə bilmədi",
+        "confirmedAt": "{time} tarixində təsdiqlənib",
+        "withdrawnAt": "{time} tarixində geri götürülüb",
+        "whereGoing": "Bu mükafatın hara gedəcəyi",
+        "supplementsHeading": "Kampaniya bağlandıqdan sonra alınanlar",
+        "upgrade": "Mükafatın yüksəldilməsi",
+        "extraAddons": "Əlavə seçimlər",
+        "supplementsNote": "Yuxarıdakı dəstəkdən ayrıca tutulur və hələ heç tutulmayıb.",
+        "lockedTitle": "Bu dəstək artıq burada dəyişdirilə bilməz",
+        "lockedBody": "Dəstək verilərkən dəyişdirilə bilər, təsdiqləndikdən sonra isə — kampaniya dəstək qəbul etdiyi müddətdə — yalnız artırıla bilər, azaldıla və ya geri götürülə bilməz. Bunun vəziyyəti: {state}, ona görə həmin idarəetmələr təklif olunmur. Burada nəsə səhvdirsə, kampaniyanın müəllifinə müraciət edin."
+      },
+      "editor": {
+        "loadingRewards": "Mükafatlar yüklənir",
+        "heading": "Bu dəstəyi dəyiş",
+        "intro": "Kampaniyanın son tarixinə qədər seçdiklərinizi dəyişə bilərsiniz. Hələ heç nə tutulmayıb, ona görə dəyişiklik fərqi hesablamır, bütün dəstəyi yenidən qiymətləndirir.",
+        "anonymousHint": "Adınız kampaniyanın açıq dəstəkçi siyahısında və profilinizdə göstərilmir. Müəllif isə onu görür, çünki mükafatınızı göndərməlidir.",
+        "saving": "Saxlanılır",
+        "save": "Dəyişiklikləri saxla",
+        "noChanges": "Hələ heç nə dəyişdirilməyib.",
+        "savedTitle": "Dəstəyiniz yeniləndi",
+        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Heç nə tutulmayıb — tutulma kampaniya uğurla bağlananda baş verir."
+      }
+    },
     "notifications": {
       "headline": {
         "PLEDGE_CONFIRMED": "{campaign} kampaniyasına {amount} məbləğində dəstəyiniz təsdiqləndi",

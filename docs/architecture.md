@@ -6346,9 +6346,19 @@ it was written in.
 > are not.
 >
 > **What is still English, stated rather than left to be found.** The campaign editor,
-> the seven panels left under the account headings, and
-> `components/moderation/ReportControl` — the dialog a member of the public opens to
-> report a campaign. Epic #78 is the list of them with a count against each.
+> the five panels left under the account headings, `lib/pledges/failure.ts`'s twenty
+> service refusals, and `components/moderation/ReportControl` — the dialog a member of
+> the public opens to report a campaign. Epic #78 is the list of them with a count
+> against each.
+>
+> **The refusal table is the one entry on that list that is not a screen, and the one
+> that was not found by reading the list.** `checkout.errors` covers the checkout form's
+> own validation, so both ends read as translated; what neither covers is what the
+> **service** says when it refuses — "That reward has just gone", "This campaign is not
+> taking pledges" — which three screens render in English. A backer who chose
+> Azerbaijani meets a translated form that refuses them in English at the moment
+> something went wrong with their money. #91 carries it; it surfaced while #81 was
+> translating the panels that draw it.
 >
 > **The screens somebody secures or closes an account with came off it in #80.** Two-factor
 > enrolment — including "this is the only time these are shown", the sentence standing
@@ -6358,6 +6368,14 @@ it was written in.
 > credential panels beside them already did. `deviceNameOf` took its last two English words
 > as an argument with them: a browser is called Chrome in every language, but "Chrome **on**
 > macOS" is a preposition, and two of the four languages put the platform first.
+>
+> **The pledge panels came off it in #81.** The list, one pledge's own screen, the editor
+> on it, and §6.2's twelve pledge states — a third module-level table that took its words
+> as an argument, after the countdown and the survey question types. The editor is the
+> checkout's form over a pledge that already exists, so its field, its hints and its four
+> quote refusals are the checkout's words: `components/checkout/refusals.ts` is now the
+> one place either screen turns a refusal into a sentence, rather than two wordings of
+> "This reward costs {price}" on two forms that are visibly the same.
 >
 > **The creator dashboard came off that list in #79.** All five panels under
 > `/projects/[id]/dashboard` draw from the catalogue: the overview and its countdown,

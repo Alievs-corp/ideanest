@@ -14,6 +14,9 @@ import {
 import { formatMoney } from '../../lib/money';
 import { formatExactTime } from '../../lib/time';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { PledgeListCopy } from '../../lib/i18n/pledges-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import type { Locale } from '../../lib/i18n/locale';
 
 /**
  * Every pledge this account has made — the way in to §4.5's PL-09 and PL-10. Issue #287.
@@ -65,14 +68,29 @@ function stateVariant(state: string): 'default' | 'success' | 'warning' | 'dange
   return STATE_VARIANT[state] ?? 'default';
 }
 
-/** The instant that best describes where a pledge is, or null when none of them is set. */
-function momentOf(pledge: BackerPledgeSummary): { readonly label: string; readonly at: string } | null {
-  if (pledge.canceledAt != null) return { label: 'Cancelled', at: pledge.canceledAt };
-  if (pledge.confirmedAt != null) return { label: 'Confirmed', at: pledge.confirmedAt };
+/**
+ * The instant that best describes where a pledge is, as a finished sentence.
+ *
+ * A whole sentence per case rather than a label joined to a time: "Confirmed" followed by a
+ * date only reads as English, and two of the four languages put the date first. It returns
+ * null when neither instant is set, which is a pledge with nothing to say about when.
+ */
+function momentOf(pledge: BackerPledgeSummary, copy: PledgeListCopy, locale: Locale): string | null {
+  if (pledge.canceledAt != null) {
+    return fillPlaceholders(copy.cancelledAt, { time: formatExactTime(pledge.canceledAt, locale) });
+  }
+  if (pledge.confirmedAt != null) {
+    return fillPlaceholders(copy.confirmedAt, { time: formatExactTime(pledge.confirmedAt, locale) });
+  }
   return null;
 }
 
-export function PledgeList() {
+export interface PledgeListProps {
+  /** Every word this list draws, resolved on the server — #81. */
+  readonly copy: PledgeListCopy;
+}
+
+export function PledgeList({ copy }: PledgeListProps) {
   const locale = useRouteLocale();
   const { status, items, hasMore, loadingMore, error, loadMore } = useCursorList<BackerPledgeSummary>(
     useCallback((cursor, signal) => listMyPledges(cursor, signal), []),
@@ -82,7 +100,7 @@ export function PledgeList() {
 
   if (status === 'loading') {
     return (
-      <SkeletonGroup label="Loading your pledges" className="flex flex-col gap-3">
+      <SkeletonGroup label={copy.loading} className="flex flex-col gap-3">
         {[0, 1, 2].map((row) => (
           <Skeleton key={row} height="5.5rem" />
         ))}
@@ -92,7 +110,7 @@ export function PledgeList() {
 
   if (status === 'failed') {
     return (
-      <InlineAlert variant="danger" title="Your pledges could not be loaded">
+      <InlineAlert variant="danger" title={copy.failedTitle}>
         <p>{error}</p>
       </InlineAlert>
     );
@@ -102,11 +120,11 @@ export function PledgeList() {
     return (
       <EmptyState
         icon={<HeartHandshake aria-hidden="true" className="size-6" />}
-        title="You have not backed anything yet"
-        description="Every pledge you make appears here, with what you chose and what you will be charged when the campaign closes."
+        title={copy.emptyTitle}
+        description={copy.emptyBody}
         action={
           <Link href="/discover">
-            <Pill type="button">Browse campaigns</Pill>
+            <Pill type="button">{copy.browse}</Pill>
           </Link>
         }
       />
@@ -117,7 +135,7 @@ export function PledgeList() {
     <div className="flex flex-col gap-6">
       <ul className="flex list-none flex-col gap-3">
         {items.map((pledge) => {
-          const moment = momentOf(pledge);
+          const moment = momentOf(pledge, copy, locale);
 
           return (
             <li
@@ -137,23 +155,25 @@ export function PledgeList() {
                 <p className="mt-1 text-sm text-white/64">
                   {/* PL-02: a pledge with no reward is a first-class choice and is named as
                       one, rather than left as a blank where a title would be. */}
-                  {pledge.rewardTitle ?? 'Support, with no reward'}
+                  {pledge.rewardTitle ?? copy.noReward}
                 </p>
 
                 <p className="mt-1 text-sm text-white/40">
-                  by {pledge.project.creatorSlug}
+                  {fillPlaceholders(copy.byCreator, { creator: pledge.project.creatorSlug })}
                   {moment !== null && (
                     <>
                       {' · '}
-                      {moment.label} {formatExactTime(moment.at, locale)}
+                      {moment}
                     </>
                   )}
                 </p>
 
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <Tag variant={stateVariant(pledge.state)}>{pledgeStateLabel(pledge.state)}</Tag>
-                  {pledge.isAnonymous && <Tag>Anonymous</Tag>}
-                  {pledge.latePledge && <Tag>Late pledge</Tag>}
+                  <Tag variant={stateVariant(pledge.state)}>
+                    {pledgeStateLabel(pledge.state, copy.states)}
+                  </Tag>
+                  {pledge.isAnonymous && <Tag>{copy.anonymous}</Tag>}
+                  {pledge.latePledge && <Tag>{copy.latePledge}</Tag>}
                 </div>
               </div>
 
@@ -169,8 +189,8 @@ export function PledgeList() {
                 */}
                 <p className="mt-1 text-xs text-white/40">
                   {pledge.state === 'COLLECTED' || pledge.state === 'FULFILLED'
-                    ? 'collected'
-                    : 'to be collected when the campaign closes'}
+                    ? copy.collected
+                    : copy.toBeCollected}
                 </p>
               </div>
             </li>
@@ -181,13 +201,13 @@ export function PledgeList() {
       {hasMore && (
         <div>
           <Pill type="button" variant="outline" disabled={loadingMore} onClick={loadMore}>
-            {loadingMore ? 'Loading' : 'Show more'}
+            {loadingMore ? copy.loadingMore : copy.showMore}
           </Pill>
         </div>
       )}
 
       {error !== null && (
-        <InlineAlert variant="danger" title="The next page did not load">
+        <InlineAlert variant="danger" title={copy.nextPageFailed}>
           <p>{error}</p>
         </InlineAlert>
       )}

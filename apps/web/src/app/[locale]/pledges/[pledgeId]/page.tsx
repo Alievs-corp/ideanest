@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { AccountPageHeader } from '../../../../components/account/AccountPageHeader';
 import { PledgeManager } from '../../../../components/pledges/PledgeManager';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
-import { checkoutCopy } from '../../../../lib/i18n/shell-copy.server';
+import { checkoutCopy, pledgeManagerCopy } from '../../../../lib/i18n/shell-copy.server';
 import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -44,15 +44,22 @@ export default async function PledgePage({
 }: {
   params: Promise<{ pledgeId: string }>;
 }) {
-  const { pledgeId } = await params;
-  const t = await getTranslations('account.pages.pledgeDetail');
+  // Words, not data: the manager and the editor under it are client islands, so the route
+  // resolves both vocabularies — this screen's own, and the checkout's, which the editor's
+  // field, hints and refusals come from.
+  const [{ pledgeId }, t, checkout, pledges] = await Promise.all([
+    params,
+    getTranslations('account.pages.pledgeDetail'),
+    checkoutCopy(),
+    pledgeManagerCopy(),
+  ]);
 
   return (
     <>
       <AccountPageHeader title={t('title')}>{t('intro')}</AccountPageHeader>
 
       <div className="mt-8">
-        <PledgeManager pledgeId={pledgeId} copy={await checkoutCopy()} />
+        <PledgeManager pledgeId={pledgeId} copy={checkout} pledges={pledges} />
       </div>
     </>
   );

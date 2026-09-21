@@ -351,6 +351,67 @@
         "saving": "Saving"
       }
     },
+    "pledges": {
+      "states": {
+        "DRAFT": "Not finished",
+        "CONFIRMED": "Confirmed",
+        "EXPIRED": "Expired",
+        "CANCELED_BY_BACKER": "Cancelled by you",
+        "CANCELED_BY_PROJECT": "Cancelled by the creator",
+        "CHARGE_PENDING": "Payment in progress",
+        "CHARGE_FAILED": "Payment failed",
+        "COLLECTED": "Paid",
+        "DROPPED": "Dropped",
+        "REFUNDED": "Refunded",
+        "CHARGEBACK": "Charged back",
+        "FULFILLED": "Delivered"
+      },
+      "latePledge": "Late pledge",
+      "anonymous": "Anonymous",
+      "list": {
+        "loading": "Loading your pledges",
+        "failedTitle": "Your pledges could not be loaded",
+        "emptyTitle": "You have not backed anything yet",
+        "emptyBody": "Every pledge you make appears here, with what you chose and what you will be charged when the campaign closes.",
+        "browse": "Browse campaigns",
+        "noReward": "Support, with no reward",
+        "byCreator": "by {creator}",
+        "cancelledAt": "Cancelled {time}",
+        "confirmedAt": "Confirmed {time}",
+        "collected": "collected",
+        "toBeCollected": "to be collected when the campaign closes",
+        "loadingMore": "Loading",
+        "showMore": "Show more",
+        "nextPageFailed": "The next page did not load"
+      },
+      "manager": {
+        "loading": "Loading this pledge",
+        "unreadableTitle": "This pledge could not be read",
+        "unreadableBody": "The service did not answer. Try again in a moment.",
+        "allPledges": "All your pledges",
+        "campaignUnnamed": "This pledge’s campaign could not be loaded",
+        "confirmedAt": "Confirmed {time}",
+        "withdrawnAt": "Withdrawn {time}",
+        "whereGoing": "Where this reward is going",
+        "supplementsHeading": "Bought after the campaign closed",
+        "upgrade": "Reward upgrade",
+        "extraAddons": "Extra add-ons",
+        "supplementsNote": "Charged separately from the pledge above, and not yet charged at all.",
+        "lockedTitle": "This pledge can no longer be changed here",
+        "lockedBody": "A pledge can be changed while it is being made, and raised — never lowered or withdrawn — after it is confirmed, while the campaign takes pledges. This one is {state}, so those controls are not offered. If something about it is wrong, the campaign’s creator is who to ask."
+      },
+      "editor": {
+        "loadingRewards": "Loading the rewards",
+        "heading": "Change this pledge",
+        "intro": "You can change what you chose until the campaign’s deadline. Nothing has been charged yet, so an edit re-prices the whole pledge rather than billing a difference.",
+        "anonymousHint": "Your name is kept off the campaign’s public backer list and off your profile. The creator still sees it, because they have to post your reward.",
+        "saving": "Saving",
+        "save": "Save changes",
+        "noChanges": "Nothing has been changed yet.",
+        "savedTitle": "Your pledge was updated",
+        "savedBody": "The figures above are the service’s, not this page’s arithmetic. Nothing has been charged — collection happens when the campaign closes successfully."
+      }
+    },
     "notifications": {
       "headline": {
         "PLEDGE_CONFIRMED": "Your pledge of {amount} to {campaign} is confirmed",

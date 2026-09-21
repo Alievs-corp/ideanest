@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authorizedFetch } from '../api/client';
 import { findMyPledge, listMyPledges, pledgeStateLabel } from './backer';
+import { pledgeListCopyFrom } from '../i18n/pledges-copy';
+import { translatorFor } from '../../test-copy';
 
 /**
  * The backer's own pledge list — §4.5 PL-09 and PL-10, issue #287.
@@ -142,13 +144,21 @@ describe('findMyPledge', () => {
   });
 });
 
+/*
+ * The twelve words, built from `messages/en.json` with the builder the route calls — #81.
+ *
+ * Retyping them here would give a test that passes whatever the catalogue says, and would
+ * still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const STATES = pledgeListCopyFrom(translatorFor('account.pledges')).states;
+
 describe('pledgeStateLabel', () => {
   it('says who cancelled, because the schema’s spelling is not a sentence', () => {
-    expect(pledgeStateLabel('CANCELED_BY_PROJECT')).toBe('Cancelled by the creator');
-    expect(pledgeStateLabel('CANCELED_BY_BACKER')).toBe('Cancelled by you');
+    expect(pledgeStateLabel('CANCELED_BY_PROJECT', STATES)).toBe('Cancelled by the creator');
+    expect(pledgeStateLabel('CANCELED_BY_BACKER', STATES)).toBe('Cancelled by you');
   });
 
   it('renders a state this build has never heard of as itself', () => {
-    expect(pledgeStateLabel('SOMETHING_NEW')).toBe('SOMETHING_NEW');
+    expect(pledgeStateLabel('SOMETHING_NEW', STATES)).toBe('SOMETHING_NEW');
   });
 });

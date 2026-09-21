@@ -159,33 +159,22 @@ export function pledgeHref(pledgeId: string): string {
   return `/pledges/${encodeURIComponent(pledgeId)}`;
 }
 
-/**
- * The twelve states of §6.2 as words a backer can read.
+/*
+ * The twelve states of §6.2 used to be a table here, in English — #81.
  *
- * Stated here rather than imported from `components/campaign-editor/EditorShell`, which holds
- * the sixteen **campaign** states: they are two different machines that happen to share four
- * spellings, and one table for both would be a table somebody eventually adds a campaign state
- * to and breaks a pledge screen with.
+ * They are `account.pledges.states` in the catalogue now, resolved by the route and handed
+ * to the panel that draws them. A module-level constant is evaluated before any request
+ * exists and cannot read a catalogue, which is the same reason `lib/moderation/describe.ts`
+ * takes its reasons as an argument. `lib/i18n/pledges-copy.ts` holds the shape.
  *
- * The wording is the backer's rather than the schema's. `CANCELED_BY_PROJECT` is not a thing
- * anybody did to themselves, and "Cancelled by the creator" is what actually happened.
+ * <p>The wording stayed the backer's rather than the schema's: `CANCELED_BY_PROJECT` is not
+ * a thing anybody did to themselves, and "Cancelled by the creator" is what actually
+ * happened. And they are still not the campaign editor's sixteen — two machines that share
+ * four spellings, and one table for both is a table somebody eventually breaks a pledge
+ * screen with.
  */
-export const PLEDGE_STATE_LABEL: Record<string, string> = {
-  DRAFT: 'Not finished',
-  CONFIRMED: 'Confirmed',
-  EXPIRED: 'Expired',
-  CANCELED_BY_BACKER: 'Cancelled by you',
-  CANCELED_BY_PROJECT: 'Cancelled by the creator',
-  CHARGE_PENDING: 'Payment in progress',
-  CHARGE_FAILED: 'Payment failed',
-  COLLECTED: 'Paid',
-  DROPPED: 'Dropped',
-  REFUNDED: 'Refunded',
-  CHARGEBACK: 'Charged back',
-  FULFILLED: 'Delivered',
-};
 
 /** A state this build has never heard of reads as itself rather than as an empty label. */
-export function pledgeStateLabel(state: string): string {
-  return PLEDGE_STATE_LABEL[state] ?? state;
+export function pledgeStateLabel(state: string, states: Readonly<Record<string, string>>): string {
+  return states[state] ?? state;
 }

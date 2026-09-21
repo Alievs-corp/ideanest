@@ -10,10 +10,10 @@ import {
   SkeletonGroup,
   TextInput,
 } from '@ideanest/ui';
-import { formatMoney, type AmountRejection } from '../../lib/money';
+import { formatMoney } from '../../lib/money';
 import type { PublicReward } from '../../lib/pledges/api';
 import type { CheckoutFailure } from '../../lib/pledges/failure';
-import { destinationOptions, toAmounts, type QuoteRefusal } from '../../lib/pledges/quote';
+import { destinationOptions, toAmounts } from '../../lib/pledges/quote';
 import { AddonChoice } from './AddonChoice';
 import { countryName, DestinationField } from './DestinationField';
 import { PaymentStep } from './PaymentStep';
@@ -22,6 +22,7 @@ import { RewardChoice } from './RewardChoice';
 import { NO_REWARD, useCheckout } from './useCheckout';
 import { useReservationClock } from './useReservationClock';
 import { type CheckoutCopy, fillPlaceholders } from '../../lib/i18n/checkout-copy';
+import { contributionMessage, refusalMessage } from './refusals';
 
 /**
  * The checkout — docs/architecture.md §4.5, PL-01 to PL-08 and PL-12.
@@ -78,53 +79,13 @@ function stepNames(copy: CheckoutCopy): Readonly<Record<Step, string>> {
   };
 }
 
-/**
- * `parseAmount`'s rejection reasons, worded for THIS field.
+/*
+ * `contributionMessage` and `refusalMessage` moved to `./refusals.ts` in #81.
  *
- * The parser returns a reason rather than a message precisely so that each field
- * can say what it means here: the same `not-positive` is "a goal has to be more
- * than nothing" on a campaign form and this on a pledge.
+ * `PledgeEditor` is this form over a pledge that already exists and had its own English
+ * copies of both. That file carries the argument for one home; nothing about either
+ * function changed on the way there.
  */
-function contributionMessage(
-  reason: AmountRejection,
-  minimum: string | null,
-  copy: CheckoutCopy,
-): string {
-  switch (reason) {
-    case 'empty':
-      return minimum === null
-        ? copy.errors.amountMissing
-        : fillPlaceholders(copy.errors.amountMissingMinimum, { minimum });
-    case 'comma':
-      return copy.errors.amountComma;
-    case 'not-a-number':
-      return copy.errors.amountNotANumber;
-    case 'too-many-decimals':
-      return copy.errors.amountPrecision;
-    case 'too-large':
-      return copy.errors.amountTooLarge;
-    case 'not-positive':
-      return copy.errors.amountTooSmall;
-  }
-}
-
-/** A quote refusal, worded for the control it belongs to. */
-function refusalMessage(refusal: QuoteRefusal, copy: CheckoutCopy): string {
-  switch (refusal.reason) {
-    case 'contribution-below-price':
-      return fillPlaceholders(copy.errors.belowRewardPrice, {
-        price: formatMoney(refusal.price),
-      });
-    case 'destination-missing':
-      return copy.errors.destinationMissing;
-    case 'destination-unpriced':
-      return fillPlaceholders(copy.errors.destinationUnpriced, {
-        lines: refusal.lines.join(', '),
-      });
-    case 'nothing-pledged':
-      return copy.errors.totalTooSmall;
-  }
-}
 
 /** The failure banner, with whatever the recovery for this code happens to be. */
 function FailureNotice({
