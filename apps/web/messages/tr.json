@@ -368,7 +368,7 @@
         "remove": "Çıkar",
         "removeLabel": "{name} kampanyasını kaydedilenlerden çıkar",
         "removalFailedTitle": "Çıkarılamadı",
-        "removalFailedBody": "“{name}” çıkarılamadı. Kampanya hâlâ kaydedilmiş durumda — birazdan tekrar deneyin."
+        "removalFailedBody": "«{name}» çıkarılamadı. Kampanya hâlâ kaydedilmiş durumda — birazdan tekrar deneyin."
       },
       "following": {
         "loading": "Takip ettiğiniz üreticiler yükleniyor",
@@ -393,9 +393,9 @@
         "CHARGE_PENDING": "Ödeme sürüyor",
         "CHARGE_FAILED": "Ödeme başarısız",
         "COLLECTED": "Ödendi",
-        "DROPPED": "Kapsam dışı bırakıldı",
+        "DROPPED": "Gerçekleşmedi",
         "REFUNDED": "İade edildi",
-        "CHARGEBACK": "Bankaca geri alındı",
+        "CHARGEBACK": "Banka üzerinden geri alındı",
         "FULFILLED": "Teslim edildi"
       },
       "latePledge": "Geç destek",
@@ -850,7 +850,7 @@
         "metaTitle": "E-posta şablonları",
         "metaDescription": "Platformun gönderdiği her mesajın metni ve ona yapılmış her düzenleme.",
         "title": "E-posta şablonları",
-        "intro": "Kodla gelen metin, biri onu yeniden yazmadıysa platformun gönderdiği metindir. Bir düzenleme yerinde bir şey değiştirmez, bir sürüm ekler, böylece “bu bildirim martta ne diyordu” sorusu yanıtlanabilir kalır."
+        "intro": "Kodla gelen metin, biri onu yeniden yazmadıysa platformun gönderdiği metindir. Bir düzenleme yerinde bir şey değiştirmez, bir sürüm ekler, böylece «bu bildirim martta ne diyordu» sorusu yanıtlanabilir kalır."
       },
       "emailTemplatesType": {
         "metaTitle": "E-posta metni",
@@ -861,7 +861,7 @@
         "metaTitle": "Ücretler",
         "metaDescription": "Platform ve işlem oranları, istisnaları ve platformun uyguladığı her koşul kümesi.",
         "title": "Ücretler",
-        "intro": "Bir ücreti değiştirmek, şimdiden başlayan yeni koşullar açar. Kapananlar ekranda kalır, çünkü “martta ne aldık” sorusuna §22.1 bir saklama kuralı bağlar."
+        "intro": "Bir ücreti değiştirmek, şimdiden başlayan yeni koşullar açar. Kapananlar ekranda kalır, çünkü «martta ne aldık» sorusuna §22.1 bir saklama kuralı bağlar."
       },
       "plans": {
         "metaTitle": "Planlar",
@@ -1235,7 +1235,7 @@
         "loadingList": "Metin yükleniyor",
         "readFailed": "Metin okunamadı.",
         "overriddenTitle": "Bu metin yeniden yazıldı",
-        "overriddenBody": "Sürüm {version} yayında ve platformun gönderdiği bu. Onu geri çekmek kodla gelen metni yeniden gönderir — sürümler her durumda saklanır, çünkü “bu bildirim martta ne diyordu” sorusunu eninde sonunda biri sorar.",
+        "overriddenBody": "Sürüm {version} yayında ve platformun gönderdiği bu. Onu geri çekmek kodla gelen metni yeniden gönderir — sürümler her durumda saklanır, çünkü «bu bildirim martta ne diyordu» sorusunu eninde sonunda biri sorar.",
         "shippedTitle": "Bu, kodla gelen metin",
         "shippedBody": "Hiçbir şey düzenlenmedi, bu yüzden platform kodla gelen metni gönderiyor. Düzenleme yerinde bir şey değiştirmez, bir sürüm ekler.",
         "shippedHeading": "Kodla gelen metin",
@@ -1750,7 +1750,7 @@
           "search": "Ara",
           "searching": "Aranıyor",
           "change": "Başkasını seç",
-          "noneFound": "“{term}” ile eşleşen hesap yok.",
+          "noneFound": "«{term}» ile eşleşen hesap yok.",
           "resultsLabel": "Eşleşen hesaplar",
           "failedTitle": "Dizinde arama yapılamadı"
         },
@@ -2478,7 +2478,7 @@
         "dismiss": {
           "title": "Bu şikayet reddedilsin mi?",
           "description": "{name} hakkındaki şikayet haksız olarak kaydedilir. Bu geri alınamaz.",
-          "body": "Retler de denetlenir. “Bu kampanya hakkındaki on dört şikayeti kim reddetti” bir soruşturmanın başladığı sorudur.",
+          "body": "Retler de denetlenir. «Bu kampanya hakkındaki on dört şikayeti kim reddetti» bir soruşturmanın başladığı sorudur.",
           "confirmLabel": "Şikayeti reddet",
           "busyLabel": "Reddediliyor",
           "noteLabel": "Not",
@@ -3086,7 +3086,7 @@
       "errorTitle": "Projeler yüklenemedi",
       "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
       "refused": "Servis bu isteği reddetti ve nedenini söylemedi. Süzgeçleri temizlemeyi deneyin.",
-      "emptyQueryTitle": "“{query}” ile eşleşen proje yok",
+      "emptyQueryTitle": "«{query}» ile eşleşen proje yok",
       "emptyFilteredTitle": "Bu süzgeçlerle eşleşen proje yok",
       "emptyTitle": "Henüz gösterilecek proje yok",
       "emptyQueryBody": "Platformda bu aramayla eşleşen bir şey yok. Yazımı denetleyin ya da daha kısa bir sözcük deneyin.",
@@ -3135,7 +3135,7 @@
       "unavailableAnnounce": "Öneriler kullanılamıyor. Yazdığınız şey yine de aranabilir.",
       "failedFallback": "Öneriler yüklenemedi. Yazdığınızı aramak için Enter'a basın.",
       "failedDetail": "{detail} Yazdığınızı aramak için Enter'a basın.",
-      "none": "“{query}” için öneri yok. Yine de aramak için Enter'a basın.",
+      "none": "«{query}» için öneri yok. Yine de aramak için Enter'a basın.",
       "kinds": {
         "campaign": "Kampanya",
         "category": "Kategori",
@@ -3227,14 +3227,14 @@
     },
     "search": {
       "title": "Arama",
-      "resultsTitle": "“{query}” için sonuçlar",
+      "resultsTitle": "«{query}» için sonuçlar",
       "prompt": "Aradığınızı yazın — bir kampanya, bir kategori ya da bir üretici. Ya da <feed>tüm akışa göz atın</feed> ve filtrelerle daraltın.",
       "count": "{count, plural, =0 {Hiçbir kampanya eşleşmedi} other {# kampanya}}",
       "countMore": "{count, plural, =0 {Hiçbir kampanya eşleşmedi} other {# kampanya, akışta daha fazlası var}}",
-      "emptyTitle": "“{query}” ile hiçbir şey eşleşmedi",
+      "emptyTitle": "«{query}» ile hiçbir şey eşleşmedi",
       "emptyBody": "Yazımı kontrol edin ya da daha kısa bir kelime deneyin. Akış, ifadeye göre değil kategoriye, duruma ve tutara göre daraltılabilir.",
       "emptyAction": "Akışa göz atın",
-      "gridLabel": "“{query}” için arama sonuçları"
+      "gridLabel": "«{query}» için arama sonuçları"
     }
   },
   "checkout": {
@@ -4340,10 +4340,10 @@
       "errorTitle": "Gönderilmedi",
       "refused": "Şikayet reddedildi.",
       "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
-      "detailRequired": "“Diğer” için bir cümle gerekir, yoksa moderatörün bakacağı bir şey olmaz.",
+      "detailRequired": "«Diğer» için bir cümle gerekir, yoksa moderatörün bakacağı bir şey olmaz.",
       "reasonLabel": "Nesi yanlış?",
       "detailLabel": "Moderatörün bilmesi gereken başka bir şey",
-      "detailHint": "“Diğer” dışında isteğe bağlı. Ne gördünüz ve nerede.",
+      "detailHint": "«Diğer» dışında isteğe bağlı. Ne gördünüz ve nerede.",
       "sending": "Gönderiliyor",
       "submit": "Şikayeti gönder",
       "descriptions": {
@@ -4835,8 +4835,8 @@
       "deductionsHeading": "Brütten ne düşüldü",
       "deductionsCaption": "Bu kampanyanın topladığı ile ödenecek tutar arasındaki tüm kesintiler",
       "grossCollected": "Brüt toplanan",
-      "platformFee": "Platform komisyonu",
-      "processingFee": "İşlem komisyonu",
+      "platformFee": "Platform ücreti",
+      "processingFee": "İşlem ücreti",
       "taxWithheld": "Kesilen vergi",
       "taxNote": "IdeaNest hiçbir vergi kesmiyor. Borcunuz sizinle vergi daireniz arasındadır.",
       "refunded": "Destekçilere iade edilen",

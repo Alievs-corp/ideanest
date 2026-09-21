@@ -368,7 +368,7 @@
         "remove": "Çıxar",
         "removeLabel": "{name} kampaniyasını saxlanmışlardan çıxar",
         "removalFailedTitle": "Çıxarıla bilmədi",
-        "removalFailedBody": "“{name}” çıxarıla bilmədi. Kampaniya hələ də saxlanılıb — bir azdan yenidən cəhd edin."
+        "removalFailedBody": "«{name}» çıxarıla bilmədi. Kampaniya hələ də saxlanılıb — bir azdan yenidən cəhd edin."
       },
       "following": {
         "loading": "İzlədiyiniz müəlliflər yüklənir",
@@ -393,7 +393,7 @@
         "CHARGE_PENDING": "Ödəniş gedir",
         "CHARGE_FAILED": "Ödəniş alınmadı",
         "COLLECTED": "Ödənilib",
-        "DROPPED": "Kənarlaşdırılıb",
+        "DROPPED": "Baş tutmayıb",
         "REFUNDED": "Geri qaytarılıb",
         "CHARGEBACK": "Geri tələb edilib",
         "FULFILLED": "Çatdırılıb"
@@ -850,7 +850,7 @@
         "metaTitle": "E-poçt şablonları",
         "metaDescription": "Platformanın göndərdiyi hər mesajın mətni və ona edilən hər redaktə.",
         "title": "E-poçt şablonları",
-        "intro": "Kodla gələn mətn, kimsə onu yenidən yazmayıbsa, platformanın göndərdiyidir. Redaktə heç nəyi yerində dəyişmir, versiya əlavə edir, ona görə “bu bildiriş martda nə deyirdi” sualı cavablana bilən qalır."
+        "intro": "Kodla gələn mətn, kimsə onu yenidən yazmayıbsa, platformanın göndərdiyidir. Redaktə heç nəyi yerində dəyişmir, versiya əlavə edir, ona görə «bu bildiriş martda nə deyirdi» sualı cavablana bilən qalır."
       },
       "emailTemplatesType": {
         "metaTitle": "E-poçt mətni",
@@ -861,7 +861,7 @@
         "metaTitle": "Komissiyalar",
         "metaDescription": "Platforma və emal dərəcələri, onların istisnaları və platformanın tətbiq etdiyi hər şərtlər dəsti.",
         "title": "Komissiyalar",
-        "intro": "Komissiyanı dəyişmək indidən başlayan yeni şərtlər açır. Bağlanmışlar ekranda qalır, çünki “martda nə tutmuşduq” sualına §22.1 saxlama qaydası bağlayır."
+        "intro": "Komissiyanı dəyişmək indidən başlayan yeni şərtlər açır. Bağlanmışlar ekranda qalır, çünki «martda nə tutmuşduq» sualına §22.1 saxlama qaydası bağlayır."
       },
       "plans": {
         "metaTitle": "Planlar",
@@ -1235,7 +1235,7 @@
         "loadingList": "Mətn yüklənir",
         "readFailed": "Mətni oxumaq mümkün olmadı.",
         "overriddenTitle": "Bu mətn yenidən yazılıb",
-        "overriddenBody": "Versiya {version} canlıdır və platformanın göndərdiyi budur. Onu geri götürmək kodla gələn mətni yenidən göndərir — versiyalar hər halda saxlanılır, çünki “bu bildiriş martda nə deyirdi” sualını kimsə mütləq verir.",
+        "overriddenBody": "Versiya {version} canlıdır və platformanın göndərdiyi budur. Onu geri götürmək kodla gələn mətni yenidən göndərir — versiyalar hər halda saxlanılır, çünki «bu bildiriş martda nə deyirdi» sualını kimsə mütləq verir.",
         "shippedTitle": "Bu, kodla gələn mətndir",
         "shippedBody": "Heç nə redaktə olunmayıb, ona görə platforma kodla gələn mətni göndərir. Redaktə heç nəyi yerində dəyişmir, versiya əlavə edir.",
         "shippedHeading": "Kodla gələn mətn",
@@ -1750,7 +1750,7 @@
           "search": "Axtar",
           "searching": "Axtarılır",
           "change": "Başqasını seç",
-          "noneFound": "“{term}” üzrə uyğun hesab yoxdur.",
+          "noneFound": "«{term}» üzrə uyğun hesab yoxdur.",
           "resultsLabel": "Uyğun hesablar",
           "failedTitle": "Kataloqda axtarış aparıla bilmədi"
         },
@@ -2478,7 +2478,7 @@
         "dismiss": {
           "title": "Bu şikayət rədd edilsin?",
           "description": "{name} haqqında şikayət əsassız kimi qeyd olunur. Bunu geri qaytarmaq mümkün deyil.",
-          "body": "Rədd qərarları da audit olunur. “Bu kampaniya haqqında on dörd şikayəti kim rədd etdi” sualı araşdırmanın başladığı sualdır.",
+          "body": "Rədd qərarları da audit olunur. «Bu kampaniya haqqında on dörd şikayəti kim rədd etdi» sualı araşdırmanın başladığı sualdır.",
           "confirmLabel": "Şikayəti rədd et",
           "busyLabel": "Rədd edilir",
           "noteLabel": "Qeyd",
@@ -3086,7 +3086,7 @@
       "errorTitle": "Layihələri yükləmək mümkün olmadı",
       "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
       "refused": "Xidmət bu sorğunu rədd etdi və səbəbini bildirmədi. Süzgəcləri təmizləməyə çalışın.",
-      "emptyQueryTitle": "“{query}” üzrə uyğun layihə yoxdur",
+      "emptyQueryTitle": "«{query}» üzrə uyğun layihə yoxdur",
       "emptyFilteredTitle": "Bu süzgəclərə uyğun layihə yoxdur",
       "emptyTitle": "Hələ göstəriləcək layihə yoxdur",
       "emptyQueryBody": "Platformada bu axtarışa uyğun heç nə yoxdur. Yazılışı yoxlayın və ya daha qısa söz sınayın.",
@@ -3135,7 +3135,7 @@
       "unavailableAnnounce": "Təkliflər əlçatan deyil. Yazdığınızı yenə də axtarmaq olar.",
       "failedFallback": "Təklifləri yükləmək mümkün olmadı. Yazdığınızı axtarmaq üçün Enter basın.",
       "failedDetail": "{detail} Yazdığınızı axtarmaq üçün Enter basın.",
-      "none": "“{query}” üzrə təklif yoxdur. Yenə də axtarmaq üçün Enter basın.",
+      "none": "«{query}» üzrə təklif yoxdur. Yenə də axtarmaq üçün Enter basın.",
       "kinds": {
         "campaign": "Kampaniya",
         "category": "Kateqoriya",
@@ -3227,14 +3227,14 @@
     },
     "search": {
       "title": "Axtarış",
-      "resultsTitle": "“{query}” üçün nəticələr",
+      "resultsTitle": "«{query}» üçün nəticələr",
       "prompt": "Axtardığınızı yazın — kampaniya, kateqoriya və ya müəllif. Ya da <feed>bütün lentə baxın</feed> və onu filtrlərlə daraltın.",
       "count": "{count, plural, =0 {Heç bir kampaniya uyğun gəlmədi} other {# kampaniya}}",
       "countMore": "{count, plural, =0 {Heç bir kampaniya uyğun gəlmədi} other {# kampaniya, lentdə daha çoxu var}}",
-      "emptyTitle": "“{query}” üzrə heç nə tapılmadı",
+      "emptyTitle": "«{query}» üzrə heç nə tapılmadı",
       "emptyBody": "Yazılışı yoxlayın və ya daha qısa bir söz sınayın. Lenti ifadə əvəzinə kateqoriya, status və məbləğ üzrə daraltmaq olar.",
       "emptyAction": "Lentə baxın",
-      "gridLabel": "“{query}” üçün axtarış nəticələri"
+      "gridLabel": "«{query}» üçün axtarış nəticələri"
     }
   },
   "checkout": {
@@ -4340,10 +4340,10 @@
       "errorTitle": "Göndərilmədi",
       "refused": "Şikayət rədd edildi.",
       "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
-      "detailRequired": "“Digər” üçün bir cümlə lazımdır, yoxsa moderatorun baxacağı heç nə olmur.",
+      "detailRequired": "«Digər» üçün bir cümlə lazımdır, yoxsa moderatorun baxacağı heç nə olmur.",
       "reasonLabel": "Burada nə səhvdir?",
       "detailLabel": "Moderatorun bilməli olduğu başqa nə var",
-      "detailHint": "İstəyə bağlıdır, “Digər” istisna olmaqla. Nə gördünüz və harada.",
+      "detailHint": "İstəyə bağlıdır, «Digər» istisna olmaqla. Nə gördünüz və harada.",
       "sending": "Göndərilir",
       "submit": "Şikayəti göndər",
       "descriptions": {

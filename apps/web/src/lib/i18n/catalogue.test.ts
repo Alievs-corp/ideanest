@@ -150,4 +150,66 @@ describe('the message catalogues', () => {
       }
     }
   });
+
+  it('quotes a phrase the way each language quotes one', () => {
+    /*
+     * ISSUE #94. English uses “…” and the other three use «…», and that was already the
+     * majority spelling in all four when the convention was written down. It was only the
+     * majority: Azerbaijani and Turkish carried thirteen curly-quoted strings each, mostly in
+     * the search results and the moderation forms, where a reader meets the two conventions
+     * one screen apart.
+     *
+     * It is not only typography. A quotation mark is where somebody else's words start, and a
+     * catalogue that marks that boundary two ways has a reader deciding which mark means it.
+     * Pinned here because it is the kind of drift no reviewer reports and every reviewer sees.
+     */
+    const CURLY = /[“”]/u;
+    const GUILLEMET = /[«»]/u;
+
+    for (const [key, message] of entries(CATALOGUES['en'])) {
+      expect(GUILLEMET.test(message), `en ${key} quotes with «» where “” is the convention`).toBe(
+        false,
+      );
+    }
+
+    for (const locale of SUPPORTED_LOCALES.filter((other) => other !== 'en')) {
+      for (const [key, message] of entries(CATALOGUES[locale])) {
+        expect(CURLY.test(message), `${locale} ${key} quotes with “” where «» is the convention`)
+          .toBe(false);
+      }
+    }
+  });
+
+  it('gives one ledger account one name, in each language', () => {
+    /*
+     * ISSUE #94, which predicted this one: "`fees.disclosure` already spells the same two fees
+     * in four languages — these must agree with it, and I matched them by eye rather than by
+     * test." They did not agree. Turkish called the same deduction `Platform komisyonu` on the
+     * creator's financial summary and `Platform ücreti` in the administration console's ledger
+     * and on the payout it produces.
+     *
+     * <h2>Why identity rather than a vocabulary check</h2>
+     *
+     * These are not two labels that happen to mean the same thing: `dashboard.finance` and
+     * `admin.money.account` name the SAME §7.2 account, read by the creator whose money it
+     * came out of and by the administrator answering them about it. If those two screens print
+     * different words, the support conversation is about which one is the real fee. A test can
+     * check that far and no further — whether the word is the right word is what a native
+     * speaker reads for, and a string equal to another string is at least one word rather
+     * than two.
+     */
+    const SAME: ReadonlyArray<readonly [string, string]> = [
+      ['dashboard.finance.platformFee', 'admin.money.account.platform_fee'],
+      ['dashboard.finance.platformFee', 'admin.screens.payouts.platformFee'],
+      ['dashboard.finance.processingFee', 'admin.money.account.psp_fee'],
+    ];
+
+    for (const locale of SUPPORTED_LOCALES) {
+      const messages = new Map(entries(CATALOGUES[locale]));
+
+      for (const [left, right] of SAME) {
+        expect(messages.get(left), `${locale}: ${left} against ${right}`).toBe(messages.get(right));
+      }
+    }
+  });
 });
