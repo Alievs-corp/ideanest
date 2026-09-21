@@ -6346,9 +6346,17 @@ it was written in.
 > are not.
 >
 > **What is still English, stated rather than left to be found.** The campaign editor,
-> the backer survey screens, `lib/pledges/failure.ts`'s twenty service refusals, and
+> `lib/pledges/failure.ts`'s twenty service refusals, and
 > `components/moderation/ReportControl` — the dialog a member of the public opens to
 > report a campaign. Epic #78 is the list of them with a count against each.
+>
+> **The backer survey screens came off it in #84.** The list under `/account/surveys`, the
+> card that answers one survey and the field that draws a question are one screen, so they
+> are handed one copy object rather than three. Two of those sentences are not hints: a
+> backer is told that the creator can see the answers they are typing, and that the one
+> answer this form does not take — a shipping address, §17.4's encrypted row against the
+> pledge — is held elsewhere. A reader who cannot read either is answering without having
+> been told, which is what made ten strings worth more than ten strings.
 >
 > **The saved-campaigns and following lists came off it in #83.** The two panels under
 > `/account/saved` and `/account/following` are one panel twice — a cursor-paginated list

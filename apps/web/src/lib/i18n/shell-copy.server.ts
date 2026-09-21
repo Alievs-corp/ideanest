@@ -44,6 +44,7 @@ import {
   followingListCopyFrom,
   savedListCopyFrom,
 } from './signals-copy';
+import { type SurveysCopy, surveysCopyFrom } from './surveys-copy';
 import { type PayoutPanelCopy, payoutPanelCopyFrom } from './payout-copy';
 import { type CampaignControlsCopy, campaignControlsCopyFrom } from './campaign-controls-copy';
 import type { PluralForms } from '@ideanest/ui';
@@ -392,6 +393,20 @@ export async function savedListCopy(): Promise<SignalListCopy> {
 export async function followingListCopy(): Promise<SignalListCopy> {
   return followingListCopyFrom(
     await getTranslations('account.signals'),
+    await getTranslations('common'),
+  );
+}
+
+/**
+ * The backer survey screens under `/account/surveys` — issue #84.
+ *
+ * One object for the list, the cards below it and the fields inside those: it is one screen,
+ * and three accessors would be three reads of one namespace threaded through one tree.
+ * `common` comes in for the empty state's way out, which every list on the platform shares.
+ */
+export async function surveysCopy(): Promise<SurveysCopy> {
+  return surveysCopyFrom(
+    await getTranslations('account.surveys'),
     await getTranslations('common'),
   );
 }

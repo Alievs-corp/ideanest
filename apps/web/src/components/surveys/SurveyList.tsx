@@ -6,6 +6,9 @@ import { ClipboardList } from 'lucide-react';
 import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import { listMySurveys, needsAnAnswer, type BackerSurvey } from '../../lib/surveys/api';
+import type { SurveysCopy } from '../../lib/i18n/surveys-copy';
+import { pluralise } from '../../lib/i18n/plurals';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { SurveyCard } from './SurveyCard';
 
 /**
@@ -28,8 +31,20 @@ import { SurveyCard } from './SurveyCard';
  * A survey arrives when a creator sends one, which is not an event this screen can be told
  * about — §4.10's notifications are. Polling would be a request a minute for a list that
  * changes a few times a year.
+ *
+ * <h2>The words arrive as a prop</h2>
+ *
+ * This is a client component and has to be, so it cannot read the catalogue itself — issue
+ * #84. The route resolves {@link SurveysCopy} once and hands the list its half; each card
+ * below is handed the other. `lib/i18n/surveys-copy.ts` carries the rest of that decision.
  */
-export function SurveyList() {
+
+export interface SurveyListProps {
+  readonly copy: SurveysCopy;
+}
+
+export function SurveyList({ copy }: SurveyListProps) {
+  const locale = useRouteLocale();
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed' | 'signed-out'>('loading');
   const [surveys, setSurveys] = useState<readonly BackerSurvey[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -54,8 +69,8 @@ export function SurveyList() {
         }
         setError(
           cause instanceof ApiError
-            ? (cause.problem?.detail ?? cause.problem?.title ?? 'The service refused the request.')
-            : 'The service could not be reached. Check your connection and try again.',
+            ? (cause.problem?.detail ?? cause.problem?.title ?? copy.list.refused)
+            : copy.list.unreachable,
         );
         setStatus('failed');
       }
@@ -68,7 +83,7 @@ export function SurveyList() {
 
   if (status === 'loading') {
     return (
-      <SkeletonGroup label="Loading your surveys" className="flex flex-col gap-4">
+      <SkeletonGroup label={copy.list.loading} className="flex flex-col gap-4">
         {[0, 1].map((row) => (
           <Skeleton key={row} height="12rem" />
         ))}
@@ -78,7 +93,7 @@ export function SurveyList() {
 
   if (status === 'failed') {
     return (
-      <InlineAlert variant="danger" title="Your surveys could not be loaded">
+      <InlineAlert variant="danger" title={copy.list.failedTitle}>
         <p>{error}</p>
       </InlineAlert>
     );
@@ -88,11 +103,11 @@ export function SurveyList() {
     return (
       <EmptyState
         icon={<ClipboardList aria-hidden="true" className="size-6" />}
-        title="Nothing to answer"
-        description="A creator sends a survey once their campaign has funded, to find out which size, which colour, and where to send it."
+        title={copy.list.emptyTitle}
+        description={copy.list.emptyBody}
         action={
           <Link href="/discover">
-            <Pill type="button">Browse campaigns</Pill>
+            <Pill type="button">{copy.list.emptyAction}</Pill>
           </Link>
         }
       />
@@ -107,18 +122,18 @@ export function SurveyList() {
       {outstanding.length > 0 && (
         <InlineAlert
           variant="warning"
-          title={
-            outstanding.length === 1
-              ? 'One creator is waiting on you'
-              : `${outstanding.length} creators are waiting on you`
-          }
+          title={pluralise(locale, copy.list.waitingTitle, outstanding.length)}
         >
-          <p>A campaign cannot be packed until the answers are in.</p>
+          <p>{copy.list.waitingBody}</p>
         </InlineAlert>
       )}
 
       {[...outstanding, ...rest].map((survey) => (
-        <SurveyCard key={`${survey.surveyId}:${survey.pledgeId}`} survey={survey} />
+        <SurveyCard
+          key={`${survey.surveyId}:${survey.pledgeId}`}
+          survey={survey}
+          copy={copy.card}
+        />
       ))}
     </div>
   );

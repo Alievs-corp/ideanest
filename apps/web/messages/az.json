@@ -443,6 +443,45 @@
         "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Heç nə tutulmayıb — tutulma kampaniya uğurla bağlananda baş verir."
       }
     },
+    "surveys": {
+      "list": {
+        "loading": "Sorğularınız yüklənir",
+        "failedTitle": "Sorğularınız yüklənə bilmədi",
+        "refused": "Xidmət müraciəti rədd etdi.",
+        "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
+        "emptyTitle": "Cavablanacaq sorğu yoxdur",
+        "emptyBody": "Müəllif kampaniyası maliyyələşdikdən sonra sorğu göndərir — hansı ölçü, hansı rəng və hara göndərəcəyini öyrənmək üçün.",
+        "waitingTitle": {
+          "one": "Bir müəllif sizi gözləyir",
+          "few": "{count} müəllif sizi gözləyir",
+          "many": "{count} müəllif sizi gözləyir",
+          "other": "{count} müəllif sizi gözləyir"
+        },
+        "waitingBody": "Cavablar gəlmədən kampaniya yığıla bilməz."
+      },
+      "card": {
+        "needsAnAnswer": "Cavab gözləyir",
+        "answered": "Cavablanıb",
+        "closed": "Bağlanıb",
+        "respondBy": "{time} tarixinədək istənilib.",
+        "noDate": "Bunun üçün tarix təyin edilməyib.",
+        "answeredOn": "{time} tarixində cavab vermisiniz.",
+        "closedTitle": "Bu sorğu bağlanıb",
+        "closedBody": "Müəllifin ehtiyacı olan məlumat artıq var və dəyişiklik qəbul etmir. Cavablarınız aşağıda, yadda saxlanıldığı kimidir.",
+        "failedTitle": "Cavablarınız yadda saxlanılmadı",
+        "refused": "Xidmət cavabları rədd etdi.",
+        "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
+        "savedTitle": "Yadda saxlanıldı",
+        "savedBody": "Müəllif cavablarınızı görür. Sorğu açıq olduğu müddətdə onları dəyişə bilərsiniz.",
+        "required": "Bu sual mütləqdir.",
+        "saving": "Yadda saxlanılır",
+        "submit": "Cavabları yadda saxla"
+      },
+      "question": {
+        "addressNote": "Çatdırılma ünvanı bu formanın hissəsi deyil — ayrıca və şifrələnmiş saxlanılır.",
+        "addressLink": "Ünvanı əlavə edin və ya dəyişin"
+      }
+    },
     "notifications": {
       "headline": {
         "PLEDGE_CONFIRMED": "{campaign} kampaniyasına {amount} məbləğində dəstəyiniz təsdiqləndi",

@@ -443,6 +443,45 @@
         "savedBody": "The figures above are the service’s, not this page’s arithmetic. Nothing has been charged — collection happens when the campaign closes successfully."
       }
     },
+    "surveys": {
+      "list": {
+        "loading": "Loading your surveys",
+        "failedTitle": "Your surveys could not be loaded",
+        "refused": "The service refused the request.",
+        "unreachable": "The service could not be reached. Check your connection and try again.",
+        "emptyTitle": "Nothing to answer",
+        "emptyBody": "A creator sends a survey once their campaign has funded, to find out which size, which colour, and where to send it.",
+        "waitingTitle": {
+          "one": "One creator is waiting on you",
+          "few": "{count} creators are waiting on you",
+          "many": "{count} creators are waiting on you",
+          "other": "{count} creators are waiting on you"
+        },
+        "waitingBody": "A campaign cannot be packed until the answers are in."
+      },
+      "card": {
+        "needsAnAnswer": "Needs an answer",
+        "answered": "Answered",
+        "closed": "Closed",
+        "respondBy": "Asked for by {time}.",
+        "noDate": "No date was set for this one.",
+        "answeredOn": "You answered on {time}.",
+        "closedTitle": "This survey is closed",
+        "closedBody": "The creator has what they need and is no longer taking changes. Your answers are below as they were saved.",
+        "failedTitle": "Your answers were not saved",
+        "refused": "The service refused the answers.",
+        "unreachable": "The service could not be reached. Check your connection and try again.",
+        "savedTitle": "Saved",
+        "savedBody": "The creator can see your answers. You can change them while this survey is open.",
+        "required": "This one is required.",
+        "saving": "Saving",
+        "submit": "Save answers"
+      },
+      "question": {
+        "addressNote": "A shipping address is not part of this form — it is held separately and encrypted.",
+        "addressLink": "Add or change your address"
+      }
+    },
     "notifications": {
       "headline": {
         "PLEDGE_CONFIRMED": "Your pledge of {amount} to {campaign} is confirmed",

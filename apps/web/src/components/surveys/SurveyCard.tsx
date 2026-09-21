@@ -12,6 +12,8 @@ import {
 } from '../../lib/surveys/api';
 import { formatExactTime } from '../../lib/time';
 import { SurveyQuestionField } from './SurveyQuestionField';
+import type { SurveyCardCopy } from '../../lib/i18n/surveys-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
 /**
@@ -37,10 +39,19 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
  * a question that scrolled off the top of the screen. The message names the question, and
  * focus is not stolen: docs/ui-kit.md §9.2 wants the error beside the field, and the field is
  * where the reader is already looking.
+ *
+ * <h2>The words arrive as a prop, and one of them is a promise</h2>
+ *
+ * A client component cannot read the catalogue — issue #84, and `lib/i18n/surveys-copy.ts`
+ * carries why. What makes this card more than a translation is `copy.savedBody`: it tells
+ * somebody that the creator can see what they have just typed, which is a fact about who reads
+ * their answers rather than a hint about the form. A reader who cannot read it is answering
+ * without having been told.
  */
 
 export interface SurveyCardProps {
   readonly survey: BackerSurvey;
+  readonly copy: SurveyCardCopy;
 }
 
 function draftFrom(survey: BackerSurvey): Record<string, readonly string[]> {
@@ -49,7 +60,7 @@ function draftFrom(survey: BackerSurvey): Record<string, readonly string[]> {
   return draft;
 }
 
-export function SurveyCard({ survey: initial }: SurveyCardProps) {
+export function SurveyCard({ survey: initial, copy }: SurveyCardProps) {
   const locale = useRouteLocale();
   const [survey, setSurvey] = useState(initial);
   const [draft, setDraft] = useState<Record<string, readonly string[]>>(() => draftFrom(initial));
@@ -69,7 +80,7 @@ export function SurveyCard({ survey: initial }: SurveyCardProps) {
     for (const question of questions) {
       if (!question.required || question.type === 'ADDRESS') continue;
       if ((draft[question.id] ?? []).length === 0) {
-        missing[question.id] = 'This one is required.';
+        missing[question.id] = copy.required;
       }
     }
     if (Object.keys(missing).length > 0) {
@@ -100,8 +111,8 @@ export function SurveyCard({ survey: initial }: SurveyCardProps) {
       setSaved(false);
       setFailure(
         cause instanceof ApiError
-          ? (cause.problem?.detail ?? cause.problem?.title ?? 'The service refused the answers.')
-          : 'The service could not be reached. Check your connection and try again.',
+          ? (cause.problem?.detail ?? cause.problem?.title ?? copy.refused)
+          : copy.unreachable,
       );
     } finally {
       setBusy(false);
@@ -125,37 +136,36 @@ export function SurveyCard({ survey: initial }: SurveyCardProps) {
           words, and the variant is the second signal.
         */}
         {!survey.open ? (
-          <Tag variant="default">Closed</Tag>
+          <Tag variant="default">{copy.closed}</Tag>
         ) : survey.answered ? (
-          <Tag variant="success">Answered</Tag>
+          <Tag variant="success">{copy.answered}</Tag>
         ) : (
-          <Tag variant="warning">Needs an answer</Tag>
+          <Tag variant="warning">{copy.needsAnAnswer}</Tag>
         )}
       </header>
 
       <p className="mt-3 text-sm text-white/40">
         {survey.respondBy !== null && survey.respondBy !== ''
-          ? `Asked for by ${formatExactTime(survey.respondBy, locale)}.`
-          : 'No date was set for this one.'}
+          ? fillPlaceholders(copy.respondBy, { time: formatExactTime(survey.respondBy, locale) })
+          : copy.noDate}
         {survey.answered && survey.submittedAt !== null
-          ? ` You answered on ${formatExactTime(survey.submittedAt, locale)}.`
+          ? ` ${fillPlaceholders(copy.answeredOn, {
+              time: formatExactTime(survey.submittedAt, locale),
+            })}`
           : ''}
       </p>
 
       {!survey.open && (
         <div className="mt-5">
-          <InlineAlert variant="info" title="This survey is closed">
-            <p>
-              The creator has what they need and is no longer taking changes. Your answers are
-              below as they were saved.
-            </p>
+          <InlineAlert variant="info" title={copy.closedTitle}>
+            <p>{copy.closedBody}</p>
           </InlineAlert>
         </div>
       )}
 
       {failure !== null && (
         <div className="mt-5">
-          <InlineAlert variant="danger" title="Your answers were not saved">
+          <InlineAlert variant="danger" title={copy.failedTitle}>
             <p>{failure}</p>
           </InlineAlert>
         </div>
@@ -163,8 +173,8 @@ export function SurveyCard({ survey: initial }: SurveyCardProps) {
 
       {saved && failure === null && (
         <div className="mt-5">
-          <InlineAlert variant="success" title="Saved">
-            <p>The creator can see your answers. You can change them while this survey is open.</p>
+          <InlineAlert variant="success" title={copy.savedTitle}>
+            <p>{copy.savedBody}</p>
           </InlineAlert>
         </div>
       )}
@@ -178,6 +188,7 @@ export function SurveyCard({ survey: initial }: SurveyCardProps) {
             disabled={!survey.open || busy}
             error={errors[question.id]}
             addressHref={addressHref}
+            copy={copy.question}
             onChange={(value) => {
               setDraft((previous) => ({ ...previous, [question.id]: value }));
               setSaved(false);
@@ -188,7 +199,7 @@ export function SurveyCard({ survey: initial }: SurveyCardProps) {
         {survey.open && (
           <div>
             <Pill type="submit" disabled={busy}>
-              {busy ? 'Saving' : 'Save answers'}
+              {busy ? copy.saving : copy.submit}
             </Pill>
           </div>
         )}
