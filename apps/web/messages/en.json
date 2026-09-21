@@ -4219,6 +4219,47 @@
       "review": "How complete your campaign is, what moderation has said about it, and submitting it for review."
     }
   },
+  "moderation": {
+    "report": {
+      "trigger": "Report",
+      "triggerOn": {
+        "campaign": "Report this campaign",
+        "account": "Report this account",
+        "comment": "Report this comment"
+      },
+      "dialogLabel": "Report {name}",
+      "commentOn": "a comment on {title}",
+      "signedOutBody": "Reporting needs an account. It is how the platform can tell one complaint from five copies of the same one, and how a moderator can come back to you.",
+      "signIn": "Sign in",
+      "filedTitle": "A moderator will look at this",
+      "filedBody": {
+        "campaign": "We have your report. Nothing about the campaign changes because of it — a report is a request for a person to look, not a vote.",
+        "account": "We have your report. Nothing about the account changes because of it — a report is a request for a person to look, not a vote.",
+        "comment": "We have your report. Nothing about the comment changes because of it — a report is a request for a person to look, not a vote."
+      },
+      "close": "Close",
+      "errorTitle": "It was not sent",
+      "refused": "The report was refused.",
+      "unreachable": "The service could not be reached. Check your connection and try again.",
+      "detailRequired": "“Other” needs a sentence, or a moderator has nothing to look at.",
+      "reasonLabel": "What is wrong with it?",
+      "detailLabel": "Anything else a moderator should know",
+      "detailHint": "Optional, except for “Other”. What you saw, and where.",
+      "sending": "Sending",
+      "submit": "Send report",
+      "descriptions": {
+        "PROHIBITED_ITEM": "It offers something the platform does not allow to be funded.",
+        "MISREPRESENTATION": "It states something about itself that is not true.",
+        "NOT_ORIGINAL": "The work is somebody else’s, presented as the creator’s own.",
+        "INTELLECTUAL_PROPERTY": "It uses a trademark, a design or a work without the right to.",
+        "OFFENSIVE": "The material itself is offensive.",
+        "DISCRIMINATION": "It targets people for who they are.",
+        "SPAM": "It exists to advertise something else.",
+        "FRAUD": "There is reason to believe nobody intends to deliver.",
+        "OTHER": "Something else — say what below."
+      }
+    }
+  },
   "profile": {
     "notFound": "Profile not found",
     "metaDescription": "{name} on IdeaNest — the campaigns they have created and backed.",

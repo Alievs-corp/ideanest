@@ -3,7 +3,7 @@ import type { ModerationCopy } from '../i18n/admin/content-copy';
 import { fillPlaceholders } from '../i18n/placeholders';
 import { pluralise } from '../i18n/plurals';
 import { formatRelativeTime as baseRelativeTime } from '../time';
-import type { QueuedReport, ReportReason, ReportState, ReportTargetType } from './api';
+import type { QueuedReport, ReportState, ReportTargetType } from './api';
 
 /**
  * Turning a queue row into words.
@@ -13,34 +13,16 @@ import type { QueuedReport, ReportReason, ReportState, ReportTargetType } from '
  * measures its age from the same instant.
  */
 
-/**
- * The nine reasons, in English, for the one surface that still draws them from here.
+/*
+ * `REASON_LABELS` WAS HERE, AND #85 DELETED IT RATHER THAN TRANSLATING IT.
  *
- * <h2>This is `ReportControl`'s table and nothing else's since #324</h2>
- *
- * The console reads `admin.moderation.reason`, which is the same nine words in four
- * languages. This constant survives because `components/moderation/ReportControl` — the
- * dialog a member of the public opens on a campaign page — is not part of the console and
- * was not translated with it: it carries its own reason descriptions, its own target nouns
- * and about ten more sentences, and half-translating a public surface inside an
- * administrative change would be worse than leaving it whole.
- *
- * <p><strong>The duplication is held still by a test rather than by a comment.</strong>
- * `lib/i18n/wording.test.ts` asserts that `admin.moderation.reason` says exactly what this
- * table says, so the day somebody rewords one the other fails rather than drifting. It goes
- * when the public control is translated, which is the rest of #324.
+ * It was the nine reasons in English, kept because the public report dialog was not part of
+ * the console and was not translated with it — and `lib/i18n/wording.test.ts` asserted that
+ * it said exactly what `admin.moderation.reason` says, so the two could not drift while the
+ * duplication lasted. Translating the dialog is what ended it: both surfaces read the
+ * catalogue now, there is one table of nine, and the test that held the copy still went with
+ * the copy. `lib/i18n/report-copy.ts` carries the reasoning.
  */
-export const REASON_LABELS: Readonly<Record<ReportReason, string>> = {
-  PROHIBITED_ITEM: 'Prohibited item',
-  MISREPRESENTATION: 'Misrepresentation',
-  NOT_ORIGINAL: 'Not original work',
-  INTELLECTUAL_PROPERTY: 'Intellectual property',
-  OFFENSIVE: 'Offensive content',
-  DISCRIMINATION: 'Discrimination',
-  SPAM: 'Spam',
-  FRAUD: 'Fraud',
-  OTHER: 'Other',
-};
 
 /**
  * Enough of an identifier to tell two cards apart, said aloud without pain.

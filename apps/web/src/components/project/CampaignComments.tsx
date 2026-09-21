@@ -8,7 +8,7 @@ import { CommentControls } from './CommentControls';
 import { ViewerInstant } from './ViewerClock';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { localeOrDefault } from '../../lib/i18n/locale';
-import { commentCopy } from '../../lib/i18n/shell-copy.server';
+import { commentCopy, reportControlCopy } from '../../lib/i18n/shell-copy.server';
 
 /**
  * §4.4's Comments tab — issue #285, over §4.9's C-01, C-02, C-03 and C-07.
@@ -281,6 +281,7 @@ async function CommentEntry({
 
       <CommentControls
         copy={copy}
+        reportCopy={await reportControlCopy()}
         commentId={comment.id}
         authorId={comment.authorId}
         acceptsReplies={comment.acceptsReplies}

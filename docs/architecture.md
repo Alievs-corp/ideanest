@@ -6345,10 +6345,17 @@ it was written in.
 > is asking. `apps/web/README.md` records exactly which routes are key-based and which
 > are not.
 >
-> **What is still English, stated rather than left to be found.** The campaign editor,
-> `lib/pledges/failure.ts`'s twenty service refusals, and
-> `components/moderation/ReportControl` — the dialog a member of the public opens to
-> report a campaign. Epic #78 is the list of them with a count against each.
+> **What is still English, stated rather than left to be found.** The campaign editor and
+> `lib/pledges/failure.ts`'s twenty service refusals. Epic #78 is the list of them with a
+> count against each.
+>
+> **The public report dialog came off it in #85, by deleting rather than translating.** It
+> is the one surface on that list a signed-out stranger reaches, and the nine reasons it
+> offers already existed in four languages under `admin.moderation.reason` because the
+> console was translated first. So `REASON_LABELS`, the English table
+> `lib/moderation/describe.ts` kept for this dialog — along with the rule in
+> `lib/i18n/wording.test.ts` written to stop the two drifting — went with it. One table of
+> nine, read by the moderator triaging the queue and by the person filing the complaint.
 >
 > **The backer survey screens came off it in #84.** The list under `/account/surveys`, the
 > card that answers one survey and the field that draws a question are one screen, so they

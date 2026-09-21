@@ -45,6 +45,7 @@ import {
   savedListCopyFrom,
 } from './signals-copy';
 import { type SurveysCopy, surveysCopyFrom } from './surveys-copy';
+import { type ReportControlCopy, reportControlCopyFrom } from './report-copy';
 import { type PayoutPanelCopy, payoutPanelCopyFrom } from './payout-copy';
 import { type CampaignControlsCopy, campaignControlsCopyFrom } from './campaign-controls-copy';
 import type { PluralForms } from '@ideanest/ui';
@@ -407,6 +408,22 @@ export async function followingListCopy(): Promise<SignalListCopy> {
 export async function surveysCopy(): Promise<SurveysCopy> {
   return surveysCopyFrom(
     await getTranslations('account.surveys'),
+    await getTranslations('common'),
+  );
+}
+
+/**
+ * The public report dialog, wherever it is mounted — issue #85.
+ *
+ * It reads three namespaces, and the middle one is the point of the issue: the nine reasons
+ * are `admin.moderation.reason`, the same table the console triages by, rather than a second
+ * list that used to live in `lib/moderation/describe.ts` and be held still by a test.
+ * `report-copy.ts` carries the argument.
+ */
+export async function reportControlCopy(): Promise<ReportControlCopy> {
+  return reportControlCopyFrom(
+    await getTranslations('moderation.report'),
+    await getTranslations('admin.moderation'),
     await getTranslations('common'),
   );
 }

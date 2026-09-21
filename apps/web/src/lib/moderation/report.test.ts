@@ -1,12 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAccessToken } from '../api/access-token';
-import { REASON_LABELS } from './describe';
-import {
-  REASON_DESCRIPTIONS,
-  REPORT_REASONS,
-  requiresDetail,
-  submitReport,
-} from './report';
+import en from '../../../messages/en.json';
+import { REPORT_REASONS, requiresDetail, submitReport } from './report';
 
 /**
  * §4.9's C-06 and C-07 — issue #286.
@@ -17,7 +12,8 @@ import {
  *     service, and a client that sent a comment report to the campaign path would file a
  *     complaint against the wrong object — which a moderator cannot tell from a genuine one.
  *   - the reasons this screen offers are exactly the taxonomy the queue reads back, so a
- *     reporter and a moderator are looking at the same nine values.
+ *     reporter and a moderator are looking at the same nine values — the same nine CATALOGUE
+ *     KEYS since #85, rather than two tables a test held level.
  *   - `OTHER` is the one reason that needs a sentence, because it is the one a moderator
  *     cannot act on without one.
  *   - an empty detail is omitted rather than sent as `""`.
@@ -52,12 +48,26 @@ afterEach(() => {
 
 describe('the vocabulary', () => {
   it('offers exactly the taxonomy the moderation queue reads back', () => {
-    expect([...REPORT_REASONS].sort()).toEqual(Object.keys(REASON_LABELS).sort());
+    /*
+     * One table since #85: the queue and the public dialog both name the nine from
+     * `admin.moderation.reason`. This catches a tenth reason reaching the catalogue without
+     * reaching the order the dialog offers them in — and the reverse, which is a radio with
+     * no label.
+     */
+    expect([...REPORT_REASONS].sort()).toEqual(Object.keys(en.admin.moderation.reason).sort());
   });
 
   it('explains every reason to somebody who does not know the taxonomy', () => {
+    /*
+     * "Not original work" is self-explanatory to a moderator who knows §5.4 and to nobody
+     * else, so every reason carries a sentence under it. Read from the catalogue rather than
+     * from a constant, because the sentences are in four languages since #85.
+     */
+    const descriptions: Record<string, string | undefined> = en.moderation.report.descriptions;
+
     for (const reason of REPORT_REASONS) {
-      expect(REASON_DESCRIPTIONS[reason].trim()).not.toBe('');
+      expect(descriptions[reason], reason).toBeTypeOf('string');
+      expect(descriptions[reason]?.trim(), reason).not.toBe('');
     }
   });
 

@@ -6,7 +6,6 @@ import en from '../../../messages/en.json';
 import ru from '../../../messages/ru.json';
 import tr from '../../../messages/tr.json';
 import { TRUST_COPY } from '../../components/project/CampaignTrustBlock';
-import { REASON_LABELS } from '../moderation/describe';
 
 /**
  * The English catalogue says what the components used to say — issue #324.
@@ -185,21 +184,18 @@ describe('the English catalogue against the wording it replaced', () => {
     }
   });
 
-  it('says the same nine report reasons as the public control still holds', () => {
-    /*
-     * `lib/moderation/describe.ts` keeps `REASON_LABELS` because `ReportControl` — the dialog
-     * a member of the public opens on a campaign page — was not translated with the console:
-     * it carries its own reason descriptions, its own target nouns and about ten more
-     * sentences, and half-translating a public surface inside an administrative change would
-     * be worse than leaving it whole.
-     *
-     * <p>So the same nine words exist twice, and this is what stops them drifting. The day
-     * somebody rewords one, the other fails here rather than quietly saying something else to
-     * a moderator than it says to the person who filed the complaint. It goes when the public
-     * control is translated, which is the rest of #324.
-     */
-    expect(en.admin.moderation.reason).toEqual(REASON_LABELS);
-  });
+  /*
+   * A NINTH RULE WAS HERE UNTIL #85, AND ITS DELETION IS THE POINT OF THAT ISSUE.
+   *
+   * It asserted that `admin.moderation.reason` said exactly what `lib/moderation/describe.ts`
+   * exported as `REASON_LABELS` — the same nine reasons, in English, twice, because the
+   * console was translated and the public report dialog was not. The rule existed to stop the
+   * two drifting, which is the right answer to a duplication you cannot yet remove.
+   *
+   * #85 removed it. Both surfaces read the catalogue now, so there is one table of nine and
+   * nothing left to hold still; a rule asserting that the catalogue agrees with itself would
+   * be noise. `lib/i18n/report-copy.ts` carries the reasoning.
+   */
 });
 
 /**

@@ -4219,6 +4219,47 @@
       "review": "Kampaniyanın nə qədər hazır olduğu, moderasiyanın onun haqqında dedikləri və baxışa göndərilməsi."
     }
   },
+  "moderation": {
+    "report": {
+      "trigger": "Şikayət et",
+      "triggerOn": {
+        "campaign": "Bu kampaniyadan şikayət et",
+        "account": "Bu hesabdan şikayət et",
+        "comment": "Bu şərhdən şikayət et"
+      },
+      "dialogLabel": "{name} barəsində şikayət",
+      "commentOn": "{title} kampaniyasındakı bir şərh",
+      "signedOutBody": "Şikayət etmək üçün hesab lazımdır. Platforma bir şikayəti eyni şikayətin beş surətindən beləcə ayırd edir və moderator sizinlə bu yolla əlaqə saxlaya bilir.",
+      "signIn": "Daxil ol",
+      "filedTitle": "Moderator buna baxacaq",
+      "filedBody": {
+        "campaign": "Şikayətiniz bizdədir. Buna görə kampaniyada heç nə dəyişmir — şikayət bir insanın baxması üçün müraciətdir, səsvermə deyil.",
+        "account": "Şikayətiniz bizdədir. Buna görə hesabda heç nə dəyişmir — şikayət bir insanın baxması üçün müraciətdir, səsvermə deyil.",
+        "comment": "Şikayətiniz bizdədir. Buna görə şərhdə heç nə dəyişmir — şikayət bir insanın baxması üçün müraciətdir, səsvermə deyil."
+      },
+      "close": "Bağla",
+      "errorTitle": "Göndərilmədi",
+      "refused": "Şikayət rədd edildi.",
+      "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
+      "detailRequired": "“Digər” üçün bir cümlə lazımdır, yoxsa moderatorun baxacağı heç nə olmur.",
+      "reasonLabel": "Burada nə səhvdir?",
+      "detailLabel": "Moderatorun bilməli olduğu başqa nə var",
+      "detailHint": "İstəyə bağlıdır, “Digər” istisna olmaqla. Nə gördünüz və harada.",
+      "sending": "Göndərilir",
+      "submit": "Şikayəti göndər",
+      "descriptions": {
+        "PROHIBITED_ITEM": "Platformanın maliyyələşdirilməsinə icazə vermədiyi bir şey təklif edir.",
+        "MISREPRESENTATION": "Özü haqqında doğru olmayan bir şey iddia edir.",
+        "NOT_ORIGINAL": "İş başqasınındır, müəllifin öz işi kimi təqdim olunur.",
+        "INTELLECTUAL_PROPERTY": "Ticarət nişanından, dizayndan və ya əsərdən buna hüququ olmadan istifadə edir.",
+        "OFFENSIVE": "Materialın özü təhqiramizdir.",
+        "DISCRIMINATION": "İnsanları kim olduqlarına görə hədəf alır.",
+        "SPAM": "Başqa bir şeyin reklamı üçün mövcuddur.",
+        "FRAUD": "Heç kimin çatdırmaq niyyətində olmadığını düşünməyə əsas var.",
+        "OTHER": "Başqa bir şey — aşağıda yazın."
+      }
+    }
+  },
   "profile": {
     "notFound": "Profil tapılmadı",
     "metaDescription": "IdeaNest-də {name} — yaratdığı və dəstəklədiyi kampaniyalar.",
