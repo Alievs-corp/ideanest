@@ -11,6 +11,16 @@ import {
 } from '../../lib/profiles/api';
 import { listProfileLocations } from '../../lib/profiles/locations';
 import { ProfileEditorPanel } from './ProfileEditorPanel';
+import { profileEditorCopyFrom } from '../../lib/i18n/profile-copy';
+import { translatorFor } from '../../test-copy';
+
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #82.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = profileEditorCopyFrom(translatorFor('profile'));
 
 /**
  * §4.2's profile editor — P-01 to P-03, issue #276.
@@ -124,7 +134,7 @@ afterEach(cleanup);
 /** Renders and waits for the read, so no test asserts against a form that is still loading. */
 async function open(): Promise<ReturnType<typeof userEvent.setup>> {
   const user = userEvent.setup();
-  render(<ProfileEditorPanel />);
+  render(<ProfileEditorPanel copy={COPY} />);
   await screen.findByRole('textbox', { name: /^Name/u });
   return user;
 }
@@ -438,7 +448,7 @@ describe('when the gazetteer cannot be read', () => {
 describe('when the profile itself cannot be read', () => {
   it('says so instead of rendering an empty form somebody would save over their profile', async () => {
     readMock.mockRejectedValue(new ApiError(503, null, 'The service is unavailable.'));
-    render(<ProfileEditorPanel />);
+    render(<ProfileEditorPanel copy={COPY} />);
 
     expect(await screen.findByText('Your profile could not be loaded')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save profile' })).not.toBeInTheDocument();

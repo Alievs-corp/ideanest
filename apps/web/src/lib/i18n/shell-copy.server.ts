@@ -69,7 +69,14 @@ import {
   commentCopyFrom,
 } from './campaign-copy';
 import { localeOrDefault, type Locale } from './locale';
-import { type ProfileCopy, profileCopyFrom } from './profile-copy';
+import {
+  type ProfileCopy,
+  type ProfileEditorCopy,
+  type ProfileVisibilityCopy,
+  profileCopyFrom,
+  profileEditorCopyFrom,
+  profileVisibilityCopyFrom,
+} from './profile-copy';
 import {
   type InboxCopy,
   type PreferencesCopy,
@@ -265,6 +272,24 @@ export async function profileCopy(): Promise<ProfileCopy> {
     await getTranslations('profile'),
     await getTranslations('common'),
   );
+}
+
+/**
+ * The editor that writes the profile above, and the switch that hides it — issue #82.
+ *
+ * The same namespace as the public side, which is the point: the two halves describe the same
+ * six fields, and somebody who edits "Biography" should meet the word they saw on their own
+ * profile. `profile-copy.ts` carries the rest.
+ *
+ * <p>Two accessors because two routes: `/settings/profile` draws the editor and
+ * `/settings/privacy` draws the visibility switch beside the data export and the closure.
+ */
+export async function profileEditorCopy(): Promise<ProfileEditorCopy> {
+  return profileEditorCopyFrom(await getTranslations('profile'));
+}
+
+export async function profileVisibilityCopy(): Promise<ProfileVisibilityCopy> {
+  return profileVisibilityCopyFrom(await getTranslations('profile'));
 }
 
 /**

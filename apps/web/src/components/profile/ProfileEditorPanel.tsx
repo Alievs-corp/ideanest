@@ -21,6 +21,8 @@ import { listProfileLocations } from '../../lib/profiles/locations';
 import { useSession } from '../session/SessionProvider';
 import { ProfileAvatarField } from './ProfileAvatarField';
 import { SocialLinksField } from './SocialLinksField';
+import type { ProfileEditorCopy } from '../../lib/i18n/profile-copy';
+import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * §4.2's P-01, P-02 and P-03 — the profile editor. Issue #276.
@@ -196,7 +198,12 @@ function editFrom(profile: OwnProfile, draft: ProfileDraft): ProfileEdit {
   return edit;
 }
 
-export function ProfileEditorPanel() {
+export interface ProfileEditorPanelProps {
+  /** Every word this form and its two fields draw, resolved on the server — #82. */
+  readonly copy: ProfileEditorCopy;
+}
+
+export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
   const { status, refresh } = useSession();
 
   const [profile, setProfile] = useState<OwnProfile | null>(null);
@@ -224,9 +231,7 @@ export function ProfileEditorPanel() {
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
         setLoadFailure(
-          cause instanceof ApiError
-            ? (cause.problem?.detail ?? cause.message)
-            : 'Your profile could not be loaded. Reload the page to try again.',
+          cause instanceof ApiError ? (cause.problem?.detail ?? cause.message) : copy.loadFailed,
         );
       });
 
@@ -291,9 +296,7 @@ export function ProfileEditorPanel() {
         setFailure(null);
       } else {
         setFailure(
-          cause instanceof ApiError
-            ? (cause.problem?.detail ?? cause.message)
-            : 'IdeaNest could not be reached. Nothing was saved.',
+          cause instanceof ApiError ? (cause.problem?.detail ?? cause.message) : copy.unreachable,
         );
       }
     } finally {
@@ -319,21 +322,26 @@ export function ProfileEditorPanel() {
 
   return (
     <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">
-        How you appear on IdeaNest
-      </h2>
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.heading}</h2>
 
       {profile !== null && (
         <div className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">
+          {/*
+            The address is a link rather than a string, so the sentence is filled with nodes:
+            where it falls is exactly what a translation is entitled to move, and a "before"
+            key and an "after" key would buy the link at the cost of word order.
+          */}
           <p>
-            Your profile is at{' '}
-            <Link
-              href={profileHref(profile.slug)}
-              className="rounded-sm text-white underline underline-offset-4"
-            >
-              /u/{profile.slug}
-            </Link>
-            , and everything on this page is public to anybody who opens it.
+            {fillNodes(copy.liveAt, {
+              address: (
+                <Link
+                  href={profileHref(profile.slug)}
+                  className="rounded-sm text-white underline underline-offset-4"
+                >
+                  /u/{profile.slug}
+                </Link>
+              ),
+            })}
           </p>
           {/*
             THE HANDLE, SAID RATHER THAN GREYED OUT. `PATCH /v1/me/profile` has no key for
@@ -342,38 +350,37 @@ export function ProfileEditorPanel() {
           */}
           <p className="mt-3">
             <strong className="font-medium text-white">
-              Your handle, @{profile.slug}, cannot be changed here.
+              {fillPlaceholders(copy.handleFixed, { slug: profile.slug })}
             </strong>{' '}
-            It is the address of this page and it is printed on every campaign you publish, so
-            moving it would break links other people have already shared.
+            {copy.handleWhy}
           </p>
         </div>
       )}
 
       {loadFailure !== null && (
         <div className="mt-6">
-          <InlineAlert variant="danger" title="Your profile could not be loaded">
+          <InlineAlert variant="danger" title={copy.loadFailedTitle}>
             <p>{loadFailure}</p>
           </InlineAlert>
         </div>
       )}
 
       {profile === null && loadFailure === null && (
-        <p className="mt-6 text-sm text-white/40">Loading your profile.</p>
+        <p className="mt-6 text-sm text-white/40">{copy.loading}</p>
       )}
 
       {profile !== null && draft !== null && (
         <form onSubmit={submit} noValidate className="mt-8 flex max-w-[38rem] flex-col gap-6">
           {failure !== null && (
-            <InlineAlert variant="danger" title="Nothing was saved">
+            <InlineAlert variant="danger" title={copy.saveFailedTitle}>
               <p>{failure}</p>
             </InlineAlert>
           )}
 
           <Field
-            label="Name"
+            label={copy.name}
             required
-            hint={`What you are called on your profile and on every campaign you create. ${PROFILE_NAME_MAX_CHARACTERS} characters or fewer.`}
+            hint={fillPlaceholders(copy.nameHint, { max: String(PROFILE_NAME_MAX_CHARACTERS) })}
             error={fieldErrors['name']}
           >
             {/*
@@ -395,8 +402,8 @@ export function ProfileEditorPanel() {
           </Field>
 
           <Field
-            label="Biography"
-            hint={`A few sentences about you, on the About tab of your profile. ${PROFILE_BIO_MAX_CHARACTERS} characters or fewer.`}
+            label={copy.bio}
+            hint={fillPlaceholders(copy.bioHint, { max: String(PROFILE_BIO_MAX_CHARACTERS) })}
             error={fieldErrors['bio']}
           >
             <Textarea
@@ -424,11 +431,12 @@ export function ProfileEditorPanel() {
             disabled={saving}
             error={fieldErrors['avatarUrl']}
             onUrlChange={(url) => change({ avatarUrl: url })}
+            copy={copy.avatar}
           />
 
           <Field
-            label="Website"
-            hint="Has to start with https://. It is shown on your profile as a link."
+            label={copy.website}
+            hint={copy.websiteHint}
             error={fieldErrors['websiteUrl']}
           >
             <TextInput
@@ -438,14 +446,14 @@ export function ProfileEditorPanel() {
               autoComplete="url"
               value={draft.websiteUrl}
               disabled={saving}
-              placeholder="https://example.com"
+              placeholder={copy.websitePlaceholder}
               onChange={(event) => change({ websiteUrl: event.target.value })}
             />
           </Field>
 
           <Field
-            label="Location"
-            hint="Where you are, from the places IdeaNest knows about."
+            label={copy.location}
+            hint={copy.locationHint}
             error={fieldErrors['locationSlug']}
             /*
               `grouped` exactly when there is no control below. docs/ui-kit.md §7.13's rule is
@@ -464,8 +472,10 @@ export function ProfileEditorPanel() {
               */
               <p className="text-sm text-white/40">
                 {profile.location === null
-                  ? 'The list of places could not be loaded, so this cannot be set here right now. Everything else on this page still saves.'
-                  : `Your profile says ${profile.location.name}. The list of places could not be loaded, so this cannot be changed right now — everything else on this page still saves.`}
+                  ? copy.locationsUnavailable
+                  : fillPlaceholders(copy.locationsUnavailableWithValue, {
+                      place: profile.location.name,
+                    })}
               </p>
             ) : (
               <Select
@@ -480,7 +490,7 @@ export function ProfileEditorPanel() {
                   field that must end up with a value; this one must be clearable, and a
                   disabled empty option is one somebody can leave and never return to.
                 */}
-                <option value="">Not saying</option>
+                <option value="">{copy.notSaying}</option>
                 {locations.map((location) => (
                   <option key={location.slug} value={location.slug}>
                     {location.name}
@@ -495,11 +505,12 @@ export function ProfileEditorPanel() {
             disabled={saving}
             error={fieldErrors['socialLinks']}
             onChange={(links) => change({ socialLinks: links })}
+            copy={copy.links}
           />
 
           <div className="flex flex-wrap items-center gap-4">
             <Pill type="submit" disabled={saving}>
-              {saving ? 'Saving' : 'Save profile'}
+              {saving ? copy.saving : copy.save}
             </Pill>
           </div>
 
@@ -511,16 +522,18 @@ export function ProfileEditorPanel() {
           */}
           <div role="status" aria-live="polite" className="empty:hidden">
             {saved && (
-              <InlineAlert variant="success" title="Your profile is saved">
+              <InlineAlert variant="success" title={copy.savedTitle}>
                 <p>
-                  It is live at{' '}
-                  <Link
-                    href={profileHref(profile.slug)}
-                    className="text-white underline underline-offset-4"
-                  >
-                    /u/{profile.slug}
-                  </Link>
-                  .
+                  {fillNodes(copy.savedBody, {
+                    address: (
+                      <Link
+                        href={profileHref(profile.slug)}
+                        className="text-white underline underline-offset-4"
+                      >
+                        /u/{profile.slug}
+                      </Link>
+                    ),
+                  })}
                 </p>
               </InlineAlert>
             )}

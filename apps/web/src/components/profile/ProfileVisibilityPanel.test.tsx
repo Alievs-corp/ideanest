@@ -6,6 +6,16 @@ import { probeProfileVisibility, setProfileVisibility } from '../../lib/profiles
 import { fetchSession, type Session } from '../../lib/session/session';
 import { SessionProvider } from '../session/SessionProvider';
 import { ProfileVisibilityPanel } from './ProfileVisibilityPanel';
+import { profileVisibilityCopyFrom } from '../../lib/i18n/profile-copy';
+import { translatorFor } from '../../test-copy';
+
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #82.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = profileVisibilityCopyFrom(translatorFor('profile'));
 
 /**
  * §4.2's P-07 — issue #274.
@@ -70,7 +80,7 @@ const ACCOUNT: Session = {
 function renderPanel() {
   return render(
     <SessionProvider>
-      <ProfileVisibilityPanel />
+      <ProfileVisibilityPanel copy={COPY} />
     </SessionProvider>,
   );
 }

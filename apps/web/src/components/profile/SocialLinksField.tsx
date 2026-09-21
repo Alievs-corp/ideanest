@@ -8,6 +8,8 @@ import {
   type ProfileSocialLink,
   type SocialPlatform,
 } from '../../lib/profiles/api';
+import type { ProfileLinksCopy } from '../../lib/i18n/profile-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * §4.2's P-03 — the accounts somebody keeps elsewhere.
@@ -59,6 +61,8 @@ export interface SocialLinksFieldProps {
   /** The service's own refusal, when it named `socialLinks`. */
   readonly error?: string;
   readonly onChange: (links: readonly ProfileSocialLink[]) => void;
+  /** Every word this field draws — #82. The nine platform names are not among them. */
+  readonly copy: ProfileLinksCopy;
 }
 
 /** The platforms a row may offer: everything no *other* row has taken. */
@@ -81,6 +85,7 @@ export function SocialLinksField({
   disabled = false,
   error,
   onChange,
+  copy,
 }: SocialLinksFieldProps) {
   const spare = firstUnused(links);
   const atCap = links.length >= MAX_SOCIAL_LINKS;
@@ -93,15 +98,13 @@ export function SocialLinksField({
   return (
     <Field
       grouped
-      label="Links to your other accounts"
-      hint={`One link per platform, and at most ${MAX_SOCIAL_LINKS}. Every address has to start with https://.`}
+      label={copy.label}
+      hint={fillPlaceholders(copy.hint, { max: String(MAX_SOCIAL_LINKS) })}
       error={error}
     >
       <div className="flex flex-col gap-3">
         {links.length === 0 && (
-          <p className="text-sm text-white/40">
-            You have not added any. They appear on your public profile, under your biography.
-          </p>
+          <p className="text-sm text-white/40">{copy.none}</p>
         )}
 
         {/*
@@ -120,7 +123,7 @@ export function SocialLinksField({
               <Select
                 value={link.platform}
                 disabled={disabled}
-                aria-label={`Platform for link ${index + 1}`}
+                aria-label={fillPlaceholders(copy.platformFor, { number: String(index + 1) })}
                 className="sm:w-44"
                 onChange={(event) => replace(index, { ...link, platform: event.target.value })}
               >
@@ -145,8 +148,8 @@ export function SocialLinksField({
                 inputMode="url"
                 value={link.url}
                 disabled={disabled}
-                aria-label={`${label} address`}
-                placeholder="https://example.com/you"
+                aria-label={fillPlaceholders(copy.addressFor, { platform: label })}
+                placeholder={copy.addressPlaceholder}
                 className="sm:flex-1"
                 onChange={(event) => replace(index, { ...link, url: event.target.value })}
               />
@@ -160,10 +163,10 @@ export function SocialLinksField({
                   out of context. The visible word is inside the accessible name rather than
                   replaced by it, so speech control still reaches the button by what it says.
                 */
-                aria-label={`Remove the ${label} link`}
+                aria-label={fillPlaceholders(copy.removeLink, { platform: label })}
                 onClick={() => onChange(links.filter((_, position) => position !== index))}
               >
-                Remove
+                {copy.remove}
               </Pill>
             </div>
           );
@@ -179,7 +182,7 @@ export function SocialLinksField({
               onChange([...links, { platform: spare, url: '' }]);
             }}
           >
-            Add a link
+            {copy.add}
           </Pill>
 
           {/*
@@ -189,8 +192,11 @@ export function SocialLinksField({
           */}
           <p className="text-sm text-white/40">
             {atCap
-              ? `${MAX_SOCIAL_LINKS} of ${MAX_SOCIAL_LINKS} used, which is the most a profile can carry. Remove one to add another.`
-              : `${links.length} of ${MAX_SOCIAL_LINKS} used.`}
+              ? fillPlaceholders(copy.atCap, { max: String(MAX_SOCIAL_LINKS) })
+              : fillPlaceholders(copy.used, {
+                  used: String(links.length),
+                  max: String(MAX_SOCIAL_LINKS),
+                })}
           </p>
         </div>
 
@@ -201,10 +207,7 @@ export function SocialLinksField({
           button that is disabled for no visible reason.
         */}
         {!atCap && spare === undefined && (
-          <InlineAlert variant="info" title="Every platform is already listed">
-            There is a link for each platform IdeaNest knows about. Change one instead of
-            adding another.
-          </InlineAlert>
+          <InlineAlert variant="info" title={copy.allListedTitle}>{copy.allListedBody}</InlineAlert>
         )}
       </div>
     </Field>

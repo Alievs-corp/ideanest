@@ -11,6 +11,7 @@ import {
   type ProfileVisibility,
 } from '../../lib/profiles/api';
 import { useSession } from '../session/SessionProvider';
+import type { ProfileVisibilityCopy } from '../../lib/i18n/profile-copy';
 
 /**
  * §4.2's P-07 — whether `/u/{slug}` answers at all. Issue #274.
@@ -64,7 +65,12 @@ import { useSession } from '../session/SessionProvider';
 
 type Probe = ProfileVisibility | 'unknown' | 'loading';
 
-export function ProfileVisibilityPanel() {
+export interface ProfileVisibilityPanelProps {
+  /** Every word this panel draws, resolved on the server — #82. */
+  readonly copy: ProfileVisibilityCopy;
+}
+
+export function ProfileVisibilityPanel({ copy }: ProfileVisibilityPanelProps) {
   const { status, session } = useSession();
   const slug = session?.slug ?? null;
 
@@ -116,10 +122,8 @@ export function ProfileVisibilityPanel() {
       setVisibility(previous);
       setError(
         cause instanceof ApiError
-          ? (cause.problem?.detail ??
-            cause.problem?.title ??
-            'The service refused the change. Your profile is as it was.')
-          : 'The service could not be reached. Your profile is as it was.',
+          ? (cause.problem?.detail ?? cause.problem?.title ?? copy.refused)
+          : copy.unreachable,
       );
     } finally {
       setSaving(false);
@@ -130,12 +134,8 @@ export function ProfileVisibilityPanel() {
 
   return (
     <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">Your public profile</h2>
-      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">
-        Your profile page lists the campaigns you have created and the ones you have backed. It
-        never shows any amounts, and pledges you made anonymously are never listed. Hiding it
-        makes the address answer as though there were nothing there.
-      </p>
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.heading}</h2>
+      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">{copy.intro}</p>
 
       <div className="mt-6">
         <Switch
@@ -144,14 +144,14 @@ export function ProfileVisibilityPanel() {
           onCheckedChange={(next) => void change(next)}
           label={
             <span className="text-[15px]">
-              Show my profile to everybody
+              {copy.toggle}
               {/*
                 The state is announced by `role="switch"` itself, so this is the visible half
                 only — and it is a word rather than a colour, because colour alone never
                 carries meaning (docs/ui-kit.md §9.2).
               */}
               <span aria-hidden="true" className="ml-2 text-white/40">
-                {visibility === 'PUBLIC' ? 'Public' : visibility === 'PRIVATE' ? 'Hidden' : '—'}
+                {visibility === 'PUBLIC' ? copy.public : visibility === 'PRIVATE' ? copy.hidden : '—'}
               </span>
             </span>
           }
@@ -159,24 +159,20 @@ export function ProfileVisibilityPanel() {
       </div>
 
       {visibility === 'loading' && (
-        <p className="mt-4 text-sm text-white/40">Checking what a visitor sees.</p>
+        <p className="mt-4 text-sm text-white/40">{copy.checking}</p>
       )}
 
       {visibility === 'unknown' && (
         <div className="mt-5">
-          <InlineAlert variant="warning" title="This setting could not be read">
-            <p>
-              IdeaNest could not check whether your profile is currently visible, so the switch
-              is disabled rather than showing a position it is not sure of. Reload the page to
-              try again.
-            </p>
+          <InlineAlert variant="warning" title={copy.unknownTitle}>
+            <p>{copy.unknownBody}</p>
           </InlineAlert>
         </div>
       )}
 
       {error !== null && (
         <div className="mt-5">
-          <InlineAlert variant="danger" title="Nothing was changed" onDismiss={() => setError(null)}>
+          <InlineAlert variant="danger" title={copy.failedTitle} onDismiss={() => setError(null)}>
             <p>{error}</p>
           </InlineAlert>
         </div>
@@ -188,7 +184,7 @@ export function ProfileVisibilityPanel() {
             href={profileHref(slug)}
             className="rounded-sm text-white/64 underline underline-offset-4 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
           >
-            See your profile as a visitor sees it
+            {copy.seeAsVisitor}
           </Link>
         </p>
       )}

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Field, FileDropZone, InlineAlert, Media, Pill, TextInput } from '@ideanest/ui';
 import { describeSize, measureImage } from '../../lib/projects/coverImage';
+import type { ProfileAvatarCopy } from '../../lib/i18n/profile-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * §4.2's P-01, as much of it as the platform can do — the profile picture.
@@ -55,6 +57,8 @@ export interface ProfileAvatarFieldProps {
   /** The service's own refusal, when it named `avatarUrl`. */
   readonly error?: string;
   readonly onUrlChange: (url: string) => void;
+  /** Every word this field draws, the two accessible names included — #82. */
+  readonly copy: ProfileAvatarCopy;
 }
 
 type Note = { tone: 'info' | 'danger'; title?: string; text: string };
@@ -76,6 +80,7 @@ export function ProfileAvatarField({
   disabled = false,
   error,
   onUrlChange,
+  copy,
 }: ProfileAvatarFieldProps) {
   const [checking, setChecking] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
@@ -104,15 +109,16 @@ export function ProfileAvatarField({
 
       setNote({
         tone: 'info',
-        title: square ? 'This picture is square' : 'This picture is not square',
-        text: square
-          ? `${file.name} is ${describeSize(size)} pixels and fits the circle as it is. Nothing has been uploaded — publish it somewhere public and paste the address below.`
-          : `${file.name} is ${describeSize(size)} pixels, so it is cropped to a circle from the middle. Nothing has been uploaded — publish it somewhere public and paste the address below.`,
+        title: square ? copy.squareTitle : copy.notSquareTitle,
+        text: fillPlaceholders(square ? copy.square : copy.notSquare, {
+          file: file.name,
+          size: describeSize(size),
+        }),
       });
     } catch (cause) {
       setNote({
         tone: 'danger',
-        text: cause instanceof Error ? cause.message : 'That file could not be read as an image.',
+        text: cause instanceof Error ? cause.message : copy.unreadable,
       });
     } finally {
       setChecking(false);
@@ -122,16 +128,12 @@ export function ProfileAvatarField({
   return (
     <Field
       grouped
-      label="Profile picture"
-      hint="Shown beside your name on your profile and on every campaign you create."
+      label={copy.label}
+      hint={copy.hint}
       error={error}
     >
       <div className="flex flex-col gap-3">
-        <InlineAlert variant="info" title="Uploading arrives with the media pipeline">
-          IdeaNest cannot store a file yet, so this takes the address of a picture that is
-          already published somewhere. Choosing which part of it to show — the crop — arrives
-          with the same work.
-        </InlineAlert>
+        <InlineAlert variant="info" title={copy.pipelineTitle}>{copy.pipelineBody}</InlineAlert>
 
         <div className="flex items-center gap-4">
           <div className="size-20 shrink-0 overflow-hidden rounded-full border border-white/8 bg-surface-3">
@@ -154,7 +156,7 @@ export function ProfileAvatarField({
               */
               <span
                 role="img"
-                aria-label={`${name}, with no picture`}
+                aria-label={fillPlaceholders(copy.noPicture, { name })}
                 className="grid size-full place-items-center text-xl font-medium text-white/64"
               >
                 {initialsOf(name)}
@@ -164,10 +166,10 @@ export function ProfileAvatarField({
 
           <p className="text-sm text-white/40">
             {address !== '' && broken === address
-              ? 'That address did not load as a picture here. Your profile would show your initials instead.'
+              ? copy.broken
               : previewable
-                ? 'This is how your picture is cropped to a circle.'
-                : 'Your initials are shown while there is no picture.'}
+                ? copy.cropped
+                : copy.initials}
           </p>
         </div>
 
@@ -181,8 +183,8 @@ export function ProfileAvatarField({
               The `Field` label names a group here, so it cannot name this control; without a
               label of its own the input is announced as "edit text" and nothing else.
             */
-            aria-label="Profile picture address"
-            placeholder="https://images.example.com/me.jpg"
+            aria-label={copy.address}
+            placeholder={copy.addressPlaceholder}
             className="sm:flex-1"
             onChange={(event) => {
               setBroken(null);
@@ -200,7 +202,7 @@ export function ProfileAvatarField({
                 onUrlChange('');
               }}
             >
-              Remove picture
+              {copy.remove}
             </Pill>
           )}
         </div>
@@ -208,10 +210,10 @@ export function ProfileAvatarField({
         <FileDropZone
           accept="image/*"
           disabled={disabled || checking}
-          prompt="Or drop a picture here to see how it would be cropped"
-          dragPrompt="Release to measure this picture"
-          buttonLabel="Choose a picture to measure"
-          hint="Measured in your browser. Nothing is uploaded."
+          prompt={copy.prompt}
+          dragPrompt={copy.dragPrompt}
+          buttonLabel={copy.buttonLabel}
+          hint={copy.dropHint}
           onFiles={(files) => {
             const [first] = files;
             if (first) void checkFile(first);
