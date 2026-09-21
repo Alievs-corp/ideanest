@@ -303,7 +303,7 @@
         "loading": "Teslimatlarınız yükleniyor",
         "failedTitle": "Teslimatlarınız yüklenemedi",
         "refused": "Servis isteği reddetti.",
-        "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "emptyTitle": "Yolda bir şey yok",
         "emptyBody": "Desteklediğiniz bir kampanya fonlandığında ve üretici paketlemeye başladığında her ödül, takip bilgisiyle birlikte burada görünür.",
         "emptyAction": "Kampanyalara göz at",
@@ -325,7 +325,7 @@
         "PREPARING": "Üretici bunu henüz göndermedi.",
         "SHIPPED": "Taşıyıcıda.",
         "DELIVERED": "Taşıyıcı ulaştığını söylüyor.",
-        "RETURNED": "Teslim edilemedi ve üreticiye döndü. Adresinizi denetleyin.",
+        "RETURNED": "Teslim edilemedi ve üreticiye döndü. Adresinizi kontrol edin.",
         "unknown": "Bu platformda o durum için henüz bir açıklama yok."
       },
       "form": {
@@ -343,7 +343,7 @@
         "loadFailedTitle": "Bu adres yüklenemedi",
         "loading": "Adresiniz yükleniyor",
         "notFound": "O destek bulunamadı ya da size ait değil.",
-        "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "refused": "Adres reddedildi.",
         "lockedTitle": "Bu adres kilitli",
         "lockedBody": "Üretici değişiklikleri kapattı, bu genellikle etiketlerin basıldığı anlamına gelir. Yanlışsa kampanya üzerinden onlara yazın.",
@@ -449,7 +449,7 @@
         "loading": "Anketleriniz yükleniyor",
         "failedTitle": "Anketleriniz yüklenemedi",
         "refused": "Servis isteği reddetti.",
-        "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "emptyTitle": "Yanıtlanacak bir şey yok",
         "emptyBody": "Üretici, kampanyası fonlandıktan sonra bir anket gönderir — hangi beden, hangi renk ve nereye göndereceğini öğrenmek için.",
         "waitingTitle": {
@@ -471,7 +471,7 @@
         "closedBody": "Üreticinin ihtiyacı olan bilgi elinde ve artık değişiklik almıyor. Yanıtlarınız, kaydedildikleri hâliyle aşağıda.",
         "failedTitle": "Yanıtlarınız kaydedilmedi",
         "refused": "Servis yanıtları reddetti.",
-        "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "savedTitle": "Kaydedildi",
         "savedBody": "Üretici yanıtlarınızı görebilir. Anket açık olduğu sürece onları değiştirebilirsiniz.",
         "required": "Bu soru zorunludur.",
@@ -596,7 +596,7 @@
         "markRead": "Okundu olarak işaretle",
         "marking": "İşaretleniyor",
         "refused": "Servis isteği reddetti. Yeniden deneyin.",
-        "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin."
+        "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin."
       },
       "preferences": {
         "signedOut": "Oturumunuz kapalı",
@@ -609,7 +609,7 @@
         "tooManyChanges": "Bu, servisin bir seferde kabul ettiğinden fazla değişiklik. Biraz bekleyip yeniden deneyin.",
         "conflict": "Bu ayarı aynı anda başka bir şey değiştirdi. Sayfayı yenileyip yeniden deneyin.",
         "refused": "Servis değişikliği reddetti. Yeniden deneyin.",
-        "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "saved": "{category} — {channel}: {mode}."
       }
     }
@@ -2686,7 +2686,7 @@
         "codesHeading": "Kurtarma kodlarınızı saklayın",
         "disableHeading": "İki adımlı doğrulamayı kapatın",
         "fromService": "Servisten",
-        "intro": "Parolanızın üstüne telefonunuzdan gelen bir kod. §4.1 bunu {emphasis} kılıyor, yani bir üreticiden er ya da geç istenecek — şimdi açmak daha ucuz an.",
+        "intro": "Parolanızın üstüne telefonunuzdan gelen bir kod. §4.1 bunu {emphasis} kılıyor, yani bir üreticiden er ya da geç istenecek — şimdi açmak daha ucuz andır.",
         "introEmphasis": "ödemeden önce zorunlu",
         "setUp": "Kur",
         "turnOff": "Kapat",
@@ -2754,7 +2754,7 @@
         "errorTitle": "Bir şeyler ters gitti",
         "loading": "Cihazlarınız yükleniyor",
         "emptyTitle": "Hiçbir cihazda oturum açık değil",
-        "emptyBody": "Siz bu sayfayı okurken bu mümkün olmamalı. Yeniden denetlemek için sayfayı yenileyin.",
+        "emptyBody": "Siz bu sayfayı okurken bu mümkün olmamalı. Yeniden kontrol etmek için sayfayı yenileyin.",
         "tryAgain": "Yeniden dene",
         "confirmTitle": "Diğer her yerde çıkış yapılsın mı?",
         "confirmDescription": "{devices} hemen kapatılacak. Bu cihaz açık kalır.",
@@ -2793,7 +2793,7 @@
       "footer": "Ödüle dayalı kitlesel fonlama. Hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarın tamamını iade eder."
     },
     "loadingForm": "Form yükleniyor…",
-    "checkingLink": "Bağlantı denetleniyor…",
+    "checkingLink": "Bağlantı kontrol ediliyor…",
     "fields": {
       "email": "E-posta adresi",
       "emailPlaceholder": "you@example.com",
@@ -2806,7 +2806,7 @@
       "unexpectedTitle": "Bir şeyler ters gitti",
       "unexpectedDetail": "İstek tamamlanamadı. Birazdan yeniden deneyin.",
       "unreachableTitle": "Servise ulaşılamadı",
-      "unreachableDetail": "Bağlantınızı denetleyip yeniden deneyin. Hiçbir şey gönderilmedi.",
+      "unreachableDetail": "Bağlantınızı kontrol edip yeniden deneyin. Hiçbir şey gönderilmedi.",
       "suspendedTitle": "Hesap askıya alındı",
       "suspendedDetail": "Bu hesap askıya alındı. İtiraz için destek ekibine yazın.",
       "rateLimitedTitle": "Çok fazla deneme",
@@ -2845,7 +2845,7 @@
       "signIn": "Oturum açın",
       "twoFactorTitle": "Bir adım daha",
       "twoFactorIntro": "Bu hesapta iki adımlı doğrulama zaten açık.",
-      "sentTitle": "E-postanızı denetleyin",
+      "sentTitle": "E-postanızı kontrol edin",
       "sentIntro": "{address} adresine bir ileti gönderdik. Hesabınızın kurulumunu bitirmek için içindeki bağlantıyı açın.",
       "sentLifetime": "Bağlantı 24 saat geçerlidir ve bir kez kullanılabilir.",
       "sentExisting": "O adresin zaten bir IdeaNest hesabı varsa ileti bunu söyler ve ikinci bir hesap açmak yerine geri dönüş yolu sunar.",
@@ -2863,7 +2863,7 @@
       "recoveryLabel": "Kurtarma kodu",
       "recoveryHint": "İki adımlı doğrulamayı açarken kaydettiğiniz kodlardan biri. Her biri bir kez çalışır.",
       "submit": "Devam et",
-      "submitting": "Denetleniyor",
+      "submitting": "Kontrol ediliyor",
       "differentAccount": "Başka bir hesap kullan"
     },
     "providers": {
@@ -2882,7 +2882,7 @@
       "submitting": "Bağlantı gönderiliyor",
       "remembered": "Hatırladınız mı?",
       "signIn": "Oturum açın",
-      "sentTitle": "E-postanızı denetleyin",
+      "sentTitle": "E-postanızı kontrol edin",
       "sentIntro": "{address} adresinin bir IdeaNest hesabı varsa, yeni parola belirlemek için bir bağlantı ona yola çıktı.",
       "sentLifetime": "Bağlantı {lifetime} çalışır ve bir kez kullanılabilir. Yeniden istemek onu değiştirir, bu yüzden en son iletiyi kullanın.",
       "sentRetry": "Hiçbir şey gelmedi mi? Adreste yazım yanlışı var mı bakın, sonra {retry}. Bir hesabın var olup olmadığını size söyleyemeyiz, bu yüzden bu ekran her iki durumda da aynı görünür.",
@@ -2944,7 +2944,7 @@
       "idleTitle": "Size gönderdiğimiz bağlantıyı açın",
       "idleIntro": "Bu sayfa bir hesabın yeni bir e-posta adresine taşınmasını bitirir ve bunun için o adrese gönderilen bağlantıya ihtiyacı vardır. O bağlantıyı açmak sizi gereken her şeyle birlikte buraya geri getirir.",
       "confirmingTitle": "Yeni adresiniz doğrulanıyor",
-      "confirmingIntro": "Bir saniye — bağlantıyı denetliyoruz.",
+      "confirmingIntro": "Bir saniye — bağlantıyı kontrol ediyoruz.",
       "confirmedTitle": "E-posta adresiniz değiştirildi",
       "confirmedIntro": "Bundan sonra oturum açacağınız adres bu. Parolanız değişmedi ve oturum açmış her tarayıcı açık kalmaya devam ediyor — hesabın taşındığını söylemek için önceki adrese de yazdık.",
       "goToAccount": "Hesabınıza gidin",
@@ -3084,13 +3084,13 @@
       "removeChip": "{group} süzgecini kaldır: {label}",
       "tryAgain": "Yeniden dene",
       "errorTitle": "Projeler yüklenemedi",
-      "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+      "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
       "refused": "Servis bu isteği reddetti ve nedenini söylemedi. Süzgeçleri temizlemeyi deneyin.",
       "emptyQueryTitle": "«{query}» ile eşleşen proje yok",
       "emptyFilteredTitle": "Bu süzgeçlerle eşleşen proje yok",
       "emptyTitle": "Henüz gösterilecek proje yok",
-      "emptyQueryBody": "Platformda bu aramayla eşleşen bir şey yok. Yazımı denetleyin ya da daha kısa bir sözcük deneyin.",
-      "emptyQueryBodyFiltered": "Bu süzgeçler uygulanmışken platformda bu aramayla eşleşen bir şey yok. Yazımı denetleyin ya da daha kısa bir sözcük deneyin.",
+      "emptyQueryBody": "Platformda bu aramayla eşleşen bir şey yok. Yazımı kontrol edin ya da daha kısa bir sözcük deneyin.",
+      "emptyQueryBodyFiltered": "Bu süzgeçler uygulanmışken platformda bu aramayla eşleşen bir şey yok. Yazımı kontrol edin ya da daha kısa bir sözcük deneyin.",
       "emptyBody": "Bu akışın gösterebileceği hiçbir şey platformda yayımlanmadı.",
       "blamedOne": "Diğer süzgeçleriniz uygulandığında {filter} altında kampanya kalmıyor. Onu kaldırırsanız sonuçlar geri gelmeli.",
       "blamedMany": "Bu süzgeçlerin ortak hiçbir şeyi yok: {filters}. Birini kaldırırsanız sonuçlar geri gelmeli.",
@@ -3205,7 +3205,7 @@
       "loading": "Yükleniyor",
       "nextFailedTitle": "Sonraki sayfa yüklenmedi",
       "refused": "Servis isteği reddetti. Yeniden deneyin.",
-      "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+      "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
       "count": {
         "one": "{count} kampanya",
         "few": "{count} kampanya",
@@ -3349,7 +3349,7 @@
     "failures": {
       "unreachable": {
         "title": "Servise ulaşılamadı",
-        "detail": "İstek gitmedi ya da yanıt gelmedi. Bağlantınızı denetleyip yeniden deneyin — yeniden denemek güvenlidir ve iki kez destek gönderemez."
+        "detail": "İstek gitmedi ya da yanıt gelmedi. Bağlantınızı kontrol edip yeniden deneyin — yeniden denemek güvenlidir ve iki kez destek gönderemez."
       },
       "signedOut": {
         "title": "Giriş yapmadınız",
@@ -4223,10 +4223,10 @@
       "loadFailedTitle": "Bu kampanya yüklenemedi",
       "notSubmittedTitle": "Bu kampanya gönderilmedi",
       "notLaunchedTitle": "Bu kampanya başlatılmadı",
-      "loadingLabel": "Kampanyanın ne kadar hazır olduğu denetleniyor",
+      "loadingLabel": "Kampanyanın ne kadar hazır olduğu kontrol ediliyor",
       "completeness": "Hazırlık",
       "progressLabel": "Kampanya hazırlığı: yüzde {score}",
-      "checkAgain": "Yeniden denetle",
+      "checkAgain": "Yeniden kontrol et",
       "seeOtherPlans": "Diğer planların neye izin verdiğine bakın",
       "requiredHeading": "Göndermeden önce zorunlu",
       "requiredDescription": "Bunların hepsi platformun gönderim kurallarından gelir. Hepsi tamamlanmadan kampanya moderasyona gitmez.",
@@ -4258,7 +4258,7 @@
       },
       "notFound": "Böyle bir kampanya bulunamadı.",
       "noAccess": "Bu kampanyaya erişiminiz yok.",
-      "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+      "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
       "progressSummary": "%{score} hazır. Zorunlu maddelerden {blockingTotal} içinden {blockingDone} tamamlandı, önerilenlerden {advisoryTotal} içinden {advisoryDone}.",
       "blockersRemaining": {
         "one": "{count} zorunlu madde henüz tamamlanmadı.",
@@ -4278,7 +4278,7 @@
       "dropHint": "20 MB'a kadar. Görsel burada dönüştürülüp küçültülür, orijinali saklanmaz. En iyisi {minimum} ve üzeri.",
       "urlPlaceholder": "Ya da bir adres yapıştırın: https://images.example.com/cover.jpg",
       "urlLabel": "Kapak görselinin adresi",
-      "checking": "Denetleniyor",
+      "checking": "Kontrol ediliyor",
       "useAddress": "Bu adresi kullan",
       "needUrlFirst": "Önce bir görselin adresini girin.",
       "notUsedTitle": "Bu dosya kullanılmadı",
@@ -4302,7 +4302,7 @@
         "UPLOADS_UNAVAILABLE": "Bu ortamda yükleme açık değil. Bunun yerine bir adres yapıştırın.",
         "MEDIA_STORAGE_UNREACHABLE": "Görsel deposu yanıt vermiyor. Birazdan yeniden deneyin.",
         "UPLOAD_STILL_PROCESSING": "Bu görsel her zamankinden uzun sürüyor. Bu sekmeye dönerseniz görünebilir.",
-        "UPLOAD_TRANSFER_FAILED": "Görsel depoya ulaşmadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "UPLOAD_TRANSFER_FAILED": "Görsel depoya ulaşmadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "UPLOAD_REFUSED": "Bu dosya reddedildi.",
         "UPLOAD_UNFINISHED": "Bu yükleme tamamlanamadı.",
         "MEDIA_NOT_FOUND": "Bu yükleme okunamadı."
@@ -4352,7 +4352,7 @@
       "close": "Kapat",
       "errorTitle": "Gönderilmedi",
       "refused": "Şikayet reddedildi.",
-      "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+      "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
       "detailRequired": "«Diğer» için bir cümle gerekir, yoksa moderatörün bakacağı bir şey olmaz.",
       "reasonLabel": "Nesi yanlış?",
       "detailLabel": "Moderatörün bilmesi gereken başka bir şey",
@@ -4408,7 +4408,7 @@
       "loading": "Yükleniyor",
       "nextFailedTitle": "Sonraki sayfa yüklenmedi",
       "refused": "Servis isteği reddetti. Yeniden deneyin.",
-      "unreachable": "Servise ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin."
+      "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin."
     },
     "card": {
       "states": {
@@ -4492,9 +4492,9 @@
         "toggle": "Profilimi herkese göster",
         "public": "Açık",
         "hidden": "Gizli",
-        "checking": "Bir ziyaretçinin ne gördüğü denetleniyor.",
+        "checking": "Bir ziyaretçinin ne gördüğü kontrol ediliyor.",
         "unknownTitle": "Bu ayar okunamadı",
-        "unknownBody": "IdeaNest profilinizin şu anda görünür olup olmadığını denetleyemedi, bu yüzden anahtar emin olmadığı bir konumu göstermek yerine devre dışı. Yeniden denemek için sayfayı yenileyin.",
+        "unknownBody": "IdeaNest profilinizin şu anda görünür olup olmadığını kontrol edemedi, bu yüzden anahtar emin olmadığı bir konumu göstermek yerine devre dışı. Yeniden denemek için sayfayı yenileyin.",
         "failedTitle": "Hiçbir şey değiştirilmedi",
         "refused": "Servis değişikliği reddetti. Profiliniz olduğu gibi kaldı.",
         "unreachable": "Servise ulaşılamadı. Profiliniz olduğu gibi kaldı.",
@@ -4858,7 +4858,7 @@
       "payoutsHeading": "Ödemeler",
       "payoutsEmpty": "Henüz yok. Ödeme §5.4’teki bekletmeden sonra hazırlanır ve hepsi — iptal edilenler dahil — burada görünür.",
       "booksHeading": "Defterler ne diyor",
-      "booksIntro": "Bu kampanya için §7.2 hesapları. Yukarıdaki toplamların güvene değil, bir şeye karşı denetlenebilmesi için yayımlanıyor. Hesabınızdaki eksi bakiye, platformun sizin için tuttuğu paradır.",
+      "booksIntro": "Bu kampanya için §7.2 hesapları. Yukarıdaki toplamların güvene değil, bir şeye karşı kontrol edilebilmesi için yayımlanıyor. Hesabınızdaki eksi bakiye, platformun sizin için tuttuğu paradır.",
       "unbalancedTitle": "Bu defterler denk gelmiyor",
       "unbalancedBody": "Bu kampanyanın kayıtları sıfır toplamıyor. Bunu açıklayan bir şey sizin elinizde değil — yukarıdaki rakamlara güvenmeden önce bu kampanyayı belirterek destek ekibine yazın.",
       "ledgerEmpty": "Bu kampanya için henüz bir kayıt işlenmedi.",
