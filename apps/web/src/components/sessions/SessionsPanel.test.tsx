@@ -6,6 +6,16 @@ import { ApiError } from '../../lib/api/problem';
 import { listSessions, revokeSession } from '../../lib/sessions/api';
 import { signOut } from '../../lib/api/access-token';
 import { SessionsPanel } from './SessionsPanel';
+import { sessionsPanelCopyFrom } from '../../lib/i18n/settings-copy';
+import { translatorFor } from '../../test-copy';
+
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #80.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = sessionsPanelCopyFrom(translatorFor('settings.panels'), translatorFor('auth'));
 
 vi.mock('../../lib/sessions/api', () => ({
   listSessions: vi.fn(),
@@ -64,7 +74,7 @@ beforeEach(() => {
 describe('SessionsPanel', () => {
   it('announces that it is loading rather than showing a blank panel', () => {
     listSessionsMock.mockReturnValue(new Promise<SessionSummary[]>(() => {}));
-    render(<SessionsPanel />);
+    render(<SessionsPanel copy={COPY} />);
 
     // The placeholders themselves are `aria-hidden`; the container carries the
     // message and the busy state, so a screen reader hears the wait rather than
@@ -75,7 +85,7 @@ describe('SessionsPanel', () => {
 
   it('lists one row per device, named so a person can recognise it', async () => {
     listSessionsMock.mockResolvedValue([HERE, PHONE, LAPTOP]);
-    render(<SessionsPanel />);
+    render(<SessionsPanel copy={COPY} />);
 
     expect(await screen.findByText('Chrome on macOS')).toBeInTheDocument();
     expect(rows()).toHaveLength(3);
@@ -88,7 +98,7 @@ describe('SessionsPanel', () => {
   // has to be readable text on exactly one row.
   it('marks the current device with a word, on that row only', async () => {
     listSessionsMock.mockResolvedValue([HERE, PHONE]);
-    render(<SessionsPanel />);
+    render(<SessionsPanel copy={COPY} />);
 
     await screen.findByText('Chrome on macOS');
 
@@ -102,7 +112,7 @@ describe('SessionsPanel', () => {
   // cannot tell which device they are about to end.
   it('gives each sign-out button an accessible name that says which device', async () => {
     listSessionsMock.mockResolvedValue([HERE, PHONE, LAPTOP]);
-    render(<SessionsPanel />);
+    render(<SessionsPanel copy={COPY} />);
 
     await screen.findByText('Chrome on macOS');
 
@@ -114,7 +124,7 @@ describe('SessionsPanel', () => {
   it('removes a revoked row and announces it politely', async () => {
     const user = userEvent.setup();
     listSessionsMock.mockResolvedValue([HERE, PHONE]);
-    render(<SessionsPanel />);
+    render(<SessionsPanel copy={COPY} />);
 
     await screen.findByText('Chrome on macOS');
     await user.click(screen.getByRole('button', { name: 'Sign out Safari on iOS' }));
@@ -131,7 +141,7 @@ describe('SessionsPanel', () => {
   it('moves focus somewhere real after the row that had it disappears', async () => {
     const user = userEvent.setup();
     listSessionsMock.mockResolvedValue([HERE, PHONE]);
-    render(<SessionsPanel />);
+    render(<SessionsPanel copy={COPY} />);
 
     await screen.findByText('Chrome on macOS');
     await user.click(screen.getByRole('button', { name: 'Sign out Safari on iOS' }));
@@ -147,7 +157,7 @@ describe('SessionsPanel', () => {
     const user = userEvent.setup();
     listSessionsMock.mockResolvedValue([HERE, PHONE]);
     revokeSessionMock.mockResolvedValue('already-gone');
-    render(<SessionsPanel />);
+    render(<SessionsPanel copy={COPY} />);
 
     await screen.findByText('Chrome on macOS');
     await user.click(screen.getByRole('button', { name: 'Sign out Safari on iOS' }));
@@ -162,7 +172,7 @@ describe('SessionsPanel', () => {
     revokeSessionMock.mockRejectedValue(
       new ApiError(500, { detail: 'The device could not be signed out.' }),
     );
-    render(<SessionsPanel />);
+    render(<SessionsPanel copy={COPY} />);
 
     await screen.findByText('Chrome on macOS');
     await user.click(screen.getByRole('button', { name: 'Sign out Safari on iOS' }));
@@ -180,7 +190,7 @@ describe('SessionsPanel', () => {
   it('signs out through logout, not revoke, when the row is this device', async () => {
     const user = userEvent.setup();
     listSessionsMock.mockResolvedValue([HERE, PHONE]);
-    render(<SessionsPanel />);
+    render(<SessionsPanel copy={COPY} />);
 
     await screen.findByText('Chrome on macOS');
     await user.click(screen.getByRole('button', { name: 'Sign out of this device' }));
@@ -193,7 +203,7 @@ describe('SessionsPanel', () => {
   describe('signing out everywhere else', () => {
     it('is not offered when this is the only device', async () => {
       listSessionsMock.mockResolvedValue([HERE]);
-      render(<SessionsPanel />);
+      render(<SessionsPanel copy={COPY} />);
 
       await screen.findByText('Chrome on macOS');
       expect(
@@ -204,7 +214,7 @@ describe('SessionsPanel', () => {
     it('asks first, and says how many devices it means', async () => {
       const user = userEvent.setup();
       listSessionsMock.mockResolvedValue([HERE, PHONE, LAPTOP]);
-      render(<SessionsPanel />);
+      render(<SessionsPanel copy={COPY} />);
 
       await screen.findByText('Chrome on macOS');
       await user.click(screen.getByRole('button', { name: 'Sign out everywhere else' }));
@@ -217,7 +227,7 @@ describe('SessionsPanel', () => {
     it('does nothing when the confirmation is cancelled', async () => {
       const user = userEvent.setup();
       listSessionsMock.mockResolvedValue([HERE, PHONE, LAPTOP]);
-      render(<SessionsPanel />);
+      render(<SessionsPanel copy={COPY} />);
 
       await screen.findByText('Chrome on macOS');
       await user.click(screen.getByRole('button', { name: 'Sign out everywhere else' }));
@@ -233,7 +243,7 @@ describe('SessionsPanel', () => {
     it('revokes every other device and leaves this one signed in', async () => {
       const user = userEvent.setup();
       listSessionsMock.mockResolvedValueOnce([HERE, PHONE, LAPTOP]).mockResolvedValueOnce([HERE]);
-      render(<SessionsPanel />);
+      render(<SessionsPanel copy={COPY} />);
 
       await screen.findByText('Chrome on macOS');
       await user.click(screen.getByRole('button', { name: 'Sign out everywhere else' }));
@@ -258,7 +268,7 @@ describe('SessionsPanel', () => {
         if (id === 'laptop') throw new ApiError(500, null);
         return 'revoked';
       });
-      render(<SessionsPanel />);
+      render(<SessionsPanel copy={COPY} />);
 
       await screen.findByText('Chrome on macOS');
       await user.click(screen.getByRole('button', { name: 'Sign out everywhere else' }));
@@ -275,7 +285,7 @@ describe('SessionsPanel', () => {
   describe('when the account cannot use the list', () => {
     it('explains a deletion grace period instead of showing a bare failure', async () => {
       listSessionsMock.mockRejectedValue(new ApiError(403, null));
-      render(<SessionsPanel />);
+      render(<SessionsPanel copy={COPY} />);
 
       const alert = await screen.findByRole('alert');
       expect(alert).toHaveTextContent('Your account is scheduled for deletion');
@@ -283,7 +293,7 @@ describe('SessionsPanel', () => {
 
     it('says so plainly when the session has ended', async () => {
       listSessionsMock.mockRejectedValue(new ApiError(401, null));
-      render(<SessionsPanel />);
+      render(<SessionsPanel copy={COPY} />);
 
       expect(await screen.findByText('You are signed out')).toBeInTheDocument();
       expect(screen.queryByRole('list')).not.toBeInTheDocument();
@@ -292,7 +302,7 @@ describe('SessionsPanel', () => {
     it('offers a retry when the request simply failed', async () => {
       const user = userEvent.setup();
       listSessionsMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
-      render(<SessionsPanel />);
+      render(<SessionsPanel copy={COPY} />);
 
       const retry = await screen.findByRole('button', { name: 'Try again' });
       listSessionsMock.mockResolvedValueOnce([HERE]);

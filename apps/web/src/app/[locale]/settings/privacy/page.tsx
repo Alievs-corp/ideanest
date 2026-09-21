@@ -5,6 +5,10 @@ import { AccountClosurePanel } from '../../../../components/settings/AccountClos
 import { DataExportPanel } from '../../../../components/settings/DataExportPanel';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 import { getTranslations } from 'next-intl/server';
+import {
+  accountClosurePanelCopy,
+  dataExportPanelCopy,
+} from '../../../../lib/i18n/shell-copy.server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('settings.pages.privacy');
@@ -46,7 +50,13 @@ export async function generateMetadata(): Promise<Metadata> {
  * safety argument.
  */
 export default async function PrivacyPage() {
-  const t = await getTranslations('settings.pages.privacy');
+  // Both panels are client islands behind a bearer token, so the route resolves their words
+  // and hands them down — lib/i18n/settings-copy.ts carries the reasoning.
+  const [t, exportCopy, closureCopy] = await Promise.all([
+    getTranslations('settings.pages.privacy'),
+    dataExportPanelCopy(),
+    accountClosurePanelCopy(),
+  ]);
 
   return (
     <>
@@ -56,8 +66,8 @@ export default async function PrivacyPage() {
 
       <div className="mt-8 flex flex-col gap-6">
         <ProfileVisibilityPanel />
-        <DataExportPanel />
-        <AccountClosurePanel />
+        <DataExportPanel copy={exportCopy} />
+        <AccountClosurePanel copy={closureCopy} />
       </div>
     </>
   );

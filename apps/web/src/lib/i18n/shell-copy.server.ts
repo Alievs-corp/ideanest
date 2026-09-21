@@ -80,10 +80,18 @@ import {
   consoleIndexCopyFrom,
 } from './admin-copy';
 import {
+  type AccountClosurePanelCopy,
+  type DataExportPanelCopy,
   type EmailChangePanelCopy,
   type PasswordChangePanelCopy,
+  type SessionsPanelCopy,
+  type TwoFactorPanelCopy,
+  accountClosurePanelCopyFrom,
+  dataExportPanelCopyFrom,
   emailChangePanelCopyFrom,
   passwordChangePanelCopyFrom,
+  sessionsPanelCopyFrom,
+  twoFactorPanelCopyFrom,
 } from './settings-copy';
 import { type TrailCopy } from '../seo/structured-data/breadcrumb';
 import { trailCopyFrom } from './trail-copy';
@@ -198,6 +206,42 @@ export async function emailChangePanelCopy(): Promise<EmailChangePanelCopy> {
 
 export async function passwordChangePanelCopy(): Promise<PasswordChangePanelCopy> {
   return passwordChangePanelCopyFrom(
+    await getTranslations('settings.panels'),
+    await getTranslations('auth'),
+  );
+}
+
+/**
+ * The three panels somebody secures or closes an account with — issue #80.
+ *
+ * Each takes `auth` as well as its own namespace, for the reason the two credential panels
+ * above do: the refusal vocabulary is one object, shared with the six authentication routes,
+ * rather than a second spelling of "That did not work" under `settings.panels`.
+ */
+export async function twoFactorPanelCopy(): Promise<TwoFactorPanelCopy> {
+  return twoFactorPanelCopyFrom(
+    await getTranslations('settings.panels'),
+    await getTranslations('auth'),
+  );
+}
+
+export async function accountClosurePanelCopy(): Promise<AccountClosurePanelCopy> {
+  return accountClosurePanelCopyFrom(
+    await getTranslations('settings.panels'),
+    await getTranslations('auth'),
+  );
+}
+
+export async function dataExportPanelCopy(): Promise<DataExportPanelCopy> {
+  return dataExportPanelCopyFrom(
+    await getTranslations('settings.panels'),
+    await getTranslations('auth'),
+  );
+}
+
+/** §4.1's A-09 — the device list under `/settings/sessions`, and the row it repeats. */
+export async function sessionsPanelCopy(): Promise<SessionsPanelCopy> {
+  return sessionsPanelCopyFrom(
     await getTranslations('settings.panels'),
     await getTranslations('auth'),
   );

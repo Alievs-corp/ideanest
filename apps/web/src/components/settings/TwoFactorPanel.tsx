@@ -9,6 +9,8 @@ import {
   startTwoFactorEnrolment,
   type TwoFactorEnrolment,
 } from '../../lib/auth/twoFactor';
+import type { TwoFactorPanelCopy } from '../../lib/i18n/settings-copy';
+import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * §4.1's A-07 — enrolling in two-factor, seeing the recovery codes once, and switching it
@@ -64,19 +66,39 @@ type Step =
   | { readonly kind: 'codes'; readonly codes: readonly string[] }
   | { readonly kind: 'disable' };
 
-function messageFor(cause: unknown): string {
+function messageFor(cause: unknown, copy: TwoFactorPanelCopy): string {
   if (cause instanceof ApiError) {
-    return (
-      cause.problem?.detail ?? cause.problem?.title ?? 'The service refused the request. Try again.'
-    );
+    return cause.problem?.detail ?? cause.problem?.title ?? copy.failures.refusedDetail;
   }
-  return 'The service could not be reached. Check your connection and try again.';
+  return copy.failures.unreachableDetail;
 }
 
-/** The service's own sentence for an account that is already enrolled. */
+/**
+ * The service's own sentence for an account that is already enrolled.
+ *
+ * <h2>Matching on prose is wrong, and it is what the service leaves available</h2>
+ *
+ * §10.4 says a client branches on `code` and never on `detail`, "which is prose written for
+ * a human and may be reworded or localised at any time". This endpoint publishes no `code`:
+ * every `TwoFactorRejectedException` arrives as one problem type — a wrong password, a wrong
+ * code, and this — so the sentence is the only thing that tells them apart.
+ *
+ * <p>It is safe today for a reason worth writing down rather than relying on quietly:
+ * `TwoFactorEnrolmentService` throws this string as a Java literal rather than reading it
+ * from `messages_{az,ru,tr}.properties`, so the wire sentence is English whatever language
+ * the account is in. The moment that refusal is translated, this comparison stops matching
+ * and the panel stops moving the reader to the off-path — so what is printed is
+ * `copy.alreadyEnabled` rather than what arrived, and the fix is a `code` on the service
+ * side. That is `area: backend` work and #78 does not own it.
+ */
 const ALREADY_ENABLED = 'Two-factor authentication is already enabled.';
 
-export function TwoFactorPanel() {
+export interface TwoFactorPanelProps {
+  /** Every word this panel draws, resolved on the server — #80. */
+  readonly copy: TwoFactorPanelCopy;
+}
+
+export function TwoFactorPanel({ copy }: TwoFactorPanelProps) {
   const [step, setStep] = useState<Step>({ kind: 'idle' });
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
@@ -135,14 +157,16 @@ export function TwoFactorPanel() {
       setPassword('');
       go({ kind: 'scan', enrolment });
     } catch (cause) {
-      const detail = messageFor(cause);
+      const detail = messageFor(cause, copy);
       if (detail === ALREADY_ENABLED) {
         /*
          * Not an error the reader can act on where they are — it is the answer to the
          * question this panel could not ask. The password they just proved is the same one
          * the off-path needs, so they are moved there rather than sent back to the start.
          */
-        setNotice(detail);
+        // Our sentence, not the one that arrived: see ALREADY_ENABLED for why the wire
+        // sentence is English and why printing it here would be the panel's one English line.
+        setNotice(copy.alreadyEnabled);
         go({ kind: 'disable' });
         return;
       }
@@ -163,7 +187,7 @@ export function TwoFactorPanel() {
       setAcknowledged(false);
       go({ kind: 'codes', codes });
     } catch (cause) {
-      setError(messageFor(cause));
+      setError(messageFor(cause, copy));
     } finally {
       setBusy(false);
     }
@@ -187,10 +211,10 @@ export function TwoFactorPanel() {
           : { kind: 'recovery-code', recoveryCode: typedRecovery },
       );
       setPassword('');
-      setNotice('Two-factor authentication is off. Your password alone signs you in again.');
+      setNotice(copy.disabledNotice);
       go({ kind: 'idle' });
     } catch (cause) {
-      setError(messageFor(cause));
+      setError(messageFor(cause, copy));
     } finally {
       setBusy(false);
     }
@@ -203,14 +227,14 @@ export function TwoFactorPanel() {
       className="text-lg font-medium tracking-[-0.02em] text-white focus:outline-none"
     >
       {step.kind === 'scan'
-        ? 'Add IdeaNest to your authenticator'
+        ? copy.scanHeading
         : step.kind === 'codes'
-          ? 'Save your recovery codes'
+          ? copy.codesHeading
           : step.kind === 'disable'
-            ? 'Turn two-factor authentication off'
+            ? copy.disableHeading
             : step.kind === 'password'
-              ? 'Confirm your password'
-              : 'Two-factor authentication'}
+              ? copy.passwordHeading
+              : copy.heading}
     </h2>
   );
 
@@ -220,7 +244,7 @@ export function TwoFactorPanel() {
 
       {notice !== null && step.kind !== 'codes' && (
         <div className="mt-5">
-          <InlineAlert variant="info" title="From the service" onDismiss={() => setNotice(null)}>
+          <InlineAlert variant="info" title={copy.fromService} onDismiss={() => setNotice(null)}>
             <p>{notice}</p>
           </InlineAlert>
         </div>
@@ -228,7 +252,7 @@ export function TwoFactorPanel() {
 
       {error !== null && (
         <div className="mt-5">
-          <InlineAlert variant="danger" title="That did not work">
+          <InlineAlert variant="danger" title={copy.failures.refusedTitle}>
             <p>{error}</p>
           </InlineAlert>
         </div>
@@ -237,34 +261,33 @@ export function TwoFactorPanel() {
       {step.kind === 'idle' && (
         <div className="mt-4 flex flex-col gap-6">
           <p className="max-w-[62ch] text-[15px] leading-relaxed text-white/64">
-            A code from your phone, on top of your password. §4.1 makes it{' '}
-            <strong className="font-medium text-white">required before a payout</strong>, so a
-            creator will be asked for one sooner or later — switching it on now is the cheaper
-            moment.
+            {/*
+              The emphasised phrase is its own key and the sentence is filled around it. A
+              "before" key and an "after" key would buy the same `<strong>` at the cost of
+              word order, which is the thing a translation is entitled to change.
+            */}
+            {fillNodes(copy.intro, {
+              emphasis: (
+                <strong className="font-medium text-white">{copy.introEmphasis}</strong>
+              ),
+            })}
           </p>
           <div className="flex flex-wrap gap-3">
             <Pill type="button" onClick={() => go({ kind: 'password' })}>
-              Set it up
+              {copy.setUp}
             </Pill>
             <Pill type="button" variant="ghost" onClick={() => go({ kind: 'disable' })}>
-              Turn it off
+              {copy.turnOff}
             </Pill>
           </div>
-          <p className="max-w-[62ch] text-sm text-white/40">
-            Both are offered because this screen cannot read which one applies — the service
-            publishes no field saying whether your account is enrolled. Whichever you choose, it
-            answers honestly.
-          </p>
+          <p className="max-w-[62ch] text-sm text-white/40">{copy.bothOffered}</p>
         </div>
       )}
 
       {step.kind === 'password' && (
         <form onSubmit={begin} noValidate className="mt-4 flex max-w-[26rem] flex-col gap-5">
-          <p className="text-[15px] leading-relaxed text-white/64">
-            Turning a security control on costs your password, so that a stolen sign-in cannot
-            bolt a second factor onto your account.
-          </p>
-          <Field label="Current password" required>
+          <p className="text-[15px] leading-relaxed text-white/64">{copy.passwordIntro}</p>
+          <Field label={copy.currentPassword} required>
             <TextInput
               type="password"
               name="password"
@@ -275,10 +298,10 @@ export function TwoFactorPanel() {
           </Field>
           <div className="flex flex-wrap gap-3">
             <Pill type="submit" disabled={busy}>
-              {busy ? 'Checking' : 'Continue'}
+              {busy ? copy.checking : copy.continue}
             </Pill>
             <Pill type="button" variant="ghost" onClick={() => go({ kind: 'idle' })}>
-              Cancel
+              {copy.cancel}
             </Pill>
           </div>
         </form>
@@ -287,22 +310,25 @@ export function TwoFactorPanel() {
       {step.kind === 'scan' && (
         <form onSubmit={confirm} noValidate className="mt-4 flex flex-col gap-6">
           <p className="max-w-[62ch] text-[15px] leading-relaxed text-white/64">
-            Two-factor is <strong className="font-medium text-white">not on yet</strong>. Add this
-            to your authenticator, then enter the code it shows — that is what switches it on.
+            {fillNodes(copy.scanIntro, {
+              emphasis: (
+                <strong className="font-medium text-white">{copy.scanIntroEmphasis}</strong>
+              ),
+            })}
           </p>
 
           <div className="flex flex-col gap-4 rounded-xl border border-white/8 bg-surface-1 p-5">
             <div>
-              <p className="text-sm text-white/64">On this device</p>
+              <p className="text-sm text-white/64">{copy.onThisDevice}</p>
               <a
                 href={step.enrolment.otpauthUri}
                 className="mt-1 inline-block rounded-sm text-[15px] text-white underline underline-offset-4 hover:text-white/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
               >
-                Open in your authenticator app
+                {copy.openApp}
               </a>
             </div>
             <div>
-              <p className="text-sm text-white/64">Or enter this key by hand</p>
+              <p className="text-sm text-white/64">{copy.byHand}</p>
               {/*
                 `break-all` on a monospace run: a base32 secret has no spaces to wrap at, and
                 without it the card widens until the layout scrolls sideways.
@@ -311,13 +337,16 @@ export function TwoFactorPanel() {
                 {step.enrolment.secret}
               </code>
               <p className="mt-2 text-sm text-white/40">
-                {step.enrolment.digits} digits, every {step.enrolment.periodSeconds} seconds,{' '}
-                {step.enrolment.algorithm}.
+                {fillPlaceholders(copy.parameters, {
+                  digits: String(step.enrolment.digits),
+                  seconds: String(step.enrolment.periodSeconds),
+                  algorithm: step.enrolment.algorithm,
+                })}
               </p>
             </div>
           </div>
 
-          <Field label="Code from your authenticator" required>
+          <Field label={copy.codeLabel} required>
             <TextInput
               name="code"
               autoComplete="one-time-code"
@@ -325,16 +354,16 @@ export function TwoFactorPanel() {
               maxLength={16}
               value={code}
               onChange={(event) => setCode(event.target.value)}
-              placeholder="000000"
+              placeholder={copy.codePlaceholder}
             />
           </Field>
 
           <div className="flex flex-wrap gap-3">
             <Pill type="submit" disabled={busy}>
-              {busy ? 'Confirming' : 'Switch it on'}
+              {busy ? copy.confirming : copy.switchOn}
             </Pill>
             <Pill type="button" variant="ghost" onClick={() => go({ kind: 'idle' })}>
-              Cancel
+              {copy.cancel}
             </Pill>
           </div>
         </form>
@@ -342,12 +371,8 @@ export function TwoFactorPanel() {
 
       {step.kind === 'codes' && (
         <div className="mt-4 flex flex-col gap-6">
-          <InlineAlert variant="warning" title="This is the only time these are shown">
-            <p>
-              We store a hash of them, so they cannot be shown again — only replaced by
-              enrolling afresh. Each one works once, and any of them signs you in when your
-              authenticator is out of reach.
-            </p>
+          <InlineAlert variant="warning" title={copy.codesWarningTitle}>
+            <p>{copy.codesWarningBody}</p>
           </InlineAlert>
 
           <ul className="grid list-none grid-cols-2 gap-2 rounded-xl border border-white/8 bg-surface-1 p-5 font-mono text-[15px] text-white select-all sm:grid-cols-3">
@@ -364,7 +389,7 @@ export function TwoFactorPanel() {
           <Checkbox
             checked={acknowledged}
             onChange={(event) => setAcknowledged(event.target.checked)}
-            label="I have saved these somewhere I can reach without my phone."
+            label={copy.acknowledge}
           />
 
           <div>
@@ -372,11 +397,11 @@ export function TwoFactorPanel() {
               type="button"
               disabled={!acknowledged}
               onClick={() => {
-                setNotice('Two-factor authentication is on. You will be asked for a code when you sign in.');
+                setNotice(copy.enabledNotice);
                 go({ kind: 'idle' });
               }}
             >
-              Done
+              {copy.done}
             </Pill>
           </div>
         </div>
@@ -385,11 +410,12 @@ export function TwoFactorPanel() {
       {step.kind === 'disable' && (
         <form onSubmit={turnOff} noValidate className="mt-4 flex max-w-[26rem] flex-col gap-5">
           <p className="text-[15px] leading-relaxed text-white/64">
-            Your password <em>and</em> a code. Without the code the whole feature would be worth
-            exactly one password, which is the thing it was added to stop being enough.
+            {fillNodes(copy.disableIntro, {
+              emphasis: <em>{copy.disableIntroEmphasis}</em>,
+            })}
           </p>
 
-          <Field label="Current password" required>
+          <Field label={copy.currentPassword} required>
             <TextInput
               type="password"
               name="password"
@@ -399,7 +425,7 @@ export function TwoFactorPanel() {
             />
           </Field>
 
-          <Field label="Code from your authenticator">
+          <Field label={copy.codeLabel}>
             <TextInput
               name="code"
               autoComplete="one-time-code"
@@ -407,14 +433,11 @@ export function TwoFactorPanel() {
               maxLength={16}
               value={code}
               onChange={(event) => setCode(event.target.value)}
-              placeholder="000000"
+              placeholder={copy.codePlaceholder}
             />
           </Field>
 
-          <Field
-            label="Or a recovery code"
-            hint="For the person whose phone is the reason they are here. Each one works once."
-          >
+          <Field label={copy.recoveryLabel} hint={copy.recoveryHint}>
             <TextInput
               name="recoveryCode"
               autoComplete="off"
@@ -427,10 +450,10 @@ export function TwoFactorPanel() {
 
           <div className="flex flex-wrap gap-3">
             <Pill type="submit" variant="danger" disabled={busy}>
-              {busy ? 'Turning it off' : 'Turn it off'}
+              {busy ? copy.turningOff : copy.turnOff}
             </Pill>
             <Pill type="button" variant="ghost" onClick={() => go({ kind: 'idle' })}>
-              Cancel
+              {copy.cancel}
             </Pill>
           </div>
         </form>

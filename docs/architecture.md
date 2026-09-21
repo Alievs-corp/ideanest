@@ -6346,9 +6346,18 @@ it was written in.
 > are not.
 >
 > **What is still English, stated rather than left to be found.** The campaign editor,
-> the eleven panels under the account headings, and
+> the seven panels left under the account headings, and
 > `components/moderation/ReportControl` — the dialog a member of the public opens to
 > report a campaign. Epic #78 is the list of them with a count against each.
+>
+> **The screens somebody secures or closes an account with came off it in #80.** Two-factor
+> enrolment — including "this is the only time these are shown", the sentence standing
+> between a reader and a permanently locked account — the data export, the account closure
+> and its thirty-day grace period, and the device list. All four read their refusals from
+> `auth.failures` rather than spelling "That did not work" a second time, which is what the
+> credential panels beside them already did. `deviceNameOf` took its last two English words
+> as an argument with them: a browser is called Chrome in every language, but "Chrome **on**
+> macOS" is a preposition, and two of the four languages put the platform first.
 >
 > **The creator dashboard came off that list in #79.** All five panels under
 > `/projects/[id]/dashboard` draw from the catalogue: the overview and its countdown,

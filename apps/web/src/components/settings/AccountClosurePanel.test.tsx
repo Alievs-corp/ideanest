@@ -8,6 +8,16 @@ import { fetchSession, type Session } from '../../lib/session/session';
 import { formatExactTime } from '../../lib/time';
 import { SessionProvider } from '../session/SessionProvider';
 import { AccountClosurePanel } from './AccountClosurePanel';
+import { accountClosurePanelCopyFrom } from '../../lib/i18n/settings-copy';
+import { translatorFor } from '../../test-copy';
+
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #80.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = accountClosurePanelCopyFrom(translatorFor('settings.panels'), translatorFor('auth'));
 
 /**
  * §4.1's A-10 — issue #279.
@@ -66,7 +76,7 @@ const ACCOUNT: Session = {
 function renderPanel() {
   return render(
     <SessionProvider>
-      <AccountClosurePanel />
+      <AccountClosurePanel copy={COPY} />
     </SessionProvider>,
   );
 }

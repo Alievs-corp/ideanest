@@ -9,12 +9,11 @@ import { listSessions, revokeSession, type SessionSummary } from '../../lib/sess
 import { deviceNameOf } from '../../lib/sessions/describe';
 import { SessionRow } from './SessionRow';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { SessionsPanelCopy } from '../../lib/i18n/settings-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { pluralise } from '../../lib/i18n/plurals';
 
 type Status = 'loading' | 'ready' | 'failed' | 'signed-out';
-
-function devices(count: number): string {
-  return `${count} ${count === 1 ? 'device' : 'devices'}`;
-}
 
 /**
  * Turns a failure into something a user can act on.
@@ -23,16 +22,12 @@ function devices(count: number): string {
  * worth showing, but the ones this endpoint produces are, and inventing a
  * generic message on top of a specific one loses information the user needs.
  */
-function messageFor(cause: unknown): string {
+function messageFor(cause: unknown, copy: SessionsPanelCopy): string {
   if (cause instanceof ApiError) {
-    if (cause.status === 403) {
-      return 'Your account is scheduled for deletion, so devices cannot be managed. Cancel the deletion to manage them again.';
-    }
-    return (
-      cause.problem?.detail ?? cause.problem?.title ?? 'The service refused the request. Try again.'
-    );
+    if (cause.status === 403) return copy.deletionScheduled;
+    return cause.problem?.detail ?? cause.problem?.title ?? copy.failures.refusedDetail;
   }
-  return 'The service could not be reached. Check your connection and try again.';
+  return copy.failures.unreachableDetail;
 }
 
 function wasAborted(cause: unknown): boolean {
@@ -49,8 +44,20 @@ function wasAborted(cause: unknown): boolean {
  * colour on hover and nothing else — no fade-up, and no stagger on the list,
  * which §8 rules out for lists regardless.
  */
-export function SessionsPanel() {
+export interface SessionsPanelProps {
+  /** Every word this panel and its rows draw, resolved on the server — #80. */
+  readonly copy: SessionsPanelCopy;
+}
+
+export function SessionsPanel({ copy }: SessionsPanelProps) {
   const locale = useRouteLocale();
+
+  /*
+   * "3 devices", in the reader's language. A plural rather than a ternary on `=== 1`:
+   * Russian picks between three forms by the last digit, so a singular/plural split is wrong
+   * for most numbers in one of the four languages and nothing on screen would say so.
+   */
+  const devices = (count: number): string => pluralise(locale, copy.devices, count);
   const [status, setStatus] = useState<Status>('loading');
   const [sessions, setSessions] = useState<readonly SessionSummary[]>([]);
   const [now, setNow] = useState<Date>(() => new Date());
@@ -81,7 +88,7 @@ export function SessionsPanel() {
         setStatus('signed-out');
         return;
       }
-      setError(messageFor(cause));
+      setError(messageFor(cause, copy));
       setStatus('failed');
     }
   }, []);
@@ -116,7 +123,7 @@ export function SessionsPanel() {
       await endThisSession();
       setStatus('signed-out');
     } catch (cause) {
-      setError(messageFor(cause));
+      setError(messageFor(cause, copy));
     } finally {
       markBusy(session.id, false);
     }
@@ -125,7 +132,7 @@ export function SessionsPanel() {
   async function endOneDevice(session: SessionSummary): Promise<void> {
     if (session.current) return endThisDevice(session);
 
-    const name = deviceNameOf(session);
+    const name = deviceNameOf(session, copy.row);
     markBusy(session.id, true);
     setError(null);
 
@@ -133,7 +140,7 @@ export function SessionsPanel() {
       // A 404 means it was already gone, which is the state the user asked for.
       await revokeSession(session.id);
       setSessions((previous) => previous.filter((row) => row.id !== session.id));
-      setNotice(`Signed out ${name}.`);
+      setNotice(fillPlaceholders(copy.signedOutDevice, { name }));
 
       /*
        * The button that started this has just been removed from the document.
@@ -143,7 +150,7 @@ export function SessionsPanel() {
        */
       headingRef.current?.focus();
     } catch (cause) {
-      setError(messageFor(cause));
+      setError(messageFor(cause, copy));
     } finally {
       markBusy(session.id, false);
     }
@@ -173,11 +180,14 @@ export function SessionsPanel() {
     await load();
 
     if (failures === 0) {
-      setNotice(`Signed out ${devices(targets.length)}.`);
+      setNotice(fillPlaceholders(copy.signedOutDevices, { devices: devices(targets.length) }));
     } else {
       setNotice(null);
       setError(
-        `Signed out ${devices(targets.length - failures)}. ${devices(failures)} could not be signed out — try again.`,
+        fillPlaceholders(copy.signedOutPartly, {
+          done: devices(targets.length - failures),
+          failed: devices(failures),
+        }),
       );
     }
 
@@ -186,8 +196,8 @@ export function SessionsPanel() {
 
   if (status === 'signed-out') {
     return (
-      <InlineAlert variant="info" title="You are signed out">
-        This browser no longer has a session. Sign in again to manage your devices.
+      <InlineAlert variant="info" title={copy.signedOutTitle}>
+        {copy.signedOutBody}
       </InlineAlert>
     );
   }
@@ -203,7 +213,7 @@ export function SessionsPanel() {
           tabIndex={-1}
           className="text-lg font-medium tracking-[-0.02em] text-white"
         >
-          Your devices
+          {copy.heading}
           {status === 'ready' && (
             <span className="ml-2 text-xs font-normal text-white/40">{sessions.length}</span>
           )}
@@ -211,7 +221,7 @@ export function SessionsPanel() {
 
         {others.length > 0 && (
           <Pill variant="danger" size="sm" onClick={() => setConfirmOpen(true)}>
-            Sign out everywhere else
+            {copy.signOutEverywhere}
           </Pill>
         )}
       </div>
@@ -231,13 +241,13 @@ export function SessionsPanel() {
 
       {/* `InlineAlert` carries `role="alert"` for danger — it must interrupt. */}
       {error && (
-        <InlineAlert variant="danger" title="Something went wrong" className="mt-4">
+        <InlineAlert variant="danger" title={copy.errorTitle} className="mt-4">
           {error}
         </InlineAlert>
       )}
 
       {status === 'loading' && (
-        <SkeletonGroup label="Loading your devices" className="mt-4">
+        <SkeletonGroup label={copy.loading} className="mt-4">
           <div className="divide-y divide-white/6 overflow-hidden rounded-lg border border-white/8 bg-surface-2">
             {[0, 1, 2].map((row) => (
               <div key={row} className="flex items-start gap-4 px-5 py-4">
@@ -255,8 +265,8 @@ export function SessionsPanel() {
       {status === 'ready' && sessions.length === 0 && (
         <EmptyState
           className="mt-4"
-          title="No devices are signed in"
-          description="That should not be possible while you are reading this page. Reload it to check again."
+          title={copy.emptyTitle}
+          description={copy.emptyBody}
         />
       )}
 
@@ -268,6 +278,7 @@ export function SessionsPanel() {
               session={session}
               now={now}
               locale={locale}
+              copy={copy.row}
               busy={busyIds.has(session.id)}
               onSignOut={(row) => void endOneDevice(row)}
             />
@@ -277,7 +288,7 @@ export function SessionsPanel() {
 
       {status === 'failed' && (
         <Pill variant="ghost" size="sm" className="mt-4" onClick={() => void load()}>
-          Try again
+          {copy.tryAgain}
         </Pill>
       )}
 
@@ -290,23 +301,26 @@ export function SessionsPanel() {
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         size="sm"
-        title="Sign out everywhere else?"
-        description={`${devices(others.length)} will be signed out immediately. This one stays signed in.`}
+        title={copy.confirmTitle}
+        description={fillPlaceholders(copy.confirmDescription, {
+          devices: devices(others.length),
+        })}
         closeOnBackdropClick={false}
         showClose={false}
         footer={
           <>
             <Pill variant="ghost" disabled={endingOthers} onClick={() => setConfirmOpen(false)}>
-              Cancel
+              {copy.cancel}
             </Pill>
             <Pill variant="danger" disabled={endingOthers} onClick={() => void endOtherDevices()}>
-              {endingOthers ? 'Signing out' : `Sign out ${devices(others.length)}`}
+              {endingOthers
+                ? copy.signingOutAll
+                : fillPlaceholders(copy.signOutCount, { devices: devices(others.length) })}
             </Pill>
           </>
         }
       >
-        Anyone using those devices will have to sign in again. Do this if you have lost a device or
-        you do not recognise something in the list.
+        {copy.confirmBody}
       </Modal>
     </section>
   );

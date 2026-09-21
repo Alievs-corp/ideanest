@@ -1,4 +1,5 @@
 import type { SessionSummary } from './api';
+import { fillPlaceholders } from '../i18n/placeholders';
 
 /**
  * Turning a session row into something a person can recognise.
@@ -58,6 +59,22 @@ export function platformOf(userAgent: string | undefined): string | null {
 }
 
 /**
+ * The two words this module cannot parse out of a user agent — issue #80.
+ *
+ * A browser is called Chrome in every language and a platform is called macOS in every
+ * language; those are names and they are left alone. What joins them is a preposition, and
+ * "Chrome on macOS" is English — Azerbaijani and Turkish put the platform first. The
+ * admission for a session with neither is prose too. Both arrive as an argument, the shape
+ * `lib/moderation/describe.ts` is in: this module is imported by a client bundle and cannot
+ * read a catalogue.
+ */
+export interface DeviceNameCopy {
+  /** Carries `{browser}` and `{platform}`. */
+  readonly onPlatform: string;
+  readonly unknownDevice: string;
+}
+
+/**
  * What the row is called.
  *
  * The label the client sent at sign-in wins, because a person who named their
@@ -67,6 +84,7 @@ export function platformOf(userAgent: string | undefined): string | null {
  */
 export function deviceNameOf(
   session: Pick<SessionSummary, 'deviceLabel' | 'userAgent'>,
+  copy: DeviceNameCopy,
 ): string {
   const label = session.deviceLabel?.trim();
   if (label) return label;
@@ -74,8 +92,8 @@ export function deviceNameOf(
   const browser = browserOf(session.userAgent);
   const platform = platformOf(session.userAgent);
 
-  if (browser && platform) return `${browser} on ${platform}`;
-  return browser ?? platform ?? 'Unknown device';
+  if (browser && platform) return fillPlaceholders(copy.onPlatform, { browser, platform });
+  return browser ?? platform ?? copy.unknownDevice;
 }
 
 /**
