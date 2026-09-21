@@ -312,14 +312,20 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   chips, its saved segments and its table, the financial summary down to §7.2's ledger, and
   §4.8's survey builder with the five answer types PM-03 offers.
   `lib/i18n/dashboard-copy.ts` holds the shape and one accessor per panel;
-  `lib/i18n/shell-copy.server.ts` is where a route resolves it.
+  `lib/i18n/shell-copy.server.ts` is where a route resolves it;
+- the screens somebody secures or closes an account with (#80) — `/settings/security`'s
+  two-factor enrolment down to the recovery codes shown once, `/settings/privacy`'s data
+  export and account closure, and `/settings/sessions`' device list and its row. All four
+  read their refusals from `auth.failures` rather than carrying a second spelling of them,
+  which is what the email and password panels beside them already did.
+  `lib/i18n/settings-copy.ts` holds the shape.
 
 What is still English:
 
 | Surface | Where |
 |---|---|
 | The campaign editor | `components/campaign-editor` |
-| The panels below eleven account headings | `components/settings`, `components/sessions`, `components/surveys`, `components/pledges`, `components/profile`'s editor |
+| The panels below seven account headings | `components/surveys`, `components/pledges`, `components/profile`'s editor, and the saved and following lists |
 | The public report dialog | `components/moderation/ReportControl` |
 
 `ReportControl` is the reason `lib/moderation/describe.ts` still exports `REASON_LABELS`: the

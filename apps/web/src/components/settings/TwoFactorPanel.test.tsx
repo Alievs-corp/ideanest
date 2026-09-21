@@ -8,6 +8,16 @@ import {
   startTwoFactorEnrolment,
 } from '../../lib/auth/twoFactor';
 import { TwoFactorPanel } from './TwoFactorPanel';
+import { twoFactorPanelCopyFrom } from '../../lib/i18n/settings-copy';
+import { translatorFor } from '../../test-copy';
+
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #80.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = twoFactorPanelCopyFrom(translatorFor('settings.panels'), translatorFor('auth'));
 
 /**
  * §4.1's A-07 — issue #278.
@@ -68,7 +78,7 @@ async function reachTheSecret(user: ReturnType<typeof userEvent.setup>): Promise
 describe('enrolling', () => {
   it('does not claim two-factor is on before a code has been entered', async () => {
     const user = userEvent.setup();
-    render(<TwoFactorPanel />);
+    render(<TwoFactorPanel copy={COPY} />);
 
     await reachTheSecret(user);
 
@@ -78,7 +88,7 @@ describe('enrolling', () => {
 
   it('offers the secret both ways, because not every device can open a link', async () => {
     const user = userEvent.setup();
-    render(<TwoFactorPanel />);
+    render(<TwoFactorPanel copy={COPY} />);
 
     await reachTheSecret(user);
 
@@ -91,7 +101,7 @@ describe('enrolling', () => {
 
   it('shows the recovery codes and refuses to move on until they are acknowledged', async () => {
     const user = userEvent.setup();
-    render(<TwoFactorPanel />);
+    render(<TwoFactorPanel copy={COPY} />);
 
     await reachTheSecret(user);
     await user.type(screen.getByLabelText(/Code from your authenticator/u), '123456');
@@ -112,7 +122,7 @@ describe('enrolling', () => {
       new ApiError(409, { detail: 'Two-factor authentication is already enabled.' }),
     );
     const user = userEvent.setup();
-    render(<TwoFactorPanel />);
+    render(<TwoFactorPanel copy={COPY} />);
 
     await reachTheSecret(user);
 
@@ -126,7 +136,7 @@ describe('enrolling', () => {
   it('prints any other refusal as an error and keeps the password step', async () => {
     startMock.mockRejectedValue(new ApiError(401, { detail: 'That password or code is not valid.' }));
     const user = userEvent.setup();
-    render(<TwoFactorPanel />);
+    render(<TwoFactorPanel copy={COPY} />);
 
     await reachTheSecret(user);
 
@@ -138,7 +148,7 @@ describe('enrolling', () => {
 describe('disabling', () => {
   it('sends the password and exactly one proof', async () => {
     const user = userEvent.setup();
-    render(<TwoFactorPanel />);
+    render(<TwoFactorPanel copy={COPY} />);
 
     await user.click(screen.getByRole('button', { name: 'Turn it off' }));
     await user.type(screen.getByLabelText(/Current password/u), 'correct horse');
@@ -150,7 +160,7 @@ describe('disabling', () => {
 
   it('will not submit with a password alone', async () => {
     const user = userEvent.setup();
-    render(<TwoFactorPanel />);
+    render(<TwoFactorPanel copy={COPY} />);
 
     await user.click(screen.getByRole('button', { name: 'Turn it off' }));
     await user.type(screen.getByLabelText(/Current password/u), 'correct horse');
@@ -186,7 +196,7 @@ describe('moving between steps', () => {
     const frames = heldFrames();
     try {
       const user = userEvent.setup();
-      render(<TwoFactorPanel />);
+      render(<TwoFactorPanel copy={COPY} />);
 
       await user.click(screen.getByRole('button', { name: 'Turn it off' }));
 
@@ -202,7 +212,7 @@ describe('moving between steps', () => {
     const frames = heldFrames();
     try {
       const user = userEvent.setup();
-      render(<TwoFactorPanel />);
+      render(<TwoFactorPanel copy={COPY} />);
 
       await user.click(screen.getByRole('button', { name: 'Turn it off' }));
       const password = screen.getByLabelText(/Current password/u);

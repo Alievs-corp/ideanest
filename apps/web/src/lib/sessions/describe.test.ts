@@ -8,6 +8,8 @@ import {
   locationOf,
   platformOf,
 } from './describe';
+import { sessionsPanelCopyFrom } from '../i18n/settings-copy';
+import { translatorFor } from '../../test-copy';
 
 const CHROME_MAC =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
@@ -60,30 +62,38 @@ describe('platformOf', () => {
   });
 });
 
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #80.
+ *
+ * Retyping the sentences here would give a test that passes whatever the catalogue says, and
+ * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const NAMES = sessionsPanelCopyFrom(translatorFor('settings.panels'), translatorFor('auth')).row;
+
 describe('deviceNameOf', () => {
   it('prefers the label the client sent at sign-in', () => {
-    expect(deviceNameOf({ deviceLabel: "İsmət's MacBook", userAgent: CHROME_MAC })).toBe(
+    expect(deviceNameOf({ deviceLabel: "İsmət's MacBook", userAgent: CHROME_MAC }, NAMES)).toBe(
       "İsmət's MacBook",
     );
   });
 
   it('ignores a label that is only whitespace', () => {
-    expect(deviceNameOf({ deviceLabel: '   ', userAgent: CHROME_MAC })).toBe('Chrome on macOS');
+    expect(deviceNameOf({ deviceLabel: '   ', userAgent: CHROME_MAC }, NAMES)).toBe('Chrome on macOS');
   });
 
   it('falls back to browser and platform', () => {
-    expect(deviceNameOf({ userAgent: SAFARI_IPHONE })).toBe('Safari on iOS');
+    expect(deviceNameOf({ userAgent: SAFARI_IPHONE }, NAMES)).toBe('Safari on iOS');
   });
 
   it('uses whichever half it could read', () => {
-    expect(deviceNameOf({ userAgent: 'Mozilla/5.0 (Windows NT 10.0)' })).toBe('Windows');
+    expect(deviceNameOf({ userAgent: 'Mozilla/5.0 (Windows NT 10.0)' }, NAMES)).toBe('Windows');
   });
 
   // An invented name on a security screen is worse than none: the user then has
   // to decide whether to trust it.
   it('admits when it knows nothing', () => {
-    expect(deviceNameOf({})).toBe('Unknown device');
-    expect(deviceNameOf({ userAgent: 'something-unparseable' })).toBe('Unknown device');
+    expect(deviceNameOf({}, NAMES)).toBe('Unknown device');
+    expect(deviceNameOf({ userAgent: 'something-unparseable' }, NAMES)).toBe('Unknown device');
   });
 });
 

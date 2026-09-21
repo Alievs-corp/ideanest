@@ -10,6 +10,8 @@ import {
   locationOf,
   platformOf,
 } from '../../lib/sessions/describe';
+import type { SessionRowCopy } from '../../lib/i18n/settings-copy';
+import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 
 export interface SessionRowProps {
   session: SessionSummary;
@@ -24,6 +26,13 @@ export interface SessionRowProps {
    * segment.
    */
   locale: Locale;
+  /**
+   * The row's own words, handed down by the panel — #80.
+   *
+   * A prop for the same reason `locale` is: this component is a pure row, and its test
+   * renders it outside a router, where nothing could resolve a catalogue.
+   */
+  copy: SessionRowCopy;
   busy: boolean;
   onSignOut: (session: SessionSummary) => void;
 }
@@ -41,8 +50,8 @@ export interface SessionRowProps {
  * hurry about — the same reasoning that keeps the active page in a paginator
  * white rather than lime. Colour alone would carry nothing anyway (§9.2).
  */
-export function SessionRow({ session, now, locale, busy, onSignOut }: SessionRowProps) {
-  const name = deviceNameOf(session);
+export function SessionRow({ session, now, locale, copy, busy, onSignOut }: SessionRowProps) {
+  const name = deviceNameOf(session, copy);
   const platform = platformOf(session.userAgent);
   const address = locationOf(session);
   const Icon = platform === 'Android' || platform === 'iOS' ? Smartphone : Monitor;
@@ -52,14 +61,30 @@ export function SessionRow({ session, now, locale, busy, onSignOut }: SessionRow
    * hides the browser. Put it back as supporting detail — "MacBook Pro" alone
    * does not tell you which of two browsers on that machine is signed in.
    */
+  const browser = browserOf(session.userAgent);
   const agent = session.deviceLabel?.trim()
-    ? [browserOf(session.userAgent), platform].filter(Boolean).join(' on ')
+    ? browser && platform
+      ? // The same joining sentence `deviceNameOf` uses, and for the same reason it is a
+        // template: "on" is a preposition, and two of the four languages put the platform first.
+        fillPlaceholders(copy.onPlatform, { browser, platform })
+      : (browser ?? platform ?? null)
     : null;
 
   const detail = [agent, address].filter(Boolean).join(' · ');
 
-  const verb = busy ? 'Signing out' : 'Sign out';
-  const target = session.current ? 'of this device' : name;
+  const verb = busy ? copy.signingOut : copy.signOut;
+
+  /*
+   * Two whole sentences rather than a verb concatenated with a target. "Sign out" + "of this
+   * device" reads as English and as nothing else: every other language here puts the object
+   * somewhere the join cannot reach, and an accessible name assembled from halves is one
+   * nobody ever proofreads as a sentence.
+   */
+  const label = session.current
+    ? busy
+      ? copy.signingOutThisLabel
+      : copy.signOutThisLabel
+    : fillPlaceholders(busy ? copy.signingOutLabel : copy.signOutLabel, { device: name });
 
   return (
     <li className="flex items-start gap-4 px-5 py-4 transition-colors duration-150 ease-in-out hover:bg-surface-3">
@@ -73,10 +98,10 @@ export function SessionRow({ session, now, locale, busy, onSignOut }: SessionRow
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <p className="text-base font-medium tracking-[-0.02em] text-white">{name}</p>
-          {session.current && <Tag>This device</Tag>}
+          {session.current && <Tag>{copy.thisDevice}</Tag>}
         </div>
 
-        <p className="mt-1 text-sm text-white/64">{detail || 'No device details recorded'}</p>
+        <p className="mt-1 text-sm text-white/64">{detail || copy.noDetails}</p>
 
         {/*
           `--text-tertiary` is only AA at 16px and up, and on a security screen
@@ -84,14 +109,23 @@ export function SessionRow({ session, now, locale, busy, onSignOut }: SessionRow
           `--text-secondary` (9.2:1) rather than the usual meta treatment.
         */}
         <p className="mt-0.5 text-sm text-white/64">
-          {'Last active '}
-          <time dateTime={session.lastSeenAt} title={formatExactTime(session.lastSeenAt, locale)}>
-            {formatRelativeTime(session.lastSeenAt, now, locale)}
-          </time>
-          {' · signed in '}
-          <time dateTime={session.createdAt} title={formatExactTime(session.createdAt, locale)}>
-            {formatRelativeTime(session.createdAt, now, locale)}
-          </time>
+          {/*
+            One sentence with two instants in it, filled with nodes rather than split into
+            three literals: Azerbaijani and Turkish put "signed in" after the time rather
+            than before it, and two half-sentences cannot express that.
+          */}
+          {fillNodes(copy.lastActive, {
+            seen: (
+              <time dateTime={session.lastSeenAt} title={formatExactTime(session.lastSeenAt, locale)}>
+                {formatRelativeTime(session.lastSeenAt, now, locale)}
+              </time>
+            ),
+            created: (
+              <time dateTime={session.createdAt} title={formatExactTime(session.createdAt, locale)}>
+                {formatRelativeTime(session.createdAt, now, locale)}
+              </time>
+            ),
+          })}
         </p>
       </div>
 
@@ -105,7 +139,7 @@ export function SessionRow({ session, now, locale, busy, onSignOut }: SessionRow
         size="sm"
         className="mt-0.5 shrink-0"
         disabled={busy}
-        aria-label={`${verb} ${target}`}
+        aria-label={label}
         onClick={() => onSignOut(session)}
       >
         {verb}

@@ -4,6 +4,7 @@ import { AccountPageHeader } from '../../../../components/account/AccountPageHea
 import { TwoFactorPanel } from '../../../../components/settings/TwoFactorPanel';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 import { getTranslations } from 'next-intl/server';
+import { twoFactorPanelCopy } from '../../../../lib/i18n/shell-copy.server';
 
 /**
  * The one class an inline link inside a page's introduction carries.
@@ -39,7 +40,10 @@ export async function generateMetadata(): Promise<Metadata> {
  * each other, and this page links across.
  */
 export default async function SecurityPage() {
-  const t = await getTranslations('settings.pages.security');
+  const [t, panel] = await Promise.all([
+    getTranslations('settings.pages.security'),
+    twoFactorPanelCopy(),
+  ]);
 
   return (
     <>
@@ -54,7 +58,7 @@ export default async function SecurityPage() {
       </AccountPageHeader>
 
       <div className="mt-8">
-        <TwoFactorPanel />
+        <TwoFactorPanel copy={panel} />
       </div>
     </>
   );

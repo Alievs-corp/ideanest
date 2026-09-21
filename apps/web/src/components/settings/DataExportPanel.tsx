@@ -5,6 +5,8 @@ import { Download } from 'lucide-react';
 import { InlineAlert, Pill } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import { EXPORT_FILENAME, fetchAccountExport } from '../../lib/account/closure';
+import type { DataExportPanelCopy } from '../../lib/i18n/settings-copy';
+import { fillNodes } from '../../lib/i18n/placeholders';
 
 /**
  * §4.1's A-11 — a machine-readable copy of the account. Issue #279.
@@ -30,7 +32,12 @@ import { EXPORT_FILENAME, fetchAccountExport } from '../../lib/account/closure';
  * can make" and bounds it per account. A client that retried on a 429 would be spending
  * somebody else's allowance on their behalf.
  */
-export function DataExportPanel() {
+export interface DataExportPanelProps {
+  /** Every word this panel draws, resolved on the server — #80. */
+  readonly copy: DataExportPanelCopy;
+}
+
+export function DataExportPanel({ copy }: DataExportPanelProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloaded, setDownloaded] = useState(false);
@@ -53,14 +60,11 @@ export function DataExportPanel() {
       setDownloaded(true);
     } catch (cause) {
       if (cause instanceof ApiError && cause.status === 429) {
-        setError(
-          cause.problem?.detail ??
-            'You have asked for this a few times recently. Try again in a little while.',
-        );
+        setError(cause.problem?.detail ?? copy.rateLimited);
       } else if (cause instanceof ApiError) {
-        setError(cause.problem?.detail ?? cause.problem?.title ?? 'The export was refused.');
+        setError(cause.problem?.detail ?? cause.problem?.title ?? copy.refused);
       } else {
-        setError('The service could not be reached. Check your connection and try again.');
+        setError(copy.failures.unreachableDetail);
       }
     } finally {
       setBusy(false);
@@ -69,15 +73,12 @@ export function DataExportPanel() {
 
   return (
     <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">Take a copy of your data</h2>
-      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">
-        One JSON file with everything IdeaNest holds about your account. It downloads to this
-        device and is not stored anywhere afterwards.
-      </p>
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.heading}</h2>
+      <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">{copy.intro}</p>
 
       {error !== null && (
         <div className="mt-5">
-          <InlineAlert variant="danger" title="The export did not arrive">
+          <InlineAlert variant="danger" title={copy.errorTitle}>
             <p>{error}</p>
           </InlineAlert>
         </div>
@@ -85,10 +86,11 @@ export function DataExportPanel() {
 
       {downloaded && error === null && (
         <div className="mt-5">
-          <InlineAlert variant="success" title="Saved">
+          <InlineAlert variant="success" title={copy.savedTitle}>
             <p>
-              Look for <code className="font-mono">{EXPORT_FILENAME}</code> wherever this browser
-              puts downloads.
+              {fillNodes(copy.savedBody, {
+                filename: <code className="font-mono">{EXPORT_FILENAME}</code>,
+              })}
             </p>
           </InlineAlert>
         </div>
@@ -101,7 +103,7 @@ export function DataExportPanel() {
           onClick={() => void download()}
           iconLeft={<Download aria-hidden="true" className="size-4" />}
         >
-          {busy ? 'Preparing your copy' : 'Download my data'}
+          {busy ? copy.preparing : copy.download}
         </Pill>
       </div>
     </section>

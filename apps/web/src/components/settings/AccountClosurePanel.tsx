@@ -7,6 +7,8 @@ import { cancelDeletion, requestDeletion } from '../../lib/account/closure';
 import { formatExactTime } from '../../lib/time';
 import { useSession } from '../session/SessionProvider';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { AccountClosurePanelCopy } from '../../lib/i18n/settings-copy';
+import { fillNodes } from '../../lib/i18n/placeholders';
 
 /**
  * §4.1's A-10 — closing an account, with the thirty-day delay made explicit before it is
@@ -44,7 +46,12 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
  * docs/motion-system.md §5. The confirmation appears outright; a destructive action that
  * animates is one somebody is still watching when they press it.
  */
-export function AccountClosurePanel() {
+export interface AccountClosurePanelProps {
+  /** Every word this panel draws, resolved on the server — #80. */
+  readonly copy: AccountClosurePanelCopy;
+}
+
+export function AccountClosurePanel({ copy }: AccountClosurePanelProps) {
   const locale = useRouteLocale();
   const { session, refresh } = useSession();
 
@@ -59,16 +66,11 @@ export function AccountClosurePanel() {
   function describe(cause: unknown): string {
     if (cause instanceof ApiError) {
       if (cause.status === 429) {
-        return (
-          cause.problem?.detail ??
-          'That has been tried a few times recently. Wait a little and try again.'
-        );
+        return cause.problem?.detail ?? copy.rateLimited;
       }
-      return (
-        cause.problem?.detail ?? cause.problem?.title ?? 'The service refused the request.'
-      );
+      return cause.problem?.detail ?? cause.problem?.title ?? copy.failures.refusedDetail;
     }
-    return 'The service could not be reached. Check your connection and try again.';
+    return copy.failures.unreachableDetail;
   }
 
   async function close(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -127,11 +129,11 @@ export function AccountClosurePanel() {
         `--danger` left rule. Not a red panel — §9.2 forbids colour as the only carrier, and
         the heading and the button say what this is.
       */}
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">Close your account</h2>
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{copy.heading}</h2>
 
       {error !== null && (
         <div className="mt-5">
-          <InlineAlert variant="danger" title="That did not work">
+          <InlineAlert variant="danger" title={copy.failures.refusedTitle}>
             <p>{error}</p>
           </InlineAlert>
         </div>
@@ -139,43 +141,44 @@ export function AccountClosurePanel() {
 
       {gone && (
         <div className="mt-5">
-          <InlineAlert variant="warning" title="This account is no longer there">
-            <p>Sign out and sign in again — there is nothing left here to close.</p>
+          <InlineAlert variant="warning" title={copy.goneTitle}>
+            <p>{copy.goneBody}</p>
           </InlineAlert>
         </div>
       )}
 
       {scheduledFor !== null ? (
         <div className="mt-4 flex flex-col gap-6">
-          <InlineAlert variant="warning" title="This account is scheduled to close">
+          <InlineAlert variant="warning" title={copy.scheduledTitle}>
             <p>
-              It will be anonymised on{' '}
-              <strong className="font-medium text-white">{formatExactTime(scheduledFor, locale)}</strong>.
-              Until then you can still sign in, and cancelling below puts everything back.
+              {/*
+                The date is an element rather than a string, so the sentence is filled with
+                nodes: where the date falls in it is exactly what a translation may change.
+              */}
+              {fillNodes(copy.scheduledBody, {
+                date: (
+                  <strong className="font-medium text-white">
+                    {formatExactTime(scheduledFor, locale)}
+                  </strong>
+                ),
+              })}
             </p>
           </InlineAlert>
 
           <div>
             <Pill type="button" disabled={busy} onClick={() => void withdraw()}>
-              {busy ? 'Cancelling' : 'Keep my account'}
+              {busy ? copy.cancelling : copy.keep}
             </Pill>
           </div>
         </div>
       ) : (
         <form onSubmit={close} noValidate className="mt-4 flex max-w-[34rem] flex-col gap-5">
           <div className="text-[15px] leading-relaxed text-white/64">
-            <p>
-              Closing is not immediate. The account is kept for thirty days and then anonymised,
-              so a closure made in anger — or by somebody else — can be undone.
-            </p>
-            <p className="mt-3">
-              Financial records are kept for the statutory period whatever happens to the
-              account, and campaigns you have backed keep their totals. Neither of those names
-              you afterwards.
-            </p>
+            <p>{copy.notImmediate}</p>
+            <p className="mt-3">{copy.recordsKept}</p>
           </div>
 
-          <Field label="Current password" required>
+          <Field label={copy.currentPassword} required>
             <TextInput
               type="password"
               name="password"
@@ -188,12 +191,12 @@ export function AccountClosurePanel() {
           <Checkbox
             checked={understood}
             onChange={(event) => setUnderstood(event.target.checked)}
-            label="I understand this closes my account and anonymises it after thirty days."
+            label={copy.understood}
           />
 
           <div>
             <Pill type="submit" variant="danger" disabled={busy || !understood}>
-              {busy ? 'Scheduling' : 'Close my account'}
+              {busy ? copy.scheduling : copy.close}
             </Pill>
           </div>
         </form>

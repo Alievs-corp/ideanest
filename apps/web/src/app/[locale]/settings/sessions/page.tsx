@@ -3,6 +3,7 @@ import { AccountPageHeader } from '../../../../components/account/AccountPageHea
 import { SessionsPanel } from '../../../../components/sessions/SessionsPanel';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 import { getTranslations } from 'next-intl/server';
+import { sessionsPanelCopy } from '../../../../lib/i18n/shell-copy.server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('settings.pages.sessions');
@@ -25,7 +26,10 @@ export async function generateMetadata(): Promise<Metadata> {
  * leave assistive technology with two answers to "jump to main".
  */
 export default async function SessionsPage() {
-  const t = await getTranslations('settings.pages.sessions');
+  const [t, panel] = await Promise.all([
+    getTranslations('settings.pages.sessions'),
+    sessionsPanelCopy(),
+  ]);
 
   return (
     <>
@@ -34,7 +38,7 @@ export default async function SessionsPage() {
       </AccountPageHeader>
 
       <div className="mt-8">
-        <SessionsPanel />
+        <SessionsPanel copy={panel} />
       </div>
     </>
   );
