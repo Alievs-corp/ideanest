@@ -25,6 +25,17 @@ import { describe, expect, it } from 'vitest';
  * and `account-area.pages.test.ts` cover the rest — only that a name a screen reader
  * announces was not typed in one language.
  *
+ * <p>#101 added the fourth, and it is the half of the first rule that was missing. Forbidding
+ * `aria-label="…"` catches a name typed as an attribute and nothing else: `CampaignActions`
+ * built five of them as template literals — `` aria-label={`Save ${title}`} `` — and passed
+ * every run of this file while announcing English to a reader who had chosen Russian. The rule
+ * cannot simply forbid a quoted string in there, because `t('selectNamed')` and
+ * `copy.showMoreCreated` quote a KEY rather than a word. What it forbids is prose in a
+ * template: the text outside `${…}` must carry no letters, so `` `${label}: ${title}` `` is a
+ * composition and `` `Approximately ${amount}` `` is a sentence somebody typed. Both of the
+ * latter existed — in the checkout's total and in the campaign page's countdown — and neither
+ * was on any list.
+ *
  * <p>#99 added the third. A `ProgressBar`'s label is its accessible name and a `StatBlock`'s
  * is the word printed under the figure — the first is invisible to everybody who can see the
  * page and the second is a word so small nobody proofreads it. `LiveFunding` typed four of
@@ -86,6 +97,20 @@ describe('the names only a screen reader hears', () => {
    * `label={backersCount === 1 ? 'backer' : 'backers'}` was ALSO wrong in Russian, which
    * picks between three forms by the last digit. The ternary is the shape the rule catches.
    */
+  it('never builds an `aria-label` out of a template with words in it', () => {
+    /*
+     * ISSUE #101. The attribute rule above sees `aria-label="Save"`; this one sees
+     * `` aria-label={`Save ${title}`} ``, which is the same English name built one character
+     * differently. A composition of values — `` `${label}: ${title}` `` — is left alone,
+     * because the words in it came from the catalogue before they got here.
+     */
+    const offenders = FILES.filter((path) =>
+      ariaLabelsOf(readFileSync(path, 'utf8')).some(isTypedProse),
+    ).map((path) => path.slice(SOURCE.length + 1));
+
+    expect(offenders, 'these announce an English name whatever the reader chose').toEqual([]);
+  });
+
   it('never labels a kit figure or progress bar with a literal', () => {
     const offenders = FILES.filter((path) =>
       labelsOf(readFileSync(path, 'utf8')).some(quotesAWord),
@@ -155,4 +180,32 @@ function braced(text: string, open: number): string {
  */
 function quotesAWord(expression: string): boolean {
   return /(["'`])[^"'`]*\p{L}{2}[^"'`]*\1/u.test(expression);
+}
+
+/** Every `aria-label=` expression in `source`, attribute form and braced form alike. */
+function ariaLabelsOf(source: string): readonly string[] {
+  const found: string[] = [];
+
+  for (const match of source.matchAll(/aria-label=(?:"|\{)/gu)) {
+    const at = match.index + match[0].length - 1;
+
+    found.push(
+      source[at] === '"' ? source.slice(at, source.indexOf('"', at + 1) + 1) : braced(source, at),
+    );
+  }
+
+  return found;
+}
+
+/**
+ * Whether an expression builds a name out of words typed here.
+ *
+ * Only template literals: a call's argument is a catalogue key and a comparison's operand is a
+ * discriminant, and both quote something that is not a word. What is left of a template once
+ * its `${…}` holes are removed is the part somebody typed, so a letter in it is English.
+ */
+function isTypedProse(expression: string): boolean {
+  return [...expression.matchAll(/`([^`]*)`/gu)].some((template) =>
+    /\p{L}/u.test((template[1] as string).replace(/\$\{[^}]*\}/gu, '')),
+  );
 }

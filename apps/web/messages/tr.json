@@ -3293,6 +3293,7 @@
       "delivery": "Teslimat",
       "tax": "Vergi",
       "total": "Toplam",
+      "approximately": "Yaklaşık {amount}",
       "noReward": "Ödülsüz destek",
       "yourSupport": "Destek tutarı",
       "rewardLine": "Ödül"
@@ -3541,8 +3542,35 @@
     },
     "actions": {
       "save": "Kaydet",
+      "saved": "Kaydedildi",
       "share": "Paylaş",
-      "remind": "Hatırlat"
+      "remind": "Hatırlat",
+      "reminderSet": "Hatırlatma kuruldu",
+      "saveLabel": "{title} kampanyasını kaydet",
+      "savedLabel": "{title} kaydedildi",
+      "shareLabel": "{title} kampanyasını paylaş",
+      "remindLabel": "{title} açıldığında bana hatırlat",
+      "remindingLabel": "{title} açıldığında size bildirilecek",
+      "notices": {
+        "saved": "{title} kaydedildi.",
+        "notSaved": "{title} kaydedilmedi.",
+        "removed": "{title} kaydedilenlerden çıkarıldı.",
+        "shared": "Paylaşıldı.",
+        "copied": "Bağlantı kopyalandı.",
+        "shareFailed": "Paylaşılamadı. Bağlantı adres çubuğunda.",
+        "copyFailed": "Bağlantı kopyalanamadı. Adres çubuğunda duruyor.",
+        "remindOn": "Bu kampanya açıldığında size bir kez yazacağız.",
+        "remindOff": "Bu açıldığında size bildirilmeyecek."
+      },
+      "failures": {
+        "signIn": "Önce giriş yapın.",
+        "notSaved": "Kaydedilemedi. Tekrar deneyin.",
+        "unreachable": "Servise ulaşılamadı. Tekrar deneyin."
+      }
+    },
+    "countdown": {
+      "label": "Bu kampanyayı desteklemek için kalan süre: {time}",
+      "left": "{time} kaldı"
     },
     "back": {
       "cta": "Bu kampanyayı destekle"

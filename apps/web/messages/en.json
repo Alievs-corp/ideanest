@@ -3293,6 +3293,7 @@
       "delivery": "Delivery",
       "tax": "Tax",
       "total": "Total",
+      "approximately": "Approximately {amount}",
       "noReward": "Support with no reward",
       "yourSupport": "Your support",
       "rewardLine": "Reward"
@@ -3541,8 +3542,35 @@
     },
     "actions": {
       "save": "Save",
+      "saved": "Saved",
       "share": "Share",
-      "remind": "Remind me"
+      "remind": "Remind me",
+      "reminderSet": "Reminder set",
+      "saveLabel": "Save {title}",
+      "savedLabel": "{title} is saved",
+      "shareLabel": "Share {title}",
+      "remindLabel": "Remind me when {title} opens",
+      "remindingLabel": "You will be told when {title} opens",
+      "notices": {
+        "saved": "{title} saved.",
+        "notSaved": "{title} is not saved.",
+        "removed": "{title} removed from your saved campaigns.",
+        "shared": "Shared.",
+        "copied": "Link copied.",
+        "shareFailed": "That could not be shared. The link is in the address bar.",
+        "copyFailed": "The link could not be copied. It is in the address bar.",
+        "remindOn": "We will write to you once, when this campaign opens.",
+        "remindOff": "You will not be told when this opens."
+      },
+      "failures": {
+        "signIn": "Sign in first.",
+        "notSaved": "That could not be saved. Try again.",
+        "unreachable": "The service could not be reached. Try again."
+      }
+    },
+    "countdown": {
+      "label": "Time left to back this campaign: {time}",
+      "left": "{time} left"
     },
     "back": {
       "cta": "Back this campaign"

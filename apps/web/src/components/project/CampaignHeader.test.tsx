@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createTranslator } from 'next-intl';
+import RU from '../../../messages/ru.json';
 import type { ProjectPageResponse } from '../../lib/api/server';
 import type { CampaignPage } from '../../lib/projects/publicPage';
 import { readCampaignPage } from '../../lib/projects/publicPage';
@@ -13,8 +15,11 @@ import { CampaignMedia } from './CampaignMedia';
 import { CampaignTabs } from './CampaignTabs';
 import { CampaignTrustBlock, TRUST_COPY } from './CampaignTrustBlock';
 import { CampaignCountdown } from './ViewerClock';
-import MESSAGES from '../../../messages/en.json';
-import { campaignActionsCopyFrom } from '../../lib/i18n/campaign-copy';
+import {
+  type FundingTranslator,
+  campaignActionsCopyFrom,
+  campaignCountdownCopyFrom,
+} from '../../lib/i18n/campaign-copy';
 import CATALOGUE from '../../../messages/en.json';
 import { resolveServerTree } from '../../test-support/server-tree';
 import { expectNoViolations } from '../../test-axe';
@@ -48,9 +53,29 @@ vi.mock('next-intl/server', async () => {
   };
 });
 
-/* The words the server would have resolved, from the real catalogue. */
+/*
+ * The words the server would have resolved, from the real catalogue.
+ *
+ * Through `createTranslator` rather than an index into the JSON, because five of these names
+ * and three of the notices carry `{title}` and the builder reads those with `raw` — indexing
+ * would have passed whatever shape the file happened to hold and stopped failing the day a
+ * key moved.
+ */
 const ACTIONS_COPY = campaignActionsCopyFrom(
-  (key: string) => MESSAGES.campaign.actions[key as keyof typeof MESSAGES.campaign.actions],
+  createTranslator({
+    locale: 'en',
+    messages: CATALOGUE,
+    namespace: 'campaign.actions',
+  }) as unknown as FundingTranslator,
+);
+
+/* The countdown's two sentences, the same way. */
+const CLOCK_COPY = campaignCountdownCopyFrom(
+  createTranslator({
+    locale: 'en',
+    messages: CATALOGUE,
+    namespace: 'campaign',
+  }) as unknown as FundingTranslator,
 );
 
 
@@ -195,7 +220,7 @@ describe('the media player', () => {
 
 describe('the live countdown', () => {
   it('is a timer that does not announce itself on every tick', async () => {
-    render(<CampaignCountdown deadline="2026-08-29T12:00:00Z" initialLabel="9 days, 12 hours" />);
+    render(<CampaignCountdown copy={CLOCK_COPY} deadline="2026-08-29T12:00:00Z" initialLabel="9 days, 12 hours" />);
 
     const timer = screen.getByRole('timer');
     expect(timer).toHaveAttribute('aria-live', 'off');
@@ -203,14 +228,14 @@ describe('the live countdown', () => {
   });
 
   it('renders the server’s value into the markup rather than waiting for a tick', async () => {
-    render(<CampaignCountdown deadline="2026-08-29T12:00:00Z" initialLabel="9 days, 12 hours" />);
+    render(<CampaignCountdown copy={CLOCK_COPY} deadline="2026-08-29T12:00:00Z" initialLabel="9 days, 12 hours" />);
 
     expect(screen.getByRole('timer')).toHaveTextContent('9 days, 12 hours left');
   });
 
   it('renders nothing at all for a campaign that has closed', async () => {
     const { container } = render(
-      <CampaignCountdown deadline="2026-08-01T00:00:00Z" initialLabel={null} />,
+      <CampaignCountdown copy={CLOCK_COPY} deadline="2026-08-01T00:00:00Z" initialLabel={null} />,
     );
 
     expect(container).toBeEmptyDOMElement();
@@ -396,6 +421,55 @@ describe('the save, share and reminder controls', () => {
     expect(
       await screen.findByRole('button', { name: 'Remind me when A coffee table book opens' }),
     ).toBeInTheDocument();
+  });
+
+  /**
+   * ISSUE #101, and the reason it was an issue rather than a line in #86.
+   *
+   * Fourteen of this control's twenty-one strings are ones nobody reviewing the page with
+   * their eyes will ever meet: five accessible names and nine sentences in a polite live
+   * region. Every one of them was typed in English, on a page drawn from the catalogue, and
+   * two of the three the component was already handed as a prop were ignored.
+   *
+   * <p>So this renders the Russian catalogue and asserts the two halves separately — the name
+   * a screen reader announces before the press, and the sentence it announces after. Asserted
+   * against `messages/ru.json` rather than against a Russian string typed here, which is what
+   * makes it fail when either side is edited.
+   */
+  it('announces in the reader’s language, name and notice alike', async () => {
+    const copy = campaignActionsCopyFrom(
+      createTranslator({
+        locale: 'ru',
+        messages: RU,
+        namespace: 'campaign.actions',
+      }) as unknown as FundingTranslator,
+    );
+
+    sessionMock.mockResolvedValue(ACCOUNT);
+    const page = campaign();
+
+    render(
+      await resolveServerTree(
+        <SessionProvider>
+          <CampaignActions
+            copy={copy}
+            projectId={page.id}
+            state={page.state}
+            title={page.title}
+            path={PATH}
+          />
+        </SessionProvider>,
+      ),
+    );
+
+    const fill = (template: string) => template.replace('{title}', page.title);
+
+    await userEvent.click(await screen.findByRole('button', { name: fill(copy.saveLabel) }));
+
+    expect(
+      await screen.findByRole('button', { name: fill(copy.savedLabel) }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText(fill(RU.campaign.actions.notices.saved))).toBeInTheDocument();
   });
 });
 

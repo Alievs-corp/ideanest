@@ -299,9 +299,8 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   those six surfaces all render;
 - the six authentication screens under `app/[locale]/(auth)`, and the two credential
   panels under `/settings` that share their refusal vocabulary;
-- the checkout, the public campaign page and the public pre-launch page — **except the
-  save, share and reminder controls**, which are the row of pills under §4.4's header and
-  are the one thing on that page still typed in English. They are listed below;
+- the checkout, the public campaign page and the public pre-launch page, **in full** since
+  #101 closed the last four components on them;
 - the account area: the frame, all thirteen screens' headings, one pledge's own screen, the
   notifications inbox and its settings, and the two fulfilment screens;
 - the administration console, **in full** — the bar, the rail, the index that lists §4.11's
@@ -387,19 +386,24 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   and the goal line below them came off the same pass — the second is `common.card.ofGoal`,
   word for word what both campaign cards already print under their own bars.
 
+- the save, share and reminder controls, the live countdown and the checkout's approximate
+  total (#101) — twenty-four strings across four components, **fourteen of which nobody
+  reviewing those pages with their eyes would ever have met**: five accessible names and nine
+  sentences in a polite live region, which is the only thing said to a reader whose save,
+  share or reminder finished in a table row, an operating-system sheet or a clipboard.
+  `CampaignActions` was the worst of it — it was already handed three words as a prop and
+  ignored two of them, so the same pill said a translated word to a stranger and an English
+  one to the reader about to press it. `campaign.actions`, `campaign.countdown` and
+  `checkout.summary.approximately` hold them. The rule that followed closes the half of #86's
+  that was missing: an `aria-label` may not be built from a template with words in it, only
+  from values that were words before they arrived. That rule is what found the countdown and
+  the checkout total, neither of which was on any list.
+
 What is still English:
 
 | Surface | Where |
 |---|---|
 | The campaign editor | `components/campaign-editor` |
-| The save, share and reminder controls | `components/project/CampaignActions.tsx` (#101) |
-
-**The second row was found by closing #99 and is stated rather than quietly fixed.** That
-component already takes three words as a prop and types about twenty more: the two state
-words on each pill, five accessible names built by template, and the twelve sentences its
-live region announces after a save, a share or a reminder. It is a surface rather than a
-stray, so it is its own issue — and until it is closed, the claim that the public campaign
-page is covered in full is the claim this table exists to stop anybody making.
 
 **Three kinds of value in the console stay in the service's own spelling, deliberately.** A
 provider name (`PAYRIFF`), a card network's reason code and a staff capability

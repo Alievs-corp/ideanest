@@ -13,10 +13,57 @@ import type { PluralForms } from './plurals';
  * and hand them over, which is the pattern `lib/i18n/shell-copy.ts` measured a provider
  * against.
  */
+/**
+ * The save, share and reminder pills, and everything they say afterwards — issue #101.
+ *
+ * <h2>Why a control this small carries twenty-one strings</h2>
+ *
+ * Because almost none of them are on the button. Every one of these three controls finishes
+ * somewhere the reader cannot see — a row in a table, an operating-system sheet, a clipboard —
+ * so `CampaignActions` announces the result in a polite live region, and those nine sentences
+ * are the only thing a screen-reader reader is told. Five more are accessible names, which say
+ * WHICH campaign is being saved because the page carries several controls called "Save".
+ *
+ * <p>That is why they survived seven surfaces of translation: fourteen of the twenty-one are
+ * invisible to anybody reviewing the page with their eyes, which is the same reason #86's
+ * skeleton labels survived and the same reason `accessible-names.test.ts` exists.
+ *
+ * <h2>Why the three refusals are this control's own rather than `auth.failures`</h2>
+ *
+ * The settings panels read `auth.failures` instead of spelling "that did not work" twice, and
+ * this deliberately does not. Those are a title and a detail filling an `InlineAlert`; these
+ * are one line each in a live region, and a reader hears them rather than reads them. Wrapping
+ * the panels' two-part shape to produce one sentence would be a worse fit than three strings.
+ */
 export interface CampaignActionsCopy {
   readonly save: string;
+  readonly saved: string;
   readonly share: string;
   readonly remind: string;
+  readonly reminderSet: string;
+  /** Each carries `{title}`. The accessible names, which name the campaign. */
+  readonly saveLabel: string;
+  readonly savedLabel: string;
+  readonly shareLabel: string;
+  readonly remindLabel: string;
+  readonly remindingLabel: string;
+  /** What the live region announces. The first three carry `{title}`. */
+  readonly notices: {
+    readonly saved: string;
+    readonly notSaved: string;
+    readonly removed: string;
+    readonly shared: string;
+    readonly copied: string;
+    readonly shareFailed: string;
+    readonly copyFailed: string;
+    readonly remindOn: string;
+    readonly remindOff: string;
+  };
+  readonly failures: {
+    readonly signIn: string;
+    readonly notSaved: string;
+    readonly unreachable: string;
+  };
 }
 
 export interface CommentCopy {
@@ -76,6 +123,20 @@ export interface LiveFundingCopy {
   readonly backers: PluralForms;
 }
 
+/**
+ * The live countdown's two sentences — issue #101.
+ *
+ * Both carry `{time}`, and the accessible name carries the WHOLE sentence rather than the
+ * quantity: `ViewerClock` argues that "2 days, 4 hours" announced on its own is a quantity of
+ * nothing. The visible half is `aria-hidden`, so these two are read by different people and
+ * neither is a substring of the other — which is why `left` is its own key rather than the
+ * name with a prefix trimmed off it.
+ */
+export interface CampaignCountdownCopy {
+  readonly label: string;
+  readonly left: string;
+}
+
 export type CampaignTranslator = (key: string) => string;
 
 /**
@@ -89,8 +150,42 @@ export interface FundingTranslator extends CampaignTranslator {
   raw(key: string): unknown;
 }
 
-export function campaignActionsCopyFrom(t: CampaignTranslator): CampaignActionsCopy {
-  return { save: t('save'), share: t('share'), remind: t('remind') };
+export function campaignActionsCopyFrom(t: FundingTranslator): CampaignActionsCopy {
+  /*
+   * `raw` for the five names and the three notices that carry `{title}`: next-intl would
+   * format the placeholder against values the server does not have, because the campaign's
+   * title is filled in by the client component that already holds it.
+   */
+  const template = (key: string) => String(t.raw(key));
+
+  return {
+    save: t('save'),
+    saved: t('saved'),
+    share: t('share'),
+    remind: t('remind'),
+    reminderSet: t('reminderSet'),
+    saveLabel: template('saveLabel'),
+    savedLabel: template('savedLabel'),
+    shareLabel: template('shareLabel'),
+    remindLabel: template('remindLabel'),
+    remindingLabel: template('remindingLabel'),
+    notices: {
+      saved: template('notices.saved'),
+      notSaved: template('notices.notSaved'),
+      removed: template('notices.removed'),
+      shared: t('notices.shared'),
+      copied: t('notices.copied'),
+      shareFailed: t('notices.shareFailed'),
+      copyFailed: t('notices.copyFailed'),
+      remindOn: t('notices.remindOn'),
+      remindOff: t('notices.remindOff'),
+    },
+    failures: {
+      signIn: t('failures.signIn'),
+      notSaved: t('failures.notSaved'),
+      unreachable: t('failures.unreachable'),
+    },
+  };
 }
 
 export function commentCopyFrom(t: CampaignTranslator): CommentCopy {
@@ -119,4 +214,8 @@ export function liveFundingCopyFrom(t: FundingTranslator): LiveFundingCopy {
     ofGoal: t('funding.ofGoal'),
     backers: t.raw('funding.backers') as PluralForms,
   };
+}
+
+export function campaignCountdownCopyFrom(t: FundingTranslator): CampaignCountdownCopy {
+  return { label: String(t.raw('countdown.label')), left: String(t.raw('countdown.left')) };
 }

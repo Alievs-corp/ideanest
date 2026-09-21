@@ -10,6 +10,7 @@ import { unsaveCampaign } from '../../lib/community/signals';
 import { useSession } from '../session/SessionProvider';
 import { localeHref, useLocale } from '../../i18n/navigation';
 import type { CampaignActionsCopy } from '../../lib/i18n/campaign-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * §4.4's save, share and reminder controls — issue #281, and §4.9's C-09, C-11 and C-13.
@@ -53,14 +54,28 @@ import type { CampaignActionsCopy } from '../../lib/i18n/campaign-copy';
  * A dismissal is not a failure. `navigator.share` rejects with an `AbortError` when somebody
  * closes the sheet, and reporting that as "sharing failed" would accuse the reader of a bug.
  *
- * <h2>The reminder is only offered where the endpoint accepts one</h2>
- *
  * §4.4 lists a reminder control in the header without qualifying the state.
  * `POST /v1/projects/{id}/remind` is a <em>launch</em> reminder: the service answers 409
  * `reminders-closed` — "this campaign has already opened, so there is nothing left to be
  * reminded about" — for anything past `PRELAUNCH`. A control that was always shown would be a
  * control that fails on eight of the nine public states, so it is rendered on the one state
  * that has something to promise.
+ *
+ * <h2>Fourteen of its twenty-one words are ones nobody reviewing this page can see</h2>
+ *
+ * Nine are what the live region announces and five are accessible names, and until #101 all
+ * twenty-one were typed here — on a page whose every other component read the catalogue, and
+ * in a component that was already being handed three of them as a prop and ignoring two of
+ * those. `lib/i18n/campaign-copy.ts` sets out why the three refusals are this control's own
+ * rather than `auth.failures`'.
+ *
+ * <p>The campaign's title is filled in here rather than on the server, because the server
+ * resolves this copy once for a route and the title belongs to the campaign the route is
+ * about. `fillPlaceholders` is the substitution; `lib/i18n/placeholders.ts` argues why a
+ * sentence with a hole in it survives a component boundary and a concatenation does not —
+ * "Save {title}" puts the name in a different place in three of the four languages.
+ *
+ * <h2>The reminder is only offered where the endpoint accepts one</h2>
  *
  * A signed-out reader is sent to the campaign's pre-launch page rather than offered a
  * shortened version of its form. That page (#39) already collects an address, is already rate
@@ -83,12 +98,20 @@ export interface CampaignActionsProps {
 type SaveState = 'idle' | 'busy' | 'saved';
 type RemindState = 'idle' | 'busy' | 'following';
 
-function messageFor(cause: unknown): string {
+/**
+ * What went wrong, said in the reader's language where this side knows what it was.
+ *
+ * `problem.detail` is the exception and is deliberate: it is the SERVICE's sentence about this
+ * particular refusal, which is more specific than anything this side could say, and
+ * `lib/pledges/failure.ts` made the same trade for the checkout. What is replaced here is the
+ * three sentences this side invents when the service offered none.
+ */
+function messageFor(cause: unknown, failures: CampaignActionsCopy['failures']): string {
   if (cause instanceof ApiError) {
-    if (cause.status === 401) return 'Sign in first.';
-    return cause.problem?.detail ?? cause.problem?.title ?? 'That could not be saved. Try again.';
+    if (cause.status === 401) return failures.signIn;
+    return cause.problem?.detail ?? cause.problem?.title ?? failures.notSaved;
   }
-  return 'The service could not be reached. Try again.';
+  return failures.unreachable;
 }
 
 export function CampaignActions({ projectId, state, title, path,
@@ -120,16 +143,18 @@ export function CampaignActions({ projectId, state, title, path,
       if (wasSaved) {
         await unsaveCampaign(projectId);
         setSave('idle');
-        setNotice(`${title} removed from your saved campaigns.`);
+        setNotice(fillPlaceholders(copy.notices.removed, { title }));
       } else {
         const result = await saveCampaign(projectId);
         // The response decides, not this side. See the class comment on idempotency.
         setSave(result.saved ? 'saved' : 'idle');
-        setNotice(result.saved ? `${title} saved.` : `${title} is not saved.`);
+        setNotice(
+          fillPlaceholders(result.saved ? copy.notices.saved : copy.notices.notSaved, { title }),
+        );
       }
     } catch (cause) {
       setSave(wasSaved ? 'saved' : 'idle');
-      setNotice(messageFor(cause));
+      setNotice(messageFor(cause, copy.failures));
     }
   }
 
@@ -139,11 +164,11 @@ export function CampaignActions({ projectId, state, title, path,
     if (typeof navigator.share === 'function') {
       try {
         await navigator.share({ title, url });
-        setNotice('Shared.');
+        setNotice(copy.notices.shared);
       } catch (cause) {
         // Somebody closing the sheet is not an error and must not be reported as one.
         if (cause instanceof DOMException && cause.name === 'AbortError') return;
-        setNotice('That could not be shared. The link is in the address bar.');
+        setNotice(copy.notices.shareFailed);
       }
       return;
     }
@@ -151,14 +176,14 @@ export function CampaignActions({ projectId, state, title, path,
     try {
       await navigator.clipboard.writeText(url);
       setShared(true);
-      setNotice('Link copied.');
+      setNotice(copy.notices.copied);
     } catch {
       /*
        * A clipboard write can be refused outright — an insecure origin, or a browser that
        * asks first. The address bar already holds the link, so the honest answer is to say
        * where it is rather than to fail silently.
        */
-      setNotice('The link could not be copied. It is in the address bar.');
+      setNotice(copy.notices.copyFailed);
     }
   }
 
@@ -172,15 +197,15 @@ export function CampaignActions({ projectId, state, title, path,
       if (wasFollowing) {
         await forgetMe(projectId);
         setRemind('idle');
-        setNotice('You will not be told when this opens.');
+        setNotice(copy.notices.remindOff);
       } else {
         await remindMe(projectId);
         setRemind('following');
-        setNotice('We will write to you once, when this campaign opens.');
+        setNotice(copy.notices.remindOn);
       }
     } catch (cause) {
       setRemind(wasFollowing ? 'following' : 'idle');
-      setNotice(messageFor(cause));
+      setNotice(messageFor(cause, copy.failures));
     }
   }
 
@@ -219,7 +244,7 @@ export function CampaignActions({ projectId, state, title, path,
              * nobody, which is §9.2.
              */
             aria-pressed={saved}
-            aria-label={saved ? `${title} is saved` : `Save ${title}`}
+            aria-label={fillPlaceholders(saved ? copy.savedLabel : copy.saveLabel, { title })}
             iconLeft={
               saved ? (
                 <BookmarkCheck aria-hidden="true" className="size-4" />
@@ -228,7 +253,7 @@ export function CampaignActions({ projectId, state, title, path,
               )
             }
           >
-            {saved ? 'Saved' : 'Save'}
+            {saved ? copy.saved : copy.save}
           </Pill>
         )}
 
@@ -236,7 +261,7 @@ export function CampaignActions({ projectId, state, title, path,
           variant="ghost"
           size="sm"
           onClick={() => void share()}
-          aria-label={`Share ${title}`}
+          aria-label={fillPlaceholders(copy.shareLabel, { title })}
           iconLeft={
             shared ? (
               <Check aria-hidden="true" className="size-4" />
@@ -265,11 +290,10 @@ export function CampaignActions({ projectId, state, title, path,
               disabled={remind === 'busy'}
               onClick={() => void toggleRemind()}
               aria-pressed={remind === 'following'}
-              aria-label={
-                remind === 'following'
-                  ? `You will be told when ${title} opens`
-                  : `Remind me when ${title} opens`
-              }
+              aria-label={fillPlaceholders(
+                remind === 'following' ? copy.remindingLabel : copy.remindLabel,
+                { title },
+              )}
               iconLeft={
                 remind === 'following' ? (
                   <BellOff aria-hidden="true" className="size-4" />
@@ -278,7 +302,7 @@ export function CampaignActions({ projectId, state, title, path,
                 )
               }
             >
-              {remind === 'following' ? 'Reminder set' : 'Remind me'}
+              {remind === 'following' ? copy.reminderSet : copy.remind}
             </Pill>
           ))}
       </div>

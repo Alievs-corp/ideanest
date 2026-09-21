@@ -3293,6 +3293,7 @@
       "delivery": "Çatdırılma",
       "tax": "Vergi",
       "total": "Cəmi",
+      "approximately": "Təxminən {amount}",
       "noReward": "Mükafatsız dəstək",
       "yourSupport": "Dəstək məbləği",
       "rewardLine": "Mükafat"
@@ -3541,8 +3542,35 @@
     },
     "actions": {
       "save": "Saxla",
+      "saved": "Saxlanılıb",
       "share": "Paylaş",
-      "remind": "Xatırlat"
+      "remind": "Xatırlat",
+      "reminderSet": "Xatırlatma qurulub",
+      "saveLabel": "{title} kampaniyasını saxla",
+      "savedLabel": "{title} saxlanılıb",
+      "shareLabel": "{title} kampaniyasını paylaş",
+      "remindLabel": "{title} açılanda mənə xatırlat",
+      "remindingLabel": "{title} açılanda sizə bildiriləcək",
+      "notices": {
+        "saved": "{title} saxlanıldı.",
+        "notSaved": "{title} saxlanılmayıb.",
+        "removed": "{title} saxlanmışlardan çıxarıldı.",
+        "shared": "Paylaşıldı.",
+        "copied": "Keçid kopyalandı.",
+        "shareFailed": "Paylaşmaq mümkün olmadı. Keçid ünvan sətrindədir.",
+        "copyFailed": "Keçid kopyalana bilmədi. O, ünvan sətrindədir.",
+        "remindOn": "Bu kampaniya açılanda sizə bir dəfə yazacağıq.",
+        "remindOff": "Bu açılanda sizə bildirilməyəcək."
+      },
+      "failures": {
+        "signIn": "Əvvəlcə daxil olun.",
+        "notSaved": "Saxlanıla bilmədi. Yenidən cəhd edin.",
+        "unreachable": "Xidmətə çatmaq mümkün olmadı. Yenidən cəhd edin."
+      }
+    },
+    "countdown": {
+      "label": "Bu kampaniyanı dəstəkləməyə qalan vaxt: {time}",
+      "left": "{time} qalıb"
     },
     "back": {
       "cta": "Bu kampaniyanı dəstəklə"
