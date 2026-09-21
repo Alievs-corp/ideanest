@@ -6346,10 +6346,15 @@ it was written in.
 > are not.
 >
 > **What is still English, stated rather than left to be found.** The campaign editor,
-> the five panels left under the account headings, `lib/pledges/failure.ts`'s twenty
+> the three panels left under the account headings, `lib/pledges/failure.ts`'s twenty
 > service refusals, and `components/moderation/ReportControl` — the dialog a member of
 > the public opens to report a campaign. Epic #78 is the list of them with a count
 > against each.
+>
+> **The profile editor came off it in #82**, which closed the last English half of a pair
+> whose public side was already key-based. Both halves read `profile` rather than the
+> editor getting a `settings.profile` group of its own: they describe the same six
+> fields, and two vocabularies for one thing drift the first time either is edited.
 >
 > **The refusal table is the one entry on that list that is not a screen, and the one
 > that was not found by reading the list.** `checkout.errors` covers the checkout form's

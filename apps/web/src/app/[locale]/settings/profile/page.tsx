@@ -4,6 +4,7 @@ import { AccountPageHeader } from '../../../../components/account/AccountPageHea
 import { ProfileEditorPanel } from '../../../../components/profile/ProfileEditorPanel';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 import { getTranslations } from 'next-intl/server';
+import { profileEditorCopy } from '../../../../lib/i18n/shell-copy.server';
 
 /**
  * The one class an inline link inside a page's introduction carries.
@@ -62,7 +63,12 @@ export async function generateMetadata(): Promise<Metadata> {
  * about an error message applies to a save confirmation too.
  */
 export default async function ProfileSettingsPage() {
-  const t = await getTranslations('settings.pages.profile');
+  // Words, not data: the editor is a client island behind a bearer token, so the route
+  // resolves its sentences — profile-copy.ts says why they share the public side's namespace.
+  const [t, copy] = await Promise.all([
+    getTranslations('settings.pages.profile'),
+    profileEditorCopy(),
+  ]);
 
   return (
     <>
@@ -77,7 +83,7 @@ export default async function ProfileSettingsPage() {
       </AccountPageHeader>
 
       <div className="mt-8">
-        <ProfileEditorPanel />
+        <ProfileEditorPanel copy={copy} />
       </div>
     </>
   );
