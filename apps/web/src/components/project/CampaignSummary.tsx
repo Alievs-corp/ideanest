@@ -12,7 +12,8 @@ import { CampaignMedia } from './CampaignMedia';
 import { LiveFunding } from './LiveFunding';
 import { CampaignCountdown } from './ViewerClock';
 import { getTranslations } from 'next-intl/server';
-import { campaignActionsCopy } from '../../lib/i18n/shell-copy.server';
+import { fillNodes } from '../../lib/i18n/placeholders';
+import { campaignActionsCopy, liveFundingCopy } from '../../lib/i18n/shell-copy.server';
 
 /**
  * §4.4's header: the cover, the title, who made it, and how the funding stands.
@@ -146,7 +147,9 @@ export async function CampaignSummary({
   now = new Date(),
 }: CampaignSummaryProps) {
   const t = await getTranslations('campaign');
+  const common = await getTranslations('common');
   const actions = await campaignActionsCopy();
+  const funding = await liveFundingCopy();
   const badge = BADGES[campaign.state];
 
   /*
@@ -226,14 +229,35 @@ export async function CampaignSummary({
           {campaign.blurb !== null && <p className="text-base text-reading">{campaign.blurb}</p>}
         </div>
 
+        {/*
+          THE BYLINE IS ONE SENTENCE WITH A LINK IN IT, not the word "by" and a name after it.
+          None of the other three languages has English's preposition here — all three label
+          the name and follow it with a colon — so a "before" key and an "after" key would buy
+          the link's styling at the cost of word order, which is exactly what a translation is
+          entitled to change. `fillNodes` fills the hole with the link.
+
+          It is `campaign.by` rather than `discovery.card.by` even though the two say the same
+          thing today. The card's byline belongs to the card — `lib/i18n/card-copy.ts` draws
+          that line and keeps only the four sentences both cards share in `common` — and a page
+          reaching into another surface's namespace is a page that breaks when that surface is
+          redesigned.
+        */}
         <p className="text-sm text-white/64">
-          by{' '}
-          <Link
-            href={`/discover?q=${encodeURIComponent(campaign.creator.name)}`}
-            className="rounded-sm text-white underline-offset-4 hover:underline"
-          >
-            {campaign.creator.name}
-          </Link>
+          {/*
+            `raw`, because the creator is a node and next-intl would try to format `{creator}`
+            against values this side has none of — `lib/i18n/placeholders.ts` sets out why a
+            hole filled with an element is not ICU's job.
+          */}
+          {fillNodes(String(t.raw('by')), {
+            creator: (
+              <Link
+                href={`/discover?q=${encodeURIComponent(campaign.creator.name)}`}
+                className="rounded-sm text-white underline-offset-4 hover:underline"
+              >
+                {campaign.creator.name}
+              </Link>
+            ),
+          })}
         </p>
 
         {campaign.goal !== null && (
@@ -251,10 +275,18 @@ export async function CampaignSummary({
               pledged={campaign.pledged}
               backersCount={campaign.backersCount}
               realtimeOrigin={realtimeOrigin}
+              copy={funding}
             />
 
+            {/*
+              `common.card.ofGoal` rather than a key of this page's own: it is word for word the
+              sentence both campaign cards print under their bar, and `common.card` exists so
+              that the four sentences more than one surface draws have one spelling. The figures
+              above it are the block's own words for the reason `campaign-copy.ts` gives — a
+              `StatBlock` label stands beside its number rather than containing it.
+            */}
             <p className="text-sm text-white/64">
-              of {formatMoney(campaign.goal)} goal
+              {common('card.ofGoal', { amount: formatMoney(campaign.goal) })}
               {showDays && campaign.daysLeft !== null && ` · ${t('daysLeft', { days: campaign.daysLeft })}`}
             </p>
 

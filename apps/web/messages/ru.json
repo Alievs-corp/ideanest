@@ -3526,6 +3526,19 @@
     },
     "daysLeft": "{days, plural, =0 {Последний день} one {остался # день} few {осталось # дня} many {осталось # дней} other {осталось # дня}}",
     "backers": "{count, plural, =0 {Нет бэкеров} one {# бэкер} few {# бэкера} many {# бэкеров} other {# бэкера}}",
+    "by": "автор: {creator}",
+    "funding": {
+      "progressLabel": "Финансирование: {percent} процентов цели",
+      "pledged": "собрано",
+      "funded": "цель достигнута",
+      "ofGoal": "от цели",
+      "backers": {
+        "one": "бэкер",
+        "few": "бэкера",
+        "many": "бэкеров",
+        "other": "бэкера"
+      }
+    },
     "actions": {
       "save": "Сохранить",
       "share": "Поделиться",

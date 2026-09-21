@@ -3526,6 +3526,19 @@
     },
     "daysLeft": "{days, plural, =0 {Son gün} other {# gün kaldı}}",
     "backers": "{count, plural, =0 {Destekçi yok} other {# destekçi}}",
+    "by": "hazırlayan: {creator}",
+    "funding": {
+      "progressLabel": "Finansman: hedefin yüzde {percent} kadarı",
+      "pledged": "toplanan destek",
+      "funded": "hedefe ulaşıldı",
+      "ofGoal": "hedeften",
+      "backers": {
+        "one": "destekçi",
+        "few": "destekçi",
+        "many": "destekçi",
+        "other": "destekçi"
+      }
+    },
     "actions": {
       "save": "Kaydet",
       "share": "Paylaş",

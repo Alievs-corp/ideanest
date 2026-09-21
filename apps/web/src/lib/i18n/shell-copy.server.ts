@@ -72,8 +72,10 @@ import {
 import {
   type CampaignActionsCopy,
   type CommentCopy,
+  type LiveFundingCopy,
   campaignActionsCopyFrom,
   commentCopyFrom,
+  liveFundingCopyFrom,
 } from './campaign-copy';
 import { localeOrDefault, type Locale } from './locale';
 import {
@@ -490,6 +492,18 @@ export async function pricingCopy(): Promise<PricingCopy> {
 /** The save, share and reminder controls. */
 export async function campaignActionsCopy(): Promise<CampaignActionsCopy> {
   return campaignActionsCopyFrom(await getTranslations('campaign.actions'));
+}
+
+/**
+ * The funding block under §4.4's header — issue #99.
+ *
+ * Resolved by `CampaignSummary` rather than by the page, for the reason every other island on
+ * that route is: whichever server component mounts a client component is the one that knows
+ * what words it needs, and a page threading copy through a header it does not itself read is
+ * a page that has to be edited whenever the header is.
+ */
+export async function liveFundingCopy(): Promise<LiveFundingCopy> {
+  return liveFundingCopyFrom(await getTranslations('campaign'));
 }
 
 /** The composer and the two comment controls, which share one section. */

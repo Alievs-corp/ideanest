@@ -3526,6 +3526,19 @@
     },
     "daysLeft": "{days, plural, =0 {Son gün} other {# gün qaldı}}",
     "backers": "{count, plural, =0 {Dəstəkçi yoxdur} other {# dəstəkçi}}",
+    "by": "müəllif: {creator}",
+    "funding": {
+      "progressLabel": "Maliyyələşmə: hədəfin {percent} faizi",
+      "pledged": "dəstəklənib",
+      "funded": "maliyyələşib",
+      "ofGoal": "hədəfdən",
+      "backers": {
+        "one": "dəstəkçi",
+        "few": "dəstəkçi",
+        "many": "dəstəkçi",
+        "other": "dəstəkçi"
+      }
+    },
     "actions": {
       "save": "Saxla",
       "share": "Paylaş",

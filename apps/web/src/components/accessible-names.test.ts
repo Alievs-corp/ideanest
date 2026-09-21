@@ -25,6 +25,12 @@ import { describe, expect, it } from 'vitest';
  * and `account-area.pages.test.ts` cover the rest — only that a name a screen reader
  * announces was not typed in one language.
  *
+ * <p>#99 added the third. A `ProgressBar`'s label is its accessible name and a `StatBlock`'s
+ * is the word printed under the figure — the first is invisible to everybody who can see the
+ * page and the second is a word so small nobody proofreads it. `LiveFunding` typed four of
+ * them in English beneath a campaign page that was otherwise drawn from the catalogue, and
+ * neither rule above would have caught one.
+ *
  * <p>Both attributes reach a component as an expression now. Something resolved on the server
  * and handed down, or a prop: `DiscoverySkeleton` takes its label from the caller precisely
  * because it is rendered from a Suspense fallback on the server and from the feed on the
@@ -74,4 +80,79 @@ describe('the names only a screen reader hears', () => {
     expect(offenders, 'a skeleton label is a word like any other and belongs in the catalogue')
       .toEqual([]);
   });
+
+  /*
+   * ISSUE #99. A literal here is not merely untranslated: `LiveFunding`'s
+   * `label={backersCount === 1 ? 'backer' : 'backers'}` was ALSO wrong in Russian, which
+   * picks between three forms by the last digit. The ternary is the shape the rule catches.
+   */
+  it('never labels a kit figure or progress bar with a literal', () => {
+    const offenders = FILES.filter((path) =>
+      labelsOf(readFileSync(path, 'utf8')).some(quotesAWord),
+    ).map((path) => path.slice(SOURCE.length + 1));
+
+    expect(offenders, 'a label under a figure is a word like any other and belongs in the catalogue')
+      .toEqual([]);
+  });
 });
+
+/**
+ * Every `label=` expression on a `<ProgressBar>` or `<StatBlock>` in `source`.
+ *
+ * Scanned rather than matched, because the value is an expression and expressions nest: the
+ * good spelling is `label={fillPlaceholders(copy.progressLabel, { percent })}`, whose own
+ * braces a regex stops at, and the bad one is a ternary whose literals are several tokens in.
+ */
+function labelsOf(source: string): readonly string[] {
+  const found: string[] = [];
+
+  for (const match of source.matchAll(/<(?:ProgressBar|StatBlock)\b/gu)) {
+    const tag = openingTag(source, match.index);
+    const label = /\slabel=(?:("[^"]*")|\{)/u.exec(tag);
+    if (label === null) continue;
+
+    found.push(label[1] ?? braced(tag, label.index + label[0].length - 1));
+  }
+
+  return found;
+}
+
+/** From `<` to the `>` that closes the tag, ignoring any `>` inside a braced expression. */
+function openingTag(source: string, start: number): string {
+  let depth = 0;
+
+  for (let at = start; at < source.length; at += 1) {
+    const character = source[at];
+    if (character === '{') depth += 1;
+    else if (character === '}') depth -= 1;
+    else if (character === '>' && depth === 0) return source.slice(start, at);
+  }
+
+  return source.slice(start);
+}
+
+/** The contents of the braced expression beginning at `open`. */
+function braced(text: string, open: number): string {
+  let depth = 0;
+
+  for (let at = open; at < text.length; at += 1) {
+    if (text[at] === '{') depth += 1;
+    else if (text[at] === '}') {
+      depth -= 1;
+      if (depth === 0) return text.slice(open + 1, at);
+    }
+  }
+
+  return text.slice(open + 1);
+}
+
+/**
+ * Whether an expression quotes a word rather than reading one.
+ *
+ * A quoted string of letters is a word somebody typed. `size="md"` is not a label and never
+ * reaches this; a class name never appears in a `label`; and `copy.pledged` carries no quotes
+ * at all, which is the point.
+ */
+function quotesAWord(expression: string): boolean {
+  return /(["'`])[^"'`]*\p{L}{2}[^"'`]*\1/u.test(expression);
+}

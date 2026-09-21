@@ -3526,6 +3526,19 @@
     },
     "daysLeft": "{days, plural, =0 {Last day} one {# day left} other {# days left}}",
     "backers": "{count, plural, =0 {No backers} one {# backer} other {# backers}}",
+    "by": "by {creator}",
+    "funding": {
+      "progressLabel": "Funding: {percent} percent of the goal",
+      "pledged": "pledged",
+      "funded": "funded",
+      "ofGoal": "of goal",
+      "backers": {
+        "one": "backer",
+        "few": "backers",
+        "many": "backers",
+        "other": "backers"
+      }
+    },
     "actions": {
       "save": "Save",
       "share": "Share",
