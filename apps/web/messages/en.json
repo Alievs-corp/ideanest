@@ -341,6 +341,7 @@
         "phoneHint": "Some carriers will not deliver without one.",
         "requiredField": "A parcel cannot be addressed without this.",
         "loadFailedTitle": "This address could not be loaded",
+        "loading": "Loading your address",
         "notFound": "That pledge could not be found, or it is not yours.",
         "unreachable": "The service could not be reached. Check your connection and try again.",
         "refused": "The address was refused.",
@@ -584,6 +585,7 @@
         "signedOut": "You are signed out",
         "signedOutBody": "This browser no longer has a session. Sign in again to read your notifications.",
         "loadingList": "Loading your notifications",
+        "errorTitle": "Something went wrong",
         "emptyTitle": "Nothing yet",
         "emptyBody": "When a campaign you back reaches its goal, closes, or takes a payment, it will appear here.",
         "filteredTitle": "Nothing here in what has loaded",
@@ -4002,6 +4004,7 @@
         "failedTitle": "The history could not be loaded",
         "emptyTitle": "No earlier versions yet",
         "loadingLabel": "Loading earlier versions",
+        "loadingVersion": "Loading this version…",
         "description": "A version is kept each time the story changes, at most one every few minutes. The most recent fifty are here.",
         "emptyDescription": "One is kept the first time the story changes, and then at most one every few minutes while you write.",
         "replaceWarning": "The story you have now is replaced.",
@@ -4173,16 +4176,21 @@
       "buttonLabel": "Choose an image",
       "dropHint": "Up to 20 MB. It is converted and resized here, and the original is not kept. {minimum} or larger reads best.",
       "urlPlaceholder": "Or paste an address: https://images.example.com/cover.jpg",
+      "urlLabel": "Cover image address",
+      "checking": "Checking",
+      "useAddress": "Use this address",
       "needUrlFirst": "Enter the address of an image first.",
       "notUsedTitle": "That file was not used",
       "unusable": "That image could not be used.",
       "softTitle": "This will look soft at full width",
       "set": "Cover set from a {size} pixel image.",
       "setSmall": "Cover set from a {size} pixel image. It is below the recommended {minimum}, so it will be scaled up to fill the header and will look soft. Its proportions are kept — the frame crops rather than stretches. The campaign can still be submitted.",
+      "size": "Cover is {size} pixels",
+      "sizeUploaded": "Cover is {size} pixels · uploaded",
       "stage": {
-        "preparing": "Preparing",
-        "uploading": "Uploading",
-        "processing": "Processing"
+        "preparing": "Preparing the image…",
+        "uploading": "Uploading the image…",
+        "processing": "Processing the image…"
       },
       "failures": {
         "TOO_SMALL": "That image is too small to display. Anything from {minimum} upwards reads well.",
@@ -4193,7 +4201,10 @@
         "UPLOADS_UNAVAILABLE": "Uploading is not switched on for this environment. Paste an address instead.",
         "MEDIA_STORAGE_UNREACHABLE": "Image storage is not answering. Please try again shortly.",
         "UPLOAD_STILL_PROCESSING": "That image is taking longer than usual. It may appear if you come back to this tab.",
-        "UPLOAD_TRANSFER_FAILED": "The image did not reach storage. Check the connection and try again."
+        "UPLOAD_TRANSFER_FAILED": "The image did not reach storage. Check the connection and try again.",
+        "UPLOAD_REFUSED": "That file was refused.",
+        "UPLOAD_UNFINISHED": "That upload could not be finished.",
+        "MEDIA_NOT_FOUND": "That upload could not be read."
       }
     },
     "newProject": {

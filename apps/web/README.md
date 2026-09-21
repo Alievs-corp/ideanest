@@ -354,6 +354,15 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   `admin.moderation.reason` now. The three target kinds are three whole phrases rather
   than a noun in a slot, because "Report this campaign" is a sentence only English builds
   that way. `lib/i18n/report-copy.ts` holds the shape.
+- the strays (#86) — six strings that belonged to no surface, each a single literal in an
+  otherwise translated component, which is how they survived. **Four were `SkeletonGroup`
+  labels**, and that is not a coincidence: a skeleton's label is the accessible name of a
+  loading region, invisible to everybody reviewing the screen and announced to exactly the
+  readers who cannot see it. `src/components/accessible-names.test.ts` is the rule that
+  followed — no literal `aria-label`, no literal skeleton label, anywhere under `src`.
+  `lib/media/upload.ts`'s refusals came off the same pass: a library cannot read a
+  catalogue, so it answers with a code and the editor draws the words
+  (`campaignEditor.cover.failures`).
 
 What is still English:
 

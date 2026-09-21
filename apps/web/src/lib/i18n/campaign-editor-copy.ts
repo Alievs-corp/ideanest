@@ -962,6 +962,8 @@ export interface StoryHistoryCopy {
   readonly failedTitle: string;
   readonly emptyTitle: string;
   readonly loadingLabel: string;
+  /** One version being fetched for preview, under the list of all of them — #86. */
+  readonly loadingVersion: string;
   readonly description: string;
   readonly emptyDescription: string;
   readonly replaceWarning: string;
@@ -1225,6 +1227,7 @@ export function storyPanelCopyFrom(
       failedTitle: at('history.failedTitle'),
       emptyTitle: at('history.emptyTitle'),
       loadingLabel: at('history.loadingLabel'),
+      loadingVersion: at('history.loadingVersion'),
       description: at('history.description'),
       emptyDescription: at('history.emptyDescription'),
       replaceWarning: at('history.replaceWarning'),
@@ -1562,6 +1565,15 @@ export const COVER_FAILURE_CODES = [
   'MEDIA_STORAGE_UNREACHABLE',
   'UPLOAD_STILL_PROCESSING',
   'UPLOAD_TRANSFER_FAILED',
+  /*
+   * The last three are `lib/media/upload.ts`'s own, added by #86. That module used to answer
+   * with an English sentence when the service sent no problem body, and the sentence reached
+   * the screen — a library cannot read the catalogue, so it now answers with the code alone
+   * and these are where the words live.
+   */
+  'UPLOAD_REFUSED',
+  'UPLOAD_UNFINISHED',
+  'MEDIA_NOT_FOUND',
 ] as const;
 
 export type CoverFailureCode = (typeof COVER_FAILURE_CODES)[number];
@@ -1587,6 +1599,10 @@ export interface CoverImageCopy {
   /** Carries `{minimum}`. */
   readonly dropHint: string;
   readonly urlPlaceholder: string;
+  /** The address field's own accessible name — the `Field` label names the group — #86. */
+  readonly urlLabel: string;
+  readonly checking: string;
+  readonly useAddress: string;
   readonly needUrlFirst: string;
   readonly notUsedTitle: string;
   readonly unusable: string;
@@ -1595,6 +1611,15 @@ export interface CoverImageCopy {
   readonly set: string;
   /** Carries `{size}` and `{minimum}`. */
   readonly setSmall: string;
+  /**
+   * The caption under a chosen cover. Both carry `{size}`.
+   *
+   * Two whole sentences rather than one plus a " · uploaded" fragment, which is what this was
+   * until #86: a suffix appended in JSX is a phrase a translator cannot move, and the
+   * separator belongs to whichever half their language puts last.
+   */
+  readonly size: string;
+  readonly sizeUploaded: string;
   readonly stage: {
     readonly preparing: string;
     readonly uploading: string;
@@ -1644,12 +1669,17 @@ export function coverImageCopyFrom(t: CampaignEditorTranslator): CoverImageCopy 
     buttonLabel: at('buttonLabel'),
     dropHint: tpl('dropHint'),
     urlPlaceholder: at('urlPlaceholder'),
+    urlLabel: at('urlLabel'),
+    checking: at('checking'),
+    useAddress: at('useAddress'),
     needUrlFirst: at('needUrlFirst'),
     notUsedTitle: at('notUsedTitle'),
     unusable: at('unusable'),
     softTitle: at('softTitle'),
     set: tpl('set'),
     setSmall: tpl('setSmall'),
+    size: tpl('size'),
+    sizeUploaded: tpl('sizeUploaded'),
     stage: {
       preparing: at('stage.preparing'),
       uploading: at('stage.uploading'),

@@ -341,6 +341,7 @@
         "phoneHint": "Bəzi daşıyıcılar onsuz çatdırmır.",
         "requiredField": "Bağlamanı bu olmadan ünvanlamaq mümkün deyil.",
         "loadFailedTitle": "Bu ünvanı yükləmək mümkün olmadı",
+        "loading": "Ünvanınız yüklənir",
         "notFound": "Həmin dəstək tapılmadı və ya sizə aid deyil.",
         "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
         "refused": "Ünvan rədd edildi.",
@@ -584,6 +585,7 @@
         "signedOut": "Sistemdən çıxmısınız",
         "signedOutBody": "Bu brauzerin artıq seansı yoxdur. Bildirişlərinizi oxumaq üçün yenidən daxil olun.",
         "loadingList": "Bildirişləriniz yüklənir",
+        "errorTitle": "Nəsə səhv getdi",
         "emptyTitle": "Hələ heç nə yoxdur",
         "emptyBody": "Dəstəklədiyiniz kampaniya hədəfinə çatanda, bağlananda və ya ödəniş alınanda burada görünəcək.",
         "filteredTitle": "Yüklənənlər arasında heç nə yoxdur",
@@ -4002,6 +4004,7 @@
         "failedTitle": "Versiya tarixçəsini yükləmək olmadı",
         "emptyTitle": "Hələ əvvəlki versiya yoxdur",
         "loadingLabel": "Əvvəlki versiyalar yüklənir",
+        "loadingVersion": "Bu versiya yüklənir…",
         "description": "Hekayə hər dəyişdikdə versiya saxlanılır, amma bir neçə dəqiqədə birdən çox yox. Burada son əllisi var.",
         "emptyDescription": "Biri hekayə ilk dəfə dəyişəndə saxlanılır, sonra isə siz yazdıqca bir neçə dəqiqədə birdən çox olmayaraq.",
         "replaceWarning": "İndiki hekayəniz əvəz olunur.",
@@ -4173,16 +4176,21 @@
       "buttonLabel": "Şəkil seçin",
       "dropHint": "20 MB-a qədər. Şəkil burada çevrilir və kiçildilir, orijinal saxlanılmır. Ən yaxşısı {minimum} və daha böyük.",
       "urlPlaceholder": "Və ya ünvanı yapışdırın: https://images.example.com/cover.jpg",
+      "urlLabel": "Üz qabığı şəklinin ünvanı",
+      "checking": "Yoxlanılır",
+      "useAddress": "Bu ünvanı işlət",
       "needUrlFirst": "Əvvəlcə şəklin ünvanını yazın.",
       "notUsedTitle": "Bu fayl istifadə olunmadı",
       "unusable": "Bu şəkli işlətmək alınmadı.",
       "softTitle": "Tam enində bulanıq görünəcək",
       "set": "Üz qabığı {size} piksel şəkildən götürüldü.",
       "setSmall": "Üz qabığı {size} piksel şəkildən götürüldü. Bu, tövsiyə olunan {minimum} ölçüdən kiçikdir, ona görə başlığı doldurmaq üçün böyüdüləcək və bulanıq görünəcək. Nisbətləri saxlanılır — çərçivə dartmır, kəsir. Kampaniyanı yenə də göndərmək olar.",
+      "size": "Üz qabığı {size} pikseldir",
+      "sizeUploaded": "Üz qabığı {size} pikseldir · yüklənib",
       "stage": {
-        "preparing": "Hazırlanır",
-        "uploading": "Yüklənir",
-        "processing": "Emal olunur"
+        "preparing": "Şəkil hazırlanır…",
+        "uploading": "Şəkil yüklənir…",
+        "processing": "Şəkil emal olunur…"
       },
       "failures": {
         "TOO_SMALL": "Bu şəkil göstərmək üçün çox kiçikdir. {minimum} və yuxarısı yaxşı oxunur.",
@@ -4193,7 +4201,10 @@
         "UPLOADS_UNAVAILABLE": "Bu mühitdə yükləmə aktiv deyil. Əvəzinə ünvan yapışdırın.",
         "MEDIA_STORAGE_UNREACHABLE": "Şəkil anbarı cavab vermir. Bir azdan yenidən cəhd edin.",
         "UPLOAD_STILL_PROCESSING": "Bu şəkil adətkindən uzun çəkir. Bu bölməyə qayıtsanız, görünə bilər.",
-        "UPLOAD_TRANSFER_FAILED": "Şəkil anbara çatmadı. Bağlantını yoxlayıb yenidən cəhd edin."
+        "UPLOAD_TRANSFER_FAILED": "Şəkil anbara çatmadı. Bağlantını yoxlayıb yenidən cəhd edin.",
+        "UPLOAD_REFUSED": "Bu fayl qəbul edilmədi.",
+        "UPLOAD_UNFINISHED": "Bu yükləməni tamamlamaq alınmadı.",
+        "MEDIA_NOT_FOUND": "Bu yükləməni oxumaq alınmadı."
       }
     },
     "newProject": {

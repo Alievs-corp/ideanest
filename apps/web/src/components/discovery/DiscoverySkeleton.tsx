@@ -24,9 +24,22 @@ import { SkeletonCard, SkeletonGroup } from '@ideanest/ui';
 
 const CARDS = Array.from({ length: 6 }, (_, index) => index);
 
-export function DiscoverySkeleton() {
+export interface DiscoverySkeletonProps {
+  /**
+   * The loading region's accessible name — `discovery.feed.loading`, from the caller.
+   *
+   * A skeleton's label is announced to exactly the readers who cannot see the shimmer, which
+   * is why it was English here until #86 while everything around it was not: nobody reviewing
+   * the screen ever reads it. It is a prop rather than a lookup because this component is
+   * rendered both from a Suspense fallback on the server and from the feed on the client, and
+   * only one of those two can call `getTranslations`.
+   */
+  readonly label: string;
+}
+
+export function DiscoverySkeleton({ label }: DiscoverySkeletonProps) {
   return (
-    <SkeletonGroup label="Loading projects">
+    <SkeletonGroup label={label}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {CARDS.map((index) => (
           <SkeletonCard key={index} />

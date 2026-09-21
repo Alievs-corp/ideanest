@@ -115,7 +115,12 @@ export function CoverImageField({
 
   function describeFailure(cause: unknown): string {
     if (cause instanceof UploadFailed) {
-      return refusalFor(copy, cause.code) ?? cause.message;
+      /*
+       * `cause.message` is the SERVICE's own sentence when it sent one, and empty when it did
+       * not — `lib/media/upload.ts` stopped carrying English fallbacks in #86, and the three
+       * codes it throws instead are in `copy.failures` with the other nine.
+       */
+      return refusalFor(copy, cause.code) ?? (cause.message === '' ? copy.unusable : cause.message);
     }
     return cause instanceof Error ? cause.message : copy.unusable;
   }
@@ -212,9 +217,15 @@ export function CoverImageField({
               decorative
             />
             <figcaption className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-[13px] text-white/64">
+              {/*
+                Two whole sentences rather than one with a fragment appended. " · uploaded"
+                was a literal here until #86, and a translator handed a dangling suffix has
+                no way to put it where their language puts it.
+              */}
               <span>
-                Cover is {describeSize(cover)} pixels
-                {cover.mediaId ? ' · uploaded' : ''}
+                {fillPlaceholders(cover.mediaId ? copy.sizeUploaded : copy.size, {
+                  size: describeSize(cover),
+                })}
               </span>
               <Pill
                 variant="ghost"
@@ -254,13 +265,13 @@ export function CoverImageField({
             // The `Field` label names a group here, so it cannot name this
             // control; without a label of its own the input would be announced
             // as "edit text" and nothing else.
-            aria-label="Cover image address"
+            aria-label={copy.urlLabel}
             placeholder={copy.urlPlaceholder}
             className="sm:flex-1"
             onChange={(event) => onUrlChange(event.target.value)}
           />
           <Pill variant="ghost" disabled={disabled || checking} onClick={() => void useAddress()}>
-            {checking && stage === null ? 'Checking' : 'Use this address'}
+            {checking && stage === null ? copy.checking : copy.useAddress}
           </Pill>
         </div>
 
@@ -276,9 +287,12 @@ export function CoverImageField({
           registered before anything is put into it.
         */}
         <div role="status" aria-live="polite" className="empty:hidden">
-          {stage !== null && (
-            <InlineAlert variant="info">{copy.stage[stage]} the image…</InlineAlert>
-          )}
+          {/*
+            THE WHOLE SENTENCE, not a word with " the image…" after it. That was the shape
+            until #86: three translated stage words with an English tail appended in JSX,
+            which reads as "Şəkil hazırlanır the image…" in every language but one.
+          */}
+          {stage !== null && <InlineAlert variant="info">{copy.stage[stage]}</InlineAlert>}
           {stage === null && note !== null && note.tone !== 'danger' && (
             <InlineAlert variant={note.tone} title={note.title}>
               {note.text}

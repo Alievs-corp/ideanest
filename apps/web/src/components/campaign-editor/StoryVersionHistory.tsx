@@ -268,7 +268,7 @@ export function StoryVersionHistory({
                     {previewProblem !== null ? (
                       <InlineAlert variant="warning">{previewProblem}</InlineAlert>
                     ) : preview === null ? (
-                      <p className="text-[13px] text-white/64">Loading this version…</p>
+                      <p className="text-[13px] text-white/64">{copy.loadingVersion}</p>
                     ) : (
                       <StoryPreview copy={copy} vocabulary={vocabulary} document={preview} />
                     )}
