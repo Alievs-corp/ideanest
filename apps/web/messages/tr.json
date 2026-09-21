@@ -17,6 +17,12 @@
     },
     "saving": "Kaydediliyor…",
     "tryAgain": "Tekrar deneyin",
+    "browseCampaigns": "Kampaniyalara göz at",
+    "list": {
+      "showMore": "Daha fazla göster",
+      "loadingMore": "Yükleniyor",
+      "nextPageFailed": "Sonraki sayfa yüklenmedi"
+    },
     "trail": {
       "home": "Ana sayfa",
       "discover": "Keşfet",
@@ -349,6 +355,31 @@
         "savedBodyAt": "Ödül buraya gidiyor, {at} itibarıyla.",
         "save": "Adresi kaydet",
         "saving": "Kaydediliyor"
+      }
+    },
+    "signals": {
+      "saved": {
+        "loading": "Kaydettiğiniz kampanyalar yükleniyor",
+        "failedTitle": "Kaydettiğiniz kampanyalar yüklenemedi",
+        "emptyTitle": "Henüz hiçbir şey kaydetmediniz",
+        "emptyBody": "Kaydettiğiniz kampanya burada kalır, kapanmadan önce ona geri dönebilirsiniz.",
+        "meta": "{time} kaydedildi · üretici: {creator}",
+        "remove": "Çıkar",
+        "removeLabel": "{name} kampanyasını kaydedilenlerden çıkar",
+        "removalFailedTitle": "Çıkarılamadı",
+        "removalFailedBody": "“{name}” çıkarılamadı. Kampanya hâlâ kaydedilmiş durumda — birazdan tekrar deneyin."
+      },
+      "following": {
+        "loading": "Takip ettiğiniz üreticiler yükleniyor",
+        "failedTitle": "Liste yüklenemedi",
+        "emptyTitle": "Henüz kimseyi takip etmiyorsunuz",
+        "emptyBody": "Bir üreticiyi takip etmek, yeni bir şey başlattığında size mesaj gelmesi demektir.",
+        "emptyAction": "Üretici bul",
+        "meta": "{creator} · {time} tarihinden beri takip ediyorsunuz",
+        "remove": "Takibi bırak",
+        "removeLabel": "{name} adlı üreticiyi takip etmeyi bırak",
+        "removalFailedTitle": "Değişiklik olmadı",
+        "removalFailedBody": "{name} adlı üreticiyi hâlâ takip ediyorsunuz. Değişiklik servise ulaşmadı — birazdan tekrar deneyin."
       }
     },
     "pledges": {

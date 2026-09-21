@@ -13,6 +13,8 @@ import {
 import { formatRelativeTime } from '../../lib/time';
 import { useCursorList } from './useCursorList';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { SignalListCopy } from '../../lib/i18n/signals-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * §4.9's C-10 — the campaigns this account saved. Issue #288.
@@ -41,7 +43,12 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
  * docs/motion-system.md §5 puts the account area at none, and §8 rules out staggering a list
  * regardless.
  */
-export function SavedProjectsPanel() {
+export interface SavedProjectsPanelProps {
+  /** Every word this list draws, resolved on the server — #83. */
+  readonly copy: SignalListCopy;
+}
+
+export function SavedProjectsPanel({ copy }: SavedProjectsPanelProps) {
   const locale = useRouteLocale();
   const { status, items, hasMore, loadingMore, error, loadMore, remove } =
     useCursorList<SavedCampaign>(useCallback((cursor, signal) => listSaved(cursor, signal), []));
@@ -64,9 +71,7 @@ export function SavedProjectsPanel() {
        * reappears in the middle of a list is harder to notice than one called out at the top.
        */
       setRestored((previous) => [campaign, ...previous]);
-      setRemovalError(
-        `“${campaign.title}” could not be removed. It is still saved — try again in a moment.`,
-      );
+      setRemovalError(fillPlaceholders(copy.removalFailedBody, { name: campaign.title }));
     }
   }
 
@@ -74,7 +79,7 @@ export function SavedProjectsPanel() {
 
   if (status === 'loading') {
     return (
-      <SkeletonGroup label="Loading your saved campaigns" className="flex flex-col gap-3">
+      <SkeletonGroup label={copy.loading} className="flex flex-col gap-3">
         {[0, 1, 2].map((row) => (
           <Skeleton key={row} height="4.5rem" />
         ))}
@@ -84,7 +89,7 @@ export function SavedProjectsPanel() {
 
   if (status === 'failed') {
     return (
-      <InlineAlert variant="danger" title="Your saved campaigns could not be loaded">
+      <InlineAlert variant="danger" title={copy.failedTitle}>
         <p>{error}</p>
       </InlineAlert>
     );
@@ -96,11 +101,11 @@ export function SavedProjectsPanel() {
     return (
       <EmptyState
         icon={<Bookmark aria-hidden="true" className="size-6" />}
-        title="Nothing saved yet"
-        description="Saving a campaign keeps it here so you can come back before it closes."
+        title={copy.emptyTitle}
+        description={copy.emptyBody}
         action={
           <Link href="/discover">
-            <Pill type="button">Browse campaigns</Pill>
+            <Pill type="button">{copy.emptyAction}</Pill>
           </Link>
         }
       />
@@ -112,7 +117,7 @@ export function SavedProjectsPanel() {
       {removalError !== null && (
         <InlineAlert
           variant="danger"
-          title="That was not removed"
+          title={copy.removalFailedTitle}
           onDismiss={() => setRemovalError(null)}
         >
           <p>{removalError}</p>
@@ -133,7 +138,10 @@ export function SavedProjectsPanel() {
                 {campaign.title}
               </Link>
               <p className="mt-1 text-sm text-white/40">
-                Saved {formatRelativeTime(campaign.savedAt, now, locale)} · by {campaign.creatorSlug}
+                {fillPlaceholders(copy.meta, {
+                  time: formatRelativeTime(campaign.savedAt, now, locale),
+                  creator: campaign.creatorSlug,
+                })}
               </p>
             </div>
 
@@ -145,10 +153,10 @@ export function SavedProjectsPanel() {
               type="button"
               variant="ghost"
               size="sm"
-              aria-label={`Remove ${campaign.title} from your saved campaigns`}
+              aria-label={fillPlaceholders(copy.removeLabel, { name: campaign.title })}
               onClick={() => void drop(campaign)}
             >
-              Remove
+              {copy.remove}
             </Pill>
           </li>
         ))}
@@ -157,13 +165,13 @@ export function SavedProjectsPanel() {
       {hasMore && (
         <div>
           <Pill type="button" variant="outline" disabled={loadingMore} onClick={loadMore}>
-            {loadingMore ? 'Loading' : 'Show more'}
+            {loadingMore ? copy.loadingMore : copy.showMore}
           </Pill>
         </div>
       )}
 
       {error !== null && (
-        <InlineAlert variant="danger" title="The next page did not load">
+        <InlineAlert variant="danger" title={copy.nextPageFailed}>
           <p>{error}</p>
         </InlineAlert>
       )}

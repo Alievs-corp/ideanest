@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { AccountPageHeader } from '../../../../components/account/AccountPageHeader';
 import { SavedProjectsPanel } from '../../../../components/account/SavedProjectsPanel';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
+import { savedListCopy } from '../../../../lib/i18n/shell-copy.server';
 import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -23,6 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function SavedProjectsPage() {
   const t = await getTranslations('account.pages.saved');
+  const copy = await savedListCopy();
 
   return (
     <>
@@ -31,7 +33,7 @@ export default async function SavedProjectsPage() {
       </AccountPageHeader>
 
       <div className="mt-8">
-        <SavedProjectsPanel />
+        <SavedProjectsPanel copy={copy} />
       </div>
     </>
   );

@@ -4,6 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import { listSaved, unsaveCampaign, type SavedCampaign } from '../../lib/community/signals';
 import { SavedProjectsPanel } from './SavedProjectsPanel';
+import { savedListCopyFrom } from '../../lib/i18n/signals-copy';
+import { translatorFor } from '../../test-copy';
+
+/*
+ * The words, built from `messages/en.json` with the builder the route calls — #83.
+ *
+ * Retyping them here would give a test that passes whatever the catalogue says, and would
+ * still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ */
+const COPY = savedListCopyFrom(translatorFor('account.signals'), translatorFor('common'));
 
 /**
  * §4.9's C-10 — issue #288.
@@ -49,7 +59,7 @@ afterEach(cleanup);
 describe('SavedProjectsPanel', () => {
   it('announces the wait rather than showing a blank panel', () => {
     listMock.mockReturnValue(new Promise(() => {}));
-    render(<SavedProjectsPanel />);
+    render(<SavedProjectsPanel copy={COPY} />);
 
     const label = screen.getByText('Loading your saved campaigns');
     expect(label.closest('[aria-busy]')).toHaveAttribute('aria-busy', 'true');
@@ -57,7 +67,7 @@ describe('SavedProjectsPanel', () => {
 
   it('links each row at §10.2’s canonical campaign path', async () => {
     listMock.mockResolvedValue({ items: [campaign('p1', 'A tabletop game')], nextCursor: null });
-    render(<SavedProjectsPanel />);
+    render(<SavedProjectsPanel copy={COPY} />);
 
     expect(await screen.findByRole('link', { name: 'A tabletop game' })).toHaveAttribute('href', '/en/projects/aysel/slug-p1');
   });
@@ -67,7 +77,7 @@ describe('SavedProjectsPanel', () => {
       items: [campaign('p1', 'A tabletop game'), campaign('p2', 'A photo book')],
       nextCursor: null,
     });
-    render(<SavedProjectsPanel />);
+    render(<SavedProjectsPanel copy={COPY} />);
 
     expect(
       await screen.findByRole('button', {
@@ -82,7 +92,7 @@ describe('SavedProjectsPanel', () => {
   it('takes the row away at once', async () => {
     listMock.mockResolvedValue({ items: [campaign('p1', 'A tabletop game')], nextCursor: null });
     const user = userEvent.setup();
-    render(<SavedProjectsPanel />);
+    render(<SavedProjectsPanel copy={COPY} />);
 
     await user.click(
       await screen.findByRole('button', {
@@ -98,7 +108,7 @@ describe('SavedProjectsPanel', () => {
     listMock.mockResolvedValue({ items: [campaign('p1', 'A tabletop game')], nextCursor: null });
     unsaveMock.mockRejectedValue(new ApiError(500));
     const user = userEvent.setup();
-    render(<SavedProjectsPanel />);
+    render(<SavedProjectsPanel copy={COPY} />);
 
     await user.click(
       await screen.findByRole('button', {
@@ -115,7 +125,7 @@ describe('SavedProjectsPanel', () => {
       .mockResolvedValueOnce({ items: [campaign('p1', 'First')], nextCursor: 'cursor-2' })
       .mockResolvedValueOnce({ items: [campaign('p2', 'Second')], nextCursor: null });
     const user = userEvent.setup();
-    render(<SavedProjectsPanel />);
+    render(<SavedProjectsPanel copy={COPY} />);
 
     await user.click(await screen.findByRole('button', { name: 'Show more' }));
 
@@ -128,7 +138,7 @@ describe('SavedProjectsPanel', () => {
 
   it('offers somewhere to go when nothing is saved', async () => {
     listMock.mockResolvedValue({ items: [], nextCursor: null });
-    render(<SavedProjectsPanel />);
+    render(<SavedProjectsPanel copy={COPY} />);
 
     expect(await screen.findByText('Nothing saved yet')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Browse campaigns/u })).toHaveAttribute('href', '/en/discover');
@@ -136,7 +146,7 @@ describe('SavedProjectsPanel', () => {
 
   it('renders nothing at all when there is no session, rather than an error', async () => {
     listMock.mockRejectedValue(new ApiError(401));
-    const { container } = render(<SavedProjectsPanel />);
+    const { container } = render(<SavedProjectsPanel copy={COPY} />);
 
     // `SessionProvider`'s guard is what acts on a 401; a panel shouting about it would be a
     // second, louder answer to the same fact.

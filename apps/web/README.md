@@ -328,14 +328,21 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
 - the profile editor and the visibility switch (#82) — the last English half of a pair
   whose public side was already key-based. Both halves read one namespace on purpose:
   the two describe the same six fields, and somebody who edits "Biography" should meet
-  the word they saw on their own profile. `profile.editor` in the catalogue.
+  the word they saw on their own profile. `profile.editor` in the catalogue;
+- the saved-campaigns and following lists (#83) — the two panels under `/account/saved`
+  and `/account/following`. They are the same paginated list with different nouns, so
+  both are handed one `SignalListCopy` rather than two parallel shapes that would drift
+  the first time either gained a field. The paginator's three words and "Browse
+  campaigns" moved to `common.list` and `common.browseCampaigns`, because every list on
+  the platform ends with the first and every empty one offers the second.
+  `lib/i18n/signals-copy.ts` holds the shape and its two builders.
 
 What is still English:
 
 | Surface | Where |
 |---|---|
 | The campaign editor | `components/campaign-editor` |
-| The panels below three account headings | `components/surveys`, and the saved and following lists |
+| The backer survey screens | `components/surveys` (#84) |
 | The checkout and pledge refusal table | `lib/pledges/failure.ts` — twenty refusals the checkout and both pledge screens render (#91) |
 | The public report dialog | `components/moderation/ReportControl` |
 

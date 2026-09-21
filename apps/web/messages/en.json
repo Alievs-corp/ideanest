@@ -17,6 +17,12 @@
     },
     "saving": "Saving…",
     "tryAgain": "Try again",
+    "browseCampaigns": "Browse campaigns",
+    "list": {
+      "showMore": "Show more",
+      "loadingMore": "Loading",
+      "nextPageFailed": "The next page did not load"
+    },
     "trail": {
       "home": "Home",
       "discover": "Discover",
@@ -349,6 +355,31 @@
         "savedBodyAt": "This is where the reward goes, as of {at}.",
         "save": "Save address",
         "saving": "Saving"
+      }
+    },
+    "signals": {
+      "saved": {
+        "loading": "Loading your saved campaigns",
+        "failedTitle": "Your saved campaigns could not be loaded",
+        "emptyTitle": "Nothing saved yet",
+        "emptyBody": "Saving a campaign keeps it here so you can come back before it closes.",
+        "meta": "Saved {time} · by {creator}",
+        "remove": "Remove",
+        "removeLabel": "Remove {name} from your saved campaigns",
+        "removalFailedTitle": "That was not removed",
+        "removalFailedBody": "“{name}” could not be removed. It is still saved — try again in a moment."
+      },
+      "following": {
+        "loading": "Loading the creators you follow",
+        "failedTitle": "The list could not be loaded",
+        "emptyTitle": "You are not following anyone yet",
+        "emptyBody": "Following a creator means a message when they launch something new.",
+        "emptyAction": "Find creators",
+        "meta": "{creator} · following since {time}",
+        "remove": "Unfollow",
+        "removeLabel": "Stop following {name}",
+        "removalFailedTitle": "That did not change",
+        "removalFailedBody": "You are still following {name}. The change did not reach the service — try again in a moment."
       }
     },
     "pledges": {

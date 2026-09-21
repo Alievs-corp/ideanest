@@ -12,6 +12,8 @@ import {
 import { formatRelativeTime } from '../../lib/time';
 import { useCursorList } from './useCursorList';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { SignalListCopy } from '../../lib/i18n/signals-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * §4.9's C-10 — the creators this account follows. Issue #288.
@@ -36,7 +38,12 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
  * to keep receiving those messages — which is a decision they cannot make without knowing what
  * they are.
  */
-export function FollowingPanel() {
+export interface FollowingPanelProps {
+  /** Every word this list draws, resolved on the server — #83. */
+  readonly copy: SignalListCopy;
+}
+
+export function FollowingPanel({ copy }: FollowingPanelProps) {
   const locale = useRouteLocale();
   const { status, items, hasMore, loadingMore, error, loadMore, remove } =
     useCursorList<FollowedCreator>(
@@ -55,9 +62,7 @@ export function FollowingPanel() {
       await unfollowCreator(creator.slug);
     } catch {
       setRestored((previous) => [creator, ...previous]);
-      setRemovalError(
-        `You are still following ${creator.name}. The change did not reach the service — try again in a moment.`,
-      );
+      setRemovalError(fillPlaceholders(copy.removalFailedBody, { name: creator.name }));
     }
   }
 
@@ -65,7 +70,7 @@ export function FollowingPanel() {
 
   if (status === 'loading') {
     return (
-      <SkeletonGroup label="Loading the creators you follow" className="flex flex-col gap-3">
+      <SkeletonGroup label={copy.loading} className="flex flex-col gap-3">
         {[0, 1, 2].map((row) => (
           <Skeleton key={row} height="4.5rem" />
         ))}
@@ -75,7 +80,7 @@ export function FollowingPanel() {
 
   if (status === 'failed') {
     return (
-      <InlineAlert variant="danger" title="The list could not be loaded">
+      <InlineAlert variant="danger" title={copy.failedTitle}>
         <p>{error}</p>
       </InlineAlert>
     );
@@ -87,11 +92,11 @@ export function FollowingPanel() {
     return (
       <EmptyState
         icon={<UserPlus aria-hidden="true" className="size-6" />}
-        title="You are not following anyone yet"
-        description="Following a creator means a message when they launch something new."
+        title={copy.emptyTitle}
+        description={copy.emptyBody}
         action={
           <Link href="/discover">
-            <Pill type="button">Find creators</Pill>
+            <Pill type="button">{copy.emptyAction}</Pill>
           </Link>
         }
       />
@@ -103,7 +108,7 @@ export function FollowingPanel() {
       {removalError !== null && (
         <InlineAlert
           variant="danger"
-          title="That did not change"
+          title={copy.removalFailedTitle}
           onDismiss={() => setRemovalError(null)}
         >
           <p>{removalError}</p>
@@ -128,7 +133,10 @@ export function FollowingPanel() {
                   {creator.name}
                 </p>
                 <p className="mt-1 text-sm text-white/40">
-                  {creator.slug} · following since {formatRelativeTime(creator.followedAt, now, locale)}
+                  {fillPlaceholders(copy.meta, {
+                    creator: creator.slug,
+                    time: formatRelativeTime(creator.followedAt, now, locale),
+                  })}
                 </p>
               </div>
             </div>
@@ -137,10 +145,10 @@ export function FollowingPanel() {
               type="button"
               variant="ghost"
               size="sm"
-              aria-label={`Stop following ${creator.name}`}
+              aria-label={fillPlaceholders(copy.removeLabel, { name: creator.name })}
               onClick={() => void drop(creator)}
             >
-              Unfollow
+              {copy.remove}
             </Pill>
           </li>
         ))}
@@ -149,13 +157,13 @@ export function FollowingPanel() {
       {hasMore && (
         <div>
           <Pill type="button" variant="outline" disabled={loadingMore} onClick={loadMore}>
-            {loadingMore ? 'Loading' : 'Show more'}
+            {loadingMore ? copy.loadingMore : copy.showMore}
           </Pill>
         </div>
       )}
 
       {error !== null && (
-        <InlineAlert variant="danger" title="The next page did not load">
+        <InlineAlert variant="danger" title={copy.nextPageFailed}>
           <p>{error}</p>
         </InlineAlert>
       )}

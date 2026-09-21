@@ -17,6 +17,12 @@
     },
     "saving": "Yadda saxlanılır…",
     "tryAgain": "Yenidən cəhd edin",
+    "browseCampaigns": "Kampaniyalara bax",
+    "list": {
+      "showMore": "Daha çox göstər",
+      "loadingMore": "Yüklənir",
+      "nextPageFailed": "Növbəti səhifə yüklənmədi"
+    },
     "trail": {
       "home": "Ana səhifə",
       "discover": "Kəşf et",
@@ -349,6 +355,31 @@
         "savedBodyAt": "Mükafat bura gedir, {at} tarixinə olan məlumata görə.",
         "save": "Ünvanı yadda saxla",
         "saving": "Yadda saxlanılır"
+      }
+    },
+    "signals": {
+      "saved": {
+        "loading": "Saxlanmış kampaniyalarınız yüklənir",
+        "failedTitle": "Saxlanmış kampaniyalarınız yüklənə bilmədi",
+        "emptyTitle": "Hələ heç nə saxlamamısınız",
+        "emptyBody": "Saxladığınız kampaniya burada qalır ki, bağlanmadan əvvəl ona qayıda biləsiniz.",
+        "meta": "{time} saxlanılıb · müəllif: {creator}",
+        "remove": "Çıxar",
+        "removeLabel": "{name} kampaniyasını saxlanmışlardan çıxar",
+        "removalFailedTitle": "Çıxarıla bilmədi",
+        "removalFailedBody": "“{name}” çıxarıla bilmədi. Kampaniya hələ də saxlanılıb — bir azdan yenidən cəhd edin."
+      },
+      "following": {
+        "loading": "İzlədiyiniz müəlliflər yüklənir",
+        "failedTitle": "Siyahı yüklənə bilmədi",
+        "emptyTitle": "Hələ heç kimi izləmirsiniz",
+        "emptyBody": "Müəllifi izləmək, o yeni bir kampaniya başlatdıqda sizə mesaj gəlməsi deməkdir.",
+        "emptyAction": "Müəllif tap",
+        "meta": "{creator} · {time} tarixindən izləyirsiniz",
+        "remove": "İzləməni dayandır",
+        "removeLabel": "{name} adlı müəllifi izləməyi dayandır",
+        "removalFailedTitle": "Dəyişiklik baş tutmadı",
+        "removalFailedBody": "{name} adlı müəllifi hələ də izləyirsiniz. Dəyişiklik xidmətə çatmadı — bir azdan yenidən cəhd edin."
       }
     },
     "pledges": {
