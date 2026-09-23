@@ -417,9 +417,20 @@ cardinal and needs no suffix, and "moved to position N" is `{position} nömrəli
 is what `profile.editor.links.platformFor` became in #105. A suffix table was the other option
 and is the wrong one: `{position}` is only known in the browser, and the rule is not only
 about the last digit — 100 is `100-cü` while 1000 is `1000-ci`. `lib/i18n/catalogue.test.ts`
-forbids the shape now. Two strings carry the same defect with a **case** suffix rather than an
-ordinal (`story.panel.charactersNeeded`, `review.progressSummary`) and are #109, because
-forbidding those would mean encoding which suffixes harmonise.
+forbids the shape now.
+
+**#109 finished it, and widened the rule to every suffix.** Two strings inflected a **case**
+after a placeholder the same way — `story.panel.charactersNeeded` wrote `{count}-i` and
+`review.progressSummary` wrote `{blockingTotal}-dən {blockingDone}-i` — which is right for a
+number ending in 1, 2, 5, 7 or 8 and wrong for the rest, because a case harmonises with the
+number as it is READ. The character count is the sharper of the two: it reaches the sentence
+already grouped for the reader, so the ending would have had to agree with "1.200" rather than
+with 1200. Both are cardinal now (`{min} simvoldan {count} yazılıb`), where the suffix sits on
+the noun it has always sat on. With nothing left violating it, `catalogue.test.ts` states the
+whole shape rather than the ordinal half: **nothing in the Azerbaijani catalogue may hyphenate
+letters onto a placeholder**, whether the value is a number or a name. The other three
+languages do not have this defect to have — Russian's ordinal is `-й` whatever the digit and
+Turkish marks one with a full stop — so the rule is Azerbaijani's alone.
 
 **One word per concept, console included (#102).** Every non-English language carried two
 words for *creator* and Russian carried two for *backer*, split roughly along `admin.` against

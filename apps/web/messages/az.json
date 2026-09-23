@@ -4069,7 +4069,7 @@
         "risks": "Risklər və çətinliklər",
         "risksHint": "Nə səhv gedə bilər və siz bununla nə edəcəksiniz. Ən azı {min} simvol; baxışa göndərməzdən əvvəl mütləqdir.",
         "risksPlaceholder": "Adətən üç şey olur: istehsal, çatdırılma və vaxt. Nəyin artıq həll olunduğunu, nəyin isə yox, yazın.",
-        "charactersNeeded": "Baxışa göndərmək üçün lazım olan {min} simvoldan {count}-i"
+        "charactersNeeded": "Baxışa göndərmək üçün lazım olan {min} simvoldan {count} yazılıb"
       },
       "blocks": {
         "heading": "Hekayə",
@@ -4287,7 +4287,7 @@
       "notFound": "Belə bir kampaniya tapılmadı.",
       "noAccess": "Bu kampaniyaya girişiniz yoxdur.",
       "unreachable": "Xidmətlə əlaqə qurulmadı. Bağlantını yoxlayıb yenidən cəhd edin.",
-      "progressSummary": "{score}% hazırdır. Mütləq bəndlərdən {blockingTotal}-dən {blockingDone}-i, tövsiyə olunanlardan {advisoryTotal}-dən {advisoryDone}-i tamamlanıb.",
+      "progressSummary": "{score}% hazırdır. Mütləq {blockingTotal} bənddən {blockingDone}, tövsiyə olunan {advisoryTotal} bənddən {advisoryDone} tamamlanıb.",
       "blockersRemaining": {
         "one": "{count} mütləq bənd hələ tamamlanmayıb.",
         "few": "{count} mütləq bənd hələ tamamlanmayıb.",
