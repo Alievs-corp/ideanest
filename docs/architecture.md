@@ -6416,9 +6416,18 @@ it was written in.
 > live in a client component and would still be wrong — 100 is `100-cü` while 1000 is
 > `1000-ci`. `{total} bloqdan {index}` is cardinal and needs no suffix, and "to position N" is
 > `{position} nömrəli mövqeyə`, #105's phrasing. The rule it left behind is that shape: no
-> ordinal suffix after a placeholder in Azerbaijani. Two strings inflect a **case**
-> after a placeholder the same way and are #109 — the rule stops where stating it would mean
-> encoding which suffixes harmonise.
+> ordinal suffix after a placeholder in Azerbaijani.
+>
+> **#109 was the same defect wearing a case rather than an ordinal, and it widened the rule.**
+> `story.panel.charactersNeeded` wrote `{count}-i` and `review.progressSummary` wrote
+> `{blockingTotal}-dən {blockingDone}-i`; a case harmonises with the number as it is read, so
+> each was right for five digits out of ten. The character count is the one worth recording —
+> the number reaches the sentence already grouped for the reader, so the ending would have had
+> to agree with "1.200" as it is spoken rather than with 1200. Both read cardinally now. With
+> nothing left violating it, the rule is stated whole: nothing in the Azerbaijani catalogue
+> hyphenates letters onto a placeholder, whatever the value is. It stays Azerbaijani's alone
+> because the other three have no such ending — Russian writes `-й` whatever the digit and
+> Turkish marks an ordinal with a full stop.
 >
 > **The refusal table came off it in #91.** The twenty sentences the service says no with
 > are `checkout.failures` now, read by the checkout, the pledge editor and the pledge

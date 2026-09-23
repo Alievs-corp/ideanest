@@ -329,36 +329,54 @@ describe('the message catalogues', () => {
         .toBe(false);
     }
   });
-  it('never writes an Azerbaijani ordinal suffix after a number it does not know', () => {
+
+  it('never attaches an Azerbaijani suffix to a value it has not seen', () => {
     /*
-     * ISSUE #104. Azerbaijani builds an ordinal by adding a suffix whose vowel is chosen from
-     * the LAST DIGIT of the number: 1-ci, 2-ci, 3-cü, 4-cü, 5-ci, 6-cı, 7-ci, 8-ci, 9-cu,
-     * 10-cu. A catalogue string cannot choose it, because the number arrives in the browser
-     * long after the sentence was written: twelve strings in `campaignEditor` wrote a fixed
-     * `-ci` after a placeholder, right for 1, 2, 5, 7 and 8 and wrong for everything else.
+     * ISSUES #104 AND #109. Azerbaijani chooses a suffix's vowel from the sound of the word
+     * it attaches to, and a number is read as the word it is spelled: the ordinal is 1-ci,
+     * 2-ci, 3-cü, 4-cü, 5-ci, 6-cı, 7-ci, 8-ci, 9-cu, 10-cu, and the cases harmonise the same
+     * way — {count}-i is right for 1 and wrong for 3, which takes -ü. A catalogue cannot pick
+     * either, because the number arrives in the browser long after the sentence was written.
+     *
+     * Twelve `campaignEditor` strings wrote a fixed `-ci` after a placeholder (#104) and two
+     * more wrote a fixed case (#109), each right for five digits out of ten. One of the two
+     * was worse than it looked: `story.panel.charactersNeeded` counts characters, so the
+     * number reaches the sentence already grouped for the reader — the suffix would have had
+     * to harmonise with "1.200" as it is READ, which is a fact about the rendered string.
      *
      * <h2>Why a suffix table is not the fix</h2>
      *
-     * It would have to live in a client component, and the rule is not only about the last
-     * digit — 100 is `100-cü` while 1000 is `1000-ci`. The twelve were rephrased instead:
-     * `{total} bloqdan {index}` is cardinal and needs no suffix, and "moved to position N"
-     * became `{position} nömrəli mövqeyə`, which is what `profile.editor.links.platformFor`
-     * was changed to in #105.
+     * It would have to live in a client component, and the ordinal rule is not only about the
+     * last digit — 100 is `100-cü` while 1000 is `1000-ci`. The fourteen were rephrased
+     * instead: `{total} bloqdan {index}` is cardinal and needs no suffix, "moved to position
+     * N" is `{position} nömrəli mövqeyə` — #105's phrasing — and a count reads
+     * `{min} simvoldan {count} yazılıb`, where the suffix sits on the noun it has always sat
+     * on. Rephrasing removes the problem instead of encoding it.
+     *
+     * <h2>Why the rule is Azerbaijani alone, and why it is every suffix rather than ordinals</h2>
+     *
+     * The other three do not have this defect to have. Russian's ordinal is `-й` whatever the
+     * digit, Turkish marks one with a full stop, and English has four endings it never
+     * attaches to a placeholder here. Azerbaijani is the language where the ending depends on
+     * a value the catalogue has not got — and that is as true of a case as of an ordinal, and
+     * as true after a name as after a number, so the rule is the whole shape: nothing in the
+     * Azerbaijani catalogue may hyphenate letters onto a placeholder. Nothing did after #109,
+     * which is the only reason it can be stated this widely.
      *
      * <h2>Why it is worth a test rather than a reading</h2>
      *
-     * EVERY ONE OF THE TWELVE IS A NAME OR A LIVE REGION ONLY A SCREEN READER HEARS. Six are
+     * TWELVE OF THE FOURTEEN ARE NAMES OR LIVE REGIONS ONLY A SCREEN READER HEARS. Six are
      * `aria-label`s on the reorder buttons and six are the announcements made after a reward,
      * a block or a question moves — a creator reordering ten story blocks with the keyboard
      * heard four wrong endings out of nine moves, in the only channel that told them the move
      * had worked, and nobody reviewing the editor on screen would ever have seen one.
      */
-    const ORDINAL_AFTER_PLACEHOLDER = /\}\s*-\s*(?:[iıuü]nc[iıuü]|c[iıuü])/u;
+    const SUFFIX_ON_A_PLACEHOLDER = /\}\s*-\s*\p{L}/u;
 
     for (const [key, message] of entries(CATALOGUES['az'])) {
       expect(
-        ORDINAL_AFTER_PLACEHOLDER.test(message),
-        `az ${key}: the suffix's vowel depends on the number — rephrase (${message})`,
+        SUFFIX_ON_A_PLACEHOLDER.test(message),
+        `az ${key}: the suffix's vowel depends on the value — rephrase (${message})`,
       ).toBe(false);
     }
   });
