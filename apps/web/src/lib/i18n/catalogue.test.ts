@@ -329,4 +329,37 @@ describe('the message catalogues', () => {
         .toBe(false);
     }
   });
+  it('never writes an Azerbaijani ordinal suffix after a number it does not know', () => {
+    /*
+     * ISSUE #104. Azerbaijani builds an ordinal by adding a suffix whose vowel is chosen from
+     * the LAST DIGIT of the number: 1-ci, 2-ci, 3-cü, 4-cü, 5-ci, 6-cı, 7-ci, 8-ci, 9-cu,
+     * 10-cu. A catalogue string cannot choose it, because the number arrives in the browser
+     * long after the sentence was written: twelve strings in `campaignEditor` wrote a fixed
+     * `-ci` after a placeholder, right for 1, 2, 5, 7 and 8 and wrong for everything else.
+     *
+     * <h2>Why a suffix table is not the fix</h2>
+     *
+     * It would have to live in a client component, and the rule is not only about the last
+     * digit — 100 is `100-cü` while 1000 is `1000-ci`. The twelve were rephrased instead:
+     * `{total} bloqdan {index}` is cardinal and needs no suffix, and "moved to position N"
+     * became `{position} nömrəli mövqeyə`, which is what `profile.editor.links.platformFor`
+     * was changed to in #105.
+     *
+     * <h2>Why it is worth a test rather than a reading</h2>
+     *
+     * EVERY ONE OF THE TWELVE IS A NAME OR A LIVE REGION ONLY A SCREEN READER HEARS. Six are
+     * `aria-label`s on the reorder buttons and six are the announcements made after a reward,
+     * a block or a question moves — a creator reordering ten story blocks with the keyboard
+     * heard four wrong endings out of nine moves, in the only channel that told them the move
+     * had worked, and nobody reviewing the editor on screen would ever have seen one.
+     */
+    const ORDINAL_AFTER_PLACEHOLDER = /\}\s*-\s*(?:[iıuü]nc[iıuü]|c[iıuü])/u;
+
+    for (const [key, message] of entries(CATALOGUES['az'])) {
+      expect(
+        ORDINAL_AFTER_PLACEHOLDER.test(message),
+        `az ${key}: the suffix's vowel depends on the number — rephrase (${message})`,
+      ).toBe(false);
+    }
+  });
 });

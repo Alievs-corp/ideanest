@@ -6407,6 +6407,19 @@ it was written in.
 > console. Three findings were too large to fix under a review and are their own issues —
 > #101, #102 and #104.
 >
+> **The editor's Azerbaijani ordinals were wrong for most numbers (#104).** The suffix's vowel
+> comes from the number's last digit — 1-ci, 3-cü, 6-cı, 9-cu — and twelve `campaignEditor`
+> strings wrote a fixed `-ci` after a placeholder, so each was right for five digits and wrong
+> for the other five. Every one of them is heard rather than seen: six are the reorder buttons'
+> accessible names and six are the live region that says a reward, a block or a question has
+> moved. The twelve were rephrased rather than inflected, because a suffix table would have to
+> live in a client component and would still be wrong — 100 is `100-cü` while 1000 is
+> `1000-ci`. `{total} bloqdan {index}` is cardinal and needs no suffix, and "to position N" is
+> `{position} nömrəli mövqeyə`, #105's phrasing. The rule it left behind is that shape: no
+> ordinal suffix after a placeholder in Azerbaijani. Two strings inflect a **case**
+> after a placeholder the same way and are #109 — the rule stops where stating it would mean
+> encoding which suffixes harmonise.
+>
 > **The refusal table came off it in #91.** The twenty sentences the service says no with
 > are `checkout.failures` now, read by the checkout, the pledge editor and the pledge
 > manager. `lib/pledges/failure.ts` keeps what is behaviour rather than prose — the recovery
