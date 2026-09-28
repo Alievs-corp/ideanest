@@ -178,6 +178,9 @@ export async function generateMetadata({
     campaign === null ? null : previewOf(campaign),
     pathOf(creatorSlug, projectSlug),
     localeOrDefault(locale),
+    process.env,
+    /* No `opengraph-image` beside this page, so a campaign with no cover shares the site's (#114). */
+    'site-card',
   );
   if (campaign === null) return metadata;
 
