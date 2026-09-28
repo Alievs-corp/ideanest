@@ -140,6 +140,7 @@ export async function SiteFooter() {
                 label={copy.languageSwitcherLabel}
                 placement="up"
                 appearance="quiet"
+                phoneAlign="start"
               />
             </div>
             <dl className="flex items-center gap-2">

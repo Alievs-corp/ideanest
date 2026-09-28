@@ -202,6 +202,22 @@ describe('the footer', () => {
     unmount();
   });
 
+  it('opens its language panel on the screen at phone widths', async () => {
+    /*
+     * Below `sm` the bottom row stacks and the globe sits near the LEFT edge, so the panel has
+     * to hang from the button's left edge there — hung from its right, it opened off the
+     * screen. From `sm` the row is right-aligned and the panel is too.
+     */
+    await renderFooter();
+
+    const label = en.shell.language.label;
+    await userEvent.click(screen.getByRole('button', { name: label }));
+    const classes = screen.getByRole('navigation', { name: label }).className.split(' ');
+
+    expect(classes).toContain('left-0');
+    expect(classes).toContain('sm:right-0');
+  });
+
   it('states the currency rather than offering a control', async () => {
     await renderFooter();
 

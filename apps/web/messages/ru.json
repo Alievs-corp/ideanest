@@ -60,7 +60,7 @@
     },
     "actions": {
       "signIn": "Войти",
-      "register": "Зарегистрироваться",
+      "register": "Регистрация",
       "signOut": "Выйти",
       "notifications": "Уведомления",
       "notificationSettings": "Настройки уведомлений",

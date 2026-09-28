@@ -222,32 +222,20 @@ describe('the actions inside it', () => {
 
 describe('the language', () => {
   /**
-   * The header's globe is `hidden sm:block` — measured at 390px it pushed the register pill
-   * and this drawer's own button off the edge — so below that width these four links are the
-   * way out of a language somebody cannot read, short of scrolling to the footer.
+   * The header's globe is on a phone's row now, so the drawer is navigation only. Drawing the
+   * four languages here as well would be a second language control on the same screen, and
+   * the one a reader who cannot read the page is least likely to find.
    */
-  it('offers all four, each named in itself, and keeps the page being read', async () => {
-    pathname = '/projects/42/blueprint';
+  it('is not in the drawer — the header carries it at every width', async () => {
     const user = userEvent.setup();
     renderDrawer('ru');
 
     await user.click(screen.getByRole('button', { name: ru.shell.drawer.open }));
 
-    for (const [name, tag] of [
-      ['Azərbaycan dili', 'az'],
-      ['English', 'en'],
-      ['Русский', 'ru'],
-      ['Türkçe', 'tr'],
-    ] as const) {
-      const link = screen.getByRole('link', { name });
-      expect(link).toHaveAttribute('lang', tag);
-      expect(link).toHaveAttribute('href', `/${tag}/projects/42/blueprint`);
+    const dialog = screen.getByRole('dialog');
+    for (const name of ['Azərbaycan dili', 'English', 'Русский', 'Türkçe']) {
+      expect(within(dialog).queryByRole('link', { name })).toBeNull();
     }
-
-    expect(screen.getByRole('link', { name: 'Русский' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
   });
 });
 

@@ -70,7 +70,13 @@ export function TopBar({
         className={cn(
           'flex items-center justify-between gap-4',
           'transition-[padding] duration-300 ease-in-out',
-          scrolled ? 'px-[26px] py-5' : 'px-7 pt-7 pb-3',
+          /*
+           * 20px at the sides below `sm`, the same gutter the page content uses there, so
+           * the wordmark lines up with the text under it. The 28px it had was 16px of a
+           * phone's row spent on nothing, and the row has none to spare: the web header's
+           * language control did not fit beside the register pill without it.
+           */
+          scrolled ? 'px-[18px] py-5 sm:px-[26px]' : 'px-5 pt-7 pb-3 sm:px-7',
         )}
       >
         {logo}

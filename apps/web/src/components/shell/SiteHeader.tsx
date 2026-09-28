@@ -134,13 +134,12 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
             that changes with the session so that its position does not move when the
             bootstrap answers.
 
-            NOT BELOW `sm`. Measured at 390px the globe pushed the register pill past the
-            edge and took the drawer's own button with it, and the row has no slack to give:
-            §8.6 spends the shell's one lime element on that pill. The drawer carries the
-            four languages flat at those widths, which is where a phone's navigation already
-            is.
+            AT EVERY WIDTH, a phone included. It used to be `hidden sm:block`, with the four
+            languages drawn flat in the drawer instead — which put the way out of an unreadable
+            language behind a menu whose label the reader cannot read either. The room for it
+            on a phone comes from the register pill below and from `TopBar`'s phone gutter.
           */}
-          <LanguageSwitcher label={copy.language.label} className="hidden sm:block" />
+          <LanguageSwitcher label={copy.language.label} phoneAlign="center" />
 
           {status === 'signed-in' && session !== null && (
             <>
@@ -171,11 +170,16 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
                 middle-click, and does not announce as a link. `data-on-lime` is carried so
                 §9.3's focus ring flips to near-black — a lime ring on a lime surface is
                 invisible.
+
+                SEVEN PER CENT SMALLER BELOW `sm` — height, padding and type together, so it
+                is the same pill at a smaller size rather than a squashed one. It is the
+                widest thing on a phone's action row ("Qeydiyyatdan keç" is 153px at full
+                size), and the language globe beside it did not fit otherwise.
               */}
               <Link
                 href="/register"
                 data-on-lime=""
-                className="inline-flex h-10 items-center rounded-full bg-lime-500 px-[18px] text-sm font-medium text-on-lime transition-colors duration-150 ease-in-out hover:bg-lime-400 active:bg-lime-600"
+                className="inline-flex h-[37px] items-center rounded-full bg-lime-500 px-[17px] text-[13px] font-medium text-on-lime sm:h-10 sm:px-[18px] sm:text-sm transition-colors duration-150 ease-in-out hover:bg-lime-400 active:bg-lime-600"
               >
                 {copy.actions.register}
               </Link>
