@@ -175,7 +175,7 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-postgresql")
     // Module boundaries that are only written down are module boundaries that
     // erode. These are the same rules as az/ideanest/package-info.java, checked.
-    testImplementation("com.tngtech.archunit:archunit-junit5:1.5.0")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.5.1")
     // The provider stub. Google and Apple are not called from a test — a suite
     // that depends on somebody else's uptime fails for reasons that are not
     // ours, and neither of them will sign a token for a key we control. The
