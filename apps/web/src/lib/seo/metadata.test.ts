@@ -12,6 +12,8 @@ import { resolveTitle } from 'next/dist/lib/metadata/resolvers/resolve-title';
 import type { ProjectState } from '../projects/api';
 import {
   DESCRIPTION_MAX_LENGTH,
+  OG_IMAGE_SIZE,
+  OG_SITE_ALT,
   PROJECT_STATES,
   SITE_NAME,
   SITE_OG_LOCALE,
@@ -25,6 +27,7 @@ import {
   publicPageMetadata,
   rootMetadata,
   siteOrigin,
+  siteSocialImage,
   truncateAtWord,
 } from './metadata';
 import { SITE_URL_VARIABLE, siteUrl } from './sitemap/config';
@@ -213,7 +216,29 @@ describe('publicPageMetadata', () => {
     });
   });
 
-  it('names no image, so the file-convention image applies', () => {
+  it('names the site card when it is given no image (#114)', () => {
+    /*
+     * Inheritance does not reach here: a page's own `openGraph` object replaces the one
+     * its layout resolved, image included, so a page that named nothing shared a link
+     * with no picture.
+     */
+    const card = {
+      url: 'https://ideanest.az/en/opengraph-image',
+      width: OG_IMAGE_SIZE.width,
+      height: OG_IMAGE_SIZE.height,
+      alt: OG_SITE_ALT,
+    };
+    expect(page.openGraph?.images).toEqual([card]);
+    expect(page.twitter?.images).toEqual([card]);
+  });
+
+  it('names the site card in the language of the page', () => {
+    const az = publicPageMetadata({ title: 'X', description: 'Y', path: '/about', locale: 'az', env });
+    expect(az.openGraph?.images).toEqual([siteSocialImage('az', env)]);
+    expect(siteSocialImage('az', env).url).toBe('https://ideanest.az/az/opengraph-image');
+  });
+
+  it('names no image when the page defers to a card file of its own', () => {
     /*
      * Next merges a file-based `opengraph-image` in only when the segment's own
      * metadata has no `images` OWN PROPERTY (`resolve-metadata.js` checks
@@ -221,8 +246,16 @@ describe('publicPageMetadata', () => {
      * would therefore suppress the generated card and leave the page with no
      * preview at all — which is why this asserts absence rather than undefined.
      */
-    expect(Object.hasOwn(page.openGraph ?? {}, 'images')).toBe(false);
-    expect(Object.hasOwn(page.twitter ?? {}, 'images')).toBe(false);
+    const discover = publicPageMetadata({
+      title: 'Discover',
+      description: 'Browse.',
+      path: '/discover',
+      locale: 'en',
+      image: 'segment-file',
+      env,
+    });
+    expect(Object.hasOwn(discover.openGraph ?? {}, 'images')).toBe(false);
+    expect(Object.hasOwn(discover.twitter ?? {}, 'images')).toBe(false);
   });
 
   it('is indexable — it says nothing about robots at all', () => {
@@ -549,6 +582,25 @@ describe('projectPageMetadata', () => {
     );
 
     expect(Object.hasOwn(page.openGraph ?? {}, 'images')).toBe(false);
+  });
+
+  it('falls back to the site card on a page with no card file of its own (#114)', () => {
+    const page = projectPageMetadata(
+      {
+        id: '0193f2a1',
+        slug: 'quba-kilims',
+        state: 'LIVE',
+        title: 'Quba kilims',
+        blurb: null,
+        coverImage: null,
+      },
+      path,
+      'en',
+      env,
+      'site-card',
+    );
+
+    expect(page.openGraph?.images).toEqual([siteSocialImage('en', env)]);
   });
 
   it('prefers the campaign cover image over the generated card', () => {

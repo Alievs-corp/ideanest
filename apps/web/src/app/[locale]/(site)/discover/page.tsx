@@ -48,6 +48,8 @@ export async function generateMetadata({
     description: t('metaDescription'),
     path: '/discover',
     locale: localeOrDefault(locale),
+    /* The feed's own card, `opengraph-image.tsx` beside this file, rather than the site's. */
+    image: 'segment-file',
   });
 }
 

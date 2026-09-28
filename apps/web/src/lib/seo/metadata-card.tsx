@@ -35,19 +35,14 @@ import { SITE_NAME, truncateAtWord } from './metadata';
  * the weights the kit actually specifies.
  */
 
-/** 1200×630 — the 1.91:1 both Open Graph and a large X card crop to. */
-export const OG_IMAGE_SIZE = { width: 1200, height: 630 } as const;
+/*
+ * The size and the site card's `alt` live in `metadata.ts`, because `publicPageMetadata` names
+ * the site card explicitly (#114) and this module already imports from that one — defining them
+ * here too would be an import cycle. Re-exported so the image routes keep one place to read.
+ */
+export { OG_IMAGE_SIZE, OG_SITE_ALT } from './metadata';
 
 export const OG_IMAGE_CONTENT_TYPE = 'image/png';
-
-/**
- * `og:image:alt` for the site card.
- *
- * A social image is a picture of text, so without this a screen reader announces
- * an unnamed image (CLAUDE.md §2 — an icon-only control needs an accessible name,
- * and this is the same rule).
- */
-export const OG_SITE_ALT = `${SITE_NAME} — reward-based crowdfunding, where a campaign succeeds at 80% of its goal`;
 
 /**
  * `og:image:alt` for a campaign card, and it names no campaign.
