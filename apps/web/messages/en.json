@@ -3148,7 +3148,7 @@
       "metaDescription": "Every category and subcategory on IdeaNest, each with its own page of campaigns.",
       "title": "Categories",
       "intro": "Every category on the platform, and the subcategories inside them. Each has a page of its own.",
-      "feedLink": "The feed"
+      "unavailable": "The categories could not be loaded just now. <feed>The feed</feed> carries every campaign on the platform and can be filtered by category there."
     },
     "landing": {
       "notFound": "Category not found",
