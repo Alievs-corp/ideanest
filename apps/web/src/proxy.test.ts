@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
+import { COUNTRY_HEADER } from './lib/i18n/country';
 import { LOCALE_COOKIE } from './lib/i18n/locale';
 
 /*
@@ -29,10 +30,11 @@ const { default: proxy, config } = await import('./proxy');
  * shared with, and a path that already names a language being redirected again is an
  * infinite loop that only reproduces for people who have a cookie set.
  */
-function request(path: string, cookie?: string): NextRequest {
-  const url = `https://ideanest.az${path}`;
-  const headers = cookie === undefined ? undefined : { cookie: `${LOCALE_COOKIE}=${cookie}` };
-  return new NextRequest(url, headers === undefined ? undefined : { headers });
+function request(path: string, cookie?: string, country?: string): NextRequest {
+  const headers = new Headers();
+  if (cookie !== undefined) headers.set('cookie', `${LOCALE_COOKIE}=${cookie}`);
+  if (country !== undefined) headers.set(COUNTRY_HEADER, country);
+  return new NextRequest(`https://ideanest.az${path}`, { headers });
 }
 
 describe('the locale proxy', () => {
@@ -82,6 +84,51 @@ describe('the locale proxy', () => {
     }
   });
 
+  it('starts a first visit in the language of the country it came from (#125)', () => {
+    const cases: [string, string][] = [
+      ['AZ', 'az'],
+      ['TR', 'tr'],
+      ['RU', 'ru'],
+      ['KZ', 'ru'],
+      ['DE', 'en'],
+      ['US', 'en'],
+    ];
+    for (const [country, locale] of cases) {
+      expect(proxy(request('/', undefined, country)).headers.get('location')).toBe(
+        `https://ideanest.az/${locale}`,
+      );
+    }
+  });
+
+  it('lets the reader’s own choice outrank their country', () => {
+    /* Somebody in Baku who picked English meant it. */
+    expect(proxy(request('/', 'en', 'AZ')).headers.get('location')).toBe(
+      'https://ideanest.az/en',
+    );
+  });
+
+  it('falls through to the country when the stored cookie is not a language', () => {
+    expect(proxy(request('/', 'xx', 'AZ')).headers.get('location')).toBe(
+      'https://ideanest.az/az',
+    );
+  });
+
+  it('keeps the path when the language comes from the country', () => {
+    expect(proxy(request('/discover?page=2', undefined, 'TR')).headers.get('location')).toBe(
+      'https://ideanest.az/tr/discover?page=2',
+    );
+  });
+
+  it('never lets a shared cache replay one visitor’s redirect to another', () => {
+    /*
+     * The destination is decided by a cookie and a country. A CDN that stored the `307`
+     * a visitor from Baku was given would send the next visitor, from Berlin, to `/az`.
+     */
+    for (const response of [proxy(request('/')), proxy(request('/', 'ru', 'AZ'))]) {
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+    }
+  });
+
   it('leaves a path that already names a language alone', () => {
     /*
      * The loop guard. next-intl's middleware answers these, and what matters here is that
@@ -89,7 +136,7 @@ describe('the locale proxy', () => {
      * be an infinite one, reproducing only for readers who have a cookie set.
      */
     for (const path of ['/az', '/en/discover', '/ru/projects/aysel/kilims', '/tr/settings']) {
-      expect(proxy(request(path, 'az')).headers.get('location')).toBeNull();
+      expect(proxy(request(path, 'az', 'TR')).headers.get('location')).toBeNull();
     }
   });
 });

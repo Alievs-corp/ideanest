@@ -1,7 +1,8 @@
 import createIntlMiddleware from 'next-intl/middleware';
 import { type NextRequest, NextResponse } from 'next/server';
 import { publicCacheControl } from './lib/cache/publicRoutes';
-import { LOCALE_COOKIE, isLocale, localeOrDefault } from './lib/i18n/locale';
+import { COUNTRY_HEADER, localeForCountry } from './lib/i18n/country';
+import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale, isLocale } from './lib/i18n/locale';
 import { routing } from './i18n/routing';
 
 /**
@@ -17,7 +18,9 @@ import { routing } from './i18n/routing';
  *
  * So this file answers the one question detection existed to answer — *a request arrived
  * at `/discover` with no language, which language did this person mean?* — from the stored
- * preference alone, and delegates everything else.
+ * preference, then from the country Cloudflare says the request came from (#125,
+ * `lib/i18n/country.ts`), and delegates everything else. Both are read only on this redirect,
+ * which is never cached, so neither reaches a localised page.
  *
  * <h2>The cookie's job changed, and shrank</h2>
  *
@@ -44,8 +47,8 @@ import { routing } from './i18n/routing';
  *
  * <h2>307 AND NOT 308, DELIBERATELY</h2>
  *
- * The destination depends on a cookie, so it is not permanent and must never be recorded as
- * such. A browser that cached a 308 from `/` to `/en` would keep sending itself to English
+ * The destination depends on a cookie and a country, so it is not permanent and must never be
+ * recorded as such. A browser that cached a 308 from `/` to `/en` would keep sending itself to English
  * after the reader chose Azerbaijani — from its own cache, without asking, in a way that
  * clearing the site's cookies does not fix and that no server-side change can reach.
  */
@@ -67,7 +70,7 @@ export default function proxy(request: NextRequest): NextResponse {
     return response;
   }
 
-  const locale = localeOrDefault(request.cookies.get(LOCALE_COOKIE)?.value);
+  const locale = firstLocale(request);
   const destination = request.nextUrl.clone();
 
   /*
@@ -77,7 +80,32 @@ export default function proxy(request: NextRequest): NextResponse {
    */
   destination.pathname = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`;
 
-  return NextResponse.redirect(destination, 307);
+  const response = NextResponse.redirect(destination, 307);
+
+  /*
+   * The destination depends on a cookie and on where the request came from, so one visitor's
+   * redirect must never be replayed to another by a shared cache in front of this one.
+   */
+  response.headers.set('cache-control', 'private, no-store');
+
+  return response;
+}
+
+/**
+ * The language a request with none in its path is sent to — #123, then #125.
+ *
+ * The reader's own choice first: a stored cookie outranks everything, including the country,
+ * because somebody in Baku who picked English meant it. Then the country Cloudflare says the
+ * request came from. Then {@link DEFAULT_LOCALE}.
+ *
+ * A cookie that is not a language is treated as absent rather than as English, so it falls
+ * through to the country instead of pinning its holder to the default.
+ */
+function firstLocale(request: NextRequest): Locale {
+  const stored = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (isLocale(stored)) return stored;
+
+  return localeForCountry(request.headers.get(COUNTRY_HEADER)) ?? DEFAULT_LOCALE;
 }
 
 export const config = {
