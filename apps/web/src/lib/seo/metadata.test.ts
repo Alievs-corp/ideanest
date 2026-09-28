@@ -16,6 +16,7 @@ import {
   SITE_NAME,
   SITE_OG_LOCALE,
   canonicalUrl,
+  homePageMetadata,
   isPubliclyVisible,
   metadataBase,
   privatePageMetadata,
@@ -253,6 +254,45 @@ describe('publicPageMetadata', () => {
     });
 
     expect((long.description ?? '').length).toBeLessThanOrEqual(DESCRIPTION_MAX_LENGTH);
+  });
+});
+
+/* -------------------------------------------------------------------------
+ * The home page
+ * ---------------------------------------------------------------------- */
+
+describe('homePageMetadata', () => {
+  /*
+   * #113: `/az`, `/ru` and `/tr` all carried the English title, because this function wrote
+   * one of its own. The words are now the caller's, and these are the Azerbaijani ones.
+   */
+  const home = homePageMetadata(
+    'az',
+    {
+      title: 'IdeaNest — mükafat əsaslı kütləvi maliyyələşdirmə',
+      description: 'Mükafat əsaslı kütləvi maliyyələşdirmə.',
+    },
+    env,
+  );
+
+  it('writes the title it is given, whole, without the template', () => {
+    expect(home.title).toEqual({ absolute: 'IdeaNest — mükafat əsaslı kütləvi maliyyələşdirmə' });
+  });
+
+  it('writes the same words into the search result and the social card', () => {
+    expect(home.description).toBe('Mükafat əsaslı kütləvi maliyyələşdirmə.');
+    expect(home.openGraph).toMatchObject({
+      title: 'IdeaNest — mükafat əsaslı kütləvi maliyyələşdirmə',
+      description: 'Mükafat əsaslı kütləvi maliyyələşdirmə.',
+      url: 'https://ideanest.az/az',
+    });
+    expect(home.twitter).toMatchObject({
+      title: 'IdeaNest — mükafat əsaslı kütləvi maliyyələşdirmə',
+    });
+  });
+
+  it('is the Azerbaijani home page, not the English one', () => {
+    expect(home.alternates?.canonical).toBe('https://ideanest.az/az');
   });
 });
 
