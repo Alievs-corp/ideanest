@@ -161,6 +161,23 @@ describe('the paths the locale proxy is asked about', () => {
     }
   });
 
+  /*
+   * `/icon.svg` above is spared by its extension. The favicon Next actually generates from
+   * `app/icon.tsx` is `/icon`, with none — and a redirect on it left the site with no favicon
+   * at all (#112).
+   */
+  it('never sees the generated icons, which have no extension to spare them (#112)', () => {
+    for (const path of ['/icon', '/apple-icon']) {
+      expect(matches(path)).toBe(false);
+    }
+  });
+
+  it('still localises a page whose address only starts with the word icon', () => {
+    for (const path of ['/iconography', '/icons/new']) {
+      expect(matches(path)).toBe(true);
+    }
+  });
+
   it('still sees every page, which is the whole point of it', () => {
     for (const path of [
       '/',

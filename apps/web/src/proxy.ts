@@ -112,8 +112,15 @@ export const config = {
    * with nothing broken on the site itself to notice. The whole prefix is excluded rather
    * than that one file, because every address under it is fixed by a specification rather
    * than by this application and none of them may be localised.
+   *
+   * `icon` and `apple-icon` are the same trap as `apple-app-site-association` — issue #112.
+   * `app/icon.tsx` is a metadata route, and Next serves it at `/icon?<hash>` with no
+   * extension, so the extension clause does not spare it. While it was missing, every page's
+   * `<link rel="icon">` was answered with a `307` to `/en/icon`, which is a 404, and the site
+   * had no favicon anywhere. They are matched whole (`icon$`) rather than as a prefix so that
+   * a page whose address merely starts with the word is still localised.
    */
   matcher: [
-    '/((?!api|v1|_next|\\.well-known|robots\\.txt|sitemap\\.xml|sitemap_index\\.xml|.*\\.[\\w]+$).*)',
+    '/((?!api|v1|_next|\\.well-known|robots\\.txt|sitemap\\.xml|sitemap_index\\.xml|icon$|apple-icon$|.*\\.[\\w]+$).*)',
   ],
 };
