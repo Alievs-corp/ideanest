@@ -74,12 +74,16 @@ export default async function CategoriesPage() {
             everything, which is the one useful thing to say.
           */
           <p className="mt-10 max-w-[60ch] text-white/64">
-            The categories could not be loaded just now.{' '}
-            <Link
-              href="/discover"
-              className="text-white underline underline-offset-4 hover:text-white/80"
-            >{t('feedLink')}</Link>{' '}
-            carries every campaign on the platform and can be filtered by category there.
+            {t.rich('unavailable', {
+              feed: (chunks) => (
+                <Link
+                  href="/discover"
+                  className="text-white underline underline-offset-4 hover:text-white/80"
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
           </p>
         ) : (
           <div className="mt-12 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">

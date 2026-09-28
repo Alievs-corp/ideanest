@@ -3148,7 +3148,7 @@
       "metaDescription": "IdeaNest'teki her kategori ve alt kategori — her birinin kendi kampanya sayfası var.",
       "title": "Kategoriler",
       "intro": "Platformdaki tüm kategoriler ve içlerindeki alt kategoriler. Her birinin kendi sayfası var.",
-      "feedLink": "Akış"
+      "unavailable": "Kategoriler şu anda yüklenemedi. <feed>Akış</feed> platformdaki tüm kampanyaları gösterir ve orada kategoriye göre filtrelenebilir."
     },
     "landing": {
       "notFound": "Kategori bulunamadı",

@@ -3148,7 +3148,7 @@
       "metaDescription": "IdeaNest-dəki hər kateqoriya və alt kateqoriya — hər birinin öz kampaniya səhifəsi var.",
       "title": "Kateqoriyalar",
       "intro": "Platformadakı bütün kateqoriyalar və onların içindəki alt kateqoriyalar. Hər birinin öz səhifəsi var.",
-      "feedLink": "Lent"
+      "unavailable": "Kateqoriyalar hal-hazırda yüklənə bilmədi. <feed>Lent</feed> platformadakı bütün kampaniyaları göstərir və orada onları kateqoriyaya görə filtrləmək olar."
     },
     "landing": {
       "notFound": "Kateqoriya tapılmadı",
