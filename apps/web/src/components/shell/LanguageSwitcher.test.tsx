@@ -199,6 +199,26 @@ describe('dismissing it', () => {
   });
 });
 
+describe('where the panel opens', () => {
+  /*
+   * The footer's bug: on a phone its bottom row stacks and the globe sits a few words in from
+   * the left edge, so a panel hung from the button's right edge opened 200px leftwards, off
+   * the screen. The anchor is a class, so the class is what is asserted — jsdom has no layout.
+   */
+  it.each([
+    ['end', ['right-0'], ['left-0', 'left-1/2']],
+    ['start', ['left-0', 'sm:left-auto', 'sm:right-0'], ['left-1/2']],
+    ['center', ['left-1/2', '-translate-x-1/2', 'sm:right-0', 'sm:translate-x-0'], ['left-0']],
+  ] as const)('hangs from the %s edge on a phone, and from the right from sm', async (phoneAlign, has, hasNot) => {
+    render(<LanguageSwitcher label={label} phoneAlign={phoneAlign} />);
+    await userEvent.click(trigger());
+
+    const classes = screen.getByRole('navigation', { name: label }).className.split(/\s+/);
+    for (const name of has) expect(classes).toContain(name);
+    for (const name of hasNot) expect(classes).not.toContain(name);
+  });
+});
+
 const NAMES: Record<Locale, string> = {
   az: 'Azərbaycan dili',
   en: 'English',

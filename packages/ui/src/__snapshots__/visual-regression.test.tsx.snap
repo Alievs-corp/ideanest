@@ -3068,7 +3068,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./layout/Layout.stor
 "<div class="font-sans text-white antialiased">
 <div class="min-h-[520px] bg-surface-1">
 <header data-scrolled="" class="sticky top-0 z-50 w-full bg-transparent">
-<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-[26px] py-5">
+<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-[18px] py-5 sm:px-[26px]">
 <span class="font-display text-lg font-semibold">IdeaNest</span>
 <div class="flex h-10 items-center justify-around gap-10 rounded-full px-8 transition-[max-width,background-color,border-color] duration-300 ease-in-out mx-auto max-w-[445px] border border-white/8 bg-white text-on-white">
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Discover</a>
@@ -3106,7 +3106,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./layout/Layout.stor
 "<div class="font-sans text-white antialiased">
 <div class="min-h-[520px] bg-surface-1">
 <header class="sticky top-0 z-50 w-full bg-transparent">
-<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-7 pt-7 pb-3">
+<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-5 pt-7 pb-3 sm:px-7">
 <span class="font-display text-lg font-semibold">IdeaNest</span>
 <div class="flex h-10 items-center justify-around gap-10 rounded-full px-8 transition-[max-width,background-color,border-color] duration-300 ease-in-out max-w-full border border-transparent bg-transparent text-white">
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Discover</a>
@@ -6397,7 +6397,7 @@ exports[`rendered markup > ./layout/Layout.stories.tsx — CollapsedTopBar 1`] =
 "<div class="font-sans text-white antialiased">
 <div class="min-h-[520px] bg-surface-1">
 <header data-scrolled="" class="sticky top-0 z-50 w-full bg-transparent">
-<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-[26px] py-5">
+<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-[18px] py-5 sm:px-[26px]">
 <span class="font-display text-lg font-semibold">IdeaNest</span>
 <div class="flex h-10 items-center justify-around gap-10 rounded-full px-8 transition-[max-width,background-color,border-color] duration-300 ease-in-out mx-auto max-w-[445px] border border-white/8 bg-white text-on-white">
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Discover</a>
@@ -6435,7 +6435,7 @@ exports[`rendered markup > ./layout/Layout.stories.tsx — CollapsingTopBar 1`] 
 "<div class="font-sans text-white antialiased">
 <div class="min-h-[520px] bg-surface-1">
 <header class="sticky top-0 z-50 w-full bg-transparent">
-<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-7 pt-7 pb-3">
+<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-5 pt-7 pb-3 sm:px-7">
 <span class="font-display text-lg font-semibold">IdeaNest</span>
 <div class="flex h-10 items-center justify-around gap-10 rounded-full px-8 transition-[max-width,background-color,border-color] duration-300 ease-in-out max-w-full border border-transparent bg-transparent text-white">
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Discover</a>

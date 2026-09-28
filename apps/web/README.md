@@ -241,12 +241,15 @@ Two things about it are worth knowing before the next change to the shell:
   `Textarea` or `Field` to switch to. A white panel means adding those to the
   kit. `ReportControl` met the same wall and resolved it the same way.
 
-**The language is changed from a globe, in three places.**
+**The language is changed from a globe, in two places.**
 `components/shell/LanguageSwitcher.tsx` is an icon with the four names behind
-it: in the header from `sm` up, in the footer's bottom row at every width, and
-flat inside the mobile drawer below `sm` — measured at 390px the icon pushed the
-register pill and the drawer's own button past the edge of the screen, and §8.6
-spends the shell's one lime element on that pill. It used to be four names
+it: in the header and in the footer's bottom row, both at every width. The
+mobile drawer does not carry it. On a phone the header makes room for the globe
+with a 20px gutter (the page content's) and a register pill seven per cent
+smaller below `sm`, and the Russian label is "Регистрация" rather than
+"Зарегистрироваться", which at 165px still pushed the row off a 360px screen.
+`phoneAlign` keeps each panel on the screen there: centred under the header's
+globe, hung from the left of the footer's. It used to be four names
 written out in the footer and nothing in the header at all, which put the only
 account-free way out of a language a reader cannot read at the bottom of the
 page. Each name is its own endonym, each link goes to the same page under

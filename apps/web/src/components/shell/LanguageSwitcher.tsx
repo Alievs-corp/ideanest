@@ -89,9 +89,25 @@ export interface LanguageSwitcherProps {
    * leaves it unfilled, for the footer's rule of small type.
    */
   readonly appearance?: 'bar' | 'quiet';
-  /** On the wrapper. The header uses it to keep the icon off a phone's action row. */
+  /**
+   * Which edge of the button the panel lines up with below `sm`. From `sm` up it is always
+   * the right edge, because both rows put the control at their right-hand end there.
+   *
+   * On a phone neither of them does. The footer stacks its bottom row, so the globe sits a
+   * few words in from the LEFT edge of the screen and a right-anchored panel opens off it:
+   * `start`. The header's globe sits left of the register pill and the drawer button, about
+   * a third of the way across, where neither edge has 200px beside it: `center`.
+   */
+  readonly phoneAlign?: 'end' | 'center' | 'start';
+  /** On the wrapper. */
   readonly className?: string;
 }
+
+const PHONE_ALIGN = {
+  end: 'right-0',
+  center: 'left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0',
+  start: 'left-0 sm:left-auto sm:right-0',
+} as const;
 
 const ROW = [
   'flex items-center justify-between gap-3 rounded-sm px-3 py-2.5 text-sm',
@@ -103,6 +119,7 @@ export function LanguageSwitcher({
   label,
   placement = 'down',
   appearance = 'bar',
+  phoneAlign = 'end',
   className,
 }: LanguageSwitcherProps) {
   const current = useLocale();
@@ -162,15 +179,15 @@ export function LanguageSwitcher({
       {open && (
         /*
          * Named by the button rather than by a second copy of the same string: one control,
-         * one name. `right-0` on both placements — this sits at the right-hand end of the
-         * header's action row and of the footer's bottom row, so a panel anchored left would
-         * open off the edge of a phone.
+         * one name. Which edge it hangs from is `phoneAlign`'s job — a panel anchored to the
+         * wrong edge opens off the side of a phone.
          */
         <nav
           id={panelId}
           aria-labelledby={triggerId}
           className={cn(
-            'absolute right-0 z-50 w-[200px] rounded-md border border-white/8 bg-surface-2 p-2',
+            'absolute z-50 w-[200px] rounded-md border border-white/8 bg-surface-2 p-2',
+            PHONE_ALIGN[phoneAlign],
             'shadow-[var(--shadow-panel)]',
             placement === 'up' ? 'bottom-[calc(100%+8px)]' : 'top-[calc(100%+8px)]',
           )}
@@ -183,22 +200,13 @@ export function LanguageSwitcher({
 }
 
 /**
- * The four anchors, which are the whole of this control wherever it is drawn.
+ * The four anchors, which are the whole of the panel.
  *
- * Exported because the mobile drawer draws them flat rather than behind a second disclosure:
- * a panel that opens inside a panel is one a phone has no room for, and the drawer is already
- * a list of links. `SiteHeader` keeps the icon for every width the action row can hold it at.
+ * The mobile drawer used to draw them flat as well, because the header's globe was hidden
+ * below `sm`. The globe is in the header at every width now, so the drawer carries only
+ * navigation and a phone has one language control in the header, the same as a desktop.
  */
-export function LanguageLinks({
-  current,
-  path,
-  onChosen,
-}: {
-  readonly current: Locale;
-  readonly path: string;
-  /** The drawer closes itself on a choice, the way it does for every other link in it. */
-  readonly onChosen?: () => void;
-}) {
+function LanguageLinks({ current, path }: { readonly current: Locale; readonly path: string }) {
   return (
     <ul className="list-none">
       {SUPPORTED_LOCALES.map((locale: Locale) => {
@@ -215,10 +223,7 @@ export function LanguageLinks({
                * languages, and the one that is current IS the page being read.
                */
               aria-current={active ? 'page' : undefined}
-              onClick={() => {
-                writeLocaleCookie(locale);
-                onChosen?.();
-              }}
+              onClick={() => writeLocaleCookie(locale)}
               className={cn(ROW, active ? 'text-white' : 'text-white/64')}
             >
               {LOCALE_NAMES[locale]}

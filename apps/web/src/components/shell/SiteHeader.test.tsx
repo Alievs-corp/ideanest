@@ -133,6 +133,22 @@ describe('signed out', () => {
     expect(onLime[0]).toHaveAttribute('href', '/en/register');
   });
 
+  /**
+   * Seven per cent smaller below `sm` — height, padding and type — so the language globe fits
+   * beside it on a phone. From `sm` up it is the §8.6 pill at full size.
+   */
+  it('is seven per cent smaller at phone widths and full size from sm', async () => {
+    renderHeader();
+
+    const register = await screen.findByRole('link', { name: 'Register' });
+    for (const phone of ['h-[37px]', 'px-[17px]', 'text-[13px]']) {
+      expect(register.className).toContain(phone);
+    }
+    for (const full of ['sm:h-10', 'sm:px-[18px]', 'sm:text-sm']) {
+      expect(register.className).toContain(full);
+    }
+  });
+
   it('is a link and not a button, so it can be opened in a new tab', async () => {
     renderHeader();
     await waitFor(() =>
@@ -273,6 +289,25 @@ describe('the language control', () => {
 
     /* The signed-out pair is still unknown at this point — see the placeholder above. */
     expect(screen.getByRole('button', { name: en.shell.language.label })).toBeInTheDocument();
+  });
+
+  /**
+   * It used to be `hidden sm:block`, which left a phone with the four languages inside the
+   * drawer and nothing in the header. The panel is centred under the globe on a phone
+   * because the globe sits a third of the way across the row there, and a panel hung from
+   * its right edge opened off the left of the screen.
+   */
+  it('is on the row at phone widths too, with its panel kept on the screen', async () => {
+    renderHeader();
+
+    const control = screen.getByRole('button', { name: en.shell.language.label });
+    expect(control.parentElement?.className).not.toMatch(/(^|\s)hidden(\s|$)/);
+
+    await userEvent.click(control);
+
+    const panel = screen.getByRole('navigation', { name: en.shell.language.label });
+    expect(panel.className).toContain('left-1/2 -translate-x-1/2');
+    expect(panel.className, 'and right-aligned again from sm').toContain('sm:right-0');
   });
 });
 
