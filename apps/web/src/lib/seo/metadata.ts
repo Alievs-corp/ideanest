@@ -87,9 +87,16 @@ export const TITLE_TEMPLATE = `%s · ${SITE_NAME}`;
  */
 export const DESCRIPTION_MAX_LENGTH = 160;
 
-/** What the site says about itself when a page has said nothing more specific. */
+/**
+ * What the site says about itself when a page has said nothing more specific — in English,
+ * for the structured-data identity, which has no route and so no language of its own.
+ *
+ * It states the platform's rule the way `shell.tagline` does: a campaign succeeds at 80% of
+ * its goal. It used to say "reaches its goal", which is the opposite of the truth for a
+ * campaign that closes between the two.
+ */
 export const SITE_DESCRIPTION =
-  'Reward-based crowdfunding. Creators publish projects, backers pledge, and nobody is charged unless a project reaches its goal by its deadline.';
+  'Reward-based crowdfunding. Creators publish campaigns, backers pledge, and a campaign that does not raise 80% of its goal refunds every backer in full.';
 
 /** Just enough of `process.env` to be injectable in a test. */
 export type EnvSource = Readonly<Record<string, string | undefined>>;
@@ -435,14 +442,21 @@ export function publicPageMetadata(input: PublicPageInput): Metadata {
  * a boolean parameter would be an invitation for a second caller to decide its title is
  * special too, and the site name would then be missing from a tab where somebody needed it.
  *
- * Everything else is `publicPageMetadata`'s: the canonical, the Open Graph block, the X card,
- * and the site-wide description, which is what the home page would have written for itself in
- * any case.
+ * Everything else is `publicPageMetadata`'s: the canonical, the Open Graph block and the X card.
+ *
+ * THE WORDS ARE THE CALLER'S, IN THE ROUTE'S LANGUAGE — issue #113. This used to write an
+ * English title and `SITE_DESCRIPTION` itself, so `/az`, `/ru` and `/tr` all told a search
+ * result they were "reward-based crowdfunding" while every other page on the site was
+ * translated. The home page is the one a search for the brand lands on.
  */
-export function homePageMetadata(locale: Locale, env: EnvSource = process.env): Metadata {
+export function homePageMetadata(
+  locale: Locale,
+  copy: { readonly title: string; readonly description: string },
+  env: EnvSource = process.env,
+): Metadata {
   const base = publicPageMetadata({
-    title: `${SITE_NAME} — reward-based crowdfunding`,
-    description: SITE_DESCRIPTION,
+    title: copy.title,
+    description: copy.description,
     path: '/',
     locale,
     env,
@@ -450,7 +464,7 @@ export function homePageMetadata(locale: Locale, env: EnvSource = process.env): 
 
   return {
     ...base,
-    title: { absolute: `${SITE_NAME} — reward-based crowdfunding` },
+    title: { absolute: copy.title },
   };
 }
 

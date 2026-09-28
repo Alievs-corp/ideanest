@@ -60,9 +60,18 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations('home');
+  const shell = await getTranslations('shell');
 
-  /* See `publicPageMetadata`: the canonical and the `hreflang` cluster follow the route. */
-  return homePageMetadata(localeOrDefault(locale));
+  /*
+   * See `publicPageMetadata`: the canonical and the `hreflang` cluster follow the route, and
+   * so do the words (#113). The description is the site's tagline — the same sentence the
+   * footer prints, so a search result and the page it leads to say the same thing.
+   */
+  return homePageMetadata(localeOrDefault(locale), {
+    title: t('metaTitle'),
+    description: shell('tagline'),
+  });
 }
 
 /** Six per rail: two full rows at two columns, two at three, and never a half-empty row. */
