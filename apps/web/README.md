@@ -255,7 +255,10 @@ answers a bare path.
 
 **Every route is served under a `[locale]` segment (#123).** `/az/discover`, `/ru/discover`
 and so on; `proxy.ts` answers a bare path with a 307 to the language the reader last
-chose. `src/i18n/routing.ts` declares the shape, `src/i18n/request.ts` resolves the catalogue
+chose, or — for somebody who never chose — to the language of the country Cloudflare's
+`CF-IPCountry` header names (#125): Azerbaijan `az`, Turkey `tr`, the CIS `ru`, everywhere
+else English. The table is `src/lib/i18n/country.ts`. That redirect is `private, no-store`;
+the pages it leads to never read the country. `src/i18n/routing.ts` declares the shape, `src/i18n/request.ts` resolves the catalogue
 from the matched segment, and `src/i18n/navigation.tsx` is what every `Link`, `useRouter` and
 `usePathname` in the application must come from — a raw `next/link` drops the language and
 sends the reader through the redirect, which reads to them as the site forgetting what they

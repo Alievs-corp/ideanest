@@ -6345,6 +6345,15 @@ it was written in.
 > is asking. `apps/web/README.md` records exactly which routes are key-based and which
 > are not.
 >
+> **A first visit starts in the visitor's country's language (#125).** Only a path with no
+> language in it has to be told one, and until #125 the answer for anybody without a stored
+> choice was English, although most of the audience reads Azerbaijani, Turkish or Russian.
+> The redirect now reads Cloudflare's `CF-IPCountry` after the cookie and before the default:
+> Azerbaijan `az`, Turkey `tr`, the CIS members and Turkmenistan `ru`, and everybody else
+> English. Georgia and Ukraine left the CIS and are deliberately not in the table.
+> `Accept-Language` is still not negotiated, for #123's reason: the country is read on the one
+> response that is `private, no-store` anyway, so no localised page varies by it.
+>
 > **What is still English, stated rather than left to be found.** The campaign editor. Epic
 > #78 is the list of what was on this line and how each surface came off it.
 >
