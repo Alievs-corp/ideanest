@@ -2,6 +2,7 @@
   "name": "@ideanest/messages",
   "version": "0.0.0",
   "private": true,
+  "sideEffects": false,
   "type": "module",
   "description": "The four interface catalogues and the locale vocabulary shared by apps/web and apps/mobile.",
   "exports": {
