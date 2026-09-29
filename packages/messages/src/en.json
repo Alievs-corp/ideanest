@@ -5133,5 +5133,42 @@
     "extendDate": "Choose a date after the current deadline and no later than {latest}.",
     "withdrawWrongState": "Funds can be withdrawn only from a campaign that is live, in its closing week, extended or successful.",
     "failed": "That did not work. Try again in a moment."
+  },
+  "mobile": {
+    "tabs": {
+      "home": "Home",
+      "search": "Search",
+      "saved": "Saved",
+      "pledges": "Pledges",
+      "me": "Me"
+    },
+    "me": {
+      "thisPhone": "This phone",
+      "language": "Language",
+      "allSettings": "All settings"
+    },
+    "lock": {
+      "face": "Require Face ID",
+      "fingerprint": "Require your fingerprint",
+      "other": "Require a device unlock",
+      "notEnrolled": "Device unlock is not set up",
+      "unavailable": "This phone has no biometric unlock",
+      "checking": "Checking what this phone can do",
+      "wait": "One moment.",
+      "keychain": "Your session stays in the keychain, readable while the phone is unlocked.",
+      "enrol": "Add a fingerprint, a face or a passcode in your phone’s settings, then come back.",
+      "open": "On. This session is open until the app has been away for a few minutes.",
+      "armed": "On. The next time your pledges are read, the phone will ask for you.",
+      "refused": "The device did not confirm it was you, so nothing changed."
+    },
+    "fallback": {
+      "body": "This part of IdeyaNest is still being built for the app. It is ready on the website.",
+      "open": "Open on the website"
+    },
+    "language": {
+      "title": "Language",
+      "saveFailed": "Your account language was not saved. The app is already in the new language on this phone.",
+      "retry": "Try again"
+    }
   }
 }

@@ -3,6 +3,7 @@ import { Link, Tabs, type ErrorBoundaryProps } from 'expo-router';
 import { FailureState } from '../../components/failure-state';
 import { TabIcon, type TabIconName } from '../../components/tab-icon';
 import { Meta } from '../../components/text';
+import { useT } from '../../lib/i18n';
 import { useSession } from '../../lib/use-session';
 import { colors, radius, size, spacing } from '../../theme';
 
@@ -31,14 +32,14 @@ import { colors, radius, size, spacing } from '../../theme';
 
 const TABS: readonly {
   readonly name: string;
-  readonly title: string;
+  readonly key: 'home' | 'search' | 'saved' | 'pledges' | 'me';
   readonly icon: TabIconName;
 }[] = [
-  { name: 'index', title: 'Home', icon: 'home' },
-  { name: 'search', title: 'Search', icon: 'search' },
-  { name: 'saved', title: 'Saved', icon: 'saved' },
-  { name: 'pledges', title: 'Pledges', icon: 'pledges' },
-  { name: 'me', title: 'Me', icon: 'me' },
+  { name: 'index', key: 'home', icon: 'home' },
+  { name: 'search', key: 'search', icon: 'search' },
+  { name: 'saved', key: 'saved', icon: 'saved' },
+  { name: 'pledges', key: 'pledges', icon: 'pledges' },
+  { name: 'me', key: 'me', icon: 'me' },
 ];
 
 const styles = StyleSheet.create({
@@ -54,21 +55,23 @@ const styles = StyleSheet.create({
 /** The header control while signed out. Nothing at all when signed in. */
 function SignInLink() {
   const { signedIn } = useSession();
+  const t = useT('shell.actions');
   if (signedIn) return null;
   return (
     <Link href="/sign-in" asChild>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Sign in"
+        accessibilityLabel={t('signIn')}
         style={({ pressed }) => [styles.signIn, pressed && styles.signInPressed]}
       >
-        <Meta tone="secondary">Sign in</Meta>
+        <Meta tone="secondary">{t('signIn')}</Meta>
       </Pressable>
     </Link>
   );
 }
 
 export default function TabsLayout() {
+  const t = useT('mobile.tabs');
   return (
     <Tabs
       screenOptions={{
@@ -88,8 +91,8 @@ export default function TabsLayout() {
           key={tab.name}
           name={tab.name}
           options={{
-            title: tab.title,
-            tabBarAccessibilityLabel: tab.title,
+            title: t(tab.key),
+            tabBarAccessibilityLabel: t(tab.key),
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name={tab.icon} color={color} focused={focused} />
             ),
@@ -102,11 +105,12 @@ export default function TabsLayout() {
 
 /** A render error under the tabs: try again, never a stack trace. */
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  const t = useT('shell.failure.pages.error');
   return (
     <FailureState
-      title="Something went wrong"
-      description="The page could not be shown. Try again."
-      actionLabel="Try again"
+      title={t('title')}
+      description={t('description')}
+      actionLabel={t('retry')}
       onAction={() => void retry()}
     />
   );

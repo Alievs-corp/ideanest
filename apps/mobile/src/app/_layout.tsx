@@ -11,6 +11,7 @@ import { siteUrl } from '../api/config';
 import { destinationFor } from '../lib/links';
 import { createQueryClient, persistOptions } from '../lib/offline';
 import { lockNow } from '../lib/session';
+import { AppIntlProvider, useT } from '../lib/i18n';
 import { colors } from '../theme';
 
 /**
@@ -76,6 +77,33 @@ function urlFromNotification(
   const data = response?.notification.request.content.data;
   const url = (data as { url?: unknown } | undefined)?.url;
   return typeof url === 'string' ? url : null;
+}
+
+/** The root stack; inside the intl provider so its screen titles are translated. */
+function AppStack() {
+  const t = useT();
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.surface1 },
+        headerTintColor: colors.textPrimary,
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.surface1 },
+      }}
+    >
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      {/*
+        A modal, because signing in is an interruption of whatever somebody
+        was doing rather than a place they navigated to — and because the
+        swipe that dismisses it is the "not now" this screen must always
+        offer. Nothing on this platform requires an account to be useful.
+      */}
+      <Stack.Screen
+        name="sign-in"
+        options={{ presentation: 'modal', title: t('shell.actions.signIn') }}
+      />
+    </Stack>
+  );
 }
 
 export default function RootLayout() {
@@ -156,27 +184,10 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions()}>
           {/* Light glyphs: every surface in this system is dark (docs/ui-kit.md §2.1). */}
-          <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerStyle: { backgroundColor: colors.surface1 },
-              headerTintColor: colors.textPrimary,
-              headerShadowVisible: false,
-              contentStyle: { backgroundColor: colors.surface1 },
-            }}
-          >
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            {/*
-              A modal, because signing in is an interruption of whatever somebody
-              was doing rather than a place they navigated to — and because the
-              swipe that dismisses it is the "not now" this screen must always
-              offer. Nothing on this platform requires an account to be useful.
-            */}
-            <Stack.Screen
-              name="sign-in"
-              options={{ presentation: 'modal', title: 'Sign in' }}
-            />
-          </Stack>
+          <AppIntlProvider>
+            <StatusBar style="light" />
+            <AppStack />
+          </AppIntlProvider>
         </PersistQueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useT } from '../lib/i18n';
 import { colors, radius, size, spacing } from '../theme';
 import { Body, CardTitle, Heading, Meta } from './text';
 
@@ -26,13 +27,16 @@ export function FailureState({
   readonly reference?: string | null;
   readonly children?: ReactNode;
 }) {
+  const t = useT('shell.failure.pages.error');
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <Heading accessibilityRole="header" style={styles.centred}>
         {title}
       </Heading>
       <Body style={styles.centred}>{description}</Body>
-      {reference ? <Meta selectable>Reference: {reference}</Meta> : null}
+      {reference ? <Meta selectable>
+          {t('referenceLabel')}: {reference}
+        </Meta> : null}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={actionLabel}

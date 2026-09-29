@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, saveAccountLocale } from './client';
 import {
   hasStoredSession,
   rememberAccessToken,
@@ -116,4 +116,25 @@ it('stops carrying a credential once the session is gone', async () => {
   // a token that no longer exists.
   expect(hasStoredSession()).toBe(false);
   expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+describe('saveAccountLocale', () => {
+  it('PATCHes /v1/me/locale with the chosen language and reports success', async () => {
+    await storeRefreshToken('refresh-1');
+    fetchMock
+      .mockResolvedValueOnce(json({ accessToken: 'access-1', refreshToken: 'refresh-2' }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    expect(await saveAccountLocale('ru')).toBe(true);
+
+    const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(url).toContain('/v1/me/locale');
+    expect(init.method).toBe('PATCH');
+    expect(init.body).toBe(JSON.stringify({ locale: 'ru' }));
+  });
+
+  it('reports failure instead of throwing when the network is down', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('offline'));
+    expect(await saveAccountLocale('ru')).toBe(false);
+  });
 });
