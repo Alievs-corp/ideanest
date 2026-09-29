@@ -11,6 +11,7 @@ import { siteUrl } from '../api/config';
 import { destinationFor } from '../lib/links';
 import { createQueryClient, persistOptions } from '../lib/offline';
 import { lockNow } from '../lib/session';
+import { AccountSync } from '../lib/account-sync';
 import { AppIntlProvider, useT } from '../lib/i18n';
 import { colors } from '../theme';
 
@@ -186,6 +187,7 @@ export default function RootLayout() {
           {/* Light glyphs: every surface in this system is dark (docs/ui-kit.md §2.1). */}
           <AppIntlProvider>
             <StatusBar style="light" />
+            <AccountSync />
             <AppStack />
           </AppIntlProvider>
         </PersistQueryClientProvider>
