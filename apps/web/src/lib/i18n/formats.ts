@@ -172,3 +172,36 @@ export function numberFormat(
       : new Intl.NumberFormat(INTL_LOCALE[locale], options),
   );
 }
+
+/**
+ * A known region and what every real set of region names calls it. `DE` because its name
+ * differs in all four languages and from its own code.
+ */
+const REGION_CANARY = 'DE';
+
+/**
+ * Country names in the reader's language — issue #133.
+ *
+ * <p>The checkout and the pledge page name a shipping destination, and they used to name it
+ * with `Intl.DisplayNames(['en'])` whatever the route's language was. This asks for the
+ * route's language first and falls back to English only when the runtime cannot name
+ * regions in it.
+ *
+ * <p>"Cannot" is tested rather than trusted, for the reason #401 gives for dates: an engine
+ * may accept a locale it has no data for. Such an engine answers a region's code with the
+ * code itself, so a canary that comes back unnamed sends the reader to English, which is
+ * still a name. `null` when not even English is there, and `countryName` then shows codes.
+ */
+export function regionNames(locale: Locale): Intl.DisplayNames | null {
+  return cached(`region:${locale}`, () => {
+    for (const tag of [INTL_LOCALE[locale], INTL_LOCALE.en]) {
+      try {
+        const names = new Intl.DisplayNames([tag], { type: 'region' });
+        if (names.of(REGION_CANARY) !== REGION_CANARY) return names;
+      } catch {
+        // A runtime built without the locale's display names; try the next.
+      }
+    }
+    return null;
+  });
+}

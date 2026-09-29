@@ -5,6 +5,9 @@ import type { ReactNode } from 'react';
 import { Tag, cn } from '@ideanest/ui';
 import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
 import type { ProjectState } from '../../lib/projects/api';
+import { campaignDashboardHref } from '../../lib/account/navigation';
+import { hasLaunched } from '../../lib/projects/mine';
+import { OWNER_LINK_CLASS } from '../project/owner-link';
 import { EDITOR_TABS, editorTabHref, type EditorTabKey } from './tabs';
 
 /**
@@ -94,6 +97,13 @@ export function EditorShell({
         <div className="flex items-center gap-3">
           {state != null && <Tag>{copy.states[state]}</Tag>}
           {status}
+          {/* #141: the editor is where a creator lands from the public page's owner bar, and
+              once the campaign has opened its money and its backers are on the dashboard. */}
+          {state != null && hasLaunched(state) && (
+            <Link href={campaignDashboardHref(projectId)} className={OWNER_LINK_CLASS}>
+              {copy.dashboard}
+            </Link>
+          )}
         </div>
       </div>
 

@@ -68,7 +68,8 @@
       "profile": "Profilim",
       "settings": "Parametrlər",
       "startCampaign": "Kampaniya başladın",
-      "console": "İdarəetmə konsolu"
+      "console": "İdarəetmə konsolu",
+      "unverified": "E-poçt ünvanınız hələ təsdiqlənməyib. {email} ünvanına göndərdiyimiz linki açın."
     },
     "language": {
       "label": "Dil seçin"
@@ -252,7 +253,11 @@
         "loadingList": "Kampaniyalarınız yüklənir",
         "loadMore": "Daha çox göstər",
         "loadingMore": "Yüklənir",
-        "draftHint": "Hələ yayımlanmayıb"
+        "draftHint": "Hələ yayımlanmayıb",
+        "view": "Bax",
+        "edit": "Redaktə et",
+        "dashboard": "Panel",
+        "actionsLabel": "Kampaniya əməliyyatları: {title}"
       },
       "saved": {
         "metaTitle": "Saxlanmış layihələr",
@@ -598,6 +603,7 @@
         "filteredBody": "Bu süzgəclər indiyədək yüklənmiş bildirişlərin heç biri ilə uyğun gəlmir. Axtarışa davam etmək üçün daha çox yükləyin və ya süzgəcləri təmizləyin.",
         "loadMore": "Daha çox yüklə",
         "loading": "Yüklənir",
+        "tryAgain": "Yenidən cəhd et",
         "unreadWord": "Oxunmamış",
         "markRead": "Oxunmuş kimi işarələ",
         "marking": "İşarələnir",
@@ -616,7 +622,8 @@
         "conflict": "Eyni vaxtda başqa bir şey bu parametri dəyişdi. Səhifəni təzələyib yenidən cəhd edin.",
         "refused": "Xidmət dəyişikliyi rədd etdi. Yenidən cəhd edin.",
         "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
-        "saved": "{category} — {channel}: {mode}."
+        "saved": "{category} — {channel}: {mode}.",
+        "heading": "Sizə nə göndərilir"
       }
     }
   },
@@ -3263,6 +3270,7 @@
       "none": "Mükafatsız dəstək olun",
       "noneHint": "Kampaniyanı sadəcə var olmasını istədiyiniz üçün dəstəkləyin. Məbləği siz seçirsiniz və əvəzində mükafat almırsınız.",
       "soldOut": "Tükənib",
+      "left": "Qalıb: {remaining} / {limit}",
       "inPerson": "Şəxsən təhvil alınır",
       "digital": "Rəqəmsal çatdırılır",
       "earlyBird": "Erkən qiymət",
@@ -3276,7 +3284,8 @@
     "addons": {
       "heading": "Əlavələr",
       "intro": "İstənilən mükafata və ya mükafatsız dəstəyə əlavə edə biləcəyiniz şeylər.",
-      "soldOut": "Tükənib"
+      "soldOut": "Tükənib",
+      "quantity": "Say"
     },
     "destination": {
       "label": "Bu hara göndərilsin?",
@@ -3326,6 +3335,7 @@
       "listedAs": "İctimai siyahıda görünən ad",
       "change": "Seçdiyimi dəyişim",
       "reserve": "Rezerv edin və yoxlayın",
+      "reserving": "Rezerv edilir…",
       "confirm": "Ödənişə keçin",
       "confirming": "Ödəniş səhifəsi açılır…",
       "charged": "Pul növbəti səhifədə tutulur. Ödənişi başa çatdırmasanız, heç nə tutulmur və saxlama müddəti bitəndə mükafat buraxılır.",
@@ -3629,7 +3639,14 @@
       "heading": "Yeniliklər",
       "failed": "Yeniliklər hal-hazırda yüklənə bilmədi. Yenidən cəhd üçün səhifəni yeniləyin.",
       "older": "Köhnə yeniliklər",
+      "noOlder": "Daha köhnə yenilik yoxdur.",
+      "none": "Bu kampaniya hələ yenilik paylaşmayıb. Paylaşanda dəstəkçilərə e-poçtla xəbər verilir.",
       "backersOnly": "Yalnız dəstəkçilər üçün"
+    },
+    "owner": {
+      "label": "Sizin kampaniyanız",
+      "dashboard": "Panel",
+      "edit": "Redaktə et"
     },
     "comments": {
       "heading": "Şərhlər",
@@ -3692,6 +3709,7 @@
     "eyebrow": "Kampaniya redaktoru",
     "loadingTitle": "Yüklənir",
     "sectionsLabel": "Kampaniya bölmələri",
+    "dashboard": "Panel",
     "soon": "tezliklə",
     "notAvailable": ", bölmə hələ əlçatan deyil",
     "signedOutTitle": "Hesabdan çıxmısınız",
@@ -3938,6 +3956,12 @@
         "other": "O, {tiers} tərkibindədir. Əvvəlcə həmin mükafatlardan çıxarın, sonra silin."
       },
       "rewardHasBackers": "Əvəzində onu gizlədin — seçmiş olanlar nəyin onlara borclu olduğunun təsvirini saxlayır, amma artıq başqasına təklif olunmur.",
+      "chosenBy": {
+        "one": "Bu mükafatı seçən dəstəkçi sayı: {count}. Onu gizlətmək olar, silmək olmaz.",
+        "few": "Bu mükafatı seçən dəstəkçi sayı: {count}. Onu gizlətmək olar, silmək olmaz.",
+        "many": "Bu mükafatı seçən dəstəkçi sayı: {count}. Onu gizlətmək olar, silmək olmaz.",
+        "other": "Bu mükafatı seçən dəstəkçi sayı: {count}. Onu gizlətmək olar, silmək olmaz."
+      },
       "vocabulary": {
         "scopes": {
           "NONE": {

@@ -68,6 +68,8 @@ export interface EditorChromeCopy {
   readonly loadingTitle: string;
   /** Names the section links for assistive technology. */
   readonly sectionsLabel: string;
+  /** #141: the link to the campaign's dashboard, drawn once it has launched. */
+  readonly dashboard: string;
   readonly tabs: Readonly<Record<EditorTabKey, string>>;
   /** The visible cue on a section that has no route yet. */
   readonly soon: string;
@@ -201,6 +203,7 @@ export function editorChromeCopyFrom(
     eyebrow: t('eyebrow'),
     loadingTitle: t('loadingTitle'),
     sectionsLabel: t('sectionsLabel'),
+    dashboard: t('dashboard'),
     tabs: record(EDITOR_TAB_KEYS, (key) => t(`tabs.${key}`)),
     soon: t('soon'),
     notAvailable: t('notAvailable'),
@@ -564,7 +567,9 @@ export interface RewardsPanelCopy {
   /** One form per category. Carries `{tiers}`, the reward titles already joined. */
   readonly itemInUse: AppPluralForms;
   readonly rewardHasBackers: string;
-  /** The language whose plural rule picks the form above. */
+  /** One form per category. Carries `{count}`: why a chosen reward can be hidden but not deleted. */
+  readonly chosenBy: AppPluralForms;
+  /** The language whose plural rule picks the forms above. */
   readonly locale: Locale;
   readonly vocabulary: RewardsVocabularyCopy;
   readonly items: ItemsSectionCopy;
@@ -636,6 +641,7 @@ export function rewardsPanelCopyFrom(
     aReward: at('aReward'),
     itemInUse: t.raw('rewards.itemInUse') as AppPluralForms,
     rewardHasBackers: at('rewardHasBackers'),
+    chosenBy: t.raw('rewards.chosenBy') as AppPluralForms,
     locale,
     vocabulary: rewardsVocabularyCopyFrom(t, locale),
     items: {

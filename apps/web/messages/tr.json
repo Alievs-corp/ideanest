@@ -68,7 +68,8 @@
       "profile": "Profilim",
       "settings": "Ayarlar",
       "startCampaign": "Kampanya başlat",
-      "console": "Yönetim konsolu"
+      "console": "Yönetim konsolu",
+      "unverified": "E-posta adresiniz henüz doğrulanmadı. {email} adresine gönderdiğimiz bağlantıyı açın."
     },
     "language": {
       "label": "Bir dil seçin"
@@ -252,7 +253,11 @@
         "loadingList": "Kampanyalarınız yükleniyor",
         "loadMore": "Daha fazla göster",
         "loadingMore": "Yükleniyor",
-        "draftHint": "Henüz yayımlanmadı"
+        "draftHint": "Henüz yayımlanmadı",
+        "view": "Görüntüle",
+        "edit": "Düzenle",
+        "dashboard": "Pano",
+        "actionsLabel": "Kampanya işlemleri: {title}"
       },
       "saved": {
         "metaTitle": "Kaydedilen projeler",
@@ -598,6 +603,7 @@
         "filteredBody": "Bu süzgeçler şimdiye dek yüklenen bildirimlerin hiçbiriyle eşleşmiyor. Aramaya devam etmek için daha fazla yükleyin ya da süzgeçleri temizleyin.",
         "loadMore": "Daha fazla yükle",
         "loading": "Yükleniyor",
+        "tryAgain": "Yeniden dene",
         "unreadWord": "Okunmamış",
         "markRead": "Okundu olarak işaretle",
         "marking": "İşaretleniyor",
@@ -616,7 +622,8 @@
         "conflict": "Bu ayarı aynı anda başka bir şey değiştirdi. Sayfayı yenileyip yeniden deneyin.",
         "refused": "Servis değişikliği reddetti. Yeniden deneyin.",
         "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
-        "saved": "{category} — {channel}: {mode}."
+        "saved": "{category} — {channel}: {mode}.",
+        "heading": "Size ne gönderilir"
       }
     }
   },
@@ -3263,6 +3270,7 @@
       "none": "Ödülsüz destek olun",
       "noneHint": "Kampanyayı yalnızca var olmasını istediğiniz için destekleyin. Tutarı siz seçersiniz ve karşılığında bir ödül almazsınız.",
       "soldOut": "Tükendi",
+      "left": "Kalan: {remaining} / {limit}",
       "inPerson": "Elden teslim alınır",
       "digital": "Dijital olarak teslim edilir",
       "earlyBird": "Erken fiyat",
@@ -3276,7 +3284,8 @@
     "addons": {
       "heading": "Ekler",
       "intro": "Herhangi bir ödüle ya da ödülsüz bir desteğe ekleyebileceğiniz şeyler.",
-      "soldOut": "Tükendi"
+      "soldOut": "Tükendi",
+      "quantity": "Adet"
     },
     "destination": {
       "label": "Bu nereye gitsin?",
@@ -3326,6 +3335,7 @@
       "listedAs": "Herkese açık olarak görünen ad",
       "change": "Seçimimi değiştireceğim",
       "reserve": "Rezerve edin ve gözden geçirin",
+      "reserving": "Rezerve ediliyor…",
       "confirm": "Ödemeye geç",
       "confirming": "Ödeme sayfası açılıyor…",
       "charged": "Ücret bir sonraki sayfada tahsil edilir. Ödemeyi tamamlamazsanız hiçbir şey tahsil edilmez ve ayırma süresi dolduğunda ödül serbest bırakılır.",
@@ -3629,7 +3639,14 @@
       "heading": "Güncellemeler",
       "failed": "Güncellemeler şu anda yüklenemedi. Yeniden denemek için sayfayı yenileyin.",
       "older": "Daha eski güncellemeler",
+      "noOlder": "Daha eski güncelleme yok.",
+      "none": "Bu kampanya henüz güncelleme paylaşmadı. Paylaştığında destekçilere e-postayla haber verilir.",
       "backersOnly": "Yalnızca destekçilere"
+    },
+    "owner": {
+      "label": "Kampanyanız",
+      "dashboard": "Pano",
+      "edit": "Düzenle"
     },
     "comments": {
       "heading": "Yorumlar",
@@ -3692,6 +3709,7 @@
     "eyebrow": "Kampanya düzenleyici",
     "loadingTitle": "Yükleniyor",
     "sectionsLabel": "Kampanya bölümleri",
+    "dashboard": "Pano",
     "soon": "yakında",
     "notAvailable": ", bölüm henüz kullanılamıyor",
     "signedOutTitle": "Oturumunuz kapandı",
@@ -3938,6 +3956,12 @@
         "other": "{tiers} içinde yer alıyor. Önce o ödüllerden çıkarın, sonra silin."
       },
       "rewardHasBackers": "Bunun yerine gizleyin — onu seçmiş olanlar kendilerine borçlu olunan şeyin açıklamasını korur, ödül de artık başkasına sunulmaz.",
+      "chosenBy": {
+        "one": "Bu ödülü {count} destekçi seçti; bu yüzden gizlenebilir ama silinemez.",
+        "few": "Bu ödülü {count} destekçi seçti; bu yüzden gizlenebilir ama silinemez.",
+        "many": "Bu ödülü {count} destekçi seçti; bu yüzden gizlenebilir ama silinemez.",
+        "other": "Bu ödülü {count} destekçi seçti; bu yüzden gizlenebilir ama silinemez."
+      },
       "vocabulary": {
         "scopes": {
           "NONE": {

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { EditorShell } from './EditorShell';
 import { EDITOR_TABS } from './tabs';
 import { EDITOR_COPY } from '../../test-editor-copy';
+import type { ProjectState } from '../../lib/projects/api';
 
 /**
  * Appearance is reviewed in Storybook. These cover the navigation contract: the
@@ -11,9 +12,9 @@ import { EDITOR_COPY } from '../../test-editor-copy';
  * of them with a keyboard.
  */
 
-function renderShell() {
+function renderShell(state: ProjectState = 'DRAFT') {
   return render(
-    <EditorShell projectId="project-1" copy={EDITOR_COPY} active="basics" title="A field recorder" state="DRAFT">
+    <EditorShell projectId="project-1" copy={EDITOR_COPY} active="basics" title="A field recorder" state={state}>
       <p>The basics form</p>
     </EditorShell>
   );
@@ -115,6 +116,19 @@ describe('EditorShell', () => {
     renderShell();
     // Colour alone must never carry meaning (docs/ui-kit.md §9.2).
     expect(screen.getByText('Draft')).toBeInTheDocument();
+  });
+
+  it('links the dashboard once the campaign has launched (#141)', () => {
+    renderShell('LIVE');
+    expect(screen.getByRole('link', { name: EDITOR_COPY.dashboard })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/projects/project-1/dashboard'),
+    );
+  });
+
+  it('offers no dashboard before launch', () => {
+    renderShell('PRELAUNCH');
+    expect(screen.queryByRole('link', { name: EDITOR_COPY.dashboard })).not.toBeInTheDocument();
   });
 
   it('renders the tab content it was given', () => {

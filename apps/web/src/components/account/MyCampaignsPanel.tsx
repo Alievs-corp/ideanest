@@ -5,7 +5,10 @@ import { FolderOpen } from 'lucide-react';
 import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup } from '@ideanest/ui';
 import { Link } from '../../i18n/navigation';
 import type { ProfileProjectCard } from '../../lib/profiles/api';
-import { isPubliclyVisible, listMyProjects, myCampaignHref } from '../../lib/projects/mine';
+import { campaignDashboardHref } from '../../lib/account/navigation';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { hasLaunched, isPubliclyVisible, listMyProjects, myCampaignHref } from '../../lib/projects/mine';
+import { OWNER_LINK_CLASS } from '../project/owner-link';
 import { useCursorList } from './useCursorList';
 
 /**
@@ -49,6 +52,12 @@ export interface MyCampaignsPanelCopy {
   readonly loadMore: string;
   readonly loadingMore: string;
   readonly draftHint: string;
+  /** #141: a launched campaign's two actions, and the first's stand-in when it is not public. */
+  readonly view: string;
+  readonly edit: string;
+  readonly dashboard: string;
+  /** Carries `{title}`. Names the group of a row's actions, so two rows' links are told apart. */
+  readonly actionsLabel: string;
   /**
    * §6.1's sixteen, by wire name.
    *
@@ -61,6 +70,66 @@ export interface MyCampaignsPanelCopy {
 
 export interface MyCampaignsPanelProps {
   readonly copy: MyCampaignsPanelCopy;
+}
+
+interface RowProps {
+  readonly campaign: ProfileProjectCard;
+  readonly copy: MyCampaignsPanelCopy;
+}
+
+function RowTitle({ campaign, copy }: RowProps) {
+  return (
+    <span className="flex min-w-0 flex-col gap-1">
+      {/*
+        `wrap-anywhere` and not `truncate`: a working title is frequently one
+        unbroken string, and a creator looking for the draft they left needs to
+        read the whole of it rather than its first thirty characters.
+      */}
+      <span className="wrap-anywhere text-[15px] font-medium text-white">{campaign.title}</span>
+      {!isPubliclyVisible(campaign) && (
+        <span className="text-xs text-white/40">{copy.draftHint}</span>
+      )}
+    </span>
+  );
+}
+
+function StateChip({ campaign, copy }: RowProps) {
+  return (
+    <span className="shrink-0 rounded-full border border-white/8 px-3 py-1 text-xs text-white/64">
+      {copy.states[campaign.state] ?? campaign.state}
+    </span>
+  );
+}
+
+/**
+ * A campaign that has opened: two actions rather than one row-sized link — #141.
+ *
+ * <p>The row used to go to the public page and nowhere else, so the dashboard — the funding,
+ * the backers, the payouts and the surveys a creator owes — was reachable only by typing its
+ * address. Two destinations cannot share one link, so the row stops being one and carries
+ * both. A campaign that is not public (suspended) gets the editor where the page would be.
+ */
+function LaunchedRow({ campaign, copy }: RowProps) {
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-2 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <RowTitle campaign={campaign} copy={copy} />
+      <div className="flex flex-wrap items-center gap-2">
+        <StateChip campaign={campaign} copy={copy} />
+        <div
+          role="group"
+          aria-label={fillPlaceholders(copy.actionsLabel, { title: campaign.title })}
+          className="flex flex-wrap items-center gap-2"
+        >
+          <Link href={myCampaignHref(campaign)} className={OWNER_LINK_CLASS}>
+            {isPubliclyVisible(campaign) ? copy.view : copy.edit}
+          </Link>
+          <Link href={campaignDashboardHref(campaign.id)} className={OWNER_LINK_CLASS}>
+            {copy.dashboard}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function MyCampaignsPanel({ copy }: MyCampaignsPanelProps) {
@@ -112,28 +181,17 @@ export function MyCampaignsPanel({ copy }: MyCampaignsPanelProps) {
       <ul className="flex list-none flex-col gap-3">
         {items.map((campaign) => (
           <li key={campaign.id}>
-            <Link
-              href={myCampaignHref(campaign)}
-              className="flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-4 transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-            >
-              <span className="flex min-w-0 flex-col gap-1">
-                {/*
-                  `wrap-anywhere` and not `truncate`: a working title is frequently one
-                  unbroken string, and a creator looking for the draft they left needs to
-                  read the whole of it rather than its first thirty characters.
-                */}
-                <span className="wrap-anywhere text-[15px] font-medium text-white">
-                  {campaign.title}
-                </span>
-                {!isPubliclyVisible(campaign) && (
-                  <span className="text-xs text-white/40">{copy.draftHint}</span>
-                )}
-              </span>
-
-              <span className="shrink-0 rounded-full border border-white/8 px-3 py-1 text-xs text-white/64">
-                {copy.states[campaign.state] ?? campaign.state}
-              </span>
-            </Link>
+            {hasLaunched(campaign.state) ? (
+              <LaunchedRow campaign={campaign} copy={copy} />
+            ) : (
+              <Link
+                href={myCampaignHref(campaign)}
+                className="flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-4 transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+              >
+                <RowTitle campaign={campaign} copy={copy} />
+                <StateChip campaign={campaign} copy={copy} />
+              </Link>
+            )}
           </li>
         ))}
       </ul>

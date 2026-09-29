@@ -185,7 +185,7 @@ export function PreferencesPanel({ copy }: PreferencesPanelProps) {
         ref={headingRef}
         className="text-lg font-medium tracking-[-0.02em] text-white"
       >
-        What you are sent
+        {copy.heading}
         {status === 'ready' && stored === 0 && (
           <span className="ml-2 text-xs font-normal text-white/40">{copy.defaults}</span>
         )}

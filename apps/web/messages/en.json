@@ -68,7 +68,8 @@
       "profile": "My profile",
       "settings": "Settings",
       "startCampaign": "Start a campaign",
-      "console": "Administration console"
+      "console": "Administration console",
+      "unverified": "Your email address is not verified yet. Open the link we sent to {email}."
     },
     "language": {
       "label": "Choose a language"
@@ -252,7 +253,11 @@
         "loadingList": "Loading your campaigns",
         "loadMore": "Show more",
         "loadingMore": "Loading",
-        "draftHint": "Not published yet"
+        "draftHint": "Not published yet",
+        "view": "View",
+        "edit": "Edit",
+        "dashboard": "Dashboard",
+        "actionsLabel": "Actions for {title}"
       },
       "saved": {
         "metaTitle": "Saved projects",
@@ -598,6 +603,7 @@
         "filteredBody": "These filters match none of the notifications loaded so far. Load more to keep looking, or clear them.",
         "loadMore": "Load more",
         "loading": "Loading",
+        "tryAgain": "Try again",
         "unreadWord": "Unread",
         "markRead": "Mark as read",
         "marking": "Marking",
@@ -616,7 +622,8 @@
         "conflict": "Something else changed this setting at the same time. Reload the page and try again.",
         "refused": "The service refused the change. Try again.",
         "unreachable": "The service could not be reached. Check your connection and try again.",
-        "saved": "{category} by {channel}: {mode}."
+        "saved": "{category} by {channel}: {mode}.",
+        "heading": "What you are sent"
       }
     }
   },
@@ -3263,6 +3270,7 @@
       "none": "Pledge without a reward",
       "noneHint": "Back the campaign because you want it to exist. You choose the amount, and you get no reward in return.",
       "soldOut": "Sold out",
+      "left": "{remaining} of {limit} left",
       "inPerson": "Collected in person",
       "digital": "Delivered digitally",
       "earlyBird": "Early bird",
@@ -3276,7 +3284,8 @@
     "addons": {
       "heading": "Add-ons",
       "intro": "Extras you can add to any reward, or to a pledge without one.",
-      "soldOut": "Sold out"
+      "soldOut": "Sold out",
+      "quantity": "Quantity"
     },
     "destination": {
       "label": "Where should this go?",
@@ -3326,6 +3335,7 @@
       "listedAs": "Listed publicly as",
       "change": "Change what I chose",
       "reserve": "Reserve and review",
+      "reserving": "Reserving…",
       "confirm": "Continue to payment",
       "confirming": "Opening the payment page…",
       "charged": "You are charged on the next page. If you do not finish paying, nothing is taken and the reward is released when the hold ends.",
@@ -3629,7 +3639,14 @@
       "heading": "Updates",
       "failed": "The updates could not be loaded just now. Reload the page to try again.",
       "older": "Older updates",
+      "noOlder": "There are no older updates.",
+      "none": "This campaign has not posted an update yet. Backers are told by email when it does.",
       "backersOnly": "Backers only"
+    },
+    "owner": {
+      "label": "Your campaign",
+      "dashboard": "Dashboard",
+      "edit": "Edit"
     },
     "comments": {
       "heading": "Comments",
@@ -3692,6 +3709,7 @@
     "eyebrow": "Campaign editor",
     "loadingTitle": "Loading",
     "sectionsLabel": "Campaign sections",
+    "dashboard": "Dashboard",
     "soon": "soon",
     "notAvailable": ", not available yet",
     "signedOutTitle": "You are signed out",
@@ -3938,6 +3956,12 @@
         "other": "It is part of {tiers}. Take it out of those rewards first, then delete it."
       },
       "rewardHasBackers": "Hide it instead — the people who chose it keep the description of what they are owed, and it stops being offered to anybody else.",
+      "chosenBy": {
+        "one": "{count} backer has chosen this reward, so it can be hidden but not deleted.",
+        "few": "{count} backers have chosen this reward, so it can be hidden but not deleted.",
+        "many": "{count} backers have chosen this reward, so it can be hidden but not deleted.",
+        "other": "{count} backers have chosen this reward, so it can be hidden but not deleted."
+      },
       "vocabulary": {
         "scopes": {
           "NONE": {

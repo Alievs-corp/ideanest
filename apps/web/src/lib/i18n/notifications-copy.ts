@@ -65,6 +65,8 @@ export interface InboxCopy extends NotificationsCopy {
   readonly filteredBody: string;
   readonly loadMore: string;
   readonly loading: string;
+  /** Retries a list that failed to load. */
+  readonly tryAgain: string;
   readonly unreadWord: string;
   readonly markRead: string;
   readonly marking: string;
@@ -73,6 +75,7 @@ export interface InboxCopy extends NotificationsCopy {
 }
 
 export interface PreferencesCopy extends NotificationsCopy {
+  readonly heading: string;
   readonly signedOut: string;
   readonly signedOutBody: string;
   readonly defaults: string;
@@ -123,6 +126,7 @@ export function inboxCopyFrom(t: NotificationsTranslator): InboxCopy {
     filteredBody: t('inbox.filteredBody'),
     loadMore: t('inbox.loadMore'),
     loading: t('inbox.loading'),
+    tryAgain: t('inbox.tryAgain'),
     unreadWord: t('inbox.unreadWord'),
     markRead: t('inbox.markRead'),
     marking: t('inbox.marking'),
@@ -134,6 +138,7 @@ export function inboxCopyFrom(t: NotificationsTranslator): InboxCopy {
 export function preferencesCopyFrom(t: NotificationsTranslator): PreferencesCopy {
   return {
     ...sharedFrom(t),
+    heading: t('preferences.heading'),
     signedOut: t('preferences.signedOut'),
     signedOutBody: t('preferences.signedOutBody'),
     defaults: t('preferences.defaults'),

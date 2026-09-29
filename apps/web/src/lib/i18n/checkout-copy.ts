@@ -46,6 +46,8 @@ export interface CheckoutCopy {
     readonly none: string;
     readonly noneHint: string;
     readonly soldOut: string;
+    /** Carries `{remaining}` and `{limit}`; filled where the stock is known. */
+    readonly left: string;
     readonly inPerson: string;
     readonly digital: string;
     readonly earlyBird: string;
@@ -61,6 +63,8 @@ export interface CheckoutCopy {
     readonly heading: string;
     readonly intro: string;
     readonly soldOut: string;
+    /** The visible label of each add-on's quantity select. */
+    readonly quantity: string;
   };
   readonly destination: {
     readonly label: string;
@@ -124,6 +128,8 @@ export interface CheckoutCopy {
     readonly rule: string;
     readonly change: string;
     readonly reserve: string;
+    /** The reserve control while the reservation is in flight. */
+    readonly reserving: string;
     readonly confirm: string;
     readonly confirming: string;
   };
@@ -314,6 +320,7 @@ export function checkoutCopyFrom(t: CheckoutTranslator): CheckoutCopy {
       none: t('reward.none'),
       noneHint: t('reward.noneHint'),
       soldOut: t('reward.soldOut'),
+      left: String(t.raw('reward.left')),
       inPerson: t('reward.inPerson'),
       digital: t('reward.digital'),
       earlyBird: t('reward.earlyBird'),
@@ -328,6 +335,7 @@ export function checkoutCopyFrom(t: CheckoutTranslator): CheckoutCopy {
       heading: t('addons.heading'),
       intro: t('addons.intro'),
       soldOut: t('addons.soldOut'),
+      quantity: t('addons.quantity'),
     },
     destination: {
       label: t('destination.label'),
@@ -379,6 +387,7 @@ export function checkoutCopyFrom(t: CheckoutTranslator): CheckoutCopy {
       rule: t('review.rule'),
       change: t('review.change'),
       reserve: t('review.reserve'),
+      reserving: t('review.reserving'),
       confirm: t('review.confirm'),
       confirming: t('review.confirming'),
     },

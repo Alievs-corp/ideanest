@@ -6,6 +6,10 @@ import { CampaignOutcomeNotice } from '../../../../../components/project/Campaig
 import { CampaignRewards } from '../../../../../components/project/CampaignRewards';
 import { CampaignStory } from '../../../../../components/project/CampaignStory';
 import { CampaignSummary } from '../../../../../components/project/CampaignSummary';
+import { CampaignOwnerBar } from '../../../../../components/project/CampaignOwnerBar';
+import { campaignDashboardHref, campaignEditorHref } from '../../../../../lib/account/navigation';
+import { hasLaunched } from '../../../../../lib/projects/mine';
+import { getTranslations } from 'next-intl/server';
 import { CampaignTabs } from '../../../../../components/project/CampaignTabs';
 import { CampaignTrustBlock } from '../../../../../components/project/CampaignTrustBlock';
 import { CampaignUpdates } from '../../../../../components/project/CampaignUpdates';
@@ -258,9 +262,10 @@ export default async function CampaignPage({
    * obligation could not be loaded would be inventing an obligation to apologise for.
    * `lib/obligations/server.ts` has the argument.
    */
-  const [faqs, obligation] = await Promise.all([
+  const [faqs, obligation, owner] = await Promise.all([
     fetchProjectFaqs(campaign.id),
     fetchUpdateObligation(campaign.id),
+    getTranslations('campaign.owner'),
   ]);
 
   return (
@@ -331,6 +336,17 @@ export default async function CampaignPage({
         #91. `lib/realtime/updates.ts` explains why it cannot simply use the `/v1` rewrite
         every other browser call goes through.
       */}
+      {/*
+        #141: the creator's links to the dashboard and the editor. Drawn in the browser against
+        the session, never here — `CampaignOwnerBar` says why the cached page must not know who
+        is reading it.
+      */}
+      <CampaignOwnerBar
+        creatorSlug={campaign.creatorSlug}
+        editHref={campaignEditorHref(campaign.id)}
+        dashboardHref={hasLaunched(campaign.state) ? campaignDashboardHref(campaign.id) : null}
+        copy={{ label: owner('label'), dashboard: owner('dashboard'), edit: owner('edit') }}
+      />
       <CampaignSummary
         campaign={campaign}
         realtimeOrigin={process.env[REALTIME_ORIGIN_VARIABLE]}

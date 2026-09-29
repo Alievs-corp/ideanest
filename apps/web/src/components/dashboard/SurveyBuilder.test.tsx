@@ -5,6 +5,18 @@ import { SurveyBuilder } from './SurveyBuilder';
 import { surveyBuilderCopyFrom } from '../../lib/i18n/dashboard-copy';
 import { translatorFor } from '../../test-copy';
 import type { Survey } from '../../lib/dashboard/surveys';
+import { listRewards, type Reward } from '../../lib/projects/api';
+
+/*
+ * The builder reads the campaign's tiers itself since #135, through the creator's own reward
+ * list. Stubbed here so no test reaches the network; the default is a campaign with none.
+ */
+vi.mock('../../lib/projects/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/projects/api')>()),
+  listRewards: vi.fn(async () => []),
+}));
+
+const rewardsMock = vi.mocked(listRewards);
 
 /*
  * The words, built from `messages/en.json` with the builder the route calls — #79.
@@ -142,13 +154,33 @@ describe('SurveyBuilder', () => {
       <SurveyBuilder
         projectId="p1"
         load={async () => []}
-        rewardTiers={[{ id: 'tier-1', title: 'Boxed set' }]}
+        loadTiers={async () => [{ id: 'tier-1', title: 'Boxed set' }]}
         copy={COPY}
       />,
     );
 
     expect(await screen.findByLabelText(/Ask only the backers who chose/)).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Everybody' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Boxed set' })).toBeInTheDocument();
+  });
+
+  it("reads the creator's own tiers when the route passes none, as the surveys route does (#135)", async () => {
+    // The route renders `<SurveyBuilder projectId copy />` and nothing else.
+    rewardsMock.mockResolvedValueOnce([{ id: 'tier-1', title: 'Boxed set' } as Reward]);
+
+    render(<SurveyBuilder projectId="p1" load={async () => []} copy={COPY} />);
+
+    expect(await screen.findByLabelText(/Ask only the backers who chose/)).toBeInTheDocument();
+    expect(rewardsMock).toHaveBeenCalledWith('p1', expect.any(AbortSignal));
+  });
+
+  it('keeps working without the selector when the tiers cannot be read', async () => {
+    rewardsMock.mockRejectedValueOnce(new Error('offline'));
+
+    render(<SurveyBuilder projectId="p1" load={async () => []} copy={COPY} />);
+
+    await waitFor(() => expect(screen.getByLabelText(/Answer type/)).toBeInTheDocument());
+    expect(screen.queryByLabelText(/Ask only the backers who chose/)).not.toBeInTheDocument();
   });
 
   it('explains a refusal in terms a creator can act on', async () => {

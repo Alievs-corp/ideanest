@@ -233,7 +233,8 @@ public class UserAccounts {
             base = trimTrailingHyphen(base.substring(0, SLUG_BASE_LIMIT));
         }
 
-        if (!users.existsBySlug(base)) {
+        // A reserved word is never free: it is a route, not an address (Slugs.RESERVED).
+        if (!Slugs.isReserved(base) && !users.existsBySlug(base)) {
             return base;
         }
         for (int suffix = 2; suffix <= SLUG_ATTEMPTS; suffix++) {

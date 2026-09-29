@@ -22,6 +22,8 @@ import { RewardChoice } from './RewardChoice';
 import { NO_REWARD, useCheckout } from './useCheckout';
 import { useReservationClock } from './useReservationClock';
 import { type CheckoutCopy, fillPlaceholders } from '../../lib/i18n/checkout-copy';
+import { regionNames as regionDisplayNames } from '../../lib/i18n/formats';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { contributionMessage, refusalMessage } from './refusals';
 
 /**
@@ -251,13 +253,8 @@ export function CheckoutView({
     [checkout.selection],
   );
 
-  const regionNames = useMemo(() => {
-    try {
-      return new Intl.DisplayNames(['en'], { type: 'region' });
-    } catch {
-      return null;
-    }
-  }, []);
+  const locale = useRouteLocale();
+  const regionNames = useMemo(() => regionDisplayNames(locale), [locale]);
 
   const alternatives = useMemo(() => {
     const suggested = checkout.failure?.alternatives ?? [];
@@ -592,7 +589,7 @@ export function CheckoutView({
                 onClick={() => checkout.reserve()}
                 disabled={checkout.phase === 'reserving' || checkout.catalogueStatus !== 'ready'}
               >
-                {checkout.phase === 'reserving' ? 'Reserving…' : copy.review.reserve}
+                {checkout.phase === 'reserving' ? copy.review.reserving : copy.review.reserve}
               </Pill>
             )}
 

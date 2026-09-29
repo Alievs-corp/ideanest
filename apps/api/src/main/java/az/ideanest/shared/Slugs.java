@@ -2,6 +2,7 @@ package az.ideanest.shared;
 
 import java.text.Normalizer;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -42,7 +43,33 @@ public final class Slugs {
         {"ü", "u"}, {"Ü", "u"},
     };
 
+    /**
+     * Slugs a user, creator or campaign may not have, because the web already
+     * uses them as static route segments.
+     *
+     * <p>The public campaign page is {@code /projects/{creatorSlug}/{projectSlug}},
+     * and the same {@code /projects/[id]/} segment has static children that take a
+     * project id: {@code back}, {@code dashboard}, {@code edit} and
+     * {@code prelaunch}. Next.js matches a static segment before a dynamic one, so
+     * a campaign whose slug is {@code back} would have the checkout as its public
+     * address. {@code new} is the mirror case one level up: {@code /projects/new}
+     * is the new-campaign page, so a creator slugged {@code new} would lose every
+     * campaign address.
+     *
+     * <p>One list for both kinds of slug, because a word that is safe today in
+     * one position is one route away from not being. {@code ReservedSlugsTests}
+     * reads {@code apps/web/src/app/[locale]/projects/} and fails when a static
+     * child is added there without being added here. V82 moved the existing rows
+     * off these words.
+     */
+    public static final Set<String> RESERVED = Set.of("back", "dashboard", "edit", "new", "prelaunch");
+
     private Slugs() {
+    }
+
+    /** Whether a slug is one of {@link #RESERVED}; an allocator skips straight to {@code -2}. */
+    public static boolean isReserved(String slug) {
+        return RESERVED.contains(slug);
     }
 
     /**

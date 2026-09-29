@@ -8,6 +8,7 @@ import { Avatar, cn, useDismiss } from '@ideanest/ui';
 import { readMembership } from '../../lib/admin/staff';
 import type { Session } from '../../lib/session/session';
 import type { ShellCopy } from '../../lib/i18n/shell-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
  * The signed-in reader's own corner of the header — §4.13 WS-01's "signed-in action pair".
@@ -166,8 +167,7 @@ export function AccountMenu({ session, onSignOut, copy }: AccountMenuProps) {
           */}
           {!session.emailVerified && (
             <p className="mx-1 mb-2 rounded-sm bg-surface-3 px-3 py-2 text-xs leading-relaxed text-white/64">
-              Your email address is not verified yet. Open the link we sent to{' '}
-              {session.email}.
+              {fillPlaceholders(copy.unverified, { email: session.email })}
             </p>
           )}
 
