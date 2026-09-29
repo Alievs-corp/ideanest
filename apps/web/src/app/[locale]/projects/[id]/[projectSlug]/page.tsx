@@ -409,7 +409,9 @@ export default async function CampaignPage({
             </>
           )}
 
-          {tab === 'creator' && <CreatorTab campaign={campaign} />}
+          {tab === 'creator' && (
+            <CreatorTab campaign={campaign} returnTo={campaignTabHref(path, 'creator')} />
+          )}
 
           {tab === 'faq' && <CampaignFaqs faqs={faqs} />}
 
@@ -437,12 +439,11 @@ export default async function CampaignPage({
         the end of the page is where they are; `--text-tertiary` at 4.9:1 is legible without
         competing (docs/ui-kit.md §9.1).
 
-        THE CREATOR'S ACCOUNT STILL CANNOT BE REPORTED FROM HERE, and #282 did not change it.
-        `POST /v1/users/{id}/report` takes an identifier and both
-        `GET /v1/projects/{creatorSlug}/{projectSlug}` and `GET /v1/users/{slug}` are addressed
-        by slug and answer with one — neither carries the account id the report endpoint needs.
-        The surface that has one is the public profile itself (#274). `ReportControl` already
-        takes an account target; it gains an entry point when that page can supply an id.
+        THE CREATOR'S ACCOUNT IS REPORTED FROM THEIR PROFILE, NOT FROM HERE. #143 moved the
+        account route to `POST /v1/users/{slug}/report` and mounted it on `/u/[slug]`, one
+        click away through the Creator tab. A second Report control here would put two
+        complaints — about the campaign and about the person — side by side at the foot of a
+        page whose subject is the campaign.
 
         `ReportControl` writes §4.11's dialog entry as a CSS keyframe rather than importing
         `@ideanest/ui/motion`, for the reason the header comment above gives: 116 kB of
@@ -475,8 +476,11 @@ export default async function CampaignPage({
  */
 async function CreatorTab({
   campaign,
+  returnTo,
 }: {
   readonly campaign: CampaignPage;
+  /** This tab's own address, for the Follow control's sign-in return (#143). */
+  readonly returnTo: string;
 }) {
   const [profile, projects] = await Promise.all([
     fetchPublicProfile(campaign.creator.slug),
@@ -491,7 +495,9 @@ async function CreatorTab({
     .filter((project) => project.id !== campaign.id)
     .slice(0, CREATOR_PROJECT_LIMIT);
 
-  return <CreatorPanel campaign={campaign} profile={profile} projects={others} />;
+  return (
+    <CreatorPanel campaign={campaign} profile={profile} projects={others} returnTo={returnTo} />
+  );
 }
 
 /*

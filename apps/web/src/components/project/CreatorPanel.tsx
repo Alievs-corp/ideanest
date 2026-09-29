@@ -8,6 +8,8 @@ import type { CampaignPage } from '../../lib/projects/publicPage';
 import { ViewerInstant } from './ViewerClock';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { localeOrDefault } from '../../lib/i18n/locale';
+import { FollowControl } from '../profile/FollowControl';
+import { followControlCopyFrom } from '../../lib/i18n/profile-copy';
 
 /**
  * §4.4's Creator tab — issue #282.
@@ -58,10 +60,19 @@ import { localeOrDefault } from '../../lib/i18n/locale';
  * the first disagreement would be visible as one campaign showing two different completion
  * figures on two pages. A compact row is the honest shape for what this endpoint sends.
  *
+ * <h2>Follow — #143</h2>
+ *
+ * `FollowControl` sits under the creator's name. It is addressed by the campaign's
+ * `creator.slug`, which is there even when the profile is private, so a reader can follow the
+ * person whose campaign they are reading either way — following says nothing about whether a
+ * profile is public, and the control draws the same in both cases. It is the tab's one new
+ * client boundary: the owner sees nothing, a visitor sees a sign-in link, and everybody else
+ * the toggle.
+ *
  * <h2>Motion</h2>
  *
- * None, and no client boundary except the one `ViewerInstant` already is elsewhere on this
- * page. Nothing on this tab changes after it is rendered.
+ * None. `ViewerInstant` and `FollowControl` are the tab's client boundaries, and neither
+ * animates.
  */
 
 /** The nine public states, as a word rather than the enum. Only the ones this tab can meet. */
@@ -83,11 +94,14 @@ export interface CreatorPanelProps {
   readonly profile: PublicProfile | null;
   /** The creator's other public campaigns, already trimmed of the one being read. */
   readonly projects: readonly CreatorProject[];
+  /** Where the Follow control's sign-in returns to — this tab's own address. */
+  readonly returnTo: string;
 }
 
-export async function CreatorPanel({ campaign, profile, projects }: CreatorPanelProps) {
+export async function CreatorPanel({ campaign, profile, projects, returnTo }: CreatorPanelProps) {
   const locale = localeOrDefault(await getLocale());
   const t = await getTranslations('campaign.creator');
+  const followCopy = followControlCopyFrom(await getTranslations('profile'));
 
   /*
    * The campaign's own creator fields are the fallback, not the profile's. They came with the
@@ -152,6 +166,15 @@ export async function CreatorPanel({ campaign, profile, projects }: CreatorPanel
                 />
               </p>
             )}
+
+            <div className="mt-2">
+              <FollowControl
+                slug={campaign.creator.slug}
+                name={name}
+                returnTo={returnTo}
+                copy={followCopy}
+              />
+            </div>
           </div>
         </div>
 

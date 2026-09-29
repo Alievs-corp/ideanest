@@ -93,6 +93,55 @@ export async function unfollowCreator(slug: string): Promise<void> {
 }
 
 /**
+ * Follows a creator — `POST /v1/users/{slug}/follow`. Issue #143.
+ *
+ * Idempotent on the service's side: following somebody already followed is the same success.
+ * The answer is the service's `{ following }`, and the caller draws that rather than assuming.
+ */
+export async function followCreator(slug: string): Promise<boolean> {
+  const response = await authorizedFetch(`/v1/users/${encodeURIComponent(slug)}/follow`, {
+    method: 'POST',
+  });
+  if (!response.ok) throw await errorFrom(response);
+  const body = (await response.json()) as { readonly following?: boolean };
+  return body.following ?? true;
+}
+
+/** The largest page `GET /v1/me/following` serves — `CommunityProperties.Signals`' ceiling. */
+const FOLLOWING_SCAN_PAGE_SIZE = 100;
+
+/** How many of those pages a follow control reads before it stops looking. */
+const FOLLOWING_SCAN_PAGES = 5;
+
+/**
+ * Whether the signed-in reader follows `slug`, read from `GET /v1/me/following`. Issue #143.
+ *
+ * There is no per-creator "do I follow this" read (#137 proposes a viewer-state endpoint), so
+ * the list is walked at the service's largest page size. The walk stops after
+ * `FOLLOWING_SCAN_PAGES` pages — five hundred accounts — and answers `false` beyond that. That
+ * is safe rather than merely convenient, for the reason `CampaignActions` gives about saving:
+ * following is idempotent, so the worst case is a reader who follows five hundred people
+ * pressing Follow and being told they follow this one, which is true.
+ */
+export async function isFollowing(slug: string, signal?: AbortSignal): Promise<boolean> {
+  let cursor: string | null = null;
+  for (let read = 0; read < FOLLOWING_SCAN_PAGES; read += 1) {
+    const query = new URLSearchParams({ size: String(FOLLOWING_SCAN_PAGE_SIZE) });
+    if (cursor !== null) query.set('cursor', cursor);
+
+    const response = await authorizedFetch(`/v1/me/following?${query.toString()}`, { signal });
+    if (!response.ok) throw await errorFrom(response);
+
+    const body = (await response.json()) as RawPage<FollowedCreator>;
+    if ((body.items ?? []).some((creator) => creator.slug === slug)) return true;
+
+    cursor = body.nextCursor ?? null;
+    if (cursor === null) return false;
+  }
+  return false;
+}
+
+/**
  * The public address of a campaign.
  *
  * §10.2's `/projects/{creatorSlug}/{projectSlug}`. The folder under `app/` is called `[id]`

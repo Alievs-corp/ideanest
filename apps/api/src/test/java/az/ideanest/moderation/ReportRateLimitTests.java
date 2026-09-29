@@ -129,6 +129,22 @@ class ReportRateLimitTests {
     }
 
     @Test
+    @DisplayName("reporting an account by its slug spends the same budget as reporting a campaign")
+    void theAccountRouteSharesTheBudget() {
+        UUID reporter = UUID.randomUUID();
+        for (int attempt = 0; attempt < PER_REPORTER; attempt++) {
+            report(reporter);
+        }
+
+        // #143 moved the account route onto the slug and gave it its own service
+        // method. It must still be counted against the one allowance, or somebody who
+        // had spent theirs on campaigns could carry on spending it on people.
+        assertThatThrownBy(() -> reports.reportUser(
+                        accessTokenFor(reporter), "some-person", new ReportRequest(ReportReason.SPAM, null), request))
+                .isInstanceOf(RateLimitExceededException.class);
+    }
+
+    @Test
     @DisplayName("the response says how much of the allowance is left before it runs out")
     void theAllowanceIsReported() {
         MockHttpServletResponse response = currentResponse();
@@ -185,8 +201,8 @@ class ReportRateLimitTests {
      * to compile.
      *
      * <p><strong>Both collaborators are null, and none is reachable.</strong>
-     * {@link ReportingService#report} is the only method that touches either, and it
-     * is overridden here, so the stub never reads a repository or a
+     * {@link ReportingService#report} and {@link ReportingService#reportAccount} are the
+     * only methods that touch either, and both are overridden here, so the stub never reads a repository or a
      * {@code ReportTargets}. Naming them is what would be dishonest: a
      * {@code ReportTargets} assembled here out of nulls looks like a collaborator
      * under test and is not one, and it re-breaks this test every time
@@ -212,6 +228,12 @@ class ReportRateLimitTests {
                     ReportState.OPEN,
                     Instant.now(FIXED),
                     true);
+        }
+
+        /** The slug route's entry point (#143), overridden for the same reason. */
+        @Override
+        public SubmittedReport reportAccount(String slug, UUID reporterId, ReportReason reason, String detail) {
+            return report(ReportTargetType.USER, UUID.randomUUID(), reporterId, reason, detail);
         }
     }
 }

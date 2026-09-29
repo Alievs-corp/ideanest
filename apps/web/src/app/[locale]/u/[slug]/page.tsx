@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { ProfileAbout } from '../../../../components/profile/ProfileAbout';
 import { ProfileCampaignGrid } from '../../../../components/profile/ProfileCampaignGrid';
 import { ProfileHeader } from '../../../../components/profile/ProfileHeader';
+import { FollowControl } from '../../../../components/profile/FollowControl';
+import { ProfileReportControl } from '../../../../components/profile/ProfileReportControl';
 import { ProfileTabs, type ProfileTab } from '../../../../components/profile/ProfileTabs';
 import { CreatorObligationSummary } from '../../../../components/profile/CreatorObligationSummary';
 import { fetchCreatorObligations } from '../../../../lib/obligations/server';
@@ -16,7 +18,11 @@ import {
 import { privatePageMetadata, publicPageMetadata, truncateAtWord } from '../../../../lib/seo/metadata';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { fillPlaceholders } from '../../../../lib/i18n/placeholders';
-import { profileCopy } from '../../../../lib/i18n/shell-copy.server';
+import {
+  followControlCopy,
+  profileCopy,
+  reportControlCopy,
+} from '../../../../lib/i18n/shell-copy.server';
 import { getTranslations } from 'next-intl/server';
 
 /**
@@ -163,11 +169,13 @@ export default async function ProfilePage({
    * late campaigns" is a statement about a person. Guessing at the second one, or apologising
    * for not being able to make it, are both worse than saying nothing.
    */
-  const [created, backed, obligations, copy] = await Promise.all([
+  const [created, backed, obligations, copy, followCopy, reportCopy] = await Promise.all([
     fetchCreatedProjects(slug),
     fetchBackedProjects(slug),
     fetchCreatorObligations(slug),
     profileCopy(),
+    followControlCopy(),
+    reportControlCopy(),
   ]);
 
   const tabs: readonly ProfileTab[] = [
@@ -210,9 +218,22 @@ export default async function ProfilePage({
 
   return (
     <div className="mx-auto w-full max-w-[1120px] px-5 py-10 sm:px-6 sm:py-14">
+      {/*
+        #143: Follow beside the name. `FollowControl` draws nothing for the owner, a sign-in
+        link for a visitor, and the toggle for everybody else — the page itself stays
+        cacheable because who is reading is decided in the browser.
+      */}
       <ProfileHeader
         profile={profile}
         avatarAlt={fillPlaceholders(copy.avatarAlt, { name: profile.name })}
+        actions={
+          <FollowControl
+            slug={profile.slug}
+            name={profile.name}
+            returnTo={pathOf(slug)}
+            copy={followCopy}
+          />
+        }
       />
 
       {/*
@@ -227,6 +248,19 @@ export default async function ProfilePage({
       <div className="mt-8">
         <ProfileTabs tabs={tabs} label={copy.tabsLabel} />
       </div>
+
+      {/*
+        #143: reporting the account, at the foot of the page and quiet, for the campaign
+        page's reason — somebody who wants to report a person has read their profile. Hidden
+        from the owner, who cannot report themselves.
+      */}
+      <ProfileReportControl
+        slug={profile.slug}
+        name={profile.name}
+        returnTo={pathOf(slug)}
+        copy={reportCopy}
+        className="mt-16 border-t border-white/6 pt-6"
+      />
     </div>
   );
 }

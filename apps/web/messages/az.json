@@ -4453,6 +4453,16 @@
       "since": "IdeaNest-də qoşulub",
       "elsewhere": "Digər yerlərdə"
     },
+    "follow": {
+      "follow": "İzlə",
+      "following": "İzləyirsiniz",
+      "label": "{name} adlı istifadəçini izlə",
+      "followed": "{name} adlı istifadəçini izləyirsiniz. O, kampaniya başlatdıqda sizə mesaj gələcək.",
+      "unfollowed": "{name} adlı istifadəçini artıq izləmirsiniz.",
+      "signIn": "İzləmək üçün əvvəlcə daxil olun.",
+      "refused": "Xidmət sorğunu rədd etdi. Yenidən cəhd edin.",
+      "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin."
+    },
     "grid": {
       "failedTitle": "Bu siyahını yükləmək mümkün olmadı",
       "failedBody": "Xidmət cavab vermədi. Profildə problem yoxdur — yenidən cəhd etmək üçün səhifəni təzələyin.",

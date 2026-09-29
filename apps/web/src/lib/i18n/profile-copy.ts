@@ -139,6 +139,40 @@ export function profileCopyFrom(t: ProfileRawTranslator, common: CardTranslator)
   };
 }
 
+/**
+ * The Follow / Following toggle — issue #143. Drawn on `/u/[slug]` and in the campaign page's
+ * Creator tab, and resolved from `profile.follow` on both so the two cannot word it apart.
+ *
+ * `label`, `followed` and `unfollowed` carry `{name}` and are read with `raw`; the component
+ * fills the name in, because the server resolves this once for a route.
+ */
+export interface FollowControlCopy {
+  readonly follow: string;
+  readonly following: string;
+  /** Carries `{name}`. The accessible name; `aria-pressed` carries the state. */
+  readonly label: string;
+  /** Carries `{name}`. Announced after a follow. */
+  readonly followed: string;
+  /** Carries `{name}`. Announced after an unfollow. */
+  readonly unfollowed: string;
+  readonly signIn: string;
+  readonly refused: string;
+  readonly unreachable: string;
+}
+
+export function followControlCopyFrom(t: ProfileRawTranslator): FollowControlCopy {
+  return {
+    follow: t('follow.follow'),
+    following: t('follow.following'),
+    label: String(t.raw('follow.label')),
+    followed: String(t.raw('follow.followed')),
+    unfollowed: String(t.raw('follow.unfollowed')),
+    signIn: t('follow.signIn'),
+    refused: t('follow.refused'),
+    unreachable: t('follow.unreachable'),
+  };
+}
+
 /* -------------------------------------------------------------------------
  * The editor that writes the profile above — issue #82, epic #78
  *

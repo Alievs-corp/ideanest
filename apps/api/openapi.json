@@ -9471,43 +9471,6 @@
         "tags" : [ "content-report-controller" ]
       }
     },
-    "/v1/users/{id}/report" : {
-      "post" : {
-        "operationId" : "contentReportReportUser",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "type" : "string",
-            "format" : "uuid"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ReportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "202" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReportResponse"
-                }
-              }
-            },
-            "description" : "Accepted"
-          }
-        },
-        "tags" : [ "content-report-controller" ]
-      }
-    },
     "/v1/users/{slug}" : {
       "get" : {
         "operationId" : "publicProfileProfile",
@@ -9664,6 +9627,42 @@
           }
         },
         "tags" : [ "profile-project-controller" ]
+      }
+    },
+    "/v1/users/{slug}/report" : {
+      "post" : {
+        "operationId" : "contentReportReportUser",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "slug",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "202" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReportResponse"
+                }
+              }
+            },
+            "description" : "Accepted"
+          }
+        },
+        "tags" : [ "content-report-controller" ]
       }
     },
     "/v1/users/{slug}/update-obligations" : {

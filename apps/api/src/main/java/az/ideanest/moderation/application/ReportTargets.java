@@ -7,6 +7,7 @@ import az.ideanest.community.application.PublicProjectUpdates;
 import az.ideanest.moderation.domain.ReportTargetType;
 import az.ideanest.project.application.ProjectNotFoundException;
 import az.ideanest.project.application.PublicProjects;
+import az.ideanest.user.application.UserAccount;
 import az.ideanest.user.application.UserAccounts;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -85,6 +86,22 @@ public class ReportTargets {
             // escaping here would reach the fallback handler and become a 500.
             throw new ReportTargetNotFoundException(ReportTargetType.PROJECT, projectId);
         }
+    }
+
+    /**
+     * The account behind a public slug, which is how a profile addresses it (#143).
+     *
+     * <p>The public profile response carries the slug and deliberately no identifier,
+     * and following is already addressed by slug, so reporting is too. Resolved
+     * through {@code UserAccounts.findBySlug} — the same lookup the follow route
+     * uses — which excludes soft-deleted accounts exactly as {@link #require} does.
+     *
+     * @throws ReportTargetNotFoundException when no account answers to the slug
+     */
+    public UUID requireAccountBySlug(String slug) {
+        return accounts.findBySlug(slug)
+                .map(UserAccount::id)
+                .orElseThrow(() -> new ReportTargetNotFoundException(ReportTargetType.USER, String.valueOf(slug)));
     }
 
     private void requireAccount(UUID accountId) {

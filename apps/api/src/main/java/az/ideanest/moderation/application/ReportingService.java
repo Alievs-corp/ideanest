@@ -106,6 +106,24 @@ public class ReportingService {
     }
 
     /**
+     * Records a complaint about an account named by its public slug (#143), or returns
+     * the one this reporter already made.
+     *
+     * <p>The profile page has the slug and not the identifier, and following is
+     * addressed the same way. The slug is resolved to the account first and the report
+     * is then exactly {@link #report} on {@link ReportTargetType#USER}, so deduplication,
+     * the self-report refusal and the queue row are unchanged — the queue still names the
+     * account by its identifier, which survives a slug change.
+     *
+     * @throws ReportTargetNotFoundException when no account answers to the slug
+     */
+    @Transactional
+    public SubmittedReport reportAccount(String slug, UUID reporterId, ReportReason reason, String detail) {
+        UUID accountId = targets.requireAccountBySlug(slug);
+        return report(ReportTargetType.USER, accountId, reporterId, reason, detail);
+    }
+
+    /**
      * The row the conflict pointed at.
      *
      * <p>It has to be there: {@code ON CONFLICT DO NOTHING} declined only because a

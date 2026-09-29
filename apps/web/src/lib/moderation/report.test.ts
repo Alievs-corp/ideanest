@@ -88,12 +88,13 @@ describe('submitReport', () => {
     const send = accept();
 
     await submitReport({ kind: 'campaign', id: 'p1' }, 'SPAM', '');
-    await submitReport({ kind: 'account', id: 'u1' }, 'SPAM', '');
+    await submitReport({ kind: 'account', slug: 'ayan q' }, 'SPAM', '');
     await submitReport({ kind: 'comment', id: 'c1' }, 'SPAM', '');
 
     expect(send.mock.calls.map((call) => call[0])).toEqual([
       '/v1/projects/p1/report',
-      '/v1/users/u1/report',
+      // By slug, escaped — #143. The profile carries no account id.
+      '/v1/users/ayan%20q/report',
       '/v1/comments/c1/report',
     ]);
   });

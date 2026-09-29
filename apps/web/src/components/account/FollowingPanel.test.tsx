@@ -27,8 +27,8 @@ const COPY = followingListCopyFrom(translatorFor('account.signals'), translatorF
  *   - **an optimistic removal reverts.** The row goes at once and comes back with a message
  *     when the service refused, rather than leaving the list disagreeing with the server.
  *   - the empty state offers somewhere to go, and says so in the catalogue's words.
- *   - a row is text rather than a link, which is the decision the component's own note
- *     explains: `/users/{slug}` is #274 and does not exist yet.
+ *   - **a row's name opens the creator's profile** (#143), escaped, and only the name is the
+ *     link — the Unfollow button beside it stays a button of its own.
  */
 
 vi.mock('../../lib/community/signals', async (importOriginal) => ({
@@ -65,12 +65,21 @@ describe('FollowingPanel', () => {
     expect(label.closest('[aria-busy]')).toHaveAttribute('aria-busy', 'true');
   });
 
-  it('draws a creator as text, because the profile route does not exist yet', async () => {
-    listMock.mockResolvedValue({ items: [creator('c1', 'Aysel')], nextCursor: null });
+  it("links each creator's name to their profile", async () => {
+    listMock.mockResolvedValue({
+      items: [creator('c1', 'Aysel'), { ...creator('c2', 'Kamran'), slug: 'kamran q' }],
+      nextCursor: null,
+    });
     render(<FollowingPanel copy={COPY} />);
 
-    expect(await screen.findByText('Aysel')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Aysel' })).not.toBeInTheDocument();
+    const aysel = await screen.findByRole('link', { name: 'Aysel' });
+    expect(aysel.getAttribute('href')).toMatch(/\/u\/slug-c1$/);
+    expect(screen.getByRole('link', { name: 'Kamran' }).getAttribute('href')).toMatch(
+      /\/u\/kamran%20q$/,
+    );
+    // The name is the link and the button is not inside it: two controls, two targets.
+    expect(aysel.querySelector('button')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Stop following Aysel' }).closest('a')).toBeNull();
   });
 
   it('names every Unfollow button after the creator it unfollows', async () => {
