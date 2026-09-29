@@ -321,7 +321,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Card/Ca
 </div>
 </div>
 <div role="progressbar" aria-valuenow="87" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 87 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5 mt-2">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 87%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-13%);">
 </div>
 </div>
 <div class="mt-2 flex items-baseline justify-between">
@@ -965,7 +965,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Progres
 "<div class="font-sans text-white antialiased">
 <div class="w-[420px]">
 <div role="progressbar" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 64 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 64%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-36%);">
 </div>
 </div>
 <div class="mt-2 text-sm tabular-nums">64%</div>
@@ -982,7 +982,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Progres
 <span class="text-xs text-white/40">In progress</span>
 </div>
 <div role="progressbar" aria-valuenow="12" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 12 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 12%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-88%);">
 </div>
 </div>
 </div>
@@ -992,7 +992,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Progres
 <span class="text-xs text-white/40">In progress</span>
 </div>
 <div role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 45 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 45%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-55%);">
 </div>
 </div>
 </div>
@@ -1002,7 +1002,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Progres
 <span class="text-xs text-white/40">In progress</span>
 </div>
 <div role="progressbar" aria-valuenow="87" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 87 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 87%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-13%);">
 </div>
 </div>
 </div>
@@ -1012,7 +1012,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Progres
 <span class="text-xs text-white/40">Goal reached</span>
 </div>
 <div role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 100 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-success shadow-[0_0_12px_var(--lime-glow)] transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 100%;">
+<div class="h-full w-full rounded-full bg-success shadow-[0_0_12px_var(--lime-glow)] transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(0%);">
 </div>
 </div>
 </div>
@@ -1022,7 +1022,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Progres
 <span class="text-xs text-white/40">Goal reached</span>
 </div>
 <div role="progressbar" aria-valuenow="1111" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 1111 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-success shadow-[0_0_12px_var(--lime-glow)] transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 100%;">
+<div class="h-full w-full rounded-full bg-success shadow-[0_0_12px_var(--lime-glow)] transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(0%);">
 </div>
 </div>
 </div>
@@ -1151,7 +1151,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/RailHea
 </div>
 </div>
 <div role="progressbar" aria-valuenow="87" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 87 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5 mt-2">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 87%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-13%);">
 </div>
 </div>
 <div class="mt-2 flex items-baseline justify-between">
@@ -1191,7 +1191,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/RailHea
 </div>
 </div>
 <div role="progressbar" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 64 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5 mt-2">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 64%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-36%);">
 </div>
 </div>
 <div class="mt-2 flex items-baseline justify-between">
@@ -1231,7 +1231,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/RailHea
 </div>
 </div>
 <div role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 45 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5 mt-2">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 45%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-55%);">
 </div>
 </div>
 <div class="mt-2 flex items-baseline justify-between">
@@ -1271,7 +1271,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/RailHea
 </div>
 </div>
 <div role="progressbar" aria-valuenow="22" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 22 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5 mt-2">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 22%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-78%);">
 </div>
 </div>
 <div class="mt-2 flex items-baseline justify-between">
@@ -3650,7 +3650,7 @@ exports[`rendered markup > ./components/Card/Card.stories.tsx — ProjectCard 1`
 </div>
 </div>
 <div role="progressbar" aria-valuenow="87" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 87 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5 mt-2">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 87%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-13%);">
 </div>
 </div>
 <div class="mt-2 flex items-baseline justify-between">
@@ -4294,7 +4294,7 @@ exports[`rendered markup > ./components/ProgressBar/ProgressBar.stories.tsx — 
 "<div class="font-sans text-white antialiased">
 <div class="w-[420px]">
 <div role="progressbar" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 64 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 64%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-36%);">
 </div>
 </div>
 <div class="mt-2 text-sm tabular-nums">64%</div>
@@ -4311,7 +4311,7 @@ exports[`rendered markup > ./components/ProgressBar/ProgressBar.stories.tsx — 
 <span class="text-xs text-white/40">In progress</span>
 </div>
 <div role="progressbar" aria-valuenow="12" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 12 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 12%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-88%);">
 </div>
 </div>
 </div>
@@ -4321,7 +4321,7 @@ exports[`rendered markup > ./components/ProgressBar/ProgressBar.stories.tsx — 
 <span class="text-xs text-white/40">In progress</span>
 </div>
 <div role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 45 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 45%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-55%);">
 </div>
 </div>
 </div>
@@ -4331,7 +4331,7 @@ exports[`rendered markup > ./components/ProgressBar/ProgressBar.stories.tsx — 
 <span class="text-xs text-white/40">In progress</span>
 </div>
 <div role="progressbar" aria-valuenow="87" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 87 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 87%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-13%);">
 </div>
 </div>
 </div>
@@ -4341,7 +4341,7 @@ exports[`rendered markup > ./components/ProgressBar/ProgressBar.stories.tsx — 
 <span class="text-xs text-white/40">Goal reached</span>
 </div>
 <div role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 100 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-success shadow-[0_0_12px_var(--lime-glow)] transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 100%;">
+<div class="h-full w-full rounded-full bg-success shadow-[0_0_12px_var(--lime-glow)] transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(0%);">
 </div>
 </div>
 </div>
@@ -4351,7 +4351,7 @@ exports[`rendered markup > ./components/ProgressBar/ProgressBar.stories.tsx — 
 <span class="text-xs text-white/40">Goal reached</span>
 </div>
 <div role="progressbar" aria-valuenow="1111" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 1111 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5">
-<div class="h-full rounded-full bg-success shadow-[0_0_12px_var(--lime-glow)] transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 100%;">
+<div class="h-full w-full rounded-full bg-success shadow-[0_0_12px_var(--lime-glow)] transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(0%);">
 </div>
 </div>
 </div>
@@ -4480,7 +4480,7 @@ exports[`rendered markup > ./components/RailHeader/RailHeader.stories.tsx — Di
 </div>
 </div>
 <div role="progressbar" aria-valuenow="87" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 87 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5 mt-2">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 87%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-13%);">
 </div>
 </div>
 <div class="mt-2 flex items-baseline justify-between">
@@ -4520,7 +4520,7 @@ exports[`rendered markup > ./components/RailHeader/RailHeader.stories.tsx — Di
 </div>
 </div>
 <div role="progressbar" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 64 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5 mt-2">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 64%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-36%);">
 </div>
 </div>
 <div class="mt-2 flex items-baseline justify-between">
@@ -4560,7 +4560,7 @@ exports[`rendered markup > ./components/RailHeader/RailHeader.stories.tsx — Di
 </div>
 </div>
 <div role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 45 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5 mt-2">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 45%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-55%);">
 </div>
 </div>
 <div class="mt-2 flex items-baseline justify-between">
@@ -4600,7 +4600,7 @@ exports[`rendered markup > ./components/RailHeader/RailHeader.stories.tsx — Di
 </div>
 </div>
 <div role="progressbar" aria-valuenow="22" aria-valuemin="0" aria-valuemax="100" aria-label="Funding: 22 percent" class="w-full overflow-hidden rounded-full bg-surface-3 h-1.5 mt-2">
-<div class="h-full rounded-full bg-lime-500 transition-[width] duration-[800ms] ease-[var(--ease-standard)]" style="width: 22%;">
+<div class="h-full w-full rounded-full bg-lime-500 transition-transform duration-[800ms] ease-[var(--ease-standard)]" style="transform: translateX(-78%);">
 </div>
 </div>
 <div class="mt-2 flex items-baseline justify-between">

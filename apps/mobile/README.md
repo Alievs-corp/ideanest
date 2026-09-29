@@ -177,10 +177,14 @@ doubles that can refuse.
 ## Builds and releases (#116)
 
 `eas.json` has three profiles and `.github/workflows/mobile-release.yml` drives
-them. The workflow **checks** on every change — typecheck, tests, the Expo config
-resolving, and the association identifiers agreeing — and **builds** only on a
-manual dispatch, because a store build is a deliberate act with a human behind
-it.
+them. It **builds** only on a manual dispatch, because a store build is a
+deliberate act with a human behind it.
+
+The **checks** — typecheck, tests, the Expo config resolving, and the association
+identifiers agreeing — are `.github/workflows/mobile-check.yml`. `ci.yml` runs
+them on every change to `apps/mobile` or `packages/**`, and `CI complete` fails
+when they fail, so a red mobile test blocks the merge (#144). The release
+workflow runs the same checks again before it builds.
 
 Building needs Xcode and the Android SDK, which this repository does not own, so
 the build runs on Expo's infrastructure and needs `EXPO_TOKEN` in the repository

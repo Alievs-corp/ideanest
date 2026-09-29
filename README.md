@@ -117,7 +117,9 @@ ideanest/
     │                         the First Load JS budgets. Each job runs only when
     │                         the change touches it; `CI complete` reports for
     │                         all of them and is the required check
-    ├── mobile-release.yml    Mobile typecheck and tests, and the EAS build
+    ├── mobile-check.yml      Mobile typecheck, tests and config. Called by
+    │                         ci.yml and before every mobile build
+    ├── mobile-release.yml    The EAS build, on manual dispatch only
     ├── lighthouse.yml        Lab Core Web Vitals. Weekly and on request —
     │                         advisory, and never able to fail a pull request
     ├── release.yml           Build once, deploy that build: staging on merge,

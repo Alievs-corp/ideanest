@@ -1,78 +1,95 @@
 /**
  * A campaign story, flattened to something a phone can render.
  *
- * <h2>Why the story is not rendered as rich text here</h2>
+ * <h2>What the story is</h2>
  *
- * `ProjectPageResponse.story` is a TipTap document — the JSON shape §14.2's
- * editor produces. `apps/web` renders it with TipTap's own renderer, which is a
- * browser library and has no React Native equivalent that shares its node types.
- * The alternatives were to ship a second renderer with its own idea of what a
- * heading is, or to render the text and be honest that formatting is missing.
+ * `ProjectPageResponse.story` is the block document the campaign editor saves
+ * (`apps/web/src/lib/projects/story.ts`, schema version 1):
  *
- * The second is chosen, and the reason is what a story is used for on a phone:
- * somebody deciding whether to back something reads it once, in a scroll view,
- * on the way somewhere. Losing bold is a cost. A renderer that disagrees with
- * the web about list nesting would be a cost paid on every campaign, invisibly,
- * with nothing to compare against.
+ * ```ts
+ * { version: 1, blocks: [{ type: 'heading', text }, { type: 'paragraph', spans }, …] }
+ * ```
  *
- * When the mobile checkout (#58) makes this screen a purchase surface rather
- * than a reading one, a shared renderer becomes worth building. It is not one
- * yet, and this file says so in one place rather than each screen guessing.
+ * It used to be a TipTap document, and this file walked that shape. Once the
+ * editor moved to blocks the walker found nothing to walk and every campaign
+ * showed an empty story (#140). The walker is gone; nothing reads TipTap any more.
+ *
+ * <h2>Why it is still plain text</h2>
+ *
+ * This is the short-term fix #140 asks for, so the shipped screen is not blank.
+ * The proper one belongs to the campaign-page work in the mobile parity epic
+ * (#155): move the document's types and reader into a shared package, and render
+ * every block natively — marks, lists, quotes, rules, images and embeds. Until
+ * then each block with text becomes one paragraph, and the screen says that
+ * formatting, images and video are on the web page.
+ *
+ * <h2>Versions</h2>
+ *
+ * A document whose `version` this build does not know answers nothing, which is
+ * what the web's `readStoryDocument` does. Guessing at a newer shape would show
+ * a reader half a story as if it were all of it.
  */
 
-/** The subset of a TipTap document this needs to walk. Nothing here validates it. */
-interface Node {
-  readonly type?: string;
-  readonly text?: string;
-  readonly content?: readonly Node[];
+/** The schema version this reader understands. Matches the web's `STORY_SCHEMA_VERSION`. */
+const STORY_SCHEMA_VERSION = 1;
+
+/** Loose on purpose: this is data from the network, and nothing here may throw on it. */
+type Loose = Readonly<Record<string, unknown>>;
+
+function isRecord(value: unknown): value is Loose {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-/** Node types that end a block, and therefore a paragraph on screen. */
-const BLOCK_TYPES = new Set([
-  'paragraph',
-  'heading',
-  'blockquote',
-  'listItem',
-  'codeBlock',
-  'horizontalRule',
-]);
+/** A paragraph's, a quote's or a list item's spans, joined. Marks are dropped. */
+function spansText(spans: unknown): string {
+  if (!Array.isArray(spans)) return '';
+  return spans
+    .map((span) => (isRecord(span) && typeof span.text === 'string' ? span.text : ''))
+    .join('');
+}
+
+/** The paragraphs one block contributes, before trimming. Blocks without text give none. */
+function blockParagraphs(block: unknown): string[] {
+  if (!isRecord(block)) return [];
+
+  switch (block.type) {
+    case 'heading':
+      return typeof block.text === 'string' ? [block.text] : [];
+    case 'paragraph':
+    case 'quote':
+      return [spansText(block.spans)];
+    case 'list': {
+      if (!Array.isArray(block.items)) return [];
+      const ordered = block.ordered === true;
+      // The marker is kept: without it a list reads as a run of short paragraphs.
+      // Empty items are dropped before numbering, so an ordered list does not skip a number.
+      return block.items
+        .map((item) => spansText(item).trim())
+        .filter((text) => text !== '')
+        .map((text, index) => `${ordered ? `${index + 1}.` : '•'} ${text}`);
+    }
+    default:
+      // `rule`, `image`, `embed`, and any type a newer editor adds: nothing to read.
+      return [];
+  }
+}
 
 /**
  * The story as paragraphs of plain text.
  *
- * Empty blocks are dropped rather than rendered as blank space: a TipTap
- * document routinely carries a trailing empty paragraph, and three of them at
- * the end of every campaign is a scroll view that looks broken.
+ * Empty blocks are dropped rather than rendered as blank space — an empty
+ * paragraph, or a list item with no text, is a scroll view that looks broken.
  *
  * @param story the `story` field, whatever it happens to be — this is called
  *     with data from the network and must not throw on a shape it did not expect
  */
 export function storyParagraphs(story: unknown): string[] {
-  const paragraphs: string[] = [];
-  let current = '';
+  if (!isRecord(story)) return [];
+  if (story.version !== STORY_SCHEMA_VERSION) return [];
+  if (!Array.isArray(story.blocks)) return [];
 
-  const walk = (node: Node): void => {
-    if (typeof node.text === 'string') {
-      current += node.text;
-    }
-
-    for (const child of node.content ?? []) {
-      walk(child);
-    }
-
-    if (node.type !== undefined && BLOCK_TYPES.has(node.type)) {
-      const trimmed = current.trim();
-      if (trimmed !== '') paragraphs.push(trimmed);
-      current = '';
-    }
-  };
-
-  if (story !== null && typeof story === 'object') {
-    walk(story as Node);
-  }
-
-  const trailing = current.trim();
-  if (trailing !== '') paragraphs.push(trailing);
-
-  return paragraphs;
+  return story.blocks
+    .flatMap(blockParagraphs)
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph !== '');
 }

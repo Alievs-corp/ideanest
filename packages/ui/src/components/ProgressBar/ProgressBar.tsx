@@ -10,6 +10,14 @@ import { cn } from '../../lib/cn';
  *
  * The bar fills to 100% and stops, but `value` may exceed it — an
  * overfunded campaign shows its real figure as text while the track stays full.
+ *
+ * THE FILL MOVES, IT DOES NOT GROW — issue 146. It is always the track's full width,
+ * slid left by the part not yet funded, and the track's `overflow-hidden`
+ * hides what is outside. Animating `width` forced layout on every frame of the
+ * most frequently animated element on the platform (every card, and
+ * `LiveFunding` in place); `transform` is composited. It is a translate rather
+ * than the `scaleX` issue 146 suggested because a scaled fill squashes its rounded
+ * leading edge at low percentages, and a translated one keeps it exact.
  */
 export interface ProgressBarProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
   /** Percentage. May exceed 100. */
@@ -48,11 +56,11 @@ export function ProgressBar({
     >
       <div
         className={cn(
-          'h-full rounded-full',
+          'h-full w-full rounded-full',
           complete ? 'bg-success shadow-[0_0_12px_var(--lime-glow)]' : 'bg-lime-500',
-          animate && 'transition-[width] duration-[800ms] ease-[var(--ease-standard)]',
+          animate && 'transition-transform duration-[800ms] ease-[var(--ease-standard)]',
         )}
-        style={{ width: `${clamped}%` }}
+        style={{ transform: `translateX(${clamped - 100}%)` }}
       />
     </div>
   );

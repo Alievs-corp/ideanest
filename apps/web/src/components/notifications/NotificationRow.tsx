@@ -55,7 +55,7 @@ export function NotificationRow({
   busy,
   onOpen,
 }: NotificationRowProps) {
-  const view = describeNotification(notification, copy);
+  const view = describeNotification(notification, copy, locale);
   const unread = notification.readAt === undefined || notification.readAt === null;
 
   return (

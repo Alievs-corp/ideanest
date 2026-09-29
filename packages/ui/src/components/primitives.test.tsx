@@ -108,13 +108,27 @@ describe('ProgressBar', () => {
     const { container } = render(<ProgressBar value={1111} />);
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1111');
     const fill = container.querySelector('[role="progressbar"] > div') as HTMLElement;
-    expect(fill.style.width).toBe('100%');
+    expect(fill.style.transform).toBe('translateX(0%)');
+  });
+
+  it('draws the fill by sliding it, not by resizing it', () => {
+    const { container } = render(<ProgressBar value={64} />);
+    const fill = container.querySelector('[role="progressbar"] > div') as HTMLElement;
+    expect(fill.style.transform).toBe('translateX(-36%)');
+    expect(fill.style.width).toBe('');
+    expect(fill.className).toContain('transition-transform');
+  });
+
+  it('does not transition at all when animation is turned off', () => {
+    const { container } = render(<ProgressBar value={64} animate={false} />);
+    const fill = container.querySelector('[role="progressbar"] > div') as HTMLElement;
+    expect(fill.className).not.toMatch(/transition/);
   });
 
   it('clamps negative values to zero', () => {
     const { container } = render(<ProgressBar value={-20} />);
     const fill = container.querySelector('[role="progressbar"] > div') as HTMLElement;
-    expect(fill.style.width).toBe('0%');
+    expect(fill.style.transform).toBe('translateX(-100%)');
   });
 });
 

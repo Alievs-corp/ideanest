@@ -396,7 +396,7 @@ export function SurveyBuilder({
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-full bg-[--lime-500] px-5 py-2.5 text-sm font-semibold text-[--ink-900] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="inline-flex items-center gap-2 rounded-full bg-[--lime-500] px-5 py-2.5 text-sm font-semibold text-[--text-on-lime] hover:bg-[--lime-400] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             {editing ? copy.save : copy.createDraft}
           </button>
