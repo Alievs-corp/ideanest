@@ -3348,7 +3348,7 @@
     },
     "agreementUnavailable": {
       "title": "Destek şu anda başlatılamadı",
-      "body": "Destekçi sözleşmesi şu anda yüklenemedi ve destek onu olmadan onaylanmaz. Hiçbir şey ayrılmadı ve hiçbir şey tahsil edilmedi. Birazdan yeniden deneyin.",
+      "body": "Destekçi sözleşmesi şu anda yüklenemedi ve destek onu olmadan onaylanmaz. Bu sayfa sizin için yer ayırmadı ve kartınızdan hiçbir tutar tahsil etmedi. Birazdan yeniden deneyin.",
       "action": "Yeniden deneyin"
     },
     "risk": {
@@ -4514,7 +4514,7 @@
     "follow": {
       "follow": "Takip et",
       "following": "Takip ediliyor",
-      "label": "{name} adlı kullanıcıyı takip et",
+      "accessibleName": "{action}: {name}",
       "followed": "{name} adlı kullanıcıyı takip ediyorsunuz. Yeni bir kampanya başlattığında size mesaj gelecek.",
       "unfollowed": "{name} adlı kullanıcıyı artık takip etmiyorsunuz.",
       "signIn": "Takip etmek için önce giriş yapın.",
@@ -4808,7 +4808,7 @@
       "fixedFee": "Ödeme sağlayıcısı ayrıca işlem başına {amount} alır.",
       "twoFees": "Bunlar iki ayrı kesintidir. IdeaNest’in ücreti platformun aldığıdır; işlem ücreti parayı taşıyan şirkete gider ve IdeaNest onu hiçbir zaman almaz. Yürürlükteki oranlar yukarıdakilerdir ve ödeme tam olarak bunlarla hesaplanır.",
       "unconfigured": "IdeaNest henüz bir ücret tarifesi belirlemedi, bu yüzden bugün desteklerden hiçbir şey kesilmiyor. Bu kalıcı bir taahhüt değildir: herhangi bir oran belirlendiği anda burada yayımlanır, koşullar ise yaratıcı sözleşmesinde belirtilir.",
-      "unavailable": "Ücret şu anda yüklenemedi. Bu, hiçbir ücret alınmadığı anlamına gelmez: yürürlükteki oran <agreement>yaratıcı sözleşmesinde</agreement> belirtilir."
+      "unavailable": "Ücret şu anda yüklenemedi. Bu, hiçbir ücret alınmadığı anlamına gelmez: yürürlükteki oranlar <pricing>Planlar ve fiyatlar</pricing> sayfasında yayımlanır — birazdan yeniden bakın."
     }
   },
   "dashboard": {

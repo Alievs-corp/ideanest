@@ -264,7 +264,8 @@ describe('the creator tab', () => {
     it('keeps the byline the campaign already carries', async () => {
       render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={null} projects={[]} />));
 
-      expect(screen.getByText('Ayan Q')).toBeInTheDocument();
+      // The paragraph, not the Follow control, whose accessible name carries the name too.
+      expect(screen.getByText('Ayan Q', { selector: 'p' })).toBeInTheDocument();
     });
 
     it('offers no profile link and explains nothing, because 404 covers three cases', async () => {

@@ -6839,8 +6839,9 @@ unreachable read with the `configured: false` sentence — "nothing is being ded
 pledges today" — so during the 2026-09-28 outage creators were told there was no fee.
 `FeeDisclosure` now has three branches: the rates, the unconfigured sentence (only when the
 service answered `configured: false`), and a failed-read sentence that states no figure,
-says it is not a statement that nothing is charged, and links to the creator agreement. A
-body claiming `configured: true` without its rates is drawn as a failed read. `/about` no
+says it is not a statement that nothing is charged, and links to Pricing — not to the
+creator agreement, which is unpublished until #423 answers (§22.2), so that link would
+lead to "not published" during the very outage the sentence is for. A body claiming `configured: true` without its rates is drawn as a failed read. `/about` no
 longer prints a rate at all: it names the two fees and links to Pricing, so the two pages
 cannot disagree when the schedule moves.
 

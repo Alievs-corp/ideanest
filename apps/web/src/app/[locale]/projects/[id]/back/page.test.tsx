@@ -127,6 +127,31 @@ describe.each(SUPPORTED_LOCALES)('the checkout in %s', (locale) => {
   });
 });
 
+describe('what the failure state claims', () => {
+  /*
+   * The page knows what it did and nothing else. A backer can hold other pledges — a
+   * reservation on another campaign, a charge from yesterday — and "nothing has been reserved
+   * and nothing has been charged" is a statement about all of them. The sentence is scoped to
+   * this page, in all four languages.
+   */
+  it('speaks for this page, not for the backer’s other pledges', async () => {
+    agreementMock.mockResolvedValue({ state: 'unavailable' });
+
+    const { container } = await open('en');
+
+    expect(container.textContent).toContain('This page has not reserved a place or charged your card.');
+    expect(container.textContent).not.toMatch(/nothing has been (reserved|charged)/iu);
+  });
+
+  it.each([
+    ['az', 'Bu səhifə'],
+    ['ru', 'Эта страница'],
+    ['tr', 'Bu sayfa'],
+  ] as const)('says the same in %s, about this page', (locale, thisPage) => {
+    expect(CATALOGUES[locale].checkout.agreementUnavailable.body).toContain(thisPage);
+  });
+});
+
 describe('the retry from a failed agreement read', () => {
   it('keeps a private campaign’s tokens and the chosen tier, or the retry would be refused', async () => {
     agreementMock.mockResolvedValue({ state: 'unavailable' });

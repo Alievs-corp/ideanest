@@ -114,6 +114,12 @@ function messageFor(cause: unknown, failures: CampaignActionsCopy['failures']): 
   return failures.unreachable;
 }
 
+/** `Pill`'s ghost variant at `sm`, on the link a signed-out reader is given instead of Save. */
+const SIGN_IN_PILL =
+  'inline-flex h-8 items-center justify-center gap-2 rounded-full bg-surface-3 px-3.5 ' +
+  'text-[13px] font-medium tracking-[-0.01em] whitespace-nowrap text-white ' +
+  'transition-colors duration-150 ease-in-out hover:bg-surface-4';
+
 export function CampaignActions({ projectId, state, title, path,
   copy,
 }: CampaignActionsProps) {
@@ -221,14 +227,10 @@ export function CampaignActions({ projectId, state, title, path,
           401, which `messageFor` turns into "Sign in first."
         */}
         {signedOut ? (
-          <a href={localeHref(signInHref(path), locale)} className="rounded-full">
-            <Pill
-              variant="ghost"
-              size="sm"
-              iconLeft={<Bookmark aria-hidden="true" className="size-4" />}
-            >
-              {copy.save}
-            </Pill>
+          /* One focusable element: a link drawn as the ghost pill, not a button inside a link. */
+          <a href={localeHref(signInHref(path), locale)} className={SIGN_IN_PILL}>
+            <Bookmark aria-hidden="true" className="size-4" />
+            {copy.save}
           </a>
         ) : (
           <Pill

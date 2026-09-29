@@ -149,8 +149,11 @@ export function profileCopyFrom(t: ProfileRawTranslator, common: CardTranslator)
 export interface FollowControlCopy {
   readonly follow: string;
   readonly following: string;
-  /** Carries `{name}`. The accessible name; `aria-pressed` carries the state. */
-  readonly label: string;
+  /**
+   * Carries `{action}` and `{name}`. The accessible name: `{action}` is the word drawn on the
+   * button, the rest is visually hidden beside it (WCAG 2.5.3). `aria-pressed` carries the state.
+   */
+  readonly accessibleName: string;
   /** Carries `{name}`. Announced after a follow. */
   readonly followed: string;
   /** Carries `{name}`. Announced after an unfollow. */
@@ -164,7 +167,7 @@ export function followControlCopyFrom(t: ProfileRawTranslator): FollowControlCop
   return {
     follow: t('follow.follow'),
     following: t('follow.following'),
-    label: String(t.raw('follow.label')),
+    accessibleName: String(t.raw('follow.accessibleName')),
     followed: String(t.raw('follow.followed')),
     unfollowed: String(t.raw('follow.unfollowed')),
     signIn: t('follow.signIn'),

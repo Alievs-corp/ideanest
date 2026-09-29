@@ -56,10 +56,8 @@ function sessionAs(slug: string | null): SessionState {
   };
 }
 
-function renderControl() {
-  return render(
-    <FollowControl slug="aysel" name="Aysel Q" returnTo="/u/aysel" copy={COPY} />,
-  );
+function renderControl(slug = 'aysel', name = 'Aysel Q') {
+  return render(<FollowControl slug={slug} name={name} returnTo={`/u/${slug}`} copy={COPY} />);
 }
 
 beforeEach(() => {
@@ -83,6 +81,15 @@ describe('FollowControl', () => {
     expect(followMock).not.toHaveBeenCalled();
   });
 
+  it('gives a signed-out visitor one focusable element, not a button inside a link', () => {
+    sessionMock.mockReturnValue(sessionAs(null));
+    const { container } = renderControl();
+
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(container.querySelectorAll('a, button, [tabindex]')).toHaveLength(1);
+    expect(screen.getByRole('link')).toHaveTextContent(COPY.follow);
+  });
+
   it('offers the owner nothing, and reads nothing on their behalf', () => {
     sessionMock.mockReturnValue(sessionAs('aysel'));
     const { container } = renderControl();
@@ -103,7 +110,7 @@ describe('FollowControl', () => {
     isFollowingMock.mockResolvedValue(true);
     renderControl();
 
-    const button = await screen.findByRole('button', { name: 'Follow Aysel Q', pressed: true });
+    const button = await screen.findByRole('button', { name: 'Following Aysel Q', pressed: true });
     expect(button).toHaveTextContent(COPY.following);
   });
 
@@ -125,7 +132,7 @@ describe('FollowControl', () => {
     const user = userEvent.setup();
     renderControl();
 
-    await user.click(await screen.findByRole('button', { name: 'Follow Aysel Q', pressed: true }));
+    await user.click(await screen.findByRole('button', { name: 'Following Aysel Q', pressed: true }));
 
     expect(unfollowMock).toHaveBeenCalledWith('aysel');
     expect(await screen.findByRole('button', { pressed: false })).toHaveTextContent(COPY.follow);
@@ -162,6 +169,111 @@ describe('FollowControl', () => {
     await user.click(button);
 
     expect(await screen.findByText(COPY.signIn)).toBeInTheDocument();
+  });
+
+  /*
+   * WCAG 2.5.3, Label in Name: the word drawn on the button is inside its accessible name in
+   * both states, so a voice-control user who says what they see reaches it. The name still
+   * says whom, as visually hidden text; `aria-pressed` says which state.
+   */
+  it('keeps the visible word inside the accessible name, in both states', async () => {
+    const user = userEvent.setup();
+    renderControl();
+
+    const button = await screen.findByRole('button', { name: 'Follow Aysel Q', pressed: false });
+    expect(button).not.toHaveAttribute('aria-label');
+    await waitFor(() => expect(button).toBeEnabled());
+    await user.click(button);
+
+    const pressed = await screen.findByRole('button', { pressed: true });
+    expect(pressed).toHaveAccessibleName('Following Aysel Q');
+    expect(pressed).not.toHaveAttribute('aria-label');
+    expect(pressed.querySelector('.sr-only')).toHaveTextContent('Aysel Q');
+  });
+
+  it('puts the word where each language’s grammar wants it', () => {
+    sessionMock.mockReturnValue(sessionAs(null));
+    const words = (locale: 'az' | 'ru' | 'tr') =>
+      followControlCopyFrom(translatorFor('profile', locale));
+
+    for (const [locale, expected] of [
+      ['az', 'Aysel Q adlı istifadəçini İzlə'],
+      ['ru', 'Подписаться на Aysel Q'],
+      ['tr', 'Takip et: Aysel Q'],
+    ] as const) {
+      const copy = words(locale);
+      const { unmount } = render(
+        <FollowControl slug="aysel" name="Aysel Q" returnTo="/u/aysel" copy={copy} />,
+      );
+      const link = screen.getByRole('link');
+      expect(link).toHaveAccessibleName(expected);
+      expect(link.textContent).toContain(copy.follow);
+      unmount();
+    }
+  });
+
+  /*
+   * A client navigation from one profile to another keeps the control mounted. Without a reset
+   * it carried the last person's Following — and the sentence said about them — onto the next.
+   */
+  it('starts again for a different person', async () => {
+    isFollowingMock.mockResolvedValueOnce(true);
+    const user = userEvent.setup();
+    const { rerender } = renderControl();
+
+    await user.click(await screen.findByRole('button', { name: 'Following Aysel Q', pressed: true }));
+    expect(
+      await screen.findByText(fillPlaceholders(COPY.unfollowed, { name: 'Aysel Q' })),
+    ).toBeInTheDocument();
+
+    isFollowingMock.mockReturnValue(new Promise(() => {}));
+    rerender(<FollowControl slug="bahar" name="Bahar M" returnTo="/u/bahar" copy={COPY} />);
+
+    const button = screen.getByRole('button', { name: 'Follow Bahar M' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByText(/Aysel Q/u)).not.toBeInTheDocument();
+    expect(isFollowingMock).toHaveBeenLastCalledWith('bahar', expect.any(AbortSignal));
+  });
+
+  it('starts again for a different signed-in account', async () => {
+    isFollowingMock.mockResolvedValueOnce(true);
+    const { rerender } = renderControl();
+    await screen.findByRole('button', { name: 'Following Aysel Q', pressed: true });
+
+    sessionMock.mockReturnValue(sessionAs('someone-else'));
+    isFollowingMock.mockReturnValue(new Promise(() => {}));
+    rerender(<FollowControl slug="aysel" name="Aysel Q" returnTo="/u/aysel" copy={COPY} />);
+
+    const button = screen.getByRole('button', { name: 'Follow Aysel Q' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    expect(isFollowingMock).toHaveBeenCalledTimes(2);
+  });
+
+  /*
+   * Beside the name on a profile, the header centres its row: a line reserved under the button
+   * pushed the button above the name's centre. `overlay` keeps the live region in the document
+   * — a region mounted when it speaks is one most readers never announce — but out of the flow.
+   */
+  it('can hang its live region out of the flow, keeping it in the document', async () => {
+    render(
+      <FollowControl slug="aysel" name="Aysel Q" returnTo="/u/aysel" copy={COPY} notice="overlay" />,
+    );
+    await screen.findByRole('button', { name: 'Follow Aysel Q' });
+
+    const region = document.querySelector('[aria-live="polite"]') as HTMLElement;
+    expect(region).toBeInTheDocument();
+    expect(region.className).toContain('absolute');
+    expect(region.className).not.toContain('min-h-');
+  });
+
+  it('keeps a line for the live region under the button by default', async () => {
+    renderControl();
+    await screen.findByRole('button', { name: 'Follow Aysel Q' });
+
+    const region = document.querySelector('[aria-live="polite"]') as HTMLElement;
+    expect(region.className).not.toContain('absolute');
   });
 
   it('offers Follow when the list cannot be read, since following is idempotent', async () => {

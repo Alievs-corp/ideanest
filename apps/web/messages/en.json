@@ -3348,7 +3348,7 @@
     },
     "agreementUnavailable": {
       "title": "This pledge could not be started",
-      "body": "The backer agreement could not be loaded just now, and a pledge is not confirmed without it. Nothing has been reserved and nothing has been charged. Try again in a moment.",
+      "body": "The backer agreement could not be loaded just now, and a pledge is not confirmed without it. This page has not reserved a place or charged your card. Try again in a moment.",
       "action": "Try again"
     },
     "risk": {
@@ -4514,7 +4514,7 @@
     "follow": {
       "follow": "Follow",
       "following": "Following",
-      "label": "Follow {name}",
+      "accessibleName": "{action} {name}",
       "followed": "You are following {name}. You will get a message when they launch a campaign.",
       "unfollowed": "You no longer follow {name}.",
       "signIn": "Sign in to follow people.",
@@ -4808,7 +4808,7 @@
       "fixedFee": "The payment provider also charges {amount} per transaction.",
       "twoFees": "These are two separate charges. IdeaNest’s fee is what the platform keeps; the processing fee goes to the company that moves the money, and IdeaNest never receives it. The rates in force are the ones above, and they are the rates a payout is calculated with.",
       "unconfigured": "IdeaNest has not set a fee schedule, so nothing is being deducted from pledges today. This is not a permanent commitment: the rates are published here the moment any are set, and the creator agreement is where the terms are stated.",
-      "unavailable": "The fee could not be loaded just now. This does not mean that no fee is charged: the rate in force is stated in the <agreement>creator agreement</agreement>."
+      "unavailable": "The fee could not be loaded just now. This does not mean that no fee is charged: the rates in force are published on the <pricing>Plans and pricing</pricing> page — try it again in a moment."
     }
   },
   "dashboard": {

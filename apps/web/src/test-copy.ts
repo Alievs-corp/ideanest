@@ -1,4 +1,10 @@
-import MESSAGES from '../messages/en.json';
+import az from '../messages/az.json';
+import en from '../messages/en.json';
+import ru from '../messages/ru.json';
+import tr from '../messages/tr.json';
+import type { Locale } from './lib/i18n/locale';
+
+const CATALOGUES: Readonly<Record<Locale, unknown>> = { az, en, ru, tr };
 
 /**
  * The English catalogue, as the lookup a `*-copy.ts` builder takes — issue #324.
@@ -22,15 +28,23 @@ import MESSAGES from '../messages/en.json';
  * wiring — that the button asks for `submit` rather than carrying a literal — and one language
  * shows that as well as four while keeping the assertions readable to everybody reviewing them.
  *
+ * <p>The one exception is a defect English cannot show — a label that used to be an English
+ * literal is still English in English. Such a test passes the locale it renders in, and asserts
+ * through the same lookup rather than a retyped list of that language's words, which would pass
+ * whatever the catalogue said.
+ *
  * <p>`raw` is next-intl's own escape hatch for a message that is not a string, and a couple of
  * builders use it. It is here so a test's lookup has the same surface as the real one.
  */
-export function translatorFor(namespace: string): {
+export function translatorFor(
+  namespace: string,
+  locale: Locale = 'en',
+): {
   (key: string): string;
   raw(key: string): unknown;
 } {
   function at(key: string): unknown {
-    let node: unknown = MESSAGES;
+    let node: unknown = CATALOGUES[locale];
     for (const segment of `${namespace}.${key}`.split('.')) {
       node = (node as Record<string, unknown>)[segment];
     }
