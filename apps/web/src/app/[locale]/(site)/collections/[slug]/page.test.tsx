@@ -52,7 +52,7 @@ vi.mock('next/navigation', async (importOriginal) => ({
  */
 vi.mock('next-intl/server', async () => {
   const { createTranslator } = await import('next-intl');
-  const CATALOGUE = (await import('../../../../../../messages/en.json')).default;
+  const CATALOGUE = (await import('@ideanest/messages/en.json')).default;
 
   return {
     getLocale: () => Promise.resolve('en'),

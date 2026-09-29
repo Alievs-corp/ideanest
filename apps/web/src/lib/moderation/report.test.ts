@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAccessToken } from '../api/access-token';
-import en from '../../../messages/en.json';
+import en from '@ideanest/messages/en.json';
 import { REPORT_REASONS, requiresDetail, submitReport } from './report';
 
 /**

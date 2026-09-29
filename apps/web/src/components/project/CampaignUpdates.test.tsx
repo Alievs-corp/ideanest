@@ -26,8 +26,8 @@ const route = vi.hoisted(() => ({ locale: 'en' as 'en' | 'ru' }));
 vi.mock('next-intl/server', async () => {
   const { createTranslator } = await import('next-intl');
   const CATALOGUES = {
-    en: (await import('../../../messages/en.json')).default,
-    ru: (await import('../../../messages/ru.json')).default,
+    en: (await import('@ideanest/messages/en.json')).default,
+    ru: (await import('@ideanest/messages/ru.json')).default,
   };
 
   return {

@@ -4,10 +4,10 @@ import { SUPPORTED_LOCALES, type Locale } from '../../../../../lib/i18n/locale';
 import { fetchLegalDocument } from '../../../../../lib/api/server';
 import { fetchFeeDisclosure } from '../../../../../lib/fees/server';
 import { resolveServerTree } from '../../../../../test-support/server-tree';
-import az from '../../../../../../messages/az.json';
-import en from '../../../../../../messages/en.json';
-import ru from '../../../../../../messages/ru.json';
-import tr from '../../../../../../messages/tr.json';
+import az from '@ideanest/messages/az.json';
+import en from '@ideanest/messages/en.json';
+import ru from '@ideanest/messages/ru.json';
+import tr from '@ideanest/messages/tr.json';
 import BackProjectPage from './page';
 
 /**
@@ -38,10 +38,10 @@ vi.mock('../../../../../components/checkout/CheckoutView', () => ({
 vi.mock('next-intl/server', async () => {
   const { createTranslator } = await import('next-intl');
   const catalogues = {
-    az: (await import('../../../../../../messages/az.json')).default,
-    en: (await import('../../../../../../messages/en.json')).default,
-    ru: (await import('../../../../../../messages/ru.json')).default,
-    tr: (await import('../../../../../../messages/tr.json')).default,
+    az: (await import('@ideanest/messages/az.json')).default,
+    en: (await import('@ideanest/messages/en.json')).default,
+    ru: (await import('@ideanest/messages/ru.json')).default,
+    tr: (await import('@ideanest/messages/tr.json')).default,
   };
 
   return {

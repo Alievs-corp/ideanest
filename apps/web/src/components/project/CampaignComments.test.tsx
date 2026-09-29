@@ -10,14 +10,14 @@ import { deleteComment, postComment, replyToComment } from '../../lib/community/
 import { fetchSession, type Session } from '../../lib/session/session';
 import { SessionProvider } from '../session/SessionProvider';
 import { CampaignComments } from './CampaignComments';
-import CATALOGUE from '../../../messages/en.json';
+import CATALOGUE from '@ideanest/messages/en.json';
 import { resolveServerTree } from '../../test-support/server-tree';
 import { expectNoViolations } from '../../test-axe';
 import { ApiError } from '../../lib/api/problem';
 import { commentCopyFrom } from '../../lib/i18n/campaign-copy';
 import { pluralise } from '../../lib/i18n/plurals';
 import { translatorFor } from '../../test-copy';
-import ru from '../../../messages/ru.json';
+import ru from '@ideanest/messages/ru.json';
 import { messageFor } from './CommentComposer';
 
 /** The words the two comment controls draw, built the way the page builds them (#142). */

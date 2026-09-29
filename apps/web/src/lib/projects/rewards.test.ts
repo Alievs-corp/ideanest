@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Item, Reward } from './api';
 import { REWARDS_COPY } from '../../test-editor-copy';
-import RU_MESSAGES from '../../../messages/ru.json';
+import RU_MESSAGES from '@ideanest/messages/ru.json';
 
 /** The Russian forms, read from the catalogue rather than retyped into the assertion. */
 const RU_LIMIT_BELOW_COMMITTED =

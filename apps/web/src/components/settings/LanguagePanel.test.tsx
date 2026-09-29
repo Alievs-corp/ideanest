@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import messages from '../../../messages/en.json';
+import messages from '@ideanest/messages/en.json';
 import { authorizedFetch } from '../../lib/api/client';
 import { LOCALE_COOKIE } from '../../lib/i18n/locale';
 import { LanguagePanel, type LanguagePanelCopy } from './LanguagePanel';

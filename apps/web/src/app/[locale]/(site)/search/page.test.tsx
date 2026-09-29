@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import type { DiscoveryFeed, ProjectCard } from '../../../../lib/discovery/api';
 import { fetchSearchResults } from '../../../../lib/api/server';
 import SearchPage, { generateMetadata } from './page';
-import AZ from '../../../../../messages/az.json';
+import AZ from '@ideanest/messages/az.json';
 
 /**
  * `/search` in a language other than English — issue #142.
@@ -27,7 +27,7 @@ vi.mock('../../../../components/browse/CampaignGrid', () => ({
 
 vi.mock('next-intl/server', async () => {
   const { createTranslator } = await import('next-intl');
-  const CATALOGUE = (await import('../../../../../messages/az.json')).default;
+  const CATALOGUE = (await import('@ideanest/messages/az.json')).default;
 
   return {
     getLocale: () => Promise.resolve('az'),

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import az from '../../../messages/az.json';
-import en from '../../../messages/en.json';
-import ru from '../../../messages/ru.json';
-import tr from '../../../messages/tr.json';
+import az from '@ideanest/messages/az.json';
+import en from '@ideanest/messages/en.json';
+import ru from '@ideanest/messages/ru.json';
+import tr from '@ideanest/messages/tr.json';
 
 /** All four, because a note missing from one of them is a module blocked for no stated reason. */
 const CATALOGUES = [az, en, ru, tr];

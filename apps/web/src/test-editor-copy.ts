@@ -1,4 +1,4 @@
-import MESSAGES from '../messages/en.json';
+import MESSAGES from '@ideanest/messages/en.json';
 import {
   basicsPanelCopyFrom,
   editorChromeCopyFrom,

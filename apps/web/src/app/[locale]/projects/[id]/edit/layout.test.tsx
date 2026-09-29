@@ -7,7 +7,7 @@ import { EditorShell } from '../../../../../components/campaign-editor/EditorShe
 import { MAIN_CONTENT_ID } from '../../../../../components/shell/SkipLink';
 import CampaignEditorLayout from './layout';
 import NewProjectLayout from '../../new/layout';
-import MESSAGES from '../../../../../../messages/en.json';
+import MESSAGES from '@ideanest/messages/en.json';
 import { resolveServerTree } from '../../../../../test-support/server-tree';
 import { EDITOR_COPY } from '../../../../../test-editor-copy';
 

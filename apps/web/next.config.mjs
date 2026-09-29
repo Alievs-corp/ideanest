@@ -188,6 +188,7 @@ const nextConfig = {
     '@ideanest/design-tokens',
     '@ideanest/api-client',
     '@ideanest/money',
+    '@ideanest/messages',
   ],
 
   /**

@@ -12,7 +12,7 @@ import {
 } from '../../lib/pledges/api';
 import { expectNoViolations } from '../../test-axe';
 import { CheckoutView } from './CheckoutView';
-import MESSAGES from '../../../messages/en.json';
+import MESSAGES from '@ideanest/messages/en.json';
 import { checkoutCopyFrom } from '../../lib/i18n/checkout-copy';
 import { leaveForPaymentPage } from '../../lib/pledges/payment';
 

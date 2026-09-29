@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchCollection } from '../api/server';
 import type { Collection } from './api';
 import { collectionSocialDescription, resolveCollectionLanding } from './landing';
-import CATALOGUE from '../../../messages/en.json';
+import CATALOGUE from '@ideanest/messages/en.json';
 
 /** The fallback the route resolves, from the catalogue the page will actually draw. */
 const FALLBACK = CATALOGUE.discovery.collections.socialDescription;

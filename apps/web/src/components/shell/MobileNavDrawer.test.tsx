@@ -1,7 +1,7 @@
-import az from '../../../messages/az.json';
-import en from '../../../messages/en.json';
-import ru from '../../../messages/ru.json';
-import tr from '../../../messages/tr.json';
+import az from '@ideanest/messages/az.json';
+import en from '@ideanest/messages/en.json';
+import ru from '@ideanest/messages/ru.json';
+import tr from '@ideanest/messages/tr.json';
 import { type Locale } from '../../lib/i18n/locale';
 import { type ShellCopy, shellCopyFrom } from '../../lib/i18n/shell-copy';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

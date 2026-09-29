@@ -12,7 +12,7 @@ import { PLEDGE_STATE_LABELS, readablePledgeState } from './pledge-states';
  * of the two a pull request remembered to update.
  */
 const API = join(__dirname, '../../../api');
-const WEB_MESSAGES = join(__dirname, '../../../web/messages');
+const WEB_MESSAGES = join(__dirname, '../../../../packages/messages/src');
 
 function javaEnumConstants(): string[] {
   const source = readFileSync(
