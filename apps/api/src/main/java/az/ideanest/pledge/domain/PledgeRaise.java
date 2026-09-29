@@ -43,6 +43,15 @@ public class PledgeRaise {
     /** What prefixes {@link #getChargeKey()}. A client's key is a UUID and can never start with it. */
     public static final String CHARGE_KEY_PREFIX = "pledge-raise-";
 
+    /**
+     * The charge key of a raise: the idempotency key its payment is recorded under, and the
+     * {@code order_id} the provider's page is opened with — 49 characters, well inside Epoint's 255
+     * (#178, {@code EpointPaymentProvider.MAX_ORDER_ID_LENGTH}).
+     */
+    public static String chargeKeyOf(UUID raiseId) {
+        return CHARGE_KEY_PREFIX + raiseId;
+    }
+
     @Id
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
@@ -145,7 +154,7 @@ public class PledgeRaise {
         raise.pledgeId = pledge.getId();
         raise.projectId = pledge.getProjectId();
         raise.state = PledgeRaiseState.PENDING;
-        raise.chargeKey = CHARGE_KEY_PREFIX + raise.id;
+        raise.chargeKey = chargeKeyOf(raise.id);
         raise.baseVersion = pledge.getVersion();
         raise.fromRewardTierId = pledge.getRewardTierId();
         raise.toRewardTierId = toRewardTierId;

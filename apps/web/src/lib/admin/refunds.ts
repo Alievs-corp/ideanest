@@ -38,7 +38,12 @@ export type RefundReason =
    * own. Listed so the console can name it; not offered in the form, because no member of staff
    * issues it.
    */
-  | 'RAISE_NOT_APPLIED';
+  | 'RAISE_NOT_APPLIED'
+  /*
+   * #175: a chargeback lost or conceded, recorded so no other refund pays the same money again.
+   * Written by the dispute itself; the service refuses it from the form, so it is not offered.
+   */
+  | 'CHARGEBACK';
 
 /** Where a refund has got to. `REQUESTED` is the one worth watching. */
 export type RefundState = 'REQUESTED' | 'SUCCEEDED' | 'FAILED';

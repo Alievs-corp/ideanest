@@ -60,6 +60,27 @@ describe('the tablist', () => {
     expect(screen.getByRole('tab', { name: /Created/u })).toHaveAccessibleName(/2/u);
     expect(screen.getByRole('tab', { name: 'About' })).toHaveAccessibleName('About');
   });
+
+  /**
+   * #177. A scroll container clips whatever overflows it, and the ring is drawn four pixels
+   * outside the tab (2px wide, 2px off — `theme.css`'s unlayered `:focus-visible` rule). The
+   * row pads itself by exactly that on every side and gives it back with a negative margin,
+   * as `DashboardNav` and `CampaignTabs` do.
+   */
+  it('leaves room inside the scrolling row for the focus ring on every tab', () => {
+    renderTabs();
+
+    const row = screen.getByRole('tablist', { name: 'Profile sections' });
+    expect(row).toHaveClass('overflow-x-auto');
+    expect(row).toHaveClass('p-1');
+    expect(row).toHaveClass('-m-1');
+
+    for (const tab of screen.getAllByRole('tab')) {
+      // An inset offset here would be outranked by the kit's rule anyway; nothing may ask for one.
+      expect(tab.className).not.toContain('outline-offset-[-');
+      expect(tab.className).not.toContain('outline-none');
+    }
+  });
 });
 
 describe('the keyboard contract', () => {

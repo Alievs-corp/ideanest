@@ -178,6 +178,7 @@ public class ScriptedPaymentProvider implements PaymentProvider {
         refundRefusal = null;
         lostRefundAnswers.set(0);
         lostRefundAnswersFor.clear();
+        unreachableRefunds.clear();
         hostedPagesUnavailable = false;
         lookups.clear();
         scripted.clear();
@@ -368,9 +369,36 @@ public class ScriptedPaymentProvider implements PaymentProvider {
         lookups.put(providerTransactionId, state);
     }
 
+    /** What the next refunds do before their answer is lost as unreachable (#176), one per refund. */
+    private final Deque<Boolean> unreachableRefunds = new ConcurrentLinkedDeque<>();
+
+    /**
+     * The next refund reaches the provider, <strong>is applied</strong> — the payment is reported
+     * {@code RETURNED} from then on — and its answer never arrives: the caller sees
+     * {@code ProviderUnavailableException}, as for a read timeout after the provider acted (#176).
+     */
+    public void nextRefundAppliedButUnreachable() {
+        unreachableRefunds.addLast(true);
+    }
+
+    /**
+     * The next refund cannot be told apart from {@link #nextRefundAppliedButUnreachable} by its caller,
+     * but never reached the provider's books: the payment is still reported paid (#176).
+     */
+    public void nextRefundUnreachableAndNotApplied() {
+        unreachableRefunds.addLast(false);
+    }
+
     @Override
     public RefundResult refund(RefundRequest request) {
         refunds.add(request);
+        Boolean applied = unreachableRefunds.pollFirst();
+        if (applied != null) {
+            if (applied) {
+                lookups.put(request.providerTransactionId(), PaymentLookup.State.RETURNED);
+            }
+            throw new ProviderUnavailableException(NAME, "Scripted: the refund's answer did not arrive");
+        }
         if (lostRefundAnswersFor.remove(request.providerTransactionId())
                 || lostRefundAnswers.getAndUpdate(left -> Math.max(left - 1, 0)) > 0) {
             throw new IllegalStateException("Scripted: the refund's answer was lost");

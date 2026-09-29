@@ -1992,6 +1992,7 @@
         "pendingTitle": "Geri qaytarma {state} vəziyyətindədir",
         "issuedBody": "{id} dəstəyində {amount}.",
         "providerSaid": "Provayder dedi: {message}",
+        "awaitingProvider": "Provayder hələ təsdiqləməyib. Başqa addımdan əvvəl provayderlə yoxlayırıq, ona görə yenidən göndərməyin.",
         "failedTitle": "Bu alınmadı",
         "logHeading": "Geri qaytarmalar",
         "all": "Hamısı",
@@ -2021,7 +2022,8 @@
           "PLATFORM_ERROR": "Bizim səhvimiz",
           "DISPUTE_CONCEDED": "Mübahisə etmədiyimiz geri tələb",
           "FRAUD": "Kart sahibi deyil",
-          "RAISE_NOT_APPLIED": "Tətbiq oluna bilməyən artırma"
+          "RAISE_NOT_APPLIED": "Tətbiq oluna bilməyən artırma",
+          "CHARGEBACK": "Geri tələblə qaytarıldı"
         }
       },
       "disputes": {

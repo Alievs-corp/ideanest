@@ -67,4 +67,25 @@ public class PledgeRefunds {
         totals.subtractRefunded(pledge.getProjectId(), Money.of(pledge.getTotalAmount(), pledge.getCurrency()));
         return true;
     }
+
+    /**
+     * The pledge's money has all gone back, and the card network took the last of it (#175): it is
+     * {@code CHARGEBACK} and leaves its campaign's totals, as {@link #recordRefunded} does.
+     *
+     * <p>Called by the payment module when a chargeback it lost leaves nothing on the pledge, with the
+     * lock {@link #lock} took. A pledge that is not {@code COLLECTED} is left as it is.
+     *
+     * @return whether the pledge moved
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean recordChargedBack(UUID pledgeId) {
+        Optional<Pledge> found = pledges.findByIdForUpdate(pledgeId);
+        if (found.isEmpty() || found.get().getState() != PledgeState.COLLECTED) {
+            return false;
+        }
+        Pledge pledge = found.get();
+        pledge.chargedBack();
+        totals.subtractRefunded(pledge.getProjectId(), Money.of(pledge.getTotalAmount(), pledge.getCurrency()));
+        return true;
+    }
 }

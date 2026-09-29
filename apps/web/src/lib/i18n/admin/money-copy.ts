@@ -472,6 +472,11 @@ export interface RefundConsoleCopy extends ConsoleChromeCopy {
   readonly issuedBody: string;
   /** Carries `{message}`. */
   readonly providerSaid: string;
+  /**
+   * #176: a refund the provider did not answer stays REQUESTED until reconcile asks it, and
+   * a second attempt is refused. Said so that nobody reads the pending banner as a fault.
+   */
+  readonly awaitingProvider: string;
   readonly failedTitle: string;
   readonly logHeading: string;
   readonly all: string;
@@ -519,6 +524,7 @@ export function refundConsoleCopyFrom(
     pendingTitle: String(t.raw('screens.refunds.pendingTitle')),
     issuedBody: String(t.raw('screens.refunds.issuedBody')),
     providerSaid: String(t.raw('screens.refunds.providerSaid')),
+    awaitingProvider: t('screens.refunds.awaitingProvider'),
     failedTitle: t('screens.refunds.failedTitle'),
     logHeading: t('screens.refunds.logHeading'),
     all: t('screens.refunds.all'),

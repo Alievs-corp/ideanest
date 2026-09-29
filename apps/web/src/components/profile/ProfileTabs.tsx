@@ -127,7 +127,20 @@ export function ProfileTabs({ tabs, label }: ProfileTabsProps) {
 
   return (
     <div>
-      <div role="tablist" aria-label={label} className="scrollbar-none flex gap-2 overflow-x-auto">
+      {/*
+        `-m-1 p-1`: room for the focus ring inside the scroll container, given back (#177).
+        A scroll container clips whatever overflows it, and the kit's unlayered
+        `:focus-visible` rule in `theme.css` draws the ring four pixels outside the tab (2px
+        wide, 2px off), so without the padding the row cut the ring off at the top, the bottom
+        and both ends. The same fix `DashboardNav` (#136) and `CampaignTabs` (#173) carry.
+        Nothing moves: the negative margin cancels the padding, and at 320px the four pixels
+        the row reaches past the page stay inside its 20px gutter.
+      */}
+      <div
+        role="tablist"
+        aria-label={label}
+        className="scrollbar-none -m-1 flex gap-2 overflow-x-auto p-1"
+      >
         {tabs.map((tab, index) => {
           const current = index === selected;
 

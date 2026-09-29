@@ -1992,6 +1992,7 @@
         "pendingTitle": "The refund is {state}",
         "issuedBody": "{amount} on pledge {id}.",
         "providerSaid": "The provider said: {message}",
+        "awaitingProvider": "The provider has not confirmed it yet. We check with the provider before anything else happens, so do not issue it again.",
         "failedTitle": "That did not work",
         "logHeading": "Refunds",
         "all": "All",
@@ -2021,7 +2022,8 @@
           "PLATFORM_ERROR": "Our mistake",
           "DISPUTE_CONCEDED": "A chargeback we did not contest",
           "FRAUD": "Not the cardholder",
-          "RAISE_NOT_APPLIED": "A raise that could not be applied"
+          "RAISE_NOT_APPLIED": "A raise that could not be applied",
+          "CHARGEBACK": "Returned through a chargeback"
         }
       },
       "disputes": {

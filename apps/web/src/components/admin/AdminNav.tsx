@@ -112,7 +112,14 @@ export function AdminNav({ copy }: AdminNavProps) {
         'lg:-mx-1 lg:px-1',
       ].join(' ')}
     >
-      <ul className="flex list-none gap-x-6 gap-y-8 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-1">
+      {/*
+        `-mx-1 px-1`, below the breakpoint only: the same room for the ring on the phone row
+        (#177). There the list itself is the scroll container, and without it the first
+        link's ring was cut off on the left and the last link's on the right. `pb-2` already
+        clears the bottom and the group headings sit above the top. Above the breakpoint the
+        list stops scrolling and the rail's own `lg:-mx-1 lg:px-1` takes over, so it resets.
+      */}
+      <ul className="-mx-1 flex list-none gap-x-6 gap-y-8 overflow-x-auto px-1 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-1">
         {groups.map((group) => (
           <li key={group.heading} className="min-w-max lg:min-w-0">
             <h2 className="px-3 text-xs font-medium tracking-[0.08em] text-white/40 uppercase">

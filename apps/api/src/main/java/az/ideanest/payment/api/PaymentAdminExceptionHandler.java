@@ -4,6 +4,7 @@ import az.ideanest.payment.application.DisputeNotFoundException;
 import az.ideanest.payment.application.NothingToRefundException;
 import az.ideanest.payment.application.NothingToSubmitException;
 import az.ideanest.payment.application.RefundExceedsCollectionException;
+import az.ideanest.payment.application.RefundReasonNotIssuableException;
 import az.ideanest.payment.application.UnconfiguredProviderException;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
@@ -73,6 +74,17 @@ public class PaymentAdminExceptionHandler {
         problem.setTitle("Nothing was collected");
         problem.setDetail("This pledge has no settled charge, so there is nothing to send back.");
         problem.setProperty("code", "NOTHING_TO_REFUND");
+        return problem;
+    }
+
+    /** 400 for a refund asked for under {@code CHARGEBACK}, which only a lost dispute records (#175). */
+    @ExceptionHandler(RefundReasonNotIssuableException.class)
+    public ProblemDetail handleNotIssuable(RefundReasonNotIssuableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/refund-reason-not-issuable"));
+        problem.setTitle("Not a reason a refund is sent for");
+        problem.setDetail(exception.getMessage());
+        problem.setProperty("code", "REFUND_REASON_NOT_ISSUABLE");
         return problem;
     }
 

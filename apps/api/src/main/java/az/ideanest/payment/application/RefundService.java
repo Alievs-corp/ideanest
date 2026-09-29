@@ -141,7 +141,10 @@ public class RefundService {
      * part whose sending throws — its answer lost, the database refusing the settlement — is left
      * {@code REQUESTED} and the next part is sent anyway; {@link #reconcile} settles the stuck one from
      * the provider's status once it is old enough, staff refunds included. A part that could not even
-     * be sent — its charge or its provider gone — is recorded {@code FAILED} ({@link #send}).
+     * be sent — its charge or its provider gone — is recorded {@code FAILED} ({@link #send}). A part
+     * whose provider could not be reached is left {@code REQUESTED} too (#176), and the console shows it
+     * as pending: the reversal may have gone through, and the next refund of the same money finds
+     * nothing left until the reconciliation has asked the provider.
      *
      * @param amount what to send back, or null for the whole of what is left. Null rather
      *     than a {@code full} flag, so "all of it" cannot disagree with a number the
@@ -152,11 +155,15 @@ public class RefundService {
      * @throws RefundExceedsCollectionException when this would return more than was taken
      * @throws NothingToRefundException when the pledge has no settled charge
      * @throws IdempotencyKeyReusedException when the key was spent on a refund of another pledge
+     * @throws RefundReasonNotIssuableException for {@code CHARGEBACK}, which only a lost dispute records
      */
     public List<Refund> issueParts(
             UUID staffId, UUID pledgeId, Money amount, RefundReason reason, String detail, String idempotencyKey) {
 
         staff.requireCapability(staffId, StaffCapability.ISSUE_REFUND);
+        if (reason == RefundReason.CHARGEBACK) {
+            throw new RefundReasonNotIssuableException(reason);
+        }
 
         Optional<Refund> replayed = refunds.byIdempotencyKey(idempotencyKey);
         if (replayed.isPresent()) {
@@ -205,6 +212,14 @@ public class RefundService {
      * <p>A refund that cannot be sent at all — its charge or its provider cannot be found — is recorded
      * {@code FAILED} rather than thrown (#174's review): nothing reached a provider, and a
      * {@code REQUESTED} row would count as money gone that never left.
+     *
+     * <p><strong>A provider that could not be reached is not a failure (#176).</strong> The call may
+     * have reached it and been carried out, with the answer lost on the way back — and Epoint's
+     * {@code /reverse} has no duplicate protection, so a refund recorded {@code FAILED} and offered
+     * again would pay the backer twice. The row stays {@code REQUESTED}: still counted as gone, so no
+     * path sends that money again, and settled by {@link #reconcile} from the provider's status of the
+     * payment once it is {@code unresolved-after} old. Only a reconciliation that finds the payment
+     * still paid makes it {@code FAILED}, and only then does the sweep send it again.
      */
     private Refund send(Refund refund) {
         Optional<PaymentTransaction> found = transactions.findById(refund.chargeTransactionId());
@@ -228,10 +243,15 @@ public class RefundService {
                     refund.reason().name(),
                     refund.idempotencyKey()));
         } catch (ProviderUnavailableException e) {
-            // Recorded as a failure rather than propagated. The row is the point: a refund
-            // nobody can see failed is a refund nobody retries, and the backer is still
-            // waiting for their money.
-            return records.settleFailure(refund, PaymentTransaction.UNREACHABLE, e.getMessage());
+            // Unknown, not failed (#176): the reversal may have happened. Left REQUESTED for reconcile().
+            log.warn(
+                    "Refund {} of {} on pledge {} has no answer from {}; the reconciliation settles it: {}",
+                    refund.id(),
+                    refund.amount(),
+                    refund.pledgeId(),
+                    charge.getProvider(),
+                    e.getMessage());
+            return refunds.findById(refund.id()).orElse(refund);
         }
 
         if (result.outcome() == ProviderOutcome.DECLINED) {

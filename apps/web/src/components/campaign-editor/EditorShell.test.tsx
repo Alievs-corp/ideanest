@@ -112,6 +112,30 @@ describe('EditorShell', () => {
     expect(controls).toHaveLength(EDITOR_TABS.length);
   });
 
+  /**
+   * #177. A scroll container clips whatever overflows it, and the ring is drawn four pixels
+   * outside the pill (2px wide, 2px off — `theme.css`'s unlayered `:focus-visible` rule). The
+   * row pads itself by exactly that on every side and gives it back with a negative margin,
+   * as `DashboardNav` and `CampaignTabs` do.
+   */
+  it('leaves room inside the scrolling row for the focus ring on every section', () => {
+    renderShell();
+
+    const nav = screen.getByRole('navigation', { name: EDITOR_COPY.sectionsLabel });
+    const row = nav.querySelector('ul') as HTMLElement;
+    expect(row).toHaveClass('overflow-x-auto');
+    expect(row).toHaveClass('p-1');
+    expect(row).toHaveClass('-m-1');
+
+    const controls = [...within(nav).getAllByRole('link'), ...within(nav).queryAllByRole('button')];
+    expect(controls).toHaveLength(EDITOR_TABS.length);
+    for (const control of controls) {
+      // An inset offset here would be outranked by the kit's rule anyway; nothing may ask for one.
+      expect(control.className).not.toContain('outline-offset-[-');
+      expect(control.className).not.toContain('outline-none');
+    }
+  });
+
   it('says which state the campaign is in, in words', () => {
     renderShell();
     // Colour alone must never carry meaning (docs/ui-kit.md §9.2).
