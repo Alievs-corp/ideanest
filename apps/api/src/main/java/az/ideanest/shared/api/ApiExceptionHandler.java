@@ -4,6 +4,7 @@ import az.ideanest.shared.idempotency.IdempotencyKeyReusedException;
 import az.ideanest.shared.idempotency.IdempotentRequestInProgressException;
 import az.ideanest.shared.idempotency.MalformedIdempotencyKeyException;
 import az.ideanest.shared.idempotency.MissingIdempotencyKeyException;
+import az.ideanest.shared.payment.InvalidReturnUrlException;
 import az.ideanest.shared.ratelimit.RateLimitExceededException;
 import az.ideanest.shared.ratelimit.RateLimits;
 import java.net.URI;
@@ -122,6 +123,26 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .header(HttpHeaders.RETRY_AFTER, Long.toString(RETRY_IN_PROGRESS_SECONDS))
                 .body(problem);
+    }
+
+    /**
+     * 400 for a {@code successUrl} or {@code errorUrl} that is not a page on the site — #139.
+     *
+     * <p>Here rather than with either endpoint for the idempotency refusals' reason: the hosted
+     * payment page and the payout card registration raise it from two modules, and a client that
+     * learned the body from one must get the same body from the other. {@code meta.field} says
+     * which address; the address itself is not repeated, for the reason
+     * {@link InvalidReturnUrlException} gives.
+     */
+    @ExceptionHandler(InvalidReturnUrlException.class)
+    public ProblemDetail handleInvalidReturnUrl(InvalidReturnUrlException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/invalid-return-url"));
+        problem.setTitle("Invalid return address");
+        problem.setDetail("A return address must be an https page on this platform's site.");
+        problem.setProperty("code", "INVALID_RETURN_URL");
+        problem.setProperty("meta", Map.of("field", exception.field()));
+        return problem;
     }
 
     /**

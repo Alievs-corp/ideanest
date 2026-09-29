@@ -400,14 +400,10 @@ export function FilterRail({ filters, facets, onChange, copy, locale }: FilterRa
           behaves differently from every other control beside it has to.
         */}
         {(facets?.tags ?? []).length === 0 ? (
-          <p className="text-[13px] text-white/40">
-            No tags on the campaigns matching these filters.
-          </p>
+          <p className="text-[13px] text-white/40">{copy.noTags}</p>
         ) : (
           <>
-            <p className="mb-3 text-[13px] text-white/64">
-              Choosing several tags shows only campaigns carrying all of them.
-            </p>
+            <p className="mb-3 text-[13px] text-white/64">{copy.tagsHint}</p>
             <ul className="flex flex-col gap-2.5">
               {(facets?.tags ?? []).map((tag) => (
                 <FacetCheckbox

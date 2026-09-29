@@ -87,7 +87,7 @@ Four pillars, observed across established platforms in this category:
 | **Project / Campaign** | A creative undertaking seeking funding |
 | **Creator** | The person or organisation running a project |
 | **Backer** | A user who pledges money to a project |
-| **Pledge** | A financial commitment, not charged immediately |
+| **Pledge** | A backer's commitment to a campaign, charged when the backer confirms it (IDN-EXT-01, §1.1) and refunded in full if the campaign fails, is suspended or is cancelled |
 | **Reward tier** | A package promised in exchange for a pledge amount |
 | **Add-on** | An extra item purchasable alongside a reward |
 | **Item** | The atomic physical or digital unit rewards are composed from |
@@ -1643,7 +1643,9 @@ Preferences are per category and per channel, with a digest option.
 > something to say.
 >
 > **AD-02's intake and queue, as #102 built them.** Reporting is
-> `POST /v1/projects/{id}/report` (§10.2, C-06) and `POST /v1/users/{id}/report`
+> `POST /v1/projects/{id}/report` (§10.2, C-06) and `POST /v1/users/{slug}/report`
+> (addressed by the public slug since #143, like `/v1/users/{slug}/follow`, because
+> the public profile carries no identifier; the report still stores the account id)
 > — the second is not in §10.2's list and is what AD-09's "profiles" and AD-04's
 > ban are decided from, since a complaint about a person filed against one of
 > their campaigns is filed against the wrong object. Both require a signed-in
@@ -1651,6 +1653,14 @@ Preferences are per category and per channel, with a digest option.
 > and the open-report count is the queue's only triage signal, so an
 > unauthenticated form would make that number one script's to choose. Both are
 > limited per account and per source address.
+>
+> **Accepted trade-off: report-by-slug, like follow-by-slug, accepts a private
+> profile's slug.** `GET /v1/users/{slug}` answers 404 for a PRIVATE profile, but
+> `POST /v1/users/{slug}/report` (and `/follow`) resolve the slug through
+> `UserAccounts.findBySlug`, which does not look at visibility. That is deliberate:
+> moderation may need reports about private accounts (a person who turned private
+> after harassing someone is still reportable), and the routes are signed-in and
+> rate-limited, so what they reveal about whether a slug exists is bounded.
 >
 > The queue is `GET /v1/admin/moderation/reports` with
 > `?state=&after=&limit=`, plus `GET`, `POST …/{id}/uphold` and
@@ -3843,6 +3853,47 @@ single-file change.
 > Epoint's callback carries no event id or timestamp, so a delivery is identified by
 > transaction, status and operation code, and deduplication rather than a replay window is
 > what refuses a repeat.
+>
+> **Return addresses are the site's, not the caller's (#139).** `POST /v1/pledges/{id}/payment`
+> and `POST /v1/me/payout-destination/card-registration` take a `successUrl` and an `errorUrl`
+> from the caller, and Epoint redirects the person to them from its own page
+> (`success_redirect_url`, `error_redirect_url`). Unchecked, that is an open redirect running
+> through checkout: a compromised front end or a browser extension could send a backer from the
+> bank's page to a look-alike "payment failed, re-enter your card" site. `shared.payment.ReturnUrls`
+> accepts an address only when it is absolute, has no user information, and its scheme, host and
+> port are exactly those of a configured origin; the path and query stay the caller's. Anything
+> else is 400 `INVALID_RETURN_URL` (`meta.field` names which), raised before the draft is held or
+> the card page opened. An absent address is still accepted — Epoint then uses the merchant
+> account's pages. The origins are configuration, `ideanest.payment.return-urls`: `site-origin`
+> is the e-mail links' `WEB_BASE_URL` (the API's name for the web's `IDEANEST_SITE_URL`) and
+> `additional-origins` is `PAYMENT_RETURN_ORIGINS`, comma separated, for a staging or preview
+> host beside it. Origins are https; http only on a loopback host, which is what local
+> development runs. The pending charge's `provider_response` records both addresses, so the
+> payment's own row says where the backer was sent back to; `payout_card_registrations` has no
+> column for them and the card registration records nothing extra. That asymmetry is deliberate:
+> the charge row is the money's audit trail and where a disputed "I was sent somewhere else"
+> is answered, while a card registration moves no money and the address it returned to is the
+> settings page, so a column (and a migration) would record nothing anyone needs. Because
+> `transactions` is append-only, an address longer than 2048 characters is refused outright
+> rather than stored forever. Every refusal is logged at WARN with the field and the host, never
+> the path or query. A deployment left on the loopback default (`WEB_BASE_URL` unset) starts,
+> but logs a loud WARN when a payment provider is configured or a non-local profile is active
+> — refusing to start would take the whole API down over one variable. The web builds its
+> return addresses from the browser's `location.origin`, so every host the site is served on
+> must be the site origin or be in `PAYMENT_RETURN_ORIGINS` (`ops/deploy/README.md`).
+>
+> **Decision: no custom URL scheme for the native app.** The issue asked whether the app could
+> pass `ideanest://…` as its return address. Nobody has confirmed with Epoint that its page will
+> redirect to a custom scheme, and it cannot be tested without a live merchant account — a
+> bank's 3-D Secure page and an in-app browser may each refuse a non-http navigation, and the
+> failure would be a backer stranded after paying. So custom schemes are refused like any other
+> off-site address. The app passes an https forwarder page on the site instead (for example
+> `/{locale}/pledges/{id}?payment=returned`). The mobile checkout adds that path to the app's
+> universal / app links (`apps/mobile/app.config.ts`, which today claim the site's host and, on
+> Android, only `/projects`), so the operating system hands the return to the app when it is
+> installed and the browser shows the pledge page when it is not. Revisit only
+> if Epoint confirms custom-scheme redirects in writing, and then as a configured scheme next to
+> the origins, never as "any scheme".
 >
 > Two departures from the sketch above, both small. `ProviderCapabilities` gains
 > `schemeChaining`, because R-03 is one of the three the design cannot work without and
@@ -6682,6 +6733,16 @@ reachable — and the eight documents are empty until #423 answers. A platform t
 not published its creator agreement is a platform whose catalogue is short, which is
 what both gates read as "nothing is required" rather than as a refusal.
 
+**"Not published" is the service's 404 and nothing else (#147).** The web's legal reads
+return `published`, `unpublished` (404 only) or `unavailable` (any other status, a timeout,
+a network failure, a body that does not narrow). The document and archive routes and the
+index render `FailureState` for `unavailable`; during the 2026-09-28 outage they had told
+readers IdeaNest had no terms of use. The checkout's backer-agreement read has the same three
+answers, and an unavailable one renders the failure state in place of the checkout, because
+a pledge confirmed without the §22.3 statement is one the service refuses once an agreement
+is in force. An unavailable answer is not held for the documents' hour: Next's data cache
+stores only 200 responses and these routes are dynamic.
+
 **The archive matters more than it looks.** Somebody who accepted version 3 must be able
 to read version 3, not only whatever is current — otherwise the acceptance record names a
 text the person it is about cannot see. V65 stores every version precisely so that route
@@ -6772,6 +6833,17 @@ reason `open` is on a fee schedule — three clients deriving it would round it 
 statements: zeros are a commitment to charge nothing, and an empty table is the platform
 not having decided. `FeeSchedules.priceOf` treats the absence as zero fees because a
 payout run must not stop over it; a page has the opposite obligation.
+
+**A failed read is neither, and says so (#145).** The web used to draw a refused or
+unreachable read with the `configured: false` sentence — "nothing is being deducted from
+pledges today" — so during the 2026-09-28 outage creators were told there was no fee.
+`FeeDisclosure` now has three branches: the rates, the unconfigured sentence (only when the
+service answered `configured: false`), and a failed-read sentence that states no figure,
+says it is not a statement that nothing is charged, and links to Pricing — not to the
+creator agreement, which is unpublished until #423 answers (§22.2), so that link would
+lead to "not published" during the very outage the sentence is for. A body claiming `configured: true` without its rates is drawn as a failed read. `/about` no
+longer prints a rate at all: it names the two fees and links to Pricing, so the two pages
+cannot disagree when the schedule moves.
 
 **The risk statement inside the pledge flow** — #427. §22.3 asks for it *within the
 flow*, not in the terms and not behind a link, because the requirement is about what a

@@ -96,8 +96,10 @@ export function readFeeDisclosure(body: unknown): FeeDisclosure | null {
  * resolves. Quoting the platform rate to somebody backing a campaign on different terms would be
  * the disclosure §22.3 exists to prevent.
  *
- * `null` is a refused read, which the component treats as "nothing to disclose" rather than as
- * a failure to apologise for — and never as zeros.
+ * `null` is a failed read — a refusal, a 5xx, a timeout, a network failure or a body that does
+ * not narrow. The component gives it its own sentence (#145): never zeros, and never the
+ * unconfigured sentence, which says nothing is being deducted and is true only when the service
+ * answered `configured: false`.
  */
 export async function fetchFeeDisclosure(
   projectId?: string,

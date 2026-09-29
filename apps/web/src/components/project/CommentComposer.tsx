@@ -7,7 +7,9 @@ import { ApiError } from '../../lib/api/problem';
 import { signInHref } from '../../lib/auth/redirect';
 import { isSubmittableComment, postComment, replyToComment } from '../../lib/community/comments';
 import { useSession } from '../session/SessionProvider';
-import type { CommentCopy } from '../../lib/i18n/campaign-copy';
+import type { CommentCopy, CommentFailureCopy } from '../../lib/i18n/campaign-copy';
+import type { Locale } from '../../lib/i18n/locale';
+import { pluralise } from '../../lib/i18n/plurals';
 
 /**
  * Writing a comment, and answering one — §4.9's C-01 and C-03, issue #285.
@@ -76,20 +78,26 @@ export interface CommentComposerProps {
   readonly onCancel?: (() => void) | undefined;
 }
 
-function messageFor(cause: unknown): string {
+/**
+ * The sentence a failed post shows, in the route's language (#142).
+ *
+ * The minutes of a 429 are declined with `pluralise` rather than glued onto "minutes": Russian
+ * has three forms for them and the count is only known here, in the browser.
+ */
+export function messageFor(cause: unknown, failures: CommentFailureCopy, locale: Locale): string {
   if (cause instanceof ApiError) {
-    if (cause.status === 401) return 'Your session has expired. Sign in and try again.';
+    if (cause.status === 401) return failures.sessionExpired;
     if (cause.status === 429) {
       const seconds = cause.problem?.retryAfterSeconds;
       return seconds === undefined
-        ? 'That is a lot of comments in a short time. Try again in a few minutes.'
-        : `That is a lot of comments in a short time. Try again in about ${Math.ceil(seconds / 60)} minutes.`;
+        ? failures.rateLimited
+        : pluralise(locale, failures.rateLimitedFor, Math.ceil(seconds / 60));
     }
     // The service's own wording wherever there is one: it knows which of its rules refused
     // the request and this function cannot.
-    return cause.problem?.detail ?? cause.problem?.title ?? 'That could not be posted.';
+    return cause.problem?.detail ?? cause.problem?.title ?? failures.notPosted;
   }
-  return 'The service could not be reached. Check your connection and try again.';
+  return failures.unreachable;
 }
 
 export function CommentComposer({
@@ -138,7 +146,7 @@ export function CommentComposer({
     if (busy) return;
 
     if (!isSubmittableComment(body)) {
-      setError('Write something first.');
+      setError(copy.failures.emptyBody);
       return;
     }
 
@@ -161,7 +169,7 @@ export function CommentComposer({
       router.refresh();
       onPosted?.();
     } catch (cause) {
-      setError(messageFor(cause));
+      setError(messageFor(cause, copy.failures, locale));
     } finally {
       setBusy(false);
     }

@@ -14,7 +14,7 @@ import type { ReportReason } from './api';
  *
  * <h2>Three targets, one budget, one function</h2>
  *
- * `ContentReportController` publishes `/projects/{id}/report`, `/users/{id}/report` and
+ * `ContentReportController` publishes `/projects/{id}/report`, `/users/{slug}/report` and
  * `/comments/{id}/report` on one controller sharing one rate limit, and says why: separate
  * counters would let somebody who had spent their allowance on campaigns spend a second one
  * on people. This mirrors that — one function over a target type, so a fourth surface cannot
@@ -34,17 +34,29 @@ import type { ReportReason } from './api';
  * pretend the second one added weight.
  */
 
+/**
+ * What is being reported.
+ *
+ * An account is named by its public **slug**, not an id (#143): the public profile carries
+ * the slug and deliberately no identifier, and the follow route beside it is keyed the same
+ * way. The field is called `slug` so an id cannot be passed where a slug belongs.
+ */
 export type ReportTarget =
   | { readonly kind: 'campaign'; readonly id: string }
-  | { readonly kind: 'account'; readonly id: string }
+  | { readonly kind: 'account'; readonly slug: string }
   | { readonly kind: 'comment'; readonly id: string };
 
 /** The path each target reports to. One place, so a fourth cannot be spelled two ways. */
-const PATHS: Readonly<Record<ReportTarget['kind'], (id: string) => string>> = {
-  campaign: (id) => `/v1/projects/${encodeURIComponent(id)}/report`,
-  account: (id) => `/v1/users/${encodeURIComponent(id)}/report`,
-  comment: (id) => `/v1/comments/${encodeURIComponent(id)}/report`,
-};
+function pathOf(target: ReportTarget): string {
+  switch (target.kind) {
+    case 'campaign':
+      return `/v1/projects/${encodeURIComponent(target.id)}/report`;
+    case 'account':
+      return `/v1/users/${encodeURIComponent(target.slug)}/report`;
+    case 'comment':
+      return `/v1/comments/${encodeURIComponent(target.id)}/report`;
+  }
+}
 
 /*
  * `TARGET_NOUNS` WAS HERE. It was three English nouns the dialog dropped into "Report this
@@ -109,7 +121,7 @@ export async function submitReport(
 ): Promise<SubmittedReport> {
   const trimmed = detail.trim();
 
-  const response = await authorizedFetch(PATHS[target.kind](target.id), {
+  const response = await authorizedFetch(pathOf(target), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ reason, ...(trimmed === '' ? {} : { detail: trimmed }) }),

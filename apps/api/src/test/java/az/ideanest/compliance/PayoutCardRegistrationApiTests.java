@@ -17,6 +17,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
@@ -150,6 +152,35 @@ class PayoutCardRegistrationApiTests extends AbstractIntegrationTest {
         assertThat(mine(creator).get("recorded")).isEqualTo(false);
     }
 
+    @ParameterizedTest
+    @DisplayName("a return address off the site is refused with 400, and no card page is opened")
+    @ValueSource(strings = {
+        "https://evil.example/az/settings/payout?card=failed",
+        "http://ideanest.az/az/settings/payout?card=failed",
+        "javascript:alert(document.cookie)",
+        "/az/settings/payout?card=failed",
+    })
+    void anAddressOffTheSiteIsRefused(String address) {
+        Account creator = account();
+        String good = "https://ideanest.az/az/settings/payout?card=returned";
+
+        ResponseEntity<Map<String, Object>> asSuccess =
+                begin(creator, Map.of("language", "az", "successUrl", address, "errorUrl", good));
+        ResponseEntity<Map<String, Object>> asError =
+                begin(creator, Map.of("language", "az", "successUrl", good, "errorUrl", address));
+
+        assertThat(asSuccess.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(asSuccess.getBody())
+                .containsEntry("code", "INVALID_RETURN_URL")
+                .containsEntry("type", "https://ideanest.az/problems/invalid-return-url")
+                .containsEntry("meta", Map.of("field", "successUrl"));
+        assertThat(asError.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(asError.getBody()).containsEntry("meta", Map.of("field", "errorUrl"));
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM payout_card_registrations WHERE creator_id = ?", Long.class, creator.id()))
+                .isZero();
+    }
+
     // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
@@ -165,15 +196,18 @@ class PayoutCardRegistrationApiTests extends AbstractIntegrationTest {
         return new Account(token, id);
     }
 
+    /** What apps/web/src/lib/account/payout.ts sends, on the suite's production-shaped origin. */
     private ResponseEntity<Map<String, Object>> begin(Account creator) {
-        return exchange(
-                "/v1/me/payout-destination/card-registration",
-                HttpMethod.POST,
+        return begin(
                 creator,
                 Map.of(
                         "language", "az",
-                        "successUrl", "https://ideanest.az/az/settings/payout?card=registered",
+                        "successUrl", "https://ideanest.az/az/settings/payout?card=returned",
                         "errorUrl", "https://ideanest.az/az/settings/payout?card=failed"));
+    }
+
+    private ResponseEntity<Map<String, Object>> begin(Account creator, Map<String, Object> body) {
+        return exchange("/v1/me/payout-destination/card-registration", HttpMethod.POST, creator, body);
     }
 
     private Map<String, Object> mine(Account creator) {

@@ -108,10 +108,16 @@ export const CAMPAIGN_THREAD_PARAM = 'thread';
 
 export type CampaignTabId = 'campaign' | 'creator' | 'faq' | 'updates' | 'comments';
 
+/**
+ * One tab, as an identity and a position — and deliberately without a label.
+ *
+ * The words are the catalogue's (`campaign.tabs.{id}`), resolved by `CampaignTabs` on the server
+ * in the reader's language. #132 found this constant carrying English labels that every locale
+ * drew, and the id is already the key, so a label here could only ever be a second, English-only
+ * copy of what the catalogue says.
+ */
 export interface CampaignTab {
   readonly id: CampaignTabId;
-  /** What the tab is called, in the reader's language. */
-  readonly label: string;
 }
 
 /**
@@ -127,11 +133,11 @@ export interface CampaignTab {
  * reader with a question should meet before the comment box.
  */
 export const CAMPAIGN_TABS: readonly CampaignTab[] = Object.freeze([
-  { id: 'campaign', label: 'Campaign' },
-  { id: 'creator', label: 'Creator' },
-  { id: 'faq', label: 'FAQ' },
-  { id: 'updates', label: 'Updates' },
-  { id: 'comments', label: 'Comments' },
+  { id: 'campaign' },
+  { id: 'creator' },
+  { id: 'faq' },
+  { id: 'updates' },
+  { id: 'comments' },
 ]);
 
 /** The tab a bare campaign URL opens. */

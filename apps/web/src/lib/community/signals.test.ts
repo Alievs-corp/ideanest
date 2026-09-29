@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAccessToken } from '../api/access-token';
-import { campaignHref, listFollowing, listSaved, unfollowCreator, unsaveCampaign } from './signals';
+import {
+  campaignHref,
+  followCreator,
+  isFollowing,
+  listFollowing,
+  listSaved,
+  unfollowCreator,
+  unsaveCampaign,
+} from './signals';
 
 /**
  * §4.9's C-10 — issue #288.
@@ -99,6 +107,50 @@ describe('the removals', () => {
       ['/v1/projects/p1/save', 'DELETE'],
       ['/v1/users/aysel-q/follow', 'DELETE'],
     ]);
+  });
+});
+
+describe('following — #143', () => {
+  it('follows by slug and draws what the service answered', async () => {
+    const send = page({ following: true });
+
+    await expect(followCreator('aysel q')).resolves.toBe(true);
+
+    expect(send.mock.calls[0]?.[0]).toBe('/v1/users/aysel%20q/follow');
+    expect(send.mock.calls[0]?.[1]?.method).toBe('POST');
+  });
+
+  it('finds a followed creator on a later page, passing the cursor back unread', async () => {
+    const pages = [
+      { items: [{ creatorId: 'c1', name: 'A', slug: 'a', followedAt: '2026-09-01T00:00:00Z' }], nextCursor: 'opaque' },
+      { items: [{ creatorId: 'c2', name: 'B', slug: 'aysel', followedAt: '2026-09-02T00:00:00Z' }], nextCursor: null },
+    ];
+    const send = vi.fn(async (_path: string, _init?: RequestInit) =>
+      new Response(JSON.stringify(pages.shift()), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', send);
+
+    await expect(isFollowing('aysel')).resolves.toBe(true);
+
+    const paths = send.mock.calls.map((call) => String(call[0]));
+    expect(paths[0]).toBe('/v1/me/following?size=100');
+    expect(paths[1]).toBe('/v1/me/following?size=100&cursor=opaque');
+  });
+
+  it('answers false at the end of the list', async () => {
+    page({ items: [], nextCursor: null });
+
+    await expect(isFollowing('aysel')).resolves.toBe(false);
+  });
+
+  it('stops after five pages rather than walking an unbounded list', async () => {
+    const send = page({ items: [], nextCursor: 'more' });
+
+    await expect(isFollowing('aysel')).resolves.toBe(false);
+    expect(send).toHaveBeenCalledTimes(5);
   });
 });
 

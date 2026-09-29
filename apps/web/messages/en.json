@@ -409,14 +409,14 @@
         "loading": "Loading your pledges",
         "failedTitle": "Your pledges could not be loaded",
         "emptyTitle": "You have not backed anything yet",
-        "emptyBody": "Every pledge you make appears here, with what you chose and what you will be charged when the campaign closes.",
+        "emptyBody": "Every pledge you make appears here, with what you chose and what you were charged. A pledge is charged when you confirm it, and refunded in full if its campaign fails, is suspended or is cancelled.",
         "browse": "Browse campaigns",
         "noReward": "Support, with no reward",
         "byCreator": "by {creator}",
         "cancelledAt": "Cancelled {time}",
         "confirmedAt": "Confirmed {time}",
-        "collected": "collected",
-        "toBeCollected": "to be collected when the campaign closes",
+        "charged": "charged",
+        "notCharged": "not charged",
         "loadingMore": "Loading",
         "showMore": "Show more",
         "nextPageFailed": "The next page did not load"
@@ -440,13 +440,13 @@
       "editor": {
         "loadingRewards": "Loading the rewards",
         "heading": "Change this pledge",
-        "intro": "You can change what you chose until the campaign’s deadline. Nothing has been charged yet, so an edit re-prices the whole pledge rather than billing a difference.",
+        "intro": "You can change what you chose until the campaign’s deadline. A confirmed pledge can only be raised, never lowered. An edit re-prices the whole pledge, and saving it does not charge your card.",
         "anonymousHint": "Your name is kept off the campaign’s public backer list and off your profile. The creator still sees it, because they have to post your reward.",
         "saving": "Saving",
         "save": "Save changes",
         "noChanges": "Nothing has been changed yet.",
         "savedTitle": "Your pledge was updated",
-        "savedBody": "The figures above are the service’s, not this page’s arithmetic. Nothing has been charged — collection happens when the campaign closes successfully."
+        "savedBody": "The figures above are the service’s, not this page’s arithmetic. Saving the change charged nothing. If the campaign fails, is suspended or is cancelled, every backer is refunded in full."
       }
     },
     "surveys": {
@@ -3089,6 +3089,8 @@
       "rangeInvalid": "Enter an amount in digits, for example 2500 or 2500.00.",
       "rangeUnordered": "The lowest amount must not be more than the highest.",
       "subcategoriesOf": "{category} subcategories",
+      "noTags": "No tags on the campaigns matching these filters.",
+      "tagsHint": "Choosing several tags shows only campaigns carrying all of them.",
       "loading": "Loading projects",
       "loadingMore": "Loading more projects",
       "showMore": "Show more projects",
@@ -3240,6 +3242,7 @@
     },
     "search": {
       "title": "Search",
+      "metaDescription": "Search every campaign on IdeaNest.",
       "resultsTitle": "Results for “{query}”",
       "prompt": "Type what you are looking for — a campaign, a category, a maker. Or <feed>browse the whole feed</feed> and narrow it with filters.",
       "count": "{count, plural, =0 {No campaigns matched} one {# campaign} other {# campaigns}}",
@@ -3247,6 +3250,8 @@
       "emptyTitle": "Nothing matched “{query}”",
       "emptyBody": "Check the spelling, or try a shorter word. The feed can be narrowed by category, status and amount instead of by phrase.",
       "emptyAction": "Browse the feed",
+      "moreInFeed": "See more results in the feed",
+      "refineInFeed": "Refine these results in the feed",
       "gridLabel": "Search results for {query}"
     }
   },
@@ -3340,6 +3345,11 @@
       "confirming": "Opening the payment page…",
       "charged": "You are charged on the next page. If you do not finish paying, nothing is taken and the reward is released when the hold ends.",
       "rule": "A campaign succeeds at 80% of its goal. Its creator may extend the deadline once, and you are not asked."
+    },
+    "agreementUnavailable": {
+      "title": "This pledge could not be started",
+      "body": "The backer agreement could not be loaded just now, and a pledge is not confirmed without it. This page has not reserved a place or charged your card. Try again in a moment.",
+      "action": "Try again"
     },
     "risk": {
       "heading": "What backing means",
@@ -3586,7 +3596,34 @@
     },
     "countdown": {
       "label": "Time left to back this campaign: {time}",
-      "left": "{time} left"
+      "left": "{time} left",
+      "units": {
+        "day": {
+          "one": "{count} day",
+          "few": "{count} days",
+          "many": "{count} days",
+          "other": "{count} days"
+        },
+        "hour": {
+          "one": "{count} hour",
+          "few": "{count} hours",
+          "many": "{count} hours",
+          "other": "{count} hours"
+        },
+        "minute": {
+          "one": "{count} minute",
+          "few": "{count} minutes",
+          "many": "{count} minutes",
+          "other": "{count} minutes"
+        },
+        "second": {
+          "one": "{count} second",
+          "few": "{count} seconds",
+          "many": "{count} seconds",
+          "other": "{count} seconds"
+        }
+      },
+      "pair": "{larger}, {smaller}"
     },
     "back": {
       "cta": "Back this campaign"
@@ -3604,6 +3641,9 @@
     "creator": {
       "heading": "About the creator",
       "others": "Their other campaigns"
+    },
+    "risks": {
+      "heading": "Risks and challenges"
     },
     "trust": {
       "heading": "How funding works here",
@@ -3641,7 +3681,8 @@
       "older": "Older updates",
       "noOlder": "There are no older updates.",
       "none": "This campaign has not posted an update yet. Backers are told by email when it does.",
-      "backersOnly": "Backers only"
+      "backersOnly": "Backers only",
+      "number": "Update {number}"
     },
     "owner": {
       "label": "Your campaign",
@@ -3666,10 +3707,27 @@
       "replyLabel": "Your reply",
       "withdraw": "Withdraw",
       "withdrawWarning": "Withdrawing leaves a note saying the comment was removed. Any replies to it stay, and it cannot be edited or restored.",
+      "withdrawConfirm": "Withdraw it",
+      "withdrawing": "Withdrawing",
       "keep": "Keep it",
       "postComment": "Post comment",
       "postReply": "Post reply",
-      "posting": "Posting"
+      "posting": "Posting",
+      "failures": {
+        "emptyBody": "Write something first.",
+        "sessionExpired": "Your session has expired. Sign in and try again.",
+        "rateLimited": "That is a lot of comments in a short time. Try again in a few minutes.",
+        "rateLimitedFor": {
+          "one": "That is a lot of comments in a short time. Try again in about {count} minute.",
+          "few": "That is a lot of comments in a short time. Try again in about {count} minutes.",
+          "many": "That is a lot of comments in a short time. Try again in about {count} minutes.",
+          "other": "That is a lot of comments in a short time. Try again in about {count} minutes."
+        },
+        "notPosted": "That could not be posted.",
+        "unreachable": "The service could not be reached. Check your connection and try again.",
+        "notWithdrawn": "That could not be withdrawn.",
+        "withdrawUnreachable": "The service could not be reached. Try again."
+      }
     },
     "rule": "A campaign succeeds at 80% of its goal. Its creator may extend the deadline once.",
     "prelaunch": {
@@ -4453,6 +4511,16 @@
       "since": "On IdeaNest since",
       "elsewhere": "Elsewhere"
     },
+    "follow": {
+      "follow": "Follow",
+      "following": "Following",
+      "accessibleName": "{action} {name}",
+      "followed": "You are following {name}. You will get a message when they launch a campaign.",
+      "unfollowed": "You no longer follow {name}.",
+      "signIn": "Sign in to follow people.",
+      "refused": "The service refused the request. Try again.",
+      "unreachable": "The service could not be reached. Check your connection and try again."
+    },
     "grid": {
       "failedTitle": "This list could not be loaded",
       "failedBody": "The service did not answer. Nothing is wrong with the profile — reload the page to try again.",
@@ -4574,9 +4642,9 @@
       },
       "cost": {
         "heading": "What it costs",
-        "successful": "<b>A successful campaign</b> pays 15% of every withdrawal — the bank’s and the payment provider’s fees are inside it — and the creator receives 85%.",
+        "successful": "<b>A successful campaign</b> pays the platform fee and the payment provider’s processing fee on what it collects, and the creator receives the rest. The rates in force are on the <pricing>Plans and pricing</pricing> page, read from the schedule the platform actually charges.",
         "unsuccessful": "<b>An unsuccessful campaign</b> pays nothing. No listing fee, no platform fee, no processing fee.",
-        "note": "Rates are configuration rather than code, so a category or an individual agreement can carry a different one. The rate above is the standard schedule."
+        "note": "Rates are configuration rather than code, so a category or an individual agreement can carry a different one. The Plans and pricing page shows the standard schedule in force."
       },
       "notAPurchase": {
         "heading": "A pledge is not a purchase",
@@ -4669,6 +4737,12 @@
       "governingLanguage": "This document has not been translated into your language yet. What follows is the Azerbaijani text, which is the one that governs.",
       "contentHash": "SHA-256 of this text: {hash}"
     },
+    "unavailable": {
+      "title": "This document could not be loaded",
+      "indexTitle": "The legal documents could not be loaded",
+      "body": "The service that holds IdeaNest’s legal documents did not answer just now. That is not the same as a document not being published: try again in a moment.",
+      "action": "Try again"
+    },
     "notPublished": {
       "summary": "This document has not been published yet.",
       "body": "IdeaNest is required to have this document and has not published a version of it. Nothing here is in force, and no version of it has been presented to anybody for acceptance."
@@ -4733,7 +4807,8 @@
       "creatorBody": "IdeaNest keeps {platform} of every pledge collected and the payment provider keeps {processing}, so you receive {keeps} of what your backers pledge.",
       "fixedFee": "The payment provider also charges {amount} per transaction.",
       "twoFees": "These are two separate charges. IdeaNest’s fee is what the platform keeps; the processing fee goes to the company that moves the money, and IdeaNest never receives it. The rates in force are the ones above, and they are the rates a payout is calculated with.",
-      "unconfigured": "IdeaNest has not set a fee schedule, so nothing is being deducted from pledges today. This is not a permanent commitment: the rates are published here the moment any are set, and the creator agreement is where the terms are stated."
+      "unconfigured": "IdeaNest has not set a fee schedule, so nothing is being deducted from pledges today. This is not a permanent commitment: the rates are published here the moment any are set, and the creator agreement is where the terms are stated.",
+      "unavailable": "The fee could not be loaded just now. This does not mean that no fee is charged: the rates in force are published on the <pricing>Plans and pricing</pricing> page — try it again in a moment."
     }
   },
   "dashboard": {

@@ -366,9 +366,12 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorPro
             autoComplete="off"
             value={draft.contributionText}
             disabled={saving}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, contributionText: event.currentTarget.value }))
-            }
+            onChange={(event) => {
+              /* Read before the updater: React may run it after the event has been released,
+                 when `currentTarget` is null — found by #131's first render test of this form. */
+              const contributionText = event.currentTarget.value;
+              setDraft((current) => ({ ...current, contributionText }));
+            }}
             trailing={<span className="text-[13px]">{catalogue.currency}</span>}
           />
         </Field>
@@ -404,9 +407,11 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorPro
         <Checkbox
           checked={draft.isAnonymous}
           disabled={saving}
-          onChange={(event) =>
-            setDraft((current) => ({ ...current, isAnonymous: event.currentTarget.checked }))
-          }
+          onChange={(event) => {
+            /* Read before the updater, for the contribution field's reason above. */
+            const isAnonymous = event.currentTarget.checked;
+            setDraft((current) => ({ ...current, isAnonymous }));
+          }}
           label={copy.anonymous.label}
           /* PL-12 says what it does and does not overstate it: anonymous means hidden from the
              campaign's public backer list and from §4.2's public backed archive. The creator

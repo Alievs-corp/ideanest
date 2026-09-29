@@ -1,5 +1,7 @@
 import { dateTimeFormat } from '../i18n/formats';
 import type { Locale } from '../i18n/locale';
+import { fillPlaceholders } from '../i18n/placeholders';
+import { pluralise, type PluralForms } from '../i18n/plurals';
 
 /**
  * §4.4's live countdown and its "deadline in the viewer's timezone" — the arithmetic half.
@@ -100,12 +102,31 @@ export function remainingUntil(deadline: string, now: Date): Remaining | null {
   };
 }
 
-function plural(value: number, unit: string): string {
-  return value === 1 ? `1 ${unit}` : `${value} ${unit}s`;
+/**
+ * The countdown's words — `campaign.countdown.units` and `campaign.countdown.pair` (#142).
+ *
+ * Each unit is a plural group rather than a noun with an `s` glued on. The countdown used to be
+ * "1 day" for one and a bare `s` for everything else, which is the whole of English and none of
+ * Russian, which picks between three forms by the last digit — 1 день, 2 дня, 5 дней, 21 день —
+ * while Azerbaijani and Turkish keep the noun singular after any number. `pluralise` asks
+ * `Intl.PluralRules` for the category, the way the rest of the application declines a count
+ * that is only known in the browser (`lib/i18n/plurals.ts`).
+ *
+ * Every form carries `{count}` and leaves the number unsuffixed, so an Azerbaijani unit is
+ * `{count} gün` — the #104/#109 rule that no suffix is ever glued onto a value the catalogue
+ * has not seen.
+ */
+export interface CountdownUnits {
+  readonly day: PluralForms;
+  readonly hour: PluralForms;
+  readonly minute: PluralForms;
+  readonly second: PluralForms;
+  /** Carries `{larger}` and `{smaller}` — the two units, in the language's own order. */
+  readonly pair: string;
 }
 
 /**
- * The countdown as a reader sees it.
+ * The countdown as a reader sees it, in the reader's language.
  *
  * <strong>Two units, never four.</strong> "12 days, 4 hours, 9 minutes, 31 seconds" is a
  * clock rather than a deadline: the last two digits change while somebody is reading the
@@ -117,17 +138,28 @@ function plural(value: number, unit: string): string {
  * The wording of a closed campaign belongs to the caller, not here: "Closed", "This campaign
  * has ended" and the outcome notice are three different sentences on three different
  * surfaces, and a default returned from this function would be a fourth that nobody chose.
+ *
+ * <strong>The locale is an argument, never the runtime's.</strong> The server renders the
+ * first label and `CampaignCountdown` re-renders it in the browser; both read the `[locale]`
+ * segment, so they pick the same plural category and hydration sees the same string.
  */
-export function countdownLabel(remaining: Remaining): string | null {
+export function countdownLabel(
+  remaining: Remaining,
+  units: CountdownUnits,
+  locale: Locale,
+): string | null {
   if (remaining.past) return null;
 
+  const of = (forms: PluralForms, count: number) => pluralise(locale, forms, count);
+  const pair = (larger: string, smaller: string) => fillPlaceholders(units.pair, { larger, smaller });
+
   if (remaining.days >= 1) {
-    return `${plural(remaining.days, 'day')}, ${plural(remaining.hours, 'hour')}`;
+    return pair(of(units.day, remaining.days), of(units.hour, remaining.hours));
   }
   if (remaining.hours >= 1) {
-    return `${plural(remaining.hours, 'hour')}, ${plural(remaining.minutes, 'minute')}`;
+    return pair(of(units.hour, remaining.hours), of(units.minute, remaining.minutes));
   }
-  return `${plural(remaining.minutes, 'minute')}, ${plural(remaining.seconds, 'second')}`;
+  return pair(of(units.minute, remaining.minutes), of(units.second, remaining.seconds));
 }
 
 /**

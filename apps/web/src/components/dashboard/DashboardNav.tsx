@@ -1,5 +1,6 @@
 'use client';
 
+import { useLayoutEffect, useRef } from 'react';
 import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
 import { cn } from '@ideanest/ui/server';
@@ -30,9 +31,34 @@ import type { DashboardNavCopy } from '../../lib/i18n/dashboard-copy';
  *
  * <h2>A client component for one reason</h2>
  *
- * `usePathname`, to mark the current panel. That is the whole of it: no fetch, no state,
- * no effect. When the second entry lands this is where "which one am I on" is already
- * answered.
+ * `usePathname`, to mark the current panel, and the one effect that follows from it below.
+ * No fetch, no state.
+ *
+ * <h2>One row that scrolls sideways on a phone — #136</h2>
+ *
+ * Five labels do not fit across a phone: in Russian they are about 470px of tabs against the
+ * 280px a 320px screen leaves inside the page gutter, and the row used to neither wrap nor
+ * scroll, so the last tabs were pushed off the screen and the page itself scrolled sideways.
+ * The row now scrolls on its own axis, which is what the account and admin navigation already
+ * do below their breakpoint (`AccountNav`, `AdminNav`) and what the campaign page's tab strip
+ * does (`CampaignTabs`) — one pattern, not a select on one screen and a scroller on another.
+ * No label wraps (`whitespace-nowrap`), and a second row is not an option either: it would
+ * push the panel down on exactly the viewports where height is scarcest.
+ *
+ * Scrolling hides something, so the current tab is brought into view when the panel loads:
+ * "Surveys" is last, and a creator who opened it from an email would otherwise land on a row
+ * that shows four other tabs and not the one they are on. Only the row scrolls, never the page
+ * — `scrollIntoView` would also move the window vertically to satisfy its own alignment — and
+ * it jumps rather than glides, because docs/motion-system.md §5 gives a working surface no
+ * motion to spend on it.
+ *
+ * A scroll container clips whatever overflows it, and the focus ring is drawn outside the tab:
+ * two pixels wide, two pixels off (the kit's `:focus-visible` rule in `theme.css`, which is
+ * unlayered and so outranks any offset utility put on the link). So the row carries four
+ * pixels of padding on every side and gives them back with a negative margin, the way
+ * `AccountNav` makes room for the same ring — nothing moves, and ui-kit §9.3's ring is whole
+ * rather than cut off at the top, the bottom and the row's edges. Tab still reaches every
+ * entry, and the browser scrolls each one into view as it takes focus.
  *
  * <h2>Accessibility</h2>
  *
@@ -63,17 +89,46 @@ export interface DashboardNavProps {
   readonly copy: DashboardNavCopy;
 }
 
+/**
+ * Scroll `row` sideways so `tab` is inside it, centred where the row allows.
+ *
+ * Nothing happens when the tab is already fully visible, which is every wide viewport: the
+ * row does not overflow there, and moving it would be moving something nobody asked to move.
+ */
+function revealInRow(row: HTMLElement, tab: HTMLElement): void {
+  const box = row.getBoundingClientRect();
+  const target = tab.getBoundingClientRect();
+  if (target.left >= box.left && target.right <= box.right) return;
+
+  const offset = target.left - box.left - (box.width - target.width) / 2;
+  row.scrollTo({ left: row.scrollLeft + offset, behavior: 'auto' });
+}
+
 export function DashboardNav({ projectId, copy }: DashboardNavProps) {
   const pathname = usePathname();
   const panels = panelsFor(projectId, copy);
+  const rowRef = useRef<HTMLUListElement>(null);
+
+  /*
+   * A layout effect, so the row is scrolled before the browser paints it: a passive effect ran
+   * a frame later, and the row was drawn at its start and then jumped. React 19 runs neither
+   * kind on the server and no longer warns about this one there, which is why the repository
+   * has no isomorphic wrapper (`TwoFactorPanel` uses it the same way).
+   */
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    const current = row?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (row && current) revealInRow(row, current);
+  }, [pathname]);
 
   return (
     <nav aria-label={copy.label} className="border-b border-white/8">
-      <ul className="flex gap-1">
+      {/* `-m-1 p-1`: room for the focus ring inside the scroll container, given back. */}
+      <ul ref={rowRef} className="-m-1 flex gap-1 overflow-x-auto p-1">
         {panels.map((panel) => {
           const current = pathname === panel.href;
           return (
-            <li key={panel.href}>
+            <li key={panel.href} className="shrink-0">
               <Link
                 href={panel.href}
                 aria-current={current ? 'page' : undefined}
@@ -81,8 +136,8 @@ export function DashboardNav({ projectId, copy }: DashboardNavProps) {
                   // The focus ring is on every item and is never removed: ui-kit §9.3
                   // makes it a build error, and a keyboard user on a nav with no visible
                   // focus has no way to know where they are.
-                  'inline-block rounded-t-[10px] px-4 py-3 text-sm font-medium',
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[--lime-500]',
+                  'inline-block whitespace-nowrap rounded-t-[10px] px-4 py-3 text-sm font-medium',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
                   current
                     ? 'border-b-2 border-white text-white'
                     : 'border-b-2 border-transparent text-white/64 hover:text-white',

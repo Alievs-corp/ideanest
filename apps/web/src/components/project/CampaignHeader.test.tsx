@@ -356,6 +356,8 @@ describe('the save, share and reminder controls', () => {
 
     const link = await screen.findByRole('link', { name: 'Save' });
     expect(link).toHaveAttribute('href', `/en/sign-in?next=${encodeURIComponent(PATH)}`);
+    // One focusable element: the link is the pill, with no button nested inside it.
+    expect(link.querySelector('button')).toBeNull();
   });
 
   it('names the save control after the campaign it saves', async () => {

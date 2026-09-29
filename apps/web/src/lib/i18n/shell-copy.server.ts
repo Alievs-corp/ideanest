@@ -81,9 +81,11 @@ import {
 } from './campaign-copy';
 import { localeOrDefault, type Locale } from './locale';
 import {
+  type FollowControlCopy,
   type ProfileCopy,
   type ProfileEditorCopy,
   type ProfileVisibilityCopy,
+  followControlCopyFrom,
   profileCopyFrom,
   profileEditorCopyFrom,
   profileVisibilityCopyFrom,
@@ -283,6 +285,11 @@ export async function profileCopy(): Promise<ProfileCopy> {
     await getTranslations('profile'),
     await getTranslations('common'),
   );
+}
+
+/** The Follow / Following toggle on a profile and a campaign's Creator tab — #143. */
+export async function followControlCopy(): Promise<FollowControlCopy> {
+  return followControlCopyFrom(await getTranslations('profile'));
 }
 
 /**

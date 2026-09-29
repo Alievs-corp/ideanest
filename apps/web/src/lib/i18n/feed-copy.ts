@@ -96,6 +96,10 @@ export interface FeedCopy {
   readonly rangeUnordered: string;
   /** Carries `{category}`. */
   readonly subcategoriesOf: string;
+  /** The tag group when no matching campaign carries a tag (#142). */
+  readonly noTags: string;
+  /** Tags narrow rather than widen — every chosen tag, not any (#142). */
+  readonly tagsHint: string;
   readonly loading: string;
   readonly loadingMore: string;
   readonly showMore: string;
@@ -190,6 +194,8 @@ export function feedCopyFrom(
     rangeInvalid: t('rangeInvalid'),
     rangeUnordered: t('rangeUnordered'),
     subcategoriesOf: String(t.raw('subcategoriesOf')),
+    noTags: t('noTags'),
+    tagsHint: t('tagsHint'),
     loading: t('loading'),
     loadingMore: t('loadingMore'),
     showMore: t('showMore'),

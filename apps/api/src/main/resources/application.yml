@@ -675,6 +675,31 @@ ideanest:
       private-key: ${EPOINT_PRIVATE_KEY:}
       # The payment page's language when a request names none: az, en or ru.
       language: ${EPOINT_LANGUAGE:az}
+    # Issue #139: where a provider may send a person back to. `successUrl` and `errorUrl` on
+    # the payment and payout-card endpoints come from the caller, and the provider redirects
+    # to them from its own page -- unchecked, an open redirect running through checkout. So an
+    # address is accepted only on one of these origins (scheme, host and port exactly; the
+    # path is the caller's) and anything else is 400 INVALID_RETURN_URL.
+    #
+    # Origins are https. http is accepted only on a loopback host, which is what makes the
+    # local default below work. No custom schemes (`ideanest://`): nobody has confirmed the
+    # provider redirects to one, so the native app returns through an https page on the site
+    # -- architecture §9.4.
+    return-urls:
+      # The site itself. Deliberately the e-mail links' base URL (WEB_BASE_URL), which is the
+      # API's name for the web's IDEANEST_SITE_URL: one variable for where the site is. A value
+      # that cannot be a return origin (http on a real host) is logged at start-up and refuses
+      # payments rather than stopping the service. Left at the local default
+      # (http://localhost:3000) outside local development -- an explicit non-local profile,
+      # or a payment provider configured -- it is a loud start-up WARN: every real return
+      # address would be refused. Addresses over 2048 characters are refused (they are stored
+      # in the append-only transactions.provider_response), and every refusal is logged at
+      # WARN with the field and the host only.
+      site-origin: ${ideanest.notification.email.base-url}
+      # Further origins, comma separated -- a staging or preview host that answers beside the
+      # site origin. Empty by default. A malformed entry here IS a start-up failure: it was
+      # only ever added for this purpose.
+      additional-origins: ${PAYMENT_RETURN_ORIGINS:}
     # IDN-EXT-01 (#40): `campaign-refunds`. Every backer of a campaign that ends below its
     # threshold, or is suspended or cancelled, is refunded in full, a batch at a time.
     refunds:

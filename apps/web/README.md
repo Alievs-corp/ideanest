@@ -306,7 +306,11 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
 - the six authentication screens under `app/[locale]/(auth)`, and the two credential
   panels under `/settings` that share their refusal vocabulary;
 - the checkout, the public campaign page and the public pre-launch page, **in full** since
-  #101 closed the last four components on them;
+  #101 closed the last four components on them — and truly so since #132 and #142, which
+  found the tab strip, the risks heading, the update label, the comment refusals and the
+  countdown still English (the countdown now declines each unit with `pluralise`, so Russian
+  reads 21 день and 5 дней). The same sweep took the last literals off the feed's tag group
+  and off `/search`'s link into the feed and its metadata;
 - the account area: the frame, all thirteen screens' headings, one pledge's own screen, the
   notifications inbox and its settings, and the two fulfilment screens;
 - the administration console, **in full** — the bar, the rail, the index that lists §4.11's

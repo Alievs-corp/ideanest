@@ -9,6 +9,7 @@ import {
   unfollowCreator,
   type FollowedCreator,
 } from '../../lib/community/signals';
+import { profileHref } from '../../lib/profiles/api';
 import { formatRelativeTime } from '../../lib/time';
 import { useCursorList } from './useCursorList';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
@@ -18,18 +19,13 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
 /**
  * §4.9's C-10 — the creators this account follows. Issue #288.
  *
- * <h2>The rows do not link anywhere, and that is deliberate</h2>
+ * <h2>Each name opens the creator's profile</h2>
  *
- * A creator's page is `/users/{slug}`, which is #274 — and #274 cannot be built, because the
- * service publishes no `GET /v1/users/{slug}`. `UserAccounts.findBySlug` exists and nothing
- * exposes it. Linking a name to a route that does not exist would give every row on this
- * screen a 404 behind it, which is worse than a row that is plainly text: a broken link tells
- * a reader the platform is broken, and this one would be on the screen listing the people they
- * chose to follow.
- *
- * So the name is text, the slug is shown beside it — it is what the creator is addressed by
- * everywhere else, including in a campaign's URL — and the rows become links the day #274
- * lands. `apps/web/README.md` records the gap rather than leaving it to be noticed.
+ * The rows were plain text while there was no user page to point at. #274 built `/u/{slug}`,
+ * and #143 links the name to it. Only the name is the link — the row also holds the Unfollow
+ * button, and a whole-row link around a button is two controls in one target. A profile the
+ * creator has since made private answers 404 there, which is the platform's one answer for
+ * a withheld profile rather than a broken link.
  *
  * <h2>Following exists to be told about a launch</h2>
  *
@@ -130,7 +126,12 @@ export function FollowingPanel({ copy }: FollowingPanelProps) {
               <Avatar name={creator.name} size="md" />
               <div className="min-w-0">
                 <p className="truncate text-[17px] font-medium tracking-[-0.01em] text-white">
-                  {creator.name}
+                  <Link
+                    href={profileHref(creator.slug)}
+                    className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                  >
+                    {creator.name}
+                  </Link>
                 </p>
                 <p className="mt-1 text-sm text-white/40">
                   {fillPlaceholders(copy.meta, {

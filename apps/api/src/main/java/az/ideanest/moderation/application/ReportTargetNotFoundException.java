@@ -11,23 +11,32 @@ import java.util.UUID;
  * inherits it: a draft is confidential and a suspended campaign is one trust and
  * safety has already stopped, so confirming either exists would turn the report
  * endpoint into the oracle every other public endpoint refuses to be.
+ *
+ * <p>The reference is a string because an account is reported by its public slug
+ * (#143) while every other target is reported by its identifier. Only the type
+ * reaches the response; the reference is for the log.
  */
 public class ReportTargetNotFoundException extends RuntimeException {
 
     private final transient ReportTargetType targetType;
-    private final transient UUID targetId;
+    private final transient String reference;
 
     public ReportTargetNotFoundException(ReportTargetType targetType, UUID targetId) {
-        super("No " + targetType + " " + targetId + " to report");
+        this(targetType, targetId.toString());
+    }
+
+    public ReportTargetNotFoundException(ReportTargetType targetType, String reference) {
+        super("No " + targetType + " " + reference + " to report");
         this.targetType = targetType;
-        this.targetId = targetId;
+        this.reference = reference;
     }
 
     public ReportTargetType targetType() {
         return targetType;
     }
 
-    public UUID targetId() {
-        return targetId;
+    /** The identifier, or for an account the slug, that named nothing. */
+    public String reference() {
+        return reference;
     }
 }

@@ -85,6 +85,27 @@ function momentOf(pledge: BackerPledgeSummary, copy: PledgeListCopy, locale: Loc
   return null;
 }
 
+/**
+ * The word under a pledge's total: whether that money was taken — #131.
+ *
+ * Under IDN-EXT-01 a pledge is charged when it is confirmed: paying on the provider's page is
+ * what turns a `DRAFT` into `COLLECTED`. So a paid pledge says "charged", and a checkout that
+ * ended before it was paid — abandoned, or left until its reservation lapsed — says "not
+ * charged".
+ *
+ * <strong>Every other state says nothing here, deliberately.</strong> Refunded, charged back,
+ * payment in progress, payment failed, dropped, cancelled by the creator: the state tag beside
+ * the title already names each one, and a second word under the total would either repeat it
+ * or guess. `CONFIRMED` is the retired stored-card model's (stage 4, #45, removes it) and is
+ * left to its tag for the same reason. The one thing this line must never do again is promise
+ * a later collection.
+ */
+export function chargeNoteOf(state: string, copy: PledgeListCopy): string | null {
+  if (state === 'COLLECTED' || state === 'FULFILLED') return copy.charged;
+  if (state === 'DRAFT' || state === 'EXPIRED' || state === 'CANCELED_BY_BACKER') return copy.notCharged;
+  return null;
+}
+
 export interface PledgeListProps {
   /** Every word this list draws, resolved on the server — #81. */
   readonly copy: PledgeListCopy;
@@ -136,6 +157,7 @@ export function PledgeList({ copy }: PledgeListProps) {
       <ul className="flex list-none flex-col gap-3">
         {items.map((pledge) => {
           const moment = momentOf(pledge, copy, locale);
+          const note = chargeNoteOf(pledge.state, copy);
 
           return (
             <li
@@ -182,16 +204,12 @@ export function PledgeList({ copy }: PledgeListProps) {
                   {formatMoney(pledge.amounts.total)}
                 </p>
                 {/*
-                  NOT "paid". §9.2 moves no money at confirmation and collection is epic #59's,
-                  so a pledge that has not reached COLLECTED is an amount somebody has agreed
-                  to rather than one they have been charged. Saying otherwise would have
-                  backers budgeting for a debit that has not happened.
+                  WHETHER THE TOTAL WAS TAKEN, and only where the answer is certain — see
+                  `chargeNoteOf`. #131: this line used to say "to be collected when the
+                  campaign closes" under every pledge that was not COLLECTED, including the
+                  refunded ones, long after IDN-EXT-01 moved the charge to confirmation.
                 */}
-                <p className="mt-1 text-xs text-white/40">
-                  {pledge.state === 'COLLECTED' || pledge.state === 'FULFILLED'
-                    ? copy.collected
-                    : copy.toBeCollected}
-                </p>
+                {note !== null && <p className="mt-1 text-xs text-white/40">{note}</p>}
               </div>
             </li>
           );

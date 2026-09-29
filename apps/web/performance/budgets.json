@@ -72,7 +72,7 @@
     "/[locale]/projects/[id]/edit/basics": 646,
     "/[locale]/projects/[id]/edit/faq": 785,
     "/[locale]/projects/[id]/edit/prelaunch": 775,
-    "/[locale]/projects/[id]/edit/review": 601,
+    "/[locale]/projects/[id]/edit/review": 602,
     "/[locale]/projects/[id]/edit/rewards": 803,
     "/[locale]/projects/[id]/edit/story": 759,
     "/[locale]/projects/[id]/prelaunch": 739,
@@ -93,7 +93,7 @@
     "/[locale]/settings/sessions": 720,
     "/[locale]/sign-in": 586,
     "/[locale]/trust-safety": 585,
-    "/[locale]/u/[slug]": 646,
+    "/[locale]/u/[slug]": 658,
     "/[locale]/verify-email": 576,
     "/_not-found": 471
   }

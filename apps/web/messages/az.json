@@ -409,14 +409,14 @@
         "loading": "Dəstəkləriniz yüklənir",
         "failedTitle": "Dəstəkləriniz yüklənə bilmədi",
         "emptyTitle": "Hələ heç nəyi dəstəkləməmisiniz",
-        "emptyBody": "Etdiyiniz hər dəstək burada görünür — nə seçdiyiniz və kampaniya bağlananda nə qədər tutulacağı ilə birlikdə.",
+        "emptyBody": "Etdiyiniz hər dəstək burada görünür — nə seçdiyiniz və nə qədər tutulduğu ilə birlikdə. Dəstəyin məbləği onu təsdiqlədiyiniz anda tutulur; kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pul tam geri qaytarılır.",
         "browse": "Kampaniyalara bax",
         "noReward": "Mükafatsız dəstək",
         "byCreator": "müəllif: {creator}",
         "cancelledAt": "{time} tarixində ləğv edilib",
         "confirmedAt": "{time} tarixində təsdiqlənib",
-        "collected": "tutulub",
-        "toBeCollected": "kampaniya bağlananda tutulacaq",
+        "charged": "tutulub",
+        "notCharged": "tutulmayıb",
         "loadingMore": "Yüklənir",
         "showMore": "Daha çox göstər",
         "nextPageFailed": "Növbəti səhifə yüklənmədi"
@@ -440,13 +440,13 @@
       "editor": {
         "loadingRewards": "Mükafatlar yüklənir",
         "heading": "Bu dəstəyi dəyiş",
-        "intro": "Kampaniyanın son tarixinə qədər seçdiklərinizi dəyişə bilərsiniz. Hələ heç nə tutulmayıb, ona görə dəyişiklik fərqi hesablamır, bütün dəstəyi yenidən qiymətləndirir.",
+        "intro": "Kampaniyanın son tarixinə qədər seçdiklərinizi dəyişə bilərsiniz. Təsdiqlənmiş dəstək yalnız artırıla bilər, azaldıla bilməz. Dəyişiklik bütün dəstəyi yenidən qiymətləndirir, onu yadda saxlamaq isə kartınızdan pul tutmur.",
         "anonymousHint": "Adınız kampaniyanın açıq dəstəkçi siyahısında və profilinizdə göstərilmir. Müəllif isə onu görür, çünki mükafatınızı göndərməlidir.",
         "saving": "Saxlanılır",
         "save": "Dəyişiklikləri saxla",
         "noChanges": "Hələ heç nə dəyişdirilməyib.",
         "savedTitle": "Dəstəyiniz yeniləndi",
-        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Heç nə tutulmayıb — tutulma kampaniya uğurla bağlananda baş verir."
+        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Dəyişiklik saxlanarkən kartınızdan heç nə tutulmadı. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, hər dəstəkçiyə pul tam geri qaytarılır."
       }
     },
     "surveys": {
@@ -3089,6 +3089,8 @@
       "rangeInvalid": "Məbləği rəqəmlə yazın, məsələn 2500 və ya 2500.00.",
       "rangeUnordered": "Ən aşağı məbləğ ən yuxarıdan böyük ola bilməz.",
       "subcategoriesOf": "{category} alt bölmələri",
+      "noTags": "Bu filtrlərə uyğun kampaniyalarda etiket yoxdur.",
+      "tagsHint": "Bir neçə etiket seçəndə yalnız bu etiketlərin hamısı olan kampaniyalar göstərilir.",
       "loading": "Layihələr yüklənir",
       "loadingMore": "Daha çox layihə yüklənir",
       "showMore": "Daha çox layihə göstər",
@@ -3240,6 +3242,7 @@
     },
     "search": {
       "title": "Axtarış",
+      "metaDescription": "IdeaNest-dəki bütün kampaniyalarda axtarış edin.",
       "resultsTitle": "«{query}» üçün nəticələr",
       "prompt": "Axtardığınızı yazın — kampaniya, kateqoriya və ya müəllif. Ya da <feed>bütün lentə baxın</feed> və onu filtrlərlə daraltın.",
       "count": "{count, plural, =0 {Heç bir kampaniya uyğun gəlmədi} other {# kampaniya}}",
@@ -3247,6 +3250,8 @@
       "emptyTitle": "«{query}» üzrə heç nə tapılmadı",
       "emptyBody": "Yazılışı yoxlayın və ya daha qısa bir söz sınayın. Lenti ifadə əvəzinə kateqoriya, status və məbləğ üzrə daraltmaq olar.",
       "emptyAction": "Lentə baxın",
+      "moreInFeed": "Lentdə daha çox nəticəyə baxın",
+      "refineInFeed": "Bu nəticələri lentdə daraldın",
       "gridLabel": "«{query}» üçün axtarış nəticələri"
     }
   },
@@ -3340,6 +3345,11 @@
       "confirming": "Ödəniş səhifəsi açılır…",
       "charged": "Pul növbəti səhifədə tutulur. Ödənişi başa çatdırmasanız, heç nə tutulmur və saxlama müddəti bitəndə mükafat buraxılır.",
       "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Müəllif son tarixi bir dəfə uzada bilər və bunun üçün sizdən razılıq istənmir."
+    },
+    "agreementUnavailable": {
+      "title": "Dəstəyə hazırda başlamaq mümkün olmadı",
+      "body": "Dəstəkçi müqaviləsini hazırda yükləmək mümkün olmadı, onsuz isə dəstək təsdiqlənmir. Bu səhifə sizin üçün yer rezerv etməyib və kartınızdan heç nə tutmayıb. Bir azdan yenidən cəhd edin.",
+      "action": "Yenidən cəhd edin"
     },
     "risk": {
       "heading": "Dəstək olmaq nə deməkdir",
@@ -3586,7 +3596,34 @@
     },
     "countdown": {
       "label": "Bu kampaniyanı dəstəkləməyə qalan vaxt: {time}",
-      "left": "{time} qalıb"
+      "left": "{time} qalıb",
+      "units": {
+        "day": {
+          "one": "{count} gün",
+          "few": "{count} gün",
+          "many": "{count} gün",
+          "other": "{count} gün"
+        },
+        "hour": {
+          "one": "{count} saat",
+          "few": "{count} saat",
+          "many": "{count} saat",
+          "other": "{count} saat"
+        },
+        "minute": {
+          "one": "{count} dəqiqə",
+          "few": "{count} dəqiqə",
+          "many": "{count} dəqiqə",
+          "other": "{count} dəqiqə"
+        },
+        "second": {
+          "one": "{count} saniyə",
+          "few": "{count} saniyə",
+          "many": "{count} saniyə",
+          "other": "{count} saniyə"
+        }
+      },
+      "pair": "{larger}, {smaller}"
     },
     "back": {
       "cta": "Bu kampaniyanı dəstəklə"
@@ -3604,6 +3641,9 @@
     "creator": {
       "heading": "Müəllif haqqında",
       "others": "Onun digər kampaniyaları"
+    },
+    "risks": {
+      "heading": "Risklər və çətinliklər"
     },
     "trust": {
       "heading": "Maliyyələşdirmə burada necə işləyir",
@@ -3641,7 +3681,8 @@
       "older": "Köhnə yeniliklər",
       "noOlder": "Daha köhnə yenilik yoxdur.",
       "none": "Bu kampaniya hələ yenilik paylaşmayıb. Paylaşanda dəstəkçilərə e-poçtla xəbər verilir.",
-      "backersOnly": "Yalnız dəstəkçilər üçün"
+      "backersOnly": "Yalnız dəstəkçilər üçün",
+      "number": "Yenilik {number}"
     },
     "owner": {
       "label": "Sizin kampaniyanız",
@@ -3666,10 +3707,27 @@
       "replyLabel": "Cavabınız",
       "withdraw": "Geri götür",
       "withdrawWarning": "Geri götürmək şərhin silindiyini bildirən qeyd buraxır. Ona yazılmış cavablar qalır və şərhi nə redaktə etmək, nə də geri qaytarmaq olur.",
+      "withdrawConfirm": "Bəli, geri götür",
+      "withdrawing": "Geri götürülür",
       "keep": "Qalsın",
       "postComment": "Şərhi göndər",
       "postReply": "Cavabı göndər",
-      "posting": "Göndərilir"
+      "posting": "Göndərilir",
+      "failures": {
+        "emptyBody": "Əvvəlcə nəsə yazın.",
+        "sessionExpired": "Sessiyanızın vaxtı bitib. Daxil olub yenidən cəhd edin.",
+        "rateLimited": "Qısa müddətdə çox şərh yazılıb. Bir neçə dəqiqədən sonra yenidən cəhd edin.",
+        "rateLimitedFor": {
+          "one": "Qısa müddətdə çox şərh yazılıb. Təxminən {count} dəqiqədən sonra yenidən cəhd edin.",
+          "few": "Qısa müddətdə çox şərh yazılıb. Təxminən {count} dəqiqədən sonra yenidən cəhd edin.",
+          "many": "Qısa müddətdə çox şərh yazılıb. Təxminən {count} dəqiqədən sonra yenidən cəhd edin.",
+          "other": "Qısa müddətdə çox şərh yazılıb. Təxminən {count} dəqiqədən sonra yenidən cəhd edin."
+        },
+        "notPosted": "Şərhi göndərmək mümkün olmadı.",
+        "unreachable": "Xidmətə çatmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
+        "notWithdrawn": "Şərhi geri götürmək mümkün olmadı.",
+        "withdrawUnreachable": "Xidmətə çatmaq mümkün olmadı. Yenidən cəhd edin."
+      }
     },
     "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Müəllif son tarixi bir dəfə uzada bilər.",
     "prelaunch": {
@@ -4453,6 +4511,16 @@
       "since": "IdeaNest-də qoşulub",
       "elsewhere": "Digər yerlərdə"
     },
+    "follow": {
+      "follow": "İzlə",
+      "following": "İzləyirsiniz",
+      "accessibleName": "{name} adlı istifadəçini {action}",
+      "followed": "{name} adlı istifadəçini izləyirsiniz. O, kampaniya başlatdıqda sizə mesaj gələcək.",
+      "unfollowed": "{name} adlı istifadəçini artıq izləmirsiniz.",
+      "signIn": "İzləmək üçün əvvəlcə daxil olun.",
+      "refused": "Xidmət sorğunu rədd etdi. Yenidən cəhd edin.",
+      "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin."
+    },
     "grid": {
       "failedTitle": "Bu siyahını yükləmək mümkün olmadı",
       "failedBody": "Xidmət cavab vermədi. Profildə problem yoxdur — yenidən cəhd etmək üçün səhifəni təzələyin.",
@@ -4574,9 +4642,9 @@
       },
       "cost": {
         "heading": "Nəyə başa gəlir",
-        "successful": "<b>Uğurlu kampaniya</b> hər vəsait çıxarışının 15 faizini ödəyir — bankın və ödəniş provayderinin komissiyaları buraya daxildir — müəllif isə 85 faizini alır.",
+        "successful": "<b>Uğurlu kampaniya</b> yığdığı vəsaitdən platforma komissiyasını və ödəniş provayderinin emal komissiyasını ödəyir, qalanı isə müəllifə çatır. Qüvvədə olan dərəcələr <pricing>Planlar və qiymətlər</pricing> səhifəsində göstərilir və platformanın faktiki tətbiq etdiyi cədvəldən oxunur.",
         "unsuccessful": "<b>Uğursuz kampaniya</b> heç nə ödəmir. Nə yerləşdirmə haqqı, nə platforma komissiyası, nə də emal haqqı.",
-        "note": "Dərəcələr kodda deyil, konfiqurasiyada saxlanılır, ona görə ayrıca kateqoriya və ya fərdi razılaşma başqa dərəcə daşıya bilər. Yuxarıdakı dərəcə standart cedvəldir."
+        "note": "Dərəcələr kodda deyil, konfiqurasiyada saxlanılır, ona görə ayrıca kateqoriya və ya fərdi razılaşma başqa dərəcə daşıya bilər. Planlar və qiymətlər səhifəsi qüvvədə olan standart cədvəli göstərir."
       },
       "notAPurchase": {
         "heading": "Dəstək almaq deyil",
@@ -4669,6 +4737,12 @@
       "governingLanguage": "Bu sənəd hələ sizin dilinizə tərcümə olunmayıb. Aşağıdakı mətn azərbaycan dilindədir və qüvvədə olan mətn məhz odur.",
       "contentHash": "Bu mətnin SHA-256 xülasəsi: {hash}"
     },
+    "unavailable": {
+      "title": "Bu sənədi yükləmək mümkün olmadı",
+      "indexTitle": "Hüquqi sənədləri yükləmək mümkün olmadı",
+      "body": "IdeaNest-in hüquqi sənədlərini saxlayan xidmət hazırda cavab vermədi. Bu, sənədin dərc olunmadığı anlamına gəlmir: bir azdan yenidən cəhd edin.",
+      "action": "Yenidən cəhd edin"
+    },
     "notPublished": {
       "summary": "Bu sənəd hələ dərc olunmayıb.",
       "body": "IdeaNest bu sənədə malik olmalıdır və hələ heç bir versiyasını dərc etməyib. Burada qüvvədə olan heç nə yoxdur və heç bir versiyası qəbul üçün kimsəyə təqdim edilməyib."
@@ -4733,7 +4807,8 @@
       "creatorBody": "Yığılan hər dəstəkdən IdeaNest {platform}, ödəniş provayderi isə {processing} saxlayır, beləliklə dəstəkçilərinizin verdiyi məbləğin {keeps} hissəsi sizə çatır.",
       "fixedFee": "Ödəniş provayderi hər əməliyyat üçün əlavə olaraq {amount} tutur.",
       "twoFees": "Bunlar iki ayrı tutulmadır. IdeaNest-in komissiyası platformanın saxladığıdır; emal komissiyası isə pulu hərəkət etdirən şirkətə gedir və IdeaNest onu heç vaxt almır. Qüvvədə olan dərəcələr yuxarıdakılardır və ödəniş məhz onlarla hesablanır.",
-      "unconfigured": "IdeaNest hələ komissiya cədvəli təyin etməyib, ona görə də bu gün dəstəklərdən heç nə tutulmur. Bu daimi öhdəlik deyil: hər hansı dərəcə təyin olunan kimi burada dərc olunacaq, şərtlər isə yaradıcı müqaviləsində göstərilir."
+      "unconfigured": "IdeaNest hələ komissiya cədvəli təyin etməyib, ona görə də bu gün dəstəklərdən heç nə tutulmur. Bu daimi öhdəlik deyil: hər hansı dərəcə təyin olunan kimi burada dərc olunacaq, şərtlər isə yaradıcı müqaviləsində göstərilir.",
+      "unavailable": "Komissiyanı hazırda yükləmək mümkün olmadı. Bu, komissiya tutulmadığı anlamına gəlmir: qüvvədə olan dərəcələr <pricing>Planlar və qiymətlər</pricing> səhifəsində dərc olunur — bir azdan yenidən baxın."
     }
   },
   "dashboard": {

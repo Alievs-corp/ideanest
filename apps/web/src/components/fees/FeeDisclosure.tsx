@@ -1,5 +1,7 @@
 import Decimal from 'decimal.js';
+import type { ReactNode } from 'react';
 import { getTranslations } from 'next-intl/server';
+import { Link } from '../../i18n/navigation';
 import { numberFormat } from '../../lib/i18n/formats';
 import type { Locale } from '../../lib/i18n/locale';
 import { formatMoney } from '../../lib/money';
@@ -44,6 +46,17 @@ import type { FeeDisclosure as Disclosure } from '../../lib/fees/server';
  * true and revocable, where "0%" reads as a commitment. Silence would be worse than either: a
  * pledge screen with no fee section at all is one where the reader has to assume.
  *
+ * <h2>A failed read is not "nothing configured" — issue #145</h2>
+ *
+ * The two used to share one branch and one sentence, "nothing is being deducted from pledges
+ * today". That sentence is true only when the service answered `configured: false`. When the
+ * read failed — the API slow or down, as on 2026-09-28 during the DNS move — the platform may
+ * well be charging, and a creator deciding about their campaign's money was told it was not.
+ * A failed read now has its own sentence, which names no figure, says in as many words that it
+ * is not a statement that nothing is charged, and links to the Plans and pricing page where the
+ * rates in force are published. A body that claims `configured: true` without its rates is drawn the same way: it
+ * is a disclosure the page cannot read, not a platform that has decided to charge nothing.
+ *
  * <h2>Motion: none, and this is where the rule bites hardest</h2>
  *
  * docs/motion-system.md §5: motion decreases as money gets closer, and checkout must not
@@ -54,7 +67,7 @@ import type { FeeDisclosure as Disclosure } from '../../lib/fees/server';
 export type FeeAudience = 'backer' | 'creator';
 
 export interface FeeDisclosureProps {
-  /** `null` for a refused read, which is drawn the same way as nothing being configured. */
+  /** `null` for a failed read, which has its own sentence — never the unconfigured one (#145). */
   readonly disclosure: Disclosure | null;
   readonly audience: FeeAudience;
   readonly locale: Locale;
@@ -82,30 +95,51 @@ export async function FeeDisclosure({ disclosure, audience, locale }: FeeDisclos
 
   const heading = audience === 'backer' ? t('backerHeading') : t('creatorHeading');
 
+  const statement = (body: ReactNode) => (
+    <section
+      aria-labelledby="fee-disclosure"
+      className="mt-6 flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-5 sm:p-6"
+    >
+      <h2 id="fee-disclosure" className="text-base font-medium text-white">
+        {heading}
+      </h2>
+      <p className="max-w-[68ch] text-sm leading-relaxed text-reading">{body}</p>
+    </section>
+  );
+
+  /*
+   * The service's own answer that no schedule is set. The only case in which "nothing is being
+   * deducted" is true, so the only case that may say it.
+   */
+  if (disclosure !== null && !disclosure.configured) {
+    return statement(t('unconfigured'));
+  }
+
   if (
     disclosure === null ||
-    !disclosure.configured ||
     disclosure.platformRate === null ||
     disclosure.processingRate === null ||
     disclosure.creatorReceivesRate === null
   ) {
     /*
-     * One branch for "no schedule" and for "the read failed", deliberately. Both mean the page
-     * cannot name a rate, and a reader who was told the fee could not be loaded would be told
-     * about the platform's plumbing on a screen where they are deciding about their own money.
-     * What is said instead is true in both cases: nothing is being charged that this page can
-     * state, and the terms are the ones in the creator agreement.
+     * The read failed, or answered something this page cannot state a rate from — #145. No
+     * figure and no claim about what is charged: the sentence says the rate could not be
+     * loaded, that a failed read is not the same as no fee, and points at the Plans and
+     * pricing page, which is where the rates in force are published.
+     *
+     * Not the creator agreement, although the rate is a term of it: that document is not
+     * published until the adviser's text arrives (docs/architecture.md §22.2, #423), so a
+     * link there is a link to "not published" during exactly the outage this sentence is
+     * for. On `/pricing` itself the link is the page again, which is the retry.
      */
-    return (
-      <section
-        aria-labelledby="fee-disclosure"
-        className="mt-6 flex flex-col gap-2 rounded-lg border border-white/8 bg-surface-2 p-5 sm:p-6"
-      >
-        <h2 id="fee-disclosure" className="text-base font-medium text-white">
-          {heading}
-        </h2>
-        <p className="max-w-[68ch] text-sm leading-relaxed text-reading">{t('unconfigured')}</p>
-      </section>
+    return statement(
+      t.rich('unavailable', {
+        pricing: (chunks) => (
+          <Link href="/pricing" className="text-white underline underline-offset-4">
+            {chunks}
+          </Link>
+        ),
+      }),
     );
   }
 

@@ -1,5 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { isFollowing } from '../../lib/community/signals';
+import type { Session } from '../../lib/session/session';
+import { useSession, type SessionState } from '../session/SessionProvider';
 import type { ProjectPageResponse } from '../../lib/api/server';
 import type { CampaignPage } from '../../lib/projects/publicPage';
 import { readCampaignPage } from '../../lib/projects/publicPage';
@@ -107,17 +110,79 @@ const OTHER: CreatorProject = {
   coverImage: null,
 };
 
+/*
+ * #143 put a Follow control under the creator's name. It reads the session and
+ * `GET /v1/me/following`, so both are stood in for here; `FollowControl.test.tsx` covers the
+ * control itself and these cover only that the tab mounts it for the right person.
+ */
+vi.mock('../session/SessionProvider', () => ({ useSession: vi.fn() }));
+vi.mock('../../lib/community/signals', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/community/signals')>()),
+  isFollowing: vi.fn(),
+}));
+
+const RETURN_TO = '/projects/ayan/coffee-table-book?tab=creator';
+
+function sessionAs(slug: string | null): SessionState {
+  const session: Session | null =
+    slug === null ? null : { id: `id-${slug}`, email: `${slug}@example.com`, name: slug, slug, emailVerified: true };
+  return {
+    status: slug === null ? 'signed-out' : 'signed-in',
+    session,
+    refresh: async () => {},
+    signOut: async () => {},
+  };
+}
+
+beforeEach(() => {
+  vi.mocked(useSession).mockReturnValue(sessionAs('a-reader'));
+  vi.mocked(isFollowing).mockResolvedValue(false);
+});
+
 afterEach(cleanup);
+
+describe('the Follow control on the creator tab — #143', () => {
+  it('offers a signed-in reader Follow, addressed by the campaign creator slug', async () => {
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />));
+
+    const follow = await screen.findByRole('button', { name: 'Follow Ayan Q' });
+    expect(follow).toHaveAttribute('aria-pressed', 'false');
+    expect(vi.mocked(isFollowing)).toHaveBeenCalledWith('ayan', expect.anything());
+  });
+
+  it('is there even when the profile is private, because the campaign carries the slug', async () => {
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={null} projects={[]} />));
+
+    expect(await screen.findByRole('button', { name: 'Follow Ayan Q' })).toBeInTheDocument();
+  });
+
+  it('sends a signed-out reader to sign in and back to this tab', async () => {
+    vi.mocked(useSession).mockReturnValue(sessionAs(null));
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />));
+
+    const wall = screen.getByRole('link', { name: 'Follow Ayan Q' });
+    expect(wall).toHaveAttribute('href', `/en/sign-in?next=${encodeURIComponent(RETURN_TO)}`);
+  });
+
+  it('offers the creator nothing to follow on their own campaign', async () => {
+    vi.mocked(useSession).mockReturnValue(sessionAs('ayan'));
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />));
+
+    expect(screen.queryByRole('button', { name: /Follow/u })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Follow/u })).not.toBeInTheDocument();
+    expect(vi.mocked(isFollowing)).not.toHaveBeenCalled();
+  });
+});
 
 describe('the creator tab', () => {
   it('links the creator through to the profile route the profile epic owns', async () => {
-    render(await resolveServerTree(<CreatorPanel campaign={campaign()} profile={PROFILE} projects={[]} />));
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />));
 
     expect(screen.getByRole('link', { name: /Ayan Q/u })).toHaveAttribute('href', '/en/u/ayan');
   });
 
   it('shows the biography and the joining date the profile published', async () => {
-    render(await resolveServerTree(<CreatorPanel campaign={campaign()} profile={PROFILE} projects={[]} />));
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />));
 
     expect(screen.getByText('Photographer in Baku.')).toBeInTheDocument();
     expect(screen.getByText(/Member since/u)).toBeInTheDocument();
@@ -127,6 +192,7 @@ describe('the creator tab', () => {
     render(
       await resolveServerTree(
         <CreatorPanel
+        returnTo={RETURN_TO}
         campaign={campaign()}
         profile={{ ...PROFILE, bio: null }}
         projects={[]}
@@ -142,6 +208,7 @@ describe('the creator tab', () => {
     render(
       await resolveServerTree(
         <CreatorPanel
+        returnTo={RETURN_TO}
         campaign={campaign()}
         profile={{ ...PROFILE, joinedAt: null }}
         projects={[]}
@@ -153,7 +220,7 @@ describe('the creator tab', () => {
   });
 
   it('lists the creator’s other campaigns, each with its state as a word', async () => {
-    render(await resolveServerTree(<CreatorPanel campaign={campaign()} profile={PROFILE} projects={[OTHER]} />));
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[OTHER]} />));
 
     expect(screen.getByRole('link', { name: /A folding bicycle/u })).toHaveAttribute('href', '/en/projects/ayan/a-folding-bicycle');
     // Never a hue on its own (§9.2): "Did not fund" is exactly the fact a reader must not
@@ -168,7 +235,7 @@ describe('the creator tab', () => {
   it('prints no total number of campaigns anywhere', async () => {
     const { container } = render(
       await resolveServerTree(
-        <CreatorPanel campaign={campaign()} profile={PROFILE} projects={[OTHER]} />,
+        <CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[OTHER]} />,
       ),
     );
 
@@ -177,7 +244,7 @@ describe('the creator tab', () => {
   });
 
   it('offers no way to contact the creator, because there is no endpoint behind one', async () => {
-    render(await resolveServerTree(<CreatorPanel campaign={campaign()} profile={PROFILE} projects={[OTHER]} />));
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[OTHER]} />));
 
     expect(screen.queryByRole('link', { name: /contact/iu })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /contact|message/iu })).not.toBeInTheDocument();
@@ -186,7 +253,7 @@ describe('the creator tab', () => {
   it('says nothing at all when the creator has no other campaigns', async () => {
     const { container } = render(
       await resolveServerTree(
-        <CreatorPanel campaign={campaign()} profile={PROFILE} projects={[]} />,
+        <CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />,
       ),
     );
 
@@ -195,15 +262,16 @@ describe('the creator tab', () => {
 
   describe('when the profile cannot be read', () => {
     it('keeps the byline the campaign already carries', async () => {
-      render(await resolveServerTree(<CreatorPanel campaign={campaign()} profile={null} projects={[]} />));
+      render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={null} projects={[]} />));
 
-      expect(screen.getByText('Ayan Q')).toBeInTheDocument();
+      // The paragraph, not the Follow control, whose accessible name carries the name too.
+      expect(screen.getByText('Ayan Q', { selector: 'p' })).toBeInTheDocument();
     });
 
     it('offers no profile link and explains nothing, because 404 covers three cases', async () => {
       const { container } = render(
         await resolveServerTree(
-          <CreatorPanel campaign={campaign()} profile={null} projects={[]} />,
+          <CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={null} projects={[]} />,
         ),
       );
 

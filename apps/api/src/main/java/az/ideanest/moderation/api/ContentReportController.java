@@ -91,16 +91,27 @@ public class ContentReportController {
      * report an account is to report one of its campaigns, which is the wrong object
      * for a complaint about impersonation or harassment and produces a queue where
      * every report about a person is filed against something they made.
+     *
+     * <p><strong>Addressed by slug as of #143, not by identifier.</strong> The route was
+     * {@code /users/{id}/report} and no screen could call it: the public profile
+     * response carries the slug and deliberately no identifier, and the follow route
+     * beside it — {@code /users/{slug}/follow} — is already keyed on the slug. The two
+     * cannot coexist on one path pattern, and adding the identifier to the profile would
+     * publish a stable key for every account to anybody who can read a profile, so the
+     * route changed rather than the response. Nothing called the identifier form. The
+     * report itself still names the account by identifier, so the queue, deduplication
+     * and the self-report refusal are unchanged and a report survives a slug change.
      */
-    @PostMapping("/users/{id}/report")
+    @PostMapping("/users/{slug}/report")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ReportResponse reportUser(
             @AuthenticationPrincipal Jwt accessToken,
-            @PathVariable UUID id,
+            @PathVariable String slug,
             @Valid @RequestBody ReportRequest request,
             HttpServletRequest httpRequest) {
 
-        return report(ReportTargetType.USER, id, accessToken, request, httpRequest);
+        UUID reporterId = spendBudget(accessToken, httpRequest);
+        return ReportResponse.of(reporting.reportAccount(slug, reporterId, request.reason(), request.detail()));
     }
 
     /**
@@ -154,12 +165,7 @@ public class ContentReportController {
     }
 
     /**
-     * The one implementation, and the one place the two budgets are spent.
-     *
-     * <p>Both limits are counted before anything is written, and the reporter's own
-     * budget is counted first: it is the tighter of the two and the one an attacker
-     * actually has to spend, so a client that is over it should not also have a unit
-     * of the address budget taken from whoever shares its NAT.
+     * The implementation for every target addressed by identifier.
      *
      * <p>202 rather than 201. The platform has the complaint and has created nothing
      * the client can go and read — the report is not addressable by the person who
@@ -173,6 +179,21 @@ public class ContentReportController {
             ReportRequest request,
             HttpServletRequest httpRequest) {
 
+        UUID reporterId = spendBudget(accessToken, httpRequest);
+        SubmittedReport report =
+                reporting.report(targetType, targetId, reporterId, request.reason(), request.detail());
+        return ReportResponse.of(report);
+    }
+
+    /**
+     * The one place the two budgets are spent, for all four routes; answers the reporter.
+     *
+     * <p>Both limits are counted before anything is written, and the reporter's own
+     * budget is counted first: it is the tighter of the two and the one an attacker
+     * actually has to spend, so a client that is over it should not also have a unit
+     * of the address budget taken from whoever shares its NAT.
+     */
+    private UUID spendBudget(Jwt accessToken, HttpServletRequest httpRequest) {
         ModerationProperties.Reports limits = properties.reports();
         UUID reporterId = UUID.fromString(accessToken.getSubject());
 
@@ -180,9 +201,6 @@ public class ContentReportController {
                 rateLimiter.recordAttempt("report:account:" + reporterId, limits.perReporter(), limits.window()));
         RateLimits.enforce(rateLimiter.recordAttempt(
                 "report:ip:" + ClientAddress.of(httpRequest), limits.perClient(), limits.window()));
-
-        SubmittedReport report =
-                reporting.report(targetType, targetId, reporterId, request.reason(), request.detail());
-        return ReportResponse.of(report);
+        return reporterId;
     }
 }
