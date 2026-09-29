@@ -129,6 +129,17 @@ export interface PledgeEditorCopy {
   readonly noChanges: string;
   readonly savedTitle: string;
   readonly savedBody: string;
+  /** #171: the same form over a paid pledge, where saving means paying the difference. */
+  readonly raiseHeading: string;
+  readonly raiseIntro: string;
+  /** Carries `{amount}`. */
+  readonly raiseDue: string;
+  readonly raiseNotHigher: string;
+  /** Carries `{amount}`. */
+  readonly raisePay: string;
+  readonly raiseOpening: string;
+  /** Carries `{time}`. */
+  readonly raisePending: string;
 }
 
 function editorCopyFrom(t: PledgesTranslator): PledgeEditorCopy {
@@ -142,7 +153,24 @@ function editorCopyFrom(t: PledgesTranslator): PledgeEditorCopy {
     noChanges: t('editor.noChanges'),
     savedTitle: t('editor.savedTitle'),
     savedBody: t('editor.savedBody'),
+    raiseHeading: t('editor.raiseHeading'),
+    raiseIntro: t('editor.raiseIntro'),
+    raiseDue: String(t.raw('editor.raiseDue')),
+    raiseNotHigher: t('editor.raiseNotHigher'),
+    raisePay: String(t.raw('editor.raisePay')),
+    raiseOpening: t('editor.raiseOpening'),
+    raisePending: String(t.raw('editor.raisePending')),
   };
+}
+
+/** #171: what a backer the provider sent back from paying a raise is told. */
+export interface RaiseReturnCopy {
+  readonly raisedTitle: string;
+  readonly raisedBody: string;
+  readonly failedTitle: string;
+  readonly failedBody: string;
+  readonly unappliedTitle: string;
+  readonly unappliedBody: string;
 }
 
 /** One of the caller's own pledges, with §4.5's PL-09 edit under it. */
@@ -168,6 +196,7 @@ export interface PledgeManagerCopy {
   readonly anonymous: string;
   readonly states: PledgeStatesCopy;
   readonly editor: PledgeEditorCopy;
+  readonly raiseReturned: RaiseReturnCopy;
 }
 
 export function pledgeManagerCopyFrom(t: PledgesTranslator): PledgeManagerCopy {
@@ -190,5 +219,13 @@ export function pledgeManagerCopyFrom(t: PledgesTranslator): PledgeManagerCopy {
     anonymous: t('anonymous'),
     states: statesFrom(t),
     editor: editorCopyFrom(t),
+    raiseReturned: {
+      raisedTitle: t('manager.raiseReturned.raisedTitle'),
+      raisedBody: t('manager.raiseReturned.raisedBody'),
+      failedTitle: t('manager.raiseReturned.failedTitle'),
+      failedBody: t('manager.raiseReturned.failedBody'),
+      unappliedTitle: t('manager.raiseReturned.unappliedTitle'),
+      unappliedBody: t('manager.raiseReturned.unappliedBody'),
+    },
   };
 }

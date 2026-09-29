@@ -110,12 +110,19 @@ public class Refund {
         this.detail = Objects.requireNonNull(detail, "detail");
         this.state = RefundState.REQUESTED;
         // Null only for a refund the platform issued itself, which V76 limits to the two campaign
-        // reasons (IDN-EXT-01, #40).
-        if (requestedBy == null && reason != RefundReason.CAMPAIGN_FAILED && reason != RefundReason.CAMPAIGN_HALTED) {
+        // reasons (IDN-EXT-01, #40) and V83 extends to a raise that could not be applied (#171).
+        if (requestedBy == null && !isPlatformReason(reason)) {
             throw new IllegalArgumentException("Only a campaign refund may be issued by the platform itself");
         }
         this.requestedBy = requestedBy;
         this.idempotencyKey = Objects.requireNonNull(idempotencyKey, "idempotencyKey");
+    }
+
+    /** The reasons the platform refunds on its own, with no member of staff behind them. */
+    public static boolean isPlatformReason(RefundReason reason) {
+        return reason == RefundReason.CAMPAIGN_FAILED
+                || reason == RefundReason.CAMPAIGN_HALTED
+                || reason == RefundReason.RAISE_NOT_APPLIED;
     }
 
     /**

@@ -2,6 +2,7 @@ package az.ideanest.pledge.api;
 
 import az.ideanest.pledge.PledgeProperties;
 import az.ideanest.pledge.application.PledgeCheckout;
+import az.ideanest.pledge.application.PledgeRaiseCheckout;
 import az.ideanest.pledge.application.PledgeService;
 import az.ideanest.pledge.application.PledgeSupplementService;
 import az.ideanest.shared.idempotency.IdempotencyKey;
@@ -85,6 +86,8 @@ public class PledgeController {
 
     private static final String EDIT = "pledge.edit";
 
+    private static final String RAISE = "pledge.raise";
+
     private static final String CANCEL = "pledge.cancel";
 
     /** §4.8's PM-09 and PM-10 (#76). Beside the four above for the same reason. */
@@ -105,6 +108,7 @@ public class PledgeController {
     private final PledgeService pledges;
     private final PledgeCheckout checkout;
     private final PledgeSupplementService supplements;
+    private final PledgeRaiseCheckout raises;
     private final IdempotentRequests idempotency;
     private final RateLimiter rateLimiter;
     private final PledgeProperties properties;
@@ -113,12 +117,14 @@ public class PledgeController {
             PledgeService pledges,
             PledgeCheckout checkout,
             PledgeSupplementService supplements,
+            PledgeRaiseCheckout raises,
             IdempotentRequests idempotency,
             RateLimiter rateLimiter,
             PledgeProperties properties) {
         this.pledges = pledges;
         this.checkout = checkout;
         this.supplements = supplements;
+        this.raises = raises;
         this.idempotency = idempotency;
         this.rateLimiter = rateLimiter;
         this.properties = properties;
@@ -256,6 +262,41 @@ public class PledgeController {
      * <p>Absent and null mean different things in the body. See
      * {@link PatchPledgeRequest}.
      */
+    /**
+     * #171: raises a paid pledge while its campaign takes pledges, and opens the provider's page for
+     * the difference.
+     *
+     * <p>{@link #pay} for a {@code COLLECTED} pledge. The new selection is priced and held, and the
+     * answer is where to send the backer to pay the difference; the pledge changes only when the
+     * provider's webhook says it was paid. A retry under the same key replays the page it opened —
+     * the idempotency store answers before anything is priced, held or charged — and a second raise
+     * while one is waiting for its payment is refused with {@code PLEDGE_RAISE_IN_PROGRESS}.
+     */
+    @PostMapping(path = "/v1/pledges/{id}/raise", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> raise(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable UUID id,
+            @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestBody RaisePledgeRequest request) {
+
+        UUID backerId = callerOf(accessToken);
+        enforcePledgeRateLimit(backerId);
+
+        IdempotencyKey key = IdempotencyKey.of(idempotencyKey);
+        return recorded(idempotency.execute(
+                backerId,
+                // The pledge is part of what the key was spent on, for confirm()'s reason.
+                RAISE + ":" + id,
+                key,
+                request,
+                HttpStatus.OK.value(),
+                () -> PledgeRaiseResponse.of(raises.raise(
+                        request.toCommand(id, backerId),
+                        request.language(),
+                        request.successUrl(),
+                        request.errorUrl()))));
+    }
+
     @PatchMapping(path = "/v1/pledges/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> edit(
             @AuthenticationPrincipal Jwt accessToken,

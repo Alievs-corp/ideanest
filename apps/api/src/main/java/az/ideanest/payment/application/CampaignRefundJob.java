@@ -63,16 +63,17 @@ public class CampaignRefundJob implements ScheduledJob {
     /** @return how many refunds this pass settled as succeeded */
     public int refundDue(Instant now) {
         int refunded = 0;
-        List<Object[]> owed = refunds.owedCampaignRefunds(now.minus(properties.retryAfter()), properties.perPass());
+        List<Object[]> owed = refunds.owedPlatformRefunds(now.minus(properties.retryAfter()), properties.perPass());
         for (Object[] row : owed) {
-            UUID pledgeId = UUID.fromString((String) row[0]);
-            RefundReason reason = "UNSUCCESSFUL".equals(row[1]) ? RefundReason.CAMPAIGN_FAILED : RefundReason.CAMPAIGN_HALTED;
+            UUID chargeId = UUID.fromString((String) row[0]);
+            UUID pledgeId = UUID.fromString((String) row[1]);
+            RefundReason reason = RefundReason.valueOf((String) row[2]);
             try {
-                if (service.issueForCampaign(pledgeId, reason).map(Refund::state).filter(s -> s.name().equals("SUCCEEDED")).isPresent()) {
+                if (service.issueForCharge(chargeId, pledgeId, reason).map(Refund::state).filter(s -> s.name().equals("SUCCEEDED")).isPresent()) {
                     refunded++;
                 }
             } catch (RuntimeException e) {
-                log.error("Could not refund pledge {}; the next pass tries again.", pledgeId, e);
+                log.error("Could not refund charge {} of pledge {}; the next pass tries again.", chargeId, pledgeId, e);
             }
         }
 

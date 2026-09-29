@@ -176,9 +176,10 @@ public class RefundService {
      *
      * @return the settled refund, or empty when nothing remained to refund
      */
-    public Optional<Refund> issueForCampaign(UUID pledgeId, RefundReason reason) {
-        String key = "campaign-refund:" + pledgeId + ":" + (refunds.forPledge(pledgeId).size() + 1);
-        return records.recordForCampaign(pledgeId, reason, key).map(this::send);
+    public Optional<Refund> issueForCharge(UUID chargeId, UUID pledgeId, RefundReason reason) {
+        String prefix = reason == RefundReason.RAISE_NOT_APPLIED ? "raise-refund:" : "campaign-refund:";
+        String key = prefix + chargeId + ":" + (refunds.countAgainstCharge(chargeId) + 1);
+        return records.recordForCharge(chargeId, reason, key).map(this::send);
     }
 
     /**
@@ -224,7 +225,12 @@ public class RefundService {
      * @return the refund's identifier when it succeeded, empty when the provider refused it
      */
     public Optional<UUID> refundForDispute(UUID staffId, UUID pledgeId, String detail, String idempotencyKey) {
+        // One refund per charge (#171): a raised pledge was paid for more than once, and an upheld
+        // dispute returns all of it. The last refund, the one that leaves nothing, is the answer.
         Refund refund = issue(staffId, pledgeId, null, RefundReason.DISPUTE_CONCEDED, detail, idempotencyKey);
+        for (int part = 2; refund.state() == RefundState.SUCCEEDED && !refund.fullRefund(); part++) {
+            refund = issue(staffId, pledgeId, null, RefundReason.DISPUTE_CONCEDED, detail, idempotencyKey + "-" + part);
+        }
         return refund.state() == RefundState.SUCCEEDED ? Optional.of(refund.id()) : Optional.empty();
     }
 }

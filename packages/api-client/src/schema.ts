@@ -2820,6 +2820,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/pledges/{id}/raise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["pledgeRaise"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/pledges/{id}/upgrade": {
         parameters: {
             query?: never;
@@ -5020,7 +5036,7 @@ export interface components {
             /** Format: uuid */
             pledgeId: string;
             /** @enum {string} */
-            reason: "BACKER_REQUEST" | "CAMPAIGN_HALTED" | "CAMPAIGN_FAILED" | "FULFILMENT_FAILURE" | "DUPLICATE_CHARGE" | "PLATFORM_ERROR" | "DISPUTE_CONCEDED" | "FRAUD";
+            reason: "BACKER_REQUEST" | "CAMPAIGN_HALTED" | "CAMPAIGN_FAILED" | "FULFILMENT_FAILURE" | "DUPLICATE_CHARGE" | "PLATFORM_ERROR" | "DISPUTE_CONCEDED" | "FRAUD" | "RAISE_NOT_APPLIED";
         };
         Item: {
             creatorSlug?: string;
@@ -5482,6 +5498,19 @@ export interface components {
             /** Format: uuid */
             rewardTierId: string;
         };
+        PledgeRaiseBody: {
+            amount?: components["schemas"]["Money"];
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            endedAt?: string;
+            /** Format: date-time */
+            holdExpiresAt?: string;
+            /** Format: uuid */
+            id?: string;
+            state?: string;
+            total?: components["schemas"]["Money"];
+        };
         PledgeResponse: {
             addons?: components["schemas"]["PledgeAddonBody"][];
             amounts?: components["schemas"]["Amounts"];
@@ -5496,10 +5525,12 @@ export interface components {
             id?: string;
             isAnonymous?: boolean;
             latePledge?: boolean;
+            latestRaise?: components["schemas"]["PledgeRaiseBody"];
             /** Format: uuid */
             paymentMethodId?: string;
             /** Format: uuid */
             projectId?: string;
+            raisable?: boolean;
             /** Format: date-time */
             reservationExpiresAt?: string;
             /** Format: uuid */
@@ -5815,6 +5846,19 @@ export interface components {
             state?: string;
             target?: components["schemas"]["Target"];
         };
+        RaisePledgeRequest: {
+            addons?: components["schemas"]["PledgeAddonBody"][];
+            contribution?: components["schemas"]["Money"];
+            /** Format: uri */
+            errorUrl?: string;
+            expectedAmount?: components["schemas"]["Money"];
+            language?: string;
+            /** Format: uuid */
+            rewardTierId?: string;
+            shippingCountry?: string;
+            /** Format: uri */
+            successUrl?: string;
+        };
         RaiseRequest: {
             body: string;
             /** @enum {string} */
@@ -5873,7 +5917,7 @@ export interface components {
             /** Format: uuid */
             projectId?: string;
             /** @enum {string} */
-            reason?: "BACKER_REQUEST" | "CAMPAIGN_HALTED" | "CAMPAIGN_FAILED" | "FULFILMENT_FAILURE" | "DUPLICATE_CHARGE" | "PLATFORM_ERROR" | "DISPUTE_CONCEDED" | "FRAUD";
+            reason?: "BACKER_REQUEST" | "CAMPAIGN_HALTED" | "CAMPAIGN_FAILED" | "FULFILMENT_FAILURE" | "DUPLICATE_CHARGE" | "PLATFORM_ERROR" | "DISPUTE_CONCEDED" | "FRAUD" | "RAISE_NOT_APPLIED";
             /** Format: uuid */
             refundTransactionId?: string;
             /** Format: date-time */
@@ -6956,6 +7000,7 @@ export type SchemaPayoutSummary = components['schemas']['PayoutSummary'];
 export type SchemaPlan = components['schemas']['Plan'];
 export type SchemaPlatformAnalyticsResponse = components['schemas']['PlatformAnalyticsResponse'];
 export type SchemaPledgeAddonBody = components['schemas']['PledgeAddonBody'];
+export type SchemaPledgeRaiseBody = components['schemas']['PledgeRaiseBody'];
 export type SchemaPledgeResponse = components['schemas']['PledgeResponse'];
 export type SchemaPledgeSupplementBody = components['schemas']['PledgeSupplementBody'];
 export type SchemaPostCommentRequest = components['schemas']['PostCommentRequest'];
@@ -6987,6 +7032,7 @@ export type SchemaPublishRequest = components['schemas']['PublishRequest'];
 export type SchemaPublishUpdateRequest = components['schemas']['PublishUpdateRequest'];
 export type SchemaQueue = components['schemas']['Queue'];
 export type SchemaQueuedReportResponse = components['schemas']['QueuedReportResponse'];
+export type SchemaRaisePledgeRequest = components['schemas']['RaisePledgeRequest'];
 export type SchemaRaiseRequest = components['schemas']['RaiseRequest'];
 export type SchemaRate = components['schemas']['Rate'];
 export type SchemaRatesResponse = components['schemas']['RatesResponse'];
@@ -11937,6 +11983,34 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["PayPledgeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+        };
+    };
+    pledgeRaise: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RaisePledgeRequest"];
             };
         };
         responses: {

@@ -61,5 +61,15 @@ public enum RefundReason {
     DISPUTE_CONCEDED,
 
     /** The charge was not the cardholder's. */
-    FRAUD
+    FRAUD,
+
+    /**
+     * #171: the backer paid to raise their pledge and the raise could not be applied.
+     *
+     * <p>The provider took the difference, and by the time it said so the pledge had moved on — it was
+     * refunded with its campaign, or a later raise changed it, or the places the raise needed were
+     * gone. The money bought nothing, so the platform returns it on its own, the way it returns a
+     * failed campaign's pledges: no member of staff decides it, and V83 allows it without an author.
+     */
+    RAISE_NOT_APPLIED
 }

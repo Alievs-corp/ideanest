@@ -239,7 +239,7 @@
         "metaTitle": "Your pledges",
         "metaDescription": "Every campaign you have backed, and what you chose.",
         "title": "Your pledges",
-        "intro": "Every campaign you have backed. A pledge is charged when you make it and refunded in full if its campaign does not succeed. While a campaign is taking pledges you can raise yours, but not withdraw it."
+        "intro": "Every campaign you have backed. A pledge is charged when you make it and refunded in full if its campaign does not succeed. While a campaign is taking pledges you can raise yours — only the difference is charged — but you cannot lower or withdraw it."
       },
       "campaigns": {
         "metaTitle": "My campaigns",
@@ -293,7 +293,7 @@
         "metaTitle": "Your pledge",
         "metaDescription": "What you chose, what it comes to, and how to raise it.",
         "title": "Your pledge",
-        "intro": "What you chose, what it comes to, and how to raise it. A pledge is charged when it is made, and refunded in full if its campaign does not succeed."
+        "intro": "What you chose, what it comes to, and how to raise it. A pledge is charged when it is made, and refunded in full if its campaign does not succeed. Raising a paid pledge charges only the difference, straight away."
       }
     },
     "fulfilment": {
@@ -435,7 +435,15 @@
         "extraAddons": "Extra add-ons",
         "supplementsNote": "Charged separately from the pledge above, and not yet charged at all.",
         "lockedTitle": "This pledge can no longer be changed here",
-        "lockedBody": "A pledge can be changed while it is being made, and raised — never lowered or withdrawn — after it is confirmed, while the campaign takes pledges. This one is {state}, so those controls are not offered. If something about it is wrong, the campaign’s creator is who to ask."
+        "lockedBody": "A pledge can be changed while it is being made. Once it is paid for it can be raised — never lowered or withdrawn — while its campaign takes pledges, and only the difference is charged. This one is {state}, and either it has moved past that point or its campaign is no longer taking pledges, so those controls are not offered. If something about it is wrong, the campaign’s creator is who to ask.",
+        "raiseReturned": {
+          "raisedTitle": "Your pledge was raised",
+          "raisedBody": "The difference was paid, and the figures above include it. If the campaign does not succeed, is suspended or is cancelled, everything you paid is refunded in full.",
+          "failedTitle": "The raise did not go through",
+          "failedBody": "Nothing was charged, and your pledge is as it was. You can try again while the campaign takes pledges.",
+          "unappliedTitle": "The raise could not be applied",
+          "unappliedBody": "The payment went through after your pledge had already changed, so it was not added to it. That payment is refunded to you in full, automatically."
+        }
       },
       "editor": {
         "loadingRewards": "Loading the rewards",
@@ -446,7 +454,14 @@
         "save": "Save changes",
         "noChanges": "Nothing has been changed yet.",
         "savedTitle": "Your pledge was updated",
-        "savedBody": "The figures above are the service’s, not this page’s arithmetic. Saving the change charged nothing. If the campaign fails, is suspended or is cancelled, every backer is refunded in full."
+        "savedBody": "The figures above are the service’s, not this page’s arithmetic. Saving the change charged nothing. If the campaign fails, is suspended or is cancelled, every backer is refunded in full.",
+        "raiseHeading": "Raise this pledge",
+        "raiseIntro": "This pledge is paid for. While the campaign takes pledges you can raise it — a higher tier, more add-ons or a larger amount — but not lower it. Only the difference is charged, on the payment provider’s page, and your pledge changes once that payment goes through.",
+        "raiseDue": "To pay now: {amount}",
+        "raiseNotHigher": "Choose something that costs more than your pledge does now. A paid pledge can only be raised.",
+        "raisePay": "Pay {amount} and raise",
+        "raiseOpening": "Opening the payment page",
+        "raisePending": "A payment to raise this pledge is still open. You can finish it on the provider’s page, or start again after {time}."
       }
     },
     "surveys": {
@@ -2002,7 +2017,8 @@
           "DUPLICATE_CHARGE": "Charged twice",
           "PLATFORM_ERROR": "Our mistake",
           "DISPUTE_CONCEDED": "A chargeback we did not contest",
-          "FRAUD": "Not the cardholder"
+          "FRAUD": "Not the cardholder",
+          "RAISE_NOT_APPLIED": "A raise that could not be applied"
         }
       },
       "disputes": {
@@ -3458,6 +3474,26 @@
         "PLEDGE_MODIFIED": {
           "title": "This pledge changed while you were confirming it",
           "detail": "Something else wrote to it first — most often the five-minute hold running out as you confirmed. Nothing was confirmed and no card was involved. Reserve it again to carry on."
+        },
+        "PLEDGE_RAISE_IN_PROGRESS": {
+          "title": "A raise is already waiting for its payment",
+          "detail": "Finish the payment you started, or wait for it to lapse, before raising this pledge again. Nothing was charged this time."
+        },
+        "RAISE_AMOUNT_CHANGED": {
+          "title": "The amount to pay has changed",
+          "detail": "A price or a rate moved since this page was loaded, so the difference is no longer the one shown. Nothing was charged. Reload the page to see the new amount."
+        },
+        "RAISE_NOT_AN_INCREASE": {
+          "title": "That does not raise the pledge",
+          "detail": "This selection costs what your pledge already does, so there is nothing to pay. Nothing has changed."
+        },
+        "PLEDGE_NOT_RAISABLE": {
+          "title": "This pledge is not raised by paying the difference",
+          "detail": "Only a paid pledge is raised this way. Reload the page to see what can be done with this one. Nothing has changed."
+        },
+        "PAYMENT_UNAVAILABLE": {
+          "title": "Payments are not available right now",
+          "detail": "Nothing was charged. Try again in a moment."
         }
       }
     },
@@ -4665,7 +4701,7 @@
       "summary": "What happens between finding a campaign and holding the thing it funded.",
       "backing": {
         "heading": "If you are backing something",
-        "first": "Choose a reward tier, or pledge without one. <b>You are charged when you pledge</b>, and the money is held on the platform’s account. A pledge cannot be cancelled; while the campaign is taking pledges you can raise it with a higher tier or an extra.",
+        "first": "Choose a reward tier, or pledge without one. <b>You are charged when you pledge</b>, and the money is held on the platform’s account. A pledge cannot be cancelled or lowered; while the campaign is taking pledges you can raise it with a higher tier, an add-on or a larger amount, and only the difference is charged, at once.",
         "second": "A campaign succeeds at 80% of its goal. From then on its creator can withdraw the money, or extend the deadline once. If the campaign has not reached 80% by its deadline, or by the end of the extension, every backer is refunded in full and no fee is charged.",
         "third": "Once a creator withdraws, the payout is held for fourteen days. In that time a backer can dispute their payment and an administrator decides; an upheld dispute is refunded in full."
       },

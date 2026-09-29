@@ -1,6 +1,7 @@
 package az.ideanest.pledge.application;
 
 import az.ideanest.pledge.PledgeProperties;
+import az.ideanest.pledge.infrastructure.PledgeRaiseRepository;
 import az.ideanest.pledge.infrastructure.PledgeRepository;
 import az.ideanest.shared.jobs.ScheduledJob;
 import java.time.Clock;
@@ -44,13 +45,22 @@ public class ReservationCleanerJob implements ScheduledJob {
 
     private final PledgeRepository pledges;
     private final ReservationExpiry expiry;
+    private final PledgeRaiseRepository raises;
+    private final PledgeRaiseService raiseService;
     private final PledgeProperties properties;
     private final Clock clock;
 
     public ReservationCleanerJob(
-            PledgeRepository pledges, ReservationExpiry expiry, PledgeProperties properties, Clock clock) {
+            PledgeRepository pledges,
+            ReservationExpiry expiry,
+            PledgeRaiseRepository raises,
+            PledgeRaiseService raiseService,
+            PledgeProperties properties,
+            Clock clock) {
         this.pledges = pledges;
         this.expiry = expiry;
+        this.raises = raises;
+        this.raiseService = raiseService;
         this.properties = properties;
         this.clock = clock;
     }
@@ -75,7 +85,38 @@ public class ReservationCleanerJob implements ScheduledJob {
 
     @Override
     public void run() {
-        releaseExpiredReservations(clock.instant().truncatedTo(ChronoUnit.MICROS));
+        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        releaseExpiredReservations(now);
+        releaseLapsedRaises(now);
+    }
+
+    /**
+     * #171: the places a raise held for its payment go back when nobody paid within the window.
+     *
+     * <p>The same walk as the drafts', for the same reason and in the same job: a raise's hold is a
+     * reservation like a draft's, and a minute late is a minute in which a tier looks sold out while a
+     * place is free. One raise per transaction, and one failure does not stop the rest.
+     *
+     * @return how many raises this pass released
+     */
+    public int releaseLapsedRaises(Instant now) {
+        List<UUID> lapsed =
+                raises.findPledgesWithLapsedRaises(now, PageRequest.ofSize(properties.reservation().cleanupBatchSize()));
+
+        int released = 0;
+        for (UUID pledgeId : lapsed) {
+            try {
+                if (raiseService.releaseLapsed(pledgeId, now)) {
+                    released++;
+                }
+            } catch (RuntimeException e) {
+                log.error("Could not release the lapsed raise of pledge {}; the next pass tries again.", pledgeId, e);
+            }
+        }
+        if (released > 0) {
+            log.info("Released {} of {} lapsed raises.", released, lapsed.size());
+        }
+        return released;
     }
 
     /**

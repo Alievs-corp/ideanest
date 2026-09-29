@@ -326,6 +326,22 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
             nativeQuery = true)
     int addToTotals(@Param("id") UUID id, @Param("amount") BigDecimal amount, @Param("currency") String currency);
 
+    /**
+     * #171: a paid pledge was raised, so the campaign has raised the difference more — and has the
+     * same number of backers, because it is the same pledge.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(
+            value =
+                    """
+                    UPDATE projects
+                       SET pledged_amount = pledged_amount + :amount
+                     WHERE id = :id
+                       AND currency = :currency
+                    """,
+            nativeQuery = true)
+    int addRaiseToTotals(@Param("id") UUID id, @Param("amount") BigDecimal amount, @Param("currency") String currency);
+
     /** IDN-EXT-01 (#40): take a fully refunded pledge out of a campaign's totals, never below zero. */
     @Modifying(flushAutomatically = true)
     @Query(
