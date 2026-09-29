@@ -55,6 +55,7 @@ const config: ExpoConfig = {
   version: '0.1.0',
   orientation: 'portrait',
   userInterfaceStyle: 'dark',
+  icon: './assets/icon.png',
 
   /**
    * The custom scheme. `ideanest://project/<creator>/<campaign>` is what a push
@@ -83,6 +84,10 @@ const config: ExpoConfig = {
 
   android: {
     package: 'az.ideanest.app',
+    adaptiveIcon: {
+      foregroundImage: './assets/adaptive-icon.png',
+      backgroundColor: colors.surface1,
+    },
     /**
      * App Links. `autoVerify` is what stops Android showing a disambiguation
      * sheet: it fetches `https://<host>/.well-known/assetlinks.json` at install
@@ -101,6 +106,14 @@ const config: ExpoConfig = {
 
   plugins: [
     'expo-router',
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/splash-icon.png',
+        imageWidth: 200,
+        backgroundColor: colors.surface1,
+      },
+    ],
     [
       'expo-secure-store',
       {
@@ -143,6 +156,7 @@ const config: ExpoConfig = {
         // Android notification icon tint is as much part of the palette as a
         // card is, and it is the one that ends up on a lock screen.
         color: colors.lime500,
+        icon: './assets/notification-icon.png',
       },
     ],
   ],
