@@ -160,6 +160,11 @@ describe('the pledge screens’ money sentences in every language', () => {
  * works, Trust and safety and the rest — is held to the same rule: nothing says the charge comes
  * later, and nothing calls a pledge a hold on the card. The second set of phrases is the retired
  * authorisation model, as each catalogue spelled it.
+ *
+ * #171 adds every string under `account.pledges` — the list, the pledge screen, its editor and the
+ * raise notices — where a backer reads about their own money. The whole catalogue was tried and is
+ * not held to it: an admin payments table says "nothing has been charged yet" of itself, and the
+ * checkout words a charge that is genuinely still to come, both correctly.
  */
 describe('the public pages’ money sentences in every language', () => {
   const LATER: Record<string, RegExp> = {
@@ -187,8 +192,17 @@ describe('the public pages’ money sentences in every language', () => {
     ['ru', ru],
     ['tr', tr],
   ] as const)('says nothing about a later charge or a hold in %s', (language, catalogue) => {
-    const sentences = sentencesOf(catalogue.static, 'static');
-    expect(sentences.length).toBeGreaterThan(0);
+    const sentences = [
+      ...sentencesOf(catalogue.static, 'static'),
+      ...sentencesOf(catalogue.account.pledges, 'account.pledges'),
+    ];
+    expect(sentences.map(([path]) => path)).toEqual(
+      expect.arrayContaining([
+        'static.trustSafety.money.first',
+        'account.pledges.editor.raisePending',
+        'account.pledges.manager.raiseReturned.heldBody',
+      ]),
+    );
     for (const [path, sentence] of sentences) {
       expect(sentence, `${language} ${path}: ${sentence}`).not.toMatch(LATER[language] as RegExp);
       expect(sentence, `${language} ${path}: ${sentence}`).not.toMatch(HOLD[language] as RegExp);
