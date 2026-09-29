@@ -2,8 +2,10 @@ import { useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { deviceLocale, siteUrl } from '../api/config';
+import { siteUrl } from '../api/config';
+import { currentLocale } from '../lib/locale';
 import { isGuarded, signInHrefFor } from '../lib/guard';
+import { useT } from '../lib/i18n';
 import { useSession } from '../lib/use-session';
 import { colors, size, spacing } from '../theme';
 import { Button } from './form';
@@ -20,15 +22,18 @@ import { Body, Heading } from './text';
  * @param webPath the web path, locale stripped (`/projects/<id>/back`, not `/az/projects/…`)
  */
 export function WebFallback({
-  title,
+  titleKey,
   webPath,
 }: {
-  readonly title: string;
+  /** A catalogue key, e.g. `shell.nav.pricing`. */
+  readonly titleKey: string;
   readonly webPath: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const { signedIn } = useSession();
+  const t = useT('mobile.fallback');
+  const tAll = useT();
   const blocked = isGuarded(pathname) && !signedIn;
 
   useEffect(() => {
@@ -39,11 +44,11 @@ export function WebFallback({
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
-      <Heading accessibilityRole="header">{title}</Heading>
-      <Body>This part of IdeyaNest is still being built for the app. It is ready on the web.</Body>
+      <Heading accessibilityRole="header">{tAll(titleKey)}</Heading>
+      <Body>{t('body')}</Body>
       <Button
-        label="Open on the website"
-        onPress={() => void WebBrowser.openBrowserAsync(`${siteUrl()}/${deviceLocale()}${webPath}`)}
+        label={t('open')}
+        onPress={() => void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}${webPath}`)}
       />
     </ScrollView>
   );

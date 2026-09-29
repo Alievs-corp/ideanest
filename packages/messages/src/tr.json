@@ -5133,5 +5133,44 @@
     "extendDate": "Mevcut son tarihten sonra ve en geç {latest} olan bir tarih seçin.",
     "withdrawWrongState": "Para yalnızca etkin, son haftasında, uzatılmış ya da başarılı bir kampanyadan çekilebilir.",
     "failed": "Olmadı. Birazdan yeniden deneyin."
+  },
+  "mobile": {
+    "tabs": {
+      "home": "Ana sayfa",
+      "search": "Arama",
+      "saved": "Kaydedilenler",
+      "pledges": "Destekler",
+      "me": "Ben"
+    },
+    "me": {
+      "thisPhone": "Bu telefon",
+      "language": "Dil",
+      "allSettings": "Tüm ayarlar"
+    },
+    "lock": {
+      "face": "Face ID iste",
+      "fingerprint": "Parmak izini iste",
+      "other": "Cihaz kilidini iste",
+      "notEnrolled": "Cihaz kilidi ayarlanmamış",
+      "unavailable": "Bu telefonda biyometrik kilit yok",
+      "checking": "Telefonun yetenekleri kontrol ediliyor",
+      "wait": "Bir saniye.",
+      "keychain": "Oturumunuz anahtarlıkta tutulur ve telefon açıkken okunabilir.",
+      "enrol": "Telefonunuzun ayarlarında parmak izi, yüz veya parola ekleyin, sonra geri dönün.",
+      "open": "Açık. Uygulama birkaç dakika arka planda kalana kadar oturum açık kalır.",
+      "armed": "Açık. Destekleriniz bir sonraki okunduğunda telefon sizi doğrulamak isteyecek.",
+      "refused": "Cihaz sizin olduğunuzu doğrulamadı, bu yüzden hiçbir şey değişmedi."
+    },
+    "fallback": {
+      "body": "IdeyaNest’in bu bölümü uygulama için hâlâ hazırlanıyor. Web sitesinde hazır.",
+      "open": "Web sitesinde aç",
+      "editCampaign": "Kampanyayı düzenle",
+      "prelaunch": "Ön lansman sayfası"
+    },
+    "language": {
+      "title": "Dil",
+      "saveFailed": "Hesap diliniz kaydedilmedi. Uygulama bu telefonda zaten yeni dilde.",
+      "retry": "Tekrar dene"
+    }
   }
 }

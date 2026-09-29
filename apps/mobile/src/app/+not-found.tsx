@@ -1,5 +1,6 @@
 import { Stack, useRouter } from 'expo-router';
 import { FailureState } from '../components/failure-state';
+import { useT } from '../lib/i18n';
 
 /**
  * Where an unmatched route lands.
@@ -13,13 +14,14 @@ import { FailureState } from '../components/failure-state';
  */
 export default function NotFoundScreen() {
   const router = useRouter();
+  const t = useT('shell.failure.pages.notFound');
   return (
     <>
-      <Stack.Screen options={{ title: 'Not found' }} />
+      <Stack.Screen options={{ title: t('metaTitle') }} />
       <FailureState
-        title="That page is not in the app"
-        description="This version of IdeyaNest does not have a screen for that link. It may be on the web."
-        actionLabel="Go to Home"
+        title={t('title')}
+        description={t('description')}
+        actionLabel={t('action')}
         onAction={() => router.replace('/')}
       />
     </>

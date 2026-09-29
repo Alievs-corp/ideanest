@@ -3,11 +3,13 @@ import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useQueryClient } from '@tanstack/react-query';
-import { deviceLocale, siteUrl } from '../../api/config';
+import { siteUrl } from '../../api/config';
 import { Button } from '../../components/form';
 import { Body, CardTitle, Meta, Subheading } from '../../components/text';
 import { signOut } from '../../lib/auth';
 import { biometricCapability, canLock, type BiometricCapability } from '../../lib/biometrics';
+import { useT } from '../../lib/i18n';
+import { currentLocale } from '../../lib/locale';
 import { forgetPersistedCache } from '../../lib/offline';
 import { disableLock, enableLock } from '../../lib/session';
 import { useSession } from '../../lib/use-session';
@@ -17,35 +19,45 @@ import { colors, radius, size, spacing } from '../../theme';
  * The Me tab — issue #150. The web's account menu, settings list and footer, in one place.
  *
  * It replaces `app/account.tsx`, and the biometric lock moves here unchanged in
- * behaviour under "This phone" (see the notes that used to head that file: the switch is
- * offered only when the device can honour it, and signing out clears the offline cache
- * because #115 keeps the saved and pledge lists on disk).
+ * behaviour under "This phone" (the switch is offered only when the device can honour it,
+ * and signing out clears the offline cache because #115 keeps the saved and pledge lists
+ * on disk).
  *
- * The staff console link is never rendered: administration is not in the app.
+ * Every word is a catalogue key: the web's own where the web has the sentence, the
+ * `mobile` namespace where only the app does. The staff console link is never rendered:
+ * administration is not in the app.
  */
 
 interface Row {
+  /** A catalogue key. */
   readonly label: string;
   readonly href?: Href;
   readonly web?: string;
 }
 
 const YOUR_ACCOUNT: readonly Row[] = [
-  { label: 'My campaigns', href: '/account/campaigns' },
-  { label: 'Following', href: '/account/following' },
-  { label: 'Surveys', href: '/account/surveys' },
-  { label: 'Deliveries', href: '/account/deliveries' },
+  { label: 'account.links.campaigns.label', href: '/account/campaigns' },
+  { label: 'account.links.following.label', href: '/account/following' },
+  { label: 'account.links.surveys.label', href: '/account/surveys' },
+  { label: 'account.links.deliveries.label', href: '/account/deliveries' },
 ];
 
 const CREATOR: readonly Row[] = [
-  { label: 'Start a campaign', href: '/campaigns/new' },
-  { label: 'Pricing', href: '/pricing' },
+  { label: 'shell.actions.startCampaign', href: '/campaigns/new' },
+  { label: 'shell.nav.pricing', href: '/pricing' },
 ];
 
+const SETTINGS: readonly Row[] = [
+  { label: 'shell.actions.settings', href: '/settings' },
+  { label: 'mobile.me.language', href: '/settings/language' },
+];
+
+const LANGUAGE_ONLY: readonly Row[] = [{ label: 'mobile.me.language', href: '/settings/language' }];
+
 const ABOUT: readonly Row[] = [
-  { label: 'About IdeyaNest', web: '/about' },
-  { label: 'How it works', web: '/how-it-works' },
-  { label: 'Trust and safety', web: '/trust' },
+  { label: 'shell.footer.links.about', web: '/about' },
+  { label: 'shell.footer.links.howItWorks', web: '/how-it-works' },
+  { label: 'shell.footer.links.trustSafety', web: '/trust' },
 ];
 
 const styles = StyleSheet.create({
@@ -73,20 +85,23 @@ const styles = StyleSheet.create({
 
 function NavRow({ row }: { readonly row: Row }) {
   const router = useRouter();
+  const t = useT();
+  const label = t(row.label);
   return (
     <Pressable
-      accessibilityRole="link"
-      accessibilityLabel={row.label}
+      // In-app rows are buttons; only the ones that leave for the browser are links.
+      accessibilityRole={row.web === undefined ? 'button' : 'link'}
+      accessibilityLabel={label}
       onPress={() => {
         if (row.href !== undefined) router.push(row.href);
         else if (row.web !== undefined) {
-          void WebBrowser.openBrowserAsync(`${siteUrl()}/${deviceLocale()}${row.web}`);
+          void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}${row.web}`);
         }
       }}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
       <CardTitle style={{ flex: 1 }} accessibilityElementsHidden importantForAccessibility="no">
-        {row.label}
+        {label}
       </CardTitle>
       <Meta style={styles.chevron} accessibilityElementsHidden importantForAccessibility="no">
         ›
@@ -95,10 +110,11 @@ function NavRow({ row }: { readonly row: Row }) {
   );
 }
 
-function Group({ title, rows }: { readonly title: string; readonly rows: readonly Row[] }) {
+function Group({ titleKey, rows }: { readonly titleKey: string; readonly rows: readonly Row[] }) {
+  const t = useT();
   return (
     <View style={styles.section}>
-      <Subheading accessibilityRole="header">{title}</Subheading>
+      <Subheading accessibilityRole="header">{t(titleKey)}</Subheading>
       <View style={styles.card}>
         {rows.map((row) => (
           <NavRow key={row.label} row={row} />
@@ -111,6 +127,7 @@ function Group({ title, rows }: { readonly title: string; readonly rows: readonl
 export default function MeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const t = useT();
   const { signedIn, locked, unlocked } = useSession();
 
   const [capability, setCapability] = useState<BiometricCapability | null>(null);
@@ -157,46 +174,51 @@ export default function MeScreen() {
     }
   }
 
+  const lockLabel = t(lockLabelKey(capability));
+
   return (
     <ScrollView contentContainerStyle={styles.content}>
       {signedIn ? (
         <>
-          <Group title="Your account" rows={YOUR_ACCOUNT} />
-          <Group title="Creators" rows={CREATOR} />
-          <Group title="Settings" rows={[{ label: 'All settings', href: '/settings' }]} />
+          <Group titleKey="account.groups.yourAccount" rows={YOUR_ACCOUNT} />
+          <Group titleKey="shell.footer.groups.creators" rows={CREATOR} />
+          <Group titleKey="account.groups.settings" rows={SETTINGS} />
         </>
       ) : (
-        <View style={styles.section}>
-          <Subheading accessibilityRole="header">Welcome to IdeyaNest</Subheading>
-          <Body>
-            Discovery and search work without an account. Saved campaigns and pledges need one.
-          </Body>
-          <Button label="Sign in" onPress={() => router.push('/sign-in')} />
-          <Button
-            label="Create an account"
-            variant="secondary"
-            onPress={() =>
-              void WebBrowser.openBrowserAsync(`${siteUrl()}/${deviceLocale()}/register`)
-            }
-          />
-        </View>
+        <>
+          <View style={styles.section}>
+            <Body>{t('shell.tagline')}</Body>
+            <Button
+              label={t('shell.actions.register')}
+              onPress={() =>
+                void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}/register`)
+              }
+            />
+            <Button
+              label={t('shell.actions.signIn')}
+              variant="secondary"
+              onPress={() => router.push('/sign-in')}
+            />
+          </View>
+          <Group titleKey="account.groups.settings" rows={LANGUAGE_ONLY} />
+        </>
       )}
 
       {signedIn ? (
         <View style={styles.section}>
-          <Subheading accessibilityRole="header">This phone</Subheading>
+          <Subheading accessibilityRole="header">{t('mobile.me.thisPhone')}</Subheading>
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={styles.rowText}>
-                <Body tone="primary">{lockLabel(capability)}</Body>
-                <Meta>{lockDetail(capability, locked, unlocked)}</Meta>
+                <Body tone="primary">{lockLabel}</Body>
+                <Meta>{t(lockDetailKey(capability, locked, unlocked))}</Meta>
               </View>
               {capability !== null && canLock(capability) ? (
                 <Switch
                   value={locked}
                   onValueChange={(next) => void toggleLock(next)}
                   disabled={busy}
-                  accessibilityLabel={lockLabel(capability)}
+                  accessibilityLabel={lockLabel}
                   trackColor={{ false: colors.surface3, true: colors.lime500 }}
                   thumbColor={locked ? colors.textOnLime : colors.textTertiary}
                 />
@@ -204,56 +226,53 @@ export default function MeScreen() {
             </View>
             {refused ? (
               <Body accessibilityRole="alert" style={{ color: colors.danger }}>
-                The device did not confirm it was you, so nothing changed.
+                {t('mobile.lock.refused')}
               </Body>
             ) : null}
           </View>
         </View>
       ) : null}
 
-      <Group title="About" rows={ABOUT} />
+      <Group titleKey="shell.footer.groups.about" rows={ABOUT} />
 
       {signedIn ? (
-        <Button label="Sign out" variant="secondary" busy={busy} onPress={() => void endIt()} />
+        <Button
+          label={t('shell.actions.signOut')}
+          variant="secondary"
+          busy={busy}
+          onPress={() => void endIt()}
+        />
       ) : null}
     </ScrollView>
   );
 }
 
 /** What to call the control, in the words of whatever the device actually has. */
-function lockLabel(capability: BiometricCapability | null): string {
+function lockLabelKey(capability: BiometricCapability | null): string {
   switch (capability) {
     case 'face':
-      return 'Require Face ID';
+      return 'mobile.lock.face';
     case 'fingerprint':
-      return 'Require your fingerprint';
+      return 'mobile.lock.fingerprint';
     case 'other':
-      return 'Require a device unlock';
+      return 'mobile.lock.other';
     case 'not-enrolled':
-      return 'Device unlock is not set up';
+      return 'mobile.lock.notEnrolled';
     case 'unavailable':
-      return 'This phone has no biometric unlock';
+      return 'mobile.lock.unavailable';
     case null:
-      return 'Checking what this phone can do';
+      return 'mobile.lock.checking';
   }
 }
 
-function lockDetail(
+function lockDetailKey(
   capability: BiometricCapability | null,
   locked: boolean,
   unlocked: boolean,
 ): string {
-  if (capability === null) return 'One moment.';
-  if (capability === 'unavailable') {
-    return 'Your session stays in the keychain, readable while the phone is unlocked.';
-  }
-  if (capability === 'not-enrolled') {
-    return 'Add a fingerprint, a face or a passcode in your phone’s settings, then come back.';
-  }
-  if (!locked) {
-    return 'Your session stays in the keychain, readable while the phone is unlocked.';
-  }
-  return unlocked
-    ? 'On. This session is open until the app has been away for a few minutes.'
-    : 'On. The next time your pledges are read, the phone will ask for you.';
+  if (capability === null) return 'mobile.lock.wait';
+  if (capability === 'unavailable') return 'mobile.lock.keychain';
+  if (capability === 'not-enrolled') return 'mobile.lock.enrol';
+  if (!locked) return 'mobile.lock.keychain';
+  return unlocked ? 'mobile.lock.open' : 'mobile.lock.armed';
 }

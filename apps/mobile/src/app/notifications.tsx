@@ -1,5 +1,5 @@
 import { WebFallback } from '../components/web-fallback';
 
 export default function Screen() {
-  return <WebFallback title="Notifications" webPath={'/notifications'} />;
+  return <WebFallback titleKey="shell.actions.notifications" webPath={'/notifications'} />;
 }

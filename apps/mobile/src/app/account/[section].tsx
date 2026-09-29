@@ -3,5 +3,5 @@ import { WebFallback } from '../../components/web-fallback';
 
 export default function Screen() {
   const { section } = useLocalSearchParams<{ section: string }>();
-  return <WebFallback title="Your account" webPath={`/account/${encodeURIComponent(section)}`} />;
+  return <WebFallback titleKey="account.groups.yourAccount" webPath={`/account/${encodeURIComponent(section)}`} />;
 }

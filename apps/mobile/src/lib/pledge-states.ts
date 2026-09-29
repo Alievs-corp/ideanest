@@ -1,5 +1,6 @@
 import type { components } from '@ideanest/api-client';
-import { deviceLocale, type SupportedLocale } from '../api/config';
+import type { SupportedLocale } from '../api/config';
+import { currentLocale } from './locale';
 
 /**
  * A pledge's state in words a backer would use — issue #180.
@@ -99,7 +100,7 @@ function isPledgeState(state: string): state is PledgeState {
  */
 export function readablePledgeState(
   state: string | undefined,
-  locale: SupportedLocale = deviceLocale(),
+  locale: SupportedLocale = currentLocale(),
 ): string {
   if (state === undefined) return '';
   return isPledgeState(state) ? PLEDGE_STATE_LABELS[locale][state] : state;

@@ -1,5 +1,4 @@
 import Constants from 'expo-constants';
-import { getLocales } from 'expo-localization';
 
 /**
  * What the application was built pointing at, read back at run time.
@@ -44,41 +43,15 @@ export function siteUrl(): string {
   }
   return url;
 }
+export {
+  SUPPORTED_LOCALES,
+  isLocale as isSupportedLocale,
+  type Locale as SupportedLocale,
+} from '@ideanest/messages';
 
 /**
- * The languages §21.1 ships, and the one this device asks for.
- *
- * The service negotiates on `Accept-Language` across six controllers and sets
- * `Vary: Accept-Language` on all of them, so what the client sends decides the
- * language of every category name, collection title and facet label. `apps/web`
- * closed this gap in #324 by sending the language it renders in; the phone's
- * answer is the phone's own language, narrowed to what the platform actually
- * has copy for — an unrecognised tag would otherwise ask for a language the
- * service falls back out of on every request.
+ * The app's default language, when nothing else decides — issue #150. Azerbaijani, the
+ * platform's primary language; the web's own default stays `en`. Which language is
+ * actually in use is `lib/locale.ts`'s question (stored choice, account, device).
  */
-export const SUPPORTED_LOCALES = ['az', 'en', 'ru', 'tr'] as const;
-
-export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
-
-export const DEFAULT_LOCALE: SupportedLocale = 'en';
-
-export function isSupportedLocale(value: string): value is SupportedLocale {
-  return (SUPPORTED_LOCALES as readonly string[]).includes(value);
-}
-
-/**
- * The device's preferred language, if the platform has it.
- *
- * The first match wins rather than the first entry: somebody whose phone is set
- * to Georgian with Russian second should read Russian here rather than English,
- * and only a device that prefers none of the four falls back.
- */
-export function deviceLocale(): SupportedLocale {
-  for (const locale of getLocales()) {
-    const tag = locale.languageCode?.toLowerCase();
-    if (tag !== undefined && tag !== null && isSupportedLocale(tag)) {
-      return tag;
-    }
-  }
-  return DEFAULT_LOCALE;
-}
+export const DEFAULT_LOCALE = 'az' as const;
