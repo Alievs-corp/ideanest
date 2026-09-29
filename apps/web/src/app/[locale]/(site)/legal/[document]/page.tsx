@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { LegalDocumentPage } from '../../../../../components/content/LegalDocumentPage';
+import { LegalUnavailable } from '../../../../../components/content/LegalUnavailable';
 import { isLegalDocumentSlug, LEGAL_DOCUMENTS, legalPath } from '../../../../../lib/legal/api';
 import { fetchLegalDocument } from '../../../../../lib/legal/server';
 import { localeOrDefault } from '../../../../../lib/i18n/locale';
@@ -39,6 +40,12 @@ import { publicPageMetadata } from '../../../../../lib/seo/metadata';
  * `/legal/anything-else` is `notFound()` — which is different from a document that exists and
  * has not been published yet, and that difference is the whole of `LegalDocumentPage`'s
  * not-published branch.
+ *
+ * <h2>Not published and not loaded are two pages — issue #147</h2>
+ *
+ * Only the service's 404 is "not published". A read that failed any other way renders
+ * `LegalUnavailable`, the site's failure state: during the 2026-09-28 outage this address told
+ * readers IdeaNest had no terms of use, which §22.2 requires it to have.
  *
  * <h2>Motion: none</h2>
  *
@@ -91,12 +98,17 @@ export default async function LegalDocumentRoute({
   if (!isLegalDocumentSlug(document)) notFound();
 
   const locale = localeOrDefault(requested);
+  const read = await fetchLegalDocument(document, locale);
+
+  if (read.state === 'unavailable') {
+    return <LegalUnavailable retryHref={legalPath(document)} scope="document" />;
+  }
 
   return (
     <LegalDocumentPage
       slug={document}
       locale={locale}
-      document={await fetchLegalDocument(document, locale)}
+      document={read.state === 'published' ? read.document : null}
     />
   );
 }

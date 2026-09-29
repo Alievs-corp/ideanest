@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { CheckoutView } from '../../../../../components/checkout/CheckoutView';
 import { privatePageMetadata } from '../../../../../lib/seo/metadata';
-import { checkoutCopy } from '../../../../../lib/i18n/shell-copy.server';
+import { checkoutCopy, failureCopy } from '../../../../../lib/i18n/shell-copy.server';
 import { fetchLegalDocument } from '../../../../../lib/api/server';
 import { FeeDisclosure } from '../../../../../components/fees/FeeDisclosure';
+import { FailureAction, FailureState } from '../../../../../components/shell/FailureState';
 import { fetchFeeDisclosure } from '../../../../../lib/fees/server';
 import { localeOrDefault } from '../../../../../lib/i18n/locale';
-import { getLocale } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 /**
  * `/projects/{id}/back` — the pledge flow, docs/architecture.md §4.5.
@@ -99,6 +100,22 @@ function rewardId(value: string | string[] | undefined): string | null {
   return value;
 }
 
+/**
+ * This page's own address with the query it was opened with, for the failure state's retry.
+ *
+ * The tokens are carried over because a private campaign's checkout is unreachable without
+ * them, and a retry that dropped them would turn a transient failure into a refusal.
+ */
+function retryHref(id: string, query: Record<string, string | string[] | undefined>): string {
+  const search = new URLSearchParams();
+  for (const token of secretTokens(query['token'])) search.append('token', token);
+  const reward = rewardId(query['reward']);
+  if (reward !== null) search.set('reward', reward);
+
+  const suffix = search.toString();
+  return `/projects/${encodeURIComponent(id)}/back${suffix === '' ? '' : `?${suffix}`}`;
+}
+
 export default async function BackProjectPage({
   params,
   searchParams,
@@ -129,11 +146,35 @@ export default async function BackProjectPage({
    * rendered *with* the page — a risk sentence that appeared a moment after the confirm
    * button did would be one somebody had already scrolled past.
    *
-   * Null when nothing is published, which is where this platform stands until #439 seeds the
-   * words. The statement is then not drawn and the confirmation acknowledges nothing, which
-   * is exactly what the service asks for.
+   * `unpublished` when nothing is published, which is where this platform stands until #439
+   * seeds the words. The statement is then not drawn and the confirmation acknowledges
+   * nothing, which is exactly what the service asks for.
+   *
+   * `unavailable` is not that — #147. A failed read says nothing about whether an agreement is
+   * in force, and treating it as "none" drew a checkout without the risk statement §22.3
+   * requires, whose confirmation the service refuses once an agreement is in force. So the page
+   * renders the failure state rather than a checkout: nothing is reserved yet (that happens in
+   * `CheckoutView`, which is not mounted), and the retry is this address again.
    */
   const backerAgreement = await fetchLegalDocument('BACKER_AGREEMENT');
+
+  if (backerAgreement.state === 'unavailable') {
+    const [t, failure] = await Promise.all([
+      getTranslations('checkout.agreementUnavailable'),
+      failureCopy(),
+    ]);
+
+    return (
+      <main>
+        <FailureState
+          copy={failure}
+          title={t('title')}
+          description={<p>{t('body')}</p>}
+          action={<FailureAction href={retryHref(id, query)}>{t('action')}</FailureAction>}
+        />
+      </main>
+    );
+  }
 
   /*
    * §22.3's sixth requirement, on the screen it is actually about — #439.
@@ -156,7 +197,9 @@ export default async function BackProjectPage({
         secretTokens={secretTokens(query['token'])}
         initialRewardId={rewardId(query['reward'])}
         copy={copy}
-        backerAgreementVersion={backerAgreement?.version ?? null}
+        backerAgreementVersion={
+          backerAgreement.state === 'published' ? backerAgreement.document.version : null
+        }
       />
 
       {/*

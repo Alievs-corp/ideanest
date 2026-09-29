@@ -19,6 +19,7 @@ import {
 import type { DiscoveryFeed, ProjectCard } from '../discovery/api';
 import type { Plan } from '../plans/api';
 import { DEFAULT_LOCALE } from '../i18n/locale';
+import { LEGAL_UNAVAILABLE, LEGAL_UNPUBLISHED, type LegalRead } from '../legal/api';
 import {
   COLLECTIONS,
   DISCOVERY,
@@ -605,27 +606,54 @@ export type DocumentKind = NonNullable<
  * languages, which a database row could not be — and the <em>version</em> comes from here,
  * because it is the thing the server checks the confirmation against.
  *
- * <p>`null` when nothing of this kind is published, which is a state rather than a failure:
- * until #439 seeds the words, the platform has the machinery and none of the text, and both
- * gates treat an unpublished agreement as no requirement.
+ * <h2>Three answers, not two — issue #147</h2>
+ *
+ * `unpublished` is the service's 404: nothing of this kind is in force, which is a state rather
+ * than a failure — until #439 seeds the words, the platform has the machinery and none of the
+ * text, and both gates treat an unpublished agreement as no requirement.
+ *
+ * `unavailable` is every other failure: a 5xx, a timeout, the service unreachable. This read
+ * used to fold those into the same `null`, so during an outage the checkout drew no risk
+ * statement and offered the plain confirm label — as if no agreement were in force, when the
+ * service would refuse a confirmation that acknowledged nothing the moment it came back. The
+ * page now shows the failure state instead of a checkout it cannot complete honestly.
+ *
+ * Unlike {@link refusalOrRethrow}, a 403 or a 5xx is not an absence here: every status but 404
+ * is `unavailable`. A bug — anything that is not an `ApiError`, a network `TypeError` or an
+ * aborted or timed-out request — is still rethrown, for the reason that function gives.
+ *
+ * Only a 200 is held for the window: Next's data cache stores a `fetch` response only when its
+ * status is 200, and the route is dynamic, so an unavailable answer is asked again on the next
+ * request.
  */
 export async function fetchLegalDocument(
   kind: DocumentKind,
   options: ServerReadOptions = {},
-): Promise<LegalDocumentResponse | null> {
+): Promise<LegalRead<LegalDocumentResponse>> {
   const withWindow: ServerReadOptions = { revalidateSeconds: TAXONOMY_REVALIDATE_SECONDS, ...options };
 
   try {
-    return await client(withWindow).get('/v1/legal/documents/{kind}', {
+    const document = await client(withWindow).get('/v1/legal/documents/{kind}', {
       path: { kind },
       ...(await readOptions(withWindow, LEGAL)),
     });
+    return { state: 'published', document };
   } catch (cause) {
-    /*
-     * A 404 here means "not published yet", which is the ordinary state of this platform
-     * today and not an outage. `refusalOrRethrow` draws the same line every read in this
-     * module draws: a refusal is an absence, and anything else is the site being down.
-     */
-    return refusalOrRethrow(cause);
+    if (cause instanceof ApiError) {
+      return cause.status === 404 ? LEGAL_UNPUBLISHED : LEGAL_UNAVAILABLE;
+    }
+    if (cause instanceof TypeError || isAbort(cause)) return LEGAL_UNAVAILABLE;
+    throw cause;
   }
+}
+
+/**
+ * A request cancelled by its signal or by `AbortSignal.timeout`, which is not a bug.
+ *
+ * Read by name rather than by `instanceof`: `fetch` rejects with a `DOMException`, and whether
+ * that inherits from this realm's `Error` depends on which implementation made it.
+ */
+function isAbort(cause: unknown): boolean {
+  if (typeof cause !== 'object' || cause === null || !('name' in cause)) return false;
+  return cause.name === 'AbortError' || cause.name === 'TimeoutError';
 }

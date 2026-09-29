@@ -88,6 +88,29 @@ export interface LegalDocumentSummary {
   readonly effectiveFrom: string | null;
 }
 
+/**
+ * What a read of one legal document came back with — issue #147.
+ *
+ * <h2>Three answers, because there are three facts</h2>
+ *
+ * `unpublished` is the service answering 404: no version of this document is in force, which is
+ * this platform's state until #423's adviser delivers the words, and a page says so plainly.
+ * `unavailable` is everything else that is not a document — a 5xx, a timeout, a DNS failure, a
+ * body that does not narrow. It says nothing about whether the document exists, and a page that
+ * drew it as "not published" would tell a reader during an outage that IdeaNest has no terms of
+ * use, which §22.2 requires it to have.
+ *
+ * The two used to be one `null`. They are kept apart all the way to the render so that no
+ * caller can collapse them again without writing the branch down.
+ */
+export type LegalRead<T> =
+  | { readonly state: 'published'; readonly document: T }
+  | { readonly state: 'unpublished' }
+  | { readonly state: 'unavailable' };
+
+export const LEGAL_UNPUBLISHED: LegalRead<never> = { state: 'unpublished' };
+export const LEGAL_UNAVAILABLE: LegalRead<never> = { state: 'unavailable' };
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
