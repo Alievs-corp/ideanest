@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePathname, useRouter } from '../../i18n/navigation';
 import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup } from '@ideanest/ui';
@@ -147,6 +147,14 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
     [router, pathname],
   );
 
+  /*
+   * The rail is collapsed until asked for. It stays MOUNTED while closed (`hidden`, not
+   * unmounted) so a half-typed price range survives closing and reopening it, and the
+   * applied-filter chips below remain visible either way.
+   */
+  const [railOpen, setRailOpen] = useState(false);
+  const railId = useId();
+
   const sentinel = useRef<HTMLDivElement>(null);
   const { hasMore, loadMore } = feed;
 
@@ -196,6 +204,8 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
 
       <div className="mt-8 flex flex-col gap-8 lg:flex-row">
         <aside
+          id={railId}
+          hidden={!railOpen}
           aria-label={copy.filtersLabel}
           className="w-full shrink-0 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:w-[300px] lg:overflow-y-auto"
         >
@@ -239,6 +249,19 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
                   ? copy.loading
                   : pluralise(locale, hasMore ? copy.shownMore : copy.shown, feed.items.length)}
               </p>
+
+              <div className="flex flex-wrap items-end gap-3">
+                <Pill
+                  size="sm"
+                  variant="ghost"
+                  aria-expanded={railOpen}
+                  aria-controls={railId}
+                  onClick={() => setRailOpen((open) => !open)}
+                >
+                  {copy.railLabel}
+                  {active.length > 0 ? ` (${active.length})` : ''}
+                </Pill>
+              </div>
 
               <SortControl
                 sort={filters.sort}
