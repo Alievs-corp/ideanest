@@ -1992,7 +1992,7 @@
         "pendingTitle": "İade {state} durumunda",
         "issuedBody": "{id} desteğinde {amount}.",
         "providerSaid": "Sağlayıcı şunu dedi: {message}",
-        "awaitingProvider": "Sağlayıcı henüz onaylamadı. Sağlayıcıyla kontrol edildikten sonra kendiliğinden sonuçlanır, bu yüzden tekrar göndermeyin.",
+        "awaitingProvider": "Sağlayıcı henüz onaylamadı. Başka bir adım atmadan önce sağlayıcıyla kontrol ediyoruz, bu yüzden tekrar göndermeyin.",
         "failedTitle": "Bu işe yaramadı",
         "logHeading": "İadeler",
         "all": "Hepsi",

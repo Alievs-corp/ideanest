@@ -1992,7 +1992,7 @@
         "pendingTitle": "Geri qaytarma {state} vəziyyətindədir",
         "issuedBody": "{id} dəstəyində {amount}.",
         "providerSaid": "Provayder dedi: {message}",
-        "awaitingProvider": "Provayder hələ təsdiqləməyib. Provayderlə yoxladıqdan sonra özü yekunlaşacaq, ona görə yenidən göndərməyin.",
+        "awaitingProvider": "Provayder hələ təsdiqləməyib. Başqa addımdan əvvəl provayderlə yoxlayırıq, ona görə yenidən göndərməyin.",
         "failedTitle": "Bu alınmadı",
         "logHeading": "Geri qaytarmalar",
         "all": "Hamısı",
