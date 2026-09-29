@@ -20,9 +20,12 @@ import org.springframework.stereotype.Component;
  *
  * <p>§9.7's four cases that refund everybody are three campaign states: {@code UNSUCCESSFUL} (day 8
  * below 80%, or an extension ended below it), {@code SUSPENDED}, and {@code CANCELED}. A pass refunds
- * a bounded batch of their paid pledges, oldest collection first, each in its own transactions so one
- * refusal does not stop the rest; then it settles platform refunds whose outcome was lost from the
- * provider's {@code returned} status.
+ * a bounded batch of their settled charges with money left (#171: per charge, whatever the pledge's
+ * state, and every charge of a raise that could not be applied), oldest charge first, each in its own
+ * transactions so one refusal does not stop the rest; then it settles refunds whose outcome was lost
+ * from the provider's status of the payment — staff refunds too since #174's review, and only where
+ * that status can say which refund it was ({@code RefundService#reconcile}). A pledge becomes
+ * {@code REFUNDED} when the refund that leaves nothing on it settles, not when it is requested.
  *
  * <p>A sweep rather than a listener on the campaign's event, because a refund is a provider call and
  * a campaign of thousands of backers must not be one delivery that either succeeds entirely or is
@@ -63,20 +66,21 @@ public class CampaignRefundJob implements ScheduledJob {
     /** @return how many refunds this pass settled as succeeded */
     public int refundDue(Instant now) {
         int refunded = 0;
-        List<Object[]> owed = refunds.owedCampaignRefunds(now.minus(properties.retryAfter()), properties.perPass());
+        List<Object[]> owed = refunds.owedPlatformRefunds(now.minus(properties.retryAfter()), properties.perPass());
         for (Object[] row : owed) {
-            UUID pledgeId = UUID.fromString((String) row[0]);
-            RefundReason reason = "UNSUCCESSFUL".equals(row[1]) ? RefundReason.CAMPAIGN_FAILED : RefundReason.CAMPAIGN_HALTED;
+            UUID chargeId = UUID.fromString((String) row[0]);
+            UUID pledgeId = UUID.fromString((String) row[1]);
+            RefundReason reason = RefundReason.valueOf((String) row[2]);
             try {
-                if (service.issueForCampaign(pledgeId, reason).map(Refund::state).filter(s -> s.name().equals("SUCCEEDED")).isPresent()) {
+                if (service.issueForCharge(chargeId, pledgeId, reason).map(Refund::state).filter(s -> s.name().equals("SUCCEEDED")).isPresent()) {
                     refunded++;
                 }
             } catch (RuntimeException e) {
-                log.error("Could not refund pledge {}; the next pass tries again.", pledgeId, e);
+                log.error("Could not refund charge {} of pledge {}; the next pass tries again.", chargeId, pledgeId, e);
             }
         }
 
-        for (Refund unresolved : refunds.unresolvedCampaignRefunds(
+        for (Refund unresolved : refunds.unresolvedRefunds(
                 now.minus(properties.unresolvedAfter()), PageRequest.ofSize(properties.perPass()))) {
             try {
                 service.reconcile(unresolved);
@@ -85,7 +89,7 @@ public class CampaignRefundJob implements ScheduledJob {
             }
         }
         if (!owed.isEmpty()) {
-            log.info("campaign-refunds: {} of {} owed pledges refunded this pass.", refunded, owed.size());
+            log.info("campaign-refunds: {} of {} owed charges refunded this pass.", refunded, owed.size());
         }
         return refunded;
     }

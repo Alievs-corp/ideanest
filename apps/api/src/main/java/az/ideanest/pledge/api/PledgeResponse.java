@@ -51,6 +51,11 @@ import java.util.UUID;
  *     campaign closed, in a window its creator reopened. Read from the row rather than
  *     derived from the campaign's state, which will have moved on by the time anybody
  *     looks
+ * @param raisable #171: whether this pledge may be raised now, with
+ *     {@code POST /v1/pledges/{id}/raise} — it is paid for and its campaign is taking pledges
+ * @param latestRaise #171: the most recent attempt to raise it, or null. A page the payment provider
+ *     sent the backer back to reads its state: {@code PENDING} is a payment still settling,
+ *     {@code SUCCEEDED} is applied, and anything else changed nothing
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record PledgeResponse(
@@ -92,7 +97,9 @@ public record PledgeResponse(
          * draws it.
          */
         String displayRate,
-        List<PledgeSupplementBody> supplements) {
+        List<PledgeSupplementBody> supplements,
+        boolean raisable,
+        PledgeRaiseBody latestRaise) {
 
     /**
      * §4.5's PL-06, broken out: what the backer is charged, and what it is made of.
@@ -150,6 +157,10 @@ public record PledgeResponse(
                 // `2.0484E-2` with a decimal library that does not accept exponents gets
                 // nothing rather than a rate.
                 pledge.getDisplayRate() == null ? null : pledge.getDisplayRate().toPlainString(),
-                PledgeSupplementBody.of(detail));
+                PledgeSupplementBody.of(detail),
+                detail.raisable(),
+                detail.latestRaise() == null
+                        ? null
+                        : PledgeRaiseBody.of(detail.latestRaise(), detail.raiseResumeUrl()));
     }
 }

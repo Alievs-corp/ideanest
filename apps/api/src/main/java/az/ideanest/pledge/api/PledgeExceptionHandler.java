@@ -9,13 +9,18 @@ import az.ideanest.pledge.application.PledgeCannotBeCancelledException;
 import az.ideanest.pledge.application.PledgeDecreaseNotAllowedException;
 import az.ideanest.pledge.application.PledgeNotEditableException;
 import az.ideanest.pledge.application.PledgeNotFoundException;
+import az.ideanest.pledge.application.PledgeNotRaisableException;
 import az.ideanest.pledge.application.PledgeNotSupplementableException;
+import az.ideanest.pledge.application.PledgeRaiseInProgressException;
+import az.ideanest.pledge.application.RaiseAmountChangedException;
+import az.ideanest.pledge.application.RaiseNotAnIncreaseException;
 import az.ideanest.pledge.application.PaymentPageUnavailableException;
 import az.ideanest.pledge.application.ReservationExpiredException;
 import az.ideanest.pledge.application.RewardSoldOutException;
 import az.ideanest.pledge.application.ShippingDestinationUnpricedException;
 import az.ideanest.pledge.application.SupplementNotAnIncreaseException;
 import az.ideanest.pledge.application.UnknownRewardTierException;
+import az.ideanest.pledge.domain.PledgeState;
 import az.ideanest.project.application.ProjectNotAcceptingPledgesException;
 import az.ideanest.project.application.ProjectNotFoundException;
 import az.ideanest.reward.application.RewardStock;
@@ -299,6 +304,86 @@ public class PledgeExceptionHandler {
         return problem;
     }
 
+    /**
+     * 409: #171 — only a paid pledge is raised by paying the difference. The state is in {@code meta},
+     * and so is the way that does apply: a draft or a legacy confirmed pledge is changed with PL-09's
+     * edit, and nothing else can be changed by its backer.
+     */
+    @ExceptionHandler(PledgeNotRaisableException.class)
+    public ProblemDetail handleNotRaisable(PledgeNotRaisableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/pledge-not-raisable"));
+        problem.setTitle("This pledge is not raised by paying the difference");
+        problem.setDetail(exception.refunded()
+                ? "Money on this pledge is being or has been refunded, so it is not raised."
+                : "This pledge is " + exception.state() + ". Only a paid pledge is raised this way.");
+        problem.setProperty("code", "PLEDGE_NOT_RAISABLE");
+        Map<String, Object> meta = new LinkedHashMap<>();
+        meta.put("state", exception.state().name());
+        if (exception.refunded()) {
+            // #174's review: a raise is not applied to a pledge whose money is going back.
+            meta.put("reason", "REFUNDED");
+        }
+        if (exception.state().isEditable()) {
+            meta.put("use", "PATCH /v1/pledges/{id}");
+        }
+        problem.setProperty("meta", meta);
+        return problem;
+    }
+
+    /** 409: #171 — a raise of this pledge is already waiting for its payment. */
+    @ExceptionHandler(PledgeRaiseInProgressException.class)
+    public ProblemDetail handleRaiseInProgress(PledgeRaiseInProgressException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/pledge-raise-in-progress"));
+        problem.setTitle("A raise is already waiting for its payment");
+        problem.setDetail("Finish or abandon the payment you started. Its hold ends at "
+                + exception.holdExpiresAt() + ".");
+        problem.setProperty("code", "PLEDGE_RAISE_IN_PROGRESS");
+        problem.setProperty(
+                "meta",
+                Map.of(
+                        "raiseId", exception.raiseId().toString(),
+                        "holdExpiresAt", exception.holdExpiresAt().toString()));
+        return problem;
+    }
+
+    /**
+     * 409: #171 — the difference is not the one the backer was shown. Both figures are on the body,
+     * as money, so the client can show the new one and ask again. Nothing was held or charged.
+     */
+    @ExceptionHandler(RaiseAmountChangedException.class)
+    public ProblemDetail handleRaiseAmountChanged(RaiseAmountChangedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/raise-amount-changed"));
+        problem.setTitle("The amount to pay has changed");
+        problem.setDetail("Raising this pledge now costs " + exception.actual().amount().toPlainString() + " "
+                + exception.actual().currency() + ". Nothing was charged.");
+        problem.setProperty("code", "RAISE_AMOUNT_CHANGED");
+        problem.setProperty(
+                "meta",
+                Map.of(
+                        "expected", Map.of(
+                                "amount", exception.expected().amount().toPlainString(),
+                                "currency", exception.expected().currency()),
+                        "actual", Map.of(
+                                "amount", exception.actual().amount().toPlainString(),
+                                "currency", exception.actual().currency())));
+        return problem;
+    }
+
+    /** 422: #171 — the new selection costs exactly what the pledge already does. */
+    @ExceptionHandler(RaiseNotAnIncreaseException.class)
+    public ProblemDetail handleRaiseNotAnIncrease(RaiseNotAnIncreaseException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_CONTENT);
+        problem.setType(URI.create("https://ideanest.az/problems/raise-not-an-increase"));
+        problem.setTitle("That does not raise the pledge");
+        problem.setDetail("This selection costs what the pledge already does, so there is nothing to pay.");
+        problem.setProperty("code", "RAISE_NOT_AN_INCREASE");
+        problem.setProperty("meta", Map.of("current", exception.current().toPlainString()));
+        return problem;
+    }
+
     @ExceptionHandler(PledgeNotEditableException.class)
     public ProblemDetail handleNotEditable(PledgeNotEditableException exception) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
@@ -344,9 +429,17 @@ public class PledgeExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problem.setType(URI.create("https://ideanest.az/problems/campaign-still-taking-pledges"));
         problem.setTitle("The campaign is still running");
-        problem.setDetail("While this campaign is taking pledges, change your pledge instead of buying an upgrade.");
+        problem.setDetail("While this campaign is taking pledges, change or raise your pledge instead of buying"
+                + " an upgrade.");
         problem.setProperty("code", "CAMPAIGN_STILL_TAKING_PLEDGES");
-        problem.setProperty("meta", Map.of("use", "PATCH /v1/pledges/{id}"));
+        // #171: a paid pledge is raised, and pays the difference; anything else is edited.
+        problem.setProperty(
+                "meta",
+                Map.of(
+                        "use",
+                        exception.state() == PledgeState.COLLECTED
+                                ? "POST /v1/pledges/{id}/raise"
+                                : "PATCH /v1/pledges/{id}"));
         return problem;
     }
 

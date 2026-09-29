@@ -6647,6 +6647,50 @@
         "tags" : [ "pledge-controller" ]
       }
     },
+    "/v1/pledges/{id}/raise" : {
+      "post" : {
+        "operationId" : "pledgeRaise",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "header",
+          "name" : "Idempotency-Key",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RaisePledgeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "pledge-controller" ]
+      }
+    },
     "/v1/pledges/{id}/upgrade" : {
       "post" : {
         "operationId" : "pledgeUpgrade",
@@ -12831,7 +12875,7 @@
           },
           "reason" : {
             "type" : "string",
-            "enum" : [ "BACKER_REQUEST", "CAMPAIGN_HALTED", "CAMPAIGN_FAILED", "FULFILMENT_FAILURE", "DUPLICATE_CHARGE", "PLATFORM_ERROR", "DISPUTE_CONCEDED", "FRAUD" ]
+            "enum" : [ "BACKER_REQUEST", "CAMPAIGN_HALTED", "CAMPAIGN_FAILED", "FULFILMENT_FAILURE", "DUPLICATE_CHARGE", "PLATFORM_ERROR", "DISPUTE_CONCEDED", "FRAUD", "RAISE_NOT_APPLIED" ]
           }
         },
         "required" : [ "detail", "pledgeId", "reason" ]
@@ -14027,6 +14071,39 @@
         },
         "required" : [ "rewardTierId" ]
       },
+      "PledgeRaiseBody" : {
+        "type" : "object",
+        "properties" : {
+          "amount" : {
+            "$ref" : "#/components/schemas/Money"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "endedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "holdExpiresAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "resumeUrl" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "total" : {
+            "$ref" : "#/components/schemas/Money"
+          }
+        }
+      },
       "PledgeResponse" : {
         "type" : "object",
         "properties" : {
@@ -14066,6 +14143,9 @@
           "latePledge" : {
             "type" : "boolean"
           },
+          "latestRaise" : {
+            "$ref" : "#/components/schemas/PledgeRaiseBody"
+          },
           "paymentMethodId" : {
             "type" : "string",
             "format" : "uuid"
@@ -14073,6 +14153,9 @@
           "projectId" : {
             "type" : "string",
             "format" : "uuid"
+          },
+          "raisable" : {
+            "type" : "boolean"
           },
           "reservationExpiresAt" : {
             "type" : "string",
@@ -14916,6 +14999,41 @@
           }
         }
       },
+      "RaisePledgeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "addons" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PledgeAddonBody"
+            }
+          },
+          "contribution" : {
+            "$ref" : "#/components/schemas/Money"
+          },
+          "errorUrl" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "expectedAmount" : {
+            "$ref" : "#/components/schemas/Money"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "rewardTierId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "shippingCountry" : {
+            "type" : "string"
+          },
+          "successUrl" : {
+            "type" : "string",
+            "format" : "uri"
+          }
+        }
+      },
       "RaiseRequest" : {
         "type" : "object",
         "properties" : {
@@ -15074,7 +15192,7 @@
           },
           "reason" : {
             "type" : "string",
-            "enum" : [ "BACKER_REQUEST", "CAMPAIGN_HALTED", "CAMPAIGN_FAILED", "FULFILMENT_FAILURE", "DUPLICATE_CHARGE", "PLATFORM_ERROR", "DISPUTE_CONCEDED", "FRAUD" ]
+            "enum" : [ "BACKER_REQUEST", "CAMPAIGN_HALTED", "CAMPAIGN_FAILED", "FULFILMENT_FAILURE", "DUPLICATE_CHARGE", "PLATFORM_ERROR", "DISPUTE_CONCEDED", "FRAUD", "RAISE_NOT_APPLIED" ]
           },
           "refundTransactionId" : {
             "type" : "string",

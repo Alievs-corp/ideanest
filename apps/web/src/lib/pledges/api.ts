@@ -335,6 +335,45 @@ export interface PledgeResponse {
    * every pledge until somebody upgrades or buys an add-on late.
    */
   supplements: readonly PledgeSupplement[];
+  /**
+   * #171: whether this pledge may be raised now with `POST /v1/pledges/{id}/raise` — it is paid for
+   * (`COLLECTED`) and its campaign is taking pledges.
+   *
+   * The service answers it because only the service can: whether a campaign takes pledges depends
+   * on windows this client is not shown. Optional so an older response reads as `false`, which is
+   * the safe side: a control not offered is refused by nobody.
+   */
+  raisable?: boolean;
+  /** #171: the most recent attempt to raise this pledge, or null when there has been none. */
+  latestRaise?: PledgeRaise | null;
+}
+
+/**
+ * #171: where one attempt to raise a paid pledge has got to.
+ *
+ * `PENDING` is a payment the provider has not settled; `SUCCEEDED` is applied and is in the
+ * amounts above; `FAILED`, `EXPIRED` and `ABANDONED` changed nothing and charged nothing; and
+ * `UNAPPLIED` was charged after the pledge had changed, so it was not applied and is refunded.
+ */
+export type PledgeRaiseState = 'PENDING' | 'SUCCEEDED' | 'FAILED' | 'EXPIRED' | 'ABANDONED' | 'UNAPPLIED';
+
+export interface PledgeRaise {
+  id: string;
+  /** Widened to `string` on the wire; the union above is what this build knows how to word. */
+  state: PledgeRaiseState | string;
+  /** The difference charged, or to be charged. */
+  amount: Money;
+  /** What the pledge comes to once the raise is applied. */
+  total: Money;
+  holdExpiresAt: string;
+  createdAt: string;
+  endedAt?: string | null;
+  /**
+   * The provider’s page for this raise, to go back to and finish paying. Present only while the
+   * raise is `PENDING` and its hold has not run out; null (or absent, from an older service) otherwise,
+   * and then there is no way back to that page from here.
+   */
+  resumeUrl?: string | null;
 }
 
 /**
@@ -636,6 +675,74 @@ export async function editPledge(
       signal,
     }),
   );
+}
+
+/* -------------------------------------------------------------------------
+ * Raising a paid pledge — POST /v1/pledges/{id}/raise (#171)
+ * ---------------------------------------------------------------------- */
+
+/**
+ * What raising a paid pledge sends.
+ *
+ * The selection is {@link PledgeEdit}'s, with its Merge-Patch meaning — absent keeps, `null`
+ * clears — minus the two things a raise does not change: the anonymity flag and the card.
+ * `expectedAmount` is the difference the backer was shown and agreed to pay; the service refuses
+ * with `RAISE_AMOUNT_CHANGED` rather than charge any other figure. The rest is
+ * {@link PayPledgeRequest}'s: the provider page's language and where it sends the backer back.
+ */
+export interface PledgeRaiseRequest {
+  rewardTierId?: string | null;
+  addons?: readonly PledgeAddon[];
+  contribution?: Money;
+  shippingCountry?: string | null;
+  expectedAmount: Money;
+  language: string;
+  successUrl: string;
+  errorUrl: string;
+}
+
+/**
+ * The provider's page for the difference, and what it is for.
+ *
+ * Nothing about the pledge has changed yet: it carries the new selection only once the provider's
+ * webhook says the difference was paid, and until then its `latestRaise` is `PENDING`.
+ */
+export interface PledgeRaiseResponse {
+  pledgeId: string;
+  raiseId: string;
+  amount: Money;
+  total: Money;
+  holdExpiresAt: string;
+  providerTransactionId: string;
+  redirectUrl: string;
+}
+
+/**
+ * #171 — `POST /v1/pledges/{id}/raise`.
+ *
+ * Refusals, each worded in `./failure`: `PLEDGE_NOT_RAISABLE` for anything but a paid pledge,
+ * `PROJECT_NOT_LIVE` once the campaign stops taking pledges, `PLEDGE_RAISE_IN_PROGRESS` while an
+ * earlier raise is waiting for its payment, `PLEDGE_DECREASE_NOT_ALLOWED` and
+ * `RAISE_NOT_AN_INCREASE` for a selection that does not cost more, `RAISE_AMOUNT_CHANGED` when the
+ * difference is not the one shown, and the checkout's own `REWARD_SOLD_OUT` and friends.
+ *
+ * `Idempotency-Key` is required: a retry under the same key answers the page the first attempt
+ * opened, and never opens a second.
+ */
+export async function raisePledge(
+  id: string,
+  body: PledgeRaiseRequest,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+): Promise<PledgeRaiseResponse> {
+  const response = await authorizedFetch(`/v1/pledges/${encodeURIComponent(id)}/raise`, {
+    method: 'POST',
+    headers: mutationHeaders(idempotencyKey),
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!response.ok) throw await errorFrom(response);
+  return (await response.json()) as PledgeRaiseResponse;
 }
 
 /* -------------------------------------------------------------------------

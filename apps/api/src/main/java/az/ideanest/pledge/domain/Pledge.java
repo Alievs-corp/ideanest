@@ -460,6 +460,44 @@ public class Pledge {
     }
 
     /**
+     * #171: a paid pledge, raised while its campaign takes pledges, once the difference was paid.
+     *
+     * <p>{@link #edit} for a {@code COLLECTED} pledge, and deliberately a second method rather than a
+     * wider state check on the first: an edit re-prices a pledge nobody has paid for yet, and this
+     * writes a selection somebody has just paid the difference for. The state does not move — the
+     * backer was paid up before and is paid up after — and the total may only go up, because the
+     * money for the old total and for the difference is all that stands behind it.
+     *
+     * <p>The anonymity flag and the card are not touched: a raise changes what is bought, not who is
+     * shown or how it was paid.
+     *
+     * @throws IllegalStateException when this pledge is not {@code COLLECTED}, or the quote would not
+     *     raise it. {@code PledgeRaiseService} decides both first; this is the entity keeping its own
+     *     invariant against a caller that did not ask
+     */
+    public void raise(PledgeQuote quote, UUID rewardTierId, String shippingCountry) {
+        if (state != PledgeState.COLLECTED) {
+            throw new IllegalStateException("A pledge in " + state + " cannot be raised");
+        }
+        Objects.requireNonNull(quote, "A raised pledge is re-quoted");
+        if (quote.totalAmount().compareTo(totalAmount) <= 0) {
+            throw new IllegalStateException("A raise of a pledge of " + totalAmount + " to " + quote.totalAmount()
+                    + " is not a raise");
+        }
+        if (!quote.currency().equals(currency)) {
+            throw new IllegalStateException("A pledge in " + currency + " cannot be raised in " + quote.currency());
+        }
+
+        this.rewardTierId = rewardTierId;
+        this.baseAmount = quote.baseAmount();
+        this.addonsAmount = quote.addonsAmount();
+        this.bonusAmount = quote.bonusAmount();
+        this.shippingAmount = quote.shippingAmount();
+        this.taxAmount = quote.taxAmount();
+        this.shippingCountry = shippingCountry;
+    }
+
+    /**
      * §6.2's {@code CONFIRMED --> CANCELED_BY_BACKER}, and the same edge from a
      * {@code DRAFT}. §4.5's PL-10.
      *

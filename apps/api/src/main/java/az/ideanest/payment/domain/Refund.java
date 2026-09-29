@@ -72,6 +72,9 @@ public class Refund {
     @Column(name = "failure_message")
     private String failureMessage;
 
+    @Column(name = "review_reason")
+    private String reviewReason;
+
     @Column(name = "requested_by", nullable = false, updatable = false)
     private UUID requestedBy;
 
@@ -110,12 +113,19 @@ public class Refund {
         this.detail = Objects.requireNonNull(detail, "detail");
         this.state = RefundState.REQUESTED;
         // Null only for a refund the platform issued itself, which V76 limits to the two campaign
-        // reasons (IDN-EXT-01, #40).
-        if (requestedBy == null && reason != RefundReason.CAMPAIGN_FAILED && reason != RefundReason.CAMPAIGN_HALTED) {
+        // reasons (IDN-EXT-01, #40) and V83 extends to a raise that could not be applied (#171).
+        if (requestedBy == null && !isPlatformReason(reason)) {
             throw new IllegalArgumentException("Only a campaign refund may be issued by the platform itself");
         }
         this.requestedBy = requestedBy;
         this.idempotencyKey = Objects.requireNonNull(idempotencyKey, "idempotencyKey");
+    }
+
+    /** The reasons the platform refunds on its own, with no member of staff behind them. */
+    public static boolean isPlatformReason(RefundReason reason) {
+        return reason == RefundReason.CAMPAIGN_FAILED
+                || reason == RefundReason.CAMPAIGN_HALTED
+                || reason == RefundReason.RAISE_NOT_APPLIED;
     }
 
     /**
@@ -157,6 +167,7 @@ public class Refund {
         this.settledAt = Objects.requireNonNull(at, "at");
         this.failureCode = null;
         this.failureMessage = null;
+        this.reviewReason = null;
     }
 
     /**
@@ -171,6 +182,25 @@ public class Refund {
         this.failureCode = Objects.requireNonNull(failureCode, "failureCode");
         this.failureMessage = failureMessage;
         this.settledAt = Objects.requireNonNull(at, "at");
+        this.reviewReason = null;
+    }
+
+    /**
+     * The provider's answer was lost and its status of the payment cannot say whether this refund
+     * happened (#174's review): another refund went against the same charge, or this one was only part
+     * of it. The row stays {@code REQUESTED} — it still counts as gone, so nothing is sent twice — and
+     * is left to a person; the reconciliation stops asking about it.
+     */
+    public void needsReview(String reason) {
+        if (state != RefundState.REQUESTED) {
+            throw new IllegalStateException("Only a refund whose outcome is unknown is left for review");
+        }
+        this.reviewReason = Objects.requireNonNull(reason, "reason");
+    }
+
+    /** Why a person has to settle this refund, or null when nobody has to. */
+    public String reviewReason() {
+        return reviewReason;
     }
 
     public UUID id() {
@@ -197,6 +227,15 @@ public class Refund {
         return Money.of(amount, currency);
     }
 
+    /**
+     * Whether this refund was meant to return the rest of the pledge — V53's intent, recorded when it
+     * was requested and never changed.
+     *
+     * <p><strong>Not whether the pledge was refunded in full (#171).</strong> A refund of a raised
+     * pledge is one part per charge and every part of a full refund carries the flag; and an intent
+     * can fail. Whether the pledge's money has all gone back is decided when a refund settles, from
+     * what was charged and what succeeded, and shows as the pledge's {@code REFUNDED} state.
+     */
     public boolean fullRefund() {
         return fullRefund;
     }

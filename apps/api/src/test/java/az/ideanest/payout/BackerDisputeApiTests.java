@@ -147,6 +147,31 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("upheld on a pledge raised during the campaign: every charge is refunded, each against its own payment")
+    void anUpheldDisputeOnARaisedPledgeRefundsEveryCharge() {
+        Campaign campaign = aWithdrawnCampaign("dispute-raised", true);
+        UUID pledgeId = campaign.first().pledgeId();
+        Object disputeId = dispute(campaign.first()).getBody().get("id");
+
+        ResponseEntity<Map<String, Object>> decided = decide(disputeId, "UPHOLD");
+
+        assertThat(decided.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(decided.getBody()).containsEntry("state", "UPHELD");
+        assertThat(jdbc().queryForList(
+                        "SELECT amount FROM refunds WHERE pledge_id = ? AND reason = 'DISPUTE_CONCEDED' AND state = 'SUCCEEDED'"
+                                + " ORDER BY amount",
+                        BigDecimal.class,
+                        pledgeId))
+                .usingElementComparator(BigDecimal::compareTo)
+                .containsExactly(new BigDecimal("15.00"), new BigDecimal("25.00"));
+        assertThat(jdbc().queryForObject("SELECT state FROM pledges WHERE id = ?", String.class, pledgeId))
+                .isEqualTo("REFUNDED");
+        Map<String, Object> recalculated = jdbc().queryForMap(
+                "SELECT refunded_amount FROM payouts WHERE project_id = ? AND state = 'CALCULATED'", campaign.projectId());
+        assertThat((BigDecimal) recalculated.get("refunded_amount")).isEqualByComparingTo("40.00");
+    }
+
+    @Test
     @DisplayName("rejected: nothing moves, and a decided dispute cannot be decided again")
     void aRejectedDisputeMovesNothing() {
         Campaign campaign = aWithdrawnCampaign("dispute-rejected");
@@ -180,7 +205,11 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
     }
 
     private Campaign aWithdrawnCampaign(String prefix) {
-        Campaign campaign = aPaidCampaign(prefix);
+        return aWithdrawnCampaign(prefix, false);
+    }
+
+    private Campaign aWithdrawnCampaign(String prefix, boolean firstRaised) {
+        Campaign campaign = aPaidCampaign(prefix, firstRaised);
         assertThat(post("/v1/projects/" + campaign.projectId() + "/withdrawal", campaign.creator().accessToken(), null, null)
                         .getStatusCode())
                 .isEqualTo(HttpStatus.OK);
@@ -191,6 +220,11 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
 
     /** Two backers of 25.00 AZN each, paid through the payment page; the campaign decided successful. */
     private Campaign aPaidCampaign(String prefix) {
+        return aPaidCampaign(prefix, false);
+    }
+
+    /** As {@link #aPaidCampaign(String)}; with {@code firstRaised}, the first backer raised to 40.00 while it ran (#171). */
+    private Campaign aPaidCampaign(String prefix, boolean firstRaised) {
         Account creator = account(prefix + "-creator");
         UUID projectId = UUID.fromString((String) post(
                         "/v1/projects",
@@ -204,6 +238,21 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
 
         Backer first = paid(projectId, account(prefix + "-first"));
         Backer second = paid(projectId, account(prefix + "-second"));
+        if (firstRaised) {
+            String transaction = (String) post(
+                            "/v1/pledges/" + first.pledgeId() + "/raise",
+                            first.account().accessToken(),
+                            UUID.randomUUID().toString(),
+                            Map.of(
+                                    "contribution", Map.of("amount", "40.00", "currency", "AZN"),
+                                    "expectedAmount", Map.of("amount", "15.00", "currency", "AZN")))
+                    .getBody()
+                    .get("providerTransactionId");
+            settle(transaction);
+            assertThat(jdbc().queryForObject(
+                            "SELECT total_amount FROM pledges WHERE id = ?", BigDecimal.class, first.pledgeId()))
+                    .isEqualByComparingTo("40.00");
+        }
 
         jdbc().update(
                 """
@@ -230,6 +279,12 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
                         "/v1/pledges/" + pledgeId + "/payment", backer.accessToken(), UUID.randomUUID().toString(), Map.of())
                 .getBody()
                 .get("providerTransactionId");
+        settle(transaction);
+        return new Backer(backer, pledgeId);
+    }
+
+    /** The provider's signed success webhook for a payment made on its page. */
+    private void settle(String transaction) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         ScriptedWebhooks.headers().forEach(headers::add);
@@ -237,7 +292,6 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
                 {"id":"evt-%s","type":"charge_succeeded","providerTransactionId":"%s"}"""
                 .formatted(UUID.randomUUID(), transaction);
         rest.exchange("/v1/webhooks/psp/payriff", HttpMethod.POST, new HttpEntity<>(delivery.getBytes(), headers), String.class);
-        return new Backer(backer, pledgeId);
     }
 
     private ResponseEntity<Map<String, Object>> dispute(Backer backer) {

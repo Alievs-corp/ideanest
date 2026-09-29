@@ -319,14 +319,43 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
      *
      * <p>The gross a payout is computed from. Ordered so that a payout's own record of
      * which rows it covered is reproducible.
+     *
+     * <p><strong>Not a charge that paid for a raise which could not be applied (#171).</strong> That
+     * money bought nothing and is owed back to the backer ({@code RAISE_NOT_APPLIED}), so it is never
+     * part of what a creator is paid, whether or not its refund has gone out yet. Native because the
+     * raise is the pledge module's table.
      */
     @Query(
-            """
-            SELECT t FROM PaymentTransaction t
-            WHERE t.projectId = :projectId
-              AND t.type = az.ideanest.payment.domain.TransactionType.CHARGE
-              AND t.status = az.ideanest.payment.domain.TransactionStatus.SUCCEEDED
-            ORDER BY t.createdAt ASC
-            """)
+            value =
+                    """
+                    SELECT t.* FROM transactions t
+                      LEFT JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
+                     WHERE t.project_id = :projectId
+                       AND t.type = 'CHARGE'
+                       AND t.status = 'SUCCEEDED'
+                       AND rs.state IS DISTINCT FROM 'UNAPPLIED'
+                     ORDER BY t.created_at ASC
+                    """,
+            nativeQuery = true)
     List<PaymentTransaction> settledChargesOfProject(@Param("projectId") UUID projectId);
+
+    /**
+     * The charges on one pledge that paid for a raise which could not be applied — #171, #174's review.
+     *
+     * <p>Owed back already ({@code RAISE_NOT_APPLIED}), so a staff refund of an amount draws on them
+     * last: taking one first would leave the backer short by that much once the platform's own refund
+     * of it finds nothing left. Identifiers as text; native because the raise is the pledge module's.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT CAST(t.id AS text) FROM transactions t
+                      JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
+                     WHERE t.pledge_id = :pledgeId
+                       AND t.type = 'CHARGE'
+                       AND t.status = 'SUCCEEDED'
+                       AND rs.state = 'UNAPPLIED'
+                    """,
+            nativeQuery = true)
+    List<String> unappliedRaiseChargesOf(@Param("pledgeId") UUID pledgeId);
 }

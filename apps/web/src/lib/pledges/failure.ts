@@ -176,6 +176,11 @@ export const PLEDGE_FAILURE_CODES = [
   'IDEMPOTENCY_KEY_REQUIRED',
   'IDEMPOTENCY_KEY_INVALID',
   'PLEDGE_MODIFIED',
+  'PLEDGE_RAISE_IN_PROGRESS',
+  'RAISE_AMOUNT_CHANGED',
+  'RAISE_NOT_AN_INCREASE',
+  'PLEDGE_NOT_RAISABLE',
+  'PAYMENT_UNAVAILABLE',
 ] as const;
 
 export type PledgeFailureCode = (typeof PLEDGE_FAILURE_CODES)[number];
@@ -268,6 +273,17 @@ const BEHAVIOUR: Record<PledgeFailureCode, Behaviour> = {
    * sweep or something else wrote to the pledge.
    */
   PLEDGE_MODIFIED: { recovery: 'redraft' },
+  /*
+   * #171's five. A raise already waiting for its payment ends by itself — paid, failed, or lapsed —
+   * so there is nothing on this screen to do about it. A difference that moved since the page was
+   * loaded needs the page loaded again, which prices it afresh. A selection that costs no more is
+   * the one refusal the form can fix. And no payment provider is the one that clears on its own.
+   */
+  PLEDGE_RAISE_IN_PROGRESS: { recovery: 'none' },
+  RAISE_AMOUNT_CHANGED: { recovery: 'none' },
+  RAISE_NOT_AN_INCREASE: { recovery: 'change-selection', field: 'contribution' },
+  PLEDGE_NOT_RAISABLE: { recovery: 'none' },
+  PAYMENT_UNAVAILABLE: { recovery: 'retry' },
 };
 
 /** Whether this build has a considered answer for a code the service sent. */
