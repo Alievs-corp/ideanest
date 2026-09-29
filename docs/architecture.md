@@ -1654,6 +1654,14 @@ Preferences are per category and per channel, with a digest option.
 > unauthenticated form would make that number one script's to choose. Both are
 > limited per account and per source address.
 >
+> **Accepted trade-off: report-by-slug, like follow-by-slug, accepts a private
+> profile's slug.** `GET /v1/users/{slug}` answers 404 for a PRIVATE profile, but
+> `POST /v1/users/{slug}/report` (and `/follow`) resolve the slug through
+> `UserAccounts.findBySlug`, which does not look at visibility. That is deliberate:
+> moderation may need reports about private accounts (a person who turned private
+> after harassing someone is still reportable), and the routes are signed-in and
+> rate-limited, so what they reveal about whether a slug exists is bounded.
+>
 > The queue is `GET /v1/admin/moderation/reports` with
 > `?state=&after=&limit=`, plus `GET`, `POST …/{id}/uphold` and
 > `POST …/{id}/dismiss` on a single report. Staff-only through the same
@@ -3862,7 +3870,17 @@ single-file change.
 > host beside it. Origins are https; http only on a loopback host, which is what local
 > development runs. The pending charge's `provider_response` records both addresses, so the
 > payment's own row says where the backer was sent back to; `payout_card_registrations` has no
-> column for them and the card registration records nothing extra.
+> column for them and the card registration records nothing extra. That asymmetry is deliberate:
+> the charge row is the money's audit trail and where a disputed "I was sent somewhere else"
+> is answered, while a card registration moves no money and the address it returned to is the
+> settings page, so a column (and a migration) would record nothing anyone needs. Because
+> `transactions` is append-only, an address longer than 2048 characters is refused outright
+> rather than stored forever. Every refusal is logged at WARN with the field and the host, never
+> the path or query. A deployment left on the loopback default (`WEB_BASE_URL` unset) starts,
+> but logs a loud WARN when a payment provider is configured or a non-local profile is active
+> — refusing to start would take the whole API down over one variable. The web builds its
+> return addresses from the browser's `location.origin`, so every host the site is served on
+> must be the site origin or be in `PAYMENT_RETURN_ORIGINS` (`ops/deploy/README.md`).
 >
 > **Decision: no custom URL scheme for the native app.** The issue asked whether the app could
 > pass `ideanest://…` as its return address. Nobody has confirmed with Epoint that its page will

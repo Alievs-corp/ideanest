@@ -689,7 +689,12 @@ ideanest:
       # The site itself. Deliberately the e-mail links' base URL (WEB_BASE_URL), which is the
       # API's name for the web's IDEANEST_SITE_URL: one variable for where the site is. A value
       # that cannot be a return origin (http on a real host) is logged at start-up and refuses
-      # payments rather than stopping the service.
+      # payments rather than stopping the service. Left at the local default
+      # (http://localhost:3000) outside local development -- an explicit non-local profile,
+      # or a payment provider configured -- it is a loud start-up WARN: every real return
+      # address would be refused. Addresses over 2048 characters are refused (they are stored
+      # in the append-only transactions.provider_response), and every refusal is logged at
+      # WARN with the field and the host only.
       site-origin: ${ideanest.notification.email.base-url}
       # Further origins, comma separated -- a staging or preview host that answers beside the
       # site origin. Empty by default. A malformed entry here IS a start-up failure: it was
