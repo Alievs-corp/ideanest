@@ -172,6 +172,52 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("#184's review: a payout left in flight for a campaign already paid is refused before the provider")
+    void aPayoutInFlightForAPaidCampaignIsNotSent() {
+        Funded funded = aFundedCampaign("payout-paid-in-flight");
+        post("/v1/projects/" + funded.projectId() + "/withdrawal", funded.creator().accessToken(), null, null);
+        relay.run();
+        UUID paid = markPaid(funded.projectId());
+        // Priced before #182, or by a previous-release node during the deploy, and since approved.
+        UUID approved = anotherPayout(funded.projectId(), "APPROVED");
+        Account admin = administrator();
+        jdbc().update("INSERT INTO payout_approvals (payout_id, approver_id) VALUES (?, ?)", approved, admin.id());
+
+        ResponseEntity<Map<String, Object>> sent = post("/v1/admin/payouts/" + approved + "/send", admin.accessToken(), null, null);
+
+        assertThat(sent.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(sent.getBody()).containsEntry("code", "CAMPAIGN_ALREADY_PAID_OUT");
+        assertThat(sent.getBody().get("meta")).isEqualTo(Map.of("payoutId", paid.toString()));
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM transactions WHERE project_id = ? AND type = 'PAYOUT'", Long.class, funded.projectId()))
+                .isZero();
+        assertThat(jdbc().queryForObject("SELECT state FROM payouts WHERE id = ?", String.class, approved))
+                .isEqualTo("APPROVED");
+    }
+
+    @Test
+    @DisplayName("#184's review: a payout whose send went unanswered cannot be cancelled, so it is never priced again")
+    void aPayoutWhoseSendWentUnansweredIsNotCancelled() {
+        Funded funded = aFundedCampaign("payout-unanswered");
+        post("/v1/projects/" + funded.projectId() + "/withdrawal", funded.creator().accessToken(), null, null);
+        relay.run();
+        UUID payout = jdbc().queryForObject("SELECT id FROM payouts WHERE project_id = ?", UUID.class, funded.projectId());
+        // Where `PayoutService.send` leaves it when the provider could not be reached.
+        jdbc().update("UPDATE payouts SET state = 'APPROVED', send_unconfirmed_at = now() WHERE id = ?", payout);
+
+        ResponseEntity<Map<String, Object>> cancelled =
+                post("/v1/admin/payouts/" + payout + "/cancel", administrator().accessToken(), null, null);
+
+        assertThat(cancelled.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(cancelled.getBody()).containsEntry("code", "PAYOUT_SEND_UNCONFIRMED");
+        assertThat(jdbc().queryForObject("SELECT state FROM payouts WHERE id = ?", String.class, payout))
+                .isEqualTo("APPROVED");
+        assertThat(payouts.recalculate(funded.projectId())).map(p -> p.id()).contains(payout);
+        assertThat(jdbc().queryForObject("SELECT count(*) FROM payouts WHERE project_id = ?", Long.class, funded.projectId()))
+                .isEqualTo(1L);
+    }
+
+    @Test
     @DisplayName("#182: V86 refuses a second paid payout for a campaign whatever wrote it")
     void theSchemaRefusesASecondPaidPayout() {
         Funded funded = aFundedCampaign("payout-paid-twice");
@@ -281,6 +327,42 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
                 """,
                 projectId);
         return new Funded(creator, backer, projectId);
+    }
+
+    /**
+     * Marks the campaign's payout sent. `PayoutGateway.send` needs a provider that answers payouts, which the
+     * scripted one does not; any transaction row satisfies payouts_paid_has_transaction.
+     */
+    private UUID markPaid(UUID projectId) {
+        UUID paid = jdbc().queryForObject("SELECT id FROM payouts WHERE project_id = ?", UUID.class, projectId);
+        jdbc().update(
+                """
+                UPDATE payouts
+                   SET state = 'PAID', sent_at = now(),
+                       payout_transaction_id = (SELECT id FROM transactions WHERE project_id = ? AND type = 'CHARGE' LIMIT 1)
+                 WHERE id = ?
+                """,
+                projectId,
+                paid);
+        return paid;
+    }
+
+    /** A second payout for the campaign, a copy of its first in the given in-flight state. */
+    private UUID anotherPayout(UUID projectId, String state) {
+        UUID id = UUID.randomUUID();
+        jdbc().update(
+                """
+                INSERT INTO payouts (id, project_id, creator_id, gross_amount, platform_fee, processing_fee, tax_withheld,
+                                     refunded_amount, net_amount, currency, state, payable_at, approvals_required,
+                                     idempotency_key)
+                SELECT ?, project_id, creator_id, gross_amount, platform_fee, processing_fee, tax_withheld,
+                       refunded_amount, net_amount, currency, ?, payable_at, 1, 'payout-again-' || gen_random_uuid()
+                  FROM payouts WHERE project_id = ? AND state = 'PAID'
+                """,
+                id,
+                state,
+                projectId);
+        return id;
     }
 
     /** A member of staff who may calculate payouts: an account holding a V48 grant. */

@@ -29,6 +29,9 @@ export {
   type CardRailProps,
 } from './components/RailHeader/RailHeader';
 
+/* Helpers */
+export { revealFocusedItem } from './lib/reveal-focused-item';
+
 /* Layout */
 export { Rail, RailItem, type RailProps, type RailItemProps } from './layout/Rail';
 export { TopBar, TopBarLink, type TopBarProps } from './layout/TopBar';

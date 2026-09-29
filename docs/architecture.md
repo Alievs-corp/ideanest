@@ -2587,8 +2587,15 @@ HOLD → BLOCKED (fraud)
 > take a chargeback lost after the payout off twice, once as the creator's debt and once as a
 > `CHARGEBACK` refund. With late pledges off (#36) there is nothing a second payout could be for.
 > Finance's calculation answers 409 `CAMPAIGN_ALREADY_PAID_OUT`, a redelivered withdrawal requests
-> nothing, and V86's partial unique index allows one `PAID` payout per campaign. A `FAILED` or
-> `CANCELLED` payout is still followed by a fresh calculation.
+> nothing, a payout still in flight for a paid campaign is refused at send before the provider is
+> asked, and V86's partial unique index allows one `PAID` payout per campaign. A withdrawal whose
+> whole net goes towards the creator's debts is recorded as that payout — `PAID`, net zero, nothing
+> sent, no transaction — so it too reads as paid out, and a chargeback lost afterwards is the
+> creator's debt. A payout the provider refused (`FAILED`) or staff cancelled is still followed by a
+> fresh calculation. **A send the provider never answered is not a refusal:** the money may have
+> moved, so the payout stays `APPROVED` with `send_unconfirmed_at`, is sent again only under its own
+> idempotency key and at its own figure, and cannot be cancelled (409 `PAYOUT_SEND_UNCONFIRMED`),
+> recalculated or disputed — a fresh calculation would go out under a new key beside it.
 >
 > **The decision edition 6 left to this specification: the dispute window when a payout waits
 > for VÖEN.** It stays open **until the money is actually sent**, not only for the 14 days.

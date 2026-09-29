@@ -12,6 +12,7 @@ import { PLEDGE_STATE_LABELS, readablePledgeState } from './pledge-states';
  * of the two a pull request remembered to update.
  */
 const API = join(__dirname, '../../../api');
+const WEB_MESSAGES = join(__dirname, '../../../web/messages');
 
 function javaEnumConstants(): string[] {
   const source = readFileSync(
@@ -48,6 +49,17 @@ describe('pledge state labels', () => {
   it('cover exactly the enum the contract publishes', () => {
     const published = CONTRACT.components.schemas.BackerFilterBody.properties.states.items.enum;
     expect(Object.keys(PLEDGE_STATE_LABELS.en).sort()).toEqual([...published].sort());
+  });
+
+  /**
+   * The same words as the web, not a second translation of them. A backer who reads
+   * "Charged back" on a phone and something else in a browser has two answers to one question.
+   */
+  it.each(SUPPORTED_LOCALES)("match the web's wording in %s", (locale) => {
+    const catalogue = JSON.parse(readFileSync(join(WEB_MESSAGES, `${locale}.json`), 'utf8')) as {
+      account: { pledges: { states: Record<string, string> } };
+    };
+    expect(PLEDGE_STATE_LABELS[locale]).toEqual(catalogue.account.pledges.states);
   });
 
   it.each(SUPPORTED_LOCALES)('never print a raw state name in %s', (locale) => {

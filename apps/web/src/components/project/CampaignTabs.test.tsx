@@ -186,8 +186,10 @@ describe('the campaign tab strip', () => {
 
   /**
    * #181. Chromium leaves a tab that is only partly off the row's edge where it is when Tab
-   * lands on it, so the row asks for it. The strip is server-rendered, and this is what proves
-   * the handler survived the trip through `ScrollRow`, the client `<ul>` it is carried on.
+   * lands on it, so the row asks for it. The strip is a server component and cannot hold a
+   * handler, so the row is `ScrollRow`. jsdom renders the whole tree as client code, so this
+   * does not exercise the server-to-client boundary; what it proves is that the strip's row
+   * is the one carrying the handler, and that focusing a tab asks for that tab to be revealed.
    */
   it('scrolls a tab fully into view when it takes focus', async () => {
     const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
@@ -198,8 +200,10 @@ describe('the campaign tab strip', () => {
 
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     expect(scrollIntoView.mock.contexts[0]).toBe(faq);
-    expect(scrollIntoView).toHaveBeenCalledWith(
-      expect.objectContaining({ block: 'nearest', inline: 'nearest' }),
-    );
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'auto',
+    });
   });
 });

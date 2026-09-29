@@ -252,12 +252,17 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
             nativeQuery = true)
     int reopenUnreachable();
 
-    /** How many refunds against one pledge have no outcome yet — #174's review, for a dispute's retry. */
+    /**
+     * How many refunds against one pledge have no outcome yet — #174's review, for a dispute's retry.
+     * A {@code FAILED} {@code provider_unreachable} row a previous release wrote is one of them (#183).
+     */
     @Query(
             """
             SELECT COUNT(r) FROM Refund r
             WHERE r.pledgeId = :pledgeId
-              AND r.state = az.ideanest.payment.domain.RefundState.REQUESTED
+              AND (r.state = az.ideanest.payment.domain.RefundState.REQUESTED
+                   OR (r.state = az.ideanest.payment.domain.RefundState.FAILED
+                       AND r.failureCode = 'provider_unreachable'))
             """)
     long countRequestedAgainst(@Param("pledgeId") UUID pledgeId);
 

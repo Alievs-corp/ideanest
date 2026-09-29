@@ -1,8 +1,7 @@
 'use client';
 
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { cn } from '@ideanest/ui';
-import { revealFocusedItem } from '../../lib/scroll-row';
+import { cn, revealFocusedItem } from '@ideanest/ui';
 
 /**
  * The profile's three sections — §4.2 P-04, P-05 and P-06, issue #274.
@@ -138,7 +137,8 @@ export function ProfileTabs({ tabs, label }: ProfileTabsProps) {
         the row reaches past the page stay inside its 20px gutter.
 
         `onFocus`: a tab that takes focus while it is half off the row's edge, from Tab or
-        from an arrow key, is scrolled fully into view (#181, `lib/scroll-row.ts`).
+        from an arrow key, is scrolled fully into view (#181, `revealFocusedItem` in
+        `@ideanest/ui`).
       */}
       <div
         role="tablist"

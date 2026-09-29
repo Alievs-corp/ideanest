@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { Chip, RemovableChip } from './Chip/Chip';
+import { Chip, ChipRow, RemovableChip } from './Chip/Chip';
 import { IconButton } from './IconButton/IconButton';
 import { ProgressBar } from './ProgressBar/ProgressBar';
 import { DotIndicator } from './DotIndicator/DotIndicator';
@@ -36,6 +36,47 @@ describe('Chip', () => {
   it('renders a zero count rather than hiding it', () => {
     render(<Chip count={0}>Empty</Chip>);
     expect(screen.getByRole('button')).toHaveTextContent('0');
+  });
+});
+
+/**
+ * A row that scrolls sideways leaves a chip partly off its edge, and Chromium does not move the
+ * row when Tab lands on one. The row asks for it — see `lib/reveal-focused-item.ts`.
+ */
+describe('ChipRow', () => {
+  it('scrolls a chip fully into view when it takes focus', () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    render(
+      <ChipRow aria-label="Categories">
+        <Chip>Games</Chip>
+        <Chip>Art</Chip>
+      </ChipRow>,
+    );
+
+    const art = screen.getByRole('button', { name: 'Art' });
+    art.focus();
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.contexts[0]).toBe(art);
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'auto',
+    });
+    scrollIntoView.mockRestore();
+  });
+
+  it("still runs the caller's own onFocus", () => {
+    const onFocus = vi.fn();
+    render(
+      <ChipRow aria-label="Categories" onFocus={onFocus}>
+        <Chip>Games</Chip>
+      </ChipRow>,
+    );
+
+    screen.getByRole('button', { name: 'Games' }).focus();
+
+    expect(onFocus).toHaveBeenCalledOnce();
   });
 });
 

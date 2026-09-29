@@ -2,12 +2,11 @@
 
 import { Link } from '../../i18n/navigation';
 import type { ReactNode } from 'react';
-import { Tag, cn } from '@ideanest/ui';
+import { Tag, cn, revealFocusedItem } from '@ideanest/ui';
 import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
 import type { ProjectState } from '../../lib/projects/api';
 import { campaignDashboardHref } from '../../lib/account/navigation';
 import { hasLaunched } from '../../lib/projects/mine';
-import { revealFocusedItem } from '../../lib/scroll-row';
 import { OWNER_LINK_CLASS } from '../project/owner-link';
 import { EDITOR_TABS, editorTabHref, type EditorTabKey } from './tabs';
 
@@ -119,7 +118,8 @@ export function EditorShell({
           the four pixels the row reaches past the frame stay inside its 20px gutter.
 
           `onFocus`: a tab Tab lands on while it is half off the row's edge is scrolled fully
-          into view, which Chromium does not do by itself (#181, `lib/scroll-row.ts`).
+          into view, which Chromium does not do by itself (#181, `revealFocusedItem` in
+          `@ideanest/ui`).
         */}
         <ul
           className="scrollbar-none -m-1 flex gap-2 overflow-x-auto p-1"

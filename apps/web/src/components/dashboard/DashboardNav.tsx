@@ -5,7 +5,7 @@ import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
 import { cn } from '@ideanest/ui/server';
 import type { DashboardNavCopy } from '../../lib/i18n/dashboard-copy';
-import { revealFocusedItem } from '../../lib/scroll-row';
+import { revealFocusedItem } from '@ideanest/ui';
 
 /**
  * The way between the dashboard's panels.
@@ -60,7 +60,8 @@ import { revealFocusedItem } from '../../lib/scroll-row';
  * `AccountNav` makes room for the same ring — nothing moves, and ui-kit §9.3's ring is whole
  * rather than cut off at the top, the bottom and the row's edges. Tab still reaches every
  * entry, and the row scrolls each one fully into view as it takes focus: Chromium leaves a tab
- * that is only partly off the edge where it is, so `lib/scroll-row.ts` asks for it (#181).
+ * that is only partly off the edge where it is, so `revealFocusedItem` from `@ideanest/ui`
+ * asks for it (#181) — instantly, like the load-time reveal below.
  *
  * <h2>Accessibility</h2>
  *

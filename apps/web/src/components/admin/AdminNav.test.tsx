@@ -135,6 +135,29 @@ describe('the console rail', () => {
       expect(screen.getByRole('link', { name: COPY.links[link] })).toBeInTheDocument();
     }
   });
+
+  /**
+   * #181. Chromium leaves a link that is only partly off the row's edge where it is when Tab
+   * lands on it, so the row asks for it: focus bubbles to the row, and the row reveals the
+   * link that took it.
+   */
+  it('scrolls a link fully into view when it takes focus', () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    renderRail(ADMINISTRATOR);
+
+    const links = screen.getAllByRole('link');
+    const target = links[links.length - 1] as HTMLElement;
+    target.focus();
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.contexts[0]).toBe(target);
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'auto',
+    });
+    scrollIntoView.mockRestore();
+  });
 });
 
 /**

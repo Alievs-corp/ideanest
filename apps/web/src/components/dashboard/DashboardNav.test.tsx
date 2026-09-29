@@ -189,8 +189,10 @@ describe('DashboardNav', () => {
 
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     expect(scrollIntoView.mock.contexts[0]).toBe(finance);
-    expect(scrollIntoView).toHaveBeenCalledWith(
-      expect.objectContaining({ block: 'nearest', inline: 'nearest' }),
-    );
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'auto',
+    });
   });
 });

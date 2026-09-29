@@ -532,8 +532,13 @@ public class PayoutService {
      * details neither of them had seen, because there were none to see. The parameter is gone
      * and cannot come back: there is no argument on this method that decides where money goes.
      *
+     * <p><strong>A send the provider never answered is not a failure (#184's review).</strong> It
+     * may have been carried out, so the payout stays {@code APPROVED}, is sent again only under its own
+     * key and at its own figure, and cannot be cancelled.
+     *
      * @throws PayoutNotSendableException when it has not been approved, or the figures have
      *     moved underneath it
+     * @throws CampaignAlreadyPaidOutException when another payout already paid the campaign
      * @throws PayoutSignaturesShortException when the row says approved and the signatures
      *     on file do not reach {@code approvalsRequired}
      * @throws PayoutDestinationNotVerifiedException when the creator's destination stopped
@@ -574,8 +579,30 @@ public class PayoutService {
             throw new PayoutSignaturesShortException(payoutId, signatures, payout.approvalsRequired());
         }
 
+        // #184's review: before the provider, not after. A payout left in flight for a campaign that was
+        // already paid (priced before #182, or by a previous-release node during the deploy) would be
+        // sent, and V86 would then refuse the PAID row at commit -- rolling back the record of money the
+        // provider had already moved, and leaving the payout APPROVED to be sent again.
+        Optional<Payout> alreadyPaid = payouts.paidFor(payout.projectId());
+        if (alreadyPaid.isPresent()) {
+            audit.recordIndependently(
+                    AuditAction.PAYOUT_SENT,
+                    payoutId,
+                    AuditActor.moderator(staffId),
+                    AuditOutcome.REFUSED,
+                    "alreadyPaidOut; paidBy=%s".formatted(alreadyPaid.get().id()));
+            throw new CampaignAlreadyPaidOutException(payout.projectId(), alreadyPaid.get().id());
+        }
+
         CampaignFunds funds = gateway.fundsOf(payout.projectId(), payout.currency());
-        if (!funds.collected().equals(payout.gross()) || !funds.refunded().equals(payout.refunded())) {
+        boolean figuresMoved =
+                !funds.collected().equals(payout.gross()) || !funds.refunded().equals(payout.refunded());
+        if (figuresMoved && payout.sendUnconfirmed()) {
+            // #184's review: an earlier send of this payout may have been carried out. Refusing it now would
+            // cancel it, and the next calculation would send a new figure under a new key beside the one
+            // that may already have moved. It goes again under its own key at its own figure.
+            log.warn("Payout {}'s figures moved after a send that may have happened; it is retried as priced.", payoutId);
+        } else if (figuresMoved) {
             payout.cancelled();
             audit.record(
                     AuditAction.PAYOUT_SENT,
@@ -605,6 +632,11 @@ public class PayoutService {
             if (payout.debtWithheld().isPositive()) {
                 debts.recover(payout.creatorId(), payout.debtWithheld(), now);
             }
+        } else if (sent.transactionId() == null) {
+            // #184's review: the provider could not be reached, so nothing it said was recorded and the
+            // instruction may have been carried out. Failed, it would be followed by a fresh calculation
+            // under a new key; so it stays APPROVED and is sent again under this one (PayoutGateway#send).
+            payout.sendUnconfirmedAt(now);
         } else {
             payout.failed(sent.failureCode(), sent.failureMessage(), now);
         }
@@ -629,6 +661,9 @@ public class PayoutService {
         Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
         if (!payout.state().isInFlight()) {
             throw new PayoutNotSendableException(payoutId, payout.state());
+        }
+        if (payout.sendUnconfirmed()) {
+            throw new PayoutSendUnconfirmedException(payoutId);
         }
 
         payout.cancelled();

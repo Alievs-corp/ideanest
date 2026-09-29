@@ -96,8 +96,12 @@ public class CampaignRefundJob implements ScheduledJob {
                 log.error("Could not reconcile refund {}; the next pass tries again.", unresolved.id(), e);
             }
             // #183: whatever the answer, this row goes to the back of the queue, so rows the provider keeps
-            // calling pending cannot fill every pass.
-            refunds.checked(unresolved.id(), now);
+            // calling pending cannot fill every pass. Its own try: one row's stamp failing stops no other row.
+            try {
+                refunds.checked(unresolved.id(), now);
+            } catch (RuntimeException e) {
+                log.error("Could not mark refund {} as asked about; it keeps its place in the queue.", unresolved.id(), e);
+            }
         }
         if (!owed.isEmpty()) {
             log.info("campaign-refunds: {} of {} owed charges refunded this pass.", refunded, owed.size());

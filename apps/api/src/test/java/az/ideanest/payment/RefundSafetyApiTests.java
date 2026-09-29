@@ -3,6 +3,7 @@ package az.ideanest.payment;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
+import az.ideanest.payment.PaymentProperties;
 import az.ideanest.payment.application.CampaignRefundJob;
 import az.ideanest.payment.application.DisputeService;
 import az.ideanest.payment.application.PayoutGateway;
@@ -83,6 +84,9 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private PaymentTransactionRepository transactions;
+
+    @Autowired
+    private PaymentProperties paymentProperties;
 
     private final List<UUID> paidPledges = new ArrayList<>();
     private final List<UUID> projects = new ArrayList<>();
@@ -429,11 +433,12 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("#183: refunds the provider keeps calling pending do not stop newer ones from being reconciled")
+    @DisplayName("#183: a full pass of refunds the provider keeps calling pending does not stop newer ones being reconciled")
     void theReconciliationGetsPastRefundsItCannotDecide() {
         Paid stuck = aPaidPledge("reconcile-stuck", "25.00");
         provider.willLookUp(stuck.providerTransactionId(), PaymentLookup.State.PENDING);
-        for (int i = 0; i < 100; i++) {
+        int perPass = paymentProperties.refunds().perPass();
+        for (int i = 0; i < perPass; i++) {
             requested(stuck, "3 hours", "stuck-refund:" + stuck.chargeId() + ":" + i);
         }
         Paid waiting = aPaidPledge("reconcile-waiting", "25.00");
@@ -448,7 +453,7 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
                         "SELECT count(*) FROM refunds WHERE pledge_id = ? AND last_checked_at IS NOT NULL",
                         Long.class,
                         stuck.pledgeId()))
-                .isEqualTo(100L);
+                .isEqualTo((long) perPass);
 
         job.refundDue(Instant.now().plus(Duration.ofMinutes(10)));
 

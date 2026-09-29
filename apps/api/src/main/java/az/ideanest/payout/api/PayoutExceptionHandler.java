@@ -10,6 +10,7 @@ import az.ideanest.payout.application.PayoutDestinationProviderMismatchException
 import az.ideanest.payout.application.PayoutNotApprovableException;
 import az.ideanest.payout.application.PayoutNotFoundException;
 import az.ideanest.payout.application.PayoutNotSendableException;
+import az.ideanest.payout.application.PayoutSendUnconfirmedException;
 import az.ideanest.payout.application.PayoutSignaturesShortException;
 import az.ideanest.payout.application.UnknownPayoutCampaignException;
 import az.ideanest.staff.api.StaffRefusals;
@@ -91,6 +92,19 @@ public class PayoutExceptionHandler {
         problem.setDetail("This campaign has already been paid out. A campaign is paid out once.");
         problem.setProperty("code", "CAMPAIGN_ALREADY_PAID_OUT");
         problem.setProperty("meta", Map.of("payoutId", exception.paidPayoutId().toString()));
+        return problem;
+    }
+
+    /** 409 when a payout whose last send went unanswered is cancelled — #184's review. */
+    @ExceptionHandler(PayoutSendUnconfirmedException.class)
+    public ProblemDetail handleSendUnconfirmed(PayoutSendUnconfirmedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-send-unconfirmed"));
+        problem.setTitle("This payout may already have been sent");
+        problem.setDetail(
+                "The provider did not answer the last send, so the money may have moved. Send it again: it goes"
+                        + " under the same key, so the provider can tell it is the same payout.");
+        problem.setProperty("code", "PAYOUT_SEND_UNCONFIRMED");
         return problem;
     }
 

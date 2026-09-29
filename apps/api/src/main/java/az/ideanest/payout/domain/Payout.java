@@ -93,6 +93,14 @@ public class Payout {
     @Column(name = "sent_at")
     private Instant sentAt;
 
+    /**
+     * V86 (#184's review): when a send ended with the provider unreachable. The instruction may have
+     * been carried out, so the payout stays {@code APPROVED} and is only ever sent again under the
+     * same key — never cancelled or recalculated, which would price it again under a new one.
+     */
+    @Column(name = "send_unconfirmed_at")
+    private Instant sendUnconfirmedAt;
+
     @Column(name = "idempotency_key", nullable = false, updatable = false)
     private String idempotencyKey;
 
@@ -226,6 +234,41 @@ public class Payout {
         this.sentAt = Objects.requireNonNull(at, "at");
         this.failureCode = null;
         this.failureMessage = null;
+    }
+
+    /**
+     * The provider could not be reached, so whether the money moved is unknown (#184's review).
+     *
+     * <p>Not {@link #failed}: a failed payout is followed by a fresh calculation under a new key, and if
+     * this instruction was carried out that would pay the creator twice. It stays {@code APPROVED}, is
+     * retried under the same key, and {@link #sendUnconfirmed()} keeps it from being cancelled.
+     */
+    public void sendUnconfirmedAt(Instant at) {
+        if (state != PayoutState.APPROVED) {
+            throw new IllegalStateException("Payout " + id + " is " + state + ", not APPROVED");
+        }
+        this.sendUnconfirmedAt = Objects.requireNonNull(at, "at");
+    }
+
+    /** Whether a send ended unreachable, so the money may already have moved. */
+    public boolean sendUnconfirmed() {
+        return sendUnconfirmedAt != null;
+    }
+
+    /**
+     * Everything it would have paid went towards the creator's debts (#184's review).
+     *
+     * <p>{@code PAID} with nothing sent and no transaction — V86 allows that for a net of zero — so the
+     * campaign reads as paid out to every guard that asks, and a redelivered withdrawal cannot price the
+     * money the platform kept a second time.
+     */
+    public void settledAgainstDebts(Instant at) {
+        if (state != PayoutState.CALCULATED || netAmount.signum() != 0 || debtWithheld.signum() <= 0) {
+            throw new IllegalStateException(
+                    "Payout " + id + " is " + state + " with net " + netAmount + ", not wholly withheld");
+        }
+        this.state = PayoutState.PAID;
+        this.sentAt = Objects.requireNonNull(at, "at");
     }
 
     /** The provider refused. Terminal — see {@link PayoutState#FAILED}. */

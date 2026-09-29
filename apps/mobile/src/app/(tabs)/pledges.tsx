@@ -2,6 +2,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
+import { deviceLocale } from '../../api/config';
 import { usePledges } from '../../api/queries';
 import { Button } from '../../components/form';
 import { EmptyState, ErrorState, Loading, OfflineNotice } from '../../components/states';
@@ -58,6 +59,8 @@ export default function PledgesScreen() {
   }
 
   const items = pledges.data?.pledges ?? [];
+  // Once per render of the screen, not once per row.
+  const locale = deviceLocale();
 
   if (items.length === 0) {
     if (pledges.isLoading) return <Loading label="Loading your pledges" />;
@@ -94,7 +97,7 @@ export default function PledgesScreen() {
           {item.rewardTitle == null ? null : <Body numberOfLines={1}>{item.rewardTitle}</Body>}
           <View style={styles.amount}>
             <Meta tone="secondary">{formatMoney(item.amounts?.total)}</Meta>
-            <Meta>{readablePledgeState(item.state)}</Meta>
+            <Meta>{readablePledgeState(item.state, locale)}</Meta>
           </View>
         </View>
       )}

@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { revealFocusedItem } from './scroll-row';
+import { revealFocusedItem } from './reveal-focused-item';
 
 /**
- * The focus handler every sideways-scrolling tab row carries — issue #181.
+ * The focus handler every sideways-scrolling row carries.
  *
  * jsdom lays nothing out and `test-setup.ts` stubs `scrollIntoView`, so what is asserted is the
  * request: which element is asked to scroll, and with which options.
@@ -22,52 +22,23 @@ function Row() {
   );
 }
 
-/** A `matchMedia` that answers `reduce` to the reduced-motion query and nothing else. */
-function preferReducedMotion(reduce: boolean): void {
-  vi.spyOn(window, 'matchMedia').mockImplementation(
-    (query: string) =>
-      ({
-        media: query,
-        matches: reduce && query === '(prefers-reduced-motion: reduce)',
-        addEventListener: () => {},
-        removeEventListener: () => {},
-      }) as unknown as MediaQueryList,
-  );
-}
-
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
 describe('revealFocusedItem', () => {
   it('scrolls the focused item into view by the smallest move on both axes', () => {
-    preferReducedMotion(false);
     const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
     render(<Row />);
 
-    screen.getByRole('link', { name: 'One' }).focus();
+    const one = screen.getByRole('link', { name: 'One' });
+    one.focus();
 
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
-    expect(scrollIntoView.mock.contexts[0]).toBe(screen.getByRole('link', { name: 'One' }));
-    expect(scrollIntoView).toHaveBeenCalledWith({
-      block: 'nearest',
-      inline: 'nearest',
-      behavior: 'smooth',
-    });
+    expect(scrollIntoView.mock.contexts[0]).toBe(one);
   });
 
-  it('handles every item from the one listener on the row, whatever the element', () => {
-    preferReducedMotion(false);
-    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
-    render(<Row />);
-
-    screen.getByRole('button', { name: 'Two' }).focus();
-
-    expect(scrollIntoView.mock.contexts[0]).toBe(screen.getByRole('button', { name: 'Two' }));
-  });
-
-  it('jumps rather than glides under prefers-reduced-motion', () => {
-    preferReducedMotion(true);
+  it('jumps rather than glides, as the browser does for a focused element', () => {
     const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
     render(<Row />);
 
@@ -78,6 +49,16 @@ describe('revealFocusedItem', () => {
       inline: 'nearest',
       behavior: 'auto',
     });
+  });
+
+  it('handles every item from the one listener on the row, whatever the element', () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    render(<Row />);
+
+    const two = screen.getByRole('button', { name: 'Two' });
+    two.focus();
+
+    expect(scrollIntoView.mock.contexts[0]).toBe(two);
   });
 
   it('does not scroll the row when the row itself takes focus', () => {

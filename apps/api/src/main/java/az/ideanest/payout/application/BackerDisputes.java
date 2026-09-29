@@ -90,6 +90,11 @@ public class BackerDisputes {
         Payout held = payouts
                 .inFlightFor(pledge.projectId())
                 .orElseThrow(() -> new DisputeWindowClosedException(pledge.projectId()));
+        if (held.sendUnconfirmed()) {
+            // #184's review: its send may already have been carried out, and nothing is refunded through the
+            // platform after payout. The window closes when the money may have left, not when it is confirmed.
+            throw new DisputeWindowClosedException(pledge.projectId());
+        }
         if (funds.refundableOn(pledgeId).isEmpty()) {
             throw new NothingToDisputeException(pledgeId);
         }

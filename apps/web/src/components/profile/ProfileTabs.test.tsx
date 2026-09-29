@@ -140,9 +140,11 @@ describe('the keyboard contract', () => {
 
     await user.keyboard('{ArrowRight}');
     expect(scrollIntoView.mock.contexts.at(-1)).toBe(screen.getByRole('tab', { name: 'Backed' }));
-    expect(scrollIntoView).toHaveBeenLastCalledWith(
-      expect.objectContaining({ block: 'nearest', inline: 'nearest' }),
-    );
+    expect(scrollIntoView).toHaveBeenLastCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'auto',
+    });
   });
 });
 
