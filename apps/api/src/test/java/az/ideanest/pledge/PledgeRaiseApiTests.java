@@ -2,13 +2,22 @@ package az.ideanest.pledge;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.payment.application.CampaignFunds;
 import az.ideanest.payment.application.CampaignRefundJob;
 import az.ideanest.payment.application.PayoutGateway;
+import az.ideanest.payment.application.RefundService;
+import az.ideanest.payment.domain.ChargeResult;
 import az.ideanest.payment.domain.HostedPaymentRequest;
+import az.ideanest.payment.domain.PaymentLookup;
+import az.ideanest.payment.domain.PaymentTransaction;
+import az.ideanest.payment.domain.ProviderName;
+import az.ideanest.payment.domain.ProviderOutcome;
 import az.ideanest.payment.domain.RefundRequest;
+import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.pledge.application.ReservationCleanerJob;
 import az.ideanest.shared.EmailAddress;
+import az.ideanest.shared.money.Money;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
 import az.ideanest.support.PaymentRows;
@@ -16,11 +25,13 @@ import az.ideanest.support.ScriptedPaymentProvider;
 import az.ideanest.support.ScriptedWebhooks;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -95,16 +106,37 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
     /** The pledges this suite paid for, whose payment rows it removes — see {@code PaymentRows}. */
     private final List<UUID> paidPledges = new ArrayList<>();
 
+    @Autowired
+    private RefundService refundService;
+
+    @Autowired
+    private PaymentTransactionRepository transactionRows;
+
+    @Autowired
+    private AccessTokenIssuer tokens;
+
     @BeforeEach
     void refundsApproved() {
         provider.willRefund();
+        provider.loseRefundAnswers(0);
+        provider.willOpenHostedPayments();
     }
 
     @AfterEach
     void clearPayments() {
+        provider.willRefund();
+        provider.loseRefundAnswers(0);
+        provider.willOpenHostedPayments();
         jdbc().update("DELETE FROM provider_webhook_events");
+        // This suite's pledges' events, which no relay here publishes: left behind, a later suite's relay
+        // would deliver them against campaigns that suite may already have removed.
+        for (UUID pledgeId : paidPledges) {
+            jdbc().update("DELETE FROM outbox_events WHERE aggregate_id = ?", pledgeId);
+        }
         PaymentRows.clearPledges(dataSource, paidPledges);
         paidPledges.clear();
+        // `granted_by` is RESTRICT, so a grant left behind stops IdentitySchemaTests emptying `users`.
+        jdbc().update("DELETE FROM staff_role_grants WHERE note = '#174 fixture'");
     }
 
     // ------------------------------------------------------------------
@@ -506,10 +538,10 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
                         paid.pledgeId()))
                 .containsOnly("CAMPAIGN_FAILED")
                 .hasSize(2);
+        // Both were meant to return everything (V53's intent); the pledge ended when the second settled.
         assertThat(jdbc().queryForObject(
                         "SELECT count(*) FROM refunds WHERE pledge_id = ? AND full_refund", Long.class, paid.pledgeId()))
-                .as("the one that left nothing is the full refund")
-                .isEqualTo(1L);
+                .isEqualTo(2L);
         assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
         assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
 
@@ -534,6 +566,465 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
         assertThat(funds.refunded().amount()).isEqualByComparingTo("0.00");
         assertThat(funds.net().amount()).isEqualByComparingTo("80.00");
         assertThat(sentFor(paid.pledgeId())).isEmpty();
+    }
+
+    // ------------------------------------------------------------------
+    // A refund decides the pledge only when it settles (#174's review)
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a refund whose answer was lost is not taken for the last one: the pledge is refunded once every charge is")
+    void aLostRefundAnswerDoesNotEndThePledgeEarly() {
+        Scenario paid = aPaidPledge("raise-lost-answer");
+        String raised = (String) raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString())
+                .getBody()
+                .get("providerTransactionId");
+        deliver(raised, "charge_succeeded");
+        end(paid.projectId(), "UNSUCCESSFUL");
+
+        // The first charge's refund reaches the provider and its answer never comes back; the raise's
+        // refund goes through. Before the fix the second was "the full one" and ended the pledge.
+        provider.loseRefundAnswers(1);
+        refunds.refundDue(Instant.now());
+
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.providerTransactionId() + "=" + request.amount().amount().toPlainString())
+                .containsExactly(paid.providerTransactionId() + "=25.00", raised + "=55.00");
+        assertThat(refundStates(paid.pledgeId())).containsExactlyInAnyOrder("REQUESTED", "SUCCEEDED");
+        assertThat(state(paid.pledgeId())).as("25.00 has not certainly gone back").isEqualTo("COLLECTED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("80.00"), 1));
+
+        // An hour on, the provider still calls the first payment paid: that refund failed.
+        refunds.refundDue(Instant.now().plus(Duration.ofHours(2)));
+        assertThat(refundStates(paid.pledgeId())).containsExactlyInAnyOrder("FAILED", "SUCCEEDED");
+        assertThat(state(paid.pledgeId())).isEqualTo("COLLECTED");
+
+        // After the retry interval it is sent again, whatever the pledge's state, and that one ends it.
+        refunds.refundDue(Instant.now().plus(Duration.ofHours(8)));
+        assertThat(sentFor(paid.pledgeId())).hasSize(3);
+        assertThat(sentFor(paid.pledgeId()).getLast().providerTransactionId()).isEqualTo(paid.providerTransactionId());
+        assertThat(refundStates(paid.pledgeId())).containsExactlyInAnyOrder("FAILED", "SUCCEEDED", "SUCCEEDED");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+
+        refunds.refundDue(Instant.now().plus(Duration.ofHours(20)));
+        assertThat(sentFor(paid.pledgeId())).as("nothing is refunded twice").hasSize(3);
+    }
+
+    @Test
+    @DisplayName("a campaign halted while a raise is on the page: the raise is not applied and both charges come back")
+    void aRaisePaidWhileTheCampaignIsRefundedIsNotApplied() {
+        Scenario paid = aPaidPledge("raise-halted");
+        String raised = (String) raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString())
+                .getBody()
+                .get("providerTransactionId");
+        end(paid.projectId(), "SUSPENDED");
+
+        // The halt's refund of the first charge is sent, and its answer is late.
+        provider.loseRefundAnswers(1);
+        refunds.refundDue(Instant.now());
+        assertThat(refundStates(paid.pledgeId())).containsExactly("REQUESTED");
+
+        // Then the difference is paid. It is not applied: the campaign no longer takes pledges and the
+        // pledge's money is on its way back.
+        deliver(raised, "charge_succeeded");
+
+        Map<String, Object> after = read(paid);
+        assertThat(raiseOf(after).get("state")).isEqualTo("UNAPPLIED");
+        assertThat(amount(after, "total")).isEqualTo("25.00");
+        assertThat(after.get("state")).isEqualTo("COLLECTED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("25.00"), 1));
+        assertThat(stock(paid.deluxe())).isEqualTo(new Stock(0, 0));
+        assertThat(stock(paid.mug())).isEqualTo(new Stock(0, 0));
+
+        // The provider confirms the first refund, and the raise's charge is refunded on its own.
+        provider.willLookUp(paid.providerTransactionId(), PaymentLookup.State.RETURNED);
+        refunds.refundDue(Instant.now().plus(Duration.ofHours(2)));
+
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.providerTransactionId() + "=" + request.amount().amount().toPlainString())
+                .containsExactlyInAnyOrder(paid.providerTransactionId() + "=25.00", raised + "=55.00");
+        assertThat(jdbc().queryForList(
+                        "SELECT reason FROM refunds WHERE pledge_id = ? AND state = 'SUCCEEDED'", String.class, paid.pledgeId()))
+                .containsExactlyInAnyOrder("CAMPAIGN_HALTED", "RAISE_NOT_APPLIED");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        assertThat(totals(paid.projectId())).as("the pledge's 25.00 leaves, and the 55.00 was never counted")
+                .isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+    }
+
+    @Test
+    @DisplayName("a raise paid after the campaign closed is not applied: the decided total is not moved, and it is refunded")
+    void aRaisePaidAfterTheCloseIsNotApplied() {
+        Scenario paid = aPaidPledge("raise-after-close");
+        String raised = (String) raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString())
+                .getBody()
+                .get("providerTransactionId");
+        close(paid.projectId());
+
+        deliver(raised, "charge_succeeded");
+
+        assertThat(raiseOf(read(paid)).get("state")).isEqualTo("UNAPPLIED");
+        assertThat(amount(read(paid), "total")).isEqualTo("25.00");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("25.00"), 1));
+        assertThat(stock(paid.deluxe())).isEqualTo(new Stock(0, 0));
+        assertThat(payouts.fundsOf(paid.projectId(), "AZN").net().amount()).isEqualByComparingTo("25.00");
+
+        refunds.refundDue(Instant.now());
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.providerTransactionId() + "=" + request.amount().amount().toPlainString())
+                .containsExactly(raised + "=55.00");
+        assertThat(state(paid.pledgeId())).isEqualTo("COLLECTED");
+    }
+
+    @Test
+    @DisplayName("a raise paid after part of the pledge was refunded is not applied, and no new raise is started")
+    void aRaisePaidAfterAPartialRefundIsNotApplied() {
+        Scenario paid = aPaidPledge("raise-after-partial");
+        String raised = (String) raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString())
+                .getBody()
+                .get("providerTransactionId");
+
+        ResponseEntity<Map<String, Object>> partial = staffRefund(paid.pledgeId(), azn("5.00"));
+        assertThat(partial.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(partial.getBody()).containsEntry("state", "SUCCEEDED");
+
+        deliver(raised, "charge_succeeded");
+
+        Map<String, Object> after = read(paid);
+        assertThat(raiseOf(after).get("state")).isEqualTo("UNAPPLIED");
+        assertThat(amount(after, "total")).isEqualTo("25.00");
+        assertThat(after.get("raisable")).isEqualTo(false);
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("25.00"), 1));
+
+        refunds.refundDue(Instant.now());
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.providerTransactionId() + "=" + request.amount().amount().toPlainString())
+                .containsExactly(paid.providerTransactionId() + "=5.00", raised + "=55.00");
+        assertThat(state(paid.pledgeId())).as("20.00 of it still stands").isEqualTo("COLLECTED");
+
+        ResponseEntity<Map<String, Object>> again = raise(paid, UUID.randomUUID().toString(), Map.of(
+                "contribution", azn("30.00"), "expectedAmount", azn("5.00")));
+        assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(again.getBody()).containsEntry("code", "PLEDGE_NOT_RAISABLE");
+        assertThat(meta(again.getBody())).containsEntry("reason", "REFUNDED");
+    }
+
+    @Test
+    @DisplayName("a raise paid after the pledge was refunded is not applied, and its charge is refunded")
+    void aRaisePaidAfterTheRefundIsRefunded() {
+        Scenario paid = aPaidPledge("raise-after-refund");
+        String raised = (String) raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString())
+                .getBody()
+                .get("providerTransactionId");
+
+        assertThat(staffRefund(paid.pledgeId(), null).getBody()).containsEntry("state", "SUCCEEDED");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+
+        deliver(raised, "charge_succeeded");
+
+        Map<String, Object> after = read(paid);
+        assertThat(raiseOf(after).get("state")).isEqualTo("UNAPPLIED");
+        assertThat(amount(after, "total")).isEqualTo("25.00");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+        assertThat(stock(paid.deluxe())).isEqualTo(new Stock(0, 0));
+        assertThat(stock(paid.mug())).isEqualTo(new Stock(0, 0));
+
+        refunds.refundDue(Instant.now());
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.providerTransactionId() + "=" + request.amount().amount().toPlainString())
+                .containsExactly(paid.providerTransactionId() + "=25.00", raised + "=55.00");
+        assertThat(jdbc().queryForObject(
+                        "SELECT reason FROM refunds WHERE pledge_id = ? AND amount = 55.00", String.class, paid.pledgeId()))
+                .isEqualTo("RAISE_NOT_APPLIED");
+    }
+
+    // ------------------------------------------------------------------
+    // Staff refunds and disputes on a raised pledge
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a staff refund of the rest returns every charge of a raised pledge, each against its own payment")
+    void aStaffFullRefundReturnsEveryCharge() {
+        Scenario paid = aRaisedPledge("raise-staff-full");
+
+        ResponseEntity<Map<String, Object>> issued = staffRefund(paid.pledgeId(), null);
+
+        assertThat(issued.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(issued.getBody()).containsEntry("state", "SUCCEEDED").containsEntry("fullRefund", true);
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.amount().amount().toPlainString())
+                .containsExactly("55.00", "25.00");
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM refunds WHERE pledge_id = ? AND state = 'SUCCEEDED' AND full_refund",
+                        Long.class,
+                        paid.pledgeId()))
+                .isEqualTo(2L);
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+    }
+
+    @Test
+    @DisplayName("a staff refund of an amount is split across the charges, newest first, up to what the pledge has left")
+    void aStaffRefundOfAnAmountIsSplitAcrossCharges() {
+        Scenario paid = aRaisedPledge("raise-staff-split");
+
+        ResponseEntity<Map<String, Object>> sixty = staffRefund(paid.pledgeId(), azn("60.00"));
+        assertThat(sixty.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.amount().amount().toPlainString())
+                .containsExactly("55.00", "5.00");
+        assertThat(state(paid.pledgeId())).isEqualTo("COLLECTED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("80.00"), 1));
+
+        ResponseEntity<Map<String, Object>> tooMuch = staffRefund(paid.pledgeId(), azn("25.00"));
+        assertThat(tooMuch.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(tooMuch.getBody()).containsEntry("code", "REFUND_EXCEEDS_COLLECTION");
+        assertThat((String) tooMuch.getBody().get("detail")).as("what the pledge has left, not one charge").contains("20.00");
+
+        assertThat(staffRefund(paid.pledgeId(), null).getBody()).containsEntry("state", "SUCCEEDED");
+        assertThat(sentFor(paid.pledgeId()).getLast().amount().amount()).isEqualByComparingTo("20.00");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+    }
+
+    @Test
+    @DisplayName("a staff refund is replayed under its key, every part of it, and reaches no provider twice")
+    void aStaffRefundIsReplayed() {
+        Scenario paid = aRaisedPledge("raise-staff-replay");
+        String key = "refund-" + UUID.randomUUID();
+
+        Object first = staffRefund(paid.pledgeId(), null, key).getBody().get("id");
+        Object again = staffRefund(paid.pledgeId(), null, key).getBody().get("id");
+
+        assertThat(again).isEqualTo(first);
+        assertThat(sentFor(paid.pledgeId())).hasSize(2);
+        assertThat(jdbc().queryForList(
+                        "SELECT idempotency_key FROM refunds WHERE pledge_id = ? ORDER BY idempotency_key",
+                        String.class,
+                        paid.pledgeId()))
+                .containsExactly(key, key + "#2");
+    }
+
+    @Test
+    @DisplayName("a partial staff refund, then a failed campaign: the rest of every charge comes back and the pledge ends refunded")
+    void aPartialRefundThenAFailedCampaignRefundsTheRest() {
+        Scenario paid = aRaisedPledge("raise-partial-then-fail");
+        assertThat(staffRefund(paid.pledgeId(), azn("10.00")).getBody()).containsEntry("state", "SUCCEEDED");
+        end(paid.projectId(), "UNSUCCESSFUL");
+
+        refunds.refundDue(Instant.now());
+
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.amount().amount().toPlainString())
+                .containsExactlyInAnyOrder("10.00", "25.00", "45.00");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+        refunds.refundDue(Instant.now());
+        assertThat(sentFor(paid.pledgeId())).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("an upheld dispute on a raised pledge refunds every charge")
+    void anUpheldDisputeRefundsEveryCharge() {
+        Scenario paid = aRaisedPledge("raise-dispute");
+
+        Optional<UUID> refunded = refundService.refundForDispute(
+                admin().id(), paid.pledgeId(), "Upheld in a test.", "backer-dispute-" + UUID.randomUUID());
+
+        assertThat(refunded).isPresent();
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.amount().amount().toPlainString())
+                .containsExactly("55.00", "25.00");
+        assertThat(jdbc().queryForList(
+                        "SELECT reason FROM refunds WHERE pledge_id = ? AND state = 'SUCCEEDED'", String.class, paid.pledgeId()))
+                .containsOnly("DISPUTE_CONCEDED")
+                .hasSize(2);
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+    }
+
+    // ------------------------------------------------------------------
+    // Late payments, pages that do not open, and requests that are refused
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a late payment after the places sold out is not applied, moves no stock, and is refunded")
+    void aLatePaymentAfterTheStockWentIsRefunded() {
+        Scenario paid = aPaidPledge("raise-late-sold-out");
+        String transaction = (String) raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString())
+                .getBody()
+                .get("providerTransactionId");
+        lapse(paid.pledgeId());
+        cleaner.releaseLapsedRaises(Instant.now());
+        // Somebody else takes both Deluxe places while the payment is on its way.
+        jdbc().update("UPDATE reward_tiers SET claimed_quantity = 2 WHERE id = ?", paid.deluxe());
+
+        deliver(transaction, "charge_succeeded");
+
+        Map<String, Object> after = read(paid);
+        assertThat(raiseOf(after).get("state")).isEqualTo("UNAPPLIED");
+        assertThat(amount(after, "total")).isEqualTo("25.00");
+        assertThat(stock(paid.deluxe())).isEqualTo(new Stock(2, 0));
+        assertThat(stock(paid.mug())).isEqualTo(new Stock(0, 0));
+        assertThat(stock(paid.standard())).isEqualTo(new Stock(1, 0));
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("25.00"), 1));
+
+        refunds.refundDue(Instant.now());
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.providerTransactionId() + "=" + request.amount().amount().toPlainString())
+                .containsExactly(transaction + "=55.00");
+        assertThat(state(paid.pledgeId())).isEqualTo("COLLECTED");
+    }
+
+    @Test
+    @DisplayName("a page that cannot be opened holds nothing, and lets the backer try again at once")
+    void aPageThatCannotOpenHoldsNothing() {
+        Scenario paid = aPaidPledge("raise-no-page");
+        provider.willRefuseHostedPayments();
+
+        ResponseEntity<Map<String, Object>> refused = raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString());
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(refused.getBody()).containsEntry("code", "PAYMENT_UNAVAILABLE");
+        // The endpoint runs in the idempotency store's transaction, so the raise and its hold went back
+        // with the refusal (PledgeRaiseCheckout); either way nothing is pending and nothing is held.
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM pledge_raises WHERE pledge_id = ? AND state = 'PENDING'",
+                        Long.class,
+                        paid.pledgeId()))
+                .isZero();
+        assertThat(read(paid).get("raisable")).isEqualTo(true);
+        assertThat(stock(paid.deluxe())).isEqualTo(new Stock(0, 0));
+        assertThat(stock(paid.mug())).isEqualTo(new Stock(0, 0));
+
+        provider.willOpenHostedPayments();
+        assertThat(raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString()).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    @DisplayName("another backer's pledge is not found, a foreign return address and a reused key are refused, and nothing is held")
+    void refusedRequestsHoldNothing() {
+        Scenario paid = aPaidPledge("raise-refused");
+
+        Account stranger = account("raise-stranger");
+        ResponseEntity<Map<String, Object>> foreign = raise(stranger, paid.pledgeId(), UUID.randomUUID().toString(), Map.of(
+                "contribution", azn("30.00"), "expectedAmount", azn("5.00")));
+        assertThat(foreign.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        ResponseEntity<Map<String, Object>> elsewhere = raise(paid, UUID.randomUUID().toString(), Map.of(
+                "contribution", azn("30.00"),
+                "expectedAmount", azn("5.00"),
+                "successUrl", "https://evil.example.com/pledges"));
+        assertThat(elsewhere.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(elsewhere.getBody()).containsEntry("code", "INVALID_RETURN_URL");
+
+        assertThat(read(paid).get("latestRaise")).isNull();
+        assertThat(pagesFor(paid.pledgeId())).isEqualTo(1);
+
+        String key = UUID.randomUUID().toString();
+        assertThat(raise(paid, key, Map.of("contribution", azn("30.00"), "expectedAmount", azn("5.00")))
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        ResponseEntity<Map<String, Object>> reused = raise(paid, key, Map.of(
+                "contribution", azn("40.00"), "expectedAmount", azn("15.00")));
+        assertThat(reused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(reused.getBody()).containsEntry("code", "IDEMPOTENCY_KEY_REUSED");
+        assertThat(pagesFor(paid.pledgeId())).isEqualTo(2);
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM pledge_raises WHERE pledge_id = ?", Long.class, paid.pledgeId()))
+                .isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("a pending raise can be resumed on the provider's page until its hold runs out, and not after it ends")
+    void aPendingRaiseCanBeResumed() {
+        Scenario paid = aPaidPledge("raise-resume");
+        ResponseEntity<Map<String, Object>> opened = raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString());
+
+        Map<String, Object> pending = raiseOf(read(paid));
+        assertThat(pending.get("state")).isEqualTo("PENDING");
+        assertThat(pending.get("resumeUrl")).isEqualTo(opened.getBody().get("redirectUrl"));
+
+        lapse(paid.pledgeId());
+        Map<String, Object> lapsed = raiseOf(read(paid));
+        assertThat(lapsed.get("state")).as("the cleaner has not reached it").isEqualTo("PENDING");
+        assertThat(lapsed).containsEntry("resumeUrl", null);
+
+        // A new raise, paid: no page to go back to.
+        ResponseEntity<Map<String, Object>> next = raise(paid, UUID.randomUUID().toString(), Map.of(
+                "contribution", azn("35.00"), "expectedAmount", azn("10.00")));
+        assertThat(raiseOf(read(paid)).get("resumeUrl")).isEqualTo(next.getBody().get("redirectUrl"));
+        deliver((String) next.getBody().get("providerTransactionId"), "charge_succeeded");
+        assertThat(raiseOf(read(paid))).containsEntry("state", "SUCCEEDED").containsEntry("resumeUrl", null);
+    }
+
+    // ------------------------------------------------------------------
+    // A paid raise nothing settled (rolling deployment)
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a raise's charge recorded by something that did not settle the raise is applied by the sweep")
+    void anOrphanedPaidRaiseIsApplied() {
+        Scenario paid = aPaidPledge("raise-orphan-applied");
+        ResponseEntity<Map<String, Object>> opened = raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString());
+        settleWithoutTheRaise(paid, opened);
+        assertThat(raiseOf(read(paid)).get("state")).isEqualTo("PENDING");
+
+        assertThat(cleaner.settlePaidRaises(Instant.now())).isEqualTo(1);
+
+        Map<String, Object> raised = read(paid);
+        assertThat(raiseOf(raised).get("state")).isEqualTo("SUCCEEDED");
+        assertThat(amount(raised, "total")).isEqualTo("80.00");
+        assertThat(stock(paid.deluxe())).isEqualTo(new Stock(1, 0));
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("80.00"), 1));
+        assertThat(cleaner.settlePaidRaises(Instant.now())).as("settled once").isZero();
+    }
+
+    @Test
+    @DisplayName("an orphaned paid raise that can no longer be applied is marked unapplied by the sweep and refunded")
+    void anOrphanedPaidRaiseIsRefunded() {
+        Scenario paid = aPaidPledge("raise-orphan-refunded");
+        ResponseEntity<Map<String, Object>> opened = raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString());
+        settleWithoutTheRaise(paid, opened);
+        lapse(paid.pledgeId());
+        cleaner.releaseLapsedRaises(Instant.now());
+        assertThat(raiseOf(read(paid)).get("state")).isEqualTo("EXPIRED");
+        jdbc().update("UPDATE reward_tiers SET claimed_quantity = 2 WHERE id = ?", paid.deluxe());
+
+        assertThat(cleaner.settlePaidRaises(Instant.now())).isEqualTo(1);
+        assertThat(raiseOf(read(paid)).get("state")).isEqualTo("UNAPPLIED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("25.00"), 1));
+
+        refunds.refundDue(Instant.now());
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.amount().amount().toPlainString())
+                .containsExactly("55.00");
+    }
+
+    @Test
+    @DisplayName("a payout never includes a raise's charge that is owed back, before or after its refund")
+    void aPayoutLeavesOutAnUnappliedRaise() {
+        Scenario paid = aPaidPledge("raise-payout-unapplied");
+        String transaction = (String) raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString())
+                .getBody()
+                .get("providerTransactionId");
+        lapse(paid.pledgeId());
+        cleaner.releaseLapsedRaises(Instant.now());
+        jdbc().update("UPDATE reward_tiers SET claimed_quantity = 2 WHERE id = ?", paid.deluxe());
+        deliver(transaction, "charge_succeeded");
+        assertThat(raiseOf(read(paid)).get("state")).isEqualTo("UNAPPLIED");
+
+        CampaignFunds before = payouts.fundsOf(paid.projectId(), "AZN");
+        assertThat(before.collected().amount()).isEqualByComparingTo("25.00");
+        assertThat(before.net().amount()).isEqualByComparingTo("25.00");
+
+        refunds.refundDue(Instant.now());
+        CampaignFunds after = payouts.fundsOf(paid.projectId(), "AZN");
+        assertThat(after.collected().amount()).isEqualByComparingTo("25.00");
+        assertThat(after.refunded().amount()).isEqualByComparingTo("0.00");
+        assertThat(after.net().amount()).isEqualByComparingTo("25.00");
     }
 
     // ------------------------------------------------------------------
@@ -602,6 +1093,67 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
                 campaign.backer(),
                 pledgeId,
                 transaction);
+    }
+
+    /** A pledge paid for at 25.00 and raised to Deluxe with two mugs, 80.00, the difference paid. */
+    private Scenario aRaisedPledge(String prefix) {
+        Scenario paid = aPaidPledge(prefix);
+        String raised = (String) raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString())
+                .getBody()
+                .get("providerTransactionId");
+        assertThat(deliver(raised, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(amount(read(paid), "total")).isEqualTo("80.00");
+        return paid;
+    }
+
+    /**
+     * What a node of the release before raises did with a raise's success webhook: the charge settled
+     * and posted, and the raise left as it was (V83's rolling-deployment note).
+     */
+    private void settleWithoutTheRaise(Scenario paid, ResponseEntity<Map<String, Object>> opened) {
+        transactionRows.save(PaymentTransaction.charge(
+                paid.pledgeId(),
+                paid.projectId(),
+                Money.of(new BigDecimal("55.00"), "AZN"),
+                ProviderName.PAYRIFF,
+                new ChargeResult(
+                        ProviderOutcome.APPROVED, (String) opened.getBody().get("providerTransactionId"), null, null, "{}"),
+                1,
+                "pledge-raise-" + opened.getBody().get("raiseId")));
+    }
+
+    private ResponseEntity<Map<String, Object>> staffRefund(UUID pledgeId, Map<String, Object> amount) {
+        return staffRefund(pledgeId, amount, "refund-" + UUID.randomUUID());
+    }
+
+    private ResponseEntity<Map<String, Object>> staffRefund(UUID pledgeId, Map<String, Object> amount, String key) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("pledgeId", pledgeId.toString());
+        body.put("amount", amount);
+        body.put("reason", "BACKER_REQUEST");
+        body.put("detail", "The backer asked, in a test.");
+        return post(admin(), "/v1/admin/refunds", key, body);
+    }
+
+    /** A member of staff who may issue refunds: a user row holding a V48 grant, as #43's suite makes one. */
+    private Account admin() {
+        UUID id = Campaigns.creator(dataSource, "raise-refund-administrator");
+        jdbc().update(
+                """
+                INSERT INTO staff_role_grants (account_id, role, granted_by, note)
+                VALUES (?, 'ADMINISTRATOR', ?, '#174 fixture')
+                ON CONFLICT DO NOTHING
+                """,
+                id,
+                id);
+        String token = tokens.issue(
+                        id, UUID.randomUUID(), new AccessTokenIssuer.AccountStanding(true, false), false, Instant.now())
+                .value();
+        return new Account(token, id);
+    }
+
+    private List<String> refundStates(UUID pledgeId) {
+        return jdbc().queryForList("SELECT state FROM refunds WHERE pledge_id = ?", String.class, pledgeId);
     }
 
     private UUID draft(Scenario campaign, Account backer, String contribution) {

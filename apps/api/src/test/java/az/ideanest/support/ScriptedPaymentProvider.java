@@ -176,6 +176,8 @@ public class ScriptedPaymentProvider implements PaymentProvider {
      */
     public void reset() {
         refundRefusal = null;
+        lostRefundAnswers.set(0);
+        hostedPagesUnavailable = false;
         lookups.clear();
         scripted.clear();
         charges.clear();
@@ -267,9 +269,24 @@ public class ScriptedPaymentProvider implements PaymentProvider {
         }
     }
 
+    private volatile boolean hostedPagesUnavailable;
+
+    /** Every payment page from now on cannot be opened: the provider cannot be reached (#171). */
+    public void willRefuseHostedPayments() {
+        hostedPagesUnavailable = true;
+    }
+
+    /** Payment pages open again. */
+    public void willOpenHostedPayments() {
+        hostedPagesUnavailable = false;
+    }
+
     /** A payment page on a host nothing resolves; the payment is settled by a scripted webhook. */
     @Override
     public HostedPaymentSession beginHostedPayment(HostedPaymentRequest request) {
+        if (hostedPagesUnavailable) {
+            throw new az.ideanest.payment.domain.ProviderUnavailableException(NAME, "Scripted: no payment page");
+        }
         hostedPayments.add(request);
         String transaction = "scripted-hosted-" + providerTransactionCounter.incrementAndGet();
         return new HostedPaymentSession(transaction, URI.create("https://pay.scripted.invalid/" + transaction));
@@ -318,6 +335,18 @@ public class ScriptedPaymentProvider implements PaymentProvider {
         refundRefusal = null;
     }
 
+    private final AtomicInteger lostRefundAnswers = new AtomicInteger();
+
+    /**
+     * The next {@code count} refunds reach the provider and are recorded here, and their answer is
+     * lost on the way back — the process dying between the call and the record (#40, #171). The
+     * caller sees an exception that is not {@code ProviderUnavailableException}, so its refund row
+     * stays {@code REQUESTED}.
+     */
+    public void loseRefundAnswers(int count) {
+        lostRefundAnswers.set(count);
+    }
+
     public void willLookUp(String providerTransactionId, PaymentLookup.State state) {
         lookups.put(providerTransactionId, state);
     }
@@ -325,6 +354,9 @@ public class ScriptedPaymentProvider implements PaymentProvider {
     @Override
     public RefundResult refund(RefundRequest request) {
         refunds.add(request);
+        if (lostRefundAnswers.getAndUpdate(left -> Math.max(left - 1, 0)) > 0) {
+            throw new IllegalStateException("Scripted: the refund's answer was lost");
+        }
         String refusal = refundRefusal;
         if (refusal != null) {
             return new RefundResult(ProviderOutcome.DECLINED, null, refusal, "Scripted refusal", "{\"scripted\":true}");
