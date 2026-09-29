@@ -1,7 +1,7 @@
 # The IdeyaNest web application, as an image — docs/architecture.md §19, issue #139.
 #
 # Built from the repository root, not from this directory: `@ideanest/web` depends
-# on three workspace packages that are source-only, so a build context scoped to
+# on source-only workspace packages that are source-only, so a build context scoped to
 # `apps/web` cannot see the code it compiles. `ops/deploy/README.md` gives the
 # command; `.dockerignore` at the root is what keeps that context from being the
 # whole checkout including `.next` and `node_modules`.
@@ -26,6 +26,8 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/web/package.json apps/web/
 COPY packages/api-client/package.json packages/api-client/
 COPY packages/design-tokens/package.json packages/design-tokens/
+COPY packages/messages/package.json packages/messages/
+COPY packages/money/package.json packages/money/
 COPY packages/ui/package.json packages/ui/
 
 # `--frozen-lockfile`, so an image can never be built from a resolution the
