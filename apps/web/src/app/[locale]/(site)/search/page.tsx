@@ -46,10 +46,16 @@ import { projectCardCopy, searchFieldCopy } from '../../../../lib/i18n/shell-cop
  * no such thing as a prerendered answer to a phrase nobody has typed yet.
  */
 
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Search',
-  description: 'Search every campaign on IdeaNest.',
-});
+/**
+ * The title and description in the route's language — #142 found both typed in English.
+ *
+ * A function rather than a `const` because the words depend on the request's language. It reads
+ * no `searchParams`, so it adds nothing dynamic that the page itself does not already have.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('discovery.search');
+  return privatePageMetadata({ title: t('title'), description: t('metaDescription') });
+}
 
 export default async function SearchPage({
   searchParams,
@@ -158,7 +164,7 @@ export default async function SearchPage({
                     href={inDiscovery}
                     className="inline-flex h-11 items-center rounded-full border border-white/16 px-6 text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3"
                   >
-                    {hasMore ? 'See more results in the feed' : 'Refine these results in the feed'}
+                    {t(hasMore ? 'moreInFeed' : 'refineInFeed')}
                   </Link>
                 </div>
               </>

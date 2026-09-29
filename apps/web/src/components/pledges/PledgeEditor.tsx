@@ -366,9 +366,12 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorPro
             autoComplete="off"
             value={draft.contributionText}
             disabled={saving}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, contributionText: event.currentTarget.value }))
-            }
+            onChange={(event) => {
+              /* Read before the updater: React may run it after the event has been released,
+                 when `currentTarget` is null — found by #131's first render test of this form. */
+              const contributionText = event.currentTarget.value;
+              setDraft((current) => ({ ...current, contributionText }));
+            }}
             trailing={<span className="text-[13px]">{catalogue.currency}</span>}
           />
         </Field>

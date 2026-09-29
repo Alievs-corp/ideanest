@@ -1,8 +1,23 @@
 import Decimal from 'decimal.js';
-import { describe, expect, it } from 'vitest';
-import { changesFrom, type Draft } from './PledgeEditor';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { changesFrom, PledgeEditor, type Draft } from './PledgeEditor';
 import { NO_REWARD } from '../checkout/useCheckout';
-import type { PledgeResponse } from '../../lib/pledges/api';
+import { editPledge, getPublicRewards, type PledgeResponse } from '../../lib/pledges/api';
+import { checkoutCopyFrom } from '../../lib/i18n/checkout-copy';
+import { pledgeManagerCopyFrom } from '../../lib/i18n/pledges-copy';
+import { translatorFor } from '../../test-copy';
+
+vi.mock('../../lib/pledges/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/pledges/api')>()),
+  getPublicRewards: vi.fn(),
+  editPledge: vi.fn(),
+}));
+
+/* The words the page resolves, built from the catalogue with the same builders (#131). */
+const CHECKOUT = checkoutCopyFrom(translatorFor('checkout'));
+const EDITOR = pledgeManagerCopyFrom(translatorFor('account.pledges')).editor;
 
 /**
  * The Merge-Patch body §4.5's PL-09 edit sends — issue #287.
@@ -179,3 +194,66 @@ describe('the money', () => {
     expect(edit.contribution?.currency).toBe('USD');
   });
 });
+
+/**
+ * #131: what the editor tells a backer about money, drawn from the catalogue.
+ *
+ * The editor used to say "Nothing has been charged yet" and, after a save, that collection
+ * "happens when the campaign closes successfully" — the retired model. What an edit actually
+ * does is re-price the whole pledge, refuse to lower a confirmed one, and take no payment
+ * (`ReservationService#edit` moves places and never charges). The assertions go through the
+ * builder, so they are about the wiring; the last test holds the words themselves to the rule.
+ */
+describe('the editor’s account of the money', () => {
+  const noReward = pledge({
+    rewardTierId: null,
+    addons: [],
+    shippingCountry: null,
+    amounts: {
+      base: { amount: '50.00', currency: 'AZN' },
+      addons: { amount: '0.00', currency: 'AZN' },
+      bonus: { amount: '0.00', currency: 'AZN' },
+      shipping: { amount: '0.00', currency: 'AZN' },
+      tax: { amount: '0.00', currency: 'AZN' },
+      total: { amount: '50.00', currency: 'AZN' },
+    },
+  });
+
+  afterEach(cleanup);
+
+  async function renderEditor(onSaved = vi.fn()) {
+    vi.mocked(getPublicRewards).mockResolvedValue({ currency: 'AZN', rewards: [], addons: [] });
+    render(<PledgeEditor copy={CHECKOUT} pledges={EDITOR} pledge={noReward} onSaved={onSaved} />);
+    await screen.findByRole('heading', { name: EDITOR.heading });
+  }
+
+  it('introduces the form with the catalogue’s sentence', async () => {
+    await renderEditor();
+
+    expect(screen.getByText(EDITOR.intro)).toBeInTheDocument();
+  });
+
+  it('confirms a save with the catalogue’s sentence', async () => {
+    const saved = pledge({ ...noReward, amounts: { ...noReward.amounts, total: { amount: '75.00', currency: 'AZN' } } });
+    vi.mocked(editPledge).mockResolvedValue(saved);
+    const user = userEvent.setup();
+    await renderEditor();
+
+    const field = screen.getByLabelText(CHECKOUT.contribution.legendNoReward, { exact: false });
+    await user.clear(field);
+    await user.type(field, '75.00');
+    await user.click(screen.getByRole('button', { name: EDITOR.save }));
+
+    expect(await screen.findByText(EDITOR.savedBody)).toBeInTheDocument();
+    expect(screen.getByText(EDITOR.savedTitle)).toBeInTheDocument();
+  });
+
+  it('never tells a backer the charge happens later', () => {
+    for (const sentence of [EDITOR.intro, EDITOR.savedBody]) {
+      expect(sentence).not.toMatch(/when the campaign closes|collection happens|nothing has been charged/iu);
+    }
+    expect(EDITOR.intro).toMatch(/only be raised/u);
+    expect(EDITOR.savedBody).toMatch(/refunded in full/u);
+  });
+});
+

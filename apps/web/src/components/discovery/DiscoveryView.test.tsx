@@ -15,6 +15,7 @@ import { DiscoveryView } from './DiscoveryView';
 import { projectCardCopyFrom } from '../../lib/i18n/card-copy';
 import { translatorFor } from '../../test-copy';
 import { feedCopyFrom } from '../../lib/i18n/feed-copy';
+import ru from '../../../messages/ru.json';
 /*
  * The copy the route would have resolved, built from `messages/en.json` by the same function it
  * calls — issue #324. Retyping the sentences here would give a test that passes whatever the
@@ -780,6 +781,37 @@ describe('the rail as a structure', () => {
     ]) {
       expect(screen.getByRole('group', { name: legend })).toBeInTheDocument();
     }
+  });
+
+  /**
+   * #142: the tag group's two sentences were English literals in `FilterRail`. They come from
+   * the route's copy now; the Russian case is the one the literals could not have passed.
+   */
+  it('explains, in the copy’s words, that several tags narrow rather than widen', async () => {
+    await open();
+
+    const tags = screen.getByRole('group', { name: 'Tags' });
+    expect(within(tags).getByText(FEED_COPY.tagsHint)).toBeInTheDocument();
+    expect(within(tags).queryByText(FEED_COPY.noTags)).not.toBeInTheDocument();
+  });
+
+  it('says so, in the copy’s words, when no matching campaign carries a tag', async () => {
+    facetsMock.mockResolvedValue({ ...FACETS, tags: [] });
+    await open();
+
+    const tags = screen.getByRole('group', { name: 'Tags' });
+    expect(await within(tags).findByText(FEED_COPY.noTags)).toBeInTheDocument();
+    expect(within(tags).queryByText(FEED_COPY.tagsHint)).not.toBeInTheDocument();
+  });
+
+  it('draws the tag sentences from the copy it is handed, not from a literal', async () => {
+    nav.reset('');
+    facetsMock.mockResolvedValue({ ...FACETS, tags: [] });
+    const copy = { ...FEED_COPY, noTags: ru.discovery.feed.noTags, tagsHint: ru.discovery.feed.tagsHint };
+    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={copy} />);
+
+    expect(await screen.findByText(ru.discovery.feed.noTags)).toBeInTheDocument();
+    expect(screen.queryByText(FEED_COPY.noTags)).not.toBeInTheDocument();
   });
 
   it('is a landmark with a name of its own', async () => {

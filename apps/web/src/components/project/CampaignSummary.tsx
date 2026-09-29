@@ -11,7 +11,8 @@ import { CampaignActions } from './CampaignActions';
 import { CampaignMedia } from './CampaignMedia';
 import { LiveFunding } from './LiveFunding';
 import { CampaignCountdown } from './ViewerClock';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { localeOrDefault } from '../../lib/i18n/locale';
 import { fillNodes } from '../../lib/i18n/placeholders';
 import {
   campaignActionsCopy,
@@ -179,7 +180,10 @@ export async function CampaignSummary({
    */
   const remaining =
     showDays && campaign.deadline !== null ? remainingUntil(campaign.deadline, now) : null;
-  const countdown = remaining === null ? null : countdownLabel(remaining);
+  const countdown =
+    remaining === null
+      ? null
+      : countdownLabel(remaining, clock.units, localeOrDefault(await getLocale()));
 
   return (
     <header className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">

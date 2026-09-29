@@ -409,14 +409,14 @@
         "loading": "Dəstəkləriniz yüklənir",
         "failedTitle": "Dəstəkləriniz yüklənə bilmədi",
         "emptyTitle": "Hələ heç nəyi dəstəkləməmisiniz",
-        "emptyBody": "Etdiyiniz hər dəstək burada görünür — nə seçdiyiniz və kampaniya bağlananda nə qədər tutulacağı ilə birlikdə.",
+        "emptyBody": "Etdiyiniz hər dəstək burada görünür — nə seçdiyiniz və nə qədər tutulduğu ilə birlikdə. Dəstək onu təsdiqlədiyiniz anda tutulur; kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pul tam geri qaytarılır.",
         "browse": "Kampaniyalara bax",
         "noReward": "Mükafatsız dəstək",
         "byCreator": "müəllif: {creator}",
         "cancelledAt": "{time} tarixində ləğv edilib",
         "confirmedAt": "{time} tarixində təsdiqlənib",
-        "collected": "tutulub",
-        "toBeCollected": "kampaniya bağlananda tutulacaq",
+        "charged": "tutulub",
+        "notCharged": "tutulmayıb",
         "loadingMore": "Yüklənir",
         "showMore": "Daha çox göstər",
         "nextPageFailed": "Növbəti səhifə yüklənmədi"
@@ -440,13 +440,13 @@
       "editor": {
         "loadingRewards": "Mükafatlar yüklənir",
         "heading": "Bu dəstəyi dəyiş",
-        "intro": "Kampaniyanın son tarixinə qədər seçdiklərinizi dəyişə bilərsiniz. Hələ heç nə tutulmayıb, ona görə dəyişiklik fərqi hesablamır, bütün dəstəyi yenidən qiymətləndirir.",
+        "intro": "Kampaniyanın son tarixinə qədər seçdiklərinizi dəyişə bilərsiniz. Təsdiqlənmiş dəstək yalnız artırıla bilər, azaldıla bilməz. Dəyişiklik bütün dəstəyi yenidən qiymətləndirir, onu yadda saxlamaq isə kartınızdan pul tutmur.",
         "anonymousHint": "Adınız kampaniyanın açıq dəstəkçi siyahısında və profilinizdə göstərilmir. Müəllif isə onu görür, çünki mükafatınızı göndərməlidir.",
         "saving": "Saxlanılır",
         "save": "Dəyişiklikləri saxla",
         "noChanges": "Hələ heç nə dəyişdirilməyib.",
         "savedTitle": "Dəstəyiniz yeniləndi",
-        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Heç nə tutulmayıb — tutulma kampaniya uğurla bağlananda baş verir."
+        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Dəyişikliyi yadda saxlamaq heç nə tutmadı. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, hər dəstəkçiyə pul tam geri qaytarılır."
       }
     },
     "surveys": {
@@ -3089,6 +3089,8 @@
       "rangeInvalid": "Məbləği rəqəmlə yazın, məsələn 2500 və ya 2500.00.",
       "rangeUnordered": "Ən aşağı məbləğ ən yuxarıdan böyük ola bilməz.",
       "subcategoriesOf": "{category} alt bölmələri",
+      "noTags": "Bu filtrlərə uyğun kampaniyalarda etiket yoxdur.",
+      "tagsHint": "Bir neçə etiket seçəndə yalnız bu etiketlərin hamısı olan kampaniyalar göstərilir.",
       "loading": "Layihələr yüklənir",
       "loadingMore": "Daha çox layihə yüklənir",
       "showMore": "Daha çox layihə göstər",
@@ -3240,6 +3242,7 @@
     },
     "search": {
       "title": "Axtarış",
+      "metaDescription": "IdeaNest-dəki bütün kampaniyalarda axtarış edin.",
       "resultsTitle": "«{query}» üçün nəticələr",
       "prompt": "Axtardığınızı yazın — kampaniya, kateqoriya və ya müəllif. Ya da <feed>bütün lentə baxın</feed> və onu filtrlərlə daraltın.",
       "count": "{count, plural, =0 {Heç bir kampaniya uyğun gəlmədi} other {# kampaniya}}",
@@ -3247,6 +3250,8 @@
       "emptyTitle": "«{query}» üzrə heç nə tapılmadı",
       "emptyBody": "Yazılışı yoxlayın və ya daha qısa bir söz sınayın. Lenti ifadə əvəzinə kateqoriya, status və məbləğ üzrə daraltmaq olar.",
       "emptyAction": "Lentə baxın",
+      "moreInFeed": "Lentdə daha çox nəticəyə baxın",
+      "refineInFeed": "Bu nəticələri lentdə daraldın",
       "gridLabel": "«{query}» üçün axtarış nəticələri"
     }
   },
@@ -3591,7 +3596,34 @@
     },
     "countdown": {
       "label": "Bu kampaniyanı dəstəkləməyə qalan vaxt: {time}",
-      "left": "{time} qalıb"
+      "left": "{time} qalıb",
+      "units": {
+        "day": {
+          "one": "{count} gün",
+          "few": "{count} gün",
+          "many": "{count} gün",
+          "other": "{count} gün"
+        },
+        "hour": {
+          "one": "{count} saat",
+          "few": "{count} saat",
+          "many": "{count} saat",
+          "other": "{count} saat"
+        },
+        "minute": {
+          "one": "{count} dəqiqə",
+          "few": "{count} dəqiqə",
+          "many": "{count} dəqiqə",
+          "other": "{count} dəqiqə"
+        },
+        "second": {
+          "one": "{count} saniyə",
+          "few": "{count} saniyə",
+          "many": "{count} saniyə",
+          "other": "{count} saniyə"
+        }
+      },
+      "pair": "{larger}, {smaller}"
     },
     "back": {
       "cta": "Bu kampaniyanı dəstəklə"
@@ -3609,6 +3641,9 @@
     "creator": {
       "heading": "Müəllif haqqında",
       "others": "Onun digər kampaniyaları"
+    },
+    "risks": {
+      "heading": "Risklər və çətinliklər"
     },
     "trust": {
       "heading": "Maliyyələşdirmə burada necə işləyir",
@@ -3646,7 +3681,8 @@
       "older": "Köhnə yeniliklər",
       "noOlder": "Daha köhnə yenilik yoxdur.",
       "none": "Bu kampaniya hələ yenilik paylaşmayıb. Paylaşanda dəstəkçilərə e-poçtla xəbər verilir.",
-      "backersOnly": "Yalnız dəstəkçilər üçün"
+      "backersOnly": "Yalnız dəstəkçilər üçün",
+      "number": "Yenilik {number}"
     },
     "owner": {
       "label": "Sizin kampaniyanız",
@@ -3671,10 +3707,27 @@
       "replyLabel": "Cavabınız",
       "withdraw": "Geri götür",
       "withdrawWarning": "Geri götürmək şərhin silindiyini bildirən qeyd buraxır. Ona yazılmış cavablar qalır və şərhi nə redaktə etmək, nə də geri qaytarmaq olur.",
+      "withdrawConfirm": "Bəli, geri götür",
+      "withdrawing": "Geri götürülür",
       "keep": "Qalsın",
       "postComment": "Şərhi göndər",
       "postReply": "Cavabı göndər",
-      "posting": "Göndərilir"
+      "posting": "Göndərilir",
+      "failures": {
+        "emptyBody": "Əvvəlcə nəsə yazın.",
+        "sessionExpired": "Sessiyanızın vaxtı bitib. Daxil olub yenidən cəhd edin.",
+        "rateLimited": "Qısa müddətdə çox şərh yazılıb. Bir neçə dəqiqədən sonra yenidən cəhd edin.",
+        "rateLimitedFor": {
+          "one": "Qısa müddətdə çox şərh yazılıb. Təxminən {count} dəqiqədən sonra yenidən cəhd edin.",
+          "few": "Qısa müddətdə çox şərh yazılıb. Təxminən {count} dəqiqədən sonra yenidən cəhd edin.",
+          "many": "Qısa müddətdə çox şərh yazılıb. Təxminən {count} dəqiqədən sonra yenidən cəhd edin.",
+          "other": "Qısa müddətdə çox şərh yazılıb. Təxminən {count} dəqiqədən sonra yenidən cəhd edin."
+        },
+        "notPosted": "Şərhi göndərmək mümkün olmadı.",
+        "unreachable": "Xidmətə çatmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
+        "notWithdrawn": "Şərhi geri götürmək mümkün olmadı.",
+        "withdrawUnreachable": "Xidmətə çatmaq mümkün olmadı. Yenidən cəhd edin."
+      }
     },
     "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Müəllif son tarixi bir dəfə uzada bilər.",
     "prelaunch": {

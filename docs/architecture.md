@@ -87,7 +87,7 @@ Four pillars, observed across established platforms in this category:
 | **Project / Campaign** | A creative undertaking seeking funding |
 | **Creator** | The person or organisation running a project |
 | **Backer** | A user who pledges money to a project |
-| **Pledge** | A financial commitment, not charged immediately |
+| **Pledge** | A backer's commitment to a campaign, charged when the backer confirms it (IDN-EXT-01, §1.1) and refunded in full if the campaign fails, is suspended or is cancelled |
 | **Reward tier** | A package promised in exchange for a pledge amount |
 | **Add-on** | An extra item purchasable alongside a reward |
 | **Item** | The atomic physical or digital unit rewards are composed from |

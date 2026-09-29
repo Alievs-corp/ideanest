@@ -86,6 +86,12 @@ export interface CampaignCountdownProps {
 
 export function CampaignCountdown({ copy, deadline, initialLabel }: CampaignCountdownProps) {
   const [label, setLabel] = useState<string | null>(initialLabel);
+  /*
+   * The language the server declined `initialLabel` in — both read the `[locale]` segment, so
+   * every tick picks the plural category the HTML already used (#142).
+   */
+  const locale = useRouteLocale();
+  const { units } = copy;
 
   useEffect(() => {
     /*
@@ -106,7 +112,7 @@ export function CampaignCountdown({ copy, deadline, initialLabel }: CampaignCoun
        * costs nothing — which is what makes a one-second interval safe in the final hour and
        * free everywhere above it.
        */
-      setLabel(countdownLabel(remaining));
+      setLabel(countdownLabel(remaining, units, locale));
       if (remaining.past) return;
 
       timer = setTimeout(tick, countdownIntervalMs(remaining));
@@ -117,7 +123,7 @@ export function CampaignCountdown({ copy, deadline, initialLabel }: CampaignCoun
     timer = setTimeout(tick, countdownIntervalMs(initial));
 
     return () => clearTimeout(timer);
-  }, [deadline]);
+  }, [deadline, units, locale]);
 
   if (label === null) return null;
 
