@@ -7,6 +7,7 @@ import { ConsoleMembershipProvider } from './ConsoleMembership';
 import { ConsoleReader } from './ConsoleReader';
 import { adminShellCopy, shellCopy } from '../../lib/i18n/shell-copy.server';
 import { consoleChrome } from '../../lib/i18n/admin/console.server';
+import { BrandMark } from '../brand/BrandMark';
 
 /**
  * The frame every console screen renders inside — §4.11 and §4.13 WS-01, issue #294.
@@ -123,7 +124,8 @@ export async function AdminArea({ children }: AdminAreaProps) {
               href="/admin"
               className="rounded-lg text-sm font-semibold tracking-[-0.01em] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
             >
-              IdeaNest{' '}
+              <BrandMark className="mr-2 inline-block h-5 w-auto align-[-0.2em] text-[var(--lime-500)]" />
+              IdeyaNest{' '}
               <span className="font-normal text-white/48">{copy.console}</span>
             </Link>
 

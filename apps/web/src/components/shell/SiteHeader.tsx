@@ -11,6 +11,7 @@ import { SearchField } from '../search/SearchField';
 import { MobileNavDrawer } from './MobileNavDrawer';
 import { isCurrent } from './navigation';
 import type { ShellCopy } from '../../lib/i18n/shell-copy';
+import { BrandMark } from '../brand/BrandMark';
 
 /**
  * The global header — §4.13 WS-01, docs/ui-kit.md §8.6, docs/motion-system.md §4.7.
@@ -88,9 +89,10 @@ export function SiteHeader({ copy }: SiteHeaderProps) {
       logo={
         <Link
           href="/"
-          className="shrink-0 rounded-sm text-lg font-semibold tracking-[-0.03em] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="inline-flex shrink-0 items-center gap-2 rounded-sm text-lg font-semibold tracking-[-0.03em] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
         >
-          IdeaNest
+          <BrandMark />
+          IdeyaNest
         </Link>
       }
       navClassName="hidden md:flex"

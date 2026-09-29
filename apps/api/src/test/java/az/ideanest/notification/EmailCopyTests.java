@@ -449,7 +449,7 @@ class EmailCopyTests extends AbstractIntegrationTest {
      * That no translation carries a lone apostrophe.
      *
      * <p>Every row is a {@code MessageFormat} pattern, where a single quote opens a literal
-     * section: a Turkish sentence written {@code IdeaNest'e {1} geldi} prints the placeholder
+     * section: a Turkish sentence written {@code IdeyaNest'e {1} geldi} prints the placeholder
      * as four characters rather than substituting the campaign. Turkish attaches case suffixes
      * to proper nouns with an apostrophe, so this is a trap the language walks into by writing
      * ordinary prose, and the failure lands in a subject line.

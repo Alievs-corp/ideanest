@@ -71,7 +71,7 @@ export default async function LegalIndexRoute({
 
   /*
    * `null` is a failed read, and it is drawn as one — #147. This used to become an empty map, so
-   * every row said "not published yet": during an outage the index told a regulator that IdeaNest
+   * every row said "not published yet": during an outage the index told a regulator that IdeyaNest
    * had published none of the eight documents §22.2 requires. Neither "in force" nor "not
    * published" can be said without the answer, so the page says it could not load.
    */

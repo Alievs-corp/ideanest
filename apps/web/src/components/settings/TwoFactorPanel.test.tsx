@@ -54,7 +54,7 @@ const disableMock = vi.mocked(disableTwoFactor);
 
 const ENROLMENT = {
   secret: 'JBSWY3DPEHPK3PXP',
-  otpauthUri: 'otpauth://totp/IdeaNest:aysel?secret=JBSWY3DPEHPK3PXP',
+  otpauthUri: 'otpauth://totp/IdeyaNest:aysel?secret=JBSWY3DPEHPK3PXP',
   digits: 6,
   periodSeconds: 30,
   algorithm: 'SHA1',

@@ -59,7 +59,7 @@ const CLIENT_HEADER_VALUE = 'ideanest-mobile';
 
 /** What the account's session list calls this phone. Display only; never trusted. */
 function deviceLabel(): string {
-  return Device.deviceName ?? 'IdeaNest on mobile';
+  return Device.deviceName ?? 'IdeyaNest on mobile';
 }
 
 /** The two shapes `POST /v1/auth/login` can answer with. */

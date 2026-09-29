@@ -72,9 +72,9 @@ describe('what this device can do', () => {
 
 describe('the prompt', () => {
   it('reports success and refusal as a boolean', async () => {
-    expect(await unlock('Unlock IdeaNest')).toBe(true);
+    expect(await unlock('Unlock IdeyaNest')).toBe(true);
 
     biometrics.__setBiometrics({ succeeds: false });
-    expect(await unlock('Unlock IdeaNest')).toBe(false);
+    expect(await unlock('Unlock IdeyaNest')).toBe(false);
   });
 });

@@ -96,14 +96,14 @@
         "surveys": "Sorğular",
         "deliveries": "Çatdırılmalar",
         "settings": "Parametrlər",
-        "about": "IdeaNest haqqında",
+        "about": "IdeyaNest haqqında",
         "howItWorks": "Necə işləyir",
         "trustSafety": "Etibar və təhlükəsizlik",
         "legal": "Hüquqi"
       }
     },
     "failure": {
-      "elsewhere": "IdeaNest-in digər səhifələri",
+      "elsewhere": "IdeyaNest-in digər səhifələri",
       "links": {
         "browse": "Kampaniyalara baxın",
         "categories": "Kateqoriyalar",
@@ -124,8 +124,8 @@
         },
         "maintenance": {
           "metaTitle": "Texniki xidmət",
-          "metaDescription": "Dəyişiklik etdiyimiz müddətdə IdeaNest qısa vaxt əlçatan deyil.",
-          "title": "IdeaNest qısa müddətə əlçatan deyil",
+          "metaDescription": "Dəyişiklik etdiyimiz müddətdə IdeyaNest qısa vaxt əlçatan deyil.",
+          "title": "IdeyaNest qısa müddətə əlçatan deyil",
           "description": "Planlı dəyişiklik edirik və o bitənə qədər platforma əlçatan deyil. Heç bir dəstəyə təsir etmir: texniki xidmət zamanı heç nə tutulmur və hər kampaniyanın son tarixi olduğu kimi qalır.",
           "action": "Ana səhifəni yoxlayın"
         },
@@ -203,7 +203,7 @@
       },
       "notifications": {
         "label": "Bildirişlər",
-        "summary": "IdeaNest-in sizə nə bildirdiyi və bunun sizə necə çatdığı."
+        "summary": "IdeyaNest-in sizə nə bildirdiyi və bunun sizə necə çatdığı."
       },
       "sessions": {
         "label": "Cihazlar",
@@ -227,7 +227,7 @@
       },
       "language": {
         "label": "Dil və valyuta",
-        "summary": "IdeaNest-in sizə yazdığı dil və məbləğlərin göstərildiyi valyuta."
+        "summary": "IdeyaNest-in sizə yazdığı dil və məbləğlərin göstərildiyi valyuta."
       },
       "payout": {
         "label": "Ödəniş məlumatları",
@@ -285,7 +285,7 @@
       },
       "inbox": {
         "metaTitle": "Bildirişlər",
-        "metaDescription": "IdeaNest-in sizə bildirdiyi hər şey, ən yenisi əvvəldə.",
+        "metaDescription": "IdeyaNest-in sizə bildirdiyi hər şey, ən yenisi əvvəldə.",
         "title": "Bildirişlər",
         "intro": "Platformanın sizə bildirdiyi hər şey, ən yenisi əvvəldə. Birini açmağınız onu oxunmuş kimi işarələyir. <settings>Sizə nə göndərildiyini dəyişin</settings>."
       },
@@ -2577,7 +2577,7 @@
   "settings": {
     "language": {
       "title": "Dil və valyuta",
-      "intro": "IdeaNest sizə necə yazır və məbləğləri hansı valyutada oxuyursunuz.",
+      "intro": "IdeyaNest sizə necə yazır və məbləğləri hansı valyutada oxuyursunuz.",
       "fieldLabel": "İnterfeys dili",
       "fieldHint": "Hesab səhifələrinizə dərhal tətbiq olunur. Tərcümənin qalanı yazılana qədər ictimai sayt ingiliscə qalır.",
       "save": "Dili yadda saxla",
@@ -2604,39 +2604,39 @@
       },
       "notifications": {
         "metaTitle": "Bildiriş parametrləri",
-        "metaDescription": "IdeaNest-in sizə nə bildirdiyini və bunun sizə necə çatdığını seçin.",
+        "metaDescription": "IdeyaNest-in sizə nə bildirdiyini və bunun sizə necə çatdığını seçin.",
         "title": "Bildirişlər",
         "intro": "Sizə nəyin bildiriləcəyini və bunun sizə necə çatacağını seçin. <b>Baş verdikcə</b> hər birini ayrıca göndərir; <b>gündəlik icmal</b> kanal dəstəkləyirsə, onları gündə bir mesaja yığır. <b>Tətbiqdə</b> isə <inbox>bildirişlərinizi</inbox> doldurur. Dəyişikliklər siz etdikcə yadda saxlanılır."
       },
       "sessions": {
         "metaTitle": "Aktiv sessiyalar",
-        "metaDescription": "IdeaNest hesabınıza daxil olmuş cihazları nəzərdən keçirin və istənilənini çıxarın.",
+        "metaDescription": "IdeyaNest hesabınıza daxil olmuş cihazları nəzərdən keçirin və istənilənini çıxarın.",
         "title": "Cihazlar",
         "intro": "Hesabınıza hazırda daxil olmuş bütün cihazlar. Tanımadığınız biri varsa, onu çıxarın — on beş dəqiqə ərzində sessiyasını yeniləyə bilməyəcək."
       },
       "email": {
         "metaTitle": "E-poçt ünvanı",
-        "metaDescription": "IdeaNest hesabınızı başqa e-poçt ünvanına köçürün.",
+        "metaDescription": "IdeyaNest hesabınızı başqa e-poçt ünvanına köçürün.",
         "title": "E-poçt ünvanı",
-        "intro": "Daxil olduğunuz ünvan və IdeaNest-in sizə göndərdiyi hər şeyin getdiyi yer. Bunun əvəzinə şifrənizi dəyişmək üçün <password>şifrə</password> bölməsinə keçin."
+        "intro": "Daxil olduğunuz ünvan və IdeyaNest-in sizə göndərdiyi hər şeyin getdiyi yer. Bunun əvəzinə şifrənizi dəyişmək üçün <password>şifrə</password> bölməsinə keçin."
       },
       "password": {
         "metaTitle": "Şifrə",
-        "metaDescription": "IdeaNest hesabınızın şifrəsini dəyişin.",
+        "metaDescription": "IdeyaNest hesabınızın şifrəsini dəyişin.",
         "title": "Şifrə",
         "intro": "Onu dəyişmək üçün hazırkı şifrəniz lazımdır. Əgər o sizdə yoxdursa — və ya yalnız Google, yaxud Apple ilə daxil olmusunuzsa — əvəzinə <reset>e-poçtla sıfırlayın</reset>."
       },
       "security": {
         "metaTitle": "İki mərhələli doğrulama",
-        "metaDescription": "IdeaNest girişinizə telefonunuzdan gələn kodu əlavə edin.",
+        "metaDescription": "IdeyaNest girişinizə telefonunuzdan gələn kodu əlavə edin.",
         "title": "İki mərhələli doğrulama",
         "intro": "Şifrənizin üstünə telefonunuzdan gələn kod. §4.1 ödənişdən əvvəl bunu tələb edir, ona görə müəllif gec-tez bununla qarşılaşacaq. Hansı brauzerlərin daxil olduğunu görmək üçün <devices>cihazlar</devices> bölməsinə keçin."
       },
       "privacy": {
         "metaTitle": "Məxfilik, məlumatlar və hesabın bağlanması",
-        "metaDescription": "Profilinizi kimin görə biləcəyini seçin, IdeaNest məlumatlarınızın surətini yükləyin və ya hesabınızı bağlayın.",
+        "metaDescription": "Profilinizi kimin görə biləcəyini seçin, IdeyaNest məlumatlarınızın surətini yükləyin və ya hesabınızı bağlayın.",
         "title": "Məxfilik, məlumatlar və hesabın bağlanması",
-        "intro": "Sizi kimlərin görə biləcəyi, IdeaNest-in sizin haqqınızda saxladığı hər şey və siz ayrılsanız onlarla nə olacağı."
+        "intro": "Sizi kimlərin görə biləcəyi, IdeyaNest-in sizin haqqınızda saxladığı hər şey və siz ayrılsanız onlarla nə olacağı."
       },
       "payout": {
         "metaTitle": "Ödəniş məlumatları",
@@ -2682,7 +2682,7 @@
       "payout": {
         "loading": "Ödəniş məlumatlarınız yüklənir",
         "subjectHeading": "Kimə ödənilir",
-        "subjectIntro": "IdeaNest burada göstərilən şəxsə və ya şirkətə ödəyir. Hər hansı ödəniş göndərilməzdən əvvəl administrator VÖEN-in həqiqi olduğunu və biznes kartının onun sahibinə məxsus olduğunu yoxlayır.",
+        "subjectIntro": "IdeyaNest burada göstərilən şəxsə və ya şirkətə ödəyir. Hər hansı ödəniş göndərilməzdən əvvəl administrator VÖEN-in həqiqi olduğunu və biznes kartının onun sahibinə məxsus olduğunu yoxlayır.",
         "kind": "Siz",
         "kindIndividual": "Fiziki şəxssiniz",
         "kindEntity": "Şirkətsiniz",
@@ -2696,7 +2696,7 @@
         "saving": "Saxlanılır…",
         "saved": "Yadda saxlanıldı.",
         "cardHeading": "Biznes kartı",
-        "cardIntro": "Ödənişlər ödəniş provayderinin səhifəsində qeydiyyatdan keçirdiyiniz biznes kartına göndərilir. Kart nömrəsi heç vaxt IdeaNest-də daxil edilmir.",
+        "cardIntro": "Ödənişlər ödəniş provayderinin səhifəsində qeydiyyatdan keçirdiyiniz biznes kartına göndərilir. Kart nömrəsi heç vaxt IdeyaNest-də daxil edilmir.",
         "cardNone": "Hələ kart yoxdur.",
         "cardOnFile": "{hint}, sahibi: {holder}",
         "standingAwaiting": "Yoxlama gözlənilir",
@@ -2716,7 +2716,7 @@
       "twoFactor": {
         "heading": "İki mərhələli doğrulama",
         "passwordHeading": "Şifrənizi təsdiqləyin",
-        "scanHeading": "IdeaNest-i autentifikator tətbiqinizə əlavə edin",
+        "scanHeading": "IdeyaNest-i autentifikator tətbiqinizə əlavə edin",
         "codesHeading": "Bərpa kodlarınızı saxlayın",
         "disableHeading": "İki mərhələli doğrulamanı söndürün",
         "fromService": "Xidmətdən",
@@ -2771,7 +2771,7 @@
       },
       "export": {
         "heading": "Məlumatlarınızın surətini götürün",
-        "intro": "IdeaNest-in hesabınız haqqında saxladığı hər şey bir JSON faylında. O, bu cihaza endirilir və sonra heç yerdə saxlanılmır.",
+        "intro": "IdeyaNest-in hesabınız haqqında saxladığı hər şey bir JSON faylında. O, bu cihaza endirilir və sonra heç yerdə saxlanılmır.",
         "errorTitle": "İxrac gəlmədi",
         "rateLimited": "Bunu son vaxtlar bir neçə dəfə istəmisiniz. Bir azdan yenidən cəhd edin.",
         "refused": "İxrac rədd edildi.",
@@ -2855,7 +2855,7 @@
     },
     "signIn": {
       "metaTitle": "Daxil olun",
-      "metaDescription": "IdeaNest-ə daxil olun.",
+      "metaDescription": "IdeyaNest-ə daxil olun.",
       "title": "Daxil olun",
       "intro": "Dəstəklərinizə, kampaniyalarınıza və izlədiyiniz hər şeyə qayıdın.",
       "submit": "Daxil ol",
@@ -2868,7 +2868,7 @@
     },
     "register": {
       "metaTitle": "Hesab yaradın",
-      "metaDescription": "IdeaNest hesabı yaradın.",
+      "metaDescription": "IdeyaNest hesabı yaradın.",
       "title": "Hesab yaradın",
       "intro": "Kampaniyaları dəstəkləyin, müəllifləri izləyin və öz kampaniyanızı başladın. Bunun üçün bir e-poçt ünvanı və bir şifrə kifayətdir.",
       "name": "Ad",
@@ -2882,7 +2882,7 @@
       "sentTitle": "E-poçtunuzu yoxlayın",
       "sentIntro": "{address} ünvanına bir mesaj göndərdik. Hesabınızın qurulmasını tamamlamaq üçün oradakı keçidi açın.",
       "sentLifetime": "Keçid 24 saat etibarlıdır və bir dəfə istifadə oluna bilər.",
-      "sentExisting": "Həmin ünvanın artıq IdeaNest hesabı var idisə, mesaj bunu bildirir və ikinci hesab yaratmaq əvəzinə geri qayıtmaq yolu təklif edir.",
+      "sentExisting": "Həmin ünvanın artıq IdeyaNest hesabı var idisə, mesaj bunu bildirir və ikinci hesab yaratmaq əvəzinə geri qayıtmaq yolu təklif edir.",
       "verified": "Artıq təsdiqlənib?"
     },
     "twoFactor": {
@@ -2909,7 +2909,7 @@
     "reset": {
       "lifetime": "bir saat",
       "metaTitle": "Şifrənizi sıfırlayın",
-      "metaDescription": "IdeaNest hesabınıza yeni şifrə təyin edən keçid alın.",
+      "metaDescription": "IdeyaNest hesabınıza yeni şifrə təyin edən keçid alın.",
       "title": "Şifrənizi sıfırlayın",
       "intro": "Daxil olduğunuz ünvanı yazın, biz də yeni şifrə təyin edən bir keçid göndərək. Köhnə şifrə lazım olmayacaq.",
       "submit": "Keçidi göndər",
@@ -2917,7 +2917,7 @@
       "remembered": "Yadınıza düşdü?",
       "signIn": "Daxil olun",
       "sentTitle": "E-poçtunuzu yoxlayın",
-      "sentIntro": "{address} ünvanının IdeaNest hesabı varsa, yeni şifrə təyin etmək üçün keçid ona yola salınıb.",
+      "sentIntro": "{address} ünvanının IdeyaNest hesabı varsa, yeni şifrə təyin etmək üçün keçid ona yola salınıb.",
       "sentLifetime": "Keçid {lifetime} işləyir və bir dəfə istifadə oluna bilər. Yenidən istəmək onu əvəz edir, ona görə ən son mesajdan istifadə edin.",
       "sentRetry": "Heç nə gəlmədi? Ünvanda səhv olub-olmadığını yoxlayın, sonra {retry}. Hesabın mövcudluğunu sizə deyə bilmirik, ona görə bu ekran hər iki halda eyni görünür.",
       "tryAnother": "başqa ünvan yoxlayın",
@@ -2925,7 +2925,7 @@
     },
     "resetConfirm": {
       "metaTitle": "Yeni şifrə seçin",
-      "metaDescription": "IdeaNest hesabınızın şifrəsinin sıfırlanmasını tamamlayın.",
+      "metaDescription": "IdeyaNest hesabınızın şifrəsinin sıfırlanmasını tamamlayın.",
       "title": "Yeni şifrə seçin",
       "intro": "Bu keçid göndərildiyi andan {lifetime} işləyir və yalnız bir dəfə. Burada şifrə təyin etmək hesaba daxil olmuş bütün brauzerləri sistemdən çıxarır.",
       "newPassword": "Yeni şifrə",
@@ -2952,7 +2952,7 @@
     },
     "verifyEmail": {
       "metaTitle": "E-poçtunuzu təsdiqləyin",
-      "metaDescription": "IdeaNest hesabınızın qurulmasını tamamlayın.",
+      "metaDescription": "IdeyaNest hesabınızın qurulmasını tamamlayın.",
       "statusVerifying": "E-poçt ünvanınız təsdiqlənir.",
       "statusVerified": "E-poçt ünvanınız təsdiqləndi.",
       "statusFailed": "Bu təsdiq keçidindən istifadə etmək mümkün olmadı.",
@@ -2970,7 +2970,7 @@
     },
     "emailChange": {
       "metaTitle": "Yeni e-poçt ünvanınızı təsdiqləyin",
-      "metaDescription": "IdeaNest hesabınızın yeni e-poçt ünvanına köçürülməsini tamamlayın.",
+      "metaDescription": "IdeyaNest hesabınızın yeni e-poçt ünvanına köçürülməsini tamamlayın.",
       "statusConfirming": "Yeni e-poçt ünvanınız təsdiqlənir.",
       "statusConfirmed": "E-poçt ünvanınız dəyişdirildi.",
       "statusTaken": "Həmin ünvanın artıq hesabı var, ona görə dəyişiklik tamamlana bilmədi.",
@@ -2996,7 +2996,7 @@
     }
   },
   "home": {
-    "metaTitle": "IdeaNest — mükafat əsaslı kütləvi maliyyələşdirmə",
+    "metaTitle": "IdeyaNest — mükafat əsaslı kütləvi maliyyələşdirmə",
     "hero": {
       "title": "Hələ mövcud olmayanı maliyyələşdirin",
       "standfirst": "Müəlliflər hədəfi və son tarixi olan kampaniya yerləşdirir. Dəstəkçilər dəstək olur. Kampaniya hədəfinin 80%-ində uğurlu sayılır — ora çatmasa, hər dəstəkçiyə məbləğ tam qaytarılır.",
@@ -3029,7 +3029,7 @@
   "discovery": {
     "discover": {
       "metaTitle": "Kəşf edin",
-      "metaDescription": "IdeaNest-dəki bütün kampaniyalara baxın və filtrləyin."
+      "metaDescription": "IdeyaNest-dəki bütün kampaniyalara baxın və filtrləyin."
     },
     "card": {
       "badges": {
@@ -3096,7 +3096,7 @@
     },
     "feed": {
       "title": "Kəşf et",
-      "standfirst": "IdeaNest-dəki bütün kampaniyalar, sizin üçün önəmli olana görə süzülmüş.",
+      "standfirst": "IdeyaNest-dəki bütün kampaniyalar, sizin üçün önəmli olana görə süzülmüş.",
       "filtersLabel": "Layihələri süz",
       "railLabel": "Süzgəclər",
       "resultsHeading": "Layihələr",
@@ -3181,16 +3181,16 @@
     },
     "categories": {
       "metaTitle": "Kateqoriyalar",
-      "metaDescription": "IdeaNest-dəki hər kateqoriya və alt kateqoriya — hər birinin öz kampaniya səhifəsi var.",
+      "metaDescription": "IdeyaNest-dəki hər kateqoriya və alt kateqoriya — hər birinin öz kampaniya səhifəsi var.",
       "title": "Kateqoriyalar",
       "intro": "Platformadakı bütün kateqoriyalar və onların içindəki alt kateqoriyalar. Hər birinin öz səhifəsi var.",
       "unavailable": "Kateqoriyalar hal-hazırda yüklənə bilmədi. <feed>Lent</feed> platformadakı bütün kampaniyaları göstərir və orada onları kateqoriyaya görə filtrləmək olar."
     },
     "landing": {
       "notFound": "Kateqoriya tapılmadı",
-      "metaDescription": "IdeaNest-də {category} kateqoriyasındakı kollektiv maliyyələşdirmə kampaniyaları — bir kampaniyanı dəstəkləyin və ya özünüzünkünü başladın.",
+      "metaDescription": "IdeyaNest-də {category} kateqoriyasındakı kollektiv maliyyələşdirmə kampaniyaları — bir kampaniyanı dəstəkləyin və ya özünüzünkünü başladın.",
       "subMetaTitle": "{category} kateqoriyasında {subcategory}",
-      "subMetaDescription": "IdeaNest-də {category} kateqoriyasının bir hissəsi olan {subcategory} bölməsindəki kollektiv maliyyələşdirmə kampaniyaları.",
+      "subMetaDescription": "IdeyaNest-də {category} kateqoriyasının bir hissəsi olan {subcategory} bölməsindəki kollektiv maliyyələşdirmə kampaniyaları.",
       "standfirst": "{category} kateqoriyasına aid kampaniyalar, ən yenisi əvvəldə.",
       "subStandfirst": "{category} → {subcategory} bölməsinə aid kampaniyalar, ən yenisi əvvəldə.",
       "subcategoriesLabel": "{category} kateqoriyasının alt bölmələri",
@@ -3205,15 +3205,15 @@
     },
     "collections": {
       "metaTitle": "Kolleksiyalar",
-      "metaDescription": "IdeaNest-də redaksiya seçimləri, mövzu kolleksiyaları və açıq çağırışlar — hər birinin öz kampaniya səhifəsi var.",
+      "metaDescription": "IdeyaNest-də redaksiya seçimləri, mövzu kolleksiyaları və açıq çağırışlar — hər birinin öz kampaniya səhifəsi var.",
       "window": {
         "closes": "Bağlanır",
         "openSince": "Açıqdır"
       },
       "notFound": "Kolleksiya tapılmadı",
-      "socialDescription": "{title} — IdeaNest-də seçilmiş kollektiv maliyyələşdirmə kampaniyaları kolleksiyası.",
+      "socialDescription": "{title} — IdeyaNest-də seçilmiş kollektiv maliyyələşdirmə kampaniyaları kolleksiyası.",
       "title": "Kolleksiyalar",
-      "intro": "IdeaNest komandasının seçdiyi kampaniyalar, bir mövsüm və ya mövzu ətrafında qurulmuş kolleksiyalar və müəllifin hələ də qoşula biləcəyi açıq çağırışlar. Hər birinin öz səhifəsi var.",
+      "intro": "IdeyaNest komandasının seçdiyi kampaniyalar, bir mövsüm və ya mövzu ətrafında qurulmuş kolleksiyalar və müəllifin hələ də qoşula biləcəyi açıq çağırışlar. Hər birinin öz səhifəsi var.",
       "listLabel": "Kolleksiyalar",
       "emptyTitle": "Hazırda kolleksiya yoxdur",
       "emptyBody": "Hazırda platformada seçilmiş heç nə yoxdur və ya siyahını yükləmək mümkün olmadı. Hər iki halda lent bütün kampaniyaları daşıyır.",
@@ -3224,13 +3224,13 @@
         "open_call": "Açıq çağırış"
       },
       "sentences": {
-        "staff_selection": "IdeaNest komandası tərəfindən seçilib.",
+        "staff_selection": "IdeyaNest komandası tərəfindən seçilib.",
         "themed": "Bir mövzu ətrafında qurulmuş kolleksiya.",
         "open_call": "Açıq çağırış: açıq olduğu müddətdə kampaniyaların təqdim oluna biləcəyi proqram."
       },
       "inCollection": "Bu kolleksiyada",
       "cardCampaigns": "Kampaniyalar",
-      "badge": "Bu kolleksiyadakı kampaniyalar IdeaNest redaksiya nişanını daşıyır.",
+      "badge": "Bu kolleksiyadakı kampaniyalar IdeyaNest redaksiya nişanını daşıyır.",
       "badgeOpenCall": "Onu verən şey bu proqrama qəbul olunmaqdır.",
       "badgeCurated": "Bu, platformanın arxasında durduğu seçimdir, hər hansı kampaniya haqqında zəmanət deyil.",
       "campaignsEmptyTitle": "Hələ göstəriləcək heç nə yoxdur",
@@ -3263,7 +3263,7 @@
     },
     "search": {
       "title": "Axtarış",
-      "metaDescription": "IdeaNest-dəki bütün kampaniyalarda axtarış edin.",
+      "metaDescription": "IdeyaNest-dəki bütün kampaniyalarda axtarış edin.",
       "resultsTitle": "«{query}» üçün nəticələr",
       "prompt": "Axtardığınızı yazın — kampaniya, kateqoriya və ya müəllif. Ya da <feed>bütün lentə baxın</feed> və onu filtrlərlə daraltın.",
       "count": "{count, plural, =0 {Heç bir kampaniya uyğun gəlmədi} other {# kampaniya}}",
@@ -3342,7 +3342,7 @@
     "payment": {
       "heading": "Ödəniş",
       "none": "Ödənişi ödəniş provayderinin səhifəsində edirsiniz",
-      "body": "Davam etdikdə ödəniş provayderinin təhlükəsiz səhifəsi açılır və kartınızı orada daxil edirsiniz. Kart məlumatları heç vaxt IdeaNest-də daxil edilmir və dəstəyinizin məbləği orada bir dəfə tutulur.",
+      "body": "Davam etdikdə ödəniş provayderinin təhlükəsiz səhifəsi açılır və kartınızı orada daxil edirsiniz. Kart məlumatları heç vaxt IdeyaNest-də daxil edilmir və dəstəyinizin məbləği orada bir dəfə tutulur.",
       "later": "Kampaniya hədəfinin 80%-ini toplamasa, ləğv edilsə və ya dayandırılsa, dəstəyiniz sizə tam qaytarılır."
     },
     "anonymous": {
@@ -3374,7 +3374,7 @@
     },
     "risk": {
       "heading": "Dəstək olmaq nə deməkdir",
-      "body": "Dəstək satın almaq deyil. Siz bir cəhdi maliyyələşdirirsiniz və mükafata zəmanət yoxdur — kampaniya gecikə, dəyişə və ya heç çatmaya bilər. Mükafatı sizə IdeaNest deyil, kampaniyanın müəllifi borcludur.",
+      "body": "Dəstək satın almaq deyil. Siz bir cəhdi maliyyələşdirirsiniz və mükafata zəmanət yoxdur — kampaniya gecikə, dəyişə və ya heç çatmaya bilər. Mükafatı sizə IdeyaNest deyil, kampaniyanın müəllifi borcludur.",
       "confirm": "Başa düşürəm — ödənişə keçin",
       "stale": "Bu səhifə açıq ikən mətn yeniləndi. Yenidən oxuyun, sonra təsdiqləyin."
     },
@@ -3519,14 +3519,14 @@
       "sending": "Göndərilir…",
       "cancel": "Ləğv et",
       "opened": "Etirazınız açıqdır. Administrator ödəniş göndərilməzdən əvvəl qərar verəcək.",
-      "windowClosed": "Bu ödənişə artıq IdeaNest vasitəsilə etiraz etmək olmaz: kampaniya üzrə saxlanılan ödəniş yoxdur.",
+      "windowClosed": "Bu ödənişə artıq IdeyaNest vasitəsilə etiraz etmək olmaz: kampaniya üzrə saxlanılan ödəniş yoxdur.",
       "nothing": "Bu ödənişdən qaytarılacaq heç nə qalmayıb.",
       "failed": "Alınmadı. Bir azdan yenidən cəhd edin."
     }
   },
   "pricing": {
     "metaTitle": "Planlar və qiymətlər",
-    "metaDescription": "IdeaNest-də kampaniya dərc etməyin qiyməti və hər planın nə verdiyi.",
+    "metaDescription": "IdeyaNest-də kampaniya dərc etməyin qiyməti və hər planın nə verdiyi.",
     "title": "Planlar",
     "intro": "Kampaniya qurmaq pulsuzdur. Onu dərc etmək üçün plan lazımdır, plan isə eyni vaxtda neçə kampaniya apara biləcəyinizi və nə qədər böyük hədəf təyin edə biləcəyinizi müəyyən edir.",
     "loading": "Mövcud planınız yoxlanılır",
@@ -3702,7 +3702,7 @@
       "neverUpdatedBody": "Kampaniya bağlandıqdan sonra burada heç nə dərc olunmayıb. Yenilənmə {due} tarixinədək gözlənilirdi.",
       "lateBody": "Son yenilənmə {lastUpdate} tarixində dərc olunub. Növbətisi {due} tarixinədək gözlənilirdi.",
       "completeBody": "Müəllif bu kampaniyanı icra olunmuş kimi qeyd edib, ona görə də aylıq yenilənmələr artıq gözlənilmir.",
-      "rule": "Müəlliflər kampaniyaları icra olunana qədər ayda ən azı bir dəfə yenilənmə dərc etməyə razılıq verirlər. IdeaNest baş verənləri bildirir və müəlliflərlə dəstəkçilər arasında vasitəçilik edir; mükafatları çatdırmır və mübahisələri həll etmir."
+      "rule": "Müəlliflər kampaniyaları icra olunana qədər ayda ən azı bir dəfə yenilənmə dərc etməyə razılıq verirlər. IdeyaNest baş verənləri bildirir və müəlliflərlə dəstəkçilər arasında vasitəçilik edir; mükafatları çatdırmır və mübahisələri həll etmir."
     },
     "outcome": {
       "funded": "Bu kampaniya maliyyələşdi",
@@ -4534,7 +4534,7 @@
   },
   "profile": {
     "notFound": "Profil tapılmadı",
-    "metaDescription": "IdeaNest-də {name} — yaratdığı və dəstəklədiyi kampaniyalar.",
+    "metaDescription": "IdeyaNest-də {name} — yaratdığı və dəstəklədiyi kampaniyalar.",
     "avatarAlt": "{name} adlı istifadəçinin profil şəkli",
     "tabsLabel": "Profil bölmələri",
     "tabs": {
@@ -4545,14 +4545,14 @@
     "obligations": {
       "heading": "{count, plural, one {Bir kampaniya yenilənmədə gecikir} other {# kampaniya yenilənmədə gecikir}}",
       "body": "{count, plural, one {{name} adlı müəllifin bir kampaniyası növbəti dəstəkçi yenilənməsinin gözlənildiyi tarixi keçib.} other {{name} adlı müəllifin # kampaniyası növbəti dəstəkçi yenilənməsinin gözlənildiyi tarixi keçib.}}",
-      "rule": "Müəlliflər kampaniyaları icra olunana qədər ayda ən azı bir dəfə yenilənmə dərc etməyə razılıq verirlər. Bu, soruşa bilməniz üçün bildirilir; IdeaNest vasitəçilik edir və mübahisələri həll etmir."
+      "rule": "Müəlliflər kampaniyaları icra olunana qədər ayda ən azı bir dəfə yenilənmə dərc etməyə razılıq verirlər. Bu, soruşa bilməniz üçün bildirilir; IdeyaNest vasitəçilik edir və mübahisələri həll etmir."
     },
     "about": {
       "heading": "{name} haqqında",
       "empty": "{name} burada heç nə yazmayıb.",
       "basedIn": "Yerləşdiyi yer",
       "website": "Veb sayt",
-      "since": "IdeaNest-də qoşulub",
+      "since": "IdeyaNest-də qoşulub",
       "elsewhere": "Digər yerlərdə"
     },
     "follow": {
@@ -4569,7 +4569,7 @@
       "failedTitle": "Bu siyahını yükləmək mümkün olmadı",
       "failedBody": "Xidmət cavab vermədi. Profildə problem yoxdur — yenidən cəhd etmək üçün səhifəni təzələyin.",
       "createdEmptyTitle": "Hələ kampaniya yoxdur",
-      "createdEmptyBody": "{name} IdeaNest-də kampaniya dərc etməyib.",
+      "createdEmptyBody": "{name} IdeyaNest-də kampaniya dərc etməyib.",
       "backedEmptyTitle": "Hələ burada heç nə yoxdur",
       "backedEmptyBody": "{name} açıq şəkildə kampaniya dəstəkləməyib. Anonim edilən dəstəklər burada heç vaxt göstərilmir.",
       "showMore": "Daha çox göstər",
@@ -4594,7 +4594,7 @@
       }
     },
     "editor": {
-      "heading": "IdeaNest-də necə görünürsünüz",
+      "heading": "IdeyaNest-də necə görünürsünüz",
       "liveAt": "Profiliniz {address} ünvanındadır və bu səhifədəki hər şey onu açan hər kəsə açıqdır.",
       "handleFixed": "İstifadəçi adınız, @{slug}, burada dəyişdirilə bilməz.",
       "handleWhy": "Bu, həmin səhifənin ünvanıdır və dərc etdiyiniz hər kampaniyada yazılır — onu dəyişmək başqalarının artıq paylaşdığı keçidləri sındırardı.",
@@ -4602,7 +4602,7 @@
       "loadFailed": "Profiliniz yüklənə bilmədi. Yenidən cəhd etmək üçün səhifəni təzələyin.",
       "loading": "Profiliniz yüklənir.",
       "saveFailedTitle": "Heç nə saxlanılmadı",
-      "unreachable": "IdeaNest-ə çatmaq mümkün olmadı. Heç nə saxlanılmadı.",
+      "unreachable": "IdeyaNest-ə çatmaq mümkün olmadı. Heç nə saxlanılmadı.",
       "name": "Ad",
       "nameHint": "Profilinizdə və yaratdığınız hər kampaniyada göründüyünüz ad. {max} simvol və ya az.",
       "bio": "Haqqınızda",
@@ -4611,7 +4611,7 @@
       "websiteHint": "https:// ilə başlamalıdır. Profilinizdə keçid kimi göstərilir.",
       "websitePlaceholder": "https://example.com",
       "location": "Yer",
-      "locationHint": "Harada olduğunuz — IdeaNest-in tanıdığı yerlərdən.",
+      "locationHint": "Harada olduğunuz — IdeyaNest-in tanıdığı yerlərdən.",
       "notSaying": "Bildirmirəm",
       "locationsUnavailable": "Yerlərin siyahısı yüklənə bilmədi, ona görə bunu indi burada təyin etmək olmaz. Bu səhifədəki qalan hər şey yenə saxlanılır.",
       "locationsUnavailableWithValue": "Profilinizdə {place} yazılıb. Yerlərin siyahısı yüklənə bilmədi, ona görə bunu indi dəyişmək olmaz — bu səhifədəki qalan hər şey yenə saxlanılır.",
@@ -4623,7 +4623,7 @@
         "label": "Profil şəkli",
         "hint": "Profilinizdə və yaratdığınız hər kampaniyada adınızın yanında göstərilir.",
         "pipelineTitle": "Yükləmə media boru xətti ilə birlikdə gələcək",
-        "pipelineBody": "IdeaNest hələ fayl saxlaya bilmir, ona görə burada artıq harada isə dərc olunmuş şəklin ünvanı verilir. Şəklin hansı hissəsinin göstəriləcəyini seçmək — kəsim — eyni işlə birlikdə gələcək.",
+        "pipelineBody": "IdeyaNest hələ fayl saxlaya bilmir, ona görə burada artıq harada isə dərc olunmuş şəklin ünvanı verilir. Şəklin hansı hissəsinin göstəriləcəyini seçmək — kəsim — eyni işlə birlikdə gələcək.",
         "noPicture": "{name}, şəkilsiz",
         "broken": "Həmin ünvan burada şəkil kimi açılmadı. Profiliniz onun yerinə baş hərflərinizi göstərəcək.",
         "cropped": "Şəkliniz dairəyə belə kəsilir.",
@@ -4654,7 +4654,7 @@
         "used": "{max} keçiddən {used} istifadə olunub.",
         "atCap": "{max} keçidin hamısı istifadə olunub — bu, bir profilin daşıya biləcəyi ən çox saydır. Yenisini əlavə etmək üçün birini silin.",
         "allListedTitle": "Bütün platformalar artıq siyahıdadır",
-        "allListedBody": "IdeaNest-in tanıdığı hər platforma üçün bir keçid var. Yenisini əlavə etmək yerinə mövcud olanı dəyişin."
+        "allListedBody": "IdeyaNest-in tanıdığı hər platforma üçün bir keçid var. Yenisini əlavə etmək yerinə mövcud olanı dəyişin."
       },
       "visibility": {
         "heading": "Açıq profiliniz",
@@ -4664,7 +4664,7 @@
         "hidden": "Gizli",
         "checking": "Ziyarətçinin nə gördüyü yoxlanılır.",
         "unknownTitle": "Bu parametr oxuna bilmədi",
-        "unknownBody": "IdeaNest profilinizin hazırda görünüb-görünmədiyini yoxlaya bilmədi, ona görə açar əmin olmadığı vəziyyəti göstərmək əvəzinə söndürülüb. Yenidən cəhd etmək üçün səhifəni təzələyin.",
+        "unknownBody": "IdeyaNest profilinizin hazırda görünüb-görünmədiyini yoxlaya bilmədi, ona görə açar əmin olmadığı vəziyyəti göstərmək əvəzinə söndürülüb. Yenidən cəhd etmək üçün səhifəni təzələyin.",
         "failedTitle": "Heç nə dəyişdirilmədi",
         "refused": "Xidmət dəyişikliyi rədd etdi. Profiliniz olduğu kimi qalır.",
         "unreachable": "Xidmətə çatmaq mümkün olmadı. Profiliniz olduğu kimi qalır.",
@@ -4675,10 +4675,10 @@
   "static": {
     "about": {
       "metaTitle": "Haqqımızda",
-      "metaDescription": "IdeaNest nədir, hədəfin 80%-ində uğur necə işləyir və nəyə başa gəlir.",
-      "title": "IdeaNest haqqında",
+      "metaDescription": "IdeyaNest nədir, hədəfin 80%-ində uğur necə işləyir və nəyə başa gəlir.",
+      "title": "IdeyaNest haqqında",
       "summary": "Hələ mövcud olmayan şeyləri maliyyələşdirmək üçün yer — şərtlər hamı üçün eynidir.",
-      "intro": "IdeaNest mükafat əsaslı kütləvi maliyyələşdirmə platformasıdır. Müəllif hədəfi və son tarixi olan kampaniya yerləşdirir; həmin şeyin var olmasını istəyənlər ona dəstək olur və pul elə o an tutulur; kampaniya hədəfinin ən azı 80%-ini toplasa, müəllif vəsaiti çıxarır və həmin şeyi hazırlayır. Toplamasa, hər dəstəkçiyə məbləğ tam qaytarılır.",
+      "intro": "IdeyaNest mükafat əsaslı kütləvi maliyyələşdirmə platformasıdır. Müəllif hədəfi və son tarixi olan kampaniya yerləşdirir; həmin şeyin var olmasını istəyənlər ona dəstək olur və pul elə o an tutulur; kampaniya hədəfinin ən azı 80%-ini toplasa, müəllif vəsaiti çıxarır və həmin şeyi hazırlayır. Toplamasa, hər dəstəkçiyə məbləğ tam qaytarılır.",
       "allOrNothing": {
         "heading": "80%-də uğur və bu həddin səbəbi",
         "first": "Hədəfinin 80%-ini toplayan kampaniya uğurlu sayılır və müəllif kampaniyanın neçə faizlə bağlanmasından asılı olmayaraq bütün mükafatları bütün dəstəkçilərə çatdırmalıdır. Ondan az məbləğə arxalanmaq olmaz, ona görə belə kampaniya uğursuz sayılır, müəllifinə heç bir komissiyaya başa gəlmir və hər dəstəkçiyə məbləğ tam qaytarılır.",
@@ -4701,7 +4701,7 @@
     },
     "howItWorks": {
       "metaTitle": "Necə işləyir",
-      "metaDescription": "Kampaniyaya dəstək olmaq, kampaniya aparmaq və IdeaNest-də dəstəklə bağlama arasında nə baş verir.",
+      "metaDescription": "Kampaniyaya dəstək olmaq, kampaniya aparmaq və IdeyaNest-də dəstəklə bağlama arasında nə baş verir.",
       "title": "Necə işləyir",
       "summary": "Kampaniyanı tapmaqla onun maliyyələşdirdiyi şeyi əldə etmək arasında nə baş verir.",
       "backing": {
@@ -4750,12 +4750,12 @@
       },
       "reporting": {
         "heading": "Nəyi isə şikayət etmək",
-        "first": "IdeaNest hesabı olan hər kəs kampaniyanı, şərhi və ya hesabı şikayət edə bilər. Şikayət avtomatik filtrə deyil, moderatora gedir: beş nəfər etiraz etdi deyə heç nə yox olmur, şikayət isə bir insanın baxması üçün müraciətdir.",
+        "first": "IdeyaNest hesabı olan hər kəs kampaniyanı, şərhi və ya hesabı şikayət edə bilər. Şikayət avtomatik filtrə deyil, moderatora gedir: beş nəfər etiraz etdi deyə heç nə yox olmur, şikayət isə bir insanın baxması üçün müraciətdir.",
         "second": "Eyni şeyi iki dəfə şikayət etmək çəki əlavə etmir — ikinci şikayət birincinin özünü qaytarır. Şikayətlər ictimai deyil və şikayət olunan hesaba onu kimin şikayət etdiyi bildirilmir."
       },
       "money": {
         "heading": "Pulunuz",
-        "first": "Kart məlumatları heç vaxt IdeaNest-in öz serverlərinə çatmır; ödənişlər provayderin öz sahələri üzrə keçir. Dəstəyinizi təsdiqlədiyiniz anda pul tutulur və platformanın hesabında saxlanılır. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pulunuz tam geri qaytarılır.",
+        "first": "Kart məlumatları heç vaxt IdeyaNest-in öz serverlərinə çatmır; ödənişlər provayderin öz sahələri üzrə keçir. Dəstəyinizi təsdiqlədiyiniz anda pul tutulur və platformanın hesabında saxlanılır. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pulunuz tam geri qaytarılır.",
         "second": "Hər ödəniş əməliyyatı idempotentdir — bu, cazibədar görünməyən, lakin ən vacib xassədir: əlaqə kəsildiyi üçün təkrarlanan sorğu iki deyil, bir dəstək və bir tutulma yaradır."
       },
       "account": {
@@ -4767,7 +4767,7 @@
       },
       "limits": {
         "heading": "Nə edə bilmərik",
-        "first": "IdeaNest kampaniyanı öhdəliyini yerinə yetirməyə məcbur edə bilməz. Edə bildiyi şey qeydi dürüst saxlamaqdır: kampaniyanın yenilikləri, şərhləri və onu şikayət etmək yolu — hamısı kampaniyanın öz səhifəsindədir, yəni onu dəstəkləyib-dəstəkləməməyi düşünən şəxsin görəcəyi yerdə.",
+        "first": "IdeyaNest kampaniyanı öhdəliyini yerinə yetirməyə məcbur edə bilməz. Edə bildiyi şey qeydi dürüst saxlamaqdır: kampaniyanın yenilikləri, şərhləri və onu şikayət etmək yolu — hamısı kampaniyanın öz səhifəsindədir, yəni onu dəstəkləyib-dəstəkləməməyi düşünən şəxsin görəcəyi yerdə.",
         "second": "Müəllif öz kampaniyasındakı şərhləri moderasiya edə bilər, silinən şərh isə yox olmur — sətir qalır, silinmiş kimi işarələnir. Təmizlənmiş şərh axını buna görə yenə də təmizlənmiş kimi görünür, məsələ də budur: üzərində heç nə olmayan səhifə ilə on iki silinməsi olan səhifə ayrı şeylərdir və oxucunun bunları ayırd etməyə haqqı var."
       }
     }
@@ -4784,12 +4784,12 @@
     "unavailable": {
       "title": "Bu sənədi yükləmək mümkün olmadı",
       "indexTitle": "Hüquqi sənədləri yükləmək mümkün olmadı",
-      "body": "IdeaNest-in hüquqi sənədlərini saxlayan xidmət hazırda cavab vermədi. Bu, sənədin dərc olunmadığı anlamına gəlmir: bir azdan yenidən cəhd edin.",
+      "body": "IdeyaNest-in hüquqi sənədlərini saxlayan xidmət hazırda cavab vermədi. Bu, sənədin dərc olunmadığı anlamına gəlmir: bir azdan yenidən cəhd edin.",
       "action": "Yenidən cəhd edin"
     },
     "notPublished": {
       "summary": "Bu sənəd hələ dərc olunmayıb.",
-      "body": "IdeaNest bu sənədə malik olmalıdır və hələ heç bir versiyasını dərc etməyib. Burada qüvvədə olan heç nə yoxdur və heç bir versiyası qəbul üçün kimsəyə təqdim edilməyib."
+      "body": "IdeyaNest bu sənədə malik olmalıdır və hələ heç bir versiyasını dərc etməyib. Burada qüvvədə olan heç nə yoxdur və heç bir versiyası qəbul üçün kimsəyə təqdim edilməyib."
     },
     "archive": {
       "notice": "Artıq qüvvədə olmayan bir versiyanı oxuyursunuz. O saxlanılır, çünki onu qəbul etmiş şəxs qəbul etdiyini oxumaq hüququna malikdir.",
@@ -4800,9 +4800,9 @@
     },
     "index": {
       "title": "Hüquqi sənədlər",
-      "summary": "IdeaNest-in dərc etməli olduğu səkkiz sənəd və onlardan hansılarının qüvvədə olduğu.",
+      "summary": "IdeyaNest-in dərc etməli olduğu səkkiz sənəd və onlardan hansılarının qüvvədə olduğu.",
       "metaTitle": "Hüquqi sənədlər",
-      "metaDescription": "IdeaNest-in dərc etdiyi şərtlər, siyasətlər və müqavilələr — hər birinin versiyası və qüvvəyəminmə tarixi ilə.",
+      "metaDescription": "IdeyaNest-in dərc etdiyi şərtlər, siyasətlər və müqavilələr — hər birinin versiyası və qüvvəyəminmə tarixi ilə.",
       "intro": "Aşağıdakı hər sənədin daimi ünvanı var. Hər biri versiya nömrəsini, tətbiq olunmağa başladığı tarixi və mətninin xülasəsini göstərir ki, kiminsə qəbul etdiyi versiya illər sonra da müəyyən edilib oxuna bilsin.",
       "inForce": "Versiya {version}, {date} tarixindən qüvvədədir",
       "notPublished": "Hələ dərc olunmayıb",
@@ -4811,7 +4811,7 @@
     "documents": {
       "terms-of-use": {
         "title": "İstifadə şərtləri",
-        "summary": "IdeaNest ilə ondan istifadə edən hər kəs arasındakı müqavilə, platformanın vasitəçi rolu daxil olmaqla."
+        "summary": "IdeyaNest ilə ondan istifadə edən hər kəs arasındakı müqavilə, platformanın vasitəçi rolu daxil olmaqla."
       },
       "privacy-policy": {
         "title": "Məxfilik siyasəti",
@@ -4823,7 +4823,7 @@
       },
       "platform-rules": {
         "title": "Platforma qaydaları",
-        "summary": "IdeaNest-də nə üçün kampaniya qurula bilər və nə silinir."
+        "summary": "IdeyaNest-də nə üçün kampaniya qurula bilər və nə silinir."
       },
       "creator-agreement": {
         "title": "Yaradıcı müqaviləsi",
@@ -4847,11 +4847,11 @@
     "disclosure": {
       "backerHeading": "Dəstəyinizə nə tətbiq olunur",
       "creatorHeading": "Sizə nə çatır",
-      "backerBody": "Sizdən yalnız dəstək məbləği tutulur, üstünə heç nə əlavə olunmur. Həmin məbləğdən IdeaNest {platform}, ödəniş provayderi isə {processing} saxlayır; qalanı müəllifə gedir.",
-      "creatorBody": "Yığılan hər dəstəkdən IdeaNest {platform}, ödəniş provayderi isə {processing} saxlayır, beləliklə dəstəkçilərinizin verdiyi məbləğin {keeps} hissəsi sizə çatır.",
+      "backerBody": "Sizdən yalnız dəstək məbləği tutulur, üstünə heç nə əlavə olunmur. Həmin məbləğdən IdeyaNest {platform}, ödəniş provayderi isə {processing} saxlayır; qalanı müəllifə gedir.",
+      "creatorBody": "Yığılan hər dəstəkdən IdeyaNest {platform}, ödəniş provayderi isə {processing} saxlayır, beləliklə dəstəkçilərinizin verdiyi məbləğin {keeps} hissəsi sizə çatır.",
       "fixedFee": "Ödəniş provayderi hər əməliyyat üçün əlavə olaraq {amount} tutur.",
-      "twoFees": "Bunlar iki ayrı tutulmadır. IdeaNest-in komissiyası platformanın saxladığıdır; emal komissiyası isə pulu hərəkət etdirən şirkətə gedir və IdeaNest onu heç vaxt almır. Qüvvədə olan dərəcələr yuxarıdakılardır və ödəniş məhz onlarla hesablanır.",
-      "unconfigured": "IdeaNest hələ komissiya cədvəli təyin etməyib, ona görə də bu gün dəstəklərdən heç nə tutulmur. Bu daimi öhdəlik deyil: hər hansı dərəcə təyin olunan kimi burada dərc olunacaq, şərtlər isə yaradıcı müqaviləsində göstərilir.",
+      "twoFees": "Bunlar iki ayrı tutulmadır. IdeyaNest-in komissiyası platformanın saxladığıdır; emal komissiyası isə pulu hərəkət etdirən şirkətə gedir və IdeyaNest onu heç vaxt almır. Qüvvədə olan dərəcələr yuxarıdakılardır və ödəniş məhz onlarla hesablanır.",
+      "unconfigured": "IdeyaNest hələ komissiya cədvəli təyin etməyib, ona görə də bu gün dəstəklərdən heç nə tutulmur. Bu daimi öhdəlik deyil: hər hansı dərəcə təyin olunan kimi burada dərc olunacaq, şərtlər isə yaradıcı müqaviləsində göstərilir.",
       "unavailable": "Komissiyanı hazırda yükləmək mümkün olmadı. Bu, komissiya tutulmadığı anlamına gəlmir: qüvvədə olan dərəcələr <pricing>Planlar və qiymətlər</pricing> səhifəsində dərc olunur — bir azdan yenidən baxın."
     }
   },
@@ -5028,7 +5028,7 @@
       "platformFee": "Platforma komissiyası",
       "processingFee": "Emal komissiyası",
       "taxWithheld": "Tutulan vergi",
-      "taxNote": "IdeaNest heç bir vergi tutmur. Borclu olduğunuz vergi sizinlə vergi orqanı arasındadır.",
+      "taxNote": "IdeyaNest heç bir vergi tutmur. Borclu olduğunuz vergi sizinlə vergi orqanı arasındadır.",
       "refunded": "Dəstəkçilərə qaytarılıb",
       "payable": "Ödəniləcək",
       "payableProjected": "Ödəniləcək, proqnoz",

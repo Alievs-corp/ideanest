@@ -866,7 +866,7 @@ INSERT INTO email_deliveries (id, notification_id, digest_id, member_count, reci
                               outcome, attempt, subject, message_id, detail, accepted_at, created_at)
 SELECT seed_id('delivery:' || n.id::text), n.id, NULL, 1, n.recipient_id, n.type,
        'ACCEPTED', 1,
-       'IdeaNest: ' || (n.params ->> 'projectTitle'),
+       'IdeyaNest: ' || (n.params ->> 'projectTitle'),
        '<' || substr(md5(n.id::text), 1, 20) || '@ideanest.az>',
        NULL, n.sent_at, n.sent_at
 FROM notifications n

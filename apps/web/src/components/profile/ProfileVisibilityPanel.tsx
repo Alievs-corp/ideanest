@@ -22,7 +22,7 @@ import type { ProfileVisibilityCopy } from '../../lib/i18n/profile-copy';
  * to save a name or a biography to; an entry pointing at a page that cannot work is worse than
  * no entry. This control has an endpoint of its own and therefore has to live somewhere, and
  * `/settings/privacy` is already the page about who can see what — it holds the data export
- * and the account closure, which are the two other answers to "what does IdeaNest hold about
+ * and the account closure, which are the two other answers to "what does IdeyaNest hold about
  * me and who can read it". A `/settings/profile` built to hold one switch would be a screen
  * whose other four fields are the ones that do not exist yet.
  *

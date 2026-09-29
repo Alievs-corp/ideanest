@@ -1,5 +1,5 @@
 /**
- * `@ideanest/api-client` — the typed surface of the IdeaNest API (#136).
+ * `@ideanest/api-client` — the typed surface of the IdeyaNest API (#136).
  *
  * Three things, in order of how much they matter:
  *

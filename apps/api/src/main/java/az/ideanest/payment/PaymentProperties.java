@@ -202,7 +202,7 @@ public record PaymentProperties(
                     Duration.ofDays(7),
                     DEFAULT_DELAYS,
                     Duration.ofHours(1),
-                    "IdeaNest");
+                    "IdeyaNest");
         }
 
         public Collection {
@@ -217,7 +217,7 @@ public record PaymentProperties(
                     : List.copyOf(attemptDelays);
             unresolvedRecheck = unresolvedRecheck == null ? Duration.ofHours(1) : unresolvedRecheck;
             statementDescriptor = statementDescriptor == null || statementDescriptor.isBlank()
-                    ? "IdeaNest"
+                    ? "IdeyaNest"
                     : statementDescriptor.trim();
 
             for (Duration delay : attemptDelays) {

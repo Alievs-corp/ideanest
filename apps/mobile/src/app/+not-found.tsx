@@ -19,7 +19,7 @@ export default function NotFoundScreen() {
       <Stack.Screen options={{ title: 'Not found' }} />
       <Subheading>That page is not in the app</Subheading>
       <Body style={{ textAlign: 'center' }}>
-        This version of IdeaNest does not have a screen for that link. It may be on the web.
+        This version of IdeyaNest does not have a screen for that link. It may be on the web.
       </Body>
       <Link href="/" style={styles.button} accessibilityRole="button">
         <CardTitle tone="onLime">Go to Discover</CardTitle>

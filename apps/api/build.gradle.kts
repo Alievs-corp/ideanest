@@ -6,7 +6,7 @@ plugins {
 
 group = "az.ideanest"
 version = "0.0.1-SNAPSHOT"
-description = "IdeaNest API"
+description = "IdeyaNest API"
 
 java {
     // A toolchain, not `sourceCompatibility`: the build then produces the same

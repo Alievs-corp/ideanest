@@ -249,7 +249,7 @@ public class EpointPaymentProvider implements PaymentProvider {
         parameters.put("order_id", request.idempotencyKey());
         parameters.put("amount", request.amount().amount());
         parameters.put("currency", CURRENCY);
-        parameters.put("description", "IdeaNest payout " + request.payoutId());
+        parameters.put("description", "IdeyaNest payout " + request.payoutId());
 
         JsonNode answer = call("/refund-request", parameters, "send a payout");
         String status = lower(text(answer, "status"));

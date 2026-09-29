@@ -97,7 +97,7 @@ export interface LegalDocumentSummary {
  * this platform's state until #423's adviser delivers the words, and a page says so plainly.
  * `unavailable` is everything else that is not a document — a 5xx, a timeout, a DNS failure, a
  * body that does not narrow. It says nothing about whether the document exists, and a page that
- * drew it as "not published" would tell a reader during an outage that IdeaNest has no terms of
+ * drew it as "not published" would tell a reader during an outage that IdeyaNest has no terms of
  * use, which §22.2 requires it to have.
  *
  * The two used to be one `null`. They are kept apart all the way to the render so that no

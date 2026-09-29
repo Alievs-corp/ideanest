@@ -98,9 +98,9 @@ vi.mock('next/navigation', async (importOriginal) => ({
 vi.mock('../shell/SiteShell', () => ({
   SiteShell: ({ children }: { readonly children: ReactNode }) => (
     <div>
-      <header data-testid="shell-chrome">IdeaNest</header>
+      <header data-testid="shell-chrome">IdeyaNest</header>
       {children}
-      <footer data-testid="shell-chrome-footer">IdeaNest</footer>
+      <footer data-testid="shell-chrome-footer">IdeyaNest</footer>
     </div>
   ),
 }));

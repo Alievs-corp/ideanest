@@ -91,7 +91,7 @@ class SimaImzaSignatureProviderTests {
     }
 
     private static SignatureRequest request() {
-        return new SignatureRequest(DOCUMENT_HASH, "1A2B3C4", "+994501234567", "IdeaNest creator agreement, v3");
+        return new SignatureRequest(DOCUMENT_HASH, "1A2B3C4", "+994501234567", "IdeyaNest creator agreement, v3");
     }
 
     private static String signedBody(String hash) {

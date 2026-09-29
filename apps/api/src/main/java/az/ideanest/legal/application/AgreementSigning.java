@@ -297,11 +297,11 @@ public class AgreementSigning {
      * What the citizen reads on their phone before deciding.
      *
      * <p>The document's own title and version, in the governing language. A purpose that said
-     * "IdeaNest" and nothing else would be a prompt to sign an unnamed thing, which is the
+     * "IdeyaNest" and nothing else would be a prompt to sign an unnamed thing, which is the
      * prompt people learn to approve without reading.
      */
     private static String purposeOf(LegalDocument governing, AgreementInForce agreement) {
-        return "%s v%d — IdeaNest".formatted(governing.getTitle(), agreement.version());
+        return "%s v%d — IdeyaNest".formatted(governing.getTitle(), agreement.version());
     }
 
     /** A session that has been opened, with the version it was opened over. */

@@ -1,4 +1,4 @@
-# A scrape configuration for the IdeaNest API — issue #138.
+# A scrape configuration for the IdeyaNest API — issue #138.
 #
 # An EXAMPLE and not the deployment's own file: where Prometheus runs, how it
 # discovers instances and where it sends alerts are all decisions that belong to

@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 /**
  * A creator registering the business card their payout goes to — IDN-EXT-01 (#44).
  *
- * <p>The card is entered on the provider's page and never in an IdeaNest form (the spec's Epoint
+ * <p>The card is entered on the provider's page and never in an IdeyaNest form (the spec's Epoint
  * notes: {@code /card-registration} with {@code refund=1}). {@link #begin} asks the primary provider
  * for that page and records the card identifier it answers as {@code PENDING}. The provider's
  * callback settles it: registered, and {@code payout-card.registered} goes through the outbox to the
@@ -76,7 +76,7 @@ public class PayoutCardRegistrations implements PaymentEventHandler {
         PayoutCardSession session;
         try {
             session = provider.beginPayoutCardRegistration(
-                    new PayoutCardRequest(creatorId, "IdeaNest payout card", language, successUrl, errorUrl));
+                    new PayoutCardRequest(creatorId, "IdeyaNest payout card", language, successUrl, errorUrl));
         } catch (UnsupportedOperationException refused) {
             throw new PayoutCardsUnavailableException(provider.name() + " does not register payout cards", refused);
         } catch (ProviderUnavailableException unavailable) {

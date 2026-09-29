@@ -1,4 +1,4 @@
-# Prometheus alerting rules for the IdeaNest API — docs/architecture.md §8.4, issue #138.
+# Prometheus alerting rules for the IdeyaNest API — docs/architecture.md §8.4, issue #138.
 #
 # THREE CONDITIONS ARE NAMED IN §8.4 AND ALL THREE ARE HERE: ledger imbalance,
 # collection failure rate, and provider unavailability. Each one has a second rule

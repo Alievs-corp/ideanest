@@ -61,11 +61,11 @@ describe('the English catalogue against the wording it replaced', () => {
 
     /*
      * And the English must still say what IDN-EXT-01 requires it to say (#44): the pledge is
-     * charged on the provider's page, once; a card is never typed into IdeaNest; an
+     * charged on the provider's page, once; a card is never typed into IdeyaNest; an
      * unfinished payment takes nothing; and a campaign that does not succeed refunds in full.
      */
     expect(en.checkout.payment.body).toMatch(/charged there, once/u);
-    expect(en.checkout.payment.body).toMatch(/never entered on IdeaNest/u);
+    expect(en.checkout.payment.body).toMatch(/never entered on IdeyaNest/u);
     expect(en.checkout.payment.later).toMatch(/refunded in full/u);
     expect(en.checkout.review.charged).toMatch(/If you do not finish paying, nothing is taken/u);
   });

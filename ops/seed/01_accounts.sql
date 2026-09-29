@@ -9,7 +9,7 @@ VALUES
   -- Staff
   (seed_id('user:admin'), 'admin@ideanest.az', now() - interval '400 days',
    'Aysel Məmmədova', 'aysel-mammadova', 'https://i.pravatar.cc/300?img=47',
-   'IdeaNest platformasının administratoru. Məhsul, etibar və təhlükəsizlik komandalarının işini əlaqələndirir.',
+   'IdeyaNest platformasının administratoru. Məhsul, etibar və təhlükəsizlik komandalarının işini əlaqələndirir.',
    'az', 'AZN', 'PUBLIC', 'https://ideanest.az/about', seed_location('baki'), now() - interval '400 days'),
 
   (seed_id('user:moderator'), 'moderator@ideanest.az', now() - interval '380 days',
@@ -35,7 +35,7 @@ VALUES
   -- Creators
   (seed_id('user:creator'), 'creator@ideanest.az', now() - interval '300 days',
    'Leyla Səfərova', 'leyla-safarova', 'https://i.pravatar.cc/300?img=5',
-   'Sənaye dizayneri və məhsul qurucusu. Bakıda kiçik bir emalatxana idarə edirəm — Azərbaycan xalçaçılığının naxışlarını gündəlik əşyalara gətirməyə çalışıram. IdeaNest-də üç kampaniya keçirmişəm.',
+   'Sənaye dizayneri və məhsul qurucusu. Bakıda kiçik bir emalatxana idarə edirəm — Azərbaycan xalçaçılığının naxışlarını gündəlik əşyalara gətirməyə çalışıram. IdeyaNest-də üç kampaniya keçirmişəm.',
    'az', 'AZN', 'PUBLIC', 'https://tumar.studio', seed_location('baki'), now() - interval '300 days'),
 
   (seed_id('user:orxan'), 'orxan@ideanest.az', now() - interval '280 days',

@@ -80,7 +80,7 @@ everything:
 is wasted weight and wasted code. Driving a line-split scroll sequence through a
 declarative attribute API is impossible. Each tool is used where it is cheapest.
 
-### IdeaNest stack
+### IdeyaNest stack
 
 | Need | Library |
 |---|---|
@@ -428,10 +428,10 @@ The asymmetry reads as "message delivered, message gone".
 ## 5. Motion budget per surface
 
 The reference material is a marketing site: sixteen screens of scroll, designed
-to impress. IdeaNest is a transaction platform. That difference changes several
+to impress. IdeyaNest is a transaction platform. That difference changes several
 decisions.
 
-| Reference behaviour | IdeaNest | Reason |
+| Reference behaviour | IdeyaNest | Reason |
 |---|---|---|
 | Smooth scroll everywhere | **Marketing routes only** | It hijacks native scroll; in long lists it lags and it breaks keyboard navigation |
 | Page transition on every route | **Marketing to app only** | A 300ms overlay in the pledge flow is pure friction |

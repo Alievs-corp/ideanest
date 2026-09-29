@@ -1,11 +1,11 @@
 {
   "openapi" : "3.1.0",
   "info" : {
-    "description" : "The public API of the IdeaNest crowdfunding platform, as specified in docs/architecture.md §10.\n\nTwo conventions are worth reading before generating a client against this document. **Money is an object with a string amount** — `{\"amount\": \"599.00\", \"currency\": \"AZN\"}` — and never a JSON number, because a JSON number is an IEEE 754 double and cannot hold what somebody pledged. **Errors are RFC 9457 problem details** carrying a `code` alongside the status; the status says how to behave and the code says what happened, and a client branches on the code.\n\nEndpoints listed under \"Project — public\", discovery, and search answer without an `Authorization` header. Everything else refuses one that is absent.",
+    "description" : "The public API of the IdeyaNest crowdfunding platform, as specified in docs/architecture.md §10.\n\nTwo conventions are worth reading before generating a client against this document. **Money is an object with a string amount** — `{\"amount\": \"599.00\", \"currency\": \"AZN\"}` — and never a JSON number, because a JSON number is an IEEE 754 double and cannot hold what somebody pledged. **Errors are RFC 9457 problem details** carrying a `code` alongside the status; the status says how to behave and the code says what happened, and a client branches on the code.\n\nEndpoints listed under \"Project — public\", discovery, and search answer without an `Authorization` header. Everything else refuses one that is absent.",
     "license" : {
       "name" : "Proprietary"
     },
-    "title" : "IdeaNest API",
+    "title" : "IdeyaNest API",
     "version" : "1"
   },
   "servers" : [ {

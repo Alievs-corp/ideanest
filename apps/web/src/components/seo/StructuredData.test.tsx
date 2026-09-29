@@ -10,14 +10,14 @@ function script(container: HTMLElement): HTMLScriptElement | null {
 describe('StructuredData', () => {
   it('writes one block a parser can read', () => {
     const { container } = render(
-      <StructuredData nodes={[{ '@type': 'Organization', name: 'IdeaNest' }]} />,
+      <StructuredData nodes={[{ '@type': 'Organization', name: 'IdeyaNest' }]} />,
     );
 
     const block = script(container);
     expect(block).not.toBeNull();
     expect(JSON.parse(block?.textContent ?? '')).toEqual({
       '@context': 'https://schema.org',
-      '@graph': [{ '@type': 'Organization', name: 'IdeaNest' }],
+      '@graph': [{ '@type': 'Organization', name: 'IdeyaNest' }],
     });
   });
 

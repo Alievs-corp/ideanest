@@ -1,5 +1,5 @@
 /**
- * IdeaNest design tokens in JS/TS form.
+ * IdeyaNest design tokens in JS/TS form.
  *
  * The web build consumes the CSS custom properties in `theme.css`. This module
  * exists for React Native (NativeWind cannot read CSS variables) and for

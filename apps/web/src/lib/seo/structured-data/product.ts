@@ -49,7 +49,7 @@ import { withoutAbsent, type JsonLdNode } from './document';
  * fabricated review signal, which is the specific thing Google's structured data
  * policy names as grounds for a manual action.
  *
- * **No `seller`.** The seller of a reward is the creator, and IdeaNest is the
+ * **No `seller`.** The seller of a reward is the creator, and IdeyaNest is the
  * escrow between them (§4.5). Naming the platform as the seller would move a
  * fulfilment obligation onto it in machine-readable form.
  *

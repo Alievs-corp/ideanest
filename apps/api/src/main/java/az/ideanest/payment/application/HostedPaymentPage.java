@@ -67,7 +67,7 @@ public class HostedPaymentPage implements PaymentPage {
             session = provider.beginHostedPayment(new HostedPaymentRequest(
                     pledge.pledgeId(),
                     pledge.total(),
-                    "IdeaNest pledge " + pledge.pledgeId(),
+                    "IdeyaNest pledge " + pledge.pledgeId(),
                     language,
                     successUrl,
                     errorUrl,

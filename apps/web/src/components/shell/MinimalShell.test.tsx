@@ -79,7 +79,7 @@ describe('the frame', () => {
 
   it('offers a way home from the wordmark', () => {
     renderShell();
-    expect(screen.getByRole('link', { name: 'IdeaNest' })).toHaveAttribute('href', '/en');
+    expect(screen.getByRole('link', { name: 'IdeyaNest' })).toHaveAttribute('href', '/en');
   });
 
   it('renders no footer when it was given none', () => {
@@ -108,7 +108,7 @@ describe('a failure state', () => {
     renderShell();
 
     expect(screen.getByRole('link', { name: 'Go to the home page' })).toHaveAttribute('href', '/en');
-    const elsewhere = screen.getByRole('navigation', { name: 'Elsewhere on IdeaNest' });
+    const elsewhere = screen.getByRole('navigation', { name: 'Elsewhere on IdeyaNest' });
     expect(elsewhere).toBeInTheDocument();
   });
 
@@ -118,7 +118,7 @@ describe('a failure state', () => {
         <FailureState
         copy={FAILURE_COPY}
           showLinks={false}
-          title="IdeaNest is down for a short while"
+          title="IdeyaNest is down for a short while"
           description={<p>Planned maintenance.</p>}
           action={<FailureAction href="/">Try the home page</FailureAction>}
         />
@@ -126,6 +126,6 @@ describe('a failure state', () => {
     );
 
     // Offering "Browse campaigns" from a maintenance page is an invitation into the outage.
-    expect(screen.queryByRole('navigation', { name: 'Elsewhere on IdeaNest' })).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Elsewhere on IdeyaNest' })).toBeNull();
   });
 });

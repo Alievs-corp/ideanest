@@ -12,7 +12,7 @@ describe('looksIdentifying', () => {
     ['a local phone number', '0501234567'],
     ['a JWT', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1gFWFOEjXk'],
     ['a bearer credential', 'Bearer abcdefghijklmnop'],
-    ['an enrolment URI', 'otpauth://totp/IdeaNest'],
+    ['an enrolment URI', 'otpauth://totp/IdeyaNest'],
     ['an IBAN', 'AZ21NABZ00000000137010001944'],
     ['a card number', '4111111111111111'],
     ['a card number with spaces', '4111 1111 1111 1111'],

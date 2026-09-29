@@ -27,7 +27,7 @@ type ChangeFrequency = NonNullable<SitemapEntry['changeFrequency']>;
  * #264 built it. `/categories` joins it as WS-05's index — the page every category landing
  * page hangs from, and the one a crawler walks to find them.
  *
- * WS-07's three static pages join it with #292. They are the pages a search for "is IdeaNest
+ * WS-07's three static pages join it with #292. They are the pages a search for "is IdeyaNest
  * legitimate" should be able to reach, which is exactly the query a sitemap exists to answer;
  * they are also the only routes on the platform whose content is entirely editorial, so a
  * crawler that finds them finds something worth indexing rather than a shell around a feed.

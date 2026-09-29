@@ -77,7 +77,7 @@ describe('the card itself', () => {
   it('names the site and no campaign on the site card', () => {
     const text = textOf(siteSocialCard());
 
-    expect(text).toContain('IdeaNest');
+    expect(text).toContain('IdeyaNest');
     expect(text).not.toContain('…');
   });
 

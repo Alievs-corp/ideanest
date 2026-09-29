@@ -65,7 +65,7 @@ describe('asking for a link', () => {
     await ask(user, 'nobody@example.com');
 
     // "If that address has an account" is the only sentence this screen is entitled to write.
-    expect(await screen.findByText(/has an IdeaNest account/u)).toBeInTheDocument();
+    expect(await screen.findByText(/has an IdeyaNest account/u)).toBeInTheDocument();
     expect(screen.queryByText(/we have sent you a link/iu)).not.toBeInTheDocument();
     // The address is echoed because a typo is the commonest reason nothing arrives — and it is
     // the reader's own address rather than anything the service disclosed.

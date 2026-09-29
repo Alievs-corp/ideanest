@@ -324,7 +324,7 @@ public record NotificationProperties(
 
         private static final String DEFAULT_FROM = "no-reply@ideanest.az";
 
-        private static final String DEFAULT_FROM_NAME = "IdeaNest";
+        private static final String DEFAULT_FROM_NAME = "IdeyaNest";
 
         private static final String DEFAULT_BASE_URL = "https://ideanest.az";
 

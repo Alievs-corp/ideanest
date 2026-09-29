@@ -2,7 +2,7 @@ import type { paths } from './schema';
 import { ApiError, problemFrom } from './problem';
 
 /**
- * A typed reader for the IdeaNest API — #136.
+ * A typed reader for the IdeyaNest API — #136.
  *
  * <h2>Why this is hand-written and tiny</h2>
  *

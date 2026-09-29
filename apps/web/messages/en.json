@@ -96,14 +96,14 @@
         "surveys": "Surveys",
         "deliveries": "Deliveries",
         "settings": "Settings",
-        "about": "About IdeaNest",
+        "about": "About IdeyaNest",
         "howItWorks": "How it works",
         "trustSafety": "Trust and safety",
         "legal": "Legal"
       }
     },
     "failure": {
-      "elsewhere": "Elsewhere on IdeaNest",
+      "elsewhere": "Elsewhere on IdeyaNest",
       "links": {
         "browse": "Browse campaigns",
         "categories": "Categories",
@@ -124,8 +124,8 @@
         },
         "maintenance": {
           "metaTitle": "Down for maintenance",
-          "metaDescription": "IdeaNest is briefly unavailable while we make a change.",
-          "title": "IdeaNest is down for a short while",
+          "metaDescription": "IdeyaNest is briefly unavailable while we make a change.",
+          "title": "IdeyaNest is down for a short while",
           "description": "We are making a planned change and the platform is unavailable while it finishes. No pledge is affected: nothing is collected during a maintenance window, and every campaign deadline is unchanged.",
           "action": "Try the home page"
         },
@@ -203,7 +203,7 @@
       },
       "notifications": {
         "label": "Notifications",
-        "summary": "What IdeaNest tells you, and how it reaches you."
+        "summary": "What IdeyaNest tells you, and how it reaches you."
       },
       "sessions": {
         "label": "Devices",
@@ -227,7 +227,7 @@
       },
       "language": {
         "label": "Language and currency",
-        "summary": "The language IdeaNest writes to you in, and the currency amounts are shown in."
+        "summary": "The language IdeyaNest writes to you in, and the currency amounts are shown in."
       },
       "payout": {
         "label": "Payout details",
@@ -285,7 +285,7 @@
       },
       "inbox": {
         "metaTitle": "Notifications",
-        "metaDescription": "Everything IdeaNest has told you, newest first.",
+        "metaDescription": "Everything IdeyaNest has told you, newest first.",
         "title": "Notifications",
         "intro": "Everything the platform has told you, newest first. Opening one marks it read. <settings>Change what you are sent</settings>."
       },
@@ -2577,7 +2577,7 @@
   "settings": {
     "language": {
       "title": "Language and currency",
-      "intro": "How IdeaNest writes to you, and the currency you read amounts in.",
+      "intro": "How IdeyaNest writes to you, and the currency you read amounts in.",
       "fieldLabel": "Interface language",
       "fieldHint": "Applies to your account pages straight away. The public site is still in English while the rest of the translation is written.",
       "save": "Save language",
@@ -2604,39 +2604,39 @@
       },
       "notifications": {
         "metaTitle": "Notification settings",
-        "metaDescription": "Choose what IdeaNest tells you, and how it reaches you.",
+        "metaDescription": "Choose what IdeyaNest tells you, and how it reaches you.",
         "title": "Notifications",
         "intro": "Choose what you are told and how it reaches you. <b>As it happens</b> sends each one on its own; <b>daily digest</b> collects them into one message a day, where the channel supports it. <b>In app</b> is what fills your <inbox>notifications</inbox>. Changes save as you make them."
       },
       "sessions": {
         "metaTitle": "Active sessions",
-        "metaDescription": "Review the devices signed in to your IdeaNest account and sign out of any of them.",
+        "metaDescription": "Review the devices signed in to your IdeyaNest account and sign out of any of them.",
         "title": "Devices",
         "intro": "Every device currently signed in to your account. If you do not recognise one, sign it out — it stops being able to refresh within fifteen minutes."
       },
       "email": {
         "metaTitle": "Email address",
-        "metaDescription": "Move your IdeaNest account to a different email address.",
+        "metaDescription": "Move your IdeyaNest account to a different email address.",
         "title": "Email address",
-        "intro": "The address you sign in with, and where everything IdeaNest sends you goes. To change your password instead, go to <password>password</password>."
+        "intro": "The address you sign in with, and where everything IdeyaNest sends you goes. To change your password instead, go to <password>password</password>."
       },
       "password": {
         "metaTitle": "Password",
-        "metaDescription": "Change the password on your IdeaNest account.",
+        "metaDescription": "Change the password on your IdeyaNest account.",
         "title": "Password",
         "intro": "Changing it needs the one you have now. If you do not have it — or you have only ever signed in with Google or Apple — <reset>reset it by email</reset> instead."
       },
       "security": {
         "metaTitle": "Two-factor authentication",
-        "metaDescription": "Add a code from your phone to your IdeaNest sign-in.",
+        "metaDescription": "Add a code from your phone to your IdeyaNest sign-in.",
         "title": "Two-factor authentication",
         "intro": "A code from your phone, on top of your password. §4.1 requires it before a payout, so a creator will meet it sooner or later. To see which browsers are signed in, go to <devices>devices</devices>."
       },
       "privacy": {
         "metaTitle": "Privacy, data and closure",
-        "metaDescription": "Choose who can see your profile, download a copy of your IdeaNest data, or close your account.",
+        "metaDescription": "Choose who can see your profile, download a copy of your IdeyaNest data, or close your account.",
         "title": "Privacy, data and closure",
-        "intro": "Who can see you, everything IdeaNest holds about you, and what happens to it if you leave."
+        "intro": "Who can see you, everything IdeyaNest holds about you, and what happens to it if you leave."
       },
       "payout": {
         "metaTitle": "Payout details",
@@ -2682,7 +2682,7 @@
       "payout": {
         "loading": "Loading your payout details",
         "subjectHeading": "Who is paid",
-        "subjectIntro": "IdeaNest pays the person or company named here. Before any payout is sent, an administrator checks that the VÖEN is real and that the business card belongs to its holder.",
+        "subjectIntro": "IdeyaNest pays the person or company named here. Before any payout is sent, an administrator checks that the VÖEN is real and that the business card belongs to its holder.",
         "kind": "You are",
         "kindIndividual": "An individual",
         "kindEntity": "A company",
@@ -2696,7 +2696,7 @@
         "saving": "Saving…",
         "saved": "Saved.",
         "cardHeading": "Business card",
-        "cardIntro": "Payouts go to a business card you register on the payment provider’s page. The card number is never entered on IdeaNest.",
+        "cardIntro": "Payouts go to a business card you register on the payment provider’s page. The card number is never entered on IdeyaNest.",
         "cardNone": "No card on file yet.",
         "cardOnFile": "{hint}, held by {holder}",
         "standingAwaiting": "Waiting for verification",
@@ -2716,7 +2716,7 @@
       "twoFactor": {
         "heading": "Two-factor authentication",
         "passwordHeading": "Confirm your password",
-        "scanHeading": "Add IdeaNest to your authenticator",
+        "scanHeading": "Add IdeyaNest to your authenticator",
         "codesHeading": "Save your recovery codes",
         "disableHeading": "Turn two-factor authentication off",
         "fromService": "From the service",
@@ -2771,7 +2771,7 @@
       },
       "export": {
         "heading": "Take a copy of your data",
-        "intro": "One JSON file with everything IdeaNest holds about your account. It downloads to this device and is not stored anywhere afterwards.",
+        "intro": "One JSON file with everything IdeyaNest holds about your account. It downloads to this device and is not stored anywhere afterwards.",
         "errorTitle": "The export did not arrive",
         "rateLimited": "You have asked for this a few times recently. Try again in a little while.",
         "refused": "The export was refused.",
@@ -2855,7 +2855,7 @@
     },
     "signIn": {
       "metaTitle": "Sign in",
-      "metaDescription": "Sign in to IdeaNest.",
+      "metaDescription": "Sign in to IdeyaNest.",
       "title": "Sign in",
       "intro": "Back to your pledges, your campaigns, and everything you are following.",
       "submit": "Sign in",
@@ -2868,7 +2868,7 @@
     },
     "register": {
       "metaTitle": "Create an account",
-      "metaDescription": "Create an IdeaNest account.",
+      "metaDescription": "Create an IdeyaNest account.",
       "title": "Create an account",
       "intro": "Back campaigns, follow creators, and start a campaign of your own. It takes an email address and a password.",
       "name": "Name",
@@ -2882,7 +2882,7 @@
       "sentTitle": "Check your email",
       "sentIntro": "We have sent a message to {address}. Open the link in it to finish setting up your account.",
       "sentLifetime": "The link is valid for 24 hours and can be used once.",
-      "sentExisting": "If that address already had an IdeaNest account, the message says so and offers a way back in instead of creating a second one.",
+      "sentExisting": "If that address already had an IdeyaNest account, the message says so and offers a way back in instead of creating a second one.",
       "verified": "Already verified?"
     },
     "twoFactor": {
@@ -2909,7 +2909,7 @@
     "reset": {
       "lifetime": "one hour",
       "metaTitle": "Reset your password",
-      "metaDescription": "Get a link that sets a new password for your IdeaNest account.",
+      "metaDescription": "Get a link that sets a new password for your IdeyaNest account.",
       "title": "Reset your password",
       "intro": "Give us the address you sign in with and we will send a link that sets a new password. You will not need the old one.",
       "submit": "Send the link",
@@ -2917,7 +2917,7 @@
       "remembered": "Remembered it?",
       "signIn": "Sign in",
       "sentTitle": "Check your email",
-      "sentIntro": "If {address} has an IdeaNest account, a link to set a new password is on its way to it.",
+      "sentIntro": "If {address} has an IdeyaNest account, a link to set a new password is on its way to it.",
       "sentLifetime": "The link works for {lifetime} and can be used once. Asking again replaces it, so use the most recent message.",
       "sentRetry": "Nothing arrived? Check the address for a typo, then {retry}. We cannot tell you whether an account exists, so this screen looks the same either way.",
       "tryAnother": "try another address",
@@ -2925,7 +2925,7 @@
     },
     "resetConfirm": {
       "metaTitle": "Choose a new password",
-      "metaDescription": "Finish resetting the password on your IdeaNest account.",
+      "metaDescription": "Finish resetting the password on your IdeyaNest account.",
       "title": "Choose a new password",
       "intro": "This link works for {lifetime} from when it was sent, and once. Setting a password here signs out every browser that was signed in to the account.",
       "newPassword": "New password",
@@ -2952,7 +2952,7 @@
     },
     "verifyEmail": {
       "metaTitle": "Verify your email",
-      "metaDescription": "Finish setting up your IdeaNest account.",
+      "metaDescription": "Finish setting up your IdeyaNest account.",
       "statusVerifying": "Verifying your email address.",
       "statusVerified": "Your email address is verified.",
       "statusFailed": "This verification link could not be used.",
@@ -2970,7 +2970,7 @@
     },
     "emailChange": {
       "metaTitle": "Confirm your new email address",
-      "metaDescription": "Finish moving your IdeaNest account to a new email address.",
+      "metaDescription": "Finish moving your IdeyaNest account to a new email address.",
       "statusConfirming": "Confirming your new email address.",
       "statusConfirmed": "Your email address has been changed.",
       "statusTaken": "That address now has an account, so the change could not be completed.",
@@ -2996,7 +2996,7 @@
     }
   },
   "home": {
-    "metaTitle": "IdeaNest — reward-based crowdfunding",
+    "metaTitle": "IdeyaNest — reward-based crowdfunding",
     "hero": {
       "title": "Fund what does not exist yet",
       "standfirst": "Creators publish a campaign with a goal and a deadline. Backers pledge. A campaign succeeds at 80% of its goal — and if it does not get there, every backer is refunded in full.",
@@ -3029,7 +3029,7 @@
   "discovery": {
     "discover": {
       "metaTitle": "Discover",
-      "metaDescription": "Browse and filter every campaign on IdeaNest."
+      "metaDescription": "Browse and filter every campaign on IdeyaNest."
     },
     "card": {
       "badges": {
@@ -3096,7 +3096,7 @@
     },
     "feed": {
       "title": "Discover",
-      "standfirst": "Every campaign on IdeaNest, narrowed by whatever matters to you.",
+      "standfirst": "Every campaign on IdeyaNest, narrowed by whatever matters to you.",
       "filtersLabel": "Filter projects",
       "railLabel": "Filters",
       "resultsHeading": "Projects",
@@ -3181,16 +3181,16 @@
     },
     "categories": {
       "metaTitle": "Categories",
-      "metaDescription": "Every category and subcategory on IdeaNest, each with its own page of campaigns.",
+      "metaDescription": "Every category and subcategory on IdeyaNest, each with its own page of campaigns.",
       "title": "Categories",
       "intro": "Every category on the platform, and the subcategories inside them. Each has a page of its own.",
       "unavailable": "The categories could not be loaded just now. <feed>The feed</feed> carries every campaign on the platform and can be filtered by category there."
     },
     "landing": {
       "notFound": "Category not found",
-      "metaDescription": "Crowdfunding campaigns in {category} on IdeaNest — pledge to a campaign, or start one of your own.",
+      "metaDescription": "Crowdfunding campaigns in {category} on IdeyaNest — pledge to a campaign, or start one of your own.",
       "subMetaTitle": "{subcategory} in {category}",
-      "subMetaDescription": "Crowdfunding campaigns in {subcategory}, part of {category}, on IdeaNest.",
+      "subMetaDescription": "Crowdfunding campaigns in {subcategory}, part of {category}, on IdeyaNest.",
       "standfirst": "Campaigns filed under {category}, newest first.",
       "subStandfirst": "Campaigns filed under {category} → {subcategory}, newest first.",
       "subcategoriesLabel": "Subcategories of {category}",
@@ -3205,15 +3205,15 @@
     },
     "collections": {
       "metaTitle": "Collections",
-      "metaDescription": "Staff selections, themed collections, and open calls on IdeaNest — each with its own page of campaigns.",
+      "metaDescription": "Staff selections, themed collections, and open calls on IdeyaNest — each with its own page of campaigns.",
       "window": {
         "closes": "Closes",
         "openSince": "Open since"
       },
       "notFound": "Collection not found",
-      "socialDescription": "{title} — a curated collection of crowdfunding campaigns on IdeaNest.",
+      "socialDescription": "{title} — a curated collection of crowdfunding campaigns on IdeyaNest.",
       "title": "Collections",
-      "intro": "Campaigns chosen by the IdeaNest team, collections built around a season or a subject, and open calls a creator can still be part of. Each has a page of its own.",
+      "intro": "Campaigns chosen by the IdeyaNest team, collections built around a season or a subject, and open calls a creator can still be part of. Each has a page of its own.",
       "listLabel": "Collections",
       "emptyTitle": "No collections just now",
       "emptyBody": "Nothing is curated on the platform at the moment, or the list could not be loaded. The feed carries every campaign either way.",
@@ -3224,13 +3224,13 @@
         "open_call": "Open call"
       },
       "sentences": {
-        "staff_selection": "Chosen by the IdeaNest team.",
+        "staff_selection": "Chosen by the IdeyaNest team.",
         "themed": "A collection built around one subject.",
         "open_call": "An open call: a programme campaigns can be submitted to while it is open."
       },
       "inCollection": "In this collection",
       "cardCampaigns": "Campaigns",
-      "badge": "Campaigns in this collection carry the IdeaNest editorial badge.",
+      "badge": "Campaigns in this collection carry the IdeyaNest editorial badge.",
       "badgeOpenCall": "Being accepted into this programme is what grants it.",
       "badgeCurated": "It is a selection the platform stands behind, not a guarantee about any campaign.",
       "campaignsEmptyTitle": "Nothing to show here yet",
@@ -3263,7 +3263,7 @@
     },
     "search": {
       "title": "Search",
-      "metaDescription": "Search every campaign on IdeaNest.",
+      "metaDescription": "Search every campaign on IdeyaNest.",
       "resultsTitle": "Results for “{query}”",
       "prompt": "Type what you are looking for — a campaign, a category, a maker. Or <feed>browse the whole feed</feed> and narrow it with filters.",
       "count": "{count, plural, =0 {No campaigns matched} one {# campaign} other {# campaigns}}",
@@ -3342,7 +3342,7 @@
     "payment": {
       "heading": "Payment",
       "none": "You pay on the payment provider’s page",
-      "body": "Continuing opens the payment provider’s secure page, where you enter your card. Card details are never entered on IdeaNest, and your pledge is charged there, once.",
+      "body": "Continuing opens the payment provider’s secure page, where you enter your card. Card details are never entered on IdeyaNest, and your pledge is charged there, once.",
       "later": "Your pledge is refunded in full if the campaign does not raise 80% of its goal, or if it is cancelled or suspended."
     },
     "anonymous": {
@@ -3374,7 +3374,7 @@
     },
     "risk": {
       "heading": "What backing means",
-      "body": "A pledge is not a purchase. You are funding an attempt, and a reward is not guaranteed — the campaign may be delayed, may change, or may never arrive. The creator owes you the reward, not IdeaNest.",
+      "body": "A pledge is not a purchase. You are funding an attempt, and a reward is not guaranteed — the campaign may be delayed, may change, or may never arrive. The creator owes you the reward, not IdeyaNest.",
       "confirm": "I understand — continue to payment",
       "stale": "This statement was updated while this page was open. Read it again, then confirm."
     },
@@ -3519,14 +3519,14 @@
       "sending": "Sending…",
       "cancel": "Cancel",
       "opened": "Your dispute is open. An administrator will decide it before the payout is sent.",
-      "windowClosed": "This payment can no longer be disputed through IdeaNest: no payout is being held for the campaign.",
+      "windowClosed": "This payment can no longer be disputed through IdeyaNest: no payout is being held for the campaign.",
       "nothing": "There is nothing left of this payment to refund.",
       "failed": "That did not work. Try again in a moment."
     }
   },
   "pricing": {
     "metaTitle": "Plans and pricing",
-    "metaDescription": "What it costs to publish a campaign on IdeaNest, and what each plan allows.",
+    "metaDescription": "What it costs to publish a campaign on IdeyaNest, and what each plan allows.",
     "title": "Plans",
     "intro": "Building a campaign is free. Publishing one needs a plan, and the plan decides how many campaigns you can run at once and how large a goal you can ask for.",
     "loading": "Checking what you already have",
@@ -3702,7 +3702,7 @@
       "neverUpdatedBody": "Nothing has been published here since the campaign closed. An update was due on {due}.",
       "lateBody": "The last update was published on {lastUpdate}. The next one was due on {due}.",
       "completeBody": "The creator has marked this campaign as fulfilled, so monthly updates are no longer expected.",
-      "rule": "Creators agree to publish an update at least once a month until their campaign is fulfilled. IdeaNest states what has happened and mediates between creators and backers; it does not deliver rewards and does not decide disputes."
+      "rule": "Creators agree to publish an update at least once a month until their campaign is fulfilled. IdeyaNest states what has happened and mediates between creators and backers; it does not deliver rewards and does not decide disputes."
     },
     "outcome": {
       "funded": "This campaign was funded",
@@ -4534,7 +4534,7 @@
   },
   "profile": {
     "notFound": "Profile not found",
-    "metaDescription": "{name} on IdeaNest — the campaigns they have created and backed.",
+    "metaDescription": "{name} on IdeyaNest — the campaigns they have created and backed.",
     "avatarAlt": "{name}’s profile picture",
     "tabsLabel": "Profile sections",
     "tabs": {
@@ -4545,14 +4545,14 @@
     "obligations": {
       "heading": "{count, plural, one {One campaign is late on updates} other {# campaigns are late on updates}}",
       "body": "{count, plural, one {One campaign by {name} has gone past the date its next backer update was due.} other {# campaigns by {name} have gone past the date their next backer update was due.}}",
-      "rule": "Creators agree to publish an update at least once a month until their campaign is fulfilled. This is stated so you can ask about it; IdeaNest mediates and does not decide disputes."
+      "rule": "Creators agree to publish an update at least once a month until their campaign is fulfilled. This is stated so you can ask about it; IdeyaNest mediates and does not decide disputes."
     },
     "about": {
       "heading": "About {name}",
       "empty": "{name} has not written anything here.",
       "basedIn": "Based in",
       "website": "Website",
-      "since": "On IdeaNest since",
+      "since": "On IdeyaNest since",
       "elsewhere": "Elsewhere"
     },
     "follow": {
@@ -4569,7 +4569,7 @@
       "failedTitle": "This list could not be loaded",
       "failedBody": "The service did not answer. Nothing is wrong with the profile — reload the page to try again.",
       "createdEmptyTitle": "No campaigns yet",
-      "createdEmptyBody": "{name} has not published a campaign on IdeaNest.",
+      "createdEmptyBody": "{name} has not published a campaign on IdeyaNest.",
       "backedEmptyTitle": "Nothing here yet",
       "backedEmptyBody": "{name} has not backed a campaign publicly. Pledges made anonymously are never listed here.",
       "showMore": "Show more",
@@ -4594,7 +4594,7 @@
       }
     },
     "editor": {
-      "heading": "How you appear on IdeaNest",
+      "heading": "How you appear on IdeyaNest",
       "liveAt": "Your profile is at {address}, and everything on this page is public to anybody who opens it.",
       "handleFixed": "Your handle, @{slug}, cannot be changed here.",
       "handleWhy": "It is the address of this page and it is printed on every campaign you publish, so moving it would break links other people have already shared.",
@@ -4602,7 +4602,7 @@
       "loadFailed": "Your profile could not be loaded. Reload the page to try again.",
       "loading": "Loading your profile.",
       "saveFailedTitle": "Nothing was saved",
-      "unreachable": "IdeaNest could not be reached. Nothing was saved.",
+      "unreachable": "IdeyaNest could not be reached. Nothing was saved.",
       "name": "Name",
       "nameHint": "What you are called on your profile and on every campaign you create. {max} characters or fewer.",
       "bio": "Biography",
@@ -4611,7 +4611,7 @@
       "websiteHint": "Has to start with https://. It is shown on your profile as a link.",
       "websitePlaceholder": "https://example.com",
       "location": "Location",
-      "locationHint": "Where you are, from the places IdeaNest knows about.",
+      "locationHint": "Where you are, from the places IdeyaNest knows about.",
       "notSaying": "Not saying",
       "locationsUnavailable": "The list of places could not be loaded, so this cannot be set here right now. Everything else on this page still saves.",
       "locationsUnavailableWithValue": "Your profile says {place}. The list of places could not be loaded, so this cannot be changed right now — everything else on this page still saves.",
@@ -4623,7 +4623,7 @@
         "label": "Profile picture",
         "hint": "Shown beside your name on your profile and on every campaign you create.",
         "pipelineTitle": "Uploading arrives with the media pipeline",
-        "pipelineBody": "IdeaNest cannot store a file yet, so this takes the address of a picture that is already published somewhere. Choosing which part of it to show — the crop — arrives with the same work.",
+        "pipelineBody": "IdeyaNest cannot store a file yet, so this takes the address of a picture that is already published somewhere. Choosing which part of it to show — the crop — arrives with the same work.",
         "noPicture": "{name}, with no picture",
         "broken": "That address did not load as a picture here. Your profile would show your initials instead.",
         "cropped": "This is how your picture is cropped to a circle.",
@@ -4654,7 +4654,7 @@
         "used": "{used} of {max} used.",
         "atCap": "{max} of {max} used, which is the most a profile can carry. Remove one to add another.",
         "allListedTitle": "Every platform is already listed",
-        "allListedBody": "There is a link for each platform IdeaNest knows about. Change one instead of adding another."
+        "allListedBody": "There is a link for each platform IdeyaNest knows about. Change one instead of adding another."
       },
       "visibility": {
         "heading": "Your public profile",
@@ -4664,7 +4664,7 @@
         "hidden": "Hidden",
         "checking": "Checking what a visitor sees.",
         "unknownTitle": "This setting could not be read",
-        "unknownBody": "IdeaNest could not check whether your profile is currently visible, so the switch is disabled rather than showing a position it is not sure of. Reload the page to try again.",
+        "unknownBody": "IdeyaNest could not check whether your profile is currently visible, so the switch is disabled rather than showing a position it is not sure of. Reload the page to try again.",
         "failedTitle": "Nothing was changed",
         "refused": "The service refused the change. Your profile is as it was.",
         "unreachable": "The service could not be reached. Your profile is as it was.",
@@ -4675,10 +4675,10 @@
   "static": {
     "about": {
       "metaTitle": "About",
-      "metaDescription": "What IdeaNest is, how success at 80% of the goal works, and what it costs.",
-      "title": "About IdeaNest",
+      "metaDescription": "What IdeyaNest is, how success at 80% of the goal works, and what it costs.",
+      "title": "About IdeyaNest",
       "summary": "A place to fund things that do not exist yet, on terms that are the same for everybody.",
-      "intro": "IdeaNest is a reward-based crowdfunding platform. A creator publishes a campaign with a goal and a deadline; people who want the thing to exist pledge towards it and are charged when they do; and if the campaign raises at least 80% of its goal, the creator withdraws the money and makes the thing. If it does not, every backer is refunded in full.",
+      "intro": "IdeyaNest is a reward-based crowdfunding platform. A creator publishes a campaign with a goal and a deadline; people who want the thing to exist pledge towards it and are charged when they do; and if the campaign raises at least 80% of its goal, the creator withdraws the money and makes the thing. If it does not, every backer is refunded in full.",
       "allOrNothing": {
         "heading": "Success at 80%, and why the line is there",
         "first": "A campaign that raises 80% of its goal succeeds, and its creator owes every reward to every backer whatever percentage it closed at. Below that the money is not enough to rely on, so the campaign fails, costs its creator no fee, and every backer is refunded in full.",
@@ -4701,7 +4701,7 @@
     },
     "howItWorks": {
       "metaTitle": "How it works",
-      "metaDescription": "Backing a campaign, running one, and what happens between a pledge and a parcel on IdeaNest.",
+      "metaDescription": "Backing a campaign, running one, and what happens between a pledge and a parcel on IdeyaNest.",
       "title": "How it works",
       "summary": "What happens between finding a campaign and holding the thing it funded.",
       "backing": {
@@ -4750,12 +4750,12 @@
       },
       "reporting": {
         "heading": "Reporting something",
-        "first": "A campaign, a comment or an account can be reported by anybody with an IdeaNest account. A report goes to a moderator, not to an automatic filter: nothing disappears because five people objected to it, and a report is a request for a person to look.",
+        "first": "A campaign, a comment or an account can be reported by anybody with an IdeyaNest account. A report goes to a moderator, not to an automatic filter: nothing disappears because five people objected to it, and a report is a request for a person to look.",
         "second": "Reporting the same thing twice does not add weight — the second report returns the first one. Reports are not public, and the account being reported is not told who reported it."
       },
       "money": {
         "heading": "Your money",
-        "first": "Card details never reach IdeaNest’s own servers; payments go through the provider’s hosted fields. Your pledge is charged when you confirm it, and the money is held on the platform’s account. If the campaign does not succeed, is suspended or is cancelled, you are refunded in full.",
+        "first": "Card details never reach IdeyaNest’s own servers; payments go through the provider’s hosted fields. Your pledge is charged when you confirm it, and the money is held on the platform’s account. If the campaign does not succeed, is suspended or is cancelled, you are refunded in full.",
         "second": "Every payment operation is idempotent, which is the unglamorous property that matters most: a request that is retried because a connection dropped produces one pledge and one charge, not two."
       },
       "account": {
@@ -4767,7 +4767,7 @@
       },
       "limits": {
         "heading": "What we cannot do",
-        "first": "IdeaNest cannot make a campaign deliver. What it can do is keep the record honest: a campaign’s updates, its comments and the way to report it are all on the campaign’s own page, where somebody deciding whether to back it will see them.",
+        "first": "IdeyaNest cannot make a campaign deliver. What it can do is keep the record honest: a campaign’s updates, its comments and the way to report it are all on the campaign’s own page, where somebody deciding whether to back it will see them.",
         "second": "A creator can moderate comments on their own campaign, and a removed one does not vanish — the row stays, marked as removed. A comment thread that has been cleaned out therefore still looks like one, which is the point: a page with nothing on it and a page with twelve removals are different things, and a reader is entitled to tell them apart."
       }
     }
@@ -4784,12 +4784,12 @@
     "unavailable": {
       "title": "This document could not be loaded",
       "indexTitle": "The legal documents could not be loaded",
-      "body": "The service that holds IdeaNest’s legal documents did not answer just now. That is not the same as a document not being published: try again in a moment.",
+      "body": "The service that holds IdeyaNest’s legal documents did not answer just now. That is not the same as a document not being published: try again in a moment.",
       "action": "Try again"
     },
     "notPublished": {
       "summary": "This document has not been published yet.",
-      "body": "IdeaNest is required to have this document and has not published a version of it. Nothing here is in force, and no version of it has been presented to anybody for acceptance."
+      "body": "IdeyaNest is required to have this document and has not published a version of it. Nothing here is in force, and no version of it has been presented to anybody for acceptance."
     },
     "archive": {
       "notice": "You are reading a version that is no longer in force. It is kept because somebody who accepted it is entitled to read what they accepted.",
@@ -4800,9 +4800,9 @@
     },
     "index": {
       "title": "Legal documents",
-      "summary": "The eight documents IdeaNest is required to publish, and which of them are in force.",
+      "summary": "The eight documents IdeyaNest is required to publish, and which of them are in force.",
       "metaTitle": "Legal documents",
-      "metaDescription": "The terms, policies and agreements IdeaNest publishes, with the version and effective date of each.",
+      "metaDescription": "The terms, policies and agreements IdeyaNest publishes, with the version and effective date of each.",
       "intro": "Every document below has a permanent address. Each shows its version number, the date it started to apply, and the digest of its text, so that a version somebody accepted can be identified and read years later.",
       "inForce": "Version {version}, in force since {date}",
       "notPublished": "Not published yet",
@@ -4811,7 +4811,7 @@
     "documents": {
       "terms-of-use": {
         "title": "Terms of use",
-        "summary": "The contract between IdeaNest and everybody who uses it, including the platform’s role as an intermediary."
+        "summary": "The contract between IdeyaNest and everybody who uses it, including the platform’s role as an intermediary."
       },
       "privacy-policy": {
         "title": "Privacy policy",
@@ -4823,7 +4823,7 @@
       },
       "platform-rules": {
         "title": "Platform rules",
-        "summary": "What may be campaigned for on IdeaNest, and what is removed."
+        "summary": "What may be campaigned for on IdeyaNest, and what is removed."
       },
       "creator-agreement": {
         "title": "Creator agreement",
@@ -4847,11 +4847,11 @@
     "disclosure": {
       "backerHeading": "What your pledge is subject to",
       "creatorHeading": "What you receive",
-      "backerBody": "You are charged the amount you pledge, and nothing on top of it. Of that amount IdeaNest keeps {platform} and the payment provider keeps {processing}; the rest goes to the creator.",
-      "creatorBody": "IdeaNest keeps {platform} of every pledge collected and the payment provider keeps {processing}, so you receive {keeps} of what your backers pledge.",
+      "backerBody": "You are charged the amount you pledge, and nothing on top of it. Of that amount IdeyaNest keeps {platform} and the payment provider keeps {processing}; the rest goes to the creator.",
+      "creatorBody": "IdeyaNest keeps {platform} of every pledge collected and the payment provider keeps {processing}, so you receive {keeps} of what your backers pledge.",
       "fixedFee": "The payment provider also charges {amount} per transaction.",
-      "twoFees": "These are two separate charges. IdeaNest’s fee is what the platform keeps; the processing fee goes to the company that moves the money, and IdeaNest never receives it. The rates in force are the ones above, and they are the rates a payout is calculated with.",
-      "unconfigured": "IdeaNest has not set a fee schedule, so nothing is being deducted from pledges today. This is not a permanent commitment: the rates are published here the moment any are set, and the creator agreement is where the terms are stated.",
+      "twoFees": "These are two separate charges. IdeyaNest’s fee is what the platform keeps; the processing fee goes to the company that moves the money, and IdeyaNest never receives it. The rates in force are the ones above, and they are the rates a payout is calculated with.",
+      "unconfigured": "IdeyaNest has not set a fee schedule, so nothing is being deducted from pledges today. This is not a permanent commitment: the rates are published here the moment any are set, and the creator agreement is where the terms are stated.",
       "unavailable": "The fee could not be loaded just now. This does not mean that no fee is charged: the rates in force are published on the <pricing>Plans and pricing</pricing> page — try it again in a moment."
     }
   },
@@ -5028,7 +5028,7 @@
       "platformFee": "Platform fee",
       "processingFee": "Processing fee",
       "taxWithheld": "Tax withheld",
-      "taxNote": "IdeaNest withholds no tax. What you owe is between you and your tax authority.",
+      "taxNote": "IdeyaNest withholds no tax. What you owe is between you and your tax authority.",
       "refunded": "Refunded to backers",
       "payable": "Payable",
       "payableProjected": "Payable, projected",

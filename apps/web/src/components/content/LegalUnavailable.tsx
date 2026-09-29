@@ -7,11 +7,11 @@ import { failureCopy } from '../../lib/i18n/shell-copy.server';
  *
  * <h2>Why this is not the "not published" page</h2>
  *
- * `LegalDocumentPage`'s not-published branch is the service answering 404: IdeaNest has no
+ * `LegalDocumentPage`'s not-published branch is the service answering 404: IdeyaNest has no
  * version of the document in force, and the page says so because §22.2 requires the document
  * and hiding its absence would be worse. This is the other answer — a 5xx, a timeout, a DNS
  * failure — which says nothing about whether the document exists. Drawing it as "not published"
- * told readers on 2026-09-28 that IdeaNest had no terms of use; drawing it as a failure tells
+ * told readers on 2026-09-28 that IdeyaNest had no terms of use; drawing it as a failure tells
  * them what is actually true, which is that the page could not be loaded.
  *
  * <h2>`FailureState`, with a link rather than a button</h2>

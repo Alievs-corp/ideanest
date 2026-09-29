@@ -140,7 +140,7 @@ fi
 
 check "schema-history"
 if [ "$(q "SELECT to_regclass('public.flyway_schema_history') IS NULL")" = "t" ]; then
-  check_fail "flyway_schema_history does not exist; this is not a restored IdeaNest database"
+  check_fail "flyway_schema_history does not exist; this is not a restored IdeyaNest database"
 else
   HISTORY_FAILURES="$(q 'SELECT count(*) FROM flyway_schema_history WHERE NOT success')"
   HISTORY_COUNT="$(q 'SELECT count(*) FROM flyway_schema_history WHERE version IS NOT NULL')"

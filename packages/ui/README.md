@@ -1,6 +1,6 @@
 # @ideanest/ui
 
-Primitive, layout, and motion components for the IdeaNest design system.
+Primitive, layout, and motion components for the IdeyaNest design system.
 
 Design decisions live in [`docs/ui-kit.md`](../../docs/ui-kit.md).
 Motion decisions live in [`docs/motion-system.md`](../../docs/motion-system.md).

@@ -124,7 +124,7 @@ describe('what a collection says about itself in a shared link', () => {
     const description = collectionSocialDescription({ ...COLLECTION, description: null }, FALLBACK);
 
     expect(description).toBe(
-      'Spring 2026 — a curated collection of crowdfunding campaigns on IdeaNest.',
+      'Spring 2026 — a curated collection of crowdfunding campaigns on IdeyaNest.',
     );
   });
 

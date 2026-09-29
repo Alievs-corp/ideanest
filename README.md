@@ -1,6 +1,6 @@
 <div align="center">
 
-# IdeaNest
+# IdeyaNest
 
 **A reward-based crowdfunding platform.**
 Creators publish a project, backers pledge, and money only moves if the goal is met.
@@ -14,7 +14,7 @@ Creators publish a project, backers pledge, and money only moves if the goal is 
 
 ## What it is
 
-IdeaNest funds creative projects on a **threshold** model (IDN-EXT-01). A creator
+IdeyaNest funds creative projects on a **threshold** model (IDN-EXT-01). A creator
 sets a goal and a deadline. Backers pledge against reward tiers and are charged
 when they pledge. A campaign succeeds at **80% of its goal**, the creator may
 extend the deadline once, and withdrawing the money closes the campaign. If it

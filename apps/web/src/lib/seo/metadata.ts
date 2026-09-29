@@ -27,7 +27,7 @@ import { languageAlternates, localePath } from './sitemap/localised';
  * not public gets the private shape — see `isPubliclyVisible`.
  */
 
-export const SITE_NAME = 'IdeaNest';
+export const SITE_NAME = 'IdeyaNest';
 
 /**
  * The `<html lang>` of the **document**, which is the language of the public site.
@@ -70,7 +70,7 @@ export const SITE_LANGUAGE = 'en';
 export const SITE_OG_LOCALE = 'en_US';
 
 /**
- * `%s · IdeaNest`.
+ * `%s · IdeyaNest`.
  *
  * A middot rather than a pipe or a dash: an em dash reads as punctuation inside
  * a sentence and a pipe is a shell character that some feed readers escape.
@@ -256,7 +256,7 @@ export function truncateAtWord(text: string, max: number = DESCRIPTION_MAX_LENGT
  * description would be us paraphrasing somebody else's project — the same
  * mistake as machine-translating it (§21.1).
  *
- * When there is none, the fallback states what IdeaNest is and names the
+ * When there is none, the fallback states what IdeyaNest is and names the
  * campaign, and stops. It invents no adjective, no progress figure, and no
  * deadline: a description is cached by crawlers and unfurlers for days, and
  * "48 hours left" is false within two of them.
@@ -347,7 +347,7 @@ export interface SocialImage {
 export interface PublicPageInput {
   /**
    * The page's own title, WITHOUT the site name. `TITLE_TEMPLATE` adds it, and a
-   * title that carries it as well reads `Discover · IdeaNest · IdeaNest`.
+   * title that carries it as well reads `Discover · IdeyaNest · IdeyaNest`.
    */
   readonly title: string;
   readonly description: string;
@@ -409,7 +409,7 @@ export function siteSocialImage(locale: Locale, env: EnvSource = process.env): S
  * page with a file beside it, and it passes this.
  *
  * `og:title` and `twitter:title` carry the bare title for the same reason the
- * template exists: `og:site_name` already says IdeaNest, and a card that repeats
+ * template exists: `og:site_name` already says IdeyaNest, and a card that repeats
  * it has spent a third of its width on the word.
  */
 export function publicPageMetadata(input: PublicPageInput): Metadata {
@@ -467,8 +467,8 @@ export function publicPageMetadata(input: PublicPageInput): Metadata {
 /**
  * `/` — the one page whose title is not run through the template.
  *
- * `TITLE_TEMPLATE` is `%s · IdeaNest`, which is right for every page that has a subject and
- * wrong for the one whose subject IS the site: "IdeaNest · IdeaNest" in a browser tab, in a
+ * `TITLE_TEMPLATE` is `%s · IdeyaNest`, which is right for every page that has a subject and
+ * wrong for the one whose subject IS the site: "IdeyaNest · IdeyaNest" in a browser tab, in a
  * bookmark, and in a search result. Next's metadata API has `title.absolute` for exactly
  * this, and this is the only caller of it.
  *
@@ -518,7 +518,7 @@ export function homePageMetadata(
  * **`openGraph` and `twitter` are `null`, not absent.** Absent is not the same
  * thing: Next inherits a resolved `openGraph` down the segment tree, so a private
  * page that merely declined to set one would still carry the ROOT LAYOUT'S card —
- * a checkout link pasted into a chat would unfurl as a tidy IdeaNest preview and
+ * a checkout link pasted into a chat would unfurl as a tidy IdeyaNest preview and
  * imply the recipient could open it. `null` is how the metadata API says "and not
  * the one you inherited either".
  *

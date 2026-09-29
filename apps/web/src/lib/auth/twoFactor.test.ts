@@ -97,7 +97,7 @@ describe('the enrolment endpoints', () => {
   it('starts an enrolment with the password and returns the secret once', async () => {
     const send = respondWith({
       secret: 'JBSWY3DPEHPK3PXP',
-      otpauthUri: 'otpauth://totp/IdeaNest:aysel',
+      otpauthUri: 'otpauth://totp/IdeyaNest:aysel',
       digits: 6,
       periodSeconds: 30,
       algorithm: 'SHA1',

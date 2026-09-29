@@ -21,7 +21,7 @@ import LegalIndexRoute from './page';
  *
  * <p>Published renders the document, the service's 404 renders "not published", and every other
  * failure renders the site's failure state. The last is the defect: during the 2026-09-28
- * outage `/legal/terms-of-use` said IdeaNest had no terms of use. Each state is rendered in all
+ * outage `/legal/terms-of-use` said IdeyaNest had no terms of use. Each state is rendered in all
  * four languages, because the sentence a reader is given is the thing under test and a
  * translation carries it as much as the English does.
  */

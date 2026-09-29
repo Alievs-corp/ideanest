@@ -45,7 +45,7 @@ import { publicPageMetadata } from '../../../../../lib/seo/metadata';
  *
  * Only the service's 404 is "not published". A read that failed any other way renders
  * `LegalUnavailable`, the site's failure state: during the 2026-09-28 outage this address told
- * readers IdeaNest had no terms of use, which §22.2 requires it to have.
+ * readers IdeyaNest had no terms of use, which §22.2 requires it to have.
  *
  * <h2>Motion: none</h2>
  *
