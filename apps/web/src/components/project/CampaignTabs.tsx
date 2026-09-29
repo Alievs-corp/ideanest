@@ -40,6 +40,19 @@ import { getTranslations } from 'next-intl/server';
  * reader and the weight change carries it to somebody who cannot separate the two greys
  * (§9.2). The focus ring is the kit's lime outline on a dark ground, which §9.3 permits and
  * which is the one place lime belongs on this component.
+ *
+ * <h2>Room for the ring inside the scroll row — #173</h2>
+ *
+ * The row scrolls (below), and a scroll container clips whatever overflows it. The ring is
+ * drawn outside the tab: two pixels wide, two pixels off. The link used to ask for an inset
+ * ring with `outline-offset-[-2px]`, but the kit's `:focus-visible` rule in `theme.css` is
+ * unlayered and so outranks any offset utility — the ring was drawn outside anyway and the
+ * row cut it off at the top, the bottom and both ends. So the row carries four pixels of
+ * padding on every side and gives them back with a negative margin, as `DashboardNav` and
+ * `AccountNav` do for the same ring. The bottom margin is one pixel more than the padding
+ * because the row has always hung one pixel below the nav, so a tab's rule covers the nav's
+ * hairline rather than sitting on top of it. At 320px the four pixels the row reaches past
+ * the nav on each side stay inside the page's own 20px gutter, so the page does not scroll.
  */
 
 export interface CampaignTabsProps {
@@ -69,7 +82,12 @@ export async function CampaignTabs({ active, path }: CampaignTabsProps) {
         The scroll is not a keyboard trap and needs no script: these are links, so Tab moves
         through them and the browser scrolls each one into view on focus.
       */}
-      <ul className="-mb-px flex gap-1 overflow-x-auto">
+      {/*
+        `-mx-1 -mt-1 p-1`: room for the focus ring inside the scroll container, given back.
+        `-mb-[5px]`: the same four pixels, plus the one that lays the tabs' rule over the
+        nav's hairline (#173 — see above).
+      */}
+      <ul className="-mx-1 -mt-1 -mb-[5px] flex gap-1 overflow-x-auto p-1">
         {CAMPAIGN_TABS.map((tab) => {
           const current = tab.id === active;
           return (
@@ -93,7 +111,7 @@ export async function CampaignTabs({ active, path }: CampaignTabsProps) {
                 className={[
                   'inline-flex h-11 items-center whitespace-nowrap border-b-2 px-4 text-sm',
                   'transition-colors duration-150 ease-in-out',
-                  'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--lime-500)]',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]',
                   current
                     ? 'border-white font-medium text-white'
                     : 'border-transparent text-white/64 hover:border-white/16 hover:text-white',
