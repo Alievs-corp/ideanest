@@ -93,11 +93,26 @@ docker build -f apps/web/Dockerfile \
 
 The API has its own name for the same origin: `WEB_BASE_URL`, read at runtime,
 which every e-mail link is built from and which is also the origin a payment
-provider may return a person to (#139, `docs/architecture.md` §9.4). Set it to the
-site's https origin in every deployed environment — an http value on a real host is
-logged at start-up and every payment return address is then refused. A staging
-site reachable on a second host adds it in `PAYMENT_RETURN_ORIGINS` (comma
-separated, https only; a malformed entry stops the API starting).
+provider may return a person to (#139, `docs/architecture.md` §9.4). **`WEB_BASE_URL`
+must be the site's https origin** (production: `https://ideyanest.com`) in every
+deployed environment. An http value on a real host is logged at start-up and every
+payment return address is then refused. Left unset it falls back to
+`http://localhost:3000`, which is a valid origin: the API starts, logs a loud
+`PAYMENT RETURN ADDRESSES ARE LOOPBACK ONLY` WARN (when a payment provider is
+configured or a non-local profile is active), and refuses every real return
+address — so check for that line after a deploy.
+
+The web builds the return addresses from the browser's `location.origin`
+(`apps/web/src/lib/pledges/payment.ts`, `apps/web/src/lib/account/payout.ts`), not
+from `IDEANEST_SITE_URL`. So **every host the web is served on** must be either the
+site origin (`WEB_BASE_URL`) or listed in `PAYMENT_RETURN_ORIGINS` (comma
+separated, https only; a malformed entry stops the API starting), or payments
+started on that host are refused with `INVALID_RETURN_URL`. Production is served on
+`https://ideyanest.com`, and `www.ideyanest.com` redirects to it, so production
+needs nothing extra; a staging site, a preview host, or a second domain that serves
+pages rather than redirecting must be added. Every refusal is logged at WARN with
+the field and the host (never the full address), which is where a missing host
+shows up.
 
 `IDEANEST_API_ORIGIN` is **not** baked in. It is read at request time by the
 proxy and by the server reads, so one API image and one web image run against
