@@ -461,7 +461,8 @@ public class ProjectEditingService {
             base = trimTrailingHyphen(base.substring(0, SLUG_BASE_LIMIT));
         }
 
-        if (!projects.existsByCreatorIdAndSlug(creatorId, base)) {
+        // A reserved word is never free: it is a route, not an address (Slugs.RESERVED).
+        if (!Slugs.isReserved(base) && !projects.existsByCreatorIdAndSlug(creatorId, base)) {
             return base;
         }
         for (int suffix = 2; suffix <= SLUG_ATTEMPTS; suffix++) {

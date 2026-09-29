@@ -308,6 +308,17 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("a title that slugs to a route segment is numbered from the start (#148)")
+    void reservedSlugsAreSkipped() {
+        Creator creator = creator();
+
+        // /projects/{creator}/back is the checkout, so "back" is never an address.
+        assertThat(draft(creator, "Back").get("slug")).isEqualTo("back-2");
+        assertThat(draft(creator, "Dashboard").get("slug")).isEqualTo("dashboard-2");
+        assertThat(draft(creator, "Back").get("slug")).isEqualTo("back-3");
+    }
+
+    @Test
     @DisplayName("an unauthenticated caller cannot create a campaign")
     void creatingIsBehindAuthentication() {
         assertThat(rest.exchange(

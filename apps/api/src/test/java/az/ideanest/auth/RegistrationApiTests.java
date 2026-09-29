@@ -77,6 +77,18 @@ class RegistrationApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("nobody gets the slug new, which is the new-campaign page (#148)")
+    void theSlugNewIsReserved() {
+        EmailAddress email = uniqueEmail();
+
+        register(email, "a-long-enough-password", "New");
+
+        // /projects/new is a static route, so a creator slugged "new" would have
+        // every campaign address shadowed by it. Numbered, as a taken slug is.
+        assertThat(users.findByEmail(email).orElseThrow().slug()).matches("new-[0-9]+");
+    }
+
+    @Test
     @DisplayName("the password is stored as an Argon2id hash and nothing else")
     void passwordIsHashed() {
         EmailAddress email = uniqueEmail();
