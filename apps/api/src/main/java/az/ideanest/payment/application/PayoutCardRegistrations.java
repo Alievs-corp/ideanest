@@ -10,6 +10,7 @@ import az.ideanest.payment.domain.PayoutCardSession;
 import az.ideanest.payment.domain.ProviderUnavailableException;
 import az.ideanest.payment.infrastructure.PayoutCardRegistrationRepository;
 import az.ideanest.shared.outbox.Outbox;
+import az.ideanest.shared.payment.ReturnUrls;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -43,21 +44,31 @@ public class PayoutCardRegistrations implements PaymentEventHandler {
     private final PayoutCardRegistrationRepository registrations;
     private final Outbox outbox;
     private final Clock clock;
+    private final ReturnUrls returnUrls;
 
     public PayoutCardRegistrations(
-            PaymentProviders providers, PayoutCardRegistrationRepository registrations, Outbox outbox, Clock clock) {
+            PaymentProviders providers,
+            PayoutCardRegistrationRepository registrations,
+            Outbox outbox,
+            Clock clock,
+            ReturnUrls returnUrls) {
         this.providers = providers;
         this.registrations = registrations;
         this.outbox = outbox;
         this.clock = clock;
+        this.returnUrls = returnUrls;
     }
 
     /**
      * Opens the provider's card entry page for this creator.
      *
+     * @throws az.ideanest.shared.payment.InvalidReturnUrlException when either address is not a page
+     *     on the site (#139). Checked first: a refused address is the caller's mistake whether or not a
+     *     provider is configured
      * @throws PayoutCardsUnavailableException when no provider can register a payout card now
      */
     public PayoutCardPage begin(UUID creatorId, String language, URI successUrl, URI errorUrl) {
+        returnUrls.check(successUrl, errorUrl);
         PaymentProvider provider = providers
                 .primary()
                 .orElseThrow(() -> new PayoutCardsUnavailableException("No payment provider is configured"));

@@ -270,6 +270,11 @@ ideanest:
       # unanswered. A deployed environment leaves this empty and collects nothing --
       # see application.yml.
       primary: PAYRIFF
+    return-urls:
+      # The suite's site origin is the local default (http://localhost:3000). Production's
+      # origin beside it, so the tests can send the addresses the web really sends there and
+      # prove that http, a foreign host, `javascript:` and a relative path on it are refused.
+      additional-origins: https://ideanest.az
     reconciliation:
       # `-`, like every other job's schedule in this profile. A pass firing in the
       # background reads the very ledger rows a payment test is in the middle of
