@@ -4511,6 +4511,16 @@
       "since": "IdeaNest üyeliği",
       "elsewhere": "Diğer bağlantılar"
     },
+    "follow": {
+      "follow": "Takip et",
+      "following": "Takip ediliyor",
+      "label": "{name} adlı kullanıcıyı takip et",
+      "followed": "{name} adlı kullanıcıyı takip ediyorsunuz. Yeni bir kampanya başlattığında size mesaj gelecek.",
+      "unfollowed": "{name} adlı kullanıcıyı artık takip etmiyorsunuz.",
+      "signIn": "Takip etmek için önce giriş yapın.",
+      "refused": "Servis isteği reddetti. Yeniden deneyin.",
+      "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin."
+    },
     "grid": {
       "failedTitle": "Bu liste yüklenemedi",
       "failedBody": "Servis yanıt vermedi. Profilde bir sorun yok — yeniden denemek için sayfayı yenileyin.",

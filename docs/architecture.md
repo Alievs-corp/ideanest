@@ -1643,7 +1643,9 @@ Preferences are per category and per channel, with a digest option.
 > something to say.
 >
 > **AD-02's intake and queue, as #102 built them.** Reporting is
-> `POST /v1/projects/{id}/report` (§10.2, C-06) and `POST /v1/users/{id}/report`
+> `POST /v1/projects/{id}/report` (§10.2, C-06) and `POST /v1/users/{slug}/report`
+> (addressed by the public slug since #143, like `/v1/users/{slug}/follow`, because
+> the public profile carries no identifier; the report still stores the account id)
 > — the second is not in §10.2's list and is what AD-09's "profiles" and AD-04's
 > ban are decided from, since a complaint about a person filed against one of
 > their campaigns is filed against the wrong object. Both require a signed-in

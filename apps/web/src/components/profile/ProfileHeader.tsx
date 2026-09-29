@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import type { ReactNode } from 'react';
 import { MediaFrame } from '@ideanest/ui/server';
 import { canOptimise } from '../../lib/images/source';
 import type { PublicProfile } from '../../lib/profiles/api';
@@ -14,14 +15,14 @@ import type { PublicProfile } from '../../lib/profiles/api';
  * this file. The biography is on the About tab, because §4.2 gives it a tab (P-06) and a
  * header that also printed it would make that tab a duplicate of the top of the page.
  *
- * <h2>There is no report control here, and the reason is a missing field</h2>
+ * <h2>The Follow control is a slot, and Report is not here</h2>
  *
- * §4.9's reporting is built and `POST /v1/users/{id}/report` exists, but it is keyed on an
- * account **identifier** and `PublicProfileResponse` carries only a slug — deliberately, since
- * nothing public on this platform is addressed by an account id. So a control here would have
- * nothing to send. Recorded rather than quietly omitted: the fix is either a slug-addressed
- * report endpoint or an id on the profile projection, and both are a decision rather than an
- * oversight to correct in passing.
+ * #143 gave the profile a Follow toggle and a Report control. The header stays a Server
+ * Component and takes the toggle as `actions`, so the client island is the button and not the
+ * name and picture around it. Report sits at the foot of the page, quietly, for the campaign
+ * page's reason: "something is wrong here" is not the first thing to put beside a person's
+ * name. Both are addressed by slug — `POST /v1/users/{slug}/report` replaced the id-keyed
+ * route, because `PublicProfileResponse` deliberately carries no account id.
  *
  * <h2>The avatar is hand-rolled, which is not a preference</h2>
  *
@@ -55,11 +56,13 @@ export interface ProfileHeaderProps {
    * rather than a label, so it belongs in the catalogue like any other.
    */
   readonly avatarAlt: string;
+  /** Drawn beside the name — the Follow toggle (#143). Absent draws nothing. */
+  readonly actions?: ReactNode;
 }
 
-export function ProfileHeader({ profile, avatarAlt }: ProfileHeaderProps) {
+export function ProfileHeader({ profile, avatarAlt, actions }: ProfileHeaderProps) {
   return (
-    <header className="flex items-center gap-5">
+    <header className="flex flex-wrap items-center gap-5">
       <div className="size-14 shrink-0 overflow-hidden rounded-full ring-2 ring-[var(--surface-1)]">
         {profile.avatarUrl === null ? (
           /*
@@ -90,7 +93,7 @@ export function ProfileHeader({ profile, avatarAlt }: ProfileHeaderProps) {
         )}
       </div>
 
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <h1 className="truncate text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
           {profile.name}
         </h1>
@@ -98,6 +101,8 @@ export function ProfileHeader({ profile, avatarAlt }: ProfileHeaderProps) {
             somebody copies when they want to point at this person. */}
         <p className="mt-1 truncate text-sm text-white/40">@{profile.slug}</p>
       </div>
+
+      {actions !== undefined && <div className="shrink-0">{actions}</div>}
     </header>
   );
 }

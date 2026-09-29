@@ -4511,6 +4511,16 @@
       "since": "On IdeaNest since",
       "elsewhere": "Elsewhere"
     },
+    "follow": {
+      "follow": "Follow",
+      "following": "Following",
+      "label": "Follow {name}",
+      "followed": "You are following {name}. You will get a message when they launch a campaign.",
+      "unfollowed": "You no longer follow {name}.",
+      "signIn": "Sign in to follow people.",
+      "refused": "The service refused the request. Try again.",
+      "unreachable": "The service could not be reached. Check your connection and try again."
+    },
     "grid": {
       "failedTitle": "This list could not be loaded",
       "failedBody": "The service did not answer. Nothing is wrong with the profile — reload the page to try again.",

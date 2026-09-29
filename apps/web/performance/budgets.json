@@ -93,7 +93,7 @@
     "/[locale]/settings/sessions": 720,
     "/[locale]/sign-in": 586,
     "/[locale]/trust-safety": 585,
-    "/[locale]/u/[slug]": 646,
+    "/[locale]/u/[slug]": 658,
     "/[locale]/verify-email": 576,
     "/_not-found": 471
   }

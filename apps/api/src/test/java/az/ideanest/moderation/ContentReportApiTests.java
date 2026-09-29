@@ -85,8 +85,11 @@ class ContentReportApiTests extends AbstractIntegrationTest {
     // Fixtures
     // ------------------------------------------------------------------
 
-    /** A registered, signed-in account: its access token and its identifier. */
-    private record Account(String accessToken, UUID id) {
+    /**
+     * A registered, signed-in account: its access token, its identifier, and the public
+     * slug an account is reported by since #143.
+     */
+    private record Account(String accessToken, UUID id, String slug) {
     }
 
     private Account account(String prefix) {
@@ -149,7 +152,8 @@ class ContentReportApiTests extends AbstractIntegrationTest {
                         Instant.now())
                 .value();
 
-        MODERATOR = new Account(accessToken, id);
+        MODERATOR = new Account(
+                accessToken, id, users.findById(id).orElseThrow().getSlug());
         return MODERATOR;
     }
 
@@ -162,8 +166,8 @@ class ContentReportApiTests extends AbstractIntegrationTest {
                         jsonHeaders()),
                 new ParameterizedTypeReference<Map<String, Object>>() {});
 
-        UUID id = users.findByEmailAndDeletedAtIsNull(email).orElseThrow().getId();
-        return new Account((String) signedIn.getBody().get("accessToken"), id);
+        var user = users.findByEmailAndDeletedAtIsNull(email).orElseThrow();
+        return new Account((String) signedIn.getBody().get("accessToken"), user.getId(), user.getSlug());
     }
 
     private static HttpHeaders jsonHeaders() {
@@ -325,12 +329,43 @@ class ContentReportApiTests extends AbstractIntegrationTest {
         Account subject = account("subject");
 
         ResponseEntity<Map<String, Object>> response = post(
-                "/v1/users/" + subject.id() + "/report",
+                "/v1/users/" + subject.slug() + "/report",
                 reporter.accessToken(),
                 reportBody("OFFENSIVE", "Abusive messages."));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(metaOfTarget(response.getBody())).containsEntry("type", "USER");
+        // Addressed by slug, filed against the identifier: the queue names the
+        // account by what survives a change of slug (#143).
+        assertThat(metaOfTarget(response.getBody())).containsEntry("id", subject.id().toString());
+        assertThat(reportsOn(subject.id())).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("an account is addressed by its slug, not by its identifier")
+    void anAccountIsNotReportedByIdentifier() {
+        Account subject = account("subject");
+
+        ResponseEntity<Map<String, Object>> response =
+                post("/v1/users/" + subject.id() + "/report", account("reporter").accessToken(), reportBody("SPAM", null));
+
+        // #143 moved the route onto the slug the public profile carries. An
+        // identifier is not a slug, so it names nobody.
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).containsEntry("code", "REPORT_TARGET_NOT_FOUND");
+        assertThat(reportsOn(subject.id())).isZero();
+    }
+
+    @Test
+    @DisplayName("reporting an account requires an account")
+    void reportingAnAccountRequiresAnAccount() {
+        Account subject = account("subject");
+
+        ResponseEntity<Map<String, Object>> response =
+                post("/v1/users/" + subject.slug() + "/report", null, reportBody("SPAM", null));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(reportsOn(subject.id())).isZero();
     }
 
     @Test
@@ -368,10 +403,22 @@ class ContentReportApiTests extends AbstractIntegrationTest {
         UUID nothing = UUID.randomUUID();
 
         ResponseEntity<Map<String, Object>> response =
-                post("/v1/users/" + nothing + "/report", account("reporter").accessToken(), reportBody("SPAM", null));
+                post("/v1/projects/" + nothing + "/report", account("reporter").accessToken(), reportBody("SPAM", null));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(reportsOn(nothing)).isZero();
+    }
+
+    @Test
+    @DisplayName("a slug that names nobody cannot be reported")
+    void anInventedSlugCannotBeReported() {
+        ResponseEntity<Map<String, Object>> response = post(
+                "/v1/users/nobody-answers-to-this-" + SEQUENCE.incrementAndGet() + "/report",
+                account("reporter").accessToken(),
+                reportBody("SPAM", null));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).containsEntry("code", "REPORT_TARGET_NOT_FOUND");
     }
 
     @Test
@@ -380,7 +427,7 @@ class ContentReportApiTests extends AbstractIntegrationTest {
         Account reporter = account("reporter");
 
         ResponseEntity<Map<String, Object>> response =
-                post("/v1/users/" + reporter.id() + "/report", reporter.accessToken(), reportBody("SPAM", null));
+                post("/v1/users/" + reporter.slug() + "/report", reporter.accessToken(), reportBody("SPAM", null));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).containsEntry("code", "CANNOT_REPORT_SELF");
@@ -530,7 +577,7 @@ class ContentReportApiTests extends AbstractIntegrationTest {
         UUID campaign = liveCampaign(account("creator"));
         Account person = account("subject");
         post("/v1/projects/" + campaign + "/report", account("reporter").accessToken(), reportBody("FRAUD", null));
-        post("/v1/users/" + person.id() + "/report", account("reporter").accessToken(), reportBody("OFFENSIVE", null));
+        post("/v1/users/" + person.slug() + "/report", account("reporter").accessToken(), reportBody("OFFENSIVE", null));
 
         ResponseEntity<Map<String, Object>> profiles =
                 get("/v1/admin/moderation/reports?target=USER", moderator().accessToken());
@@ -563,7 +610,7 @@ class ContentReportApiTests extends AbstractIntegrationTest {
          * back.
          */
         post("/v1/projects/" + campaign + "/report", account("reporter").accessToken(), reportBody("FRAUD", null));
-        post("/v1/users/" + person.id() + "/report", account("reporter").accessToken(), reportBody("OFFENSIVE", null));
+        post("/v1/users/" + person.slug() + "/report", account("reporter").accessToken(), reportBody("OFFENSIVE", null));
         post("/v1/projects/" + campaign + "/report", account("reporter").accessToken(), reportBody("SPAM", null));
 
         ResponseEntity<Map<String, Object>> firstPage =
