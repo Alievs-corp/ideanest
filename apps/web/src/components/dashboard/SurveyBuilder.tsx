@@ -13,6 +13,7 @@ import {
   Textarea,
 } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
+import { listRewards } from '../../lib/projects/api';
 import {
   QUESTION_TYPES,
   createSurvey,
@@ -81,8 +82,16 @@ function messageFor(cause: unknown, copy: SurveyBuilderCopy): string {
 
 export interface SurveyBuilderProps {
   readonly projectId: string;
-  /** The campaign's reward tiers, for PM-02's condition. Empty is legitimate. */
-  readonly rewardTiers?: readonly { readonly id: string; readonly title: string }[];
+  /**
+   * Reads the campaign's reward tiers, for PM-02's condition — #135.
+   *
+   * <p>The builder reads them itself rather than taking them as a prop. The surveys route is a
+   * server component and anonymous by design, and the creator's own tier list is behind the
+   * bearer token this builder already holds for `listSurveys`. Reading it here also keeps the
+   * hidden and secret tiers, which the public rewards endpoint leaves out and which a creator
+   * may well want to survey.
+   */
+  readonly loadTiers?: (projectId: string, signal?: AbortSignal) => Promise<readonly RewardTier[]>;
   /** Injected by tests. Default to the real readers and writers. */
   readonly load?: typeof listSurveys;
   readonly create?: typeof createSurvey;
@@ -93,9 +102,15 @@ export interface SurveyBuilderProps {
   readonly copy: SurveyBuilderCopy;
 }
 
+/** What PM-02's selector needs of a tier. */
+export interface RewardTier {
+  readonly id: string;
+  readonly title: string;
+}
+
 export function SurveyBuilder({
   projectId,
-  rewardTiers = [],
+  loadTiers,
   load,
   create,
   update,
@@ -115,6 +130,24 @@ export function SurveyBuilder({
   const [message, setMessage] = useState('');
   const [questions, setQuestions] = useState<readonly SurveyQuestion[]>([emptyQuestion()]);
   const [confirmingSend, setConfirmingSend] = useState(false);
+  const [rewardTiers, setRewardTiers] = useState<readonly RewardTier[]>([]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    (loadTiers ?? listRewards)(projectId, controller.signal)
+      .then((tiers) => setRewardTiers(tiers.map(({ id, title }) => ({ id, title }))))
+      .catch(() => {
+        /*
+         * The condition is optional, so a tier list that did not load costs the selector and
+         * nothing else: every question asks everybody, which is what the builder did before
+         * #135. The surveys themselves report their own failure below.
+         */
+      });
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   useEffect(() => {
     const controller = new AbortController();
