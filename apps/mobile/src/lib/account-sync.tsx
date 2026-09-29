@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { isLocale } from '@ideanest/messages';
 import { ACCOUNT_KEYS, useMe } from './account';
 import { setLocale } from './locale';
+import { useSession } from './use-session';
 
 /**
  * Keeps the shell's picture of the account current — issue #150. Renders nothing.
@@ -19,7 +20,17 @@ import { setLocale } from './locale';
 export function AccountSync() {
   const queryClient = useQueryClient();
   const { data } = useMe();
+  const { signedIn } = useSession();
   const applied = useRef<string | null>(null);
+
+  // Whatever ends the session — sign-out, a revoked token, a 401 elsewhere — the next person
+  // to sign in must not see this account's name or badge from the cache.
+  useEffect(() => {
+    if (signedIn) return;
+    queryClient.removeQueries({ queryKey: ACCOUNT_KEYS.me });
+    queryClient.removeQueries({ queryKey: ACCOUNT_KEYS.unread });
+    applied.current = null;
+  }, [signedIn, queryClient]);
 
   useEffect(() => {
     if (data === null || data === undefined) {

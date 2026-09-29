@@ -65,7 +65,8 @@ export function useMe() {
     queryFn: ({ signal }) => fetchMe(signal),
     enabled: signedIn,
     staleTime: 60_000,
-    retry: 1,
+    // Backoff, so an outage that ends while the app is open is noticed without a foreground.
+    retry: 3,
   });
 }
 
