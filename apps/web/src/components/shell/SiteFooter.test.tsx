@@ -245,7 +245,7 @@ describe('the footer', () => {
   it('claims no year', async () => {
     await renderFooter();
 
-    expect(screen.getByText('© IdeaNest')).toBeInTheDocument();
+    expect(screen.getByText('© IdeyaNest')).toBeInTheDocument();
     expect(screen.queryByText(/©.*20\d\d/u)).toBeNull();
   });
 });

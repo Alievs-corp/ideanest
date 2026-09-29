@@ -9,7 +9,7 @@ import java.util.UUID;
  * A payment the backer makes on the provider's own page — IDN-EXT-01 (#38).
  *
  * <p>The charge-now model: the pledge is paid when it is confirmed, with the backer present,
- * and the card is entered on the provider's page and never in an IdeaNest form (§17.2's SAQ A).
+ * and the card is entered on the provider's page and never in an IdeyaNest form (§17.2's SAQ A).
  * #39 owns the caller.
  *
  * @param pledgeId the pledge being paid

@@ -156,7 +156,7 @@ function rootTitleTemplate(): string {
 describe('the title template', () => {
   const page = publicPageMetadata({
     title: 'Discover',
-    description: 'Browse and filter every campaign on IdeaNest.',
+    description: 'Browse and filter every campaign on IdeyaNest.',
     path: '/discover',
     locale: 'en',
     env,
@@ -172,7 +172,7 @@ describe('the title template', () => {
 
   it('does not put the site name in the page title itself, so it is never doubled', () => {
     expect(page.title).toBe('Discover');
-    // og:site_name already carries it, and "Discover · IdeaNest — IdeaNest" is
+    // og:site_name already carries it, and "Discover · IdeyaNest — IdeyaNest" is
     // what setting it twice looks like in a shared link.
     expect(page.openGraph?.title).toBe('Discover');
     expect(page.twitter?.title).toBe('Discover');
@@ -186,7 +186,7 @@ describe('the title template', () => {
 describe('publicPageMetadata', () => {
   const page = publicPageMetadata({
     title: 'Discover',
-    description: 'Browse and filter every campaign on IdeaNest.',
+    description: 'Browse and filter every campaign on IdeyaNest.',
     path: '/discover?utm_source=x',
     locale: 'en',
     env,
@@ -204,7 +204,7 @@ describe('publicPageMetadata', () => {
       locale: SITE_OG_LOCALE,
       url: 'https://ideanest.az/en/discover',
       title: 'Discover',
-      description: 'Browse and filter every campaign on IdeaNest.',
+      description: 'Browse and filter every campaign on IdeyaNest.',
     });
   });
 
@@ -212,7 +212,7 @@ describe('publicPageMetadata', () => {
     expect(page.twitter).toMatchObject({
       card: 'summary_large_image',
       title: 'Discover',
-      description: 'Browse and filter every campaign on IdeaNest.',
+      description: 'Browse and filter every campaign on IdeyaNest.',
     });
   });
 
@@ -302,25 +302,25 @@ describe('homePageMetadata', () => {
   const home = homePageMetadata(
     'az',
     {
-      title: 'IdeaNest — mükafat əsaslı kütləvi maliyyələşdirmə',
+      title: 'IdeyaNest — mükafat əsaslı kütləvi maliyyələşdirmə',
       description: 'Mükafat əsaslı kütləvi maliyyələşdirmə.',
     },
     env,
   );
 
   it('writes the title it is given, whole, without the template', () => {
-    expect(home.title).toEqual({ absolute: 'IdeaNest — mükafat əsaslı kütləvi maliyyələşdirmə' });
+    expect(home.title).toEqual({ absolute: 'IdeyaNest — mükafat əsaslı kütləvi maliyyələşdirmə' });
   });
 
   it('writes the same words into the search result and the social card', () => {
     expect(home.description).toBe('Mükafat əsaslı kütləvi maliyyələşdirmə.');
     expect(home.openGraph).toMatchObject({
-      title: 'IdeaNest — mükafat əsaslı kütləvi maliyyələşdirmə',
+      title: 'IdeyaNest — mükafat əsaslı kütləvi maliyyələşdirmə',
       description: 'Mükafat əsaslı kütləvi maliyyələşdirmə.',
       url: 'https://ideanest.az/az',
     });
     expect(home.twitter).toMatchObject({
-      title: 'IdeaNest — mükafat əsaslı kütləvi maliyyələşdirmə',
+      title: 'IdeyaNest — mükafat əsaslı kütləvi maliyyələşdirmə',
     });
   });
 

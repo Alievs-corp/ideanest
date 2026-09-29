@@ -162,7 +162,7 @@ class RetryScheduleTests {
         return new PaymentProperties(
                 null,
                 new PaymentProperties.Collection(
-                        "-", "-", 20, 100, 200, Duration.ofDays(7), delays, Duration.ofHours(1), "IdeaNest"),
+                        "-", "-", 20, 100, 200, Duration.ofDays(7), delays, Duration.ofHours(1), "IdeyaNest"),
                 null,
                 null,
                 null,

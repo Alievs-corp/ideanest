@@ -58,7 +58,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * <p>The half that is <strong>not</strong> ours is the provider's latency, its rate limit
  * and its retry semantics. #60 has not chosen one, and §9.3 records that the four
  * candidates differ enough that a number measured against a guess would be a
- * threshold-bearing artefact describing code that is not IdeaNest. So <strong>no
+ * threshold-bearing artefact describing code that is not IdeyaNest. So <strong>no
  * end-to-end throughput SLO is asserted here</strong>. What is asserted is the floor our
  * own path must clear for the provider's latency to be the only remaining variable, and
  * the measured rate is logged so a regression is visible as a number rather than as a

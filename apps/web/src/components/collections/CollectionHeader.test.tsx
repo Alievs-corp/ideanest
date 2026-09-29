@@ -108,7 +108,7 @@ describe('the editorial badge', () => {
   it('is stated in words when membership grants it', () => {
     render(<CollectionHeader locale="en" copy={COPY} collection={collection({ grantsBadge: true })} />);
 
-    expect(screen.getByText(/carry the IdeaNest editorial badge/u)).toBeInTheDocument();
+    expect(screen.getByText(/carry the IdeyaNest editorial badge/u)).toBeInTheDocument();
   });
 
   it('says nothing when it does not', () => {

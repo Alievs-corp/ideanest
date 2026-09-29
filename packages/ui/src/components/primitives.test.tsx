@@ -330,7 +330,7 @@ describe('TopBar', () => {
   it('puts navClassName on the pill, so a consumer can hide it where its links are not drawn', () => {
     const { container } = render(
       <TopBar
-        logo={<span>IdeaNest</span>}
+        logo={<span>IdeyaNest</span>}
         navClassName="hidden md:flex"
         nav={<a href="/discover">Discover</a>}
       />,
@@ -344,7 +344,7 @@ describe('TopBar', () => {
   });
 
   it('leaves the pill alone when the consumer says nothing', () => {
-    render(<TopBar logo={<span>IdeaNest</span>} nav={<a href="/discover">Discover</a>} />);
+    render(<TopBar logo={<span>IdeyaNest</span>} nav={<a href="/discover">Discover</a>} />);
 
     const pill = screen.getByRole('link', { name: 'Discover' }).parentElement as HTMLElement;
     expect(pill.className).not.toContain('hidden');
@@ -387,7 +387,7 @@ describe('TopBar', () => {
       return (
         <TopBar
           forceScrolled={scrolled}
-          logo={<span>IdeaNest</span>}
+          logo={<span>IdeyaNest</span>}
           nav={<a href="/discover">Discover</a>}
           actions={<button type="button">Sign in</button>}
         />

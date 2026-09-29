@@ -966,7 +966,7 @@ schedule's identifier is on both.
 **Tax.** §4.10 is #78 and is blocked on a legal answer, so nothing withholds any
 and the figure is zero on every campaign. A bare "− AZN 0.00" reads as "no tax
 is due on your earnings", which is not something this platform is in a position
-to say — so the row says that IdeaNest withholds none and that what is owed is
+to say — so the row says that IdeyaNest withholds none and that what is owed is
 between the creator and their tax authority.
 
 **`platform_fee` in the ledger.** It is zero for a different and worse reason:

@@ -300,7 +300,7 @@ ideanest:
         - PT72H
         - P5D
       unresolved-recheck: PT1H
-      statement-descriptor: IdeaNest
+      statement-descriptor: IdeyaNest
     circuit-breaker:
       # Two rather than five, so that a test can open the breaker with two failures
       # instead of five. The cooldown stays a minute: AdjustableClock is what moves

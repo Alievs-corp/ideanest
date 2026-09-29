@@ -11,7 +11,7 @@ import { withoutAbsent, type JsonLdNode } from './document';
  * the origin, which is what carries the language and the name a search engine
  * prints above a result. Collapsing them into one node is common and wrong: a
  * site name and a company name are not required to be the same string, and the
- * day IdeaNest's are not, one of the two claims would silently become false.
+ * day IdeyaNest's are not, one of the two claims would silently become false.
  *
  * <h2>Where this is mounted, and why it is not the root layout</h2>
  *
@@ -77,7 +77,7 @@ function localisedHomeUrl(locale: Locale, env: EnvSource): string {
 /**
  * THE IDENTIFIERS ARE NOT LOCALISED, AND THAT IS THE WHOLE POINT OF THEM.
  *
- * `@id` is a name for a thing, not an address to fetch. There is one IdeaNest and one website
+ * `@id` is a name for a thing, not an address to fetch. There is one IdeyaNest and one website
  * at this origin, described in four languages; giving each language its own `@id` would put
  * four `Organization` nodes into the crawl for one organisation — the exact duplication
  * `graphs.ts` moved these nodes off `/discover` to avoid. So the fragment hangs off the bare

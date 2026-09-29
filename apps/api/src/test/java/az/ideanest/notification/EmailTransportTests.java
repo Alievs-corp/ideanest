@@ -404,7 +404,7 @@ class EmailTransportTests extends AbstractIntegrationTest {
         digestJob.combineDue(Instant.now().truncatedTo(ChronoUnit.MICROS));
 
         MimeMessage received = MailServerStub.awaitOne();
-        assertThat(received.getSubject()).isEqualTo("Your IdeaNest summary");
+        assertThat(received.getSubject()).isEqualTo("Your IdeyaNest summary");
         assertThat(partsOf(received).get(0))
                 .as("one message, and both things in it")
                 .contains("There are 2")

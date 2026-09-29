@@ -1,4 +1,4 @@
-# IdeaNest — Platform Specification
+# IdeyaNest — Platform Specification
 
 **Reward-based crowdfunding. Web, mobile, and backend.**
 
@@ -2572,7 +2572,7 @@ HOLD → BLOCKED (fraud)
 > warned twice — when creating the campaign and before submitting it — and gives both at the
 > withdrawal screen. They are §9.5's payout destination (V72): visible to administrators,
 > never public. The business card is registered on Epoint's own page with `refund=1`, never
-> in an IdeaNest form (§9.2).
+> in an IdeyaNest form (§9.2).
 >
 > **At every withdrawal request, automatic ones included, every backer is notified**: "the
 > creator has requested a withdrawal; until DATE you may dispute your payment". An
@@ -3753,7 +3753,7 @@ collecting it.
 > a backer is `/reverse` — which has **no duplicate protection of its own**, so the platform
 > keeps its own (#40). A payout to a creator is `/refund-request` against a `card_id` — a
 > payout, despite the name — to a business card registered through `/card-registration` with
-> `refund=1`, entered on Epoint's page and never in an IdeaNest form (#38, #41). **Questions
+> `refund=1`, entered on Epoint's page and never in an IdeyaNest form (#38, #41). **Questions
 > for Epoint, owned by the product owner:** how long after a payment `/reverse` stays
 > available (believed to be about 120 days), and the limits on payouts to a card.
 >
@@ -3775,7 +3775,7 @@ collecting it.
 > (with §22.3's acknowledgement in its label when an agreement is published) and calls
 > `/payment` with the page's language and two return addresses, `/{locale}/pledges/{id}` with
 > `?payment=returned` or `?payment=failed`. The browser leaves for the provider's page; no card
-> is ever entered in IdeaNest. The rule — success at 80%, one extension — and "you are charged
+> is ever entered in IdeyaNest. The rule — success at 80%, one extension — and "you are charged
 > on the next page; an unfinished payment takes nothing" are printed above the control, with no
 > motion. The pledge page the provider returns to decides what to say from the pledge's state,
 > not from the word in the address: `COLLECTED` is paid; a `DRAFT` after a successful return is
@@ -6978,7 +6978,7 @@ what both gates read as "nothing is required" rather than as a refusal.
 return `published`, `unpublished` (404 only) or `unavailable` (any other status, a timeout,
 a network failure, a body that does not narrow). The document and archive routes and the
 index render `FailureState` for `unavailable`; during the 2026-09-28 outage they had told
-readers IdeaNest had no terms of use. The checkout's backer-agreement read has the same three
+readers IdeyaNest had no terms of use. The checkout's backer-agreement read has the same three
 answers, and an unavailable one renders the failure state in place of the checkout, because
 a pledge confirmed without the §22.3 statement is one the service refuses once an agreement
 is in force. An unavailable answer is not held for the documents' hour: Next's data cache

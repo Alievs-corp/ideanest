@@ -12,15 +12,15 @@ import { SCHEMA_CONTEXT, serialiseStructuredData, withoutAbsent } from './docume
 describe('serialiseStructuredData', () => {
   it('puts every node in one graph under one context', () => {
     const json = serialiseStructuredData([
-      { '@type': 'Organization', name: 'IdeaNest' },
-      { '@type': 'WebSite', name: 'IdeaNest' },
+      { '@type': 'Organization', name: 'IdeyaNest' },
+      { '@type': 'WebSite', name: 'IdeyaNest' },
     ]);
 
     expect(JSON.parse(json ?? '')).toEqual({
       '@context': SCHEMA_CONTEXT,
       '@graph': [
-        { '@type': 'Organization', name: 'IdeaNest' },
-        { '@type': 'WebSite', name: 'IdeaNest' },
+        { '@type': 'Organization', name: 'IdeyaNest' },
+        { '@type': 'WebSite', name: 'IdeyaNest' },
       ],
     });
   });
@@ -49,8 +49,8 @@ describe('serialiseStructuredData', () => {
 
 describe('withoutAbsent', () => {
   it('drops the properties that have no value', () => {
-    expect(withoutAbsent({ name: 'IdeaNest', description: undefined })).toEqual({
-      name: 'IdeaNest',
+    expect(withoutAbsent({ name: 'IdeyaNest', description: undefined })).toEqual({
+      name: 'IdeyaNest',
     });
   });
 

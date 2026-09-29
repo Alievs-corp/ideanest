@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
- * Entry point for the IdeaNest API.
+ * Entry point for the IdeyaNest API.
  *
  * <p>The service is a modular monolith. Every module lives in its own package
  * under {@code az.ideanest} and is described in that package's

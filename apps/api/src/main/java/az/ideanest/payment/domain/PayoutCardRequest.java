@@ -7,7 +7,7 @@ import java.util.UUID;
 /**
  * A creator registering the business card a payout goes to — IDN-EXT-01 (#38, #41).
  *
- * <p>Entered on the provider's page and never in an IdeaNest form. #41 owns the caller, and stores
+ * <p>Entered on the provider's page and never in an IdeyaNest form. #41 owns the caller, and stores
  * the card identifier this returns as the payout destination.
  */
 public record PayoutCardRequest(UUID creatorId, String description, String language, URI successUrl, URI errorUrl) {

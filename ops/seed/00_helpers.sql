@@ -1,4 +1,4 @@
--- IdeaNest local demo seed. Development only.
+-- IdeyaNest local demo seed. Development only.
 --
 -- Nothing here is production data and none of it should ever run against a
 -- deployed database: the accounts share one password, the payment records

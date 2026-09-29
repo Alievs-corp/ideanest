@@ -9,6 +9,7 @@ import { useSession } from '../session/SessionProvider';
 import { SearchField } from '../search/SearchField';
 import { isCurrent } from './navigation';
 import type { ShellCopy } from '../../lib/i18n/shell-copy';
+import { BrandMark } from '../brand/BrandMark';
 
 /**
  * Off-canvas navigation and search below the layout's breakpoint — §4.13 WS-03.
@@ -116,7 +117,10 @@ export function MobileNavDrawer({ copy }: MobileNavDrawerProps) {
             )}
           >
             <div className="flex items-center justify-between px-5 py-5">
-              <span className="text-lg font-semibold tracking-[-0.03em] text-white">IdeaNest</span>
+              <span className="inline-flex items-center gap-2 text-lg font-semibold tracking-[-0.03em] text-white">
+                <BrandMark />
+                IdeyaNest
+              </span>
               <button
                 type="button"
                 aria-label={copy.drawer.close}

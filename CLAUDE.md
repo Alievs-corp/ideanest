@@ -1,4 +1,4 @@
-# Contributing to IdeaNest
+# Contributing to IdeyaNest
 
 Rules for anyone — human or agent — working in this repository. They are not
 suggestions. A change that violates them should be rejected in review even if

@@ -35,19 +35,19 @@ import type { FailureCopy } from './shell-copy';
  */
 const FAILURE_COPY: Record<Locale, FailureCopy> = {
   az: {
-    elsewhere: 'IdeaNest-in digər səhifələri',
+    elsewhere: 'IdeyaNest-in digər səhifələri',
     links: { browse: 'Kampaniyalara baxın', categories: 'Kateqoriyalar', search: 'Axtarış' },
   },
   en: {
-    elsewhere: 'Elsewhere on IdeaNest',
+    elsewhere: 'Elsewhere on IdeyaNest',
     links: { browse: 'Browse campaigns', categories: 'Categories', search: 'Search' },
   },
   ru: {
-    elsewhere: 'Другие разделы IdeaNest',
+    elsewhere: 'Другие разделы IdeyaNest',
     links: { browse: 'Смотреть кампании', categories: 'Категории', search: 'Поиск' },
   },
   tr: {
-    elsewhere: "IdeaNest'teki diğer sayfalar",
+    elsewhere: "IdeyaNest'teki diğer sayfalar",
     links: { browse: 'Kampanyalara göz atın', categories: 'Kategoriler', search: 'Arama' },
   },
 };

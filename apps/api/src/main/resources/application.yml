@@ -755,7 +755,7 @@ ideanest:
       # What a backer sees on their statement. A charge thirty to sixty days after
       # a pledge is exactly the charge somebody disputes because they did not
       # recognise it.
-      statement-descriptor: ${STATEMENT_DESCRIPTOR:IdeaNest}
+      statement-descriptor: ${STATEMENT_DESCRIPTOR:IdeyaNest}
     circuit-breaker:
       # §9.3: "if the primary is unavailable on the day a large campaign closes, the
       # entire business stops." The breaker is not the answer to that -- only a
@@ -1060,7 +1060,7 @@ ideanest:
     # button at an address nobody reads is worse than offering none.
     email:
       from: ${MAIL_FROM:no-reply@ideanest.az}
-      from-name: ${MAIL_FROM_NAME:IdeaNest}
+      from-name: ${MAIL_FROM_NAME:IdeyaNest}
       # Every link in every template is built from this. A preview environment
       # that left it at the default would send its readers to production.
       base-url: ${WEB_BASE_URL:http://localhost:3000}
@@ -1194,7 +1194,7 @@ ideanest:
 
     two-factor:
       # What the authenticator app shows above the six digits.
-      issuer: IdeaNest
+      issuer: IdeyaNest
       # The proof of a correct password, waiting for a code. Long enough to find
       # the phone, short enough that one captured from a log is dead by the time
       # anybody reads it.

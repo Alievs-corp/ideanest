@@ -225,7 +225,7 @@ export default function SignInScreen() {
  */
 function readable(cause: unknown, step: Step): string {
   if (!(cause instanceof ApiError)) {
-    return 'Could not reach IdeaNest. Check your connection and try again.';
+    return 'Could not reach IdeyaNest. Check your connection and try again.';
   }
   if (cause.status === 429) {
     const seconds = cause.problem?.retryAfterSeconds;

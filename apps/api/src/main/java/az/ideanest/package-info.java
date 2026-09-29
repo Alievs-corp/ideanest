@@ -1,5 +1,5 @@
 /**
- * IdeaNest API — a modular monolith.
+ * IdeyaNest API — a modular monolith.
  *
  * <p>Packages are organised <strong>by feature, not by layer</strong>. Everything
  * about pledging lives under {@code pledge}; there is no repository package

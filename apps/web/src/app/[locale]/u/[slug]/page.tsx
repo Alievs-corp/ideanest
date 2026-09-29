@@ -77,7 +77,7 @@ function pathOf(slug: string): string {
  * A profile that cannot be read gets `privatePageMetadata`: `noindex`, `nofollow`, no
  * canonical and **no Open Graph block at all**. That last part is the point rather than
  * tidiness — without it, a link to a hidden profile pasted into a chat would unfurl as an
- * IdeaNest card and imply there is somebody behind it, which is the leak the 404 exists to
+ * IdeyaNest card and imply there is somebody behind it, which is the leak the 404 exists to
  * prevent, restated in a preview image.
  *
  * The description is the biography when there is one and a plain sentence when there is not.

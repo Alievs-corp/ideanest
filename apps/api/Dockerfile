@@ -1,4 +1,4 @@
-# The IdeaNest API, as an image — docs/architecture.md §19, issue #139.
+# The IdeyaNest API, as an image — docs/architecture.md §19, issue #139.
 #
 # Two stages. The build stage carries a JDK, Gradle's caches and the whole source
 # tree; the runtime stage carries a JRE and one jar. Shipping the build stage

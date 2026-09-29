@@ -1,7 +1,7 @@
 # UI Kit — Dark Surface, Lime Accent
 
 **Status:** authoritative. This document defines colour, surface, form, and
-component behaviour for every IdeaNest surface.
+component behaviour for every IdeyaNest surface.
 
 Motion is specified separately in [`motion-system.md`](./motion-system.md).
 The two are designed to be read together: this one answers *how it looks*, the
@@ -48,7 +48,7 @@ A dense dashboard should read as chaos. It does not, for three reasons:
 
 ### 1.3 What this means for a funding platform
 
-The visual language originates in a dense operational dashboard. IdeaNest has
+The visual language originates in a dense operational dashboard. IdeyaNest has
 two faces, and they suit it differently:
 
 | Surface | Character | Fit |
@@ -1125,7 +1125,7 @@ exist — twenty routes shipped with no shared header and no footer.
 ├─────────────────────────────────────────────────┤
 │  Explore     Creators     Company     Legal     │  ← footer, --surface-1
 │  ───────────────────────────────────  --divider │
-│  © IdeaNest        Language ▾   Currency ▾      │
+│  © IdeyaNest        Language ▾   Currency ▾      │
 └─────────────────────────────────────────────────┘
 ```
 

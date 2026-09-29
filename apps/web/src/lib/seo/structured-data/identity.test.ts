@@ -45,7 +45,7 @@ describe('siteIdentityNodes', () => {
   });
 
   /**
-   * The identifier is a name for a thing rather than an address, and there is one IdeaNest.
+   * The identifier is a name for a thing rather than an address, and there is one IdeyaNest.
    * Four `@id`s would be four organisations across a crawl of four languages.
    */
   it('keeps one identifier for the organisation across every language', () => {

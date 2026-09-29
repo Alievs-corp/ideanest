@@ -24,7 +24,7 @@ import { privatePageMetadata } from '../../../../lib/seo/metadata';
  */
 export const metadata: Metadata = privatePageMetadata({
   title: 'Language and currency',
-  description: 'Choose the language IdeaNest writes to you in, and the currency it shows amounts in.',
+  description: 'Choose the language IdeyaNest writes to you in, and the currency it shows amounts in.',
 });
 
 /**

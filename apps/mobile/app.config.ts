@@ -50,7 +50,7 @@ const siteUrl = origin(SITE_URL_VARIABLE, DEFAULT_SITE_URL);
 const siteHost = new URL(siteUrl).host;
 
 const config: ExpoConfig = {
-  name: 'IdeaNest',
+  name: 'IdeyaNest',
   slug: 'ideanest',
   version: '0.1.0',
   orientation: 'portrait',
@@ -116,7 +116,7 @@ const config: ExpoConfig = {
          * biometric data, it asks the operating system whether the device owner
          * is present. This says what actually happens and why.
          */
-        faceIDPermission: 'IdeaNest uses Face ID to unlock the session kept on this device.',
+        faceIDPermission: 'IdeyaNest uses Face ID to unlock the session kept on this device.',
       },
     ],
     [
@@ -133,7 +133,7 @@ const config: ExpoConfig = {
          * every time — so it is stated identically rather than left to that
          * ordering.
          */
-        faceIDPermission: 'IdeaNest uses Face ID to unlock the session kept on this device.',
+        faceIDPermission: 'IdeyaNest uses Face ID to unlock the session kept on this device.',
       },
     ],
     [

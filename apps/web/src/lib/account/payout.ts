@@ -8,7 +8,7 @@ import { localeOrDefault, type Locale } from '../i18n/locale';
  * Three existing endpoints and one new one. `/v1/me/legal-subject` holds the legal name and the
  * VÖEN (#430); `/v1/me/payout-destination` reads the card on file and its verification standing
  * (#432); `/v1/me/payout-destination/card-registration` opens the payment provider's page where the
- * business card is entered. A card is never typed into IdeaNest.
+ * business card is entered. A card is never typed into IdeyaNest.
  *
  * Null fields may be absent rather than null — the service serialises `non_null` — so every optional
  * field is `?: T | null`, the convention `lib/pledges/api.ts` states.

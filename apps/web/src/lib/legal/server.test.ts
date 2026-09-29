@@ -6,7 +6,7 @@ import { fetchArchivedLegalDocument, fetchLegalCatalogue, fetchLegalDocument } f
  *
  * <p>The defect: every non-OK status and every thrown error came back as `null`, and the pages
  * draw `null` as "this document has not been published yet". A 503, a timeout or a DNS failure
- * therefore told a reader that IdeaNest had no terms of use. Only the service's 404 means that,
+ * therefore told a reader that IdeyaNest had no terms of use. Only the service's 404 means that,
  * and these tests pin the line between the two where it is drawn.
  */
 

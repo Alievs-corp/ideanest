@@ -1,4 +1,4 @@
-# The IdeaNest web application, as an image — docs/architecture.md §19, issue #139.
+# The IdeyaNest web application, as an image — docs/architecture.md §19, issue #139.
 #
 # Built from the repository root, not from this directory: `@ideanest/web` depends
 # on three workspace packages that are source-only, so a build context scoped to

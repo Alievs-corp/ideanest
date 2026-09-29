@@ -102,7 +102,7 @@ class RedactionTests {
         assertThat(redact(MARKER + " twoFactorSecret=JBSWY3DPEHPK3PXP")).doesNotContain("JBSWY3DPEHPK3PXP");
         assertThat(redact(MARKER + " code=418025")).doesNotContain("418025");
         assertThat(redact(MARKER + " recoveryCodes=[abcd-efgh, ijkl-mnop]")).doesNotContain("abcd-efgh");
-        assertThat(redact(MARKER + " otpauth://totp/IdeaNest:a@b.example?secret=JBSWY3DPEHPK3PXP"))
+        assertThat(redact(MARKER + " otpauth://totp/IdeyaNest:a@b.example?secret=JBSWY3DPEHPK3PXP"))
                 .doesNotContain("JBSWY3DPEHPK3PXP");
     }
 

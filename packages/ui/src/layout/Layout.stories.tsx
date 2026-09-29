@@ -50,7 +50,7 @@ export const CollapsingTopBar: Story = {
     <div className="min-h-[520px] bg-surface-1">
       <TopBar
         forceScrolled={false}
-        logo={<span className="font-display text-lg font-semibold">IdeaNest</span>}
+        logo={<span className="font-display text-lg font-semibold">IdeyaNest</span>}
         nav={
           <>
             <TopBarLink href="#">Discover</TopBarLink>
@@ -72,7 +72,7 @@ export const CollapsedTopBar: Story = {
     <div className="min-h-[520px] bg-surface-1">
       <TopBar
         forceScrolled
-        logo={<span className="font-display text-lg font-semibold">IdeaNest</span>}
+        logo={<span className="font-display text-lg font-semibold">IdeyaNest</span>}
         nav={
           <>
             <TopBarLink href="#">Discover</TopBarLink>

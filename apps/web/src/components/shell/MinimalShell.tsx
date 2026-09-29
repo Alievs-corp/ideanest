@@ -1,6 +1,7 @@
 import { Link } from '../../i18n/navigation';
 import type { ReactNode } from 'react';
 import { MAIN_CONTENT_ID, SkipLink } from './SkipLink';
+import { BrandMark } from '../brand/BrandMark';
 
 /**
  * A wordmark, a `<main>`, and one line at the bottom — the frame for the screens that must not
@@ -72,9 +73,10 @@ export function MinimalShell({
       <header className="px-5 pt-7 sm:px-7">
         <Link
           href="/"
-          className="inline-block rounded-sm text-lg font-semibold tracking-[-0.03em] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          className="inline-flex items-center gap-2 rounded-sm text-lg font-semibold tracking-[-0.03em] text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
         >
-          IdeaNest
+          <BrandMark />
+          IdeyaNest
         </Link>
       </header>
 

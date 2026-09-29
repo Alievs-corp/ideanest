@@ -7,7 +7,7 @@ import type { JsonLdNode } from './document';
  *
  * `FAQPage` used to produce a rich result — the expandable questions under a
  * search listing. In August 2023 Google restricted it to well-known
- * authoritative government and health sites, which IdeaNest is not. The
+ * authoritative government and health sites, which IdeyaNest is not. The
  * remaining eligibility was then withdrawn entirely: the feature stopped
  * appearing in Search on 7 May 2026 and the documentation for it has been
  * removed. **There is no rich result to earn here and this markup is not

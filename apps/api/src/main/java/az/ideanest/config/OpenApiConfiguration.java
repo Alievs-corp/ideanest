@@ -66,11 +66,11 @@ public class OpenApiConfiguration {
     public OpenAPI ideaNestApi() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("IdeaNest API")
+                        .title("IdeyaNest API")
                         .version(API_VERSION)
                         .description(
                                 """
-                                The public API of the IdeaNest crowdfunding platform, as \
+                                The public API of the IdeyaNest crowdfunding platform, as \
                                 specified in docs/architecture.md §10.
 
                                 Two conventions are worth reading before generating a client \

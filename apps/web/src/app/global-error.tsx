@@ -58,7 +58,7 @@ export default function GlobalError({
       >
         <main>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 600, letterSpacing: '-0.03em', margin: 0 }}>
-            IdeaNest could not load
+            IdeyaNest could not load
           </h1>
           <p style={{ margin: '1rem auto 0', maxWidth: '46ch', lineHeight: 1.6, opacity: 0.64 }}>
             Something failed before the page could be built. Reloading is worth one attempt; if

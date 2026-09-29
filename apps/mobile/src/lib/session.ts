@@ -76,7 +76,7 @@ const PRESENT_KEY = 'session.present';
 const LOCKED_KEY = 'session.locked';
 
 /** What the system prompt says when a request needs the token and the lock is on. */
-const UNLOCK_PROMPT = 'Unlock IdeaNest';
+const UNLOCK_PROMPT = 'Unlock IdeyaNest';
 
 let accessToken: string | null = null;
 

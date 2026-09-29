@@ -91,7 +91,7 @@ class TwoFactorApiTests extends AbstractIntegrationTest {
 
         assertThat(enrolment.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat((String) enrolment.getBody().get("secret")).isNotBlank();
-        assertThat((String) enrolment.getBody().get("otpauthUri")).startsWith("otpauth://totp/IdeaNest:");
+        assertThat((String) enrolment.getBody().get("otpauthUri")).startsWith("otpauth://totp/IdeyaNest:");
 
         // The failure this prevents is a lockout: a phone that dies between
         // scanning the picture and typing a code would otherwise leave the user

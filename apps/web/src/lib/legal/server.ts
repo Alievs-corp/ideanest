@@ -52,7 +52,7 @@ import {
  *
  * This module used to return `null` for every non-OK status and every thrown error, so a 503,
  * a timeout or a DNS failure was drawn as "this document has not been published yet". On
- * 2026-09-28, during the DNS move, `/legal/terms-of-use` told readers IdeaNest had no terms.
+ * 2026-09-28, during the DNS move, `/legal/terms-of-use` told readers IdeyaNest had no terms.
  * {@link LegalRead} now keeps the two apart: 404 alone is `unpublished`, and everything that is
  * not a document — any other status, a rejected `fetch`, a body that does not narrow — is
  * `unavailable`, which the pages draw with `FailureState`.

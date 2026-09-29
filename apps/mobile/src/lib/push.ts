@@ -94,7 +94,7 @@ export async function registerForPush(): Promise<PushRegistration> {
    */
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: 'IdeaNest',
+      name: 'IdeyaNest',
       importance: Notifications.AndroidImportance.DEFAULT,
     });
   }

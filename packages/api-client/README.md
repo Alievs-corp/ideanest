@@ -1,6 +1,6 @@
 # `@ideanest/api-client`
 
-The typed surface of the IdeaNest API, generated from the service's own OpenAPI 3.1
+The typed surface of the IdeyaNest API, generated from the service's own OpenAPI 3.1
 document. Issue #136.
 
 ```ts

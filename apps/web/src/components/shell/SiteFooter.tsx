@@ -1,6 +1,7 @@
 import { Link } from '../../i18n/navigation';
 import { footerCopy } from '../../lib/i18n/shell-copy.server';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { BrandMark } from '../brand/BrandMark';
 
 /**
  * The global footer — §4.13 WS-02, docs/ui-kit.md §8.6.
@@ -91,7 +92,10 @@ export async function SiteFooter() {
             most often assumes wrongly — §5.1 is the rule it describes.
           */}
           <div className="max-w-[38ch]">
-            <p className="text-lg font-medium tracking-[-0.02em] text-white">IdeaNest</p>
+            <p className="inline-flex items-center gap-2 text-lg font-medium tracking-[-0.02em] text-white">
+              <BrandMark />
+              IdeyaNest
+            </p>
             <p className="mt-3 text-[15px] leading-relaxed text-white/64">{copy.tagline}</p>
           </div>
 
@@ -125,7 +129,7 @@ export async function SiteFooter() {
             and it is also the kind of date that quietly goes stale on a statically rendered
             page. The claim is true without one.
           */}
-          <p>© IdeaNest</p>
+          <p>© IdeyaNest</p>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             {/*

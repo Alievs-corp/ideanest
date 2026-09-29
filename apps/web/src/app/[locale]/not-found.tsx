@@ -26,7 +26,7 @@ import { getTranslations } from 'next-intl/server';
  * Next serves this file with a 404 on its own; nothing here sets one, and nothing here prints
  * one either — a status code shown on a page is what makes a crawler index an error. The
  * private metadata shape is belt and braces, and it also strips the inherited Open Graph
- * block, so a dead link pasted into a chat does not unfurl as a tidy IdeaNest card implying
+ * block, so a dead link pasted into a chat does not unfurl as a tidy IdeyaNest card implying
  * there is a page behind it.
  *
  * <h2>It cannot say what was being looked for</h2>

@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * Every field on this screen is somebody's own money, read with a bearer token only the browser
  * holds. There is nothing for a crawler and nothing to put in the initial HTML — which is also
  * why the metadata is `privatePageMetadata`: `noindex`, `nofollow`, and **no Open Graph block
- * at all**, so a pledge link pasted into a chat does not unfurl as a tidy IdeaNest card
+ * at all**, so a pledge link pasted into a chat does not unfurl as a tidy IdeyaNest card
  * implying the recipient could open it.
  *
  * <h2>It sits inside the account frame, like its sibling</h2>
