@@ -131,7 +131,12 @@ public class PayoutService {
      * violation into a sentence. Two payouts in flight for one campaign is how a creator
      * gets paid twice for the same collections.
      *
+     * <p><strong>And if one was already paid (#182).</strong> The figures below are the campaign's
+     * whole collections, and nothing subtracts what an earlier payout sent: a second one would pay the
+     * same money again. {@link CampaignAlreadyPaidOutException} has the argument; V86 is its index.
+     *
      * @throws PayoutAlreadyInFlightException when the campaign has one
+     * @throws CampaignAlreadyPaidOutException when the campaign has already been paid out
      * @throws NothingToPayException when the campaign has collected nothing, or has
      *     refunded everything it collected
      */
@@ -142,6 +147,13 @@ public class PayoutService {
         payouts.inFlightFor(projectId).ifPresent(existing -> {
             throw new PayoutAlreadyInFlightException(projectId, existing.id());
         });
+        payouts.paidFor(projectId).ifPresent(paid -> {
+            throw new CampaignAlreadyPaidOutException(projectId, paid.id());
+        });
+        if (payouts.hasUnreachableFailure(projectId)) {
+            // A previous release's unanswered send: its money may have moved. V86's header has the fix.
+            throw PayoutSendUnconfirmedException.forCampaign(projectId);
+        }
 
         ProjectSummary campaign = projects
                 .summaryOf(projectId)
@@ -524,8 +536,13 @@ public class PayoutService {
      * details neither of them had seen, because there were none to see. The parameter is gone
      * and cannot come back: there is no argument on this method that decides where money goes.
      *
+     * <p><strong>A send the provider never answered is not a failure (#184's review).</strong> It
+     * may have been carried out, so the payout stays {@code APPROVED}, is sent again only under its own
+     * key and at its own figure, and cannot be cancelled.
+     *
      * @throws PayoutNotSendableException when it has not been approved, or the figures have
      *     moved underneath it
+     * @throws CampaignAlreadyPaidOutException when another payout already paid the campaign
      * @throws PayoutSignaturesShortException when the row says approved and the signatures
      *     on file do not reach {@code approvalsRequired}
      * @throws PayoutDestinationNotVerifiedException when the creator's destination stopped
@@ -566,8 +583,30 @@ public class PayoutService {
             throw new PayoutSignaturesShortException(payoutId, signatures, payout.approvalsRequired());
         }
 
+        // #184's review: before the provider, not after. A payout left in flight for a campaign that was
+        // already paid (priced before #182, or by a previous-release node during the deploy) would be
+        // sent, and V86 would then refuse the PAID row at commit -- rolling back the record of money the
+        // provider had already moved, and leaving the payout APPROVED to be sent again.
+        Optional<Payout> alreadyPaid = payouts.paidFor(payout.projectId());
+        if (alreadyPaid.isPresent()) {
+            audit.recordIndependently(
+                    AuditAction.PAYOUT_SENT,
+                    payoutId,
+                    AuditActor.moderator(staffId),
+                    AuditOutcome.REFUSED,
+                    "alreadyPaidOut; paidBy=%s".formatted(alreadyPaid.get().id()));
+            throw new CampaignAlreadyPaidOutException(payout.projectId(), alreadyPaid.get().id());
+        }
+
         CampaignFunds funds = gateway.fundsOf(payout.projectId(), payout.currency());
-        if (!funds.collected().equals(payout.gross()) || !funds.refunded().equals(payout.refunded())) {
+        boolean figuresMoved =
+                !funds.collected().equals(payout.gross()) || !funds.refunded().equals(payout.refunded());
+        if (figuresMoved && payout.sendUnconfirmed()) {
+            // #184's review: an earlier send of this payout may have been carried out. Refusing it now would
+            // cancel it, and the next calculation would send a new figure under a new key beside the one
+            // that may already have moved. It goes again under its own key at its own figure.
+            log.warn("Payout {}'s figures moved after a send that may have happened; it is retried as priced.", payoutId);
+        } else if (figuresMoved) {
             payout.cancelled();
             audit.record(
                     AuditAction.PAYOUT_SENT,
@@ -597,6 +636,14 @@ public class PayoutService {
             if (payout.debtWithheld().isPositive()) {
                 debts.recover(payout.creatorId(), payout.debtWithheld(), now);
             }
+        } else if (sent.transactionId() == null || payout.sendUnconfirmed()) {
+            // #184's review: the provider could not be reached, so nothing it said was recorded and the
+            // instruction may have been carried out. Failed, it would be followed by a fresh calculation
+            // under a new key; so it stays APPROVED and is sent again under this one (PayoutGateway#send).
+            // A refusal of such a retry proves nothing either -- Epoint refuses an order_id it has already
+            // carried out -- so only `resolveUnconfirmed`, from the provider's statement, ends it.
+            payout.sendUnconfirmedAt(now);
+            log.error("Payout {}'s send is unconfirmed ({}); settle it from the provider's statement.", payoutId, sent.failureCode());
         } else {
             payout.failed(sent.failureCode(), sent.failureMessage(), now);
         }
@@ -613,6 +660,77 @@ public class PayoutService {
         return payout;
     }
 
+    /**
+     * Settles a payout whose send was never confirmed, from the provider's statement — #184's review.
+     *
+     * <p>The only way out of an unconfirmed send. Sent, the payout is {@code PAID} against a transaction
+     * carrying the provider's reference, with the posting a sent payout gets and its withheld debt
+     * recovered. Not sent, it is {@code FAILED} ({@code confirmed_not_sent}) and the campaign may be
+     * priced again. Either way it is a person's reading of the statement, so the note is required and
+     * audited.
+     *
+     * @throws PayoutNotSendableException when the payout is neither an approved one with an unconfirmed
+     *     send nor one a previous release recorded failed as unreachable
+     * @throws CampaignAlreadyPaidOutException when settling it as sent and another payout already paid
+     */
+    @Transactional
+    public Payout resolveUnconfirmed(UUID staffId, UUID payoutId, boolean sent, String providerTransactionId, String note) {
+        staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
+
+        Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
+        // Or one a previous release recorded FAILED as unreachable, which V86 could not reopen.
+        boolean unconfirmed = (payout.state() == PayoutState.APPROVED && payout.sendUnconfirmed())
+                || (payout.state() == PayoutState.FAILED && "provider_unreachable".equals(payout.failureCode()));
+        if (!unconfirmed) {
+            throw new PayoutNotSendableException(payoutId, payout.state());
+        }
+        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+
+        if (!sent) {
+            payout.failed("confirmed_not_sent", note, now);
+            audit.record(
+                    AuditAction.PAYOUT_SENT,
+                    payoutId,
+                    AuditActor.moderator(staffId),
+                    AuditOutcome.REFUSED,
+                    "unconfirmedResolved=notSent; note=%s".formatted(note));
+            return payout;
+        }
+
+        Optional<Payout> alreadyPaid = payouts.paidFor(payout.projectId());
+        if (alreadyPaid.isPresent()) {
+            throw new CampaignAlreadyPaidOutException(payout.projectId(), alreadyPaid.get().id());
+        }
+        PayoutGateway.Sent recorded = gateway.recordFromStatement(
+                payoutId,
+                payout.projectId(),
+                payout.creatorId(),
+                payout.net(),
+                providerTransactionId,
+                payout.idempotencyKey());
+        payout.paid(recorded.transactionId(), now);
+        if (payout.debtWithheld().isPositive()) {
+            debts.recover(payout.creatorId(), payout.debtWithheld(), now);
+        }
+        // What went back after it was priced -- a chargeback lost while the send was unconfirmed -- was paid
+        // to the creator as well. Not a creator debt automatically (a debt is keyed on its dispute), so it is
+        // put in front of the person settling it.
+        CampaignFunds funds = gateway.fundsOf(payout.projectId(), payout.currency());
+        Money movedSince = funds.refunded().minus(payout.refunded());
+        if (movedSince.isPositive()) {
+            log.error("Payout {} was sent at its priced figure, and {} went back since: recover it from the creator.",
+                    payoutId, movedSince);
+        }
+        audit.record(
+                AuditAction.PAYOUT_SENT,
+                payoutId,
+                AuditActor.moderator(staffId),
+                AuditOutcome.SUCCEEDED,
+                "unconfirmedResolved=sent; amount=%s; providerTransaction=%s; refundedSincePriced=%s; note=%s"
+                        .formatted(payout.net(), providerTransactionId, movedSince, note));
+        return payout;
+    }
+
     /** Withdraws a payout before it is sent. */
     @Transactional
     public Payout cancel(UUID staffId, UUID payoutId) {
@@ -621,6 +739,9 @@ public class PayoutService {
         Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
         if (!payout.state().isInFlight()) {
             throw new PayoutNotSendableException(payoutId, payout.state());
+        }
+        if (payout.sendUnconfirmed()) {
+            throw new PayoutSendUnconfirmedException(payoutId);
         }
 
         payout.cancelled();

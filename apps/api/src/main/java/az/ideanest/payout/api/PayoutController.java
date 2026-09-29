@@ -30,7 +30,8 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>Reading needs {@code VIEW_FINANCE}. Calculating needs it too — it moves no money, and
  * a finance member of staff has to be able to answer a creator asking what they will be
- * paid. <strong>Approving, sending and cancelling need {@code APPROVE_PAYOUT}</strong>,
+ * paid. <strong>Approving, sending, cancelling and settling an unconfirmed send need
+ * {@code APPROVE_PAYOUT}</strong>,
  * which {@code FINANCE} deliberately does not confer: §4.11 requires dual approval above a
  * threshold, and a role granting both issuing and approving would make the second
  * signature a formality whenever the finance team is one person.
@@ -168,6 +169,37 @@ public class PayoutController {
                 .body(summaryOf(payouts.send(callerOf(accessToken), payoutId)));
     }
 
+    /**
+     * Settles a send the provider never answered as carried out, from its statement — #184's review.
+     *
+     * <p>One of the two ways out of {@code PAYOUT_SEND_UNCONFIRMED}. A person read the statement, so
+     * the note says what they read, and the provider's reference ties the record to the money.
+     */
+    @PostMapping("/{payoutId}/unconfirmed-send/sent")
+    public ResponseEntity<PayoutResponses.PayoutSummary> unconfirmedSent(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable UUID payoutId,
+            @Valid @RequestBody UnconfirmedSentRequest request) {
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(summaryOf(payouts.resolveUnconfirmed(
+                        callerOf(accessToken), payoutId, true, request.providerTransactionId().trim(), request.note().trim())));
+    }
+
+    /** The other way out: the statement shows it was not carried out, so the campaign may be priced again. */
+    @PostMapping("/{payoutId}/unconfirmed-send/not-sent")
+    public ResponseEntity<PayoutResponses.PayoutSummary> unconfirmedNotSent(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable UUID payoutId,
+            @Valid @RequestBody UnconfirmedNotSentRequest request) {
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(summaryOf(payouts.resolveUnconfirmed(
+                        callerOf(accessToken), payoutId, false, null, request.note().trim())));
+    }
+
     /** Withdraws a payout before it is sent. */
     @PostMapping("/{payoutId}/cancel")
     public ResponseEntity<PayoutResponses.PayoutSummary> cancel(
@@ -184,6 +216,19 @@ public class PayoutController {
 
     /** Why this payout is being approved, for the next person to read. */
     public record ApproveRequest(@Size(max = 2000) String note) {
+    }
+
+    /**
+     * The provider's statement shows the unconfirmed send was carried out.
+     *
+     * @param providerTransactionId the provider's reference for the payout, as the statement shows it
+     */
+    public record UnconfirmedSentRequest(
+            @NotBlank @Size(max = 200) String providerTransactionId, @NotBlank @Size(max = 2000) String note) {
+    }
+
+    /** The provider's statement shows the unconfirmed send was not carried out. */
+    public record UnconfirmedNotSentRequest(@NotBlank @Size(max = 2000) String note) {
     }
 
     /** One payout, with both standings beside it — #431's and #432's "show why". */

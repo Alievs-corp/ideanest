@@ -3,6 +3,7 @@
 import { Link } from '../../i18n/navigation';
 import type { ReactNode } from 'react';
 import { Tag, cn } from '@ideanest/ui';
+import { revealFocusedItem } from '@ideanest/ui/reveal-focused-item';
 import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
 import type { ProjectState } from '../../lib/projects/api';
 import { campaignDashboardHref } from '../../lib/account/navigation';
@@ -116,8 +117,15 @@ export function EditorShell({
           the bottom and both ends. The same fix `DashboardNav` (#136) and `CampaignTabs`
           (#173) carry. Nothing moves: the negative margin cancels the padding, and at 320px
           the four pixels the row reaches past the frame stay inside its 20px gutter.
+
+          `onFocus`: a tab Tab lands on while it is half off the row's edge is scrolled fully
+          into view, which Chromium does not do by itself (#181, `revealFocusedItem` in
+          `@ideanest/ui`).
         */}
-        <ul className="scrollbar-none -m-1 flex gap-2 overflow-x-auto p-1">
+        <ul
+          className="scrollbar-none -m-1 flex gap-2 overflow-x-auto p-1"
+          onFocus={revealFocusedItem}
+        >
           {EDITOR_TABS.map((tab) => {
             const current = tab.key === active;
 

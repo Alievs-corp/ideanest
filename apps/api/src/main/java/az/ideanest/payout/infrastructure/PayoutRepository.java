@@ -48,6 +48,38 @@ public interface PayoutRepository extends JpaRepository<Payout, UUID> {
     Optional<Payout> inFlightFor(@Param("projectId") UUID projectId);
 
     /**
+     * The payout that paid a campaign, if one did — #182.
+     *
+     * <p>V86's partial unique index permits at most one, and that index is what stops a campaign paid
+     * once from being priced, and paid, again.
+     */
+    @Query(
+            """
+            SELECT p FROM Payout p
+            WHERE p.projectId = :projectId
+              AND p.state = az.ideanest.payout.domain.PayoutState.PAID
+            """)
+    Optional<Payout> paidFor(@Param("projectId") UUID projectId);
+
+    /**
+     * Whether a campaign has a payout recorded {@code FAILED} because the provider could not be reached —
+     * #184's review.
+     *
+     * <p>Only a node of the release before it writes one (this release keeps such a payout
+     * {@code APPROVED}, its send unconfirmed), and V86 turned every earlier one back. Its money may have
+     * moved, so the campaign is not priced again until staff settle it from the provider's statement
+     * ({@code PayoutService#resolveUnconfirmed}) or V86's UPDATE is run once more.
+     */
+    @Query(
+            """
+            SELECT COUNT(p) > 0 FROM Payout p
+            WHERE p.projectId = :projectId
+              AND p.state = az.ideanest.payout.domain.PayoutState.FAILED
+              AND p.failureCode = 'provider_unreachable'
+            """)
+    boolean hasUnreachableFailure(@Param("projectId") UUID projectId);
+
+    /**
      * Every payout a campaign has ever had, newest first — issue #99.
      *
      * <p><strong>Every state, including {@code CANCELLED} and {@code FAILED}.</strong> The

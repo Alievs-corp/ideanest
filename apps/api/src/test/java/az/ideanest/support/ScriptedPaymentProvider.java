@@ -183,6 +183,8 @@ public class ScriptedPaymentProvider implements PaymentProvider {
         lookups.clear();
         scripted.clear();
         charges.clear();
+        payoutAnswers.clear();
+        payouts.clear();
         standing = ProviderOutcome.APPROVED;
         declineCode = "card_declined";
     }
@@ -421,9 +423,49 @@ public class ScriptedPaymentProvider implements PaymentProvider {
                 "{\"scripted\":true}");
     }
 
+    /**
+     * The next payout answers, in order — #184's review. {@code null} is an unreachable provider; a
+     * {@link ProviderOutcome} is that answer. Unscripted, a payout still throws: no suite sends one by
+     * accident.
+     */
+    private final Deque<java.util.Optional<ProviderOutcome>> payoutAnswers = new ConcurrentLinkedDeque<>();
+
+    private final List<PayoutRequest> payouts = Collections.synchronizedList(new ArrayList<>());
+
+    /** The next payout sent is answered with this outcome. */
+    public void nextPayout(ProviderOutcome outcome) {
+        payoutAnswers.addLast(java.util.Optional.of(outcome));
+    }
+
+    /** The next payout sent finds the provider unreachable. */
+    public void nextPayoutUnreachable() {
+        payoutAnswers.addLast(java.util.Optional.empty());
+    }
+
+    /** Every payout this provider was asked to send, in order. */
+    public List<PayoutRequest> payouts() {
+        synchronized (payouts) {
+            return List.copyOf(payouts);
+        }
+    }
+
     @Override
     public PayoutResult payout(PayoutRequest request) {
-        throw new UnsupportedOperationException("Payouts are #69; no test drives them yet");
+        java.util.Optional<ProviderOutcome> answer = payoutAnswers.pollFirst();
+        if (answer == null) {
+            throw new UnsupportedOperationException("No payout answer was scripted for this test");
+        }
+        payouts.add(request);
+        if (answer.isEmpty()) {
+            throw new ProviderUnavailableException(NAME, "The scripted provider could not be reached");
+        }
+        ProviderOutcome outcome = answer.get();
+        return new PayoutResult(
+                outcome,
+                "scripted-payout-" + providerTransactionCounter.incrementAndGet(),
+                outcome == ProviderOutcome.DECLINED ? "duplicate_order_id" : null,
+                outcome == ProviderOutcome.DECLINED ? "The order was already processed" : null,
+                "{\"scripted\":true}");
     }
 
     /**

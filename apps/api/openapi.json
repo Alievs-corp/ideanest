@@ -2120,6 +2120,80 @@
         "tags" : [ "payout-controller" ]
       }
     },
+    "/v1/admin/payouts/{payoutId}/unconfirmed-send/not-sent" : {
+      "post" : {
+        "operationId" : "payoutUnconfirmedNotSent",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "payoutId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UnconfirmedNotSentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PayoutSummary"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "payout-controller" ]
+      }
+    },
+    "/v1/admin/payouts/{payoutId}/unconfirmed-send/sent" : {
+      "post" : {
+        "operationId" : "payoutUnconfirmedSent",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "payoutId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UnconfirmedSentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PayoutSummary"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "payout-controller" ]
+      }
+    },
     "/v1/admin/plans" : {
       "get" : {
         "operationId" : "adminSubscriptionCatalogue",
@@ -17323,6 +17397,33 @@
             "type" : "string"
           }
         }
+      },
+      "UnconfirmedNotSentRequest" : {
+        "type" : "object",
+        "properties" : {
+          "note" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "note" ]
+      },
+      "UnconfirmedSentRequest" : {
+        "type" : "object",
+        "properties" : {
+          "note" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          },
+          "providerTransactionId" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "note", "providerTransactionId" ]
       },
       "UpdateNotificationPreferencesRequest" : {
         "type" : "object",

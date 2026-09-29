@@ -95,7 +95,7 @@ public interface PledgeRaiseRepository extends JpaRepository<PledgeRaise, UUID> 
                           LEFT JOIN transactions t ON t.id = r.charge_transaction_id
                           LEFT JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
                          WHERE r.pledge_id = :pledgeId
-                           AND r.state <> 'FAILED'
+                           AND (r.state <> 'FAILED' OR r.failure_code = 'provider_unreachable')
                            AND rs.state IS DISTINCT FROM 'UNAPPLIED')
                     """,
             nativeQuery = true)

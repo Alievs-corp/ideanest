@@ -3,6 +3,7 @@ package az.ideanest.payment;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
+import az.ideanest.payment.PaymentProperties;
 import az.ideanest.payment.application.CampaignRefundJob;
 import az.ideanest.payment.application.DisputeService;
 import az.ideanest.payment.application.PayoutGateway;
@@ -83,6 +84,9 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private PaymentTransactionRepository transactions;
+
+    @Autowired
+    private PaymentProperties paymentProperties;
 
     private final List<UUID> paidPledges = new ArrayList<>();
     private final List<UUID> projects = new ArrayList<>();
@@ -298,11 +302,11 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
     void v85LeavesAReopenedRefundBesideALaterOneToAPerson() {
         Paid paid = aPaidPledge("unreachable-then-refunded", "25.00");
         end(paid.projectId(), "UNSUCCESSFUL");
-        UUID old = failedAsUnreachable(paid);
-        // The release before #176 then refunded the charge again, past retry-after.
+        // The release before #176 refunded the charge again, past retry-after, beside the unreachable attempt.
         job.refundDue(Instant.now());
         assertThat(sentFor(paid.pledgeId())).hasSize(1);
         assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        UUID old = failedAsUnreachable(paid, "campaign-refund:" + paid.chargeId() + ":before-176");
 
         replay("V85__reopen_unreachable_refunds.sql");
 
@@ -384,6 +388,82 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
     }
 
     // ------------------------------------------------------------------
+    // #183: whatever release wrote it, and whatever else is waiting
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("#183: an unreachable refund a previous release writes after V85 counts as gone, and is reconciled not resent")
+    void anUnreachableRefundWrittenAfterV85IsReconciledNotResent() {
+        Paid paid = aPaidPledge("unreachable-rolling", "25.00");
+        end(paid.projectId(), "UNSUCCESSFUL");
+        // Written by a node of the previous release during the deploy, after V85 had run: nobody replays it.
+        UUID old = failedAsUnreachable(paid);
+
+        assertThat(staffRefund(paid.pledgeId(), null, "BACKER_REQUEST").getStatusCode())
+                .as("staff cannot send it again before the provider is asked")
+                .isEqualTo(HttpStatus.CONFLICT);
+        assertThat(gateway.fundsOf(paid.projectId(), "AZN").refunded().amount()).isEqualByComparingTo("25.00");
+
+        provider.willLookUp(paid.providerTransactionId(), PaymentLookup.State.RETURNED);
+        // Long past retry-after, which is when the previous release would have sent it again.
+        job.refundDue(Instant.now().plus(Duration.ofDays(1)));
+
+        assertThat(sentFor(paid.pledgeId())).as("the provider had applied it").isEmpty();
+        assertThat(jdbc().queryForObject("SELECT state FROM refunds WHERE id = ?", String.class, old))
+                .isEqualTo("SUCCEEDED");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+    }
+
+    @Test
+    @DisplayName("#183: an unreachable refund a previous release writes after V85 that never happened is sent once the provider says so")
+    void anUnreachableRefundWrittenAfterV85ThatDidNotHappenIsResentAfterReconcile() {
+        Paid paid = aPaidPledge("unreachable-rolling-lost", "25.00");
+        end(paid.projectId(), "UNSUCCESSFUL");
+        failedAsUnreachable(paid);
+
+        job.refundDue(Instant.now().plus(Duration.ofDays(1)));
+
+        assertThat(sentFor(paid.pledgeId())).as("reconciled, not re-sent").isEmpty();
+        assertThat(refundStates(paid.pledgeId())).containsExactly("FAILED");
+
+        job.refundDue(Instant.now().plus(Duration.ofDays(2)));
+
+        assertThat(sentFor(paid.pledgeId())).hasSize(1);
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+    }
+
+    @Test
+    @DisplayName("#183: a full pass of refunds the provider keeps calling pending does not stop newer ones being reconciled")
+    void theReconciliationGetsPastRefundsItCannotDecide() {
+        Paid stuck = aPaidPledge("reconcile-stuck", "25.00");
+        provider.willLookUp(stuck.providerTransactionId(), PaymentLookup.State.PENDING);
+        int perPass = paymentProperties.refunds().perPass();
+        for (int i = 0; i < perPass; i++) {
+            requested(stuck, "3 hours", "stuck-refund:" + stuck.chargeId() + ":" + i);
+        }
+        Paid waiting = aPaidPledge("reconcile-waiting", "25.00");
+        provider.willLookUp(waiting.providerTransactionId(), PaymentLookup.State.RETURNED);
+        UUID newer = requested(waiting, "2 hours", "waiting-refund:" + waiting.chargeId());
+
+        job.refundDue(Instant.now());
+        assertThat(jdbc().queryForObject("SELECT state FROM refunds WHERE id = ?", String.class, newer))
+                .as("a full pass of older rows, all still pending")
+                .isEqualTo("REQUESTED");
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM refunds WHERE pledge_id = ? AND last_checked_at IS NOT NULL",
+                        Long.class,
+                        stuck.pledgeId()))
+                .isEqualTo((long) perPass);
+
+        job.refundDue(Instant.now().plus(Duration.ofMinutes(10)));
+
+        assertThat(jdbc().queryForObject("SELECT state FROM refunds WHERE id = ?", String.class, newer))
+                .isEqualTo("SUCCEEDED");
+        assertThat(refundStates(stuck.pledgeId())).containsOnly("REQUESTED");
+        assertThat(sentFor(stuck.pledgeId())).isEmpty();
+    }
+
+    // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
 
@@ -461,6 +541,10 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
 
     /** A campaign refund the release before #176 recorded FAILED as unreachable, seven hours ago. */
     private UUID failedAsUnreachable(Paid paid) {
+        return failedAsUnreachable(paid, "campaign-refund:" + paid.chargeId() + ":1");
+    }
+
+    private UUID failedAsUnreachable(Paid paid, String idempotencyKey) {
         UUID id = UUID.randomUUID();
         jdbc().update(
                 """
@@ -475,7 +559,26 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
                 paid.pledgeId(),
                 paid.projectId(),
                 paid.chargeId(),
-                "campaign-refund:" + paid.chargeId() + ":1");
+                idempotencyKey);
+        return id;
+    }
+
+    /** A refund of one qəpik with no outcome yet, requested {@code ago}, the way a lost answer leaves one. */
+    private UUID requested(Paid paid, String ago, String idempotencyKey) {
+        UUID id = UUID.randomUUID();
+        jdbc().update(
+                """
+                INSERT INTO refunds (id, pledge_id, project_id, charge_transaction_id, amount, currency, full_refund,
+                                     reason, detail, state, requested_by, requested_at, idempotency_key)
+                VALUES (?, ?, ?, ?, 0.01, 'AZN', false, 'CAMPAIGN_FAILED', 'Its answer was lost', 'REQUESTED', NULL,
+                        now() - CAST(? AS interval), ?)
+                """,
+                id,
+                paid.pledgeId(),
+                paid.projectId(),
+                paid.chargeId(),
+                ago,
+                idempotencyKey);
         return id;
     }
 

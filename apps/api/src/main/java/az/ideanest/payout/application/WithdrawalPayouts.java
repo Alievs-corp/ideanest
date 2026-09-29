@@ -78,13 +78,23 @@ public class WithdrawalPayouts {
      * Requests the payout of a withdrawn campaign, with the hold, and announces it.
      *
      * <p>Idempotent on the campaign: a redelivered withdrawal finds the payout already in flight and
-     * requests nothing again. Empty when nothing is payable — a campaign whose money was all refunded.
+     * requests nothing again. Empty when nothing is payable — a campaign whose money was all refunded,
+     * or one already paid out (#182: {@code CampaignAlreadyPaidOutException} has the argument).
      */
     @Transactional
     public Optional<Payout> request(UUID projectId, boolean automatic) {
         Optional<Payout> existing = payouts.inFlightFor(projectId);
         if (existing.isPresent()) {
             return existing;
+        }
+        Optional<Payout> paid = payouts.paidFor(projectId);
+        if (paid.isPresent()) {
+            log.warn("Campaign {} was already paid out by payout {}; nothing is requested again.", projectId, paid.get().id());
+            return Optional.empty();
+        }
+        if (payouts.hasUnreachableFailure(projectId)) {
+            log.error("Campaign {} has a payout whose send went unanswered; nothing is requested (V86's header).", projectId);
+            return Optional.empty();
         }
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         Optional<Payout> requested = price(projectId, now, now.plus(properties.hold()), "withdrawal", automatic);
@@ -111,6 +121,13 @@ public class WithdrawalPayouts {
             return Optional.empty();
         }
         Payout held = payouts.findAndLock(inFlight.get().id()).orElseThrow();
+        if (held.sendUnconfirmed()) {
+            // #184's review: its last send may have been carried out, so it is not cancelled and priced again
+            // under a new key. Only a dispute opened before that send gets here (BackerDisputes#open closes the
+            // window after it); its refund stands and is left to staff against the payout as priced.
+            log.error("Payout {} may already have been sent; campaign {} is not recalculated.", held.id(), projectId);
+            return Optional.of(held);
+        }
         Instant payableAt = held.payableAt();
         held.cancelled();
         payouts.saveAndFlush(held);
@@ -141,11 +158,6 @@ public class WithdrawalPayouts {
 
         // IDN-EXT-01 (#43): a creator who owes for a chargeback lost after an earlier payout has it withheld.
         Money withheld = withheldFrom(campaign.creatorId(), net);
-        if (withheld.equals(net)) {
-            Money left = debts.recover(campaign.creatorId(), withheld, now);
-            log.info("Campaign {}'s payout went entirely towards its creator's debts ({} unapplied).", projectId, left);
-            return Optional.empty();
-        }
 
         Payout priced = Payout.calculated(
                 projectId,
@@ -161,6 +173,28 @@ public class WithdrawalPayouts {
                 Payout.idempotencyKeyOf(why, projectId, now));
         if (withheld.isPositive()) {
             priced.withholdDebt(withheld);
+        }
+        if (withheld.equals(net)) {
+            // All of it goes towards the creator's debts. Recorded as the campaign's payout, PAID with nothing
+            // sent (#184's review): with no row, a redelivered withdrawal or a finance calculation found the
+            // campaign unpaid and the debts cleared, and priced the money the platform kept all over again.
+            priced.settledAgainstDebts(now);
+            priced = payouts.save(priced);
+            Money left = debts.recover(campaign.creatorId(), withheld, now);
+            audit.record(
+                    AuditAction.PAYOUT_CALCULATED,
+                    priced.id(),
+                    AuditActor.system(),
+                    AuditOutcome.SUCCEEDED,
+                    "%s; automatic=%s; project=%s; settledAgainstDebts=%s; unapplied=%s"
+                            .formatted(why, automatic, projectId, withheld, left));
+            if (left.isPositive()) {
+                // Priced against debts that another recovery settled in the meantime: the creator is owed this.
+                log.error("Campaign {} withheld {} towards debts that were no longer owed; pay it by hand.", projectId, left);
+            } else {
+                log.info("Campaign {}'s payout went entirely towards its creator's debts.", projectId);
+            }
+            return Optional.empty();
         }
         priced = payouts.save(priced);
 

@@ -5,6 +5,7 @@ import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
 import { cn } from '@ideanest/ui/server';
 import type { DashboardNavCopy } from '../../lib/i18n/dashboard-copy';
+import { revealFocusedItem } from '@ideanest/ui/reveal-focused-item';
 
 /**
  * The way between the dashboard's panels.
@@ -58,7 +59,9 @@ import type { DashboardNavCopy } from '../../lib/i18n/dashboard-copy';
  * pixels of padding on every side and gives them back with a negative margin, the way
  * `AccountNav` makes room for the same ring — nothing moves, and ui-kit §9.3's ring is whole
  * rather than cut off at the top, the bottom and the row's edges. Tab still reaches every
- * entry, and the browser scrolls each one into view as it takes focus.
+ * entry, and the row scrolls each one fully into view as it takes focus: Chromium leaves a tab
+ * that is only partly off the edge where it is, so `revealFocusedItem` from `@ideanest/ui`
+ * asks for it (#181) — instantly, like the load-time reveal below.
  *
  * <h2>Accessibility</h2>
  *
@@ -124,7 +127,11 @@ export function DashboardNav({ projectId, copy }: DashboardNavProps) {
   return (
     <nav aria-label={copy.label} className="border-b border-white/8">
       {/* `-m-1 p-1`: room for the focus ring inside the scroll container, given back. */}
-      <ul ref={rowRef} className="-m-1 flex gap-1 overflow-x-auto p-1">
+      <ul
+        ref={rowRef}
+        className="-m-1 flex gap-1 overflow-x-auto p-1"
+        onFocus={revealFocusedItem}
+      >
         {panels.map((panel) => {
           const current = pathname === panel.href;
           return (

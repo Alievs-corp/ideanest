@@ -916,6 +916,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/payouts/{payoutId}/unconfirmed-send/not-sent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["payoutUnconfirmedNotSent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payouts/{payoutId}/unconfirmed-send/sent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["payoutUnconfirmedSent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/plans": {
         parameters: {
             query?: never;
@@ -6709,6 +6741,13 @@ export interface components {
             periodSeconds?: number;
             secret?: string;
         };
+        UnconfirmedNotSentRequest: {
+            note: string;
+        };
+        UnconfirmedSentRequest: {
+            note: string;
+            providerTransactionId: string;
+        };
         UpdateNotificationPreferencesRequest: {
             preferences: components["schemas"]["Change"][];
         };
@@ -7138,6 +7177,8 @@ export type SchemaTranslation = components['schemas']['Translation'];
 export type SchemaTranslationRequest = components['schemas']['TranslationRequest'];
 export type SchemaTree = components['schemas']['Tree'];
 export type SchemaTwoFactorEnrolmentResponse = components['schemas']['TwoFactorEnrolmentResponse'];
+export type SchemaUnconfirmedNotSentRequest = components['schemas']['UnconfirmedNotSentRequest'];
+export type SchemaUnconfirmedSentRequest = components['schemas']['UnconfirmedSentRequest'];
 export type SchemaUpdateNotificationPreferencesRequest = components['schemas']['UpdateNotificationPreferencesRequest'];
 export type SchemaUpdateRequest = components['schemas']['UpdateRequest'];
 export type SchemaUpgradePledgeRequest = components['schemas']['UpgradePledgeRequest'];
@@ -8677,6 +8718,58 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutSummary"];
+                };
+            };
+        };
+    };
+    payoutUnconfirmedNotSent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payoutId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnconfirmedNotSentRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutSummary"];
+                };
+            };
+        };
+    };
+    payoutUnconfirmedSent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payoutId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnconfirmedSentRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

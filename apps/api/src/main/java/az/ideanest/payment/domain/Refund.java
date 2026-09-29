@@ -87,6 +87,14 @@ public class Refund {
     @Column(name = "idempotency_key", nullable = false, updatable = false)
     private String idempotencyKey;
 
+    /**
+     * V87 (#183): when the reconciliation last asked about this refund. Written only by
+     * {@code RefundRepository#checked}, so a row loaded before a pass and saved after it cannot put
+     * back an older answer — read-only here, and only for the queue's order.
+     */
+    @Column(name = "last_checked_at", insertable = false, updatable = false)
+    private Instant lastCheckedAt;
+
     protected Refund() {
         // Hibernate.
     }

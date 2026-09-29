@@ -171,19 +171,41 @@ class ChargebackRecoveryTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("a debt as large as the next payout takes all of it, and no payout is requested")
+    @DisplayName("a debt as large as the next payout takes all of it: nothing is sent, and the campaign reads as paid out")
     void aLargeDebtTakesTheWholePayout() {
         Funded first = aFundedCampaign("chargeback-large", "25.00");
         paidOut(first.projectId(), "21.25");
-        resolve(chargeback(first, "25.00", "20.00"), "LOST", admin());
+        Account admin = admin();
+        resolve(chargeback(first, "25.00", "20.00"), "LOST", admin);
 
         UUID second = aSecondCampaign(first.creator(), "chargeback-large-next", "25.00");
 
         assertThat(withdrawalPayouts.request(second, false)).isEmpty();
-        assertThat(jdbc().queryForObject("SELECT count(*) FROM payouts WHERE project_id = ?", Long.class, second)).isZero();
+        // #184's review: recorded as the campaign's payout, PAID with nothing sent, so nothing prices it again.
+        Map<String, Object> settled = jdbc().queryForMap(
+                "SELECT state, net_amount, debt_withheld, payout_transaction_id, sent_at FROM payouts WHERE project_id = ?",
+                second);
+        assertThat(settled.get("state")).isEqualTo("PAID");
+        assertThat((BigDecimal) settled.get("net_amount")).isEqualByComparingTo("0.00");
+        assertThat((BigDecimal) settled.get("debt_withheld")).isPositive();
+        assertThat(settled.get("payout_transaction_id")).isNull();
+        assertThat(settled.get("sent_at")).isNotNull();
+        BigDecimal recovered = jdbc().queryForObject(
+                "SELECT recovered FROM creator_debts WHERE creator_id = ?", BigDecimal.class, first.creator().id());
+        assertThat(recovered).isEqualByComparingTo((BigDecimal) settled.get("debt_withheld"));
+
+        // A redelivered withdrawal, and finance pressing calculate, find it paid rather than the debts cleared.
+        assertThat(withdrawalPayouts.request(second, false)).isEmpty();
+        ResponseEntity<Map<String, Object>> again =
+                post("/v1/admin/payouts", admin.accessToken(), null, Map.of("projectId", second.toString()));
+        assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(again.getBody()).containsEntry("code", "CAMPAIGN_ALREADY_PAID_OUT");
+        assertThat(jdbc().queryForObject("SELECT count(*) FROM payouts WHERE project_id = ?", Long.class, second))
+                .isEqualTo(1L);
         assertThat(jdbc().queryForObject(
                         "SELECT recovered FROM creator_debts WHERE creator_id = ?", BigDecimal.class, first.creator().id()))
-                .isPositive();
+                .isEqualByComparingTo(recovered);
+        assertThat(transactions.hasPaidOut(second)).as("a chargeback lost now is the creator's debt").isTrue();
     }
 
     // ------------------------------------------------------------------

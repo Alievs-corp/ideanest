@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProfileTabs, type ProfileTab } from './ProfileTabs';
@@ -30,7 +30,10 @@ function renderTabs() {
   return render(<ProfileTabs tabs={TABS} label="Profile sections" />);
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe('the tablist', () => {
   it('is named, so a reader who arrives at it out of context knows what it is', () => {
@@ -120,6 +123,28 @@ describe('the keyboard contract', () => {
 
     await user.keyboard('{Home}');
     expect(screen.getByRole('tab', { name: /Created/u })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  /**
+   * #181. At 320px "Backed" sat half off the row's edge and Chromium left it there when focus
+   * arrived. The row's focus handler covers Tab and the arrow keys alike, because the arrow
+   * keys move focus too.
+   */
+  it('scrolls the tab that takes focus fully into view, from Tab and from an arrow key', async () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    const user = userEvent.setup();
+    renderTabs();
+
+    await user.tab();
+    expect(scrollIntoView.mock.contexts.at(-1)).toBe(screen.getByRole('tab', { name: /Created/u }));
+
+    await user.keyboard('{ArrowRight}');
+    expect(scrollIntoView.mock.contexts.at(-1)).toBe(screen.getByRole('tab', { name: 'Backed' }));
+    expect(scrollIntoView).toHaveBeenLastCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'auto',
+    });
   });
 });
 

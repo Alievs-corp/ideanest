@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditorShell } from './EditorShell';
@@ -158,5 +158,27 @@ describe('EditorShell', () => {
   it('renders the tab content it was given', () => {
     renderShell();
     expect(screen.getByText('The basics form')).toBeInTheDocument();
+  });
+
+  /**
+   * #181. At 320px Tab landed on "FAQ" half off the row's edge and Chromium left it there. Focus
+   * bubbles to the row, and the row reveals the section that took it.
+   */
+  it('scrolls a section fully into view when it takes focus', () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    renderShell();
+
+    const nav = screen.getByRole('navigation', { name: EDITOR_COPY.sectionsLabel });
+    const faq = within(nav).getByRole('link', { name: EDITOR_COPY.tabs.faq });
+    faq.focus();
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.contexts[0]).toBe(faq);
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'auto',
+    });
+    scrollIntoView.mockRestore();
   });
 });

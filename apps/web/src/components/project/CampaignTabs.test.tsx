@@ -76,6 +76,7 @@ const TABS = translatorFor('campaign.tabs');
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   route.locale = 'en';
 });
 
@@ -181,5 +182,28 @@ describe('the campaign tab strip', () => {
       expect(link).toHaveClass('focus-visible:outline-[var(--lime-500)]');
       expect(link.className).not.toContain('outline-offset-[-');
     }
+  });
+
+  /**
+   * #181. Chromium leaves a tab that is only partly off the row's edge where it is when Tab
+   * lands on it, so the row asks for it. The strip is a server component and cannot hold a
+   * handler, so the row is `ScrollRow`. jsdom renders the whole tree as client code, so this
+   * does not exercise the server-to-client boundary; what it proves is that the strip's row
+   * is the one carrying the handler, and that focusing a tab asks for that tab to be revealed.
+   */
+  it('scrolls a tab fully into view when it takes focus', async () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    render(await resolveServerTree(<CampaignTabs active="campaign" path={PATH} />));
+
+    const faq = screen.getByRole('link', { name: TABS('faq') });
+    faq.focus();
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.contexts[0]).toBe(faq);
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'auto',
+    });
   });
 });

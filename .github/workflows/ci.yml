@@ -89,6 +89,15 @@ jobs:
           #
           # `.github/workflows/ci.yml` is in both. Editing this file has to run
           # everything it describes, or the edit is unreviewable.
+          #
+          # A few files under `apps/api` are in the JavaScript filters too,
+          # because JavaScript tests read them to catch the backend moving
+          # without its clients: `packages/api-client/src/schema.test.ts` (run by
+          # the web job) compares `schema.ts` with `openapi.json`, and
+          # `apps/mobile/src/lib/pledge-states.test.ts` reads `openapi.json` and
+          # the `PledgeState` enum to check every state has a label (#180).
+          # Without them here, a backend-only pull request that broke either
+          # would skip the job that says so, and `main` would find out later.
           filters: |
             shared: &shared
               - 'packages/**'
@@ -99,10 +108,13 @@ jobs:
             web:
               - *shared
               - 'apps/web/**'
+              - 'apps/api/openapi.json'
             mobile:
               - *shared
               - 'apps/mobile/**'
               - '.github/workflows/mobile-check.yml'
+              - 'apps/api/openapi.json'
+              - 'apps/api/src/main/java/az/ideanest/pledge/domain/PledgeState.java'
             api:
               - 'apps/api/**'
               - '.github/workflows/ci.yml'

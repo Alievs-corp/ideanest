@@ -38,14 +38,27 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
      */
     boolean existsByIdempotencyKey(String idempotencyKey);
 
-    /** IDN-EXT-01 (#43): whether money has been paid out for a campaign — a settled PAYOUT row. */
+    /**
+     * IDN-EXT-01 (#43): whether money has been paid out for a campaign — a settled PAYOUT row.
+     *
+     * <p><strong>Or a payout settled entirely against the creator's debts (#184's review, V86)</strong>:
+     * {@code PAID} with nothing sent and so no transaction. The creator's share was kept against what
+     * they owed, so a chargeback lost afterwards is theirs to repay exactly as after a sent payout.
+     * Native for that, because the payouts table is the payout module's and nothing here names it.
+     *
+     * <p><strong>Not a payout whose send went unanswered.</strong> Whether it paid is for staff to settle;
+     * a loss before then stays in the campaign's refunded figure, which is right if it was not sent (the
+     * next calculation takes it off once) and is reported for recovery by hand if it was
+     * ({@code PayoutService#resolveUnconfirmed}). Counting it here as well would take it off twice.
+     */
     @Query(
-            """
-            SELECT COUNT(t) > 0 FROM PaymentTransaction t
-            WHERE t.projectId = :projectId
-              AND t.type = az.ideanest.payment.domain.TransactionType.PAYOUT
-              AND t.status = az.ideanest.payment.domain.TransactionStatus.SUCCEEDED
-            """)
+            value =
+                    """
+                    SELECT EXISTS (SELECT 1 FROM transactions t
+                                    WHERE t.project_id = :projectId AND t.type = 'PAYOUT' AND t.status = 'SUCCEEDED')
+                        OR EXISTS (SELECT 1 FROM payouts p WHERE p.project_id = :projectId AND p.state = 'PAID')
+                    """,
+            nativeQuery = true)
     boolean hasPaidOut(@Param("projectId") UUID projectId);
 
     /** IDN-EXT-01 (#39): the charge a payment page opened, by the provider's name for it. */

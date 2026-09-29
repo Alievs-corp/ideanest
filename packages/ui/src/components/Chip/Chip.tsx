@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import type { ComponentPropsWithoutRef, FocusEvent, ReactNode } from 'react';
 import { cn } from '../../lib/cn';
+import { revealFocusedItem } from '../../lib/reveal-focused-item';
 
 /**
  * Filter chip. See docs/ui-kit.md §7.3.
@@ -110,13 +111,28 @@ export function RemovableChip({
  *
  * The right edge fades rather than cutting off, so "there is more" is legible
  * without a scrollbar.
+ *
+ * A chip that takes focus while it is partly off the row's edge is scrolled
+ * fully into view, which Chromium does not do by itself — see
+ * `lib/reveal-focused-item.ts`. A caller's own `onFocus` still runs, after it.
  */
 export interface ChipRowProps extends ComponentPropsWithoutRef<'div'> {
   /** Right-edge fade mask. Disable when every chip already fits. */
   fadeEdge?: boolean;
 }
 
-export function ChipRow({ fadeEdge = true, className, children, ...props }: ChipRowProps) {
+export function ChipRow({
+  fadeEdge = true,
+  className,
+  children,
+  onFocus,
+  ...props
+}: ChipRowProps) {
+  function handleFocus(event: FocusEvent<HTMLDivElement>): void {
+    revealFocusedItem(event);
+    onFocus?.(event);
+  }
+
   return (
     <div
       role="group"
@@ -126,6 +142,7 @@ export function ChipRow({ fadeEdge = true, className, children, ...props }: Chip
         className,
       )}
       {...props}
+      onFocus={handleFocus}
     >
       {children}
     </div>

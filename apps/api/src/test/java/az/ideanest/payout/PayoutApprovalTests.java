@@ -139,6 +139,43 @@ class PayoutApprovalTests {
     }
 
     @Test
+    @DisplayName("#184's review: a send the provider never answered leaves the payout approved, not failed")
+    void anUnansweredSendStaysApproved() {
+        Payout sending = payout((short) 1, Instant.parse("2026-01-01T00:00:00Z"));
+        assertThatThrownBy(() -> sending.sendUnconfirmedAt(Instant.now())).isInstanceOf(IllegalStateException.class);
+        sending.payable();
+        sending.approved();
+
+        sending.sendUnconfirmedAt(Instant.parse("2026-02-01T00:00:00Z"));
+
+        // Failed, it would be priced again under a new key beside an instruction that may have moved money.
+        assertThat(sending.state()).isEqualTo(PayoutState.APPROVED);
+        assertThat(sending.sendUnconfirmed()).isTrue();
+        assertThat(sending.failureCode()).isNull();
+        assertThat(sending.sentAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("#184's review: a payout wholly withheld towards debts is paid with nothing sent, and nothing else is")
+    void onlyAWhollyWithheldPayoutSettlesAgainstDebts() {
+        Payout withheld = payout((short) 1, Instant.parse("2026-01-01T00:00:00Z"));
+        withheld.withholdDebt(Money.of(new BigDecimal("90.00"), "AZN"));
+        Instant at = Instant.parse("2026-02-01T00:00:00Z");
+
+        withheld.settledAgainstDebts(at);
+
+        assertThat(withheld.state()).isEqualTo(PayoutState.PAID);
+        assertThat(withheld.net().amount()).isEqualByComparingTo("0.00");
+        assertThat(withheld.sentAt()).isEqualTo(at);
+        assertThat(withheld.payoutTransactionId()).isNull();
+
+        Payout partly = payout((short) 1, Instant.parse("2026-01-01T00:00:00Z"));
+        partly.withholdDebt(FIVE);
+        assertThatThrownBy(() -> partly.settledAgainstDebts(at)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> payout((short) 1, at).settledAgainstDebts(at)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     @DisplayName("only the three in-flight states are in flight")
     void inFlightIsTheThreeThatCanStillMove() {
         // V55's partial unique index permits one in-flight payout per campaign, and this is

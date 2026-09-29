@@ -1,6 +1,8 @@
 package az.ideanest.payout.api;
 
 import az.ideanest.payment.application.NoPayoutProviderException;
+import az.ideanest.payment.application.PayoutReferenceTakenException;
+import az.ideanest.payout.application.CampaignAlreadyPaidOutException;
 import az.ideanest.payout.application.NothingToPayException;
 import az.ideanest.payout.application.PayoutAlreadyInFlightException;
 import az.ideanest.payout.application.CreatorNotVerifiedException;
@@ -9,6 +11,7 @@ import az.ideanest.payout.application.PayoutDestinationProviderMismatchException
 import az.ideanest.payout.application.PayoutNotApprovableException;
 import az.ideanest.payout.application.PayoutNotFoundException;
 import az.ideanest.payout.application.PayoutNotSendableException;
+import az.ideanest.payout.application.PayoutSendUnconfirmedException;
 import az.ideanest.payout.application.PayoutSignaturesShortException;
 import az.ideanest.payout.application.UnknownPayoutCampaignException;
 import az.ideanest.staff.api.StaffRefusals;
@@ -22,9 +25,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * AD-05's payout refusals — issues #69, #306 and #398.
+ * AD-05's payout refusals — issues #69, #306, #398 and #182.
  *
- * <p>Eleven handlers rather than one over a shared supertype, and that is deliberate: each
+ * <p>One handler per refusal rather than one over a shared supertype, and that is deliberate: each
  * carries a different {@code code} and leads the reader to a different next action. A base
  * class would invite an advice that caught it and flattened all of them into "the payout
  * could not be processed", which is the sentence support tickets are made of.
@@ -78,6 +81,45 @@ public class PayoutExceptionHandler {
         problem.setDetail("This campaign already has a payout waiting. Open that one rather than starting another.");
         problem.setProperty("code", "PAYOUT_ALREADY_IN_FLIGHT");
         problem.setProperty("meta", Map.of("payoutId", exception.existingPayoutId().toString()));
+        return problem;
+    }
+
+    /** 409 when the campaign has already been paid out — #182. The payout that paid it travels in {@code meta}. */
+    @ExceptionHandler(CampaignAlreadyPaidOutException.class)
+    public ProblemDetail handleAlreadyPaidOut(CampaignAlreadyPaidOutException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/campaign-already-paid-out"));
+        problem.setTitle("Campaign already paid out");
+        problem.setDetail("This campaign has already been paid out. A campaign is paid out once.");
+        problem.setProperty("code", "CAMPAIGN_ALREADY_PAID_OUT");
+        problem.setProperty("meta", Map.of("payoutId", exception.paidPayoutId().toString()));
+        return problem;
+    }
+
+    /**
+     * 409 when a payout whose send went unanswered is cancelled, or its campaign priced again — #184's
+     * review.
+     */
+    @ExceptionHandler(PayoutSendUnconfirmedException.class)
+    public ProblemDetail handleSendUnconfirmed(PayoutSendUnconfirmedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-send-unconfirmed"));
+        problem.setTitle("This payout may already have been sent");
+        problem.setDetail(
+                "The provider did not answer a send, so the money may have moved. Send it again under the same"
+                        + " key, or settle it from the provider's statement as sent or not sent.");
+        problem.setProperty("code", "PAYOUT_SEND_UNCONFIRMED");
+        return problem;
+    }
+
+    /** 409 when the statement's reference is already on a settled transaction — #184's review. */
+    @ExceptionHandler(PayoutReferenceTakenException.class)
+    public ProblemDetail handleReferenceTaken(PayoutReferenceTakenException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-reference-taken"));
+        problem.setTitle("That provider reference is already recorded");
+        problem.setDetail("Another settled transaction carries this reference. Check the statement's reference again.");
+        problem.setProperty("code", "PAYOUT_REFERENCE_TAKEN");
         return problem;
     }
 
