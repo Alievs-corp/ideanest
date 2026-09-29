@@ -27,3 +27,19 @@ describe('id-keyed campaign routes', () => {
     });
   });
 });
+
+describe('hostile links', () => {
+  it('returns null for a malformed percent escape instead of throwing', () => {
+    expect(destinationFor('https://ideanest.az/projects/a%zz/b', HOST)).toBeNull();
+  });
+
+  it('refuses an encoded slash in a slug', () => {
+    expect(destinationFor('https://ideanest.az/projects/a%2Fb/c', HOST)).toBeNull();
+  });
+
+  it('opens the first edit step for a bare /edit', () => {
+    expect(destinationFor(`https://ideanest.az/projects/${ID}/edit`, HOST)).toEqual({
+      pathname: `/campaigns/${ID}/edit/basics`,
+    });
+  });
+});

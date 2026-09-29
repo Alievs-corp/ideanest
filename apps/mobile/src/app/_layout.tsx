@@ -60,6 +60,9 @@ const RELOCK_AFTER_MS = 2 * 60 * 1000;
 
 const queryClient = createQueryClient();
 
+/** The tabs are always the base of the stack, so a guarded deep link has somewhere to go back to. */
+export const unstable_settings = { initialRouteName: '(tabs)' };
+
 /**
  * The link inside a push payload, or null when there is not one.
  *

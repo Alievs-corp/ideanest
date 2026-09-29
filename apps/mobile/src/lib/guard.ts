@@ -36,6 +36,7 @@ export function safeNext(next: string | null | undefined): string | null {
   if (typeof next !== 'string' || next === '') return null;
   if (!next.startsWith('/') || next.startsWith('//') || next.includes('\\')) return null;
   if (/^\/[a-z][a-z0-9+.-]*:/i.test(next)) return null;
+  if (/[\u0000-\u001f\s]/.test(next)) return null;
   if (AUTH_PATHS.test(next)) return null;
   return next;
 }

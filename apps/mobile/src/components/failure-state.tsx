@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { colors, radius, size, spacing } from '../theme';
 import { Body, CardTitle, Heading, Meta } from './text';
 
@@ -27,7 +27,7 @@ export function FailureState({
   readonly children?: ReactNode;
 }) {
   return (
-    <View style={styles.screen}>
+    <ScrollView contentContainerStyle={styles.screen}>
       <Heading accessibilityRole="header" style={styles.centred}>
         {title}
       </Heading>
@@ -44,13 +44,13 @@ export function FailureState({
         </CardTitle>
       </Pressable>
       {children}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing[4],

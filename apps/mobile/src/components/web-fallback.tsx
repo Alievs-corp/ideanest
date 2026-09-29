@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { deviceLocale, siteUrl } from '../api/config';
@@ -38,20 +38,20 @@ export function WebFallback({
   if (blocked) return null;
 
   return (
-    <View style={styles.screen}>
+    <ScrollView contentContainerStyle={styles.screen}>
       <Heading accessibilityRole="header">{title}</Heading>
       <Body>This part of IdeyaNest is still being built for the app. It is ready on the web.</Body>
       <Button
         label="Open on the website"
         onPress={() => void WebBrowser.openBrowserAsync(`${siteUrl()}/${deviceLocale()}${webPath}`)}
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     gap: spacing[4],
     padding: size.cardPaddingLarge,
