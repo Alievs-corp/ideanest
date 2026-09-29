@@ -816,7 +816,7 @@ sequenceDiagram
 | PL-06 | Total calculation | Reward + add-ons + shipping + tax |
 | PL-07 | Card entry or stored card | Card data never reaches our servers |
 | PL-08 | 3-D Secure | Mandatory |
-| PL-09 | Edit a pledge | **Upward only**, while the campaign takes pledges (IDN-EXT-01). Built (#35): an edit that would lower a confirmed pledge is refused with `PLEDGE_DECREASE_NOT_ALLOWED`; a draft is still being chosen and may go either way |
+| PL-09 | Edit a pledge | **Upward only**, while the campaign takes pledges (IDN-EXT-01). Built (#35): an edit that would lower a confirmed pledge is refused with `PLEDGE_DECREASE_NOT_ALLOWED`; a draft is still being chosen and may go either way. **A paid (`COLLECTED`) pledge is raised, not edited (#171)**: `POST /v1/pledges/{id}/raise` charges the difference at once on the provider's page, and the pledge changes when that payment settles — see the note below |
 | PL-10 | ~~Cancel a pledge~~ | **Withdrawn by IDN-EXT-01**: a backer cannot cancel; refunds are campaign-level (§9.7). Built (#35): `DELETE /v1/pledges/{id}` answers `PLEDGE_CANNOT_BE_CANCELLED` for anything past `DRAFT`, and only abandoning an unpaid checkout remains. The web's cancel panel is gone |
 | PL-11 | ~~Replace the card~~ | **Withdrawn**: the charge is at confirmation, so there is no later collection to fail |
 | PL-12 | Anonymous pledging | Hidden from public lists |
@@ -964,6 +964,76 @@ sequenceDiagram
 > reason: an edit that is refused — because the add-on the backer wanted more of has
 > run out — must leave them holding exactly what they had, and the other order would
 > briefly leave them holding nothing.
+
+> **PL-09 for a paid pledge: raised by paying the difference (#171).** The decision, taken by the
+> owner in #171 over the alternative of rewriting the copy: **while its campaign takes pledges, a
+> backer may raise a paid pledge — a better tier, more add-ons, a larger contribution, or a
+> destination that costs more — and the difference is charged at once, the way the confirmation
+> charge is. Never lowered, never withdrawn.** IDN-EXT-01 (#39) had made almost every pledge
+> `COLLECTED` the moment it was made, and PL-09's `PATCH` only moves `DRAFT` and `CONFIRMED`, so
+> until #171 the screens promised a raise no endpoint performed.
+>
+> The flow is the confirmation's, in the same two requests:
+>
+> 1. **`POST /v1/pledges/{id}/raise`** (`Idempotency-Key` required) takes PL-09's selection fields
+>    with their Merge-Patch meaning, the page's `language`, `successUrl` and `errorUrl`, and
+>    `expectedAmount` — the difference the backer was shown. In one transaction, holding the
+>    pledge's row lock: the pledge must be the caller's and `COLLECTED` (`PLEDGE_NOT_RAISABLE`
+>    otherwise, naming `PATCH` for a draft or a legacy `CONFIRMED` pledge), the campaign must be
+>    taking pledges (`PROJECT_NOT_LIVE`, from the same `PledgeAcceptance` as the draft), no other
+>    raise may be waiting for its payment (`PLEDGE_RAISE_IN_PROGRESS`), the new selection is priced
+>    by the checkout's own `selectionFor`, and it must cost more (`PLEDGE_DECREASE_NOT_ALLOWED`
+>    below, `RAISE_NOT_AN_INCREASE` equal) by exactly `expectedAmount` (`RAISE_AMOUNT_CHANGED`,
+>    with both figures, rather than charge a number nobody agreed to). Only then are the places
+>    the new selection needs beyond what the pledge claims **reserved**, and a `PENDING`
+>    `pledge_raises` row written with the quote, the add-on lines, the hold and the pledge's
+>    `version`. The transaction commits, and then the provider's page is opened for the
+>    difference through the same `PaymentPage` the confirmation uses, under an idempotency key
+>    derived from the raise (`pledge-raise-{id}`), which is also the provider's order identifier.
+>    If no page can be opened the raise is `ABANDONED` and its hold given back at once.
+> 2. **The provider's webhook** settles it in `HostedChargeEvents`, which tells a raise's charge
+>    from a draft's by that key. On success, in one transaction: the `SUCCEEDED` charge row, the
+>    ledger posting (escrow to the creator, as for any charge), and the raise applied — the held
+>    places committed from reserved to claimed, the places the pledge no longer needs released,
+>    the pledge's tier, add-ons, destination and five amounts rewritten (it stays `COLLECTED`),
+>    the difference added to the campaign's `pledged_amount` (not to `backers_count`: it is the
+>    same backer), and `pledge.edited` recorded, which §4.10 already words for the backer. On
+>    failure: the `FAILED` row, the hold released, and the pledge exactly as it was.
+>
+> **Retries charge once.** A retried request under the same key is answered from §10.3's store
+> with the page the first attempt opened; a second delivery of the webhook is refused by the
+> webhook table or by the settled row; and `transactions_idempotency_key_key` admits one settled
+> row per raise.
+>
+> **Two raises at once cannot both be priced against one total.** The prepare holds the pledge's
+> row lock while it looks for a raise in flight, and V83's `pledge_raises_one_pending_per_pledge`
+> admits one `PENDING` raise per pledge. A raise is applied only to the pledge `version` it was
+> priced against; anything that moved the pledge in between — another raise, a campaign refund, a
+> post-campaign upgrade — makes the charge a payment for nothing, and it is recorded `UNAPPLIED`.
+>
+> **Holds lapse, payments may still arrive.** A raise's places are held for the confirmation's
+> payment window (`ideanest.pledge.reservation.payment-window`) and §8.4's `reservation-cleaner`
+> gives them back afterwards (`EXPIRED`). A payment that arrives later is still applied when the
+> pledge has not moved, no newer raise was started, and the places can be claimed again; otherwise
+> it is `UNAPPLIED`. An `UNAPPLIED` raise's charge is refunded by the platform on its own through
+> `campaign-refunds` with the reason `RAISE_NOT_APPLIED` (V83), whatever the campaign's state —
+> money that bought nothing is never paid out.
+>
+> **Refunds and payouts see the new total because they read the charges, not the pledge.** A
+> raised pledge was paid for in two or more charges. A campaign that fails or is halted refunds
+> **each charge against its own provider transaction** (§9.7), and the refund that leaves nothing
+> is the full one that moves the pledge to `REFUNDED` and takes its whole total — raise included —
+> out of the campaign's figures. A campaign that succeeds pays out every settled charge on it, the
+> raises among them (§9.5's `PayoutGateway.fundsOf`).
+>
+> **What did not change.** A draft is still edited with `PATCH` and paid for once; a legacy
+> `CONFIRMED` pledge is still edited with `PATCH` and charged nothing (#35's rule); a pledge still
+> cannot be cancelled; and once the campaign stops taking pledges the raise is refused and §4.8's
+> PM-09 and PM-10 routes behave exactly as before — recorded beside the pledge, not charged. While
+> the campaign runs those two routes answer `CAMPAIGN_STILL_TAKING_PLEDGES` with `meta.use` naming
+> the raise for a paid pledge and `PATCH` for anything else. `GET /v1/pledges/{id}` carries
+> `raisable` — paid for, and the campaign is taking pledges — and `latestRaise`, which the pledge
+> screen reads when the provider sends the backer back (`?raise=returned|failed`).
 
 > **PL-12 is built (#57), and what it needed was not a column.** `is_anonymous` was
 > already stored and already accepted from `POST /v1/pledges/draft` (#52). What was
@@ -1172,8 +1242,9 @@ The most valuable and most complex module. It begins when funding closes.
 > Stock is not duplicated: a post-campaign add-on claims its places through the same
 > statements the checkout uses, so a limited add-on cannot be oversold by being bought
 > late. The two endpoints are **refused while the campaign is still taking pledges**,
-> with a code naming §4.5's PL-09 edit — two ways to change one pledge, and the campaign
-> decides which applies. A downgrade is refused rather than recorded as a negative
+> with a code naming the way that applies then — §4.5's PL-09 edit for a draft or a legacy
+> confirmed pledge, and since #171 the raise for a paid one, which charges the difference at
+> once. Two ways to change one pledge, and the campaign decides which applies. A downgrade is refused rather than recorded as a negative
 > supplement: money that has been collected comes back through #67. And **nothing is
 > charged**: PM-16 is the charge, `collected_at` is null on every row this platform
 > holds, and a stub that marked one collected would tell a creator money had arrived.
@@ -2415,7 +2486,8 @@ stateDiagram-v2
 > **IDN-EXT-01 redrew this diagram (#35, #39).** A confirmed pledge is a charged one, so
 > `CONFIRMED`, `CHARGE_PENDING`, `CHARGE_FAILED` and `DROPPED` leave the diagram, and there is
 > no edge from a paid pledge to `CANCELED_BY_BACKER`: a backer cannot cancel. A raise is not
-> an edge — the pledge stays `COLLECTED` and gains a supplement. The removed states remain in
+> an edge — the pledge stays `COLLECTED`. During the campaign its selection and total change once
+> the difference is paid (#171, §4.5); after the campaign it gains a supplement (§4.8). The removed states remain in
 > the code until stage 4 (#45); the notes below record why each was added.
 >
 > **`DRAFT --> CANCELED_BY_BACKER` is new, and #56 added it while building
@@ -3083,6 +3155,17 @@ backer per project.
 > who lost would get a 500 on a campaign with stock to spare. A single global order
 > makes the cycle unconstructible.
 
+#### `pledge_raises` and `pledge_raise_lines` (#171, V83)
+One row per attempt to raise a paid pledge while its campaign takes pledges: `pledge_id`,
+`project_id`, `state` (`PENDING`, `SUCCEEDED`, `FAILED`, `EXPIRED`, `ABANDONED`, `UNAPPLIED`),
+`charge_key` (the charge's `transactions.idempotency_key`), `base_version` (the pledge's
+`version` it was priced against), the new tier and destination, the five new amounts,
+`from_total`, `to_total` and `amount` (the difference, positive, and constrained to be
+`to_total - from_total`), `hold_expires_at` and `ended_at`. At most one `PENDING` row per pledge.
+`pledge_raise_lines` holds, per raise, the `ADDON` lines of the new selection and the `HOLD` —
+the places reserved for it while it is pending, stored rather than recomputed because by the time
+they are given back the pledge may have moved. §4.5 has the flow.
+
 #### `payment_methods`
 `id`, `user_id`, `provider`, `provider_token` (**token only, never a card
 number**), `scheme_transaction_id`, `brand`, `last4`, `exp_month`, `exp_year`,
@@ -3412,7 +3495,7 @@ load profile).
 | `charge-processor` | Every minute | Opens the collection of campaigns that closed above goal, and makes §9.6's first attempt against the pledges it queues. **Built (#64).** The rate limit is §9.3's R-09 expressed as a batch per tick — a hundred charges a minute is roughly 1.7 requests a second, a figure a provider can be told in advance rather than one discovered by being throttled at a campaign's close. There is deliberately no sleeping inside a pass to smooth it further: a sleep would hold the job's lease, and a pass that outlasts its lease is joined by a second replica |
 | `charge-retry` | Every 6 hours | Retries failures within the window and drops what has run out of it. **Built (#65).** Six hours rather than a minute because §9.6's slots are at +24h, +72h and +5 days — nobody can tell an attempt made at 24:00 from one at 27:00. **Two jobs and not one**, for the reason §8.4 gives about splitting `reminder-sender` from `deadline-reminder`: `JobRunner` counts failures per job name, so one job doing both queues would let a database problem in the retry sweep back off the initial collection too. The drop is here rather than in a third job — it is the last row of the same table, at the same granularity, and it runs after the retries so a pledge whose final attempt is due in the same pass gets it |
 | `payout-scheduler` | Daily | Prepare payouts once the hold elapses |
-| `reservation-cleaner` | Every minute | Release expired stock reservations |
+| `reservation-cleaner` | Every minute | Release expired stock reservations: lapsed drafts, and since #171 the places a raise of a paid pledge held for a payment that did not arrive in the payment window |
 | `search-indexer` | Event-driven plus nightly full | Keep the index current |
 | `analytics-aggregator` | Hourly | Populate daily rollups |
 | `reminder-sender` | Every minute | Launch reminders (#39) |
@@ -4067,6 +4150,17 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > A refund's transaction row carries no provider transaction identifier when the provider issues
 > none — Epoint's `/reverse` does not — because V41 admits one settled row per provider transaction
 > and the charge is that row; the refund reaches its charge through `refunds.charge_transaction_id`.
+>
+> **Per charge since #171.** A pledge raised during its campaign (§4.5) was paid for in more than one
+> charge, and a provider reverses a payment up to what that payment was. So `campaign-refunds` offers
+> settled **charges**, not pledges: every charge on a paid pledge of a failed or halted campaign, and
+> every charge of a raise that was paid for and could not be applied (`RAISE_NOT_APPLIED`, whatever
+> the campaign's state). Each is refunded against its own provider transaction for what it has left,
+> the double-refund rules above apply per charge, and the refund that leaves nothing on the pledge is
+> its full refund — the one that moves it to `REFUNDED` and subtracts its whole total. A staff
+> refund goes against the newest charge that can cover it alone, so a raised pledge is refunded in
+> full by staff one charge at a time, and an upheld backer dispute (#43) issues one refund per charge
+> until nothing is left.
 
 ### 9.8 Chargebacks
 
@@ -4267,6 +4361,7 @@ GET    /v1/pledges/{id}
 POST   /v1/pledges/{id}/confirm
 POST   /v1/pledges/{id}/payment          # IDN-EXT-01 (#39): hold the draft, open the payment page; paid → COLLECTED by webhook
 PATCH  /v1/pledges/{id}
+POST   /v1/pledges/{id}/raise            # #171: raise a COLLECTED pledge while the campaign takes pledges; opens the payment page for the difference, applied by webhook
 DELETE /v1/pledges/{id}   # IDN-EXT-01 (#35): abandons an unpaid DRAFT only; PLEDGE_CANNOT_BE_CANCELLED otherwise
 GET    /v1/pledges/{id}/receipt
 
