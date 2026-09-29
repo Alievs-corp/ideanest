@@ -1,10 +1,10 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Link, Tabs, type ErrorBoundaryProps } from 'expo-router';
 import { FailureState } from '../../components/failure-state';
 import { TabIcon, type TabIconName } from '../../components/tab-icon';
 import { Meta } from '../../components/text';
 import { useT } from '../../lib/i18n';
-import { useSession } from '../../lib/use-session';
+import { badgeText, useSessionState, useUnreadCount } from '../../lib/account';
 import { colors, radius, size, spacing } from '../../theme';
 
 /**
@@ -50,21 +50,75 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   signInPressed: { backgroundColor: colors.surface3 },
+  // Same footprint as the bell, so the title does not shift while the session is unknown.
+  placeholder: { width: size.touchTarget, height: size.touchTarget },
+  bell: {
+    width: size.touchTarget,
+    height: size.touchTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+  },
+  badge: {
+    position: 'absolute',
+    top: 4,
+    right: 2,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: radius.full,
+    backgroundColor: colors.lime500,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { color: colors.textOnLime, fontSize: 11, lineHeight: 14, fontWeight: '700' },
 });
 
-/** The header control while signed out. Nothing at all when signed in. */
-function SignInLink() {
-  const { signedIn } = useSession();
+/**
+ * The header control — the web header's right-hand side.
+ *
+ * Signed in: the bell with the unread count as a badge (`99+` past ninety-nine, none at
+ * zero). Signed out: "Sign in". Unknown (the account has not been read, or the read failed):
+ * a blank of the same width, so the title does not jump when the answer arrives.
+ */
+function HeaderAction() {
+  const state = useSessionState();
+  const unread = useUnreadCount();
   const t = useT('shell.actions');
-  if (signedIn) return null;
+  const tHeader = useT('mobile.header');
+
+  if (state === 'unknown') return <View style={styles.placeholder} />;
+
+  if (state === 'signed-out') {
+    return (
+      <Link href="/sign-in" asChild>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('signIn')}
+          style={({ pressed }) => [styles.signIn, pressed && styles.signInPressed]}
+        >
+          <Meta tone="secondary">{t('signIn')}</Meta>
+        </Pressable>
+      </Link>
+    );
+  }
+
+  const badge = unread === undefined ? null : badgeText(unread);
+  const label =
+    unread === undefined ? t('notifications') : unread > 99 ? tHeader('over') : tHeader('unread', { count: unread });
   return (
-    <Link href="/sign-in" asChild>
+    <Link href="/notifications" asChild>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t('signIn')}
-        style={({ pressed }) => [styles.signIn, pressed && styles.signInPressed]}
+        accessibilityLabel={label}
+        style={({ pressed }) => [styles.bell, pressed && styles.signInPressed]}
       >
-        <Meta tone="secondary">{t('signIn')}</Meta>
+        <TabIcon name="bell" color={colors.textPrimary} focused={false} size={24} />
+        {badge === null ? null : (
+          <View style={styles.badge} accessibilityElementsHidden importantForAccessibility="no">
+            <Meta style={styles.badgeText}>{badge}</Meta>
+          </View>
+        )}
       </Pressable>
     </Link>
   );
@@ -83,7 +137,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.lime500,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarShowLabel: false,
-        headerRight: () => <SignInLink />,
+        headerRight: () => <HeaderAction />,
       }}
     >
       {TABS.map((tab) => (

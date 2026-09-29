@@ -11,7 +11,7 @@ import Svg, { Path } from 'react-native-svg';
  * be the only signal of where somebody is (CLAUDE.md §2).
  */
 
-export type TabIconName = 'home' | 'search' | 'saved' | 'pledges' | 'me';
+export type TabIconName = 'home' | 'search' | 'saved' | 'pledges' | 'me' | 'bell';
 
 const PATHS: Record<TabIconName, readonly string[]> = {
   home: ['M3 10.5 12 3l9 7.5', 'M5 9.5V21h5v-6h4v6h5V9.5'],
@@ -20,6 +20,7 @@ const PATHS: Record<TabIconName, readonly string[]> = {
   pledges: [
     'M12 20.5s-8-4.6-8-10.7A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8 2.8c0 6.1-8 10.7-8 10.7Z',
   ],
+  bell: ['M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z', 'M10 20.5a2 2 0 0 0 4 0'],
   me: ['M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z', 'M4 21a8 8 0 0 1 16 0'],
 };
 

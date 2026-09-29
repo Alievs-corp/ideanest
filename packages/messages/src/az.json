@@ -5142,6 +5142,10 @@
       "pledges": "Dəstəklər",
       "me": "Mən"
     },
+    "header": {
+      "unread": "Bildirişlər, {count, plural, =0 {oxunmamış yoxdur} one {# oxunmamış} other {# oxunmamış}}",
+      "over": "Bildirişlər, 99-dan çox oxunmamış"
+    },
     "me": {
       "thisPhone": "Bu telefon",
       "language": "Dil",
