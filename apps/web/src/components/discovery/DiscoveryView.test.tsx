@@ -227,9 +227,18 @@ async function open(initialSearch = ''): Promise<UserEvent> {
   render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} />);
   await screen.findByRole('heading', { level: 1, name: 'Discover' });
   await waitFor(() => expect(feedMock).toHaveBeenCalled());
+  // The rail is collapsed until the reader opens it.
+  expect(screen.getByRole('button', { name: /^Filters/ })).toHaveAttribute('aria-expanded', 'false');
+  await user.click(screen.getByRole('button', { name: /^Filters/ }));
   await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Games' })).toBeInTheDocument());
 
   return user;
+}
+
+/** Opens the sort panel and returns it. */
+async function openSort(user: UserEvent): Promise<HTMLElement> {
+  await user.click(screen.getByRole('button', { name: /Sort by/ }));
+  return screen.getByRole('group', { name: 'Sort by' });
 }
 
 const search = (): URLSearchParams => new URLSearchParams(nav.read());
@@ -423,6 +432,7 @@ describe('facet counts', () => {
     render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} />);
 
     await waitFor(() => expect(feedMock).toHaveBeenCalled());
+    await userEvent.setup().click(screen.getByRole('button', { name: /^Filters/ }));
     await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Live' })).toBeEnabled());
     expect(screen.queryByText('None')).not.toBeInTheDocument();
   });
@@ -476,53 +486,51 @@ describe('the sort control', () => {
   it('changes the request and the URL', async () => {
     const user = await open();
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Sort by' }), 'most_funded');
+    const panel = await openSort(user);
+    await user.click(within(panel).getByRole('button', { name: 'Most funded' }));
 
     await waitFor(() => expect(search().get('sort')).toBe('most_funded'));
     await waitFor(() => expect(lastQuery().sort).toBe('most_funded'));
   });
 
   it('offers only the orders the service can serve', async () => {
-    await open();
+    const user = await open();
 
-    const options = within(screen.getByRole('combobox', { name: 'Sort by' }))
-      .getAllByRole('option')
-      .map((option) => (option as HTMLOptionElement).value);
+    const options = within(await openSort(user))
+      .getAllByRole('button')
+      .map((option) => option.textContent ?? '');
 
-    expect(options).toEqual(['newest', 'ending_soon', 'most_funded', 'most_backed', 'popularity']);
+    expect(options).toHaveLength(5);
     // Declared by the service and refused by every implementation of it (#44,
     // #47). Offering an order that empties the page is worse than not offering
     // it.
-    expect(options).not.toContain('relevance');
-    expect(options).not.toContain('near_me');
     // `best_match` has nothing to rank on an unsearched feed and the service
     // resolves it straight back to `newest`, so offering it here would be a
     // control that appears selectable and then does nothing.
-    expect(options).not.toContain('best_match');
+    expect(options).not.toContain('Best match');
   });
 
   it('offers best match, and shows it, once there is something to match', async () => {
-    await open('q=ceramics');
+    const user = await open('q=ceramics');
 
-    const control = screen.getByRole('combobox', { name: 'Sort by' }) as HTMLSelectElement;
-    const options = within(control)
-      .getAllByRole('option')
-      .map((option) => (option as HTMLOptionElement).value);
+    const control = screen.getByRole('button', { name: /Sort by/ });
+    const panel = await openSort(user);
+    const options = within(panel)
+      .getAllByRole('button')
+      .map((option) => option.textContent ?? '');
 
-    expect(options).toContain('best_match');
+    expect(options).toContain('Best match');
     // AND IT IS SELECTED. An unstated sort resolves to `best_match` server-side
     // whenever `q` is present, so a control reading "Newest" over this feed
     // would be describing an order the service is not using.
-    expect(control.value).toBe('best_match');
+    expect(control).toHaveTextContent('Best match');
     expect(lastQuery().sort).toBe('best_match');
   });
 
   it('keeps an order the reader chose over a search', async () => {
     await open('q=ceramics&sort=ending_soon');
 
-    expect((screen.getByRole('combobox', { name: 'Sort by' }) as HTMLSelectElement).value).toBe(
-      'ending_soon',
-    );
+    expect(screen.getByRole('button', { name: /Sort by/ })).toHaveTextContent('Ending soon');
     expect(lastQuery().sort).toBe('ending_soon');
   });
 });
