@@ -98,6 +98,8 @@ export interface ShellCopy {
      * the row is drawn from an answer asked for on open rather than on every page view.
      */
     readonly console: string;
+    /** Carries `{email}`. The menu's note to an account that has not verified its address. */
+    readonly unverified: string;
   };
 }
 
@@ -174,6 +176,12 @@ export interface FooterCopy {
 export type ShellTranslator = (key: string) => string;
 
 /**
+ * {@link ShellTranslator} plus the raw read, for the header's one template — the menu's
+ * unverified-address note carries `{email}` (#133), which only the browser knows.
+ */
+export type ShellTemplateTranslator = ShellTranslator & { raw(key: string): unknown };
+
+/**
  * Just the search box's words.
  *
  * `/search` renders `SearchField` outside the shell and needs nothing else from the
@@ -183,7 +191,7 @@ export function shellSearchCopyFrom(t: ShellTranslator): ShellCopy['search'] {
   return { label: t('search.label') };
 }
 
-export function shellCopyFrom(t: ShellTranslator): ShellCopy {
+export function shellCopyFrom(t: ShellTemplateTranslator): ShellCopy {
   return {
     skipToContent: t('skipToContent'),
     tagline: t('tagline'),
@@ -217,6 +225,7 @@ export function shellCopyFrom(t: ShellTranslator): ShellCopy {
       settings: t('actions.settings'),
       startCampaign: t('actions.startCampaign'),
       console: t('actions.console'),
+      unverified: String(t.raw('actions.unverified')),
     },
   };
 }

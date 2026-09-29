@@ -324,7 +324,7 @@ export function InboxPanel({ copy }: InboxPanelProps) {
 
       {status === 'failed' && (
         <Pill variant="ghost" size="sm" className="mt-4" onClick={() => void load()}>
-          Try again
+          {copy.tryAgain}
         </Pill>
       )}
     </section>

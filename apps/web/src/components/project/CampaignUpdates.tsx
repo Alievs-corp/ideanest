@@ -88,9 +88,7 @@ export async function CampaignUpdates({ page, olderHref, paged }: CampaignUpdate
         </p>
       ) : page.updates.length === 0 ? (
         <p className="text-sm text-white/64">
-          {paged
-            ? 'There are no older updates.'
-            : 'This campaign has not posted an update yet. Backers are told by email when it does.'}
+          {paged ? t('noOlder') : t('none')}
         </p>
       ) : (
         <ol className="flex flex-col gap-6">

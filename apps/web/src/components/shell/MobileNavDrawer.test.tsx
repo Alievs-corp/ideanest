@@ -84,7 +84,7 @@ function renderDrawer(at: Locale = 'en') {
  * whatever `messages/*.json` says, which is the opposite of what it is for.
  */
 function copyFor(at: Locale): ShellCopy {
-  return shellCopyFrom((key) => {
+  const lookup = (key: string): string => {
     let node: unknown = CATALOGUES[at].shell;
     for (const segment of key.split('.')) {
       if (typeof node !== 'object' || node === null) throw new Error(`no message at shell.${key}`);
@@ -92,7 +92,8 @@ function copyFor(at: Locale): ShellCopy {
     }
     if (typeof node !== 'string') throw new Error(`no message at shell.${key} in ${at}`);
     return node;
-  });
+  };
+  return shellCopyFrom(Object.assign(lookup, { raw: lookup }));
 }
 
 

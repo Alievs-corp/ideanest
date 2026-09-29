@@ -564,7 +564,9 @@ export interface RewardsPanelCopy {
   /** One form per category. Carries `{tiers}`, the reward titles already joined. */
   readonly itemInUse: AppPluralForms;
   readonly rewardHasBackers: string;
-  /** The language whose plural rule picks the form above. */
+  /** One form per category. Carries `{count}`: why a chosen reward can be hidden but not deleted. */
+  readonly chosenBy: AppPluralForms;
+  /** The language whose plural rule picks the forms above. */
   readonly locale: Locale;
   readonly vocabulary: RewardsVocabularyCopy;
   readonly items: ItemsSectionCopy;
@@ -636,6 +638,7 @@ export function rewardsPanelCopyFrom(
     aReward: at('aReward'),
     itemInUse: t.raw('rewards.itemInUse') as AppPluralForms,
     rewardHasBackers: at('rewardHasBackers'),
+    chosenBy: t.raw('rewards.chosenBy') as AppPluralForms,
     locale,
     vocabulary: rewardsVocabularyCopyFrom(t, locale),
     items: {

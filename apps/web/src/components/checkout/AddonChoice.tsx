@@ -104,7 +104,7 @@ export function AddonChoice({ addons, quantityOf, onChange, disabled = false,
                 </p>
               ) : (
                 <label className="flex items-center gap-2 text-[13px] text-white/64">
-                  Quantity
+                  {copy.quantity}
                   {/*
                     The add-on's title is part of the accessible name because a
                     page of eight selects all called "Quantity" is unusable by

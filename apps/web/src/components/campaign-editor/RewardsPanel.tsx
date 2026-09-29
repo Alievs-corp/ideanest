@@ -816,8 +816,7 @@ function RewardCard({
 
       {backed && (
         <p className="mt-3 text-[13px] text-white/64">
-          {reward.claimedQuantity} {reward.claimedQuantity === 1 ? 'backer has' : 'backers have'}{' '}
-          chosen this reward, so it can be hidden but not deleted.
+          {pluralise(words.locale, words.chosenBy, reward.claimedQuantity)}
         </p>
       )}
 

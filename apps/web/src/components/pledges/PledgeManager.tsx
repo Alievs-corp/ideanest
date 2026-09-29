@@ -20,6 +20,7 @@ import { PledgeEditor } from './PledgeEditor';
 import { paymentReturnHint, type PaymentReturnHint } from '../../lib/pledges/payment';
 import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import { regionNames } from '../../lib/i18n/formats';
 import type { PledgeManagerCopy } from '../../lib/i18n/pledges-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
@@ -164,14 +165,8 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
     return () => clearTimeout(timer);
   }, [returned, pledge, checks, load]);
 
-  const display = useMemo(() => {
-    try {
-      return new Intl.DisplayNames(['en'], { type: 'region' });
-    } catch {
-      // A runtime without region display names shows the code, which is still an answer.
-      return null;
-    }
-  }, []);
+  // A runtime without region display names gets null, and the code is still an answer.
+  const display = useMemo(() => regionNames(locale), [locale]);
 
   if (status === 'loading') {
     return (

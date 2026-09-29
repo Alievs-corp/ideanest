@@ -4,6 +4,7 @@ import ru from '../../../messages/ru.json';
 import tr from '../../../messages/tr.json';
 import { SUPPORTED_LOCALES, type Locale } from '../../lib/i18n/locale';
 import { type ShellCopy, shellCopyFrom } from '../../lib/i18n/shell-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -79,7 +80,7 @@ function renderHeader(at: Locale = 'en') {
  * whatever `messages/*.json` says, which is the opposite of what it is for.
  */
 function copyFor(at: Locale): ShellCopy {
-  return shellCopyFrom((key) => {
+  const lookup = (key: string): string => {
     let node: unknown = CATALOGUES[at].shell;
     for (const segment of key.split('.')) {
       if (typeof node !== 'object' || node === null) throw new Error(`no message at shell.${key}`);
@@ -87,7 +88,8 @@ function copyFor(at: Locale): ShellCopy {
     }
     if (typeof node !== 'string') throw new Error(`no message at shell.${key} in ${at}`);
     return node;
-  });
+  };
+  return shellCopyFrom(Object.assign(lookup, { raw: lookup }));
 }
 
 
@@ -211,6 +213,18 @@ describe('signed in', () => {
     await user.click(await screen.findByRole('button', { name: /Aysel Quliyeva/u }));
 
     expect(screen.getByText(/not verified yet/u)).toBeInTheDocument();
+  });
+
+  it("says it in the route's language, with the address filled in (#133)", async () => {
+    const user = userEvent.setup();
+    sessionMock.mockResolvedValue({ ...ACCOUNT, emailVerified: false });
+    renderHeader('az');
+
+    await user.click(await screen.findByRole('button', { name: /Aysel Quliyeva/u }));
+
+    const expected = fillPlaceholders(copyFor('az').actions.unverified, { email: ACCOUNT.email });
+    expect(expected).not.toContain('{email}');
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
   it('says nothing about verification once the address is verified', async () => {

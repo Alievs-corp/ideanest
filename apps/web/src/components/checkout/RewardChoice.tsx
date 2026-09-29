@@ -96,7 +96,10 @@ function StockLine({
 
   return (
     <span className="tabular-nums text-white/64">
-      {reward.remainingQuantity ?? reward.limitQuantity} of {reward.limitQuantity} left
+      {fillPlaceholders(copy.left, {
+        remaining: String(reward.remainingQuantity ?? reward.limitQuantity),
+        limit: String(reward.limitQuantity),
+      })}
     </span>
   );
 }

@@ -87,6 +87,14 @@ vi.mock('../../lib/pledges/payment', async (importOriginal) => ({
   leaveForPaymentPage: vi.fn(),
 }));
 
+/* The route's language, which names the destinations (#133). English unless a test says. */
+let routeLocale = 'en';
+
+vi.mock('next/navigation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/navigation')>()),
+  useParams: () => ({ locale: routeLocale }),
+}));
+
 const rewardsMock = vi.mocked(getPublicRewards);
 const draftMock = vi.mocked(createPledgeDraft);
 const payMock = vi.mocked(payForPledge);
@@ -264,6 +272,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  routeLocale = 'en';
 });
 
 /* -------------------------------------------------------------------------
@@ -448,6 +457,18 @@ describe('the destination', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: /Sticker pack/ }), '1');
 
     expect(await screen.findByLabelText(/Where should this go/)).toBeInTheDocument();
+  });
+
+  it("names the destinations in the route's language (#133)", async () => {
+    routeLocale = 'az';
+    const user = await open();
+
+    await user.click(screen.getByRole('radio', { name: /Enamel mug/ }));
+    const field = await screen.findByLabelText(/Where should this go/);
+
+    // The copy is still English here; only the country names follow the route.
+    expect(within(field).getByRole('option', { name: 'Azərbaycan' })).toBeInTheDocument();
+    expect(within(field).getByRole('option', { name: 'Türkiyə' })).toBeInTheDocument();
   });
 
   it('charges the rate for the destination chosen', async () => {
