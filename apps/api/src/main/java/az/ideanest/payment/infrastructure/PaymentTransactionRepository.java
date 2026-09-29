@@ -338,4 +338,24 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
                     """,
             nativeQuery = true)
     List<PaymentTransaction> settledChargesOfProject(@Param("projectId") UUID projectId);
+
+    /**
+     * The charges on one pledge that paid for a raise which could not be applied — #171, #174's review.
+     *
+     * <p>Owed back already ({@code RAISE_NOT_APPLIED}), so a staff refund of an amount draws on them
+     * last: taking one first would leave the backer short by that much once the platform's own refund
+     * of it finds nothing left. Identifiers as text; native because the raise is the pledge module's.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT CAST(t.id AS text) FROM transactions t
+                      JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
+                     WHERE t.pledge_id = :pledgeId
+                       AND t.type = 'CHARGE'
+                       AND t.status = 'SUCCEEDED'
+                       AND rs.state = 'UNAPPLIED'
+                    """,
+            nativeQuery = true)
+    List<String> unappliedRaiseChargesOf(@Param("pledgeId") UUID pledgeId);
 }

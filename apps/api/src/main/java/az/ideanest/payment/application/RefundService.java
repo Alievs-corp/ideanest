@@ -14,6 +14,7 @@ import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.payment.infrastructure.RefundRepository;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
+import az.ideanest.shared.idempotency.IdempotencyKeyReusedException;
 import az.ideanest.shared.money.Money;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +68,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class RefundService {
 
     private static final Logger log = LoggerFactory.getLogger(RefundService.class);
+
+    /** The failure code of a refund that never reached a provider. */
+    static final String NOT_SENT = "not_sent";
 
     private final RefundRepository refunds;
     private final PaymentTransactionRepository transactions;
@@ -133,14 +137,21 @@ public class RefundService {
      * commit and then each sent on its own. A part the provider refuses leaves the others standing;
      * the refusal is on its row, and a retry under a new key sends only what is still left.
      *
+     * <p><strong>Every part is sent, whatever happened to the one before (#174's review).</strong> A
+     * part whose sending throws — its answer lost, the database refusing the settlement — is left
+     * {@code REQUESTED} and the next part is sent anyway; {@link #reconcile} settles the stuck one from
+     * the provider's status once it is old enough, staff refunds included. A part that could not even
+     * be sent — its charge or its provider gone — is recorded {@code FAILED} ({@link #send}).
+     *
      * @param amount what to send back, or null for the whole of what is left. Null rather
      *     than a {@code full} flag, so "all of it" cannot disagree with a number the
      *     console computed from a page it loaded ten minutes ago
      * @param idempotencyKey CLAUDE.md: every payment mutation is idempotent. A replay
      *     returns the original parts and reaches no provider
-     * @return every part, newest charge first
+     * @return every part, in the order they were sent
      * @throws RefundExceedsCollectionException when this would return more than was taken
      * @throws NothingToRefundException when the pledge has no settled charge
+     * @throws IdempotencyKeyReusedException when the key was spent on a refund of another pledge
      */
     public List<Refund> issueParts(
             UUID staffId, UUID pledgeId, Money amount, RefundReason reason, String detail, String idempotencyKey) {
@@ -152,11 +163,16 @@ public class RefundService {
             // The whole of §9.3's R-08. A retried request returns the original result and
             // does not reach the provider, which on this endpoint is the difference
             // between refunding once and refunding twice.
+            if (!replayed.get().pledgeId().equals(pledgeId)) {
+                // The key answers for a refund of another pledge. Replaying it would tell the caller a
+                // refund happened that did not; refusing it is §10.3's answer to a reused key.
+                throw new IdempotencyKeyReusedException("refund");
+            }
             log.info("Refund {} replayed under key {}", replayed.get().id(), idempotencyKey);
             List<Refund> parts = new ArrayList<>(List.of(replayed.get()));
             for (int n = 2; ; n++) {
                 Optional<Refund> part = refunds.byIdempotencyKey(RefundRecords.partKey(idempotencyKey, n));
-                if (part.isEmpty()) {
+                if (part.isEmpty() || !part.get().pledgeId().equals(pledgeId)) {
                     break;
                 }
                 parts.add(part.get());
@@ -166,20 +182,42 @@ public class RefundService {
 
         List<Refund> sent = new ArrayList<>();
         for (Refund part : records.record(staffId, pledgeId, amount, reason, detail, idempotencyKey)) {
-            sent.add(send(part));
+            try {
+                sent.add(send(part));
+            } catch (RuntimeException unknown) {
+                // Whether the provider reversed it is not known: left REQUESTED, still counted as gone,
+                // and settled by reconcile() from the provider's status. The other parts go regardless.
+                log.error(
+                        "Refund {} of {} on pledge {} has no recorded outcome; the reconciliation settles it.",
+                        part.id(),
+                        part.amount(),
+                        pledgeId,
+                        unknown);
+                sent.add(refunds.findById(part.id()).orElse(part));
+            }
         }
         return sent;
     }
 
-    /** Steps two and three: the provider call, then the outcome. */
+    /**
+     * Steps two and three: the provider call, then the outcome.
+     *
+     * <p>A refund that cannot be sent at all — its charge or its provider cannot be found — is recorded
+     * {@code FAILED} rather than thrown (#174's review): nothing reached a provider, and a
+     * {@code REQUESTED} row would count as money gone that never left.
+     */
     private Refund send(Refund refund) {
-        PaymentTransaction charge = transactions
-                .findById(refund.chargeTransactionId())
-                .orElseThrow(() -> new NothingToRefundException(refund.pledgeId()));
-
-        PaymentProvider provider = providers
-                .byName(charge.getProvider())
-                .orElseThrow(() -> new UnconfiguredProviderException(charge.getProvider()));
+        Optional<PaymentTransaction> found = transactions.findById(refund.chargeTransactionId());
+        if (found.isEmpty()) {
+            return records.settleFailure(refund, NOT_SENT, "The charge this refund reverses was not found.");
+        }
+        PaymentTransaction charge = found.get();
+        Optional<PaymentProvider> configured = providers.byName(charge.getProvider());
+        if (configured.isEmpty()) {
+            return records.settleFailure(
+                    refund, NOT_SENT, "No payment provider is configured for " + charge.getProvider() + ".");
+        }
+        PaymentProvider provider = configured.get();
 
         RefundResult result;
         try {
@@ -222,20 +260,29 @@ public class RefundService {
     }
 
     /**
-     * IDN-EXT-01 (#40): settle a platform refund whose outcome was never recorded — a crash between
-     * asking the provider and writing the answer — from the provider's own status.
+     * IDN-EXT-01 (#40): settle a refund whose outcome was never recorded — a crash between asking the
+     * provider and writing the answer — from the provider's own status of the payment. Staff refunds
+     * as well as the platform's, since #174's review.
      *
-     * <p>{@code returned} is the refund having happened. A payment the provider still calls paid was
-     * not refunded, and the row is failed so the next pass sends it again. Anything else — pending, or
-     * a provider that cannot look payments up — is left for a later pass.
+     * <p>{@code returned} is the refund having happened, and a payment the provider still calls paid
+     * was not refunded — the row is failed so the next pass sends it again. <strong>But only when this
+     * refund is the only one against its charge</strong> (#174's review). The status is the whole
+     * payment's, and since #171 a payment can be reversed in parts: with another refund against the
+     * same charge, {@code returned} may be that one, and a partial reversal may leave the payment
+     * reported as paid. So a partial refund told "still paid", or any refund sharing its charge, is
+     * not decided: it stays {@code REQUESTED} — still counted as gone, so nothing is sent twice — and is
+     * marked for a person ({@link Refund#needsReview}), which the console's {@code REQUESTED} list
+     * shows. Anything else — pending, or a provider that cannot look payments up — is left for a later
+     * pass.
      */
     public Refund reconcile(Refund refund) {
-        PaymentTransaction charge = transactions
-                .findById(refund.chargeTransactionId())
-                .orElseThrow(() -> new NothingToRefundException(refund.pledgeId()));
-        PaymentProvider provider = providers
-                .byName(charge.getProvider())
-                .orElseThrow(() -> new UnconfiguredProviderException(charge.getProvider()));
+        Optional<PaymentTransaction> found = transactions.findById(refund.chargeTransactionId());
+        Optional<PaymentProvider> configured = found.flatMap(charge -> providers.byName(charge.getProvider()));
+        if (configured.isEmpty()) {
+            return records.markForReview(refund, "Its charge or the charge's provider cannot be found.");
+        }
+        PaymentTransaction charge = found.get();
+        PaymentProvider provider = configured.get();
 
         PaymentLookup lookup;
         try {
@@ -244,13 +291,29 @@ public class RefundService {
             log.info("Refund {} stays unresolved: {}", refund.id(), e.getMessage());
             return refund;
         }
+
+        // Every refund against the charge that has not failed, this one included: equal to this one's
+        // amount only when it is the only one.
+        boolean alone = refund.amount()
+                .equals(Money.of(refunds.refundedAgainstCharge(charge.getId()), refund.amount().currency()));
+        boolean whole = refund.amount().equals(charge.getAmount());
         return switch (lookup.state()) {
-            case RETURNED -> records.settleSuccess(
-                    refund,
-                    charge,
-                    new RefundResult(ProviderOutcome.APPROVED, null, null, null, lookup.rawResponse()));
-            case SUCCEEDED -> records.settleFailure(
-                    refund, "reverse_not_confirmed", "The provider still reports the payment as paid.");
+            case RETURNED -> alone
+                    ? records.settleSuccess(
+                            refund,
+                            charge,
+                            new RefundResult(ProviderOutcome.APPROVED, null, null, null, lookup.rawResponse()))
+                    : records.markForReview(
+                            refund,
+                            "The provider reports the payment returned, and another refund went against the same"
+                                    + " charge: which of them it was cannot be told from the payment's status.");
+            case SUCCEEDED -> alone && whole
+                    ? records.settleFailure(
+                            refund, "reverse_not_confirmed", "The provider still reports the payment as paid.")
+                    : records.markForReview(
+                            refund,
+                            "The provider still reports the payment as paid, and this refund was only part of it:"
+                                    + " a partial reversal may not change the payment's status.");
             case PENDING, FAILED -> refund;
         };
     }
@@ -262,12 +325,38 @@ public class RefundService {
      * {@link #issueParts} with {@code DISPUTE_CONCEDED} and no amount, which returns every charge's
      * remainder (#171), and the answer is only whether all of it went through.
      *
-     * @return the first part's identifier when every part succeeded, empty when the provider refused
-     *     any of them — a retry under a new key sends only what is still left
+     * <p><strong>A retry completes it (#174's review).</strong> When nothing is left to send because
+     * every earlier part has gone back, the dispute is answered with the latest refund that did; when
+     * a part is still without an outcome, the answer is empty until the reconciliation settles it —
+     * never a second refund beside one that may have happened.
+     *
+     * @return a refund's identifier when all of the pledge's money has gone back, empty when a part was
+     *     refused or has no outcome yet — a retry under a new key sends only what is still left
      */
     public Optional<UUID> refundForDispute(UUID staffId, UUID pledgeId, String detail, String idempotencyKey) {
+        staff.requireCapability(staffId, StaffCapability.ISSUE_REFUND);
+        List<PaymentTransaction> charges = transactions.settledChargesOf(pledgeId);
+        if (!charges.isEmpty()) {
+            String currency = charges.getFirst().getAmount().currency();
+            Money left = Money.of(transactions.collectedOn(pledgeId), currency)
+                    .minus(Money.of(refunds.refundedAgainst(pledgeId), currency));
+            if (!left.isPositive()) {
+                return settledInFull(pledgeId);
+            }
+        }
         List<Refund> parts = issueParts(staffId, pledgeId, null, RefundReason.DISPUTE_CONCEDED, detail, idempotencyKey);
         boolean allSucceeded = parts.stream().allMatch(part -> part.state() == RefundState.SUCCEEDED);
-        return allSucceeded ? Optional.of(parts.getFirst().id()) : Optional.empty();
+        return allSucceeded ? settledInFull(pledgeId).or(() -> Optional.of(parts.getFirst().id())) : Optional.empty();
+    }
+
+    /** The latest refund that went back, when nothing on the pledge is still without an outcome. */
+    private Optional<UUID> settledInFull(UUID pledgeId) {
+        if (refunds.countRequestedAgainst(pledgeId) > 0) {
+            return Optional.empty();
+        }
+        return refunds.forPledge(pledgeId).stream()
+                .filter(refund -> refund.state() == RefundState.SUCCEEDED)
+                .map(Refund::id)
+                .findFirst();
     }
 }

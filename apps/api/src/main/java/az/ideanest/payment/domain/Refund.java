@@ -72,6 +72,9 @@ public class Refund {
     @Column(name = "failure_message")
     private String failureMessage;
 
+    @Column(name = "review_reason")
+    private String reviewReason;
+
     @Column(name = "requested_by", nullable = false, updatable = false)
     private UUID requestedBy;
 
@@ -164,6 +167,7 @@ public class Refund {
         this.settledAt = Objects.requireNonNull(at, "at");
         this.failureCode = null;
         this.failureMessage = null;
+        this.reviewReason = null;
     }
 
     /**
@@ -178,6 +182,25 @@ public class Refund {
         this.failureCode = Objects.requireNonNull(failureCode, "failureCode");
         this.failureMessage = failureMessage;
         this.settledAt = Objects.requireNonNull(at, "at");
+        this.reviewReason = null;
+    }
+
+    /**
+     * The provider's answer was lost and its status of the payment cannot say whether this refund
+     * happened (#174's review): another refund went against the same charge, or this one was only part
+     * of it. The row stays {@code REQUESTED} — it still counts as gone, so nothing is sent twice — and
+     * is left to a person; the reconciliation stops asking about it.
+     */
+    public void needsReview(String reason) {
+        if (state != RefundState.REQUESTED) {
+            throw new IllegalStateException("Only a refund whose outcome is unknown is left for review");
+        }
+        this.reviewReason = Objects.requireNonNull(reason, "reason");
+    }
+
+    /** Why a person has to settle this refund, or null when nobody has to. */
+    public String reviewReason() {
+        return reviewReason;
     }
 
     public UUID id() {

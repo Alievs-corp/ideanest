@@ -17,10 +17,13 @@ import az.ideanest.payment.infrastructure.RefundRepository;
 import az.ideanest.pledge.application.PledgeRefunds;
 import az.ideanest.shared.money.Money;
 import java.time.Clock;
+import java.nio.charset.StandardCharsets;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +90,11 @@ public class RefundRecords {
      * up to what the pledge has left in all, split across its charges. The first part carries the
      * caller's idempotency key and the others keys derived from it ({@link #partKey}).
      *
+     * <p>A charge that paid for a raise which could not be applied is drawn on <strong>last</strong>
+     * (#174's review). It is owed back already, and the platform refunds it on its own; a staff refund
+     * of an amount that took it first would leave the backer short by that much, because the
+     * platform's refund would then find nothing left of it.
+     *
      * @return the parts, newest charge first; never empty
      * @throws NothingToRefundException when the pledge has no settled charge
      * @throws RefundExceedsCollectionException when this would return more than the pledge has left
@@ -110,9 +118,14 @@ public class RefundRecords {
         // "Meant to be the whole thing" (V53): the rest of the pledge, on every part of it.
         boolean full = requested.equals(remaining);
 
+        Set<String> owedBack = Set.copyOf(transactions.unappliedRaiseChargesOf(pledgeId));
+        List<PaymentTransaction> ordered = new ArrayList<>(charges);
+        // Stable: newest first within each group, the pledge's own money before money owed back.
+        ordered.sort(Comparator.comparing(charge -> owedBack.contains(charge.getId().toString())));
+
         List<Refund> parts = new ArrayList<>();
         Money unassigned = requested;
-        for (PaymentTransaction charge : charges) {
+        for (PaymentTransaction charge : ordered) {
             if (!unassigned.isPositive()) {
                 break;
             }
@@ -146,13 +159,16 @@ public class RefundRecords {
 
     /**
      * The idempotency key of the {@code n}th part of a refund, derived from the caller's key so a replay
-     * finds every part. Kept within V53's 200 characters.
+     * finds every part.
+     *
+     * <p>A name-based UUID of the key and the part's number, not the key with a suffix (#174's review):
+     * "key#2" is a key somebody else may have sent, and truncating a long key to fit V53's 200
+     * characters made two different keys derive the same one. Of a fixed length, and different for
+     * every key and part: the number is last, after a separator no number contains.
      */
     static String partKey(String idempotencyKey, int n) {
-        String suffix = "#" + n;
-        return idempotencyKey.length() + suffix.length() <= 200
-                ? idempotencyKey + suffix
-                : idempotencyKey.substring(0, 200 - suffix.length()) + suffix;
+        byte[] name = (idempotencyKey + "|part|" + n).getBytes(StandardCharsets.UTF_8);
+        return "refund-part-" + UUID.nameUUIDFromBytes(name);
     }
 
     /**
@@ -285,6 +301,24 @@ public class RefundRecords {
 
         log.info("Refund {} of {} settled on pledge {}", refund.id(), refund.amount(), refund.pledgeId());
         return settled;
+    }
+
+    /**
+     * Leaves a refund whose outcome cannot be decided to a person — #174's review.
+     *
+     * <p>It stays {@code REQUESTED}, so it still counts as gone and nothing is sent twice, and the
+     * reconciliation stops asking about it. Logged at {@code ERROR}: money may or may not have moved.
+     */
+    @Transactional
+    Refund markForReview(Refund refund, String reason) {
+        pledges.lock(refund.pledgeId());
+        Refund attached = refunds.findById(refund.id()).orElseThrow();
+        if (attached.state() != RefundState.REQUESTED) {
+            return attached;
+        }
+        attached.needsReview(reason);
+        log.error("Refund {} of {} on pledge {} needs a person: {}", refund.id(), refund.amount(), refund.pledgeId(), reason);
+        return refunds.save(attached);
     }
 
     /**

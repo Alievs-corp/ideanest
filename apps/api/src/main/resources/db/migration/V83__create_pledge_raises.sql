@@ -19,11 +19,15 @@
 --              was refunded, changed by a later raise, or the places are gone. The charge is owed
 --              back, and the campaign-refunds job returns it (RAISE_NOT_APPLIED, below)
 --
--- Reverse: DROP TABLE pledge_raise_lines; DROP TABLE pledge_raises; and restore the two refund
--- constraints below without RAISE_NOT_APPLIED -- once no row uses it.
+-- Reverse: ALTER TABLE refunds DROP COLUMN review_reason; DROP TABLE pledge_raise_lines; DROP TABLE
+-- pledge_raises; and restore the two refund constraints below without RAISE_NOT_APPLIED -- once no
+-- row uses it.
 --
--- Contract: none. Two new tables, and two CHECK constraints that accept one more value; nothing the
--- previous release reads or writes goes away, so the SCHEMA is safe under a rolling deployment.
+-- Contract: none. Two new tables, a nullable column on refunds that the previous release does not map,
+-- and two CHECK constraints that accept one more value; nothing the previous release reads or writes
+-- goes away, so the SCHEMA is safe under a rolling deployment. (A previous-release node reconciling a
+-- refund marked for review would fail refunds_review_only_while_requested and roll back -- which is
+-- the point of the mark.)
 --
 -- The BEHAVIOUR is not, for the minutes both releases run, and what covers it is code rather than
 -- this file:
@@ -165,3 +169,14 @@ ALTER TABLE refunds ADD CONSTRAINT refunds_system_refunds_are_campaign_refunds C
 -- A refund reverses one charge. A raised pledge has more than one, so "has this charge been
 -- refunded" is now asked per charge.
 CREATE INDEX refunds_by_charge ON refunds (charge_transaction_id) WHERE charge_transaction_id IS NOT NULL;
+
+-- A refund whose outcome was lost is settled from the provider's status of the whole payment
+-- (`/get-status`), and since #171 a payment can be reversed in parts. When another refund has gone
+-- against the same charge, or this one was only part of it, "returned" or "still paid" does not say
+-- whether THIS refund happened. Such a row is left REQUESTED -- it still counts as gone, so nothing is
+-- sent twice -- and marked here for staff, so the reconciliation stops asking about it and does not
+-- crowd out the rows it can decide. Null on every row that does not need a person.
+ALTER TABLE refunds ADD COLUMN review_reason text;
+ALTER TABLE refunds ADD CONSTRAINT refunds_review_only_while_requested CHECK (
+    review_reason IS NULL OR (state = 'REQUESTED' AND length(btrim(review_reason)) BETWEEN 1 AND 500)
+);

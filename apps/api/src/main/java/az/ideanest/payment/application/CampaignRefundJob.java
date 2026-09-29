@@ -22,9 +22,10 @@ import org.springframework.stereotype.Component;
  * below 80%, or an extension ended below it), {@code SUSPENDED}, and {@code CANCELED}. A pass refunds
  * a bounded batch of their settled charges with money left (#171: per charge, whatever the pledge's
  * state, and every charge of a raise that could not be applied), oldest charge first, each in its own
- * transactions so one refusal does not stop the rest; then it settles platform refunds whose outcome
- * was lost from the provider's {@code returned} status. A pledge becomes {@code REFUNDED} when the
- * refund that leaves nothing on it settles, not when it is requested.
+ * transactions so one refusal does not stop the rest; then it settles refunds whose outcome was lost
+ * from the provider's status of the payment — staff refunds too since #174's review, and only where
+ * that status can say which refund it was ({@code RefundService#reconcile}). A pledge becomes
+ * {@code REFUNDED} when the refund that leaves nothing on it settles, not when it is requested.
  *
  * <p>A sweep rather than a listener on the campaign's event, because a refund is a provider call and
  * a campaign of thousands of backers must not be one delivery that either succeeds entirely or is
@@ -79,7 +80,7 @@ public class CampaignRefundJob implements ScheduledJob {
             }
         }
 
-        for (Refund unresolved : refunds.unresolvedCampaignRefunds(
+        for (Refund unresolved : refunds.unresolvedRefunds(
                 now.minus(properties.unresolvedAfter()), PageRequest.ofSize(properties.perPass()))) {
             try {
                 service.reconcile(unresolved);

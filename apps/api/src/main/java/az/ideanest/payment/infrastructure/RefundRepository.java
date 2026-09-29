@@ -173,16 +173,32 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
             nativeQuery = true)
     List<Object[]> owedPlatformRefunds(@Param("retryBefore") java.time.Instant retryBefore, @Param("limit") int limit);
 
-    /** IDN-EXT-01 (#40): platform refunds whose outcome was never recorded, oldest first. */
+    /**
+     * Refunds whose outcome was never recorded, oldest first — IDN-EXT-01 (#40).
+     *
+     * <p>A member of staff's as well as the platform's since #174's review: a staff refund of a raised
+     * pledge is sent as several parts, and a part whose answer was lost would otherwise stay
+     * {@code REQUESTED} for ever, counted as gone and never paid. Rows already left for a person
+     * ({@code review_reason}) are not asked about again.
+     */
     @Query(
             """
             SELECT r FROM Refund r
             WHERE r.state = az.ideanest.payment.domain.RefundState.REQUESTED
-              AND r.requestedBy IS NULL
+              AND r.reviewReason IS NULL
               AND r.requestedAt < :before
             ORDER BY r.requestedAt ASC
             """)
-    List<Refund> unresolvedCampaignRefunds(@Param("before") java.time.Instant before, Pageable page);
+    List<Refund> unresolvedRefunds(@Param("before") java.time.Instant before, Pageable page);
+
+    /** How many refunds against one pledge have no outcome yet — #174's review, for a dispute's retry. */
+    @Query(
+            """
+            SELECT COUNT(r) FROM Refund r
+            WHERE r.pledgeId = :pledgeId
+              AND r.state = az.ideanest.payment.domain.RefundState.REQUESTED
+            """)
+    long countRequestedAgainst(@Param("pledgeId") UUID pledgeId);
 
     /** Every refund against one pledge, for the detail a support conversation needs. */
     @Query("SELECT r FROM Refund r WHERE r.pledgeId = :pledgeId ORDER BY r.requestedAt DESC")
