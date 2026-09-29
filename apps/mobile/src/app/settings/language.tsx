@@ -5,7 +5,8 @@ import { saveAccountLocale } from '../../api/client';
 import { Button } from '../../components/form';
 import { Body, CardTitle, Heading } from '../../components/text';
 import { useT } from '../../lib/i18n';
-import { setLocale, useLocale } from '../../lib/locale';
+import { useQueryClient } from '@tanstack/react-query';
+import { currentLocale, setLocale, useLocale } from '../../lib/locale';
 import { useSession } from '../../lib/use-session';
 import { colors, radius, size, spacing } from '../../theme';
 
@@ -51,14 +52,20 @@ export default function LanguageScreen() {
   const active = useLocale();
   const { signedIn } = useSession();
   const [unsaved, setUnsaved] = useState<Locale | null>(null);
+  const queryClient = useQueryClient();
 
   async function saveToAccount(locale: Locale): Promise<void> {
     if (!signedIn) return;
-    setUnsaved((await saveAccountLocale(locale)) ? null : locale);
+    const saved = await saveAccountLocale(locale);
+    // A slow answer for a language that has since been replaced says nothing about the
+    // current choice, and a retry of it would overwrite the account with the older one.
+    if (locale === currentLocale()) setUnsaved(saved ? null : locale);
   }
 
   function choose(locale: Locale): void {
     setLocale(locale);
+    // Category names, collection titles and facet labels arrive already translated.
+    void queryClient.invalidateQueries();
     setUnsaved(null);
     void saveToAccount(locale);
   }

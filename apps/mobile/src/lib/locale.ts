@@ -64,13 +64,15 @@ export function currentLocale(): Locale {
 /**
  * Switches the language, persists the choice and re-renders subscribers with no restart.
  *
- * Also the entry for an account language read from `GET /v1/me`: it overwrites the stored
- * choice, which is rule 2 above.
+ * Rule 2 (the account language from `GET /v1/me` overwriting the stored choice) will call
+ * this too, once the session reads `/v1/me`; nothing reads it yet.
  */
 export function setLocale(next: Locale): void {
+  // Persisted even when unchanged: tapping the language already in use is still a choice,
+  // and it must outlive a later change of the phone's own language.
+  deviceStore.set(STORAGE_KEY, next);
   if (next === current) return;
   current = next;
-  deviceStore.set(STORAGE_KEY, next);
   for (const listener of listeners) listener();
 }
 

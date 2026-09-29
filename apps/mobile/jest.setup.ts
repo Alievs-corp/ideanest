@@ -207,7 +207,7 @@ jest.mock('expo-constants', () => ({
   },
 }));
 
-/** The device's language. One of §21.1's four, so `deviceLocale()` resolves rather than falls back. */
+/** The device's language. One of §21.1's four, so `resolveLocale` finds a device language rather than falling back. */
 jest.mock('expo-localization', () => ({
   getLocales: () => [{ languageCode: 'az', languageTag: 'az-AZ' }],
 }));

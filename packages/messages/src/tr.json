@@ -5163,7 +5163,9 @@
     },
     "fallback": {
       "body": "IdeyaNest’in bu bölümü uygulama için hâlâ hazırlanıyor. Web sitesinde hazır.",
-      "open": "Web sitesinde aç"
+      "open": "Web sitesinde aç",
+      "editCampaign": "Kampanyayı düzenle",
+      "prelaunch": "Ön lansman sayfası"
     },
     "language": {
       "title": "Dil",

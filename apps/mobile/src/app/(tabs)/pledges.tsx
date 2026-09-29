@@ -2,7 +2,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
-import { currentLocale } from '../../lib/locale';
+import { useLocale } from '../../lib/locale';
 import { usePledges } from '../../api/queries';
 import { Button } from '../../components/form';
 import { EmptyState, ErrorState, Loading, OfflineNotice } from '../../components/states';
@@ -60,7 +60,7 @@ export default function PledgesScreen() {
 
   const items = pledges.data?.pledges ?? [];
   // Once per render of the screen, not once per row.
-  const locale = currentLocale();
+  const locale = useLocale();
 
   if (items.length === 0) {
     if (pledges.isLoading) return <Loading label="Loading your pledges" />;

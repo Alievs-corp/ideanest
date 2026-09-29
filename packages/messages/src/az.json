@@ -5163,7 +5163,9 @@
     },
     "fallback": {
       "body": "IdeyaNest-in bu hissəsi tətbiq üçün hələ hazırlanır. Saytda hazırdır.",
-      "open": "Saytda aç"
+      "open": "Saytda aç",
+      "editCampaign": "Kampaniyanı redaktə et",
+      "prelaunch": "Ön-lansman səhifəsi"
     },
     "language": {
       "title": "Dil",

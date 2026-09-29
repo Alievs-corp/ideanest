@@ -1,3 +1,4 @@
+import { deviceStore } from './storage';
 import { currentLocale, resolveLocale, setLocale } from './locale';
 
 const none = { stored: null, account: null, languages: [], region: null } as const;
@@ -40,5 +41,12 @@ describe('setLocale', () => {
     expect(currentLocale()).toBe('ru');
     setLocale('az');
     expect(currentLocale()).toBe('az');
+  });
+});
+
+describe('setLocale persistence', () => {
+  it('stores the choice even when it equals the language already in use', () => {
+    setLocale('az');
+    expect(deviceStore.getString('locale')).toBe('az');
   });
 });

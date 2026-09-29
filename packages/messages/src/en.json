@@ -5163,7 +5163,9 @@
     },
     "fallback": {
       "body": "This part of IdeyaNest is still being built for the app. It is ready on the website.",
-      "open": "Open on the website"
+      "open": "Open on the website",
+      "editCampaign": "Edit campaign",
+      "prelaunch": "Pre-launch page"
     },
     "language": {
       "title": "Language",
