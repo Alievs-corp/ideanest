@@ -311,6 +311,18 @@ Width narrows, fill turns white, padding tightens — all on one 300ms curve. Th
 effect is that navigation is absent at the top of the page and materialises as
 you move.
 
+> **The CSS above describes the two end states, not how to animate between
+> them.** Transitioning `max-width` and `padding` lays the page out again on
+> every frame, on every page, on scroll (issue 166). `TopBar` applies the layout
+> change in one step and draws the motion with `transform` and `opacity` only:
+> the white fill is its own layer that fades in with `opacity`, and the row's
+> children are moved by FLIP — measured before the change, then started from
+> where they were with a `transform` that runs out over the same 300ms. The FLIP
+> transform exists only while it runs, because a transform left on the row
+> would become the containing block of the drawer's `position: fixed` panel.
+> Under reduced motion the fade's transition is removed and the FLIP is not
+> started.
+
 ### 4.8 Counting figure
 
 ```tsx

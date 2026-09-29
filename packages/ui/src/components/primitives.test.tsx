@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -10,6 +10,7 @@ import { Avatar, AvatarGroup } from './Avatar/Avatar';
 import { Timeline } from '../layout/Timeline';
 import { RailItem, Rail } from '../layout/Rail';
 import { TopBar } from '../layout/TopBar';
+import { setPrefersReducedMotion } from '../test-setup';
 
 /**
  * Appearance is reviewed in Storybook. These tests cover BEHAVIOUR and
@@ -185,6 +186,38 @@ describe('Avatar', () => {
     );
     expect(screen.getByText('+1695')).toBeInTheDocument();
   });
+
+  /**
+   * Issue 166: the spread used to widen each face's negative margin, which laid the row out
+   * again on every frame and shoved whatever sat beside the group. The overlap is fixed now
+   * and the spread is a transform, cumulative by position.
+   */
+  it('spreads on hover with a transform by position, never a margin', () => {
+    const { container } = render(
+      <AvatarGroup max={2} total={5}>
+        <Avatar name="One Person" />
+        <Avatar name="Two Person" />
+        <Avatar name="Three Person" />
+      </AvatarGroup>,
+    );
+    const group = container.firstElementChild as HTMLElement;
+    const slots = Array.from(group.children) as HTMLElement[];
+
+    expect(slots).toHaveLength(3);
+    expect(group.className).not.toMatch(/margin|-ml-1/);
+    slots.forEach((slot, index) => {
+      expect(slot.style.getPropertyValue('--avatar-index')).toBe(String(index));
+      expect(slot.className).toContain('group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)]');
+      expect(slot.className).toContain('transition-transform');
+      expect(slot.className).toContain('motion-reduce:transition-none');
+      expect(slot.className).not.toContain('transition-[margin]');
+    });
+    /* The overlap itself is fixed layout: every face after the first, the chip included. */
+    expect(slots[0]?.className).not.toContain('-ml-2.5');
+    expect(slots[1]?.className).toContain('-ml-2.5');
+    expect(slots[2]).toHaveTextContent('+3');
+    expect(slots[2]?.className).toContain('-ml-2.5');
+  });
 });
 
 describe('RailItem', () => {
@@ -274,5 +307,96 @@ describe('TopBar', () => {
 
     const pill = screen.getByRole('link', { name: 'Discover' }).parentElement as HTMLElement;
     expect(pill.className).not.toContain('hidden');
+  });
+
+  /*
+   * Issue 166: the bar used to transition padding and max-width, laying out the page on every
+   * frame of every collapse. What moves now is a surface layer's opacity and a transform on
+   * the row's children that exists only while it runs.
+   */
+  describe('collapse motion', () => {
+    const animate = vi.fn();
+
+    /** Every element reports a box that depends on the bar's state, as layout would. */
+    function stubLayout() {
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: Element,
+      ) {
+        const collapsed = this.closest('header')?.hasAttribute('data-scrolled') ?? false;
+        const top = collapsed ? 20 : 28;
+        return new DOMRect(collapsed ? 18 : 20, top, 100, 40);
+      });
+      Object.defineProperty(HTMLElement.prototype, 'animate', {
+        configurable: true,
+        writable: true,
+        value: animate,
+      });
+    }
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      animate.mockReset();
+      delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
+      setPrefersReducedMotion(false);
+    });
+
+    function bar(scrolled: boolean) {
+      return (
+        <TopBar
+          forceScrolled={scrolled}
+          logo={<span>IdeaNest</span>}
+          nav={<a href="/discover">Discover</a>}
+          actions={<button type="button">Sign in</button>}
+        />
+      );
+    }
+
+    it('fades a surface layer in with opacity instead of animating the pill', () => {
+      const { container, rerender } = render(bar(false));
+      const pill = screen.getByRole('link', { name: 'Discover' }).parentElement as HTMLElement;
+      const surface = container.querySelector('[data-top-bar-surface]') as HTMLElement;
+
+      expect(surface).toHaveAttribute('aria-hidden', 'true');
+      expect(surface.className).toContain('transition-opacity');
+      expect(surface.className).toContain('opacity-0');
+      /* The pill keeps a border in both states, so its box does not change with the surface. */
+      expect(pill.className).toContain('border-transparent');
+      expect(pill.className).not.toMatch(/transition-\[/);
+
+      rerender(bar(true));
+      expect(surface.className).toContain('opacity-100');
+      expect(surface.className).toContain('bg-white');
+      expect(pill.className).toContain('max-w-[445px]');
+      expect(pill.className).toContain('text-on-white');
+    });
+
+    it('moves the row with a transform from where it was drawn to nothing', () => {
+      stubLayout();
+      const { container, rerender } = render(bar(false));
+      rerender(bar(true));
+
+      const row = container.querySelector('header > div') as HTMLElement;
+      expect(row.className).not.toContain('transition');
+      /* Logo, pill and actions: each started 2px right of and 8px below where it now sits. */
+      expect(animate).toHaveBeenCalledTimes(row.children.length);
+      for (const [keyframes, options] of animate.mock.calls) {
+        expect(keyframes).toEqual([{ transform: 'translate(2px, 8px)' }, { transform: 'none' }]);
+        expect(options).toMatchObject({ duration: 300 });
+      }
+      expect(animate.mock.contexts).toEqual(Array.from(row.children));
+    });
+
+    it('draws no motion when the reader asks for less', () => {
+      stubLayout();
+      setPrefersReducedMotion(true);
+      const { container, rerender } = render(bar(false));
+      rerender(bar(true));
+
+      expect(animate).not.toHaveBeenCalled();
+      expect(container.querySelector('header')).toHaveAttribute('data-scrolled');
+      expect(
+        (container.querySelector('[data-top-bar-surface]') as HTMLElement).className,
+      ).toContain('motion-reduce:transition-none');
+    });
   });
 });
