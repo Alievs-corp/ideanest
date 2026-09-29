@@ -177,6 +177,7 @@ public class ScriptedPaymentProvider implements PaymentProvider {
     public void reset() {
         refundRefusal = null;
         lostRefundAnswers.set(0);
+        lostRefundAnswersFor.clear();
         hostedPagesUnavailable = false;
         lookups.clear();
         scripted.clear();
@@ -347,6 +348,22 @@ public class ScriptedPaymentProvider implements PaymentProvider {
         lostRefundAnswers.set(count);
     }
 
+    private final Set<String> lostRefundAnswersFor = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /**
+     * The next refund of this payment reaches the provider and its answer is lost, as
+     * {@link #loseRefundAnswers} — for one payment, whatever order the refunds are sent in (#174).
+     */
+    public void loseRefundAnswerFor(String providerTransactionId) {
+        lostRefundAnswersFor.add(providerTransactionId);
+    }
+
+    /** Every refund's answer arrives again: undoes {@link #loseRefundAnswers} and {@link #loseRefundAnswerFor}. */
+    public void answerEveryRefund() {
+        lostRefundAnswers.set(0);
+        lostRefundAnswersFor.clear();
+    }
+
     public void willLookUp(String providerTransactionId, PaymentLookup.State state) {
         lookups.put(providerTransactionId, state);
     }
@@ -354,7 +371,8 @@ public class ScriptedPaymentProvider implements PaymentProvider {
     @Override
     public RefundResult refund(RefundRequest request) {
         refunds.add(request);
-        if (lostRefundAnswers.getAndUpdate(left -> Math.max(left - 1, 0)) > 0) {
+        if (lostRefundAnswersFor.remove(request.providerTransactionId())
+                || lostRefundAnswers.getAndUpdate(left -> Math.max(left - 1, 0)) > 0) {
             throw new IllegalStateException("Scripted: the refund's answer was lost");
         }
         String refusal = refundRefusal;

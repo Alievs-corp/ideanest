@@ -118,14 +118,14 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
     @BeforeEach
     void refundsApproved() {
         provider.willRefund();
-        provider.loseRefundAnswers(0);
+        provider.answerEveryRefund();
         provider.willOpenHostedPayments();
     }
 
     @AfterEach
     void clearPayments() {
         provider.willRefund();
-        provider.loseRefundAnswers(0);
+        provider.answerEveryRefund();
         provider.willOpenHostedPayments();
         jdbc().update("DELETE FROM provider_webhook_events");
         // This suite's pledges' events, which no relay here publishes: left behind, a later suite's relay
@@ -800,11 +800,10 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
 
         assertThat(again).isEqualTo(first);
         assertThat(sentFor(paid.pledgeId())).hasSize(2);
-        assertThat(jdbc().queryForList(
-                        "SELECT idempotency_key FROM refunds WHERE pledge_id = ? ORDER BY idempotency_key",
-                        String.class,
-                        paid.pledgeId()))
-                .containsExactly(key, key + "#2");
+        List<String> keys = jdbc().queryForList(
+                "SELECT idempotency_key FROM refunds WHERE pledge_id = ?", String.class, paid.pledgeId());
+        assertThat(keys).hasSize(2).contains(key);
+        assertThat(keys).filteredOn(part -> !part.equals(key)).singleElement().asString().startsWith("refund-part-");
     }
 
     @Test
@@ -1028,6 +1027,141 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
     }
 
     // ------------------------------------------------------------------
+    // Parts that lose their answer, and what the payment's status can prove (#174's second review)
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a staff refund part whose answer is lost does not stop the next part, and is reconciled")
+    void aStaffPartWithALostAnswerIsReconciled() {
+        Scenario paid = aPaidPledge("raise-staff-lost");
+        String raised = raiseAndPay(paid);
+        provider.loseRefundAnswerFor(raised);
+
+        ResponseEntity<Map<String, Object>> issued = staffRefund(paid.pledgeId(), null);
+
+        assertThat(issued.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(issued.getBody()).as("the part without an outcome is the answer").containsEntry("state", "REQUESTED");
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.providerTransactionId() + "=" + request.amount().amount().toPlainString())
+                .containsExactly(raised + "=55.00", paid.providerTransactionId() + "=25.00");
+        assertThat(refundStates(paid.pledgeId())).containsExactlyInAnyOrder("REQUESTED", "SUCCEEDED");
+        assertThat(state(paid.pledgeId())).isEqualTo("COLLECTED");
+
+        // An hour on, the provider still calls the raise's payment paid, and that refund was all of it:
+        // it did not happen. It fails, and the rest can be refunded.
+        refunds.refundDue(Instant.now().plus(Duration.ofHours(2)));
+        assertThat(refundStates(paid.pledgeId())).containsExactlyInAnyOrder("FAILED", "SUCCEEDED");
+        assertThat(state(paid.pledgeId())).isEqualTo("COLLECTED");
+
+        assertThat(staffRefund(paid.pledgeId(), null).getBody()).containsEntry("state", "SUCCEEDED");
+        assertThat(sentFor(paid.pledgeId()).getLast().amount().amount()).isEqualByComparingTo("55.00");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+    }
+
+    @Test
+    @DisplayName("an upheld dispute whose part lost its answer waits for it, then completes without refunding twice")
+    void aDisputeWithALostPartCompletesOnRetry() {
+        Scenario paid = aPaidPledge("raise-dispute-lost");
+        String raised = raiseAndPay(paid);
+        provider.loseRefundAnswerFor(raised);
+        UUID staffId = admin().id();
+
+        assertThat(refundService.refundForDispute(staffId, paid.pledgeId(), "Upheld.", "backer-dispute-" + UUID.randomUUID()))
+                .isEmpty();
+        assertThat(refundService.refundForDispute(staffId, paid.pledgeId(), "Upheld.", "backer-dispute-" + UUID.randomUUID()))
+                .as("still without an outcome: not refunded again beside it")
+                .isEmpty();
+        assertThat(sentFor(paid.pledgeId())).hasSize(2);
+
+        provider.willLookUp(raised, PaymentLookup.State.RETURNED);
+        refunds.refundDue(Instant.now().plus(Duration.ofHours(2)));
+        assertThat(refundStates(paid.pledgeId())).containsOnly("SUCCEEDED").hasSize(2);
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+
+        assertThat(refundService.refundForDispute(staffId, paid.pledgeId(), "Upheld.", "backer-dispute-" + UUID.randomUUID()))
+                .isPresent();
+        assertThat(sentFor(paid.pledgeId())).as("nothing sent twice").hasSize(2);
+    }
+
+    @Test
+    @DisplayName("a lost remainder refund is not settled from a 'returned' status another refund of the charge explains")
+    void aReturnedStatusDoesNotSettleARemainderRefund() {
+        Scenario paid = aPaidPledge("raise-remainder-lost");
+        String raised = raiseAndPay(paid);
+        // 10.00 of the raise's 55.00 goes back first.
+        assertThat(staffRefund(paid.pledgeId(), azn("10.00")).getBody()).containsEntry("state", "SUCCEEDED");
+        end(paid.projectId(), "UNSUCCESSFUL");
+        provider.loseRefundAnswerFor(raised);
+
+        refunds.refundDue(Instant.now());
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.providerTransactionId() + "=" + request.amount().amount().toPlainString())
+                .containsExactlyInAnyOrder(
+                        raised + "=10.00", paid.providerTransactionId() + "=25.00", raised + "=45.00");
+
+        provider.willLookUp(raised, PaymentLookup.State.RETURNED);
+        refunds.refundDue(Instant.now().plus(Duration.ofHours(2)));
+
+        Map<String, Object> remainder = jdbc().queryForMap(
+                "SELECT state, review_reason FROM refunds WHERE pledge_id = ? AND amount = 45.00", paid.pledgeId());
+        assertThat(remainder.get("state")).as("not proven either way").isEqualTo("REQUESTED");
+        assertThat((String) remainder.get("review_reason")).contains("another refund");
+        assertThat(state(paid.pledgeId())).isEqualTo("COLLECTED");
+
+        // Left for a person: not asked about again, and nothing is sent in its place.
+        provider.willLookUp(raised, PaymentLookup.State.SUCCEEDED);
+        refunds.refundDue(Instant.now().plus(Duration.ofHours(10)));
+        assertThat(jdbc().queryForObject(
+                        "SELECT state FROM refunds WHERE pledge_id = ? AND amount = 45.00", String.class, paid.pledgeId()))
+                .isEqualTo("REQUESTED");
+        assertThat(sentFor(paid.pledgeId())).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("a staff refund of an amount draws on a charge owed back last, so the backer gets both")
+    void aStaffRefundLeavesTheOwedBackChargeLast() {
+        Scenario paid = aPaidPledge("raise-staff-owed");
+        String transaction = (String) raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString())
+                .getBody()
+                .get("providerTransactionId");
+        lapse(paid.pledgeId());
+        cleaner.releaseLapsedRaises(Instant.now());
+        jdbc().update("UPDATE reward_tiers SET claimed_quantity = 2 WHERE id = ?", paid.deluxe());
+        deliver(transaction, "charge_succeeded");
+        assertThat(raiseOf(read(paid)).get("state")).isEqualTo("UNAPPLIED");
+
+        assertThat(staffRefund(paid.pledgeId(), azn("20.00")).getBody()).containsEntry("state", "SUCCEEDED");
+        refunds.refundDue(Instant.now());
+
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.providerTransactionId() + "=" + request.amount().amount().toPlainString())
+                .containsExactly(paid.providerTransactionId() + "=20.00", transaction + "=55.00");
+        assertThat(state(paid.pledgeId())).as("5.00 of the pledge still stands").isEqualTo("COLLECTED");
+    }
+
+    @Test
+    @DisplayName("a refund part's key cannot collide with another request's, and a key spent on another pledge is refused")
+    void refundPartKeysDoNotCollide() {
+        Scenario first = aRaisedPledge("raise-key-first");
+        Scenario second = aPaidPledge("raise-key-second");
+        String key = "refund-" + "k".repeat(193);
+        assertThat(key).hasSize(200);
+
+        // What a suffixed part key would have been, spent first by another request.
+        assertThat(staffRefund(second.pledgeId(), azn("1.00"), key.substring(0, 198) + "#2").getBody())
+                .containsEntry("state", "SUCCEEDED");
+        assertThat(staffRefund(first.pledgeId(), null, key).getBody()).containsEntry("state", "SUCCEEDED");
+        assertThat(sentFor(first.pledgeId())).hasSize(2);
+        assertThat(state(first.pledgeId())).isEqualTo("REFUNDED");
+
+        ResponseEntity<Map<String, Object>> elsewhere = staffRefund(second.pledgeId(), null, key);
+        assertThat(elsewhere.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(elsewhere.getBody()).containsEntry("code", "IDEMPOTENCY_KEY_REUSED");
+        assertThat(sentFor(second.pledgeId())).as("only the 1.00").hasSize(1);
+    }
+
+    // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
 
@@ -1093,6 +1227,16 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
                 campaign.backer(),
                 pledgeId,
                 transaction);
+    }
+
+    /** Raises a paid pledge to Deluxe with two mugs and pays the 55.00; the raise's payment. */
+    private String raiseAndPay(Scenario paid) {
+        String raised = (String) raiseToDeluxeWithTwoMugs(paid, UUID.randomUUID().toString())
+                .getBody()
+                .get("providerTransactionId");
+        assertThat(deliver(raised, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(amount(read(paid), "total")).isEqualTo("80.00");
+        return raised;
     }
 
     /** A pledge paid for at 25.00 and raised to Deluxe with two mugs, 80.00, the difference paid. */
