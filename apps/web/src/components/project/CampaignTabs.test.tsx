@@ -76,6 +76,7 @@ const TABS = translatorFor('campaign.tabs');
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   route.locale = 'en';
 });
 
@@ -181,5 +182,24 @@ describe('the campaign tab strip', () => {
       expect(link).toHaveClass('focus-visible:outline-[var(--lime-500)]');
       expect(link.className).not.toContain('outline-offset-[-');
     }
+  });
+
+  /**
+   * #181. Chromium leaves a tab that is only partly off the row's edge where it is when Tab
+   * lands on it, so the row asks for it. The strip is server-rendered, and this is what proves
+   * the handler survived the trip through `ScrollRow`, the client `<ul>` it is carried on.
+   */
+  it('scrolls a tab fully into view when it takes focus', async () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+    render(await resolveServerTree(<CampaignTabs active="campaign" path={PATH} />));
+
+    const faq = screen.getByRole('link', { name: TABS('faq') });
+    faq.focus();
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.contexts[0]).toBe(faq);
+    expect(scrollIntoView).toHaveBeenCalledWith(
+      expect.objectContaining({ block: 'nearest', inline: 'nearest' }),
+    );
   });
 });

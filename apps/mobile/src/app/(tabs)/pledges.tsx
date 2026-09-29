@@ -6,6 +6,7 @@ import { usePledges } from '../../api/queries';
 import { Button } from '../../components/form';
 import { EmptyState, ErrorState, Loading, OfflineNotice } from '../../components/states';
 import { Body, CardTitle, Meta } from '../../components/text';
+import { readablePledgeState } from '../../lib/pledge-states';
 import { useSession } from '../../lib/use-session';
 import { colors, radius, size, spacing } from '../../theme';
 
@@ -40,28 +41,6 @@ const styles = StyleSheet.create({
   separator: { height: spacing[3] },
   amount: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[3] },
 });
-
-/** The states §5.3 gives a pledge, in words a backer would use. */
-function readableState(state: string | undefined): string {
-  switch (state) {
-    case 'DRAFT':
-      return 'Not finished';
-    case 'PENDING':
-      return 'Awaiting payment';
-    case 'CONFIRMED':
-      return 'Confirmed';
-    case 'COLLECTED':
-      return 'Collected';
-    case 'CANCELED':
-      return 'Cancelled';
-    case 'REFUNDED':
-      return 'Refunded';
-    default:
-      // Not "Unknown". A state this build has not been taught about is still a
-      // real state on the service, and printing it is more useful than hiding it.
-      return state ?? '';
-  }
-}
 
 export default function PledgesScreen() {
   const router = useRouter();
@@ -115,7 +94,7 @@ export default function PledgesScreen() {
           {item.rewardTitle == null ? null : <Body numberOfLines={1}>{item.rewardTitle}</Body>}
           <View style={styles.amount}>
             <Meta tone="secondary">{formatMoney(item.amounts?.total)}</Meta>
-            <Meta>{readableState(item.state)}</Meta>
+            <Meta>{readablePledgeState(item.state)}</Meta>
           </View>
         </View>
       )}

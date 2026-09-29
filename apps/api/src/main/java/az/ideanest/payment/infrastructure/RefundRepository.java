@@ -8,8 +8,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * V53's refunds — issues #67 and #307.
@@ -25,6 +27,12 @@ import org.springframework.data.repository.query.Param;
  * not. A requested refund has not left yet but is about to, and counting only the
  * succeeded ones would let two staff members each issue a full refund in the seconds
  * before the first one settles.
+ *
+ * <p><strong>Except a {@code FAILED} one whose provider could not be reached (#183).</strong> This
+ * release never writes one — such a refund stays {@code REQUESTED} (#176) — but the release before it
+ * did, and during a rolling deploy it still can after V85 has run. Whether that reversal happened is
+ * unknown, so every sum here counts it as gone until {@link #reopenUnreachable} hands it to the
+ * reconciliation; counted as failed, the next refund would send the same money again.
  */
 public interface RefundRepository extends JpaRepository<Refund, UUID> {
 
@@ -40,7 +48,8 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
             """
             SELECT COALESCE(SUM(r.amount), 0) FROM Refund r
             WHERE r.pledgeId = :pledgeId
-              AND r.state <> az.ideanest.payment.domain.RefundState.FAILED
+              AND (r.state <> az.ideanest.payment.domain.RefundState.FAILED
+                   OR r.failureCode = 'provider_unreachable')
             """)
     BigDecimal refundedAgainst(@Param("pledgeId") UUID pledgeId);
 
@@ -55,7 +64,8 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
             """
             SELECT COALESCE(SUM(r.amount), 0) FROM Refund r
             WHERE r.chargeTransactionId = :chargeId
-              AND r.state <> az.ideanest.payment.domain.RefundState.FAILED
+              AND (r.state <> az.ideanest.payment.domain.RefundState.FAILED
+                   OR r.failureCode = 'provider_unreachable')
             """)
     BigDecimal refundedAgainstCharge(@Param("chargeId") UUID chargeId);
 
@@ -118,7 +128,7 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
                       LEFT JOIN transactions t ON t.id = r.charge_transaction_id
                       LEFT JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
                      WHERE r.project_id = :projectId
-                       AND r.state <> 'FAILED'
+                       AND (r.state <> 'FAILED' OR r.failure_code = 'provider_unreachable')
                        AND rs.state IS DISTINCT FROM 'UNAPPLIED'
                     """,
             nativeQuery = true)
@@ -160,13 +170,14 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
                        AND t.pledge_id IS NOT NULL
                        AND (rs.state = 'UNAPPLIED' OR p.state IN ('UNSUCCESSFUL', 'CANCELED', 'SUSPENDED'))
                        AND t.amount > (SELECT COALESCE(SUM(r.amount), 0) FROM refunds r
-                                        WHERE r.charge_transaction_id = t.id AND r.state <> 'FAILED')
+                                        WHERE r.charge_transaction_id = t.id
+                                          AND (r.state <> 'FAILED' OR r.failure_code = 'provider_unreachable'))
                        AND NOT EXISTS (SELECT 1 FROM refunds r
                                         WHERE r.charge_transaction_id = t.id AND r.state = 'FAILED'
                                           AND r.settled_at > :retryBefore)
                        AND NOT EXISTS (SELECT 1 FROM refunds r
                                         WHERE r.pledge_id = t.pledge_id AND r.charge_transaction_id IS NULL
-                                          AND r.state <> 'FAILED')
+                                          AND (r.state <> 'FAILED' OR r.failure_code = 'provider_unreachable'))
                      ORDER BY t.created_at, t.id
                      LIMIT :limit
                     """,
@@ -180,6 +191,10 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
      * pledge is sent as several parts, and a part whose answer was lost would otherwise stay
      * {@code REQUESTED} for ever, counted as gone and never paid. Rows already left for a person
      * ({@code review_reason}) are not asked about again.
+     *
+     * <p><strong>Least recently asked first, not oldest first (#183).</strong> A row the provider keeps
+     * calling pending stays {@code REQUESTED}; ordered by age, a batch of those would be every pass and
+     * nothing newer would be asked about. Never asked comes first, then the longest since {@link #checked}.
      */
     @Query(
             """
@@ -187,9 +202,55 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
             WHERE r.state = az.ideanest.payment.domain.RefundState.REQUESTED
               AND r.reviewReason IS NULL
               AND r.requestedAt < :before
-            ORDER BY r.requestedAt ASC
+            ORDER BY r.lastCheckedAt ASC NULLS FIRST, r.requestedAt ASC
             """)
     List<Refund> unresolvedRefunds(@Param("before") java.time.Instant before, Pageable page);
+
+    /** V87 (#183): the reconciliation asked about this refund, whatever it was told. */
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "UPDATE refunds SET last_checked_at = :at WHERE id = :id", nativeQuery = true)
+    int checked(@Param("id") UUID id, @Param("at") java.time.Instant at);
+
+    /**
+     * V85's reopening, for rows written after it ran — #183.
+     *
+     * <p>A node of the release before #176 still records an unreachable refund {@code FAILED} in the
+     * minutes both releases run, after V85 has already reopened the rows it found. This is V85's UPDATE,
+     * run at the start of every {@code campaign-refunds} pass, so such a row is back to
+     * {@code REQUESTED} — and the provider asked before anything is sent — whatever release wrote it and
+     * without anybody re-running the migration by hand. Until then the sums above count it as gone.
+     * V85's header has the argument for each branch.
+     *
+     * @return how many rows were reopened; zero on every pass once no previous release is running
+     */
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(
+            value =
+                    """
+                    UPDATE refunds r
+                       SET state = 'REQUESTED',
+                           settled_at = NULL,
+                           failure_code = NULL,
+                           failure_message = NULL,
+                           review_reason = CASE
+                               WHEN r.charge_transaction_id IS NULL THEN
+                                   'Recorded failed as unreachable before #176 and names no charge: whether it'
+                                   || ' happened needs the provider''s statement.'
+                               WHEN EXISTS (SELECT 1 FROM refunds o
+                                             WHERE o.charge_transaction_id = r.charge_transaction_id
+                                               AND o.id <> r.id
+                                               AND (o.state <> 'FAILED' OR o.failure_code = 'provider_unreachable')) THEN
+                                   'Recorded failed as unreachable before #176, and another refund went against the'
+                                   || ' same charge: the payment''s status cannot tell which happened, so it needs'
+                                   || ' the provider''s statement.'
+                           END
+                     WHERE r.state = 'FAILED'
+                       AND r.failure_code = 'provider_unreachable'
+                    """,
+            nativeQuery = true)
+    int reopenUnreachable();
 
     /** How many refunds against one pledge have no outcome yet — #174's review, for a dispute's retry. */
     @Query(

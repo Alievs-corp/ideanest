@@ -48,6 +48,20 @@ public interface PayoutRepository extends JpaRepository<Payout, UUID> {
     Optional<Payout> inFlightFor(@Param("projectId") UUID projectId);
 
     /**
+     * The payout that paid a campaign, if one did — #182.
+     *
+     * <p>V86's partial unique index permits at most one, and that index is what stops a campaign paid
+     * once from being priced, and paid, again.
+     */
+    @Query(
+            """
+            SELECT p FROM Payout p
+            WHERE p.projectId = :projectId
+              AND p.state = az.ideanest.payout.domain.PayoutState.PAID
+            """)
+    Optional<Payout> paidFor(@Param("projectId") UUID projectId);
+
+    /**
      * Every payout a campaign has ever had, newest first — issue #99.
      *
      * <p><strong>Every state, including {@code CANCELLED} and {@code FAILED}.</strong> The

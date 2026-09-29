@@ -131,7 +131,12 @@ public class PayoutService {
      * violation into a sentence. Two payouts in flight for one campaign is how a creator
      * gets paid twice for the same collections.
      *
+     * <p><strong>And if one was already paid (#182).</strong> The figures below are the campaign's
+     * whole collections, and nothing subtracts what an earlier payout sent: a second one would pay the
+     * same money again. {@link CampaignAlreadyPaidOutException} has the argument; V86 is its index.
+     *
      * @throws PayoutAlreadyInFlightException when the campaign has one
+     * @throws CampaignAlreadyPaidOutException when the campaign has already been paid out
      * @throws NothingToPayException when the campaign has collected nothing, or has
      *     refunded everything it collected
      */
@@ -141,6 +146,9 @@ public class PayoutService {
 
         payouts.inFlightFor(projectId).ifPresent(existing -> {
             throw new PayoutAlreadyInFlightException(projectId, existing.id());
+        });
+        payouts.paidFor(projectId).ifPresent(paid -> {
+            throw new CampaignAlreadyPaidOutException(projectId, paid.id());
         });
 
         ProjectSummary campaign = projects

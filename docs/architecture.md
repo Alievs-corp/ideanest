@@ -2582,6 +2582,14 @@ HOLD → BLOCKED (fraud)
 > recovered from the creator's future payouts, and the account is blocked until it is repaid
 > (§9.8).
 >
+> **A campaign is paid out once (#182).** A payout prices the campaign's whole collections and
+> nothing in it subtracts an earlier payout, so a second one would pay the same money again — and
+> take a chargeback lost after the payout off twice, once as the creator's debt and once as a
+> `CHARGEBACK` refund. With late pledges off (#36) there is nothing a second payout could be for.
+> Finance's calculation answers 409 `CAMPAIGN_ALREADY_PAID_OUT`, a redelivered withdrawal requests
+> nothing, and V86's partial unique index allows one `PAID` payout per campaign. A `FAILED` or
+> `CANCELLED` payout is still followed by a fresh calculation.
+>
 > **The decision edition 6 left to this specification: the dispute window when a payout waits
 > for VÖEN.** It stays open **until the money is actually sent**, not only for the 14 days.
 > The rule is that disputes are possible until payout and that nothing is refunded through
@@ -4243,7 +4251,15 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > anything is resent; one beside another refund of the same charge (or naming no charge) is reopened
 > already carrying a `review_reason` — the refunds against the charge may then add up to more than it
 > was, which blocks any further refund — and is left to a person. A previous-release node can still
-> write such a row during the deploy; V85's header has the query to run once afterwards.
+> write such a row during the deploy, after V85 has run (#183): every read of what has gone back
+> counts a `FAILED` `provider_unreachable` row as gone, and every `campaign-refunds` pass starts by
+> running V85's UPDATE again (`RefundRepository.reopenUnreachable`), so such a row is reconciled before
+> anything is resent whatever release wrote it — nobody has to re-run the migration by hand.
+>
+> **The reconciliation takes turns (#183).** Each pass asks about a bounded batch of unresolved
+> refunds, least recently asked first (`refunds.last_checked_at`, V87, stamped whatever the answer),
+> never-asked first of all. A refund the provider keeps calling pending goes to the back of the queue
+> instead of filling every pass ahead of newer ones.
 >
 > **A partially charged-back charge.** An unreachable refund of the rest of a charge the network took
 > part of is never alone on its charge, so the reconciliation cannot tell from the payment's status

@@ -1,6 +1,7 @@
 import { Link } from '../../i18n/navigation';
 import { CAMPAIGN_TABS, campaignTabHref, type CampaignTabId } from '../../lib/projects/tabs';
 import { getTranslations } from 'next-intl/server';
+import { ScrollRow } from '../shell/ScrollRow';
 
 /**
  * §4.4's tab list — issues #282, #283, #284 and #285, and the shell all four hang from.
@@ -25,12 +26,13 @@ import { getTranslations } from 'next-intl/server';
  * `lib/projects/tabs.ts` argues the other half of this — why the tab is a query parameter
  * rather than local state or a route per tab, and which of §4.4's seven tabs exist.
  *
- * <h2>Server-rendered, and nothing here is a boundary</h2>
+ * <h2>Server-rendered, and the row is the only boundary</h2>
  *
- * No state, no handler, no hook. The active tab arrives as a prop because the page read it
- * from the address, so the correct tab is in the HTML rather than chosen after hydration —
- * which is what makes a link to the Comments tab open the comments for somebody whose
- * JavaScript never arrives.
+ * No state, no hook. The active tab arrives as a prop because the page read it from the
+ * address, so the correct tab is in the HTML rather than chosen after hydration — which is
+ * what makes a link to the Comments tab open the comments for somebody whose JavaScript never
+ * arrives. The one handler is the row's focus reveal (#181, below), and it lives in
+ * `ScrollRow`, a client `<ul>` the server-rendered tabs are passed into as children.
  *
  * <h2>Colour and focus</h2>
  *
@@ -79,15 +81,17 @@ export async function CampaignTabs({ active, path }: CampaignTabsProps) {
         the surplus a horizontal scroll instead of a second row that would push the campaign's
         own content down by a line on exactly the viewports where vertical space is scarcest.
 
-        The scroll is not a keyboard trap and needs no script: these are links, so Tab moves
-        through them and the browser scrolls each one into view on focus.
+        The scroll is not a keyboard trap: these are links, so Tab moves through them. The
+        browser does not scroll a tab that is only partly off the edge, though (#181), so
+        `ScrollRow` brings each one fully into view as it takes focus. Without JavaScript the
+        row still scrolls and every tab is still reachable; only that last nudge is missing.
       */}
       {/*
         `-mx-1 -mt-1 p-1`: room for the focus ring inside the scroll container, given back.
         `-mb-[5px]`: the same four pixels, plus the one that lays the tabs' rule over the
         nav's hairline (#173 — see above).
       */}
-      <ul className="-mx-1 -mt-1 -mb-[5px] flex gap-1 overflow-x-auto p-1">
+      <ScrollRow className="-mx-1 -mt-1 -mb-[5px] flex gap-1 overflow-x-auto p-1">
         {CAMPAIGN_TABS.map((tab) => {
           const current = tab.id === active;
           return (
@@ -127,7 +131,7 @@ export async function CampaignTabs({ active, path }: CampaignTabsProps) {
             </li>
           );
         })}
-      </ul>
+      </ScrollRow>
     </nav>
   );
 }

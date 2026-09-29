@@ -174,4 +174,23 @@ describe('DashboardNav', () => {
     );
     expect(scrollTo).not.toHaveBeenCalled();
   });
+
+  /**
+   * #181. The load-time reveal above covers the current tab; this covers the others. Tab onto
+   * one that is half off the row's edge and the row brings it fully into view, which Chromium
+   * does not do by itself.
+   */
+  it('scrolls a tab fully into view when it takes focus', () => {
+    render(<DashboardNav projectId={PROJECT} copy={COPY.en} />);
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
+
+    const finance = screen.getByRole('link', { name: en.dashboard.nav.finance });
+    finance.focus();
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.contexts[0]).toBe(finance);
+    expect(scrollIntoView).toHaveBeenCalledWith(
+      expect.objectContaining({ block: 'nearest', inline: 'nearest' }),
+    );
+  });
 });

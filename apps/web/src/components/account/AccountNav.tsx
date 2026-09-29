@@ -2,6 +2,7 @@
 
 import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
+import { revealFocusedItem } from '../../lib/scroll-row';
 import { isCurrentAccountLink } from '../../lib/account/navigation';
 
 /**
@@ -126,8 +127,15 @@ export function AccountNav({ label, groups }: AccountNavProps) {
         link's ring was cut off on the left and the last link's on the right. `pb-2` already
         clears the bottom and the group headings sit above the top. Above the breakpoint the
         list stops scrolling and the rail's own `lg:-mx-1 lg:px-1` takes over, so it resets.
+
+        `onFocus`: a link Tab lands on while it is half off the row's edge is scrolled fully
+        into view, which Chromium does not do by itself (#181, `lib/scroll-row.ts`). Above the
+        breakpoint the same call keeps the focused link inside the rail's own vertical scroll.
       */}
-      <ul className="-mx-1 flex list-none gap-x-6 gap-y-8 overflow-x-auto px-1 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-1">
+      <ul
+        className="-mx-1 flex list-none gap-x-6 gap-y-8 overflow-x-auto px-1 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-1"
+        onFocus={revealFocusedItem}
+      >
         {groups.map((group) => (
           <li key={group.heading} className="min-w-max lg:min-w-0">
             <h2 className="px-3 text-xs font-medium tracking-[0.08em] text-white/40 uppercase">

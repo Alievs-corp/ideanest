@@ -1,6 +1,7 @@
 package az.ideanest.payout.api;
 
 import az.ideanest.payment.application.NoPayoutProviderException;
+import az.ideanest.payout.application.CampaignAlreadyPaidOutException;
 import az.ideanest.payout.application.NothingToPayException;
 import az.ideanest.payout.application.PayoutAlreadyInFlightException;
 import az.ideanest.payout.application.CreatorNotVerifiedException;
@@ -22,9 +23,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * AD-05's payout refusals — issues #69, #306 and #398.
+ * AD-05's payout refusals — issues #69, #306, #398 and #182.
  *
- * <p>Eleven handlers rather than one over a shared supertype, and that is deliberate: each
+ * <p>One handler per refusal rather than one over a shared supertype, and that is deliberate: each
  * carries a different {@code code} and leads the reader to a different next action. A base
  * class would invite an advice that caught it and flattened all of them into "the payout
  * could not be processed", which is the sentence support tickets are made of.
@@ -78,6 +79,18 @@ public class PayoutExceptionHandler {
         problem.setDetail("This campaign already has a payout waiting. Open that one rather than starting another.");
         problem.setProperty("code", "PAYOUT_ALREADY_IN_FLIGHT");
         problem.setProperty("meta", Map.of("payoutId", exception.existingPayoutId().toString()));
+        return problem;
+    }
+
+    /** 409 when the campaign has already been paid out — #182. The payout that paid it travels in {@code meta}. */
+    @ExceptionHandler(CampaignAlreadyPaidOutException.class)
+    public ProblemDetail handleAlreadyPaidOut(CampaignAlreadyPaidOutException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/campaign-already-paid-out"));
+        problem.setTitle("Campaign already paid out");
+        problem.setDetail("This campaign has already been paid out. A campaign is paid out once.");
+        problem.setProperty("code", "CAMPAIGN_ALREADY_PAID_OUT");
+        problem.setProperty("meta", Map.of("payoutId", exception.paidPayoutId().toString()));
         return problem;
     }
 

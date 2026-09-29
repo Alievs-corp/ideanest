@@ -78,13 +78,19 @@ public class WithdrawalPayouts {
      * Requests the payout of a withdrawn campaign, with the hold, and announces it.
      *
      * <p>Idempotent on the campaign: a redelivered withdrawal finds the payout already in flight and
-     * requests nothing again. Empty when nothing is payable — a campaign whose money was all refunded.
+     * requests nothing again. Empty when nothing is payable — a campaign whose money was all refunded,
+     * or one already paid out (#182: {@code CampaignAlreadyPaidOutException} has the argument).
      */
     @Transactional
     public Optional<Payout> request(UUID projectId, boolean automatic) {
         Optional<Payout> existing = payouts.inFlightFor(projectId);
         if (existing.isPresent()) {
             return existing;
+        }
+        Optional<Payout> paid = payouts.paidFor(projectId);
+        if (paid.isPresent()) {
+            log.warn("Campaign {} was already paid out by payout {}; nothing is requested again.", projectId, paid.get().id());
+            return Optional.empty();
         }
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         Optional<Payout> requested = price(projectId, now, now.plus(properties.hold()), "withdrawal", automatic);

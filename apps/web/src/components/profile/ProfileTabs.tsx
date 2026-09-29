@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@ideanest/ui';
+import { revealFocusedItem } from '../../lib/scroll-row';
 
 /**
  * The profile's three sections — §4.2 P-04, P-05 and P-06, issue #274.
@@ -135,11 +136,15 @@ export function ProfileTabs({ tabs, label }: ProfileTabsProps) {
         and both ends. The same fix `DashboardNav` (#136) and `CampaignTabs` (#173) carry.
         Nothing moves: the negative margin cancels the padding, and at 320px the four pixels
         the row reaches past the page stay inside its 20px gutter.
+
+        `onFocus`: a tab that takes focus while it is half off the row's edge, from Tab or
+        from an arrow key, is scrolled fully into view (#181, `lib/scroll-row.ts`).
       */}
       <div
         role="tablist"
         aria-label={label}
         className="scrollbar-none -m-1 flex gap-2 overflow-x-auto p-1"
+        onFocus={revealFocusedItem}
       >
         {tabs.map((tab, index) => {
           const current = index === selected;
