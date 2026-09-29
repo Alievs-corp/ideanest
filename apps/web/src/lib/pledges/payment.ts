@@ -31,6 +31,33 @@ export function paymentReturnFor(pledgeId: string, location: Pick<Location, 'ori
   };
 }
 
+/**
+ * #171: the same, for the page that pays the difference of a raise.
+ *
+ * `?raise=` rather than `?payment=`, because the pledge screen has to tell the two apart: after a
+ * raise the pledge is already `COLLECTED` whatever the provider decided, so its state says nothing
+ * about the payment the backer has just come back from. The raise's own state does, and the word in
+ * the address says which of the two to read.
+ */
+export function raiseReturnFor(
+  pledgeId: string,
+  location: Pick<Location, 'origin' | 'pathname'> = window.location,
+): PaymentReturn {
+  const language = localeOrDefault(location.pathname.split('/')[1]);
+  const page = `${location.origin}/${language}/pledges/${encodeURIComponent(pledgeId)}`;
+  return {
+    language,
+    successUrl: `${page}?raise=returned`,
+    errorUrl: `${page}?raise=failed`,
+  };
+}
+
+/** What `?raise=` may say. Anything else is not a return from a raise's payment page. */
+export function raiseReturnHint(search: string): PaymentReturnHint | null {
+  const value = new URLSearchParams(search).get('raise');
+  return value === 'returned' || value === 'failed' ? value : null;
+}
+
 /** What `?payment=` may say. Anything else is not a return from the payment page. */
 export type PaymentReturnHint = 'returned' | 'failed';
 

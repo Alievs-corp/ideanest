@@ -17,11 +17,15 @@ import { formatExactTime } from '../../lib/time';
 import { approximate, formatMoney, type ExchangeRate } from '../../lib/money';
 import { BackerDisputeForm } from './BackerDisputeForm';
 import { PledgeEditor } from './PledgeEditor';
-import { paymentReturnHint, type PaymentReturnHint } from '../../lib/pledges/payment';
+import {
+  paymentReturnHint,
+  raiseReturnHint,
+  type PaymentReturnHint,
+} from '../../lib/pledges/payment';
 import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { regionNames } from '../../lib/i18n/formats';
-import type { PledgeManagerCopy } from '../../lib/i18n/pledges-copy';
+import type { PledgeManagerCopy, RaiseReturnCopy } from '../../lib/i18n/pledges-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**
@@ -61,6 +65,15 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  * `lib/pledges/failure.ts` words it as "this campaign is not taking pledges. Nothing has
  * changed", which is an answer a backer can read. A control that is refused with a sentence is
  * better than a control that was never there.
+ *
+ * <h2>A paid pledge is raised, and the service says when — #171</h2>
+ *
+ * A `COLLECTED` pledge is not edited: it was charged when it was made, and raising it charges the
+ * difference on the provider's page. Whether that is possible right now is the one fact this screen
+ * does take from the service rather than leaving to a refusal, because the answer decides which of
+ * two forms to draw: `raisable` is true only while the pledge is paid for and its campaign is taking
+ * pledges. A paid pledge on a campaign that has closed gets the locked notice instead, whose sentence
+ * says exactly that.
  *
  * <h2>Motion: none</h2>
  *
@@ -150,20 +163,31 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
    * Suspense boundary for one query parameter.
    */
   const [returned, setReturned] = useState<PaymentReturnHint | null>(null);
+  const [raiseReturned, setRaiseReturned] = useState<PaymentReturnHint | null>(null);
   const [checks, setChecks] = useState(0);
   useEffect(() => {
     setReturned(paymentReturnHint(window.location.search));
+    setRaiseReturned(raiseReturnHint(window.location.search));
   }, []);
 
+  /*
+   * Asks again while a payment the backer has just come back from is still settling: a draft that
+   * is not yet paid for, or — #171 — a raise that is still pending. The same bound for both.
+   */
+  const settling =
+    pledge !== null &&
+    ((returned === 'returned' && pledge.state === 'DRAFT') ||
+      (raiseReturned === 'returned' && pledge.latestRaise?.state === 'PENDING'));
+
   useEffect(() => {
-    if (returned !== 'returned' || pledge === null || pledge.state !== 'DRAFT') return;
+    if (!settling) return;
     if (checks >= PAYMENT_CHECKS) return;
     const timer = setTimeout(() => {
       setChecks((count) => count + 1);
       void load();
     }, PAYMENT_CHECK_INTERVAL_MS);
     return () => clearTimeout(timer);
-  }, [returned, pledge, checks, load]);
+  }, [settling, checks, load]);
 
   // A runtime without region display names gets null, and the code is still an answer.
   const display = useMemo(() => regionNames(locale), [locale]);
@@ -195,6 +219,8 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
   }
 
   const editable = EDITABLE.has(pledge.state);
+  /* #171: the service's own answer, and only for a paid pledge. See the module comment. */
+  const raisable = pledge.state === 'COLLECTED' && pledge.raisable === true;
   const rewardTitle = summary?.rewardTitle ?? null;
   const destination =
     pledge.shippingCountry == null ? null : countryName(pledge.shippingCountry, display);
@@ -202,6 +228,14 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
   return (
     <div className="flex flex-col gap-6">
       {returned !== null && <PaymentReturnNotice hint={returned} state={pledge.state} copy={copy} />}
+      {raiseReturned !== null && (
+        <RaiseReturnNotice
+          hint={raiseReturned}
+          raise={pledge.latestRaise ?? null}
+          copy={pledges.raiseReturned}
+          checkout={copy}
+        />
+      )}
 
       <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
@@ -310,6 +344,16 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
           {/* No cancel control: IDN-EXT-01 (#35) — a backer cannot withdraw a pledge, only raise it. */}
           <PledgeEditor pledge={pledge} onSaved={setPledge} copy={copy} pledges={pledges.editor} />
         </>
+      ) : raisable ? (
+        /* #171: a paid pledge, raised by paying the difference. `onSaved` is never called: the
+           form leaves for the provider's page, and the pledge is read again on the way back. */
+        <PledgeEditor
+          pledge={pledge}
+          onSaved={setPledge}
+          copy={copy}
+          pledges={pledges.editor}
+          mode="raise"
+        />
       ) : (
         <InlineAlert variant="info" title={pledges.lockedTitle}>
           <p>
@@ -337,6 +381,54 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
         </Link>
       </div>
     </div>
+  );
+}
+
+/**
+ * What a backer the provider sent back from paying a raise is told — #171.
+ *
+ * The raise's state decides it, not the pledge's: the pledge is `COLLECTED` before, during and after,
+ * so only `latestRaise` says whether the difference was paid. `SUCCEEDED` is raised; `PENDING` after a
+ * successful return is a webhook still on its way; `UNAPPLIED` was charged after the pledge had
+ * already changed and is being refunded; anything else charged nothing.
+ */
+function RaiseReturnNotice({
+  hint,
+  raise,
+  copy,
+  checkout,
+}: {
+  readonly hint: PaymentReturnHint;
+  readonly raise: PledgeResponse['latestRaise'];
+  readonly copy: RaiseReturnCopy;
+  readonly checkout: CheckoutCopy;
+}) {
+  if (raise == null) return null;
+  if (raise.state === 'SUCCEEDED') {
+    return (
+      <InlineAlert variant="success" title={copy.raisedTitle}>
+        <p>{copy.raisedBody}</p>
+      </InlineAlert>
+    );
+  }
+  if (raise.state === 'UNAPPLIED') {
+    return (
+      <InlineAlert variant="warning" title={copy.unappliedTitle}>
+        <p>{copy.unappliedBody}</p>
+      </InlineAlert>
+    );
+  }
+  if (raise.state === 'PENDING' && hint === 'returned') {
+    return (
+      <InlineAlert variant="info" title={checkout.returned.waitingTitle}>
+        <p>{checkout.returned.waitingBody}</p>
+      </InlineAlert>
+    );
+  }
+  return (
+    <InlineAlert variant="warning" title={copy.failedTitle}>
+      <p>{copy.failedBody}</p>
+    </InlineAlert>
   );
 }
 

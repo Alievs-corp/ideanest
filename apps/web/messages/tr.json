@@ -239,7 +239,7 @@
         "metaTitle": "Destekleriniz",
         "metaDescription": "Desteklediğiniz tüm kampanyalar ve seçtikleriniz.",
         "title": "Destekleriniz",
-        "intro": "Desteklediğiniz tüm kampanyalar. Destek verildiği anda tahsil edilir ve kampanya başarısız olursa tamamı iade edilir. Kampanya destek kabul ettiği sürece desteğinizi artırabilir, ancak geri çekemezsiniz."
+        "intro": "Desteklediğiniz tüm kampanyalar. Destek verildiği anda tahsil edilir ve kampanya başarısız olursa tamamı iade edilir. Kampanya destek kabul ettiği sürece desteğinizi artırabilirsiniz — yalnızca aradaki fark tahsil edilir — ancak düşüremez veya geri çekemezsiniz."
       },
       "campaigns": {
         "metaTitle": "Kampanyalarım",
@@ -293,7 +293,7 @@
         "metaTitle": "Desteğiniz",
         "metaDescription": "Ne seçtiniz, tutarı ne kadar ve nasıl artırılır.",
         "title": "Desteğiniz",
-        "intro": "Ne seçtiniz, tutarı ne kadar ve nasıl artırılır. Destek verildiği anda tahsil edilir ve kampanya başarılı olmazsa tamamı geri ödenir."
+        "intro": "Ne seçtiniz, tutarı ne kadar ve nasıl artırılır. Destek verildiği anda tahsil edilir ve kampanya başarılı olmazsa tamamı geri ödenir. Ödenmiş bir desteği artırdığınızda yalnızca aradaki fark hemen tahsil edilir."
       }
     },
     "fulfilment": {
@@ -435,7 +435,15 @@
         "extraAddons": "Ek seçenekler",
         "supplementsNote": "Yukarıdaki destekten ayrı tahsil edilir ve henüz hiç tahsil edilmedi.",
         "lockedTitle": "Bu destek burada artık değiştirilemez",
-        "lockedBody": "Bir destek verilirken değiştirilebilir, onaylandıktan sonra ise — kampanya destek aldığı sürece — yalnızca yükseltilebilir; düşürülemez ve geri çekilemez. Bunun durumu: {state}, bu yüzden o denetimler sunulmuyor. Bir şey yanlışsa sormanız gereken kişi kampanyanın yaratıcısıdır."
+        "lockedBody": "Bir destek verilirken değiştirilebilir. Ödendikten sonra ise kampanya destek aldığı sürece yalnızca yükseltilebilir — düşürülemez ve geri çekilemez — ve yalnızca aradaki fark tahsil edilir. Bunun durumu: {state}. Ya destek o aşamayı geçti ya da kampanya artık destek almıyor, bu yüzden o denetimler sunulmuyor. Bir şey yanlışsa sormanız gereken kişi kampanyanın yaratıcısıdır.",
+        "raiseReturned": {
+          "raisedTitle": "Desteğiniz artırıldı",
+          "raisedBody": "Aradaki fark ödendi ve yukarıdaki rakamlara dahil. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse ödediğiniz her şey tamamen iade edilir.",
+          "failedTitle": "Artırma gerçekleşmedi",
+          "failedBody": "Hiçbir tutar tahsil edilmedi ve desteğiniz olduğu gibi kaldı. Kampanya destek kabul ettiği sürece yeniden deneyebilirsiniz.",
+          "unappliedTitle": "Artırma uygulanamadı",
+          "unappliedBody": "Ödeme, desteğiniz zaten değiştikten sonra gerçekleşti, bu yüzden desteğe eklenmedi. Bu ödeme size otomatik olarak tamamen iade edilir."
+        }
       },
       "editor": {
         "loadingRewards": "Ödüller yükleniyor",
@@ -446,7 +454,14 @@
         "save": "Değişiklikleri kaydet",
         "noChanges": "Henüz hiçbir şey değiştirilmedi.",
         "savedTitle": "Desteğiniz güncellendi",
-        "savedBody": "Yukarıdaki rakamlar bu sayfanın aritmetiği değil, servisin kendisinindir. Değişikliği kaydetmek hiçbir tahsilat yapmadı. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse her destekçiye tam iade yapılır."
+        "savedBody": "Yukarıdaki rakamlar bu sayfanın aritmetiği değil, servisin kendisinindir. Değişikliği kaydetmek hiçbir tahsilat yapmadı. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse her destekçiye tam iade yapılır.",
+        "raiseHeading": "Bu desteği artır",
+        "raiseIntro": "Bu destek ödendi. Kampanya destek kabul ettiği sürece onu artırabilirsiniz — daha yüksek bir seviye, daha fazla ek ya da daha büyük bir tutar — ama düşüremezsiniz. Yalnızca aradaki fark ödeme sağlayıcısının sayfasında tahsil edilir ve desteğiniz bu ödeme gerçekleştikten sonra değişir.",
+        "raiseDue": "Şimdi ödenecek tutar: {amount}",
+        "raiseNotHigher": "Desteğinizin şu anki tutarından daha pahalı bir seçim yapın. Ödenmiş bir destek yalnızca artırılabilir.",
+        "raisePay": "Öde ve artır: {amount}",
+        "raiseOpening": "Ödeme sayfası açılıyor",
+        "raisePending": "Bu desteği artırmak için başlatılan ödeme hâlâ açık. Sağlayıcının sayfasında tamamlayabilir ya da şu zamandan sonra yeniden başlayabilirsiniz: {time}."
       }
     },
     "surveys": {
@@ -2002,7 +2017,8 @@
           "DUPLICATE_CHARGE": "İki kez tahsil edildi",
           "PLATFORM_ERROR": "Bizim hatamız",
           "DISPUTE_CONCEDED": "İtiraz etmediğimiz bir ters ibraz",
-          "FRAUD": "Kart sahibi değil"
+          "FRAUD": "Kart sahibi değil",
+          "RAISE_NOT_APPLIED": "Uygulanamayan bir artırma"
         }
       },
       "disputes": {
@@ -3458,6 +3474,26 @@
         "PLEDGE_MODIFIED": {
           "title": "Siz onaylarken bu destek değişti",
           "detail": "Ona önce başka bir şey yazdı — en sık görüleni, siz onaylarken beş dakikalık rezervasyonun dolmasıdır. Hiçbir şey onaylanmadı ve hiçbir kart kullanılmadı. Devam etmek için yeniden rezerve edin."
+        },
+        "PLEDGE_RAISE_IN_PROGRESS": {
+          "title": "Bir artırma zaten ödemesini bekliyor",
+          "detail": "Bu desteği yeniden artırmadan önce başlattığınız ödemeyi tamamlayın ya da süresinin dolmasını bekleyin. Bu sefer hiçbir tutar tahsil edilmedi."
+        },
+        "RAISE_AMOUNT_CHANGED": {
+          "title": "Ödenecek tutar değişti",
+          "detail": "Bu sayfa yüklendiğinden beri bir fiyat ya da kur değişti, bu yüzden aradaki fark gösterilenle aynı değil. Hiçbir tutar tahsil edilmedi. Yeni tutarı görmek için sayfayı yenileyin."
+        },
+        "RAISE_NOT_AN_INCREASE": {
+          "title": "Bu, desteği artırmıyor",
+          "detail": "Bu seçim desteğinizin şu anki tutarıyla aynı, yani ödenecek bir şey yok. Hiçbir şey değişmedi."
+        },
+        "PLEDGE_NOT_RAISABLE": {
+          "title": "Bu destek aradaki farkı ödeyerek artırılmaz",
+          "detail": "Bu yolla yalnızca ödenmiş bir destek artırılır. Bununla ne yapılabileceğini görmek için sayfayı yenileyin. Hiçbir şey değişmedi."
+        },
+        "PAYMENT_UNAVAILABLE": {
+          "title": "Ödemeler şu anda kullanılamıyor",
+          "detail": "Hiçbir tutar tahsil edilmedi. Birazdan yeniden deneyin."
         }
       }
     },
@@ -4662,7 +4698,7 @@
       "summary": "Bir kampanyayı bulmakla onun fonladığı şeyi elinize almak arasında neler olur.",
       "backing": {
         "heading": "Bir şeye destek oluyorsanız",
-        "first": "Bir ödül seviyesi seçin ya da ödülsüz destek olun. <b>Ücret destek verdiğiniz anda tahsil edilir</b> ve platformun hesabında tutulur. Destek iptal edilemez; kampanya destek kabul ettiği sürece daha yüksek bir seviye ya da ek seçerek desteğinizi artırabilirsiniz.",
+        "first": "Bir ödül seviyesi seçin ya da ödülsüz destek olun. <b>Ücret destek verdiğiniz anda tahsil edilir</b> ve platformun hesabında tutulur. Destek iptal edilemez ve düşürülemez; kampanya destek kabul ettiği sürece daha yüksek bir seviye, bir ek ya da daha büyük bir tutarla desteğinizi artırabilirsiniz ve yalnızca aradaki fark hemen tahsil edilir.",
         "second": "Bir kampanya hedefinin %80'inde başarılı sayılır. Yaratıcı o andan itibaren parayı çekebilir ya da son tarihi bir kez uzatabilir. Kampanya son tarihine ya da uzatmanın sonuna kadar %80'e ulaşmazsa her destekçiye tutarın tamamı iade edilir ve komisyon alınmaz.",
         "third": "Yaratıcı parayı çekmek istedikten sonra ödeme on dört gün bekletilir. Bu süre içinde bir destekçi ödemesine itiraz edebilir ve kararı bir yönetici verir; kabul edilen bir itirazda tutarın tamamı iade edilir."
       },

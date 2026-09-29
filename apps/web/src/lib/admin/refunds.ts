@@ -32,7 +32,13 @@ export type RefundReason =
   | 'DUPLICATE_CHARGE'
   | 'PLATFORM_ERROR'
   | 'DISPUTE_CONCEDED'
-  | 'FRAUD';
+  | 'FRAUD'
+  /*
+   * #171: a raise the backer paid for that could not be applied, refunded by the platform on its
+   * own. Listed so the console can name it; not offered in the form, because no member of staff
+   * issues it.
+   */
+  | 'RAISE_NOT_APPLIED';
 
 /** Where a refund has got to. `REQUESTED` is the one worth watching. */
 export type RefundState = 'REQUESTED' | 'SUCCEEDED' | 'FAILED';

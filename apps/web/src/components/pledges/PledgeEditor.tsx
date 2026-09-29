@@ -19,6 +19,7 @@ import { NO_REWARD } from '../checkout/useCheckout';
 import {
   editPledge,
   getPublicRewards,
+  raisePledge,
   type PledgeAddon,
   type PledgeEdit,
   type PledgeResponse,
@@ -27,6 +28,7 @@ import {
 } from '../../lib/pledges/api';
 import { describeFailure, type CheckoutFailure } from '../../lib/pledges/failure';
 import { IdempotencyKeyring } from '../../lib/pledges/idempotency';
+import { leaveForPaymentPage, raiseReturnFor } from '../../lib/pledges/payment';
 import {
   destinationOptions,
   quoteSelection,
@@ -37,6 +39,8 @@ import {
 import { formatMoney, parseAmount, toMoney, type AmountParse } from '../../lib/money';
 import { type CheckoutCopy, fillPlaceholders } from '../../lib/i18n/checkout-copy';
 import type { PledgeEditorCopy } from '../../lib/i18n/pledges-copy';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import { formatExactTime } from '../../lib/time';
 import { contributionMessage, refusalMessage } from '../checkout/refusals';
 
 /**
@@ -76,6 +80,20 @@ import { contributionMessage, refusalMessage } from '../checkout/refusals';
  * the client is working from a reward list it fetched some seconds ago — a price, a rate or a
  * tier's availability may have moved since. The server quotes against the row it is writing,
  * inside the transaction that writes it.
+ *
+ * <h2>Raising a paid pledge is the same form, and saving means paying the difference — #171</h2>
+ *
+ * A `COLLECTED` pledge was charged when it was made, so PL-09's `PATCH` does not reach it. In
+ * `mode="raise"` the same controls build the same Merge-Patch diff, and the button sends it to
+ * `POST /v1/pledges/{id}/raise` with the difference this form previews as `expectedAmount`, then
+ * leaves for the provider's page to pay it. The service refuses to charge any other figure
+ * (`RAISE_AMOUNT_CHANGED`), so what the backer reads beside the button is what the provider asks
+ * for. Nothing on the pledge changes until the provider says the difference was paid; the manager
+ * reads the outcome off `latestRaise` when the backer comes back.
+ *
+ * Only an increase is offered. A selection that costs no more than the pledge does now leaves the
+ * button disabled with a sentence saying why, and the anonymity box is not drawn, because a raise
+ * changes what is bought and not who is shown.
  *
  * <h2>Motion: none, and this is the screen the rule was written for</h2>
  *
@@ -190,9 +208,22 @@ export interface PledgeEditorProps {
   readonly pledge: PledgeResponse;
   /** Called with the whole pledge the service answered with. Never a merge. */
   readonly onSaved: (next: PledgeResponse) => void;
+  /**
+   * `edit` for a draft or a legacy confirmed pledge — PL-09's `PATCH`, which charges nothing — and
+   * `raise` for a paid one, where saving opens the provider's page for the difference (#171).
+   */
+  readonly mode?: 'edit' | 'raise';
 }
 
-export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorProps) {
+/** Whether a raise is waiting for its payment and still holds its places. */
+function raiseInFlight(pledge: PledgeResponse, now: number): boolean {
+  const latest = pledge.latestRaise;
+  return latest != null && latest.state === 'PENDING' && Date.parse(latest.holdExpiresAt) > now;
+}
+
+export function PledgeEditor({ pledge, onSaved, copy, pledges, mode = 'edit' }: PledgeEditorProps) {
+  const raising = mode === 'raise';
+  const locale = useRouteLocale();
   const [catalogue, setCatalogue] = useState<PublicRewardList | null>(null);
   const [catalogueFailure, setCatalogueFailure] = useState<CheckoutFailure | null>(null);
   const [draft, setDraft] = useState<Draft>(() => draftOf(pledge));
@@ -267,6 +298,50 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorPro
     [draft, parsed, pledge],
   );
 
+  /*
+   * #171: what raising to this selection costs — the preview's total less what the pledge already
+   * comes to. `decimal.js`, never a float: it is sent back as the figure the backer agreed to.
+   */
+  const difference: Decimal | null = useMemo(() => {
+    if (!raising || quote === null || !quote.ok) return null;
+    return quote.quote.total.minus(new Decimal(pledge.amounts.total.amount));
+  }, [raising, quote, pledge]);
+
+  const due = difference !== null && difference.gt(0)
+    ? formatMoney(toMoney(difference, pledge.amounts.total.currency))
+    : null;
+  const inFlight = raising && raiseInFlight(pledge, Date.now());
+
+  /**
+   * #171: asks for the provider's page for the difference, and goes there.
+   *
+   * The key is derived from the change and the figure together, so a retry of the same raise after
+   * a dropped connection answers the page the first attempt opened, and a different figure is a
+   * different intent. `saving` is left on after a successful answer: the browser is leaving.
+   */
+  async function raise(): Promise<void> {
+    if (saving || isEmpty(edit) || difference === null || !difference.gt(0)) return;
+
+    const intent = { ...edit, expectedAmount: toMoney(difference, pledge.amounts.total.currency) };
+    setSaving(true);
+    setFailure(null);
+    setSaved(false);
+
+    try {
+      const opened = await raisePledge(
+        pledge.id,
+        { ...intent, ...raiseReturnFor(pledge.id) },
+        keyring.current.keyFor(intent),
+      );
+      leaveForPaymentPage(opened.redirectUrl);
+    } catch (cause) {
+      const described = describeFailure(cause, copy.failures);
+      if (described.retireKey) keyring.current.retire(intent);
+      setFailure(described);
+      setSaving(false);
+    }
+  }
+
   async function save(): Promise<void> {
     if (saving || isEmpty(edit)) return;
 
@@ -330,10 +405,24 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorPro
 
   return (
     <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">{pledges.heading}</h2>
+      <h2 className="text-lg font-medium tracking-[-0.02em] text-white">
+        {raising ? pledges.raiseHeading : pledges.heading}
+      </h2>
       <p className="mt-2 max-w-[62ch] text-[15px] leading-relaxed text-white/64">
-        {pledges.intro}
+        {raising ? pledges.raiseIntro : pledges.intro}
       </p>
+
+      {inFlight && pledge.latestRaise != null && (
+        <div className="mt-4">
+          <InlineAlert variant="info" title={pledges.raiseHeading}>
+            <p>
+              {fillPlaceholders(pledges.raisePending, {
+                time: formatExactTime(pledge.latestRaise.holdExpiresAt, locale),
+              })}
+            </p>
+          </InlineAlert>
+        </div>
+      )}
 
       <div className="mt-6 flex flex-col gap-6">
         <RewardChoice
@@ -404,20 +493,22 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorPro
           />
         )}
 
-        <Checkbox
-          checked={draft.isAnonymous}
-          disabled={saving}
-          onChange={(event) => {
-            /* Read before the updater, for the contribution field's reason above. */
-            const isAnonymous = event.currentTarget.checked;
-            setDraft((current) => ({ ...current, isAnonymous }));
-          }}
-          label={copy.anonymous.label}
-          /* PL-12 says what it does and does not overstate it: anonymous means hidden from the
-             campaign's public backer list and from §4.2's public backed archive. The creator
-             still sees who backed them — they have to, in order to post what was promised. */
-          description={pledges.anonymousHint}
-        />
+        {!raising && (
+          <Checkbox
+            checked={draft.isAnonymous}
+            disabled={saving}
+            onChange={(event) => {
+              /* Read before the updater, for the contribution field's reason above. */
+              const isAnonymous = event.currentTarget.checked;
+              setDraft((current) => ({ ...current, isAnonymous }));
+            }}
+            label={copy.anonymous.label}
+            /* PL-12 says what it does and does not overstate it: anonymous means hidden from the
+               campaign's public backer list and from §4.2's public backed archive. The creator
+               still sees who backed them — they have to, in order to post what was promised. */
+            description={pledges.anonymousHint}
+          />
+        )}
 
         <PledgeSummary
           copy={copy.summary}
@@ -430,20 +521,51 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges }: PledgeEditorPro
           destination={draft.destination}
           unavailable={quoteRefusal === null ? undefined : <p>{quoteRefusal}</p>}
         >
-          <div className="flex flex-col gap-3">
-            <Pill
-              type="button"
-              variant="accent"
-              disabled={saving || isEmpty(edit) || !parsed.ok}
-              onClick={() => void save()}
-            >
-              {saving ? pledges.saving : pledges.save}
-            </Pill>
+          {raising ? (
+            <div className="flex flex-col gap-3">
+              {due !== null && (
+                <p className="text-[15px] font-medium tabular-nums text-on-white">
+                  {fillPlaceholders(pledges.raiseDue, { amount: due })}
+                </p>
+              )}
+              <Pill
+                type="button"
+                variant="accent"
+                disabled={saving || inFlight || due === null || !parsed.ok}
+                onClick={() => void raise()}
+              >
+                {saving
+                  ? pledges.raiseOpening
+                  : due === null
+                    ? pledges.raiseHeading
+                    : fillPlaceholders(pledges.raisePay, { amount: due })}
+              </Pill>
 
-            {isEmpty(edit) && !saved && (
-              <p className="text-sm text-on-white/64">{pledges.noChanges}</p>
-            )}
-          </div>
+              {isEmpty(edit) ? (
+                <p className="text-sm text-on-white/64">{pledges.noChanges}</p>
+              ) : (
+                difference !== null &&
+                !difference.gt(0) && (
+                  <p className="text-sm text-on-white/64">{pledges.raiseNotHigher}</p>
+                )
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <Pill
+                type="button"
+                variant="accent"
+                disabled={saving || isEmpty(edit) || !parsed.ok}
+                onClick={() => void save()}
+              >
+                {saving ? pledges.saving : pledges.save}
+              </Pill>
+
+              {isEmpty(edit) && !saved && (
+                <p className="text-sm text-on-white/64">{pledges.noChanges}</p>
+              )}
+            </div>
+          )}
         </PledgeSummary>
 
         {saved && failure === null && (

@@ -239,7 +239,7 @@
         "metaTitle": "Dəstəkləriniz",
         "metaDescription": "Dəstəklədiyiniz bütün kampaniyalar və seçdikləriniz.",
         "title": "Dəstəkləriniz",
-        "intro": "Dəstəklədiyiniz bütün kampaniyalar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, tam qaytarılır. Kampaniya dəstək qəbul etdiyi müddətdə dəstəyinizi artıra bilərsiniz, lakin geri götürə bilməzsiniz."
+        "intro": "Dəstəklədiyiniz bütün kampaniyalar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, tam qaytarılır. Kampaniya dəstək qəbul etdiyi müddətdə dəstəyinizi artıra bilərsiniz — yalnız fərq tutulur — lakin onu azalda və ya geri götürə bilməzsiniz."
       },
       "campaigns": {
         "metaTitle": "Kampaniyalarım",
@@ -293,7 +293,7 @@
         "metaTitle": "Dəstəyiniz",
         "metaDescription": "Nə seçdiniz, məbləği nə qədərdir və onu necə artırmaq olar.",
         "title": "Dəstəyiniz",
-        "intro": "Nə seçdiniz, məbləği nə qədərdir və onu necə artırmaq olar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, tam qaytarılır."
+        "intro": "Nə seçdiniz, məbləği nə qədərdir və onu necə artırmaq olar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, tam qaytarılır. Ödənilmiş dəstəyi artıranda yalnız fərq dərhal tutulur."
       }
     },
     "fulfilment": {
@@ -435,7 +435,15 @@
         "extraAddons": "Əlavə seçimlər",
         "supplementsNote": "Yuxarıdakı dəstəkdən ayrıca tutulur və hələ heç tutulmayıb.",
         "lockedTitle": "Bu dəstək artıq burada dəyişdirilə bilməz",
-        "lockedBody": "Dəstək verilərkən dəyişdirilə bilər, təsdiqləndikdən sonra isə — kampaniya dəstək qəbul etdiyi müddətdə — yalnız artırıla bilər, azaldıla və ya geri götürülə bilməz. Bunun vəziyyəti: {state}, ona görə həmin idarəetmələr təklif olunmur. Burada nəsə səhvdirsə, kampaniyanın müəllifinə müraciət edin."
+        "lockedBody": "Dəstək verilərkən dəyişdirilə bilər. Ödənildikdən sonra isə kampaniya dəstək qəbul etdiyi müddətdə yalnız artırıla bilər — azaldıla və ya geri götürülə bilməz — və yalnız fərq tutulur. Bunun vəziyyəti: {state}. Ya dəstək həmin mərhələni keçib, ya da kampaniya artıq dəstək qəbul etmir, ona görə həmin idarəetmələr təklif olunmur. Burada nəsə səhvdirsə, kampaniyanın müəllifinə müraciət edin.",
+        "raiseReturned": {
+          "raisedTitle": "Dəstəyiniz artırıldı",
+          "raisedBody": "Fərq ödənildi və yuxarıdakı rəqəmlərə daxildir. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, ödədiyiniz hər şey tam qaytarılır.",
+          "failedTitle": "Artırma baş tutmadı",
+          "failedBody": "Heç nə tutulmadı və dəstəyiniz əvvəlki kimi qalır. Kampaniya dəstək qəbul etdiyi müddətdə yenidən cəhd edə bilərsiniz.",
+          "unappliedTitle": "Artırma tətbiq oluna bilmədi",
+          "unappliedBody": "Ödəniş dəstəyiniz artıq dəyişdikdən sonra keçdi, ona görə ona əlavə olunmadı. Həmin ödəniş sizə avtomatik olaraq tam qaytarılır."
+        }
       },
       "editor": {
         "loadingRewards": "Mükafatlar yüklənir",
@@ -446,7 +454,14 @@
         "save": "Dəyişiklikləri saxla",
         "noChanges": "Hələ heç nə dəyişdirilməyib.",
         "savedTitle": "Dəstəyiniz yeniləndi",
-        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Dəyişiklik saxlanarkən kartınızdan heç nə tutulmadı. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, hər dəstəkçiyə pul tam geri qaytarılır."
+        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Dəyişiklik saxlanarkən kartınızdan heç nə tutulmadı. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, hər dəstəkçiyə pul tam geri qaytarılır.",
+        "raiseHeading": "Bu dəstəyi artır",
+        "raiseIntro": "Bu dəstək ödənilib. Kampaniya dəstək qəbul etdiyi müddətdə onu artıra bilərsiniz — daha yüksək pillə, daha çox əlavə və ya daha böyük məbləğ — lakin azalda bilməzsiniz. Yalnız fərq ödəniş provayderinin səhifəsində tutulur və dəstəyiniz həmin ödəniş keçəndən sonra dəyişir.",
+        "raiseDue": "İndi ödəniləcək məbləğ: {amount}",
+        "raiseNotHigher": "Hazırkı dəstəyinizdən baha olan bir seçim edin. Ödənilmiş dəstək yalnız artırıla bilər.",
+        "raisePay": "{amount} ödə və artır",
+        "raiseOpening": "Ödəniş səhifəsi açılır",
+        "raisePending": "Bu dəstəyi artırmaq üçün başladılan ödəniş hələ açıqdır. Onu provayderin səhifəsində tamamlaya bilərsiniz; yenidən başlamaq isə bu vaxtdan sonra mümkündür: {time}."
       }
     },
     "surveys": {
@@ -2002,7 +2017,8 @@
           "DUPLICATE_CHARGE": "İki dəfə tutuldu",
           "PLATFORM_ERROR": "Bizim səhvimiz",
           "DISPUTE_CONCEDED": "Mübahisə etmədiyimiz geri tələb",
-          "FRAUD": "Kart sahibi deyil"
+          "FRAUD": "Kart sahibi deyil",
+          "RAISE_NOT_APPLIED": "Tətbiq oluna bilməyən artırma"
         }
       },
       "disputes": {
@@ -3458,6 +3474,26 @@
         "PLEDGE_MODIFIED": {
           "title": "Siz təsdiqləyərkən bu dəstək dəyişdi",
           "detail": "Ona əvvəlcə başqa bir şey yazdı — ən çox rast gəlinəni, siz təsdiqləyərkən beşdəqiqəlik rezervin bitməsidir. Heç nə təsdiqlənmədi və heç bir kart istifadə olunmadı. Davam etmək üçün yenidən rezerv edin."
+        },
+        "PLEDGE_RAISE_IN_PROGRESS": {
+          "title": "Artırma üçün ödəniş artıq gözlənilir",
+          "detail": "Bu dəstəyi yenidən artırmazdan əvvəl başladığınız ödənişi tamamlayın və ya onun müddətinin bitməsini gözləyin. Bu dəfə heç nə tutulmadı."
+        },
+        "RAISE_AMOUNT_CHANGED": {
+          "title": "Ödəniləcək məbləğ dəyişib",
+          "detail": "Bu səhifə açılandan bəri qiymət və ya məzənnə dəyişib, ona görə fərq göstəriləndən fərqlidir. Heç nə tutulmadı. Yeni məbləği görmək üçün səhifəni yeniləyin."
+        },
+        "RAISE_NOT_AN_INCREASE": {
+          "title": "Bu, dəstəyi artırmır",
+          "detail": "Bu seçim dəstəyinizin indiki məbləğinə bərabərdir, ona görə ödəniləcək heç nə yoxdur. Heç nə dəyişmədi."
+        },
+        "PLEDGE_NOT_RAISABLE": {
+          "title": "Bu dəstək fərqi ödəməklə artırılmır",
+          "detail": "Bu yolla yalnız ödənilmiş dəstək artırılır. Bununla nə etmək olar, görmək üçün səhifəni yeniləyin. Heç nə dəyişmədi."
+        },
+        "PAYMENT_UNAVAILABLE": {
+          "title": "Ödənişlər hazırda mümkün deyil",
+          "detail": "Heç nə tutulmadı. Bir azdan yenidən cəhd edin."
         }
       }
     },
@@ -4662,7 +4698,7 @@
       "summary": "Kampaniyanı tapmaqla onun maliyyələşdirdiyi şeyi əldə etmək arasında nə baş verir.",
       "backing": {
         "heading": "Əgər nəyisə dəstəkləyirsinizsə",
-        "first": "Mükafat pilləsi seçin və ya mükafatsız dəstək olun. <b>Pul dəstək olduğunuz anda tutulur</b> və platformanın hesabında saxlanılır. Dəstəyi ləğv etmək olmur; kampaniya dəstək qəbul etdiyi müddətdə onu daha yüksək pillə və ya əlavə ilə artıra bilərsiniz.",
+        "first": "Mükafat pilləsi seçin və ya mükafatsız dəstək olun. <b>Pul dəstək olduğunuz anda tutulur</b> və platformanın hesabında saxlanılır. Dəstəyi ləğv etmək və ya azaltmaq olmur; kampaniya dəstək qəbul etdiyi müddətdə onu daha yüksək pillə, əlavə və ya daha böyük məbləğlə artıra bilərsiniz, bu zaman yalnız fərq dərhal tutulur.",
         "second": "Kampaniya hədəfinin 80%-ində uğurlu sayılır. Müəllif o andan vəsaiti çıxara və ya son tarixi bir dəfə uzada bilər. Kampaniya son tarixinədək və ya uzadılmanın sonunadək 80%-ə çatmasa, hər dəstəkçiyə məbləğ tam qaytarılır və heç bir komissiya tutulmur.",
         "third": "Müəllif vəsaiti çıxardıqdan sonra ödəniş on dörd gün saxlanılır. Bu müddətdə dəstəkçi ödənişinə etiraz edə bilər və qərarı administrator verir; qəbul edilən etiraz üzrə məbləğ tam qaytarılır."
       },
