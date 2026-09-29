@@ -4197,12 +4197,27 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > campaign refund; not a `RAISE_NOT_APPLIED` one) — and no longer decides the pledge.
 >
 > **A staff refund is split across charges.** With no amount it returns every charge's remainder;
-> with one, up to what the pledge has left in all, taken from the newest charge first. The parts are
-> recorded in one commit under the pledge's lock and then sent one by one; the first carries the
-> request's idempotency key and the others `key#2`, `key#3`…, so a replay answers every part and
-> reaches no provider. The console's answer is the first part that did not succeed, or the first
-> part. An upheld backer dispute (#43) refunds the rest the same way and is upheld only when every
-> part succeeded.
+> with one, up to what the pledge has left in all, taken from the newest charge first — except that a
+> charge of a raise that could not be applied is drawn on last, since the platform already owes it
+> back and would otherwise find nothing left of it. The parts are recorded in one commit under the
+> pledge's lock and then each is sent, whatever happened to the one before. The first carries the
+> request's idempotency key and the others a key derived from it (`refund-part-` and a name-based
+> UUID of the key and the part's number, so no other request's key can collide with it), and a
+> replay answers every part and reaches no provider; a key already spent on another pledge's refund
+> is refused `IDEMPOTENCY_KEY_REUSED`. A part that could not be sent at all (its charge or provider
+> missing) is `FAILED`; one whose answer was lost stays `REQUESTED` for the reconciliation. The
+> console's answer is the first part that did not succeed, or the first part. An upheld backer
+> dispute (#43) refunds the rest the same way and is upheld once all of the pledge's money has gone
+> back: a retry while a part has no outcome waits for it rather than sending anything beside it.
+>
+> **What the reconciliation can prove (#174's review).** A refund whose outcome was lost — a staff
+> refund's as well as the platform's — is settled from the provider's status of the whole payment:
+> `returned` settles it, "still paid" fails it so it is sent again. Since payments are reversed in
+> parts, that holds only when the refund is the only one against its charge, and "still paid" only
+> when it was for all of the charge. Otherwise the status cannot say which refund happened: the row
+> stays `REQUESTED` — counted as gone, so nothing is sent twice — with `refunds.review_reason` (V83)
+> saying why, is logged at `ERROR`, and is no longer asked about. It shows in the console's
+> `REQUESTED` list; settling it is a person's job, and no screen does that yet.
 
 ### 9.8 Chargebacks
 
