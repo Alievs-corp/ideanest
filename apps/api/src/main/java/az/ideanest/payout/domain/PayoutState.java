@@ -21,7 +21,10 @@ public enum PayoutState {
     /** Signed off, waiting for the sender. */
     APPROVED,
 
-    /** The provider took the instruction. */
+    /**
+     * The provider took the instruction — or, with a net of zero and no transaction, everything it
+     * would have paid went towards the creator's debts (V86). Either way the campaign is paid out.
+     */
     PAID,
 
     /**

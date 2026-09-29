@@ -92,6 +92,10 @@ public class WithdrawalPayouts {
             log.warn("Campaign {} was already paid out by payout {}; nothing is requested again.", projectId, paid.get().id());
             return Optional.empty();
         }
+        if (payouts.hasUnreachableFailure(projectId)) {
+            log.error("Campaign {} has a payout whose send went unanswered; nothing is requested (V86's header).", projectId);
+            return Optional.empty();
+        }
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         Optional<Payout> requested = price(projectId, now, now.plus(properties.hold()), "withdrawal", automatic);
         requested.ifPresent(payout -> outbox.record(
@@ -184,7 +188,12 @@ public class WithdrawalPayouts {
                     AuditOutcome.SUCCEEDED,
                     "%s; automatic=%s; project=%s; settledAgainstDebts=%s; unapplied=%s"
                             .formatted(why, automatic, projectId, withheld, left));
-            log.info("Campaign {}'s payout went entirely towards its creator's debts ({} unapplied).", projectId, left);
+            if (left.isPositive()) {
+                // Priced against debts that another recovery settled in the meantime: the creator is owed this.
+                log.error("Campaign {} withheld {} towards debts that were no longer owed; pay it by hand.", projectId, left);
+            } else {
+                log.info("Campaign {}'s payout went entirely towards its creator's debts.", projectId);
+            }
             return Optional.empty();
         }
         priced = payouts.save(priced);

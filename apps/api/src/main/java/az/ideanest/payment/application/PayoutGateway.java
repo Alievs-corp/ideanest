@@ -4,6 +4,7 @@ import az.ideanest.payment.domain.PaymentProvider;
 import az.ideanest.payment.domain.PaymentTransaction;
 import az.ideanest.payment.domain.PayoutRequest;
 import az.ideanest.payment.domain.PayoutResult;
+import az.ideanest.payment.domain.ProviderOutcome;
 import az.ideanest.payment.domain.ProviderUnavailableException;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.payment.infrastructure.RefundRepository;
@@ -133,14 +134,41 @@ public class PayoutGateway {
             result = provider.payout(
                     new PayoutRequest(payoutId, creatorId, amount, destinationReference, idempotencyKey));
         } catch (ProviderUnavailableException e) {
-            // No transaction row: the provider was never reached, so there is nothing it
-            // said to record. The payout stays approved and is retried, which is safe
-            // because the idempotency key is the same one.
+            // No transaction row: nothing the provider said reached us to record. The payout
+            // stays approved with its send unconfirmed (#184's review) and is retried only
+            // under the same key, or settled by staff from the provider's statement.
             log.warn("Payout {} could not be sent: {}", payoutId, e.getMessage());
             return new Sent(false, null, PaymentTransaction.UNREACHABLE, e.getMessage());
         }
 
         return postings.record(payoutId, projectId, creatorId, amount, provider.name(), result, idempotencyKey);
+    }
+
+    /**
+     * Records a payout the provider's statement shows was carried out, when the send itself was never
+     * answered — #184's review.
+     *
+     * <p>The same row and posting a sent payout gets, written from what a member of staff read on the
+     * statement instead of from the provider's answer. Under its own key ({@code <key>-statement}): a
+     * retry of the send may already have written a refusal under the payout's key, and the provider's
+     * reference is what ties the row to the money.
+     */
+    public Sent recordFromStatement(
+            UUID payoutId, UUID projectId, UUID creatorId, Money amount, String providerTransactionId, String idempotencyKey) {
+        String key = idempotencyKey + "-statement";
+        Optional<PaymentTransaction> replayed = transactions.findByIdempotencyKey(key);
+        if (replayed.isPresent()) {
+            return new Sent(true, replayed.get().getId(), null, null);
+        }
+        PaymentProvider provider = providers.primary().orElseThrow(NoPayoutProviderException::new);
+        return postings.record(
+                payoutId,
+                projectId,
+                creatorId,
+                amount,
+                provider.name(),
+                new PayoutResult(ProviderOutcome.APPROVED, providerTransactionId, null, null, "{\"source\":\"statement\"}"),
+                key);
     }
 
     /**

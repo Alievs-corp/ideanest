@@ -11,14 +11,17 @@ import java.util.UUID;
  */
 public class PayoutSendUnconfirmedException extends RuntimeException {
 
-    private final transient UUID payoutId;
-
     public PayoutSendUnconfirmedException(UUID payoutId) {
         super("Payout " + payoutId + " may already have been sent; it is retried, not cancelled");
-        this.payoutId = payoutId;
     }
 
-    public UUID payoutId() {
-        return payoutId;
+    private PayoutSendUnconfirmedException(String message) {
+        super(message);
+    }
+
+    /** A campaign whose earlier payout a previous release recorded failed as unreachable: not priced again. */
+    public static PayoutSendUnconfirmedException forCampaign(UUID projectId) {
+        return new PayoutSendUnconfirmedException(
+                "Campaign " + projectId + " has a payout whose send went unanswered; it is not priced again");
     }
 }

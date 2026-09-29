@@ -150,6 +150,10 @@ public class PayoutService {
         payouts.paidFor(projectId).ifPresent(paid -> {
             throw new CampaignAlreadyPaidOutException(projectId, paid.id());
         });
+        if (payouts.hasUnreachableFailure(projectId)) {
+            // A previous release's unanswered send: its money may have moved. V86's header has the fix.
+            throw PayoutSendUnconfirmedException.forCampaign(projectId);
+        }
 
         ProjectSummary campaign = projects
                 .summaryOf(projectId)
@@ -632,11 +636,14 @@ public class PayoutService {
             if (payout.debtWithheld().isPositive()) {
                 debts.recover(payout.creatorId(), payout.debtWithheld(), now);
             }
-        } else if (sent.transactionId() == null) {
+        } else if (sent.transactionId() == null || payout.sendUnconfirmed()) {
             // #184's review: the provider could not be reached, so nothing it said was recorded and the
             // instruction may have been carried out. Failed, it would be followed by a fresh calculation
             // under a new key; so it stays APPROVED and is sent again under this one (PayoutGateway#send).
+            // A refusal of such a retry proves nothing either -- Epoint refuses an order_id it has already
+            // carried out -- so only `resolveUnconfirmed`, from the provider's statement, ends it.
             payout.sendUnconfirmedAt(now);
+            log.error("Payout {}'s send is unconfirmed ({}); settle it from the provider's statement.", payoutId, sent.failureCode());
         } else {
             payout.failed(sent.failureCode(), sent.failureMessage(), now);
         }
@@ -650,6 +657,68 @@ public class PayoutService {
                         .formatted(payout.net(), sent.transactionId(), sent.failureCode()));
 
         log.info("Payout {} send attempted by {}: moved={}", payoutId, staffId, sent.moved());
+        return payout;
+    }
+
+    /**
+     * Settles a payout whose send was never confirmed, from the provider's statement — #184's review.
+     *
+     * <p>The only way out of an unconfirmed send. Sent, the payout is {@code PAID} against a transaction
+     * carrying the provider's reference, with the posting a sent payout gets and its withheld debt
+     * recovered. Not sent, it is {@code FAILED} ({@code confirmed_not_sent}) and the campaign may be
+     * priced again. Either way it is a person's reading of the statement, so the note is required and
+     * audited.
+     *
+     * @throws PayoutNotSendableException when the payout is neither an approved one with an unconfirmed
+     *     send nor one a previous release recorded failed as unreachable
+     * @throws CampaignAlreadyPaidOutException when settling it as sent and another payout already paid
+     */
+    @Transactional
+    public Payout resolveUnconfirmed(UUID staffId, UUID payoutId, boolean sent, String providerTransactionId, String note) {
+        staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
+
+        Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
+        // Or one a previous release recorded FAILED as unreachable, which V86 could not reopen.
+        boolean unconfirmed = (payout.state() == PayoutState.APPROVED && payout.sendUnconfirmed())
+                || (payout.state() == PayoutState.FAILED && "provider_unreachable".equals(payout.failureCode()));
+        if (!unconfirmed) {
+            throw new PayoutNotSendableException(payoutId, payout.state());
+        }
+        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+
+        if (!sent) {
+            payout.failed("confirmed_not_sent", note, now);
+            audit.record(
+                    AuditAction.PAYOUT_SENT,
+                    payoutId,
+                    AuditActor.moderator(staffId),
+                    AuditOutcome.REFUSED,
+                    "unconfirmedResolved=notSent; note=%s".formatted(note));
+            return payout;
+        }
+
+        Optional<Payout> alreadyPaid = payouts.paidFor(payout.projectId());
+        if (alreadyPaid.isPresent()) {
+            throw new CampaignAlreadyPaidOutException(payout.projectId(), alreadyPaid.get().id());
+        }
+        PayoutGateway.Sent recorded = gateway.recordFromStatement(
+                payoutId,
+                payout.projectId(),
+                payout.creatorId(),
+                payout.net(),
+                providerTransactionId,
+                payout.idempotencyKey());
+        payout.paid(recorded.transactionId(), now);
+        if (payout.debtWithheld().isPositive()) {
+            debts.recover(payout.creatorId(), payout.debtWithheld(), now);
+        }
+        audit.record(
+                AuditAction.PAYOUT_SENT,
+                payoutId,
+                AuditActor.moderator(staffId),
+                AuditOutcome.SUCCEEDED,
+                "unconfirmedResolved=sent; amount=%s; providerTransaction=%s; note=%s"
+                        .formatted(payout.net(), providerTransactionId, note));
         return payout;
     }
 

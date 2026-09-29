@@ -2595,7 +2595,14 @@ HOLD → BLOCKED (fraud)
 > fresh calculation. **A send the provider never answered is not a refusal:** the money may have
 > moved, so the payout stays `APPROVED` with `send_unconfirmed_at`, is sent again only under its own
 > idempotency key and at its own figure, and cannot be cancelled (409 `PAYOUT_SEND_UNCONFIRMED`),
-> recalculated or disputed — a fresh calculation would go out under a new key beside it.
+> recalculated or disputed (neither opened nor upheld) — a fresh calculation would go out under a new
+> key beside it. A refusal of that retry proves nothing either (Epoint refuses an `order_id` it has
+> already carried out), so it stays unconfirmed. Only a person reading the provider's statement ends
+> it: `POST /v1/admin/payouts/{id}/unconfirmed-send/sent` (with the statement's transaction reference:
+> `PAID`, the posting a sent payout gets, withheld debt recovered) or `.../not-sent` (`FAILED`
+> `confirmed_not_sent`, after which the campaign may be priced again). For chargebacks it counts as
+> paid out. V86 turns the payouts earlier releases recorded `FAILED` `provider_unreachable` into
+> unconfirmed ones; a campaign with such a row left is not priced again until it is settled.
 >
 > **The decision edition 6 left to this specification: the dispute window when a payout waits
 > for VÖEN.** It stays open **until the money is actually sent**, not only for the 14 days.

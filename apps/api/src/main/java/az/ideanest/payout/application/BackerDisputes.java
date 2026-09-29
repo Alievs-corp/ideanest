@@ -139,6 +139,14 @@ public class BackerDisputes {
         if (!uphold) {
             return records.reject(disputeId, staffId, detail, now);
         }
+        // #184's review: nothing is refunded through the platform once the money may have left. A payout
+        // already paid, or one whose send went unanswered, would not be recalculated without this backer --
+        // the refund would go out beside a payout that still carries their money.
+        boolean moneyMayHaveLeft = payouts.paidFor(dispute.projectId()).isPresent()
+                || payouts.inFlightFor(dispute.projectId()).filter(Payout::sendUnconfirmed).isPresent();
+        if (moneyMayHaveLeft) {
+            throw new DisputeWindowClosedException(dispute.projectId());
+        }
 
         Optional<UUID> refund = refunds.refundForDispute(
                 staffId, dispute.pledgeId(), detail, "backer-dispute-" + disputeId + "-" + now.toEpochMilli());

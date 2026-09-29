@@ -95,15 +95,18 @@ public class PayoutExceptionHandler {
         return problem;
     }
 
-    /** 409 when a payout whose last send went unanswered is cancelled — #184's review. */
+    /**
+     * 409 when a payout whose send went unanswered is cancelled, or its campaign priced again — #184's
+     * review.
+     */
     @ExceptionHandler(PayoutSendUnconfirmedException.class)
     public ProblemDetail handleSendUnconfirmed(PayoutSendUnconfirmedException exception) {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problem.setType(URI.create("https://ideanest.az/problems/payout-send-unconfirmed"));
         problem.setTitle("This payout may already have been sent");
         problem.setDetail(
-                "The provider did not answer the last send, so the money may have moved. Send it again: it goes"
-                        + " under the same key, so the provider can tell it is the same payout.");
+                "The provider did not answer a send, so the money may have moved. Send it again under the same"
+                        + " key, or settle it from the provider's statement as sent or not sent.");
         problem.setProperty("code", "PAYOUT_SEND_UNCONFIRMED");
         return problem;
     }
