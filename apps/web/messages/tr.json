@@ -3542,6 +3542,7 @@
       "PRELAUNCH": "Çok yakında",
       "LIVE": "Etkin",
       "SUCCESSFUL": "Fonlandı",
+      "COLLECTING": "Fonlandı",
       "LATE_PLEDGE": "Geç destekler açık",
       "FULFILLING": "Yerine getiriliyor",
       "COMPLETED": "Tamamlandı",
@@ -3640,6 +3641,8 @@
     },
     "creator": {
       "heading": "Yaratıcı hakkında",
+      "memberSince": "<date></date> tarihinden beri üye",
+      "seeAll": "{name} tarafından oluşturulan her şeyi görün",
       "others": "Diğer kampanyaları"
     },
     "risks": {

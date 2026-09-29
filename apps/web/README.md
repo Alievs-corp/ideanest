@@ -310,7 +310,9 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   found the tab strip, the risks heading, the update label, the comment refusals and the
   countdown still English (the countdown now declines each unit with `pluralise`, so Russian
   reads 21 день and 5 дней). The same sweep took the last literals off the feed's tag group
-  and off `/search`'s link into the feed and its metadata;
+  and off `/search`'s link into the feed and its metadata. #172 found the Creator tab's
+  state words, its "Member since" line and its link to the profile still English, and took them
+  from `campaign.state` and `campaign.creator`;
 - the account area: the frame, all thirteen screens' headings, one pledge's own screen, the
   notifications inbox and its settings, and the two fulfilment screens;
 - the administration console, **in full** — the bar, the rail, the index that lists §4.11's
