@@ -1992,6 +1992,7 @@
         "pendingTitle": "The refund is {state}",
         "issuedBody": "{amount} on pledge {id}.",
         "providerSaid": "The provider said: {message}",
+        "awaitingProvider": "The provider has not confirmed it yet. It settles on its own once we check with the provider, so do not issue it again.",
         "failedTitle": "That did not work",
         "logHeading": "Refunds",
         "all": "All",

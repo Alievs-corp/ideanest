@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.payment.application.CampaignFunds;
 import az.ideanest.payment.application.CampaignRefundJob;
+import az.ideanest.payment.application.DisputeService;
 import az.ideanest.payment.application.PayoutGateway;
 import az.ideanest.payment.application.RefundService;
 import az.ideanest.payment.domain.ChargeResult;
@@ -114,6 +115,9 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private AccessTokenIssuer tokens;
+
+    @Autowired
+    private DisputeService disputes;
 
     @BeforeEach
     void refundsApproved() {
@@ -707,6 +711,53 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
         assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(again.getBody()).containsEntry("code", "PLEDGE_NOT_RAISABLE");
         assertThat(meta(again.getBody())).containsEntry("reason", "REFUNDED");
+    }
+
+    @Test
+    @DisplayName("#175: a chargeback lost on a raise's charge: no new raise, and a failed campaign refunds only the first charge")
+    void aChargebackOnARaisesCharge() {
+        Scenario paid = aRaisedPledge("raise-chargeback");
+        UUID raiseCharge = jdbc().queryForObject(
+                "SELECT id FROM transactions WHERE pledge_id = ? AND type = 'CHARGE' AND status = 'SUCCEEDED'"
+                        + " AND idempotency_key LIKE 'pledge-raise-%'",
+                UUID.class,
+                paid.pledgeId());
+        UUID dispute = disputes.notified(
+                        ProviderName.PAYRIFF,
+                        "case-" + UUID.randomUUID(),
+                        raiseCharge,
+                        Money.of(new BigDecimal("55.00"), "AZN"),
+                        Money.of(new BigDecimal("0.00"), "AZN"),
+                        "fraudulent",
+                        null)
+                .id();
+
+        assertThat(post(admin(), "/v1/admin/disputes/" + dispute + "/resolve", null, Map.of("outcome", "LOST"))
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        assertThat(jdbc().queryForMap(
+                        "SELECT reason, charge_transaction_id, full_refund FROM refunds WHERE pledge_id = ?",
+                        paid.pledgeId()))
+                .containsEntry("reason", "CHARGEBACK")
+                .containsEntry("charge_transaction_id", raiseCharge)
+                .containsEntry("full_refund", true);
+        assertThat(state(paid.pledgeId())).as("the first charge still stands").isEqualTo("COLLECTED");
+
+        // Money of the pledge has gone back, so it is not raised again (hasRefundOfPledgeMoney).
+        ResponseEntity<Map<String, Object>> again = raise(paid, UUID.randomUUID().toString(), Map.of(
+                "contribution", azn("90.00"), "expectedAmount", azn("10.00")));
+        assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(again.getBody()).containsEntry("code", "PLEDGE_NOT_RAISABLE");
+
+        end(paid.projectId(), "UNSUCCESSFUL");
+        refunds.refundDue(Instant.now());
+
+        assertThat(sentFor(paid.pledgeId()))
+                .extracting(request -> request.providerTransactionId() + "=" + request.amount().amount().toPlainString())
+                .containsExactly(paid.providerTransactionId() + "=25.00");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
     }
 
     @Test

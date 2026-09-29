@@ -166,14 +166,18 @@ public class Refund {
      *
      * <p>Born {@code SUCCEEDED}, with the {@code REFUND} transaction the loss recorded, because nothing
      * is sent: the money has already gone. {@code resolvedBy} is the member of staff who resolved the
-     * case, so it has an author like every refund a person caused. Not a full refund: nobody decided an
-     * amount, the network did, and whether the pledge has anything left is read from what went back.
+     * case, so it has an author like every refund a person caused.
+     *
+     * @param tookTheRest whether it took everything its charge had left, which is what
+     *     {@link #fullRefund} then says — as every part of a staff refund of the rest does. Whether the
+     *     pledge has anything left is still read from what went back, never from this
      */
     public static Refund chargeback(
             UUID pledgeId,
             UUID projectId,
             UUID chargeTransactionId,
             Money amount,
+            boolean tookTheRest,
             String detail,
             UUID resolvedBy,
             String idempotencyKey,
@@ -185,7 +189,7 @@ public class Refund {
                 projectId,
                 Objects.requireNonNull(chargeTransactionId, "chargeTransactionId"),
                 amount,
-                false,
+                tookTheRest,
                 RefundReason.CHARGEBACK,
                 detail,
                 Objects.requireNonNull(resolvedBy, "resolvedBy"),

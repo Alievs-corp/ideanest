@@ -207,6 +207,7 @@ export function RefundConsole({ copy }: RefundConsoleProps) {
             {issued.failureMessage
               ? ` ${fillPlaceholders(copy.providerSaid, { message: issued.failureMessage })}`
               : ''}
+            {issued.state === 'REQUESTED' ? ` ${copy.awaitingProvider}` : ''}
           </InlineAlert>
         )}
         {writeError && (

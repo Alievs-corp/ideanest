@@ -274,8 +274,9 @@ public class DisputeService {
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         dispute.resolved(outcome, staffId, now);
 
-        if (outcome != DisputeState.WON) {
-            postLoss(dispute, staffId, now);
+        // A case resolved against the platform twice (LOST, then CONCEDED; or lost again after a reopening)
+        // moved the money once: the second resolution posts nothing and recovers nothing (#175's review).
+        if (outcome != DisputeState.WON && postLoss(dispute, staffId, now)) {
             recoverFromCreatorIfPaidOut(dispute, staffId, now);
         }
 
@@ -307,16 +308,31 @@ public class DisputeService {
      * the network took it; nothing is sent. Under the pledge's row lock, like every refund, so a refund
      * being recorded at the same moment either counts this or is counted by it. When it leaves nothing
      * on the pledge, the pledge is {@code CHARGEBACK} and leaves its campaign's totals.
+     *
+     * <p><strong>Once per case.</strong> The loss is keyed on the dispute ({@code dispute-{id}} for the
+     * transaction, {@code chargeback-{id}} for the refund row), and a case resolved against the platform
+     * a second time finds its loss already posted and writes nothing — before, the transaction's unique
+     * key refused the second resolution with a 500. A loss posted before V84 without its refund row gets
+     * one then.
+     *
+     * @return whether the loss was posted now, rather than found posted by an earlier resolution
      */
-    private void postLoss(Dispute dispute, UUID staffId, Instant now) {
+    private boolean postLoss(Dispute dispute, UUID staffId, Instant now) {
         pledges.lock(dispute.pledgeId());
+        Optional<PaymentTransaction> earlier = transactions.findByIdempotencyKey(lossKey(dispute));
+        if (earlier.isPresent()) {
+            log.info("Dispute {} was already lost; its loss is not posted twice.", dispute.id());
+            recordChargeback(dispute, staffId, earlier.get(), now);
+            return false;
+        }
+
         PaymentTransaction recorded = transactions.save(PaymentTransaction.refund(
                 dispute.pledgeId(),
                 dispute.projectId(),
                 dispute.amount(),
                 dispute.provider(),
                 new RefundResult(ProviderOutcome.APPROVED, dispute.providerDisputeId(), null, null, null),
-                "dispute-" + dispute.id()));
+                lossKey(dispute)));
 
         Posting.Builder posting = Posting.of(recorded.getId(), dispute.projectId())
                 .debit(LedgerAccount.REFUNDS, dispute.amount())
@@ -327,21 +343,46 @@ public class DisputeService {
         }
 
         ledger.post(posting.build());
+        recordChargeback(dispute, staffId, recorded, now);
+        return true;
+    }
 
+    private static String lossKey(Dispute dispute) {
+        return "dispute-" + dispute.id();
+    }
+
+    /**
+     * The loss's {@code refunds} row, unless the case already has one, and the pledge's state after it.
+     *
+     * <p>{@code full_refund} when it took everything its charge had left, the way every part of a staff
+     * refund of the rest carries it: the console then does not call a chargeback of a whole charge partial.
+     */
+    private void recordChargeback(Dispute dispute, UUID staffId, PaymentTransaction loss, Instant now) {
+        String key = "chargeback-" + dispute.id();
+        if (refunds.byIdempotencyKey(key).isPresent()) {
+            return;
+        }
+        String currency = dispute.amount().currency();
+        boolean tookTheRest = transactions
+                .findById(dispute.chargeTransactionId())
+                .map(charge -> !charge.getAmount()
+                        .minus(Money.of(refunds.refundedAgainstCharge(charge.getId()), currency))
+                        .isGreaterThan(dispute.amount()))
+                .orElse(false);
         refunds.save(Refund.chargeback(
                 dispute.pledgeId(),
                 dispute.projectId(),
                 dispute.chargeTransactionId(),
                 dispute.amount(),
+                tookTheRest,
                 "The card network took this charge back: dispute %s (%s case %s) was resolved %s."
                         .formatted(dispute.id(), dispute.provider(), dispute.providerDisputeId(), dispute.state()),
                 staffId,
-                "chargeback-" + dispute.id(),
-                recorded.getId(),
+                key,
+                loss.getId(),
                 now));
         refunds.flush();
 
-        String currency = dispute.amount().currency();
         Money collected = Money.of(transactions.collectedOn(dispute.pledgeId()), currency);
         Money returned = Money.of(refunds.succeededAgainst(dispute.pledgeId()), currency);
         if (collected.isPositive() && !collected.isGreaterThan(returned)) {

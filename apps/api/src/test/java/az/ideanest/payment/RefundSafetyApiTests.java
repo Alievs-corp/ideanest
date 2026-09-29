@@ -6,7 +6,12 @@ import az.ideanest.auth.application.AccessTokenIssuer;
 import az.ideanest.payment.application.CampaignRefundJob;
 import az.ideanest.payment.application.DisputeService;
 import az.ideanest.payment.application.PayoutGateway;
+import az.ideanest.payment.domain.PaymentLookup;
+import az.ideanest.payment.domain.PaymentTransaction;
 import az.ideanest.payment.domain.ProviderName;
+import az.ideanest.payment.domain.ProviderOutcome;
+import az.ideanest.payment.domain.RefundResult;
+import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.payment.domain.RefundReason;
 import az.ideanest.payment.domain.RefundRequest;
 import az.ideanest.shared.money.Money;
@@ -32,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -39,6 +45,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 /**
  * Money that has already gone back is never sent back again — #175 and #176.
@@ -73,6 +80,9 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private AccessTokenIssuer tokens;
+
+    @Autowired
+    private PaymentTransactionRepository transactions;
 
     private final List<UUID> paidPledges = new ArrayList<>();
     private final List<UUID> projects = new ArrayList<>();
@@ -173,9 +183,139 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
         assertThat(sentFor(paid.pledgeId())).isEmpty();
     }
 
+    @Test
+    @DisplayName("#175: a case resolved against the platform twice moves the money once, and answers both times")
+    void aDisputeResolvedTwiceMovesTheMoneyOnce() {
+        Paid paid = aPaidPledge("chargeback-twice", "25.00");
+        UUID dispute = chargeback(paid, "25.00");
+        Account admin = admin();
+
+        assertThat(resolve(dispute, "LOST", admin).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resolve(dispute, "CONCEDED", admin).getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM refunds WHERE idempotency_key = ?", Long.class, "chargeback-" + dispute))
+                .isEqualTo(1L);
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM transactions WHERE idempotency_key = ?", Long.class, "dispute-" + dispute))
+                .isEqualTo(1L);
+        assertThat(state(paid.pledgeId())).isEqualTo("CHARGEBACK");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+    }
+
+    @Test
+    @DisplayName("#175: two chargebacks on one pledge: the second takes the rest, and the pledge ends charged back")
+    void twoChargebacksEndThePledge() {
+        Paid paid = aPaidPledge("chargeback-two", "25.00");
+        Account admin = admin();
+
+        resolve(chargeback(paid, "10.00"), "LOST", admin);
+        assertThat(state(paid.pledgeId())).isEqualTo("COLLECTED");
+        resolve(chargeback(paid, "15.00"), "LOST", admin);
+
+        assertThat(jdbc().queryForList(
+                        "SELECT amount || ':' || full_refund FROM refunds WHERE pledge_id = ? ORDER BY amount",
+                        String.class,
+                        paid.pledgeId()))
+                .as("the second took everything the charge had left")
+                .containsExactly("10.00:false", "15.00:true");
+        assertThat(state(paid.pledgeId())).isEqualTo("CHARGEBACK");
+        assertThat(totals(paid.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+
+        end(paid.projectId(), "UNSUCCESSFUL");
+        job.refundDue(Instant.now());
+        assertThat(sentFor(paid.pledgeId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("#175: V84 backfills a loss recorded before it, with no author when the resolver is gone")
+    void v84BackfillsAnOldLoss() {
+        Paid paid = aPaidPledge("chargeback-backfill", "25.00");
+        UUID dispute = chargeback(paid, "25.00");
+        // What the release before #175 left behind: the case resolved, its loss transaction, no refund row.
+        // The resolver's account since deleted: disputes.handled_by is ON DELETE SET NULL.
+        jdbc().update(
+                "UPDATE disputes SET state = 'LOST', resolved_at = now(), handled_by = NULL WHERE id = ?", dispute);
+        transactions.save(PaymentTransaction.refund(
+                paid.pledgeId(),
+                paid.projectId(),
+                Money.of(new BigDecimal("25.00"), "AZN"),
+                ProviderName.PAYRIFF,
+                new RefundResult(ProviderOutcome.APPROVED, "case-" + UUID.randomUUID(), null, null, null),
+                "dispute-" + dispute));
+
+        replay("V84__record_chargebacks_as_refunds.sql");
+        replay("V84__record_chargebacks_as_refunds.sql");
+
+        Map<String, Object> row = jdbc().queryForMap(
+                "SELECT reason, state, amount, full_refund, requested_by, charge_transaction_id FROM refunds"
+                        + " WHERE pledge_id = ?",
+                paid.pledgeId());
+        assertThat(row.get("reason")).isEqualTo("CHARGEBACK");
+        assertThat(row.get("state")).isEqualTo("SUCCEEDED");
+        assertThat((BigDecimal) row.get("amount")).isEqualByComparingTo("25.00");
+        assertThat(row.get("full_refund")).isEqualTo(true);
+        assertThat(row.get("requested_by")).isNull();
+        assertThat(row.get("charge_transaction_id")).isEqualTo(paid.chargeId());
+
+        assertThat(staffRefund(paid.pledgeId(), null, "BACKER_REQUEST").getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        end(paid.projectId(), "UNSUCCESSFUL");
+        job.refundDue(Instant.now());
+        assertThat(sentFor(paid.pledgeId())).isEmpty();
+    }
+
     // ------------------------------------------------------------------
     // #176: an unreachable refund is an unknown one
     // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("#176: V85 reopens a refund recorded failed as unreachable, and the provider is asked before any resend")
+    void v85ReopensAnUnreachableRefund() {
+        Paid paid = aPaidPledge("unreachable-old", "25.00");
+        end(paid.projectId(), "UNSUCCESSFUL");
+        UUID old = failedAsUnreachable(paid);
+
+        replay("V85__reopen_unreachable_refunds.sql");
+
+        Map<String, Object> reopened = jdbc().queryForMap(
+                "SELECT state, settled_at, failure_code, failure_message, review_reason FROM refunds WHERE id = ?", old);
+        assertThat(reopened.get("state")).isEqualTo("REQUESTED");
+        assertThat(reopened.get("settled_at")).isNull();
+        assertThat(reopened.get("failure_code")).isNull();
+        assertThat(reopened.get("failure_message")).isNull();
+        assertThat(reopened.get("review_reason")).isNull();
+
+        provider.willLookUp(paid.providerTransactionId(), PaymentLookup.State.RETURNED);
+        job.refundDue(Instant.now());
+
+        assertThat(sentFor(paid.pledgeId())).as("the provider had applied it").isEmpty();
+        assertThat(refundStates(paid.pledgeId())).containsExactly("SUCCEEDED");
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+    }
+
+    @Test
+    @DisplayName("#176: V85 leaves an unreachable refund beside a later one on the same charge to a person, and sends nothing")
+    void v85LeavesAReopenedRefundBesideALaterOneToAPerson() {
+        Paid paid = aPaidPledge("unreachable-then-refunded", "25.00");
+        end(paid.projectId(), "UNSUCCESSFUL");
+        UUID old = failedAsUnreachable(paid);
+        // The release before #176 then refunded the charge again, past retry-after.
+        job.refundDue(Instant.now());
+        assertThat(sentFor(paid.pledgeId())).hasSize(1);
+        assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
+
+        replay("V85__reopen_unreachable_refunds.sql");
+
+        Map<String, Object> reopened = jdbc().queryForMap("SELECT state, review_reason FROM refunds WHERE id = ?", old);
+        assertThat(reopened.get("state")).isEqualTo("REQUESTED");
+        assertThat((String) reopened.get("review_reason")).contains("another refund");
+
+        job.refundDue(Instant.now().plus(Duration.ofDays(1)));
+
+        assertThat(sentFor(paid.pledgeId())).hasSize(1);
+        assertThat(jdbc().queryForObject("SELECT state FROM refunds WHERE id = ?", String.class, old))
+                .isEqualTo("REQUESTED");
+    }
 
     @Test
     @DisplayName("#176: a campaign refund applied by the provider whose answer was lost is settled, not sent again")
@@ -250,7 +390,7 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
     private record Account(String accessToken, UUID id) {
     }
 
-    private record Paid(UUID projectId, UUID pledgeId, UUID chargeId) {
+    private record Paid(UUID projectId, UUID pledgeId, UUID chargeId, String providerTransactionId) {
     }
 
     private record Totals(BigDecimal pledged, int backers) {
@@ -304,7 +444,7 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
                 "SELECT id FROM transactions WHERE pledge_id = ? AND type = 'CHARGE' AND status = 'SUCCEEDED'",
                 UUID.class,
                 pledgeId);
-        return new Paid(projectId, pledgeId, chargeId);
+        return new Paid(projectId, pledgeId, chargeId, transaction);
     }
 
     private UUID chargeback(Paid paid, String amount) {
@@ -317,6 +457,34 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
                         "fraudulent",
                         null)
                 .id();
+    }
+
+    /** A campaign refund the release before #176 recorded FAILED as unreachable, seven hours ago. */
+    private UUID failedAsUnreachable(Paid paid) {
+        UUID id = UUID.randomUUID();
+        jdbc().update(
+                """
+                INSERT INTO refunds (id, pledge_id, project_id, charge_transaction_id, amount, currency, full_refund,
+                                     reason, detail, state, failure_code, failure_message, requested_by,
+                                     requested_at, settled_at, idempotency_key)
+                VALUES (?, ?, ?, ?, 25.00, 'AZN', true, 'CAMPAIGN_FAILED', 'Sent before #176', 'FAILED',
+                        'provider_unreachable', 'Epoint could not be reached', NULL,
+                        now() - interval '7 hours', now() - interval '7 hours', ?)
+                """,
+                id,
+                paid.pledgeId(),
+                paid.projectId(),
+                paid.chargeId(),
+                "campaign-refund:" + paid.chargeId() + ":1");
+        return id;
+    }
+
+    /**
+     * Runs a migration again, against rows written the way the release before it wrote them. V84 and V85
+     * are written to be re-runnable for exactly this; the schema ends as Flyway left it.
+     */
+    private void replay(String migration) {
+        new ResourceDatabasePopulator(new ClassPathResource("db/migration/" + migration)).execute(dataSource);
     }
 
     private ResponseEntity<Map<String, Object>> resolve(UUID disputeId, String outcome, Account admin) {

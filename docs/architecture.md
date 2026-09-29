@@ -4238,7 +4238,17 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > then does the sweep send it again, after `retry-after`. The staff endpoint answers 200 with
 > `state: REQUESTED` and no failure code: pending, not refused. `FAILED` now means refused by the
 > provider, found still paid by the reconciliation, or never sent (charge or provider missing,
-> `not_sent`).
+> `not_sent`). **V85** moves the refunds recorded the old way (`FAILED`, `provider_unreachable`) back to
+> `REQUESTED`, clearing `settled_at` and the failure fields, so the next pass asks the provider before
+> anything is resent; one beside another refund of the same charge (or naming no charge) is reopened
+> already carrying a `review_reason` — the refunds against the charge may then add up to more than it
+> was, which blocks any further refund — and is left to a person. A previous-release node can still
+> write such a row during the deploy; V85's header has the query to run once afterwards.
+>
+> **A partially charged-back charge.** An unreachable refund of the rest of a charge the network took
+> part of is never alone on its charge, so the reconciliation cannot tell from the payment's status
+> which reversal happened: it always goes to `markForReview`, stays `REQUESTED` (counted as gone), and
+> waits for a person rather than being settled or resent.
 
 ### 9.8 Chargebacks
 
@@ -4279,8 +4289,17 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > network took. When it leaves nothing on the pledge, the pledge moves `COLLECTED → CHARGEBACK` and
 > leaves its campaign's totals, as a full refund does; when a refund later takes the rest, `REFUNDED`.
 > `CHARGEBACK` cannot be issued through `POST /v1/admin/refunds` (400 `REFUND_REASON_NOT_ISSUABLE`).
-> V84 backfills the row for losses recorded before it (from their `dispute-{id}` transaction; skipped
-> when the resolver's account is gone) and leaves those pledges' states for a person.
+> `full_refund` is true when the chargeback took everything its charge had left, as every part of a
+> staff refund of the rest carries it. A case resolved against the platform twice (`LOST` then
+> `CONCEDED`, or lost again after a reopening) moves the money once: the second resolution finds the
+> `dispute-{id}` transaction and the `chargeback-{id}` row and posts, records and recovers nothing
+> (before, it failed with a 500 on the transaction's unique key). Any chargeback row, even of part of
+> the pledge, is "pledge money gone back" to `hasRefundOfPledgeMoney`, so **a pledge with a lost
+> chargeback cannot be raised** (`PLEDGE_NOT_RAISABLE`), and a raise paid for afterwards is `UNAPPLIED`
+> and refunded. V84 backfills the row for losses recorded before it, from their `dispute-{id}`
+> transaction; one whose resolver's account has since been deleted is backfilled with no author, which
+> V84 lets `CHARGEBACK` have (V76/V83's authorless-refund rule), and the console shows it as the
+> platform's. Those pledges' states are left for a person.
 >
 > **Built (#44), the screens.** A paid pledge's page offers "Dispute this payment" behind one press;
 > the reason goes to `POST /v1/pledges/{id}/disputes`, and `DISPUTE_WINDOW_CLOSED` and
