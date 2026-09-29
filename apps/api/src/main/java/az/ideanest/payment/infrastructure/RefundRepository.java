@@ -59,6 +59,21 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
             """)
     BigDecimal refundedAgainstCharge(@Param("chargeId") UUID chargeId);
 
+    /**
+     * How much has actually gone back on one pledge: its {@code SUCCEEDED} refunds only — #171.
+     *
+     * <p>What decides that a pledge is refunded in full. Unlike {@link #refundedAgainst}, a refund
+     * still in flight does not count: it may yet fail, and a pledge must not be taken out of its
+     * campaign's figures for money that has not left.
+     */
+    @Query(
+            """
+            SELECT COALESCE(SUM(r.amount), 0) FROM Refund r
+            WHERE r.pledgeId = :pledgeId
+              AND r.state = az.ideanest.payment.domain.RefundState.SUCCEEDED
+            """)
+    BigDecimal succeededAgainst(@Param("pledgeId") UUID pledgeId);
+
     /** How many refunds, of any state, were ever recorded against one charge — for the next key. */
     @Query("SELECT COUNT(r) FROM Refund r WHERE r.chargeTransactionId = :chargeId")
     long countAgainstCharge(@Param("chargeId") UUID chargeId);
@@ -90,27 +105,42 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
      * {@code REQUESTED} ones are not, for {@link #refundedAgainst}'s reason: a refund that
      * has not left yet is about to, and paying a creator money that is on its way back to
      * a backer is the one mistake a payout must not make.
+     *
+     * <p><strong>Not the refunds of a raise that could not be applied (#171).</strong> Its charge is
+     * left out of the payout's gross ({@code PaymentTransactionRepository#settledChargesOfProject}),
+     * because it is owed back and never the creator's; subtracting its refund as well would take it
+     * out twice. Native for that join, which reads the pledge module's table.
      */
     @Query(
-            """
-            SELECT COALESCE(SUM(r.amount), 0) FROM Refund r
-            WHERE r.projectId = :projectId
-              AND r.state <> az.ideanest.payment.domain.RefundState.FAILED
-            """)
+            value =
+                    """
+                    SELECT COALESCE(SUM(r.amount), 0) FROM refunds r
+                      LEFT JOIN transactions t ON t.id = r.charge_transaction_id
+                      LEFT JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
+                     WHERE r.project_id = :projectId
+                       AND r.state <> 'FAILED'
+                       AND rs.state IS DISTINCT FROM 'UNAPPLIED'
+                    """,
+            nativeQuery = true)
     BigDecimal refundedOnProject(@Param("projectId") UUID projectId);
 
-    /** Every refund against one pledge, for the detail a support conversation needs. */
     /**
      * The settled charges the platform owes back on its own, one row per charge — IDN-EXT-01 (#40)
      * and #171.
      *
-     * <p>Two kinds of charge. Every charge on a paid pledge whose campaign ended below its threshold
-     * or was halted: a raised pledge has more than one, and each is reversed against its own provider
-     * transaction. And a charge that paid for a raise which could not be applied, whatever the
-     * campaign's state: it bought nothing.
+     * <p>Two kinds of charge. Every charge of a campaign that ended below its threshold or was halted,
+     * <strong>whatever its pledge's state</strong>: a raised pledge has more than one charge, each
+     * reversed against its own provider transaction, and a pledge's state is not what says whether its
+     * money went back — a charge whose refund failed after another charge of the same pledge was
+     * refunded must still be offered. And a charge that paid for a raise which could not be applied,
+     * whatever the campaign's state: it bought nothing.
      *
-     * <p>A charge with a refund in flight or done is skipped, and so is one whose last refund failed
-     * more recently than the retry interval. Rows of charge id, pledge id and the refund reason's
+     * <p>A charge is offered while it has money left: its amount less every refund against it that has
+     * not failed. A refund in flight counts as gone, so nothing is sent twice, and a charge refunded in
+     * part — by a member of staff, say — is offered for the rest. One whose last refund failed more
+     * recently than the retry interval waits. A pledge with a refund that names no charge — V53 allows
+     * one, and nothing writes one — is left to staff rather than refunded again beside money that
+     * cannot be placed. Rows of charge id, pledge id and the refund reason's
      * name, oldest charge first. Native because it reads four modules' tables in one statement;
      * nothing here names their classes.
      */
@@ -123,18 +153,20 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
                                 WHEN p.state = 'UNSUCCESSFUL' THEN 'CAMPAIGN_FAILED'
                                 ELSE 'CAMPAIGN_HALTED' END AS reason
                       FROM transactions t
-                      JOIN pledges pl ON pl.id = t.pledge_id
                       JOIN projects p ON p.id = t.project_id
                       LEFT JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
                      WHERE t.type = 'CHARGE'
                        AND t.status = 'SUCCEEDED'
-                       AND (rs.state = 'UNAPPLIED'
-                            OR (pl.state = 'COLLECTED' AND p.state IN ('UNSUCCESSFUL', 'CANCELED', 'SUSPENDED')))
-                       AND NOT EXISTS (SELECT 1 FROM refunds r
+                       AND t.pledge_id IS NOT NULL
+                       AND (rs.state = 'UNAPPLIED' OR p.state IN ('UNSUCCESSFUL', 'CANCELED', 'SUSPENDED'))
+                       AND t.amount > (SELECT COALESCE(SUM(r.amount), 0) FROM refunds r
                                         WHERE r.charge_transaction_id = t.id AND r.state <> 'FAILED')
                        AND NOT EXISTS (SELECT 1 FROM refunds r
                                         WHERE r.charge_transaction_id = t.id AND r.state = 'FAILED'
                                           AND r.settled_at > :retryBefore)
+                       AND NOT EXISTS (SELECT 1 FROM refunds r
+                                        WHERE r.pledge_id = t.pledge_id AND r.charge_transaction_id IS NULL
+                                          AND r.state <> 'FAILED')
                      ORDER BY t.created_at, t.id
                      LIMIT :limit
                     """,
@@ -152,6 +184,7 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
             """)
     List<Refund> unresolvedCampaignRefunds(@Param("before") java.time.Instant before, Pageable page);
 
+    /** Every refund against one pledge, for the detail a support conversation needs. */
     @Query("SELECT r FROM Refund r WHERE r.pledgeId = :pledgeId ORDER BY r.requestedAt DESC")
     List<Refund> forPledge(@Param("pledgeId") UUID pledgeId);
 }

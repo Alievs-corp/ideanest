@@ -204,6 +204,15 @@ public class Refund {
         return Money.of(amount, currency);
     }
 
+    /**
+     * Whether this refund was meant to return the rest of the pledge — V53's intent, recorded when it
+     * was requested and never changed.
+     *
+     * <p><strong>Not whether the pledge was refunded in full (#171).</strong> A refund of a raised
+     * pledge is one part per charge and every part of a full refund carries the flag; and an intent
+     * can fail. Whether the pledge's money has all gone back is decided when a refund settles, from
+     * what was charged and what succeeded, and shows as the pledge's {@code REFUNDED} state.
+     */
     public boolean fullRefund() {
         return fullRefund;
     }

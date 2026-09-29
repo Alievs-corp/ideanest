@@ -20,9 +20,11 @@ import org.springframework.stereotype.Component;
  *
  * <p>§9.7's four cases that refund everybody are three campaign states: {@code UNSUCCESSFUL} (day 8
  * below 80%, or an extension ended below it), {@code SUSPENDED}, and {@code CANCELED}. A pass refunds
- * a bounded batch of their paid pledges, oldest collection first, each in its own transactions so one
- * refusal does not stop the rest; then it settles platform refunds whose outcome was lost from the
- * provider's {@code returned} status.
+ * a bounded batch of their settled charges with money left (#171: per charge, whatever the pledge's
+ * state, and every charge of a raise that could not be applied), oldest charge first, each in its own
+ * transactions so one refusal does not stop the rest; then it settles platform refunds whose outcome
+ * was lost from the provider's {@code returned} status. A pledge becomes {@code REFUNDED} when the
+ * refund that leaves nothing on it settles, not when it is requested.
  *
  * <p>A sweep rather than a listener on the campaign's event, because a refund is a provider call and
  * a campaign of thousands of backers must not be one delivery that either succeeds entirely or is
@@ -86,7 +88,7 @@ public class CampaignRefundJob implements ScheduledJob {
             }
         }
         if (!owed.isEmpty()) {
-            log.info("campaign-refunds: {} of {} owed pledges refunded this pass.", refunded, owed.size());
+            log.info("campaign-refunds: {} of {} owed charges refunded this pass.", refunded, owed.size());
         }
         return refunded;
     }

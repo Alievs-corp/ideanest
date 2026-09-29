@@ -15,6 +15,7 @@ import az.ideanest.payment.infrastructure.RefundRepository;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.shared.money.Money;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -103,20 +104,45 @@ public class RefundService {
     }
 
     /**
-     * Issues a refund.
+     * Issues a refund, and answers with the part that best describes how it went.
+     *
+     * <p>A refund of a raised pledge is sent as one part per charge (#171, {@link #issueParts}); the
+     * console shows one row, so this answers with the first part that did not succeed, or the first
+     * part when every one did. Every part is listed against the pledge.
+     *
+     * @see #issueParts
+     */
+    public Refund issue(
+            UUID staffId, UUID pledgeId, Money amount, RefundReason reason, String detail, String idempotencyKey) {
+        List<Refund> parts = issueParts(staffId, pledgeId, amount, reason, detail, idempotencyKey);
+        return parts.stream()
+                .filter(part -> part.state() != RefundState.SUCCEEDED)
+                .findFirst()
+                .orElse(parts.getFirst());
+    }
+
+    /**
+     * Issues a refund, one part per charge it draws on.
      *
      * <p>Deliberately not {@code @Transactional}: it commits twice with a network call in
      * between. See the class comment.
+     *
+     * <p><strong>One part per charge (#171).</strong> A provider reverses a payment up to what that
+     * payment was, and a raised pledge was paid for more than once. So the refund is split across the
+     * pledge's charges, newest first ({@link RefundRecords#record}), all of them recorded in one
+     * commit and then each sent on its own. A part the provider refuses leaves the others standing;
+     * the refusal is on its row, and a retry under a new key sends only what is still left.
      *
      * @param amount what to send back, or null for the whole of what is left. Null rather
      *     than a {@code full} flag, so "all of it" cannot disagree with a number the
      *     console computed from a page it loaded ten minutes ago
      * @param idempotencyKey CLAUDE.md: every payment mutation is idempotent. A replay
-     *     returns the original row and reaches no provider
+     *     returns the original parts and reaches no provider
+     * @return every part, newest charge first
      * @throws RefundExceedsCollectionException when this would return more than was taken
      * @throws NothingToRefundException when the pledge has no settled charge
      */
-    public Refund issue(
+    public List<Refund> issueParts(
             UUID staffId, UUID pledgeId, Money amount, RefundReason reason, String detail, String idempotencyKey) {
 
         staff.requireCapability(staffId, StaffCapability.ISSUE_REFUND);
@@ -127,10 +153,22 @@ public class RefundService {
             // does not reach the provider, which on this endpoint is the difference
             // between refunding once and refunding twice.
             log.info("Refund {} replayed under key {}", replayed.get().id(), idempotencyKey);
-            return replayed.get();
+            List<Refund> parts = new ArrayList<>(List.of(replayed.get()));
+            for (int n = 2; ; n++) {
+                Optional<Refund> part = refunds.byIdempotencyKey(RefundRecords.partKey(idempotencyKey, n));
+                if (part.isEmpty()) {
+                    break;
+                }
+                parts.add(part.get());
+            }
+            return parts;
         }
 
-        return send(records.record(staffId, pledgeId, amount, reason, detail, idempotencyKey));
+        List<Refund> sent = new ArrayList<>();
+        for (Refund part : records.record(staffId, pledgeId, amount, reason, detail, idempotencyKey)) {
+            sent.add(send(part));
+        }
+        return sent;
     }
 
     /** Steps two and three: the provider call, then the outcome. */
@@ -166,13 +204,14 @@ public class RefundService {
     }
 
     /**
-     * IDN-EXT-01 (#40): refund a paid pledge in full because its campaign failed or was halted.
+     * IDN-EXT-01 (#40): refund what one settled charge has left because its campaign failed or was
+     * halted, or because it paid for a raise that could not be applied (#171).
      *
      * <p><strong>The platform's own protection against refunding twice</strong>, since Epoint's
-     * {@code /reverse} has none: the sweep only offers a pledge with no refund requested or succeeded,
-     * a {@code REQUESTED} row blocks every later attempt until it is settled, and the key is unique per
-     * attempt. A refund whose outcome was lost is never re-sent blind — {@link #reconcile} asks the
-     * provider what the payment is first.
+     * {@code /reverse} has none: the sweep only offers a charge with money left once every refund
+     * requested or succeeded against it is counted, a {@code REQUESTED} row counts until it is settled,
+     * and the key is unique per attempt. A refund whose outcome was lost is never re-sent blind —
+     * {@link #reconcile} asks the provider what the payment is first.
      *
      * @return the settled refund, or empty when nothing remained to refund
      */
@@ -220,17 +259,15 @@ public class RefundService {
      * IDN-EXT-01 (#43): refund a pledge in full because an administrator upheld the backer's dispute.
      *
      * <p>For the payout module, which may not name this module's domain: the refund goes through
-     * {@link #issue} with {@code DISPUTE_CONCEDED}, and the answer is only whether it went through.
+     * {@link #issueParts} with {@code DISPUTE_CONCEDED} and no amount, which returns every charge's
+     * remainder (#171), and the answer is only whether all of it went through.
      *
-     * @return the refund's identifier when it succeeded, empty when the provider refused it
+     * @return the first part's identifier when every part succeeded, empty when the provider refused
+     *     any of them — a retry under a new key sends only what is still left
      */
     public Optional<UUID> refundForDispute(UUID staffId, UUID pledgeId, String detail, String idempotencyKey) {
-        // One refund per charge (#171): a raised pledge was paid for more than once, and an upheld
-        // dispute returns all of it. The last refund, the one that leaves nothing, is the answer.
-        Refund refund = issue(staffId, pledgeId, null, RefundReason.DISPUTE_CONCEDED, detail, idempotencyKey);
-        for (int part = 2; refund.state() == RefundState.SUCCEEDED && !refund.fullRefund(); part++) {
-            refund = issue(staffId, pledgeId, null, RefundReason.DISPUTE_CONCEDED, detail, idempotencyKey + "-" + part);
-        }
-        return refund.state() == RefundState.SUCCEEDED ? Optional.of(refund.id()) : Optional.empty();
+        List<Refund> parts = issueParts(staffId, pledgeId, null, RefundReason.DISPUTE_CONCEDED, detail, idempotencyKey);
+        boolean allSucceeded = parts.stream().allMatch(part -> part.state() == RefundState.SUCCEEDED);
+        return allSucceeded ? Optional.of(parts.getFirst().id()) : Optional.empty();
     }
 }
