@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ApiError } from '@ideanest/api-client';
 import { Button, TextField } from '../components/form';
 import { Body, Heading, Meta } from '../components/text';
 import { signIn, verifyTwoFactor } from '../lib/auth';
+import { safeNext } from '../lib/guard';
 import { colors, size, spacing } from '../theme';
 
 /**
@@ -60,6 +61,7 @@ type Step = 'credentials' | 'two-factor';
 
 export default function SignInScreen() {
   const router = useRouter();
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const passwordField = useRef<TextInput>(null);
 
   const [step, setStep] = useState<Step>('credentials');
@@ -77,7 +79,11 @@ export default function SignInScreen() {
      * there is what they expect. `use-session.ts` publishes the change, so the
      * screen underneath has already redrawn by the time it is visible.
      */
-    router.back();
+    // A guarded route sent somebody here with `next`; validated by the same rules as
+    // the web's redirect, so a crafted link cannot steer past sign-in to anywhere.
+    const destination = safeNext(next);
+    if (destination !== null) router.replace(destination as never);
+    else router.back();
   }
 
   async function submitCredentials(): Promise<void> {
