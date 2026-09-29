@@ -91,6 +91,14 @@ docker build -f apps/web/Dockerfile \
   -t ghcr.io/<owner>/<repo>/web:staging-<sha> .
 ```
 
+The API has its own name for the same origin: `WEB_BASE_URL`, read at runtime,
+which every e-mail link is built from and which is also the origin a payment
+provider may return a person to (#139, `docs/architecture.md` §9.4). Set it to the
+site's https origin in every deployed environment — an http value on a real host is
+logged at start-up and every payment return address is then refused. A staging
+site reachable on a second host adds it in `PAYMENT_RETURN_ORIGINS` (comma
+separated, https only; a malformed entry stops the API starting).
+
 `IDEANEST_API_ORIGIN` is **not** baked in. It is read at request time by the
 proxy and by the server reads, so one API image and one web image run against
 staging and production alike.

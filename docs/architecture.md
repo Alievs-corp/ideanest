@@ -3844,6 +3844,37 @@ single-file change.
 > transaction, status and operation code, and deduplication rather than a replay window is
 > what refuses a repeat.
 >
+> **Return addresses are the site's, not the caller's (#139).** `POST /v1/pledges/{id}/payment`
+> and `POST /v1/me/payout-destination/card-registration` take a `successUrl` and an `errorUrl`
+> from the caller, and Epoint redirects the person to them from its own page
+> (`success_redirect_url`, `error_redirect_url`). Unchecked, that is an open redirect running
+> through checkout: a compromised front end or a browser extension could send a backer from the
+> bank's page to a look-alike "payment failed, re-enter your card" site. `shared.payment.ReturnUrls`
+> accepts an address only when it is absolute, has no user information, and its scheme, host and
+> port are exactly those of a configured origin; the path and query stay the caller's. Anything
+> else is 400 `INVALID_RETURN_URL` (`meta.field` names which), raised before the draft is held or
+> the card page opened. An absent address is still accepted — Epoint then uses the merchant
+> account's pages. The origins are configuration, `ideanest.payment.return-urls`: `site-origin`
+> is the e-mail links' `WEB_BASE_URL` (the API's name for the web's `IDEANEST_SITE_URL`) and
+> `additional-origins` is `PAYMENT_RETURN_ORIGINS`, comma separated, for a staging or preview
+> host beside it. Origins are https; http only on a loopback host, which is what local
+> development runs. The pending charge's `provider_response` records both addresses, so the
+> payment's own row says where the backer was sent back to; `payout_card_registrations` has no
+> column for them and the card registration records nothing extra.
+>
+> **Decision: no custom URL scheme for the native app.** The issue asked whether the app could
+> pass `ideanest://…` as its return address. Nobody has confirmed with Epoint that its page will
+> redirect to a custom scheme, and it cannot be tested without a live merchant account — a
+> bank's 3-D Secure page and an in-app browser may each refuse a non-http navigation, and the
+> failure would be a backer stranded after paying. So custom schemes are refused like any other
+> off-site address. The app passes an https forwarder page on the site instead (for example
+> `/{locale}/pledges/{id}?payment=returned`). The mobile checkout adds that path to the app's
+> universal / app links (`apps/mobile/app.config.ts`, which today claim the site's host and, on
+> Android, only `/projects`), so the operating system hands the return to the app when it is
+> installed and the browser shows the pledge page when it is not. Revisit only
+> if Epoint confirms custom-scheme redirects in writing, and then as a configured scheme next to
+> the origins, never as "any scheme".
+>
 > Two departures from the sketch above, both small. `ProviderCapabilities` gains
 > `schemeChaining`, because R-03 is one of the three the design cannot work without and
 > the record had no field for it; `preAuthHoldDays` stays, as the number that records

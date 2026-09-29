@@ -23,6 +23,8 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
@@ -200,6 +202,64 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
         assertThat(provider.hostedPayments()).noneMatch(request -> request.pledgeId().equals(checkout.pledgeId()));
     }
 
+    @Test
+    @DisplayName("the web's own return addresses pass, and the pending charge records where the backer goes back to")
+    void theWebsReturnAddressesPass() {
+        Checkout checkout = aDraft("hosted-return");
+        // What apps/web/src/lib/pledges/payment.ts sends, on the suite's production-shaped origin.
+        String page = "https://ideanest.az/ru/pledges/" + checkout.pledgeId();
+
+        ResponseEntity<Map<String, Object>> opened = pay(
+                checkout,
+                UUID.randomUUID().toString(),
+                Map.of("language", "ru", "successUrl", page + "?payment=returned", "errorUrl", page + "?payment=failed"));
+
+        assertThat(opened.getStatusCode()).isEqualTo(HttpStatus.OK);
+        HostedPaymentRequest asked = provider.hostedPayments().getLast();
+        assertThat(asked.successUrl()).hasToString(page + "?payment=returned");
+        assertThat(asked.errorUrl()).hasToString(page + "?payment=failed");
+        Map<String, Object> recorded = jdbc().queryForMap(
+                "SELECT provider_response->>'successUrl' AS success, provider_response->>'errorUrl' AS error"
+                        + " FROM transactions WHERE pledge_id = ? AND status = 'PENDING'",
+                checkout.pledgeId());
+        assertThat(recorded.get("success")).isEqualTo(page + "?payment=returned");
+        assertThat(recorded.get("error")).isEqualTo(page + "?payment=failed");
+    }
+
+    @ParameterizedTest
+    @DisplayName("a return address off the site is refused with 400, and nothing is held, opened or recorded")
+    @ValueSource(strings = {
+        "https://evil.example/ru/pledges/p?payment=failed",
+        "http://ideanest.az/ru/pledges/p?payment=failed",
+        "javascript:alert(document.cookie)",
+        "/ru/pledges/p?payment=failed",
+    })
+    void anAddressOffTheSiteIsRefused(String address) {
+        Checkout checkout = aDraft("hosted-offsite");
+        String good = "https://ideanest.az/ru/pledges/" + checkout.pledgeId() + "?payment=returned";
+        Instant heldUntil = reservationExpiresAt(checkout.pledgeId());
+
+        ResponseEntity<Map<String, Object>> asSuccess = pay(
+                checkout, UUID.randomUUID().toString(), Map.of("successUrl", address, "errorUrl", good));
+        ResponseEntity<Map<String, Object>> asError = pay(
+                checkout, UUID.randomUUID().toString(), Map.of("successUrl", good, "errorUrl", address));
+
+        assertThat(asSuccess.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(asSuccess.getBody())
+                .containsEntry("code", "INVALID_RETURN_URL")
+                .containsEntry("type", "https://ideanest.az/problems/invalid-return-url")
+                .containsEntry("meta", Map.of("field", "successUrl"));
+        assertThat(asError.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(asError.getBody()).containsEntry("meta", Map.of("field", "errorUrl"));
+        // The refusal does not repeat the address it refused.
+        assertThat(asSuccess.getBody().toString()).doesNotContain(address);
+
+        assertThat(provider.hostedPayments()).noneMatch(request -> request.pledgeId().equals(checkout.pledgeId()));
+        assertThat(charges(checkout.pledgeId())).isEmpty();
+        // Refused before the draft was held for the payment window.
+        assertThat(reservationExpiresAt(checkout.pledgeId())).isEqualTo(heldUntil);
+    }
+
     // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
@@ -246,7 +306,16 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
                 HttpMethod.POST,
                 caller.accessToken(),
                 key,
-                Map.of("language", "en", "successUrl", "https://ideanest.test/back/ok"));
+                Map.of("language", "en", "successUrl", "https://ideanest.az/en/pledges/" + pledgeId + "?payment=returned"));
+    }
+
+    private ResponseEntity<Map<String, Object>> pay(Checkout checkout, String key, Map<String, Object> body) {
+        return exchange(
+                "/v1/pledges/" + checkout.pledgeId() + "/payment",
+                HttpMethod.POST,
+                checkout.backer().accessToken(),
+                key,
+                body);
     }
 
     private ResponseEntity<String> deliver(String transaction, String type) {

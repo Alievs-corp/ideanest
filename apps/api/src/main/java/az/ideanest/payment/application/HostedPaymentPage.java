@@ -12,10 +12,13 @@ import az.ideanest.pledge.application.PayablePledge;
 import az.ideanest.pledge.application.PaymentPage;
 import az.ideanest.pledge.application.PaymentPageSession;
 import az.ideanest.pledge.application.PaymentPageUnavailableException;
+import az.ideanest.shared.payment.ReturnUrls;
 import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * The payment module's side of {@link PaymentPage} — IDN-EXT-01 (#39).
@@ -24,6 +27,11 @@ import org.springframework.stereotype.Service;
  * provider's transaction identifier. {@code transactions} is append-only, so the charge is settled
  * later by a second row — {@code SUCCEEDED} or {@code FAILED} — which V41's partial indexes allow
  * to share this row's identifier and key while refusing two settled rows for one payment.
+ *
+ * <p>The return addresses are checked again here, although {@code PledgeCheckout} already has: this
+ * is where they leave for the provider, and a second caller of {@link PaymentPage} must not be able to
+ * skip the rule (#139). The pending row records them, so the payment's own record says where the
+ * backer was sent back to.
  */
 @Service
 public class HostedPaymentPage implements PaymentPage {
@@ -32,15 +40,24 @@ public class HostedPaymentPage implements PaymentPage {
 
     private final PaymentProviders providers;
     private final PaymentTransactionRepository transactions;
+    private final ReturnUrls returnUrls;
+    private final ObjectMapper json;
 
-    public HostedPaymentPage(PaymentProviders providers, PaymentTransactionRepository transactions) {
+    public HostedPaymentPage(
+            PaymentProviders providers,
+            PaymentTransactionRepository transactions,
+            ReturnUrls returnUrls,
+            ObjectMapper json) {
         this.providers = providers;
         this.transactions = transactions;
+        this.returnUrls = returnUrls;
+        this.json = json;
     }
 
     @Override
     public PaymentPageSession open(
             PayablePledge pledge, String language, URI successUrl, URI errorUrl, String idempotencyKey) {
+        returnUrls.check(successUrl, errorUrl);
         PaymentProvider provider = providers
                 .primary()
                 .orElseThrow(() -> new PaymentPageUnavailableException("No payment provider is configured."));
@@ -67,10 +84,31 @@ public class HostedPaymentPage implements PaymentPage {
                 pledge.projectId(),
                 pledge.total(),
                 provider.name(),
-                new ChargeResult(ProviderOutcome.PENDING, session.providerTransactionId(), null, null, "{\"hostedPayment\":true}"),
+                new ChargeResult(
+                        ProviderOutcome.PENDING,
+                        session.providerTransactionId(),
+                        null,
+                        null,
+                        opened(successUrl, errorUrl)),
                 1,
                 idempotencyKey));
         log.info("Opened payment {} for pledge {}.", session.providerTransactionId(), pledge.pledgeId());
         return new PaymentPageSession(session.providerTransactionId(), session.redirectUrl());
+    }
+
+    /**
+     * What the pending row stores: that the page was opened, and where the provider will send the
+     * backer back. Written through the mapper rather than concatenated, because the addresses came
+     * from the caller.
+     */
+    private String opened(URI successUrl, URI errorUrl) {
+        ObjectNode node = json.createObjectNode().put("hostedPayment", true);
+        if (successUrl != null) {
+            node.put("successUrl", successUrl.toString());
+        }
+        if (errorUrl != null) {
+            node.put("errorUrl", errorUrl.toString());
+        }
+        return json.writeValueAsString(node);
     }
 }
