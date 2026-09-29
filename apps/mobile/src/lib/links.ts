@@ -85,7 +85,46 @@ export function destinationFor(url: string, siteHost: string): Destination | nul
   return campaignDestination(parsed.pathname);
 }
 
-function campaignDestination(path: string): Destination | null {
+/** The web carries the locale in the path; the app has a chosen locale instead. */
+const LOCALE_PREFIX = /^\/(az|en|ru|tr)(?=\/|$)/;
+
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+
+/**
+ * The web paths keyed by a project **id** and the app routes they open — issue #150.
+ *
+ * Expo Router cannot hold `projects/[creatorSlug]` and `projects/[id]` as siblings, so
+ * these live under `campaigns/`. They are tested BEFORE the creator/slug pattern, and
+ * with a strict UUID: otherwise `/projects/<uuid>/back` would open a campaign slugged
+ * `back`, and `/projects/alice/back` (not a UUID) would open the checkout.
+ */
+const ID_ROUTES: readonly [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^\/projects\/new\/?$/, () => '/campaigns/new'],
+  [
+    new RegExp(`^/projects/(${UUID})/(back|prelaunch)/?$`, 'i'),
+    (m) => `/campaigns/${m[1]}/${m[2]}`,
+  ],
+  [
+    new RegExp(
+      `^/projects/(${UUID})/edit/(basics|story|rewards|faq|prelaunch|review)/?$`,
+      'i',
+    ),
+    (m) => `/campaigns/${m[1]}/edit/${m[2]}`,
+  ],
+  [
+    new RegExp(`^/projects/(${UUID})/dashboard(?:/(charts|backers|finance|surveys))?/?$`, 'i'),
+    (m) => `/campaigns/${m[1]}/dashboard${m[2] === undefined ? '' : `/${m[2]}`}`,
+  ],
+];
+
+function campaignDestination(rawPath: string): Destination | null {
+  const path = rawPath.replace(LOCALE_PREFIX, '') || '/';
+
+  for (const [pattern, toRoute] of ID_ROUTES) {
+    const idMatch = pattern.exec(path);
+    if (idMatch !== null) return { pathname: toRoute(idMatch) };
+  }
+
   const match = CAMPAIGN_PATH.exec(path);
   if (match === null) return null;
 

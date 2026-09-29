@@ -1,64 +1,68 @@
 import { Pressable, StyleSheet } from 'react-native';
-import { Link, Tabs } from 'expo-router';
+import { Link, Tabs, type ErrorBoundaryProps } from 'expo-router';
+import { FailureState } from '../../components/failure-state';
+import { TabIcon, type TabIconName } from '../../components/tab-icon';
 import { Meta } from '../../components/text';
-import { colors, fontSize, fontWeight, radius, size, spacing } from '../../theme';
+import { useSession } from '../../lib/use-session';
+import { colors, radius, size, spacing } from '../../theme';
 
 /**
- * The four things somebody does on a phone — issue #110's navigation.
+ * The five tabs — issue #150.
  *
- * <h2>Four, and why not more</h2>
+ * <h2>Icons only, on purpose</h2>
  *
- * §4.1's mobile-marked features fall into discovery, search, what somebody kept,
- * and what somebody backed. Creating and editing a campaign are not here: they
- * are `[W]` in §4 and they are long-form form work that a phone is the wrong
- * place for. A tab bar that offered them would be a promise the screens behind
- * it do not keep.
+ * The tab bar draws a glyph and no label. That is a design decision, not an oversight:
+ * the bar stays the same height at every font scale and in every one of the four
+ * languages. CLAUDE.md §2 still needs an accessible name on an icon-only control, so every
+ * tab carries `tabBarAccessibilityLabel` — a screen reader announces "Home, tab, 1 of 5" —
+ * and colour is never the only signal: the active glyph is heavier as well as lime.
  *
- * <h2>Every tab has a label, not only an icon</h2>
+ * <h2>Five, and the fifth is "Me"</h2>
  *
- * CLAUDE.md §2 requires an accessible name on an icon-only control, and the
- * cheapest way to satisfy it is not to have icon-only controls. A visible label
- * also survives the case an icon never does: somebody using the application in a
- * language whose conventions the icon was not drawn for.
+ * Home, Search, Saved, Pledges and Me. The web's header account menu, settings and footer
+ * become the Me tab, so nothing needs a header "Account" link any more. The header keeps
+ * one control: "Sign in" while nobody is signed in, mirroring the web header.
  *
- * <h2>Account is in the header, not in the tab bar — issue #29</h2>
+ * <h2>The colours are the site's</h2>
  *
- * The four above are things somebody does. Signing in, turning on the biometric
- * lock and signing out are settings a phone owes, and a fifth tab for them would
- * make the tab bar a list of five things of which one is not like the others.
- * The header is where both platforms already put it, and it is on every tab
- * rather than on one so that "where do I sign in" has the same answer from
- * wherever somebody happens to be when they ask.
+ * `--surface-2` bar, `--border` hairline, `--lime-500` when active and `--text-tertiary`
+ * otherwise (§2.2 measures the latter at 4.9:1).
  */
 
+const TABS: readonly {
+  readonly name: string;
+  readonly title: string;
+  readonly icon: TabIconName;
+}[] = [
+  { name: 'index', title: 'Home', icon: 'home' },
+  { name: 'search', title: 'Search', icon: 'search' },
+  { name: 'saved', title: 'Saved', icon: 'saved' },
+  { name: 'pledges', title: 'Pledges', icon: 'pledges' },
+  { name: 'me', title: 'Me', icon: 'me' },
+];
+
 const styles = StyleSheet.create({
-  account: {
+  signIn: {
     minHeight: size.touchTarget,
-    // Height rather than a square: a 44pt-wide target around a word this short
-    // would clip it, and the platform header already spaces the sides.
     justifyContent: 'center',
     paddingHorizontal: spacing[4],
     borderRadius: radius.full,
   },
-  accountPressed: { backgroundColor: colors.surface3 },
+  signInPressed: { backgroundColor: colors.surface3 },
 });
 
-/**
- * The header control.
- *
- * <p>A word rather than a glyph, for the same reason the tabs below carry
- * labels: CLAUDE.md §2 requires an accessible name on an icon-only control, and
- * the cheapest way to satisfy that is not to have one.
- */
-function AccountLink() {
+/** The header control while signed out. Nothing at all when signed in. */
+function SignInLink() {
+  const { signedIn } = useSession();
+  if (signedIn) return null;
   return (
-    <Link href="/account" asChild>
+    <Link href="/sign-in" asChild>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Account"
-        style={({ pressed }) => [styles.account, pressed && styles.accountPressed]}
+        accessibilityLabel="Sign in"
+        style={({ pressed }) => [styles.signIn, pressed && styles.signInPressed]}
       >
-        <Meta tone="secondary">Account</Meta>
+        <Meta tone="secondary">Sign in</Meta>
       </Pressable>
     </Link>
   );
@@ -73,19 +77,37 @@ export default function TabsLayout() {
         headerShadowVisible: false,
         sceneStyle: { backgroundColor: colors.surface1 },
         tabBarStyle: { backgroundColor: colors.surface2, borderTopColor: colors.border },
-        // Lime is the active state because lime means "this is where you are",
-        // which is the same "act now" the token means everywhere else. Inactive
-        // is `--text-tertiary`, which §2.2 measures at 4.9:1 on `--surface-1`.
         tabBarActiveTintColor: colors.lime500,
         tabBarInactiveTintColor: colors.textTertiary,
-        tabBarLabelStyle: { fontSize: fontSize.xxs, fontWeight: fontWeight.medium },
-        headerRight: () => <AccountLink />,
+        tabBarShowLabel: false,
+        headerRight: () => <SignInLink />,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Discover' }} />
-      <Tabs.Screen name="search" options={{ title: 'Search' }} />
-      <Tabs.Screen name="saved" options={{ title: 'Saved' }} />
-      <Tabs.Screen name="pledges" options={{ title: 'Pledges' }} />
+      {TABS.map((tab) => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            title: tab.title,
+            tabBarAccessibilityLabel: tab.title,
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={tab.icon} color={color} focused={focused} />
+            ),
+          }}
+        />
+      ))}
     </Tabs>
+  );
+}
+
+/** A render error under the tabs: try again, never a stack trace. */
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  return (
+    <FailureState
+      title="Something went wrong"
+      description="The page could not be shown. Try again."
+      actionLabel="Try again"
+      onAction={() => void retry()}
+    />
   );
 }

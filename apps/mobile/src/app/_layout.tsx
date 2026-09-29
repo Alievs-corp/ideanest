@@ -173,7 +173,6 @@ export default function RootLayout() {
               name="sign-in"
               options={{ presentation: 'modal', title: 'Sign in' }}
             />
-            <Stack.Screen name="account" options={{ title: 'Account' }} />
           </Stack>
         </PersistQueryClientProvider>
       </SafeAreaProvider>
