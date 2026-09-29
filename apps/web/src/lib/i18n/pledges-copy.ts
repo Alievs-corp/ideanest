@@ -138,8 +138,11 @@ export interface PledgeEditorCopy {
   /** Carries `{amount}`. */
   readonly raisePay: string;
   readonly raiseOpening: string;
-  /** Carries `{time}`. */
+  /** Carries `{time}`. The pending raise has no page this client can send the backer back to. */
   readonly raisePending: string;
+  /** Carries `{time}`. The pending raise has a page to continue, and {@link raiseResume} goes there. */
+  readonly raisePendingResumable: string;
+  readonly raiseResume: string;
 }
 
 function editorCopyFrom(t: PledgesTranslator): PledgeEditorCopy {
@@ -160,6 +163,8 @@ function editorCopyFrom(t: PledgesTranslator): PledgeEditorCopy {
     raisePay: String(t.raw('editor.raisePay')),
     raiseOpening: t('editor.raiseOpening'),
     raisePending: String(t.raw('editor.raisePending')),
+    raisePendingResumable: String(t.raw('editor.raisePendingResumable')),
+    raiseResume: t('editor.raiseResume'),
   };
 }
 
@@ -169,6 +174,8 @@ export interface RaiseReturnCopy {
   readonly raisedBody: string;
   readonly failedTitle: string;
   readonly failedBody: string;
+  /** Carries `{time}`: a return through the error door while the raise is still pending and holding. */
+  readonly heldBody: string;
   readonly unappliedTitle: string;
   readonly unappliedBody: string;
 }
@@ -224,6 +231,7 @@ export function pledgeManagerCopyFrom(t: PledgesTranslator): PledgeManagerCopy {
       raisedBody: t('manager.raiseReturned.raisedBody'),
       failedTitle: t('manager.raiseReturned.failedTitle'),
       failedBody: t('manager.raiseReturned.failedBody'),
+      heldBody: String(t.raw('manager.raiseReturned.heldBody')),
       unappliedTitle: t('manager.raiseReturned.unappliedTitle'),
       unappliedBody: t('manager.raiseReturned.unappliedBody'),
     },

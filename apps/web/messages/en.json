@@ -438,9 +438,10 @@
         "lockedBody": "A pledge can be changed while it is being made. Once it is paid for it can be raised — never lowered or withdrawn — while its campaign takes pledges, and only the difference is charged. This one is {state}, and either it has moved past that point or its campaign is no longer taking pledges, so those controls are not offered. If something about it is wrong, the campaign’s creator is who to ask.",
         "raiseReturned": {
           "raisedTitle": "Your pledge was raised",
-          "raisedBody": "The difference was paid, and the figures above include it. If the campaign does not succeed, is suspended or is cancelled, everything you paid is refunded in full.",
+          "raisedBody": "The difference was paid, and the figures on this page include it. If the campaign does not succeed, is suspended or is cancelled, everything you paid is refunded in full.",
           "failedTitle": "The raise did not go through",
           "failedBody": "Nothing was charged, and your pledge is as it was. You can try again while the campaign takes pledges.",
+          "heldBody": "The payment did not go through, and nothing was charged. Your pledge is as it was, and the payment you started stays open until {time}; you can start again after that.",
           "unappliedTitle": "The raise could not be applied",
           "unappliedBody": "The payment went through after your pledge had already changed, so it was not added to it. That payment is refunded to you in full, automatically."
         }
@@ -461,7 +462,9 @@
         "raiseNotHigher": "Choose something that costs more than your pledge does now. A paid pledge can only be raised.",
         "raisePay": "Pay {amount} and raise",
         "raiseOpening": "Opening the payment page",
-        "raisePending": "A payment to raise this pledge is still open. You can finish it on the provider’s page, or start again after {time}."
+        "raisePending": "A payment to raise this pledge is still open. If its payment page is still open, finish it there; otherwise you can start again after {time}.",
+        "raisePendingResumable": "A payment to raise this pledge is still open. You can continue it on the payment provider’s page, or start again after {time}.",
+        "raiseResume": "Continue payment"
       }
     },
     "surveys": {
@@ -3477,7 +3480,7 @@
         },
         "PLEDGE_RAISE_IN_PROGRESS": {
           "title": "A raise is already waiting for its payment",
-          "detail": "Finish the payment you started, or wait for it to lapse, before raising this pledge again. Nothing was charged this time."
+          "detail": "A payment you started to raise this pledge is still open. Reload this page to see how long it stays open and whether it can be continued. Nothing was charged this time."
         },
         "RAISE_AMOUNT_CHANGED": {
           "title": "The amount to pay has changed",

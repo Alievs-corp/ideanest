@@ -221,6 +221,30 @@ function raiseInFlight(pledge: PledgeResponse, now: number): boolean {
   return latest != null && latest.state === 'PENDING' && Date.parse(latest.holdExpiresAt) > now;
 }
 
+/**
+ * What the form was seeded from: the pledge's identity, the fields the form edits, and its figures.
+ *
+ * The manager reads the pledge again every few seconds while a payment settles, and every read is a
+ * new object. Re-seeding on the object would put back, every three seconds, whatever the backer had
+ * chosen since; re-seeding on this only happens when the pledge the form describes has changed.
+ */
+function seedOf(pledge: PledgeResponse): string {
+  return JSON.stringify([pledge.id, draftOf(pledge), pledge.amounts]);
+}
+
+/** `setTimeout`'s ceiling. A hold is minutes long; this only stops a far date firing at once. */
+const LONGEST_TIMEOUT_MS = 2 ** 31 - 1;
+
+/**
+ * The kit's small primary `Pill` (`@ideanest/ui`, docs/ui-kit.md §7.2), drawn on a link: the kit's
+ * `Pill` is a `<button>`, and leaving for another page is a link's job.
+ */
+const PILL_LINK =
+  'inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-white px-3.5 ' +
+  'text-[13px] font-medium tracking-[-0.01em] text-on-white transition-[background-color,transform] ' +
+  'duration-150 ease-in-out hover:-translate-y-px hover:bg-[var(--white-muted)] active:translate-y-0 ' +
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]';
+
 export function PledgeEditor({ pledge, onSaved, copy, pledges, mode = 'edit' }: PledgeEditorProps) {
   const raising = mode === 'raise';
   const locale = useRouteLocale();
@@ -258,11 +282,47 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges, mode = 'edit' }: 
     return () => controller.abort();
   }, [pledge.projectId]);
 
-  /* The form is re-seeded whenever the server hands back a new pledge, so what is on screen
-     after a save is what the service stored rather than what was typed. */
+  /* The form is re-seeded whenever the server hands back a pledge that differs from the one it was
+     seeded from, so what is on screen after a save is what the service stored rather than what was
+     typed — and a read that only confirms what the form already shows leaves the backer's choices
+     alone (`seedOf`). */
+  const seeded = useRef(seedOf(pledge));
   useEffect(() => {
+    const seed = seedOf(pledge);
+    if (seed === seeded.current) return;
+    seeded.current = seed;
     setDraft(draftOf(pledge));
   }, [pledge]);
+
+  /*
+   * #171: a raise leaves for the provider's page with `saving` still on, because the browser is
+   * leaving. A backer who comes back with the browser's Back button may be shown this page from the
+   * back-forward cache, frozen as it was — every control disabled and the button still saying it is
+   * opening the page. `pageshow` with `persisted` is that restore, and the form is handed back.
+   */
+  useEffect(() => {
+    function restored(event: PageTransitionEvent): void {
+      if (event.persisted) setSaving(false);
+    }
+    window.addEventListener('pageshow', restored);
+    return () => window.removeEventListener('pageshow', restored);
+  }, []);
+
+  /*
+   * A pending raise holds the button until its hold runs out, and nothing else would draw the page
+   * again at that moment: one timer, set for the end of the hold, is what gives the button back.
+   */
+  const pendingHold =
+    raising && pledge.latestRaise?.state === 'PENDING' ? pledge.latestRaise.holdExpiresAt : null;
+  const [holdTick, setHoldTick] = useState(0);
+  useEffect(() => {
+    if (pendingHold === null) return;
+    const remaining = Date.parse(pendingHold) - Date.now();
+    if (!(remaining > 0)) return;
+    /* Scheduled again from the tick, so a timer that fires a moment early is simply set again. */
+    const timer = setTimeout(() => setHoldTick((tick) => tick + 1), Math.min(remaining, LONGEST_TIMEOUT_MS));
+    return () => clearTimeout(timer);
+  }, [pendingHold, holdTick]);
 
   const parsed: AmountParse = useMemo(() => parseAmount(draft.contributionText), [draft.contributionText]);
 
@@ -307,10 +367,15 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges, mode = 'edit' }: 
     return quote.quote.total.minus(new Decimal(pledge.amounts.total.amount));
   }, [raising, quote, pledge]);
 
-  const due = difference !== null && difference.gt(0)
+  /* Nothing is due for a form that changes nothing, even where the preview's arithmetic and the
+     pledge's stored figures have drifted apart: there is no raise to pay for. */
+  const due = !isEmpty(edit) && difference !== null && difference.gt(0)
     ? formatMoney(toMoney(difference, pledge.amounts.total.currency))
     : null;
   const inFlight = raising && raiseInFlight(pledge, Date.now());
+  /* Only while the raise holds: the service sends it for no other raise, and a page past its hold
+     would take a payment the service no longer waits for. */
+  const resumeUrl = inFlight ? pledge.latestRaise?.resumeUrl ?? null : null;
 
   /**
    * #171: asks for the provider's page for the difference, and goes there.
@@ -415,11 +480,22 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges, mode = 'edit' }: 
       {inFlight && pledge.latestRaise != null && (
         <div className="mt-4">
           <InlineAlert variant="info" title={pledges.raiseHeading}>
+            {/* The sentence promises a way back only when there is one: the service's page for this
+                raise. Without it, the page the backer left may still be open, and that is all. */}
             <p>
-              {fillPlaceholders(pledges.raisePending, {
+              {fillPlaceholders(resumeUrl === null ? pledges.raisePending : pledges.raisePendingResumable, {
                 time: formatExactTime(pledge.latestRaise.holdExpiresAt, locale),
               })}
             </p>
+            {resumeUrl !== null && (
+              <p className="mt-3">
+                {/* A link, because it goes somewhere: the provider's page for the payment already
+                    started. The service refuses a second raise while this one holds. */}
+                <a href={resumeUrl} className={PILL_LINK}>
+                  {pledges.raiseResume}
+                </a>
+              </p>
+            )}
           </InlineAlert>
         </div>
       )}
@@ -531,7 +607,7 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges, mode = 'edit' }: 
               <Pill
                 type="button"
                 variant="accent"
-                disabled={saving || inFlight || due === null || !parsed.ok}
+                disabled={saving || inFlight || isEmpty(edit) || due === null || !parsed.ok}
                 onClick={() => void raise()}
               >
                 {saving

@@ -368,6 +368,12 @@ export interface PledgeRaise {
   holdExpiresAt: string;
   createdAt: string;
   endedAt?: string | null;
+  /**
+   * The provider’s page for this raise, to go back to and finish paying. Present only while the
+   * raise is `PENDING` and its hold has not run out; null (or absent, from an older service) otherwise,
+   * and then there is no way back to that page from here.
+   */
+  resumeUrl?: string | null;
 }
 
 /**

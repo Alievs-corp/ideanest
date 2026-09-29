@@ -438,11 +438,12 @@
         "lockedBody": "Dəstək verilərkən dəyişdirilə bilər. Ödənildikdən sonra isə kampaniya dəstək qəbul etdiyi müddətdə yalnız artırıla bilər — azaldıla və ya geri götürülə bilməz — və yalnız fərq tutulur. Bunun vəziyyəti: {state}. Ya dəstək həmin mərhələni keçib, ya da kampaniya artıq dəstək qəbul etmir, ona görə həmin idarəetmələr təklif olunmur. Burada nəsə səhvdirsə, kampaniyanın müəllifinə müraciət edin.",
         "raiseReturned": {
           "raisedTitle": "Dəstəyiniz artırıldı",
-          "raisedBody": "Fərq ödənildi və yuxarıdakı rəqəmlərə daxildir. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, ödədiyiniz hər şey tam qaytarılır.",
+          "raisedBody": "Fərq ödənildi və bu səhifədəki rəqəmlərə daxildir. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, ödədiyiniz hər şey tam qaytarılır.",
           "failedTitle": "Artırma baş tutmadı",
           "failedBody": "Heç nə tutulmadı və dəstəyiniz əvvəlki kimi qalır. Kampaniya dəstək qəbul etdiyi müddətdə yenidən cəhd edə bilərsiniz.",
+          "heldBody": "Ödəniş keçmədi və heç nə tutulmadı. Dəstəyiniz əvvəlki kimi qalır, başladığınız ödəniş isə bu vaxtadək açıq qalır: {time}. Ondan sonra yenidən başlaya bilərsiniz.",
           "unappliedTitle": "Artırma tətbiq oluna bilmədi",
-          "unappliedBody": "Ödəniş dəstəyiniz artıq dəyişdikdən sonra keçdi, ona görə ona əlavə olunmadı. Həmin ödəniş sizə avtomatik olaraq tam qaytarılır."
+          "unappliedBody": "Ödəniş dəstəyiniz artıq dəyişdikdən sonra keçdi, buna görə də dəstəyə əlavə olunmadı. Həmin ödəniş sizə avtomatik olaraq tam qaytarılır."
         }
       },
       "editor": {
@@ -458,10 +459,12 @@
         "raiseHeading": "Bu dəstəyi artır",
         "raiseIntro": "Bu dəstək ödənilib. Kampaniya dəstək qəbul etdiyi müddətdə onu artıra bilərsiniz — daha yüksək pillə, daha çox əlavə və ya daha böyük məbləğ — lakin azalda bilməzsiniz. Yalnız fərq ödəniş provayderinin səhifəsində tutulur və dəstəyiniz həmin ödəniş keçəndən sonra dəyişir.",
         "raiseDue": "İndi ödəniləcək məbləğ: {amount}",
-        "raiseNotHigher": "Hazırkı dəstəyinizdən baha olan bir seçim edin. Ödənilmiş dəstək yalnız artırıla bilər.",
+        "raiseNotHigher": "Hazırkı dəstəyinizdən daha baha olan bir seçim edin. Ödənilmiş dəstək yalnız artırıla bilər.",
         "raisePay": "{amount} ödə və artır",
         "raiseOpening": "Ödəniş səhifəsi açılır",
-        "raisePending": "Bu dəstəyi artırmaq üçün başladılan ödəniş hələ açıqdır. Onu provayderin səhifəsində tamamlaya bilərsiniz; yenidən başlamaq isə bu vaxtdan sonra mümkündür: {time}."
+        "raisePending": "Bu dəstəyi artırmaq üçün başladılan ödəniş hələ açıqdır. Ödəniş səhifəsi hələ açıqdırsa, onu orada tamamlayın; əks halda yenidən başlamaq bu vaxtdan sonra mümkündür: {time}.",
+        "raisePendingResumable": "Bu dəstəyi artırmaq üçün başladılan ödəniş hələ açıqdır. Onu ödəniş provayderinin səhifəsində davam etdirə bilərsiniz; yenidən başlamaq isə bu vaxtdan sonra mümkündür: {time}.",
+        "raiseResume": "Ödənişi davam etdir"
       }
     },
     "surveys": {
@@ -3477,7 +3480,7 @@
         },
         "PLEDGE_RAISE_IN_PROGRESS": {
           "title": "Artırma üçün ödəniş artıq gözlənilir",
-          "detail": "Bu dəstəyi yenidən artırmazdan əvvəl başladığınız ödənişi tamamlayın və ya onun müddətinin bitməsini gözləyin. Bu dəfə heç nə tutulmadı."
+          "detail": "Bu dəstəyi artırmaq üçün başladığınız ödəniş hələ açıqdır. Onun nə vaxtadək açıq qalacağını və davam etdirilə bilib-bilmədiyini görmək üçün bu səhifəni yeniləyin. Bu dəfə heç nə tutulmadı."
         },
         "RAISE_AMOUNT_CHANGED": {
           "title": "Ödəniləcək məbləğ dəyişib",

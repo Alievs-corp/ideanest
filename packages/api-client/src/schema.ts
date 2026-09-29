@@ -5508,6 +5508,7 @@ export interface components {
             holdExpiresAt?: string;
             /** Format: uuid */
             id?: string;
+            resumeUrl?: string;
             state?: string;
             total?: components["schemas"]["Money"];
         };
