@@ -990,7 +990,12 @@ sequenceDiagram
 >    `version`. The transaction commits, and then the provider's page is opened for the
 >    difference through the same `PaymentPage` the confirmation uses, under an idempotency key
 >    derived from the raise (`pledge-raise-{id}`), which is also the provider's order identifier.
->    If no page can be opened the raise is `ABANDONED` and its hold given back at once.
+>    If no page can be opened nothing is held: under the endpoint the prepare and the page share the
+>    idempotency store's transaction, so the raise and its hold roll back with the refusal (a caller
+>    outside one gets an `ABANDONED` raise and its hold given back at once). The page's address is
+>    kept on the raise, and `GET /v1/pledges/{id}` offers it back as `latestRaise.resumeUrl` while the
+>    raise is `PENDING` and its hold lasts — a backer who left the provider's page is not locked out
+>    for the payment window — and as null otherwise.
 > 2. **The provider's webhook** settles it in `HostedChargeEvents`, which tells a raise's charge
 >    from a draft's by that key. On success, in one transaction: the `SUCCEEDED` charge row, the
 >    ledger posting (escrow to the creator, as for any charge), and the raise applied — the held
@@ -1011,20 +1016,42 @@ sequenceDiagram
 > priced against; anything that moved the pledge in between — another raise, a campaign refund, a
 > post-campaign upgrade — makes the charge a payment for nothing, and it is recorded `UNAPPLIED`.
 >
+> **A raise is never applied beside a refund, or after the campaign stopped taking pledges (#174's
+> review).** When the difference is paid the raise is applied only if the campaign still takes
+> pledges and none of the pledge's own money is being or has been refunded (a refund that has not
+> failed; refunds of an earlier raise's `UNAPPLIED` charge do not count). Otherwise it is
+> `UNAPPLIED` and its charge refunded. Without this, a campaign halted while a raise was on the
+> provider's page would have its pledge refunded charge by charge while the raise landed on it,
+> and a payment that arrived after the deadline would change `pledged_amount` after the campaign's
+> outcome was snapshotted; neither can now happen. The prepare refuses such a pledge up front
+> (`PLEDGE_NOT_RAISABLE` with `meta.reason: REFUNDED`) and `raisable` is false for it. Recording and
+> settling a refund take the pledge's row lock, as the raise does, so neither slips between the
+> other's read and write.
+>
 > **Holds lapse, payments may still arrive.** A raise's places are held for the confirmation's
 > payment window (`ideanest.pledge.reservation.payment-window`) and §8.4's `reservation-cleaner`
 > gives them back afterwards (`EXPIRED`). A payment that arrives later is still applied when the
 > pledge has not moved, no newer raise was started, and the places can be claimed again; otherwise
 > it is `UNAPPLIED`. An `UNAPPLIED` raise's charge is refunded by the platform on its own through
 > `campaign-refunds` with the reason `RAISE_NOT_APPLIED` (V83), whatever the campaign's state —
-> money that bought nothing is never paid out.
+> money that bought nothing is never paid out: `PayoutGateway.fundsOf` leaves such a charge, and its
+> refund, out of a campaign's funds.
+>
+> **A paid raise nothing settled is settled by the cleaner.** The webhook records the charge and
+> settles the raise in one transaction, but a node of the release before raises existed (a rolling
+> deployment, V83's header) records the charge and leaves the raise `PENDING`. §8.4's
+> `reservation-cleaner` sweeps every `SUCCEEDED` `pledge-raise-*` charge whose raise is not
+> `SUCCEEDED` or `UNAPPLIED` and settles it as the webhook would have: applied while it still can be,
+> otherwise `UNAPPLIED` and refunded.
 >
 > **Refunds and payouts see the new total because they read the charges, not the pledge.** A
 > raised pledge was paid for in two or more charges. A campaign that fails or is halted refunds
-> **each charge against its own provider transaction** (§9.7), and the refund that leaves nothing
-> is the full one that moves the pledge to `REFUNDED` and takes its whole total — raise included —
-> out of the campaign's figures. A campaign that succeeds pays out every settled charge on it, the
-> raises among them (§9.5's `PayoutGateway.fundsOf`).
+> **each charge against its own provider transaction** for what it has left (§9.7). The pledge moves
+> to `REFUNDED`, and its whole total — raise included — leaves the campaign's figures, when a refund
+> **settles** and leaves nothing: under the pledge's row lock, what it was charged less what has
+> actually gone back is zero. Never when a refund is merely requested, since that one may fail. A
+> campaign that succeeds pays out every settled charge on it, the applied raises among them (§9.5's
+> `PayoutGateway.fundsOf`).
 >
 > **What did not change.** A draft is still edited with `PATCH` and paid for once; a legacy
 > `CONFIRMED` pledge is still edited with `PATCH` and charged nothing (#35's rule); a pledge still
@@ -3161,7 +3188,8 @@ One row per attempt to raise a paid pledge while its campaign takes pledges: `pl
 `charge_key` (the charge's `transactions.idempotency_key`), `base_version` (the pledge's
 `version` it was priced against), the new tier and destination, the five new amounts,
 `from_total`, `to_total` and `amount` (the difference, positive, and constrained to be
-`to_total - from_total`), `hold_expires_at` and `ended_at`. At most one `PENDING` row per pledge.
+`to_total - from_total`), `hold_expires_at`, `ended_at`, and `resume_url` (the provider's page for
+its payment, offered back while it is `PENDING` and held). At most one `PENDING` row per pledge.
 `pledge_raise_lines` holds, per raise, the `ADDON` lines of the new selection and the `HOLD` —
 the places reserved for it while it is pending, stored rather than recomputed because by the time
 they are given back the pledge may have moved. §4.5 has the flow.
@@ -3495,7 +3523,7 @@ load profile).
 | `charge-processor` | Every minute | Opens the collection of campaigns that closed above goal, and makes §9.6's first attempt against the pledges it queues. **Built (#64).** The rate limit is §9.3's R-09 expressed as a batch per tick — a hundred charges a minute is roughly 1.7 requests a second, a figure a provider can be told in advance rather than one discovered by being throttled at a campaign's close. There is deliberately no sleeping inside a pass to smooth it further: a sleep would hold the job's lease, and a pass that outlasts its lease is joined by a second replica |
 | `charge-retry` | Every 6 hours | Retries failures within the window and drops what has run out of it. **Built (#65).** Six hours rather than a minute because §9.6's slots are at +24h, +72h and +5 days — nobody can tell an attempt made at 24:00 from one at 27:00. **Two jobs and not one**, for the reason §8.4 gives about splitting `reminder-sender` from `deadline-reminder`: `JobRunner` counts failures per job name, so one job doing both queues would let a database problem in the retry sweep back off the initial collection too. The drop is here rather than in a third job — it is the last row of the same table, at the same granularity, and it runs after the retries so a pledge whose final attempt is due in the same pass gets it |
 | `payout-scheduler` | Daily | Prepare payouts once the hold elapses |
-| `reservation-cleaner` | Every minute | Release expired stock reservations: lapsed drafts, and since #171 the places a raise of a paid pledge held for a payment that did not arrive in the payment window |
+| `reservation-cleaner` | Every minute | Release expired stock reservations: lapsed drafts, and since #171 the places a raise of a paid pledge held for a payment that did not arrive in the payment window. Since #174's review it also settles a raise whose charge settled without it (a rolling deployment's previous-release node): applied if it still can be, otherwise `UNAPPLIED` and refunded |
 | `search-indexer` | Event-driven plus nightly full | Keep the index current |
 | `analytics-aggregator` | Hourly | Populate daily rollups |
 | `reminder-sender` | Every minute | Launch reminders (#39) |
@@ -4153,14 +4181,28 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 >
 > **Per charge since #171.** A pledge raised during its campaign (§4.5) was paid for in more than one
 > charge, and a provider reverses a payment up to what that payment was. So `campaign-refunds` offers
-> settled **charges**, not pledges: every charge on a paid pledge of a failed or halted campaign, and
-> every charge of a raise that was paid for and could not be applied (`RAISE_NOT_APPLIED`, whatever
-> the campaign's state). Each is refunded against its own provider transaction for what it has left,
-> the double-refund rules above apply per charge, and the refund that leaves nothing on the pledge is
-> its full refund — the one that moves it to `REFUNDED` and subtracts its whole total. A staff
-> refund goes against the newest charge that can cover it alone, so a raised pledge is refunded in
-> full by staff one charge at a time, and an upheld backer dispute (#43) issues one refund per charge
-> until nothing is left.
+> settled **charges**, not pledges: every charge of a failed or halted campaign **that has money
+> left** — its amount less every refund against it that has not failed — whatever its pledge's state,
+> and every charge of a raise that was paid for and could not be applied (`RAISE_NOT_APPLIED`,
+> whatever the campaign's state). So a charge refunded in part by staff is refunded for the rest, and
+> a charge whose refund failed after the pledge's other charges went back is retried. Each is
+> refunded against its own provider transaction for what it has left, and the double-refund rules
+> above apply per charge (a requested refund counts as gone until it settles).
+>
+> **Refunded in full is decided when a refund settles (#174's review).** Not when it is requested:
+> under the pledge's row lock, the settlement compares what the pledge was charged with what has
+> actually gone back, and when nothing is left the pledge moves to `REFUNDED` and its whole total
+> leaves the campaign's figures, in that transaction. `refunds.full_refund` keeps V53's meaning —
+> whether the refund was *meant* to return the rest (every part of a staff refund of the rest, every
+> campaign refund; not a `RAISE_NOT_APPLIED` one) — and no longer decides the pledge.
+>
+> **A staff refund is split across charges.** With no amount it returns every charge's remainder;
+> with one, up to what the pledge has left in all, taken from the newest charge first. The parts are
+> recorded in one commit under the pledge's lock and then sent one by one; the first carries the
+> request's idempotency key and the others `key#2`, `key#3`…, so a replay answers every part and
+> reaches no provider. The console's answer is the first part that did not succeed, or the first
+> part. An upheld backer dispute (#43) refunds the rest the same way and is upheld only when every
+> part succeeded.
 
 ### 9.8 Chargebacks
 
