@@ -8,8 +8,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
@@ -103,6 +105,9 @@ public class PledgeRaise {
     @Column(name = "ended_at")
     private Instant endedAt;
 
+    @Column(name = "resume_url")
+    private String resumeUrl;
+
     @Generated(event = EventType.INSERT)
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
@@ -186,12 +191,46 @@ public class PledgeRaise {
         end(PledgeRaiseState.ABANDONED, at);
     }
 
-    /** Paid for, and could not be applied: the charge is owed back. */
+    /**
+     * Paid for, and could not be applied: the charge is owed back.
+     *
+     * <p>From any state but the two that already settled a payment. A raise that was {@code FAILED}
+     * or {@code ABANDONED} and whose charge nevertheless settled — a provider that answered twice, a
+     * page that opened although the call to open it failed — took money for nothing, and this is what
+     * gets it returned.
+     */
     public void unapplied(Instant at) {
-        if (state != PledgeRaiseState.PENDING && state != PledgeRaiseState.EXPIRED) {
-            throw new IllegalStateException("A raise in " + state + " was not waiting for a payment");
+        if (state == PledgeRaiseState.SUCCEEDED || state == PledgeRaiseState.UNAPPLIED) {
+            throw new IllegalStateException("A raise in " + state + " has already settled its payment");
         }
         end(PledgeRaiseState.UNAPPLIED, at);
+    }
+
+    /**
+     * Where the provider's page for this raise's payment is, once it has been opened — so a backer who
+     * left it can go back while the raise is pending. Recorded only while it is.
+     */
+    public void recordPage(URI page) {
+        if (state != PledgeRaiseState.PENDING || page == null || page.getScheme() == null) {
+            return;
+        }
+        String address = page.toString();
+        String scheme = page.getScheme().toLowerCase(java.util.Locale.ROOT);
+        // Only what V83's pledge_raises_resume_url_shape admits, so this can never fail the transaction
+        // the payment page was opened in: an address of another shape is simply not offered back.
+        if ((scheme.equals("https") || scheme.equals("http")) && address.startsWith(scheme + "://") && address.length() <= 2048) {
+            this.resumeUrl = address;
+        }
+    }
+
+    /**
+     * The provider's page to go back to, while this raise is still waiting for its payment and its
+     * hold has not run out; empty otherwise, since a page for a raise that ended pays for nothing.
+     */
+    public Optional<String> resumeUrlAt(Instant now) {
+        return isPending() && holdExpiresAt.isAfter(now)
+                ? Optional.ofNullable(resumeUrl)
+                : Optional.empty();
     }
 
     private void requirePending() {

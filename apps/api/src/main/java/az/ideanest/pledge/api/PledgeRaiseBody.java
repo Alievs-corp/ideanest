@@ -15,12 +15,22 @@ import java.util.UUID;
  * @param amount the difference charged, or to be charged
  * @param total what the pledge comes to once the raise is applied
  * @param holdExpiresAt until when a {@code PENDING} raise holds its places
+ * @param resumeUrl the provider's page this raise is waiting to be paid on, so a backer who left it
+ *     can go back; present only while the raise is {@code PENDING} and its hold has not run out, and
+ *     null otherwise
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record PledgeRaiseBody(
-        UUID id, String state, Money amount, Money total, Instant holdExpiresAt, Instant createdAt, Instant endedAt) {
+        UUID id,
+        String state,
+        Money amount,
+        Money total,
+        Instant holdExpiresAt,
+        Instant createdAt,
+        Instant endedAt,
+        String resumeUrl) {
 
-    static PledgeRaiseBody of(PledgeRaise raise) {
+    static PledgeRaiseBody of(PledgeRaise raise, String resumeUrl) {
         return new PledgeRaiseBody(
                 raise.getId(),
                 raise.getState().name(),
@@ -28,6 +38,7 @@ public record PledgeRaiseBody(
                 Money.of(raise.getToTotal(), raise.getCurrency()),
                 raise.getHoldExpiresAt(),
                 raise.getCreatedAt(),
-                raise.getEndedAt());
+                raise.getEndedAt(),
+                resumeUrl);
     }
 }

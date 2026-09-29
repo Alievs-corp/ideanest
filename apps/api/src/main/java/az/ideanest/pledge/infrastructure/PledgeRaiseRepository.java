@@ -73,4 +73,55 @@ public interface PledgeRaiseRepository extends JpaRepository<PledgeRaise, UUID> 
             ORDER BY r.holdExpiresAt
             """)
     List<UUID> findPledgesWithLapsedRaises(@Param("now") Instant now, Pageable page);
+
+    /**
+     * Whether any of the pledge's own money has gone back or is on its way — #171.
+     *
+     * <p>A refund that has not failed, against the pledge. A raise is neither started nor applied on
+     * a pledge whose money is being returned: the pledge's refunded-in-full decision is made from what
+     * was charged and what went back, and a raise landing between a refund being decided and being
+     * settled would leave part of the pledge refunded and the rest standing at a total the backer no
+     * longer paid. Refunds of a raise that was paid for and could not be applied are not the pledge's
+     * money and do not count.
+     *
+     * <p>Native, because refunds and charges are the payment module's tables and this module may not
+     * name their classes.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT EXISTS (
+                        SELECT 1 FROM refunds r
+                          LEFT JOIN transactions t ON t.id = r.charge_transaction_id
+                          LEFT JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
+                         WHERE r.pledge_id = :pledgeId
+                           AND r.state <> 'FAILED'
+                           AND rs.state IS DISTINCT FROM 'UNAPPLIED')
+                    """,
+            nativeQuery = true)
+    boolean hasRefundOfPledgeMoney(@Param("pledgeId") UUID pledgeId);
+
+    /**
+     * The charge keys of raises that were paid for and never settled — #171.
+     *
+     * <p>A {@code SUCCEEDED} charge whose raise is neither {@code SUCCEEDED} nor {@code UNAPPLIED}:
+     * money taken that nothing applied and nothing will refund. The webhook settles the charge and the
+     * raise in one transaction, so a committed charge beside an unsettled raise was recorded by
+     * something that did not settle it — a node of the release before raises existed, during a rolling
+     * deployment. Oldest charge first. Native for {@link #hasRefundOfPledgeMoney}'s reason.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT rs.charge_key
+                      FROM pledge_raises rs
+                      JOIN transactions t ON t.idempotency_key = rs.charge_key
+                     WHERE rs.state IN ('PENDING', 'EXPIRED', 'FAILED', 'ABANDONED')
+                       AND t.type = 'CHARGE'
+                       AND t.status = 'SUCCEEDED'
+                     ORDER BY t.created_at, rs.charge_key
+                     LIMIT :limit
+                    """,
+            nativeQuery = true)
+    List<String> findPaidUnsettledChargeKeys(@Param("limit") int limit);
 }

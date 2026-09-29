@@ -314,10 +314,16 @@ public class PledgeExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problem.setType(URI.create("https://ideanest.az/problems/pledge-not-raisable"));
         problem.setTitle("This pledge is not raised by paying the difference");
-        problem.setDetail("This pledge is " + exception.state() + ". Only a paid pledge is raised this way.");
+        problem.setDetail(exception.refunded()
+                ? "Money on this pledge is being or has been refunded, so it is not raised."
+                : "This pledge is " + exception.state() + ". Only a paid pledge is raised this way.");
         problem.setProperty("code", "PLEDGE_NOT_RAISABLE");
         Map<String, Object> meta = new LinkedHashMap<>();
         meta.put("state", exception.state().name());
+        if (exception.refunded()) {
+            // #174's review: a raise is not applied to a pledge whose money is going back.
+            meta.put("reason", "REFUNDED");
+        }
         if (exception.state().isEditable()) {
             meta.put("use", "PATCH /v1/pledges/{id}");
         }

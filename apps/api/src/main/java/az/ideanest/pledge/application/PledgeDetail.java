@@ -31,9 +31,11 @@ import java.util.UUID;
  *     for the whole pledge — the response is what groups them
  * @param latestRaise #171: the most recent attempt to raise this paid pledge, or null when there
  *     has been none — what a screen the payment provider sent the backer back to reads
- * @param raisable #171: whether this pledge may be raised now — it is paid for and its campaign is
- *     taking pledges. The service answers it because only the service can: whether a campaign is
- *     taking pledges depends on windows the client is not shown
+ * @param raisable #171: whether this pledge may be raised now — it is paid for, its campaign is
+ *     taking pledges, and none of its money is being refunded. The service answers it because only
+ *     the service can: whether a campaign is taking pledges depends on windows the client is not shown
+ * @param raiseResumeUrl #171: the provider's page {@code latestRaise} is waiting to be paid on, while
+ *     it is pending and its hold lasts; null otherwise. Where a backer who left the page goes back to
  */
 public record PledgeDetail(
         Pledge pledge,
@@ -41,7 +43,8 @@ public record PledgeDetail(
         List<PledgeSupplement> supplements,
         List<SupplementAddon> supplementAddons,
         PledgeRaise latestRaise,
-        boolean raisable) {
+        boolean raisable,
+        String raiseResumeUrl) {
 
     /** A pledge that has never been raised and cannot be now. */
     public PledgeDetail(
@@ -49,7 +52,7 @@ public record PledgeDetail(
             List<PledgeAddon> addons,
             List<PledgeSupplement> supplements,
             List<SupplementAddon> supplementAddons) {
-        this(pledge, addons, supplements, supplementAddons, null, false);
+        this(pledge, addons, supplements, supplementAddons, null, false, null);
     }
 
     public PledgeDetail {

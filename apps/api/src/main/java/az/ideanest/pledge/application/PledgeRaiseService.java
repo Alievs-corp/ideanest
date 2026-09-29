@@ -6,6 +6,7 @@ import az.ideanest.pledge.domain.PledgeAddon;
 import az.ideanest.pledge.domain.PledgeQuote;
 import az.ideanest.pledge.domain.PledgeRaise;
 import az.ideanest.pledge.domain.PledgeRaiseLine;
+import az.ideanest.pledge.domain.PledgeRaiseState;
 import az.ideanest.pledge.domain.PledgeState;
 import az.ideanest.pledge.infrastructure.PledgeAddonRepository;
 import az.ideanest.pledge.infrastructure.PledgeRaiseLineRepository;
@@ -15,6 +16,7 @@ import az.ideanest.project.application.CampaignTotals;
 import az.ideanest.project.application.PledgeAcceptance;
 import az.ideanest.shared.money.Money;
 import az.ideanest.shared.outbox.Outbox;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -135,6 +137,11 @@ public class PledgeRaiseService {
             throw new PledgeNotRaisableException(pledge.getId(), pledge.getState());
         }
         acceptance.requireAcceptingPledges(pledge.getProjectId());
+        // A pledge whose money is being or has been returned is not taken more money for: the raise
+        // would not be applied when it was paid (recordPaid), only refunded.
+        if (raises.hasRefundOfPledgeMoney(pledge.getId())) {
+            throw PledgeNotRaisableException.refunded(pledge.getId());
+        }
 
         Optional<PledgeRaise> inFlight = raises.findPendingForUpdate(pledge.getId());
         if (inFlight.isPresent()) {
@@ -230,10 +237,23 @@ public class PledgeRaiseService {
      * money, the pledge and the campaign's total commit together. Never throws for a raise that cannot
      * be applied: that would roll back the record of money the provider has already taken.
      *
-     * <p><strong>When it is applied.</strong> The pledge is still {@code COLLECTED}, it is the version
-     * the raise was priced against, and the raise was waiting for this payment. A raise whose hold
-     * lapsed before the payment arrived is still applied if no newer raise was started and the places
-     * it needs can be claimed again; a payment is not refused for arriving late.
+     * <p><strong>When it is applied.</strong> The raise was waiting for this payment, the pledge is
+     * still {@code COLLECTED} and the version the raise was priced against, the campaign still takes
+     * pledges, and none of the pledge's money is being or has been refunded. A raise whose hold lapsed
+     * before the payment arrived is still applied if no newer raise was started and the places it
+     * needs can be claimed again; a payment is not refused for arriving late.
+     *
+     * <p><strong>Why the campaign and the refunds.</strong> A campaign that failed or was halted while
+     * a raise was on the provider's page refunds every charge of the pledge, one at a time; applying
+     * the raise then would add to the campaign's total a difference that is about to be refunded, after
+     * its outcome was decided. And a refund decided before the raise was paid for was measured against
+     * the pledge as it was. So the raise is {@code UNAPPLIED} and its charge refunded on its own
+     * ({@code RAISE_NOT_APPLIED}); the pledge is left exactly as its refunds found it. Recording and
+     * settling a refund take the pledge's row lock too, so neither slips between the other's read and
+     * write.
+     *
+     * <p>A raise that was {@code FAILED} or {@code ABANDONED} and whose charge settled anyway is
+     * recorded {@code UNAPPLIED} too: the money is returned rather than kept for a raise nobody sees.
      */
     @Transactional(propagation = Propagation.MANDATORY)
     public RaiseSettlement recordPaid(String chargeKey, Instant at) {
@@ -243,15 +263,18 @@ public class PledgeRaiseService {
         }
         Optional<Pledge> found = pledges.findByIdForUpdate(pledgeId.get());
         PledgeRaise raise = raises.findByChargeKeyForUpdate(chargeKey).orElseThrow();
-        if (!raise.awaitsPayment()) {
+        if (raise.getState() == PledgeRaiseState.SUCCEEDED || raise.getState() == PledgeRaiseState.UNAPPLIED) {
             return new RaiseSettlement(RaiseSettlement.Outcome.ALREADY_SETTLED, raise.getId(), raise.getPledgeId(), null);
         }
         Pledge pledge = found.orElseThrow(() -> new IllegalStateException("Raise " + raise.getId() + " has no pledge"));
 
         SortedMap<UUID, Integer> hold = raise.isPending() ? holdOf(raise) : null;
-        boolean applicable = pledge.getState() == PledgeState.COLLECTED
+        boolean applicable = raise.awaitsPayment()
+                && pledge.getState() == PledgeState.COLLECTED
                 && pledge.getVersion() == raise.getBaseVersion()
-                && (raise.isPending() || !raises.existsNewer(pledge.getId(), raise.getId(), raise.getCreatedAt()));
+                && (raise.isPending() || !raises.existsNewer(pledge.getId(), raise.getId(), raise.getCreatedAt()))
+                && acceptance.isAcceptingPledges(pledge.getProjectId())
+                && !raises.hasRefundOfPledgeMoney(pledge.getId());
 
         boolean applied = applicable
                 && reservations.applyRaise(
@@ -338,6 +361,46 @@ public class PledgeRaiseService {
         }
         expire(pledge.get(), pending.get(), now);
         return true;
+    }
+
+    /**
+     * The reservation cleaner's third walk: a raise whose charge settled without the raise being
+     * settled with it, settled now exactly as the webhook would have — applied while it still can be,
+     * otherwise {@code UNAPPLIED} so that campaign-refunds returns the charge.
+     *
+     * <p>The webhook records the charge and settles the raise in one transaction, so this only finds a
+     * charge recorded by something that did not know about raises: a node of the previous release
+     * during a rolling deployment (V83). The charge and its ledger posting are already there; only the
+     * raise is missing its half.
+     *
+     * @return what the settlement did
+     */
+    @Transactional
+    public RaiseSettlement settlePaidCharge(String chargeKey, Instant now) {
+        RaiseSettlement settlement = recordPaid(chargeKey, now);
+        if (settlement.outcome() == RaiseSettlement.Outcome.APPLIED
+                || settlement.outcome() == RaiseSettlement.Outcome.UNAPPLIED) {
+            log.warn(
+                    "Raise {} of pledge {} had been paid for and never settled; settled now: {}.",
+                    settlement.raiseId(),
+                    settlement.pledgeId(),
+                    settlement.outcome());
+        }
+        return settlement;
+    }
+
+    /**
+     * Keeps the address of the provider's page a pending raise was sent to, so a backer who leaves it
+     * can go back while the hold lasts ({@code latestRaise.resumeUrl}).
+     *
+     * <p>After the page opened, in the caller's transaction when there is one — under the endpoint, the
+     * idempotency store's, in which the raise was prepared. Only the raise's row is locked; this reads
+     * nothing of the pledge's, and {@link PledgeRaise#recordPage} refuses nothing, so it cannot turn
+     * that transaction into a rollback after the provider has opened a page.
+     */
+    @Transactional
+    public void recordPage(UUID raiseId, URI page) {
+        raises.findByIdForUpdate(raiseId).ifPresent(raise -> raise.recordPage(page));
     }
 
     private void expire(Pledge pledge, PledgeRaise raise, Instant now) {

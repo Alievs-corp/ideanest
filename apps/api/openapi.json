@@ -14093,6 +14093,9 @@
             "type" : "string",
             "format" : "uuid"
           },
+          "resumeUrl" : {
+            "type" : "string"
+          },
           "state" : {
             "type" : "string"
           },

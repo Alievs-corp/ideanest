@@ -22,8 +22,29 @@
 -- Reverse: DROP TABLE pledge_raise_lines; DROP TABLE pledge_raises; and restore the two refund
 -- constraints below without RAISE_NOT_APPLIED -- once no row uses it.
 --
--- -- Contract: none. Two new tables, and two CHECK constraints that accept one more value; nothing
--- -- the previous release reads or writes goes away, so this is safe under a rolling deployment.
+-- Contract: none. Two new tables, and two CHECK constraints that accept one more value; nothing the
+-- previous release reads or writes goes away, so the SCHEMA is safe under a rolling deployment.
+--
+-- The BEHAVIOUR is not, for the minutes both releases run, and what covers it is code rather than
+-- this file:
+--   * A previous-release node that receives the success webhook of a raise's charge records the
+--     SUCCEEDED charge and its ledger posting, does not know the charge pays for a raise, and leaves
+--     the raise PENDING (and then EXPIRED once the reservation cleaner reaches it). Nothing in that
+--     release would ever apply or refund it. The reservation cleaner of this release sweeps every
+--     SUCCEEDED `pledge-raise-*` charge whose raise is not SUCCEEDED or UNAPPLIED and settles it as
+--     the webhook would have: applied while it still can be, otherwise UNAPPLIED and refunded.
+--   * A previous-release node's campaign-refunds job refunds a pledge as one refund against its
+--     newest charge. On a raised pledge that asks for more than that payment was, which a provider
+--     refuses (a payment is reversed up to its own amount); the refusal is recorded FAILED, and this
+--     release's job refunds each charge for what it has left -- the refused one once `retry-after`
+--     has passed.
+--   * A previous-release node has no POST /v1/pledges/{id}/raise, so a raise routed to one is a 404
+--     and nothing is held or charged.
+--
+-- The two constraint swaps at the end are a DROP and an ADD each, and the ADD validates at once.
+-- NOT VALID plus VALIDATE would buy nothing here: DROP CONSTRAINT already holds ACCESS EXCLUSIVE on
+-- `refunds` until this migration's transaction commits, so a VALIDATE in the same transaction scans
+-- under the same lock, and V46 records why this directory does not leave constraints unvalidated.
 
 CREATE TABLE pledge_raises (
     id                  uuid           PRIMARY KEY,
@@ -65,6 +86,10 @@ CREATE TABLE pledge_raises (
     hold_expires_at     timestamptz    NOT NULL,
     -- When the row last left PENDING. An EXPIRED raise that is paid for later moves again.
     ended_at            timestamptz,
+    -- The provider's page for this raise's payment, once it has been opened: where a backer who left
+    -- it can go back to while the raise is PENDING and its hold has not run out. Null before the page
+    -- opens and when it could not be; never shown once the raise has ended.
+    resume_url          text,
     created_at          timestamptz    NOT NULL DEFAULT now(),
 
     CONSTRAINT pledge_raises_pledge_fkey
@@ -84,7 +109,10 @@ CREATE TABLE pledge_raises (
     ),
     CONSTRAINT pledge_raises_currency_shape CHECK (currency ~ '^[A-Z]{3}$'),
     CONSTRAINT pledge_raises_charge_key_length CHECK (length(btrim(charge_key)) BETWEEN 8 AND 255),
-    CONSTRAINT pledge_raises_ended_matches_state CHECK ((state = 'PENDING') = (ended_at IS NULL))
+    CONSTRAINT pledge_raises_ended_matches_state CHECK ((state = 'PENDING') = (ended_at IS NULL)),
+    CONSTRAINT pledge_raises_resume_url_shape CHECK (
+        resume_url IS NULL OR (resume_url ~ '^https?://' AND length(resume_url) <= 2048)
+    )
 );
 
 -- One raise in flight per pledge. The service refuses a second while the first is held, and this
@@ -97,6 +125,10 @@ CREATE INDEX pledge_raises_pledge_idx ON pledge_raises (pledge_id, created_at DE
 
 -- What the reservation cleaner walks every minute.
 CREATE INDEX pledge_raises_lapsed_idx ON pledge_raises (hold_expires_at) WHERE state = 'PENDING';
+
+-- What its sweep for paid raises nobody settled walks: every raise that did not end applied or owing.
+CREATE INDEX pledge_raises_unsettled_idx ON pledge_raises (charge_key)
+    WHERE state IN ('PENDING', 'EXPIRED', 'FAILED', 'ABANDONED');
 
 COMMENT ON TABLE pledge_raises IS
     '#171: raising a COLLECTED pledge while its campaign takes pledges. The difference is charged on the provider page; the pledge changes when it is paid.';

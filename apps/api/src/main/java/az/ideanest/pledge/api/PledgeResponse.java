@@ -159,6 +159,8 @@ public record PledgeResponse(
                 pledge.getDisplayRate() == null ? null : pledge.getDisplayRate().toPlainString(),
                 PledgeSupplementBody.of(detail),
                 detail.raisable(),
-                detail.latestRaise() == null ? null : PledgeRaiseBody.of(detail.latestRaise()));
+                detail.latestRaise() == null
+                        ? null
+                        : PledgeRaiseBody.of(detail.latestRaise(), detail.raiseResumeUrl()));
     }
 }

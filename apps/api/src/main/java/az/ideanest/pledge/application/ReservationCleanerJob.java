@@ -88,6 +88,35 @@ public class ReservationCleanerJob implements ScheduledJob {
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         releaseExpiredReservations(now);
         releaseLapsedRaises(now);
+        settlePaidRaises(now);
+    }
+
+    /**
+     * #171: a raise whose charge settled and which nothing settled with it — a node of the release
+     * before raises existed took the webhook during a rolling deployment (V83) — is settled now, as the
+     * webhook would have: applied while it still can be, otherwise {@code UNAPPLIED} so its charge is
+     * refunded. Without this walk that money would be held for a raise nobody applies or returns.
+     *
+     * <p>Here rather than in the payment module because what it settles is the raise; the charge and
+     * its ledger posting are already recorded. One raise per transaction, and one failure does not stop
+     * the rest.
+     *
+     * @return how many raises this pass settled
+     */
+    public int settlePaidRaises(Instant now) {
+        List<String> unsettled = raises.findPaidUnsettledChargeKeys(properties.reservation().cleanupBatchSize());
+        int settled = 0;
+        for (String chargeKey : unsettled) {
+            try {
+                RaiseSettlement.Outcome outcome = raiseService.settlePaidCharge(chargeKey, now).outcome();
+                if (outcome == RaiseSettlement.Outcome.APPLIED || outcome == RaiseSettlement.Outcome.UNAPPLIED) {
+                    settled++;
+                }
+            } catch (RuntimeException e) {
+                log.error("Could not settle the paid raise {}; the next pass tries again.", chargeKey, e);
+            }
+        }
+        return settled;
     }
 
     /**

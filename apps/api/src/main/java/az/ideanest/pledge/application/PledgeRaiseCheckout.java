@@ -2,22 +2,30 @@ package az.ideanest.pledge.application;
 
 import az.ideanest.shared.payment.ReturnUrls;
 import java.net.URI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
  * {@code POST /v1/pledges/{id}/raise} — #171.
  *
- * <p>{@link PledgeCheckout} for a raise, and in the same two steps for the same reason: the raise and
- * its hold are committed first, and only then is the provider asked for a page, so its row lock is not
- * held while somebody else's server answers. The return addresses are checked before either step, so
- * a refused address holds nothing (#139).
+ * <p>{@link PledgeCheckout} for a raise, in the same two steps: the raise and its hold are prepared
+ * first, and only then is the provider asked for a page. The return addresses are checked before
+ * either step, so a refused address holds nothing (#139).
  *
- * <p>The one thing a confirmation does not need: when the page cannot be opened, the raise is
- * abandoned and its hold given back at once. A draft's places lapse with its reservation anyway; a
- * raise's would otherwise stand in the way of the backer's next attempt for the whole payment window.
+ * <p><strong>Under the endpoint, the two steps are one transaction.</strong> {@code POST
+ * /v1/pledges/{id}/raise} runs this inside the idempotency store's own transaction
+ * ({@code IdempotencyRecords#runAndRecord}), so {@link PledgeRaiseService#prepare} joins it: the
+ * pledge's row lock is held while the provider answers, and a page that cannot be opened rolls the
+ * raise and its hold back with the rest — nothing is held and nothing is recorded. That is the draft's
+ * {@code /payment} arrangement too. {@link PledgeRaiseService#abandon} is for a caller outside such a
+ * transaction, where the raise would otherwise stand in the way of the backer's next attempt for the
+ * whole payment window.
  */
 @Service
 public class PledgeRaiseCheckout {
+
+    private static final Logger log = LoggerFactory.getLogger(PledgeRaiseCheckout.class);
 
     private final PledgeRaiseService raises;
     private final PaymentPage page;
@@ -44,13 +52,21 @@ public class PledgeRaiseCheckout {
     public OpenedRaise raise(RaisePledge command, String language, URI successUrl, URI errorUrl) {
         returnUrls.check(successUrl, errorUrl);
         PayableRaise payable = raises.prepare(command);
+        PaymentPageSession session;
         try {
-            PaymentPageSession session =
-                    page.open(payable.payment(), language, successUrl, errorUrl, payable.chargeKey());
-            return new OpenedRaise(payable, session);
+            session = page.open(payable.payment(), language, successUrl, errorUrl, payable.chargeKey());
         } catch (RuntimeException failure) {
             raises.abandon(payable.raiseId());
             throw failure;
         }
+        // Outside the try: the page is open and a payment may follow, so keeping its address must not
+        // abandon the raise. PledgeRaise.recordPage refuses nothing — it keeps an address only of the
+        // shape V83 accepts — so this cannot turn the request's transaction into a rollback.
+        try {
+            raises.recordPage(payable.raiseId(), session.redirectUrl());
+        } catch (RuntimeException failure) {
+            log.warn("Could not keep the page address of raise {}; it cannot be resumed.", payable.raiseId(), failure);
+        }
+        return new OpenedRaise(payable, session);
     }
 }
