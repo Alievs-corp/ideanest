@@ -2,7 +2,8 @@
 
 import { Link } from '../../i18n/navigation';
 import type { ReactNode } from 'react';
-import { Tag, cn, revealFocusedItem } from '@ideanest/ui';
+import { Tag, cn } from '@ideanest/ui';
+import { revealFocusedItem } from '@ideanest/ui/reveal-focused-item';
 import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
 import type { ProjectState } from '../../lib/projects/api';
 import { campaignDashboardHref } from '../../lib/account/navigation';

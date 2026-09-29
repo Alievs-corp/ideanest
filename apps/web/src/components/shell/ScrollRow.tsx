@@ -1,7 +1,7 @@
 'use client';
 
 import type { ComponentPropsWithoutRef } from 'react';
-import { revealFocusedItem } from '@ideanest/ui';
+import { revealFocusedItem } from '@ideanest/ui/reveal-focused-item';
 
 /**
  * A sideways-scrolling `<ul>` that brings a focused item fully into view — issue #181.

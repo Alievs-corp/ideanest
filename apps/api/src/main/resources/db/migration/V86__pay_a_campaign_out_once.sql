@@ -43,6 +43,10 @@
 --
 -- Unanswered sends the UPDATE could not reopen, for staff to settle from the statement:
 --   SELECT id, project_id FROM payouts WHERE state = 'FAILED' AND failure_code = 'provider_unreachable';
+-- A previous-release node does not know send_unconfirmed_at and can still cancel a reopened payout during
+-- the deploy, after which the campaign could be priced again. Check once afterwards; any row here is an
+-- unanswered send to settle from the statement before its campaign is paid again:
+--   SELECT id, project_id FROM payouts WHERE state = 'CANCELLED' AND send_unconfirmed_at IS NOT NULL;
 --
 -- Reverse: DROP INDEX payouts_one_paid_per_project; ALTER TABLE payouts DROP COLUMN send_unconfirmed_at;
 -- and restore V55's payouts_paid_has_transaction -- once no PAID row with a zero net and no transaction

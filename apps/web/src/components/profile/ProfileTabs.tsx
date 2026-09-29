@@ -1,7 +1,8 @@
 'use client';
 
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { cn, revealFocusedItem } from '@ideanest/ui';
+import { cn } from '@ideanest/ui';
+import { revealFocusedItem } from '@ideanest/ui/reveal-focused-item';
 
 /**
  * The profile's three sections — §4.2 P-04, P-05 and P-06, issue #274.

@@ -2600,8 +2600,10 @@ HOLD → BLOCKED (fraud)
 > already carried out), so it stays unconfirmed. Only a person reading the provider's statement ends
 > it: `POST /v1/admin/payouts/{id}/unconfirmed-send/sent` (with the statement's transaction reference:
 > `PAID`, the posting a sent payout gets, withheld debt recovered) or `.../not-sent` (`FAILED`
-> `confirmed_not_sent`, after which the campaign may be priced again). For chargebacks it counts as
-> paid out. V86 turns the payouts earlier releases recorded `FAILED` `provider_unreachable` into
+> `confirmed_not_sent`, after which the campaign may be priced again). Until then a chargeback lost on
+> the campaign stays in its refunded figure rather than becoming a creator debt — taken off once if it
+> was not sent, and logged with the settlement (`refundedSincePriced`) for recovery by hand if it was.
+> V86 turns the payouts earlier releases recorded `FAILED` `provider_unreachable` into
 > unconfirmed ones; a campaign with such a row left is not priced again until it is settled.
 >
 > **The decision edition 6 left to this specification: the dispute window when a payout waits

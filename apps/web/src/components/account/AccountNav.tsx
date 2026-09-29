@@ -2,7 +2,7 @@
 
 import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
-import { revealFocusedItem } from '@ideanest/ui';
+import { revealFocusedItem } from '@ideanest/ui/reveal-focused-item';
 import { isCurrentAccountLink } from '../../lib/account/navigation';
 
 /**

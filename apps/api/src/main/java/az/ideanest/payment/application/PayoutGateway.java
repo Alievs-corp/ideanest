@@ -5,6 +5,7 @@ import az.ideanest.payment.domain.PaymentTransaction;
 import az.ideanest.payment.domain.PayoutRequest;
 import az.ideanest.payment.domain.PayoutResult;
 import az.ideanest.payment.domain.ProviderOutcome;
+import az.ideanest.payment.domain.TransactionStatus;
 import az.ideanest.payment.domain.ProviderUnavailableException;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.payment.infrastructure.RefundRepository;
@@ -161,6 +162,10 @@ public class PayoutGateway {
             return new Sent(true, replayed.get().getId(), null, null);
         }
         PaymentProvider provider = providers.primary().orElseThrow(NoPayoutProviderException::new);
+        if (transactions.existsByProviderAndProviderTransactionIdAndStatusIn(
+                provider.name(), providerTransactionId, List.of(TransactionStatus.SUCCEEDED, TransactionStatus.FAILED))) {
+            throw new PayoutReferenceTakenException(providerTransactionId);
+        }
         return postings.record(
                 payoutId,
                 projectId,

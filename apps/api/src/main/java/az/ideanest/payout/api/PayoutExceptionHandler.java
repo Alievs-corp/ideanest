@@ -1,6 +1,7 @@
 package az.ideanest.payout.api;
 
 import az.ideanest.payment.application.NoPayoutProviderException;
+import az.ideanest.payment.application.PayoutReferenceTakenException;
 import az.ideanest.payout.application.CampaignAlreadyPaidOutException;
 import az.ideanest.payout.application.NothingToPayException;
 import az.ideanest.payout.application.PayoutAlreadyInFlightException;
@@ -108,6 +109,17 @@ public class PayoutExceptionHandler {
                 "The provider did not answer a send, so the money may have moved. Send it again under the same"
                         + " key, or settle it from the provider's statement as sent or not sent.");
         problem.setProperty("code", "PAYOUT_SEND_UNCONFIRMED");
+        return problem;
+    }
+
+    /** 409 when the statement's reference is already on a settled transaction — #184's review. */
+    @ExceptionHandler(PayoutReferenceTakenException.class)
+    public ProblemDetail handleReferenceTaken(PayoutReferenceTakenException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-reference-taken"));
+        problem.setTitle("That provider reference is already recorded");
+        problem.setDetail("Another settled transaction carries this reference. Check the statement's reference again.");
+        problem.setProperty("code", "PAYOUT_REFERENCE_TAKEN");
         return problem;
     }
 

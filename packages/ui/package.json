@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./server": "./src/server.ts",
     "./motion": "./src/motion.ts",
+    "./reveal-focused-item": "./src/lib/reveal-focused-item.ts",
     "./styles.css": "./src/styles.css"
   },
   "scripts": {

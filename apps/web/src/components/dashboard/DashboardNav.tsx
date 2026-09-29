@@ -5,7 +5,7 @@ import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
 import { cn } from '@ideanest/ui/server';
 import type { DashboardNavCopy } from '../../lib/i18n/dashboard-copy';
-import { revealFocusedItem } from '@ideanest/ui';
+import { revealFocusedItem } from '@ideanest/ui/reveal-focused-item';
 
 /**
  * The way between the dashboard's panels.

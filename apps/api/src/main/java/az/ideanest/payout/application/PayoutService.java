@@ -712,13 +712,22 @@ public class PayoutService {
         if (payout.debtWithheld().isPositive()) {
             debts.recover(payout.creatorId(), payout.debtWithheld(), now);
         }
+        // What went back after it was priced -- a chargeback lost while the send was unconfirmed -- was paid
+        // to the creator as well. Not a creator debt automatically (a debt is keyed on its dispute), so it is
+        // put in front of the person settling it.
+        CampaignFunds funds = gateway.fundsOf(payout.projectId(), payout.currency());
+        Money movedSince = funds.refunded().minus(payout.refunded());
+        if (movedSince.isPositive()) {
+            log.error("Payout {} was sent at its priced figure, and {} went back since: recover it from the creator.",
+                    payoutId, movedSince);
+        }
         audit.record(
                 AuditAction.PAYOUT_SENT,
                 payoutId,
                 AuditActor.moderator(staffId),
                 AuditOutcome.SUCCEEDED,
-                "unconfirmedResolved=sent; amount=%s; providerTransaction=%s; note=%s"
-                        .formatted(payout.net(), providerTransactionId, note));
+                "unconfirmedResolved=sent; amount=%s; providerTransaction=%s; refundedSincePriced=%s; note=%s"
+                        .formatted(payout.net(), providerTransactionId, movedSince, note));
         return payout;
     }
 
