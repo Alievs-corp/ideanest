@@ -569,9 +569,10 @@ not shout as loudly as a campaign about to close.
 ```css
 .progress { height: 6px; border-radius: var(--radius-full);
             background: var(--surface-3); overflow: hidden; }
-.progress__fill { height: 100%; border-radius: var(--radius-full);
+.progress__fill { width: 100%; height: 100%; border-radius: var(--radius-full);
                   background: var(--lime-500);
-                  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+                  /* Slid, never resized: translateX(percent - 100%). See #146. */
+                  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 .progress--complete .progress__fill {
   background: var(--success);
   box-shadow: 0 0 12px var(--lime-glow);
