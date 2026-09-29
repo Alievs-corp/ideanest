@@ -3542,6 +3542,7 @@
       "PRELAUNCH": "Tezliklə",
       "LIVE": "Aktiv",
       "SUCCESSFUL": "Maliyyələşdi",
+      "COLLECTING": "Maliyyələşdi",
       "LATE_PLEDGE": "Gecikmiş dəstək açıqdır",
       "FULFILLING": "Yerinə yetirilir",
       "COMPLETED": "Tamamlandı",
@@ -3640,6 +3641,8 @@
     },
     "creator": {
       "heading": "Müəllif haqqında",
+      "memberSince": "<date></date> tarixindən üzvdür",
+      "seeAll": "{name} tərəfindən yaradılan hər şeyə baxın",
       "others": "Onun digər kampaniyaları"
     },
     "risks": {

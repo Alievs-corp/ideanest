@@ -158,4 +158,28 @@ describe('the campaign tab strip', () => {
       expect(link).toHaveClass('whitespace-nowrap');
     }
   });
+
+  /**
+   * #173. A scroll container clips whatever overflows it, and the ring is drawn four pixels
+   * outside the tab (2px wide, 2px off — `theme.css`'s unlayered `:focus-visible` rule, which
+   * no offset utility on the link can override, so the old `outline-offset-[-2px]` inset ring
+   * was never drawn). The row pads itself by exactly that on every side and gives it back with
+   * a negative margin, as `DashboardNav` and `AccountNav` do; the bottom gives back one pixel
+   * more, so the current tab's rule still lies over the nav's hairline.
+   */
+  it('draws a focus ring on every tab that the scrolling row leaves room for', async () => {
+    const { container } = render(await resolveServerTree(<CampaignTabs active="campaign" path={PATH} />));
+
+    const row = container.querySelector('ul') as HTMLElement;
+    expect(row).toHaveClass('p-1');
+    expect(row).toHaveClass('-mx-1');
+    expect(row).toHaveClass('-mt-1');
+    expect(row).toHaveClass('-mb-[5px]');
+    for (const link of screen.getAllByRole('link')) {
+      expect(link).toHaveClass('focus-visible:outline-2');
+      expect(link).toHaveClass('focus-visible:outline-offset-2');
+      expect(link).toHaveClass('focus-visible:outline-[var(--lime-500)]');
+      expect(link.className).not.toContain('outline-offset-[-');
+    }
+  });
 });

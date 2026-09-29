@@ -69,24 +69,39 @@ import { followControlCopyFrom } from '../../lib/i18n/profile-copy';
  * client boundary: the owner sees nothing, a visitor sees a sign-in link, and everybody else
  * the toggle.
  *
+ * <h2>Every word is the catalogue's — #172</h2>
+ *
+ * The state words, "Member since" and the link to the profile were English literals in every
+ * language after #132 and #142 had translated the rest of the page. This is a server component,
+ * so it reads the catalogue directly, as `CampaignRisks` and `CampaignUpdates` do; a copy prop
+ * would be ceremony between it and the request. The state words are `campaign.state`, the
+ * group the campaign header's badge already reads, so a campaign is called the same thing on
+ * its own page and in somebody else's Creator tab. The joining date is formatted in the
+ * route's language by `formatDay`, and `ViewerInstant` re-renders it in the same language.
+ *
  * <h2>Motion</h2>
  *
  * None. `ViewerInstant` and `FollowControl` are the tab's client boundaries, and neither
  * animates.
  */
 
-/** The nine public states, as a word rather than the enum. Only the ones this tab can meet. */
-const STATE_WORDS: Partial<Record<CreatorProject['state'], string>> = {
-  PRELAUNCH: 'Coming soon',
-  LIVE: 'Live',
-  SUCCESSFUL: 'Funded',
-  COLLECTING: 'Funded',
-  LATE_PLEDGE: 'Late pledges open',
-  FULFILLING: 'Fulfilling',
-  COMPLETED: 'Completed',
-  UNSUCCESSFUL: 'Did not fund',
-  CANCELED: 'Cancelled',
-};
+/**
+ * The public states this tab can meet, each a key under `campaign.state`.
+ *
+ * A closed list rather than a lookup of whatever the service sends: `state` is an open
+ * string (#323), and a state with no word here is omitted rather than printed as its enum.
+ */
+const STATE_KEYS: ReadonlySet<CreatorProject['state']> = new Set([
+  'PRELAUNCH',
+  'LIVE',
+  'SUCCESSFUL',
+  'COLLECTING',
+  'LATE_PLEDGE',
+  'FULFILLING',
+  'COMPLETED',
+  'UNSUCCESSFUL',
+  'CANCELED',
+]);
 
 export interface CreatorPanelProps {
   readonly campaign: CampaignPage;
@@ -101,6 +116,7 @@ export interface CreatorPanelProps {
 export async function CreatorPanel({ campaign, profile, projects, returnTo }: CreatorPanelProps) {
   const locale = localeOrDefault(await getLocale());
   const t = await getTranslations('campaign.creator');
+  const states = await getTranslations('campaign.state');
   const followCopy = followControlCopyFrom(await getTranslations('profile'));
 
   /*
@@ -111,8 +127,9 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
   const name = profile?.name ?? campaign.creator.name;
   const avatarUrl = profile?.avatarUrl ?? campaign.creator.avatarUrl;
 
+  const joinedAt = profile?.joinedAt ?? null;
   const joinedServerText =
-    profile?.joinedAt == null ? null : formatDay(profile.joinedAt, SERVER_TIME_ZONE, locale);
+    joinedAt === null ? null : formatDay(joinedAt, SERVER_TIME_ZONE, locale);
 
   return (
     <section aria-labelledby="campaign-creator" className="flex flex-col gap-8">
@@ -156,14 +173,21 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
               </Link>
             )}
 
-            {profile?.joinedAt != null && joinedServerText !== null && (
+            {joinedAt !== null && joinedServerText !== null && (
               <p className="text-sm text-white/64">
-                Member since{' '}
-                <ViewerInstant
-                  instant={profile.joinedAt}
-                  serverText={joinedServerText}
-                  precision="day"
-                />
+                {/*
+                  A tag rather than `{date}`: the date is an element, and where it sits in the
+                  sentence is the language's decision — Azerbaijani and Turkish put it first.
+                */}
+                {t.rich('memberSince', {
+                  date: () => (
+                    <ViewerInstant
+                      instant={joinedAt}
+                      serverText={joinedServerText}
+                      precision="day"
+                    />
+                  ),
+                })}
               </p>
             )}
 
@@ -191,7 +215,7 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
 
           <ul className="flex flex-col gap-2">
             {projects.map((project) => {
-              const word = STATE_WORDS[project.state];
+              const word = STATE_KEYS.has(project.state) ? states(project.state) : undefined;
               return (
                 <li key={project.id}>
                   <Link
@@ -220,7 +244,7 @@ export async function CreatorPanel({ campaign, profile, projects, returnTo }: Cr
                 href={profileHref(profile.slug)}
                 className="rounded-sm text-white underline-offset-4 hover:underline"
               >
-                See everything {name} has made
+                {t('seeAll', { name })}
               </Link>
             </p>
           )}

@@ -3542,6 +3542,7 @@
       "PRELAUNCH": "Coming soon",
       "LIVE": "Live",
       "SUCCESSFUL": "Funded",
+      "COLLECTING": "Funded",
       "LATE_PLEDGE": "Late pledges open",
       "FULFILLING": "Fulfilling",
       "COMPLETED": "Completed",
@@ -3640,6 +3641,8 @@
     },
     "creator": {
       "heading": "About the creator",
+      "memberSince": "Member since <date></date>",
+      "seeAll": "See everything {name} has made",
       "others": "Their other campaigns"
     },
     "risks": {

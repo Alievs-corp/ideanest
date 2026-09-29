@@ -3542,6 +3542,7 @@
       "PRELAUNCH": "Скоро",
       "LIVE": "Идёт сбор",
       "SUCCESSFUL": "Собрано",
+      "COLLECTING": "Собрано",
       "LATE_PLEDGE": "Поздние взносы открыты",
       "FULFILLING": "Выполняется",
       "COMPLETED": "Завершена",
@@ -3640,6 +3641,8 @@
     },
     "creator": {
       "heading": "Об авторе",
+      "memberSince": "Участник с <date></date>",
+      "seeAll": "Смотреть всё, что создал автор {name}",
       "others": "Другие кампании автора"
     },
     "risks": {

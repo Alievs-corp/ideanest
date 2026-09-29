@@ -8,23 +8,30 @@ import type { CampaignPage } from '../../lib/projects/publicPage';
 import { readCampaignPage } from '../../lib/projects/publicPage';
 import type { CreatorProject, PublicProfile } from '../../lib/projects/creatorProfile';
 import { CreatorPanel } from './CreatorPanel';
-import CATALOGUE from '../../../messages/en.json';
 import { resolveServerTree } from '../../test-support/server-tree';
+import { translatorFor } from '../../test-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { formatDay, SERVER_TIME_ZONE, viewerTimeZone } from '../../lib/projects/deadline';
 
 /*
- * The real catalogue, through next-intl's own formatter.
+ * The real catalogues, through next-intl's own formatter, in the language the test chooses.
  *
  * `createTranslator` rather than a hand-rolled substitution, because these messages carry ICU
- * plurals — `{days, plural, one {# day left} other {# days left}}` — and a regex that swapped
- * `{days}` for a number would produce a sentence no language actually renders. Asserting
- * against `messages/en.json` formatted the way the application formats it is what makes this
- * suite fail when a translation is edited to something the component no longer draws.
+ * arguments and rich-text tags, and a regex that swapped them would produce a sentence no
+ * language actually renders. English by default; #172's test renders in Azerbaijani, which is
+ * the one render the old literals could not have passed.
  */
+const route = vi.hoisted(() => ({ locale: 'en' as 'en' | 'az' }));
+
 vi.mock('next-intl/server', async () => {
   const { createTranslator } = await import('next-intl');
+  const CATALOGUES = {
+    en: (await import('../../../messages/en.json')).default,
+    az: (await import('../../../messages/az.json')).default,
+  };
 
   return {
-    getLocale: async () => 'en',
+    getLocale: async () => route.locale,
     /*
      * `namespace` is a plain string here and a union of every valid path in next-intl's own
      * types. The cast is at the mock's edge rather than at each call: what a component asks
@@ -33,12 +40,38 @@ vi.mock('next-intl/server', async () => {
      */
     getTranslations: async (namespace: string) =>
       createTranslator({
-        locale: 'en',
-        messages: CATALOGUE,
+        locale: route.locale,
+        messages: CATALOGUES[route.locale],
         namespace: namespace as never,
       }),
   };
 });
+
+/*
+ * `ViewerInstant` re-renders the joining date in the browser, in the language of the route's
+ * `[locale]` segment. There is no segment under jsdom, so the test's locale stands in for it —
+ * otherwise an Azerbaijani render would have its date rewritten in English after the effect.
+ */
+vi.mock('../../lib/i18n/useRouteLocale', () => ({ useRouteLocale: () => route.locale }));
+
+/** `campaign.creator.memberSince`, split at the date it wraps. */
+function memberSince(locale: 'en' | 'az' = 'en'): { readonly before: string; readonly after: string } {
+  const template = String(translatorFor('campaign.creator', locale).raw('memberSince'));
+  const [before = '', after = ''] = template.split('<date></date>');
+  return { before, after };
+}
+
+/** `campaign.creator.seeAll`, with the creator's name in it. */
+function seeAll(name: string, locale: 'en' | 'az' = 'en'): string {
+  return fillPlaceholders(String(translatorFor('campaign.creator', locale).raw('seeAll')), { name });
+}
+
+/** The joining sentence the tab drew, and the date inside it. */
+function joiningLine(container: HTMLElement): { readonly line: string; readonly date: string } {
+  const time = container.querySelector(`time[datetime="${JOINED_AT}"]`);
+  if (time === null || time.parentElement === null) throw new Error('no joining date was drawn');
+  return { line: time.parentElement.textContent ?? '', date: time.textContent ?? '' };
+}
 
 
 
@@ -82,12 +115,14 @@ function campaign(overrides: Partial<ProjectPageResponse> = {}): CampaignPage {
   return page;
 }
 
+const JOINED_AT = '2024-02-01T00:00:00Z';
+
 const PROFILE: PublicProfile = {
   slug: 'ayan',
   name: 'Ayan Q',
   avatarUrl: null,
   bio: 'Photographer in Baku.',
-  joinedAt: '2024-02-01T00:00:00Z',
+  joinedAt: JOINED_AT,
   // §4.2 P-02 and P-03. The Creator tab renders none of the three — it links to the profile
   // for them — and they are here because #323 made this one shape rather than two.
   websiteUrl: null,
@@ -139,7 +174,10 @@ beforeEach(() => {
   vi.mocked(isFollowing).mockResolvedValue(false);
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  route.locale = 'en';
+});
 
 describe('the Follow control on the creator tab — #143', () => {
   it('offers a signed-in reader Follow, addressed by the campaign creator slug', async () => {
@@ -182,10 +220,14 @@ describe('the creator tab', () => {
   });
 
   it('shows the biography and the joining date the profile published', async () => {
-    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />));
+    const { container } = render(
+      await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[]} />),
+    );
 
     expect(screen.getByText('Photographer in Baku.')).toBeInTheDocument();
-    expect(screen.getByText(/Member since/u)).toBeInTheDocument();
+    const { before, after } = memberSince();
+    const { line, date } = joiningLine(container);
+    expect(line).toBe(`${before}${date}${after}`);
   });
 
   it('omits the biography row rather than saying the creator has not written one', async () => {
@@ -205,7 +247,7 @@ describe('the creator tab', () => {
   });
 
   it('omits the joining date rather than printing an empty one', async () => {
-    render(
+    const { container } = render(
       await resolveServerTree(
         <CreatorPanel
         returnTo={RETURN_TO}
@@ -216,7 +258,8 @@ describe('the creator tab', () => {
       ),
     );
 
-    expect(screen.queryByText(/Member since/u)).not.toBeInTheDocument();
+    expect(container.querySelector('time')).toBeNull();
+    expect(container.textContent).not.toContain(memberSince().before.trim());
   });
 
   it('lists the creator’s other campaigns, each with its state as a word', async () => {
@@ -225,7 +268,43 @@ describe('the creator tab', () => {
     expect(screen.getByRole('link', { name: /A folding bicycle/u })).toHaveAttribute('href', '/en/projects/ayan/a-folding-bicycle');
     // Never a hue on its own (§9.2): "Did not fund" is exactly the fact a reader must not
     // have to infer from a colour, so every card states its outcome in text.
-    expect(screen.getByText('Funded')).toBeInTheDocument();
+    expect(screen.getByText(translatorFor('campaign.state')('SUCCESSFUL'))).toBeInTheDocument();
+  });
+
+  it('calls a campaign that is collecting funded, as the header does', async () => {
+    render(
+      await resolveServerTree(
+        <CreatorPanel
+          returnTo={RETURN_TO}
+          campaign={campaign()}
+          profile={PROFILE}
+          projects={[{ ...OTHER, state: 'COLLECTING' }]}
+        />,
+      ),
+    );
+
+    expect(screen.getByText(translatorFor('campaign.state')('COLLECTING'))).toBeInTheDocument();
+  });
+
+  it('omits a state it has no word for rather than printing the enum', async () => {
+    const { container } = render(
+      await resolveServerTree(
+        <CreatorPanel
+          returnTo={RETURN_TO}
+          campaign={campaign()}
+          profile={PROFILE}
+          projects={[{ ...OTHER, state: 'SOMETHING_NEW' }]}
+        />,
+      ),
+    );
+
+    expect(container.textContent).not.toContain('SOMETHING_NEW');
+  });
+
+  it('links through to everything else the creator has made', async () => {
+    render(await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[OTHER]} />));
+
+    expect(screen.getByRole('link', { name: seeAll('Ayan Q') })).toHaveAttribute('href', '/en/u/ayan');
   });
 
   /**
@@ -258,6 +337,33 @@ describe('the creator tab', () => {
     );
 
     expect(container.textContent).not.toMatch(/no previous|no other/iu);
+  });
+
+  /**
+   * #172: the state words, "Member since" and the profile link were English literals in every
+   * language. Azerbaijani is the render they could not have passed, and it is asserted through
+   * the Azerbaijani catalogue rather than a retyped list of its words.
+   */
+  it('draws every word in the route’s language, not in English', async () => {
+    route.locale = 'az';
+    const { container } = render(
+      await resolveServerTree(<CreatorPanel returnTo={RETURN_TO} campaign={campaign()} profile={PROFILE} projects={[OTHER]} />),
+    );
+
+    expect(screen.getByText(translatorFor('campaign.state', 'az')('SUCCESSFUL'))).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: seeAll('Ayan Q', 'az') })).toBeInTheDocument();
+
+    const { before, after } = memberSince('az');
+    const { line, date } = joiningLine(container);
+    expect(line).toBe(`${before}${date}${after}`);
+    // The date itself in Azerbaijani: the server's UTC rendering, or the viewer's zone after
+    // the effect — the same language either way.
+    expect([
+      formatDay(JOINED_AT, SERVER_TIME_ZONE, 'az'),
+      formatDay(JOINED_AT, viewerTimeZone(), 'az'),
+    ]).toContain(date);
+
+    expect(container.textContent).not.toMatch(/Funded|Member since|See everything/u);
   });
 
   describe('when the profile cannot be read', () => {
