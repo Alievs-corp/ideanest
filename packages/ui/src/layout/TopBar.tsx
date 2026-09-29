@@ -99,6 +99,8 @@ export function TopBar({
   const shown = useRef(scrolled);
   /** The row's children as drawn just before the state changed: FLIP's "first". */
   const first = useRef<DOMRect[] | null>(null);
+  /** The FLIP animations still running, so a reversal can stop them before it measures. */
+  const running = useRef<Animation[]>([]);
 
   const show = useCallback((next: boolean) => {
     if (next === shown.current) return;
@@ -121,29 +123,53 @@ export function TopBar({
   /*
    * FLIP's "last, invert, play". A layout effect runs before paint, so the new layout is
    * never drawn without the transform that puts each child back where it was.
+   *
+   * A collapse still running when the state flips back is cancelled first. `first` was read
+   * with that transform on, which is right: it is where the reader sees each child. But the
+   * new layout must be read without it, or the in-flight offset is counted twice and the
+   * children jump when the reverse starts. All the reads come before any animation starts,
+   * so the browser lays the row out once rather than once per child.
    */
   useLayoutEffect(() => {
+    for (const animation of running.current) animation.cancel();
+    running.current = [];
+
     const before = first.current;
     first.current = null;
     const row = rowRef.current;
     if (!before || !row || row.children.length !== before.length) return;
 
-    Array.from(row.children).forEach((child, index) => {
-      const was = before[index];
-      if (!was || !(child instanceof HTMLElement) || typeof child.animate !== 'function') return;
+    const children = Array.from(row.children);
+    const now = children.map((child) => child.getBoundingClientRect());
 
-      const now = child.getBoundingClientRect();
+    children.forEach((child, index) => {
+      const was = before[index];
+      const is = now[index];
+      if (!was || !is || !(child instanceof HTMLElement) || typeof child.animate !== 'function') {
+        return;
+      }
       // Centres rather than edges, so a pill whose width changed moves as one piece.
-      const dx = was.left + was.width / 2 - (now.left + now.width / 2);
-      const dy = was.top + was.height / 2 - (now.top + now.height / 2);
+      const dx = was.left + was.width / 2 - (is.left + is.width / 2);
+      const dy = was.top + was.height / 2 - (is.top + is.height / 2);
       if (dx === 0 && dy === 0) return;
 
-      child.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
-        duration: COLLAPSE_MS,
-        easing: COLLAPSE_EASING,
-      });
+      running.current.push(
+        child.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], {
+          duration: COLLAPSE_MS,
+          easing: COLLAPSE_EASING,
+        }),
+      );
     });
   }, [scrolled]);
+
+  /* Nothing is left running on a row that is gone. */
+  useEffect(
+    () => () => {
+      for (const animation of running.current) animation.cancel();
+      running.current = [];
+    },
+    [],
+  );
 
   return (
     <header

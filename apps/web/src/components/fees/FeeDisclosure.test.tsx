@@ -111,13 +111,21 @@ describe.each(SUPPORTED_LOCALES)('the fee disclosure in %s', (locale) => {
     },
   );
 
-  it('points a failed read at the creator agreement, where the rate is stated', async () => {
-    await draw(null, locale, 'creator');
+  /*
+   * Not at the creator agreement: it is not published until #423 answers (architecture §22.2),
+   * so during the outage this sentence is for, that link would lead to "not published".
+   */
+  it.each(['backer', 'creator'] as const)(
+    'points a failed read, for a %s, at the pricing page where the rates are published',
+    async (audience) => {
+      await draw(null, locale, audience);
 
-    const link = screen.getByRole('link');
-    expect(link.getAttribute('href')).toMatch(/\/legal\/creator-agreement$/u);
-    expect(link.textContent).toBe(/<agreement>(.*)<\/agreement>/u.exec(copy.unavailable)?.[1]);
-  });
+      const link = screen.getByRole('link');
+      expect(link.getAttribute('href')).toMatch(/\/pricing$/u);
+      expect(link.getAttribute('href')).not.toContain('/legal/');
+      expect(link.textContent).toBe(/<pricing>(.*)<\/pricing>/u.exec(copy.unavailable)?.[1]);
+    },
+  );
 
   it('treats a configured answer without its rates as a failed read, not as nothing charged', async () => {
     const { container } = await draw(
@@ -141,11 +149,12 @@ describe('the failed-read sentence', () => {
     expect(container.textContent).not.toMatch(/nothing is being deducted/iu);
   });
 
-  it('reads as a failure in Azerbaijani, and names the agreement by its own name', async () => {
+  it('reads as a failure in Azerbaijani, and names the pricing page as the site does', async () => {
     const { container } = await draw(null, 'az', 'backer');
 
     expect(container.textContent).toContain('Komissiyanı hazırda yükləmək mümkün olmadı.');
+    expect(container.textContent).toContain('komissiya tutulmadığı anlamına gəlmir');
     expect(container.textContent).not.toContain('heç nə tutulmur');
-    expect(screen.getByRole('link').textContent).toBe('yaradıcı müqaviləsində');
+    expect(screen.getByRole('link').textContent).toBe('Planlar və qiymətlər');
   });
 });

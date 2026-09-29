@@ -248,6 +248,26 @@ describe('the editor’s account of the money', () => {
     expect(screen.getByText(EDITOR.savedTitle)).toBeInTheDocument();
   });
 
+  /*
+   * The anonymity box read `event.currentTarget.checked` inside the state updater, which React
+   * may run after the event is released and `currentTarget` is null — the crash the contribution
+   * field already had fixed. Ticking it and saving is the whole path.
+   */
+  it('sends the anonymity box as ticked, without losing the event on the way', async () => {
+    vi.mocked(editPledge).mockResolvedValue(pledge({ ...noReward, isAnonymous: true }));
+    const user = userEvent.setup();
+    await renderEditor();
+
+    const box = screen.getByRole('checkbox', { name: new RegExp(`^${CHECKOUT.anonymous.label}`, 'u') });
+    expect(box).not.toBeChecked();
+    await user.click(box);
+    expect(box).toBeChecked();
+    await user.click(screen.getByRole('button', { name: EDITOR.save }));
+
+    await screen.findByText(EDITOR.savedBody);
+    expect(vi.mocked(editPledge).mock.calls.at(-1)?.[1]).toEqual({ isAnonymous: true });
+  });
+
   it('never tells a backer the charge happens later', () => {
     for (const sentence of [EDITOR.intro, EDITOR.savedBody]) {
       expect(sentence).not.toMatch(/when the campaign closes|collection happens|nothing has been charged/iu);

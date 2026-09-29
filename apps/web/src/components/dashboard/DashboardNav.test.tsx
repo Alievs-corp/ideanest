@@ -1,4 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
+import { useLayoutEffect } from 'react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import az from '../../../messages/az.json';
 import en from '../../../messages/en.json';
@@ -120,6 +122,43 @@ describe('DashboardNav', () => {
     expect(scrollTo).toHaveBeenCalledWith({ left: 400, behavior: 'auto' });
     // The page does not move: scrollIntoView would scroll the window to align the row too.
     expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  /*
+   * Scrolled before the first paint, not a frame after it. Layout effects all run, in tree
+   * order, before the browser paints and before any passive effect, so a layout effect placed
+   * after the nav sees the scroll already made only if the nav's own was a layout effect too.
+   */
+  it('scrolls the row before the browser paints it, so it does not jump after load', () => {
+    stubPhoneGeometry();
+    const scrollTo = vi.spyOn(Element.prototype, 'scrollTo');
+    pathname = `${BASE}/surveys`;
+    let scrolledBeforePaint: number | null = null;
+    function BeforePaint() {
+      useLayoutEffect(() => {
+        scrolledBeforePaint = scrollTo.mock.calls.length;
+      }, []);
+      return null;
+    }
+
+    render(
+      <>
+        <DashboardNav projectId={PROJECT} copy={COPY.en} />
+        <BeforePaint />
+      </>,
+    );
+
+    expect(scrolledBeforePaint).toBe(1);
+  });
+
+  it('renders on the server without complaint', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    pathname = `${BASE}/surveys`;
+
+    expect(renderToString(<DashboardNav projectId={PROJECT} copy={COPY.en} />)).toContain(
+      'aria-current="page"',
+    );
+    expect(error).not.toHaveBeenCalled();
   });
 
   it('leaves the row where it is when the current tab is already visible', () => {

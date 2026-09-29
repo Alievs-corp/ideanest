@@ -329,6 +329,23 @@ describe('the backer agreement read', () => {
     });
   });
 
+  /*
+   * A proxy's HTML error page served with a 200 makes `response.json()` throw a SyntaxError.
+   * That is an outage, not a bug: rethrown, it reached the error boundary instead of the
+   * checkout's failure state.
+   */
+  it('is unavailable when a 200 carries a body that does not parse', async () => {
+    const fetchImpl = (async () =>
+      new Response('<html><body>Bad gateway</body></html>', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })) as unknown as typeof fetch;
+
+    expect(await fetchLegalDocument('BACKER_AGREEMENT', { env: ENV, fetchImpl })).toEqual({
+      state: 'unavailable',
+    });
+  });
+
   it('still rethrows a bug rather than calling it an outage', async () => {
     const fetchImpl = (async () => {
       throw new RangeError('a programming error');

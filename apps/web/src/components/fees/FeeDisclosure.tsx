@@ -4,7 +4,6 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '../../i18n/navigation';
 import { numberFormat } from '../../lib/i18n/formats';
 import type { Locale } from '../../lib/i18n/locale';
-import { legalPath } from '../../lib/legal/api';
 import { formatMoney } from '../../lib/money';
 import type { FeeDisclosure as Disclosure } from '../../lib/fees/server';
 
@@ -54,8 +53,8 @@ import type { FeeDisclosure as Disclosure } from '../../lib/fees/server';
  * read failed — the API slow or down, as on 2026-09-28 during the DNS move — the platform may
  * well be charging, and a creator deciding about their campaign's money was told it was not.
  * A failed read now has its own sentence, which names no figure, says in as many words that it
- * is not a statement that nothing is charged, and links to the creator agreement where the rate
- * is stated. A body that claims `configured: true` without its rates is drawn the same way: it
+ * is not a statement that nothing is charged, and links to the Plans and pricing page where the
+ * rates in force are published. A body that claims `configured: true` without its rates is drawn the same way: it
  * is a disclosure the page cannot read, not a platform that has decided to charge nothing.
  *
  * <h2>Motion: none, and this is where the rule bites hardest</h2>
@@ -125,14 +124,18 @@ export async function FeeDisclosure({ disclosure, audience, locale }: FeeDisclos
     /*
      * The read failed, or answered something this page cannot state a rate from — #145. No
      * figure and no claim about what is charged: the sentence says the rate could not be
-     * loaded and points at the document where it is stated. The creator agreement for both
-     * audiences: it is the document the unconfigured sentence already names as the place the
-     * terms are stated, and the rate is a term between the platform and the creator.
+     * loaded, that a failed read is not the same as no fee, and points at the Plans and
+     * pricing page, which is where the rates in force are published.
+     *
+     * Not the creator agreement, although the rate is a term of it: that document is not
+     * published until the adviser's text arrives (docs/architecture.md §22.2, #423), so a
+     * link there is a link to "not published" during exactly the outage this sentence is
+     * for. On `/pricing` itself the link is the page again, which is the retry.
      */
     return statement(
       t.rich('unavailable', {
-        agreement: (chunks) => (
-          <Link href={legalPath('creator-agreement')} className="text-white underline underline-offset-4">
+        pricing: (chunks) => (
+          <Link href="/pricing" className="text-white underline underline-offset-4">
             {chunks}
           </Link>
         ),

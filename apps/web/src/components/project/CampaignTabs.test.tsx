@@ -106,12 +106,13 @@ describe('the campaign tab strip', () => {
    */
   it('names every tab in the route’s language, not in English', async () => {
     route.locale = 'az';
+    const AZ = translatorFor('campaign.tabs', 'az');
     render(await resolveServerTree(<CampaignTabs active="campaign" path={PATH} />));
 
-    const names = within(screen.getByRole('navigation', { name: 'Kampaniya bölmələri' }))
+    const names = within(screen.getByRole('navigation', { name: AZ('label') }))
       .getAllByRole('link')
       .map((link) => link.textContent);
-    expect(names).toEqual(['Kampaniya', 'Müəllif', 'Suallar', 'Yeniliklər', 'Şərhlər']);
+    expect(names).toEqual(CAMPAIGN_TABS.map((tab) => AZ(tab.id)));
     for (const english of CAMPAIGN_TABS.map((tab) => TABS(tab.id))) {
       expect(names).not.toContain(english);
     }

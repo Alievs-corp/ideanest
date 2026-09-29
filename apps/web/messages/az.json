@@ -409,7 +409,7 @@
         "loading": "Dəstəkləriniz yüklənir",
         "failedTitle": "Dəstəkləriniz yüklənə bilmədi",
         "emptyTitle": "Hələ heç nəyi dəstəkləməmisiniz",
-        "emptyBody": "Etdiyiniz hər dəstək burada görünür — nə seçdiyiniz və nə qədər tutulduğu ilə birlikdə. Dəstək onu təsdiqlədiyiniz anda tutulur; kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pul tam geri qaytarılır.",
+        "emptyBody": "Etdiyiniz hər dəstək burada görünür — nə seçdiyiniz və nə qədər tutulduğu ilə birlikdə. Dəstəyin məbləği onu təsdiqlədiyiniz anda tutulur; kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pul tam geri qaytarılır.",
         "browse": "Kampaniyalara bax",
         "noReward": "Mükafatsız dəstək",
         "byCreator": "müəllif: {creator}",
@@ -446,7 +446,7 @@
         "save": "Dəyişiklikləri saxla",
         "noChanges": "Hələ heç nə dəyişdirilməyib.",
         "savedTitle": "Dəstəyiniz yeniləndi",
-        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Dəyişikliyi yadda saxlamaq heç nə tutmadı. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, hər dəstəkçiyə pul tam geri qaytarılır."
+        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Dəyişiklik saxlanarkən kartınızdan heç nə tutulmadı. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, hər dəstəkçiyə pul tam geri qaytarılır."
       }
     },
     "surveys": {
@@ -3348,7 +3348,7 @@
     },
     "agreementUnavailable": {
       "title": "Dəstəyə hazırda başlamaq mümkün olmadı",
-      "body": "Dəstəkçi müqaviləsini hazırda yükləmək mümkün olmadı, onsuz isə dəstək təsdiqlənmir. Heç nə rezerv olunmayıb və heç nə tutulmayıb. Bir azdan yenidən cəhd edin.",
+      "body": "Dəstəkçi müqaviləsini hazırda yükləmək mümkün olmadı, onsuz isə dəstək təsdiqlənmir. Bu səhifə sizin üçün yer rezerv etməyib və kartınızdan heç nə tutmayıb. Bir azdan yenidən cəhd edin.",
       "action": "Yenidən cəhd edin"
     },
     "risk": {
@@ -4514,7 +4514,7 @@
     "follow": {
       "follow": "İzlə",
       "following": "İzləyirsiniz",
-      "label": "{name} adlı istifadəçini izlə",
+      "accessibleName": "{name} adlı istifadəçini {action}",
       "followed": "{name} adlı istifadəçini izləyirsiniz. O, kampaniya başlatdıqda sizə mesaj gələcək.",
       "unfollowed": "{name} adlı istifadəçini artıq izləmirsiniz.",
       "signIn": "İzləmək üçün əvvəlcə daxil olun.",
@@ -4740,7 +4740,7 @@
     "unavailable": {
       "title": "Bu sənədi yükləmək mümkün olmadı",
       "indexTitle": "Hüquqi sənədləri yükləmək mümkün olmadı",
-      "body": "IdeaNest-in hüquqi sənədlərini saxlayan xidmət hazırda cavab vermədi. Bu, sənədin dərc olunmadığı demək deyil: bir azdan yenidən cəhd edin.",
+      "body": "IdeaNest-in hüquqi sənədlərini saxlayan xidmət hazırda cavab vermədi. Bu, sənədin dərc olunmadığı anlamına gəlmir: bir azdan yenidən cəhd edin.",
       "action": "Yenidən cəhd edin"
     },
     "notPublished": {
@@ -4808,7 +4808,7 @@
       "fixedFee": "Ödəniş provayderi hər əməliyyat üçün əlavə olaraq {amount} tutur.",
       "twoFees": "Bunlar iki ayrı tutulmadır. IdeaNest-in komissiyası platformanın saxladığıdır; emal komissiyası isə pulu hərəkət etdirən şirkətə gedir və IdeaNest onu heç vaxt almır. Qüvvədə olan dərəcələr yuxarıdakılardır və ödəniş məhz onlarla hesablanır.",
       "unconfigured": "IdeaNest hələ komissiya cədvəli təyin etməyib, ona görə də bu gün dəstəklərdən heç nə tutulmur. Bu daimi öhdəlik deyil: hər hansı dərəcə təyin olunan kimi burada dərc olunacaq, şərtlər isə yaradıcı müqaviləsində göstərilir.",
-      "unavailable": "Komissiyanı hazırda yükləmək mümkün olmadı. Bu, heç bir komissiya tutulmadığı demək deyil: qüvvədə olan dərəcə <agreement>yaradıcı müqaviləsində</agreement> göstərilir."
+      "unavailable": "Komissiyanı hazırda yükləmək mümkün olmadı. Bu, komissiya tutulmadığı anlamına gəlmir: qüvvədə olan dərəcələr <pricing>Planlar və qiymətlər</pricing> səhifəsində dərc olunur — bir azdan yenidən baxın."
     }
   },
   "dashboard": {

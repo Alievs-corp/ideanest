@@ -232,6 +232,7 @@ export default async function ProfilePage({
             name={profile.name}
             returnTo={pathOf(slug)}
             copy={followCopy}
+            notice="overlay"
           />
         }
       />

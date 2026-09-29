@@ -315,7 +315,9 @@ describe('TopBar', () => {
    * the row's children that exists only while it runs.
    */
   describe('collapse motion', () => {
-    const animate = vi.fn();
+    const animate = vi.fn((_keyframes: Keyframe[], _options: KeyframeAnimationOptions) => ({
+      cancel: vi.fn(),
+    }));
 
     /** Every element reports a box that depends on the bar's state, as layout would. */
     function stubLayout() {
@@ -335,7 +337,7 @@ describe('TopBar', () => {
 
     afterEach(() => {
       vi.restoreAllMocks();
-      animate.mockReset();
+      animate.mockClear();
       delete (HTMLElement.prototype as Partial<HTMLElement>).animate;
       setPrefersReducedMotion(false);
     });
@@ -384,6 +386,74 @@ describe('TopBar', () => {
         expect(options).toMatchObject({ duration: 300 });
       }
       expect(animate.mock.contexts).toEqual(Array.from(row.children));
+    });
+
+    /*
+     * getBoundingClientRect includes a transform that is still running. A reversal inside the
+     * 300ms has to cancel the running collapse before it reads the new layout, or the offset
+     * still in flight is counted twice and every child jumps by it when the reverse starts.
+     */
+    it('starts a reversal mid-collapse from where the children are drawn, without a jump', () => {
+      /* Each element is drawn at its layout box plus whatever FLIP transform is on it. */
+      const inFlight = new Map<Element, { x: number; y: number }>();
+      const log: string[] = [];
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: Element,
+      ) {
+        log.push('read');
+        const collapsed = this.closest('header')?.hasAttribute('data-scrolled') ?? false;
+        const offset = inFlight.get(this) ?? { x: 0, y: 0 };
+        return new DOMRect((collapsed ? 18 : 20) + offset.x, (collapsed ? 20 : 28) + offset.y, 100, 40);
+      });
+      const cancels: ReturnType<typeof vi.fn>[] = [];
+      const flip = vi.fn(function (this: Element, keyframes: Keyframe[]) {
+        log.push('animate');
+        const from = /translate\((-?[\d.]+)px, (-?[\d.]+)px\)/.exec(String(keyframes[0]?.transform));
+        /* Freeze the animation halfway, which is where the reader sees it when they reverse. */
+        inFlight.set(this, { x: Number(from?.[1]) / 2, y: Number(from?.[2]) / 2 });
+        const cancel = vi.fn(() => {
+          log.push('cancel');
+          inFlight.delete(this);
+        });
+        cancels.push(cancel);
+        return { cancel };
+      });
+      Object.defineProperty(HTMLElement.prototype, 'animate', {
+        configurable: true,
+        writable: true,
+        value: flip,
+      });
+
+      const { container, rerender } = render(bar(false));
+      rerender(bar(true));
+      const row = container.querySelector('header > div') as HTMLElement;
+      expect(flip).toHaveBeenCalledTimes(row.children.length);
+      expect(flip.mock.calls[0]?.[0]).toEqual([
+        { transform: 'translate(2px, 8px)' },
+        { transform: 'none' },
+      ]);
+
+      /* 150ms in, each child is drawn 1px right of and 4px below its collapsed box. */
+      const collapse = [...cancels];
+      flip.mockClear();
+      log.length = 0;
+      rerender(bar(false));
+
+      /* Every collapse animation was cancelled before the reverse measured. */
+      expect(collapse).toHaveLength(row.children.length);
+      for (const cancel of collapse) expect(cancel).toHaveBeenCalledTimes(1);
+      /*
+       * Drawn at 19,24 and laid out at 20,28: the reverse starts 1px left and 4px up, exactly
+       * where the reader saw each child. Without the cancel it would start at -2px, -8px.
+       */
+      expect(flip).toHaveBeenCalledTimes(row.children.length);
+      for (const [keyframes] of flip.mock.calls) {
+        expect(keyframes).toEqual([{ transform: 'translate(-1px, -4px)' }, { transform: 'none' }]);
+      }
+      /* The layout effect cancels, then reads every child, then starts every animation. */
+      const effect = log.slice(log.indexOf('cancel'));
+      expect(effect.lastIndexOf('cancel')).toBeLessThan(effect.indexOf('read'));
+      expect(effect.lastIndexOf('read')).toBeLessThan(effect.indexOf('animate'));
     });
 
     it('draws no motion when the reader asks for less', () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { Link } from '../../i18n/navigation';
 import { usePathname } from '../../i18n/navigation';
 import { cn } from '@ideanest/ui/server';
@@ -109,7 +109,13 @@ export function DashboardNav({ projectId, copy }: DashboardNavProps) {
   const panels = panelsFor(projectId, copy);
   const rowRef = useRef<HTMLUListElement>(null);
 
-  useEffect(() => {
+  /*
+   * A layout effect, so the row is scrolled before the browser paints it: a passive effect ran
+   * a frame later, and the row was drawn at its start and then jumped. React 19 runs neither
+   * kind on the server and no longer warns about this one there, which is why the repository
+   * has no isomorphic wrapper (`TwoFactorPanel` uses it the same way).
+   */
+  useLayoutEffect(() => {
     const row = rowRef.current;
     const current = row?.querySelector<HTMLElement>('[aria-current="page"]');
     if (row && current) revealInRow(row, current);

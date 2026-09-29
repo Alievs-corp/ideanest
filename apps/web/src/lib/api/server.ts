@@ -619,8 +619,9 @@ export type DocumentKind = NonNullable<
  * page now shows the failure state instead of a checkout it cannot complete honestly.
  *
  * Unlike {@link refusalOrRethrow}, a 403 or a 5xx is not an absence here: every status but 404
- * is `unavailable`. A bug — anything that is not an `ApiError`, a network `TypeError` or an
- * aborted or timed-out request — is still rethrown, for the reason that function gives.
+ * is `unavailable`, and so is a 200 whose body does not parse. A bug — anything that is not an
+ * `ApiError`, a network `TypeError`, an unparseable body's `SyntaxError` or an aborted or
+ * timed-out request — is still rethrown, for the reason that function gives.
  *
  * Only a 200 is held for the window: Next's data cache stores a `fetch` response only when its
  * status is 200, and the route is dynamic, so an unavailable answer is asked again on the next
@@ -642,7 +643,11 @@ export async function fetchLegalDocument(
     if (cause instanceof ApiError) {
       return cause.status === 404 ? LEGAL_UNPUBLISHED : LEGAL_UNAVAILABLE;
     }
-    if (cause instanceof TypeError || isAbort(cause)) return LEGAL_UNAVAILABLE;
+    // A 200 whose body is not JSON — a proxy's error page served as success — is an outage
+    // too, as `lib/legal/server.ts` treats it; rethrown it would take the checkout down.
+    if (cause instanceof TypeError || cause instanceof SyntaxError || isAbort(cause)) {
+      return LEGAL_UNAVAILABLE;
+    }
     throw cause;
   }
 }
