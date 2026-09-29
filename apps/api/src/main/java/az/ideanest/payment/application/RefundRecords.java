@@ -78,8 +78,16 @@ public class RefundRecords {
      * of staff each issuing a full refund in the same second would otherwise both read a
      * zero, and the platform would return twice what it took.
      *
+     * <p><strong>One refund reverses one charge (#171).</strong> A provider refunds a payment it
+     * took, up to what that payment was, and a raised pledge was paid for in more than one payment.
+     * So the refund goes against the newest charge that can cover it on its own: with no amount, that
+     * charge's whole remainder; with an amount, the newest charge with at least that much left. A
+     * raised pledge is therefore refunded in full in one refund per charge, and the one that leaves
+     * nothing behind is the full refund that moves the pledge to {@code REFUNDED}.
+     *
      * @throws NothingToRefundException when the pledge has no settled charge
-     * @throws RefundExceedsCollectionException when this would return more than was taken
+     * @throws RefundExceedsCollectionException when this would return more than was taken, or more
+     *     than any one of its charges has left
      */
     @Transactional
     Refund record(
@@ -90,16 +98,29 @@ public class RefundRecords {
             throw new NothingToRefundException(pledgeId);
         }
 
-        PaymentTransaction charge = charges.getFirst();
-        String currency = charge.getAmount().currency();
+        String currency = charges.getFirst().getAmount().currency();
+        Money remaining = remainingOn(pledgeId, currency);
 
-        Money collected = Money.of(transactions.collectedOn(pledgeId), currency);
-        Money alreadyRefunded = Money.of(refunds.refundedAgainst(pledgeId), currency);
-        Money remaining = collected.minus(alreadyRefunded);
+        PaymentTransaction charge = null;
+        Money chargeLeft = Money.zero(currency);
+        for (PaymentTransaction candidate : charges) {
+            Money left = remainingOnCharge(candidate);
+            boolean covers = amount == null ? left.isPositive() : !left.isLessThan(amount);
+            if (covers) {
+                charge = candidate;
+                chargeLeft = left;
+                break;
+            }
+            chargeLeft = chargeLeft.max(left);
+        }
 
-        Money requested = amount == null ? remaining : amount;
+        Money requested = amount == null ? (charge == null ? remaining : chargeLeft) : amount;
         if (!requested.isPositive() || requested.isGreaterThan(remaining)) {
             throw new RefundExceedsCollectionException(pledgeId, requested, remaining);
+        }
+        if (charge == null) {
+            // Within what the pledge has left, and more than any one of its payments does.
+            throw new RefundExceedsCollectionException(pledgeId, requested, chargeLeft);
         }
 
         Refund refund = refunds.save(Refund.requested(
@@ -107,7 +128,7 @@ public class RefundRecords {
                 charge.getProjectId(),
                 charge.getId(),
                 requested,
-                requested.equals(collected),
+                requested.equals(remaining),
                 reason,
                 detail,
                 staffId,
@@ -137,35 +158,48 @@ public class RefundRecords {
      * instead is true and narrow: this much went back to a backer.
      */
     /**
-     * IDN-EXT-01 (#40): the platform refunds a paid pledge in full because its campaign failed or was
-     * halted. No member of staff asked, so there is no author and no capability check; the reason is
-     * the author, and the audit row says the system acted.
+     * IDN-EXT-01 (#40): the platform refunds one settled charge in full, because its campaign failed
+     * or was halted, or because it paid for a raise that could not be applied (#171). No member of
+     * staff asked, so there is no author and no capability check; the reason is the author, and the
+     * audit row says the system acted.
      *
-     * @return empty when nothing collected remains to refund
+     * <p><strong>Per charge, since #171.</strong> A raised pledge was paid for twice or more, and each
+     * payment is reversed on its own, against its own provider transaction and for no more than it
+     * was. The refund that leaves nothing on the pledge is its full refund, and moves it to
+     * {@code REFUNDED}. A raise's refund is that one only when everything else the pledge was paid
+     * has already gone back; otherwise the pledge it did not change still stands.
+     *
+     * @return empty when nothing of this charge remains to refund
      */
     @Transactional
-    Optional<Refund> recordForCampaign(UUID pledgeId, RefundReason reason, String idempotencyKey) {
-        List<PaymentTransaction> charges = transactions.settledChargesOf(pledgeId);
-        if (charges.isEmpty()) {
+    Optional<Refund> recordForCharge(UUID chargeId, RefundReason reason, String idempotencyKey) {
+        Optional<PaymentTransaction> found = transactions.findById(chargeId);
+        if (found.isEmpty()) {
             return Optional.empty();
         }
-        PaymentTransaction charge = charges.getFirst();
-        String currency = charge.getAmount().currency();
-        Money collected = Money.of(transactions.collectedOn(pledgeId), currency);
-        Money remaining = collected.minus(Money.of(refunds.refundedAgainst(pledgeId), currency));
-        if (!remaining.isPositive()) {
+        PaymentTransaction charge = found.get();
+        Money left = remainingOnCharge(charge);
+        if (!left.isPositive()) {
             return Optional.empty();
         }
+        UUID pledgeId = charge.getPledgeId();
+        Money remaining = remainingOn(pledgeId, left.currency());
+        boolean completes = left.equals(remaining);
+
         Refund refund = refunds.save(Refund.requested(
                 pledgeId,
                 charge.getProjectId(),
                 charge.getId(),
-                remaining,
-                remaining.equals(collected),
+                left,
+                completes,
                 reason,
-                reason == RefundReason.CAMPAIGN_FAILED
-                        ? "The campaign ended below its success threshold; every backer is refunded in full."
-                        : "The campaign was suspended or cancelled; every backer is refunded in full.",
+                switch (reason) {
+                    case CAMPAIGN_FAILED ->
+                        "The campaign ended below its success threshold; every backer is refunded in full.";
+                    case RAISE_NOT_APPLIED ->
+                        "The backer paid to raise their pledge and the raise could not be applied.";
+                    default -> "The campaign was suspended or cancelled; every backer is refunded in full.";
+                },
                 null,
                 idempotencyKey));
         audit.record(
@@ -173,8 +207,20 @@ public class RefundRecords {
                 refund.id(),
                 AuditActor.system(),
                 AuditOutcome.SUCCEEDED,
-                "pledge=%s; amount=%s; reason=%s; full=%s".formatted(pledgeId, remaining, reason, refund.fullRefund()));
+                "pledge=%s; charge=%s; amount=%s; reason=%s; full=%s"
+                        .formatted(pledgeId, chargeId, left, reason, refund.fullRefund()));
         return Optional.of(refund);
+    }
+
+    /** What a pledge has left to refund: everything it was charged, less every refund not failed. */
+    private Money remainingOn(UUID pledgeId, String currency) {
+        return Money.of(transactions.collectedOn(pledgeId), currency)
+                .minus(Money.of(refunds.refundedAgainst(pledgeId), currency));
+    }
+
+    /** What one charge has left to refund. */
+    private Money remainingOnCharge(PaymentTransaction charge) {
+        return charge.getAmount().minus(Money.of(refunds.refundedAgainstCharge(charge.getId()), charge.getAmount().currency()));
     }
 
     @Transactional
@@ -203,9 +249,10 @@ public class RefundRecords {
         Refund attached = refunds.findById(refund.id()).orElseThrow();
         attached.succeeded(recorded.getId(), clock.instant().truncatedTo(ChronoUnit.MICROS));
         // IDN-EXT-01 (#40): a pledge refunded in full is REFUNDED and leaves its campaign's totals, in
-        // this transaction. A partial refund leaves the pledge standing.
+        // this transaction. A partial refund leaves the pledge standing. Since #171 the full refund is
+        // the one that leaves nothing, which on a raised pledge is the last of its charges.
         if (attached.fullRefund()) {
-            pledges.recordRefunded(refund.pledgeId(), refund.amount());
+            pledges.recordRefunded(refund.pledgeId());
         }
 
         log.info("Refund {} of {} settled on pledge {}", refund.id(), refund.amount(), refund.pledgeId());

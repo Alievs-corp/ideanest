@@ -348,8 +348,66 @@ public class ReservationService {
      */
     @Transactional
     public Pledge edit(Pledge pledge, EditPledge command, List<PledgeAddon> existingAddons) {
-        UUID projectId = pledge.getProjectId();
+        PlannedSelection planned = plan(pledge, command, existingAddons);
+        PledgeQuote quote = planned.quote();
 
+        // IDN-EXT-01 (#35): a confirmed pledge may only be raised. Checked against the quote and
+        // before any place moves, so a refused edit leaves the pledge and every counter exactly as
+        // they were. A draft is still being chosen and is not held to it.
+        if (pledge.getState() == PledgeState.CONFIRMED
+                && quote.totalAmount().compareTo(pledge.getTotalAmount()) < 0) {
+            throw new PledgeDecreaseNotAllowedException(pledge.getId(), pledge.getTotalAmount(), quote.totalAmount());
+        }
+
+        moveThePlaces(pledge, planned.places(), existingAddons);
+
+        pledge.edit(
+                quote,
+                planned.rewardTierId(),
+                planned.shippingCountry(),
+                planned.anonymous(),
+                planned.paymentMethodId());
+        replaceAddons(pledge, existingAddons, planned.addons());
+
+        // saveAndFlush for draft's second reason: total_amount is generated, so the
+        // response cannot be built until the UPDATE has run. The version check that
+        // comes with it is the point of the flush being here rather than at the
+        // commit — a backer editing in one tab while another confirms is exactly the
+        // race Pledge's @Version exists for, and it has to surface as an answer
+        // rather than at a commit nothing can translate.
+        return pledges.saveAndFlush(pledge);
+    }
+
+    /**
+     * A selection an edit or a raise names, resolved against the pledge it changes and priced.
+     *
+     * @param rewardTierId the tier after the change, or null for support only
+     * @param addons the add-on lines after the change
+     * @param places every place the selection holds: the reward's one and each add-on's quantity
+     */
+    record PlannedSelection(
+            UUID rewardTierId,
+            List<DraftPledge.AddonSelection> addons,
+            String shippingCountry,
+            boolean anonymous,
+            UUID paymentMethodId,
+            PledgeQuote quote,
+            SortedMap<UUID, Integer> places) {
+    }
+
+    /**
+     * Resolves a partial selection against the pledge and prices it: PL-09's edit and #171's raise.
+     *
+     * <p>Absent fields keep what the pledge has, and the quote comes from {@link #selectionFor}, the
+     * checkout's own pricing, so a draft, an edit and a raise of one selection come to one total.
+     * Nothing is written and no place moves: a refusal here costs nothing.
+     *
+     * @throws UnknownRewardTierException when the campaign has no such tier
+     * @throws ContributionBelowRewardPriceException when the contribution is below the tier's price
+     * @throws ShippingDestinationUnpricedException when something is posted and the destination has
+     *     no rate
+     */
+    PlannedSelection plan(Pledge pledge, EditPledge command, List<PledgeAddon> existingAddons) {
         UUID rewardTierId =
                 command.rewardTierId().isPresent() ? command.rewardTierId().value() : pledge.getRewardTierId();
         String shippingCountry = command.shippingCountry().isPresent()
@@ -369,28 +427,137 @@ public class ReservationService {
         DraftPledge.requireDistinctSelections(rewardTierId, addonSelections);
 
         PledgeQuote quote = PledgeQuote.of(
-                selectionFor(projectId, rewardTierId, addonSelections, contribution, shippingCountry));
+                selectionFor(pledge.getProjectId(), rewardTierId, addonSelections, contribution, shippingCountry));
 
-        // IDN-EXT-01 (#35): a confirmed pledge may only be raised. Checked against the quote and
-        // before any place moves, so a refused edit leaves the pledge and every counter exactly as
-        // they were. A draft is still being chosen and is not held to it.
-        if (pledge.getState() == PledgeState.CONFIRMED
-                && quote.totalAmount().compareTo(pledge.getTotalAmount()) < 0) {
-            throw new PledgeDecreaseNotAllowedException(pledge.getId(), pledge.getTotalAmount(), quote.totalAmount());
+        return new PlannedSelection(
+                rewardTierId,
+                addonSelections,
+                shippingCountry,
+                anonymous,
+                paymentMethodId,
+                quote,
+                HeldPlaces.of(rewardTierId, addonSelections));
+    }
+
+    /**
+     * #171: the places a raise of a paid pledge needs beyond what the pledge already claims, held as
+     * <em>reserved</em> while the backer is on the payment page.
+     *
+     * <p>Reserved rather than claimed, for the reason a draft's are: nothing has been paid for yet,
+     * and a hold that lapses is given back by the reservation cleaner. Only the difference is taken.
+     * The pledge's own claimed places stay claimed until the raise is applied, so a backer whose raise
+     * fails or lapses still holds exactly what they paid for.
+     *
+     * @return the places taken, which the raise records as its hold
+     * @throws RewardSoldOutException when a tier the raise needs more of has too few left. The
+     *     transaction rolls back, so nothing is held
+     */
+    @Transactional
+    public SortedMap<UUID, Integer> holdForRaise(
+            Pledge pledge, List<PledgeAddon> existingAddons, SortedMap<UUID, Integer> wanted) {
+
+        SortedMap<UUID, Integer> extra = HeldPlaces.extraIn(wanted, HeldPlaces.heldBy(pledge, existingAddons));
+        takeThePlaces(pledge.getProjectId(), extra, false);
+        return extra;
+    }
+
+    /**
+     * #171: gives back the places a raise was holding, because it failed, lapsed, or could not open.
+     *
+     * <p>From <em>reserved</em>, which is where {@link #holdForRaise} put them. A tier with nothing to
+     * give back is logged rather than refused, for {@link #releaseTheHeldPlaces}' reason.
+     */
+    @Transactional
+    public void releaseRaiseHold(UUID pledgeId, SortedMap<UUID, Integer> hold) {
+        for (Map.Entry<UUID, Integer> line : hold.entrySet()) {
+            if (!stock.releasePlaces(line.getKey(), line.getValue())) {
+                log.error(
+                        "A raise of pledge {} held {} reserved places on reward tier {} that the tier had no record of.",
+                        pledgeId,
+                        line.getValue(),
+                        line.getKey());
+            }
+        }
+    }
+
+    /**
+     * #171: writes a paid-for raise onto its pledge, and moves the places with it.
+     *
+     * <p>In the transaction the payment settles in, so it must not throw for anything a payment can
+     * run into: a raise that cannot be applied answers {@code false} and leaves the pledge and every
+     * counter as they were, and the caller records it as owing the charge back. An exception here
+     * would roll back the settled charge and its ledger posting with it.
+     *
+     * <p><strong>The places.</strong> What the new selection needs beyond what the pledge claims was
+     * either held for the raise as reserved, and is then committed from reserved to claimed exactly as
+     * a paid draft's are, or, for a raise paid after its hold lapsed, it has to be claimed again and
+     * may have been sold in the meantime. Then everything the pledge claims and the new selection
+     * does not is given back. Taken before released, for {@link #edit}'s reason.
+     *
+     * @param hold the places held for this raise, or null when its hold already went back
+     * @return whether the raise was applied
+     */
+    @Transactional
+    public boolean applyRaise(
+            Pledge pledge,
+            List<PledgeAddon> existingAddons,
+            UUID rewardTierId,
+            List<DraftPledge.AddonSelection> addonSelections,
+            String shippingCountry,
+            PledgeQuote quote,
+            SortedMap<UUID, Integer> hold) {
+
+        SortedMap<UUID, Integer> current = HeldPlaces.heldBy(pledge, existingAddons);
+        SortedMap<UUID, Integer> wanted = HeldPlaces.of(rewardTierId, addonSelections);
+        SortedMap<UUID, Integer> extra = HeldPlaces.extraIn(wanted, current);
+
+        if (hold != null && hold.equals(extra)) {
+            for (Map.Entry<UUID, Integer> line : extra.entrySet()) {
+                if (!stock.commitPlaces(line.getKey(), line.getValue())) {
+                    log.error(
+                            "A raise of pledge {} committed reward tier {}, which had no {} reserved places to commit.",
+                            pledge.getId(),
+                            line.getKey(),
+                            line.getValue());
+                }
+            }
+        } else {
+            if (hold != null) {
+                // Not the hold this selection needs: give it back and claim what is needed instead.
+                releaseRaiseHold(pledge.getId(), hold);
+            }
+            if (!claimAllOrNone(extra)) {
+                return false;
+            }
         }
 
-        moveThePlaces(pledge, HeldPlaces.of(rewardTierId, addonSelections), existingAddons);
+        SortedMap<UUID, Integer> surplus = HeldPlaces.extraIn(current, wanted);
+        releaseTheHeldPlaces(pledge, surplus, true);
 
-        pledge.edit(quote, rewardTierId, shippingCountry, anonymous, paymentMethodId);
+        pledge.raise(quote, rewardTierId, shippingCountry);
         replaceAddons(pledge, existingAddons, addonSelections);
+        pledges.saveAndFlush(pledge);
+        return true;
+    }
 
-        // saveAndFlush for draft's second reason: total_amount is generated, so the
-        // response cannot be built until the UPDATE has run. The version check that
-        // comes with it is the point of the flush being here rather than at the
-        // commit — a backer editing in one tab while another confirms is exactly the
-        // race Pledge's @Version exists for, and it has to surface as an answer
-        // rather than at a commit nothing can translate.
-        return pledges.saveAndFlush(pledge);
+    /**
+     * Claims every place in the map, or none of them.
+     *
+     * <p>Not {@link #takeThePlaces}, which throws: here a refusal must not roll back the caller's
+     * transaction. The places already claimed when one tier refuses are given straight back.
+     */
+    private boolean claimAllOrNone(SortedMap<UUID, Integer> places) {
+        SortedMap<UUID, Integer> claimed = HeldPlaces.none();
+        for (Map.Entry<UUID, Integer> line : places.entrySet()) {
+            if (!stock.claimPlaces(line.getKey(), line.getValue())) {
+                for (Map.Entry<UUID, Integer> undo : claimed.entrySet()) {
+                    stock.releaseClaimedPlaces(undo.getKey(), undo.getValue());
+                }
+                return false;
+            }
+            claimed.put(line.getKey(), line.getValue());
+        }
+        return true;
     }
 
     /**

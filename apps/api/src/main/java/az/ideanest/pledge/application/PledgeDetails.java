@@ -1,12 +1,17 @@
 package az.ideanest.pledge.application;
 
 import az.ideanest.pledge.domain.Pledge;
+import az.ideanest.pledge.domain.PledgeRaise;
+import az.ideanest.pledge.domain.PledgeState;
 import az.ideanest.pledge.domain.PledgeSupplement;
 import az.ideanest.pledge.domain.SupplementAddon;
 import az.ideanest.pledge.infrastructure.PledgeAddonRepository;
+import az.ideanest.pledge.infrastructure.PledgeRaiseRepository;
 import az.ideanest.pledge.infrastructure.PledgeSupplementRepository;
 import az.ideanest.pledge.infrastructure.SupplementAddonRepository;
+import az.ideanest.project.application.PledgeAcceptance;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 /**
@@ -30,15 +35,21 @@ public class PledgeDetails {
     private final PledgeAddonRepository addons;
     private final PledgeSupplementRepository supplements;
     private final SupplementAddonRepository supplementLines;
+    private final PledgeRaiseRepository raises;
+    private final PledgeAcceptance acceptance;
 
     public PledgeDetails(
             PledgeAddonRepository addons,
             PledgeSupplementRepository supplements,
-            SupplementAddonRepository supplementLines) {
+            SupplementAddonRepository supplementLines,
+            PledgeRaiseRepository raises,
+            PledgeAcceptance acceptance) {
 
         this.addons = addons;
         this.supplements = supplements;
         this.supplementLines = supplementLines;
+        this.raises = raises;
+        this.acceptance = acceptance;
     }
 
     /**
@@ -56,6 +67,14 @@ public class PledgeDetails {
                 : supplementLines.findBySupplements(
                         bought.stream().map(PledgeSupplement::getId).toList());
 
-        return new PledgeDetail(pledge, addons.findByPledge(pledge.getId()), bought, lines);
+        PledgeRaise latestRaise =
+                raises.findLatest(pledge.getId(), PageRequest.of(0, 1)).stream().findFirst().orElse(null);
+        // #171: a paid pledge is raised while its campaign takes pledges, and the service is the only
+        // side that can say whether it does.
+        boolean raisable = pledge.getState() == PledgeState.COLLECTED
+                && acceptance.isAcceptingPledges(pledge.getProjectId());
+
+        return new PledgeDetail(
+                pledge, addons.findByPledge(pledge.getId()), bought, lines, latestRaise, raisable);
     }
 }

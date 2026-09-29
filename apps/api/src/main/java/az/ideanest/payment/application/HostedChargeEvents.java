@@ -13,6 +13,8 @@ import az.ideanest.payment.domain.TransactionType;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.pledge.application.PaidPledge;
 import az.ideanest.pledge.application.PledgePayments;
+import az.ideanest.pledge.application.PledgeRaiseService;
+import az.ideanest.pledge.application.RaiseSettlement;
 import az.ideanest.project.application.CampaignCollections;
 import az.ideanest.project.application.CollectingCampaign;
 import az.ideanest.shared.outbox.Outbox;
@@ -41,6 +43,15 @@ import org.springframework.stereotype.Component;
  *
  * <p>A delivery about a charge this handler did not open — a stored-card collection, or an unknown
  * transaction — is recorded as handled with a note saying so, and moves nothing.
+ *
+ * <p><strong>A raise is paid on the same page (#171).</strong> The charge row, the ledger posting and
+ * the order are the same; what differs is what the money is for, and the pending row's idempotency key
+ * says which — a raise derives its key from itself. A paid raise is handed to
+ * {@link PledgeRaiseService#recordPaid}, which applies it and counts the difference, or records it as
+ * owing the charge back when it can no longer be applied; a failed one to
+ * {@link PledgeRaiseService#recordFailed}, which gives its held places back. {@code pledge.collected}
+ * is not recorded for a raise: the pledge was collected once, and the raise announces itself as
+ * {@code pledge.edited}.
  */
 @Component
 public class HostedChargeEvents implements PaymentEventHandler {
@@ -51,6 +62,7 @@ public class HostedChargeEvents implements PaymentEventHandler {
     private final CampaignCollections campaigns;
     private final Ledger ledger;
     private final PledgePayments pledges;
+    private final PledgeRaiseService raises;
     private final Outbox outbox;
     private final Clock clock;
 
@@ -59,12 +71,14 @@ public class HostedChargeEvents implements PaymentEventHandler {
             CampaignCollections campaigns,
             Ledger ledger,
             PledgePayments pledges,
+            PledgeRaiseService raises,
             Outbox outbox,
             Clock clock) {
         this.transactions = transactions;
         this.campaigns = campaigns;
         this.ledger = ledger;
         this.pledges = pledges;
+        this.raises = raises;
         this.outbox = outbox;
         this.clock = clock;
     }
@@ -92,6 +106,7 @@ public class HostedChargeEvents implements PaymentEventHandler {
 
         PaymentTransaction pending = opened.get();
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        boolean raise = raises.isRaiseCharge(pending.getIdempotencyKey());
 
         if (event.type() == PaymentEventType.CHARGE_FAILED) {
             transactions.save(PaymentTransaction.charge(
@@ -107,6 +122,9 @@ public class HostedChargeEvents implements PaymentEventHandler {
                             event.rawBody()),
                     1,
                     pending.getIdempotencyKey()));
+            if (raise) {
+                raises.recordFailed(pending.getIdempotencyKey(), now);
+            }
             log.info("Payment {} for pledge {} failed.", reference, pending.getPledgeId());
             return Optional.of("payment " + reference + " failed");
         }
@@ -128,6 +146,25 @@ public class HostedChargeEvents implements PaymentEventHandler {
                 .debit(LedgerAccount.ESCROW, pending.getAmount())
                 .credit(LedgerAccount.creator(campaign.creatorId()), pending.getAmount())
                 .build());
+
+        if (raise) {
+            RaiseSettlement settlement = raises.recordPaid(pending.getIdempotencyKey(), now);
+            log.info(
+                    "Payment {} settled raise {} of pledge {}: {} (transaction {}).",
+                    reference,
+                    settlement.raiseId(),
+                    pending.getPledgeId(),
+                    settlement.outcome(),
+                    settled.getId());
+            return Optional.of(switch (settlement.outcome()) {
+                case APPLIED -> "pledge " + pending.getPledgeId() + " raised";
+                // The money is in and posted, and the raise could not take it: the campaign-refunds job
+                // returns the charge (RAISE_NOT_APPLIED).
+                case UNAPPLIED -> "payment " + reference + " succeeded for a raise that can no longer be applied";
+                case ALREADY_SETTLED -> "raise for payment " + reference + " is already settled";
+                case UNKNOWN -> "no raise is paid for by " + reference;
+            });
+        }
 
         Optional<PaidPledge> paid = pledges.recordPaid(pending.getPledgeId(), now);
         if (paid.isEmpty()) {

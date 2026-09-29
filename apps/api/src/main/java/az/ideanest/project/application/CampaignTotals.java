@@ -46,6 +46,23 @@ public class CampaignTotals {
     }
 
     /**
+     * Counts the difference a paid pledge was raised by — #171.
+     *
+     * <p>Towards the amount raised and not the backers: a raise is the same pledge, and its backer is
+     * already counted once.
+     *
+     * @throws IllegalStateException when the campaign does not exist or is in another currency
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void addRaised(UUID projectId, Money difference) {
+        int updated = projects.addRaiseToTotals(projectId, difference.amount(), difference.currency());
+        if (updated != 1) {
+            throw new IllegalStateException(
+                    "Campaign " + projectId + " in " + difference.currency() + " could not be credited with a raise");
+        }
+    }
+
+    /**
      * Takes one fully refunded pledge out of the totals — IDN-EXT-01 (#40).
      *
      * <p>Never below zero: a campaign's totals can have been seeded before this class existed, and a

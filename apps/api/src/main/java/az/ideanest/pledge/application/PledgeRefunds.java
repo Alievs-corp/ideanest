@@ -30,18 +30,20 @@ public class PledgeRefunds {
     }
 
     /**
-     * @param refunded what went back, which is what leaves the campaign's total
      * @return whether the pledge moved
      */
     @Transactional(propagation = Propagation.MANDATORY)
-    public boolean recordRefunded(UUID pledgeId, Money refunded) {
+    public boolean recordRefunded(UUID pledgeId) {
         Optional<Pledge> found = pledges.findByIdForUpdate(pledgeId);
         if (found.isEmpty() || found.get().getState() != PledgeState.COLLECTED) {
             return false;
         }
         Pledge pledge = found.get();
         pledge.refunded();
-        totals.subtractRefunded(pledge.getProjectId(), refunded);
+        // What the campaign counted for this pledge: its total, which a raise (#171) added to. Not the
+        // amount of the refund that completed it — a raised pledge is refunded one charge at a time,
+        // and the last refund is only the last charge.
+        totals.subtractRefunded(pledge.getProjectId(), Money.of(pledge.getTotalAmount(), pledge.getCurrency()));
         return true;
     }
 }

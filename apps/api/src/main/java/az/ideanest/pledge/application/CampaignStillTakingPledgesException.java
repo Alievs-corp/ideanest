@@ -1,5 +1,6 @@
 package az.ideanest.pledge.application;
 
+import az.ideanest.pledge.domain.PledgeState;
 import java.util.UUID;
 
 /**
@@ -13,10 +14,22 @@ import java.util.UUID;
  * any moment, and which one is decided by the campaign rather than by the client — so
  * the refusal has to say so, or a client will offer an upgrade button that never works
  * until the deadline passes.
+ *
+ * <p>Since #171 the alternative depends on the pledge: a paid ({@code COLLECTED}) pledge is raised
+ * with {@code POST /v1/pledges/{id}/raise}, which charges the difference, and a draft or a legacy
+ * confirmed one with PL-09's edit. The state is carried so the refusal can name the right one.
  */
 public class CampaignStillTakingPledgesException extends RuntimeException {
 
-    public CampaignStillTakingPledgesException(UUID projectId) {
+    private final PledgeState state;
+
+    public CampaignStillTakingPledgesException(UUID projectId, PledgeState state) {
         super("Campaign " + projectId + " is still taking pledges");
+        this.state = state;
+    }
+
+    /** The state of the pledge somebody tried to buy more for. */
+    public PledgeState state() {
+        return state;
     }
 }

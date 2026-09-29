@@ -32,9 +32,10 @@ import org.springframework.transaction.annotation.Transactional;
  * transaction".
  *
  * <p>So the two endpoints here are refused while the campaign is still taking pledges,
- * with a code that sends the client to the edit instead. One way to change a pledge at
- * a time, and the one that applies is decided by the campaign rather than by the
- * client.
+ * with a code that sends the client to the way that applies then: the edit for a draft or a
+ * legacy confirmed pledge, and since #171 {@link PledgeRaiseService}'s raise for a paid one,
+ * which re-quotes the pledge and charges the difference at once. One way to change a pledge at
+ * a time, and the one that applies is decided by the campaign rather than by the client.
  *
  * <h2>What actually changes</h2>
  *
@@ -216,7 +217,7 @@ public class PledgeSupplementService {
                 pledges.findOwned(pledgeId, backerId).orElseThrow(() -> new PledgeNotFoundException(pledgeId));
 
         if (acceptance.isAcceptingPledges(pledge.getProjectId())) {
-            throw new CampaignStillTakingPledgesException(pledge.getProjectId());
+            throw new CampaignStillTakingPledgesException(pledge.getProjectId(), pledge.getState());
         }
         if (!SUPPLEMENTABLE.contains(pledge.getState())) {
             throw new PledgeNotSupplementableException(pledgeId, pledge.getState());

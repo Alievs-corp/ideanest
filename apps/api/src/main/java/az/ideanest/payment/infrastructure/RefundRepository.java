@@ -44,6 +44,25 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
             """)
     BigDecimal refundedAgainst(@Param("pledgeId") UUID pledgeId);
 
+    /**
+     * How much has been refunded, or is on its way back, against one charge — #171.
+     *
+     * <p>A raised pledge was paid for in more than one charge and a provider reverses each on its own,
+     * so what one charge has left is asked of that charge. {@code FAILED} refunds excluded, for
+     * {@link #refundedAgainst}'s reason.
+     */
+    @Query(
+            """
+            SELECT COALESCE(SUM(r.amount), 0) FROM Refund r
+            WHERE r.chargeTransactionId = :chargeId
+              AND r.state <> az.ideanest.payment.domain.RefundState.FAILED
+            """)
+    BigDecimal refundedAgainstCharge(@Param("chargeId") UUID chargeId);
+
+    /** How many refunds, of any state, were ever recorded against one charge — for the next key. */
+    @Query("SELECT COUNT(r) FROM Refund r WHERE r.chargeTransactionId = :chargeId")
+    long countAgainstCharge(@Param("chargeId") UUID chargeId);
+
     /** A refund already recorded under this key, for the idempotent replay. */
     @Query("SELECT r FROM Refund r WHERE r.idempotencyKey = :key")
     Optional<Refund> byIdempotencyKey(@Param("key") String key);
@@ -82,31 +101,45 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
 
     /** Every refund against one pledge, for the detail a support conversation needs. */
     /**
-     * IDN-EXT-01 (#40): paid pledges on campaigns that ended below their threshold or were halted,
-     * with no refund in flight or done, and no failed one more recent than the retry interval.
+     * The settled charges the platform owes back on its own, one row per charge — IDN-EXT-01 (#40)
+     * and #171.
      *
-     * <p>Rows of pledge id and campaign state, oldest collection first. Native because it reads three
-     * modules' tables in one statement; nothing here names their classes.
+     * <p>Two kinds of charge. Every charge on a paid pledge whose campaign ended below its threshold
+     * or was halted: a raised pledge has more than one, and each is reversed against its own provider
+     * transaction. And a charge that paid for a raise which could not be applied, whatever the
+     * campaign's state: it bought nothing.
+     *
+     * <p>A charge with a refund in flight or done is skipped, and so is one whose last refund failed
+     * more recently than the retry interval. Rows of charge id, pledge id and the refund reason's
+     * name, oldest charge first. Native because it reads four modules' tables in one statement;
+     * nothing here names their classes.
      */
     @Query(
             value =
                     """
-                    SELECT CAST(pl.id AS text) AS pledge_id, p.state AS project_state
-                      FROM pledges pl
-                      JOIN projects p ON p.id = pl.project_id
-                     WHERE pl.state = 'COLLECTED'
-                       AND p.state IN ('UNSUCCESSFUL', 'CANCELED', 'SUSPENDED')
-                       AND EXISTS (SELECT 1 FROM transactions t
-                                    WHERE t.pledge_id = pl.id AND t.type = 'CHARGE' AND t.status = 'SUCCEEDED')
+                    SELECT CAST(t.id AS text) AS charge_id,
+                           CAST(t.pledge_id AS text) AS pledge_id,
+                           CASE WHEN rs.state = 'UNAPPLIED' THEN 'RAISE_NOT_APPLIED'
+                                WHEN p.state = 'UNSUCCESSFUL' THEN 'CAMPAIGN_FAILED'
+                                ELSE 'CAMPAIGN_HALTED' END AS reason
+                      FROM transactions t
+                      JOIN pledges pl ON pl.id = t.pledge_id
+                      JOIN projects p ON p.id = t.project_id
+                      LEFT JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
+                     WHERE t.type = 'CHARGE'
+                       AND t.status = 'SUCCEEDED'
+                       AND (rs.state = 'UNAPPLIED'
+                            OR (pl.state = 'COLLECTED' AND p.state IN ('UNSUCCESSFUL', 'CANCELED', 'SUSPENDED')))
                        AND NOT EXISTS (SELECT 1 FROM refunds r
-                                        WHERE r.pledge_id = pl.id AND r.state <> 'FAILED')
+                                        WHERE r.charge_transaction_id = t.id AND r.state <> 'FAILED')
                        AND NOT EXISTS (SELECT 1 FROM refunds r
-                                        WHERE r.pledge_id = pl.id AND r.state = 'FAILED' AND r.settled_at > :retryBefore)
-                     ORDER BY pl.collected_at NULLS LAST, pl.id
+                                        WHERE r.charge_transaction_id = t.id AND r.state = 'FAILED'
+                                          AND r.settled_at > :retryBefore)
+                     ORDER BY t.created_at, t.id
                      LIMIT :limit
                     """,
             nativeQuery = true)
-    List<Object[]> owedCampaignRefunds(@Param("retryBefore") java.time.Instant retryBefore, @Param("limit") int limit);
+    List<Object[]> owedPlatformRefunds(@Param("retryBefore") java.time.Instant retryBefore, @Param("limit") int limit);
 
     /** IDN-EXT-01 (#40): platform refunds whose outcome was never recorded, oldest first. */
     @Query(
