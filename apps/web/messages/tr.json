@@ -438,9 +438,10 @@
         "lockedBody": "Bir destek verilirken değiştirilebilir. Ödendikten sonra ise kampanya destek aldığı sürece yalnızca yükseltilebilir — düşürülemez ve geri çekilemez — ve yalnızca aradaki fark tahsil edilir. Bunun durumu: {state}. Ya destek o aşamayı geçti ya da kampanya artık destek almıyor, bu yüzden o denetimler sunulmuyor. Bir şey yanlışsa sormanız gereken kişi kampanyanın yaratıcısıdır.",
         "raiseReturned": {
           "raisedTitle": "Desteğiniz artırıldı",
-          "raisedBody": "Aradaki fark ödendi ve yukarıdaki rakamlara dahil. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse ödediğiniz her şey tamamen iade edilir.",
+          "raisedBody": "Aradaki fark ödendi ve bu sayfadaki rakamlara dahil. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse ödediğiniz her şey tamamen iade edilir.",
           "failedTitle": "Artırma gerçekleşmedi",
           "failedBody": "Hiçbir tutar tahsil edilmedi ve desteğiniz olduğu gibi kaldı. Kampanya destek kabul ettiği sürece yeniden deneyebilirsiniz.",
+          "heldBody": "Ödeme gerçekleşmedi ve hiçbir tutar tahsil edilmedi. Desteğiniz olduğu gibi kaldı, başlattığınız ödeme ise şu zamana kadar açık kalır: {time}. Sonrasında yeniden başlayabilirsiniz.",
           "unappliedTitle": "Artırma uygulanamadı",
           "unappliedBody": "Ödeme, desteğiniz zaten değiştikten sonra gerçekleşti, bu yüzden desteğe eklenmedi. Bu ödeme size otomatik olarak tamamen iade edilir."
         }
@@ -461,7 +462,9 @@
         "raiseNotHigher": "Desteğinizin şu anki tutarından daha pahalı bir seçim yapın. Ödenmiş bir destek yalnızca artırılabilir.",
         "raisePay": "Öde ve artır: {amount}",
         "raiseOpening": "Ödeme sayfası açılıyor",
-        "raisePending": "Bu desteği artırmak için başlatılan ödeme hâlâ açık. Sağlayıcının sayfasında tamamlayabilir ya da şu zamandan sonra yeniden başlayabilirsiniz: {time}."
+        "raisePending": "Bu desteği artırmak için başlatılan ödeme hâlâ açık. Ödeme sayfası hâlâ açıksa ödemeyi orada tamamlayın; değilse şu zamandan sonra yeniden başlayabilirsiniz: {time}.",
+        "raisePendingResumable": "Bu desteği artırmak için başlatılan ödeme hâlâ açık. Ödemeye ödeme sağlayıcısının sayfasında devam edebilir ya da şu zamandan sonra yeniden başlayabilirsiniz: {time}.",
+        "raiseResume": "Ödemeye devam et"
       }
     },
     "surveys": {
@@ -3477,7 +3480,7 @@
         },
         "PLEDGE_RAISE_IN_PROGRESS": {
           "title": "Bir artırma zaten ödemesini bekliyor",
-          "detail": "Bu desteği yeniden artırmadan önce başlattığınız ödemeyi tamamlayın ya da süresinin dolmasını bekleyin. Bu sefer hiçbir tutar tahsil edilmedi."
+          "detail": "Bu desteği artırmak için başlattığınız ödeme hâlâ açık. Ne zamana kadar açık kalacağını ve devam ettirilip ettirilemeyeceğini görmek için bu sayfayı yenileyin. Bu sefer hiçbir tutar tahsil edilmedi."
         },
         "RAISE_AMOUNT_CHANGED": {
           "title": "Ödenecek tutar değişti",

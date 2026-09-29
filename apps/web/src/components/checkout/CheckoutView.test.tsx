@@ -1009,6 +1009,32 @@ describe('paying', () => {
     expect(screen.queryByRole('button', { name: 'Continue to payment' })).not.toBeInTheDocument();
   });
 
+  it('hands the pay button back when the browser restores the page from its back-forward cache', async () => {
+    payMock.mockResolvedValue(PAGE);
+
+    const user = await open();
+    await reserveTheMug(user);
+    await user.click(await screen.findByRole('button', { name: 'Continue to payment' }));
+    await waitFor(() => expect(leaveMock).toHaveBeenCalledWith(PAGE.redirectUrl));
+
+    // An ordinary load is not a restore, and changes nothing.
+    act(() => {
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+    });
+    expect(screen.queryByRole('button', { name: 'Continue to payment' })).not.toBeInTheDocument();
+
+    act(() => {
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    });
+    const again = screen.getByRole('button', { name: 'Continue to payment' });
+    expect(again).toBeEnabled();
+
+    // Paying again is the same intent, so it asks with the same key and opens the same page.
+    await user.click(again);
+    await waitFor(() => expect(payMock).toHaveBeenCalledTimes(2));
+    expect(payMock.mock.calls[1]?.[2]).toBe(payMock.mock.calls[0]?.[2]);
+  });
+
   it('states the rule and where the charge happens before the control, and takes no card', async () => {
     const user = await open();
     await reserveTheMug(user);

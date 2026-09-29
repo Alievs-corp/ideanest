@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PledgeEditor } from './PledgeEditor';
 import { getPublicRewards, raisePledge, type PledgeResponse } from '../../lib/pledges/api';
@@ -180,5 +180,141 @@ describe('raising a paid pledge', () => {
     expect(
       screen.getByRole('button', { name: fillPlaceholders(EDITOR.raisePay, { amount: AZN('25.00') }) }),
     ).toBeDisabled();
+  });
+});
+
+describe('a raise that is still waiting for its payment', () => {
+  function pending(overrides: Partial<NonNullable<PledgeResponse['latestRaise']>> = {}): PledgeResponse {
+    return paid({
+      latestRaise: {
+        id: 'raise-0',
+        state: 'PENDING',
+        amount: { amount: '10.00', currency: 'AZN' },
+        total: { amount: '60.00', currency: 'AZN' },
+        holdExpiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        createdAt: new Date().toISOString(),
+        endedAt: null,
+        ...overrides,
+      },
+    });
+  }
+
+  const opening = (template: string) => (template.split('{time}')[0] ?? '').trim();
+
+  it('offers the provider’s page again when the service has one to go back to', async () => {
+    await renderRaise(pending({ resumeUrl: 'https://pay.example/provider-0' }));
+
+    const resume = screen.getByRole('link', { name: EDITOR.raiseResume });
+    expect(resume).toHaveAttribute('href', 'https://pay.example/provider-0');
+    expect(screen.getByText((text) => text.startsWith(opening(EDITOR.raisePendingResumable)))).toBeInTheDocument();
+  });
+
+  it('promises no way back when there is none', async () => {
+    await renderRaise(pending({ resumeUrl: null }));
+
+    expect(screen.queryByRole('link', { name: EDITOR.raiseResume })).not.toBeInTheDocument();
+    expect(screen.getByText((text) => text.startsWith(opening(EDITOR.raisePending)))).toBeInTheDocument();
+  });
+
+  it('gives the button back when the hold runs out, with nothing else drawing the page', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      await renderRaise(pending({ holdExpiresAt: new Date(Date.now() + 60 * 1000).toISOString() }));
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const field = screen.getByLabelText(CHECKOUT.contribution.legendNoReward, { exact: false });
+      await user.clear(field);
+      await user.type(field, '75.00');
+
+      const pay = screen.getByRole('button', { name: fillPlaceholders(EDITOR.raisePay, { amount: AZN('25.00') }) });
+      expect(pay).toBeDisabled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(61 * 1000);
+      });
+
+      expect(pay).toBeEnabled();
+      expect(screen.queryByText((text) => text.startsWith(opening(EDITOR.raisePending)))).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('the raise form over a pledge that is read again', () => {
+  it('keeps what the backer chose when a read brings back the same pledge', async () => {
+    vi.mocked(getPublicRewards).mockResolvedValue({ currency: 'AZN', rewards: [], addons: [] });
+    const { rerender } = render(
+      <PledgeEditor copy={CHECKOUT} pledges={EDITOR} pledge={paid()} onSaved={vi.fn()} mode="raise" />,
+    );
+    await screen.findByRole('heading', { name: EDITOR.raiseHeading });
+    await giveInstead('75.00');
+
+    // The manager's polling: a new object every time, describing the same pledge.
+    rerender(<PledgeEditor copy={CHECKOUT} pledges={EDITOR} pledge={paid()} onSaved={vi.fn()} mode="raise" />);
+
+    expect(screen.getByLabelText(CHECKOUT.contribution.legendNoReward, { exact: false })).toHaveValue('75.00');
+  });
+
+  it('starts again from the pledge when a read brings back a changed one', async () => {
+    vi.mocked(getPublicRewards).mockResolvedValue({ currency: 'AZN', rewards: [], addons: [] });
+    const { rerender } = render(
+      <PledgeEditor copy={CHECKOUT} pledges={EDITOR} pledge={paid()} onSaved={vi.fn()} mode="raise" />,
+    );
+    await screen.findByRole('heading', { name: EDITOR.raiseHeading });
+    await giveInstead('75.00');
+
+    const raised = paid({
+      amounts: {
+        ...paid().amounts,
+        base: { amount: '75.00', currency: 'AZN' },
+        total: { amount: '75.00', currency: 'AZN' },
+      },
+    });
+    rerender(<PledgeEditor copy={CHECKOUT} pledges={EDITOR} pledge={raised} onSaved={vi.fn()} mode="raise" />);
+
+    expect(screen.getByLabelText(CHECKOUT.contribution.legendNoReward, { exact: false })).toHaveValue('75.00');
+    expect(screen.getByText(EDITOR.noChanges)).toBeInTheDocument();
+  });
+
+  it('offers nothing to pay while nothing has changed, even where the figures have drifted', async () => {
+    // A stored total below what the selection prices at: the preview would call the gap "due".
+    await renderRaise(
+      paid({ amounts: { ...paid().amounts, total: { amount: '45.00', currency: 'AZN' } } }),
+    );
+
+    expect(screen.queryByText(fillPlaceholders(EDITOR.raiseDue, { amount: AZN('5.00') }))).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: EDITOR.raiseHeading })).toBeDisabled();
+    expect(screen.getByText(EDITOR.noChanges)).toBeInTheDocument();
+  });
+
+  it('hands the form back when the browser restores the page from its back-forward cache', async () => {
+    vi.mocked(raisePledge).mockResolvedValue({
+      pledgeId: 'pledge-1',
+      raiseId: 'raise-1',
+      amount: { amount: '25.00', currency: 'AZN' },
+      total: { amount: '75.00', currency: 'AZN' },
+      holdExpiresAt: '2026-09-29T12:15:00Z',
+      providerTransactionId: 'provider-1',
+      redirectUrl: 'https://pay.example/provider-1',
+    });
+    await renderRaise();
+    const user = await giveInstead('75.00');
+    await user.click(screen.getByRole('button', { name: fillPlaceholders(EDITOR.raisePay, { amount: AZN('25.00') }) }));
+
+    const leaving = await screen.findByRole('button', { name: EDITOR.raiseOpening });
+    expect(leaving).toBeDisabled();
+
+    // An ordinary load of the page is not a restore, and changes nothing.
+    act(() => {
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+    });
+    expect(screen.getByRole('button', { name: EDITOR.raiseOpening })).toBeDisabled();
+
+    act(() => {
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    });
+    expect(
+      screen.getByRole('button', { name: fillPlaceholders(EDITOR.raisePay, { amount: AZN('25.00') }) }),
+    ).toBeEnabled();
   });
 });

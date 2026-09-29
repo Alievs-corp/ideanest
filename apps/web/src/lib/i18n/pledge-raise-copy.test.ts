@@ -46,6 +46,17 @@ describe('what the pledge screens promise, in English', () => {
     expect(manager.editor.intro).toMatch(/does not charge your card/u);
   });
 
+  it('promises a way back to a pending raise’s payment only where the page offers one', () => {
+    // Drawn when the service sends no page to go back to: the page the backer left is all there is.
+    expect(manager.editor.raisePending).toMatch(/If its payment page is still open, finish it there; otherwise you can start again after \{time\}/u);
+    // Drawn beside the link to the service's page for the raise.
+    expect(manager.editor.raisePendingResumable).toMatch(/continue it on the payment provider’s page/u);
+    // A refusal cannot link anywhere, so it sends the backer to the page that can.
+    const inProgress = checkoutCopyFrom(translatorFor('checkout')).failures.codes.PLEDGE_RAISE_IN_PROGRESS.detail;
+    expect(inProgress).toMatch(/Reload this page/u);
+    expect(inProgress).not.toMatch(/Finish the payment you started/u);
+  });
+
   it('describes backing on the how-it-works page the same way', () => {
     const backing = translatorFor('static.howItWorks.backing').raw('first') as string;
     expect(backing).toMatch(/A pledge cannot be cancelled or lowered/u);
@@ -84,5 +95,7 @@ describe.each(SUPPORTED_LOCALES.filter((locale): locale is Exclude<Locale, 'en'>
     expect(copy.editor.raiseDue).toContain('{amount}');
     expect(copy.editor.raisePay).toContain('{amount}');
     expect(copy.editor.raisePending).toContain('{time}');
+    expect(copy.editor.raisePendingResumable).toContain('{time}');
+    expect(copy.raiseReturned.heldBody).toContain('{time}');
   });
 });

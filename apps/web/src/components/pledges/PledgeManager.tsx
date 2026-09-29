@@ -24,6 +24,7 @@ import {
 } from '../../lib/pledges/payment';
 import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
+import type { Locale } from '../../lib/i18n/locale';
 import { regionNames } from '../../lib/i18n/formats';
 import type { PledgeManagerCopy, RaiseReturnCopy } from '../../lib/i18n/pledges-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -173,11 +174,15 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
   /*
    * Asks again while a payment the backer has just come back from is still settling: a draft that
    * is not yet paid for, or — #171 — a raise that is still pending. The same bound for both.
+   *
+   * A raise is asked about whichever door the backer came back through. The provider's error
+   * door is a hint like the other one, and the raise is still pending until its webhook says what
+   * happened — which may be that the payment went through after all.
    */
   const settling =
     pledge !== null &&
     ((returned === 'returned' && pledge.state === 'DRAFT') ||
-      (raiseReturned === 'returned' && pledge.latestRaise?.state === 'PENDING'));
+      (raiseReturned !== null && pledge.latestRaise?.state === 'PENDING'));
 
   useEffect(() => {
     if (!settling) return;
@@ -228,14 +233,22 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
   return (
     <div className="flex flex-col gap-6">
       {returned !== null && <PaymentReturnNotice hint={returned} state={pledge.state} copy={copy} />}
-      {raiseReturned !== null && (
-        <RaiseReturnNotice
-          hint={raiseReturned}
-          raise={pledge.latestRaise ?? null}
-          copy={pledges.raiseReturned}
-          checkout={copy}
-        />
-      )}
+      {/*
+        A live region that is on the page before anything is put in it, so the notice changing
+        under the polling above — waiting, then raised — is announced. `role="status"`, as
+        docs/ui-kit.md has a message nobody asked for announced: politely, and without taking focus.
+      */}
+      <div role="status" aria-live="polite" className="empty:hidden">
+        {raiseReturned !== null && (
+          <RaiseReturnNotice
+            hint={raiseReturned}
+            raise={pledge.latestRaise ?? null}
+            copy={pledges.raiseReturned}
+            checkout={copy}
+            locale={locale}
+          />
+        )}
+      </div>
 
       <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
@@ -384,24 +397,41 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
   );
 }
 
+/** #171: the raise states that changed nothing and charged nothing. */
+const RAISE_NOT_CHARGED = new Set(['FAILED', 'EXPIRED', 'ABANDONED']);
+
 /**
  * What a backer the provider sent back from paying a raise is told — #171.
  *
  * The raise's state decides it, not the pledge's: the pledge is `COLLECTED` before, during and after,
- * so only `latestRaise` says whether the difference was paid. `SUCCEEDED` is raised; `PENDING` after a
- * successful return is a webhook still on its way; `UNAPPLIED` was charged after the pledge had
- * already changed and is being refunded; anything else charged nothing.
+ * so only `latestRaise` says whether the difference was paid. `SUCCEEDED` is raised; `UNAPPLIED` was
+ * charged after the pledge had already changed and is being refunded; `FAILED`, `EXPIRED` and
+ * `ABANDONED` charged nothing.
+ *
+ * `PENDING` is a webhook still on its way, whichever door the backer came through: after a successful
+ * return it is waited for, and after the error door the notice says what is true while it waits —
+ * nothing charged, and the payment started still open until its hold ends, so a second raise cannot
+ * be started before then. The address's word is a hint (`lib/pledges/payment.ts`), and the manager
+ * keeps reading until the raise settles.
+ *
+ * A state this build does not know is not guessed at: it draws nothing rather than telling somebody
+ * nothing was charged.
  */
-function RaiseReturnNotice({
+export function RaiseReturnNotice({
   hint,
   raise,
   copy,
   checkout,
+  locale,
+  now = Date.now(),
 }: {
   readonly hint: PaymentReturnHint;
   readonly raise: PledgeResponse['latestRaise'];
   readonly copy: RaiseReturnCopy;
   readonly checkout: CheckoutCopy;
+  readonly locale: Locale;
+  /** When the hold is compared with. A prop so a test can say. */
+  readonly now?: number;
 }) {
   if (raise == null) return null;
   if (raise.state === 'SUCCEEDED') {
@@ -418,12 +448,24 @@ function RaiseReturnNotice({
       </InlineAlert>
     );
   }
-  if (raise.state === 'PENDING' && hint === 'returned') {
-    return (
-      <InlineAlert variant="info" title={checkout.returned.waitingTitle}>
-        <p>{checkout.returned.waitingBody}</p>
-      </InlineAlert>
-    );
+  if (raise.state === 'PENDING') {
+    if (hint === 'returned') {
+      return (
+        <InlineAlert variant="info" title={checkout.returned.waitingTitle}>
+          <p>{checkout.returned.waitingBody}</p>
+        </InlineAlert>
+      );
+    }
+    if (Date.parse(raise.holdExpiresAt) > now) {
+      return (
+        <InlineAlert variant="warning" title={copy.failedTitle}>
+          <p>{fillPlaceholders(copy.heldBody, { time: formatExactTime(raise.holdExpiresAt, locale) })}</p>
+        </InlineAlert>
+      );
+    }
+    /* Past its hold, the pledge editor offers a new raise, and the sentence below says so. */
+  } else if (!RAISE_NOT_CHARGED.has(raise.state)) {
+    return null;
   }
   return (
     <InlineAlert variant="warning" title={copy.failedTitle}>

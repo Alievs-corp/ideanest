@@ -283,6 +283,21 @@ export function useCheckout(
   const lastMutation = useRef<'reserve' | 'pay'>('reserve');
 
   /*
+   * `redirecting` is a phase the page leaves in, not one it comes back to. A backer who returns from
+   * the provider's page with the browser's Back button may be shown this page from the back-forward
+   * cache, frozen as it was left — the pay button disabled and saying the page is opening. `pageshow`
+   * with `persisted` is that restore, and the reservation is handed back as it stood: paying again
+   * replays the same key, so it opens the same payment rather than a second one.
+   */
+  useEffect(() => {
+    function restored(event: PageTransitionEvent): void {
+      if (event.persisted) setPhase((current) => (current === 'redirecting' ? 'reserved' : current));
+    }
+    window.addEventListener('pageshow', restored);
+    return () => window.removeEventListener('pageshow', restored);
+  }, []);
+
+  /*
    * The secret tokens, serialised, so the effect below depends on their VALUE
    * rather than on the identity of the array. A route that rebuilds the array on
    * every render — which is what reading a query string does — would otherwise
