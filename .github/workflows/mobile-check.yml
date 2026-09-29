@@ -1,0 +1,69 @@
+name: Mobile check
+
+# The checks `apps/mobile` can run without a build — issue #144.
+#
+# ONE DEFINITION, TWO CALLERS. `ci.yml` calls this on every pull request and
+# push that touches `apps/mobile` or anything it consumes, and `CI complete`
+# fails when it fails, which is what makes a red mobile test block a merge.
+# `mobile-release.yml` calls it before an EAS build, so a store build is never
+# queued from a commit whose tests are red. Before #144 the checks lived only in
+# `mobile-release.yml`, whose result no required check waited for: a pull request
+# with failing mobile tests showed `CI complete` green and was mergeable.
+#
+# Not triggered on its own. A workflow with its own `on: pull_request` is a
+# status branch protection would have to require by name, which is the mistake
+# `ci.yml`'s header comment and #67 explain.
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  check:
+    name: Mobile (typecheck, test, config)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter @ideanest/mobile typecheck
+
+      - name: Test
+        run: pnpm --filter @ideanest/mobile test
+
+      # `app.config.ts` reads two environment variables and THROWS on a value it
+      # cannot use, which is deliberate (see the file). Resolving it here is what
+      # turns that throw into a failed check rather than into a failed build
+      # twenty minutes into an EAS queue.
+      - name: Resolve the Expo configuration
+        env:
+          IDEANEST_API_ORIGIN: https://api.ideanest.az
+          IDEANEST_SITE_URL: https://ideanest.az
+        run: pnpm --filter @ideanest/mobile exec expo config --type public > /dev/null
+
+      # The two files that let a link open the application (#114) name the same
+      # bundle identifier and package that `app.config.ts` does. They are
+      # generated from environment variables at run time, so nothing checks that
+      # they agree — except this.
+      - name: Check the association identifiers agree
+        env:
+          IDEANEST_SITE_URL: https://ideanest.az
+        run: node apps/mobile/scripts/check-association.mjs

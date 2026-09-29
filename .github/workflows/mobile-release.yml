@@ -24,17 +24,9 @@ name: Mobile release
 # nobody has set is missing is a workflow people learn to ignore.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/mobile/**'
-      - 'packages/**'
-      - '.github/workflows/mobile-release.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'apps/mobile/**'
-      - '.github/workflows/mobile-release.yml'
+  # The checks that used to run here on every push and pull request live in
+  # `mobile-check.yml` and are called from `ci.yml` (#144), where `CI complete`
+  # waits for them. What is left is the build, which only a person starts.
   # A store build is a deliberate act with a human behind it. It is never a
   # consequence of merging.
   workflow_dispatch:
@@ -64,56 +56,12 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # What this repository can check on its own, on every change.
-  #
-  # A separate job from the `frontend` one in ci.yml, and named separately, so
-  # that a mobile failure says "mobile" on the pull request rather than being
-  # one line inside a check about Storybook. It repeats the install because a
-  # job is a fresh machine; the pnpm cache is what makes that cheap.
+  # The same checks a pull request runs, against the commit about to be built.
+  # A build of a commit whose tests are red is EAS minutes spent on an artefact
+  # nobody should install.
   # ---------------------------------------------------------------------------
   check:
-    name: Mobile (typecheck, test, config)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6
-        with:
-          run_install: false
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck
-        run: pnpm --filter @ideanest/mobile typecheck
-
-      - name: Test
-        run: pnpm --filter @ideanest/mobile test
-
-      # `app.config.ts` reads two environment variables and THROWS on a value it
-      # cannot use, which is deliberate (see the file). Resolving it here is what
-      # turns that throw into a failed check rather than into a failed build
-      # twenty minutes into an EAS queue.
-      - name: Resolve the Expo configuration
-        env:
-          IDEANEST_API_ORIGIN: https://api.ideanest.az
-          IDEANEST_SITE_URL: https://ideanest.az
-        run: pnpm --filter @ideanest/mobile exec expo config --type public > /dev/null
-
-      # The two files that let a link open the application (#114) name the same
-      # bundle identifier and package that `app.config.ts` does. They are
-      # generated from environment variables at run time, so nothing checks that
-      # they agree — except this.
-      - name: Check the association identifiers agree
-        env:
-          IDEANEST_SITE_URL: https://ideanest.az
-        run: node apps/mobile/scripts/check-association.mjs
+    uses: ./.github/workflows/mobile-check.yml
 
   # ---------------------------------------------------------------------------
   # The build, on Expo's infrastructure.
@@ -122,7 +70,6 @@ jobs:
     name: EAS build (${{ inputs.profile || 'preview' }})
     runs-on: ubuntu-latest
     needs: check
-    if: github.event_name == 'workflow_dispatch'
     timeout-minutes: 30
     environment: mobile
     steps:
