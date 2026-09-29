@@ -20,6 +20,9 @@ importers:
       '@ideanest/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
+      '@ideanest/messages':
+        specifier: workspace:*
+        version: link:../../packages/messages
       '@ideanest/money':
         specifier: workspace:*
         version: link:../../packages/money
@@ -150,6 +153,9 @@ importers:
       '@ideanest/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
+      '@ideanest/messages':
+        specifier: workspace:*
+        version: link:../../packages/messages
       '@ideanest/money':
         specifier: workspace:*
         version: link:../../packages/money
@@ -235,6 +241,18 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+
+  packages/messages:
+    devDependencies:
+      '@types/node':
+        specifier: ~22.20.2
+        version: 22.20.2
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.0(@types/node@22.20.2)(jsdom@30.0.1)(vite@8.3.0(@types/node@22.20.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   packages/money:
     dependencies:

@@ -4,7 +4,7 @@ import { fetchSession } from '../../../lib/session/session';
 import { SessionProvider } from '../../../components/session/SessionProvider';
 import { MAIN_CONTENT_ID } from '../../../components/shell/SkipLink';
 import NotificationsLayout from './layout';
-import MESSAGES from '../../../../messages/en.json';
+import MESSAGES from '@ideanest/messages/en.json';
 import { resolveServerTree } from '../../../test-support/server-tree';
 
 /**

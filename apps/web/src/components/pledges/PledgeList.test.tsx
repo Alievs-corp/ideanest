@@ -4,10 +4,10 @@ import { listMyPledges, type BackerPledgeSummary } from '../../lib/pledges/backe
 import { pledgeListCopyFrom } from '../../lib/i18n/pledges-copy';
 import { translatorFor } from '../../test-copy';
 import { chargeNoteOf, PledgeList } from './PledgeList';
-import az from '../../../messages/az.json';
-import en from '../../../messages/en.json';
-import ru from '../../../messages/ru.json';
-import tr from '../../../messages/tr.json';
+import az from '@ideanest/messages/az.json';
+import en from '@ideanest/messages/en.json';
+import ru from '@ideanest/messages/ru.json';
+import tr from '@ideanest/messages/tr.json';
 
 /**
  * The pledge list's account of the money — issue #131.

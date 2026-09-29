@@ -8,10 +8,10 @@ import {
   fetchLegalCatalogue,
   fetchLegalDocument,
 } from '../../../../lib/legal/server';
-import az from '../../../../../messages/az.json';
-import en from '../../../../../messages/en.json';
-import ru from '../../../../../messages/ru.json';
-import tr from '../../../../../messages/tr.json';
+import az from '@ideanest/messages/az.json';
+import en from '@ideanest/messages/en.json';
+import ru from '@ideanest/messages/ru.json';
+import tr from '@ideanest/messages/tr.json';
 import LegalDocumentRoute from './[document]/page';
 import ArchivedLegalDocumentRoute from './[document]/v/[version]/page';
 import LegalIndexRoute from './page';
@@ -37,10 +37,10 @@ vi.mock('../../../../lib/legal/server', () => ({
 vi.mock('next-intl/server', async () => {
   const { createTranslator } = await import('next-intl');
   const catalogues = {
-    az: (await import('../../../../../messages/az.json')).default,
-    en: (await import('../../../../../messages/en.json')).default,
-    ru: (await import('../../../../../messages/ru.json')).default,
-    tr: (await import('../../../../../messages/tr.json')).default,
+    az: (await import('@ideanest/messages/az.json')).default,
+    en: (await import('@ideanest/messages/en.json')).default,
+    ru: (await import('@ideanest/messages/ru.json')).default,
+    tr: (await import('@ideanest/messages/tr.json')).default,
   };
 
   return {

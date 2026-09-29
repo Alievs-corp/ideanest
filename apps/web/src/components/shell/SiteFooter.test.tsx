@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import az from '../../../messages/az.json';
-import en from '../../../messages/en.json';
-import ru from '../../../messages/ru.json';
-import tr from '../../../messages/tr.json';
+import az from '@ideanest/messages/az.json';
+import en from '@ideanest/messages/en.json';
+import ru from '@ideanest/messages/ru.json';
+import tr from '@ideanest/messages/tr.json';
 import { SUPPORTED_LOCALES, type Locale } from '../../lib/i18n/locale';
 import { FOOTER_GROUPS } from './navigation';
 import { SiteFooter } from './SiteFooter';

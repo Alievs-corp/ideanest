@@ -20,7 +20,7 @@ import { deviceLocale, type SupportedLocale } from '../api/config';
  *
  * <h2>The wording is the web's</h2>
  *
- * Every label is `account.pledges.states` from `apps/web/messages`, so a pledge
+ * Every label is `account.pledges.states` from `packages/messages`, so a pledge
  * reads the same on both. The backer's view rather than the schema's:
  * `CANCELED_BY_PROJECT` is not something the backer did.
  */

@@ -15,7 +15,7 @@ import { DiscoveryView } from './DiscoveryView';
 import { projectCardCopyFrom } from '../../lib/i18n/card-copy';
 import { translatorFor } from '../../test-copy';
 import { feedCopyFrom } from '../../lib/i18n/feed-copy';
-import ru from '../../../messages/ru.json';
+import ru from '@ideanest/messages/ru.json';
 /*
  * The copy the route would have resolved, built from `messages/en.json` by the same function it
  * calls — issue #324. Retyping the sentences here would give a test that passes whatever the

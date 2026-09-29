@@ -13,10 +13,10 @@ import type { CountdownUnits, Remaining } from './deadline';
 import { campaignCountdownCopyFrom } from '../i18n/campaign-copy';
 import type { Locale } from '../i18n/locale';
 import { translatorFor } from '../../test-copy';
-import az from '../../../messages/az.json';
-import en from '../../../messages/en.json';
-import ru from '../../../messages/ru.json';
-import tr from '../../../messages/tr.json';
+import az from '@ideanest/messages/az.json';
+import en from '@ideanest/messages/en.json';
+import ru from '@ideanest/messages/ru.json';
+import tr from '@ideanest/messages/tr.json';
 
 /** The English units, through the same builder the page calls — never retyped (#142). */
 const EN_UNITS = campaignCountdownCopyFrom(translatorFor('campaign')).units;

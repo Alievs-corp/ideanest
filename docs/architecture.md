@@ -6622,7 +6622,7 @@ internationalisation APIs.
 it was written in.
 
 > **The catalogue covers the whole client's public and account-facing surface now
-> (#324), and the emails with it.** `apps/web/messages/{az,en,ru,tr}.json` holds the
+> (#324), and the emails with it.** `packages/messages/src/{az,en,ru,tr}.json` holds the
 > four languages and `next-intl` resolves them from the `[locale]` segment #123 put
 > in the path. `users.locale` is the durable record behind the reader's choice: it is
 > returned by `GET /v1/me`, written by `PATCH /v1/me/locale`, and — since #324 — read

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import en from '../../../messages/en.json';
+import en from '@ideanest/messages/en.json';
 import { LOCALE_COOKIE, SUPPORTED_LOCALES, type Locale } from '../../lib/i18n/locale';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { expectNoViolations } from '../../test-axe';

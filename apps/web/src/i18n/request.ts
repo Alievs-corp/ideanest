@@ -34,6 +34,14 @@ import { routing } from './routing';
  * dynamic import. An unchecked value there is an attacker-chosen path into the module
  * graph, which is a different class of problem from a page in the wrong language.
  */
+/* Four static imports, so the bundler sees each catalogue instead of a template it cannot follow. */
+const CATALOGUES = {
+  az: () => import('@ideanest/messages/az.json'),
+  en: () => import('@ideanest/messages/en.json'),
+  ru: () => import('@ideanest/messages/ru.json'),
+  tr: () => import('@ideanest/messages/tr.json'),
+} as const;
+
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;
   const locale = isLocale(requested) ? requested : routing.defaultLocale;
@@ -42,7 +50,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     locale,
 
     /* One catalogue per language, loaded by the tag that was just narrowed to one of four. */
-    messages: (await import(`../../messages/${locale}.json`)).default,
+    messages: (await CATALOGUES[locale]()).default,
 
     /*
      * WHAT A MISSING KEY DOES. In development it throws, so a key that was never added is

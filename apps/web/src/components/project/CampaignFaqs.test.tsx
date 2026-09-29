@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { CampaignFaq } from '../../lib/community/faqs';
 import { CampaignFaqs } from './CampaignFaqs';
-import CATALOGUE from '../../../messages/en.json';
+import CATALOGUE from '@ideanest/messages/en.json';
 import { resolveServerTree } from '../../test-support/server-tree';
 import { expectNoViolations } from '../../test-axe';
 

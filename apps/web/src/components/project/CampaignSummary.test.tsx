@@ -8,7 +8,7 @@ import { SessionProvider } from '../session/SessionProvider';
 import { CampaignSummary } from './CampaignSummary';
 import { CampaignOutcomeNotice } from './CampaignOutcomeNotice';
 import { CampaignRewards } from './CampaignRewards';
-import CATALOGUE from '../../../messages/en.json';
+import CATALOGUE from '@ideanest/messages/en.json';
 import { resolveServerTree } from '../../test-support/server-tree';
 import { expectNoViolations } from '../../test-axe';
 

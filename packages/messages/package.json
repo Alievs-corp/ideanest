@@ -1,0 +1,24 @@
+{
+  "name": "@ideanest/messages",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "description": "The four interface catalogues and the locale vocabulary shared by apps/web and apps/mobile.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./az.json": "./src/az.json",
+    "./en.json": "./src/en.json",
+    "./ru.json": "./src/ru.json",
+    "./tr.json": "./src/tr.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

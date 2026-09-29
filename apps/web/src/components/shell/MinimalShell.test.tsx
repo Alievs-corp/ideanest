@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { FailureAction, FailureState } from './FailureState';
 import { MinimalShell } from './MinimalShell';
 import { MAIN_CONTENT_ID } from './SkipLink';
-import en from '../../../messages/en.json';
+import en from '@ideanest/messages/en.json';
 
 const FAILURE_COPY = {
   elsewhere: en.shell.failure.elsewhere,

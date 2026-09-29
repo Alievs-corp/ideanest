@@ -4,7 +4,7 @@ import type { ReactElement } from 'react';
 import type { ProjectCard } from '../../lib/discovery/api';
 import type { Category } from '../../lib/categories/api';
 import { CategoryLanding } from './CategoryLanding';
-import CATALOGUE from '../../../messages/en.json';
+import CATALOGUE from '@ideanest/messages/en.json';
 import { resolveServerTree } from '../../test-support/server-tree';
 
 /*

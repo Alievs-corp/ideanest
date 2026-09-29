@@ -326,7 +326,7 @@ describe('the catalogue covers the contract', () => {
 
   it.each(LOCALES)('%s has a headline and an unnamed sentence for every type', (locale) => {
     const catalogue = JSON.parse(
-      readFileSync(join(import.meta.dirname, `../../../messages/${locale}.json`), 'utf8'),
+      readFileSync(join(import.meta.dirname, `../../../../../packages/messages/src/${locale}.json`), 'utf8'),
     ) as { account: { notifications: { headline: Record<string, string>; unnamed: Record<string, string> } } };
     const { headline, unnamed } = catalogue.account.notifications;
 

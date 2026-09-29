@@ -16,7 +16,7 @@ vi.mock('../../../../lib/api/server', () => ({ fetchCategories: vi.fn() }));
 
 vi.mock('next-intl/server', async () => {
   const { createTranslator } = await import('next-intl');
-  const CATALOGUE = (await import('../../../../../messages/az.json')).default;
+  const CATALOGUE = (await import('@ideanest/messages/az.json')).default;
 
   return {
     getLocale: () => Promise.resolve('az'),
