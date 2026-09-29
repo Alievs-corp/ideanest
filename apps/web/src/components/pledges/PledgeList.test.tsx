@@ -150,3 +150,57 @@ describe('the pledge screens’ money sentences in every language', () => {
     }
   });
 });
+
+/**
+ * The public pages' account of the money — issue #170.
+ *
+ * The Trust and safety page still said a pledge was "an authorisation rather than a charge" and
+ * that a campaign missing its goal "takes nothing at all", in all four languages, after #131 had
+ * fixed the same sentence on the pledge screens. Every string under `static` — About, How it
+ * works, Trust and safety and the rest — is held to the same rule: nothing says the charge comes
+ * later, and nothing calls a pledge a hold on the card. The second set of phrases is the retired
+ * authorisation model, as each catalogue spelled it.
+ */
+describe('the public pages’ money sentences in every language', () => {
+  const LATER: Record<string, RegExp> = {
+    en: /when the campaign closes|to be collected|collection happens|nothing has been charged/iu,
+    az: /bağlananda|tutulacaq|hələ heç nə tutulmayıb/iu,
+    ru: /когда кампания закроется|спишется|пока ничего не списано|списание происходит/iu,
+    tr: /kapandığında|tahsil edilecek|henüz hiçbir tahsilat/iu,
+  };
+  const HOLD: Record<string, RegExp> = {
+    en: /authori[sz]ation|authori[sz]ed|not charged until|takes nothing/iu,
+    az: /avtoriz|heç nə almır/iu,
+    ru: /авторизац|не берёт/iu,
+    tr: /provizyon|hiçbir tutar almaz/iu,
+  };
+
+  function sentencesOf(node: unknown, path: string): Array<[string, string]> {
+    if (typeof node === 'string') return [[path, node]];
+    if (node === null || typeof node !== 'object') return [];
+    return Object.entries(node).flatMap(([key, value]) => sentencesOf(value, `${path}.${key}`));
+  }
+
+  it.each([
+    ['en', en],
+    ['az', az],
+    ['ru', ru],
+    ['tr', tr],
+  ] as const)('says nothing about a later charge or a hold in %s', (language, catalogue) => {
+    const sentences = sentencesOf(catalogue.static, 'static');
+    expect(sentences.length).toBeGreaterThan(0);
+    for (const [path, sentence] of sentences) {
+      expect(sentence, `${language} ${path}: ${sentence}`).not.toMatch(LATER[language] as RegExp);
+      expect(sentence, `${language} ${path}: ${sentence}`).not.toMatch(HOLD[language] as RegExp);
+    }
+  });
+
+  it.each([
+    ['en', en, /charged when you confirm it[\s\S]*refunded in full/u],
+    ['az', az, /təsdiqlədiyiniz anda pul tutulur[\s\S]*tam geri qaytarılır/u],
+    ['ru', ru, /списываются, когда вы подтверждаете взнос[\s\S]*вернут взнос полностью/u],
+    ['tr', tr, /onayladığınız anda tahsil edilir[\s\S]*tamamı size iade edilir/u],
+  ] as const)('says on Trust and safety that a pledge is charged at confirmation in %s', (_, catalogue, said) => {
+    expect(catalogue.static.trustSafety.money.first).toMatch(said);
+  });
+});

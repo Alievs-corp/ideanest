@@ -4711,7 +4711,7 @@
       },
       "money": {
         "heading": "Pulunuz",
-        "first": "Kart məlumatları heç vaxt IdeaNest-in öz serverlərinə çatmır; ödənişlər provayderin öz sahələri üzrə keçir. Kampaniya davam etdiyi müddətdə dəstəyiniz tutulma deyil, avtorizədir; hədəfinə çatmayan kampaniya isə heç nə almır.",
+        "first": "Kart məlumatları heç vaxt IdeaNest-in öz serverlərinə çatmır; ödənişlər provayderin öz sahələri üzrə keçir. Dəstəyinizi təsdiqlədiyiniz anda pul tutulur və platformanın hesabında saxlanılır. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pulunuz tam geri qaytarılır.",
         "second": "Hər ödəniş əməliyyatı idempotentdir — bu, cazibədar görünməyən, lakin ən vacib xassədir: əlaqə kəsildiyi üçün təkrarlanan sorğu iki deyil, bir dəstək və bir tutulma yaradır."
       },
       "account": {

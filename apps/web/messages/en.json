@@ -4711,7 +4711,7 @@
       },
       "money": {
         "heading": "Your money",
-        "first": "Card details never reach IdeaNest’s own servers; payments go through the provider’s hosted fields. While a campaign is running your pledge is an authorisation rather than a charge, and a campaign that misses its goal takes nothing at all.",
+        "first": "Card details never reach IdeaNest’s own servers; payments go through the provider’s hosted fields. Your pledge is charged when you confirm it, and the money is held on the platform’s account. If the campaign does not succeed, is suspended or is cancelled, you are refunded in full.",
         "second": "Every payment operation is idempotent, which is the unglamorous property that matters most: a request that is retried because a connection dropped produces one pledge and one charge, not two."
       },
       "account": {

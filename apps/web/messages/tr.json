@@ -4711,7 +4711,7 @@
       },
       "money": {
         "heading": "Paranız",
-        "first": "Kart bilgileri hiçbir zaman IdeaNest'in kendi sunucularına ulaşmaz; ödemeler sağlayıcının kendi alanları üzerinden geçer. Kampanya sürerken desteğiniz bir tahsilat değil bir provizyondur ve hedefine ulaşamayan bir kampanya hiçbir tutar almaz.",
+        "first": "Kart bilgileri hiçbir zaman IdeaNest'in kendi sunucularına ulaşmaz; ödemeler sağlayıcının kendi alanları üzerinden geçer. Ücret desteğinizi onayladığınız anda tahsil edilir ve platformun hesabında tutulur. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse tutarın tamamı size iade edilir.",
         "second": "Her ödeme işlemi idempotenttir — bu, gösterişsiz ama en önemli özelliktir: bağlantı koptuğu için yinelenen bir istek iki değil bir destek ve bir tahsilat üretir."
       },
       "account": {
