@@ -509,7 +509,8 @@
         "NEW_DEVICE_SIGN_IN": "A new device signed in to your account",
         "CAMPAIGN_EXTENDED": "{campaign} has a new deadline",
         "WITHDRAWAL_REQUESTED": "The creator of {campaign} requested their payout",
-        "PAYOUT_DETAILS_NEEDED": "Your payout for {campaign} is waiting for your details"
+        "PAYOUT_DETAILS_NEEDED": "Your payout for {campaign} is waiting for your details",
+        "UPDATE_DUE_SOON": "Your update for {campaign} is due {when}"
       },
       "unnamed": {
         "PLEDGE_CONFIRMED": "Your pledge of {amount} to a campaign is confirmed",
@@ -536,7 +537,8 @@
         "NEW_DEVICE_SIGN_IN": "A new device signed in to your account",
         "CAMPAIGN_EXTENDED": "A campaign you backed has a new deadline",
         "WITHDRAWAL_REQUESTED": "The creator of a campaign you backed requested their payout",
-        "PAYOUT_DETAILS_NEEDED": "Your payout is waiting for your VÖEN and business card"
+        "PAYOUT_DETAILS_NEEDED": "Your payout is waiting for your VÖEN and business card",
+        "UPDATE_DUE_SOON": "An update for your campaign is due {when}"
       },
       "amount": {
         "total": "your chosen amount",
@@ -545,6 +547,10 @@
         "needed": "what it needed",
         "closingTotal": "its closing total",
         "funds": "your funds"
+      },
+      "due": {
+        "on": "by {date}",
+        "unknown": "soon"
       },
       "category": {
         "PLEDGES": "Your pledges",

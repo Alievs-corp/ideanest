@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { InboxNotification, NotificationType } from './api';
 import { inboxCopyFrom } from '../i18n/notifications-copy';
@@ -24,34 +26,17 @@ import {
   readParams,
 } from './describe';
 
-/** Every type the contract publishes, so the sweep below cannot silently shrink. */
-const TYPES: readonly NotificationType[] = [
-  'PLEDGE_CONFIRMED',
-  'PLEDGE_EDITED',
-  'GOAL_REACHED',
-  'DEADLINE_48H',
-  'DEADLINE_24H',
-  'CAMPAIGN_SUCCEEDED',
-  'CAMPAIGN_UNSUCCESSFUL',
-  'CAMPAIGN_EXTENDED',
-  'WITHDRAWAL_REQUESTED',
-  'PAYOUT_DETAILS_NEEDED',
-  'PROJECT_APPROVED',
-  'PAYMENT_COLLECTED',
-  'PAYMENT_FAILED',
-  'FINAL_PAYMENT_WARNING',
-  'PAYOUT_SENT',
-  'NEW_UPDATE_PUBLISHED',
-  'COMMENT_REPLY',
-  'DIRECT_MESSAGE',
-  'SURVEY_AVAILABLE',
-  'SURVEY_OVERDUE',
-  'REWARD_SHIPPED',
-  'FOLLOWED_CREATOR_LAUNCHED',
-  'LAUNCH_REMINDER',
-  'SAVED_PROJECT_ENDING_SOON',
-  'NEW_DEVICE_SIGN_IN',
-];
+/**
+ * Every type the service publishes, read from the contract rather than retyped — #138.
+ *
+ * `OpenApiContractTests` fails when `apps/api/openapi.json` stops describing the Java
+ * `NotificationType`, so this list is the backend's. A hand-written one missed
+ * `UPDATE_DUE_SOON`, and creators saw the enum name in their inbox.
+ */
+const CONTRACT = JSON.parse(
+  readFileSync(join(import.meta.dirname, '../../../../api/openapi.json'), 'utf8'),
+) as { components: { schemas: { NotificationResponse: { properties: { type: { enum: string[] } } } } } };
+const TYPES = CONTRACT.components.schemas.NotificationResponse.properties.type.enum as NotificationType[];
 
 /** A document carrying everything any type reads — the shape #249 made routine. */
 const FULL_PARAMS = {
@@ -65,6 +50,7 @@ const FULL_PARAMS = {
   pledged: { amount: '6250.00', currency: 'AZN' },
   backersCount: 184,
   attempt: 2,
+  dueAt: '2026-10-05',
 };
 
 function notification(
@@ -126,7 +112,7 @@ describe('campaignOf', () => {
 
 describe('describeNotification', () => {
   it('names the campaign when the document carries a title', () => {
-    const view = describeNotification(notification({ type: 'GOAL_REACHED' }), COPY);
+    const view = describeNotification(notification({ type: 'GOAL_REACHED' }), COPY, 'en');
 
     expect(view.campaign).toBe('Xari Bulbul Ceramics');
     expect(view.headline).toBe('Xari Bulbul Ceramics reached its goal of 5,000.00 AZN');
@@ -142,6 +128,7 @@ describe('describeNotification', () => {
     const view = describeNotification(
       notification({ type: 'GOAL_REACHED', params: { goal: { amount: '5000.00', currency: 'AZN' } } }),
       COPY,
+      'en',
     );
 
     expect(view.campaign).toBeNull();
@@ -150,21 +137,23 @@ describe('describeNotification', () => {
   });
 
   it.each(TYPES)('renders %s as a finished sentence with a full document', (type) => {
-    const view = describeNotification(notification({ type }), COPY);
+    const view = describeNotification(notification({ type }), COPY, 'en');
 
     expect(view.headline).not.toBe('');
     expect(view.headline).not.toContain('  ');
     expect(view.headline).not.toContain('undefined');
     expect(view.headline).not.toContain('null');
+    expect(view.headline).not.toBe(type);
   });
 
   it.each(TYPES)('renders %s as a finished sentence with an empty document', (type) => {
-    const view = describeNotification(notification({ type, params: {} }), COPY);
+    const view = describeNotification(notification({ type, params: {} }), COPY, 'en');
 
     expect(view.headline).not.toBe('');
     expect(view.headline).not.toContain('  ');
     expect(view.headline).not.toContain('undefined');
     expect(view.headline).not.toContain('null');
+    expect(view.headline).not.toBe(type);
   });
 
   /*
@@ -176,13 +165,14 @@ describe('describeNotification', () => {
     const view = describeNotification(
       notification({ type: 'PLEDGE_CONFIRMED', params: { total: { amount: 120, currency: 'AZN' } } }),
       COPY,
+      'en',
     );
 
     expect(view.headline).toBe('Your pledge of your chosen amount to a campaign is confirmed');
   });
 
   it('groups thousands and keeps the scale the service sent', () => {
-    const view = describeNotification(notification({ type: 'CAMPAIGN_SUCCEEDED' }), COPY);
+    const view = describeNotification(notification({ type: 'CAMPAIGN_SUCCEEDED' }), COPY, 'en');
 
     expect(view.headline).toContain('6,250.00 AZN');
   });
@@ -196,6 +186,7 @@ describe('describeNotification', () => {
     const view = describeNotification(
       notification({ type: 'NEW_DEVICE_SIGN_IN', category: 'SECURITY' }),
       COPY,
+      'en',
     );
 
     expect(view.href).toBe('/settings/sessions');
@@ -207,6 +198,7 @@ describe('describeNotification', () => {
     const view = describeNotification(
       notification({ type: 'PLEDGE_CONFIRMED', params: 'oops' as unknown as Record<string, unknown> }),
       COPY,
+      'en',
     );
 
     expect(view.headline).toBe('Your pledge of your chosen amount to a campaign is confirmed');
@@ -291,5 +283,54 @@ describe('grouping by day', () => {
     expect(dayLabelOf(NOW.toISOString(), NOW, 'ru')).toBe('Сегодня');
     expect(dayLabelOf(NOW.toISOString(), NOW, 'tr')).toBe('Bugün');
     expect(dayLabelOf('2026-08-19T09:00:00.000Z', NOW, 'ru')).toBe('Вчера');
+  });
+});
+
+describe('UPDATE_DUE_SOON — #138', () => {
+  it('names the campaign and the day the update is due', () => {
+    const view = describeNotification(notification({ type: 'UPDATE_DUE_SOON' }), COPY, 'en');
+
+    expect(view.headline).toBe('Your update for Xari Bulbul Ceramics is due by 5 October 2026');
+    expect(view.href).toBe('/projects/aysel-studio/xari-bulbul-ceramics');
+  });
+
+  it('reads the day in UTC, so no reader sees the day before', () => {
+    // 2026-10-05T00:00Z is still 4 October west of Greenwich.
+    const view = describeNotification(
+      notification({ type: 'UPDATE_DUE_SOON', params: { dueAt: '2026-10-05' } }),
+      COPY,
+      'en',
+    );
+
+    expect(view.headline).toBe('An update for your campaign is due by 5 October 2026');
+  });
+
+  it('says "soon" rather than inventing a date when the document has none', () => {
+    const view = describeNotification(
+      notification({ type: 'UPDATE_DUE_SOON', params: { projectTitle: 'Lamp', dueAt: 'next week' } }),
+      COPY,
+      'en',
+    );
+
+    expect(view.headline).toBe('Your update for Lamp is due soon');
+  });
+});
+
+/*
+ * Every type the contract publishes has a sentence in every language, named and unnamed — #138.
+ * Read from the catalogues themselves, so a type added to the service fails here in CI instead
+ * of rendering its enum name to whoever receives it first.
+ */
+describe('the catalogue covers the contract', () => {
+  const LOCALES = ['az', 'en', 'ru', 'tr'] as const;
+
+  it.each(LOCALES)('%s has a headline and an unnamed sentence for every type', (locale) => {
+    const catalogue = JSON.parse(
+      readFileSync(join(import.meta.dirname, `../../../messages/${locale}.json`), 'utf8'),
+    ) as { account: { notifications: { headline: Record<string, string>; unnamed: Record<string, string> } } };
+    const { headline, unnamed } = catalogue.account.notifications;
+
+    expect(TYPES.filter((type) => typeof headline[type] !== 'string')).toEqual([]);
+    expect(TYPES.filter((type) => typeof unnamed[type] !== 'string')).toEqual([]);
   });
 });

@@ -509,7 +509,8 @@
         "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni cihazdan daxil olundu",
         "CAMPAIGN_EXTENDED": "{campaign} kampaniyasının yeni müddəti var",
         "WITHDRAWAL_REQUESTED": "{campaign} kampaniyasının müəllifi vəsaitin çıxarılmasını tələb edib",
-        "PAYOUT_DETAILS_NEEDED": "{campaign} kampaniyası üzrə ödənişiniz rekvizitlərinizi gözləyir"
+        "PAYOUT_DETAILS_NEEDED": "{campaign} kampaniyası üzrə ödənişiniz rekvizitlərinizi gözləyir",
+        "UPDATE_DUE_SOON": "{campaign} kampaniyası üçün yenilik {when} gözlənilir"
       },
       "unnamed": {
         "PLEDGE_CONFIRMED": "Bir kampaniyaya {amount} məbləğində dəstəyiniz təsdiqləndi",
@@ -536,7 +537,8 @@
         "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni cihazdan daxil olundu",
         "CAMPAIGN_EXTENDED": "Dəstəklədiyiniz kampaniyanın yeni müddəti var",
         "WITHDRAWAL_REQUESTED": "Dəstəklədiyiniz kampaniyanın müəllifi vəsaitin çıxarılmasını tələb edib",
-        "PAYOUT_DETAILS_NEEDED": "Ödənişiniz VÖEN və biznes kartınızı gözləyir"
+        "PAYOUT_DETAILS_NEEDED": "Ödənişiniz VÖEN və biznes kartınızı gözləyir",
+        "UPDATE_DUE_SOON": "Kampaniyanız üçün yenilik {when} gözlənilir"
       },
       "amount": {
         "total": "seçdiyiniz məbləğ",
@@ -545,6 +547,10 @@
         "needed": "ehtiyacı olan məbləğ",
         "closingTotal": "bağlanış məbləği",
         "funds": "vəsaitiniz"
+      },
+      "due": {
+        "on": "{date} tarixinədək",
+        "unknown": "tezliklə"
       },
       "category": {
         "PLEDGES": "Dəstəkləriniz",

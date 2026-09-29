@@ -33,6 +33,12 @@ export interface NotificationsCopy {
   readonly unnamed: Readonly<Record<string, string>>;
   /** What stands in for a figure the document does not carry. */
   readonly amount: Readonly<Record<string, string>>;
+  /**
+   * The `{when}` of a sentence about a deadline — #138. `on` carries `{date}`; `unknown` is
+   * what a document without the date reads as. The preposition is in here rather than in the
+   * headline because it changes with the fallback in every language.
+   */
+  readonly due: { readonly on: string; readonly unknown: string };
   readonly category: Readonly<Record<string, string>>;
   readonly categoryDescription: Readonly<Record<string, string>>;
   readonly channel: Readonly<Record<string, string>>;
@@ -89,6 +95,7 @@ function sharedFrom(t: NotificationsTranslator): NotificationsCopy {
     headline: record('headline'),
     unnamed: record('unnamed'),
     amount: record('amount'),
+    due: { on: String(t.raw('due.on')), unknown: t('due.unknown') },
     category: record('category'),
     categoryDescription: record('categoryDescription'),
     channel: record('channel'),

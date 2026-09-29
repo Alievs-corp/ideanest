@@ -132,6 +132,7 @@ function amountOr(params: Record<string, unknown>, key: string, fallback: string
 export function describeNotification(
   notification: InboxNotification,
   copy: NotificationsCopy,
+  locale: Locale,
 ): NotificationView {
   const params = readParams(notification.params);
   const campaign = campaignOf(params);
@@ -140,7 +141,7 @@ export function describeNotification(
   return {
     campaign: named,
     href: hrefOf(notification, campaign.href),
-    headline: headlineOf(notification.type, params, named, copy),
+    headline: headlineOf(notification.type, params, named, copy, locale),
   };
 }
 
@@ -149,6 +150,7 @@ function headlineOf(
   params: Record<string, unknown>,
   campaign: string | null,
   copy: NotificationsCopy,
+  locale: Locale,
 ): string {
   /*
    * TWO TABLES, NOT ONE SENTENCE WITH A STAND-IN — issue #324. The template that names the
@@ -164,7 +166,35 @@ function headlineOf(
   return fillPlaceholders(template, {
     campaign: campaign ?? '',
     amount: amountFor(type, params, copy),
+    when: whenFor(type, params, copy, locale),
   });
+}
+
+/**
+ * The deadline a headline refers to, or the words that stand in for one — #138.
+ *
+ * <p>`dueAt` is a calendar day (`2026-10-05`), not an instant: `NotificationEventListener`
+ * formats it before it is stored, because the day is what the creator agreed to. It is read
+ * as that day in UTC so that no reader's time zone moves it to the day before.
+ */
+function whenFor(
+  type: NotificationType,
+  params: Record<string, unknown>,
+  copy: NotificationsCopy,
+  locale: Locale,
+): string {
+  if (type !== 'UPDATE_DUE_SOON') return '';
+
+  const day = textOf(params, 'dueAt');
+  const at = day !== null && /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00Z`) : null;
+  if (at === null || Number.isNaN(at.getTime())) return copy.due.unknown;
+
+  const date = dateTimeFormat(
+    locale,
+    { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' },
+    'notification-due',
+  ).format(at);
+  return fillPlaceholders(copy.due.on, { date });
 }
 
 /**
