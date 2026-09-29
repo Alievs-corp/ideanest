@@ -14,10 +14,13 @@ import az.ideanest.payment.domain.EvidenceKind;
 import az.ideanest.payment.domain.PaymentTransaction;
 import az.ideanest.payment.domain.ProviderName;
 import az.ideanest.payment.domain.ProviderOutcome;
+import az.ideanest.payment.domain.Refund;
 import az.ideanest.payment.domain.RefundResult;
 import az.ideanest.payment.infrastructure.DisputeEvidenceRepository;
 import az.ideanest.payment.infrastructure.DisputeRepository;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
+import az.ideanest.payment.infrastructure.RefundRepository;
+import az.ideanest.pledge.application.PledgeRefunds;
 import az.ideanest.project.application.CampaignCollections;
 import az.ideanest.user.application.UserDirectory;
 import az.ideanest.shared.access.PlatformStaff;
@@ -61,6 +64,10 @@ import org.springframework.transaction.annotation.Transactional;
  * accounts because they are different facts: the disputed amount is a backer's money going
  * back, and the fee is the platform's cost of being asked. Netting them would hide the
  * second inside the first, and the second is the number that makes contesting worthwhile.
+ *
+ * <p><strong>A loss is also a refund row (#175).</strong> Every read that decides what of a charge
+ * can still be refunded sums {@code refunds}; a loss recorded only as a transaction left the money
+ * refundable, and a failed campaign or a member of staff paid the backer a second time.
  */
 @Service
 public class DisputeService {
@@ -79,6 +86,8 @@ public class DisputeService {
     private final CampaignCollections campaigns;
     private final CreatorDebts creatorDebts;
     private final UserDirectory users;
+    private final RefundRepository refunds;
+    private final PledgeRefunds pledges;
 
     public DisputeService(
             DisputeRepository disputes,
@@ -90,7 +99,9 @@ public class DisputeService {
             Clock clock,
             CampaignCollections campaigns,
             CreatorDebts creatorDebts,
-            UserDirectory users) {
+            UserDirectory users,
+            RefundRepository refunds,
+            PledgeRefunds pledges) {
         this.disputes = disputes;
         this.evidence = evidence;
         this.transactions = transactions;
@@ -101,6 +112,8 @@ public class DisputeService {
         this.campaigns = campaigns;
         this.creatorDebts = creatorDebts;
         this.users = users;
+        this.refunds = refunds;
+        this.pledges = pledges;
     }
 
     /**
@@ -262,7 +275,7 @@ public class DisputeService {
         dispute.resolved(outcome, staffId, now);
 
         if (outcome != DisputeState.WON) {
-            postLoss(dispute);
+            postLoss(dispute, staffId, now);
             recoverFromCreatorIfPaidOut(dispute, staffId, now);
         }
 
@@ -286,8 +299,17 @@ public class DisputeService {
      * movement seen from the other side. The fee is a separate line against
      * {@code psp_fee}, balanced against escrow, because the provider takes it from the
      * platform's balance and not from the backer's.
+     *
+     * <p><strong>And a {@code refunds} row (#175)</strong>, reason {@code CHARGEBACK}, already
+     * {@code SUCCEEDED}, against the disputed charge and pointing at the transaction above. The refund
+     * paths — the staff overdraft check, the per-charge remainder, the campaign-refunds sweep — and the
+     * payout's refunded figure all ask {@code refunds} what has gone back, and this is how they learn
+     * the network took it; nothing is sent. Under the pledge's row lock, like every refund, so a refund
+     * being recorded at the same moment either counts this or is counted by it. When it leaves nothing
+     * on the pledge, the pledge is {@code CHARGEBACK} and leaves its campaign's totals.
      */
-    private void postLoss(Dispute dispute) {
+    private void postLoss(Dispute dispute, UUID staffId, Instant now) {
+        pledges.lock(dispute.pledgeId());
         PaymentTransaction recorded = transactions.save(PaymentTransaction.refund(
                 dispute.pledgeId(),
                 dispute.projectId(),
@@ -305,6 +327,26 @@ public class DisputeService {
         }
 
         ledger.post(posting.build());
+
+        refunds.save(Refund.chargeback(
+                dispute.pledgeId(),
+                dispute.projectId(),
+                dispute.chargeTransactionId(),
+                dispute.amount(),
+                "The card network took this charge back: dispute %s (%s case %s) was resolved %s."
+                        .formatted(dispute.id(), dispute.provider(), dispute.providerDisputeId(), dispute.state()),
+                staffId,
+                "chargeback-" + dispute.id(),
+                recorded.getId(),
+                now));
+        refunds.flush();
+
+        String currency = dispute.amount().currency();
+        Money collected = Money.of(transactions.collectedOn(dispute.pledgeId()), currency);
+        Money returned = Money.of(refunds.succeededAgainst(dispute.pledgeId()), currency);
+        if (collected.isPositive() && !collected.isGreaterThan(returned)) {
+            pledges.recordChargedBack(dispute.pledgeId());
+        }
     }
 
     /**

@@ -12875,7 +12875,7 @@
           },
           "reason" : {
             "type" : "string",
-            "enum" : [ "BACKER_REQUEST", "CAMPAIGN_HALTED", "CAMPAIGN_FAILED", "FULFILMENT_FAILURE", "DUPLICATE_CHARGE", "PLATFORM_ERROR", "DISPUTE_CONCEDED", "FRAUD", "RAISE_NOT_APPLIED" ]
+            "enum" : [ "BACKER_REQUEST", "CAMPAIGN_HALTED", "CAMPAIGN_FAILED", "FULFILMENT_FAILURE", "DUPLICATE_CHARGE", "PLATFORM_ERROR", "DISPUTE_CONCEDED", "FRAUD", "RAISE_NOT_APPLIED", "CHARGEBACK" ]
           }
         },
         "required" : [ "detail", "pledgeId", "reason" ]
@@ -15192,7 +15192,7 @@
           },
           "reason" : {
             "type" : "string",
-            "enum" : [ "BACKER_REQUEST", "CAMPAIGN_HALTED", "CAMPAIGN_FAILED", "FULFILMENT_FAILURE", "DUPLICATE_CHARGE", "PLATFORM_ERROR", "DISPUTE_CONCEDED", "FRAUD", "RAISE_NOT_APPLIED" ]
+            "enum" : [ "BACKER_REQUEST", "CAMPAIGN_HALTED", "CAMPAIGN_FAILED", "FULFILMENT_FAILURE", "DUPLICATE_CHARGE", "PLATFORM_ERROR", "DISPUTE_CONCEDED", "FRAUD", "RAISE_NOT_APPLIED", "CHARGEBACK" ]
           },
           "refundTransactionId" : {
             "type" : "string",

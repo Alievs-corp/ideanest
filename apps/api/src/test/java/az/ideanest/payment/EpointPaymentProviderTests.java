@@ -117,6 +117,18 @@ class EpointPaymentProviderTests {
     }
 
     @Test
+    @DisplayName("#178: an order id longer than Epoint's 255 characters is refused before a request is made")
+    void anOrderIdPastTheLimitIsRefused() {
+        EpointPaymentProvider epoint = answering("/request", new Recorded(), "{}");
+        String tooLong = "k".repeat(EpointPaymentProvider.MAX_ORDER_ID_LENGTH + 1);
+
+        assertThatThrownBy(() -> epoint.beginHostedPayment(new HostedPaymentRequest(
+                        UUID.randomUUID(), Money.of(new BigDecimal("10.00"), "AZN"), null, null, null, null, tooLong)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("255");
+    }
+
+    @Test
     @DisplayName("a refused payment page, or an Epoint that cannot be reached, is a provider unavailable")
     void refusalsAndOutagesAreUnavailable() {
         EpointPaymentProvider refusing = answering("/request", new Recorded(), """

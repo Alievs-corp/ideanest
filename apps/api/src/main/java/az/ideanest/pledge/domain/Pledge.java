@@ -390,6 +390,17 @@ public class Pledge {
         this.state = PledgeState.REFUNDED;
     }
 
+    /**
+     * §6.2's {@code COLLECTED → CHARGEBACK} (#175): the card network took the backer's money back, and
+     * nothing of it is left with the platform.
+     */
+    public void chargedBack() {
+        if (state != PledgeState.COLLECTED) {
+            throw new IllegalStateException("A pledge in " + state + " has nothing collected to charge back");
+        }
+        this.state = PledgeState.CHARGEBACK;
+    }
+
     public void paid(Instant at) {
         if (state != PledgeState.DRAFT) {
             throw new IllegalStateException("A pledge in " + state + " cannot be paid for");

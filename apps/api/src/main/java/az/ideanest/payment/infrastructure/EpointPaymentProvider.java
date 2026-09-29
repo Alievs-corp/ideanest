@@ -103,6 +103,19 @@ public class EpointPaymentProvider implements PaymentProvider {
 
     private static final ProviderName NAME = ProviderName.EPOINT;
 
+    /**
+     * The longest {@code order_id} Epoint accepts — #178.
+     *
+     * <p>"Unique order ID in your application. Max 255 characters.", for {@code /request} and for
+     * {@code /refund-request} alike (https://developer.epoint.az/en/checkout/request and
+     * https://developer.epoint.az/en/refund/refund-request, read 2026-09-29; the 2022 PDF of API v1
+     * says the same). Every key the platform sends as one is far shorter: a pledge's is a UUID (36), a
+     * raise's {@code pledge-raise-} and a UUID (49), a payout's at most 65 — {@code EpointOrderIdTests}
+     * holds each of them to this. Checked before a request is made, so a key that grew past it fails
+     * here with its name rather than as Epoint's refusal of a payment page.
+     */
+    public static final int MAX_ORDER_ID_LENGTH = 255;
+
     /** API v1.0.3: split, pre-auth, refund, reverse and payout are AZN only. */
     private static final String CURRENCY = "AZN";
 
@@ -137,6 +150,7 @@ public class EpointPaymentProvider implements PaymentProvider {
     @Override
     public HostedPaymentSession beginHostedPayment(HostedPaymentRequest request) {
         requireAzn(request.amount());
+        requireOrderIdFits(request.idempotencyKey());
         Map<String, Object> parameters = parameters(request.language());
         parameters.put("amount", request.amount().amount());
         parameters.put("currency", CURRENCY);
@@ -229,6 +243,7 @@ public class EpointPaymentProvider implements PaymentProvider {
     @Override
     public PayoutResult payout(PayoutRequest request) {
         requireAzn(request.amount());
+        requireOrderIdFits(request.idempotencyKey());
         Map<String, Object> parameters = parameters(null);
         parameters.put("card_id", request.destinationReference());
         parameters.put("order_id", request.idempotencyKey());
@@ -395,6 +410,14 @@ public class EpointPaymentProvider implements PaymentProvider {
         parameters.put("public_key", settings.publicKey());
         parameters.put("language", language != null && LANGUAGES.contains(language) ? language : settings.language());
         return parameters;
+    }
+
+    /** #178: refused before a request, like a currency Epoint does not take. */
+    private static void requireOrderIdFits(String orderId) {
+        if (orderId == null || orderId.isBlank() || orderId.length() > MAX_ORDER_ID_LENGTH) {
+            throw new IllegalArgumentException("Epoint takes an order_id of 1 to %d characters, not %s"
+                    .formatted(MAX_ORDER_ID_LENGTH, orderId == null ? "none" : orderId.length()));
+        }
     }
 
     private static void putIfPresent(Map<String, Object> parameters, String name, Object value) {

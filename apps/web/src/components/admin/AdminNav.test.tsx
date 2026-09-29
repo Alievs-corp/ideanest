@@ -106,6 +106,23 @@ describe('the console rail', () => {
     expect(rail.className).toContain('lg:-mx-1');
   });
 
+  /**
+   * #177. Below the breakpoint the list, not the rail, is the scroll container, and it clipped
+   * the first link's ring on the left and the last link's on the right. It pads its own sides
+   * and gives them back there, and resets above the breakpoint where the rail does it instead.
+   */
+  it('keeps room for the focus ring on the phone row too', () => {
+    renderRail(ADMINISTRATOR);
+
+    const row = screen.getByRole('navigation', { name: COPY.navLabel }).querySelector('ul') as HTMLElement;
+    expect(row).toHaveClass('overflow-x-auto');
+    expect(row).toHaveClass('px-1');
+    expect(row).toHaveClass('-mx-1');
+    expect(row).toHaveClass('pb-2');
+    expect(row).toHaveClass('lg:px-0');
+    expect(row).toHaveClass('lg:mx-0');
+  });
+
   it('still draws every destination for a reader who holds every capability', () => {
     renderRail(ADMINISTRATOR);
 

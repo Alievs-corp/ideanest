@@ -2021,7 +2021,8 @@
           "PLATFORM_ERROR": "Our mistake",
           "DISPUTE_CONCEDED": "A chargeback we did not contest",
           "FRAUD": "Not the cardholder",
-          "RAISE_NOT_APPLIED": "A raise that could not be applied"
+          "RAISE_NOT_APPLIED": "A raise that could not be applied",
+          "CHARGEBACK": "Returned through a chargeback"
         }
       },
       "disputes": {

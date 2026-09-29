@@ -130,6 +130,15 @@ public class Payout {
         this.idempotencyKey = Objects.requireNonNull(idempotencyKey, "idempotencyKey");
     }
 
+    /**
+     * The idempotency key a payout is sent under, which Epoint's {@code /refund-request} also takes as
+     * its {@code order_id}: why it was priced, the campaign, and when. At most 65 characters for the
+     * purposes in use, inside Epoint's 255 (#178).
+     */
+    public static String idempotencyKeyOf(String purpose, UUID projectId, Instant at) {
+        return purpose + "-" + projectId + "-" + at.toEpochMilli();
+    }
+
     /** A figure worked out and not yet payable. */
     public static Payout calculated(
             UUID projectId,

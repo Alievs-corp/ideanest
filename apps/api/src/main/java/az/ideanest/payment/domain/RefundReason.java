@@ -71,5 +71,17 @@ public enum RefundReason {
      * gone. The money bought nothing, so the platform returns it on its own, the way it returns a
      * failed campaign's pledges: no member of staff decides it, and V83 allows it without an author.
      */
-    RAISE_NOT_APPLIED
+    RAISE_NOT_APPLIED,
+
+    /**
+     * #175: the card network took the money back — a chargeback lost or conceded.
+     *
+     * <p>Never sent to a provider and never issued by a person: {@code DisputeService} records it,
+     * already {@code SUCCEEDED}, when the case is resolved against the platform. It is a refund row
+     * at all so that every read that asks what of a charge has gone back — the overdraft check, the
+     * per-charge remainder, the campaign-refunds sweep, the payout's refunded figure — counts it
+     * without knowing chargebacks exist. Without it the same money was refundable a second time.
+     * Its own code, not {@link #DISPUTE_CONCEDED}: that one is a refund the platform chose to send.
+     */
+    CHARGEBACK
 }

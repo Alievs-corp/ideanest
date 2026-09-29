@@ -990,6 +990,15 @@ sequenceDiagram
 >    `version`. The transaction commits, and then the provider's page is opened for the
 >    difference through the same `PaymentPage` the confirmation uses, under an idempotency key
 >    derived from the raise (`pledge-raise-{id}`), which is also the provider's order identifier.
+>    **Epoint's `order_id` limit is 255 characters (#178)** — "Unique order ID in your application.
+>    Max 255 characters." on `/request` and `/refund-request` alike
+>    (<https://developer.epoint.az/en/checkout/request>,
+>    <https://developer.epoint.az/en/refund/refund-request>, read 2026-09-29; the 2022 API v1 PDF says
+>    the same). Every key sent as one fits with room to spare: a pledge's payment page uses the
+>    backer's `Idempotency-Key`, a canonical UUID (36); a raise's `pledge-raise-{uuid}` (49); a payout
+>    `{payout|withdrawal|recalculated}-{projectId}-{epochMillis}` (at most 65). So no key was shortened.
+>    `EpointPaymentProvider.MAX_ORDER_ID_LENGTH` refuses a longer one before any request, and
+>    `EpointOrderIdTests` builds each kind of key with the code that builds it and holds it to the limit.
 >    If no page can be opened nothing is held: under the endpoint the prepare and the page share the
 >    idempotency store's transaction, so the raise and its hold roll back with the refusal (a caller
 >    outside one gets an `ABANDONED` raise and its hold given back at once). The page's address is
@@ -4218,6 +4227,18 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > stays `REQUESTED` — counted as gone, so nothing is sent twice — with `refunds.review_reason` (V83)
 > saying why, is logged at `ERROR`, and is no longer asked about. It shows in the console's
 > `REQUESTED` list; settling it is a person's job, and no screen does that yet.
+>
+> **An unreachable provider is an unknown outcome, not a failure (#176).** A reversal whose call
+> ended `ProviderUnavailableException` — a timeout, a dropped connection, an answer nobody can read —
+> may have been carried out, and Epoint's `/reverse` has no duplicate protection. Such a refund
+> (campaign or staff) is no longer recorded `FAILED` with `provider_unreachable`: it stays
+> `REQUESTED`, so it counts as gone on every path — the sweep does not offer its charge, and a second
+> staff refund of the same money finds nothing left (409) — until the reconciliation above asks the
+> provider after `unresolved-after`. Only a payment the provider still reports paid fails it, and only
+> then does the sweep send it again, after `retry-after`. The staff endpoint answers 200 with
+> `state: REQUESTED` and no failure code: pending, not refused. `FAILED` now means refused by the
+> provider, found still paid by the reconciliation, or never sent (charge or provider missing,
+> `not_sent`).
 
 ### 9.8 Chargebacks
 
@@ -4243,6 +4264,23 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > debt as large as the payout leaves no payout: a withdrawal applies it all at once, and finance's
 > calculation answers nothing to pay. Reinstating the account once the debt is settled is a staff
 > action. Epoint documents no chargeback webhook, so how its chargebacks reach `disputes` is still open.
+>
+> **A lost chargeback is a refund row (#175).** The loss was recorded only as a `REFUND` transaction
+> and its posting, while every read that decides what of a charge is still refundable sums `refunds`:
+> the staff overdraft check, the per-charge remainder (#171), the `campaign-refunds` sweep, an upheld
+> backer dispute, and the payout's refunded figure. So money the network had taken back was still
+> offered, and a failed campaign or a member of staff paid the backer twice. Resolving `LOST` or
+> `CONCEDED` now also writes, under the pledge's row lock and in the same transaction, a `refunds` row
+> with reason `CHARGEBACK` (V84), already `SUCCEEDED`, against the disputed charge, pointing at that
+> transaction, authored by the administrator who resolved the case, keyed `chargeback-{disputeId}`.
+> Nothing is sent. Every path counts it without knowing chargebacks exist: a charge taken back in full
+> has nothing left, one taken back in part is refunded only for the rest, and a calculated payout that
+> did not yet count it is cancelled at send (`figuresMoved`) rather than paying the creator money the
+> network took. When it leaves nothing on the pledge, the pledge moves `COLLECTED → CHARGEBACK` and
+> leaves its campaign's totals, as a full refund does; when a refund later takes the rest, `REFUNDED`.
+> `CHARGEBACK` cannot be issued through `POST /v1/admin/refunds` (400 `REFUND_REASON_NOT_ISSUABLE`).
+> V84 backfills the row for losses recorded before it (from their `dispute-{id}` transaction; skipped
+> when the resolver's account is gone) and leaves those pledges' states for a person.
 >
 > **Built (#44), the screens.** A paid pledge's page offers "Dispute this payment" behind one press;
 > the reason goes to `POST /v1/pledges/{id}/disputes`, and `DISPUTE_WINDOW_CLOSED` and

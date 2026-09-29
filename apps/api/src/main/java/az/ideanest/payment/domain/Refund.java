@@ -160,6 +160,40 @@ public class Refund {
                 idempotencyKey);
     }
 
+    /**
+     * #175: the card network took this charge back — a chargeback lost or conceded, recorded when
+     * the case is resolved.
+     *
+     * <p>Born {@code SUCCEEDED}, with the {@code REFUND} transaction the loss recorded, because nothing
+     * is sent: the money has already gone. {@code resolvedBy} is the member of staff who resolved the
+     * case, so it has an author like every refund a person caused. Not a full refund: nobody decided an
+     * amount, the network did, and whether the pledge has anything left is read from what went back.
+     */
+    public static Refund chargeback(
+            UUID pledgeId,
+            UUID projectId,
+            UUID chargeTransactionId,
+            Money amount,
+            String detail,
+            UUID resolvedBy,
+            String idempotencyKey,
+            UUID refundTransactionId,
+            Instant at) {
+
+        Refund refund = new Refund(
+                pledgeId,
+                projectId,
+                Objects.requireNonNull(chargeTransactionId, "chargeTransactionId"),
+                amount,
+                false,
+                RefundReason.CHARGEBACK,
+                detail,
+                Objects.requireNonNull(resolvedBy, "resolvedBy"),
+                idempotencyKey);
+        refund.succeeded(refundTransactionId, at);
+        return refund;
+    }
+
     /** The provider took it. */
     public void succeeded(UUID refundTransactionId, Instant at) {
         this.state = RefundState.SUCCEEDED;
@@ -171,7 +205,11 @@ public class Refund {
     }
 
     /**
-     * The provider refused, or could not be reached.
+     * The provider refused, or the refund never reached it.
+     *
+     * <p><strong>Not a provider that could not be reached (#176).</strong> A call whose answer is lost
+     * may have been carried out, and a {@code FAILED} row is money the sweep offers again; such a refund
+     * stays {@link RefundState#REQUESTED} until the provider's status of the payment says what happened.
      *
      * <p>Terminal for this row. A retry is a new {@link #requested} row with a new
      * idempotency key, because it is a new decision — and because reusing the key would

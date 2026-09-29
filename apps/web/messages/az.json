@@ -2021,7 +2021,8 @@
           "PLATFORM_ERROR": "Bizim səhvimiz",
           "DISPUTE_CONCEDED": "Mübahisə etmədiyimiz geri tələb",
           "FRAUD": "Kart sahibi deyil",
-          "RAISE_NOT_APPLIED": "Tətbiq oluna bilməyən artırma"
+          "RAISE_NOT_APPLIED": "Tətbiq oluna bilməyən artırma",
+          "CHARGEBACK": "Geri tələblə qaytarıldı"
         }
       },
       "disputes": {

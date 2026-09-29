@@ -189,7 +189,7 @@ public class PayoutService {
                 breakdown.scheduleId(),
                 now.plus(properties.hold()),
                 required,
-                "payout-" + projectId + "-" + now.toEpochMilli());
+                Payout.idempotencyKeyOf("payout", projectId, now));
         if (withheld.isPositive()) {
             calculating.withholdDebt(withheld);
         }

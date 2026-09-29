@@ -158,7 +158,7 @@ public class WithdrawalPayouts {
                 breakdown.scheduleId(),
                 payableAt,
                 service.approvalsRequiredFor(net),
-                why + "-" + projectId + "-" + now.toEpochMilli());
+                Payout.idempotencyKeyOf(why, projectId, now));
         if (withheld.isPositive()) {
             priced.withholdDebt(withheld);
         }

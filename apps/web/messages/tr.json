@@ -2021,7 +2021,8 @@
           "PLATFORM_ERROR": "Bizim hatamız",
           "DISPUTE_CONCEDED": "İtiraz etmediğimiz bir ters ibraz",
           "FRAUD": "Kart sahibi değil",
-          "RAISE_NOT_APPLIED": "Uygulanamayan bir artırma"
+          "RAISE_NOT_APPLIED": "Uygulanamayan bir artırma",
+          "CHARGEBACK": "Ters ibrazla iade edildi"
         }
       },
       "disputes": {

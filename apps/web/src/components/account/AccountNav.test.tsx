@@ -120,6 +120,30 @@ describe('AccountNav', () => {
     expect(hrefs).toEqual(ACCOUNT_LINKS.map((link) => `/en${link.href}`));
   });
 
+  /**
+   * #177. Below the breakpoint the list is a scroll container, and the ring (four pixels outside
+   * the link: `theme.css`'s unlayered `:focus-visible` rule) was clipped on the first link's
+   * left and the last link's right. The list pads its sides and gives them back there, and
+   * resets above the breakpoint, where the rail's own `lg:-mx-1 lg:px-1` makes the room.
+   */
+  it('keeps room for the focus ring on the phone row', () => {
+    renderNav();
+
+    const nav = screen.getByRole('navigation', { name: NAV_LABELS.en });
+    const row = nav.querySelector('ul') as HTMLElement;
+    expect(row).toHaveClass('overflow-x-auto');
+    expect(row).toHaveClass('px-1');
+    expect(row).toHaveClass('-mx-1');
+    expect(row).toHaveClass('pb-2');
+    expect(row).toHaveClass('lg:px-0');
+    expect(row).toHaveClass('lg:mx-0');
+    expect(nav.className).toContain('lg:px-1');
+    expect(nav.className).toContain('lg:-mx-1');
+    for (const link of within(nav).getAllByRole('link')) {
+      expect(link).toHaveClass('focus-visible:outline-offset-2');
+    }
+  });
+
   it('takes its words from the catalogue, in English', () => {
     renderNav('en');
 

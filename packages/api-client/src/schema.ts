@@ -5036,7 +5036,7 @@ export interface components {
             /** Format: uuid */
             pledgeId: string;
             /** @enum {string} */
-            reason: "BACKER_REQUEST" | "CAMPAIGN_HALTED" | "CAMPAIGN_FAILED" | "FULFILMENT_FAILURE" | "DUPLICATE_CHARGE" | "PLATFORM_ERROR" | "DISPUTE_CONCEDED" | "FRAUD" | "RAISE_NOT_APPLIED";
+            reason: "BACKER_REQUEST" | "CAMPAIGN_HALTED" | "CAMPAIGN_FAILED" | "FULFILMENT_FAILURE" | "DUPLICATE_CHARGE" | "PLATFORM_ERROR" | "DISPUTE_CONCEDED" | "FRAUD" | "RAISE_NOT_APPLIED" | "CHARGEBACK";
         };
         Item: {
             creatorSlug?: string;
@@ -5918,7 +5918,7 @@ export interface components {
             /** Format: uuid */
             projectId?: string;
             /** @enum {string} */
-            reason?: "BACKER_REQUEST" | "CAMPAIGN_HALTED" | "CAMPAIGN_FAILED" | "FULFILMENT_FAILURE" | "DUPLICATE_CHARGE" | "PLATFORM_ERROR" | "DISPUTE_CONCEDED" | "FRAUD" | "RAISE_NOT_APPLIED";
+            reason?: "BACKER_REQUEST" | "CAMPAIGN_HALTED" | "CAMPAIGN_FAILED" | "FULFILMENT_FAILURE" | "DUPLICATE_CHARGE" | "PLATFORM_ERROR" | "DISPUTE_CONCEDED" | "FRAUD" | "RAISE_NOT_APPLIED" | "CHARGEBACK";
             /** Format: uuid */
             refundTransactionId?: string;
             /** Format: date-time */

@@ -16,7 +16,13 @@ package az.ideanest.payment.domain;
  */
 public enum RefundState {
 
-    /** Decided and recorded, not yet sent. */
+    /**
+     * Decided and recorded, and either not yet sent or sent without an answer.
+     *
+     * <p>Since #176 the second case includes a provider that could not be reached: whether it reversed
+     * the payment is unknown, so the refund still counts as gone, nothing is sent again, and the
+     * reconciliation settles it from the provider's status of the payment.
+     */
     REQUESTED,
 
     /**
@@ -30,6 +36,9 @@ public enum RefundState {
      */
     SUCCEEDED,
 
-    /** The provider refused, or could not be reached. Terminal for this row. */
+    /**
+     * The provider refused, the reconciliation found the payment still paid, or the refund could not
+     * be sent at all. Terminal for this row. Never "unreachable" (#176): that outcome is unknown.
+     */
     FAILED
 }
