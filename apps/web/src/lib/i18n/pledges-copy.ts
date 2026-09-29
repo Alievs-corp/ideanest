@@ -80,9 +80,14 @@ export interface PledgeListCopy {
   readonly cancelledAt: string;
   /** Carries `{time}`. */
   readonly confirmedAt: string;
-  /** Not "paid": §9.2 moves no money at confirmation, and collection is epic #59's. */
-  readonly collected: string;
-  readonly toBeCollected: string;
+  /**
+   * Beside the total of a pledge that has been paid for — `COLLECTED` or `FULFILLED`. Under
+   * IDN-EXT-01 a pledge is charged when it is confirmed (#131); `toBeCollected`, which told
+   * backers the money would be taken when the campaign closed, is gone.
+   */
+  readonly charged: string;
+  /** Beside a pledge that ended before anything was taken — an abandoned or expired checkout. */
+  readonly notCharged: string;
   readonly loadingMore: string;
   readonly showMore: string;
   readonly nextPageFailed: string;
@@ -102,8 +107,8 @@ export function pledgeListCopyFrom(t: PledgesTranslator): PledgeListCopy {
     byCreator: String(t.raw('list.byCreator')),
     cancelledAt: String(t.raw('list.cancelledAt')),
     confirmedAt: String(t.raw('list.confirmedAt')),
-    collected: t('list.collected'),
-    toBeCollected: t('list.toBeCollected'),
+    charged: t('list.charged'),
+    notCharged: t('list.notCharged'),
     loadingMore: t('list.loadingMore'),
     showMore: t('list.showMore'),
     nextPageFailed: t('list.nextPageFailed'),

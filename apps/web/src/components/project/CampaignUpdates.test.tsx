@@ -2,9 +2,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { CampaignUpdate, CampaignUpdatePage } from '../../lib/community/updates';
 import { CampaignUpdates } from './CampaignUpdates';
-import CATALOGUE from '../../../messages/en.json';
 import { resolveServerTree } from '../../test-support/server-tree';
 import { expectNoViolations } from '../../test-axe';
+import { translatorFor } from '../../test-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+
+/** `campaign.updates.number`, filled the way the catalogue fills it — #142, not retyped English. */
+const updateLabel = (number: number) =>
+  fillPlaceholders(String(translatorFor('campaign.updates').raw('number')), { number: String(number) });
 
 /*
  * The real catalogue, through next-intl's own formatter.
@@ -15,11 +20,18 @@ import { expectNoViolations } from '../../test-axe';
  * against `messages/en.json` formatted the way the application formats it is what makes this
  * suite fail when a translation is edited to something the component no longer draws.
  */
+/* The route's language, switchable per test: #142's label was English in every language. */
+const route = vi.hoisted(() => ({ locale: 'en' as 'en' | 'ru' }));
+
 vi.mock('next-intl/server', async () => {
   const { createTranslator } = await import('next-intl');
+  const CATALOGUES = {
+    en: (await import('../../../messages/en.json')).default,
+    ru: (await import('../../../messages/ru.json')).default,
+  };
 
   return {
-    getLocale: async () => 'en',
+    getLocale: async () => route.locale,
     /*
      * `namespace` is a plain string here and a union of every valid path in next-intl's own
      * types. The cast is at the mock's edge rather than at each call: what a component asks
@@ -28,8 +40,8 @@ vi.mock('next-intl/server', async () => {
      */
     getTranslations: async (namespace: string) =>
       createTranslator({
-        locale: 'en',
-        messages: CATALOGUE,
+        locale: route.locale,
+        messages: CATALOGUES[route.locale],
         namespace: namespace as never,
       }),
   };
@@ -72,7 +84,10 @@ function page(overrides: Partial<CampaignUpdatePage> = {}): CampaignUpdatePage {
   return { updates: [update()], nextCursor: null, ...overrides };
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  route.locale = 'en';
+});
 
 describe('the updates tab', () => {
   it('prints the number the service allocated rather than the position in the list', async () => {
@@ -86,9 +101,21 @@ describe('the updates tab', () => {
       ),
     );
 
-    expect(screen.getByText('Update 7')).toBeInTheDocument();
-    expect(screen.getByText('Update 2')).toBeInTheDocument();
-    expect(screen.queryByText('Update 1')).not.toBeInTheDocument();
+    expect(screen.getByText(updateLabel(7))).toBeInTheDocument();
+    expect(screen.getByText(updateLabel(2))).toBeInTheDocument();
+    expect(screen.queryByText(updateLabel(1))).not.toBeInTheDocument();
+  });
+
+  it('labels the update in the route’s language rather than in English (#142)', async () => {
+    route.locale = 'ru';
+    render(
+      await resolveServerTree(
+        <CampaignUpdates page={page({ updates: [update({ number: 7 })] })} olderHref={null} paged={false} />,
+      ),
+    );
+
+    expect(screen.getByText('Обновление 7')).toBeInTheDocument();
+    expect(screen.queryByText(updateLabel(7))).not.toBeInTheDocument();
   });
 
   it('gives every update a heading and a machine-readable publication date', async () => {

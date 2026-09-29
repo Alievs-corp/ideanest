@@ -409,14 +409,14 @@
         "loading": "Destekleriniz yükleniyor",
         "failedTitle": "Destekleriniz yüklenemedi",
         "emptyTitle": "Henüz hiçbir şeyi desteklemediniz",
-        "emptyBody": "Verdiğiniz her destek burada görünür — ne seçtiğiniz ve kampanya kapandığında ne kadar tahsil edileceğiyle birlikte.",
+        "emptyBody": "Verdiğiniz her destek burada görünür — ne seçtiğiniz ve ne kadar tahsil edildiğiyle birlikte. Bir destek onu onayladığınız anda tahsil edilir; kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse tamamı iade edilir.",
         "browse": "Kampanyalara göz at",
         "noReward": "Ödülsüz destek",
         "byCreator": "yaratıcı: {creator}",
         "cancelledAt": "{time} tarihinde iptal edildi",
         "confirmedAt": "{time} tarihinde onaylandı",
-        "collected": "tahsil edildi",
-        "toBeCollected": "kampanya kapandığında tahsil edilecek",
+        "charged": "tahsil edildi",
+        "notCharged": "tahsil edilmedi",
         "loadingMore": "Yükleniyor",
         "showMore": "Daha fazla göster",
         "nextPageFailed": "Sonraki sayfa yüklenmedi"
@@ -440,13 +440,13 @@
       "editor": {
         "loadingRewards": "Ödüller yükleniyor",
         "heading": "Bu desteği değiştir",
-        "intro": "Seçtiklerinizi kampanyanın son tarihine kadar değiştirebilirsiniz. Henüz hiçbir tahsilat yapılmadı, bu yüzden bir düzenleme farkı faturalamaz, desteğin tamamını yeniden fiyatlar.",
+        "intro": "Seçtiklerinizi kampanyanın son tarihine kadar değiştirebilirsiniz. Onaylanmış bir destek yalnızca yükseltilebilir, düşürülemez. Bir düzenleme desteğin tamamını yeniden fiyatlar ve kaydetmek kartınızdan tahsilat yapmaz.",
         "anonymousHint": "Adınız kampanyanın herkese açık destekçi listesinde ve profilinizde görünmez. Yaratıcı yine de görür, çünkü ödülünüzü göndermesi gerekir.",
         "saving": "Kaydediliyor",
         "save": "Değişiklikleri kaydet",
         "noChanges": "Henüz hiçbir şey değiştirilmedi.",
         "savedTitle": "Desteğiniz güncellendi",
-        "savedBody": "Yukarıdaki rakamlar bu sayfanın aritmetiği değil, servisin kendisinindir. Hiçbir tahsilat yapılmadı — tahsilat kampanya başarıyla kapandığında olur."
+        "savedBody": "Yukarıdaki rakamlar bu sayfanın aritmetiği değil, servisin kendisinindir. Değişikliği kaydetmek hiçbir tahsilat yapmadı. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse her destekçiye tam iade yapılır."
       }
     },
     "surveys": {
@@ -3089,6 +3089,8 @@
       "rangeInvalid": "Tutarı rakamla yazın, örneğin 2500 ya da 2500.00.",
       "rangeUnordered": "En düşük tutar en yüksekten büyük olamaz.",
       "subcategoriesOf": "{category} alt bölümleri",
+      "noTags": "Bu filtrelere uyan kampanyalarda etiket yok.",
+      "tagsHint": "Birden fazla etiket seçerseniz yalnızca hepsini taşıyan kampanyalar gösterilir.",
       "loading": "Projeler yükleniyor",
       "loadingMore": "Daha fazla proje yükleniyor",
       "showMore": "Daha fazla proje göster",
@@ -3240,6 +3242,7 @@
     },
     "search": {
       "title": "Arama",
+      "metaDescription": "IdeaNest'teki tüm kampanyalarda arama yapın.",
       "resultsTitle": "«{query}» için sonuçlar",
       "prompt": "Aradığınızı yazın — bir kampanya, bir kategori ya da bir yaratıcı. Ya da <feed>tüm akışa göz atın</feed> ve filtrelerle daraltın.",
       "count": "{count, plural, =0 {Hiçbir kampanya eşleşmedi} other {# kampanya}}",
@@ -3247,6 +3250,8 @@
       "emptyTitle": "«{query}» ile hiçbir şey eşleşmedi",
       "emptyBody": "Yazımı kontrol edin ya da daha kısa bir kelime deneyin. Akış, ifadeye göre değil kategoriye, duruma ve tutara göre daraltılabilir.",
       "emptyAction": "Akışa göz atın",
+      "moreInFeed": "Akışta daha fazla sonuç görün",
+      "refineInFeed": "Bu sonuçları akışta daraltın",
       "gridLabel": "«{query}» için arama sonuçları"
     }
   },
@@ -3586,7 +3591,34 @@
     },
     "countdown": {
       "label": "Bu kampanyayı desteklemek için kalan süre: {time}",
-      "left": "{time} kaldı"
+      "left": "{time} kaldı",
+      "units": {
+        "day": {
+          "one": "{count} gün",
+          "few": "{count} gün",
+          "many": "{count} gün",
+          "other": "{count} gün"
+        },
+        "hour": {
+          "one": "{count} saat",
+          "few": "{count} saat",
+          "many": "{count} saat",
+          "other": "{count} saat"
+        },
+        "minute": {
+          "one": "{count} dakika",
+          "few": "{count} dakika",
+          "many": "{count} dakika",
+          "other": "{count} dakika"
+        },
+        "second": {
+          "one": "{count} saniye",
+          "few": "{count} saniye",
+          "many": "{count} saniye",
+          "other": "{count} saniye"
+        }
+      },
+      "pair": "{larger}, {smaller}"
     },
     "back": {
       "cta": "Bu kampanyayı destekle"
@@ -3604,6 +3636,9 @@
     "creator": {
       "heading": "Yaratıcı hakkında",
       "others": "Diğer kampanyaları"
+    },
+    "risks": {
+      "heading": "Riskler ve zorluklar"
     },
     "trust": {
       "heading": "Burada fonlama nasıl işler",
@@ -3641,7 +3676,8 @@
       "older": "Daha eski güncellemeler",
       "noOlder": "Daha eski güncelleme yok.",
       "none": "Bu kampanya henüz güncelleme paylaşmadı. Paylaştığında destekçilere e-postayla haber verilir.",
-      "backersOnly": "Yalnızca destekçilere"
+      "backersOnly": "Yalnızca destekçilere",
+      "number": "Güncelleme {number}"
     },
     "owner": {
       "label": "Kampanyanız",
@@ -3666,10 +3702,27 @@
       "replyLabel": "Yanıtınız",
       "withdraw": "Geri çek",
       "withdrawWarning": "Geri çekmek, yorumun kaldırıldığını belirten bir not bırakır. Ona verilen yanıtlar kalır ve yorum ne düzenlenebilir ne de geri getirilebilir.",
+      "withdrawConfirm": "Evet, geri çek",
+      "withdrawing": "Geri çekiliyor",
       "keep": "Kalsın",
       "postComment": "Yorumu gönder",
       "postReply": "Yanıtı gönder",
-      "posting": "Gönderiliyor"
+      "posting": "Gönderiliyor",
+      "failures": {
+        "emptyBody": "Önce bir şey yazın.",
+        "sessionExpired": "Oturumunuzun süresi doldu. Giriş yapıp tekrar deneyin.",
+        "rateLimited": "Kısa sürede çok fazla yorum yapıldı. Birkaç dakika sonra tekrar deneyin.",
+        "rateLimitedFor": {
+          "one": "Kısa sürede çok fazla yorum yapıldı. Yaklaşık {count} dakika sonra tekrar deneyin.",
+          "few": "Kısa sürede çok fazla yorum yapıldı. Yaklaşık {count} dakika sonra tekrar deneyin.",
+          "many": "Kısa sürede çok fazla yorum yapıldı. Yaklaşık {count} dakika sonra tekrar deneyin.",
+          "other": "Kısa sürede çok fazla yorum yapıldı. Yaklaşık {count} dakika sonra tekrar deneyin."
+        },
+        "notPosted": "Yorum gönderilemedi.",
+        "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
+        "notWithdrawn": "Yorum geri çekilemedi.",
+        "withdrawUnreachable": "Servise ulaşılamadı. Tekrar deneyin."
+      }
     },
     "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Yaratıcı son tarihi bir kez uzatabilir.",
     "prelaunch": {

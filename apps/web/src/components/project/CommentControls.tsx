@@ -109,8 +109,8 @@ export function CommentControls({
     } catch (cause) {
       setError(
         cause instanceof ApiError
-          ? (cause.problem?.detail ?? cause.problem?.title ?? 'That could not be withdrawn.')
-          : 'The service could not be reached. Try again.',
+          ? (cause.problem?.detail ?? cause.problem?.title ?? copy.failures.notWithdrawn)
+          : copy.failures.withdrawUnreachable,
       );
     } finally {
       setBusy(false);
@@ -179,7 +179,7 @@ export function CommentControls({
               onClick={() => void withdraw()}
               className="rounded-sm text-xs font-medium text-danger underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)] disabled:opacity-40"
             >
-              {busy ? 'Withdrawing' : 'Withdraw it'}
+              {busy ? copy.withdrawing : copy.withdrawConfirm}
             </button>
             <button
               type="button"

@@ -1,4 +1,5 @@
 import type { PluralForms } from './plurals';
+import type { CountdownUnits } from '../projects/deadline';
 
 /**
  * The words the campaign page's four client controls draw — issue #324.
@@ -81,7 +82,30 @@ export interface CommentCopy {
   readonly posting: string;
   readonly withdraw: string;
   readonly withdrawWarning: string;
+  /** The confirmation's own button, and what it says while the request is in flight. */
+  readonly withdrawConfirm: string;
+  readonly withdrawing: string;
   readonly keep: string;
+  /**
+   * What the composer and the withdrawal say when a write is refused or cannot be made — #142
+   * found all of them typed into the two components in English. The service's own `detail`
+   * still wins wherever it sends one; these are for the cases it does not.
+   */
+  readonly failures: CommentFailureCopy;
+}
+
+export interface CommentFailureCopy {
+  /** The composer's own refusal of an empty body, before any request is made. */
+  readonly emptyBody: string;
+  readonly sessionExpired: string;
+  /** A 429 with no `retryAfterSeconds`. */
+  readonly rateLimited: string;
+  /** A 429 that says how long: declined against the minutes by `pluralise`, `{count}` filled. */
+  readonly rateLimitedFor: PluralForms;
+  readonly notPosted: string;
+  readonly unreachable: string;
+  readonly notWithdrawn: string;
+  readonly withdrawUnreachable: string;
 }
 
 /**
@@ -135,6 +159,13 @@ export interface LiveFundingCopy {
 export interface CampaignCountdownCopy {
   readonly label: string;
   readonly left: string;
+  /**
+   * The quantity inside `{time}` — four plural groups and the pattern that joins two of them
+   * (#142). It crosses to the browser because the countdown ticks there, and `countdownLabel`
+   * declines each unit with `Intl.PluralRules` rather than with ICU, whose runtime this page
+   * does not ship.
+   */
+  readonly units: CountdownUnits;
 }
 
 export type CampaignTranslator = (key: string) => string;
@@ -188,7 +219,7 @@ export function campaignActionsCopyFrom(t: FundingTranslator): CampaignActionsCo
   };
 }
 
-export function commentCopyFrom(t: CampaignTranslator): CommentCopy {
+export function commentCopyFrom(t: FundingTranslator): CommentCopy {
   return {
     composerLabel: t('composerLabel'),
     signedOut: t('signedOut'),
@@ -202,7 +233,19 @@ export function commentCopyFrom(t: CampaignTranslator): CommentCopy {
     posting: t('posting'),
     withdraw: t('withdraw'),
     withdrawWarning: t('withdrawWarning'),
+    withdrawConfirm: t('withdrawConfirm'),
+    withdrawing: t('withdrawing'),
     keep: t('keep'),
+    failures: {
+      emptyBody: t('failures.emptyBody'),
+      sessionExpired: t('failures.sessionExpired'),
+      rateLimited: t('failures.rateLimited'),
+      rateLimitedFor: t.raw('failures.rateLimitedFor') as PluralForms,
+      notPosted: t('failures.notPosted'),
+      unreachable: t('failures.unreachable'),
+      notWithdrawn: t('failures.notWithdrawn'),
+      withdrawUnreachable: t('failures.withdrawUnreachable'),
+    },
   };
 }
 
@@ -217,5 +260,17 @@ export function liveFundingCopyFrom(t: FundingTranslator): LiveFundingCopy {
 }
 
 export function campaignCountdownCopyFrom(t: FundingTranslator): CampaignCountdownCopy {
-  return { label: String(t.raw('countdown.label')), left: String(t.raw('countdown.left')) };
+  const unit = (key: string) => t.raw(`countdown.units.${key}`) as PluralForms;
+
+  return {
+    label: String(t.raw('countdown.label')),
+    left: String(t.raw('countdown.left')),
+    units: {
+      day: unit('day'),
+      hour: unit('hour'),
+      minute: unit('minute'),
+      second: unit('second'),
+      pair: String(t.raw('countdown.pair')),
+    },
+  };
 }

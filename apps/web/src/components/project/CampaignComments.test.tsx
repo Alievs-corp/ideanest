@@ -13,6 +13,15 @@ import { CampaignComments } from './CampaignComments';
 import CATALOGUE from '../../../messages/en.json';
 import { resolveServerTree } from '../../test-support/server-tree';
 import { expectNoViolations } from '../../test-axe';
+import { ApiError } from '../../lib/api/problem';
+import { commentCopyFrom } from '../../lib/i18n/campaign-copy';
+import { pluralise } from '../../lib/i18n/plurals';
+import { translatorFor } from '../../test-copy';
+import ru from '../../../messages/ru.json';
+import { messageFor } from './CommentComposer';
+
+/** The words the two comment controls draw, built the way the page builds them (#142). */
+const COPY = commentCopyFrom(translatorFor('campaign.comments'));
 
 /*
  * The real catalogue, through next-intl's own formatter.
@@ -308,7 +317,65 @@ describe('writing a comment', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Post comment' }));
 
     expect(postMock).not.toHaveBeenCalled();
-    expect(screen.getByText('Write something first.')).toBeInTheDocument();
+    expect(screen.getByText(COPY.failures.emptyBody)).toBeInTheDocument();
+  });
+
+  /**
+   * #142: the four refusals the composer draws were English literals. Each is asserted through
+   * the catalogue rather than retyped, so what is proved is that the composer asks for them.
+   */
+  it.each([
+    ['an expired session', new ApiError(401), COPY.failures.sessionExpired],
+    ['a rate limit with no retry time', new ApiError(429), COPY.failures.rateLimited],
+    [
+      'a rate limit that says how long',
+      new ApiError(429, { status: 429, retryAfterSeconds: 290 }),
+      pluralise('en', COPY.failures.rateLimitedFor, 5),
+    ],
+    ['a refusal with no words of its own', new ApiError(500), COPY.failures.notPosted],
+    ['a service that never answered', new TypeError('Failed to fetch'), COPY.failures.unreachable],
+  ])('says what went wrong after %s, in the catalogue’s words', async (_case, cause, expected) => {
+    postMock.mockRejectedValue(cause);
+    await renderTab(page([]));
+
+    await userEvent.type(await screen.findByLabelText('Add a comment'), 'When does it ship?');
+    await userEvent.click(screen.getByRole('button', { name: 'Post comment' }));
+
+    expect(await screen.findByText(expected)).toBeInTheDocument();
+  });
+
+  it('prefers the service’s own sentence when it sends one', async () => {
+    postMock.mockRejectedValue(
+      new ApiError(422, { status: 422, detail: 'Links are not allowed in comments.' }),
+    );
+    await renderTab(page([]));
+
+    await userEvent.type(await screen.findByLabelText('Add a comment'), 'See example.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Post comment' }));
+
+    expect(await screen.findByText('Links are not allowed in comments.')).toBeInTheDocument();
+  });
+});
+
+/**
+ * #142: the wait after a rate limit is a count only the browser knows, so it is declined with
+ * `pluralise` — and Russian has three forms for minutes, picked by the last digit.
+ */
+describe('the rate-limit sentence in Russian', () => {
+  const RU = {
+    ...COPY.failures,
+    rateLimitedFor: ru.campaign.comments.failures.rateLimitedFor,
+  };
+
+  it.each([
+    [60, 'примерно через 1 минуту.'],
+    [120, 'примерно через 2 минуты.'],
+    [300, 'примерно через 5 минут.'],
+    [1260, 'примерно через 21 минуту.'],
+  ])('declines %i seconds as the right form of minutes', (seconds, ending) => {
+    const cause = new ApiError(429, { status: 429, retryAfterSeconds: seconds });
+
+    expect(messageFor(cause, RU, 'ru').endsWith(ending)).toBe(true);
   });
 
   it('offers a signed-out reader a sign-in that returns here, not a form', async () => {
@@ -354,6 +421,20 @@ describe('withdrawing a comment', () => {
 
     await waitFor(() => expect(deleteMock).toHaveBeenCalledWith('c1'));
     expect(refresh).toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a refusal with no words of its own', new ApiError(500), COPY.failures.notWithdrawn],
+    ['a service that never answered', new TypeError('Failed to fetch'), COPY.failures.withdrawUnreachable],
+  ])('says so in the catalogue’s words after %s (#142)', async (_case, cause, expected) => {
+    deleteMock.mockRejectedValue(cause);
+    await renderTab(page([thread({ root: comment({ authorId: ACCOUNT.id }) })]));
+
+    await userEvent.click(await screen.findByRole('button', { name: COPY.withdraw }));
+    await userEvent.click(screen.getByRole('button', { name: COPY.withdrawConfirm }));
+
+    expect(await screen.findByText(expected)).toBeInTheDocument();
+    expect(refresh).not.toHaveBeenCalled();
   });
 });
 

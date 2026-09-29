@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { CAMPAIGN_TABS } from '../../lib/projects/tabs';
 import { CampaignTabs } from './CampaignTabs';
-import CATALOGUE from '../../../messages/en.json';
 import { resolveServerTree } from '../../test-support/server-tree';
+import { translatorFor } from '../../test-copy';
 
 /*
  * The real catalogue, through next-intl's own formatter.
@@ -14,11 +14,21 @@ import { resolveServerTree } from '../../test-support/server-tree';
  * against `messages/en.json` formatted the way the application formats it is what makes this
  * suite fail when a translation is edited to something the component no longer draws.
  */
+/*
+ * The route's language, switchable per test. #132 is a defect that English passing could never
+ * show — the labels it replaced were English too — so one test renders the strip in Azerbaijani.
+ */
+const route = vi.hoisted(() => ({ locale: 'en' as 'en' | 'az' }));
+
 vi.mock('next-intl/server', async () => {
   const { createTranslator } = await import('next-intl');
+  const CATALOGUES = {
+    en: (await import('../../../messages/en.json')).default,
+    az: (await import('../../../messages/az.json')).default,
+  };
 
   return {
-    getLocale: async () => 'en',
+    getLocale: async () => route.locale,
     /*
      * `namespace` is a plain string here and a union of every valid path in next-intl's own
      * types. The cast is at the mock's edge rather than at each call: what a component asks
@@ -27,8 +37,8 @@ vi.mock('next-intl/server', async () => {
      */
     getTranslations: async (namespace: string) =>
       createTranslator({
-        locale: 'en',
-        messages: CATALOGUE,
+        locale: route.locale,
+        messages: CATALOGUES[route.locale],
         namespace: namespace as never,
       }),
   };
@@ -61,13 +71,19 @@ vi.mock('next-intl/server', async () => {
 
 const PATH = '/projects/ayan/coffee-table-book';
 
-afterEach(cleanup);
+/** The words the strip must draw, from the catalogue rather than retyped (#132). */
+const TABS = translatorFor('campaign.tabs');
+
+afterEach(() => {
+  cleanup();
+  route.locale = 'en';
+});
 
 describe('the campaign tab strip', () => {
   it('offers the FAQ tab as a link to ?tab=faq', async () => {
     render(await resolveServerTree(<CampaignTabs active="campaign" path={PATH} />));
 
-    expect(screen.getByRole('link', { name: 'FAQ' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: TABS('faq') })).toHaveAttribute(
       'href',
       `/en${PATH}?tab=faq`,
     );
@@ -76,24 +92,42 @@ describe('the campaign tab strip', () => {
   it('publishes every tab the module declares, in that order', async () => {
     render(await resolveServerTree(<CampaignTabs active="campaign" path={PATH} />));
 
-    const names = within(screen.getByRole('navigation', { name: 'Campaign sections' }))
+    const names = within(screen.getByRole('navigation', { name: TABS('label') }))
       .getAllByRole('link')
       .map((link) => link.textContent);
-    expect(names).toEqual(CAMPAIGN_TABS.map((tab) => tab.label));
-    expect(names).toContain('FAQ');
+    expect(names).toEqual(CAMPAIGN_TABS.map((tab) => TABS(tab.id)));
+    expect(names).toContain(TABS('faq'));
+  });
+
+  /**
+   * #132. The labels used to be English literals in `lib/projects/tabs.ts`, so every language
+   * drew "Campaign · Creator · FAQ · Updates · Comments" — and, because the label is the link's
+   * accessible name, a screen reader read English words in an Azerbaijani voice.
+   */
+  it('names every tab in the route’s language, not in English', async () => {
+    route.locale = 'az';
+    render(await resolveServerTree(<CampaignTabs active="campaign" path={PATH} />));
+
+    const names = within(screen.getByRole('navigation', { name: 'Kampaniya bölmələri' }))
+      .getAllByRole('link')
+      .map((link) => link.textContent);
+    expect(names).toEqual(['Kampaniya', 'Müəllif', 'Suallar', 'Yeniliklər', 'Şərhlər']);
+    for (const english of CAMPAIGN_TABS.map((tab) => TABS(tab.id))) {
+      expect(names).not.toContain(english);
+    }
   });
 
   it('gives the default tab the bare path, so one campaign has one address', async () => {
     render(await resolveServerTree(<CampaignTabs active="faq" path={PATH} />));
 
-    expect(screen.getByRole('link', { name: 'Campaign' })).toHaveAttribute('href', `/en${PATH}`);
+    expect(screen.getByRole('link', { name: TABS('campaign') })).toHaveAttribute('href', `/en${PATH}`);
   });
 
   it('marks the tab being read in words rather than in colour alone', async () => {
     render(await resolveServerTree(<CampaignTabs active="faq" path={PATH} />));
 
-    expect(screen.getByRole('link', { name: 'FAQ' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Updates' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('link', { name: TABS('faq') })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: TABS('updates') })).not.toHaveAttribute('aria-current');
   });
 
   /**
@@ -105,7 +139,7 @@ describe('the campaign tab strip', () => {
 
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
     expect(screen.queryAllByRole('tab')).toHaveLength(0);
-    expect(screen.getByRole('navigation', { name: 'Campaign sections' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: TABS('label') })).toBeInTheDocument();
   });
 
   /**

@@ -99,7 +99,12 @@ export async function CampaignTabs({ active, path }: CampaignTabsProps) {
                     : 'border-transparent text-white/64 hover:border-white/16 hover:text-white',
                 ].join(' ')}
               >
-                {tab.label}
+                {/*
+                  #132: the catalogue's word for the tab, in the route's language. It is also
+                  the link's accessible name, so an English label here was an English word read
+                  in an Azerbaijani voice.
+                */}
+                {t(tab.id)}
               </Link>
             </li>
           );
