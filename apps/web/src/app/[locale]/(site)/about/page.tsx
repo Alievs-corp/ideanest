@@ -46,6 +46,16 @@ export async function generateMetadata({
  * **No figures.** There is no honest aggregate to publish — no number of campaigns funded, no
  * total raised — and a page that invented one would be inventing the only thing on it a reader
  * could not verify.
+ *
+ * <h2>No fee rate either, and that is issue #145</h2>
+ *
+ * The cost section used to print "15%… the creator receives 85%" from the message catalogue,
+ * while `/pricing` and every fee disclosure read the rate in force from `fee_schedules`. The day
+ * the rate changed, this page would have contradicted Pricing, and nothing checks a catalogue
+ * against a table. So the section names the two fees and links to Pricing for the numbers
+ * rather than reading the disclosure here: this page stays a route with no fetch, and a page
+ * that states no rate cannot state a different one. `about.test.tsx` pins the absence of a
+ * percentage in all four languages.
  */
 /**
  * The two shapes a sentence on a static page takes besides plain text.
@@ -72,7 +82,16 @@ export default async function AboutPage() {
 
       <h2>{t('cost.heading')}</h2>
       <ul>
-        <li>{t.rich('cost.successful', { b: BOLD })}</li>
+        <li>
+          {t.rich('cost.successful', {
+            b: BOLD,
+            pricing: (chunks) => (
+              <Link href="/pricing" className={INLINE_LINK}>
+                {chunks}
+              </Link>
+            ),
+          })}
+        </li>
         <li>{t.rich('cost.unsuccessful', { b: BOLD })}</li>
       </ul>
       <p>{t('cost.note')}</p>

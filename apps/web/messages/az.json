@@ -3341,6 +3341,11 @@
       "charged": "Pul növbəti səhifədə tutulur. Ödənişi başa çatdırmasanız, heç nə tutulmur və saxlama müddəti bitəndə mükafat buraxılır.",
       "rule": "Kampaniya hədəfinin 80%-ini topladıqda uğurlu sayılır. Müəllif son tarixi bir dəfə uzada bilər və bunun üçün sizdən razılıq istənmir."
     },
+    "agreementUnavailable": {
+      "title": "Dəstəyə hazırda başlamaq mümkün olmadı",
+      "body": "Dəstəkçi müqaviləsini hazırda yükləmək mümkün olmadı, onsuz isə dəstək təsdiqlənmir. Heç nə rezerv olunmayıb və heç nə tutulmayıb. Bir azdan yenidən cəhd edin.",
+      "action": "Yenidən cəhd edin"
+    },
     "risk": {
       "heading": "Dəstək olmaq nə deməkdir",
       "body": "Dəstək satın almaq deyil. Siz bir cəhdi maliyyələşdirirsiniz və mükafata zəmanət yoxdur — kampaniya gecikə, dəyişə və ya heç çatmaya bilər. Mükafatı sizə IdeaNest deyil, kampaniyanın müəllifi borcludur.",
@@ -4574,9 +4579,9 @@
       },
       "cost": {
         "heading": "Nəyə başa gəlir",
-        "successful": "<b>Uğurlu kampaniya</b> hər vəsait çıxarışının 15 faizini ödəyir — bankın və ödəniş provayderinin komissiyaları buraya daxildir — müəllif isə 85 faizini alır.",
+        "successful": "<b>Uğurlu kampaniya</b> yığdığı vəsaitdən platforma komissiyasını və ödəniş provayderinin emal komissiyasını ödəyir, qalanı isə müəllifə çatır. Qüvvədə olan dərəcələr <pricing>Planlar və qiymətlər</pricing> səhifəsində göstərilir və platformanın faktiki tətbiq etdiyi cədvəldən oxunur.",
         "unsuccessful": "<b>Uğursuz kampaniya</b> heç nə ödəmir. Nə yerləşdirmə haqqı, nə platforma komissiyası, nə də emal haqqı.",
-        "note": "Dərəcələr kodda deyil, konfiqurasiyada saxlanılır, ona görə ayrıca kateqoriya və ya fərdi razılaşma başqa dərəcə daşıya bilər. Yuxarıdakı dərəcə standart cedvəldir."
+        "note": "Dərəcələr kodda deyil, konfiqurasiyada saxlanılır, ona görə ayrıca kateqoriya və ya fərdi razılaşma başqa dərəcə daşıya bilər. Planlar və qiymətlər səhifəsi qüvvədə olan standart cədvəli göstərir."
       },
       "notAPurchase": {
         "heading": "Dəstək almaq deyil",
@@ -4669,6 +4674,12 @@
       "governingLanguage": "Bu sənəd hələ sizin dilinizə tərcümə olunmayıb. Aşağıdakı mətn azərbaycan dilindədir və qüvvədə olan mətn məhz odur.",
       "contentHash": "Bu mətnin SHA-256 xülasəsi: {hash}"
     },
+    "unavailable": {
+      "title": "Bu sənədi yükləmək mümkün olmadı",
+      "indexTitle": "Hüquqi sənədləri yükləmək mümkün olmadı",
+      "body": "IdeaNest-in hüquqi sənədlərini saxlayan xidmət hazırda cavab vermədi. Bu, sənədin dərc olunmadığı demək deyil: bir azdan yenidən cəhd edin.",
+      "action": "Yenidən cəhd edin"
+    },
     "notPublished": {
       "summary": "Bu sənəd hələ dərc olunmayıb.",
       "body": "IdeaNest bu sənədə malik olmalıdır və hələ heç bir versiyasını dərc etməyib. Burada qüvvədə olan heç nə yoxdur və heç bir versiyası qəbul üçün kimsəyə təqdim edilməyib."
@@ -4733,7 +4744,8 @@
       "creatorBody": "Yığılan hər dəstəkdən IdeaNest {platform}, ödəniş provayderi isə {processing} saxlayır, beləliklə dəstəkçilərinizin verdiyi məbləğin {keeps} hissəsi sizə çatır.",
       "fixedFee": "Ödəniş provayderi hər əməliyyat üçün əlavə olaraq {amount} tutur.",
       "twoFees": "Bunlar iki ayrı tutulmadır. IdeaNest-in komissiyası platformanın saxladığıdır; emal komissiyası isə pulu hərəkət etdirən şirkətə gedir və IdeaNest onu heç vaxt almır. Qüvvədə olan dərəcələr yuxarıdakılardır və ödəniş məhz onlarla hesablanır.",
-      "unconfigured": "IdeaNest hələ komissiya cədvəli təyin etməyib, ona görə də bu gün dəstəklərdən heç nə tutulmur. Bu daimi öhdəlik deyil: hər hansı dərəcə təyin olunan kimi burada dərc olunacaq, şərtlər isə yaradıcı müqaviləsində göstərilir."
+      "unconfigured": "IdeaNest hələ komissiya cədvəli təyin etməyib, ona görə də bu gün dəstəklərdən heç nə tutulmur. Bu daimi öhdəlik deyil: hər hansı dərəcə təyin olunan kimi burada dərc olunacaq, şərtlər isə yaradıcı müqaviləsində göstərilir.",
+      "unavailable": "Komissiyanı hazırda yükləmək mümkün olmadı. Bu, heç bir komissiya tutulmadığı demək deyil: qüvvədə olan dərəcə <agreement>yaradıcı müqaviləsində</agreement> göstərilir."
     }
   },
   "dashboard": {

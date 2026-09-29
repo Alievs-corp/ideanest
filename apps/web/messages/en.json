@@ -3341,6 +3341,11 @@
       "charged": "You are charged on the next page. If you do not finish paying, nothing is taken and the reward is released when the hold ends.",
       "rule": "A campaign succeeds at 80% of its goal. Its creator may extend the deadline once, and you are not asked."
     },
+    "agreementUnavailable": {
+      "title": "This pledge could not be started",
+      "body": "The backer agreement could not be loaded just now, and a pledge is not confirmed without it. Nothing has been reserved and nothing has been charged. Try again in a moment.",
+      "action": "Try again"
+    },
     "risk": {
       "heading": "What backing means",
       "body": "A pledge is not a purchase. You are funding an attempt, and a reward is not guaranteed — the campaign may be delayed, may change, or may never arrive. The creator owes you the reward, not IdeaNest.",
@@ -4574,9 +4579,9 @@
       },
       "cost": {
         "heading": "What it costs",
-        "successful": "<b>A successful campaign</b> pays 15% of every withdrawal — the bank’s and the payment provider’s fees are inside it — and the creator receives 85%.",
+        "successful": "<b>A successful campaign</b> pays the platform fee and the payment provider’s processing fee on what it collects, and the creator receives the rest. The rates in force are on the <pricing>Plans and pricing</pricing> page, read from the schedule the platform actually charges.",
         "unsuccessful": "<b>An unsuccessful campaign</b> pays nothing. No listing fee, no platform fee, no processing fee.",
-        "note": "Rates are configuration rather than code, so a category or an individual agreement can carry a different one. The rate above is the standard schedule."
+        "note": "Rates are configuration rather than code, so a category or an individual agreement can carry a different one. The Plans and pricing page shows the standard schedule in force."
       },
       "notAPurchase": {
         "heading": "A pledge is not a purchase",
@@ -4669,6 +4674,12 @@
       "governingLanguage": "This document has not been translated into your language yet. What follows is the Azerbaijani text, which is the one that governs.",
       "contentHash": "SHA-256 of this text: {hash}"
     },
+    "unavailable": {
+      "title": "This document could not be loaded",
+      "indexTitle": "The legal documents could not be loaded",
+      "body": "The service that holds IdeaNest’s legal documents did not answer just now. That is not the same as a document not being published: try again in a moment.",
+      "action": "Try again"
+    },
     "notPublished": {
       "summary": "This document has not been published yet.",
       "body": "IdeaNest is required to have this document and has not published a version of it. Nothing here is in force, and no version of it has been presented to anybody for acceptance."
@@ -4733,7 +4744,8 @@
       "creatorBody": "IdeaNest keeps {platform} of every pledge collected and the payment provider keeps {processing}, so you receive {keeps} of what your backers pledge.",
       "fixedFee": "The payment provider also charges {amount} per transaction.",
       "twoFees": "These are two separate charges. IdeaNest’s fee is what the platform keeps; the processing fee goes to the company that moves the money, and IdeaNest never receives it. The rates in force are the ones above, and they are the rates a payout is calculated with.",
-      "unconfigured": "IdeaNest has not set a fee schedule, so nothing is being deducted from pledges today. This is not a permanent commitment: the rates are published here the moment any are set, and the creator agreement is where the terms are stated."
+      "unconfigured": "IdeaNest has not set a fee schedule, so nothing is being deducted from pledges today. This is not a permanent commitment: the rates are published here the moment any are set, and the creator agreement is where the terms are stated.",
+      "unavailable": "The fee could not be loaded just now. This does not mean that no fee is charged: the rate in force is stated in the <agreement>creator agreement</agreement>."
     }
   },
   "dashboard": {

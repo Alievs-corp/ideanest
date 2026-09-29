@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { LegalDocumentPage } from '../../../../../../../components/content/LegalDocumentPage';
-import { isLegalDocumentSlug } from '../../../../../../../lib/legal/api';
+import { LegalUnavailable } from '../../../../../../../components/content/LegalUnavailable';
+import { isLegalDocumentSlug, legalPath } from '../../../../../../../lib/legal/api';
 import { fetchArchivedLegalDocument } from '../../../../../../../lib/legal/server';
 import { localeOrDefault } from '../../../../../../../lib/i18n/locale';
 import { privatePageMetadata } from '../../../../../../../lib/seo/metadata';
@@ -84,14 +85,21 @@ export default async function ArchivedLegalDocumentRoute({
    * permanent address for a document §22.2 requires, whether or not it has been written, and
    * `/legal/terms-of-use/v/9` is a claim that a ninth version was published. If it was not, the
    * address is wrong and a crawler should stop asking for it.
+   *
+   * Only the service's own 404 says that, though — #147. A read that failed any other way is
+   * the failure state: telling somebody holding an acceptance record for version 3 that version 3
+   * does not exist, because the service was down, is the worst answer this route could give.
    */
-  if (archived === null) notFound();
+  if (archived.state === 'unpublished') notFound();
+  if (archived.state === 'unavailable') {
+    return <LegalUnavailable retryHref={legalPath(document, number)} scope="document" />;
+  }
 
   return (
     <LegalDocumentPage
       slug={document}
       locale={locale}
-      document={archived}
+      document={archived.document}
       archivedVersion={number}
     />
   );

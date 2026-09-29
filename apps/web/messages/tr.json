@@ -3341,6 +3341,11 @@
       "charged": "Ücret bir sonraki sayfada tahsil edilir. Ödemeyi tamamlamazsanız hiçbir şey tahsil edilmez ve ayırma süresi dolduğunda ödül serbest bırakılır.",
       "rule": "Bir kampanya hedefinin %80'ine ulaştığında başarılı sayılır. Yaratıcı son tarihi bir kez uzatabilir ve bunun için size sorulmaz."
     },
+    "agreementUnavailable": {
+      "title": "Destek şu anda başlatılamadı",
+      "body": "Destekçi sözleşmesi şu anda yüklenemedi ve destek onu olmadan onaylanmaz. Hiçbir şey ayrılmadı ve hiçbir şey tahsil edilmedi. Birazdan yeniden deneyin.",
+      "action": "Yeniden deneyin"
+    },
     "risk": {
       "heading": "Destek olmak ne demek",
       "body": "Destek satın almak değildir. Bir denemeyi finanse ediyorsunuz ve ödül garanti değildir — kampanya gecikebilir, değişebilir ya da hiç ulaşmayabilir. Ödülü size IdeaNest değil, kampanyayı açan kişi borçludur.",
@@ -4574,9 +4579,9 @@
       },
       "cost": {
         "heading": "Maliyeti nedir",
-        "successful": "<b>Başarılı bir kampanya</b> her para çekiminin yüzde 15’ini öder — bankanın ve ödeme sağlayıcısının ücretleri buna dahildir — ve kampanya sahibi yüzde 85’ini alır.",
+        "successful": "<b>Başarılı bir kampanya</b> topladığı tutar üzerinden platform ücretini ve ödeme sağlayıcısının işlem ücretini öder, kalanı yaratıcıya kalır. Yürürlükteki oranlar <pricing>Planlar ve fiyatlar</pricing> sayfasında yer alır ve platformun gerçekten uyguladığı tarifeden okunur.",
         "unsuccessful": "<b>Başarısız bir kampanya</b> hiçbir şey ödemez. Ne listeleme ücreti, ne platform komisyonu, ne de işleme ücreti.",
-        "note": "Oranlar kodda değil yapılandırmada tutulur; bu nedenle bir kategori ya da bireysel bir anlaşma farklı bir oran taşıyabilir. Yukarıdaki oran standart tarifedir."
+        "note": "Oranlar kodda değil yapılandırmada tutulur; bu nedenle bir kategori ya da bireysel bir anlaşma farklı bir oran taşıyabilir. Planlar ve fiyatlar sayfası yürürlükteki standart tarifeyi gösterir."
       },
       "notAPurchase": {
         "heading": "Destek bir satın alma değildir",
@@ -4669,6 +4674,12 @@
       "governingLanguage": "Bu belge henüz sizin dilinize çevrilmedi. Aşağıdaki metin Azerice’dir ve yürürlükte olan metin odur.",
       "contentHash": "Bu metnin SHA-256 özeti: {hash}"
     },
+    "unavailable": {
+      "title": "Bu belge yüklenemedi",
+      "indexTitle": "Hukuki belgeler yüklenemedi",
+      "body": "IdeaNest’in hukuki belgelerini tutan hizmet şu anda yanıt vermedi. Bu, belgenin yayımlanmadığı anlamına gelmez: birazdan yeniden deneyin.",
+      "action": "Yeniden deneyin"
+    },
     "notPublished": {
       "summary": "Bu belge henüz yayımlanmadı.",
       "body": "IdeaNest bu belgeye sahip olmak zorundadır ve henüz hiçbir sürümünü yayımlamadı. Burada yürürlükte olan hiçbir şey yok ve hiçbir sürümü kimseye kabul için sunulmadı."
@@ -4733,7 +4744,8 @@
       "creatorBody": "IdeaNest toplanan her destekten {platform}, ödeme sağlayıcısı {processing} alır; böylece destekçilerinizin verdiğinin {keeps} kadarı size kalır.",
       "fixedFee": "Ödeme sağlayıcısı ayrıca işlem başına {amount} alır.",
       "twoFees": "Bunlar iki ayrı kesintidir. IdeaNest’in ücreti platformun aldığıdır; işlem ücreti parayı taşıyan şirkete gider ve IdeaNest onu hiçbir zaman almaz. Yürürlükteki oranlar yukarıdakilerdir ve ödeme tam olarak bunlarla hesaplanır.",
-      "unconfigured": "IdeaNest henüz bir ücret tarifesi belirlemedi, bu yüzden bugün desteklerden hiçbir şey kesilmiyor. Bu kalıcı bir taahhüt değildir: herhangi bir oran belirlendiği anda burada yayımlanır, koşullar ise yaratıcı sözleşmesinde belirtilir."
+      "unconfigured": "IdeaNest henüz bir ücret tarifesi belirlemedi, bu yüzden bugün desteklerden hiçbir şey kesilmiyor. Bu kalıcı bir taahhüt değildir: herhangi bir oran belirlendiği anda burada yayımlanır, koşullar ise yaratıcı sözleşmesinde belirtilir.",
+      "unavailable": "Ücret şu anda yüklenemedi. Bu, hiçbir ücret alınmadığı anlamına gelmez: yürürlükteki oran <agreement>yaratıcı sözleşmesinde</agreement> belirtilir."
     }
   },
   "dashboard": {

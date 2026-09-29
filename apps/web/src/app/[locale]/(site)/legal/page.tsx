@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '../../../../i18n/navigation';
 import { StaticPage } from '../../../../components/content/StaticPage';
+import { LegalUnavailable } from '../../../../components/content/LegalUnavailable';
 import { formatInstant, SERVER_TIME_ZONE } from '../../../../lib/projects/deadline';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { LEGAL_DOCUMENTS, kindOf, legalPath } from '../../../../lib/legal/api';
@@ -69,12 +70,18 @@ export default async function LegalIndexRoute({
   ]);
 
   /*
-   * Indexed by kind so the eight rows below can be built from §22.2's list rather than from the
-   * answer. `null` — a refused read — becomes an empty map, so every row says "not published
-   * yet". That is the wrong answer during an outage and it is the safe one: the alternative is a
-   * page that claims a document is in force while the service that holds it cannot be reached.
+   * `null` is a failed read, and it is drawn as one — #147. This used to become an empty map, so
+   * every row said "not published yet": during an outage the index told a regulator that IdeaNest
+   * had published none of the eight documents §22.2 requires. Neither "in force" nor "not
+   * published" can be said without the answer, so the page says it could not load.
    */
-  const inForce = new Map((catalogue ?? []).map((summary) => [summary.kind, summary]));
+  if (catalogue === null) return <LegalUnavailable retryHref={PATH} scope="index" />;
+
+  /*
+   * Indexed by kind so the eight rows below can be built from §22.2's list rather than from the
+   * answer: a document missing from it is one with nothing published.
+   */
+  const inForce = new Map(catalogue.map((summary) => [summary.kind, summary]));
 
   return (
     <StaticPage title={t('index.title')} summary={t('index.summary')}>

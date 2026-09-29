@@ -5,6 +5,7 @@ import {
   fetchCollection,
   fetchCollections,
   fetchDiscoveryFeed,
+  fetchLegalDocument,
   fetchPublicRewards,
 } from './server';
 
@@ -270,5 +271,71 @@ describe('the collections reads', () => {
     const landing = await fetchCollection('spring-2026', {}, { env: ENV, fetchImpl });
 
     expect(landing?.nextCursor).toBe('abc');
+  });
+});
+
+/**
+ * The checkout's backer-agreement read — issue #147.
+ *
+ * It had the legal pages' defect in the other place it can do harm: every refusal and every
+ * network failure was one `null`, and `null` meant "no agreement in force". During an outage the
+ * checkout drew no risk statement and offered a confirmation the service refuses once an
+ * agreement is in force. The three answers are pinned here; the page's use of them is pinned in
+ * `back/page.test.tsx`.
+ */
+describe('the backer agreement read', () => {
+  const AGREEMENT = {
+    kind: 'BACKER_AGREEMENT',
+    locale: 'en',
+    version: 2,
+    title: 'Backer agreement',
+    body: 'Text.',
+    contentHash: 'b'.repeat(64),
+  };
+
+  it('is published, with its version, when the service answers with one', async () => {
+    const { calls, fetchImpl } = ok(AGREEMENT);
+
+    const read = await fetchLegalDocument('BACKER_AGREEMENT', { env: ENV, fetchImpl });
+
+    expect(read.state).toBe('published');
+    expect(read.state === 'published' ? read.document.version : null).toBe(2);
+    expect(calls[0]?.url).toBe('https://api.test/v1/legal/documents/BACKER_AGREEMENT');
+  });
+
+  it('is unpublished on a 404', async () => {
+    expect(await fetchLegalDocument('BACKER_AGREEMENT', { env: ENV, fetchImpl: refuses(404) })).toEqual({
+      state: 'unpublished',
+    });
+  });
+
+  it.each([403, 500, 502, 503])('is unavailable, not unpublished, on a %i', async (status) => {
+    expect(
+      await fetchLegalDocument('BACKER_AGREEMENT', { env: ENV, fetchImpl: refuses(status) }),
+    ).toEqual({ state: 'unavailable' });
+  });
+
+  it.each([
+    ['a network failure', new TypeError('fetch failed')],
+    ['a timeout', new DOMException('The operation timed out.', 'TimeoutError')],
+    ['an aborted request', new DOMException('This operation was aborted', 'AbortError')],
+  ])('is unavailable on %s', async (_, cause) => {
+    const fetchImpl = (async () => {
+      throw cause;
+    }) as unknown as typeof fetch;
+
+    expect(await fetchLegalDocument('BACKER_AGREEMENT', { env: ENV, fetchImpl })).toEqual({
+      state: 'unavailable',
+    });
+  });
+
+  it('still rethrows a bug rather than calling it an outage', async () => {
+    const fetchImpl = (async () => {
+      throw new RangeError('a programming error');
+    }) as unknown as typeof fetch;
+
+    await expect(fetchLegalDocument('BACKER_AGREEMENT', { env: ENV, fetchImpl })).rejects.toThrow(
+      RangeError,
+    );
   });
 });

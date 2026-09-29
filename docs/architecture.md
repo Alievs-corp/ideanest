@@ -6682,6 +6682,16 @@ reachable — and the eight documents are empty until #423 answers. A platform t
 not published its creator agreement is a platform whose catalogue is short, which is
 what both gates read as "nothing is required" rather than as a refusal.
 
+**"Not published" is the service's 404 and nothing else (#147).** The web's legal reads
+return `published`, `unpublished` (404 only) or `unavailable` (any other status, a timeout,
+a network failure, a body that does not narrow). The document and archive routes and the
+index render `FailureState` for `unavailable`; during the 2026-09-28 outage they had told
+readers IdeaNest had no terms of use. The checkout's backer-agreement read has the same three
+answers, and an unavailable one renders the failure state in place of the checkout, because
+a pledge confirmed without the §22.3 statement is one the service refuses once an agreement
+is in force. An unavailable answer is not held for the documents' hour: Next's data cache
+stores only 200 responses and these routes are dynamic.
+
 **The archive matters more than it looks.** Somebody who accepted version 3 must be able
 to read version 3, not only whatever is current — otherwise the acceptance record names a
 text the person it is about cannot see. V65 stores every version precisely so that route
@@ -6772,6 +6782,16 @@ reason `open` is on a fee schedule — three clients deriving it would round it 
 statements: zeros are a commitment to charge nothing, and an empty table is the platform
 not having decided. `FeeSchedules.priceOf` treats the absence as zero fees because a
 payout run must not stop over it; a page has the opposite obligation.
+
+**A failed read is neither, and says so (#145).** The web used to draw a refused or
+unreachable read with the `configured: false` sentence — "nothing is being deducted from
+pledges today" — so during the 2026-09-28 outage creators were told there was no fee.
+`FeeDisclosure` now has three branches: the rates, the unconfigured sentence (only when the
+service answered `configured: false`), and a failed-read sentence that states no figure,
+says it is not a statement that nothing is charged, and links to the creator agreement. A
+body claiming `configured: true` without its rates is drawn as a failed read. `/about` no
+longer prints a rate at all: it names the two fees and links to Pricing, so the two pages
+cannot disagree when the schedule moves.
 
 **The risk statement inside the pledge flow** — #427. §22.3 asks for it *within the
 flow*, not in the terms and not behind a link, because the requirement is about what a
