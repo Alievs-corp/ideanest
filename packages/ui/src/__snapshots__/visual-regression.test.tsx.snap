@@ -250,17 +250,31 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Avatar/
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Avatar/Avatar.stories.tsx — Group [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="flex flex-col gap-6">
-<div class="flex items-center [&amp;>*]:transition-[margin] [&amp;>*]:duration-200 [&amp;>*]:ease-in-out [&amp;>*+*]:-ml-2.5 hover:[&amp;>*+*]:-ml-1">
+<div class="group/avatars flex items-center">
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)]" style="--avatar-index: 0;">
 <span role="img" aria-label="Amara Osei" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">AO</span>
+</span>
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5" style="--avatar-index: 1;">
 <span role="img" aria-label="Rowan Hale" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">RH</span>
+</span>
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5" style="--avatar-index: 2;">
 <span role="img" aria-label="Nina Halvorsen" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">NH</span>
+</span>
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5" style="--avatar-index: 3;">
 <span role="img" aria-label="Elias Nordin" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">EN</span>
+</span>
 </div>
-<div class="flex items-center [&amp;>*]:transition-[margin] [&amp;>*]:duration-200 [&amp;>*]:ease-in-out [&amp;>*+*]:-ml-2.5 hover:[&amp;>*+*]:-ml-1">
+<div class="group/avatars flex items-center">
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)]" style="--avatar-index: 0;">
 <span role="img" aria-label="Amara Osei" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">AO</span>
+</span>
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5" style="--avatar-index: 1;">
 <span role="img" aria-label="Rowan Hale" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">RH</span>
+</span>
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5" style="--avatar-index: 2;">
 <span role="img" aria-label="Nina Halvorsen" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">NH</span>
-<span class="grid size-10 shrink-0 place-items-center rounded-full bg-surface-3 text-xs font-medium text-white/64 ring-2 ring-[var(--surface-1)]">+1694</span>
+</span>
+<span class="shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5 grid size-10 place-items-center rounded-full bg-surface-3 text-xs font-medium text-white/64 ring-2 ring-[var(--surface-1)]" style="--avatar-index: 3;">+1694</span>
 </div>
 </div>
 </div>"
@@ -3068,9 +3082,11 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./layout/Layout.stor
 "<div class="font-sans text-white antialiased">
 <div class="min-h-[520px] bg-surface-1">
 <header data-scrolled="" class="sticky top-0 z-50 w-full bg-transparent">
-<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-[18px] py-5 sm:px-[26px]">
+<div class="flex items-center justify-between gap-4 px-[18px] py-5 sm:px-[26px]">
 <span class="font-display text-lg font-semibold">IdeaNest</span>
-<div class="flex h-10 items-center justify-around gap-10 rounded-full px-8 transition-[max-width,background-color,border-color] duration-300 ease-in-out mx-auto max-w-[445px] border border-white/8 bg-white text-on-white">
+<div class="relative isolate flex h-10 items-center justify-around gap-10 rounded-full border border-transparent px-8 mx-auto max-w-[445px] text-on-white">
+<span aria-hidden="true" data-top-bar-surface="" class="pointer-events-none absolute -inset-px -z-10 rounded-full border border-white/8 bg-white transition-opacity duration-300 ease-in-out motion-reduce:transition-none opacity-100">
+</span>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Discover</a>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Start a project</a>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">About</a>
@@ -3106,9 +3122,11 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./layout/Layout.stor
 "<div class="font-sans text-white antialiased">
 <div class="min-h-[520px] bg-surface-1">
 <header class="sticky top-0 z-50 w-full bg-transparent">
-<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-5 pt-7 pb-3 sm:px-7">
+<div class="flex items-center justify-between gap-4 px-5 pt-7 pb-3 sm:px-7">
 <span class="font-display text-lg font-semibold">IdeaNest</span>
-<div class="flex h-10 items-center justify-around gap-10 rounded-full px-8 transition-[max-width,background-color,border-color] duration-300 ease-in-out max-w-full border border-transparent bg-transparent text-white">
+<div class="relative isolate flex h-10 items-center justify-around gap-10 rounded-full border border-transparent px-8 max-w-full text-white">
+<span aria-hidden="true" data-top-bar-surface="" class="pointer-events-none absolute -inset-px -z-10 rounded-full border border-white/8 bg-white transition-opacity duration-300 ease-in-out motion-reduce:transition-none opacity-0">
+</span>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Discover</a>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Start a project</a>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">About</a>
@@ -3579,17 +3597,31 @@ exports[`rendered markup > ./components/Avatar/Avatar.stories.tsx — Fallback 1
 exports[`rendered markup > ./components/Avatar/Avatar.stories.tsx — Group 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="flex flex-col gap-6">
-<div class="flex items-center [&amp;>*]:transition-[margin] [&amp;>*]:duration-200 [&amp;>*]:ease-in-out [&amp;>*+*]:-ml-2.5 hover:[&amp;>*+*]:-ml-1">
+<div class="group/avatars flex items-center">
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)]" style="--avatar-index: 0;">
 <span role="img" aria-label="Amara Osei" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">AO</span>
+</span>
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5" style="--avatar-index: 1;">
 <span role="img" aria-label="Rowan Hale" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">RH</span>
+</span>
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5" style="--avatar-index: 2;">
 <span role="img" aria-label="Nina Halvorsen" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">NH</span>
+</span>
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5" style="--avatar-index: 3;">
 <span role="img" aria-label="Elias Nordin" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">EN</span>
+</span>
 </div>
-<div class="flex items-center [&amp;>*]:transition-[margin] [&amp;>*]:duration-200 [&amp;>*]:ease-in-out [&amp;>*+*]:-ml-2.5 hover:[&amp;>*+*]:-ml-1">
+<div class="group/avatars flex items-center">
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)]" style="--avatar-index: 0;">
 <span role="img" aria-label="Amara Osei" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">AO</span>
+</span>
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5" style="--avatar-index: 1;">
 <span role="img" aria-label="Rowan Hale" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">RH</span>
+</span>
+<span class="flex shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5" style="--avatar-index: 2;">
 <span role="img" aria-label="Nina Halvorsen" class="shrink-0 rounded-full bg-surface-3 object-cover ring-2 ring-[var(--surface-1)] size-10 text-sm grid place-items-center font-medium text-white/64">NH</span>
-<span class="grid size-10 shrink-0 place-items-center rounded-full bg-surface-3 text-xs font-medium text-white/64 ring-2 ring-[var(--surface-1)]">+1694</span>
+</span>
+<span class="shrink-0 transition-transform duration-200 ease-in-out motion-reduce:transition-none group-hover/avatars:translate-x-[calc(var(--avatar-index)*6px)] -ml-2.5 grid size-10 place-items-center rounded-full bg-surface-3 text-xs font-medium text-white/64 ring-2 ring-[var(--surface-1)]" style="--avatar-index: 3;">+1694</span>
 </div>
 </div>
 </div>"
@@ -6397,9 +6429,11 @@ exports[`rendered markup > ./layout/Layout.stories.tsx — CollapsedTopBar 1`] =
 "<div class="font-sans text-white antialiased">
 <div class="min-h-[520px] bg-surface-1">
 <header data-scrolled="" class="sticky top-0 z-50 w-full bg-transparent">
-<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-[18px] py-5 sm:px-[26px]">
+<div class="flex items-center justify-between gap-4 px-[18px] py-5 sm:px-[26px]">
 <span class="font-display text-lg font-semibold">IdeaNest</span>
-<div class="flex h-10 items-center justify-around gap-10 rounded-full px-8 transition-[max-width,background-color,border-color] duration-300 ease-in-out mx-auto max-w-[445px] border border-white/8 bg-white text-on-white">
+<div class="relative isolate flex h-10 items-center justify-around gap-10 rounded-full border border-transparent px-8 mx-auto max-w-[445px] text-on-white">
+<span aria-hidden="true" data-top-bar-surface="" class="pointer-events-none absolute -inset-px -z-10 rounded-full border border-white/8 bg-white transition-opacity duration-300 ease-in-out motion-reduce:transition-none opacity-100">
+</span>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Discover</a>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Start a project</a>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">About</a>
@@ -6435,9 +6469,11 @@ exports[`rendered markup > ./layout/Layout.stories.tsx — CollapsingTopBar 1`] 
 "<div class="font-sans text-white antialiased">
 <div class="min-h-[520px] bg-surface-1">
 <header class="sticky top-0 z-50 w-full bg-transparent">
-<div class="flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out px-5 pt-7 pb-3 sm:px-7">
+<div class="flex items-center justify-between gap-4 px-5 pt-7 pb-3 sm:px-7">
 <span class="font-display text-lg font-semibold">IdeaNest</span>
-<div class="flex h-10 items-center justify-around gap-10 rounded-full px-8 transition-[max-width,background-color,border-color] duration-300 ease-in-out max-w-full border border-transparent bg-transparent text-white">
+<div class="relative isolate flex h-10 items-center justify-around gap-10 rounded-full border border-transparent px-8 max-w-full text-white">
+<span aria-hidden="true" data-top-bar-surface="" class="pointer-events-none absolute -inset-px -z-10 rounded-full border border-white/8 bg-white transition-opacity duration-300 ease-in-out motion-reduce:transition-none opacity-0">
+</span>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Discover</a>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">Start a project</a>
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">About</a>

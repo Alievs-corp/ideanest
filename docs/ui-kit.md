@@ -493,6 +493,11 @@ Hover-only would make it unreachable without a pointer.
 .avatar-group:hover > * + * { margin-left: -4px; }
 ```
 
+The spread is drawn with `transform`, not by changing the margin (issue 166):
+the overlap stays fixed at `-10px`, and on hover the face at position `i`
+moves `translateX(i × 6px)`, which lands it exactly where the `-4px` margin
+would. Nothing beside the group is laid out again.
+
 Sizes: `28px` in a group, `40px` in a card, `56px` on a profile. With no image,
 initials are derived from the name.
 

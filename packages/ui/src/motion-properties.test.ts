@@ -21,17 +21,6 @@ const SRC = join(import.meta.dirname, '.');
 const LAYOUT =
   /\b(?:width|height|min-width|max-width|min-height|max-height|top|left|right|bottom|inset|margin[\w-]*|padding[\w-]*|gap|flex-basis|all)\b/;
 
-/**
- * Transitions that predate the guard, each one a known debt rather than a precedent. Every
- * entry is tracked in issue 166, and the list may only shrink: a new entry is a design change
- * and needs an issue of its own.
- */
-const KNOWN: ReadonlySet<string> = new Set([
-  'components/Avatar/Avatar.tsx: transition-[margin]',
-  'layout/TopBar.tsx: transition-[padding]',
-  'layout/TopBar.tsx: transition-[max-width,background-color,border-color]',
-]);
-
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
@@ -83,25 +72,12 @@ describe('motion discipline', () => {
     const offenders = files.flatMap((file) =>
       transitionsIn(readFileSync(file, 'utf8'))
         .filter(movesLayout)
-        .map((transition) => `${relative(SRC, file).replaceAll('\\', '/')}: ${transition}`)
-        .filter((entry) => !KNOWN.has(entry)),
+        .map((transition) => `${relative(SRC, file).replaceAll('\\', '/')}: ${transition}`),
     );
 
     expect(
       offenders,
       'Animate transform and opacity only. See CLAUDE.md §2 and docs/motion-system.md.',
     ).toEqual([]);
-  });
-
-  it('still needs every known exception, so the list cannot outlive its debt', () => {
-    const present = new Set(
-      files.flatMap((file) =>
-        transitionsIn(readFileSync(file, 'utf8')).map(
-          (transition) => `${relative(SRC, file).replaceAll('\\', '/')}: ${transition}`,
-        ),
-      ),
-    );
-
-    expect([...KNOWN].filter((entry) => !present.has(entry))).toEqual([]);
   });
 });
