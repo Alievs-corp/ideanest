@@ -253,7 +253,11 @@
         "loadingList": "Loading your campaigns",
         "loadMore": "Show more",
         "loadingMore": "Loading",
-        "draftHint": "Not published yet"
+        "draftHint": "Not published yet",
+        "view": "View",
+        "edit": "Edit",
+        "dashboard": "Dashboard",
+        "actionsLabel": "Actions for {title}"
       },
       "saved": {
         "metaTitle": "Saved projects",
@@ -3639,6 +3643,11 @@
       "none": "This campaign has not posted an update yet. Backers are told by email when it does.",
       "backersOnly": "Backers only"
     },
+    "owner": {
+      "label": "Your campaign",
+      "dashboard": "Dashboard",
+      "edit": "Edit"
+    },
     "comments": {
       "heading": "Comments",
       "all": "All comments",
@@ -3700,6 +3709,7 @@
     "eyebrow": "Campaign editor",
     "loadingTitle": "Loading",
     "sectionsLabel": "Campaign sections",
+    "dashboard": "Dashboard",
     "soon": "soon",
     "notAvailable": ", not available yet",
     "signedOutTitle": "You are signed out",

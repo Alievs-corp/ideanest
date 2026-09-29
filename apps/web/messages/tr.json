@@ -253,7 +253,11 @@
         "loadingList": "Kampanyalarınız yükleniyor",
         "loadMore": "Daha fazla göster",
         "loadingMore": "Yükleniyor",
-        "draftHint": "Henüz yayımlanmadı"
+        "draftHint": "Henüz yayımlanmadı",
+        "view": "Görüntüle",
+        "edit": "Düzenle",
+        "dashboard": "Pano",
+        "actionsLabel": "Kampanya işlemleri: {title}"
       },
       "saved": {
         "metaTitle": "Kaydedilen projeler",
@@ -3639,6 +3643,11 @@
       "none": "Bu kampanya henüz güncelleme paylaşmadı. Paylaştığında destekçilere e-postayla haber verilir.",
       "backersOnly": "Yalnızca destekçilere"
     },
+    "owner": {
+      "label": "Kampanyanız",
+      "dashboard": "Pano",
+      "edit": "Düzenle"
+    },
     "comments": {
       "heading": "Yorumlar",
       "all": "Tüm yorumlar",
@@ -3700,6 +3709,7 @@
     "eyebrow": "Kampanya düzenleyici",
     "loadingTitle": "Yükleniyor",
     "sectionsLabel": "Kampanya bölümleri",
+    "dashboard": "Pano",
     "soon": "yakında",
     "notAvailable": ", bölüm henüz kullanılamıyor",
     "signedOutTitle": "Oturumunuz kapandı",

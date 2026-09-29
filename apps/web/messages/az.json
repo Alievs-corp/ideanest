@@ -253,7 +253,11 @@
         "loadingList": "Kampaniyalarınız yüklənir",
         "loadMore": "Daha çox göstər",
         "loadingMore": "Yüklənir",
-        "draftHint": "Hələ yayımlanmayıb"
+        "draftHint": "Hələ yayımlanmayıb",
+        "view": "Bax",
+        "edit": "Redaktə et",
+        "dashboard": "Panel",
+        "actionsLabel": "Kampaniya əməliyyatları: {title}"
       },
       "saved": {
         "metaTitle": "Saxlanmış layihələr",
@@ -3639,6 +3643,11 @@
       "none": "Bu kampaniya hələ yenilik paylaşmayıb. Paylaşanda dəstəkçilərə e-poçtla xəbər verilir.",
       "backersOnly": "Yalnız dəstəkçilər üçün"
     },
+    "owner": {
+      "label": "Sizin kampaniyanız",
+      "dashboard": "Panel",
+      "edit": "Redaktə et"
+    },
     "comments": {
       "heading": "Şərhlər",
       "all": "Bütün şərhlər",
@@ -3700,6 +3709,7 @@
     "eyebrow": "Kampaniya redaktoru",
     "loadingTitle": "Yüklənir",
     "sectionsLabel": "Kampaniya bölmələri",
+    "dashboard": "Panel",
     "soon": "tezliklə",
     "notAvailable": ", bölmə hələ əlçatan deyil",
     "signedOutTitle": "Hesabdan çıxmısınız",

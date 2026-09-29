@@ -68,6 +68,8 @@ export interface EditorChromeCopy {
   readonly loadingTitle: string;
   /** Names the section links for assistive technology. */
   readonly sectionsLabel: string;
+  /** #141: the link to the campaign's dashboard, drawn once it has launched. */
+  readonly dashboard: string;
   readonly tabs: Readonly<Record<EditorTabKey, string>>;
   /** The visible cue on a section that has no route yet. */
   readonly soon: string;
@@ -201,6 +203,7 @@ export function editorChromeCopyFrom(
     eyebrow: t('eyebrow'),
     loadingTitle: t('loadingTitle'),
     sectionsLabel: t('sectionsLabel'),
+    dashboard: t('dashboard'),
     tabs: record(EDITOR_TAB_KEYS, (key) => t(`tabs.${key}`)),
     soon: t('soon'),
     notAvailable: t('notAvailable'),

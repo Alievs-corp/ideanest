@@ -46,6 +46,10 @@ export default async function MyCampaignsPage() {
     loadMore: t('loadMore'),
     loadingMore: t('loadingMore'),
     draftHint: t('draftHint'),
+    view: t('view'),
+    edit: t('edit'),
+    dashboard: t('dashboard'),
+    actionsLabel: String(t.raw('actionsLabel')),
     states: Object.fromEntries(DIRECTORY_STATES.map((state) => [state, states(`state.${state}`)])),
   };
 

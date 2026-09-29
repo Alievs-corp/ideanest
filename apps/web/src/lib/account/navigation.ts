@@ -194,3 +194,24 @@ export function isCurrentAccountLink(href: string, pathname: string): boolean {
 export function accountLinkFor(pathname: string): AccountLink | null {
   return ACCOUNT_LINKS.find((link) => link.href === pathname) ?? null;
 }
+
+/**
+ * Where a creator manages one of their own campaigns — issue #141.
+ *
+ * <p>The dashboard (overview, charts, backers, finance, surveys) was built and linked from
+ * nowhere: a creator whose campaign was live reached its money and its obligations only by
+ * typing the address. These two are the one spelling of those addresses, used by **My
+ * campaigns**, the owner bar on the public page and the editor's frame, so the mobile app's
+ * "Me" hub has a single place to mirror.
+ *
+ * <p>By project id rather than by slug. The static children of `/projects/[id]/` take the id,
+ * which is also why `Slugs.RESERVED` in the service keeps slugs off their names (#148).
+ */
+export function campaignDashboardHref(projectId: string): string {
+  return `/projects/${encodeURIComponent(projectId)}/dashboard`;
+}
+
+/** The editor's first section, which is where every entry into the editor lands. */
+export function campaignEditorHref(projectId: string): string {
+  return `/projects/${encodeURIComponent(projectId)}/edit/basics`;
+}

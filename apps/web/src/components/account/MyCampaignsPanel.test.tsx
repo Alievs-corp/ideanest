@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { translatorFor } from '../../test-copy';
 import type { ProfileProjectCard } from '../../lib/profiles/api';
 import { listMyProjects } from '../../lib/projects/mine';
 import { MyCampaignsPanel, type MyCampaignsPanelCopy } from './MyCampaignsPanel';
@@ -36,8 +37,30 @@ const COPY: MyCampaignsPanelCopy = {
   loadMore: 'Show more',
   loadingMore: 'Loading',
   draftHint: 'Not published yet',
-  states: { DRAFT: 'Draft', LIVE: 'Live', CHANGES_REQUESTED: 'Changes requested' },
+  ...(() => {
+    const t = translatorFor('account.pages.campaigns');
+    return {
+      view: t('view'),
+      edit: t('edit'),
+      dashboard: t('dashboard'),
+      actionsLabel: String(t.raw('actionsLabel')),
+    };
+  })(),
+  states: {
+    DRAFT: 'Draft',
+    LIVE: 'Live',
+    PRELAUNCH: 'Pre-launch',
+    SUSPENDED: 'Suspended',
+    CHANGES_REQUESTED: 'Changes requested',
+  },
 };
+
+/** The group of links a launched row carries, found by the name its label gives it. */
+function actionsOf(title: string): HTMLElement {
+  return screen.getByRole('group', {
+    name: COPY.actionsLabel.replace('{title}', title),
+  });
+}
 
 function card(id: string, title: string, state: string): ProfileProjectCard {
   return {
@@ -81,10 +104,52 @@ describe('the campaigns on an account', () => {
         expect.stringContaining('/projects/draft-id/edit/basics'),
       ),
     );
-    expect(screen.getByRole('link', { name: /Open thing/u })).toHaveAttribute(
+    expect(within(actionsOf('Open thing')).getByRole('link', { name: COPY.view })).toHaveAttribute(
       'href',
       expect.stringContaining('/projects/aysel/slug-live-id'),
     );
+  });
+
+  it('gives a launched campaign its dashboard beside its page (#141)', async () => {
+    listMock.mockResolvedValue({ items: [card('live-id', 'Open thing', 'LIVE')], nextCursor: null });
+
+    render(<MyCampaignsPanel copy={COPY} />);
+
+    await waitFor(() => expect(actionsOf('Open thing')).toBeInTheDocument());
+    expect(within(actionsOf('Open thing')).getByRole('link', { name: COPY.dashboard })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/projects/live-id/dashboard'),
+    );
+  });
+
+  it('gives a suspended campaign the editor and the dashboard, since it has no public page', async () => {
+    listMock.mockResolvedValue({ items: [card('held-id', 'Paused thing', 'SUSPENDED')], nextCursor: null });
+
+    render(<MyCampaignsPanel copy={COPY} />);
+
+    await waitFor(() => expect(actionsOf('Paused thing')).toBeInTheDocument());
+    const actions = within(actionsOf('Paused thing'));
+    expect(actions.getByRole('link', { name: COPY.edit })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/projects/held-id/edit/basics'),
+    );
+    expect(actions.getByRole('link', { name: COPY.dashboard })).toBeInTheDocument();
+  });
+
+  it('offers no dashboard before launch: drafts and pre-launch pages keep one link', async () => {
+    listMock.mockResolvedValue({
+      items: [card('draft-id', 'Unfinished thing', 'DRAFT'), card('soon-id', 'Coming thing', 'PRELAUNCH')],
+      nextCursor: null,
+    });
+
+    render(<MyCampaignsPanel copy={COPY} />);
+
+    await waitFor(() => expect(screen.getByRole('link', { name: /Unfinished thing/u })).toBeInTheDocument());
+    expect(screen.getByRole('link', { name: /Coming thing/u })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/projects/aysel/slug-soon-id'),
+    );
+    expect(screen.queryByRole('link', { name: COPY.dashboard })).not.toBeInTheDocument();
   });
 
   it('says what state each campaign is in, in words', async () => {
