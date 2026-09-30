@@ -11,9 +11,12 @@ import { TONES, useSurface } from './surface';
  * §7.13).
  *
  * <p>The group is `accessibilityRole="radiogroup"` and is named — by its own `label`, or by the
- * surrounding `Field` with `grouped` — so a screen reader says what the set is about before the
- * first choice ("Delivery, radio group"). Each `Radio` is one row, one `Pressable`, at least 44pt
- * tall, announced as "radio button, selected" and with its position in the set on iOS.
+ * surrounding `Field` with `grouped`. TalkBack reads that name; VoiceOver on the new architecture
+ * does not read a container that is not itself accessible, and making it accessible would swallow
+ * the radios. So the question a screen reader hears first is the grouped `Field`'s label, which
+ * is a header for exactly this reason (see `field.tsx`): put a radio group in a grouped `Field`.
+ * Each `Radio` is one row, one `Pressable`, at least 44pt tall, announced as "radio button,
+ * selected".
  *
  * <p>Selected is a lime circle with an 8pt near-black dot: an active choice, like a ticked box,
  * and never `--success`. The dot is what says "selected" to somebody who cannot tell the fill
@@ -58,7 +61,6 @@ export function RadioGroup({
         accessibilityLabel={field.accessibilityLabel}
         accessibilityHint={field.accessibilityHint}
         accessibilityState={{ disabled }}
-        aria-invalid={field.invalid}
         testID={testID}
         style={styles.group}
       >

@@ -102,12 +102,21 @@ describe('CharacterCount', () => {
       expect(announced).toHaveBeenCalledTimes(1);
     });
 
-    it('does not repeat the same sentence', async () => {
+    it('does not repeat the same sentence when the timer runs again', async () => {
       const tree = await render(<CharacterCount count={45} limit={60} />, { wrapper: English });
       await advance(1000);
-      await tree.rerender(<CharacterCount count={45} limit={60} />);
+      expect(announced).toHaveBeenCalledTimes(1);
+
+      // A new delay re-runs the effect and arms a fresh timer for the SAME sentence: only the
+      // memory of what was last said keeps it from being said twice.
+      await tree.rerender(<CharacterCount count={45} limit={60} announceDelayMs={900} />);
       await advance(1000);
       expect(announced).toHaveBeenCalledTimes(1);
+
+      // A different sentence is still announced.
+      await tree.rerender(<CharacterCount count={46} limit={60} announceDelayMs={900} />);
+      await advance(1000);
+      expect(announced).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -23,8 +23,12 @@ import { TONES, useSurface } from './surface';
  *       the duplication the web avoids with `<label for>`.</li>
  *   <li>The hint becomes the control's `accessibilityHint`, read after a pause, which is where
  *       the web's `aria-describedby` puts it too.</li>
- *   <li>The error is rendered, stays reachable by swiping, is announced assertively the moment it
- *       appears (the web's `role="alert"`), and marks the control `aria-invalid`.</li>
+ *   <li>The error is rendered, stays reachable by swiping, and is announced assertively the
+ *       moment it appears (the web's `role="alert"`). It is ALSO put at the front of the
+ *       control's `accessibilityHint`, because the announcement is heard once: somebody who
+ *       swipes back to the field later has to hear what is wrong with it there. React Native
+ *       has no `aria-invalid` — the prop does not exist in 0.86 — so the hint is the only place
+ *       an invalid state can travel with the control.</li>
  * </ul>
  *
  * <h2>Required is a word, never only an asterisk</h2>
@@ -39,15 +43,30 @@ import { TONES, useSurface } from './surface';
  * `--danger` with `CircleAlert` and a sentence. A red border alone says nothing to a screen reader
  * and nothing to somebody who cannot see red (§9.2). Lime never marks an error: lime is urgent.
  *
- * <p>`grouped` is for a control that is a SET — a radio group, a picker, a file picker — where the
- * label names the group rather than one input. The control reads the same context either way.
+ * <h2>Grouped: the question is a header</h2>
+ *
+ * `grouped` is for a SET of separately focusable controls — a radio group, a list of checkboxes —
+ * where the label is the question and each option has its own name. There is no one element to
+ * carry the question: VoiceOver on the new architecture does not read a container's
+ * `accessibilityLabel` unless the container is itself `accessible`, and an accessible container
+ * swallows the options inside it. So in a grouped field the visible label IS the stop: one header
+ * ("Delivery, required, heading") read right before the first option and reachable from the
+ * rotor's headings list. The hint and the error below the options stay readable too, since there
+ * is no single control to carry them.
+ *
+ * <p>A `Select` or a `FilePicker` is ONE control even though it opens a list, so it takes an
+ * ordinary field, not a grouped one.
  */
 
 export interface FieldControlContext {
+  /** The plain label, for visible text such as a sheet's title. */
+  readonly label: string;
   /** The accessible name: the label, with the required word when required. */
   readonly accessibilityLabel: string;
-  /** The hint, as the control's `accessibilityHint`. */
-  readonly accessibilityHint: string | undefined;
+  /** The hint, as written. */
+  readonly hint: string | undefined;
+  /** The error sentence while there is one. */
+  readonly error: string | undefined;
   readonly invalid: boolean;
   readonly required: boolean;
   readonly grouped: boolean;
@@ -55,21 +74,38 @@ export interface FieldControlContext {
 
 const FieldContext = createContext<FieldControlContext | null>(null);
 
+/**
+ * Sentences for one `accessibilityHint`, in the order they should be heard. A part that does not
+ * end a sentence gets a full stop, so a screen reader pauses between them instead of running an
+ * error into a hint.
+ */
+export function hintOf(parts: readonly (string | null | undefined)[]): string | undefined {
+  const kept = parts.map((part) => part?.trim() ?? '').filter((part) => part !== '');
+  if (kept.length === 0) return undefined;
+  return kept
+    .map((part, index) => (index < kept.length - 1 && !/[.!?…]$/u.test(part) ? `${part}.` : part))
+    .join(' ');
+}
+
 /** What a control inside a `Field` inherits. Explicit props win, so a control works standalone. */
 export function useFieldControl(own: {
   accessibilityLabel?: string | undefined;
   accessibilityHint?: string | undefined;
   invalid?: boolean | undefined;
 }): {
+  /** The plain label — the control's own name, or the field's label. For visible text. */
+  readonly label: string | undefined;
   readonly accessibilityLabel: string | undefined;
+  /** The field's error first, then the hint: what is wrong matters more than the guidance. */
   readonly accessibilityHint: string | undefined;
   readonly invalid: boolean;
   readonly inField: boolean;
 } {
   const field = useContext(FieldContext);
   return {
+    label: own.accessibilityLabel ?? field?.label,
     accessibilityLabel: own.accessibilityLabel ?? field?.accessibilityLabel,
-    accessibilityHint: own.accessibilityHint ?? field?.accessibilityHint,
+    accessibilityHint: hintOf([field?.error, own.accessibilityHint ?? field?.hint]),
     invalid: own.invalid ?? field?.invalid ?? false,
     inField: field !== null,
   };
@@ -84,7 +120,7 @@ export interface FieldProps {
   readonly error?: string | null;
   /** Says "required" in words, visibly and in the accessible name. */
   readonly required?: boolean;
-  /** For a control that is a set: radios, a select, a file picker. */
+  /** For a set of separately focusable controls: radios, a list of checkboxes. */
   readonly grouped?: boolean;
   readonly children: ReactNode;
   readonly testID?: string;
@@ -109,11 +145,20 @@ export function Field({
 
   useErrorAnnouncement(errored ? error : undefined);
 
+  const labelAccessibility = grouped
+    ? { accessible: true, accessibilityRole: 'header' as const, accessibilityLabel: name }
+    : {
+        accessibilityElementsHidden: true,
+        importantForAccessibility: 'no-hide-descendants' as const,
+      };
+
   return (
     <FieldContext.Provider
       value={{
+        label,
         accessibilityLabel: name,
-        accessibilityHint: hinted ? hint : undefined,
+        hint: hinted ? hint : undefined,
+        error: errored ? error : undefined,
         invalid: errored,
         required,
         grouped,
@@ -121,14 +166,11 @@ export function Field({
     >
       <View style={styles.field} testID={testID}>
         {/*
-         * Hidden from the screen reader: the control carries the same words as its name, and a
-         * grouped control names its group with them. Read twice, a label is noise.
+         * A single control carries these words as its name, so the label is hidden: read twice, a
+         * label is noise. A grouped field has no single control, so the label is the one stop that
+         * asks the question — a header, the required word included.
          */}
-        <View
-          style={styles.labelRow}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
+        <View style={styles.labelRow} {...labelAccessibility}>
           <Text style={[styles.label, { color: tones.primary }]}>{label}</Text>
           {required ? (
             <Text style={[styles.required, { color: tones.tertiary }]}>{t('required')}</Text>
@@ -140,9 +182,9 @@ export function Field({
         {hinted ? (
           <Text
             style={[styles.caption, { color: tones.secondary }]}
-            // The control's `accessibilityHint` already reads it.
-            accessibilityElementsHidden
-            importantForAccessibility="no"
+            // A single control's `accessibilityHint` already reads it; a group has no such place.
+            accessibilityElementsHidden={!grouped}
+            importantForAccessibility={grouped ? 'auto' : 'no'}
           >
             {hint}
           </Text>

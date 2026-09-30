@@ -115,7 +115,7 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextIn
     <View
       style={[
         ...inputFrame({ focused, invalid: field.invalid, disabled }),
-        { height: INPUT_HEIGHT[size] },
+        { minHeight: INPUT_HEIGHT[size] },
         ring,
         style,
       ]}
@@ -136,7 +136,6 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextIn
         accessibilityLabel={field.accessibilityLabel}
         accessibilityHint={field.accessibilityHint}
         accessibilityState={{ ...accessibilityState, disabled }}
-        aria-invalid={field.invalid}
         placeholderTextColor={colors.textTertiary}
         onFocus={(event) => {
           ringFocus(event);

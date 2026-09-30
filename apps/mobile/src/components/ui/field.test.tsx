@@ -89,7 +89,7 @@ describe('Field', () => {
     );
   });
 
-  it('draws an error in danger with an icon, marks the control invalid, and announces it once', async () => {
+  it('draws an error in danger with an icon, puts it in the control’s hint, and announces it once', async () => {
     const announced = jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions');
     const tree = await renderEn(
       <Field label="Email address" error="Enter an email address.">
@@ -98,7 +98,9 @@ describe('Field', () => {
     );
 
     const input = tree.getByLabelText('Email address');
-    expect(input.props['aria-invalid']).toBe(true);
+    // Heard again whenever somebody comes back to the field, not only when it appeared.
+    expect(input.props.accessibilityHint).toBe('Enter an email address.');
+    expect(input.props).not.toHaveProperty('aria-invalid');
     expect(frameOf(input).borderColor).toBe(colors.danger);
     expect(flat(tree.getByText('Enter an email address.')).color).toBe(colors.danger);
     expect(tree.container.queryAll((node) => node.type === 'RNSVGSvgView')[0]?.props.stroke).toBe(
@@ -116,29 +118,59 @@ describe('Field', () => {
     expect(announced).toHaveBeenCalledTimes(1);
   });
 
-  it('is not invalid, and announces nothing, without an error', async () => {
+  it('reads the error before the hint, as separate sentences', async () => {
+    const { getByLabelText } = await renderEn(
+      <Field label="Password" hint="Long is stronger than complicated" error="Enter a password">
+        <PasswordInput />
+      </Field>,
+    );
+    expect(getByLabelText('Password').props.accessibilityHint).toBe(
+      'Enter a password. Long is stronger than complicated',
+    );
+  });
+
+  it('has no error in the hint, and announces nothing, without an error', async () => {
     const announced = jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions');
     const { getByLabelText } = await renderEn(
       <Field label="Email address">
         <TextInput />
       </Field>,
     );
-    expect(getByLabelText('Email address').props['aria-invalid']).toBe(false);
+    expect(getByLabelText('Email address').props.accessibilityHint).toBeUndefined();
+    expect(frameOf(getByLabelText('Email address')).borderColor).toBe(colors.border);
     expect(announced).not.toHaveBeenCalled();
   });
 
-  it('names a grouped control — a radio group — with its label', async () => {
-    const { getByLabelText } = await renderEn(
-      <Field label="Delivery" grouped required>
+  it('asks a grouped field’s question as one header, required word included', async () => {
+    const { getAllByLabelText, getByRole, getByText } = await renderEn(
+      <Field label="Delivery" grouped required hint="Post takes a week.">
         <RadioGroup value="post" onChange={() => {}}>
           <Radio value="post" label="Post" />
           <Radio value="pickup" label="Pick up" />
         </RadioGroup>
       </Field>,
     );
-    // Found by its name rather than `getByRole`: the group is a container, not one accessible
-    // element — its radios must stay separately reachable inside it.
-    expect(getByLabelText('Delivery, required').props.accessibilityRole).toBe('radiogroup');
+    /*
+     * VoiceOver on the new architecture does not read the label of a container that is not itself
+     * accessible, so the question is the visible label, made one header stop.
+     */
+    expect(getByRole('header', { name: 'Delivery, required' })).toBeTruthy();
+    // The radios stay separately reachable, and the group still carries its name for TalkBack.
+    expect(getByRole('radio', { name: 'Post' })).toBeTruthy();
+    expect(
+      getAllByLabelText('Delivery, required').map((node) => node.props.accessibilityRole),
+    ).toEqual(['header', 'radiogroup']);
+    // With no single control to hold it, the hint stays readable where it is drawn.
+    expect(getByText('Post takes a week.')).toBeTruthy();
+  });
+
+  it('keeps an ordinary field’s label out of the screen reader — the control says it', async () => {
+    const { queryByRole } = await renderEn(
+      <Field label="Email address" required>
+        <TextInput />
+      </Field>,
+    );
+    expect(queryByRole('header')).toBeNull();
   });
 });
 
@@ -149,7 +181,8 @@ describe('TextInput', () => {
       const { getByLabelText } = await renderEn(
         <TextInput accessibilityLabel="Title" size={inputSize} />,
       );
-      heights.push(frameOf(getByLabelText('Title')).height);
+      // A minimum, not a fixed height: Dynamic Type may make the text taller than the box.
+      heights.push(frameOf(getByLabelText('Title')).minHeight);
     }
     expect(heights).toEqual([44, 48]);
     expect(Math.min(...(heights as number[]))).toBeGreaterThanOrEqual(size.touchTarget);
@@ -248,11 +281,17 @@ describe('Textarea', () => {
   });
 
   it('grows with its content', async () => {
-    expect(await grow(150)).toEqual({ height: 174, scrolls: false });
+    // The content height already includes the input's padding, so it is the box's height.
+    expect(await grow(150)).toEqual({ height: 150, scrolls: false });
   });
 
   it('stops at its maximum, and then scrolls', async () => {
     expect(await grow(900, 200)).toEqual({ height: 200, scrolls: true });
+  });
+
+  it('starts scrolling at the maximum, not a padding’s worth before it', async () => {
+    expect(await grow(190, 200)).toEqual({ height: 190, scrolls: false });
+    expect(await grow(200, 200)).toEqual({ height: 200, scrolls: true });
   });
 
   it('is multi-line and named', async () => {

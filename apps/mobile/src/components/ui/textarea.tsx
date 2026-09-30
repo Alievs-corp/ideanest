@@ -57,8 +57,14 @@ export const Textarea = forwardRef<RNTextInput, TextareaProps>(function Textarea
   const { ring, onFocus: ringFocus, onBlur: ringBlur } = useFocusRing();
   const ceiling = Math.max(maxHeight, TEXTAREA_MIN_HEIGHT);
   const [content, setContent] = useState(0);
-  const height = Math.min(Math.max(content + 2 * VERTICAL_PADDING, TEXTAREA_MIN_HEIGHT), ceiling);
-  const full = content + 2 * VERTICAL_PADDING >= ceiling;
+  /*
+   * `contentSize.height` already includes the input's own vertical padding on both platforms
+   * (iOS measures the whole text view; Android's content-size watcher adds the padding), so it
+   * is the box's height as it stands. Adding the padding again made the box 24pt too tall and
+   * started the scrolling early.
+   */
+  const height = Math.min(Math.max(content, TEXTAREA_MIN_HEIGHT), ceiling);
+  const full = content >= ceiling;
 
   return (
     <View
@@ -80,7 +86,6 @@ export const Textarea = forwardRef<RNTextInput, TextareaProps>(function Textarea
         accessibilityLabel={field.accessibilityLabel}
         accessibilityHint={field.accessibilityHint}
         accessibilityState={{ ...accessibilityState, disabled }}
-        aria-invalid={field.invalid}
         placeholderTextColor={colors.textTertiary}
         onContentSizeChange={(event) => {
           setContent(event.nativeEvent.contentSize.height);
