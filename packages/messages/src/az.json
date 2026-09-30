@@ -5151,7 +5151,13 @@
     "me": {
       "thisPhone": "Bu telefon",
       "language": "Dil",
-      "allSettings": "Bütün parametrlər"
+      "allSettings": "Bütün parametrlər",
+      "copyright": "© IdeyaNest",
+      "version": "Versiya {version}, yığım {build}",
+      "signOutConfirm": {
+        "title": "Bu telefonda hesabdan çıxılsın?",
+        "body": "Dəstəkləriniz və saxlanmış layihələriniz artıq bu telefonda saxlanmayacaq. İstədiyiniz vaxt yenidən daxil ola bilərsiniz."
+      }
     },
     "lock": {
       "face": "Face ID tələb et",

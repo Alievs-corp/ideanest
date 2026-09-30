@@ -74,6 +74,17 @@ describe('the app-only strings and formats', () => {
     expect(formatDate(undefined, 'en')).toBe('');
   });
 
+  /*
+   * The web's #401 bypass, which the app now shares: Azerbaijani is written out rather than
+   * asked of the engine's ICU. Node has real `az` data, so these would pass either way here —
+   * what they pin is that the app goes through `@ideanest/messages/formats` at all.
+   */
+  it('formats Azerbaijani through the shared bypass', () => {
+    expect(formatCount(1234567, 'az')).toBe('1.234.567');
+    expect(formatDate('2026-08-14T12:00:00Z', 'az')).toBe('14 avq 2026');
+    expect(pluralCategory('az', 1)).toBe('one');
+  });
+
   it('translates outside the tree in the language chosen at the moment of the call', () => {
     const before = currentLocale();
     try {

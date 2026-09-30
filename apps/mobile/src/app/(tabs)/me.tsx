@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import * as Application from 'expo-application';
 import { useRouter, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useQueryClient } from '@tanstack/react-query';
@@ -43,6 +44,8 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  *   stay because they need no answer from the service, and they are the only way out of a
  *   lock the reader no longer wants. While the first answer is still on its way the identity
  *   row is a skeleton, so the screen does not jump when the name arrives.
+ *
+ * All three end with the web footer's last row (`Colophon`), and Sign out asks first.
  */
 
 interface Row {
@@ -122,6 +125,7 @@ const styles = StyleSheet.create({
   boneEmail: { width: '70%', height: fontSize.xs },
   alertLink: { minHeight: size.touchTarget, justifyContent: 'center', alignSelf: 'flex-start' },
   alertLinkText: { textDecorationLine: 'underline' },
+  colophon: { textAlign: 'center' },
 });
 
 function NavRow({ row, onPress }: { readonly row: Row; readonly onPress?: () => void }) {
@@ -286,6 +290,31 @@ function AccountAlerts({ me }: { readonly me: Me }) {
   );
 }
 
+/**
+ * The web footer's last row (`SiteFooter`), and what only the app has to add to it: which
+ * build this is, the first thing support asks.
+ *
+ * <p>"© IdeyaNest" without a year, for the web's reason — a year from `new Date()` is a value
+ * that changes under a screen nobody touched. The currency is the web's heading and value,
+ * because phase 1 collects in manat whatever the reader's language. The version and build are
+ * the native ones (`expo-application`), not `app.config.ts`'s, since the binary is what a bug
+ * report has to name; neither exists outside a native build, so the line is left out there.
+ *
+ * <p>One text, so a screen reader reads the block in one stop, and meta-sized and tertiary
+ * like the web's: it is information, not a control.
+ */
+function Colophon() {
+  const t = useT();
+  const version = Application.nativeApplicationVersion;
+  const build = Application.nativeBuildVersion;
+  const lines = [
+    t('mobile.me.copyright'),
+    `${t('shell.footer.currencyHeading')}: ${t('shell.footer.currencyValue')}`,
+    ...(version !== null && build !== null ? [t('mobile.me.version', { version, build })] : []),
+  ];
+  return <Meta style={styles.colophon}>{lines.join('\n')}</Meta>;
+}
+
 export default function MeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -340,6 +369,20 @@ export default function MeScreen() {
     },
     [busy],
   );
+
+  /**
+   * Sign out, once the reader has said so. It ends the session and forgets the offline copy of
+   * their pledges and saved projects, and one stray tap at the foot of a scrolled list should
+   * not do that — so the pill asks first, as a native alert with the destructive action named
+   * in the pill's own words and Cancel as the way back.
+   */
+  function confirmSignOut(): void {
+    if (busy) return;
+    Alert.alert(t('mobile.me.signOutConfirm.title'), t('mobile.me.signOutConfirm.body'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('shell.actions.signOut'), style: 'destructive', onPress: () => void endIt() },
+    ]);
+  }
 
   async function endIt(): Promise<void> {
     if (busy) return;
@@ -423,12 +466,14 @@ export default function MeScreen() {
         <NavRow row={{ label: 'shell.whatsapp.open' }} onPress={() => setContacting(true)} />
       </Group>
 
+      <Colophon />
+
       {holdsSession ? (
         <Button
           label={t('shell.actions.signOut')}
           variant="secondary"
           busy={busy}
-          onPress={() => void endIt()}
+          onPress={confirmSignOut}
         />
       ) : null}
 

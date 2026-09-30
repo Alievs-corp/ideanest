@@ -4,9 +4,13 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "description": "The four interface catalogues and the locale vocabulary shared by apps/web and apps/mobile.",
+  "description": "The four interface catalogues, the locale vocabulary and the pure formatting helpers shared by apps/web and apps/mobile.",
   "exports": {
     ".": "./src/index.ts",
+    "./plurals": "./src/plurals.ts",
+    "./placeholders": "./src/placeholders.ts",
+    "./formats": "./src/formats.ts",
+    "./azerbaijani": "./src/azerbaijani.ts",
     "./az.json": "./src/az.json",
     "./en.json": "./src/en.json",
     "./ru.json": "./src/ru.json",
@@ -16,8 +20,13 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
   "devDependencies": {
     "@types/node": "~22.20.2",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
   }

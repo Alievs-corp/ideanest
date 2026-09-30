@@ -234,6 +234,12 @@ jest.mock('expo-notifications', () => ({
 /** Whether this is a real device. False, which is what a test runner is. */
 jest.mock('expo-device', () => ({ isDevice: false, deviceName: 'Test device' }));
 
+/** The binary's version and build, which the Me tab's footer names. Fixed, so a test can read them. */
+jest.mock('expo-application', () => ({
+  nativeApplicationVersion: '1.2.3',
+  nativeBuildVersion: '45',
+}));
+
 /**
  * Connectivity — issue #150's offline banner. `lib/connectivity.ts` is the only consumer.
  *

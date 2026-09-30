@@ -26,7 +26,7 @@ import {
  *
  * <h2>Region subtags stop here</h2>
  *
- * `lib/i18n/locale.ts` carries primary subtags and nothing else, because that is what the
+ * `locale.ts` carries primary subtags and nothing else, because that is what the
  * service's RFC 4647 lookup folds to and what `users_locale_supported` will accept. This map
  * is the one place a region may appear, and it appears only where a formatter needs one.
  *
@@ -37,10 +37,15 @@ import {
  * so it is right on the server, right in every test, and wrong in front of the reader — and
  * `supportedLocalesOf` reports support, so no feature test can see it.
  *
- * <p>So the two constructors below send Azerbaijani to `lib/i18n/azerbaijani.ts` instead, on
+ * <p>So the two constructors below send Azerbaijani to `azerbaijani.ts` instead, on
  * every engine, and that file has the argument for why it is every engine rather than the
  * broken one. The entry stays because it is still what `az` means to `Intl` — the surrogate
  * that module renders its numbers with is `en-GB`, for the same reason English is.
+ *
+ * <p>The phone has the same problem by a different route, which is why this file lives in
+ * `@ideanest/messages` rather than in the web (#150): Hermes on Android formats with the
+ * platform's ICU, and which `az` data that ICU carries is the handset maker's decision. The
+ * app goes through these constructors too, so both read `14 avq 2026` on every engine.
  */
 export const INTL_LOCALE: Readonly<Record<Locale, string>> = {
   az: 'az',
