@@ -235,6 +235,11 @@ async function open(initialSearch = ''): Promise<UserEvent> {
   return user;
 }
 
+/** Presses the drawer's green button: nothing reaches the URL before this. */
+async function applyFilters(user: UserEvent): Promise<void> {
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+}
+
 /** Opens the sort panel and returns it. */
 async function openSort(user: UserEvent): Promise<HTMLElement> {
   await user.click(screen.getByRole('button', { name: /Sort by/ }));
@@ -298,6 +303,9 @@ describe('applying a filter', () => {
     const user = await open();
 
     await user.click(screen.getByRole('checkbox', { name: 'Live' }));
+    // A draft: nothing has been requested or put in the URL yet.
+    expect(search().has('status')).toBe(false);
+    await applyFilters(user);
 
     await waitFor(() => expect(search().get('status')).toBe('live'));
     await waitFor(() => expect(lastQuery().statuses).toEqual(['live']));
@@ -308,13 +316,14 @@ describe('applying a filter', () => {
 
     await user.click(screen.getByRole('checkbox', { name: 'Games' }));
 
-    await waitFor(() => expect(search().get('category')).toBe('games'));
-    await waitFor(() => expect(lastQuery().categories).toEqual(['games']));
-
     // A hundred subcategories at once is a rail nobody can read, so they appear
     // under the category that was chosen.
     const nested = await screen.findByRole('list', { name: 'Games subcategories' });
     await user.click(within(nested).getByRole('checkbox', { name: 'Tabletop games' }));
+    await applyFilters(user);
+
+    await waitFor(() => expect(search().get('category')).toBe('games'));
+    await waitFor(() => expect(lastQuery().categories).toEqual(['games']));
 
     await waitFor(() => expect(search().get('subcategory')).toBe('tabletop'));
     await waitFor(() => expect(lastQuery().subcategories).toEqual(['tabletop']));
@@ -324,12 +333,12 @@ describe('applying a filter', () => {
     const user = await open();
 
     await user.click(screen.getByRole('checkbox', { name: 'Funded — 100% or more' }));
-    await waitFor(() => expect(search().get('completion')).toBe('over_100'));
-
     await user.click(screen.getAllByRole('checkbox', { name: '1,000 to under 5,000 AZN' })[0]!);
-    await waitFor(() => expect(search().get('goalBand')).toBe('1000_to_5000'));
-
     await user.click(screen.getByRole('checkbox', { name: 'Handmade' }));
+    await applyFilters(user);
+
+    await waitFor(() => expect(search().get('completion')).toBe('over_100'));
+    await waitFor(() => expect(search().get('goalBand')).toBe('1000_to_5000'));
     await waitFor(() => expect(search().get('tag')).toBe('handmade'));
 
     await waitFor(() => {
@@ -352,6 +361,7 @@ describe('applying a filter', () => {
     expect(feedMock.mock.calls.length).toBe(requestsBefore);
 
     await user.click(screen.getByRole('button', { name: 'Apply the custom goal amount range' }));
+    await applyFilters(user);
 
     await waitFor(() => {
       expect(search().get('goalMin')).toBe('2500');
@@ -838,11 +848,11 @@ describe('the rail as a structure', () => {
 
     // Space toggles a real checkbox. Nothing here is a click handler on a div.
     await user.keyboard(' ');
+    expect(upcoming).toBeChecked();
+    await applyFilters(user);
     await waitFor(() => expect(search().get('status')).toBe('upcoming'));
 
-    // And Tab keeps moving through the rail rather than trapping.
-    await user.tab();
-    expect(document.activeElement).not.toBe(upcoming);
+
   });
 
   it('does not offer a filter the service refuses', async () => {

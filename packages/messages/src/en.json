@@ -3099,6 +3099,8 @@
       "standfirst": "Every campaign on IdeyaNest, narrowed by whatever matters to you.",
       "filtersLabel": "Filter projects",
       "railLabel": "Filters",
+      "apply": "Apply",
+      "closeFilters": "Close filters",
       "resultsHeading": "Projects",
       "none": "None",
       "sortLabel": "Sort by",

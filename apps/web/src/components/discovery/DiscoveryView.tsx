@@ -1,9 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { SlidersHorizontal, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { usePathname, useRouter } from '../../i18n/navigation';
-import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup } from '@ideanest/ui';
+import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup, cn, useDismiss } from '@ideanest/ui';
 import { FadeUp } from '@ideanest/ui/motion';
 import type { ApiError } from '../../lib/api/problem';
 import { PAGE_SIZE, slugNames } from '../../lib/discovery/api';
@@ -148,12 +149,34 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
   );
 
   /*
-   * The rail is collapsed until asked for. It stays MOUNTED while closed (`hidden`, not
-   * unmounted) so a half-typed price range survives closing and reopening it, and the
-   * applied-filter chips below remain visible either way.
+   * The rail is a drawer that slides in from the right. It stays MOUNTED while closed
+   * (translated off-screen and `inert`) so a half-typed price range survives, and it edits a
+   * DRAFT: nothing reaches the URL — and so nothing refetches — until "Apply" is pressed.
+   * The draft is re-seeded from the address bar every time the applied filters change and
+   * every time the drawer opens, so closing without applying discards it.
    */
   const [railOpen, setRailOpen] = useState(false);
+  const [draft, setDraft] = useState<DiscoveryFilters>(filters);
   const railId = useId();
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const closeRail = useCallback(() => setRailOpen(false), []);
+  useDismiss({ open: railOpen, onDismiss: closeRail });
+
+  // Keyed on the query STRING, not the parsed object: the string only changes when the
+  // applied filters do.
+  const appliedKey = searchParams.toString();
+  useEffect(() => setDraft(filters), [appliedKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleRail = useCallback(() => {
+    setRailOpen((open) => {
+      if (!open) setDraft(filters);
+      return !open;
+    });
+  }, [filters]);
+
+  useEffect(() => {
+    if (railOpen) closeButton.current?.focus();
+  }, [railOpen]);
 
   const sentinel = useRef<HTMLDivElement>(null);
   const { hasMore, loadMore } = feed;
@@ -202,22 +225,58 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
         <SearchBox filters={filters} onApply={apply} copy={copy.suggest} />
       </div>
 
-      <div className="mt-8 flex flex-col gap-8 lg:flex-row">
-        <aside
-          id={railId}
-          hidden={!railOpen}
-          aria-label={copy.filtersLabel}
-          className="w-full shrink-0 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:w-[300px] lg:overflow-y-auto"
-        >
-          <FilterRail
-            filters={filters}
-            facets={facets}
-            onChange={apply}
-            copy={copy}
-            locale={locale}
-          />
-        </aside>
+      {/* The drawer's backdrop: a press outside the panel closes it without applying. */}
+      <div
+        aria-hidden="true"
+        onClick={closeRail}
+        className={cn(
+          'fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 motion-reduce:transition-none',
+          railOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+      />
 
+      <aside
+        id={railId}
+        aria-label={copy.filtersLabel}
+        inert={!railOpen}
+        className={cn(
+          'fixed right-0 top-0 z-50 flex h-dvh w-full max-w-[380px] flex-col border-l border-white/8 bg-surface-2',
+          'shadow-[var(--shadow-panel)] transition-[transform,visibility] duration-300 ease-out motion-reduce:transition-none',
+          railOpen ? 'visible translate-x-0' : 'invisible translate-x-full',
+        )}
+      >
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/8 px-5 py-4">
+          <h2 className="text-base font-semibold text-white">{copy.railLabel}</h2>
+          <button
+            ref={closeButton}
+            type="button"
+            aria-label={copy.closeFilters}
+            onClick={closeRail}
+            className="inline-grid size-9 place-items-center rounded-full bg-surface-3 text-white transition-colors duration-150 hover:bg-surface-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+          >
+            <X aria-hidden="true" className="size-4" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+          <FilterRail filters={draft} facets={facets} onChange={setDraft} copy={copy} locale={locale} />
+        </div>
+
+        <div className="shrink-0 border-t border-white/8 bg-surface-2 p-4">
+          <button
+            type="button"
+            onClick={() => {
+              apply(draft);
+              closeRail();
+            }}
+            className="h-12 w-full rounded-full bg-[var(--lime-500)] text-sm font-semibold text-[var(--text-on-lime)] transition-colors duration-150 hover:bg-[var(--lime-400)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            {copy.apply}
+          </button>
+        </div>
+      </aside>
+
+      <div className="mt-8">
         {/*
           A `div`, not a `main`. The site shell renders the page's one `<main>` and it is the
           skip link's target (§4.13 WS-01); a second landmark here would make "jump to main"
@@ -256,8 +315,9 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
                   variant="ghost"
                   aria-expanded={railOpen}
                   aria-controls={railId}
-                  onClick={() => setRailOpen((open) => !open)}
+                  onClick={toggleRail}
                 >
+                  <SlidersHorizontal aria-hidden="true" className="size-4" />
                   {copy.railLabel}
                   {active.length > 0 ? ` (${active.length})` : ''}
                 </Pill>

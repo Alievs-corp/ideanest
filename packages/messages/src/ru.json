@@ -3099,6 +3099,8 @@
       "standfirst": "Все кампании на IdeyaNest, отобранные по тому, что важно вам.",
       "filtersLabel": "Фильтровать проекты",
       "railLabel": "Фильтры",
+      "apply": "Применить",
+      "closeFilters": "Закрыть фильтры",
       "resultsHeading": "Проекты",
       "none": "Нет",
       "sortLabel": "Сортировка",
