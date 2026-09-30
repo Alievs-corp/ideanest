@@ -1,6 +1,6 @@
 name: Mobile release
 
-# Builds and distributes `apps/mobile` — issue #116.
+# Builds and distributes `apps/mobile` — §19.2.
 #
 # WHY THIS IS A SEPARATE WORKFLOW FROM `release.yml`.
 #

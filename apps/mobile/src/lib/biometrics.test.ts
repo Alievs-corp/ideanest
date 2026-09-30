@@ -3,7 +3,7 @@ import { biometricCapability, canLock, unlock } from './biometrics';
 
 /**
  * What the device can do, and what the account screen is therefore allowed to
- * offer — issue #29.
+ * offer — §4.12 MB-03.
  *
  * <p>The distinction worth testing is between "cannot" and "not yet". A phone
  * with a scanner and nothing enrolled is the case where the honest answer sends

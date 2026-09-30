@@ -92,7 +92,7 @@ jest.mock('expo-secure-store', () => {
    *
    * <p>The default is `true` — a test that says nothing gets a phone whose owner
    * is present, which is the ordinary case. `__setBiometryAllowed(false)` is how
-   * a test produces a dismissed prompt, and #29's whole point is that the
+   * a test produces a dismissed prompt, and the lock's (MB-03) whole point is that the
    * keychain, not this application, is what refuses.
    */
   let biometryAllowed = true;
@@ -142,7 +142,7 @@ jest.mock('expo-secure-store', () => {
 });
 
 /**
- * `expo-local-authentication` — issue #29's capability probe and in-app prompt.
+ * `expo-local-authentication` — §4.12 MB-03's capability probe and in-app prompt.
  *
  * <p>Native at module load like the rest, and mocked for the same reason. The
  * default is a phone with a fingerprint reader and a finger enrolled, which is

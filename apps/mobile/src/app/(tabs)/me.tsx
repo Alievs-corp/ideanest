@@ -25,7 +25,7 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  *
  * It replaces `app/account.tsx`, and the biometric lock moves here unchanged in
  * behaviour under "This phone" (the switch is offered only when the device can honour it,
- * and signing out clears the offline cache because #115 keeps the saved and pledge lists
+ * and signing out clears the offline cache because §4.12 MB-04 keeps the saved and pledge lists
  * on disk).
  *
  * Every word is a catalogue key: the web's own where the web has the sentence, the

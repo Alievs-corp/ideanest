@@ -1,13 +1,13 @@
 /**
  * The two files that let a link on this site open the mobile application —
- * issue #114, the half that lives on the web.
+ * §4.12 MB-02, the half that lives on the web.
  *
  * <h2>Why this is a module and not two route handlers with literals in them</h2>
  *
  * Neither file can be a static asset. Both name an identifier that only exists
  * once an application has been signed — Apple's team prefix, and the SHA-256 of
  * the Android signing certificate — and both differ between the internal build
- * and the store build (`apps/mobile/eas.json`, issue #116). A literal here would
+ * and the store build (`apps/mobile/eas.json`, §19.2). A literal here would
  * be one of those two, wrong for the other, and wrong in a way nothing fails on:
  * the operating system fetches the file, disagrees with it, and quietly stops
  * treating the link as a universal one. Nobody sees an error. The link just

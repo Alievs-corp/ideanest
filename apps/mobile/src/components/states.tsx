@@ -9,7 +9,7 @@ import { Body, CardTitle, Meta, Subheading } from './text';
  *
  * They live together because they are one decision. A screen that renders an
  * empty state when it should have rendered a stale-but-real list is the bug
- * #115 exists to prevent, and having the three side by side is what makes the
+ * §4.12 MB-04 exists to prevent, and having the three side by side is what makes the
  * ordering obvious at each call site: **cached data first, then the error, then
  * the empty state.**
  */
@@ -60,7 +60,7 @@ export function EmptyState({
   readonly title: string;
   readonly detail: string;
   /**
-   * The one thing to do about it, when there is one — issue #29.
+   * The one thing to do about it, when there is one — §17.1.
    *
    * <p>Optional, because most empty states have no answer: "nothing saved yet"
    * is resolved by saving something on a screen that is not this one. The
@@ -128,7 +128,7 @@ export function InlineAlert({
 }
 
 /**
- * The banner over a list that is being read from the cache — issue #115.
+ * The banner over a list that is being read from the cache — §4.12 MB-04.
  *
  * <h2>Why the list is not simply shown</h2>
  *

@@ -25,7 +25,7 @@ import { currentAccessToken, hasStoredSession } from '../lib/session';
  * Constructing one is an object literal and a closure; it is not worth caching
  * something that would be wrong.
  *
- * <h2>#29: the session lives in the `fetch`, not in the headers</h2>
+ * <h2>§17.1: the session lives in the `fetch`, not in the headers</h2>
  *
  * The access token is set on the request by {@link sessionFetch} rather than
  * passed to `createApiClient`, and that is the difference between a client that
@@ -58,7 +58,7 @@ const sessionFetch: Fetch = async (url, init) => {
   /*
    * A cold start has a keychain and no access token. Refreshing here rather than
    * after the inevitable 401 saves a round trip on the first screen somebody
-   * sees, and — with #29's lock on — means the biometric prompt appears once, at
+   * sees, and — with the lock (MB-03) on — means the biometric prompt appears once, at
    * the moment the first private read is made, rather than after a failure.
    */
   if (token === null && hasStoredSession()) {

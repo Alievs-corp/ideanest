@@ -6,7 +6,7 @@ import * as theme from './index';
 import { fontSize, lineHeight, motion, tracking } from './index';
 
 /**
- * Issue #111's actual requirement, as a test: same values, same names, **no
+ * §14.3's actual requirement (and `docs/ui-kit.md` §2's), as a test: same values, same names, **no
  * second palette**.
  *
  * `packages/ui` runs the equivalent scan over its own source, and the reason

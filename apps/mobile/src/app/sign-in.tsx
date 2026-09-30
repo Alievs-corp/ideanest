@@ -10,13 +10,13 @@ import { safeNext } from '../lib/guard';
 import { colors, size, spacing } from '../theme';
 
 /**
- * Signing in on a phone — issue #29's prerequisite, and part of the same change.
+ * Signing in on a phone — §17.1; MB-03's prerequisite, and part of the same change.
  *
  * <h2>Why this screen exists in the biometric-unlock issue</h2>
  *
- * #29 is a gate on a session, and nothing on this platform created one on a
+ * The lock is a gate on a session, and nothing on this platform created one on a
  * phone: the backend has had registration, rotation, social sign-in and
- * two-factor since #23–#26, and no client drove any of it. The issue's own
+ * two-factor (§17.1), and no client drove any of it. The issue's own
  * comment says so — "biometric unlock re-opens an existing session; it does not
  * create one" — and names it a prerequisite belonging to no issue. Shipping the
  * gate without it would have been a feature that cannot fire.
@@ -32,7 +32,7 @@ import { colors, size, spacing } from '../theme';
  * carries the full argument for why the challenge is a state of this form rather
  * than a route: a query string is written to logs, kept in history, and
  * forwarded in a `Referer`. Here there is no history and no referer, and the
- * reason still holds — a deep link is a URL, and #114 will happily route one.
+ * reason still holds — a deep link is a URL, and §4.12 MB-02 will happily route one.
  *
  * <h2>Motion: none</h2>
  *

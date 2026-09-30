@@ -2,7 +2,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { translate } from './i18n';
 
 /**
- * The device's own answer to "is the owner here?" — issue #29.
+ * The device's own answer to "is the owner here?" — §4.12 MB-03.
  *
  * <h2>This is a LOCAL GATE, and it is not an authentication factor</h2>
  *

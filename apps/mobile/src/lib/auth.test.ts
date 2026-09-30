@@ -11,7 +11,7 @@ import {
 import { memoryStore } from './storage';
 
 /**
- * Signing in and refreshing — issue #29.
+ * Signing in and refreshing — §17.1.
  *
  * <p>The assertion this file exists for is
  * {@link concurrentRefreshesMakeOneRequest}. §17.1 revokes a whole session
@@ -58,7 +58,7 @@ describe('signing in', () => {
 
     expect(outcome).toEqual({ kind: 'signed-in' });
     expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/auth/login');
-    // §17.1: a native client has no cookie jar worth using, and #24 built this
+    // §17.1: a native client has no cookie jar worth using, and the service defines this
     // shape for exactly this caller.
     expect(bodyOf(0).tokenDelivery).toBe('body');
     expect(currentAccessToken()).toBe('access-1');

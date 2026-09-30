@@ -8,7 +8,7 @@ import { useT } from '../../lib/i18n';
 import { colors, fontSize, radius, size, spacing } from '../../theme';
 
 /**
- * Search — issue #112's second half.
+ * Search — §4.3's second half.
  *
  * <h2>Why `useDeferredValue` and not a debounce timer</h2>
  *

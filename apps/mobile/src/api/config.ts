@@ -35,7 +35,7 @@ export function apiOrigin(): string {
   return origin;
 }
 
-/** The public origin whose links this application claims — used by #114. */
+/** The public origin whose links this application claims — used by the deep links (§4.12 MB-02). */
 export function siteUrl(): string {
   const url = extra().siteUrl;
   if (url === undefined || url === '') {

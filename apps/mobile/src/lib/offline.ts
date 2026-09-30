@@ -5,7 +5,7 @@ import type { Persister } from '@tanstack/react-query-persist-client';
 import { deviceStore, type KeyValueStore } from './storage';
 
 /**
- * Offline caching — issue #115. **Saved campaigns and pledges readable without a
+ * Offline caching — §4.12 MB-04. **Saved campaigns and pledges readable without a
  * connection.**
  *
  * <h2>Persisting the query cache rather than building a second one</h2>
@@ -26,7 +26,7 @@ import { deviceStore, type KeyValueStore } from './storage';
  *
  * <h2>What is persisted, and what is deliberately not</h2>
  *
- * Only the queries #115 names: what somebody saved, what they backed, and the
+ * Only the queries MB-04 names: what somebody saved, what they backed, and the
  * campaigns behind those. Everything else — discovery feeds, search results,
  * suggestions — is dropped by {@link shouldPersistQuery}. A feed is a ranking
  * computed at a moment; restoring last week's is worse than showing that the
@@ -95,7 +95,7 @@ export function createPersister(
 /**
  * The application's query client.
  *
- * `networkMode: 'offlineFirst'` is the setting that makes #115 work at all.
+ * `networkMode: 'offlineFirst'` is the setting that makes MB-04 work at all.
  * TanStack Query's default pauses a query when the device reports no
  * connection, so a cached campaign would sit behind a spinner that never
  * resolves. `offlineFirst` runs the query, lets it fail, and leaves the restored
@@ -152,7 +152,7 @@ export function shouldRetry(failureCount: number, error?: unknown): boolean {
 }
 
 /**
- * Erases the persisted cache from the device, now — issue #29.
+ * Erases the persisted cache from the device, now — §17.1.
  *
  * <h2>Why `queryClient.clear()` is not enough on its own</h2>
  *

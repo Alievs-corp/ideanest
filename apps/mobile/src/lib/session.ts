@@ -4,7 +4,7 @@ import { deviceStore, type KeyValueStore } from './storage';
 
 /**
  * Where the session lives on a phone — §16's `Authorization: Bearer` with the
- * refresh token in secure storage, behind #29's biometric gate.
+ * refresh token in secure storage, behind the biometric gate (§4.12 MB-03).
  *
  * <h2>Why this is not `lib/storage.ts`</h2>
  *
@@ -23,7 +23,7 @@ import { deviceStore, type KeyValueStore } from './storage';
  * the reason it existed: the process restarting is exactly the moment to go and
  * get a fresh one, and the refresh token is what makes that free.
  *
- * <h2>#29: TWO KEYCHAIN ITEMS, AND ONLY EVER ONE OF THEM AT A TIME</h2>
+ * <h2>MB-03: TWO KEYCHAIN ITEMS, AND ONLY EVER ONE OF THEM AT A TIME</h2>
  *
  * The biometric lock is not a check this application performs and could forget
  * to perform. It is a property of where the token is kept: with the lock on, the
@@ -193,7 +193,7 @@ export async function storedRefreshToken(): Promise<string | null> {
     /*
      * A keychain read can fail for reasons that are not "no session": a device
      * locked with `WHEN_UNLOCKED` set, a keystore invalidated because the user
-     * changed their screen lock, or -- since #29 -- a biometric prompt the
+     * changed their screen lock, or -- since the lock (§4.12 MB-03) -- a biometric prompt the
      * reader dismissed. Treating that as signed-out for the length of this call
      * is the safe reading, and the flags are deliberately NOT cleared: a
      * dismissed prompt is somebody choosing to stay locked, and forgetting the

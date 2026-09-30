@@ -11,7 +11,7 @@ import { colors, fontSize, fontWeight, radius, size, spacing, tracking } from '.
 import { Body, Meta } from './text';
 
 /**
- * The three controls a form on this platform needs — issue #29.
+ * The three controls a form on this platform needs — §17.1.
  *
  * <h2>Why these are here rather than in `@ideanest/ui`</h2>
  *

@@ -1,5 +1,5 @@
 /**
- * Checks that the two halves of #114 name the same application.
+ * Checks that the two halves of the deep links (§4.12 MB-02) name the same application.
  *
  * <h2>What can go wrong, and why nothing else catches it</h2>
  *
