@@ -4,6 +4,8 @@ import az.ideanest.shared.idempotency.IdempotencyKeyReusedException;
 import az.ideanest.shared.idempotency.IdempotentRequestInProgressException;
 import az.ideanest.shared.idempotency.MalformedIdempotencyKeyException;
 import az.ideanest.shared.idempotency.MissingIdempotencyKeyException;
+import az.ideanest.shared.maintenance.MaintenanceInProgressException;
+import az.ideanest.shared.maintenance.MaintenanceProblem;
 import az.ideanest.shared.payment.InvalidReturnUrlException;
 import az.ideanest.shared.ratelimit.RateLimitExceededException;
 import az.ideanest.shared.ratelimit.RateLimits;
@@ -173,6 +175,21 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, Long.toString(seconds))
                 .body(problem);
+    }
+
+    /**
+     * 503 with the maintenance contract, for a refusal raised below the servlet filter —
+     * issue #214.
+     *
+     * <p>The filter answers almost every request itself. What reaches here is the one
+     * case it cannot decide: a sign-in, a two-factor completion or a refresh, which pass
+     * the filter so that staff can get in, and are refused one layer down once the
+     * credentials say whose they are. The body is the filter's, so a client cannot tell
+     * which of the two refused it — and has no reason to.
+     */
+    @ExceptionHandler(MaintenanceInProgressException.class)
+    public ResponseEntity<MaintenanceProblem> handleMaintenance(MaintenanceInProgressException exception) {
+        return MaintenanceProblem.response(exception.window(), exception.retryAfterSeconds());
     }
 
     @Override

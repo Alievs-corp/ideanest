@@ -7,6 +7,7 @@ import az.ideanest.shared.SecureTokens;
 import az.ideanest.auth.domain.Session;
 import az.ideanest.auth.infrastructure.RefreshTokenRepository;
 import az.ideanest.auth.infrastructure.SessionRepository;
+import az.ideanest.shared.maintenance.MaintenanceGate;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
@@ -34,6 +35,7 @@ public class SessionStarter {
     private final SessionRepository sessions;
     private final RefreshTokenRepository refreshTokens;
     private final AccessTokenIssuer accessTokens;
+    private final MaintenanceGate maintenance;
     private final AuthProperties properties;
     private final Clock clock;
 
@@ -41,11 +43,13 @@ public class SessionStarter {
             SessionRepository sessions,
             RefreshTokenRepository refreshTokens,
             AccessTokenIssuer accessTokens,
+            MaintenanceGate maintenance,
             AuthProperties properties,
             Clock clock) {
         this.sessions = sessions;
         this.refreshTokens = refreshTokens;
         this.accessTokens = accessTokens;
+        this.maintenance = maintenance;
         this.properties = properties;
         this.clock = clock;
     }
@@ -72,6 +76,10 @@ public class SessionStarter {
 
     @Transactional
     public IssuedTokens start(NewSession request) {
+        // #214: every way in — password, two-factor completion, a provider's ID token —
+        // ends here, so this is the one check that cannot be forgotten by a new one.
+        maintenance.admitSession(request.userId());
+
         Instant now = clock.instant();
         Instant expiresAt = now.plus(properties.token().refreshTokenTtl());
 

@@ -7,6 +7,7 @@ import az.ideanest.auth.infrastructure.UserCredentialRepository;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.user.application.UserAccount;
 import az.ideanest.user.application.UserAccounts;
+import az.ideanest.shared.maintenance.MaintenanceGate;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
@@ -30,6 +31,7 @@ public class SignInService {
     private final TwoFactorChallenges challenges;
     private final SessionStarter sessionStarter;
     private final PasswordHasher passwordHasher;
+    private final MaintenanceGate maintenance;
     private final Clock clock;
 
     /**
@@ -50,6 +52,7 @@ public class SignInService {
             TwoFactorChallenges challenges,
             SessionStarter sessionStarter,
             PasswordHasher passwordHasher,
+            MaintenanceGate maintenance,
             Clock clock) {
         this.users = users;
         this.credentials = credentials;
@@ -57,6 +60,7 @@ public class SignInService {
         this.challenges = challenges;
         this.sessionStarter = sessionStarter;
         this.passwordHasher = passwordHasher;
+        this.maintenance = maintenance;
         this.clock = clock;
         this.decoyHash = passwordHasher.hash(SecureTokens.generate());
     }
@@ -107,6 +111,12 @@ public class SignInService {
         if (user.suspended()) {
             throw new AccountSuspendedException();
         }
+
+        // #214. After the password, so the refusal says nothing to somebody who does not
+        // hold it, and before the two-factor challenge, so a reader is not asked for a
+        // code only to be refused after it. Staff pass: they have to be able to sign in
+        // while the platform is closed to everybody else.
+        maintenance.admitSession(user.id());
 
         // A confirmed enrolment, not merely a row: somebody who scanned a code
         // and never entered one has not proved they can, and demanding a code

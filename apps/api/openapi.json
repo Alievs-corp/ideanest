@@ -1463,6 +1463,166 @@
         "tags" : [ "admin-legal-document-controller" ]
       }
     },
+    "/v1/admin/maintenance" : {
+      "get" : {
+        "operationId" : "maintenanceOverview",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MaintenanceOverview"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "maintenance-controller" ]
+      },
+      "post" : {
+        "operationId" : "maintenanceSchedule",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScheduleMaintenanceRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MaintenanceWindowView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "maintenance-controller" ]
+      }
+    },
+    "/v1/admin/maintenance/{id}" : {
+      "delete" : {
+        "operationId" : "maintenanceCancel",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MaintenanceWindowView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "maintenance-controller" ]
+      },
+      "patch" : {
+        "operationId" : "maintenanceChange",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangeMaintenanceRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MaintenanceWindowView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "maintenance-controller" ]
+      }
+    },
+    "/v1/admin/maintenance/{id}/end-now" : {
+      "post" : {
+        "operationId" : "maintenanceEndNow",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MaintenanceWindowView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "maintenance-controller" ]
+      }
+    },
+    "/v1/admin/maintenance/{id}/start-now" : {
+      "post" : {
+        "operationId" : "maintenanceStartNow",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MaintenanceWindowView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "maintenance-controller" ]
+      }
+    },
     "/v1/admin/me" : {
       "get" : {
         "operationId" : "staffMe",
@@ -9464,6 +9624,34 @@
         "tags" : [ "search-controller" ]
       }
     },
+    "/v1/status" : {
+      "get" : {
+        "operationId" : "statusCurrent",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlatformStatus"
+                }
+              }
+            },
+            "description" : "Whether the platform is open, and any window in force or announced."
+          },
+          "503" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MaintenanceProblem"
+                }
+              }
+            },
+            "description" : "Only from the edge, when this service is not running at all: the maintenance problem with source \"edge\". This endpoint is exempt from the API's own gate."
+          }
+        },
+        "tags" : [ "status-controller" ]
+      }
+    },
     "/v1/surveys/{surveyId}" : {
       "delete" : {
         "operationId" : "surveyDelete",
@@ -11221,6 +11409,18 @@
           }
         },
         "required" : [ "currentPassword", "newEmail" ]
+      },
+      "ChangeMaintenanceRequest" : {
+        "type" : "object",
+        "properties" : {
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "note" : {
+            "type" : "string"
+          }
+        }
       },
       "ChangePasswordRequest" : {
         "type" : "object",
@@ -13412,6 +13612,103 @@
           }
         }
       },
+      "MaintenanceOverview" : {
+        "type" : "object",
+        "properties" : {
+          "current" : {
+            "$ref" : "#/components/schemas/MaintenanceWindowView"
+          },
+          "recent" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MaintenanceWindowView"
+            }
+          },
+          "upcoming" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MaintenanceWindowView"
+            }
+          }
+        }
+      },
+      "MaintenanceProblem" : {
+        "type" : "object",
+        "description" : "The maintenance problem (issue #214). Any other 5xx, including a 503 without this `type`, is an ordinary failure.",
+        "properties" : {
+          "endsAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time",
+            "description" : "Null when no end is announced."
+          },
+          "source" : {
+            "type" : "string",
+            "enum" : [ "api", "edge" ]
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32",
+            "example" : 503
+          },
+          "title" : {
+            "type" : "string",
+            "example" : "Scheduled maintenance"
+          },
+          "type" : {
+            "type" : "string",
+            "example" : "https://ideanest.az/problems/maintenance"
+          }
+        },
+        "required" : [ "source", "startsAt", "status", "title", "type" ]
+      },
+      "MaintenanceWindowView" : {
+        "type" : "object",
+        "properties" : {
+          "announceFrom" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "cancelledAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "endedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "note" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "state" : {
+            "type" : "string",
+            "enum" : [ "SCHEDULED", "ANNOUNCED", "ACTIVE", "ENDED", "CANCELLED" ]
+          }
+        }
+      },
       "MeResponse" : {
         "type" : "object",
         "properties" : {
@@ -14286,6 +14583,24 @@
             "$ref" : "#/components/schemas/Totals"
           }
         }
+      },
+      "PlatformStatus" : {
+        "type" : "object",
+        "properties" : {
+          "maintenance" : {
+            "$ref" : "#/components/schemas/StatusWindow",
+            "description" : "The window in force, or null."
+          },
+          "state" : {
+            "type" : "string",
+            "enum" : [ "operational", "maintenance" ]
+          },
+          "upcoming" : {
+            "$ref" : "#/components/schemas/StatusWindow",
+            "description" : "The window announced and not yet started, or null."
+          }
+        },
+        "required" : [ "state" ]
       },
       "PledgeAddonBody" : {
         "type" : "object",
@@ -16234,6 +16549,29 @@
           }
         }
       },
+      "ScheduleMaintenanceRequest" : {
+        "type" : "object",
+        "properties" : {
+          "announceFrom" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "note" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "startsAt" ]
+      },
       "SendMessageRequest" : {
         "type" : "object",
         "properties" : {
@@ -16623,6 +16961,21 @@
             "enum" : [ "REAL", "PARTNER" ]
           }
         }
+      },
+      "StatusWindow" : {
+        "type" : "object",
+        "properties" : {
+          "endsAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time",
+            "description" : "Null when no end is announced."
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "startsAt" ]
       },
       "StoryVersionDetail" : {
         "type" : "object",

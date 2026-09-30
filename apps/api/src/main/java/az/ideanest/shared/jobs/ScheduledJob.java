@@ -60,4 +60,21 @@ public interface ScheduledJob {
      * will be recorded as having succeeded, which is worse than either.
      */
     void run();
+
+    /**
+     * Whether this job stands still while a maintenance window is in force — issue #214.
+     *
+     * <p><strong>True for the jobs that send money or messages out</strong>: charges,
+     * refunds, reconciliation passes, notification fan-out and delivery, reminders. Those
+     * are the ones whose effect leaves the platform and cannot be taken back if the
+     * maintenance was for a problem in them. Everything else — sweeps, rollups,
+     * retention — keeps running, because pausing it protects nobody and leaves a backlog.
+     *
+     * <p>A paused job is not claimed at all, so its attempt count and backoff are
+     * untouched and it resumes on the first tick after the window ends. Inbound webhooks
+     * are not a job and are still recorded throughout.
+     */
+    default boolean pausesDuringMaintenance() {
+        return false;
+    }
 }

@@ -1,0 +1,8 @@
+{
+  "type": "https://ideanest.az/problems/maintenance",
+  "title": "Scheduled maintenance",
+  "status": 503,
+  "startsAt": null,
+  "endsAt": null,
+  "source": "edge"
+}
