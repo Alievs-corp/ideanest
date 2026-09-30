@@ -80,6 +80,7 @@ import {
   flagConsoleCopyFrom,
   healthDashboardCopyFrom,
   legalDocumentEditorCopyFrom,
+  maintenanceConsoleCopyFrom,
   platformAnalyticsCopyFrom,
   type AuditTrailCopy,
   type EmailTemplateEditorCopy,
@@ -87,6 +88,7 @@ import {
   type FlagConsoleCopy,
   type HealthDashboardCopy,
   type LegalDocumentEditorCopy,
+  type MaintenanceConsoleCopy,
   type PlatformAnalyticsCopy,
 } from './platform-copy';
 
@@ -140,6 +142,10 @@ export async function healthDashboardCopy(): Promise<HealthDashboardCopy> {
 
 export async function flagConsoleCopy(): Promise<FlagConsoleCopy> {
   return flagConsoleCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+export async function maintenanceConsoleCopy(): Promise<MaintenanceConsoleCopy> {
+  return maintenanceConsoleCopyFrom(await getTranslations('admin'), await consoleChrome());
 }
 
 export async function platformAnalyticsCopy(): Promise<PlatformAnalyticsCopy> {

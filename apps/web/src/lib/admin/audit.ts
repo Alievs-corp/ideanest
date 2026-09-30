@@ -204,6 +204,7 @@ export const AUDIT_ENTITY_TYPES: readonly string[] = Object.freeze([
   'collaborator',
   'session',
   'collection',
+  'maintenance_window',
 ]);
 
 /**

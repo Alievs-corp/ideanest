@@ -702,7 +702,8 @@
       "/admin/campaigns": "Bütün kampaniyalar",
       "/admin/revenue": "Gəlir",
       "/admin/partners": "Tərəfdaşlar",
-      "/admin/partner-statistics": "Tərəfdaş statistikası"
+      "/admin/partner-statistics": "Tərəfdaş statistikası",
+      "/admin/maintenance": "Texniki xidmət"
     },
     "states": {
       "built": "Hazırdır",
@@ -1043,6 +1044,12 @@
         "metaDescription": "Gəlir və abunəliklər, yekunlarla.",
         "title": "Tərəfdaş statistikası",
         "intro": "Gəlir və abunəliklər yekunlarla: bu gün, bu ay, günlər, aylar və planlar üzrə."
+      },
+      "maintenance": {
+        "metaTitle": "Texniki xidmət pəncərələri",
+        "metaDescription": "Planlı texniki xidməti planlaşdırın, başladın və bitirin — oxucular əvvəlcədən xəbərdar edilir.",
+        "title": "Texniki xidmət",
+        "intro": "Pəncərə qüvvədə olanda hər oxucu texniki xidmət səhifəsini görür, xidmət isə girişdən, ödəniş provayderlərinin webhook-larından və əməkdaşlardan başqa hər şeyi rədd edir. Oxucular elan vaxtından, standart olaraq bir gün əvvəldən xəbərdar edilir. Pul və ya mesaj göndərən fon işləri dayanır və pəncərə bitəndə davam edir."
       }
     },
     "screens": {
@@ -1075,6 +1082,7 @@
           "email_template": "E-poçt şablonları",
           "feature_flag": "Funksiya bayraqları",
           "fee_schedule": "Komissiya cədvəlləri",
+          "maintenance_window": "Texniki xidmət pəncərələri",
           "payout": "Ödənişlər",
           "project": "Kampaniyalar",
           "refund": "Geri qaytarmalar",
@@ -1128,6 +1136,13 @@
           "ledger": {
             "read": "Baş kitab oxundu",
             "reconciled": "Baş kitab uzlaşdırıldı"
+          },
+          "maintenance": {
+            "window_scheduled": "Texniki xidmət pəncərəsi planlaşdırıldı",
+            "window_started": "Texniki xidmət pəncərəsi başladıldı",
+            "window_ended": "Texniki xidmət pəncərəsi bitirildi",
+            "window_changed": "Texniki xidmət pəncərəsi dəyişdirildi",
+            "window_cancelled": "Texniki xidmət pəncərəsi ləğv edildi"
           },
           "payment": {
             "log_read": "Ödəniş jurnalı oxundu"
@@ -2527,6 +2542,62 @@
         "dailyCaption": "Bu ayın günləri üzrə gəlir və abunəliklər",
         "monthlyCaption": "Aylar üzrə gəlir və abunəliklər",
         "planCaption": "Bu ayın planları üzrə gəlir və abunəliklər"
+      },
+      "maintenance": {
+        "subject": "texniki xidmət pəncərələrini",
+        "loadingList": "Texniki xidmət pəncərələri yüklənir",
+        "currentHeading": "İndi qüvvədədir",
+        "currentEmpty": "Heç nə qüvvədə deyil. Platforma hamı üçün açıqdır.",
+        "upcomingHeading": "Planlaşdırılıb",
+        "upcomingEmpty": "Heç nə planlaşdırılmayıb.",
+        "recentHeading": "Son pəncərələr",
+        "recentEmpty": "Hələ heç bir pəncərə bitməyib və ya ləğv olunmayıb.",
+        "state": {
+          "SCHEDULED": "Planlaşdırılıb",
+          "ANNOUNCED": "Elan olunub",
+          "ACTIVE": "Qüvvədədir",
+          "ENDED": "Bitib",
+          "CANCELLED": "Ləğv olunub"
+        },
+        "startsLabel": "Başlayır",
+        "endsLabel": "Bitir",
+        "announceLabel": "Oxucular bu vaxtdan xəbərdar edilir",
+        "endedLabel": "Bitdi",
+        "cancelledLabel": "Ləğv olundu",
+        "noteLabel": "Qeyd",
+        "untilFurtherNotice": "Növbəti xəbərə qədər",
+        "startNow": "İndi başlat",
+        "startNowConfirm": "Bu pəncərə indi başladılsın? On saniyə ərzində hər oxucu texniki xidmət səhifəsini görəcək, çıxan ödənişlər və mesajlar dayanacaq.",
+        "startNowYes": "Bəli, indi başlat",
+        "endNow": "İndi bitir",
+        "endNowConfirm": "Bu pəncərə indi bitirilsin? On saniyə ərzində oxucular platformaya qayıdacaq, dayandırılmış işlər davam edəcək.",
+        "endNowYes": "Bəli, indi bitir",
+        "keep": "Hələ yox",
+        "changeEnd": "Bitmə vaxtını dəyiş",
+        "newEndLabel": "Yeni bitmə vaxtı",
+        "openEndLabel": "Növbəti xəbərə qədər",
+        "saveEnd": "Bitmə vaxtını saxla",
+        "cancelWindow": "Pəncərəni ləğv et",
+        "scheduleHeading": "Pəncərə planlaşdır",
+        "scheduleIntro": "Vaxtlar sizin saat qurşağınızdadır: {zone}. Oxucular onları öz saat qurşaqlarında görür.",
+        "startsAtLabel": "Başlama vaxtı",
+        "endsAtLabel": "Bitmə vaxtı",
+        "endsAtHint": "Növbəti xəbərə qədər üçün boş saxlayın. Oxuculara təyin etdiyiniz bitmə vaxtı göstərilir.",
+        "announceFromLabel": "Oxucuları bu vaxtdan xəbərdar et",
+        "announceFromHint": "Boş saxlasanız, başlamadan bir gün əvvəl.",
+        "noteFieldLabel": "Daxili qeyd",
+        "noteHint": "Niyə və kimdən soruşmaq lazımdır. Oxucular bunu heç vaxt görmür.",
+        "schedule": "Planlaşdır",
+        "working": "İşlənir",
+        "failedTitle": "Bu alınmadı",
+        "refusal": {
+          "MAINTENANCE_WINDOW_NOT_FOUND": "Bu pəncərə artıq mövcud deyil. Siyahı yenidən oxundu.",
+          "MAINTENANCE_WINDOW_OVERLAPS": "Bu vaxtda artıq başqa pəncərə qüvvədədir və ya planlaşdırılıb. Eyni anda yalnız bir pəncərə qüvvədə və ya gözləmədə ola bilər.",
+          "MAINTENANCE_WINDOW_ALREADY_STARTED": "Bu pəncərə artıq başlayıb, onu yalnız bitirmək olar.",
+          "MAINTENANCE_WINDOW_NOT_ACTIVE": "Bu pəncərə qüvvədə deyil, bitiriləcək bir şey yoxdur.",
+          "MAINTENANCE_WINDOW_OVER": "Bu pəncərə artıq bitib.",
+          "MAINTENANCE_WINDOW_INVALID": "Bu vaxtlardan pəncərə alınmır: başlama keçmişdə ola bilməz, bitmə başlamadan sonra, xəbərdarlıq isə ondan əvvəl gəlməlidir."
+        }
       }
     },
     "moderation": {
@@ -2665,6 +2736,7 @@
       "creatorNamed": "{name}, müəllif hesabı"
     },
     "signedInAs": "{name} kimi daxil olmusunuz — {roles}",
+    "maintenanceOn": "Texniki xidmət gedir — oxucular texniki xidmət səhifəsini görür.",
     "dashboard": {
       "title": "İcmal",
       "metaTitle": "İcmal",

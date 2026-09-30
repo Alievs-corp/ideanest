@@ -702,7 +702,8 @@
       "/admin/campaigns": "Tüm kampanyalar",
       "/admin/revenue": "Gelir",
       "/admin/partners": "Ortaklar",
-      "/admin/partner-statistics": "Ortak istatistikleri"
+      "/admin/partner-statistics": "Ortak istatistikleri",
+      "/admin/maintenance": "Bakım"
     },
     "states": {
       "built": "Hazır",
@@ -1043,6 +1044,12 @@
         "metaDescription": "Gelir ve abonelikler, toplamlar halinde.",
         "title": "Ortak istatistikleri",
         "intro": "Gelir ve abonelikler toplamlar halinde: bugün, bu ay, güne, aya ve plana göre."
+      },
+      "maintenance": {
+        "metaTitle": "Bakım pencereleri",
+        "metaDescription": "Planlı bakımı planlayın, başlatın ve bitirin; okurlar önceden uyarılır.",
+        "title": "Bakım",
+        "intro": "Bir pencere yürürlükteyken her okur bakım sayfasını görür ve servis; giriş, ödeme sağlayıcılarının webhook istekleri ve ekip üyeleri dışında her şeyi reddeder. Okurlar duyuru zamanından itibaren, varsayılan olarak bir gün önceden uyarılır. Para veya mesaj gönderen arka plan işleri durur ve pencere bitince devam eder."
       }
     },
     "screens": {
@@ -1075,6 +1082,7 @@
           "email_template": "E-posta şablonları",
           "feature_flag": "Özellik bayrakları",
           "fee_schedule": "Ücret çizelgeleri",
+          "maintenance_window": "Bakım pencereleri",
           "payout": "Ödemeler",
           "project": "Kampanyalar",
           "refund": "İadeler",
@@ -1128,6 +1136,13 @@
           "ledger": {
             "read": "Defter okundu",
             "reconciled": "Defter mutabakatı yapıldı"
+          },
+          "maintenance": {
+            "window_scheduled": "Bakım penceresi planlandı",
+            "window_started": "Bakım penceresi başlatıldı",
+            "window_ended": "Bakım penceresi bitirildi",
+            "window_changed": "Bakım penceresi değiştirildi",
+            "window_cancelled": "Bakım penceresi iptal edildi"
           },
           "payment": {
             "log_read": "Ödeme günlüğü okundu"
@@ -2527,6 +2542,62 @@
         "dailyCaption": "Bu ayın günlerine göre gelir ve abonelikler",
         "monthlyCaption": "Aylara göre gelir ve abonelikler",
         "planCaption": "Bu ayın planlarına göre gelir ve abonelikler"
+      },
+      "maintenance": {
+        "subject": "bakım pencerelerini",
+        "loadingList": "Bakım pencereleri yükleniyor",
+        "currentHeading": "Şu an yürürlükte",
+        "currentEmpty": "Yürürlükte hiçbir şey yok. Platform herkese açık.",
+        "upcomingHeading": "Planlandı",
+        "upcomingEmpty": "Planlanmış bir şey yok.",
+        "recentHeading": "Son pencereler",
+        "recentEmpty": "Henüz biten veya iptal edilen bir pencere yok.",
+        "state": {
+          "SCHEDULED": "Planlandı",
+          "ANNOUNCED": "Duyuruldu",
+          "ACTIVE": "Yürürlükte",
+          "ENDED": "Bitti",
+          "CANCELLED": "İptal edildi"
+        },
+        "startsLabel": "Başlangıç",
+        "endsLabel": "Bitiş",
+        "announceLabel": "Okurlar şu tarihten itibaren uyarılır",
+        "endedLabel": "Bitti",
+        "cancelledLabel": "İptal edildi",
+        "noteLabel": "Not",
+        "untilFurtherNotice": "Yeni bir duyuruya kadar",
+        "startNow": "Şimdi başlat",
+        "startNowConfirm": "Bu pencere şimdi başlatılsın mı? On saniye içinde her okur bakım sayfasını görecek, giden ödemeler ve mesajlar duracak.",
+        "startNowYes": "Evet, şimdi başlat",
+        "endNow": "Şimdi bitir",
+        "endNowConfirm": "Bu pencere şimdi bitirilsin mi? On saniye içinde okurlar platforma geri döner ve duran işler devam eder.",
+        "endNowYes": "Evet, şimdi bitir",
+        "keep": "Şimdi değil",
+        "changeEnd": "Bitişi değiştir",
+        "newEndLabel": "Yeni bitiş",
+        "openEndLabel": "Yeni bir duyuruya kadar",
+        "saveEnd": "Bitişi kaydet",
+        "cancelWindow": "Pencereyi iptal et",
+        "scheduleHeading": "Pencere planla",
+        "scheduleIntro": "Saatler sizin saat diliminizde: {zone}. Okurlar kendi saat dilimlerinde görür.",
+        "startsAtLabel": "Başlangıç",
+        "endsAtLabel": "Bitiş",
+        "endsAtHint": "Bitiş belli değilse boş bırakın. Okurlara belirlediğiniz bitiş gösterilir.",
+        "announceFromLabel": "Okurları şu tarihten itibaren uyar",
+        "announceFromHint": "Boş bırakırsanız başlangıçtan bir gün önce.",
+        "noteFieldLabel": "İç not",
+        "noteHint": "Neden ve kime sorulmalı. Okurlar bunu asla görmez.",
+        "schedule": "Planla",
+        "working": "Çalışıyor",
+        "failedTitle": "Bu işe yaramadı",
+        "refusal": {
+          "MAINTENANCE_WINDOW_NOT_FOUND": "Bu pencere artık yok. Liste yeniden okundu.",
+          "MAINTENANCE_WINDOW_OVERLAPS": "O saatte başka bir pencere zaten yürürlükte ya da planlı. Aynı anda yalnızca bir pencere yürürlükte veya beklemede olabilir.",
+          "MAINTENANCE_WINDOW_ALREADY_STARTED": "Bu pencere zaten başladı, yalnızca bitirilebilir.",
+          "MAINTENANCE_WINDOW_NOT_ACTIVE": "Bu pencere yürürlükte değil, bitirilecek bir şey yok.",
+          "MAINTENANCE_WINDOW_OVER": "Bu pencere zaten sona erdi.",
+          "MAINTENANCE_WINDOW_INVALID": "Bu saatlerle bir pencere olmuyor: başlangıç geçmişte olamaz, bitiş başlangıçtan sonra, uyarı ise ondan önce gelmeli."
+        }
       }
     },
     "moderation": {
@@ -2665,6 +2736,7 @@
       "creatorNamed": "{name}, kurucu hesabı"
     },
     "signedInAs": "{name} olarak oturum açtınız — {roles}",
+    "maintenanceOn": "Bakım sürüyor — okurlar bakım sayfasını görüyor.",
     "dashboard": {
       "title": "Genel bakış",
       "metaTitle": "Genel bakış",
