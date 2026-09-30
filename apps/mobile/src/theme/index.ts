@@ -1,4 +1,13 @@
-import { colors, duration, easing, radius, spacing, staggerDelay } from '@ideanest/design-tokens';
+import { Platform } from 'react-native';
+import {
+  colors,
+  duration,
+  easing,
+  radius,
+  shadow,
+  spacing,
+  staggerDelay,
+} from '@ideanest/design-tokens';
 
 /**
  * The mobile styling layer — §14.3 and `docs/ui-kit.md` §2. **Same values, same names, no second
@@ -30,7 +39,70 @@ import { colors, duration, easing, radius, spacing, staggerDelay } from '@ideane
  * screens import. `docs/architecture.md` §14.3 carries the same note.
  */
 
-export { colors, duration, easing, radius, spacing, staggerDelay };
+export { colors, duration, easing, radius, shadow, spacing, staggerDelay };
+
+/**
+ * A token colour at a given opacity — the 12% tag tints, the black/64 dialog scrim, `white/24`.
+ *
+ * <p>The web writes these as `bg-danger/12` and Tailwind derives the rgba from the variable.
+ * React Native has no such syntax, and the alternative is somebody typing
+ * `'rgba(255,68,56,0.12)'`, which the hex scan cannot see and which stops following `danger` the
+ * day `danger` changes. This derives the channels **from the token value**, so the only colour in
+ * the result is the one the token file holds.
+ *
+ * <p>A translucent token keeps its own opacity in the product: `tint(colors.textSecondary, 0.5)`
+ * is white at 32%, which is what painting a half-transparent layer of it would give.
+ */
+export function tint(color: string, alpha: number): string {
+  const hex = /^#([0-9a-f]{6})$/i.exec(color);
+  if (hex?.[1] !== undefined) {
+    const value = Number.parseInt(hex[1], 16);
+    return `rgba(${(value >> 16) & 0xff},${(value >> 8) & 0xff},${value & 0xff},${alpha})`;
+  }
+
+  const rgba = /^rgba?\(([^)]+)\)$/i.exec(color);
+  const parts = rgba?.[1]?.split(',').map((part) => Number.parseFloat(part));
+  if (parts !== undefined && parts.length >= 3 && parts.every((part) => Number.isFinite(part))) {
+    const [red, green, blue, own = 1] = parts;
+    return `rgba(${red},${green},${blue},${Math.round(own * alpha * 1000) / 1000})`;
+  }
+
+  // A throw rather than the colour unchanged: a scrim that silently renders opaque is a dialog
+  // that hides the screen it is asking about.
+  throw new Error(`tint() reads #RRGGBB and rgba() tokens; ${color} is neither`);
+}
+
+/**
+ * Inter, the web's typeface, embedded at build time by the `expo-font` config plugin in
+ * `app.config.ts` — never loaded at runtime, so there is no flash of the system font and no
+ * cold-start cost.
+ *
+ * <h2>Why each weight is a face and not a `fontWeight`</h2>
+ *
+ * React Native asks the platform for "this family at this weight", and the two platforms answer
+ * differently. iOS finds a registered face by its PostScript name, which in these files is
+ * `Inter-Medium` and so on. Android registers the three files as one XML font family named
+ * `Inter` (the plugin's `fontDefinitions`), which is the only arrangement in which a weight picks
+ * a face there instead of synthesising a bold from the regular one. So a role asks for a face,
+ * and each face carries the weight that both platforms need to find it.
+ *
+ * <p>The files are Google Fonts' Inter, which carries Latin Extended and Cyrillic — the web's
+ * `next/font` subsets — so ə, ğ, ş, İ, Ə and Russian draw in Inter rather than in a fallback.
+ */
+export const font = {
+  regular: {
+    fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter' }),
+    fontWeight: '400',
+  },
+  medium: {
+    fontFamily: Platform.select({ ios: 'Inter-Medium', default: 'Inter' }),
+    fontWeight: '500',
+  },
+  semibold: {
+    fontFamily: Platform.select({ ios: 'Inter-SemiBold', default: 'Inter' }),
+    fontWeight: '600',
+  },
+} as const;
 
 /**
  * The type scale, in points.
@@ -53,10 +125,19 @@ export const fontSize = {
   h3: 20,
   /** 18px — card title. */
   lg: 18,
+  /**
+   * 17px — long-form reading (`--text-reading`: the story, a static page) and the reward title.
+   * One point over body is the whole difference between a paragraph and an essay.
+   */
+  reading: 17,
   /** 16px — body. */
   base: 16,
+  /** 15px — a row's title in the editor and in settings lists (`docs/ui-kit.md`). */
+  row: 15,
   /** 14px — subtitle, role. */
   sm: 14,
+  /** 13px — a field's hint, meta beside a row, an eyebrow. */
+  caption: 13,
   /** 12px — tag, meta, count. */
   xs: 12,
   /** 11px — badge. */
@@ -79,8 +160,11 @@ export const tracking = {
   h3: fontSize.h3 * -0.03,
   cardTitle: fontSize.lg * -0.02,
   body: fontSize.base * -0.01,
+  reading: fontSize.reading * -0.01,
   tag: 0,
   button: fontSize.base * -0.01,
+  /** Eyebrows are the one step that opens up: uppercase at 12–13px needs air, +0.06em. */
+  eyebrow: fontSize.xs * 0.06,
 } as const;
 
 /** Line heights from §5.4, resolved against the sizes above. */
@@ -91,9 +175,21 @@ export const lineHeight = {
   h3: Math.round(fontSize.h3 * 1.2),
   cardTitle: Math.round(fontSize.lg * 1.3),
   body: Math.round(fontSize.base * 1.5),
-  /** Long-form campaign story. The one place §5.4 asks for 1.75. */
-  story: Math.round(fontSize.base * 1.75),
+  /** Supporting text at 13–14px, which keeps body's 1.5. */
+  small: Math.round(fontSize.sm * 1.5),
+  /**
+   * Long-form campaign story at the reading size. The one place §5.4 asks for 1.75, and the web's
+   * `--text-reading` paragraph (17px) — so the story is not a point smaller on the phone.
+   */
+  story: Math.round(fontSize.reading * 1.75),
 } as const;
+
+/**
+ * The widest a reading column gets, in points: about 68 characters of Inter at 17px. A phone is
+ * narrower than this and never reaches it; a tablet in landscape is not, and a 120-character
+ * line is one the eye loses its place on.
+ */
+export const readingMeasure = 640;
 
 /** Weights as React Native spells them. */
 export const fontWeight = {
@@ -139,4 +235,14 @@ export const motion = {
   slow: duration.mobileSlow,
   countUp: duration.countUp,
   progress: duration.progress,
+  /**
+   * A dialog's entry, and the skeleton-to-content crossfade. 200ms on both platforms and NOT
+   * shortened: `packages/ui`'s `OVERLAY_ENTRY_MS` and `docs/motion-system.md` §6 both name it as
+   * the floor at which an arrival still reads as one, and 160 would be a flicker.
+   */
+  overlay: 200,
+  /** One pass of the skeleton shimmer — `.skeleton-shimmer` in `packages/ui/src/styles.css`. */
+  shimmer: 1400,
+  /** How far a pressed pill gives, where the motion budget allows it (`docs/motion-system.md` §7). */
+  pressScale: 0.98,
 } as const;

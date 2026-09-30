@@ -12,6 +12,7 @@
     "test": "jest --ci --passWithNoTests"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
     "@ideanest/api-client": "workspace:*",
     "@ideanest/design-tokens": "workspace:*",
     "@ideanest/messages": "workspace:*",
@@ -26,7 +27,9 @@
     "expo-constants": "~57.0.18",
     "expo-device": "~57.0.2",
     "expo-font": "~57.0.4",
+    "expo-haptics": "~57.0.3",
     "expo-image": "~57.0.5",
+    "expo-image-picker": "~57.0.20",
     "expo-linking": "~57.0.10",
     "expo-local-authentication": "~57.0.3",
     "expo-localization": "~57.0.2",
@@ -38,6 +41,7 @@
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.4",
     "expo-web-browser": "~57.0.3",
+    "lucide-react-native": "^1.48.0",
     "react": "19.3.0",
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~3.3.0",

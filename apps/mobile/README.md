@@ -55,6 +55,32 @@ A runner that does not go through Babel stops at the first import of the
 framework. `jest.config.js` explains the two settings that make this work under
 pnpm's non-flat `node_modules`.
 
+## The UI kit (#151)
+
+`@ideanest/ui` is React DOM, so the app has its own half of the same design in
+`src/components/ui/`, one component per file, imported from
+`src/components/ui/index.ts`. Screens build from the kit rather than from
+`react-native` primitives, for the web's reason: a second button is how a second
+design starts.
+
+- **Typeface.** Inter in three weights, embedded at build time by the
+  `expo-font` plugin (`app.config.ts`), never loaded at startup.
+  `src/theme/fonts.test.ts` reads the font files and checks the names each
+  platform looks a face up by, and the ə, ğ, ş, İ and Cyrillic glyphs.
+- **Surfaces.** A lime or white container provides a `SurfaceProvider`, and every
+  text role and ghost icon under it switches to the on-lime or on-white tone —
+  the native `data-on-lime`. `theme.test.ts` measures every tone on every
+  surface it can land on.
+- **White is primary, lime is accent.** `Pill`'s `primary` is white; `accent` is
+  the one urgent action on a screen and warns in development when a screen
+  mounts two. Lime is never text: `theme.test.ts` fails on a lime text colour.
+- **Motion budget.** A route declares `MotionBudgetProvider level=…` from
+  `docs/motion-system.md` §5 (checkout, the editor, auth and settings are
+  `none`); every animated primitive asks `useMotionAllowed`, which also says no
+  when the device has Reduce Motion on. Undeclared screens get `minimal`.
+- **Feedback without toasts.** `announce()` is the native `aria-live`, and
+  `haptics` is exactly the five events in §7's table.
+
 ## Configuration
 
 Two variables, read at **build** time by `app.config.ts` and surfaced through

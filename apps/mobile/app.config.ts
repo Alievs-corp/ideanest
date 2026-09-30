@@ -49,6 +49,18 @@ function origin(variable: string, fallback: string): string {
 const siteUrl = origin(SITE_URL_VARIABLE, DEFAULT_SITE_URL);
 const siteHost = new URL(siteUrl).host;
 
+/**
+ * The three Inter weights the type scale uses, as module specifiers the `expo-font` plugin
+ * resolves itself — so the files come from the package at its locked version rather than from a
+ * copy in `assets/` that nobody updates. `src/theme/fonts.test.ts` holds this list against the
+ * faces `src/theme/index.ts` asks for.
+ */
+const INTER_FACES = [
+  { path: '@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf', weight: 400 },
+  { path: '@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf', weight: 500 },
+  { path: '@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf', weight: 600 },
+];
+
 const config: ExpoConfig = {
   name: 'IdeyaNest',
   slug: 'ideanest',
@@ -106,6 +118,20 @@ const config: ExpoConfig = {
 
   plugins: [
     'expo-router',
+    [
+      'expo-font',
+      {
+        /*
+         * Inter, embedded in the binary rather than loaded by `useFonts` at startup, so the first
+         * frame is already in the right typeface (issue #151). Each platform gets the shape
+         * `src/theme/index.ts`'s `font` reads: iOS registers the three files and finds each by
+         * its PostScript name; Android gets one XML family called `Inter` with a weight per
+         * file, which is what lets a weight choose a face there.
+         */
+        ios: { fonts: INTER_FACES.map(({ path }) => path) },
+        android: { fonts: [{ fontFamily: 'Inter', fontDefinitions: INTER_FACES }] },
+      },
+    ],
     [
       'expo-localization',
       {

@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { AccessibilityInfo, View } from 'react-native';
+import type { ReactNode } from 'react';
+import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { motion, spacing, staggerDelay } from '../theme';
+import { useMotionAllowed, useReducedMotion } from './ui/motion-budget';
 
 /**
  * The one scroll-entry animation — `docs/motion-system.md` §4.1 and §7, and
@@ -24,38 +25,11 @@ import { motion, spacing, staggerDelay } from '../theme';
  */
 
 /**
- * Whether this device has asked for less motion.
- *
- * Built on `AccessibilityInfo` rather than on Reanimated's `useReducedMotion`,
- * for two reasons. It is the platform's own answer — "Reduce Motion" on iOS,
- * "Remove animations" on Android — rather than a library's reading of it, and it
- * is a core React Native API, which means it behaves under Jest instead of
- * needing the animation runtime that does not exist there.
- *
- * The subscription matters as much as the initial read. Somebody who turns the
- * setting on because a screen is making them ill should not have to restart the
- * application for it to take effect.
+ * Whether this device has asked for less motion. It lives with the motion budget now, which is
+ * the one place that combines it with the surface's level; it is re-exported here because this
+ * file is where screens have always found it.
  */
-export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-
-  useEffect(() => {
-    let current = true;
-
-    void AccessibilityInfo.isReduceMotionEnabled().then((value) => {
-      if (current) setReduced(value);
-    });
-
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced);
-
-    return () => {
-      current = false;
-      subscription.remove();
-    };
-  }, []);
-
-  return reduced;
-}
+export { useReducedMotion };
 
 export interface FadeUpProps {
   /**
@@ -74,12 +48,14 @@ export interface FadeUpProps {
  *
  * With Reduce Motion on this renders a plain `View` — not a shorter animation.
  * A 10ms fade is still a fade, and the setting is a request to stop moving
- * things rather than to move them faster.
+ * things rather than to move them faster. The same is true on a surface whose
+ * motion budget is `none` — checkout, the editor, settings — which is how a
+ * heading shared with one of those screens stays still there.
  */
 export function FadeUp({ index = 0, children }: FadeUpProps) {
-  const reduced = useReducedMotion();
+  const allowed = useMotionAllowed('minimal');
 
-  if (reduced) {
+  if (!allowed) {
     return <View>{children}</View>;
   }
 

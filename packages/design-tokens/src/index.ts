@@ -33,6 +33,8 @@ export const colors = {
   lime500: '#C6F432',
   lime600: '#B0DE1E',
   lime700: '#94BC15',
+  /** The halo a funded progress bar gains past 100% (docs/motion-system.md §6). */
+  limeGlow: 'rgba(198,244,50,0.24)',
 
   success: '#34D058',
   warning: '#FFB020',
@@ -66,6 +68,19 @@ export const spacing = {
   16: 64,
   20: 80,
   24: 96,
+} as const;
+
+/**
+ * Shadows, as CSS `box-shadow` strings. Floating white panels only - a dark
+ * shadow under a dark card is invisible cost (theme.css).
+ *
+ * Strings rather than offset/blur objects because React Native reads the same
+ * `boxShadow` syntax the web does, so one value serves both platforms and there
+ * is no second spelling of it to drift.
+ */
+export const shadow = {
+  panel: '0 8px 32px -8px rgba(0,0,0,0.5)',
+  float: '0 24px 64px -12px rgba(0,0,0,0.7)',
 } as const;
 
 /**
@@ -106,3 +121,4 @@ export function staggerDelay(index: number, step = STAGGER_STEP, max = 300): num
 
 export type Colors = typeof colors;
 export type Radius = typeof radius;
+export type Shadow = typeof shadow;
