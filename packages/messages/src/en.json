@@ -143,6 +143,17 @@
         }
       }
     },
+    "maintenance": {
+      "upcoming": "Planned maintenance on {date}, {start}–{end}: IdeyaNest will be briefly unavailable.",
+      "upcomingOpenEnded": "Planned maintenance starts on {date} at {start}. No end time has been announced yet.",
+      "until": "Back around {time}.",
+      "untilUnknown": "No end time has been announced yet.",
+      "dismiss": "Dismiss the maintenance notice",
+      "edge": {
+        "title": "IdeyaNest is unavailable right now",
+        "description": "We are working on it. This page checks again by itself and takes you back as soon as IdeyaNest answers."
+      }
+    },
     "whatsapp": {
       "open": "Message us on WhatsApp",
       "title": "Write to us on WhatsApp",

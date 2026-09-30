@@ -143,6 +143,17 @@
         }
       }
     },
+    "maintenance": {
+      "upcoming": "Planlı bakım: {date}, {start}–{end}. Bu süre boyunca IdeyaNest kullanılamayacak.",
+      "upcomingOpenEnded": "Planlı bakım {date} tarihinde saat {start} itibarıyla başlıyor. Bitiş saati henüz duyurulmadı.",
+      "until": "Tahmini dönüş: {time}.",
+      "untilUnknown": "Bitiş saati henüz duyurulmadı.",
+      "dismiss": "Bakım bildirimini kapat",
+      "edge": {
+        "title": "IdeyaNest şu anda kullanılamıyor",
+        "description": "Üzerinde çalışıyoruz. Bu sayfa kendiliğinden yeniden kontrol eder ve IdeyaNest yanıt verir vermez sizi geri götürür."
+      }
+    },
     "whatsapp": {
       "open": "WhatsApp'tan bize yazın",
       "title": "WhatsApp'tan bize yazın",

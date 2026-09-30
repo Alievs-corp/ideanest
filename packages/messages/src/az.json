@@ -143,6 +143,17 @@
         }
       }
     },
+    "maintenance": {
+      "upcoming": "Planlı texniki xidmət: {date}, saat {start}–{end}. Bu müddətdə IdeyaNest əlçatan olmayacaq.",
+      "upcomingOpenEnded": "Planlı texniki xidmət {date} tarixində başlayır (saat {start}). Bitmə vaxtı hələ elan olunmayıb.",
+      "until": "Təxmini qayıdış vaxtı: {time}.",
+      "untilUnknown": "Bitmə vaxtı hələ elan olunmayıb.",
+      "dismiss": "Texniki xidmət bildirişini bağlayın",
+      "edge": {
+        "title": "IdeyaNest hazırda əlçatan deyil",
+        "description": "Problemin həlli üzərində işləyirik. Bu səhifə özü yenidən yoxlayır və IdeyaNest cavab verən kimi sizi geri qaytarır."
+      }
+    },
     "whatsapp": {
       "open": "WhatsApp ilə bizə yazın",
       "title": "WhatsApp ilə bizə yazın",
