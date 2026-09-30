@@ -114,6 +114,12 @@ export function capitalised(text: string, locale: Locale): string {
  * expensive enough that every module in this application already hoisted one into a module
  * constant. Four languages turns each of those constants into four, and a list of two hundred
  * rows would otherwise construct two hundred of them.
+ *
+ * <p>A formatter built without a `timeZone` captures the device's zone when it is built, so
+ * one cached here keeps that zone if the device changes it mid-session — a phone crossing a
+ * border — until the page reloads or the app restarts. Accepted: the cost is a time read in
+ * the old zone for the rest of that session, and building a formatter per call to avoid it is
+ * the cost this cache exists to remove.
  */
 const CACHE = new Map<string, unknown>();
 

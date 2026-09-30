@@ -24,7 +24,7 @@ import type { PluralForms } from './plurals';
  *
  * The feed's count changes with every page appended in the browser, and the announcement that
  * follows it is read by a screen reader at the same moment. Both go through
- * `lib/i18n/plurals.ts` — CLDR's own data, none of `use-intl`'s runtime.
+ * `packages/messages/src/plurals.ts` — CLDR's own data, none of `use-intl`'s runtime.
  */
 
 /** A message lookup, narrowed to what these builders need. */

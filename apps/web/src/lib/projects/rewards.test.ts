@@ -225,7 +225,7 @@ describe('a reward tier', () => {
       /*
        * The English catalogue says "places" for every number above one, so an English
        * assertion cannot tell a working plural rule from a hard-coded "s". Russian can:
-       * 1 место, 3 места, 5 мест. This is what `lib/i18n/plurals.ts` is for, and the
+       * 1 место, 3 места, 5 мест. This is what `packages/messages/src/plurals.ts` is for, and the
        * message was built with an English ternary until #459.
        */
       const russian = { ...REWARDS_COPY.vocabulary.reward, locale: 'ru' as const,

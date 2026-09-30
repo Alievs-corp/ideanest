@@ -12,6 +12,7 @@ import ru from '@ideanest/messages/ru.json';
 import tr from '@ideanest/messages/tr.json';
 import type { Locale } from '@ideanest/messages';
 import { dateTimeFormat, numberFormat } from '@ideanest/messages/formats';
+import { installHermesFormatting } from '@ideanest/messages/hermes';
 import { pluralForm, type PluralForms } from '@ideanest/messages/plurals';
 import { currentLocale, useLocale } from './locale';
 
@@ -27,6 +28,14 @@ import { currentLocale, useLocale } from './locale';
  * `lib/locale.ts`, so changing the language re-renders the tree with no restart. Whether a
  * build step should strip the web-only `admin` namespace is the release-readiness issue's.
  */
+/*
+ * Hermes has no `DateTimeFormat.prototype.formatToParts` and, on iOS, no `NumberFormat` one,
+ * which the shared Azerbaijani formatters read. This swaps in their part-less versions where
+ * the engine lacks a method, and does nothing where it has both (jest, Node). Here, at import,
+ * because it has to precede the first formatter `@ideanest/messages/formats` builds and caches.
+ */
+installHermesFormatting();
+
 const CATALOGUES: Record<Locale, typeof en> = { az, en, ru, tr } as Record<Locale, typeof en>;
 
 /**
@@ -131,7 +140,8 @@ export function pluralCategory(locale: Locale, count: number): keyof PluralForms
  */
 export function formatCount(count: number, locale: Locale): string {
   try {
-    return numberFormat(locale, {}, 'count').format(count);
+    // An empty answer is a formatter that failed without saying so; the digits are better.
+    return numberFormat(locale, {}, 'count').format(count) || String(count);
   } catch {
     return String(count);
   }
@@ -154,7 +164,8 @@ export function formatDate(iso: string | null | undefined, locale: Locale): stri
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   try {
-    return dateTimeFormat(locale, { dateStyle: 'medium' }, 'date').format(date);
+    // An empty answer is a formatter that failed without saying so; the ISO day is better.
+    return dateTimeFormat(locale, { dateStyle: 'medium' }, 'date').format(date) || iso.slice(0, 10);
   } catch {
     return iso.slice(0, 10);
   }

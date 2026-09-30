@@ -71,8 +71,8 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  *
  * <p>The campaign's title is filled in here rather than on the server, because the server
  * resolves this copy once for a route and the title belongs to the campaign the route is
- * about. `fillPlaceholders` is the substitution; `lib/i18n/placeholders.ts` argues why a
- * sentence with a hole in it survives a component boundary and a concatenation does not —
+ * about. `fillPlaceholders` is the substitution; `packages/messages/src/placeholders.ts` argues why
+ * a sentence with a hole in it survives a component boundary and a concatenation does not —
  * "Save {title}" puts the name in a different place in three of the four languages.
  *
  * <h2>The reminder is only offered where the endpoint accepts one</h2>

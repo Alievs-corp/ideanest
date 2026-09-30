@@ -11,6 +11,7 @@
     "./placeholders": "./src/placeholders.ts",
     "./formats": "./src/formats.ts",
     "./azerbaijani": "./src/azerbaijani.ts",
+    "./hermes": "./src/hermes.ts",
     "./az.json": "./src/az.json",
     "./en.json": "./src/en.json",
     "./ru.json": "./src/ru.json",

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   azerbaijaniDateTimeFormat,
   azerbaijaniNumberFormat,
@@ -196,45 +196,46 @@ describe('the formatter table', () => {
   });
 });
 
+/** Every shape of options a caller passes, and a few more, for the two comparisons below. */
+const DATE_OPTIONS: readonly Intl.DateTimeFormatOptions[] = [
+  { dateStyle: 'full', timeZone: BAKU },
+  { dateStyle: 'long', timeZone: BAKU },
+  { dateStyle: 'medium', timeZone: BAKU },
+  { dateStyle: 'short', timeZone: BAKU },
+  { dateStyle: 'full', timeStyle: 'short', timeZone: BAKU },
+  { dateStyle: 'long', timeStyle: 'short', timeZone: BAKU },
+  { dateStyle: 'medium', timeStyle: 'short', timeZone: BAKU },
+  { dateStyle: 'medium', timeStyle: 'medium', timeZone: BAKU },
+  { dateStyle: 'short', timeStyle: 'short', timeZone: BAKU },
+  { dateStyle: 'long', timeZone: 'UTC' },
+  { month: 'long', year: 'numeric', timeZone: 'UTC' },
+  { day: 'numeric', month: 'long', year: 'numeric', timeZone: BAKU },
+  { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: BAKU },
+  { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: BAKU },
+  { hour: 'numeric', minute: '2-digit', timeZone: BAKU },
+  { hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: BAKU },
+  {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+    timeZone: BAKU,
+  },
+  { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: BAKU },
+];
+
+const INSTANTS: readonly Date[] = [
+  AUGUST,
+  SEPTEMBER,
+  new Date('2026-01-31T22:00:00Z'),
+  new Date('2026-12-01T00:00:00Z'),
+  new Date('2026-03-08T20:00:00Z'),
+  new Date('2026-06-30T23:59:59Z'),
+];
+
 describe.skipIf(!engineHasAzerbaijani())('against an engine that does have the data', () => {
-  const DATE_OPTIONS: readonly Intl.DateTimeFormatOptions[] = [
-    { dateStyle: 'full', timeZone: BAKU },
-    { dateStyle: 'long', timeZone: BAKU },
-    { dateStyle: 'medium', timeZone: BAKU },
-    { dateStyle: 'short', timeZone: BAKU },
-    { dateStyle: 'full', timeStyle: 'short', timeZone: BAKU },
-    { dateStyle: 'long', timeStyle: 'short', timeZone: BAKU },
-    { dateStyle: 'medium', timeStyle: 'short', timeZone: BAKU },
-    { dateStyle: 'medium', timeStyle: 'medium', timeZone: BAKU },
-    { dateStyle: 'short', timeStyle: 'short', timeZone: BAKU },
-    { dateStyle: 'long', timeZone: 'UTC' },
-    { month: 'long', year: 'numeric', timeZone: 'UTC' },
-    { day: 'numeric', month: 'long', year: 'numeric', timeZone: BAKU },
-    { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: BAKU },
-    { day: 'numeric', month: 'numeric', year: 'numeric', timeZone: BAKU },
-    { hour: 'numeric', minute: '2-digit', timeZone: BAKU },
-    { hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: BAKU },
-    {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short',
-      timeZone: BAKU,
-    },
-    { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: BAKU },
-  ];
-
-  const INSTANTS: readonly Date[] = [
-    AUGUST,
-    SEPTEMBER,
-    new Date('2026-01-31T22:00:00Z'),
-    new Date('2026-12-01T00:00:00Z'),
-    new Date('2026-03-08T20:00:00Z'),
-    new Date('2026-06-30T23:59:59Z'),
-  ];
-
   it.each(DATE_OPTIONS)('matches ICU for %j', (options) => {
     const ours = azerbaijaniDateTimeFormat(options);
     const icu = new Intl.DateTimeFormat('az', options);
@@ -280,5 +281,98 @@ describe.skipIf(!engineHasAzerbaijani())('against an engine that does have the d
         }
       }
     }
+  });
+});
+
+/**
+ * Hermes — #150. The app formats through this module on an engine with no
+ * `DateTimeFormat.prototype.formatToParts` at all and, on iOS, no `NumberFormat` one either.
+ *
+ * <p>Asserted by taking the methods away, in the two ways an engine can lack them: absent, and
+ * present but answering nothing. `hermes.ts` decides at install which way to format, so
+ * each case loads a fresh copy after the methods are gone, and the expected strings are
+ * computed by the copy loaded normally, before they go.
+ *
+ * <p>The engine's own `az` is broken for the duration, as it is on the phones this is for, so
+ * a string that came from it rather than from this module shows as {@link ENGINE}: Node's ICU
+ * would otherwise write the same Azerbaijani and hide which of the two answered.
+ */
+const ENGINE = '<the engine’s own az>';
+
+describe.each([
+  ['absent', undefined],
+  ['answering nothing', () => []],
+] as const)('without formatToParts (%s)', (_, stub) => {
+  const prototypes = [Intl.DateTimeFormat.prototype, Intl.NumberFormat.prototype] as const;
+  const saved = prototypes.map((prototype) => prototype.formatToParts);
+  const format = Object.getOwnPropertyDescriptor(Intl.DateTimeFormat.prototype, 'format')!;
+
+  async function partless(): Promise<typeof import('./formats')> {
+    vi.resetModules();
+    for (const prototype of prototypes) {
+      Object.defineProperty(prototype, 'formatToParts', {
+        value: stub,
+        configurable: true,
+        writable: true,
+      });
+    }
+    Object.defineProperty(Intl.DateTimeFormat.prototype, 'format', {
+      configurable: true,
+      get(this: Intl.DateTimeFormat) {
+        const real = format.get!.call(this) as Intl.DateTimeFormat['format'];
+        return this.resolvedOptions().locale.startsWith('az') ? () => ENGINE : real;
+      },
+    });
+    // What the app does at start-up: `lib/i18n.tsx` installs these before it formats anything.
+    const { installHermesFormatting } = await import('./hermes');
+    installHermesFormatting();
+    return import('./formats');
+  }
+
+  afterEach(() => {
+    prototypes.forEach((prototype, index) => {
+      Object.defineProperty(prototype, 'formatToParts', {
+        value: saved[index],
+        configurable: true,
+        writable: true,
+      });
+    });
+    Object.defineProperty(Intl.DateTimeFormat.prototype, 'format', format);
+    vi.resetModules();
+  });
+
+  it('still writes the date and the count the app prints', async () => {
+    const formats = await partless();
+    const august = new Date('2026-08-14T12:00:00Z');
+
+    expect(formats.dateTimeFormat('az', { dateStyle: 'medium' }, 'hermes').format(august)).toBe(
+      '14 avq 2026',
+    );
+    expect(formats.numberFormat('az', {}, 'hermes').format(1234567)).toBe('1.234.567');
+    expect(
+      formats.numberFormat('az', { maximumFractionDigits: 3 }, 'hermes-decimal').format(-1234.5),
+    ).toBe('-1.234,5');
+    expect(
+      formats
+        .numberFormat('az', { style: 'percent', maximumFractionDigits: 3 }, 'hermes-percent')
+        .format(0.029),
+    ).toBe('2,9%');
+  });
+
+  it('writes every date shape as the parts reading does, or leaves it to the engine', async () => {
+    const expected = DATE_OPTIONS.map((options) =>
+      // A zone name is the one shape read from parts alone; there the engine answers.
+      options.timeZoneName === undefined
+        ? INSTANTS.map((instant) => azerbaijaniDateTimeFormat(options).format(instant))
+        : INSTANTS.map(() => ENGINE),
+    );
+    const formats = await partless();
+
+    DATE_OPTIONS.forEach((options, index) => {
+      const ours = formats.dateTimeFormat('az', options, `hermes-${index}`);
+      expect(INSTANTS.map((instant) => ours.format(instant)), JSON.stringify(options)).toEqual(
+        expected[index],
+      );
+    });
   });
 });

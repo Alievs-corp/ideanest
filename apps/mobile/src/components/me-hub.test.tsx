@@ -288,6 +288,11 @@ describe('the Me tab', () => {
         ['© IdeyaNest', 'Currency: Azerbaijani manat (AZN)', 'Version 1.2.3, build 45'].join('\n'),
       ),
     ).toBeTruthy();
+
+    // Last on the tab: after everything, Sign out included where there is one.
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('© IdeyaNest')).toBeGreaterThan(tree.lastIndexOf('Sign out'));
+    expect(tree.indexOf('© IdeyaNest')).toBeGreaterThan(tree.lastIndexOf('Message us on WhatsApp'));
   });
 
   it('asks before signing out, and signs out only on the destructive choice', async () => {
@@ -307,15 +312,41 @@ describe('the Me tab', () => {
       ['Sign out', 'destructive'],
     ]);
 
-    // Cancel is the way back and does nothing else.
-    expect(buttons[0]!.onPress).toBeUndefined();
-    expect(signOut).not.toHaveBeenCalled();
-
     await act(async () => {
       buttons[1]!.onPress?.();
     });
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(mockRouter.navigate).toHaveBeenCalledWith('/');
+    alert.mockRestore();
+  });
+
+  it('cancelling signs nobody out, and the pill asks again afterwards', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    given('signed-in', AYSEL);
+    await renderMe();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
+    const [, , buttons = []] = alert.mock.calls[0]!;
+    await act(async () => {
+      buttons[0]!.onPress?.();
+    });
+    expect(signOut).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
+    expect(alert).toHaveBeenCalledTimes(2);
+    alert.mockRestore();
+  });
+
+  it('opens one confirmation for a double tap, not two queued ones', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    given('signed-in', AYSEL);
+    await renderMe();
+
+    const pill = screen.getByRole('button', { name: 'Sign out' });
+    await fireEvent.press(pill);
+    await fireEvent.press(pill);
+
+    expect(alert).toHaveBeenCalledTimes(1);
     alert.mockRestore();
   });
 

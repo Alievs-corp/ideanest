@@ -207,5 +207,5 @@ describe('paging', () => {
 /*
  * `campaignCount` moved to `discovery.collections.count` with #324. It carried a
  * singular/plural split, which is the whole of English and none of Russian — the catalogue
- * holds four CLDR forms per language and `lib/i18n/plurals.ts` selects between them.
+ * holds four CLDR forms per language and `packages/messages/src/plurals.ts` selects between them.
  */

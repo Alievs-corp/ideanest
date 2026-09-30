@@ -79,8 +79,8 @@ export function isRepeated(report: QueuedReport): boolean {
  *
  * It used to pick between "report" and "reports" with a ternary, which is the whole of
  * English plurals and none of Russian's — 1 zhaloba, 2 zhaloby, 5 zhalob. `pluralise` carries
- * the CLDR rules, and `lib/i18n/plurals.ts` records why a count like this one is resolved in
- * the browser rather than as ICU on the server.
+ * the CLDR rules, and `packages/messages/src/plurals.ts` records why a count like this one is
+ * resolved in the browser rather than as ICU on the server.
  *
  * <p>The target arrives as a whole phrase from the catalogue rather than as a noun this
  * function puts "on this" in front of. Russian agrees the demonstrative with the noun's

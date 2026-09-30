@@ -110,7 +110,7 @@ export function remainingUntil(deadline: string, now: Date): Remaining | null {
  * Russian, which picks between three forms by the last digit — 1 день, 2 дня, 5 дней, 21 день —
  * while Azerbaijani and Turkish keep the noun singular after any number. `pluralise` asks
  * `Intl.PluralRules` for the category, the way the rest of the application declines a count
- * that is only known in the browser (`lib/i18n/plurals.ts`).
+ * that is only known in the browser (`packages/messages/src/plurals.ts`).
  *
  * Every form carries `{count}` and leaves the number unsuffixed, so an Azerbaijani unit is
  * `{count} gün` — the #104/#109 rule that no suffix is ever glued onto a value the catalogue

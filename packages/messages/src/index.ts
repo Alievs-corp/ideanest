@@ -3,9 +3,10 @@ export { COUNTRY_HEADER, COUNTRY_LOCALES, localeForCountry } from './country';
 export * from './whatsapp';
 /*
  * The pure formatting helpers, also published one module per subpath
- * (`@ideanest/messages/formats` and so on). The web imports the subpaths, so a client bundle
- * that needs `fillPlaceholders` is handed that module and not the WhatsApp composer beside it;
- * the root re-exports them for a consumer that does not tree-shake anyway (Metro).
+ * (`@ideanest/messages/formats` and so on). The web's `lib/i18n/{plurals,placeholders,formats}.ts`
+ * re-export them from the subpaths, and so does the app's `lib/i18n.tsx`, so neither depends on
+ * the bundler dropping the rest of this file. Other web modules import the root for the locale
+ * vocabulary, and `sideEffects: false` is what keeps these out of a bundle that does not use them.
  */
 export { pluralForm, pluralise, type PluralForms } from './plurals';
 export { fillPlaceholders, fillNodes } from './placeholders';

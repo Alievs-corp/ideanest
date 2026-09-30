@@ -85,6 +85,43 @@ describe('the app-only strings and formats', () => {
     expect(pluralCategory('az', 1)).toBe('one');
   });
 
+  /*
+   * Hermes: `Intl.DateTimeFormat.prototype.formatToParts` is missing on both platforms and the
+   * `NumberFormat` one on iOS. Taken away here, both ways an engine can lack it — absent, and
+   * answering nothing — and the helpers loaded fresh, because the shared module decides once
+   * per load and caches its formatters.
+   */
+  it.each([
+    ['absent', undefined],
+    ['answering nothing', () => []],
+  ] as const)('formats Azerbaijani without formatToParts (%s)', (_, stub) => {
+    const prototypes = [Intl.DateTimeFormat.prototype, Intl.NumberFormat.prototype] as const;
+    const saved = prototypes.map((prototype) => prototype.formatToParts);
+    try {
+      for (const prototype of prototypes) {
+        Object.defineProperty(prototype, 'formatToParts', {
+          value: stub,
+          configurable: true,
+          writable: true,
+        });
+      }
+      jest.isolateModules(() => {
+        const fresh = require('./i18n') as typeof import('./i18n');
+        expect(fresh.formatCount(1234567, 'az')).toBe('1.234.567');
+        expect(fresh.formatDate('2026-08-14T12:00:00Z', 'az')).toBe('14 avq 2026');
+        expect(fresh.formatDate('2026-09-30T10:00:00Z', 'en')).toMatch(/^30 Sept? 2026$/);
+      });
+    } finally {
+      prototypes.forEach((prototype, index) => {
+        Object.defineProperty(prototype, 'formatToParts', {
+          value: saved[index],
+          configurable: true,
+          writable: true,
+        });
+      });
+    }
+  });
+
   it('translates outside the tree in the language chosen at the moment of the call', () => {
     const before = currentLocale();
     try {

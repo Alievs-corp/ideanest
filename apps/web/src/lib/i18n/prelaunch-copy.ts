@@ -19,8 +19,8 @@ import type { PluralForms } from '@ideanest/ui';
  *
  * <p>`waiting` is a plural rather than a template because the count is the subject of the
  * sentence and Russian needs three forms of it. It is resolved through
- * `lib/i18n/plurals.ts`, beside the number, and filled with `fillNodes` so the count keeps
- * the weight the design gives it.
+ * `packages/messages/src/plurals.ts`, beside the number, and filled with `fillNodes` so the count
+ * keeps the weight the design gives it.
  */
 export interface PrelaunchCopy {
   /** Names the skeleton while the campaign is being read. */

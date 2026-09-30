@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import * as Application from 'expo-application';
 import { useRouter, type Href } from 'expo-router';
@@ -45,7 +45,8 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  *   lock the reader no longer wants. While the first answer is still on its way the identity
  *   row is a skeleton, so the screen does not jump when the name arrives.
  *
- * All three end with the web footer's last row (`Colophon`), and Sign out asks first.
+ * All three end with the web footer's last row (`Colophon`), after Sign out where there is one,
+ * and Sign out asks first.
  */
 
 interface Row {
@@ -342,6 +343,14 @@ export default function MeScreen() {
   const [busy, setBusy] = useState(false);
   const [refused, setRefused] = useState(false);
   const [contacting, setContacting] = useState(false);
+  /*
+   * Refs, not state, for the two guards: a second tap lands before the re-render that would
+   * carry `busy`, so a state guard lets it through — two alerts queued, and each confirm a
+   * second `signOut()` and a second navigation. `asking` is held from the alert opening to
+   * its answer (or to the end of the sign-out it started); `ending` covers the sign-out itself.
+   */
+  const asking = useRef(false);
+  const ending = useRef(false);
 
   useEffect(() => {
     let live = true;
@@ -377,15 +386,30 @@ export default function MeScreen() {
    * in the pill's own words and Cancel as the way back.
    */
   function confirmSignOut(): void {
-    if (busy) return;
-    Alert.alert(t('mobile.me.signOutConfirm.title'), t('mobile.me.signOutConfirm.body'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('shell.actions.signOut'), style: 'destructive', onPress: () => void endIt() },
-    ]);
+    if (busy || asking.current) return;
+    asking.current = true;
+    const release = () => {
+      asking.current = false;
+    };
+    Alert.alert(
+      t('mobile.me.signOutConfirm.title'),
+      t('mobile.me.signOutConfirm.body'),
+      [
+        { text: t('common.cancel'), style: 'cancel', onPress: release },
+        {
+          text: t('shell.actions.signOut'),
+          style: 'destructive',
+          onPress: () => void endIt().finally(release),
+        },
+      ],
+      // Android: a tap outside the dialog or the back button closes it without either choice.
+      { cancelable: true, onDismiss: release },
+    );
   }
 
   async function endIt(): Promise<void> {
-    if (busy) return;
+    if (ending.current) return;
+    ending.current = true;
     setBusy(true);
     try {
       await signOut();
@@ -393,6 +417,7 @@ export default function MeScreen() {
       forgetPersistedCache();
       router.navigate('/');
     } finally {
+      ending.current = false;
       setBusy(false);
     }
   }
@@ -466,8 +491,6 @@ export default function MeScreen() {
         <NavRow row={{ label: 'shell.whatsapp.open' }} onPress={() => setContacting(true)} />
       </Group>
 
-      <Colophon />
-
       {holdsSession ? (
         <Button
           label={t('shell.actions.signOut')}
@@ -476,6 +499,8 @@ export default function MeScreen() {
           onPress={confirmSignOut}
         />
       ) : null}
+
+      <Colophon />
 
       <WhatsAppSheet visible={contacting} onClose={() => setContacting(false)} />
     </ScrollView>

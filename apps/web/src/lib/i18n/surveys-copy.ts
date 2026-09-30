@@ -59,8 +59,8 @@ export interface SurveyListCopy {
    * How many creators are waiting, declined.
    *
    * A ternary would be right in English and wrong in Russian, which picks between three forms
-   * by the last digit. `lib/i18n/plurals.ts` carries the whole of that reasoning; the count is
-   * only known in the browser, so it cannot be ICU resolved on the server.
+   * by the last digit. `packages/messages/src/plurals.ts` carries the whole of that reasoning; the
+   * count is only known in the browser, so it cannot be ICU resolved on the server.
    */
   readonly waitingTitle: PluralForms;
   readonly waitingBody: string;

@@ -154,8 +154,8 @@ describe('formatExactTime', () => {
   });
 
   /**
-   * English is `en-GB` and not `en` — see `lib/i18n/formats.ts`. A bare `en` resolves to
-   * `en-US` inside `Intl`, which would put a twelve-hour clock and a month-first date on the
+   * English is `en-GB` and not `en` — see `packages/messages/src/formats.ts`. A bare `en` resolves
+   * to `en-US` inside `Intl`, which would put a twelve-hour clock and a month-first date on the
    * one language out of four that does not use them.
    */
   it('keeps the English reader on the same clock as everybody else', () => {

@@ -6,7 +6,7 @@ import { cn } from '../../lib/cn';
  *
  * ALL FOUR ARE REQUIRED, and a language that does not decline repeats one
  * sentence across them. That is the web application's own encoding — see
- * `lib/i18n/plurals.ts`, whose docblock gives the reason: its catalogue test
+ * `packages/messages/src/plurals.ts`, whose docblock gives the reason: its catalogue test
  * requires the four languages to hold identical keys, so a form declared in
  * Russian and omitted in Turkish would be a key set that differs by language.
  * The repetition is the honest encoding of a language that does not decline.

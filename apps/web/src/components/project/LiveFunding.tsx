@@ -65,8 +65,8 @@ import { useCampaignUpdates } from '../../lib/realtime/useCampaignUpdates';
  * <p><strong>The backer count picks a form rather than a plural.</strong> The ternary that
  * stood here chose between "backer" and "backers", which is the whole of English and none of
  * Russian — 1 бэкер, 2 бэкера, 5 бэкеров. `pluralForm` asks `Intl.PluralRules` instead, and
- * `lib/i18n/plurals.ts` explains why the browser decides this one and the server decides
- * nearly every other counted sentence on the platform.
+ * `packages/messages/src/plurals.ts` explains why the browser decides this one and the server
+ * decides nearly every other counted sentence on the platform.
  *
  * <p><strong>The backer count is deliberately not live.</strong> A window carries how many
  * pledges were confirmed, and a pledge is not always a new backer: somebody who raises their

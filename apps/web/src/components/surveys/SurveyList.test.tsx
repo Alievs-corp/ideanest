@@ -24,7 +24,8 @@ const COPY = surveysCopyFrom(translatorFor('account.surveys'), translatorFor('co
  *     outstanding should not have to look for the outstanding one.
  *   - **the count is declined rather than switched.** "One creator" against "{count} creators"
  *     is the whole of English and none of Russian, so the sentence comes from a plural group
- *     in the catalogue and `pluralise` picks the form — `lib/i18n/plurals.ts` carries why.
+ *     in the catalogue and `pluralise` picks the form — `packages/messages/src/plurals.ts` carries
+ *     why.
  *   - a refusal says what the service said, and a silence says the service was not reached;
  *     both from the catalogue rather than from a literal in the component.
  *   - the empty state offers somewhere to go, in `common`'s words — it is the same button the
