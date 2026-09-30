@@ -33,8 +33,9 @@ import { AccentScopeProvider, Pill } from './pill';
  *
  * <h2>The order of the states is fixed here</h2>
  *
- * `components/states.tsx` documents the order and each screen used to re-derive it: **cached data
- * first, then the error, then the empty state** (§4.12 MB-04). A screen that shows "nothing here"
+ * The app's first `components/states.tsx` documented the order, and each screen re-derived it:
+ * **cached data first, then the error, then the empty state** (§4.12 MB-04). That file is gone
+ * (issue #151) and the rule lives here now. A screen that shows "nothing here"
  * when it failed to find out, or a full-screen error over a list it still has, is the bug that rule
  * prevents. So the scaffold decides, from what it is told:
  *

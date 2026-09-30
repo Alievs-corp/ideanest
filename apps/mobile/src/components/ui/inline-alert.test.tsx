@@ -114,6 +114,23 @@ describe('InlineAlert', () => {
     ).toBe(colors.warning);
   });
 
+  it('leaves the speaking to its container when told to be off: no live region, no announcement', async () => {
+    const said = jest
+      .spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions')
+      .mockImplementation(() => {});
+    const tree = await render(
+      <InlineAlert testID="alert" variant="warning" politeness="off" description="Offline" />,
+    );
+    // Not 'polite': a second live region inside the container's could be read twice by TalkBack.
+    expect(tree.getByTestId('alert').props.accessibilityLiveRegion).toBe('none');
+    expect(said).not.toHaveBeenCalled();
+    // Still a warning to look at, with its words.
+    expect(tree.getByText('Offline')).toBeTruthy();
+    expect(
+      StyleSheet.flatten(tree.getByTestId('alert').props.style as ViewStyle).borderLeftColor,
+    ).toBe(colors.warning);
+  });
+
   it('is an assertive live region for warning and danger, polite otherwise', async () => {
     const danger = await render(<InlineAlert testID="alert" variant="danger" title="Failed" />);
     const info = await render(<InlineAlert testID="alert" variant="info" title="Note" />);

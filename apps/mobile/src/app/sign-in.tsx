@@ -1,13 +1,27 @@
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type TextInput } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+  type TextInput,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ApiError } from '@ideanest/api-client';
-import { Button, TextField } from '../components/form';
 import { Body, Heading, Meta } from '../components/text';
+import {
+  Field,
+  InlineAlert,
+  MotionBudgetProvider,
+  PasswordInput,
+  Pill,
+  TextInput as KitTextInput,
+} from '../components/ui';
 import { signIn, verifyTwoFactor } from '../lib/auth';
 import { useT, type Translate } from '../lib/i18n';
 import { safeNext } from '../lib/guard';
-import { colors, size, spacing } from '../theme';
+import { size, spacing } from '../theme';
 
 /**
  * Signing in on a phone — §17.1; MB-03's prerequisite, and part of the same change.
@@ -36,8 +50,15 @@ import { colors, size, spacing } from '../theme';
  *
  * <h2>Motion: none</h2>
  *
- * `docs/motion-system.md` §5 gives authentication no entry animation. Nothing on
- * this screen fades, and `FadeUp` is not imported.
+ * `docs/motion-system.md` §5 gives authentication no entry animation. The route
+ * declares the `none` budget, so nothing on this screen fades, the pill does not
+ * scale under the thumb, and `FadeUp` is not imported.
+ *
+ * <h2>The submit pill is white</h2>
+ *
+ * Primary, not accent. Lime marks the one urgent action on a screen — backing a
+ * campaign, confirming a pledge — and signing in is neither: spending the lime
+ * here is what left nothing to mark the action that matters (issue #151).
  */
 
 const styles = StyleSheet.create({
@@ -49,13 +70,6 @@ const styles = StyleSheet.create({
   },
   intro: { gap: spacing[2] },
   fields: { gap: spacing[5] },
-  failure: {
-    borderRadius: spacing[3],
-    borderLeftWidth: 3,
-    borderLeftColor: colors.danger,
-    backgroundColor: colors.surface2,
-    padding: spacing[4],
-  },
 });
 
 type Step = 'credentials' | 'two-factor';
@@ -124,97 +138,97 @@ export default function SignInScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      // iOS moves the whole view; Android resizes the window itself and a second
-      // adjustment there pushes the form off the top of the screen.
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+    <MotionBudgetProvider level="none">
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        // iOS moves the whole view; Android resizes the window itself and a second
+        // adjustment there pushes the form off the top of the screen.
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.intro}>
-          <Heading>
-            {step === 'credentials' ? t('auth.signIn.title') : t('auth.register.twoFactorTitle')}
-          </Heading>
-          <Body>
-            {step === 'credentials' ? t('auth.signIn.intro') : t('auth.twoFactor.acceptedDetail')}
-          </Body>
-        </View>
-
-        {failure === null ? null : (
-          <View style={styles.failure} accessibilityRole="alert">
-            <Body>{failure}</Body>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <View style={styles.intro}>
+            <Heading>
+              {step === 'credentials' ? t('auth.signIn.title') : t('auth.register.twoFactorTitle')}
+            </Heading>
+            <Body>
+              {step === 'credentials' ? t('auth.signIn.intro') : t('auth.twoFactor.acceptedDetail')}
+            </Body>
           </View>
-        )}
 
-        {step === 'credentials' ? (
-          <View style={styles.fields}>
-            <TextField
-              label={t('auth.fields.email')}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect={false}
-              inputMode="email"
-              keyboardType="email-address"
-              returnKeyType="next"
-              textContentType="username"
-              onSubmitEditing={() => passwordField.current?.focus()}
-              editable={!busy}
-            />
-            <TextField
-              ref={passwordField}
-              label={t('auth.fields.password')}
-              value={password}
-              onChangeText={setPassword}
-              autoCapitalize="none"
-              autoComplete="current-password"
-              autoCorrect={false}
-              secureTextEntry
-              returnKeyType="go"
-              textContentType="password"
-              onSubmitEditing={() => void submitCredentials()}
-              editable={!busy}
-            />
-            <Button
-              label={t('auth.signIn.submit')}
-              busy={busy}
-              disabled={email.trim() === '' || password === ''}
-              onPress={() => void submitCredentials()}
-            />
-          </View>
-        ) : (
-          <View style={styles.fields}>
-            <TextField
-              label={t('auth.twoFactor.codeLabel')}
-              value={code}
-              onChangeText={setCode}
-              autoComplete="one-time-code"
-              autoCorrect={false}
-              inputMode="numeric"
-              keyboardType="number-pad"
-              returnKeyType="go"
-              textContentType="oneTimeCode"
-              onSubmitEditing={() => void submitCode()}
-              editable={!busy}
-              hint={t('mobile.signIn.recoveryHint')}
-            />
-            <Button
-              label={t('auth.twoFactor.submit')}
-              busy={busy}
-              disabled={code.trim() === ''}
-              onPress={() => void submitCode()}
-            />
-          </View>
-        )}
+          {/* A refusal is a danger alert: an icon and the sentence, announced when it appears. */}
+          {failure === null ? null : <InlineAlert variant="danger" description={failure} />}
 
-        <Meta>{t('mobile.signIn.webOnly')}</Meta>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          {step === 'credentials' ? (
+            <View style={styles.fields}>
+              <Field label={t('auth.fields.email')}>
+                <KitTextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect={false}
+                  inputMode="email"
+                  keyboardType="email-address"
+                  returnKeyType="next"
+                  textContentType="username"
+                  onSubmitEditing={() => passwordField.current?.focus()}
+                  disabled={busy}
+                />
+              </Field>
+              <Field label={t('auth.fields.password')}>
+                <PasswordInput
+                  ref={passwordField}
+                  value={password}
+                  onChangeText={setPassword}
+                  returnKeyType="go"
+                  onSubmitEditing={() => void submitCredentials()}
+                  disabled={busy}
+                />
+              </Field>
+              <Pill
+                label={t('auth.signIn.submit')}
+                size="lg"
+                fullWidth
+                busy={busy}
+                disabled={email.trim() === '' || password === ''}
+                onPress={() => void submitCredentials()}
+              />
+            </View>
+          ) : (
+            <View style={styles.fields}>
+              <Field label={t('auth.twoFactor.codeLabel')} hint={t('mobile.signIn.recoveryHint')}>
+                <KitTextInput
+                  value={code}
+                  onChangeText={setCode}
+                  autoComplete="one-time-code"
+                  autoCorrect={false}
+                  inputMode="numeric"
+                  keyboardType="number-pad"
+                  returnKeyType="go"
+                  textContentType="oneTimeCode"
+                  onSubmitEditing={() => void submitCode()}
+                  disabled={busy}
+                />
+              </Field>
+              <Pill
+                label={t('auth.twoFactor.submit')}
+                size="lg"
+                fullWidth
+                busy={busy}
+                disabled={code.trim() === ''}
+                onPress={() => void submitCode()}
+              />
+            </View>
+          )}
+
+          <Meta>{t('mobile.signIn.webOnly')}</Meta>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </MotionBudgetProvider>
   );
 }
 

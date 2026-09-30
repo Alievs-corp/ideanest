@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { AccessibilityInfo, Linking, TextInput } from 'react-native';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
@@ -53,6 +53,12 @@ function inLocale(locale: Locale, messages: typeof en, ui: ReactElement) {
     </SafeAreaProvider>,
   );
 }
+
+/*
+ * The sheet's first render also pays for loading the kit's module graph, which has taken past
+ * jest's 5 s default on a cold run, as the Me tab's suite notes too.
+ */
+jest.setTimeout(20_000);
 
 beforeEach(() => {
   focus.mockClear();
@@ -157,12 +163,14 @@ describe('WhatsAppSheet', () => {
 
   it("closes on Android's back button and keeps what was typed", async () => {
     const onClose = jest.fn();
-    await inEnglish(<WhatsAppSheet visible onClose={onClose} />);
+    const { container } = await inEnglish(<WhatsAppSheet visible onClose={onClose} />);
 
     await fireEvent.changeText(screen.getByLabelText(copy.fields.message), 'Salam');
     await fireEvent.press(screen.getByRole('button', { name: copy.submit }));
-    // `onRequestClose` is the Modal's; the event bubbles up to it from inside the sheet.
-    await fireEvent(screen.getByText(copy.title), 'requestClose');
+    // Android's back button is the Modal's `onRequestClose`, which the kit's `Sheet` owns.
+    await act(async () => {
+      container.queryAll((node) => node.type === 'Modal')[0]?.props.onRequestClose();
+    });
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(screen.queryByText(copy.errors.firstName)).toBeNull();

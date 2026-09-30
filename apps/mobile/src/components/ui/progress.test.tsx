@@ -11,8 +11,9 @@ import { PROGRESS_FILL, ProgressBar, fillFraction } from './progress';
 /**
  * The kit's funding bar — issue #151's Tests section, item by item: it clamps at 100, it turns
  * success (not lime) at 100, it moves on `scaleX` and never on `width`, and its words come from
- * the catalogue. `components/progress.test.tsx` still covers the same rules through the old path
- * the screens import.
+ * the catalogue. The screens import it from the kit now; the old `components/progress.tsx`
+ * re-export and its test are gone, and the one case only that test had — a figure far past the
+ * goal is still success, not lime — is here.
  */
 
 /*
@@ -85,6 +86,8 @@ describe('ProgressBar (kit)', () => {
 
   it('is success at 100, not lime, and gains the funded glow', async () => {
     expect((await stillFill('100')).backgroundColor).toBe(colors.success);
+    // Past the goal is still reached: 340% is success, and the bar is not lime again.
+    expect((await stillFill('340')).backgroundColor).toBe(colors.success);
 
     const { getByTestId } = await render(
       <MotionBudgetProvider level="none">

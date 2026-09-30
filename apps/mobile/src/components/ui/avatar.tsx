@@ -22,7 +22,8 @@ import { colors, font, fontSize, radius, size as measure } from '../../theme';
  * name read twice — so `decorative` hides it. Standing alone it is an image named by the person,
  * which is what the web's `alt` and `aria-label` do.
  *
- * <p>The older `components/avatar.tsx` stays until the screens move here (a later pull request).
+ * <p>It replaced the app's first `components/avatar.tsx`, which drew only the initials; the Me
+ * tab's identity row uses this one.
  */
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg';

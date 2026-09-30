@@ -64,6 +64,34 @@ describe('destinationFor', () => {
     // Routing it to the campaign would show the wrong thing confidently.
     expect(destinationFor('https://ideanest.az/projects/a/b/edit', HOST)).toBeNull();
   });
+
+  it('never sends a link to the kit gallery, from any form of link (issue #151)', () => {
+    // `app/dev/kit.tsx` is a development screen, and this parser never names it as a destination,
+    // whatever the link's scheme, host, locale prefix or case. That is this module's half only:
+    // Expo Router's own linking still maps `ideanest://dev/kit` to the file by itself, and what
+    // keeps a release build from showing it is the route's `__DEV__` redirect to `+not-found`
+    // (tested in `components/kit-gallery.test.tsx`).
+    const links = [
+      'https://ideanest.az/dev/kit',
+      'https://ideanest.az/az/dev/kit',
+      'https://ideanest.az/dev/kit/',
+      'https://IDEANEST.AZ/dev/kit?x=1',
+      'ideanest://dev/kit',
+      'ideanest:///dev/kit',
+      'ideanest://dev/kit/',
+      'ideanest://az/dev/kit',
+      'https://ideanest.az/%64ev/kit',
+    ];
+    for (const link of links) {
+      // Refused outright: none of these is a campaign, so the parser has nowhere to send it.
+      expect(destinationFor(link, HOST)).toBeNull();
+    }
+    // And a campaign whose creator happens to be called "dev" still opens the campaign, under
+    // `/projects/`, never the gallery's route.
+    expect(destinationFor('https://ideanest.az/projects/dev/kit', HOST)?.pathname).toBe(
+      '/projects/dev/kit',
+    );
+  });
 });
 
 describe('shareUrlFor', () => {

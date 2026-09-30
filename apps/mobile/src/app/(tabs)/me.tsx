@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import * as Application from 'expo-application';
 import { useRouter, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useQueryClient } from '@tanstack/react-query';
 import { siteUrl } from '../../api/config';
-import { Avatar } from '../../components/avatar';
-import { Button } from '../../components/form';
-import { InlineAlert } from '../../components/states';
 import { Body, CardTitle, Meta, Subheading } from '../../components/text';
+import {
+  Avatar,
+  InlineAlert,
+  MotionBudgetProvider,
+  Pill,
+  Skeleton,
+  Switch,
+} from '../../components/ui';
 import { WhatsAppSheet } from '../../components/whatsapp-sheet';
 import { canReadAccount, useMe, useSessionState, type Me } from '../../lib/account';
 import { signOut } from '../../lib/auth';
@@ -47,6 +52,20 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  *
  * All three end with the web footer's last row (`Colophon`), after Sign out where there is one,
  * and Sign out asks first.
+ *
+ * <h2>Kit controls, and no lime but the switch's own track</h2>
+ *
+ * The actions are the kit's pills (issue #151): Register is the white primary, Sign in and Sign
+ * out are outlines beside or below it, and nothing here is the lime accent — this tab has no
+ * urgent action. The biometric row is the kit's `Switch`: the whole row is the control, named by
+ * the lock's own label and described by the line under it, and its track is lime only while on,
+ * as a surface, never as text.
+ *
+ * <h2>Motion: none</h2>
+ *
+ * The tab is the web's account menu and settings, which `docs/motion-system.md` §5 gives no
+ * motion: the route declares `none`, so the switch's knob is placed rather than slid, the
+ * skeleton does not shimmer, and a pill does not scale under the thumb.
  */
 
 interface Row {
@@ -120,12 +139,6 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: spacing[1] },
   chevron: { color: colors.textTertiary },
   identity: { paddingVertical: spacing[4] },
-  bone: { backgroundColor: colors.surface3, borderRadius: radius.sm },
-  boneAvatar: { width: size.avatarInCard, height: size.avatarInCard, borderRadius: radius.full },
-  boneName: { width: '50%', height: fontSize.lg },
-  boneEmail: { width: '70%', height: fontSize.xs },
-  alertLink: { minHeight: size.touchTarget, justifyContent: 'center', alignSelf: 'flex-start' },
-  alertLinkText: { textDecorationLine: 'underline' },
   colophon: { textAlign: 'center' },
 });
 
@@ -209,7 +222,7 @@ function IdentityRow({ me }: { readonly me: Me }) {
         }}
         style={({ pressed }) => [styles.row, styles.identity, pressed && styles.rowPressed]}
       >
-        <Avatar name={name} decorative />
+        <Avatar name={name} size="md" decorative />
         <View style={styles.rowText}>
           <CardTitle numberOfLines={1}>{name}</CardTitle>
           <Meta numberOfLines={1}>{email}</Meta>
@@ -235,10 +248,10 @@ function IdentitySkeleton() {
       importantForAccessibility="no-hide-descendants"
     >
       <View style={[styles.row, styles.identity]}>
-        <View style={[styles.bone, styles.boneAvatar]} />
+        <Skeleton circle height={size.avatarInCard} />
         <View style={styles.rowText}>
-          <View style={[styles.bone, styles.boneName]} />
-          <View style={[styles.bone, styles.boneEmail]} />
+          <Skeleton width="50%" height={fontSize.lg} />
+          <Skeleton width="70%" height={fontSize.xs} />
         </View>
       </View>
     </View>
@@ -252,6 +265,10 @@ function IdentitySkeleton() {
  * the one place somebody who closed the email would find out. A scheduled closure second, with
  * the way to the page that cancels it — the settings namespace's own sentence, so the Me tab
  * and the closure panel describe the same state in the same words.
+ *
+ * <p>Both are warnings to look at, and both are polite: they are standing conditions of the
+ * account, not something that just happened, and an assertive warning here would interrupt a
+ * screen reader every time the Me tab is opened.
  */
 function AccountAlerts({ me }: { readonly me: Me }) {
   const router = useRouter();
@@ -261,29 +278,23 @@ function AccountAlerts({ me }: { readonly me: Me }) {
       {me.emailVerified === false ? (
         <InlineAlert
           variant="warning"
-          detail={t('shell.actions.unverified', { email: me.email ?? '' })}
+          politeness="polite"
+          description={t('shell.actions.unverified', { email: me.email ?? '' })}
         />
       ) : null}
       {me.deletionScheduledAt ? (
         <InlineAlert
           variant="warning"
+          politeness="polite"
           title={t('settings.panels.closure.scheduledTitle')}
           action={
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('account.links.privacy.label')}
+            // The alert's one way out, as the kit draws it inside an alert: a small ghost pill.
+            <Pill
+              label={t('account.links.privacy.label')}
               onPress={() => router.push('/settings/privacy')}
-              style={({ pressed }) => [styles.alertLink, pressed && styles.rowPressed]}
-            >
-              <Body
-                tone="primary"
-                style={styles.alertLinkText}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              >
-                {t('account.links.privacy.label')}
-              </Body>
-            </Pressable>
+              variant="ghost"
+              size="sm"
+            />
           }
         />
       ) : null}
@@ -425,85 +436,97 @@ export default function MeScreen() {
   const lockLabel = t(lockLabelKey(capability));
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      {loading ? <IdentitySkeleton /> : null}
+    <MotionBudgetProvider level="none">
+      <ScrollView contentContainerStyle={styles.content}>
+        {loading ? <IdentitySkeleton /> : null}
 
-      {account !== null ? (
-        <>
-          <IdentityRow me={account} />
-          <AccountAlerts me={account} />
-          <Group titleKey="account.groups.yourAccount" rows={YOUR_ACCOUNT} />
-          <Group titleKey="shell.footer.groups.creators" rows={CREATOR} />
-          <Group titleKey="account.groups.settings" rows={SETTINGS} />
-        </>
-      ) : null}
+        {account !== null ? (
+          <>
+            <IdentityRow me={account} />
+            <AccountAlerts me={account} />
+            <Group titleKey="account.groups.yourAccount" rows={YOUR_ACCOUNT} />
+            <Group titleKey="shell.footer.groups.creators" rows={CREATOR} />
+            <Group titleKey="account.groups.settings" rows={SETTINGS} />
+          </>
+        ) : null}
 
-      {holdsSession ? (
-        <View style={styles.section}>
-          <Subheading accessibilityRole="header">{t('mobile.me.thisPhone')}</Subheading>
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={styles.rowText}>
-                <Body tone="primary">{lockLabel}</Body>
-                <Meta>{t(lockDetailKey(capability, locked, unlocked))}</Meta>
-              </View>
+        {holdsSession ? (
+          <View style={styles.section}>
+            <Subheading accessibilityRole="header">{t('mobile.me.thisPhone')}</Subheading>
+            <View style={styles.card}>
               {capability !== null && canLock(capability) ? (
+                /*
+                 * The whole row is the switch: label, the line under it, and the track are one
+                 * control, announced as "Require Face ID, switch, on" with the line as its hint.
+                 */
                 <Switch
+                  label={lockLabel}
+                  description={t(lockDetailKey(capability, locked, unlocked))}
                   value={locked}
                   onValueChange={(next) => void toggleLock(next)}
                   disabled={busy}
-                  accessibilityLabel={lockLabel}
-                  trackColor={{ false: colors.surface3, true: colors.lime500 }}
-                  thumbColor={locked ? colors.textOnLime : colors.textTertiary}
                 />
+              ) : (
+                <View style={styles.row}>
+                  <View style={styles.rowText}>
+                    <Body tone="primary">{lockLabel}</Body>
+                    <Meta>{t(lockDetailKey(capability, locked, unlocked))}</Meta>
+                  </View>
+                </View>
+              )}
+              {refused ? (
+                <Body accessibilityRole="alert" style={{ color: colors.danger }}>
+                  {t('mobile.lock.refused')}
+                </Body>
               ) : null}
             </View>
-            {refused ? (
-              <Body accessibilityRole="alert" style={{ color: colors.danger }}>
-                {t('mobile.lock.refused')}
-              </Body>
-            ) : null}
           </View>
-        </View>
-      ) : null}
+        ) : null}
 
-      {state === 'signed-out' ? (
-        <>
-          <View style={styles.section}>
-            <Body>{t('shell.tagline')}</Body>
-            <Button
-              label={t('shell.actions.register')}
-              onPress={() =>
-                void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}/register`)
-              }
-            />
-            <Button
-              label={t('shell.actions.signIn')}
-              variant="secondary"
-              onPress={() => router.push('/sign-in')}
-            />
-          </View>
-          <Group titleKey="account.groups.settings" rows={LANGUAGE_ONLY} />
-        </>
-      ) : null}
+        {state === 'signed-out' ? (
+          <>
+            <View style={styles.section}>
+              <Body>{t('shell.tagline')}</Body>
+              <Pill
+                label={t('shell.actions.register')}
+                size="lg"
+                fullWidth
+                onPress={() =>
+                  void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}/register`)
+                }
+              />
+              <Pill
+                label={t('shell.actions.signIn')}
+                variant="outline"
+                size="lg"
+                fullWidth
+                onPress={() => router.push('/sign-in')}
+              />
+            </View>
+            <Group titleKey="account.groups.settings" rows={LANGUAGE_ONLY} />
+          </>
+        ) : null}
 
-      <Group titleKey="shell.footer.groups.about" rows={ABOUT}>
-        <NavRow row={{ label: 'shell.whatsapp.open' }} onPress={() => setContacting(true)} />
-      </Group>
+        <Group titleKey="shell.footer.groups.about" rows={ABOUT}>
+          <NavRow row={{ label: 'shell.whatsapp.open' }} onPress={() => setContacting(true)} />
+        </Group>
 
-      {holdsSession ? (
-        <Button
-          label={t('shell.actions.signOut')}
-          variant="secondary"
-          busy={busy}
-          onPress={confirmSignOut}
-        />
-      ) : null}
+        {holdsSession ? (
+          <Pill
+            label={t('shell.actions.signOut')}
+            variant="outline"
+            size="lg"
+            fullWidth
+            busy={busy}
+            onPress={confirmSignOut}
+          />
+        ) : null}
 
-      <Colophon />
+        <Colophon />
 
-      <WhatsAppSheet visible={contacting} onClose={() => setContacting(false)} />
-    </ScrollView>
+        <WhatsAppSheet visible={contacting} onClose={() => setContacting(false)} />
+      </ScrollView>
+    </MotionBudgetProvider>
   );
 }
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Alert, type AlertButton } from 'react-native';
+import { AccessibilityInfo, Alert, type AlertButton } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -207,6 +207,12 @@ describe('the Me tab', () => {
       screen.queryByTestId('identity-skeleton', { includeHiddenElements: true }),
     ).toBeNull();
     expect(await screen.findByLabelText('Require your fingerprint')).toBeTruthy();
+
+    // The kit's switch (issue #151): the whole row is one control, named by the lock's label and
+    // saying it is on — not React Native's platform switch beside a separate line of text.
+    const lock = screen.getByRole('switch', { name: 'Require your fingerprint' });
+    expect(lock.props.accessibilityState).toMatchObject({ checked: true });
+    expect(lock).toContainElement(screen.getByText('Require your fingerprint'));
   });
 
   it.each([
@@ -263,6 +269,29 @@ describe('the Me tab', () => {
 
     expect(screen.queryByText(/not verified/)).toBeNull();
     expect(screen.queryByText(en.settings.panels.closure.scheduledTitle)).toBeNull();
+  });
+
+  it('shows both standing warnings politely, without interrupting a screen reader', async () => {
+    const said = jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions');
+    said.mockClear();
+    given('signed-in', {
+      ...AYSEL,
+      emailVerified: false,
+      deletionScheduledAt: '2026-10-30T12:00:00Z',
+    });
+    await renderMe();
+
+    // Standing conditions of the account, not events: read in place, never announced on arrival.
+    const unverified = screen.getByText(/not verified/);
+    const closure = screen.getByText(en.settings.panels.closure.scheduledTitle);
+    for (const words of [unverified, closure]) {
+      let region = words.parent;
+      while (region !== null && region.props.accessibilityLiveRegion === undefined) {
+        region = region.parent;
+      }
+      expect(region?.props.accessibilityLiveRegion).toBe('polite');
+    }
+    expect(said).not.toHaveBeenCalled();
   });
 
   it('warns of a scheduled closure and links to the page that cancels it', async () => {

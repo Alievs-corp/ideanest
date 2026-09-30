@@ -44,6 +44,11 @@ const CAMPAIGN_PATH = /^\/projects\/([^/]+)\/([^/]+)\/?$/;
  * is to let the browser keep it — or an application trying to drive this one
  * somewhere. Silently landing on the feed makes both look like they worked.
  *
+ * <p>Only campaign paths are answered, so this parser never names a development route — the kit
+ * gallery at `dev/kit` (issue #151) — as a destination; `links.test.ts` pins that. It does not
+ * make the route unreachable: Expo Router's own linking maps a matching URL to the file by itself,
+ * and the gallery's `__DEV__` redirect is what keeps a release build from showing it.
+ *
  * @param url the incoming link, in any of the three forms above
  * @param siteHost the host this build claims, from `app.config.ts`'s `siteUrl`
  */
@@ -100,10 +105,7 @@ const UUID = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-
  */
 const ID_ROUTES: readonly [RegExp, (m: RegExpExecArray) => string][] = [
   [/^\/projects\/new\/?$/, () => '/campaigns/new'],
-  [
-    new RegExp(`^/projects/(${UUID})/(back|prelaunch)/?$`),
-    (m) => `/campaigns/${m[1]}/${m[2]}`,
-  ],
+  [new RegExp(`^/projects/(${UUID})/(back|prelaunch)/?$`), (m) => `/campaigns/${m[1]}/${m[2]}`],
   [
     new RegExp(`^/projects/(${UUID})/edit/(basics|story|rewards|faq|prelaunch|review)/?$`),
     (m) => `/campaigns/${m[1]}/edit/${m[2]}`,

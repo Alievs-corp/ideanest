@@ -1,14 +1,12 @@
-import { useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { RefreshControl, StyleSheet, View } from 'react-native';
 import type { Card } from '../api/queries';
 import { colors, size, spacing } from '../theme';
-import { FadeUp } from './motion';
 import { ProjectCard } from './project-card';
+import { SkeletonCard, SkeletonGroup, haptics } from './ui';
 
 /**
- * A virtualised list of campaigns — §4.3. **Capped stagger so long lists
- * never crawl.**
+ * A virtualised list of campaigns — §4.3. **Long lists never crawl.**
  *
  * <h2>Why FlashList and not FlatList</h2>
  *
@@ -18,27 +16,24 @@ import { ProjectCard } from './project-card';
  * fiftieth flick is measurably worse than the first on a mid-range Android
  * phone — which is most of this market.
  *
- * <h2>The stagger cap, and why the index it uses is not the list index</h2>
+ * <h2>No card animates</h2>
  *
- * `docs/motion-system.md` §7 caps the entry delay at 300ms because the fiftieth
- * item must not wait two and a half seconds. That cap alone is not enough here,
- * and this is the part that is easy to get wrong: FlashList RECYCLES rows, so
- * item 200 is rendered into the component that held item 3, and an `entering`
- * animation keyed off the absolute index would replay — a card fading in halfway
- * down a list somebody is already reading.
+ * The list used to fade its first six cards up on a capped stagger. It no longer
+ * animates any: `docs/motion-system.md` §5.1 forbids an entry animation on
+ * campaign cards outright ("§8: no animation in long lists"), and calls the card
+ * stagger "the one people reach for here and the one to refuse" — a feed that
+ * grows as somebody scrolls is a page that never settles, and it costs exactly
+ * where discovery's budget says speed outranks everything. It was also the part
+ * that was easy to get wrong: FlashList RECYCLES rows, so an `entering`
+ * animation replays on a recycled row halfway down a list somebody is reading.
+ * What still moves on a card is its progress bar, §5.1's one exception.
  *
- * So the animation is applied only to the first screenful. Beyond
- * {@link ANIMATED_PREFIX} rows the cards are mounted plain, which is also §8's
- * "no animation in long lists" rule and the reason scrolling stays at frame
- * rate. The entry animation exists to make a screen arrive; it has nothing to
- * say about row 60.
+ * <h2>Pull to refresh</h2>
+ *
+ * The kit's refresh, as `Screen` draws it (issue #151): the spinner in the text
+ * tokens on surface-3 rather than lime — a refresh is not the one urgent thing on
+ * the screen — and §7's refresh haptic as the pull lands.
  */
-
-/**
- * How many rows fade in. About two screenfuls on a phone, which is what somebody
- * sees before their thumb moves.
- */
-export const ANIMATED_PREFIX = 6;
 
 export interface CampaignListProps {
   readonly cards: readonly Card[];
@@ -54,6 +49,7 @@ export interface CampaignListProps {
 const styles = StyleSheet.create({
   content: { padding: size.cardGap, gap: size.cardGap },
   separator: { height: spacing[4] },
+  placeholders: { gap: spacing[4] },
 });
 
 export function CampaignList({
@@ -64,22 +60,10 @@ export function CampaignList({
   header,
   empty,
 }: CampaignListProps) {
-  const renderItem = useCallback(
-    ({ item, index }: { item: Card; index: number }) =>
-      index < ANIMATED_PREFIX ? (
-        <FadeUp index={index}>
-          <ProjectCard card={item} />
-        </FadeUp>
-      ) : (
-        <ProjectCard card={item} />
-      ),
-    [],
-  );
-
   return (
     <FlashList
       data={cards as Card[]}
-      renderItem={renderItem}
+      renderItem={renderCard}
       /*
        * The campaign id, not the array position. A keyExtractor that returns the
        * index defeats recycling entirely -- every card is a new identity on
@@ -101,9 +85,13 @@ export function CampaignList({
         onRefresh === undefined ? undefined : (
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.lime500}
-            colors={[colors.lime500]}
+            onRefresh={() => {
+              haptics.refresh();
+              onRefresh();
+            }}
+            tintColor={colors.textSecondary}
+            colors={[colors.textPrimary]}
+            progressBackgroundColor={colors.surface3}
           />
         )
       }
@@ -111,6 +99,36 @@ export function CampaignList({
   );
 }
 
+/** Module-level, so FlashList gets the same function on every render and keeps its recycling. */
+function renderCard({ item }: { item: Card }) {
+  return <ProjectCard card={item} />;
+}
+
 function Separator() {
   return <View style={styles.separator} />;
+}
+
+/** How many card placeholders stand in for the first page: about one screenful. */
+const PLACEHOLDERS = 3;
+
+/**
+ * The list before its first page — the kit's card-shaped placeholders in the list's own padding and
+ * spacing, so nothing moves when the cards replace them (issue #151; it replaces the spinner that
+ * the old `Loading` state drew).
+ *
+ * <p>One accessible element, named by `label` and busy, as `SkeletonGroup` makes it: the wait is
+ * one announcement ("Loading projects"), not three grey cards.
+ */
+export function CampaignListSkeleton({ label }: { readonly label: string }) {
+  return (
+    <View style={styles.content}>
+      <SkeletonGroup label={label}>
+        <View style={styles.placeholders}>
+          {Array.from({ length: PLACEHOLDERS }, (_, index) => (
+            <SkeletonCard key={index} />
+          ))}
+        </View>
+      </SkeletonGroup>
+    </View>
+  );
 }
