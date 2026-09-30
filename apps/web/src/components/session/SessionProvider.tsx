@@ -12,8 +12,6 @@ import {
 import { usePathname, useRouter } from '../../i18n/navigation';
 import { signOut as clearSession } from '../../lib/api/access-token';
 import { signInHref } from '../../lib/auth/redirect';
-import { currentLocaleCookie, writeLocaleCookie } from '../../lib/i18n/cookie';
-import { isLocale } from '../../lib/i18n/locale';
 import { requiresSession } from '../../lib/session/private-routes';
 import { fetchSession, type Session } from '../../lib/session/session';
 
@@ -55,15 +53,49 @@ import { fetchSession, type Session } from '../../lib/session/session';
  * rather than by review. `lib/session/private-routes.ts` is the list, and it is deliberately
  * not the crawler's list.
  *
- * <h2>It also mirrors the account's language into the cookie</h2>
+ * <h2>It also keeps the account's language and the cookie in step</h2>
  *
  * `GET /v1/me` carries `locale` (#324), and this is the only place in the client that reads
  * that response on every page load — so it is the only place that can notice the account and
- * the browser disagreeing. See {@link SessionProvider}'s language effect for why the mirror
- * belongs here rather than on the preference screen.
+ * the browser disagreeing. {@link syncLocale} below says which side wins and why (#216).
  */
 
 export type SessionStatus = 'unknown' | 'signed-in' | 'signed-out';
+
+/**
+ * THE ACCOUNT'S LANGUAGE AND THIS BROWSER'S, KEPT IN STEP — #324, #280, then #216.
+ *
+ * `users.locale` is the durable record and it travels with the account: mail and pushes are
+ * sent in it. The cookie is per browser, and it is what `proxy.ts` answers the bare path with.
+ * Every page load already reads `GET /v1/me` to bootstrap the session, and that response
+ * carries the language, so noticing a disagreement costs nothing extra.
+ *
+ * WHO WINS A DISAGREEMENT: THE LATEST EXPLICIT CHOICE (#216). It used to be the account,
+ * always — the cookie was overwritten on every session read, so the header's switcher lasted
+ * only for the URL it opened. Now every explicit choice (this browser's switcher and settings
+ * panel, a phone's language screen or per-app setting) is written to the account, and the
+ * account's value reaches this browser only when the browser has no choice of its own or the
+ * account changed elsewhere since this browser last synced it. `lib/i18n/sync.ts` is the rule.
+ * A read that finds nobody, and a sign-out, keep the cookie and forget the sync marks, so the
+ * next person to sign in here follows their own account.
+ *
+ * LOADED AFTER THE READ, NOT WITH THE PAGE. This provider is in the root layout, so whatever
+ * it imports statically is in every route's First Load JS, and those budgets have no room for
+ * a rule that cannot run before the read has answered anyway. The import is the whole cost
+ * here; a failed one leaves the cookie as it was, which is the state before this existed.
+ *
+ * NO `router.refresh()`. The mirror this replaces refreshed the server tree after writing the
+ * cookie, from when a render read it. Since #123 the language is the path's and nothing a
+ * render draws reads the cookie (`src/i18n/request.ts`), so the refresh was a round trip that
+ * could not change anything on screen.
+ *
+ * A VALUE THAT IS ABSENT OR UNKNOWN IS LEFT ALONE. `locale` is optional in the generated
+ * schema, and a tag outside §21.1's four is a language this client cannot draw — "nothing to
+ * apply", not "apply the default".
+ */
+function syncLocale(account: Session | null): void {
+  void import('../../lib/i18n/sync').then((sync) => sync.syncLocale(account));
+}
 
 export interface SessionState {
   readonly status: SessionStatus;
@@ -109,6 +141,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
       const account = await fetchSession();
       setSession(account);
       setStatus(account === null ? 'signed-out' : 'signed-in');
+      syncLocale(account);
     } catch {
       /*
        * THE SERVICE FAILED, WHICH IS NOT THE SAME AS BEING SIGNED OUT, so nothing is
@@ -152,49 +185,6 @@ export function SessionProvider({ children }: SessionProviderProps) {
     router.replace(signInHref(`${pathname}${query}`));
   }, [status, pathname, router]);
 
-  /*
-   * THE ACCOUNT'S LANGUAGE, MIRRORED INTO THE COOKIE A RENDER CAN READ — #324, #280.
-   *
-   * `users.locale` is the durable record and it travels with the account. The cookie is the
-   * only thing a **server** render can read before the first byte (`src/i18n/request.ts`), and
-   * it is per browser. So a person who chose Russian here is met by English the first time
-   * they open a different browser, a different device, or a private window — the account knows
-   * their language and the render never asks it.
-   *
-   * This is the join. Every page load already reads `GET /v1/me` to bootstrap the session, and
-   * that response now carries the language; noticing a disagreement costs nothing extra
-   * because the request was being made anyway. `/settings/language` writes both sides when
-   * somebody chooses, and this is what carries the choice to the next browser.
-   *
-   * WHY THE REFRESH, AND WHY IT CANNOT LOOP. Writing the cookie alone would leave the page
-   * that is already on screen in the language the render started in — the mirror would be
-   * correct and invisible until the next navigation, which is the same experience it exists to
-   * fix. `router.refresh()` re-renders the server tree, which re-reads the cookie. It cannot
-   * repeat: the effect is keyed on the session object, `refresh()` re-renders server components
-   * without remounting this one or re-running `read`, and by the time any of it could run again
-   * the cookie and the account agree and the first guard returns.
-   *
-   * A VALUE THAT IS ABSENT OR UNKNOWN IS LEFT ALONE. `locale` is optional in the generated
-   * schema, so a service that has not shipped #324 answers without it, and a tag outside
-   * §21.1's four is a language this client cannot draw. Both mean "nothing to mirror" rather
-   * than "mirror the default", because overwriting a browser's stated preference with a
-   * fallback would be this effect doing the opposite of its job.
-   *
-   * The `Session` shape is `lib/session/session.ts`'s and stays that module's to widen; the
-   * field is read here through a narrowed view of the same object rather than by changing a
-   * type five other screens depend on.
-   */
-  useEffect(() => {
-    if (session === null) return;
-
-    const stated = (session as Session & { readonly locale?: string | null }).locale;
-    if (!isLocale(stated)) return;
-    if (currentLocaleCookie() === stated) return;
-
-    writeLocaleCookie(stated);
-    router.refresh();
-  }, [session, router]);
-
   const signOut = useCallback(async () => {
     /*
      * The local state goes first, for the reason `lib/api/access-token.ts` gives about the
@@ -203,6 +193,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
      */
     setSession(null);
     setStatus('signed-out');
+    syncLocale(null);
     await clearSession();
 
     /*

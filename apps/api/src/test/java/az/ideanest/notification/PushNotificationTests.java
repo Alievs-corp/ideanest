@@ -10,10 +10,12 @@ import az.ideanest.notification.domain.NotificationType;
 import az.ideanest.notification.infrastructure.PushComposer;
 import az.ideanest.notification.infrastructure.PushDeviceRepository;
 import az.ideanest.shared.EmailAddress;
+import az.ideanest.shared.ReaderLocale;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,6 +61,9 @@ class PushNotificationTests extends AbstractIntegrationTest {
     private static final String TOKEN = "ExponentPushToken[aaaaaaaaaaaaaaaaaaaaaa]";
 
     private static final String OTHER_TOKEN = "ExpoPushToken[bbbbbbbbbbbbbbbbbbbbbb]";
+
+    /** The base catalogue's language, which is what these copy assertions are written in. */
+    private static final Locale ENGLISH = ReaderLocale.of("en");
 
     @Autowired
     private TestRestTemplate rest;
@@ -226,7 +231,7 @@ class PushNotificationTests extends AbstractIntegrationTest {
                 message(NotificationType.PLEDGE_CONFIRMED, """
                         {"projectTitle":"Solar Lamp","total":{"amount":"25.00","currency":"AZN"},\
                         "creatorSlug":"aysel","projectSlug":"solar-lamp"}"""),
-                "");
+                "", ENGLISH);
 
         // The `.named` variants, because the document carries a title.
         assertThat(content.title()).isEqualTo("Your pledge to Solar Lamp is confirmed");
@@ -234,10 +239,23 @@ class PushNotificationTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("is written in the language it is given, which the sender reads from the account")
+    void pushCopyIsInTheRecipientsLanguage() {
+        NotificationMessage pledge = message(NotificationType.PLEDGE_CONFIRMED, """
+                {"projectTitle":"Solar Lamp","total":{"amount":"25.00","currency":"AZN"}}""");
+
+        // Issue #216: it used to be Locale.ROOT, the English base catalogue, for everybody.
+        assertThat(composer.compose(pledge, "", ReaderLocale.of("ru")).title())
+                .isEqualTo("Ваш взнос в кампанию Solar Lamp подтверждён");
+        assertThat(composer.compose(pledge, "", ReaderLocale.of("az")).title())
+                .isEqualTo("Solar Lamp kampaniyasına dəstəyiniz təsdiqləndi");
+    }
+
+    @Test
     @DisplayName("falls back to the plain copy when the campaign has no title in the document")
     void copySurvivesAnUntitledDocument() {
         PushComposer.PushContent content =
-                composer.compose(message(NotificationType.PLEDGE_CONFIRMED, "{}"), "");
+                composer.compose(message(NotificationType.PLEDGE_CONFIRMED, "{}"), "", ENGLISH);
 
         // Rows written before #249 carry no title, and a sentence built around an empty
         // slot renders with a hole in it.
@@ -251,7 +269,7 @@ class PushNotificationTests extends AbstractIntegrationTest {
         PushComposer.PushContent linked = composer.compose(
                 message(NotificationType.PLEDGE_CONFIRMED, """
                         {"creatorSlug":"aysel","projectSlug":"solar-lamp"}"""),
-                "");
+                "", ENGLISH);
 
         assertThat(linked.url()).isEqualTo("ideanest://projects/aysel/solar-lamp");
 
@@ -263,7 +281,7 @@ class PushNotificationTests extends AbstractIntegrationTest {
         PushComposer.PushContent unlinked = composer.compose(
                 message(NotificationType.PLEDGE_CONFIRMED, """
                         {"projectId":"11111111-1111-1111-1111-111111111111"}"""),
-                "");
+                "", ENGLISH);
 
         assertThat(unlinked.url()).isEqualTo("ideanest://");
     }
@@ -272,7 +290,7 @@ class PushNotificationTests extends AbstractIntegrationTest {
     @DisplayName("has copy for every type, so no lock screen ever shows a placeholder")
     void everyTypeHasPushCopy() {
         for (NotificationType type : NotificationType.values()) {
-            PushComposer.PushContent content = composer.compose(message(type, "{}"), "");
+            PushComposer.PushContent content = composer.compose(message(type, "{}"), "", ENGLISH);
 
             assertThat(content.title()).as("title for %s", type).isNotBlank();
             assertThat(content.body()).as("line for %s", type).isNotBlank();

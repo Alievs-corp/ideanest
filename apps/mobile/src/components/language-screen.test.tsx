@@ -7,10 +7,14 @@ import en from '@ideanest/messages/en.json';
 import LanguageScreen from '../app/settings/language';
 import { saveAccountLocale } from '../api/client';
 import { currentLocale, setLocale } from '../lib/locale';
+import { forgetAccountSync } from '../lib/locale-sync';
+import { deviceStore } from '../lib/storage';
 
 /**
  * The language screen's account half — issue #150: `PATCH /v1/me/locale` only when signed in,
- * and a failed save keeps the local choice and says so, with a retry.
+ * and a failed save keeps the local choice and says so, with a retry. Issue #216: a save that
+ * lands records the language as the one this phone last synced with the account, and a failed
+ * one stays pending, so a stale account read cannot switch it back.
  *
  * <p>Here rather than beside `app/settings/language.tsx` because every file under `src/app` is a
  * route to Expo Router, and a test file there would be offered as a screen.
@@ -46,6 +50,7 @@ async function renderScreen() {
 beforeEach(async () => {
   jest.clearAllMocks();
   mockSignedIn = false;
+  forgetAccountSync();
   await act(async () => setLocale('az'));
 });
 
@@ -57,6 +62,7 @@ describe('the language screen', () => {
     expect(currentLocale()).toBe('ru');
     expect(saveAccountLocale).not.toHaveBeenCalled();
     expect(screen.queryByText(failed)).toBeNull();
+    expect(deviceStore.getString('locale.pending')).toBeUndefined();
   });
 
   it('signed in: sends the choice to the account', async () => {
@@ -67,6 +73,8 @@ describe('the language screen', () => {
     expect(saveAccountLocale).toHaveBeenCalledWith('tr');
     expect(currentLocale()).toBe('tr');
     expect(screen.queryByText(failed)).toBeNull();
+    expect(deviceStore.getString('locale.accountSynced')).toBe('tr');
+    expect(deviceStore.getString('locale.pending')).toBeUndefined();
   });
 
   it('a failed save keeps the local choice, says so, and retries', async () => {
@@ -77,10 +85,14 @@ describe('the language screen', () => {
 
     expect(currentLocale()).toBe('ru');
     expect(await screen.findByText(failed)).toBeTruthy();
+    expect(deviceStore.getString('locale.pending')).toBe('ru');
+    expect(deviceStore.getString('locale.accountSynced')).toBeUndefined();
 
     await fireEvent.press(screen.getByRole('button', { name: en.mobile.language.retry }));
     expect(saveAccountLocale).toHaveBeenLastCalledWith('ru');
     expect(saveAccountLocale).toHaveBeenCalledTimes(2);
     expect(screen.queryByText(failed)).toBeNull();
+    expect(deviceStore.getString('locale.accountSynced')).toBe('ru');
+    expect(deviceStore.getString('locale.pending')).toBeUndefined();
   });
 });

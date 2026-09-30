@@ -65,6 +65,17 @@ import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from '../../lib/i18n/loc
  * `/ru` rather than to whatever they had before, and without this write that redirect keeps
  * answering with a preference this control has just contradicted.
  *
+ * <h2>And, signed in, it is the account's language too — issue #216</h2>
+ *
+ * A choice here is an explicit choice, and the latest one anywhere is the account's language:
+ * mail, pushes and the reader's other devices follow it. The switch still writes only the
+ * cookie, and the page the link opens sends `PATCH /v1/me/locale`: its session read finds the
+ * cookie moved since this browser last synced with the account (`lib/i18n/sync.ts`), sends it
+ * through the api client's own fetch path, and keeps it pending until the account has it.
+ * Sending it from here would race the navigation that is about to unload this page — and,
+ * with no access token in memory yet, spend the rotating refresh cookie on a request the
+ * unload cuts off. It also keeps this control, which is on every page, free of new code.
+ *
  * <h2>The query string is deliberately dropped</h2>
  *
  * Reading it would mean `useSearchParams`, and a component that calls it sits on every route
