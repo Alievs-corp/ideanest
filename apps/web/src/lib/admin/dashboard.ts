@@ -21,8 +21,12 @@ export interface DashboardFigure {
   /** A stable name such as `pledgeVolume` or `state.LIVE`; the label is keyed on it. */
   readonly key: string;
   readonly kind: FigureKind;
-  /** A decimal string, or null when the figure cannot be computed yet. */
-  readonly value: string | null;
+  /**
+   * A decimal string, or absent when the figure cannot be computed yet. The service leaves a
+   * null out of the JSON rather than sending it, so "no value" arrives as a missing field and not
+   * as `null`, and every reader must treat both the same.
+   */
+  readonly value?: string | null;
   /** Present for `MONEY`. */
   readonly currency?: string | null;
   /** For a queue: when its oldest item arrived. */

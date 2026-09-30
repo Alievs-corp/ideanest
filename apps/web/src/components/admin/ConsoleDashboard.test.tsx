@@ -125,6 +125,26 @@ describe('the console front page', () => {
     expect(within(money).getByText(COPY.otherCurrencyNote)).toBeInTheDocument();
   });
 
+  it('says nothing has been decided yet when the success rate has no value, however the service says so', async () => {
+    // The service leaves a null out of the JSON, so in the browser the field is missing rather than
+    // null. Drawn naively that is a lone "%" on the page, which is what the live site showed.
+    const { value: _omitted, ...withoutValue } = MONEY.figures.find((figure) => figure.key === 'successRate')!;
+    readMock.mockResolvedValue(
+      page([
+        {
+          ...MONEY,
+          figures: [...MONEY.figures.filter((figure) => figure.key !== 'successRate'), withoutValue as never],
+        },
+      ]),
+    );
+
+    renderFor(['VIEW_FINANCE']);
+    const money = (await screen.findByRole('heading', { name: COPY.section.figures })).closest('section') as HTMLElement;
+
+    expect(within(money).getByText(COPY.noSuccessRate)).toBeInTheDocument();
+    expect(within(money).queryByText('%')).not.toBeInTheDocument();
+  });
+
   it('says how long the longest wait in a queue is', async () => {
     readMock.mockResolvedValue(page([CAMPAIGNS]));
 
