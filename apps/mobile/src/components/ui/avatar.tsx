@@ -74,6 +74,9 @@ export function Avatar({ name, src, size = 'md', decorative = false, testID }: A
           // The circle carries the name; two letters of it are not a second announcement.
           accessibilityElementsHidden
           importantForAccessibility="no"
+          // Decorative and inside a circle of fixed size, so Dynamic Type growing them only pushes
+          // them past the edge; the name the circle announces is what a larger text setting needs.
+          maxFontSizeMultiplier={1}
         >
           {initials(name)}
         </Text>

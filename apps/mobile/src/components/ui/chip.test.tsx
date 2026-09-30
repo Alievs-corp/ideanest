@@ -50,6 +50,13 @@ describe('Chip', () => {
     expect(chip.props.accessibilityState).toMatchObject({ selected: false });
   });
 
+  it('hugs its label without overriding its parent’s alignment', async () => {
+    const { getByRole } = await render(<Chip label="Games" onPress={noop} />);
+    const chip = getByRole('button');
+    expect(styleOf(chip).alignSelf).toBeUndefined();
+    expect(chip.parent === null ? undefined : styleOf(chip.parent).alignSelf).toBeUndefined();
+  });
+
   it('keeps its 34pt look and reaches 44pt through hitSlop', async () => {
     const { getByRole } = await render(<Chip label="Games" onPress={noop} />);
     const chip = getByRole('button');
@@ -133,6 +140,17 @@ describe('ChipRow', () => {
     const tree = await render(row);
     await fireEvent(tree.getByTestId('row'), 'layout', { nativeEvent: { layout: { width: 320 } } });
     await fireEvent(scrollerIn(tree), 'contentSizeChange', 200, 44);
+    expect(tree.queryByTestId('chip-row-fade', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('takes the fade away when the chips shrink to fit, without waiting for a scroll', async () => {
+    const tree = await render(row);
+    await fireEvent(tree.getByTestId('row'), 'layout', { nativeEvent: { layout: { width: 320 } } });
+    await fireEvent(scrollerIn(tree), 'contentSizeChange', 600, 44);
+    expect(tree.getByTestId('chip-row-fade', { includeHiddenElements: true })).toBeTruthy();
+
+    // A filter removed: the row now fits, and nobody has scrolled.
+    await fireEvent(scrollerIn(tree), 'contentSizeChange', 280, 44);
     expect(tree.queryByTestId('chip-row-fade', { includeHiddenElements: true })).toBeNull();
   });
 

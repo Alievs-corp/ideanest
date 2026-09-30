@@ -23,6 +23,11 @@ import { useMotionAllowed } from './motion-budget';
  * `image` with the alt as its label; a decorative one is hidden, which on a card whose own name
  * already says what the picture shows is the right answer rather than the lazy one.
  *
+ * <p>An empty `alt` is treated as decorative, which is what `alt=""` means on the web. It is the
+ * type checker's gap — `''` is a string — and it arrives at run time from data (a caption nobody
+ * wrote), so refusing it in development would not catch the case that matters. The alternative is
+ * an image announced as "image" with no name, which is worse than one not announced at all.
+ *
  * <h2>Motion</h2>
  *
  * `expo-image` fades a picture in over its placeholder by default. That fade is kept only where the
@@ -131,7 +136,7 @@ export type MediaProps = {
 export function Media(props: MediaProps) {
   const { src, ratio, radius = 'none', placeholder, fit = 'cover', style, testID } = props;
   const fades = useMotionAllowed('moderate');
-  const named = props.decorative !== true;
+  const named = props.decorative !== true && props.alt !== undefined && props.alt !== '';
   const preview =
     placeholder !== undefined && placeholder !== null && isPlaceholderUri(placeholder)
       ? { uri: placeholder }

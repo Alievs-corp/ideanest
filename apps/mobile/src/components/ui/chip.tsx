@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -32,7 +32,13 @@ import { Icon, type IconComponent } from './icon';
  * its hit area with `hitSlop` instead of growing — a row of 44pt chips is a different design.
  *
  * <p>No animation: §5.1 gives filter chips "150ms colour only", and a press on a phone is a colour
- * swap on the frame the finger lands, which is the same thing with nothing to reduce.
+ * swap on the frame the finger lands, which is the same thing with nothing to reduce. A selected
+ * chip gives that feedback too — white dims to `white-muted` — because pressing it is how a filter
+ * is taken off.
+ *
+ * <p>Each chip sits in a wrapper that takes the place its parent gives it and hugs the chip inside
+ * that place (as `Pill` does), rather than setting `alignSelf` on itself, which would override a
+ * parent's `alignItems: 'center'`.
  */
 
 const HEIGHT = 34;
@@ -65,61 +71,68 @@ export function Chip({
   const { ring, onFocus, onBlur } = useFocusRing();
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityHint={accessibilityHint}
-      accessibilityState={{ selected, disabled }}
-      accessibilityValue={count === undefined ? undefined : { text: String(count) }}
-      disabled={disabled}
-      onPress={onPress}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      hitSlop={{ top: REACH, bottom: REACH }}
-      testID={testID}
-      style={({ pressed }) => [
-        styles.chip,
-        selected ? styles.selected : pressed && !disabled ? styles.pressed : styles.rest,
-        disabled && styles.disabled,
-        ring,
-      ]}
-    >
-      {({ pressed }) => {
-        const text = selected
-          ? colors.textOnWhite
-          : pressed && !disabled
-            ? colors.textPrimary
-            : colors.textSecondary;
-        return (
-          <>
-            {icon === undefined ? null : <Icon icon={icon} size={14} color={text} />}
-            <Text
-              style={[styles.label, { color: text }]}
-              numberOfLines={1}
-              // The chip owns the announcement; its text must not be a second stop.
-              accessibilityElementsHidden
-              importantForAccessibility="no"
-            >
-              {label}
-            </Text>
-            {count === undefined ? null : (
+    <View style={styles.hug}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ selected, disabled }}
+        accessibilityValue={count === undefined ? undefined : { text: String(count) }}
+        disabled={disabled}
+        onPress={onPress}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        hitSlop={{ top: REACH, bottom: REACH }}
+        testID={testID}
+        style={({ pressed }) => [
+          styles.chip,
+          skinFor(selected, pressed && !disabled),
+          disabled && styles.disabled,
+          ring,
+        ]}
+      >
+        {({ pressed }) => {
+          const text = selected
+            ? colors.textOnWhite
+            : pressed && !disabled
+              ? colors.textPrimary
+              : colors.textSecondary;
+          return (
+            <>
+              {icon === undefined ? null : <Icon icon={icon} size={14} color={text} />}
               <Text
-                style={[
-                  styles.label,
-                  styles.count,
-                  { color: selected ? tint(colors.textOnWhite, 0.5) : colors.textTertiary },
-                ]}
+                style={[styles.label, { color: text }]}
+                numberOfLines={1}
+                // The chip owns the announcement; its text must not be a second stop.
                 accessibilityElementsHidden
                 importantForAccessibility="no"
               >
-                {count}
+                {label}
               </Text>
-            )}
-          </>
-        );
-      }}
-    </Pressable>
+              {count === undefined ? null : (
+                <Text
+                  style={[
+                    styles.label,
+                    styles.count,
+                    { color: selected ? tint(colors.textOnWhite, 0.5) : colors.textTertiary },
+                  ]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                >
+                  {count}
+                </Text>
+              )}
+            </>
+          );
+        }}
+      </Pressable>
+    </View>
   );
+}
+
+function skinFor(selected: boolean, pressed: boolean) {
+  if (selected) return pressed ? styles.selectedPressed : styles.selected;
+  return pressed ? styles.pressed : styles.rest;
 }
 
 export interface RemovableChipProps {
@@ -154,34 +167,36 @@ export function RemovableChip({
   const { ring, onFocus, onBlur } = useFocusRing();
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={removeLabel}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onRemove}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      hitSlop={{ top: REACH, bottom: REACH }}
-      testID={testID}
-      style={({ pressed }) => [
-        styles.chip,
-        styles.removable,
-        pressed && !disabled ? styles.removablePressed : styles.selected,
-        disabled && styles.disabled,
-        ring,
-      ]}
-    >
-      <Text
-        style={[styles.label, { color: colors.textOnWhite }]}
-        numberOfLines={1}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
+    <View style={styles.hug}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={removeLabel}
+        accessibilityState={{ disabled }}
+        disabled={disabled}
+        onPress={onRemove}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        hitSlop={{ top: REACH, bottom: REACH }}
+        testID={testID}
+        style={({ pressed }) => [
+          styles.chip,
+          styles.removable,
+          skinFor(true, pressed && !disabled),
+          disabled && styles.disabled,
+          ring,
+        ]}
       >
-        {label}
-      </Text>
-      <Icon icon={X} size={14} color={tint(colors.textOnWhite, 0.56)} />
-    </Pressable>
+        <Text
+          style={[styles.label, { color: colors.textOnWhite }]}
+          numberOfLines={1}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
+          {label}
+        </Text>
+        <Icon icon={X} size={14} color={tint(colors.textOnWhite, 0.56)} />
+      </Pressable>
+    </View>
   );
 }
 
@@ -201,41 +216,58 @@ const FADE_SHARE = 0.12;
  * <p>The right edge fades into `surface-1` rather than cutting a chip in half, so "there is more"
  * is legible without a scroll bar. The web draws it as a CSS mask; React Native has none, so it is
  * a `react-native-svg` gradient from `colors.surface1` at no opacity to full, laid over the edge
- * and ignoring touches. It is drawn only while the chips overflow and the row is not scrolled to
- * its end — a fade over the last chip, with nothing after it, would hide the one thing it is
- * pointing at.
+ * and ignoring touches. It is drawn only while there is more to the right of what is showing — a
+ * fade over the last chip, with nothing after it, would hide the one thing it is pointing at.
+ *
+ * <p>"More to the right" is recomputed whenever any of its three inputs changes: the scroll
+ * offset, the row's width (a rotation) and the chips' width (a filter added or removed). Asking only
+ * on scroll left a fade over a row that had just shrunk to fit.
  */
 export function ChipRow({ children, fadeEdge = true, testID }: ChipRowProps) {
-  const [viewport, setViewport] = useState(0);
-  const [content, setContent] = useState(0);
-  const [atEnd, setAtEnd] = useState(false);
+  const offset = useRef(0);
+  const viewport = useRef(0);
+  const content = useRef(0);
+  const [more, setMore] = useState(false);
 
-  const onScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const end =
-      nativeEvent.contentOffset.x + nativeEvent.layoutMeasurement.width >=
-      nativeEvent.contentSize.width - 1;
-    if (end !== atEnd) setAtEnd(end);
+  // Refs for the measurements, one piece of state for the answer: a scroll event re-renders the
+  // row only when the answer changes, not on every frame of the scroll.
+  const recompute = () => {
+    setMore(
+      content.current > viewport.current + 1 &&
+        offset.current + viewport.current < content.current - 1,
+    );
   };
 
-  const overflowing = content > viewport + 1;
+  const onScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
+    offset.current = nativeEvent.contentOffset.x;
+    viewport.current = nativeEvent.layoutMeasurement.width;
+    content.current = nativeEvent.contentSize.width;
+    recompute();
+  };
 
   return (
     <View
       style={styles.row}
       testID={testID}
-      onLayout={({ nativeEvent }: LayoutChangeEvent) => setViewport(nativeEvent.layout.width)}
+      onLayout={({ nativeEvent }: LayoutChangeEvent) => {
+        viewport.current = nativeEvent.layout.width;
+        recompute();
+      }}
     >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.rowContent}
-        onContentSizeChange={(width) => setContent(width)}
+        onContentSizeChange={(width) => {
+          content.current = width;
+          recompute();
+        }}
         onScroll={onScroll}
         scrollEventThrottle={32}
       >
         {children}
       </ScrollView>
-      {fadeEdge && overflowing && !atEnd ? (
+      {fadeEdge && more ? (
         <View
           pointerEvents="none"
           style={styles.fade}
@@ -259,10 +291,10 @@ export function ChipRow({ children, fadeEdge = true, testID }: ChipRowProps) {
 }
 
 const styles = StyleSheet.create({
+  hug: { alignItems: 'flex-start' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: 6,
     // A minimum, so Dynamic Type grows the chip rather than clipping its word.
     minHeight: HEIGHT,
@@ -274,7 +306,7 @@ const styles = StyleSheet.create({
   pressed: { backgroundColor: colors.surface3, borderColor: colors.border },
   selected: { backgroundColor: colors.whiteSurface, borderColor: 'transparent' },
   removable: { paddingLeft: spacing[4], paddingRight: spacing[3] },
-  removablePressed: { backgroundColor: colors.whiteMuted, borderColor: 'transparent' },
+  selectedPressed: { backgroundColor: colors.whiteMuted, borderColor: 'transparent' },
   disabled: { opacity: 0.4 },
   label: { ...font.medium, fontSize: fontSize.caption },
   count: { fontVariant: ['tabular-nums'] },

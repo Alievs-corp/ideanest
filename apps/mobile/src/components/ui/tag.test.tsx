@@ -60,6 +60,49 @@ describe('Tag', () => {
     expect(colourOf(getByText('Draft'))).toBe(TONES.white.secondary);
   });
 
+  describe('status tags on lime and white', () => {
+    const surfaces = [
+      ['lime', colors.lime500],
+      ['white', colors.whiteSurface],
+    ] as const;
+    const statuses = ['success', 'warning', 'danger', 'hot'] as const;
+
+    it.each(surfaces)(
+      'draws the words in the %s surface’s ink, over the status tint, at 4.5:1 or better',
+      async (surface, ground) => {
+        for (const variant of statuses) {
+          const { getByText } = await render(
+            <SurfaceProvider surface={surface}>
+              <Tag label="State" variant={variant} />
+            </SurfaceProvider>,
+          );
+          const word = getByText('State');
+          const text = String(colourOf(word));
+          const background = String(backgroundOf(word));
+          expect(text).toBe(TONES[surface].primary);
+          // The tint keeps saying which status it is.
+          expect(background).toBe(tint(colors[variant], 0.12));
+          expect(contrast(text, background, ground)).toBeGreaterThanOrEqual(4.5);
+        }
+      },
+    );
+
+    it('would have been illegible in the status colour — the reason for the switch', () => {
+      expect(
+        contrast(colors.success, tint(colors.success, 0.12), colors.whiteSurface),
+      ).toBeLessThan(3);
+    });
+  });
+
+  it('hugs its word without overriding its parent’s alignment', async () => {
+    const { getByTestId } = await render(<Tag testID="tag" label="Games" />);
+    const tag = getByTestId('tag');
+    expect(StyleSheet.flatten(tag.props.style as StyleProp<ViewStyle>).alignSelf).toBeUndefined();
+    expect(
+      StyleSheet.flatten(tag.parent?.props.style as StyleProp<ViewStyle>).alignSelf,
+    ).toBeUndefined();
+  });
+
   it('keeps an icon beside the word, in the word’s colour', async () => {
     const { getByText, container } = await render(
       <Tag label="Funded" variant="success" icon={CircleCheck} />,
@@ -70,6 +113,39 @@ describe('Tag', () => {
     expect(glyphs[0]?.props.stroke).toBe(colors.success);
   });
 });
+
+/** `r,g,b,a` of a colour, read the way `tint()` writes one. */
+function channels(colour: string): [number, number, number, number] {
+  const parts = /^rgba\(([^)]+)\)$/.exec(tint(colour, 1))?.[1]?.split(',').map(Number) ?? [];
+  const [r = 0, g = 0, b = 0, a = 1] = parts;
+  return [r, g, b, a];
+}
+
+/** `top` painted over an opaque `bottom`. */
+function over(top: string, bottom: [number, number, number]): [number, number, number] {
+  const [r, g, b, a] = channels(top);
+  return [r * a + bottom[0] * (1 - a), g * a + bottom[1] * (1 - a), b * a + bottom[2] * (1 - a)];
+}
+
+function luminance([r, g, b]: [number, number, number]): number {
+  const [lr, lg, lb] = [r, g, b].map((channel) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+}
+
+/** WCAG contrast of text over a translucent tag background over the surface underneath. */
+function contrast(text: string, background: string, ground: string): number {
+  const [gr, gg, gb] = channels(ground);
+  const behind = over(background, [gr, gg, gb]);
+  const front = over(text, behind);
+  const [light, dark] = [luminance(front), luminance(behind)].sort((a, b) => b - a) as [
+    number,
+    number,
+  ];
+  return (light + 0.05) / (dark + 0.05);
+}
 
 // Compile-time: a tag without a word is colour alone.
 function _typeChecks() {

@@ -19,6 +19,11 @@ describe('Avatar', () => {
     expect(getByText('AM', { includeHiddenElements: true })).toBeTruthy();
   });
 
+  it('does not let Dynamic Type push the decorative initials out of their circle', async () => {
+    const { getByText } = await render(<Avatar name="Jane Doe" />);
+    expect(getByText('JD', { includeHiddenElements: true }).props.maxFontSizeMultiplier).toBe(1);
+  });
+
   it('takes the first letter of the first two words, as the web does', () => {
     expect(initials('  Jane   Doe Smith ')).toBe('JD');
     expect(initials('cher')).toBe('C');

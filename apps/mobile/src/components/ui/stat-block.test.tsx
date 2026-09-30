@@ -65,6 +65,19 @@ describe('StatBlock', () => {
     expect(textStyle(getByText('+1')).color).not.toBe(colors.lime500);
   });
 
+  it('wraps the badge under a long figure and shrinks the figure, never truncating it', async () => {
+    const { getByText } = await render(
+      <StatBlock value="₼1,234,567,890.00" label="Pledged" badge="+12%" />,
+    );
+    const figure = getByText('₼1,234,567,890.00');
+    expect(textStyle(figure).flexShrink).toBe(1);
+    expect(figure.props.numberOfLines).toBeUndefined();
+    const row = figure.parent;
+    expect(
+      row === null ? undefined : StyleSheet.flatten(row.props.style as ViewStyle).flexWrap,
+    ).toBe('wrap');
+  });
+
   it('takes its tones from the surface it sits on', async () => {
     const { getByText } = await render(
       <SurfaceProvider surface="white">

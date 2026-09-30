@@ -52,6 +52,16 @@ describe('Media', () => {
     ).toBe(true);
   });
 
+  it('treats an empty alt as decorative, as alt="" is on the web, rather than an unnamed image', async () => {
+    const { queryByRole, getByTestId } = await render(
+      <Media testID="media" src={SRC} ratio="16/9" alt="" />,
+    );
+    expect(queryByRole('image')).toBeNull();
+    expect(
+      getByTestId('media', { includeHiddenElements: true }).props.accessibilityElementsHidden,
+    ).toBe(true);
+  });
+
   it('only accepts an inline data URI as a placeholder', () => {
     expect(isPlaceholderUri(PREVIEW)).toBe(true);
     expect(isPlaceholderUri('https://cdn.test.invalid/preview.jpg')).toBe(false);

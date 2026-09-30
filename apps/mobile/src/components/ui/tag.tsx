@@ -24,8 +24,20 @@ import { TONES, useSurface, type Surface } from './surface';
  * The web's `default` tag disappears inside a lime card — surface-3 on lime, white/64 on lime — and
  * the web relies on the caller remembering `onLime` there. React Native has the surface in context
  * already (`ui/surface.tsx`), so a tag that asks for `default` on a lime or white surface is drawn
- * as `onLime` or `onWhite`. The status variants are left alone: a caller who puts a `danger` tag
- * on a lime card has asked for danger.
+ * as `onLime` or `onWhite`.
+ *
+ * <p>A status tag keeps its tint and its icon on lime and white, but not its coloured words: green,
+ * orange, red and hot text measure about 1.8–2:1 on white and worse on lime, which is a tag nobody
+ * can read. There the words take the surface's primary tone (near-black), the 12% tint still says
+ * which status it is, and the word says what the status is — so the meaning never rests on a hue
+ * that has stopped being legible.
+ *
+ * <h2>It hugs its word, and follows its parent's alignment</h2>
+ *
+ * The tag sits in a wrapper that takes whatever place the parent gives it, and hugs its word inside
+ * that place — the arrangement `Pill` uses. An `alignSelf` on the tag itself would override a
+ * parent's `alignItems: 'center'`, which is how a tag in a centred empty state ended up on the
+ * left. `maxWidth: '100%'` and a shrinking label keep a long word inside a narrow column.
  */
 
 export type TagVariant =
@@ -40,6 +52,7 @@ export interface TagProps {
   readonly testID?: string;
 }
 
+/** Each variant on the dark surface it was designed for. */
 const SKIN: Record<TagVariant, { background: string; text: string }> = {
   default: { background: colors.surface3, text: colors.textSecondary },
   onLime: { background: tint(colors.textOnLime, 0.1), text: TONES.lime.secondary },
@@ -61,28 +74,35 @@ export function Tag({ label, variant = 'default', icon, testID }: TagProps) {
   const surface = useSurface();
   const resolved = variant === 'default' ? NEUTRAL[surface] : variant;
   const skin = SKIN[resolved];
+  const status = resolved !== 'default' && resolved !== 'onLime' && resolved !== 'onWhite';
+  // On lime or white a status colour is illegible as text; the surface's own ink is not.
+  const words = status && surface !== 'dark' ? TONES[surface].primary : skin.text;
 
   return (
-    <View style={[styles.tag, { backgroundColor: skin.background }]} testID={testID}>
-      {icon === undefined ? null : <Icon icon={icon} size={12} color={skin.text} />}
-      <Text style={[styles.label, { color: skin.text }]} numberOfLines={1}>
-        {label}
-      </Text>
+    <View style={styles.hug}>
+      <View style={[styles.tag, { backgroundColor: skin.background }]} testID={testID}>
+        {icon === undefined ? null : <Icon icon={icon} size={12} color={skin.text} />}
+        <Text style={[styles.label, { color: words }]} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  hug: { alignItems: 'flex-start', maxWidth: '100%' },
   tag: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
+    maxWidth: '100%',
     gap: 4,
-    // A minimum rather than the web's fixed 26: Dynamic Type grows the word, and a fixed box
-    // would clip it.
+    // A minimum rather than the web's fixed 26, with a little vertical padding: Dynamic Type grows
+    // the word, and a fixed box would clip it or let it touch the edges.
     minHeight: 26,
     paddingHorizontal: 10,
+    paddingVertical: 2,
     borderRadius: radius.sm,
   },
-  label: { ...font.medium, fontSize: fontSize.xs, letterSpacing: tracking.tag },
+  label: { ...font.medium, fontSize: fontSize.xs, letterSpacing: tracking.tag, flexShrink: 1 },
 });

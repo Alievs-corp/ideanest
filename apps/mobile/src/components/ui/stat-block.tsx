@@ -126,8 +126,10 @@ export function StatRow({
 
 const styles = StyleSheet.create({
   block: { gap: spacing[1] },
-  figureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
-  value: { ...font.semibold, fontVariant: ['tabular-nums'] },
+  // A long figure wraps the badge onto the next line and shrinks to the column rather than running
+  // off it. Never truncated: an ellipsis in the middle of a sum of money is a different sum.
+  figureRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', gap: 6 },
+  value: { ...font.semibold, fontVariant: ['tabular-nums'], flexShrink: 1 },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
