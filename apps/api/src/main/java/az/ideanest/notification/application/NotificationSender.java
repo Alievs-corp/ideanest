@@ -67,6 +67,15 @@ public class NotificationSender implements ScheduledJob {
         this.clock = clock;
     }
 
+    /**
+     * Paused while a maintenance window is in force (#214). It is the process that delivers
+     * email and push; what fan-out queues meanwhile waits for it.
+     */
+    @Override
+    public boolean pausesDuringMaintenance() {
+        return true;
+    }
+
     /** §8.4's {@code notification-sender}. */
     @Override
     public String name() {

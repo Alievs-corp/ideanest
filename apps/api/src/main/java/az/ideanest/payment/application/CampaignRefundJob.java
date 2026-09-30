@@ -49,6 +49,15 @@ public class CampaignRefundJob implements ScheduledJob {
         this.clock = clock;
     }
 
+    /**
+     * Paused while a maintenance window is in force (#214). It sends refunds to backers'
+     * cards.
+     */
+    @Override
+    public boolean pausesDuringMaintenance() {
+        return true;
+    }
+
     @Override
     public String name() {
         return "campaign-refunds";

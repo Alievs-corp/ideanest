@@ -1,5 +1,6 @@
 package az.ideanest.shared.jobs;
 
+import az.ideanest.shared.maintenance.MaintenanceGate;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -26,11 +27,13 @@ public class JobRunner {
 
     private final JobLease lease;
     private final JobProperties properties;
+    private final MaintenanceGate maintenance;
     private final Clock clock;
 
-    public JobRunner(JobLease lease, JobProperties properties, Clock clock) {
+    public JobRunner(JobLease lease, JobProperties properties, MaintenanceGate maintenance, Clock clock) {
         this.lease = lease;
         this.properties = properties;
+        this.maintenance = maintenance;
         this.clock = clock;
     }
 
@@ -50,6 +53,15 @@ public class JobRunner {
      * @return whether this replica ran the work
      */
     public boolean run(ScheduledJob job) {
+        // Before the claim, not inside the job: a claimed-and-skipped pass would be
+        // recorded as a success and move the job's next attempt on, and a job that
+        // checked for itself would be one more place to forget. Asked from a cached
+        // snapshot, so the question costs nothing on the ticks that are not paused.
+        if (job.pausesDuringMaintenance() && maintenance.active().isPresent()) {
+            log.debug("Job {} is paused for maintenance on this tick.", job.name());
+            return false;
+        }
+
         String holder = properties.holder();
         if (!lease.claim(job.name(), holder, now())) {
             log.debug("Job {} was not claimed on this tick.", job.name());

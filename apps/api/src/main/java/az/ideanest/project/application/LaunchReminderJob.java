@@ -42,6 +42,15 @@ public class LaunchReminderJob implements ScheduledJob {
         this.properties = properties;
     }
 
+    /**
+     * Paused while a maintenance window is in force (#214). It sends launch reminders to
+     * followers.
+     */
+    @Override
+    public boolean pausesDuringMaintenance() {
+        return true;
+    }
+
     /** §8.4's {@code reminder-sender}, in the half of it this job owns. */
     @Override
     public String name() {

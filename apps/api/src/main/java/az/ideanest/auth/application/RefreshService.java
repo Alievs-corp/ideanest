@@ -9,6 +9,7 @@ import az.ideanest.auth.infrastructure.RefreshTokenRepository;
 import az.ideanest.auth.infrastructure.SessionRepository;
 import az.ideanest.user.application.UserAccount;
 import az.ideanest.user.application.UserAccounts;
+import az.ideanest.shared.maintenance.MaintenanceGate;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
@@ -42,6 +43,7 @@ public class RefreshService {
     private final SessionRevoker revoker;
     private final AccessTokenIssuer accessTokens;
     private final UserAccounts users;
+    private final MaintenanceGate maintenance;
     private final Clock clock;
 
     public RefreshService(
@@ -50,12 +52,14 @@ public class RefreshService {
             SessionRevoker revoker,
             AccessTokenIssuer accessTokens,
             UserAccounts users,
+            MaintenanceGate maintenance,
             Clock clock) {
         this.refreshTokens = refreshTokens;
         this.sessions = sessions;
         this.revoker = revoker;
         this.accessTokens = accessTokens;
         this.users = users;
+        this.maintenance = maintenance;
         this.clock = clock;
     }
 
@@ -81,6 +85,11 @@ public class RefreshService {
         if (presented.isExpired(now) || !session.isLive(now)) {
             throw new AuthenticationFailedException(REFUSAL);
         }
+
+        // #214. Before the rotation, so a reader refused during maintenance keeps the
+        // refresh token they came with and can use it once the window ends — refusing
+        // after rotating would sign them out for a closure that was not about them.
+        maintenance.admitSession(session.getUserId());
 
         String nextTokenValue = SecureTokens.generate();
         // The successor never outlives the session. A refresh token that could

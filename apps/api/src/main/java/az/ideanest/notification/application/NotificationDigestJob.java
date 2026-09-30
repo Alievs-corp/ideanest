@@ -65,6 +65,15 @@ public class NotificationDigestJob implements ScheduledJob {
         this.clock = clock;
     }
 
+    /**
+     * Paused while a maintenance window is in force (#214). It sends the scheduled digest
+     * emails.
+     */
+    @Override
+    public boolean pausesDuringMaintenance() {
+        return true;
+    }
+
     /** §8.4's name for it, verbatim. It is the key the lease is taken on. */
     @Override
     public String name() {
