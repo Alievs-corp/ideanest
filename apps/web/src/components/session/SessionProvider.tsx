@@ -11,8 +11,6 @@ import {
 } from 'react';
 import { usePathname, useRouter } from '../../i18n/navigation';
 import { signOut as clearSession } from '../../lib/api/access-token';
-import { signInHref } from '../../lib/auth/redirect';
-import { requiresSession } from '../../lib/session/private-routes';
 import { fetchSession, type Session } from '../../lib/session/session';
 
 /**
@@ -81,8 +79,9 @@ export type SessionStatus = 'unknown' | 'signed-in' | 'signed-out';
  *
  * LOADED AFTER THE READ, NOT WITH THE PAGE. This provider is in the root layout, so whatever
  * it imports statically is in every route's First Load JS, and those budgets have no room for
- * a rule that cannot run before the read has answered anyway. The import is the whole cost
- * here; a failed one leaves the cookie as it was, which is the state before this existed.
+ * a rule that cannot run before the read has answered anyway. It shares one lazily loaded
+ * module with the route guard (`lib/session/after-read.ts`), which waits for the read too. A
+ * failed load leaves the cookie as it was, which is the state before this existed.
  *
  * NO `router.refresh()`. The mirror this replaces refreshed the server tree after writing the
  * cookie, from when a render read it. Since #123 the language is the path's and nothing a
@@ -94,7 +93,12 @@ export type SessionStatus = 'unknown' | 'signed-in' | 'signed-out';
  * apply", not "apply the default".
  */
 function syncLocale(account: Session | null): void {
-  void import('../../lib/i18n/sync').then((sync) => sync.syncLocale(account));
+  void afterRead().then((after) => after.syncLocale(account));
+}
+
+/** The work that waits for the session read, loaded when it is needed (`after-read.ts`). */
+function afterRead() {
+  return import('../../lib/session/after-read');
 }
 
 export interface SessionState {
@@ -176,13 +180,23 @@ export function SessionProvider({ children }: SessionProviderProps) {
    * would opt every statically rendered route in the application into client-side rendering
    * unless each one grew a `Suspense` boundary for it. Inside an effect there is always a
    * `location` and there is never a server render to disagree with.
+   *
+   * The route list and the return-path encoder are loaded with the rest of what waits for the
+   * read (`lib/session/after-read.ts`, #216), so they are not in every route's first load. The
+   * redirect already waited for a network answer; it now also waits for a cached chunk.
    */
   useEffect(() => {
     if (status !== 'signed-out') return;
-    if (!requiresSession(pathname)) return;
 
     const query = window.location.search;
-    router.replace(signInHref(`${pathname}${query}`));
+    let current = true;
+    void afterRead().then((after) => {
+      const target = after.privateRouteRedirect(pathname, query);
+      if (current && target !== null) router.replace(target);
+    });
+    return () => {
+      current = false;
+    };
   }, [status, pathname, router]);
 
   const signOut = useCallback(async () => {
