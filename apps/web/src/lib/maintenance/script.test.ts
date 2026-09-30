@@ -190,7 +190,8 @@ describe('the maintenance page, waiting for the platform', () => {
     const tick = async () => {
       const next = timers.shift();
       next?.run();
-      for (let index = 0; index < 5; index += 1) await Promise.resolve();
+      // A response body is read through a stream, which settles over macrotasks, not microtasks.
+      for (let index = 0; index < 20; index += 1) await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
     };
     run(maintenanceScriptSource(options(WATCH)), {
       location: location as unknown as Location,
