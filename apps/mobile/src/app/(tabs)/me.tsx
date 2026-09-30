@@ -265,6 +265,10 @@ function IdentitySkeleton() {
  * the one place somebody who closed the email would find out. A scheduled closure second, with
  * the way to the page that cancels it — the settings namespace's own sentence, so the Me tab
  * and the closure panel describe the same state in the same words.
+ *
+ * <p>Both are warnings to look at, and both are polite: they are standing conditions of the
+ * account, not something that just happened, and an assertive warning here would interrupt a
+ * screen reader every time the Me tab is opened.
  */
 function AccountAlerts({ me }: { readonly me: Me }) {
   const router = useRouter();
@@ -274,12 +278,14 @@ function AccountAlerts({ me }: { readonly me: Me }) {
       {me.emailVerified === false ? (
         <InlineAlert
           variant="warning"
+          politeness="polite"
           description={t('shell.actions.unverified', { email: me.email ?? '' })}
         />
       ) : null}
       {me.deletionScheduledAt ? (
         <InlineAlert
           variant="warning"
+          politeness="polite"
           title={t('settings.panels.closure.scheduledTitle')}
           action={
             // The alert's one way out, as the kit draws it inside an alert: a small ghost pill.

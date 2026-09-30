@@ -90,9 +90,11 @@ design starts.
   states — cached data, then the error, then empty — lives in `Screen`.
 - **The gallery.** `src/app/dev/kit.tsx` (open `ideanest://dev/kit` in a
   development build) shows every component in every variant, size and state,
-  grouped as the barrel is, to hold beside the web's Storybook. It renders only
-  when `__DEV__` is true and redirects to `+not-found` otherwise, and the
-  deep-link parser never maps a link to it (`links.test.ts`). It has no words of
+  grouped as the barrel is, to hold beside the web's Storybook. Expo Router's
+  own linking can route a link to it in any build, so the guard is the route
+  itself: it renders only when `__DEV__` is true and redirects to `+not-found`
+  otherwise. The app's deep-link parser never names it as a destination
+  (`links.test.ts`). It has no words of
   its own: headings are component names read from the code, and every sentence
   is a catalogue key, so it also shows the kit in Azerbaijani and Russian.
 

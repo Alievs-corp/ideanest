@@ -75,10 +75,12 @@ import { colors, radius, size, spacing } from '../../theme';
  *
  * <h2>Development builds only</h2>
  *
- * The route renders only when `__DEV__` is true. A release build redirects it to `+not-found`,
- * so a URL that reaches it — Expo Router maps `ideanest://dev/kit` to this file by itself — lands
- * on the ordinary "not found" screen instead of a page of test fixtures. The deep-link parser
- * (`lib/links.ts`) never produces it either; `links.test.ts` asserts that.
+ * The route renders only when `__DEV__` is true, and that check is the guard. A link CAN reach
+ * this file: Expo Router's own linking maps `ideanest://dev/kit` (and the universal-link path) to
+ * it by itself, before and regardless of our parser. So in a release build the route redirects to
+ * `+not-found`, and such a link lands on the ordinary "not found" screen instead of a page of test
+ * fixtures. The app's own deep-link parser (`lib/links.ts`) additionally never names it as a
+ * destination; `links.test.ts` asserts that, which is a narrower claim than "unreachable".
  *
  * <h2>No words of its own</h2>
  *

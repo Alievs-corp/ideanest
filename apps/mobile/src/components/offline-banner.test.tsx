@@ -53,6 +53,17 @@ describe('the banner', () => {
 
     await act(async () => setOnline(false));
     expect(screen.getByTestId('offline-region')).toContainElement(screen.getByText(BANNER));
+
+    // The one live region: nothing inside it is a region of its own, so TalkBack reads it once.
+    const nested = screen
+      .getByTestId('offline-region')
+      .queryAll(
+        (node) =>
+          node.props.accessibilityLiveRegion !== undefined &&
+          node.props.accessibilityLiveRegion !== 'none',
+      )
+      .filter((node) => node.props.testID !== 'offline-region');
+    expect(nested).toEqual([]);
   });
 
   it('keeps the screen underneath', async () => {

@@ -6,6 +6,7 @@ import { CardTitle, Meta } from '../../components/text';
 import {
   EmptyState,
   InlineAlert,
+  MotionBudgetProvider,
   Pill,
   Screen,
   Skeleton,
@@ -60,7 +61,19 @@ const styles = StyleSheet.create({
 /** Three rows' worth of placeholder: what a first screen of saved campaigns looks like. */
 const PLACEHOLDER_ROWS = [0, 1, 2] as const;
 
+/**
+ * The route: its motion budget around every state it can draw — the placeholders, the failure and
+ * the empty state, and the list itself — not only the ones `Screen` draws.
+ */
 export default function SavedScreen() {
+  return (
+    <MotionBudgetProvider level="minimal">
+      <SavedList />
+    </MotionBudgetProvider>
+  );
+}
+
+function SavedList() {
   const router = useRouter();
   const t = useT();
   const { signedIn } = useSession();
@@ -69,7 +82,6 @@ export default function SavedScreen() {
   if (!signedIn) {
     return (
       <Screen
-        motion="minimal"
         hasContent={false}
         empty={
           <EmptyState
@@ -96,7 +108,6 @@ export default function SavedScreen() {
   if (items.length === 0) {
     return (
       <Screen
-        motion="minimal"
         hasContent={saved.isLoading}
         error={
           saved.isError

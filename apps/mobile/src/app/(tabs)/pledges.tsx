@@ -8,6 +8,7 @@ import { Body, CardTitle, Meta } from '../../components/text';
 import {
   EmptyState,
   InlineAlert,
+  MotionBudgetProvider,
   Pill,
   Screen,
   Skeleton,
@@ -61,7 +62,19 @@ const styles = StyleSheet.create({
 /** Three rows' worth of placeholder: what a first screen of pledges looks like. */
 const PLACEHOLDER_ROWS = [0, 1, 2] as const;
 
+/**
+ * The route: its motion budget around every state it can draw — the placeholders, the failure and
+ * the empty state, and the list itself — not only the ones `Screen` draws.
+ */
 export default function PledgesScreen() {
+  return (
+    <MotionBudgetProvider level="none">
+      <PledgesList />
+    </MotionBudgetProvider>
+  );
+}
+
+function PledgesList() {
   const router = useRouter();
   const t = useT();
   const { signedIn } = useSession();
@@ -73,7 +86,6 @@ export default function PledgesScreen() {
   if (!signedIn) {
     return (
       <Screen
-        motion="none"
         hasContent={false}
         empty={
           <EmptyState
@@ -98,7 +110,6 @@ export default function PledgesScreen() {
   if (items.length === 0) {
     return (
       <Screen
-        motion="none"
         hasContent={pledges.isLoading}
         error={
           pledges.isError

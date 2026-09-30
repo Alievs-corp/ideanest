@@ -36,8 +36,9 @@ import { InlineAlert } from './ui';
  * appears, and not on a launch that is already online, where it never appears. iOS has no live
  * regions; there {@link OfflineAnnouncer} says it, from one place in the root, so the banners
  * mounted on every screen of the stack do not each announce it. That is why the alert itself is
- * `polite` although it is a warning: a warning `InlineAlert` announces itself on iOS by default,
- * and every screen in the stack mounting one would say the same sentence once per screen.
+ * `politeness="off"` although it is a warning: the outer view is the one live region, so the
+ * alert must not be a second one nested in it (TalkBack could read the sentence twice), and a
+ * warning `InlineAlert` would otherwise announce itself on iOS on every screen in the stack.
  */
 export function OfflineBanner() {
   const online = useOnline();
@@ -46,7 +47,7 @@ export function OfflineBanner() {
     <View accessibilityLiveRegion="polite" testID="offline-region">
       {online ? null : (
         <View style={styles.banner}>
-          <InlineAlert variant="warning" politeness="polite" description={t('banner')} />
+          <InlineAlert variant="warning" politeness="off" description={t('banner')} />
         </View>
       )}
     </View>

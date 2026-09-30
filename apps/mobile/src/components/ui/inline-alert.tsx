@@ -47,6 +47,12 @@ import { SurfaceProvider } from './surface';
  * interrupting — the `Screen`'s offline notice, which the global offline banner has already
  * announced once and which would otherwise be said again on every screen mounted.
  *
+ * <p>`politeness="off"` — the web's `aria-live="off"` — takes the alert out of the announcing
+ * business altogether: no live region of its own and no `announce()`. It is for an alert placed
+ * inside a live region that something else owns, such as the global offline banner's, where a
+ * second region nested in the first could have TalkBack read the same sentence twice. The alert
+ * still looks and reads like one; it just leaves saying it to its container.
+ *
  * <p>The alert resets the surface to dark for its contents: it is always surface-2, so an action
  * placed in it inside a lime card must still be drawn for the dark surface it actually sits on.
  */
@@ -72,9 +78,9 @@ export interface InlineAlertProps {
   readonly dismissLabel?: string;
   /**
    * Whether the alert interrupts a screen reader. `assertive` for warning and danger and `polite`
-   * otherwise, unless overridden.
+   * otherwise, unless overridden. `off` when a surrounding live region already speaks for it.
    */
-  readonly politeness?: 'assertive' | 'polite';
+  readonly politeness?: 'assertive' | 'polite' | 'off';
   readonly testID?: string;
 }
 
@@ -90,16 +96,16 @@ export function InlineAlert({
 }: InlineAlertProps) {
   const t = useT('mobile.kitDisplay');
   const { icon, colour } = VARIANT[variant];
-  const assertive =
-    (politeness ?? (variant === 'warning' || variant === 'danger' ? 'assertive' : 'polite')) ===
-    'assertive';
+  const level =
+    politeness ?? (variant === 'warning' || variant === 'danger' ? 'assertive' : 'polite');
+  const assertive = level === 'assertive';
   const words = [title, description].filter((part) => part !== undefined && part !== '').join('. ');
 
   useAnnouncedOnArrival(assertive && Platform.OS === 'ios' ? words : '');
 
   return (
     <View
-      accessibilityLiveRegion={assertive ? 'assertive' : 'polite'}
+      accessibilityLiveRegion={level === 'off' ? 'none' : level}
       style={[styles.alert, { borderLeftColor: colour }]}
       testID={testID}
     >

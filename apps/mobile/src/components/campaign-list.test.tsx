@@ -23,12 +23,21 @@ import { colors } from '../theme';
 // A cold first render of FlashList with Reanimated has taken more than 5 s on CI.
 jest.setTimeout(20_000);
 
-function render(ui: ReactElement) {
-  return renderBare(
+/**
+ * Renders, then lets FlashList finish loading inside `act`. It marks itself loaded from a
+ * `requestAnimationFrame` — a zero-delay timer under Jest — after the first render, and that state
+ * update outside `act` logged "not wrapped in act(...)" for every list rendered here.
+ */
+async function render(ui: ReactElement) {
+  const tree = await renderBare(
     <IntlProvider locale="en" messages={en}>
       {ui}
     </IntlProvider>,
   );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  return tree;
 }
 
 function cards(count: number): Card[] {

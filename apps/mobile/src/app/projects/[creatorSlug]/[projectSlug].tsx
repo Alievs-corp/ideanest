@@ -16,6 +16,7 @@ import {
   Subheading,
 } from '../../../components/text';
 import {
+  AccentScopeProvider,
   InlineAlert,
   MotionBudgetProvider,
   Pill,
@@ -132,156 +133,168 @@ export default function ProjectScreen() {
   const backers = page.backersCount ?? 0;
   const percent = fundedPercent(page.pledged?.amount, page.goal?.amount);
 
+  /*
+   * The accent scope is what `Pill`'s "two lime pills on one screen" warning counts in; `Screen`
+   * provides one, and this page draws its own layout, so it provides its own. The page has one
+   * accent, the call to action, and a second would now warn in development.
+   */
   return (
-    <MotionBudgetProvider level="moderate">
-      <View style={{ flex: 1 }}>
-        <Stack.Screen options={{ title, headerBackTitle: t('mobile.nav.back') }} />
+    <AccentScopeProvider>
+      <MotionBudgetProvider level="moderate">
+        <View style={{ flex: 1 }}>
+          <Stack.Screen options={{ title, headerBackTitle: t('mobile.nav.back') }} />
 
-        <ScrollView contentInsetAdjustmentBehavior="automatic">
-          {page.coverImage?.url == null ? null : (
-            <Image
-              source={page.coverImage.url}
-              style={styles.cover}
-              contentFit="cover"
-              accessibilityElementsHidden
-              importantForAccessibility="no"
-            />
-          )}
+          <ScrollView contentInsetAdjustmentBehavior="automatic">
+            {page.coverImage?.url == null ? null : (
+              <Image
+                source={page.coverImage.url}
+                style={styles.cover}
+                contentFit="cover"
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+            )}
 
-          <View style={styles.body}>
-            {/*
+            <View style={styles.body}>
+              {/*
             The cached page, and a refetch that failed: shown, and said to be old. Read in its
             place rather than announced — the offline banner has already said the connection went.
           */}
-            {project.isStale && project.isError ? (
-              <InlineAlert
-                variant="warning"
-                politeness="polite"
-                description={t('mobile.campaign.stale')}
-              />
-            ) : null}
-
-            <FadeUp index={0}>
-              <View style={styles.section}>
-                <Heading>{title}</Heading>
-                {page.blurb == null ? null : <Body>{page.blurb}</Body>}
-                {page.creator?.name == null ? null : (
-                  <Meta>{t('campaign.by', { creator: page.creator.name })}</Meta>
-                )}
-              </View>
-            </FadeUp>
-
-            <FadeUp index={1}>
-              <View style={styles.section}>
-                <View style={styles.figures}>
-                  <View style={styles.figure}>
-                    <Display>{formatMoney(page.pledged)}</Display>
-                    <Meta>{t('common.card.ofGoal', { amount: formatMoney(page.goal) })}</Meta>
-                  </View>
-                  <View style={styles.figure}>
-                    <Display>{formatCount(backers, locale)}</Display>
-                    {/* The web's word under the figure: `{one, few, many, other}`, not ICU. */}
-                    <Meta>{t(`campaign.funding.backers.${pluralCategory(locale, backers)}`)}</Meta>
-                  </View>
-                </View>
-                <ProgressBar
-                  completionPercent={percent}
-                  label={t('mobile.funding.progressFor', { title })}
+              {project.isStale && project.isError ? (
+                <InlineAlert
+                  variant="warning"
+                  politeness="polite"
+                  description={t('mobile.campaign.stale')}
                 />
-              </View>
-            </FadeUp>
+              ) : null}
 
-            {paragraphs.length === 0 ? null : (
-              <FadeUp index={2}>
+              <FadeUp index={0}>
                 <View style={styles.section}>
-                  <Subheading>{t('mobile.campaign.story')}</Subheading>
-                  {paragraphs.map((paragraph, index) => (
-                    <Story key={index}>{paragraph}</Story>
-                  ))}
-                  <Meta>{t('mobile.campaign.storyOnWeb')}</Meta>
+                  <Heading>{title}</Heading>
+                  {page.blurb == null ? null : <Body>{page.blurb}</Body>}
+                  {page.creator?.name == null ? null : (
+                    <Meta>{t('campaign.by', { creator: page.creator.name })}</Meta>
+                  )}
                 </View>
               </FadeUp>
-            )}
 
-            {(rewards.data?.rewards ?? []).length === 0 ? null : (
-              <FadeUp index={3}>
+              <FadeUp index={1}>
                 <View style={styles.section}>
-                  <Subheading>{t('campaign.rewards.heading')}</Subheading>
-                  {(rewards.data?.rewards ?? []).map((reward) => (
-                    <View key={reward.id} style={styles.reward}>
-                      <CardTitle>{reward.title ?? ''}</CardTitle>
-                      <Meta tone="secondary">{formatMoney(reward.price)}</Meta>
-                      {reward.description == null ? null : (
-                        <Body numberOfLines={4}>{reward.description}</Body>
-                      )}
-                      {/* In words, because "6 left" in lime and "sold out" in grey
-                        is colour carrying the difference on its own. */}
+                  <View style={styles.figures}>
+                    <View style={styles.figure}>
+                      <Display>{formatMoney(page.pledged)}</Display>
+                      <Meta>{t('common.card.ofGoal', { amount: formatMoney(page.goal) })}</Meta>
+                    </View>
+                    <View style={styles.figure}>
+                      <Display>{formatCount(backers, locale)}</Display>
+                      {/* The web's word under the figure: `{one, few, many, other}`, not ICU. */}
                       <Meta>
-                        {reward.remainingQuantity == null
-                          ? t('campaignEditor.rewards.vocabulary.stock.unlimited')
-                          : reward.remainingQuantity === 0
-                            ? t('campaign.rewards.soldOut')
-                            : t('campaign.rewards.remaining', { count: reward.remainingQuantity })}
+                        {t(`campaign.funding.backers.${pluralCategory(locale, backers)}`)}
                       </Meta>
                     </View>
-                  ))}
+                  </View>
+                  <ProgressBar
+                    completionPercent={percent}
+                    label={t('mobile.funding.progressFor', { title })}
+                  />
                 </View>
               </FadeUp>
-            )}
 
-            {(updates.data?.updates ?? []).length === 0 ? null : (
-              <FadeUp index={4}>
-                <View style={styles.section}>
-                  <Subheading>{t('campaign.updates.heading')}</Subheading>
-                  {(updates.data?.updates ?? []).map((update) => (
-                    <View key={update.number} style={styles.update}>
-                      <CardTitle numberOfLines={2}>{update.title ?? ''}</CardTitle>
-                      <Meta>{formatDate(update.publishedAt, locale)}</Meta>
-                    </View>
-                  ))}
-                </View>
-              </FadeUp>
-            )}
+              {paragraphs.length === 0 ? null : (
+                <FadeUp index={2}>
+                  <View style={styles.section}>
+                    <Subheading>{t('mobile.campaign.story')}</Subheading>
+                    {paragraphs.map((paragraph, index) => (
+                      <Story key={index}>{paragraph}</Story>
+                    ))}
+                    <Meta>{t('mobile.campaign.storyOnWeb')}</Meta>
+                  </View>
+                </FadeUp>
+              )}
 
-            <View style={styles.section}>
-              <Subheading>{t('campaign.comments.heading')}</Subheading>
-              <Body>{t('mobile.campaign.commentsOnWeb')}</Body>
+              {(rewards.data?.rewards ?? []).length === 0 ? null : (
+                <FadeUp index={3}>
+                  <View style={styles.section}>
+                    <Subheading>{t('campaign.rewards.heading')}</Subheading>
+                    {(rewards.data?.rewards ?? []).map((reward) => (
+                      <View key={reward.id} style={styles.reward}>
+                        <CardTitle>{reward.title ?? ''}</CardTitle>
+                        <Meta tone="secondary">{formatMoney(reward.price)}</Meta>
+                        {reward.description == null ? null : (
+                          <Body numberOfLines={4}>{reward.description}</Body>
+                        )}
+                        {/* In words, because "6 left" in lime and "sold out" in grey
+                        is colour carrying the difference on its own. */}
+                        <Meta>
+                          {reward.remainingQuantity == null
+                            ? t('campaignEditor.rewards.vocabulary.stock.unlimited')
+                            : reward.remainingQuantity === 0
+                              ? t('campaign.rewards.soldOut')
+                              : t('campaign.rewards.remaining', {
+                                  count: reward.remainingQuantity,
+                                })}
+                        </Meta>
+                      </View>
+                    ))}
+                  </View>
+                </FadeUp>
+              )}
+
+              {(updates.data?.updates ?? []).length === 0 ? null : (
+                <FadeUp index={4}>
+                  <View style={styles.section}>
+                    <Subheading>{t('campaign.updates.heading')}</Subheading>
+                    {(updates.data?.updates ?? []).map((update) => (
+                      <View key={update.number} style={styles.update}>
+                        <CardTitle numberOfLines={2}>{update.title ?? ''}</CardTitle>
+                        <Meta>{formatDate(update.publishedAt, locale)}</Meta>
+                      </View>
+                    ))}
+                  </View>
+                </FadeUp>
+              )}
+
+              <View style={styles.section}>
+                <Subheading>{t('campaign.comments.heading')}</Subheading>
+                <Body>{t('mobile.campaign.commentsOnWeb')}</Body>
+              </View>
             </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
 
-        {/*
-        Outside the ScrollView, so it does not scroll away. §5's minimal motion
-        budget: it is drawn, it does not arrive.
-      */}
-        <View style={styles.actions}>
           {/*
+        Outside the ScrollView, so it does not scroll away. Inside the page's moderate budget
+        the sections fade up, but this bar does not: it is drawn, it does not arrive, because
+        motion decreases as money gets closer (§5).
+      */}
+          <View style={styles.actions}>
+            {/*
             The page's one urgent action, so the one lime pill on it: backing the campaign is
             what "act now" means (docs/ui-kit.md §7.2). Its visible words are its name, so speech
             input reaches it by what it says; which campaign, and that it opens the web, is the
             hint. Share is an outline beside it.
           */}
-          <View style={styles.primary}>
+            <View style={styles.primary}>
+              <Pill
+                label={t('campaign.back.cta')}
+                accessibilityHint={t('mobile.campaign.backOnWeb', { title })}
+                variant="accent"
+                size="lg"
+                fullWidth
+                onPress={() => void openOnWeb(creatorSlug, projectSlug)}
+              />
+            </View>
+
             <Pill
-              label={t('campaign.back.cta')}
-              accessibilityHint={t('mobile.campaign.backOnWeb', { title })}
-              variant="accent"
+              label={t('campaign.actions.share')}
+              accessibilityHint={t('campaign.actions.shareLabel', { title })}
+              variant="outline"
               size="lg"
-              fullWidth
-              onPress={() => void openOnWeb(creatorSlug, projectSlug)}
+              onPress={() => void share(title, creatorSlug, projectSlug)}
             />
           </View>
-
-          <Pill
-            label={t('campaign.actions.share')}
-            accessibilityHint={t('campaign.actions.shareLabel', { title })}
-            variant="outline"
-            size="lg"
-            onPress={() => void share(title, creatorSlug, projectSlug)}
-          />
         </View>
-      </View>
-    </MotionBudgetProvider>
+      </MotionBudgetProvider>
+    </AccentScopeProvider>
   );
 }
 

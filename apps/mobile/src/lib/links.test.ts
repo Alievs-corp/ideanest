@@ -65,9 +65,12 @@ describe('destinationFor', () => {
     expect(destinationFor('https://ideanest.az/projects/a/b/edit', HOST)).toBeNull();
   });
 
-  it('never opens the kit gallery, from any form of link (issue #151)', () => {
-    // `app/dev/kit.tsx` is a development screen. A link — shared, pushed or crafted — must not
-    // be able to reach it, whatever its scheme, host, locale prefix or case.
+  it('never sends a link to the kit gallery, from any form of link (issue #151)', () => {
+    // `app/dev/kit.tsx` is a development screen, and this parser never names it as a destination,
+    // whatever the link's scheme, host, locale prefix or case. That is this module's half only:
+    // Expo Router's own linking still maps `ideanest://dev/kit` to the file by itself, and what
+    // keeps a release build from showing it is the route's `__DEV__` redirect to `+not-found`
+    // (tested in `components/kit-gallery.test.tsx`).
     const links = [
       'https://ideanest.az/dev/kit',
       'https://ideanest.az/az/dev/kit',
