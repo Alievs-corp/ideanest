@@ -536,6 +536,54 @@ class ConsoleReadApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("a partner is refused every place an individual transaction can be read")
+    void aPartnerReadsNoIndividualRecord() {
+        /*
+         * #203. PARTNER exists to see a share of the totals, and every one of these endpoints
+         * returns rows: the payment log, the ledger, the audit trail (which names accounts and
+         * amounts) and the subscription payments and their report. The role holds only
+         * VIEW_PARTNER_STATISTICS, so each of them must refuse it on the capability it asks
+         * for, which is what keeps the server, and not the browser, the thing that decides.
+         *
+         * A list rather than one request, because the failure this guards against is the
+         * fifth endpoint added next year asking only "is this caller staff".
+         */
+        Account partner = staff("console-partner", StaffRole.PARTNER);
+
+        for (String path : List.of(
+                "/v1/admin/ledger",
+                "/v1/admin/payments",
+                "/v1/admin/audit",
+                "/v1/admin/subscription/payments",
+                "/v1/admin/subscription/revenue",
+                "/v1/admin/subscriptions")) {
+            ResponseEntity<Map<String, Object>> refused = get(path, partner.accessToken());
+            assertThat(refused.getStatusCode()).as(path).isEqualTo(HttpStatus.FORBIDDEN);
+            assertThat(refused.getBody()).as(path).containsEntry("code", "INSUFFICIENT_STAFF_CAPABILITY");
+        }
+    }
+
+    @Test
+    @DisplayName("a super admin under either name reads the books")
+    void bothNamesOfTheHighestRoleReadTheBooks() {
+        /*
+         * #203, expand half of the rename. A deployment in the middle of it has accounts
+         * granted under both names, and an endpoint that admitted one and refused the other
+         * would make the outcome depend on which row an account was given first.
+         */
+        for (StaffRole role : List.of(StaffRole.SUPER_ADMIN, StaffRole.ADMINISTRATOR)) {
+            Account highest = staff("console-" + role.name().toLowerCase(java.util.Locale.ROOT), role);
+
+            assertThat(get("/v1/admin/ledger", highest.accessToken()).getStatusCode())
+                    .as(role.name())
+                    .isEqualTo(HttpStatus.OK);
+            assertThat(get("/v1/admin/subscription/revenue", highest.accessToken()).getStatusCode())
+                    .as(role.name())
+                    .isEqualTo(HttpStatus.OK);
+        }
+    }
+
+    @Test
     @DisplayName("every console read is audited, with counts and no rows")
     void everyConsoleReadIsAudited() {
         Fixture fixture = campaignWithPledge("console-audit");

@@ -2735,7 +2735,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR" ]
+            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR", "SUPER_ADMIN", "PARTNER" ]
           }
         } ],
         "responses" : {
@@ -2768,7 +2768,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR" ]
+            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR", "SUPER_ADMIN", "PARTNER" ]
           }
         } ],
         "requestBody" : {
@@ -12828,7 +12828,7 @@
           },
           "role" : {
             "type" : "string",
-            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR" ]
+            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR", "SUPER_ADMIN", "PARTNER" ]
           }
         }
       },
@@ -13378,14 +13378,14 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "MODERATE_CONTENT", "ADMINISTER_ACCOUNTS", "CURATE", "VIEW_FINANCE", "ISSUE_REFUND", "MANAGE_DISPUTES", "APPROVE_PAYOUT", "HANDLE_SUPPORT", "CONFIGURE_PLATFORM", "VIEW_AUDIT", "VIEW_HEALTH", "PUBLISH_LEGAL_DOCUMENT", "READ_ACCEPTANCE_RECORD", "READ_SIGNED_AGREEMENT", "REVIEW_IDENTITY_VERIFICATION", "OPEN_IDENTITY_DOCUMENT", "VERIFY_PAYOUT_DESTINATION", "GRANT_COMPLIANCE_OVERRIDE", "ADMINISTER_STAFF" ]
+              "enum" : [ "MODERATE_CONTENT", "ADMINISTER_ACCOUNTS", "CURATE", "VIEW_FINANCE", "ISSUE_REFUND", "MANAGE_DISPUTES", "APPROVE_PAYOUT", "HANDLE_SUPPORT", "CONFIGURE_PLATFORM", "VIEW_AUDIT", "VIEW_HEALTH", "PUBLISH_LEGAL_DOCUMENT", "READ_ACCEPTANCE_RECORD", "READ_SIGNED_AGREEMENT", "REVIEW_IDENTITY_VERIFICATION", "OPEN_IDENTITY_DOCUMENT", "VERIFY_PAYOUT_DESTINATION", "GRANT_COMPLIANCE_OVERRIDE", "ADMINISTER_STAFF", "VIEW_PARTNER_STATISTICS" ]
             }
           },
           "roles" : {
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR" ]
+              "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR", "SUPER_ADMIN", "PARTNER" ]
             }
           },
           "staff" : {

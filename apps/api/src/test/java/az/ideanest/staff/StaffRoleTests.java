@@ -57,7 +57,7 @@ class StaffRoleTests {
         for (StaffRole role : StaffRole.values()) {
             assertThat(role.capabilities().contains(StaffCapability.ADMINISTER_STAFF))
                     .withFailMessage("%s must not be able to grant roles", role)
-                    .isEqualTo(role == StaffRole.ADMINISTRATOR);
+                    .isEqualTo(role.isSuperAdmin());
         }
     }
 
@@ -66,6 +66,64 @@ class StaffRoleTests {
     void administratorHoldsEverything() {
         assertThat(StaffRole.ADMINISTRATOR.capabilities())
                 .containsExactlyInAnyOrder(StaffCapability.values());
+    }
+
+    @Test
+    @DisplayName("a super admin holds everything, exactly as the administrator it replaces")
+    void superAdminHoldsEverything() {
+        // The rename is two releases (V88), so for one of them both names are live and a
+        // difference between them would be a role that behaves differently depending on
+        // which row an account happened to be granted before the deployment.
+        assertThat(StaffRole.SUPER_ADMIN.capabilities())
+                .containsExactlyInAnyOrder(StaffCapability.values())
+                .isEqualTo(StaffRole.ADMINISTRATOR.capabilities());
+        assertThat(StaffRole.SUPER_ADMIN.isSuperAdmin()).isTrue();
+        assertThat(StaffRole.ADMINISTRATOR.isSuperAdmin()).isTrue();
+    }
+
+    @Test
+    @DisplayName("only the two names of the highest role count as the highest role")
+    void onlyTheTwoNamesAreSuperAdmin() {
+        for (StaffRole role : StaffRole.values()) {
+            assertThat(role.isSuperAdmin())
+                    .withFailMessage("%s must not count as a super admin", role)
+                    .isEqualTo(role == StaffRole.SUPER_ADMIN || role == StaffRole.ADMINISTRATOR);
+        }
+    }
+
+    @Test
+    @DisplayName("a partner holds the statistics capability and nothing else")
+    void partnerHoldsOnlyTheStatistics() {
+        assertThat(StaffRole.PARTNER.capabilities())
+                .containsExactly(StaffCapability.VIEW_PARTNER_STATISTICS);
+    }
+
+    @Test
+    @DisplayName("a partner cannot read a transaction, an account or the audit trail")
+    void partnerSeesNoIndividualRecord() {
+        // The whole point of the role. VIEW_FINANCE opens the payments journal and ledger,
+        // ADMINISTER_ACCOUNTS opens who paid, and VIEW_AUDIT names both in every row. A
+        // partner is owed a share of the totals and none of those.
+        assertThat(StaffRole.PARTNER.capabilities())
+                .doesNotContain(
+                        StaffCapability.VIEW_FINANCE,
+                        StaffCapability.ISSUE_REFUND,
+                        StaffCapability.MANAGE_DISPUTES,
+                        StaffCapability.APPROVE_PAYOUT,
+                        StaffCapability.ADMINISTER_ACCOUNTS,
+                        StaffCapability.ADMINISTER_STAFF,
+                        StaffCapability.CONFIGURE_PLATFORM,
+                        StaffCapability.VIEW_AUDIT);
+    }
+
+    @Test
+    @DisplayName("no role other than a super admin holds the partner statistics")
+    void onlySuperAdminsAndPartnersReadPartnerStatistics() {
+        for (StaffRole role : StaffRole.values()) {
+            assertThat(role.capabilities().contains(StaffCapability.VIEW_PARTNER_STATISTICS))
+                    .withFailMessage("%s must not read the partner statistics", role)
+                    .isEqualTo(role.isSuperAdmin() || role == StaffRole.PARTNER);
+        }
     }
 
     @Test
@@ -83,10 +141,12 @@ class StaffRoleTests {
 
     @ParameterizedTest
     @DisplayName("every role can read the audit trail")
-    @EnumSource(StaffRole.class)
+    @EnumSource(value = StaffRole.class, mode = EnumSource.Mode.EXCLUDE, names = "PARTNER")
     void everyRoleCanReadTheTrail(StaffRole role) {
         // Deliberately wide. A trail only the people it would incriminate can read is a
-        // trail; a trail every member of staff can read is a control.
+        // trail; a trail every member of staff can read is a control. PARTNER is the one
+        // exception, and partnerSeesNoIndividualRecord says why: the trail names accounts
+        // and amounts, which is what a partner must not see.
         assertThat(role.capabilities()).contains(StaffCapability.VIEW_AUDIT);
     }
 
@@ -181,7 +241,7 @@ class StaffRoleTests {
         // what every creator submitting after it is bound by and cannot be undone at all.
         assertThat(StaffCapability.PUBLISH_LEGAL_DOCUMENT).isNotEqualTo(StaffCapability.CONFIGURE_PLATFORM);
         for (StaffRole role : StaffRole.values()) {
-            if (role == StaffRole.ADMINISTRATOR) {
+            if (role.isSuperAdmin()) {
                 continue;
             }
             assertThat(role.capabilities())

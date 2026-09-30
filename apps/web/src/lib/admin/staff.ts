@@ -67,16 +67,28 @@ export type StaffCapability =
   | 'OPEN_IDENTITY_DOCUMENT'
   | 'VERIFY_PAYOUT_DESTINATION'
   | 'GRANT_COMPLIANCE_OVERRIDE'
-  | 'ADMINISTER_STAFF';
+  | 'ADMINISTER_STAFF'
+  | 'VIEW_PARTNER_STATISTICS';
 
 /**
- * The five kinds of person who work here.
+ * The seven kinds of staff account.
+ *
+ * <p>`SUPER_ADMIN` is `ADMINISTRATOR` under its new name and both exist for one release (V88's
+ * header has the argument); a roster can contain either. `PARTNER` sees an agreed share of the
+ * financial statistics, in aggregate, and nothing else (#203).
  *
  * <p>`COMPLIANCE` is the one this type was missing: §22's identity review is its own authority
  * in the service and on `/admin/staff`, and a compliance officer arriving here as a role no
  * type admitted was a reader the console could not describe.
  */
-export type StaffRole = 'MODERATOR' | 'CURATOR' | 'FINANCE' | 'COMPLIANCE' | 'ADMINISTRATOR';
+export type StaffRole =
+  | 'MODERATOR'
+  | 'CURATOR'
+  | 'FINANCE'
+  | 'COMPLIANCE'
+  | 'ADMINISTRATOR'
+  | 'SUPER_ADMIN'
+  | 'PARTNER';
 
 /**
  * What the console is told about whoever is reading it.
@@ -203,6 +215,7 @@ export const STAFF_CAPABILITIES: readonly StaffCapability[] = Object.freeze([
   'VERIFY_PAYOUT_DESTINATION',
   'GRANT_COMPLIANCE_OVERRIDE',
   'ADMINISTER_STAFF',
+  'VIEW_PARTNER_STATISTICS',
 ]);
 
 /** What holding each role confers, mirroring `StaffRole` in the service. */
@@ -233,6 +246,12 @@ export const ROLE_CAPABILITIES: Readonly<Record<StaffRole, readonly StaffCapabil
       'VIEW_AUDIT',
     ],
     ADMINISTRATOR: STAFF_CAPABILITIES,
+    SUPER_ADMIN: STAFF_CAPABILITIES,
+    /*
+     * One capability, and not VIEW_AUDIT: the trail names accounts and amounts, which is what a
+     * partner must not see. The service's `StaffRole.PARTNER` makes the argument; this mirrors it.
+     */
+    PARTNER: ['VIEW_PARTNER_STATISTICS'],
   });
 
 /**

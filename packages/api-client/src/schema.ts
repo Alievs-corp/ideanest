@@ -5031,7 +5031,7 @@ export interface components {
             grantedBy?: string;
             note?: string;
             /** @enum {string} */
-            role?: "MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "ADMINISTRATOR";
+            role?: "MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "ADMINISTRATOR" | "SUPER_ADMIN" | "PARTNER";
         };
         GrantRequest: {
             note?: string;
@@ -5227,8 +5227,8 @@ export interface components {
             /** Format: uuid */
             accountId?: string;
             bootstrapped?: boolean;
-            capabilities?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF")[];
-            roles?: ("MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "ADMINISTRATOR")[];
+            capabilities?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
+            roles?: ("MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "ADMINISTRATOR" | "SUPER_ADMIN" | "PARTNER")[];
             staff?: boolean;
         };
         Message: {
@@ -9199,7 +9199,7 @@ export interface operations {
             header?: never;
             path: {
                 accountId: string;
-                role: "MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "ADMINISTRATOR";
+                role: "MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "ADMINISTRATOR" | "SUPER_ADMIN" | "PARTNER";
             };
             cookie?: never;
         };
@@ -9226,7 +9226,7 @@ export interface operations {
             header?: never;
             path: {
                 accountId: string;
-                role: "MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "ADMINISTRATOR";
+                role: "MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "ADMINISTRATOR" | "SUPER_ADMIN" | "PARTNER";
             };
             cookie?: never;
         };
