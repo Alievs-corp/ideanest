@@ -3099,6 +3099,8 @@
       "standfirst": "IdeyaNest üzerindeki bütün kampanyalar, sizin için önemli olana göre süzülmüş.",
       "filtersLabel": "Projeleri süz",
       "railLabel": "Süzgeçler",
+      "apply": "Uygula",
+      "closeFilters": "Filtreleri kapat",
       "resultsHeading": "Projeler",
       "none": "Yok",
       "sortLabel": "Sıralama",

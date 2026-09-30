@@ -81,6 +81,9 @@ export interface FeedCopy {
   readonly standfirst: string;
   readonly filtersLabel: string;
   readonly railLabel: string;
+  /** The drawer's commit button: nothing filters until it is pressed. */
+  readonly apply: string;
+  readonly closeFilters: string;
   readonly resultsHeading: string;
   readonly none: string;
   readonly sortLabel: string;
@@ -183,6 +186,8 @@ export function feedCopyFrom(
     standfirst: t('standfirst'),
     filtersLabel: t('filtersLabel'),
     railLabel: t('railLabel'),
+    apply: t('apply'),
+    closeFilters: t('closeFilters'),
     resultsHeading: t('resultsHeading'),
     none: t('none'),
     sortLabel: t('sortLabel'),
