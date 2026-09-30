@@ -299,8 +299,11 @@ jest.mock('expo-image-picker', () => {
   let next: Record<string, unknown> = { canceled: true, assets: null };
   return {
     MediaTypeOptions: { Images: 'Images' },
+    PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
     launchImageLibraryAsync: jest.fn(async () => next),
     launchCameraAsync: jest.fn(async () => next),
+    getCameraPermissionsAsync: jest.fn(async () => ({ granted: true, status: 'granted' })),
+    getMediaLibraryPermissionsAsync: jest.fn(async () => ({ granted: true, status: 'granted' })),
     requestCameraPermissionsAsync: jest.fn(async () => ({ granted: true, status: 'granted' })),
     requestMediaLibraryPermissionsAsync: jest.fn(async () => ({
       granted: true,

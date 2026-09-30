@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useSyncExternalStore, type ReactNode } from 'react';
 import { AccessibilityInfo } from 'react-native';
 
 /**
@@ -61,26 +61,42 @@ export function useMotionBudget(): MotionLevel {
  *
  * The subscription matters as much as the initial read. Somebody who turns the setting on because
  * a screen is making them ill should not have to restart the application for it to take effect.
+ *
+ * <h2>One subscription, however many components ask</h2>
+ *
+ * Every `Pill` and every `FadeUp` asks, so a per-component subscription was fifty platform
+ * listeners and fifty asynchronous reads on a screen of fifty cards — and each new card started
+ * from "not reduced" until its own read came back. The answer lives in one module-level store
+ * instead: the first subscriber opens the platform listener and reads the setting, later ones get
+ * the value already known, and the listener closes when the last one leaves.
  */
+let reducedNow = false;
+const listeners = new Set<() => void>();
+let platform: { remove: () => void } | null = null;
+
+function publish(value: boolean): void {
+  if (value === reducedNow) return;
+  reducedNow = value;
+  for (const listener of listeners) listener();
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  if (platform === null) {
+    platform = AccessibilityInfo.addEventListener('reduceMotionChanged', publish);
+    void AccessibilityInfo.isReduceMotionEnabled().then(publish);
+  }
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0 && platform !== null) {
+      platform.remove();
+      platform = null;
+    }
+  };
+}
+
 export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-
-  useEffect(() => {
-    let current = true;
-
-    void AccessibilityInfo.isReduceMotionEnabled().then((value) => {
-      if (current) setReduced(value);
-    });
-
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced);
-
-    return () => {
-      current = false;
-      subscription.remove();
-    };
-  }, []);
-
-  return reduced;
+  return useSyncExternalStore(subscribe, () => reducedNow);
 }
 
 /**

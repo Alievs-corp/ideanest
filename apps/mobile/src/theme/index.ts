@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import {
   colors,
   duration,
@@ -77,31 +76,23 @@ export function tint(color: string, alpha: number): string {
  * `app.config.ts` — never loaded at runtime, so there is no flash of the system font and no
  * cold-start cost.
  *
- * <h2>Why each weight is a face and not a `fontWeight`</h2>
+ * <h2>Why each weight is its own family</h2>
  *
- * React Native asks the platform for "this family at this weight", and the two platforms answer
- * differently. iOS finds a registered face by its PostScript name, which in these files is
- * `Inter-Medium` and so on. Android registers the three files as one XML font family named
- * `Inter` (the plugin's `fontDefinitions`), which is the only arrangement in which a weight picks
- * a face there instead of synthesising a bold from the regular one. So a role asks for a face,
- * and each face carries the weight that both platforms need to find it.
+ * React Native asks the platform for "this family at this weight", and the answer is not the same
+ * everywhere. Below Android 9 (API 28, and this app's floor is 24) React Native rounds every
+ * weight under 700 to NORMAL before asking, so a single `Inter` family with three weights would
+ * draw medium and semibold as regular. So each face is registered as a family of its own, under
+ * its PostScript name — `Inter-Medium` and so on — which is also the name iOS finds a registered
+ * font by. One name per face on both platforms, and the weight rides along so iOS and Android 9+
+ * never synthesise a bolder or lighter variant of it.
  *
  * <p>The files are Google Fonts' Inter, which carries Latin Extended and Cyrillic — the web's
  * `next/font` subsets — so ə, ğ, ş, İ, Ə and Russian draw in Inter rather than in a fallback.
  */
 export const font = {
-  regular: {
-    fontFamily: Platform.select({ ios: 'Inter-Regular', default: 'Inter' }),
-    fontWeight: '400',
-  },
-  medium: {
-    fontFamily: Platform.select({ ios: 'Inter-Medium', default: 'Inter' }),
-    fontWeight: '500',
-  },
-  semibold: {
-    fontFamily: Platform.select({ ios: 'Inter-SemiBold', default: 'Inter' }),
-    fontWeight: '600',
-  },
+  regular: { fontFamily: 'Inter-Regular', fontWeight: '400' },
+  medium: { fontFamily: 'Inter-Medium', fontWeight: '500' },
+  semibold: { fontFamily: 'Inter-SemiBold', fontWeight: '600' },
 } as const;
 
 /**

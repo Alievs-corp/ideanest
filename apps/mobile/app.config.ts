@@ -56,9 +56,21 @@ const siteHost = new URL(siteUrl).host;
  * faces `src/theme/index.ts` asks for.
  */
 const INTER_FACES = [
-  { path: '@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf', weight: 400 },
-  { path: '@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf', weight: 500 },
-  { path: '@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf', weight: 600 },
+  {
+    family: 'Inter-Regular',
+    path: '@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf',
+    weight: 400,
+  },
+  {
+    family: 'Inter-Medium',
+    path: '@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf',
+    weight: 500,
+  },
+  {
+    family: 'Inter-SemiBold',
+    path: '@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf',
+    weight: 600,
+  },
 ];
 
 const config: ExpoConfig = {
@@ -123,13 +135,18 @@ const config: ExpoConfig = {
       {
         /*
          * Inter, embedded in the binary rather than loaded by `useFonts` at startup, so the first
-         * frame is already in the right typeface (issue #151). Each platform gets the shape
-         * `src/theme/index.ts`'s `font` reads: iOS registers the three files and finds each by
-         * its PostScript name; Android gets one XML family called `Inter` with a weight per
-         * file, which is what lets a weight choose a face there.
+         * frame is already in the right typeface (issue #151). Every face answers to its
+         * PostScript name on both platforms: iOS reads it from the file, and Android gets one XML
+         * family per face under the same name. Not one `Inter` family with three weights —
+         * below Android 9 React Native rounds 500 and 600 down to regular before it asks.
          */
         ios: { fonts: INTER_FACES.map(({ path }) => path) },
-        android: { fonts: [{ fontFamily: 'Inter', fontDefinitions: INTER_FACES }] },
+        android: {
+          fonts: INTER_FACES.map(({ family, path, weight }) => ({
+            fontFamily: family,
+            fontDefinitions: [{ path, weight }],
+          })),
+        },
       },
     ],
     [
@@ -172,6 +189,23 @@ const config: ExpoConfig = {
          * is present. This says what actually happens and why.
          */
         faceIDPermission: 'IdeyaNest uses Face ID to unlock the session kept on this device.',
+      },
+    ],
+    [
+      /*
+       * The photo library and the camera, for the UI kit's `FilePicker` (issue #151) — a campaign
+       * cover, an avatar. The plugin runs whether or not it is listed, because the package is
+       * autolinked, and its defaults add a microphone permission this app never uses and prompts
+       * in generic English. Stating it here is what turns the microphone off and gives the
+       * prompts a reason a reviewer and a backer can read.
+       */
+      'expo-image-picker',
+      {
+        photosPermission:
+          'IdeyaNest opens your photos so you can choose a campaign image or an avatar.',
+        cameraPermission:
+          'IdeyaNest uses the camera so you can take a campaign image or an avatar.',
+        microphonePermission: false,
       },
     ],
     [

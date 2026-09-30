@@ -2,7 +2,6 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
-import { Platform } from 'react-native';
 import config from '../../app.config';
 import { font } from './index';
 
@@ -39,53 +38,51 @@ const entry = config.plugins?.find(
 const resolveFrom = createRequire(join(__dirname, '../../package.json'));
 
 describe('the embedded typeface', () => {
-  it('is registered with the expo-font plugin for both platforms', () => {
+  const families = entry?.[1].android.fonts ?? [];
+  const paths = families.flatMap(({ fontDefinitions }) => fontDefinitions.map(({ path }) => path));
+
+  it('is registered with the expo-font plugin, one Android family per face', () => {
     expect(entry).toBeDefined();
-    expect(entry?.[1].android.fonts).toHaveLength(1);
-    expect(entry?.[1].android.fonts[0]?.fontFamily).toBe('Inter');
+    // One family per face, not one `Inter` with three weights: below Android 9 React Native
+    // rounds 500 and 600 down to regular before asking, and the headings lose their weight.
+    expect(families.map(({ fontDefinitions }) => fontDefinitions.length)).toEqual([1, 1, 1]);
   });
 
-  const definitions = entry?.[1].android.fonts[0]?.fontDefinitions ?? [];
-
   it('embeds the same three files on iOS as on Android', () => {
-    expect(entry?.[1].ios.fonts).toEqual(definitions.map(({ path }) => path));
-    expect(definitions.map(({ weight }) => weight)).toEqual([400, 500, 600]);
+    expect(entry?.[1].ios.fonts).toEqual(paths);
   });
 
   /**
-   * iOS finds a registered face by its PostScript name. A role asking for `Inter-Medium` when the
-   * file calls itself something else falls back to the system font with no error anywhere.
+   * iOS finds a registered face by its PostScript name and Android by the XML family's name, and
+   * both are the same string here. A role asking for `Inter-Medium` when the file calls itself
+   * something else falls back to the system font with no error anywhere.
    */
   it.each([
     ['regular', 400],
     ['medium', 500],
     ['semibold', 600],
-  ] as const)('gives the %s face a file iOS can find and a weight Android can', (face, weight) => {
-    const definition = definitions.find((candidate) => candidate.weight === weight);
-    expect(definition).toBeDefined();
-    const names = nameTable(readFileSync(resolveFrom.resolve(definition?.path ?? '')));
+  ] as const)('gives the %s face a name both platforms resolve, and its weight', (face, weight) => {
+    const family = families.find(({ fontFamily }) => fontFamily === font[face].fontFamily);
+    const definition = family?.fontDefinitions[0];
+    expect(definition?.weight).toBe(weight);
 
-    expect(font[face].fontWeight).toBe(String(weight));
-    // Under Jest `Platform.OS` is ios, which is the platform whose lookup is by name.
-    expect(Platform.OS).toBe('ios');
+    const names = nameTable(readFileSync(resolveFrom.resolve(definition?.path ?? '')));
     expect(font[face].fontFamily).toBe(names.postScript);
+    expect(font[face].fontWeight).toBe(String(weight));
   });
 
   /**
    * `next/font` loads the `latin-ext` and `cyrillic` subsets on the web for exactly these
    * letters. A face without them draws ə in a fallback font in the middle of an Inter word.
    */
-  it.each(definitions.map(({ path }) => [path]))(
-    'draws Azerbaijani, Turkish and Russian: %s',
-    (path) => {
-      const covered = codePoints(readFileSync(resolveFrom.resolve(path)));
-      const missing = [...'əƏğĞşŞİıçÇöÖüÜЖжЩщЁёЫы'].filter(
-        (letter) => !covered.has(letter.codePointAt(0) ?? 0),
-      );
+  it.each(paths.map((path) => [path]))('draws Azerbaijani, Turkish and Russian: %s', (path) => {
+    const covered = codePoints(readFileSync(resolveFrom.resolve(path)));
+    const missing = [...'əƏğĞşŞİıçÇöÖüÜЖжЩщЁёЫы'].filter(
+      (letter) => !covered.has(letter.codePointAt(0) ?? 0),
+    );
 
-      expect(missing).toEqual([]);
-    },
-  );
+    expect(missing).toEqual([]);
+  });
 });
 
 /* -------------------------------------------------------------------------

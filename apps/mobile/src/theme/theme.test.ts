@@ -82,17 +82,43 @@ describe('colour discipline: use a token from @ideanest/design-tokens, never a l
 /**
  * Lime is a surface or a border, never text — CLAUDE.md §2, and `docs/ui-kit.md` §9.1's 1.3:1.
  * `text.tsx` has no lime tone; this is what stops a screen setting one by hand.
+ *
+ * <p>What it matches: a style's `color:`, and the props that colour typed text or its caret —
+ * `placeholderTextColor`, `selectionColor`, `cursorColor` — set to a lime token directly, through
+ * `theme.colors`, or through `tint()`. What it deliberately does not: a `color={…}` prop on a
+ * spinner or an icon, and `tabBarActiveTintColor` on an icon-only tab bar, which are not text.
  */
+const LIME_TEXT = [
+  /\bcolor:\s*(?:tint\(\s*)?(?:theme\.)?colors\.lime\w*/g,
+  /\b(?:placeholderTextColor|selectionColor|cursorColor)\s*[:=]\s*\{?\s*(?:tint\(\s*)?(?:theme\.)?colors\.lime\w*/g,
+];
+
 describe('lime is never text', () => {
   const files = walk(SRC).filter((file) => !/\.test\.tsx?$/.test(file));
 
   it.each(files.map((file) => [relative(SRC, file), file]))(
     'sets no text colour to lime: %s',
     (_label, file) => {
-      const found = readFileSync(file, 'utf8').match(/\bcolor:\s*colors\.lime\w*/g) ?? [];
-      expect(found).toEqual([]);
+      const source = readFileSync(file, 'utf8');
+      expect(LIME_TEXT.flatMap((pattern) => source.match(pattern) ?? [])).toEqual([]);
     },
   );
+
+  it('catches the forms it claims to', () => {
+    const offenders = [
+      'color: colors.lime500',
+      'color: theme.colors.lime400',
+      'color: tint(colors.lime500, 0.8)',
+      'placeholderTextColor={colors.lime500}',
+      'selectionColor: colors.lime600',
+    ];
+    for (const line of offenders) {
+      expect(LIME_TEXT.some((pattern) => new RegExp(pattern.source).test(line))).toBe(true);
+    }
+    expect(
+      LIME_TEXT.some((pattern) => new RegExp(pattern.source).test('borderColor: colors.lime500')),
+    ).toBe(false);
+  });
 });
 
 describe('tint()', () => {

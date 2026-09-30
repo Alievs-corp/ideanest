@@ -57,7 +57,7 @@ describe('Pill', () => {
     const { getByRole } = await render(<Pill label="Go" size={pillSize} onPress={noop} />);
     const button = getByRole('button');
     const slop = button.props.hitSlop as { top: number; bottom: number };
-    expect(Number(styleOf(button).height) + slop.top + slop.bottom).toBeGreaterThanOrEqual(
+    expect(Number(styleOf(button).minHeight) + slop.top + slop.bottom).toBeGreaterThanOrEqual(
       size.touchTarget,
     );
   });
@@ -66,7 +66,7 @@ describe('Pill', () => {
     const heights = [];
     for (const pillSize of ['sm', 'md', 'lg'] as const) {
       const { getByRole } = await render(<Pill label="Go" size={pillSize} onPress={noop} />);
-      heights.push(styleOf(getByRole('button')).height);
+      heights.push(styleOf(getByRole('button')).minHeight);
     }
     expect(heights).toEqual([32, 40, 48]);
   });

@@ -33,6 +33,11 @@ import { useMotionAllowed } from './motion-budget';
  * a pointer, so `sm` and `md` extend their hit area to 44pt with `hitSlop` rather than growing:
  * the pill looks like the web's and is as easy to hit as the platform requires.
  *
+ * <p>Those heights are minimums, not fixed. Dynamic Type stays on, and at the largest
+ * accessibility sizes a 14pt label is over 40pt tall — a fixed-height pill would spill its own
+ * text out of its background. A long Azerbaijani or Russian label shrinks and truncates instead of
+ * pushing an icon out of the pill.
+ *
  * <p>Hover does not exist, so the web's hover colours become the pressed state, applied on the
  * frame the finger lands. The web's `active:scale-[0.98]` survives only where the surface's
  * motion budget allows it (`moderate` and up) — on checkout a pill does not move at all.
@@ -97,7 +102,10 @@ export interface PillProps {
   readonly iconRight?: IconComponent;
   readonly fullWidth?: boolean;
   readonly disabled?: boolean;
-  /** Shows a spinner and blocks presses. The label stays, so the pill does not resize. */
+  /**
+   * Shows a spinner and blocks presses. The label stays beside it, so the action is still named
+   * while it runs; the spinner takes the left icon's place when there is one.
+   */
   readonly busy?: boolean;
   /** What happens on press, when the label alone does not say. */
   readonly accessibilityHint?: string;
@@ -140,7 +148,7 @@ export function Pill({
    * rendered with no background at all; the wrapper keeps the two concerns in two elements.
    */
   return (
-    <Animated.View style={[fullWidth ? styles.stretch : styles.hug, scales && pressStyle]}>
+    <Animated.View style={[fullWidth ? styles.fill : styles.hug, scales && pressStyle]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
@@ -156,7 +164,7 @@ export function Pill({
         testID={testID}
         style={({ pressed }) => [
           styles.pill,
-          { height, paddingHorizontal: PADDING[size] },
+          { minHeight: height, paddingHorizontal: PADDING[size] },
           pressed && !blocked ? skin.pressed : skin.rest,
           blocked && styles.blocked,
           ring,
@@ -191,12 +199,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing[2],
+    paddingVertical: spacing[1],
     borderRadius: radius.full,
   },
-  hug: { alignSelf: 'flex-start' },
-  stretch: { alignSelf: 'stretch' },
+  /*
+   * The wrapper takes whatever place its parent gives it and the pill hugs its label inside that
+   * place, so a pill in a centred empty state is centred and one in a row is vertically centred.
+   * An `alignSelf` here would override the parent's alignment instead of following it.
+   */
+  hug: { alignItems: 'flex-start' },
+  // `width`, not `alignSelf: 'stretch'`, so a full-width pill fills a row as well as a column.
+  fill: { width: '100%' },
   blocked: { opacity: 0.4 },
-  label: { ...font.medium, letterSpacing: tracking.button },
+  label: { ...font.medium, letterSpacing: tracking.button, flexShrink: 1 },
 });
 
 /* -------------------------------------------------------------------------
