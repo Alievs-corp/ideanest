@@ -788,6 +788,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/partners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["partnerRoster"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/partners/{accountId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["partnerSave"];
+        post?: never;
+        delete: operations["partnerRemove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/payments": {
         parameters: {
             query?: never;
@@ -5415,6 +5447,20 @@ export interface components {
             socialLinks?: components["schemas"]["SocialLinkBody"][];
             websiteUrl?: string;
         };
+        Partner: {
+            /** Format: uuid */
+            accountId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: uuid */
+            createdBy?: string;
+            percentage?: string;
+            sections?: ("CURATION" | "HEALTH")[];
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            updatedBy?: string;
+        };
         PatchPledgeRequest: {
             addons?: components["schemas"]["PledgeAddonBody"][];
             contribution?: components["schemas"]["Money"];
@@ -6201,6 +6247,10 @@ export interface components {
             enabledAccounts?: string[];
             /** Format: int32 */
             rolloutPercentage?: number;
+        };
+        SaveRequest: {
+            percentage: string;
+            sections: ("CURATION" | "HEALTH")[];
         };
         SaveStateResponse: {
             saved?: boolean;
@@ -7031,6 +7081,7 @@ export type SchemaOutcome = components['schemas']['Outcome'];
 export type SchemaOutcomes = components['schemas']['Outcomes'];
 export type SchemaOverride = components['schemas']['Override'];
 export type SchemaOwnProfileResponse = components['schemas']['OwnProfileResponse'];
+export type SchemaPartner = components['schemas']['Partner'];
 export type SchemaPatchPledgeRequest = components['schemas']['PatchPledgeRequest'];
 export type SchemaPayPledgeRequest = components['schemas']['PayPledgeRequest'];
 export type SchemaPayoutFile = components['schemas']['PayoutFile'];
@@ -7114,6 +7165,7 @@ export type SchemaRoster = components['schemas']['Roster'];
 export type SchemaRowFailureBody = components['schemas']['RowFailureBody'];
 export type SchemaSaveBackerSegmentRequest = components['schemas']['SaveBackerSegmentRequest'];
 export type SchemaSaveFlagRequest = components['schemas']['SaveFlagRequest'];
+export type SchemaSaveRequest = components['schemas']['SaveRequest'];
 export type SchemaSaveStateResponse = components['schemas']['SaveStateResponse'];
 export type SchemaSavedListResponse = components['schemas']['SavedListResponse'];
 export type SchemaSchedule = components['schemas']['Schedule'];
@@ -8498,6 +8550,72 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProjectEdit"];
                 };
+            };
+        };
+    };
+    partnerRoster: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Roster"];
+                };
+            };
+        };
+    };
+    partnerSave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Partner"];
+                };
+            };
+        };
+    };
+    partnerRemove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                accountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

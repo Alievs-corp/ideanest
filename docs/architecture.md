@@ -1562,9 +1562,22 @@ Preferences are per category and per channel, with a digest option.
 > capabilities, and `StaffRole.isSuperAdmin()` is the only question code asks.
 > `PARTNER` holds one capability, `VIEW_PARTNER_STATISTICS`, and deliberately not
 > `VIEW_FINANCE`, `VIEW_AUDIT` or `ADMINISTER_ACCOUNTS`: a partner is owed a share of
-> the totals and sees no individual transaction, payer or audit row. The
-> percentage, the modules a partner may open and the statistics endpoint follow in
-> #204 and #205; until they do, a `PARTNER` grant opens nothing.
+> the totals and sees no individual transaction, payer or audit row.
+>
+> **Partner profiles (#204).** A super admin manages partners at
+> `/v1/admin/partners` (`GET`, `PUT /{accountId}`, `DELETE /{accountId}`), needing
+> `ADMINISTER_STAFF`. A profile is a percentage in (0, 100] with at most two
+> decimals, plus the console sections opened to that partner. **The partners'
+> percentages may not add up to more than 100**: the service takes an advisory lock
+> and says how much is left, and a trigger on `partner_profiles` (V89) holds the same
+> rule against a hand-written `UPDATE` and against two editors at once. A super admin
+> cannot also be a partner. Only two sections can be opened, curation (AD-03, AD-08,
+> `CURATE`) and system health (AD-16, `VIEW_HEALTH`); every other module shows an
+> individual transaction, a person, or a platform figure at 100%, so it cannot be
+> named in a request. A section is a capability computed from the partner's rows on
+> every request, so closing one takes effect on the next call. Every save and removal
+> is audited with the old and new percentage. The statistics endpoint that applies the
+> percentage follows in #205; until then a partner sees no figures.
 
 > **All sixteen have a screen now, and #259 is what built them.** The
 > distinction that table used to hide is between a capability's *record* and its

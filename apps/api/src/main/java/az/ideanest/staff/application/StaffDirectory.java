@@ -4,8 +4,10 @@ import az.ideanest.shared.EmailAddress;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.staff.StaffProperties;
+import az.ideanest.staff.domain.PartnerSection;
 import az.ideanest.staff.domain.StaffRole;
 import az.ideanest.staff.domain.StaffRoleGrant;
+import az.ideanest.staff.infrastructure.PartnerProfileRepository;
 import az.ideanest.staff.infrastructure.StaffRoleRepository;
 import az.ideanest.user.application.UserAccounts;
 import java.util.EnumSet;
@@ -65,10 +67,16 @@ public class StaffDirectory implements PlatformStaff {
 
     private final Set<EmailAddress> bootstrapAdministrators;
     private final StaffRoleRepository grants;
+    private final PartnerProfileRepository partners;
     private final UserAccounts accounts;
 
-    public StaffDirectory(StaffProperties properties, StaffRoleRepository grants, UserAccounts accounts) {
+    public StaffDirectory(
+            StaffProperties properties,
+            StaffRoleRepository grants,
+            PartnerProfileRepository partners,
+            UserAccounts accounts) {
         this.grants = grants;
+        this.partners = partners;
         this.accounts = accounts;
         // Normalised through EmailAddress at start-up rather than per call, so a
         // malformed entry stops the process with the value in the message instead of
@@ -136,6 +144,18 @@ public class StaffDirectory implements PlatformStaff {
 
         Set<StaffCapability> capabilities = EnumSet.noneOf(StaffCapability.class);
         roles.forEach(role -> capabilities.addAll(role.capabilities()));
+
+        // A partner's extra access is whatever sections a super admin opened, read on every
+        // request like the roles are: a section closed has to stop working on the next call,
+        // not the next restart. Computed here, into capabilities, so every endpoint that
+        // authorises by capability honours it without knowing partners exist -- which is what
+        // keeps the server, and not the browser, the thing that refuses a section nobody opened.
+        // Only for accounts that hold PARTNER, so a stray row cannot widen anybody else.
+        if (roles.contains(StaffRole.PARTNER)) {
+            for (PartnerSection section : partners.sectionsOf(accountId)) {
+                capabilities.add(section.capability());
+            }
+        }
 
         return new StaffMember(accountId, roles, capabilities, bootstrapped);
     }
