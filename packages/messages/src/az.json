@@ -5220,7 +5220,7 @@
       "credentialsRefused": "Bu e-poçt ünvanı və parol heç bir hesaba uyğun gəlmir.",
       "codeRefused": "Kod qəbul edilmədi. Onun vaxtı bitmiş ola bilər — yeni sorğu almaq üçün yenidən daxil olun.",
       "recoveryHint": "Bərpa kodu da burada işləyir.",
-      "webOnly": "Qeydiyyat, parolun bərpası və xarici hesabla giriş ideanest.az saytındadır. Yeni hesabın e-poçtu təsdiqlənməlidir, bu isə ekran deyil, keçiddir."
+      "webOnly": "Qeydiyyat, parolun bərpası və xarici hesabla giriş saytdadır. Yeni hesabın e-poçtu təsdiqlənməlidir, bu isə ekran deyil, keçiddir."
     }
   }
 }
