@@ -3,8 +3,8 @@ import { FlashList } from '@shopify/flash-list';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSavedProjects } from '../../api/queries';
 import { Button } from '../../components/form';
-import { EmptyState, ErrorState, Loading, OfflineNotice } from '../../components/states';
 import { CardTitle, Meta } from '../../components/text';
+import { EmptyState, InlineAlert, Screen, Skeleton, SkeletonGroup } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { useSession } from '../../lib/use-session';
 import { colors, radius, size, spacing } from '../../theme';
@@ -26,6 +26,12 @@ import { colors, radius, size, spacing } from '../../theme';
  * `/v1/me/saved` answers titles and slugs and no money, and that is the right
  * shape for a list that can be a week old. A cached percentage would be the one
  * number a backer acts on, shown at whatever it was last Tuesday.
+ *
+ * <h2>Motion: minimal</h2>
+ *
+ * A list of campaigns somebody goes back to browse, so it takes discovery's
+ * budget from `docs/motion-system.md` §5 rather than checkout's: the placeholders
+ * shimmer while the first answer is on its way, and nothing else moves.
  */
 
 const styles = StyleSheet.create({
@@ -41,7 +47,12 @@ const styles = StyleSheet.create({
   },
   pressed: { backgroundColor: colors.surface3 },
   separator: { height: spacing[3] },
+  placeholders: { gap: spacing[3] },
+  notice: { paddingBottom: spacing[3] },
 });
+
+/** Three rows' worth of placeholder: what a first screen of saved campaigns looks like. */
+const PLACEHOLDER_ROWS = [0, 1, 2] as const;
 
 export default function SavedScreen() {
   const router = useRouter();
@@ -51,13 +62,19 @@ export default function SavedScreen() {
 
   if (!signedIn) {
     return (
-      <EmptyState
-        title={t('mobile.saved.signedOutTitle')}
-        detail={t('mobile.saved.signedOutBody')}
-        // §17.1: the invitation now has a way to accept it. Until sign-in existed
-        // on this platform, this screen could only state the condition.
-        action={
-          <Button label={t('shell.actions.signIn')} onPress={() => router.push('/sign-in')} />
+      <Screen
+        motion="minimal"
+        hasContent={false}
+        empty={
+          <EmptyState
+            title={t('mobile.saved.signedOutTitle')}
+            description={t('mobile.saved.signedOutBody')}
+            // §17.1: the invitation now has a way to accept it. Until sign-in existed
+            // on this platform, this screen could only state the condition.
+            action={
+              <Button label={t('shell.actions.signIn')} onPress={() => router.push('/sign-in')} />
+            }
+          />
         }
       />
     );
@@ -65,22 +82,44 @@ export default function SavedScreen() {
 
   const items = saved.data?.items ?? [];
 
-  // The web's saved-list sentences; only the offline one is the app's.
+  /*
+   * The web's saved-list sentences; only the offline one is the app's. With nothing to list,
+   * `Screen` answers in its fixed order: placeholders while the first answer is on its way, the
+   * failure with its retry, then "nothing saved yet".
+   */
   if (items.length === 0) {
-    if (saved.isLoading) return <Loading label={t('account.signals.saved.loading')} />;
-    if (saved.isError) {
-      return (
-        <ErrorState
-          title={t('account.signals.saved.failedTitle')}
-          detail={t('mobile.offline.nothingCached')}
-        />
-      );
-    }
     return (
-      <EmptyState
-        title={t('account.signals.saved.emptyTitle')}
-        detail={t('account.signals.saved.emptyBody')}
-      />
+      <Screen
+        motion="minimal"
+        hasContent={saved.isLoading}
+        error={
+          saved.isError
+            ? {
+                title: t('account.signals.saved.failedTitle'),
+                description: t('mobile.offline.nothingCached'),
+                onRetry: () => void saved.refetch(),
+                retrying: saved.isFetching,
+              }
+            : null
+        }
+        empty={
+          <EmptyState
+            title={t('account.signals.saved.emptyTitle')}
+            description={t('account.signals.saved.emptyBody')}
+          />
+        }
+      >
+        <SkeletonGroup label={t('account.signals.saved.loading')}>
+          <View style={styles.placeholders}>
+            {PLACEHOLDER_ROWS.map((row) => (
+              <View key={row} style={styles.row}>
+                <Skeleton height={18} width="70%" />
+                <Skeleton height={12} width="35%" />
+              </View>
+            ))}
+          </View>
+        </SkeletonGroup>
+      </Screen>
     );
   }
 
@@ -93,8 +132,15 @@ export default function SavedScreen() {
       ListHeaderComponent={
         // Shown only when a refetch actually failed. A cache being used while
         // the network is fine is not worth a banner.
+        // A warning read in its place, not announced: the offline banner already said it once.
         saved.isError ? (
-          <OfflineNotice detail={t('mobile.saved.stale')} />
+          <View style={styles.notice}>
+            <InlineAlert
+              variant="warning"
+              politeness="polite"
+              description={t('mobile.saved.stale')}
+            />
+          </View>
         ) : undefined
       }
       renderItem={({ item }) => (

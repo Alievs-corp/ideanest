@@ -5,6 +5,7 @@ import type { Card } from '../api/queries';
 import { colors, size, spacing } from '../theme';
 import { FadeUp } from './motion';
 import { ProjectCard } from './project-card';
+import { SkeletonCard, SkeletonGroup } from './ui';
 
 /**
  * A virtualised list of campaigns — §4.3. **Capped stagger so long lists
@@ -54,6 +55,7 @@ export interface CampaignListProps {
 const styles = StyleSheet.create({
   content: { padding: size.cardGap, gap: size.cardGap },
   separator: { height: spacing[4] },
+  placeholders: { gap: spacing[4] },
 });
 
 export function CampaignList({
@@ -113,4 +115,29 @@ export function CampaignList({
 
 function Separator() {
   return <View style={styles.separator} />;
+}
+
+/** How many card placeholders stand in for the first page: about one screenful. */
+const PLACEHOLDERS = 3;
+
+/**
+ * The list before its first page — the kit's card-shaped placeholders in the list's own padding and
+ * spacing, so nothing moves when the cards replace them (issue #151; it replaces the spinner that
+ * the old `Loading` state drew).
+ *
+ * <p>One accessible element, named by `label` and busy, as `SkeletonGroup` makes it: the wait is
+ * one announcement ("Loading projects"), not three grey cards.
+ */
+export function CampaignListSkeleton({ label }: { readonly label: string }) {
+  return (
+    <View style={styles.content}>
+      <SkeletonGroup label={label}>
+        <View style={styles.placeholders}>
+          {Array.from({ length: PLACEHOLDERS }, (_, index) => (
+            <SkeletonCard key={index} />
+          ))}
+        </View>
+      </SkeletonGroup>
+    </View>
+  );
 }

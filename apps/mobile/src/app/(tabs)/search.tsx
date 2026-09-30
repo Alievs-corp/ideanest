@@ -1,9 +1,9 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSearchResults, useSuggestions, type Card } from '../../api/queries';
-import { CampaignList } from '../../components/campaign-list';
-import { EmptyState, ErrorState, Loading } from '../../components/states';
+import { CampaignList, CampaignListSkeleton } from '../../components/campaign-list';
 import { Body, Meta } from '../../components/text';
+import { EmptyState, ErrorState, MotionBudgetProvider } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { colors, fontSize, radius, size, spacing } from '../../theme';
 
@@ -30,11 +30,20 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  * opening a campaign. They are drawn as chips above the list so that the two
  * are not confused; a suggestion styled like a result is a tap somebody has to
  * undo.
+ *
+ * <h2>Motion: minimal</h2>
+ *
+ * Discovery's budget (`docs/motion-system.md` §5 and §5.1): no card moves, the
+ * suggestions appear and disappear, a chip changes colour and nothing else. The
+ * skeleton's shimmer is what is left.
  */
 
 const MINIMUM_QUERY = 3;
 
 const styles = StyleSheet.create({
+  page: { flex: 1, padding: size.cardGap },
+  fill: { flex: 1 },
+  pageHeader: { paddingHorizontal: size.cardGap, paddingTop: size.cardGap },
   header: { gap: spacing[3], paddingBottom: spacing[2] },
   field: {
     backgroundColor: colors.surface3,
@@ -128,58 +137,80 @@ export default function SearchScreen() {
     </View>
   );
 
-  if (!enabled) {
-    return (
-      <View style={{ flex: 1, padding: size.cardGap }}>
-        {header}
-        <Body>{t('mobile.search.minimum', { count: MINIMUM_QUERY })}</Body>
-      </View>
-    );
-  }
+  return <MotionBudgetProvider level="minimal">{body()}</MotionBudgetProvider>;
 
-  if (cards.length === 0) {
-    if (results.isLoading) return <Loading label={t('discovery.feed.loading')} />;
-    if (results.isError) {
+  function body() {
+    if (!enabled) {
       return (
-        <ErrorState
-          title={t('discovery.feed.errorTitle')}
-          detail={t('discovery.feed.unreachable')}
-        />
+        <View style={styles.page}>
+          {header}
+          <Body>{t('mobile.search.minimum', { count: MINIMUM_QUERY })}</Body>
+        </View>
       );
     }
-  }
 
-  return (
-    <CampaignList
-      cards={cards}
-      header={header}
-      onEndReached={() => {
-        if (results.hasNextPage && !results.isFetchingNextPage) void results.fetchNextPage();
-      }}
-      empty={
-        /*
-         * The web's empty feed for a term and for a term inside a category. A category chip on
-         * its own has no term to quote back, and the web's "nothing published" body would be
-         * untrue of it, so its body is the app's: try another category.
-         */
-        query.q === undefined ? (
-          <EmptyState
-            title={t('discovery.feed.emptyFilteredTitle')}
-            detail={t('mobile.search.emptyCategoryBody')}
-          />
-        ) : (
-          <EmptyState
-            title={t('discovery.feed.emptyQueryTitle', { query: query.q })}
-            detail={
-              category === undefined
-                ? t('discovery.feed.emptyQueryBody')
-                : t('discovery.feed.emptyQueryBodyFiltered')
-            }
-          />
-        )
+    /*
+     * The field stays above the loading and failed states, so a search that failed can be changed
+     * without leaving the tab — the old full-screen states took the field away with the results.
+     */
+    if (cards.length === 0) {
+      if (results.isLoading) {
+        return (
+          <View style={styles.fill}>
+            <View style={styles.pageHeader}>{header}</View>
+            <CampaignListSkeleton label={t('discovery.feed.loading')} />
+          </View>
+        );
       }
-    />
-  );
+      if (results.isError) {
+        return (
+          <View style={styles.page}>
+            {header}
+            <ErrorState
+              title={t('discovery.feed.errorTitle')}
+              description={t('discovery.feed.unreachable')}
+              onRetry={() => void results.refetch()}
+              retrying={results.isFetching}
+            />
+          </View>
+        );
+      }
+    }
+
+    return (
+      <CampaignList
+        cards={cards}
+        header={header}
+        onEndReached={() => {
+          if (results.hasNextPage && !results.isFetchingNextPage) void results.fetchNextPage();
+        }}
+        empty={
+          /*
+           * The web's empty feed for a term and for a term inside a category. A category chip on
+           * its own has no term to quote back, and the web's "nothing published" body would be
+           * untrue of it, so its body is the app's: try another category.
+           */
+          query.q === undefined ? (
+            <EmptyState
+              variant="filtered"
+              title={t('discovery.feed.emptyFilteredTitle')}
+              description={t('mobile.search.emptyCategoryBody')}
+            />
+          ) : (
+            <EmptyState
+              variant="filtered"
+              title={t('discovery.feed.emptyQueryTitle', { query: query.q })}
+              description={
+                category === undefined
+                  ? t('discovery.feed.emptyQueryBody')
+                  : t('discovery.feed.emptyQueryBodyFiltered')
+              }
+            />
+          )
+        }
+      />
+    );
+  }
 }
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).

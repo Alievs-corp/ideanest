@@ -7,8 +7,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { siteUrl } from '../../api/config';
 import { Avatar } from '../../components/avatar';
 import { Button } from '../../components/form';
-import { InlineAlert } from '../../components/states';
 import { Body, CardTitle, Meta, Subheading } from '../../components/text';
+import { InlineAlert, Pill } from '../../components/ui';
 import { WhatsAppSheet } from '../../components/whatsapp-sheet';
 import { canReadAccount, useMe, useSessionState, type Me } from '../../lib/account';
 import { signOut } from '../../lib/auth';
@@ -124,8 +124,6 @@ const styles = StyleSheet.create({
   boneAvatar: { width: size.avatarInCard, height: size.avatarInCard, borderRadius: radius.full },
   boneName: { width: '50%', height: fontSize.lg },
   boneEmail: { width: '70%', height: fontSize.xs },
-  alertLink: { minHeight: size.touchTarget, justifyContent: 'center', alignSelf: 'flex-start' },
-  alertLinkText: { textDecorationLine: 'underline' },
   colophon: { textAlign: 'center' },
 });
 
@@ -261,7 +259,7 @@ function AccountAlerts({ me }: { readonly me: Me }) {
       {me.emailVerified === false ? (
         <InlineAlert
           variant="warning"
-          detail={t('shell.actions.unverified', { email: me.email ?? '' })}
+          description={t('shell.actions.unverified', { email: me.email ?? '' })}
         />
       ) : null}
       {me.deletionScheduledAt ? (
@@ -269,21 +267,13 @@ function AccountAlerts({ me }: { readonly me: Me }) {
           variant="warning"
           title={t('settings.panels.closure.scheduledTitle')}
           action={
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('account.links.privacy.label')}
+            // The alert's one way out, as the kit draws it inside an alert: a small ghost pill.
+            <Pill
+              label={t('account.links.privacy.label')}
               onPress={() => router.push('/settings/privacy')}
-              style={({ pressed }) => [styles.alertLink, pressed && styles.rowPressed]}
-            >
-              <Body
-                tone="primary"
-                style={styles.alertLinkText}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              >
-                {t('account.links.privacy.label')}
-              </Body>
-            </Pressable>
+              variant="ghost"
+              size="sm"
+            />
           }
         />
       ) : null}

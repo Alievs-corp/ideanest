@@ -4,7 +4,7 @@ import { currentlyOnline, subscribeToConnectivity, useOnline } from '../lib/conn
 import { useT } from '../lib/i18n';
 import { colors, spacing } from '../theme';
 import { UpcomingMaintenanceBanner } from './maintenance-banner';
-import { OfflineNotice } from './states';
+import { InlineAlert } from './ui';
 
 /**
  * The global offline banner — issue #150.
@@ -25,8 +25,8 @@ import { OfflineNotice } from './states';
  *
  * <h2>The words are the banner; the stripe is the reminder</h2>
  *
- * It is {@link OfflineNotice} — a warning stripe **and** a sentence, never the hue alone
- * (CLAUDE.md §2) — laid across the top of the screen. Screens with cached data keep showing it
+ * It is the kit's warning `InlineAlert` — a stripe, an icon **and** a sentence, never the hue
+ * alone (CLAUDE.md §2) — laid across the top of the screen. Screens with cached data keep showing it
  * underneath (`offlineFirst`, `lib/offline.ts`); screens without show their own error.
  *
  * <h2>Announced once, when the connection drops</h2>
@@ -35,7 +35,9 @@ import { OfflineNotice } from './states';
  * so the sentence appearing inside it is a content change TalkBack reads — once, when it
  * appears, and not on a launch that is already online, where it never appears. iOS has no live
  * regions; there {@link OfflineAnnouncer} says it, from one place in the root, so the banners
- * mounted on every screen of the stack do not each announce it.
+ * mounted on every screen of the stack do not each announce it. That is why the alert itself is
+ * `polite` although it is a warning: a warning `InlineAlert` announces itself on iOS by default,
+ * and every screen in the stack mounting one would say the same sentence once per screen.
  */
 export function OfflineBanner() {
   const online = useOnline();
@@ -44,7 +46,7 @@ export function OfflineBanner() {
     <View accessibilityLiveRegion="polite" testID="offline-region">
       {online ? null : (
         <View style={styles.banner}>
-          <OfflineNotice detail={t('banner')} />
+          <InlineAlert variant="warning" politeness="polite" description={t('banner')} />
         </View>
       )}
     </View>

@@ -5,10 +5,24 @@ import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
 import { siteUrl } from '../../../api/config';
 import { useProjectPage, useProjectRewards, useProjectUpdates } from '../../../api/queries';
-import { ErrorState, Loading, OfflineNotice } from '../../../components/states';
 import { FadeUp } from '../../../components/motion';
 import { ProgressBar } from '../../../components/progress';
-import { Body, CardTitle, Display, Heading, Meta, Story, Subheading } from '../../../components/text';
+import {
+  Body,
+  CardTitle,
+  Display,
+  Heading,
+  Meta,
+  Story,
+  Subheading,
+} from '../../../components/text';
+import {
+  InlineAlert,
+  MotionBudgetProvider,
+  Screen,
+  Skeleton,
+  SkeletonGroup,
+} from '../../../components/ui';
 import { formatCount, formatDate, pluralCategory, useT } from '../../../lib/i18n';
 import { shareUrlFor } from '../../../lib/links';
 import { useLocale } from '../../../lib/locale';
@@ -19,14 +33,15 @@ import { colors, radius, size, spacing } from '../../../theme';
  * The campaign page — §4.4 and §4.9. **Story, rewards, updates, comments, and a
  * persistent call to action.**
  *
- * <h2>The call to action is pinned, and the page behind it does not animate</h2>
+ * <h2>Motion: moderate, and the call to action is pinned</h2>
  *
- * `docs/motion-system.md` §5 puts a checkout surface on the *minimal* budget:
- * motion decreases as money gets closer, because every animation near a payment
- * reads as hesitation. So the story fades up as it arrives — this is still a
- * reading surface — and the bar at the bottom never moves. It is drawn once,
- * outside the scroll view, so it is on screen at the moment somebody decides
- * rather than at the moment they reach the end.
+ * `docs/motion-system.md` §5 gives the project page the *moderate* budget —
+ * story and transaction in balance — and the route declares it, so every kit
+ * primitive under it reads the same level. The sections fade up as they arrive,
+ * since this is still a reading surface, and the bar at the bottom never moves:
+ * motion decreases as money gets closer. It is drawn once, outside the scroll
+ * view, so it is on screen at the moment somebody decides rather than at the
+ * moment they reach the end.
  *
  * <h2>Comments are read, not written</h2>
  *
@@ -52,6 +67,7 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   update: { gap: spacing[1], paddingVertical: spacing[2] },
+  placeholder: { gap: spacing[4], paddingTop: spacing[5] },
   actions: {
     flexDirection: 'row',
     gap: spacing[3],
@@ -94,12 +110,35 @@ export default function ProjectScreen() {
   const paragraphs = useMemo(() => storyParagraphs(project.data?.story), [project.data?.story]);
 
   if (project.data === undefined) {
-    if (project.isLoading) return <Loading label={t('campaign.prelaunch.loading')} />;
+    /*
+     * Nothing cached and nothing yet: the page's shape while the first answer is on its way, and
+     * otherwise the failure with a retry that asks again — the old state had no way out but back.
+     */
     return (
-      <ErrorState
-        title={t('mobile.campaign.failedTitle')}
-        detail={t('mobile.campaign.failedDetail')}
-      />
+      <Screen
+        motion="moderate"
+        hasContent={project.isLoading}
+        error={
+          project.isLoading
+            ? null
+            : {
+                title: t('mobile.campaign.failedTitle'),
+                description: t('mobile.campaign.failedDetail'),
+                onRetry: () => void project.refetch(),
+                retrying: project.isFetching,
+              }
+        }
+      >
+        <SkeletonGroup label={t('campaign.prelaunch.loading')}>
+          <View style={styles.placeholder}>
+            <Skeleton aspectRatio={16 / 9} radius="lg" />
+            <Skeleton height={28} width="80%" />
+            <Skeleton height={16} width="60%" />
+            <Skeleton height={40} width="50%" />
+            <Skeleton height={6} radius="lg" />
+          </View>
+        </SkeletonGroup>
+      </Screen>
     );
   }
 
@@ -109,139 +148,149 @@ export default function ProjectScreen() {
   const percent = fundedPercent(page.pledged?.amount, page.goal?.amount);
 
   return (
-    <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title, headerBackTitle: t('mobile.nav.back') }} />
+    <MotionBudgetProvider level="moderate">
+      <View style={{ flex: 1 }}>
+        <Stack.Screen options={{ title, headerBackTitle: t('mobile.nav.back') }} />
 
-      <ScrollView contentInsetAdjustmentBehavior="automatic">
-        {page.coverImage?.url == null ? null : (
-          <Image
-            source={page.coverImage.url}
-            style={styles.cover}
-            contentFit="cover"
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-          />
-        )}
+        <ScrollView contentInsetAdjustmentBehavior="automatic">
+          {page.coverImage?.url == null ? null : (
+            <Image
+              source={page.coverImage.url}
+              style={styles.cover}
+              contentFit="cover"
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
+          )}
 
-        <View style={styles.body}>
-          {project.isStale && project.isError ? (
-            <OfflineNotice detail={t('mobile.campaign.stale')} />
-          ) : null}
-
-          <FadeUp index={0}>
-            <View style={styles.section}>
-              <Heading>{title}</Heading>
-              {page.blurb == null ? null : <Body>{page.blurb}</Body>}
-              {page.creator?.name == null ? null : (
-                <Meta>{t('campaign.by', { creator: page.creator.name })}</Meta>
-              )}
-            </View>
-          </FadeUp>
-
-          <FadeUp index={1}>
-            <View style={styles.section}>
-              <View style={styles.figures}>
-                <View style={styles.figure}>
-                  <Display>{formatMoney(page.pledged)}</Display>
-                  <Meta>{t('common.card.ofGoal', { amount: formatMoney(page.goal) })}</Meta>
-                </View>
-                <View style={styles.figure}>
-                  <Display>{formatCount(backers, locale)}</Display>
-                  {/* The web's word under the figure: `{one, few, many, other}`, not ICU. */}
-                  <Meta>{t(`campaign.funding.backers.${pluralCategory(locale, backers)}`)}</Meta>
-                </View>
-              </View>
-              <ProgressBar
-                completionPercent={percent}
-                label={t('mobile.funding.progressFor', { title })}
+          <View style={styles.body}>
+            {/*
+            The cached page, and a refetch that failed: shown, and said to be old. Read in its
+            place rather than announced — the offline banner has already said the connection went.
+          */}
+            {project.isStale && project.isError ? (
+              <InlineAlert
+                variant="warning"
+                politeness="polite"
+                description={t('mobile.campaign.stale')}
               />
-            </View>
-          </FadeUp>
+            ) : null}
 
-          {paragraphs.length === 0 ? null : (
-            <FadeUp index={2}>
+            <FadeUp index={0}>
               <View style={styles.section}>
-                <Subheading>{t('mobile.campaign.story')}</Subheading>
-                {paragraphs.map((paragraph, index) => (
-                  <Story key={index}>{paragraph}</Story>
-                ))}
-                <Meta>{t('mobile.campaign.storyOnWeb')}</Meta>
+                <Heading>{title}</Heading>
+                {page.blurb == null ? null : <Body>{page.blurb}</Body>}
+                {page.creator?.name == null ? null : (
+                  <Meta>{t('campaign.by', { creator: page.creator.name })}</Meta>
+                )}
               </View>
             </FadeUp>
-          )}
 
-          {(rewards.data?.rewards ?? []).length === 0 ? null : (
-            <FadeUp index={3}>
+            <FadeUp index={1}>
               <View style={styles.section}>
-                <Subheading>{t('campaign.rewards.heading')}</Subheading>
-                {(rewards.data?.rewards ?? []).map((reward) => (
-                  <View key={reward.id} style={styles.reward}>
-                    <CardTitle>{reward.title ?? ''}</CardTitle>
-                    <Meta tone="secondary">{formatMoney(reward.price)}</Meta>
-                    {reward.description == null ? null : (
-                      <Body numberOfLines={4}>{reward.description}</Body>
-                    )}
-                    {/* In words, because "6 left" in lime and "sold out" in grey
+                <View style={styles.figures}>
+                  <View style={styles.figure}>
+                    <Display>{formatMoney(page.pledged)}</Display>
+                    <Meta>{t('common.card.ofGoal', { amount: formatMoney(page.goal) })}</Meta>
+                  </View>
+                  <View style={styles.figure}>
+                    <Display>{formatCount(backers, locale)}</Display>
+                    {/* The web's word under the figure: `{one, few, many, other}`, not ICU. */}
+                    <Meta>{t(`campaign.funding.backers.${pluralCategory(locale, backers)}`)}</Meta>
+                  </View>
+                </View>
+                <ProgressBar
+                  completionPercent={percent}
+                  label={t('mobile.funding.progressFor', { title })}
+                />
+              </View>
+            </FadeUp>
+
+            {paragraphs.length === 0 ? null : (
+              <FadeUp index={2}>
+                <View style={styles.section}>
+                  <Subheading>{t('mobile.campaign.story')}</Subheading>
+                  {paragraphs.map((paragraph, index) => (
+                    <Story key={index}>{paragraph}</Story>
+                  ))}
+                  <Meta>{t('mobile.campaign.storyOnWeb')}</Meta>
+                </View>
+              </FadeUp>
+            )}
+
+            {(rewards.data?.rewards ?? []).length === 0 ? null : (
+              <FadeUp index={3}>
+                <View style={styles.section}>
+                  <Subheading>{t('campaign.rewards.heading')}</Subheading>
+                  {(rewards.data?.rewards ?? []).map((reward) => (
+                    <View key={reward.id} style={styles.reward}>
+                      <CardTitle>{reward.title ?? ''}</CardTitle>
+                      <Meta tone="secondary">{formatMoney(reward.price)}</Meta>
+                      {reward.description == null ? null : (
+                        <Body numberOfLines={4}>{reward.description}</Body>
+                      )}
+                      {/* In words, because "6 left" in lime and "sold out" in grey
                         is colour carrying the difference on its own. */}
-                    <Meta>
-                      {reward.remainingQuantity == null
-                        ? t('campaignEditor.rewards.vocabulary.stock.unlimited')
-                        : reward.remainingQuantity === 0
-                          ? t('campaign.rewards.soldOut')
-                          : t('campaign.rewards.remaining', { count: reward.remainingQuantity })}
-                    </Meta>
-                  </View>
-                ))}
-              </View>
-            </FadeUp>
-          )}
+                      <Meta>
+                        {reward.remainingQuantity == null
+                          ? t('campaignEditor.rewards.vocabulary.stock.unlimited')
+                          : reward.remainingQuantity === 0
+                            ? t('campaign.rewards.soldOut')
+                            : t('campaign.rewards.remaining', { count: reward.remainingQuantity })}
+                      </Meta>
+                    </View>
+                  ))}
+                </View>
+              </FadeUp>
+            )}
 
-          {(updates.data?.updates ?? []).length === 0 ? null : (
-            <FadeUp index={4}>
-              <View style={styles.section}>
-                <Subheading>{t('campaign.updates.heading')}</Subheading>
-                {(updates.data?.updates ?? []).map((update) => (
-                  <View key={update.number} style={styles.update}>
-                    <CardTitle numberOfLines={2}>{update.title ?? ''}</CardTitle>
-                    <Meta>{formatDate(update.publishedAt, locale)}</Meta>
-                  </View>
-                ))}
-              </View>
-            </FadeUp>
-          )}
+            {(updates.data?.updates ?? []).length === 0 ? null : (
+              <FadeUp index={4}>
+                <View style={styles.section}>
+                  <Subheading>{t('campaign.updates.heading')}</Subheading>
+                  {(updates.data?.updates ?? []).map((update) => (
+                    <View key={update.number} style={styles.update}>
+                      <CardTitle numberOfLines={2}>{update.title ?? ''}</CardTitle>
+                      <Meta>{formatDate(update.publishedAt, locale)}</Meta>
+                    </View>
+                  ))}
+                </View>
+              </FadeUp>
+            )}
 
-          <View style={styles.section}>
-            <Subheading>{t('campaign.comments.heading')}</Subheading>
-            <Body>{t('mobile.campaign.commentsOnWeb')}</Body>
+            <View style={styles.section}>
+              <Subheading>{t('campaign.comments.heading')}</Subheading>
+              <Body>{t('mobile.campaign.commentsOnWeb')}</Body>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      {/*
+        {/*
         Outside the ScrollView, so it does not scroll away. §5's minimal motion
         budget: it is drawn, it does not arrive.
       */}
-      <View style={styles.actions}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('mobile.campaign.backOnWeb', { title })}
-          style={styles.primary}
-          onPress={() => void openOnWeb(creatorSlug, projectSlug)}
-        >
-          {/* Near-black on lime. The only legible pairing (docs/ui-kit.md §9.1). */}
-          <CardTitle tone="onLime">{t('campaign.back.cta')}</CardTitle>
-        </Pressable>
+        <View style={styles.actions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('mobile.campaign.backOnWeb', { title })}
+            style={styles.primary}
+            onPress={() => void openOnWeb(creatorSlug, projectSlug)}
+          >
+            {/* Near-black on lime. The only legible pairing (docs/ui-kit.md §9.1). */}
+            <CardTitle tone="onLime">{t('campaign.back.cta')}</CardTitle>
+          </Pressable>
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('campaign.actions.shareLabel', { title })}
-          style={styles.secondary}
-          onPress={() => void share(title, creatorSlug, projectSlug)}
-        >
-          <CardTitle>{t('campaign.actions.share')}</CardTitle>
-        </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('campaign.actions.shareLabel', { title })}
+            style={styles.secondary}
+            onPress={() => void share(title, creatorSlug, projectSlug)}
+          >
+            <CardTitle>{t('campaign.actions.share')}</CardTitle>
+          </Pressable>
+        </View>
       </View>
-    </View>
+    </MotionBudgetProvider>
   );
 }
 

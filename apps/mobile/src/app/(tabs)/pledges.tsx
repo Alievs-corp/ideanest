@@ -5,8 +5,8 @@ import { formatMoney } from '@ideanest/money';
 import { useLocale } from '../../lib/locale';
 import { usePledges } from '../../api/queries';
 import { Button } from '../../components/form';
-import { EmptyState, ErrorState, Loading, OfflineNotice } from '../../components/states';
 import { Body, CardTitle, Meta } from '../../components/text';
+import { EmptyState, InlineAlert, Screen, Skeleton, SkeletonGroup } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { readablePledgeState } from '../../lib/pledge-states';
 import { useSession } from '../../lib/use-session';
@@ -28,6 +28,12 @@ import { colors, radius, size, spacing } from '../../theme';
  * A pledge that was cancelled and one that is collected are the same shape with
  * different consequences, and CLAUDE.md §2 forbids letting colour carry that on
  * its own.
+ *
+ * <h2>Motion: none</h2>
+ *
+ * This is the account's list of money already committed. `docs/motion-system.md`
+ * §5 takes motion away as money gets closer, and gives account screens none, so
+ * the route declares `none`: the placeholders do not shimmer and nothing fades in.
  */
 
 const styles = StyleSheet.create({
@@ -42,7 +48,12 @@ const styles = StyleSheet.create({
   },
   separator: { height: spacing[3] },
   amount: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[3] },
+  placeholders: { gap: spacing[3] },
+  notice: { paddingBottom: spacing[3] },
 });
+
+/** Three rows' worth of placeholder: what a first screen of pledges looks like. */
+const PLACEHOLDER_ROWS = [0, 1, 2] as const;
 
 export default function PledgesScreen() {
   const router = useRouter();
@@ -55,11 +66,17 @@ export default function PledgesScreen() {
 
   if (!signedIn) {
     return (
-      <EmptyState
-        title={t('mobile.pledges.signedOutTitle')}
-        detail={t('mobile.pledges.signedOutBody')}
-        action={
-          <Button label={t('shell.actions.signIn')} onPress={() => router.push('/sign-in')} />
+      <Screen
+        motion="none"
+        hasContent={false}
+        empty={
+          <EmptyState
+            title={t('mobile.pledges.signedOutTitle')}
+            description={t('mobile.pledges.signedOutBody')}
+            action={
+              <Button label={t('shell.actions.signIn')} onPress={() => router.push('/sign-in')} />
+            }
+          />
         }
       />
     );
@@ -67,22 +84,48 @@ export default function PledgesScreen() {
 
   const items = pledges.data?.pledges ?? [];
 
-  // The web's pledge-list sentences; only the offline one is the app's.
+  /*
+   * The web's pledge-list sentences; only the offline one is the app's. With nothing to list, the
+   * scaffold decides between them in the order `Screen` fixes — the placeholders while the first
+   * answer is on its way, then the failure (with its retry), then "nothing yet".
+   */
   if (items.length === 0) {
-    if (pledges.isLoading) return <Loading label={t('account.pledges.list.loading')} />;
-    if (pledges.isError) {
-      return (
-        <ErrorState
-          title={t('account.pledges.list.failedTitle')}
-          detail={t('mobile.offline.nothingCached')}
-        />
-      );
-    }
     return (
-      <EmptyState
-        title={t('account.pledges.list.emptyTitle')}
-        detail={t('account.pledges.list.emptyBody')}
-      />
+      <Screen
+        motion="none"
+        hasContent={pledges.isLoading}
+        error={
+          pledges.isError
+            ? {
+                title: t('account.pledges.list.failedTitle'),
+                description: t('mobile.offline.nothingCached'),
+                onRetry: () => void pledges.refetch(),
+                retrying: pledges.isFetching,
+              }
+            : null
+        }
+        empty={
+          <EmptyState
+            title={t('account.pledges.list.emptyTitle')}
+            description={t('account.pledges.list.emptyBody')}
+          />
+        }
+      >
+        <SkeletonGroup label={t('account.pledges.list.loading')}>
+          <View style={styles.placeholders}>
+            {PLACEHOLDER_ROWS.map((row) => (
+              <View key={row} style={styles.row}>
+                <Skeleton height={18} width="70%" />
+                <Skeleton height={14} width="40%" />
+                <View style={styles.amount}>
+                  <Skeleton height={12} width="30%" />
+                  <Skeleton height={12} width="25%" />
+                </View>
+              </View>
+            ))}
+          </View>
+        </SkeletonGroup>
+      </Screen>
     );
   }
 
@@ -93,8 +136,19 @@ export default function PledgesScreen() {
       contentContainerStyle={styles.content}
       ItemSeparatorComponent={Separator}
       ListHeaderComponent={
+        /*
+         * The cached list, and a refetch that failed: the list stays and says it may be old. A
+         * warning to look at, read in its place rather than announced — the global offline banner
+         * has already said the connection went (`Screen` explains the same choice).
+         */
         pledges.isError ? (
-          <OfflineNotice detail={t('mobile.pledges.stale')} />
+          <View style={styles.notice}>
+            <InlineAlert
+              variant="warning"
+              politeness="polite"
+              description={t('mobile.pledges.stale')}
+            />
+          </View>
         ) : undefined
       }
       renderItem={({ item }) => (

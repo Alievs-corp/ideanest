@@ -17,7 +17,7 @@ import { useMotionAllowed } from './motion-budget';
 
 /**
  * Loading placeholders — the native `Skeleton`, `SkeletonGroup` and `SkeletonCard`
- * (`docs/ui-kit.md` §7.15), which replace the spinner `Loading` in `components/states.tsx`.
+ * (`docs/ui-kit.md` §7.15), which replaced the spinner `Loading` the app's first `states.tsx` drew.
  *
  * <h2>Sanctioned motion, and only transform</h2>
  *

@@ -22,7 +22,7 @@ import {
 import { pluralCategory, useT } from '../lib/i18n';
 import { colors, radius, size, spacing } from '../theme';
 import { Button, TextField } from './form';
-import { InlineAlert } from './states';
+import { InlineAlert } from './ui';
 import { Body, CardTitle } from './text';
 
 /**
@@ -233,7 +233,7 @@ export function WhatsAppSheet({
                     WhatsApp — and a screen that claimed otherwise would be claiming something it
                     cannot know.
                   */}
-                  <InlineAlert title={t('handoff.title')} detail={t('handoff.detail')} />
+                  <InlineAlert title={t('handoff.title')} description={t('handoff.detail')} />
                   <View style={styles.actions}>
                     <Button label={t('handoff.again')} onPress={() => handOver(handoff)} />
                     <Button label={t('cancel')} variant="secondary" onPress={close} />

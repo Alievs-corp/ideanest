@@ -29,8 +29,8 @@ import { SurfaceProvider } from './surface';
  * dead end, and a dead end that performs is worse than one that explains. Both states reset the
  * surface to dark for their contents, since the card is always surface-2.
  *
- * <p>The older `EmptyState` and `ErrorState` in `components/states.tsx` stay until the screens
- * move here.
+ * <p>These replaced the app's first `EmptyState` and `ErrorState` (`components/states.tsx`, deleted
+ * when the screens moved here): the old error had no retry, which is why this one requires it.
  */
 
 const EMPTY_ICON = { empty: Inbox, filtered: SearchX } as const;
