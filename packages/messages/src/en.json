@@ -5503,6 +5503,7 @@
         "tooLarge": "That picture is too large. The limit is {megabytes} MB.",
         "wrongType": "That kind of file is not accepted here.",
         "cameraDenied": "IdeyaNest is not allowed to use the camera. Allow it in your phone’s settings, then try again.",
+        "cameraRefused": "The camera was not allowed, so no photo was taken. You will be asked again next time.",
         "openFailed": "Your photos could not be opened. Try again."
       }
     }

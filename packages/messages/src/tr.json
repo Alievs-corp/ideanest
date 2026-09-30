@@ -5503,6 +5503,7 @@
         "tooLarge": "Bu görsel çok büyük. Üst sınır {megabytes} MB.",
         "wrongType": "Bu dosya türü burada kabul edilmiyor.",
         "cameraDenied": "IdeyaNest'in kamerayı kullanma izni yok. Telefonun ayarlarından izin verin, ardından yeniden deneyin.",
+        "cameraRefused": "Kameraya izin verilmedi, bu yüzden fotoğraf çekilmedi. Bir dahaki sefere yeniden sorulacak.",
         "openFailed": "Fotoğraflar açılamadı. Yeniden deneyin."
       }
     }

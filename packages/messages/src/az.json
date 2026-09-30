@@ -5503,6 +5503,7 @@
         "tooLarge": "Bu şəkil çox böyükdür. Maksimum həcm: {megabytes} MB.",
         "wrongType": "Bu fayl növü burada qəbul edilmir.",
         "cameraDenied": "Kameradan istifadəyə icazə verilməyib. Telefonun ayarlarında icazə verin, sonra yenidən cəhd edin.",
+        "cameraRefused": "Kameraya icazə verilmədi, ona görə şəkil çəkilmədi. Növbəti dəfə yenidən soruşulacaq.",
         "openFailed": "Şəkillər açılmadı. Yenidən cəhd edin."
       }
     }

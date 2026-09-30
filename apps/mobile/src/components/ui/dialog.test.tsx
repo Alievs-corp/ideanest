@@ -1,6 +1,6 @@
 import { createRef, type ReactElement, type ReactNode } from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { AccessibilityInfo, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, KeyboardAvoidingView, StyleSheet, View } from 'react-native';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { colors, radius, shadow, tint } from '../../theme';
@@ -151,6 +151,27 @@ describe('Dialog', () => {
     const { getAllByRole } = await renderEn(screen(true));
     const names = getAllByRole('button').map((button) => button.props.accessibilityLabel);
     expect(names.indexOf('Delete')).toBeLessThan(names.indexOf('Keep it'));
+  });
+
+  it('avoids the keyboard on iOS, and lets a tap reach a button under an open keyboard', async () => {
+    // A class component with no host of its own that keeps the prop, so its render is watched.
+    const avoiding = jest.spyOn(KeyboardAvoidingView.prototype, 'render');
+    const { getByText } = await renderEn(screen(true));
+    const [instance] = avoiding.mock.contexts as { props: { behavior?: string } }[];
+    expect(instance?.props.behavior).toBe('padding');
+    avoiding.mockRestore();
+    let node = getByText('It has no pledges yet.').parent;
+    while (node !== null && node.props.keyboardShouldPersistTaps === undefined) node = node.parent;
+    expect(node?.props.keyboardShouldPersistTaps).toBe('handled');
+  });
+
+  it('hands the Modal its onDismiss, for what must open only after it has gone', async () => {
+    const onDismiss = jest.fn();
+    const { container } = await renderEn(
+      <Dialog open onClose={() => {}} title={TITLE} onDismiss={onDismiss} />,
+    );
+    container.queryAll((node) => node.type === 'Modal')[0]?.props.onDismiss();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
   it('enters without animation under a budget of none', async () => {

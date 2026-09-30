@@ -1,11 +1,10 @@
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, CircleAlert, Images, Upload } from 'lucide-react-native';
 import { useLocale } from 'use-intl';
 import { formatCount, useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, size as measure, spacing } from '../../theme';
-import { announce } from './announce';
 import { useFieldControl } from './field';
 import { useFocusRing } from './focus';
 import { Icon } from './icon';
@@ -32,15 +31,40 @@ import { Sheet } from './sheet';
  * The caller's `maxBytes` and `acceptedTypes` are checked here, before `onPick` is called, so a
  * 40 MB photo is refused on the phone with a sentence rather than after a minute of uploading.
  * The sentences are the caller's when it passes them (the web's owning screens have their own:
- * `campaignEditor.cover.failures.TOO_LARGE`), and the catalogue's otherwise. A refusal is drawn
- * in danger with an icon and announced assertively, as a `Field` error is.
+ * `campaignEditor.cover.failures.TOO_LARGE`), and the catalogue's otherwise.
  *
- * <p>The camera needs a permission and asks for it; a refusal says where to change it rather than
- * failing silently. The library needs none — both platforms' photo pickers run outside the app —
- * so it does not ask for access to every photo on the phone to let somebody choose one.
+ * <p>A refusal is drawn under the zone in danger with an icon, and it becomes the zone's
+ * `accessibilityValue` while it stands. It is NOT announced: every refusal happens in the sheet,
+ * and closing the sheet moves screen-reader focus back to the zone a moment later, which would
+ * cut an announcement off mid-sentence. Landing on the zone reads "Cover image, That picture is
+ * too large…, button" instead — the refusal arrives with the focus rather than racing it, and is
+ * still there the next time somebody swipes past.
+ *
+ * <h2>Types, and the iPhone's HEIC</h2>
+ *
+ * An iPhone stores photos as HEIC, and the library hands them over as `image/heic` unless asked
+ * otherwise, which an allow-list of JPEG and PNG would refuse for most of the photos on the
+ * phone. So the library is asked for its most compatible representation
+ * (`UIImagePickerPreferredAssetRepresentationMode.Compatible`, which transcodes to JPEG), and an
+ * accepted type may be a wildcard — `['image/*']` accepts any image.
+ *
+ * <h2>Permission</h2>
+ *
+ * The camera needs a permission and asks for it. Refused with the system still willing to ask
+ * again, the sentence says nothing was taken; refused for good (`canAskAgain` false), it says
+ * where in the phone's settings to change it — sending somebody to Settings for a prompt they
+ * would simply get again is a detour. The library needs no permission — both platforms' photo
+ * pickers run outside the app — so it does not ask for access to every photo on the phone to let
+ * somebody choose one.
  *
  * <p>A picker the platform returns with no size or no type cannot be checked for that limit; it
  * is passed on, and the server's own check is what refuses it.
+ *
+ * <p>Not handled here: Android can destroy the activity while the system picker is open, and
+ * `ImagePicker.getPendingResultAsync()` recovers that result on the next launch. The recovered
+ * asset carries nothing saying which picker asked for it, and after a restart there may be none
+ * on screen or a different one, so delivering it here could attach a cover image to an avatar.
+ * The screen that owns an upload, which knows what it was doing, is where that belongs.
  */
 
 export interface PickedFile {
@@ -52,7 +76,10 @@ export interface PickedFile {
 export interface FilePickerMessages {
   readonly tooLarge?: string;
   readonly wrongType?: string;
+  /** The camera was refused for good; the sentence says where to allow it. */
   readonly cameraDenied?: string;
+  /** The camera was refused this time; the system will ask again. */
+  readonly cameraRefused?: string;
   readonly openFailed?: string;
 }
 
@@ -68,7 +95,11 @@ export interface FilePickerProps {
   readonly hint?: string;
   /** The largest file accepted, in bytes. */
   readonly maxBytes?: number;
-  /** MIME types accepted, e.g. `['image/jpeg', 'image/png']`. Anything, when absent. */
+  /**
+   * MIME types accepted: exact (`'image/png'`) or a wildcard (`'image/*'`). Anything, when absent.
+   * Library photos arrive as JPEG (see above), so `['image/jpeg', 'image/png']` accepts an
+   * iPhone's photos too.
+   */
   readonly acceptedTypes?: readonly string[];
   /** The refusals, in the words of the screen that owns the upload. */
   readonly messages?: FilePickerMessages;
@@ -104,7 +135,6 @@ export function FilePicker({
 
   function refuse(message: string): void {
     setRefusal(message);
-    announce(message, { assertive: true });
   }
 
   async function pick(source: Source): Promise<void> {
@@ -115,14 +145,25 @@ export function FilePicker({
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (!permission.granted) {
           setOpen(false);
-          refuse(messages.cameraDenied ?? t('cameraDenied'));
+          refuse(
+            permission.canAskAgain === false
+              ? (messages.cameraDenied ?? t('cameraDenied'))
+              : (messages.cameraRefused ?? t('cameraRefused')),
+          );
           return;
         }
       }
 
       let result: ImagePicker.ImagePickerResult;
       try {
-        const options: ImagePicker.ImagePickerOptions = { mediaTypes: 'images', quality: 1 };
+        const options: ImagePicker.ImagePickerOptions = {
+          mediaTypes: 'images',
+          quality: 1,
+          // iOS only, and ignored elsewhere. Read defensively: a build without the enum sends
+          // nothing rather than failing to open the library.
+          preferredAssetRepresentationMode:
+            ImagePicker.UIImagePickerPreferredAssetRepresentationMode?.Compatible,
+        };
         result =
           source === 'camera'
             ? await ImagePicker.launchCameraAsync(options)
@@ -140,7 +181,7 @@ export function FilePicker({
       const mimeType = asset.mimeType ?? null;
       const fileSize = asset.fileSize ?? null;
 
-      if (acceptedTypes !== undefined && mimeType !== null && !acceptedTypes.includes(mimeType)) {
+      if (acceptedTypes !== undefined && mimeType !== null && !accepts(acceptedTypes, mimeType)) {
         refuse(messages.wrongType ?? t('wrongType'));
         return;
       }
@@ -166,10 +207,14 @@ export function FilePicker({
         accessibilityRole="button"
         accessibilityLabel={name}
         accessibilityHint={field.accessibilityHint}
+        accessibilityValue={refusal === null ? undefined : { text: refusal }}
         accessibilityState={{ disabled, busy }}
-        aria-invalid={field.invalid || refusal !== null}
         disabled={disabled || busy}
-        onPress={() => setOpen(true)}
+        onPress={() => {
+          // A keyboard left up by the previous field would cover the sheet's two choices.
+          Keyboard.dismiss();
+          setOpen(true);
+        }}
         onFocus={onFocus}
         onBlur={onBlur}
         testID={testID}
@@ -190,7 +235,12 @@ export function FilePicker({
       </Pressable>
 
       {refusal !== null ? (
-        <View style={styles.refusal} accessible accessibilityLabel={refusal}>
+        // Hidden: the zone's value already says it, and focus returns to the zone.
+        <View
+          style={styles.refusal}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
           <View style={styles.refusalIcon}>
             <Icon icon={CircleAlert} size={14} color={colors.danger} />
           </View>
@@ -201,7 +251,8 @@ export function FilePicker({
       <Sheet
         visible={open}
         onClose={() => setOpen(false)}
-        title={field.accessibilityLabel ?? choose}
+        // The plain label: a visible title, never "Cover image, required".
+        title={field.label ?? choose}
         returnFocusTo={zone}
       >
         <SourceRow
@@ -219,6 +270,15 @@ export function FilePicker({
       </Sheet>
     </View>
   );
+}
+
+/** Whether a MIME type is on the list, where `image/*` stands for every image. */
+function accepts(accepted: readonly string[], mimeType: string): boolean {
+  const type = mimeType.toLowerCase();
+  return accepted.some((entry) => {
+    const pattern = entry.toLowerCase();
+    return pattern.endsWith('/*') ? type.startsWith(pattern.slice(0, -1)) : type === pattern;
+  });
 }
 
 /** Megabytes as the web counts them for this limit: 20 MB is 20 × 1024 × 1024 bytes. */

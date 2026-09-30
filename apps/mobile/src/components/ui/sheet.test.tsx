@@ -1,6 +1,13 @@
 import { createRef, useState, type ReactElement, type ReactNode } from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { AccessibilityInfo, StyleSheet, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  KeyboardAvoidingView,
+  Keyboard,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { colors, radius, size, tint } from '../../theme';
@@ -127,6 +134,29 @@ describe('Sheet', () => {
     await waitFor(() => expect(focusTargets().at(-1) === opener.current).toBe(true));
   });
 
+  it('avoids the keyboard on iOS, and lets a tap reach a button under an open keyboard', async () => {
+    // A class component with no host of its own that keeps the prop, so its render is watched.
+    const avoiding = jest.spyOn(KeyboardAvoidingView.prototype, 'render');
+    const { getByText } = await renderEn(sheet(true));
+    const [instance] = avoiding.mock.contexts as { props: { behavior?: string } }[];
+    expect(instance?.props.behavior).toBe('padding');
+    avoiding.mockRestore();
+    let node = getByText('Azerbaijani manat').parent;
+    while (node !== null && node.props.keyboardShouldPersistTaps === undefined) node = node.parent;
+    expect(node?.props.keyboardShouldPersistTaps).toBe('handled');
+  });
+
+  it('hands the Modal its onDismiss, for what must open only after it has gone', async () => {
+    const onDismiss = jest.fn();
+    const { container } = await renderEn(
+      <Sheet visible onClose={() => {}} title="Currency" onDismiss={onDismiss}>
+        <Text>Azerbaijani manat</Text>
+      </Sheet>,
+    );
+    container.queryAll((node) => node.type === 'Modal')[0]?.props.onDismiss();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
   it('enters without an animated style under a budget of none', async () => {
     const { getByText } = await renderEn(
       <MotionBudgetProvider level="none">{sheet(true)}</MotionBudgetProvider>,
@@ -149,7 +179,7 @@ const CURRENCIES: readonly SelectOption[] = [
 function CurrencyField({ onChange = jest.fn() }: { onChange?: (value: string) => void }) {
   const [value, setValue] = useState<string | null>(null);
   return (
-    <Field label="Currency" grouped hint="Amounts are shown in this currency.">
+    <Field label="Currency" required hint="Amounts are shown in this currency.">
       <Select
         options={CURRENCIES}
         value={value}
@@ -168,26 +198,31 @@ describe('Select', () => {
 
   it('is a combobox named by its field, announcing the placeholder as its value', async () => {
     const { getByRole } = await renderEn(<CurrencyField />);
-    const combobox = getByRole('combobox', { name: 'Currency' });
+    const combobox = getByRole('combobox', { name: 'Currency, required' });
     expect(combobox.props.accessibilityValue).toEqual({ text: 'Choose a currency' });
     expect(combobox.props.accessibilityHint).toBe('Amounts are shown in this currency.');
     expect(combobox.props.accessibilityState).toMatchObject({ expanded: false });
-    expect(flat(combobox).height).toBeGreaterThanOrEqual(size.touchTarget);
+    expect(flat(combobox).minHeight).toBeGreaterThanOrEqual(size.touchTarget);
   });
 
   it('opens the sheet, picks, closes, and returns focus to the field', async () => {
     const onChange = jest.fn();
     const { getByRole, queryByRole } = await renderEn(<CurrencyField onChange={onChange} />);
 
-    await fireEvent.press(getByRole('combobox', { name: 'Currency' }));
+    const dismissed = jest.spyOn(Keyboard, 'dismiss');
+    await fireEvent.press(getByRole('combobox', { name: 'Currency, required' }));
+    // The keyboard goes first, or it covers the options.
+    expect(dismissed).toHaveBeenCalled();
+    // The title is the plain question: the required word belongs to the field's name, not here.
     expect(getByRole('header', { name: 'Currency' })).toBeTruthy();
+    expect(queryByRole('header', { name: 'Currency, required' })).toBeNull();
     expect(getByRole('radio', { name: 'Türk lirası' }).props.accessibilityLanguage).toBe('tr');
 
     await fireEvent.press(getByRole('radio', { name: 'Euro' }));
     expect(onChange).toHaveBeenCalledWith('EUR');
     expect(queryByRole('radio', { name: 'Euro' })).toBeNull();
 
-    const combobox = getByRole('combobox', { name: 'Currency' });
+    const combobox = getByRole('combobox', { name: 'Currency, required' });
     expect(combobox.props.accessibilityValue).toEqual({ text: 'Euro' });
     await waitFor(() =>
       expect(

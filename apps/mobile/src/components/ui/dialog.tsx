@@ -1,5 +1,14 @@
 import { useRef, type ReactNode, type RefObject } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import Animated from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 import { useT } from '../../lib/i18n';
@@ -58,6 +67,14 @@ import { SurfaceProvider, TONES } from './surface';
  * exit animation at all.
  *
  * <p>Controlled only: whether a confirmation is open is the screen's state.
+ *
+ * <h2>The keyboard</h2>
+ *
+ * A confirmation can ask for a word (a reason, a name typed to confirm), so the panel sits in a
+ * `KeyboardAvoidingView` — `padding` on iOS, where the keyboard overlays the window; Android
+ * resizes the window itself — and the body's `ScrollView` keeps `keyboardShouldPersistTaps` at
+ * `handled`, so the first tap on a button under an open keyboard presses the button instead of
+ * only closing the keyboard.
  */
 
 export interface DialogProps {
@@ -76,6 +93,15 @@ export interface DialogProps {
   readonly dismissOnScrim?: boolean;
   /** The control that opened the dialog, which gets focus back when it closes. */
   readonly returnFocusTo?: RefObject<unknown>;
+  /**
+   * Called once the modal has actually gone — after it was closed, not at the moment it was.
+   *
+   * <p>iOS presents one modal view controller at a time. Presenting another — the system photo
+   * picker, a share sheet, a second sheet — while this one is still being dismissed fails without
+   * an error, so anything that must open AFTER this closes is started here, not beside
+   * `onClose`.
+   */
+  readonly onDismiss?: () => void;
   readonly testID?: string;
 }
 
@@ -89,6 +115,7 @@ export function Dialog({
   showClose = true,
   dismissOnScrim = true,
   returnFocusTo,
+  onDismiss,
   testID,
 }: DialogProps) {
   const t = useT('mobile.kitForm');
@@ -120,7 +147,11 @@ export function Dialog({
       </View>
 
       {children !== undefined && children !== null ? (
-        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
+          keyboardShouldPersistTaps="handled"
+        >
           {children}
         </ScrollView>
       ) : null}
@@ -136,8 +167,12 @@ export function Dialog({
       statusBarTranslucent
       animationType="none"
       onRequestClose={onClose}
+      onDismiss={onDismiss}
     >
-      <View style={styles.root}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.root}
+      >
         <Pressable
           style={styles.scrim}
           onPress={dismissOnScrim ? onClose : undefined}
@@ -164,7 +199,7 @@ export function Dialog({
             {panel}
           </View>
         )}
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

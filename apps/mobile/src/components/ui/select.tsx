@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ChevronDown } from 'lucide-react-native';
 import { colors } from '../../theme';
 import { useFieldControl } from './field';
@@ -20,7 +20,7 @@ import { INPUT_HEIGHT, inputFrame, inputText } from './text-input';
  * <p>The field looks like the other inputs (the shared `inputFrame`) and is
  * `accessibilityRole="combobox"`, with the chosen option — or the placeholder — as its value, so
  * VoiceOver reads "Currency, Azerbaijani manat, combo box". Pressing it opens the `Sheet`,
- * titled with the field's own label; choosing closes the sheet at once and returns focus to the
+ * titled with the field's plain label (without the required word); choosing closes the sheet at once and returns focus to the
  * field, so the next swipe goes on to the next field instead of starting from the top.
  *
  * <p>An option may carry `accessibilityLanguage` — the language picker lists each language in
@@ -65,7 +65,9 @@ export function Select({
 
   const chosen = options.find((option) => option.value === value);
   const shown = chosen?.label ?? placeholder ?? '';
-  const title = label ?? field.accessibilityLabel ?? '';
+  // The PLAIN label: the sheet's visible title is the question, not its accessible name, so
+  // it never reads 'Currency, required'.
+  const title = field.label ?? '';
 
   return (
     <>
@@ -76,9 +78,12 @@ export function Select({
         accessibilityHint={field.accessibilityHint}
         accessibilityValue={shown === '' ? undefined : { text: shown }}
         accessibilityState={{ expanded: open, disabled }}
-        aria-invalid={field.invalid}
         disabled={disabled}
-        onPress={() => setOpen(true)}
+        onPress={() => {
+          // A keyboard left up by the previous field would cover the sheet's options.
+          Keyboard.dismiss();
+          setOpen(true);
+        }}
         onFocus={onFocus}
         onBlur={onBlur}
         testID={testID}
@@ -129,7 +134,7 @@ export function Select({
 }
 
 const styles = StyleSheet.create({
-  trigger: { height: INPUT_HEIGHT.md },
+  trigger: { minHeight: INPUT_HEIGHT.md },
   value: { flex: 1 },
   chevron: { paddingRight: 14 },
 });

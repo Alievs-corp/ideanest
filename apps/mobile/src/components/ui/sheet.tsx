@@ -1,5 +1,15 @@
-import { useContext, useMemo, useRef, type ReactNode, type RefObject } from 'react';
-import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useContext, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  PanResponder,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
@@ -53,6 +63,14 @@ import { useOverlayEntry, useOverlayFocus } from './overlay';
  *
  * <p>Focus moves to the title on open and back to `returnFocusTo` on close, as the dialog's does.
  * Entry is the overlay's 200ms rise, only where motion is allowed; there is no exit animation.
+ *
+ * <h2>The keyboard</h2>
+ *
+ * The body can hold a form (the WhatsApp enquiry moves into a sheet), so the panel sits in a
+ * `KeyboardAvoidingView` — `padding` on iOS, where the keyboard overlays the window; Android
+ * resizes the window itself — and the body's `ScrollView` keeps `keyboardShouldPersistTaps` at
+ * `handled`, so the first tap on a button under an open keyboard presses the button instead of
+ * only closing the keyboard.
  */
 
 export interface SheetProps {
@@ -64,6 +82,15 @@ export interface SheetProps {
   readonly footer?: ReactNode;
   /** The control that opened the sheet, which gets focus back when it closes. */
   readonly returnFocusTo?: RefObject<unknown>;
+  /**
+   * Called once the modal has actually gone — after it was closed, not at the moment it was.
+   *
+   * <p>iOS presents one modal view controller at a time. Presenting another — the system photo
+   * picker, a share sheet, a second sheet — while this one is still being dismissed fails without
+   * an error, so anything that must open AFTER this closes is started here, not beside
+   * `onClose`.
+   */
+  readonly onDismiss?: () => void;
   readonly testID?: string;
 }
 
@@ -79,6 +106,7 @@ export function Sheet({
   children,
   footer,
   returnFocusTo,
+  onDismiss,
   testID,
 }: SheetProps) {
   const t = useT('mobile.kitForm');
@@ -95,6 +123,12 @@ export function Sheet({
   const drag = useSharedValue(0);
   const dragStyle = useAnimatedStyle(() => ({ transform: [{ translateY: drag.value }] }));
 
+  // A sheet dismissed by a drag keeps its offset until it has gone (resetting first would snap it
+  // back up for a frame); the next opening starts from the top.
+  useEffect(() => {
+    if (visible) drag.value = 0;
+  }, [visible, drag]);
+
   const pan = useMemo(
     () =>
       PanResponder.create({
@@ -109,7 +143,6 @@ export function Sheet({
         },
         onPanResponderRelease: (_, gesture) => {
           if (gesture.dy > DISMISS_DISTANCE || gesture.vy > DISMISS_VELOCITY) {
-            drag.value = 0;
             onClose();
             return;
           }
@@ -145,7 +178,11 @@ export function Sheet({
         </View>
       </View>
 
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {children}
       </ScrollView>
 
@@ -160,8 +197,12 @@ export function Sheet({
       statusBarTranslucent
       animationType="none"
       onRequestClose={onClose}
+      onDismiss={onDismiss}
     >
-      <View style={styles.root}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.root}
+      >
         <Pressable
           style={styles.scrim}
           onPress={onClose}
@@ -185,7 +226,7 @@ export function Sheet({
             <View style={styles.fill}>{body}</View>
           )}
         </Animated.View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
