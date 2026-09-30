@@ -17,7 +17,7 @@ import { mayOpenConsoleLink } from '../../lib/admin/navigation';
 import type { StaffCapability } from '../../lib/admin/staff';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { CAMPAIGN_STATES, type ConsoleDashboardCopy } from '../../lib/i18n/admin/dashboard-copy';
-import { formatMoney } from '../../lib/money';
+import { formatMoney } from '@ideanest/money/format';
 import { useConsoleMembership } from './ConsoleMembership';
 import { useConsoleResource } from './useConsoleResource';
 
