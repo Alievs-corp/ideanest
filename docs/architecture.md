@@ -1554,6 +1554,18 @@ Preferences are per category and per channel, with a digest option.
 | AD-15 | Email templates | Edit, preview, test send. **All three are built**: preview and test send with #86, editing with #315 at `/admin/email-templates`. An edit appends a version and overrides the shipped catalogue rather than replacing it |
 | AD-16 | System health | Queue depth, failed jobs, provider status. **Built (#316)** at `/admin/health`, over counts the service already takes. It does not alert — #138 is what will, and the page says so
 
+> **Staff roles: `SUPER_ADMIN` and `PARTNER` (#202, #203).** `SUPER_ADMIN` is
+> `ADMINISTRATOR` under its new name: it holds every capability and sees the real,
+> unscaled figures. The rename is two releases, because the name is stored in
+> `staff_role_grants` and a rolling deployment must never meet a role it does not
+> know; until the contract release both names are accepted, carry the same
+> capabilities, and `StaffRole.isSuperAdmin()` is the only question code asks.
+> `PARTNER` holds one capability, `VIEW_PARTNER_STATISTICS`, and deliberately not
+> `VIEW_FINANCE`, `VIEW_AUDIT` or `ADMINISTER_ACCOUNTS`: a partner is owed a share of
+> the totals and sees no individual transaction, payer or audit row. The
+> percentage, the modules a partner may open and the statistics endpoint follow in
+> #204 and #205; until they do, a `PARTNER` grant opens nothing.
+
 > **All sixteen have a screen now, and #259 is what built them.** The
 > distinction that table used to hide is between a capability's *record* and its
 > *console*: #107 built the audit log and nothing displayed it, #86 built email

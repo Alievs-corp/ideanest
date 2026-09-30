@@ -227,5 +227,22 @@ public enum StaffCapability {
      * capability effectively holds every capability, so this is the one that decides
      * what the rest of the enum is worth.
      */
-    ADMINISTER_STAFF
+    ADMINISTER_STAFF,
+
+    /**
+     * Read the financial statistics as a partner sees them: aggregates only, scaled by the
+     * partner's agreed percentage. #203, part of #202.
+     *
+     * <p><strong>The only capability {@code PARTNER} holds, and deliberately not
+     * {@link #VIEW_FINANCE}.</strong> {@code VIEW_FINANCE} opens the payments journal, the
+     * ledger and the refund queue: every individual transaction, who made it and for how
+     * much. A partner is owed a share of the totals and is owed none of that, so the
+     * capability that reads the rows must not be the one that reads the sums.
+     *
+     * <p>Holding it does not decide what the caller sees. A caller holding a super-admin
+     * role gets the real figures from the same endpoint; a partner gets each figure
+     * multiplied by their percentage. That decision is made on the server from the account's
+     * roles and profile, never from anything the client sends.
+     */
+    VIEW_PARTNER_STATISTICS
 }

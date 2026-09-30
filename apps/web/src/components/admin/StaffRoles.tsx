@@ -27,12 +27,18 @@ import { useDirectoryNames } from './useDirectoryNames';
  * screen — the grant existed at `PUT /v1/admin/staff/{id}/roles/COMPLIANCE` and the only way
  * to reach it was curl.
  */
+/*
+ * What can be granted from here. `SUPER_ADMIN` replaces `ADMINISTRATOR` (#203), so new grants
+ * use the new name while existing rows keep their old one and are still labelled. `PARTNER` is
+ * not offered yet: a partner needs a percentage and a list of modules, and a grant without them
+ * opens nothing. It arrives with the partner profile screen (#204, #206).
+ */
 const ROLES: readonly StaffRole[] = [
   'MODERATOR',
   'CURATOR',
   'FINANCE',
   'COMPLIANCE',
-  'ADMINISTRATOR',
+  'SUPER_ADMIN',
 ];
 
 /**

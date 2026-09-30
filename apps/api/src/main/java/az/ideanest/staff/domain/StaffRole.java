@@ -4,7 +4,7 @@ import az.ideanest.shared.access.StaffCapability;
 import java.util.Set;
 
 /**
- * The five kinds of person who work here, and what each of them may do — #295, #436.
+ * The seven kinds of staff account, and what each of them may do — #295, #436, #203.
  *
  * <p><strong>The capability sets are here rather than in the database</strong>, and
  * V48's header has the argument in full: this migration ships beside eleven new console
@@ -27,6 +27,18 @@ import java.util.Set;
  * <p>An account may hold several, and holds the union — see V48 on why the primary key
  * is the pair. Nothing here takes a capability away, which is what makes a union the
  * right combination and leaves no precedence rule to get wrong.
+ *
+ * <p><strong>{@link #SUPER_ADMIN} is {@link #ADMINISTRATOR} under its new name, and both
+ * exist for one release.</strong> The name is stored in {@code staff_role_grants}, so a
+ * rolling deployment cannot rename it in place — V88's header has the argument. New grants
+ * use {@code SUPER_ADMIN}; {@code ADMINISTRATOR} is what rows and bootstrap accounts hold
+ * until the contract release converts them and removes it. Code that asks "is this an
+ * administrator" must ask {@link #isSuperAdmin()}, never compare against one of the two.
+ *
+ * <p><strong>{@link #PARTNER} is the one role that sees no individual record.</strong> It
+ * holds a single capability, so on its own it opens nothing but the aggregate statistics.
+ * An account that also holds another role holds the union, as always, which is why granting
+ * a partner any other role is a decision to make deliberately and not a side effect.
  */
 public enum StaffRole {
 
@@ -119,7 +131,35 @@ public enum StaffRole {
      * argument applied to reads: every opening is audited under a name, and the audit
      * trail is the control on the role that can grant itself anything.
      */
-    ADMINISTRATOR(Set.of(StaffCapability.values()));
+    ADMINISTRATOR(Set.of(StaffCapability.values())),
+
+    /**
+     * {@link #ADMINISTRATOR} under the name the owner gave it: sees and may do everything,
+     * including the real, unscaled financial figures, and is the only kind of account that
+     * can create or change a {@link #PARTNER}.
+     *
+     * <p>Every capability rather than a listed subset, for the reason {@link #ADMINISTRATOR}
+     * gives: a listed subset would describe a restriction that does not exist, because a
+     * holder of {@code ADMINISTER_STAFF} can grant themselves anything. What limits this
+     * role is that every action is audited under the holder's name.
+     */
+    SUPER_ADMIN(Set.of(StaffCapability.values())),
+
+    /**
+     * A business partner: sees an agreed percentage of the financial statistics, in
+     * aggregate, and nothing else unless a super admin opens a console module to them. #203.
+     *
+     * <p><strong>One capability, {@code VIEW_PARTNER_STATISTICS}, and not the audit
+     * trail.</strong> Every other role can read the audit trail, and that is deliberate for
+     * them — see {@link StaffCapability#VIEW_AUDIT}. For a partner it is the opposite: the
+     * trail names accounts and amounts, which is exactly what a partner must not see, so
+     * this role is the exception to "every role can read the trail" and a test says so.
+     *
+     * <p>Not {@link StaffCapability#VIEW_FINANCE} either. That capability opens the
+     * payments journal and the ledger, which are individual transactions; the percentage a
+     * partner is owed applies to totals, and a total is not a window onto its rows.
+     */
+    PARTNER(Set.of(StaffCapability.VIEW_PARTNER_STATISTICS));
 
     private final Set<StaffCapability> capabilities;
 
@@ -130,5 +170,14 @@ public enum StaffRole {
     /** What holding this role confers. Immutable; the caller may not add to it. */
     public Set<StaffCapability> capabilities() {
         return capabilities;
+    }
+
+    /**
+     * Whether this is the highest role, under either of its two names. The one question to
+     * ask instead of comparing against {@link #ADMINISTRATOR} or {@link #SUPER_ADMIN}, so
+     * that the release which removes the old name changes this method and nothing else.
+     */
+    public boolean isSuperAdmin() {
+        return this == SUPER_ADMIN || this == ADMINISTRATOR;
     }
 }

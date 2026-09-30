@@ -1751,7 +1751,9 @@
           "CURATOR": "Küratör",
           "FINANCE": "Finans",
           "COMPLIANCE": "Uyum",
-          "ADMINISTRATOR": "Yönetici"
+          "ADMINISTRATOR": "Yönetici",
+          "SUPER_ADMIN": "Süper yönetici",
+          "PARTNER": "Ortak"
         },
         "capability": {
           "MODERATE_CONTENT": "Moderasyon ve şikayet kuyruklarında çalışmak",
@@ -1772,7 +1774,8 @@
           "OPEN_IDENTITY_DOCUMENT": "Kimlik belgesini açmak — platformdaki en hassas okuma",
           "VERIFY_PAYOUT_DESTINATION": "Ödeme adresinin yaratıcıya ait olduğunu doğrulamak",
           "GRANT_COMPLIANCE_OVERRIDE": "Bir hesap için uyum gereğini sınırlı bir süreyle kaldırmak",
-          "ADMINISTER_STAFF": "Rol vermek ve geri almak"
+          "ADMINISTER_STAFF": "Rol vermek ve geri almak",
+          "VIEW_PARTNER_STATISTICS": "Finansal istatistikleri ortak olarak okumak: yalnızca toplamlar, anlaşılan paya göre"
         },
         "picker": {
           "subject": "hesap dizinini",
