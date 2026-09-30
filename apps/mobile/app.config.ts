@@ -20,13 +20,13 @@ const API_ORIGIN_VARIABLE = 'IDEANEST_API_ORIGIN';
 const SITE_URL_VARIABLE = 'IDEANEST_SITE_URL';
 
 const DEFAULT_API_ORIGIN = 'http://localhost:8080';
-const DEFAULT_SITE_URL = 'https://ideanest.az';
+const DEFAULT_SITE_URL = 'https://ideyanest.com';
 
 /**
  * An origin, with no trailing slash, or a thrown build.
  *
  * Set-but-unusable throws rather than falling back, for `siteUrl()`'s reason: an
- * unset variable is somebody running locally, and a variable set to `ideanest.az`
+ * unset variable is somebody running locally, and a variable set to `ideyanest.com`
  * without a scheme is a misconfiguration that would otherwise ship a build
  * pointing at localhost.
  */

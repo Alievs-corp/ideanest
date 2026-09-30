@@ -6,7 +6,7 @@
  *
  * A campaign can arrive from a push notification (`ideanest://…`, the custom
  * scheme, which needs nothing from any server), from a link somebody pasted into
- * a message (`https://ideanest.az/projects/…`, which iOS and Android only hand
+ * a message (`https://ideyanest.com/projects/…`, which iOS and Android only hand
  * over after they have fetched and believed the association files), or from a
  * cold start where the operating system passes the URL that launched the
  * process. All three end up here, because a link that opens a different screen
@@ -76,7 +76,7 @@ export function destinationFor(url: string, siteHost: string): Destination | nul
 
   /*
    * The host comparison is exact and case-insensitive. Not `endsWith`: that
-   * accepts `evil-ideanest.az`, which is the whole reason this check exists.
+   * accepts `evil-ideyanest.com`, which is the whole reason this check exists.
    */
   if (parsed.host.toLowerCase() !== siteHost.toLowerCase()) {
     return null;

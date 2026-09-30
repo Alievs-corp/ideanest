@@ -55,8 +55,8 @@ jobs:
       # twenty minutes into an EAS queue.
       - name: Resolve the Expo configuration
         env:
-          IDEANEST_API_ORIGIN: https://api.ideanest.az
-          IDEANEST_SITE_URL: https://ideanest.az
+          IDEANEST_API_ORIGIN: https://api.ideyanest.com
+          IDEANEST_SITE_URL: https://ideyanest.com
         run: pnpm --filter @ideanest/mobile exec expo config --type public > /dev/null
 
       # The two files that let a link open the application (#114) name the same
@@ -65,5 +65,5 @@ jobs:
       # they agree — except this.
       - name: Check the association identifiers agree
         env:
-          IDEANEST_SITE_URL: https://ideanest.az
+          IDEANEST_SITE_URL: https://ideyanest.com
         run: node apps/mobile/scripts/check-association.mjs
