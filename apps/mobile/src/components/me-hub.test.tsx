@@ -90,6 +90,12 @@ const ABOUT = [
 /** What a session the service has not answered for still offers: the lock, and the way out. */
 const HELD = ['This phone', ...ABOUT, 'Sign out'];
 
+/*
+ * The whole Me tab plus a role query over it: the first render also pays for loading the
+ * screen's module graph, which took past jest's 5 s default on a CI runner.
+ */
+jest.setTimeout(20_000);
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockSession = { signedIn: true, locked: false, unlocked: false };
