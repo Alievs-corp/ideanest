@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useQueryClient } from '@tanstack/react-query';
 import { siteUrl } from '../../api/config';
+import { Avatar } from '../../components/avatar';
 import { Button } from '../../components/form';
+import { InlineAlert } from '../../components/states';
 import { Body, CardTitle, Meta, Subheading } from '../../components/text';
+import { WhatsAppSheet } from '../../components/whatsapp-sheet';
+import { useMe, useSessionState, type Me } from '../../lib/account';
 import { signOut } from '../../lib/auth';
 import { biometricCapability, canLock, type BiometricCapability } from '../../lib/biometrics';
 import { useT } from '../../lib/i18n';
@@ -13,7 +17,7 @@ import { currentLocale } from '../../lib/locale';
 import { forgetPersistedCache } from '../../lib/offline';
 import { disableLock, enableLock } from '../../lib/session';
 import { useSession } from '../../lib/use-session';
-import { colors, radius, size, spacing } from '../../theme';
+import { colors, fontSize, radius, size, spacing } from '../../theme';
 
 /**
  * The Me tab — issue #150. The web's account menu, settings list and footer, in one place.
@@ -26,17 +30,33 @@ import { colors, radius, size, spacing } from '../../theme';
  * Every word is a catalogue key: the web's own where the web has the sentence, the
  * `mobile` namespace where only the app does. The staff console link is never rendered:
  * administration is not in the app.
+ *
+ * <h2>Three layouts, from `GET /v1/me` rather than from the keychain</h2>
+ *
+ * - **signed-in**: who you are, what needs your attention, then the web's `ACCOUNT_GROUPS`,
+ *   the creator rows, this phone, About and sign-out;
+ * - **signed-out**: the invitation to register or sign in, the language, About;
+ * - **unknown** (a token on the phone and the service unreachable, or a 5xx): About and the
+ *   WhatsApp row only. Nothing account-shaped, and above all no "Sign in" — offering one to
+ *   somebody who is signed in, during an outage, is the mistake `lib/account.ts` exists to
+ *   avoid. While the first answer is still on its way the identity row is a skeleton, so the
+ *   screen does not jump when the name arrives.
  */
 
 interface Row {
   /** A catalogue key. */
   readonly label: string;
   readonly href?: Href;
+  /** A tab rather than a screen: switched to, so the tab keeps its own history. */
+  readonly tab?: boolean;
   readonly web?: string;
 }
 
+/** `ACCOUNT_GROUPS.yourAccount`, in its order. Pledges and Saved are tabs here. */
 const YOUR_ACCOUNT: readonly Row[] = [
+  { label: 'account.links.pledges.label', href: '/pledges', tab: true },
   { label: 'account.links.campaigns.label', href: '/account/campaigns' },
+  { label: 'account.links.saved.label', href: '/saved', tab: true },
   { label: 'account.links.following.label', href: '/account/following' },
   { label: 'account.links.surveys.label', href: '/account/surveys' },
   { label: 'account.links.deliveries.label', href: '/account/deliveries' },
@@ -47,17 +67,29 @@ const CREATOR: readonly Row[] = [
   { label: 'shell.nav.pricing', href: '/pricing' },
 ];
 
-const SETTINGS: readonly Row[] = [
-  { label: 'shell.actions.settings', href: '/settings' },
-  { label: 'mobile.me.language', href: '/settings/language' },
-];
+/** `ACCOUNT_GROUPS.settings`, in its order: one row per `settings/<key>`. */
+const SETTINGS: readonly Row[] = (
+  [
+    'profile',
+    'notifications',
+    'sessions',
+    'email',
+    'password',
+    'security',
+    'privacy',
+    'payout',
+    'language',
+  ] as const
+).map((key) => ({ label: `account.links.${key}.label`, href: `/settings/${key}` as const }));
 
 const LANGUAGE_ONLY: readonly Row[] = [{ label: 'mobile.me.language', href: '/settings/language' }];
 
+/** The web footer's `FOOTER_GROUPS.about`, with the same paths. */
 const ABOUT: readonly Row[] = [
   { label: 'shell.footer.links.about', web: '/about' },
   { label: 'shell.footer.links.howItWorks', web: '/how-it-works' },
-  { label: 'shell.footer.links.trustSafety', web: '/trust' },
+  { label: 'shell.footer.links.trustSafety', web: '/trust-safety' },
+  { label: 'shell.footer.links.legal', web: '/legal' },
 ];
 
 const styles = StyleSheet.create({
@@ -81,9 +113,16 @@ const styles = StyleSheet.create({
   rowPressed: { opacity: 0.6 },
   rowText: { flex: 1, gap: spacing[1] },
   chevron: { color: colors.textTertiary },
+  identity: { paddingVertical: spacing[4] },
+  bone: { backgroundColor: colors.surface3, borderRadius: radius.sm },
+  boneAvatar: { width: size.avatarInCard, height: size.avatarInCard, borderRadius: radius.full },
+  boneName: { width: '50%', height: fontSize.lg },
+  boneEmail: { width: '70%', height: fontSize.xs },
+  alertLink: { minHeight: size.touchTarget, justifyContent: 'center', alignSelf: 'flex-start' },
+  alertLinkText: { textDecorationLine: 'underline' },
 });
 
-function NavRow({ row }: { readonly row: Row }) {
+function NavRow({ row, onPress }: { readonly row: Row; readonly onPress?: () => void }) {
   const router = useRouter();
   const t = useT();
   const label = t(row.label);
@@ -93,8 +132,11 @@ function NavRow({ row }: { readonly row: Row }) {
       accessibilityRole={row.web === undefined ? 'button' : 'link'}
       accessibilityLabel={label}
       onPress={() => {
-        if (row.href !== undefined) router.push(row.href);
-        else if (row.web !== undefined) {
+        if (onPress !== undefined) onPress();
+        else if (row.href !== undefined) {
+          if (row.tab === true) router.navigate(row.href);
+          else router.push(row.href);
+        } else if (row.web !== undefined) {
           void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}${row.web}`);
         }
       }}
@@ -110,7 +152,16 @@ function NavRow({ row }: { readonly row: Row }) {
   );
 }
 
-function Group({ titleKey, rows }: { readonly titleKey: string; readonly rows: readonly Row[] }) {
+function Group({
+  titleKey,
+  rows,
+  children,
+}: {
+  readonly titleKey: string;
+  readonly rows: readonly Row[];
+  /** Rows that do something other than navigate, after the ones that do. */
+  readonly children?: ReactNode;
+}) {
   const t = useT();
   return (
     <View style={styles.section}>
@@ -119,8 +170,117 @@ function Group({ titleKey, rows }: { readonly titleKey: string; readonly rows: r
         {rows.map((row) => (
           <NavRow key={row.label} row={row} />
         ))}
+        {children}
       </View>
     </View>
+  );
+}
+
+/**
+ * Who is signed in: the web account menu's avatar, name and address, and the way to the
+ * public profile (`shell.actions.profile`).
+ *
+ * The avatar is decorative here for the reason `AccountMenu` gives: the name is written beside
+ * it, and a label on both is the name read twice. One stop for the whole row, which says the
+ * name and the address, and a hint that says where it goes.
+ */
+function IdentityRow({ me }: { readonly me: Me }) {
+  const router = useRouter();
+  const t = useT();
+  const name = me.name ?? me.email ?? '';
+  const email = me.email ?? '';
+  const slug = me.slug;
+  return (
+    <View style={styles.card}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={email === '' ? name : `${name}, ${email}`}
+        accessibilityHint={t('shell.actions.profile')}
+        disabled={slug === undefined}
+        onPress={() => {
+          if (slug !== undefined) router.push({ pathname: '/u/[slug]', params: { slug } });
+        }}
+        style={({ pressed }) => [styles.row, styles.identity, pressed && styles.rowPressed]}
+      >
+        <Avatar name={name} decorative />
+        <View style={styles.rowText}>
+          <CardTitle numberOfLines={1}>{name}</CardTitle>
+          <Meta numberOfLines={1}>{email}</Meta>
+        </View>
+        <Meta style={styles.chevron} accessibilityElementsHidden importantForAccessibility="no">
+          ›
+        </Meta>
+      </Pressable>
+    </View>
+  );
+}
+
+/**
+ * The identity row's shape before the account has answered. Hidden from screen readers: it
+ * says nothing, and the row it stands in for is announced when it arrives.
+ */
+function IdentitySkeleton() {
+  return (
+    <View
+      testID="identity-skeleton"
+      style={styles.card}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      <View style={[styles.row, styles.identity]}>
+        <View style={[styles.bone, styles.boneAvatar]} />
+        <View style={styles.rowText}>
+          <View style={[styles.bone, styles.boneName]} />
+          <View style={[styles.bone, styles.boneEmail]} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * What the account needs from its owner, in the web account menu's words.
+ *
+ * Unverified first, as `AccountMenu` has it: verification is required (§4.1 A-01) and this is
+ * the one place somebody who closed the email would find out. A scheduled closure second, with
+ * the way to the page that cancels it — the settings namespace's own sentence, so the Me tab
+ * and the closure panel describe the same state in the same words.
+ */
+function AccountAlerts({ me }: { readonly me: Me }) {
+  const router = useRouter();
+  const t = useT();
+  return (
+    <>
+      {me.emailVerified === false ? (
+        <InlineAlert
+          variant="warning"
+          detail={t('shell.actions.unverified', { email: me.email ?? '' })}
+        />
+      ) : null}
+      {me.deletionScheduledAt ? (
+        <InlineAlert
+          variant="warning"
+          title={t('settings.panels.closure.scheduledTitle')}
+          action={
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('account.links.privacy.label')}
+              onPress={() => router.push('/settings/privacy')}
+              style={({ pressed }) => [styles.alertLink, pressed && styles.rowPressed]}
+            >
+              <Body
+                tone="primary"
+                style={styles.alertLinkText}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              >
+                {t('account.links.privacy.label')}
+              </Body>
+            </Pressable>
+          }
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -128,11 +288,17 @@ export default function MeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useT();
-  const { signedIn, locked, unlocked } = useSession();
+  const { locked, unlocked } = useSession();
+  const state = useSessionState();
+  const me = useMe();
+  const account = state === 'signed-in' ? (me.data ?? null) : null;
+  /** Unknown because the answer has not arrived, rather than because asking failed. */
+  const loading = state === 'unknown' && !me.isError;
 
   const [capability, setCapability] = useState<BiometricCapability | null>(null);
   const [busy, setBusy] = useState(false);
   const [refused, setRefused] = useState(false);
+  const [contacting, setContacting] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -178,13 +344,45 @@ export default function MeScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      {signedIn ? (
+      {loading ? <IdentitySkeleton /> : null}
+
+      {account !== null ? (
         <>
+          <IdentityRow me={account} />
+          <AccountAlerts me={account} />
           <Group titleKey="account.groups.yourAccount" rows={YOUR_ACCOUNT} />
           <Group titleKey="shell.footer.groups.creators" rows={CREATOR} />
           <Group titleKey="account.groups.settings" rows={SETTINGS} />
+          <View style={styles.section}>
+            <Subheading accessibilityRole="header">{t('mobile.me.thisPhone')}</Subheading>
+            <View style={styles.card}>
+              <View style={styles.row}>
+                <View style={styles.rowText}>
+                  <Body tone="primary">{lockLabel}</Body>
+                  <Meta>{t(lockDetailKey(capability, locked, unlocked))}</Meta>
+                </View>
+                {capability !== null && canLock(capability) ? (
+                  <Switch
+                    value={locked}
+                    onValueChange={(next) => void toggleLock(next)}
+                    disabled={busy}
+                    accessibilityLabel={lockLabel}
+                    trackColor={{ false: colors.surface3, true: colors.lime500 }}
+                    thumbColor={locked ? colors.textOnLime : colors.textTertiary}
+                  />
+                ) : null}
+              </View>
+              {refused ? (
+                <Body accessibilityRole="alert" style={{ color: colors.danger }}>
+                  {t('mobile.lock.refused')}
+                </Body>
+              ) : null}
+            </View>
+          </View>
         </>
-      ) : (
+      ) : null}
+
+      {state === 'signed-out' ? (
         <>
           <View style={styles.section}>
             <Body>{t('shell.tagline')}</Body>
@@ -202,40 +400,13 @@ export default function MeScreen() {
           </View>
           <Group titleKey="account.groups.settings" rows={LANGUAGE_ONLY} />
         </>
-      )}
-
-      {signedIn ? (
-        <View style={styles.section}>
-          <Subheading accessibilityRole="header">{t('mobile.me.thisPhone')}</Subheading>
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={styles.rowText}>
-                <Body tone="primary">{lockLabel}</Body>
-                <Meta>{t(lockDetailKey(capability, locked, unlocked))}</Meta>
-              </View>
-              {capability !== null && canLock(capability) ? (
-                <Switch
-                  value={locked}
-                  onValueChange={(next) => void toggleLock(next)}
-                  disabled={busy}
-                  accessibilityLabel={lockLabel}
-                  trackColor={{ false: colors.surface3, true: colors.lime500 }}
-                  thumbColor={locked ? colors.textOnLime : colors.textTertiary}
-                />
-              ) : null}
-            </View>
-            {refused ? (
-              <Body accessibilityRole="alert" style={{ color: colors.danger }}>
-                {t('mobile.lock.refused')}
-              </Body>
-            ) : null}
-          </View>
-        </View>
       ) : null}
 
-      <Group titleKey="shell.footer.groups.about" rows={ABOUT} />
+      <Group titleKey="shell.footer.groups.about" rows={ABOUT}>
+        <NavRow row={{ label: 'shell.whatsapp.open' }} onPress={() => setContacting(true)} />
+      </Group>
 
-      {signedIn ? (
+      {account !== null ? (
         <Button
           label={t('shell.actions.signOut')}
           variant="secondary"
@@ -243,6 +414,8 @@ export default function MeScreen() {
           onPress={() => void endIt()}
         />
       ) : null}
+
+      <WhatsAppSheet visible={contacting} onClose={() => setContacting(false)} />
     </ScrollView>
   );
 }
