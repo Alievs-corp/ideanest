@@ -402,6 +402,17 @@ public enum AuditAction {
     PARTNER_PROFILE_REMOVED("partner.profile_removed", "account"),
 
     /**
+     * #205: somebody read the financial statistics through the partner endpoint.
+     *
+     * <p>Recorded for partners and super admins alike, with which view they got and what
+     * percentage it was scaled by, so "who has been looking at the platform's figures, and what
+     * were they shown" is answerable. The entity is the reader's own account, because the
+     * statistics belong to nobody else. Written independently of the read, like the other
+     * console reads: there is no write to be atomic with.
+     */
+    PARTNER_STATISTICS_READ("partner.statistics_read", "account"),
+
+    /**
      * AD-11 (#311): the platform changed what it charges.
      *
      * <p>The entity is the schedule that was opened rather than the one that was closed:

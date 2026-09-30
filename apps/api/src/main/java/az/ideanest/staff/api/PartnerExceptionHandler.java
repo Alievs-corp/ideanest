@@ -3,12 +3,15 @@ package az.ideanest.staff.api;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.InvalidPartnerShareException;
 import az.ideanest.staff.application.NotAModeratorException;
+import az.ideanest.staff.application.PartnerHoldsOtherRolesException;
 import az.ideanest.staff.application.PartnerIsSuperAdminException;
 import az.ideanest.staff.application.PartnerNotFoundException;
 import az.ideanest.staff.application.PartnerShareExceededException;
 import az.ideanest.staff.application.UnknownStaffAccountException;
+import az.ideanest.staff.domain.StaffRole;
 import java.net.URI;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -89,6 +92,21 @@ public class PartnerExceptionHandler {
         problem.setTitle("Already a super admin");
         problem.setDetail("A super admin sees the real figures and cannot also be given a share of them.");
         problem.setProperty("code", "PARTNER_IS_SUPER_ADMIN");
+        return problem;
+    }
+
+    /** 409: the account holds another staff role, through which it could read transactions. */
+    @ExceptionHandler(PartnerHoldsOtherRolesException.class)
+    public ProblemDetail handleOtherRoles(PartnerHoldsOtherRolesException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/partner-holds-other-roles"));
+        problem.setTitle("Holds other roles");
+        problem.setDetail("A partner may hold no other staff role: roles add up, and another role could open "
+                + "the transactions this share exists to keep from them.");
+        problem.setProperty("code", "PARTNER_HOLDS_OTHER_ROLES");
+        problem.setProperty(
+                "meta",
+                Map.of("roles", exception.roles().stream().map(StaffRole::name).sorted().collect(Collectors.joining(","))));
         return problem;
     }
 }

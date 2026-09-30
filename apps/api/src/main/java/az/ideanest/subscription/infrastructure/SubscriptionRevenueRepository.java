@@ -225,6 +225,67 @@ public interface SubscriptionRevenueRepository extends Repository<SubscriptionPa
             @Param("limit") int limit);
 
     /**
+     * What arrived each day, per currency: sums and counts, and never a row. #205.
+     *
+     * <p><strong>The one read a partner's statistics are built on</strong>, and the reason it is
+     * shaped this way: it selects {@code SUM} and {@code COUNT} grouped by day and currency,
+     * so there is no payment id, payer, reference or per-payment amount in what it returns for
+     * anybody to forget to strip. A partner is owed a share of these totals and must never
+     * receive a transaction; a query that cannot return one is a stronger guarantee than a
+     * mapper that promises not to.
+     *
+     * <p>The day is Baku's, for {@code RevenuePeriod}'s reason: the last hours of a local day
+     * would otherwise fall into the next one and the figure would disagree with the bank
+     * statement it is checked against. Reversals net into the day they were recorded on, as
+     * every other total on this table does.
+     *
+     * @param from inclusive
+     * @param to exclusive
+     */
+    @Query(
+            nativeQuery = true,
+            value =
+                    """
+                    SELECT to_char((p.received_at AT TIME ZONE 'Asia/Baku')::date, 'YYYY-MM-DD')  AS "day",
+                           p.currency                                                              AS "currency",
+                           SUM(p.amount)                                                           AS "net",
+                           COUNT(*) FILTER (WHERE p.reverses IS NULL)                              AS "payments",
+                           COUNT(*) FILTER (WHERE p.reverses IS NOT NULL)                          AS "reversals"
+                      FROM subscription_payments p
+                     WHERE p.received_at >= :from
+                       AND p.received_at <  :to
+                     GROUP BY 1, p.currency
+                     ORDER BY 1, p.currency
+                    """)
+    List<DayTotal> totalsByDay(@Param("from") Instant from, @Param("to") Instant to);
+
+    /**
+     * What each plan brought in over a period: sums and counts, and never a row. #205.
+     *
+     * <p>Grouped by code, name and currency like {@link #totalsByPlan}, so a plan renamed
+     * mid-period is two rows under one code and each figure carries the name that was true
+     * when the money arrived. Named separately because that query takes filters a partner must
+     * not be able to set.
+     */
+    @Query(
+            nativeQuery = true,
+            value =
+                    """
+                    SELECT p.plan_code                                          AS "planCode",
+                           p.plan_name                                          AS "planName",
+                           p.currency                                           AS "currency",
+                           SUM(p.amount)                                        AS "net",
+                           COUNT(*) FILTER (WHERE p.reverses IS NULL)           AS "payments",
+                           COUNT(*) FILTER (WHERE p.reverses IS NOT NULL)       AS "reversals"
+                      FROM subscription_payments p
+                     WHERE p.received_at >= :from
+                       AND p.received_at <  :to
+                     GROUP BY p.plan_code, p.plan_name, p.currency
+                     ORDER BY p.plan_code, p.plan_name, p.currency
+                    """)
+    List<PlanFigures> figuresByPlan(@Param("from") Instant from, @Param("to") Instant to);
+
+    /**
      * One currency's three figures.
      *
      * <p>Interface projections rather than records, because these are native queries: a
@@ -267,6 +328,37 @@ public interface SubscriptionRevenueRepository extends Repository<SubscriptionPa
 
         /** Rows, payments and reversals together — see {@link #getNet()}. */
         long getEntries();
+    }
+
+    /** One day's figures in one currency. The day is {@code YYYY-MM-DD}, in Baku. */
+    interface DayTotal {
+
+        String getDay();
+
+        String getCurrency();
+
+        /** {@code gross + reversed}, as stored: negative reversals already netted. */
+        BigDecimal getNet();
+
+        long getPayments();
+
+        long getReversals();
+    }
+
+    /** One plan's figures over a period, under the name it carried while that money arrived. */
+    interface PlanFigures {
+
+        String getPlanCode();
+
+        String getPlanName();
+
+        String getCurrency();
+
+        BigDecimal getNet();
+
+        long getPayments();
+
+        long getReversals();
     }
 
     /** One method's net. */

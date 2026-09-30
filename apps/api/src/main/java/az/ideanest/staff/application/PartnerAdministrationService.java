@@ -13,6 +13,7 @@ import az.ideanest.staff.infrastructure.StaffRoleRepository;
 import az.ideanest.user.application.UserAccounts;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -112,6 +113,7 @@ public class PartnerAdministrationService {
      * @throws InvalidPartnerShareException when it is not in (0, 100] with at most two decimals
      * @throws PartnerShareExceededException when the other partners leave less than this
      * @throws PartnerIsSuperAdminException when the account holds a super-admin role
+     * @throws PartnerHoldsOtherRolesException when it holds any other staff role
      * @throws UnknownStaffAccountException when the account does not exist
      */
     @Transactional
@@ -121,8 +123,18 @@ public class PartnerAdministrationService {
 
         BigDecimal percentage = parse(percentageText);
 
-        if (directory.membershipOf(accountId).roles().stream().anyMatch(StaffRole::isSuperAdmin)) {
+        Set<StaffRole> held = directory.membershipOf(accountId).roles();
+        if (held.stream().anyMatch(StaffRole::isSuperAdmin)) {
             throw new PartnerIsSuperAdminException(accountId);
+        }
+        // Roles add up. A partner who also held FINANCE would read the payments journal and the
+        // ledger through that role, and the percentage would protect nothing, so anything else
+        // they hold is given up first and on purpose.
+        Set<StaffRole> otherRoles = EnumSet.noneOf(StaffRole.class);
+        otherRoles.addAll(held);
+        otherRoles.remove(StaffRole.PARTNER);
+        if (!otherRoles.isEmpty()) {
+            throw new PartnerHoldsOtherRolesException(accountId, otherRoles);
         }
 
         profiles.lockTotal();

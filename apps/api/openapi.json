@@ -1813,6 +1813,24 @@
         "tags" : [ "project-moderation-controller" ]
       }
     },
+    "/v1/admin/partner-statistics" : {
+      "get" : {
+        "operationId" : "partnerStatisticsRead",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Statistics"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "partner-statistics-controller" ]
+      }
+    },
     "/v1/admin/partners" : {
       "get" : {
         "operationId" : "partnerRoster",
@@ -12623,6 +12641,23 @@
           }
         }
       },
+      "Figures" : {
+        "type" : "object",
+        "properties" : {
+          "currency" : {
+            "type" : "string"
+          },
+          "revenue" : {
+            "type" : "string"
+          },
+          "reversals" : {
+            "type" : "string"
+          },
+          "subscriptions" : {
+            "type" : "string"
+          }
+        }
+      },
       "Finding" : {
         "type" : "object",
         "properties" : {
@@ -13570,6 +13605,20 @@
           }
         },
         "required" : [ "amount", "currency" ]
+      },
+      "Month" : {
+        "type" : "object",
+        "properties" : {
+          "currencies" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Figures"
+            }
+          },
+          "month" : {
+            "type" : "string"
+          }
+        }
       },
       "MyAgreement" : {
         "type" : "object",
@@ -16529,6 +16578,49 @@
           },
           "value" : {
             "$ref" : "#/components/schemas/Money"
+          }
+        }
+      },
+      "Statistics" : {
+        "type" : "object",
+        "properties" : {
+          "byPlan" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Plan"
+            }
+          },
+          "daily" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Day"
+            }
+          },
+          "generatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "monthly" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Month"
+            }
+          },
+          "sharePercentage" : {
+            "type" : "string"
+          },
+          "thisMonth" : {
+            "$ref" : "#/components/schemas/Month"
+          },
+          "timeZone" : {
+            "type" : "string"
+          },
+          "today" : {
+            "$ref" : "#/components/schemas/Day"
+          },
+          "view" : {
+            "type" : "string",
+            "enum" : [ "REAL", "PARTNER" ]
           }
         }
       },
