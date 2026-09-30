@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import type { TestInstance } from 'test-renderer';
@@ -21,15 +22,20 @@ import { useMe, useSessionState, type Me, type SessionState } from '../lib/accou
 const mockRouter = { push: jest.fn(), navigate: jest.fn(), replace: jest.fn(), back: jest.fn() };
 jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 
-jest.mock('../lib/use-session', () => ({
-  useSession: () => ({ signedIn: true, locked: false, unlocked: false }),
-}));
+let mockSession = { signedIn: true, locked: false, unlocked: false };
+jest.mock('../lib/use-session', () => ({ useSession: () => mockSession }));
 
 jest.mock('../lib/account', () => ({
   ...jest.requireActual('../lib/account'),
   useMe: jest.fn(),
   useSessionState: jest.fn(),
 }));
+
+/** A phone with a notch and a home indicator, so the sheet has real insets to read. */
+const METRICS = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
 
 const AYSEL: Me = {
   id: '00000000-0000-4000-8000-000000000001',
@@ -49,11 +55,13 @@ function given(state: SessionState, me: Me | null | undefined, isError = false):
 async function renderMe() {
   const client = new QueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={client}>
-      <IntlProvider locale="en" messages={en}>
-        {children}
-      </IntlProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider initialMetrics={METRICS}>
+      <QueryClientProvider client={client}>
+        <IntlProvider locale="en" messages={en}>
+          {children}
+        </IntlProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
   return render(<MeScreen />, { wrapper });
 }
@@ -79,8 +87,12 @@ const ABOUT = [
   'Message us on WhatsApp',
 ];
 
+/** What a session the service has not answered for still offers: the lock, and the way out. */
+const HELD = ['This phone', ...ABOUT, 'Sign out'];
+
 beforeEach(() => {
   jest.clearAllMocks();
+  mockSession = { signedIn: true, locked: false, unlocked: false };
 });
 
 describe('the Me tab', () => {
@@ -117,17 +129,18 @@ describe('the Me tab', () => {
   });
 
   it('signed out: the invitation, the language, About — and no account rows', async () => {
+    mockSession = { signedIn: false, locked: false, unlocked: false };
     given('signed-out', null);
     await renderMe();
 
     expect(readingOrder()).toEqual(['Register', 'Sign in', 'Settings', 'Language', ...ABOUT]);
   });
 
-  it('unknown: About and WhatsApp only — no account rows and, above all, no "Sign in"', async () => {
+  it('unknown: this phone, About and sign out — no account rows and, above all, no "Sign in"', async () => {
     given('unknown', undefined, true);
     await renderMe();
 
-    expect(readingOrder()).toEqual(ABOUT);
+    expect(readingOrder()).toEqual(HELD);
     expect(
       screen.queryByTestId('identity-skeleton', { includeHiddenElements: true }),
     ).toBeNull();
@@ -138,7 +151,23 @@ describe('the Me tab', () => {
     await renderMe();
 
     expect(screen.getByTestId('identity-skeleton', { includeHiddenElements: true })).toBeTruthy();
-    expect(readingOrder()).toEqual(ABOUT);
+    expect(readingOrder()).toEqual(HELD);
+  });
+
+  it('locked, prompt dismissed: still no "Sign in", and the lock can still be turned off', async () => {
+    // The lock armed, nothing unlocked: the account is not read, so the state is unknown.
+    mockSession = { signedIn: true, locked: true, unlocked: false };
+    given('unknown', undefined);
+    await renderMe();
+
+    expect(readingOrder()).toEqual(HELD);
+    expect(screen.queryByRole('button', { name: 'Register' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
+    // Nothing is on its way, so no skeleton waiting for it.
+    expect(
+      screen.queryByTestId('identity-skeleton', { includeHiddenElements: true }),
+    ).toBeNull();
+    expect(await screen.findByLabelText('Require your fingerprint')).toBeTruthy();
   });
 
   it.each([
@@ -146,6 +175,7 @@ describe('the Me tab', () => {
     ['signed-out', null],
     ['unknown', undefined],
   ] as const)('never renders the staff console (%s)', async (state, me) => {
+    mockSession = { signedIn: state !== 'signed-out', locked: false, unlocked: false };
     given(state, me);
     await renderMe();
 

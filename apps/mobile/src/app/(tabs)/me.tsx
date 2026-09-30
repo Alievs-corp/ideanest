@@ -9,7 +9,7 @@ import { Button } from '../../components/form';
 import { InlineAlert } from '../../components/states';
 import { Body, CardTitle, Meta, Subheading } from '../../components/text';
 import { WhatsAppSheet } from '../../components/whatsapp-sheet';
-import { useMe, useSessionState, type Me } from '../../lib/account';
+import { canReadAccount, useMe, useSessionState, type Me } from '../../lib/account';
 import { signOut } from '../../lib/auth';
 import { biometricCapability, canLock, type BiometricCapability } from '../../lib/biometrics';
 import { useT } from '../../lib/i18n';
@@ -36,11 +36,13 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  * - **signed-in**: who you are, what needs your attention, then the web's `ACCOUNT_GROUPS`,
  *   the creator rows, this phone, About and sign-out;
  * - **signed-out**: the invitation to register or sign in, the language, About;
- * - **unknown** (a token on the phone and the service unreachable, or a 5xx): About and the
- *   WhatsApp row only. Nothing account-shaped, and above all no "Sign in" — offering one to
- *   somebody who is signed in, during an outage, is the mistake `lib/account.ts` exists to
- *   avoid. While the first answer is still on its way the identity row is a skeleton, so the
- *   screen does not jump when the name arrives.
+ * - **unknown** (a token on the phone and the service unreachable, a 5xx, or the biometric
+ *   lock not unlocked): This phone, About with the WhatsApp row, and Sign out. Nothing
+ *   account-shaped, and above all no "Sign in" — offering one to somebody who is signed in,
+ *   during an outage, is the mistake `lib/account.ts` exists to avoid. This phone and Sign out
+ *   stay because they need no answer from the service, and they are the only way out of a
+ *   lock the reader no longer wants. While the first answer is still on its way the identity
+ *   row is a skeleton, so the screen does not jump when the name arrives.
  */
 
 interface Row {
@@ -288,12 +290,19 @@ export default function MeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useT();
-  const { locked, unlocked } = useSession();
+  const session = useSession();
+  const { locked, unlocked } = session;
   const state = useSessionState();
   const me = useMe();
   const account = state === 'signed-in' ? (me.data ?? null) : null;
-  /** Unknown because the answer has not arrived, rather than because asking failed. */
-  const loading = state === 'unknown' && !me.isError;
+  /** Unknown because the answer is on its way — not because asking failed or would prompt. */
+  const loading = state === 'unknown' && canReadAccount(session) && !me.isError;
+  /*
+   * A session on this phone that the service has not denied. Signed in, or unknown with a token
+   * — an outage, or the lock not unlocked. Either way This phone and Sign out stay: they are the
+   * way out of a lock the reader no longer wants, and neither needs the account to answer.
+   */
+  const holdsSession = session.signedIn && state !== 'signed-out';
 
   const [capability, setCapability] = useState<BiometricCapability | null>(null);
   const [busy, setBusy] = useState(false);
@@ -353,33 +362,36 @@ export default function MeScreen() {
           <Group titleKey="account.groups.yourAccount" rows={YOUR_ACCOUNT} />
           <Group titleKey="shell.footer.groups.creators" rows={CREATOR} />
           <Group titleKey="account.groups.settings" rows={SETTINGS} />
-          <View style={styles.section}>
-            <Subheading accessibilityRole="header">{t('mobile.me.thisPhone')}</Subheading>
-            <View style={styles.card}>
-              <View style={styles.row}>
-                <View style={styles.rowText}>
-                  <Body tone="primary">{lockLabel}</Body>
-                  <Meta>{t(lockDetailKey(capability, locked, unlocked))}</Meta>
-                </View>
-                {capability !== null && canLock(capability) ? (
-                  <Switch
-                    value={locked}
-                    onValueChange={(next) => void toggleLock(next)}
-                    disabled={busy}
-                    accessibilityLabel={lockLabel}
-                    trackColor={{ false: colors.surface3, true: colors.lime500 }}
-                    thumbColor={locked ? colors.textOnLime : colors.textTertiary}
-                  />
-                ) : null}
+        </>
+      ) : null}
+
+      {holdsSession ? (
+        <View style={styles.section}>
+          <Subheading accessibilityRole="header">{t('mobile.me.thisPhone')}</Subheading>
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={styles.rowText}>
+                <Body tone="primary">{lockLabel}</Body>
+                <Meta>{t(lockDetailKey(capability, locked, unlocked))}</Meta>
               </View>
-              {refused ? (
-                <Body accessibilityRole="alert" style={{ color: colors.danger }}>
-                  {t('mobile.lock.refused')}
-                </Body>
+              {capability !== null && canLock(capability) ? (
+                <Switch
+                  value={locked}
+                  onValueChange={(next) => void toggleLock(next)}
+                  disabled={busy}
+                  accessibilityLabel={lockLabel}
+                  trackColor={{ false: colors.surface3, true: colors.lime500 }}
+                  thumbColor={locked ? colors.textOnLime : colors.textTertiary}
+                />
               ) : null}
             </View>
+            {refused ? (
+              <Body accessibilityRole="alert" style={{ color: colors.danger }}>
+                {t('mobile.lock.refused')}
+              </Body>
+            ) : null}
           </View>
-        </>
+        </View>
       ) : null}
 
       {state === 'signed-out' ? (
@@ -406,7 +418,7 @@ export default function MeScreen() {
         <NavRow row={{ label: 'shell.whatsapp.open' }} onPress={() => setContacting(true)} />
       </Group>
 
-      {account !== null ? (
+      {holdsSession ? (
         <Button
           label={t('shell.actions.signOut')}
           variant="secondary"

@@ -11,6 +11,7 @@ import {
   View,
   type TextInput,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocale } from 'use-intl';
 import {
   MESSAGE_MAX_LENGTH,
@@ -62,6 +63,12 @@ export function WhatsAppSheet({
   const t = useT('shell.whatsapp');
   const tAll = useT();
   const locale = useLocale();
+  /*
+   * The root `SafeAreaProvider`'s insets. React context crosses the `Modal`'s portal, so the
+   * sheet reads the same numbers as every screen: its top stays clear of the status bar (the
+   * modal draws under it) and its last button clear of the home indicator.
+   */
+  const insets = useSafeAreaInsets();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -130,7 +137,7 @@ export function WhatsAppSheet({
       onRequestClose={close}
       statusBarTranslucent
     >
-      <View style={styles.frame}>
+      <View style={[styles.frame, { paddingTop: insets.top + spacing[4] }]}>
         {/*
           Out of the accessibility tree: it is a convenience, and every way out of this sheet
           exists as a real control (Cancel, and Android's back button).
@@ -141,11 +148,25 @@ export function WhatsAppSheet({
           accessible={false}
           importantForAccessibility="no"
         />
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/*
+          Bounded, all the way down: the frame is the screen, the avoiding view may take no
+          more of it than is left above the keyboard, and the panel shrinks to fit that — so
+          the scroll view is the part that gives, and the title and the first field can be
+          scrolled back to with the keyboard up. iOS pads for the keyboard; Android resizes
+          the window itself, and a second adjustment there pushes the form off the top.
+        */}
+        <KeyboardAvoidingView
+          style={styles.avoider}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
           <View style={styles.panel} accessibilityViewIsModal>
             <ScrollView
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.content}
+              keyboardDismissMode="on-drag"
+              contentContainerStyle={[
+                styles.content,
+                { paddingBottom: insets.bottom + size.cardPaddingLarge },
+              ]}
             >
               <CardTitle accessibilityRole="header">{t('title')}</CardTitle>
 
@@ -232,6 +253,7 @@ export function WhatsAppSheet({
  *
  * The same rule as the web's `pluralForm`: CLDR through `Intl.PluralRules`, and `other` for a
  * category the catalogue does not carry (`zero`, `two`) or an engine without the constructor.
+ * Replaced by the shared `plurals` helper when `plurals.ts` moves into `@ideanest/messages` (#150).
  */
 function pluralCategory(locale: string, count: number): 'one' | 'few' | 'many' | 'other' {
   if (typeof Intl.PluralRules !== 'function') return 'other';
@@ -254,21 +276,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black,
     opacity: 0.6,
   },
+  avoider: { maxHeight: '100%', flexShrink: 1 },
   panel: {
     maxHeight: '100%',
+    flexShrink: 1,
     backgroundColor: colors.surface2,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
-  content: {
-    gap: spacing[5],
-    padding: size.cardPaddingLarge,
-    // Clear of the home indicator without a safe-area read, which a modal would need its
-    // own provider for.
-    paddingBottom: spacing[10],
-  },
+  content: { gap: spacing[5], padding: size.cardPaddingLarge },
   message: { minHeight: size.touchTarget * 3 },
   actions: { gap: spacing[3] },
 });

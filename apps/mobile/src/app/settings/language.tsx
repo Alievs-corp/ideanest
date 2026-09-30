@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Stack } from 'expo-router';
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from '@ideanest/messages';
 import { saveAccountLocale } from '../../api/client';
 import { Button } from '../../components/form';
@@ -72,6 +73,8 @@ export default function LanguageScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
+      {/* Unregistered in the root stack, so it names its own header rather than showing its path. */}
+      <Stack.Screen options={{ title: t('mobile.language.title') }} />
       <Heading accessibilityRole="header">{t('mobile.language.title')}</Heading>
 
       <View style={styles.card} accessibilityRole="radiogroup">

@@ -1,8 +1,11 @@
 import type { ReactElement } from 'react';
 import { AccessibilityInfo, Linking, TextInput } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
+import ru from '@ideanest/messages/ru.json';
+import tr from '@ideanest/messages/tr.json';
 import { MESSAGE_MAX_LENGTH, whatsappHref } from '@ideanest/messages';
 import { FailureState } from './failure-state';
 import { WhatsAppSheet } from './whatsapp-sheet';
@@ -15,6 +18,12 @@ import { WhatsAppSheet } from './whatsapp-sheet';
  * This is the part only the app has: which field receives focus, what is announced, and that
  * the link handed to the phone is the shared one.
  */
+
+/** A phone with a notch and a home indicator, so the sheet has real insets to read. */
+const METRICS = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
 
 const copy = en.shell.whatsapp;
 
@@ -32,10 +41,16 @@ function lastFocusedLabel(): unknown {
 }
 
 function inEnglish(ui: ReactElement) {
+  return inLocale('en', en, ui);
+}
+
+function inLocale(locale: string, messages: typeof en, ui: ReactElement) {
   return render(
-    <IntlProvider locale="en" messages={en}>
-      {ui}
-    </IntlProvider>,
+    <SafeAreaProvider initialMetrics={METRICS}>
+      <IntlProvider locale={locale} messages={messages}>
+        {ui}
+      </IntlProvider>
+    </SafeAreaProvider>,
   );
 }
 
@@ -113,6 +128,45 @@ describe('WhatsAppSheet', () => {
 
     await fireEvent.changeText(field, 'x'.repeat(MESSAGE_MAX_LENGTH - 1));
     expect(screen.getByText('1 character remaining')).toBeTruthy();
+  });
+
+  it.each([
+    [1, 'Остался 1 символ'],
+    [2, 'Осталось 2 символа'],
+    [5, 'Осталось 5 символов'],
+    [21, 'Остался 21 символ'],
+  ])('counts what is left in Russian plural forms (%i)', async (left, expected) => {
+    await inLocale('ru', ru as typeof en, <WhatsAppSheet visible onClose={jest.fn()} />);
+
+    await fireEvent.changeText(
+      screen.getByLabelText(ru.shell.whatsapp.fields.message),
+      'x'.repeat(MESSAGE_MAX_LENGTH - left),
+    );
+    expect(screen.getByText(expected)).toBeTruthy();
+  });
+
+  it('counts what is left in Turkish, which has one form', async () => {
+    await inLocale('tr', tr as typeof en, <WhatsAppSheet visible onClose={jest.fn()} />);
+
+    await fireEvent.changeText(
+      screen.getByLabelText(tr.shell.whatsapp.fields.message),
+      'x'.repeat(MESSAGE_MAX_LENGTH - 2),
+    );
+    expect(screen.getByText('2 karakter kaldı')).toBeTruthy();
+  });
+
+  it("closes on Android's back button and keeps what was typed", async () => {
+    const onClose = jest.fn();
+    await inEnglish(<WhatsAppSheet visible onClose={onClose} />);
+
+    await fireEvent.changeText(screen.getByLabelText(copy.fields.message), 'Salam');
+    await fireEvent.press(screen.getByRole('button', { name: copy.submit }));
+    // `onRequestClose` is the Modal's; the event bubbles up to it from inside the sheet.
+    await fireEvent(screen.getByText(copy.title), 'requestClose');
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(copy.errors.firstName)).toBeNull();
+    expect(screen.getByLabelText(copy.fields.message).props.value).toBe('Salam');
   });
 
   it('keeps what was typed when it is closed, and forgets the refusals', async () => {

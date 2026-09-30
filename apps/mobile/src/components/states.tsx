@@ -94,21 +94,6 @@ export function ErrorState({
 }
 
 /**
- * The banner over a list that is being read from the cache — issue #115.
- *
- * <h2>Why the list is not simply shown</h2>
- *
- * The data is real; it is just old. A funding figure is the one number on this
- * platform where "real but old" and "current" are different facts — a campaign
- * shown at 80% may have closed — so a screen that renders cached money without
- * saying so is a screen that lies quietly. The banner is the difference between
- * offline support and a stale page.
- *
- * A warning stripe **and** the words. Colour alone never carries meaning
- * (CLAUDE.md §2), and this is the message somebody most needs when they cannot
- * see the screen properly on a train.
- */
-/**
  * A sentence the reader should know about, inside a screen — issue #150. The native half of
  * `@ideanest/ui`'s `InlineAlert`.
  *
@@ -142,6 +127,21 @@ export function InlineAlert({
   );
 }
 
+/**
+ * The banner over a list that is being read from the cache — issue #115.
+ *
+ * <h2>Why the list is not simply shown</h2>
+ *
+ * The data is real; it is just old. A funding figure is the one number on this
+ * platform where "real but old" and "current" are different facts — a campaign
+ * shown at 80% may have closed — so a screen that renders cached money without
+ * saying so is a screen that lies quietly. The banner is the difference between
+ * offline support and a stale page.
+ *
+ * A warning stripe **and** the words. Colour alone never carries meaning
+ * (CLAUDE.md §2), and this is the message somebody most needs when they cannot
+ * see the screen properly on a train.
+ */
 export function OfflineNotice({ detail }: { readonly detail: string }) {
   return (
     <View style={styles.notice} accessibilityRole="alert">

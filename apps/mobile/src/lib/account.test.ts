@@ -1,5 +1,21 @@
+import * as SecureStore from 'expo-secure-store';
 import { ApiError } from '@ideanest/api-client';
-import { badgeText, fetchMe, sessionStateOf, type Me } from './account';
+import {
+  NoCredentialError,
+  badgeText,
+  canReadAccount,
+  fetchMe,
+  sessionStateOf,
+  type Me,
+} from './account';
+import {
+  enableLock,
+  hasStoredSession,
+  rememberAccessToken,
+  storeRefreshToken,
+  useFlagStore,
+} from './session';
+import { memoryStore } from './storage';
 
 const me = { id: 'a', name: 'Aysel' } as Me;
 
@@ -18,6 +34,24 @@ describe('sessionStateOf', () => {
 
   it('is signed in when the account came back', () => {
     expect(sessionStateOf({ hasToken: true, me })).toBe('signed-in');
+  });
+
+  it('is unknown behind a lock nobody has opened, even with the account in the cache', () => {
+    // Signed in would enable the unread-count read, which is a prompt nobody asked for.
+    expect(sessionStateOf({ hasToken: true, canRead: false, me })).toBe('unknown');
+    expect(sessionStateOf({ hasToken: true, canRead: false, me: null })).toBe('unknown');
+  });
+});
+
+describe('canReadAccount', () => {
+  it('reads without a lock, or once the lock has been opened in this process', () => {
+    expect(canReadAccount({ signedIn: true, locked: false, unlocked: false })).toBe(true);
+    expect(canReadAccount({ signedIn: true, locked: true, unlocked: true })).toBe(true);
+  });
+
+  it('waits behind a lock nobody has opened, and reads nothing for nobody', () => {
+    expect(canReadAccount({ signedIn: true, locked: true, unlocked: false })).toBe(false);
+    expect(canReadAccount({ signedIn: false, locked: false, unlocked: false })).toBe(false);
   });
 });
 
@@ -42,6 +76,17 @@ describe('fetchMe', () => {
     ) as unknown as typeof fetch;
   }
 
+  const keychain = SecureStore as unknown as {
+    __setBiometryAllowed: (allowed: boolean) => void;
+    __reset: () => void;
+  };
+
+  beforeEach(() => {
+    keychain.__reset();
+    useFlagStore(memoryStore());
+    rememberAccessToken(null);
+  });
+
   it('turns 401 and 404 into "nobody" and lets a 500 through', async () => {
     answer(401);
     await expect(fetchMe()).resolves.toBeNull();
@@ -49,5 +94,25 @@ describe('fetchMe', () => {
     await expect(fetchMe()).resolves.toBeNull();
     answer(500);
     await expect(fetchMe()).rejects.toBeInstanceOf(ApiError);
+  });
+
+  it('does NOT read a 401 as "nobody" when the prompt was dismissed and no bearer went out', async () => {
+    await storeRefreshToken('refresh-1');
+    expect(await enableLock()).toBe(true);
+    rememberAccessToken(null); // the lock re-armed
+    keychain.__setBiometryAllowed(false); // …and the reader said "not now"
+    answer(401);
+
+    await expect(fetchMe()).rejects.toBeInstanceOf(NoCredentialError);
+    // "Not now" must not mean "sign in again": the session is still on the phone.
+    expect(hasStoredSession()).toBe(true);
+  });
+
+  it('still reads a 401 to a presented bearer as "nobody"', async () => {
+    await storeRefreshToken('refresh-1');
+    rememberAccessToken('access-1');
+    answer(401);
+
+    await expect(fetchMe()).resolves.toBeNull();
   });
 });
