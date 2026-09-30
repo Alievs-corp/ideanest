@@ -1,0 +1,108 @@
+# Traefik dynamic configuration for the edge maintenance responder -- issue #214,
+# section 2. On the Coolify server this file goes into the proxy's dynamic
+# configuration directory (Servers -> Proxy -> Dynamic Configurations in the
+# Coolify UI, which writes /data/coolify/proxy/dynamic/). ops/deploy/README.md,
+# "Maintenance", has the whole procedure.
+#
+# Written for Coolify's Traefik: entry point `https`, certificate resolver
+# `letsencrypt`. `statusRewrites` needs Traefik v3.4 or later.
+#
+# WHEN THE EDGE ANSWERS -- two mechanisms, because an API that is down can be down
+# in two ways and Traefik sees them differently.
+#
+# 1. The container is gone, stopped, starting or unhealthy. This is the normal
+#    shape of a deploy and of a crash. Traefik's Docker provider drops a
+#    container that is not running or not healthy, and with it the router
+#    Coolify's labels declared -- so there is no router left to carry a
+#    middleware, and without something else Traefik answers 404. The FALLBACK
+#    ROUTERS below match the same hosts at the lowest priority and send the
+#    request here. While the application's own router exists, its longer rule
+#    outranks them and they never match.
+#
+# 2. The container is up but the request fails at the proxy: the upstream times
+#    out. The ERRORS MIDDLEWARES below, attached to the application's router,
+#    replace that response with the edge's and rewrite the status to 503.
+#
+# WHY THE MIDDLEWARES CATCH 504 ONLY, AND NOT 502 OR 503.
+#
+# The errors middleware sees a status code and nothing else. It cannot tell a 503
+# Traefik produced from a 503 the API produced, and the API produces 503 on
+# purpose: its own maintenance response (source "api", with the announced end,
+# which the edge must not overwrite with "until further notice"), and several
+# ordinary dependency failures that the contract says must NOT look like
+# maintenance. The API also produces 502 (mail-relay-unavailable, on the admin
+# e-mail endpoints). The web passes both through unchanged on /v1/. Catching
+# either would turn an honest error into a maintenance screen -- the false
+# positive issue #214 exists to remove. Nothing in this platform answers 504 by
+# itself, so 504 is safe to take.
+#
+# What that leaves uncovered: a Traefik-generated 502 in the moment between a
+# process dying and Docker marking its container stopped. Mechanism 1 takes over
+# as soon as it is marked. That gap is seconds and was judged better than
+# misreporting a real error as maintenance.
+#
+# THE HOSTS below are production's. A staging copy replaces them with its own.
+#
+# THE SERVICE ADDRESS `ideanest-edge` must resolve from the proxy container: it is
+# the edge container's name (or a network alias) on the network Coolify's proxy
+# is attached to. Check it with
+#   docker exec coolify-proxy wget -q -S -O /dev/null http://ideanest-edge:8080/
+# which prints `HTTP/1.1 503` when it is right.
+
+http:
+  middlewares:
+    # Attach to the API's Coolify router: append `edge-api-errors@file` to its
+    # `traefik.http.routers.<router>.middlewares` label.
+    edge-api-errors:
+      errors:
+        status:
+          - '504'
+        statusRewrites:
+          '504': 503
+        service: edge-api
+        query: /
+
+    # Attach to the web's Coolify router(s) the same way, as `edge-web-errors@file`.
+    edge-web-errors:
+      errors:
+        status:
+          - '504'
+        statusRewrites:
+          '504': 503
+        service: edge-web
+        query: /
+
+  routers:
+    # Priority 2, not 1: Coolify's optional catch-all redirect for unknown hosts
+    # may sit at priority 1, and this must win over that while losing to every
+    # router an application declares (their priority is their rule's length).
+    edge-api-fallback:
+      rule: Host(`api.ideyanest.com`)
+      entryPoints:
+        - https
+      priority: 2
+      service: edge-api
+      tls:
+        certResolver: letsencrypt
+
+    edge-web-fallback:
+      rule: Host(`ideyanest.com`) || Host(`www.ideyanest.com`)
+      entryPoints:
+        - https
+      priority: 2
+      service: edge-web
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    # Port 8080 answers everything with the problem document (application/problem+json).
+    edge-api:
+      loadBalancer:
+        servers:
+          - url: http://ideanest-edge:8080
+
+    # Port 8081 answers with the HTML page, and with the problem document under /v1/.
+    edge-web:
+      loadBalancer:
+        servers:
+          - url: http://ideanest-edge:8081

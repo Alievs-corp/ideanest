@@ -1,0 +1,54 @@
+# The edge maintenance responder -- issue #214, section 2.
+#
+# ops/edge is what answers for the API and the web when neither is running, which
+# is exactly when nobody is watching it work. So it is tested the way it runs:
+# behind a real Traefik loading the shipped dynamic configuration, with the API
+# and the web stopped under it.
+#
+# Its own workflow, on its own paths, like `restore-drill.yml` for ops/backup and
+# for the same reason: nothing else in CI builds or runs these files, and
+# `ci.yml`'s jobs have no reason to spend minutes on them. It is not a required
+# check -- `CI complete` is the only one (CLAUDE.md, "Merging") -- so a red run
+# here is reported on the pull request rather than blocking it, and is fixed like
+# any other red run.
+name: Edge maintenance
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ops/edge/**'
+      - '.github/workflows/edge.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ops/edge/**'
+      - '.github/workflows/edge.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  edge:
+    name: Edge maintenance responder
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      # The files against the contract: body, headers, page, Traefik wiring.
+      - name: Static checks
+        run: node ops/edge/test/static.test.mjs
+
+      # The same contract through Traefik, with the upstreams stopped.
+      - name: Behind Traefik, with the API and the web stopped
+        run: node ops/edge/test/live.test.mjs
