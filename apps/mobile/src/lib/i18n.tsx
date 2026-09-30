@@ -12,7 +12,11 @@ import ru from '@ideanest/messages/ru.json';
 import tr from '@ideanest/messages/tr.json';
 import type { Locale } from '@ideanest/messages';
 import { dateTimeFormat, numberFormat } from '@ideanest/messages/formats';
-import { installHermesFormatting } from '@ideanest/messages/hermes';
+import {
+  formatToPartsWorks,
+  partlessAzerbaijaniDateTimeFormat,
+  partlessAzerbaijaniNumberFormat,
+} from '@ideanest/messages/hermes';
 import { pluralForm, type PluralForms } from '@ideanest/messages/plurals';
 import { currentLocale, useLocale } from './locale';
 
@@ -28,14 +32,6 @@ import { currentLocale, useLocale } from './locale';
  * `lib/locale.ts`, so changing the language re-renders the tree with no restart. Whether a
  * build step should strip the web-only `admin` namespace is the release-readiness issue's.
  */
-/*
- * Hermes has no `DateTimeFormat.prototype.formatToParts` and, on iOS, no `NumberFormat` one,
- * which the shared Azerbaijani formatters read. This swaps in their part-less versions where
- * the engine lacks a method, and does nothing where it has both (jest, Node). Here, at import,
- * because it has to precede the first formatter `@ideanest/messages/formats` builds and caches.
- */
-installHermesFormatting();
-
 const CATALOGUES: Record<Locale, typeof en> = { az, en, ru, tr } as Record<Locale, typeof en>;
 
 /**
@@ -138,10 +134,33 @@ export function pluralCategory(locale: Locale, count: number): keyof PluralForms
  * Android formats with the platform's ICU, which may claim `az` and group it the root
  * locale's way. An engine that cannot format at all gets the bare digits.
  */
+/**
+ * Hermes has no `DateTimeFormat.prototype.formatToParts` and, on iOS, no `NumberFormat` one,
+ * which the shared Azerbaijani formatters read. Asked once, at import: where a method is
+ * missing or answers nothing, Azerbaijani goes to `@ideanest/messages/hermes`'s part-less
+ * formatter instead, which writes the same strings. The other three languages never read
+ * parts, and on Node and in jest both methods work, so nothing changes there.
+ */
+const PARTS = formatToPartsWorks();
+const COUNT_OPTIONS: Intl.NumberFormatOptions = {};
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
+let partlessCount: ReturnType<typeof partlessAzerbaijaniNumberFormat> | undefined;
+let partlessDate: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
+
+function countFormat(locale: Locale): { format(value: number): string } {
+  if (locale !== 'az' || PARTS.numbers) return numberFormat(locale, COUNT_OPTIONS, 'count');
+  return (partlessCount ??= partlessAzerbaijaniNumberFormat(COUNT_OPTIONS));
+}
+
+function dateFormat(locale: Locale): { format(value: Date): string } {
+  if (locale !== 'az' || PARTS.dates) return dateTimeFormat(locale, DATE_OPTIONS, 'date');
+  return (partlessDate ??= partlessAzerbaijaniDateTimeFormat(DATE_OPTIONS));
+}
+
 export function formatCount(count: number, locale: Locale): string {
   try {
     // An empty answer is a formatter that failed without saying so; the digits are better.
-    return numberFormat(locale, {}, 'count').format(count) || String(count);
+    return countFormat(locale).format(count) || String(count);
   } catch {
     return String(count);
   }
@@ -155,9 +174,9 @@ export function formatCount(count: number, locale: Locale): string {
  * Money is not formatted here: `@ideanest/money` formats amounts from their digits, the same
  * on both platforms and in every language.
  *
- * Through the web's `dateTimeFormat`, so Azerbaijani is written out by
- * `@ideanest/messages/azerbaijani` on every engine rather than trusted to the platform's ICU —
- * `14 avq 2026`, not `2026 M08 14`.
+ * Through the web's `dateTimeFormat` (or, on Hermes, its part-less twin), so Azerbaijani is
+ * written out by `@ideanest/messages` on every engine rather than trusted to the platform's
+ * ICU — `14 avq 2026`, not `2026 M08 14`.
  */
 export function formatDate(iso: string | null | undefined, locale: Locale): string {
   if (iso == null || iso === '') return '';
@@ -165,7 +184,7 @@ export function formatDate(iso: string | null | undefined, locale: Locale): stri
   if (Number.isNaN(date.getTime())) return iso;
   try {
     // An empty answer is a formatter that failed without saying so; the ISO day is better.
-    return dateTimeFormat(locale, { dateStyle: 'medium' }, 'date').format(date) || iso.slice(0, 10);
+    return dateFormat(locale).format(date) || iso.slice(0, 10);
   } catch {
     return iso.slice(0, 10);
   }

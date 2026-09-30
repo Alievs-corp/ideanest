@@ -1,8 +1,8 @@
 import {
-  installPartlessFormats,
+  MONTHS,
+  WEEKDAYS,
   monthStyle,
   weekdayStyle,
-  writtenInAzerbaijani,
   type AzerbaijaniDateTimeFormat,
   type AzerbaijaniNumberFormat,
 } from './azerbaijani';
@@ -17,14 +17,19 @@ import {
  * one on iOS, so without this an iPhone printed `1234567` and the ISO day where an Azerbaijani
  * reader is owed `1.234.567` and `14 avq 2026` — worse than the platform's own formatting it
  * replaced. Every browser has both methods, so this module is the app's alone: it is not in
- * the package root, nothing in the web imports it, and the web's bundles do not carry it.
+ * the package root, nothing in the web imports it, and `azerbaijani.ts` does not know it
+ * exists — the web's bundles carry not one byte of it, which its First Load JS budgets need.
  *
  * <h2>Asked, not assumed</h2>
  *
- * <p>{@link installHermesFormatting} tests each method once, on a known value, and replaces
- * only what fails. "Fails" includes a method that exists and answers nothing: that would write
- * an empty string, which is worse than either answer. On Node, in a browser, and for numbers
- * on Android, nothing is replaced.
+ * <p>{@link formatToPartsWorks} tests each method once, on a known value, and the app's
+ * `lib/i18n.tsx` picks the formatters below only for what fails. "Fails" includes a method
+ * that exists and answers nothing: that would write an empty string, which is worse than
+ * either answer. On Node, in a browser, and for numbers on Android, both work.
+ *
+ * <p>The words and their order are `azerbaijani.ts`'s tables; {@link written} repeats its
+ * composition over them rather than sharing it, because sharing it would mean reshaping the
+ * web's copy. `azerbaijani.test.ts` holds the two to the same output, shape by shape.
  */
 
 /** Whether `formatToParts` answers a known value with the parts that value has. */
@@ -45,7 +50,7 @@ function partsWork(
  * two separators, so exchanging every one of them is exchanging exactly those — the same answer
  * the parts reading gives, currency and percent options included.
  */
-function partlessNumberFormat(options: Intl.NumberFormatOptions): AzerbaijaniNumberFormat {
+export function partlessAzerbaijaniNumberFormat(options: Intl.NumberFormatOptions): AzerbaijaniNumberFormat {
   const rendered = new Intl.NumberFormat('en-GB', options);
   return {
     format: (value) =>
@@ -84,7 +89,9 @@ const twoDigits = (value: number): string => String(value).padStart(2, '0');
  * else — a zone name, a twelve-hour clock — is the engine's own `az`, which is what the app
  * printed before this package formatted for it.
  */
-function partlessDateTimeFormat(options: Intl.DateTimeFormatOptions): AzerbaijaniDateTimeFormat {
+export function partlessAzerbaijaniDateTimeFormat(
+  options: Intl.DateTimeFormatOptions,
+): AzerbaijaniDateTimeFormat {
   const engine = new Intl.DateTimeFormat('az', options);
   const lonely = options.minute !== undefined || options.second !== undefined;
   if (
@@ -164,37 +171,72 @@ function partlessDateTimeFormat(options: Intl.DateTimeFormatOptions): Azerbaijan
         if (withSeconds) fields.second = twoDigits(second!);
       }
 
-      return writtenInAzerbaijani(options, fields, [year, monthNumber, day]);
+      return written(options, fields, [year, monthNumber, day]);
     },
   };
+}
+
+/**
+ * `azerbaijaniDateTimeFormat`'s composition, over the fields read above: the same tables, the
+ * same order, the same glue. Kept in step by `azerbaijani.test.ts`, which requires every date
+ * shape it knows to come out of both identically.
+ */
+function written(
+  options: Intl.DateTimeFormatOptions,
+  fields: Readonly<Record<string, string | undefined>>,
+  [year, monthNumber, day]: readonly [number, number, number],
+): string {
+  const month = monthStyle(options);
+  const weekday = weekdayStyle(options);
+  const spelledOut = month === 'long' || month === 'short' || month === 'narrow';
+  const monthIndex = monthNumber - 1;
+  const dayIndex = new Date(Date.UTC(year, monthIndex, day)).getUTCDay();
+  const present = (piece: string | undefined): piece is string =>
+    piece !== undefined && piece !== '';
+
+  let date = '';
+  if (fields.month !== undefined && spelledOut) {
+    const name = MONTHS[month as 'long' | 'short' | 'narrow'][monthIndex] ?? fields.month;
+    date = [fields.day, name, fields.year].filter(present).join(' ');
+  } else if (fields.month !== undefined) {
+    const shown = options.dateStyle === 'short' ? fields.year?.slice(-2) : fields.year;
+    date = [fields.day, fields.month, shown].filter(present).join('.');
+  } else {
+    date = [fields.day, fields.year].filter(present).join(' ');
+  }
+
+  if (weekday !== undefined && fields.weekday !== undefined) {
+    const name = WEEKDAYS[weekday as 'long' | 'short' | 'narrow'][dayIndex] ?? fields.weekday;
+    date = date === '' ? name : `${date}, ${name}`;
+  }
+
+  const time = [fields.hour, fields.minute, fields.second].filter(present).join(':');
+  if (date === '') return time;
+  if (time === '') return date;
+  // A long date takes `{1}/{0}` and the rest `{1}, {0}`, as in CLDR and `azerbaijani.ts`.
+  return `${date}${spelledOut && month === 'long' ? '/' : ', '}${time}`;
 }
 
 /** 14 August 2026 in UTC — a day number no other field of it shares. */
 const PROBE = new Date(Date.UTC(2026, 7, 14, 12));
 
 /**
- * Replace what this engine cannot do, and nothing else. Called once, by the app, before its
- * first formatter is built — `formats.ts` caches them.
+ * Which of the two `formatToParts` this engine can be trusted with. Asked by the app once,
+ * before its first formatter; the answer is a property of the engine.
  */
-export function installHermesFormatting(): void {
-  const numbers = partsWork(
-    () => new Intl.NumberFormat('en-GB').formatToParts(1234.5),
-    'decimal',
-    '.',
-  );
-  const dates = partsWork(
-    () =>
-      new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'UTC',
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-      }).formatToParts(PROBE),
-    'day',
-    '14',
-  );
-  installPartlessFormats({
-    ...(numbers ? {} : { number: partlessNumberFormat }),
-    ...(dates ? {} : { date: partlessDateTimeFormat }),
-  });
+export function formatToPartsWorks(): { readonly numbers: boolean; readonly dates: boolean } {
+  return {
+    numbers: partsWork(() => new Intl.NumberFormat('en-GB').formatToParts(1234.5), 'decimal', '.'),
+    dates: partsWork(
+      () =>
+        new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'UTC',
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+        }).formatToParts(PROBE),
+      'day',
+      '14',
+    ),
+  };
 }

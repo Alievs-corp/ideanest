@@ -45,7 +45,10 @@ import {
  * <p>The phone has the same problem by a different route, which is why this file lives in
  * `@ideanest/messages` rather than in the web (#150): Hermes on Android formats with the
  * platform's ICU, and which `az` data that ICU carries is the handset maker's decision. The
- * app goes through these constructors too, so both read `14 avq 2026` on every engine.
+ * app goes through these constructors too, so both read `14 avq 2026` on every engine —
+ * except where Hermes lacks the `formatToParts` that `azerbaijani.ts` reads, where the app
+ * takes `hermes.ts`'s part-less twins instead. They are not wired in here, so that the web,
+ * whose engines all have the method, carries none of their bytes.
  */
 export const INTL_LOCALE: Readonly<Record<Locale, string>> = {
   az: 'az',

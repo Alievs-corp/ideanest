@@ -285,13 +285,13 @@ describe.skipIf(!engineHasAzerbaijani())('against an engine that does have the d
 });
 
 /**
- * Hermes — #150. The app formats through this module on an engine with no
- * `DateTimeFormat.prototype.formatToParts` at all and, on iOS, no `NumberFormat` one either.
+ * Hermes — #150. The app formats Azerbaijani on an engine with no
+ * `DateTimeFormat.prototype.formatToParts` at all and, on iOS, no `NumberFormat` one either,
+ * through `hermes.ts`'s part-less formatters.
  *
  * <p>Asserted by taking the methods away, in the two ways an engine can lack them: absent, and
- * present but answering nothing. `hermes.ts` decides at install which way to format, so
- * each case loads a fresh copy after the methods are gone, and the expected strings are
- * computed by the copy loaded normally, before they go.
+ * present but answering nothing. Each case loads a fresh copy after the methods are gone, and
+ * the expected strings are computed by this module, loaded normally, before they go.
  *
  * <p>The engine's own `az` is broken for the duration, as it is on the phones this is for, so
  * a string that came from it rather than from this module shows as {@link ENGINE}: Node's ICU
@@ -307,7 +307,7 @@ describe.each([
   const saved = prototypes.map((prototype) => prototype.formatToParts);
   const format = Object.getOwnPropertyDescriptor(Intl.DateTimeFormat.prototype, 'format')!;
 
-  async function partless(): Promise<typeof import('./formats')> {
+  async function partless(): Promise<typeof import('./hermes')> {
     vi.resetModules();
     for (const prototype of prototypes) {
       Object.defineProperty(prototype, 'formatToParts', {
@@ -323,10 +323,10 @@ describe.each([
         return this.resolvedOptions().locale.startsWith('az') ? () => ENGINE : real;
       },
     });
-    // What the app does at start-up: `lib/i18n.tsx` installs these before it formats anything.
-    const { installHermesFormatting } = await import('./hermes');
-    installHermesFormatting();
-    return import('./formats');
+    const hermes = await import('./hermes');
+    // What `lib/i18n.tsx` asks once, and why it reaches for the formatters below.
+    expect(hermes.formatToPartsWorks()).toEqual({ numbers: false, dates: false });
+    return hermes;
   }
 
   afterEach(() => {
@@ -342,21 +342,16 @@ describe.each([
   });
 
   it('still writes the date and the count the app prints', async () => {
-    const formats = await partless();
+    const hermes = await partless();
     const august = new Date('2026-08-14T12:00:00Z');
+    const number = hermes.partlessAzerbaijaniNumberFormat;
 
-    expect(formats.dateTimeFormat('az', { dateStyle: 'medium' }, 'hermes').format(august)).toBe(
+    expect(hermes.partlessAzerbaijaniDateTimeFormat({ dateStyle: 'medium' }).format(august)).toBe(
       '14 avq 2026',
     );
-    expect(formats.numberFormat('az', {}, 'hermes').format(1234567)).toBe('1.234.567');
-    expect(
-      formats.numberFormat('az', { maximumFractionDigits: 3 }, 'hermes-decimal').format(-1234.5),
-    ).toBe('-1.234,5');
-    expect(
-      formats
-        .numberFormat('az', { style: 'percent', maximumFractionDigits: 3 }, 'hermes-percent')
-        .format(0.029),
-    ).toBe('2,9%');
+    expect(number({}).format(1234567)).toBe('1.234.567');
+    expect(number({ maximumFractionDigits: 3 }).format(-1234.5)).toBe('-1.234,5');
+    expect(number({ style: 'percent', maximumFractionDigits: 3 }).format(0.029)).toBe('2,9%');
   });
 
   it('writes every date shape as the parts reading does, or leaves it to the engine', async () => {
@@ -366,10 +361,10 @@ describe.each([
         ? INSTANTS.map((instant) => azerbaijaniDateTimeFormat(options).format(instant))
         : INSTANTS.map(() => ENGINE),
     );
-    const formats = await partless();
+    const hermes = await partless();
 
     DATE_OPTIONS.forEach((options, index) => {
-      const ours = formats.dateTimeFormat('az', options, `hermes-${index}`);
+      const ours = hermes.partlessAzerbaijaniDateTimeFormat(options);
       expect(INSTANTS.map((instant) => ours.format(instant)), JSON.stringify(options)).toEqual(
         expected[index],
       );

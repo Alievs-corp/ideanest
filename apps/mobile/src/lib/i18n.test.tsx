@@ -88,8 +88,8 @@ describe('the app-only strings and formats', () => {
   /*
    * Hermes: `Intl.DateTimeFormat.prototype.formatToParts` is missing on both platforms and the
    * `NumberFormat` one on iOS. Taken away here, both ways an engine can lack it — absent, and
-   * answering nothing — and the helpers loaded fresh, because the shared module decides once
-   * per load and caches its formatters.
+   * answering nothing — and the helpers loaded fresh, because `lib/i18n.tsx` asks once per load
+   * which formatters to use. Had it kept the parts reading, the date would be the ISO day.
    */
   it.each([
     ['absent', undefined],

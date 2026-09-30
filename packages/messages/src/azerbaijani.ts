@@ -46,7 +46,7 @@
  * <p>`narrow` is the ordinal, which is what Azerbaijani narrow months are; a table that
  * invented letters for them would be inventing a language.
  */
-const MONTHS: Readonly<Record<'long' | 'short' | 'narrow', readonly string[]>> = {
+export const MONTHS: Readonly<Record<'long' | 'short' | 'narrow', readonly string[]>> = {
   long: [
     'yanvar',
     'fevral',
@@ -66,7 +66,7 @@ const MONTHS: Readonly<Record<'long' | 'short' | 'narrow', readonly string[]>> =
 };
 
 /** The weekdays, Sunday first, because that is what `Date.prototype.getUTCDay` counts from. */
-const WEEKDAYS: Readonly<Record<'long' | 'short' | 'narrow', readonly string[]>> = {
+export const WEEKDAYS: Readonly<Record<'long' | 'short' | 'narrow', readonly string[]>> = {
   long: [
     'bazar',
     'bazar ertəsi',
@@ -124,27 +124,6 @@ export interface AzerbaijaniNumberFormat {
 }
 
 /**
- * Replacements for an engine without `formatToParts`, which only the app installs — #150.
- *
- * <p>Hermes has no `Intl.DateTimeFormat.prototype.formatToParts` on either platform and no
- * `NumberFormat` one on iOS, and both functions below read parts. `hermes.ts` carries the
- * part-less versions and `installPartlessFormats` is how the app hands them over. They are
- * not imported from here because every browser has both methods: the web would carry the
- * code for nothing, on routes whose First Load JS budgets have no room for it.
- */
-interface PartlessFormats {
-  readonly number?: (options: Intl.NumberFormatOptions) => AzerbaijaniNumberFormat;
-  readonly date?: (options: Intl.DateTimeFormatOptions) => AzerbaijaniDateTimeFormat;
-}
-
-let partless: PartlessFormats = {};
-
-/** For `hermes.ts`. Installed before the first formatter is built, since `formats.ts` caches. */
-export function installPartlessFormats(formats: PartlessFormats): void {
-  partless = formats;
-}
-
-/**
  * `1.234,5`, `2,9%` — issue #403.
  *
  * <p>The same defect one type over: Chromium's `az` groups with a comma and points with a
@@ -158,7 +137,6 @@ export function installPartlessFormats(formats: PartlessFormats): void {
  * options behaving as the caller asked.
  */
 export function azerbaijaniNumberFormat(options: Intl.NumberFormatOptions): AzerbaijaniNumberFormat {
-  if (partless.number !== undefined) return partless.number(options);
   const rendered = new Intl.NumberFormat('en-GB', options);
 
   return {
@@ -212,9 +190,7 @@ export function azerbaijaniRelativeTimeFormat(
 }
 
 /** Which width of month a set of options asks for, in `Intl`'s own vocabulary. */
-export function monthStyle(
-  options: Intl.DateTimeFormatOptions,
-): Intl.DateTimeFormatOptions['month'] {
+export function monthStyle(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormatOptions['month'] {
   if (options.month !== undefined) return options.month;
   if (options.dateStyle === 'full' || options.dateStyle === 'long') return 'long';
   if (options.dateStyle === 'medium') return 'short';
@@ -223,9 +199,7 @@ export function monthStyle(
 }
 
 /** The same for the weekday, which only `dateStyle: 'full'` asks for on its own. */
-export function weekdayStyle(
-  options: Intl.DateTimeFormatOptions,
-): Intl.DateTimeFormatOptions['weekday'] {
+export function weekdayStyle(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormatOptions['weekday'] {
   if (options.weekday !== undefined) return options.weekday;
   return options.dateStyle === 'full' ? 'long' : undefined;
 }
@@ -252,7 +226,6 @@ function fieldsOf(formatter: Intl.DateTimeFormat, at: Date): Readonly<Record<str
 export function azerbaijaniDateTimeFormat(
   options: Intl.DateTimeFormatOptions,
 ): AzerbaijaniDateTimeFormat {
-  if (partless.date !== undefined) return partless.date(options);
   const rendered = new Intl.DateTimeFormat('en-GB', options);
   const calendar = new Intl.DateTimeFormat('en-GB', {
     timeZone: options.timeZone,
@@ -261,83 +234,70 @@ export function azerbaijaniDateTimeFormat(
     day: 'numeric',
   });
 
-  return {
-    format(value: Date | number): string {
-      const at = typeof value === 'number' ? new Date(value) : value;
-      const date = fieldsOf(calendar, at);
-      return writtenInAzerbaijani(options, fieldsOf(rendered, at), [
-        Number(date.year),
-        Number(date.month),
-        Number(date.day),
-      ]);
-    },
-  };
-}
-
-/**
- * The words and the order, over fields as `en-GB` renders them and the zoned calendar date as
- * `[year, month, day]` numbers. Shared with `hermes.ts`, which reads the same fields without
- * `formatToParts`, so the two can only differ in how they read and never in what they write.
- */
-export function writtenInAzerbaijani(
-  options: Intl.DateTimeFormatOptions,
-  fields: Readonly<Record<string, string>>,
-  [year, monthNumber, day]: readonly [number, number, number],
-): string {
   const month = monthStyle(options);
   const weekday = weekdayStyle(options);
   const spelledOut = month === 'long' || month === 'short' || month === 'narrow';
 
-  const monthIndex = monthNumber - 1;
-  // Built in UTC from the zoned calendar date, so the weekday is the one the reader is
-  // looking at rather than the one it is in Greenwich.
-  const dayIndex = new Date(Date.UTC(year, monthIndex, day)).getUTCDay();
+  return {
+    format(value: Date | number): string {
+      const at = typeof value === 'number' ? new Date(value) : value;
+      const fields = fieldsOf(rendered, at);
+      const date = fieldsOf(calendar, at);
 
-  let written = '';
+      const monthIndex = Number(date.month) - 1;
+      // Built in UTC from the zoned calendar date, so the weekday is the one the reader is
+      // looking at rather than the one it is in Greenwich.
+      const dayIndex = new Date(
+        Date.UTC(Number(date.year), monthIndex, Number(date.day)),
+      ).getUTCDay();
 
-  if (fields.month !== undefined && spelledOut) {
-    // `14 avqust 2026` — day, month, year, in that order and separated by spaces. The
-    // month falls back to whatever `en-GB` rendered if the index is somehow outside the
-    // table, which is a January-to-December array and cannot be, but `strict` counts.
-    const name = MONTHS[month as 'long' | 'short' | 'narrow'][monthIndex] ?? fields.month;
-    written = [fields.day, name, fields.year]
-      .filter((piece) => piece !== undefined && piece !== '')
-      .join(' ');
-  } else if (fields.month !== undefined) {
-    // `14.08.2026`. A two-digit year is what `dateStyle: 'short'` means here, and `en-GB`
-    // renders four for it, so this is the one numeric field that cannot come from it.
-    const shown =
-      options.dateStyle === 'short' && fields.year !== undefined
-        ? fields.year.slice(-2)
-        : fields.year;
-    written = [fields.day, fields.month, shown]
-      .filter((piece) => piece !== undefined && piece !== '')
-      .join('.');
-  } else {
-    written = [fields.day, fields.year]
-      .filter((piece) => piece !== undefined && piece !== '')
-      .join(' ');
-  }
+      let written = '';
 
-  if (weekday !== undefined && fields.weekday !== undefined) {
-    const name = WEEKDAYS[weekday as 'long' | 'short' | 'narrow'][dayIndex] ?? fields.weekday;
-    // After the date and not before it. `14 avqust 2026, cümə`.
-    written = written === '' ? name : `${written}, ${name}`;
-  }
+      if (fields.month !== undefined && spelledOut) {
+        // `14 avqust 2026` — day, month, year, in that order and separated by spaces. The
+        // month falls back to whatever `en-GB` rendered if the index is somehow outside the
+        // table, which is a January-to-December array and cannot be, but `strict` counts.
+        const name = MONTHS[month as 'long' | 'short' | 'narrow'][monthIndex] ?? fields.month;
+        written = [fields.day, name, fields.year]
+          .filter((piece) => piece !== undefined && piece !== '')
+          .join(' ');
+      } else if (fields.month !== undefined) {
+        // `14.08.2026`. A two-digit year is what `dateStyle: 'short'` means here, and `en-GB`
+        // renders four for it, so this is the one numeric field that cannot come from it.
+        const year =
+          options.dateStyle === 'short' && fields.year !== undefined
+            ? fields.year.slice(-2)
+            : fields.year;
+        written = [fields.day, fields.month, year]
+          .filter((piece) => piece !== undefined && piece !== '')
+          .join('.');
+      } else {
+        written = [fields.day, fields.year]
+          .filter((piece) => piece !== undefined && piece !== '')
+          .join(' ');
+      }
 
-  const clock = [fields.hour, fields.minute, fields.second]
-    .filter((piece) => piece !== undefined)
-    .join(':');
-  const time = [clock, fields.timeZoneName].filter((piece) => piece !== undefined && piece !== '').join(' ');
+      if (weekday !== undefined && fields.weekday !== undefined) {
+        const name = WEEKDAYS[weekday as 'long' | 'short' | 'narrow'][dayIndex] ?? fields.weekday;
+        // After the date and not before it. `14 avqust 2026, cümə`.
+        written = written === '' ? name : `${written}, ${name}`;
+      }
 
-  if (written === '') return time;
-  if (time === '') return written;
+      const clock = [fields.hour, fields.minute, fields.second]
+        .filter((piece) => piece !== undefined)
+        .join(':');
+      const time = [clock, fields.timeZoneName].filter((piece) => piece !== undefined && piece !== '').join(' ');
 
-  /*
-   * The glue, which is a field of its own in CLDR and differs by the length of the date:
-   * a full or long date takes `{1}/{0}` and a medium or short one takes `{1}, {0}`. So
-   * `14 avq 2026, 23:06` and `14 avqust 2026/23:06` are both correct, and both are what
-   * full ICU produces. It reads oddly in English and it is not this module's to reword.
-   */
-  return `${written}${spelledOut && month === 'long' ? '/' : ', '}${time}`;
+      if (written === '') return time;
+      if (time === '') return written;
+
+      /*
+       * The glue, which is a field of its own in CLDR and differs by the length of the date:
+       * a full or long date takes `{1}/{0}` and a medium or short one takes `{1}, {0}`. So
+       * `14 avq 2026, 23:06` and `14 avqust 2026/23:06` are both correct, and both are what
+       * full ICU produces. It reads oddly in English and it is not this module's to reword.
+       */
+      return `${written}${spelledOut && month === 'long' ? '/' : ', '}${time}`;
+    },
+  };
 }
