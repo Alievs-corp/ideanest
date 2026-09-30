@@ -47,9 +47,16 @@ const AYSEL: Me = {
   currency: 'AZN',
 };
 
-function given(state: SessionState, me: Me | null | undefined, isError = false): void {
+function given(
+  state: SessionState,
+  me: Me | null | undefined,
+  isError = false,
+  fetchStatus: 'fetching' | 'paused' | 'idle' = isError ? 'idle' : 'fetching',
+): void {
   jest.mocked(useSessionState).mockReturnValue(state);
-  jest.mocked(useMe).mockReturnValue({ data: me, isError } as ReturnType<typeof useMe>);
+  jest
+    .mocked(useMe)
+    .mockReturnValue({ data: me, isError, fetchStatus } as ReturnType<typeof useMe>);
 }
 
 async function renderMe() {
@@ -158,6 +165,18 @@ describe('the Me tab', () => {
 
     expect(screen.getByTestId('identity-skeleton', { includeHiddenElements: true })).toBeTruthy();
     expect(readingOrder()).toEqual(HELD);
+  });
+
+  it('offline, the read paused for a connection: the unknown layout, not a skeleton', async () => {
+    // Issue #150: a paused query is neither fetching nor an error. A skeleton would wait on
+    // it for as long as the phone is offline.
+    given('unknown', undefined, false, 'paused');
+    await renderMe();
+
+    expect(readingOrder()).toEqual(HELD);
+    expect(
+      screen.queryByTestId('identity-skeleton', { includeHiddenElements: true }),
+    ).toBeNull();
   });
 
   it('locked, prompt dismissed: still no "Sign in", and the lock can still be turned off', async () => {

@@ -47,19 +47,32 @@ function publish(): void {
  * <p>Both of RFC 9110's forms: delay-seconds (`120`) and an HTTP-date. `@ideanest/api-client`'s
  * reader takes only the first because the service never sends a date — but this header comes
  * from the edge, not the service, and a proxy's maintenance page is exactly where a date
- * appears. A date in the past means "now". Absent or unreadable is {@link POLL_INTERVAL_MS}.
+ * appears. Absent or unreadable is {@link POLL_INTERVAL_MS}.
+ *
+ * <p>Clamped to {@link MIN_FIRST_POLL_MS}–{@link MAX_FIRST_POLL_MS}. Below: a `0`, or a date
+ * already past, would ask in the same breath as the 503 that is still on screen. Above: the
+ * header is the edge's guess at the window, and a phone that waited an hour on a guess would
+ * show "unavailable" long after the service came back — "Try again" is the only other way out,
+ * and nobody should need it.
  */
 export function retryAfterMs(header: string | null, now: number = Date.now()): number {
   const value = header?.trim() ?? '';
-  if (/^\d+$/.test(value)) return Number(value) * 1000;
+  const clamp = (ms: number) => Math.min(MAX_FIRST_POLL_MS, Math.max(MIN_FIRST_POLL_MS, ms));
+  if (/^\d+$/.test(value)) return clamp(Number(value) * 1000);
 
   // `Date.parse` alone would read "5" or "tomorrow-ish" as something; an HTTP-date names a day.
   if (/^[A-Za-z]{3}, /.test(value)) {
     const at = Date.parse(value);
-    if (Number.isFinite(at)) return Math.max(0, at - now);
+    if (Number.isFinite(at)) return clamp(at - now);
   }
   return POLL_INTERVAL_MS;
 }
+
+/** The shortest first wait `Retry-After` can ask for. */
+export const MIN_FIRST_POLL_MS = 5_000;
+
+/** The longest first wait `Retry-After` can ask for. */
+export const MAX_FIRST_POLL_MS = 5 * 60_000;
 
 /** Whether the maintenance screen should be showing. */
 export function inMaintenance(): boolean {
@@ -83,6 +96,30 @@ export function leaveMaintenance(): void {
   if (firstPollDelay === null) return;
   firstPollDelay = null;
   publish();
+}
+
+let deferred: (() => void) | null = null;
+
+/**
+ * Holds a navigation until the service is back, when it is away. Returns whether it held it.
+ *
+ * <p>For a link or a tapped notification that arrives during maintenance. Followed at once, it
+ * would push a screen over the maintenance screen — a screen whose reads can only fail — and
+ * leave the reader one back-press from the broken stack. Dropped, the link somebody tapped would
+ * vanish. Held, it opens the moment the service answers. Only the latest is kept: two links
+ * tapped during an outage mean the reader changed their mind.
+ */
+export function deferUntilUp(navigate: () => void): boolean {
+  if (!inMaintenance()) return false;
+  deferred = navigate;
+  return true;
+}
+
+/** The navigation held during maintenance, once, or null. */
+export function takeDeferred(): (() => void) | null {
+  const navigate = deferred;
+  deferred = null;
+  return navigate;
 }
 
 /**
@@ -112,23 +149,39 @@ export function useMaintenance(): boolean {
 }
 
 /**
- * Whether the service answers again: anything but a 503 from `GET /v1/categories`.
+ * Whether the service answers again: any status below 500 from `GET /v1/categories`.
  *
  * <h2>Why that endpoint, and why not through `api/client.ts`</h2>
  *
- * Public, small, and cached by the service — the cheapest read in the contract that goes
+ * Public, small, and cheap for the service — the cheapest read in the contract that goes
  * through the whole stack rather than stopping at a health probe the edge might answer on its
  * own. It is fetched **without** the session: `sessionFetch` refreshes a missing access token
  * before the first call, and with the biometric lock on that is a Face ID prompt every thirty
  * seconds on a screen that is only waiting. A thrown `fetch` is "not yet": the connection went,
  * the service did not come back.
+ *
+ * <h2>Never from a cache</h2>
+ *
+ * The service marks this response `public, max-age=3600`, so the platform's HTTP cache
+ * (OkHttp's, `NSURLCache`) or a CDN would happily answer the poll with the 200 it stored before
+ * the outage. The screen would leave, the next real read would meet the 503, and it would be
+ * pushed again — a loop. So the request says `no-store`, sends `Cache-Control: no-cache` for
+ * the intermediaries, and carries a query string no cache has seen.
+ *
+ * <p>Below 500 rather than "not 503": a 502 or 504 is the edge saying the service is still not
+ * there, and leaving on one would send the reader straight into it.
  */
-export async function serviceAnswers(): Promise<boolean> {
+export async function serviceAnswers(now: number = Date.now()): Promise<boolean> {
   try {
-    const response = await fetch(`${apiOrigin()}/v1/categories`, {
-      headers: { accept: 'application/json', 'Accept-Language': currentLocale() },
+    const response = await fetch(`${apiOrigin()}/v1/categories?_=${now}`, {
+      cache: 'no-store',
+      headers: {
+        accept: 'application/json',
+        'Accept-Language': currentLocale(),
+        'Cache-Control': 'no-cache',
+      },
     });
-    return response.status !== 503;
+    return response.status < 500;
   } catch {
     return false;
   }

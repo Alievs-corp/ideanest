@@ -22,20 +22,36 @@ import { onlineManager } from '@tanstack/react-query';
  * it — the one thing the issue says must not happen on a launch that is already online. A
  * launch that really is offline shows the banner one frame later, which nobody can tell.
  *
- * <h2>What counts as offline</h2>
+ * <h2>What counts as offline, and how soon</h2>
  *
- * No connection, or a connection the platform says does not reach the internet (Android's
- * `NET_CAPABILITY_VALIDATED`: hotel Wi-Fi before the sign-in page). An `undefined` in either
- * field is "not known", and not known is not offline: a banner that claims the phone is
- * offline when it is not is worse than one that is a moment late.
+ * **No connection** (`isConnected: false`) is offline at once: there is nothing to doubt.
+ *
+ * **A connection that does not reach the internet** (`isInternetReachable: false` while
+ * connected) is offline only once it has stayed that way for {@link UNREACHABLE_GRACE_MS}. On
+ * iOS the field simply mirrors `isConnected`; on Android it is `NET_CAPABILITY_VALIDATED`, which
+ * is right about hotel Wi-Fi before its sign-in page and wrong, briefly or for good, about some
+ * VPNs, networks that block Google's connectivity check, and every Wi-Fi-to-cellular handover.
+ * A banner that says the phone is offline while pages are loading is worse than one that is a
+ * few seconds late, so this doubt gets a grace period and the first kind does not.
+ *
+ * **Online** is believed at once, and cancels a pending "unreachable". A field the platform
+ * leaves out is not known, and not known is not offline.
  */
 
 let online = true;
 const listeners = new Set<() => void>();
 
-/** Whether a reported state means "offline". Exported so the rule is tested where it is written. */
-export function isOfflineState(state: Network.NetworkState): boolean {
-  return state.isConnected === false || state.isInternetReachable === false;
+/** How long a connected-but-unreachable network must stay that way before it counts as offline. */
+export const UNREACHABLE_GRACE_MS = 5_000;
+
+/**
+ * What a reported state means: `offline` now, `unreachable` (offline if it lasts), or `online`.
+ * Exported so the rule is tested where it is written.
+ */
+export function reachabilityOf(state: Network.NetworkState): 'offline' | 'unreachable' | 'online' {
+  if (state.isConnected === false) return 'offline';
+  if (state.isInternetReachable === false) return 'unreachable';
+  return 'online';
 }
 
 /** Whether the phone is online right now, as far as this application knows. Synchronous. */
@@ -76,16 +92,36 @@ export function useOnline(): boolean {
 export function startConnectivity(): () => void {
   let live = true;
   let heard = false;
+  let grace: ReturnType<typeof setTimeout> | undefined;
+
+  const cancelGrace = () => {
+    if (grace !== undefined) clearTimeout(grace);
+    grace = undefined;
+  };
+
+  const apply = (state: Network.NetworkState) => {
+    const reach = reachabilityOf(state);
+    if (reach === 'unreachable') {
+      // Started once, not restarted by every repeat of the same report.
+      grace ??= setTimeout(() => {
+        grace = undefined;
+        setOnline(false);
+      }, UNREACHABLE_GRACE_MS);
+      return;
+    }
+    cancelGrace();
+    setOnline(reach === 'online');
+  };
 
   const subscription = Network.addNetworkStateListener((state) => {
     heard = true;
-    setOnline(!isOfflineState(state));
+    apply(state);
   });
 
   void Network.getNetworkStateAsync()
     .then((state) => {
       // A change reported while this was in flight is newer than this answer.
-      if (live && !heard) setOnline(!isOfflineState(state));
+      if (live && !heard) apply(state);
     })
     .catch(() => {
       // No answer is "not known", which the class comment says is online.
@@ -98,6 +134,7 @@ export function startConnectivity(): () => void {
 
   return () => {
     live = false;
+    cancelGrace();
     subscription.remove();
     // Runs the cleanup of the listener above, which is the unsubscribe.
     onlineManager.setEventListener(() => undefined);

@@ -1,4 +1,5 @@
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { ApiError } from '@ideanest/api-client';
 import { onlineManager, QueryClient } from '@tanstack/react-query';
 import type { Persister } from '@tanstack/react-query-persist-client';
 import { deviceStore, type KeyValueStore } from './storage';
@@ -129,7 +130,12 @@ export function createQueryClient(): QueryClient {
 /**
  * Whether a failed query is tried again — issue #150.
  *
- * <p>Twice, as before, and never while the phone is offline. Since
+ * <p>Twice, and never on a 4xx other than 408 (timeout) and 429 (rate limited):
+ * the rest are the service's considered answer, and asking again gets the same
+ * one. The rule the comment above always stated; the number it replaced retried
+ * those too.
+ *
+ * <p>Never while the phone is offline. Since
  * `lib/connectivity.ts` wires `onlineManager`, a retry decided on while offline
  * would not fail — it would **pause** until the connection returned, and a paused
  * query with nothing cached is neither loading nor an error, so a screen would
@@ -138,7 +144,10 @@ export function createQueryClient(): QueryClient {
  * its cached data with its notice, and `refetchOnReconnect` — the thing the
  * wiring is for — fetches it again when the phone is back.
  */
-export function shouldRetry(failureCount: number): boolean {
+export function shouldRetry(failureCount: number, error?: unknown): boolean {
+  if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+    if (error.status !== 408 && error.status !== 429) return false;
+  }
   return failureCount < 2 && onlineManager.isOnline();
 }
 

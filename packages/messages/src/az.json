@@ -5179,7 +5179,7 @@
       "retry": "Yenidən cəhd et"
     },
     "offline": {
-      "banner": "İnternet bağlantısı yoxdur. Bağlantı bərpa olunana qədər ekranda gördükləriniz köhnə ola bilər."
+      "banner": "İnternet bağlantısı yoxdur. Bağlantı bərpa olunana qədər gördükləriniz köhnəlmiş ola bilər."
     }
   }
 }

@@ -2,8 +2,11 @@ import { ApiError } from '@ideanest/api-client';
 import { api } from '../api/client';
 import { setOnline } from './connectivity';
 import {
+  MAX_FIRST_POLL_MS,
+  MIN_FIRST_POLL_MS,
   POLL_INTERVAL_MS,
   createPoller,
+  deferUntilUp,
   firstPollDelayMs,
   inMaintenance,
   leaveMaintenance,
@@ -11,13 +14,21 @@ import {
   retryAfterMs,
   serviceAnswers,
   subscribeToMaintenance,
+  takeDeferred,
 } from './maintenance';
-import { rememberAccessToken, useFlagStore } from './session';
+import {
+  hasStoredSession,
+  rememberAccessToken,
+  storeRefreshToken,
+  storedRefreshToken,
+  useFlagStore,
+} from './session';
 import { memoryStore } from './storage';
 
 /**
- * The maintenance trigger — issue #150: a 503 is maintenance, `Retry-After` sets the first
- * wait, nothing else trips it, and the poller lets go the moment the service answers.
+ * The maintenance trigger — issue #150: a 503 is maintenance wherever it is met (a read or the
+ * refresh in front of it), `Retry-After` sets the first wait within limits, nothing else trips
+ * it, an outage never signs anybody out, and the poller lets go the moment the service answers.
  */
 
 const fetchMock = jest.fn<Promise<Response>, [string, RequestInit | undefined]>();
@@ -26,13 +37,15 @@ function status(code: number, headers: Record<string, string> = {}): Response {
   return new Response(null, { status: code, headers });
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   fetchMock.mockReset();
   global.fetch = fetchMock as unknown as typeof fetch;
   useFlagStore(memoryStore());
+  await storeRefreshToken(null);
   rememberAccessToken(null);
   setOnline(true);
   leaveMaintenance();
+  takeDeferred();
 });
 
 describe('Retry-After', () => {
@@ -40,13 +53,22 @@ describe('Retry-After', () => {
 
   it('reads delay-seconds', () => {
     expect(retryAfterMs('120', NOW)).toBe(120_000);
-    expect(retryAfterMs(' 5 ', NOW)).toBe(5_000);
-    expect(retryAfterMs('0', NOW)).toBe(0);
+    expect(retryAfterMs(' 45 ', NOW)).toBe(45_000);
   });
 
-  it('reads an HTTP-date, and a date already past means now', () => {
+  it('reads an HTTP-date', () => {
     expect(retryAfterMs('Wed, 30 Sep 2026 12:02:00 GMT', NOW)).toBe(120_000);
-    expect(retryAfterMs('Wed, 30 Sep 2026 11:00:00 GMT', NOW)).toBe(0);
+  });
+
+  it('is clamped to five seconds at least and five minutes at most', () => {
+    expect(MIN_FIRST_POLL_MS).toBe(5_000);
+    expect(MAX_FIRST_POLL_MS).toBe(300_000);
+    expect(retryAfterMs('0', NOW)).toBe(MIN_FIRST_POLL_MS);
+    expect(retryAfterMs('2', NOW)).toBe(MIN_FIRST_POLL_MS);
+    // A date already past means "now", which is five seconds from the 503 still on screen.
+    expect(retryAfterMs('Wed, 30 Sep 2026 11:00:00 GMT', NOW)).toBe(MIN_FIRST_POLL_MS);
+    expect(retryAfterMs('3600', NOW)).toBe(MAX_FIRST_POLL_MS);
+    expect(retryAfterMs('Thu, 01 Oct 2026 12:00:00 GMT', NOW)).toBe(MAX_FIRST_POLL_MS);
   });
 
   it('falls back to thirty seconds when absent or unreadable', () => {
@@ -112,28 +134,76 @@ describe('the trigger', () => {
     await expect(api().get('/v1/discover')).rejects.toBeInstanceOf(ApiError);
     expect(inMaintenance()).toBe(false);
   });
+
+  it('a cold start signed in: the refresh meets the 503 first, and the session survives it', async () => {
+    // The read refreshes before it is sent, so during an outage the refresh is the request
+    // that sees the 503 — and it throws before any read reaches `sessionFetch`'s own check.
+    await storeRefreshToken('refresh-1');
+    fetchMock.mockResolvedValueOnce(status(503, { 'Retry-After': '20' }));
+
+    await expect(api().get('/v1/me/saved')).rejects.toBeInstanceOf(ApiError);
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/auth/refresh');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(inMaintenance()).toBe(true);
+    expect(firstPollDelayMs()).toBe(20_000);
+    // An outage is not a revoked session: nobody is signed out by maintenance.
+    expect(hasStoredSession()).toBe(true);
+    await expect(storedRefreshToken()).resolves.toBe('refresh-1');
+  });
+});
+
+describe('links during maintenance', () => {
+  it('are held until the service is back, and only the latest', () => {
+    const first = jest.fn();
+    const second = jest.fn();
+
+    expect(deferUntilUp(first)).toBe(false);
+
+    observeResponse(status(503));
+    expect(deferUntilUp(first)).toBe(true);
+    expect(deferUntilUp(second)).toBe(true);
+
+    expect(takeDeferred()).toBe(second);
+    expect(takeDeferred()).toBeNull();
+  });
 });
 
 describe('serviceAnswers', () => {
-  it('asks a public endpoint with no session on it', async () => {
+  it('asks a public endpoint with no session on it, and never from a cache', async () => {
     rememberAccessToken('secret');
     fetchMock.mockResolvedValueOnce(status(200));
 
-    await expect(serviceAnswers()).resolves.toBe(true);
+    await expect(serviceAnswers(1_234)).resolves.toBe(true);
 
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe('https://api.test.invalid/v1/categories');
-    expect(new Headers(init?.headers).has('Authorization')).toBe(false);
+    // A query string no cache has seen: the service marks this `public, max-age=3600`.
+    expect(url).toBe('https://api.test.invalid/v1/categories?_=1234');
+    expect(init?.cache).toBe('no-store');
+    const headers = new Headers(init?.headers);
+    expect(headers.get('Cache-Control')).toBe('no-cache');
+    expect(headers.has('Authorization')).toBe(false);
   });
 
-  it('a 503 or no answer at all is "not yet"; anything else is back', async () => {
-    fetchMock.mockResolvedValueOnce(status(503));
-    await expect(serviceAnswers()).resolves.toBe(false);
+  it('a new query string every time', async () => {
+    fetchMock.mockResolvedValue(status(503));
+    await serviceAnswers(1);
+    await serviceAnswers(2);
+    expect(fetchMock.mock.calls[0]?.[0]).not.toBe(fetchMock.mock.calls[1]?.[0]);
+  });
 
+  it.each([502, 503, 504, 500])('a %i is "not yet"', async (code) => {
+    fetchMock.mockResolvedValueOnce(status(code));
+    await expect(serviceAnswers()).resolves.toBe(false);
+  });
+
+  it('no answer at all is "not yet"', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('Network request failed'));
     await expect(serviceAnswers()).resolves.toBe(false);
+  });
 
-    fetchMock.mockResolvedValueOnce(status(500));
+  it.each([200, 304, 404, 429])('a %i is the service answering', async (code) => {
+    fetchMock.mockResolvedValueOnce(status(code));
     await expect(serviceAnswers()).resolves.toBe(true);
   });
 });

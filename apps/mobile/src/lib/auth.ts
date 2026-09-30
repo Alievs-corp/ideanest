@@ -1,6 +1,7 @@
 import { ApiError, errorFrom } from '@ideanest/api-client';
 import * as Device from 'expo-device';
 import { apiOrigin } from '../api/config';
+import { observeResponse } from './maintenance';
 import { unregisterFromPush } from './push';
 import {
   endSession,
@@ -174,8 +175,8 @@ async function runRefresh(): Promise<string | null> {
       await endSession();
       return null;
     }
-    // A network fault is not a revoked session. Nothing is cleared and the next
-    // attempt can succeed.
+    // A network fault is not a revoked session, and neither is a 5xx — a 503 is
+    // maintenance (issue #150). Nothing is cleared and the next attempt can succeed.
     rememberAccessToken(null);
     throw failure;
   }
@@ -230,15 +231,24 @@ async function adopt(body: TokenBody): Promise<void> {
  * the body. `api/client.ts` is where an authenticated read goes.
  */
 async function post(path: string, body: unknown): Promise<unknown> {
-  const response = await fetch(apiOrigin() + path, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      accept: 'application/json',
-      [CLIENT_HEADER]: CLIENT_HEADER_VALUE,
-    },
-    body: JSON.stringify(body),
-  });
+  /*
+   * Shown to the maintenance trigger (issue #150) like every `sessionFetch` response. A cold
+   * start with a stored session refreshes BEFORE its first read, so during an outage the
+   * refresh is the first request to meet the 503 — and it throws here, before any read gets
+   * as far as `sessionFetch`'s own check. A 503 is not a 401, so `runRefresh` keeps the
+   * session: an outage never signs anybody out.
+   */
+  const response = observeResponse(
+    await fetch(apiOrigin() + path, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        [CLIENT_HEADER]: CLIENT_HEADER_VALUE,
+      },
+      body: JSON.stringify(body),
+    }),
+  );
 
   if (!response.ok) throw await errorFrom(response);
   return response.status === 204 ? null : await response.json();

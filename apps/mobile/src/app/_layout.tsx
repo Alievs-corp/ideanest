@@ -11,7 +11,8 @@ import { siteUrl } from '../api/config';
 import { OfflineAnnouncer, WithOfflineBanner } from '../components/offline-banner';
 import { startConnectivity } from '../lib/connectivity';
 import { destinationFor } from '../lib/links';
-import { useMaintenance } from '../lib/maintenance';
+import { deferUntilUp } from '../lib/maintenance';
+import { useMaintenanceGate } from '../lib/maintenance-gate';
 import { createQueryClient, persistOptions } from '../lib/offline';
 import { lockNow } from '../lib/session';
 import { AccountSync } from '../lib/account-sync';
@@ -83,26 +84,11 @@ function urlFromNotification(
   return typeof url === 'string' ? url : null;
 }
 
-/**
- * Shows `maintenance` when `lib/maintenance.ts` says the service is away — issue #150.
- *
- * <p>Pushed rather than replacing the stack, so that when the service answers the screen can
- * go back to exactly where the reader was; what stops them going back *before* then is the
- * route's own options below and its hardware-back handler. Only the entry is here: the screen
- * owns its polling and its exit, because it is the one that knows when it is being looked at.
- */
-function useMaintenanceGate() {
-  const router = useRouter();
-  const down = useMaintenance();
-  useEffect(() => {
-    if (down) router.push('/maintenance');
-  }, [down, router]);
-}
-
 /** The root stack; inside the intl provider so its screen titles are translated. */
 function AppStack() {
   const t = useT();
-  useMaintenanceGate();
+  // Pushes `maintenance` when the service is away (`lib/maintenance-gate.ts`).
+  useMaintenanceGate(useRouter());
   return (
     <Stack
       screenOptions={{
@@ -190,7 +176,10 @@ export default function RootLayout() {
       // `null` means "a link this application does not claim". Doing nothing is
       // the answer: Expo Router has already shown the launch route, and sending
       // somebody to the feed instead would make a bad link look like a good one.
-      if (destination !== null) router.push(destination.pathname as never);
+      if (destination === null) return;
+      const go = () => router.push(destination.pathname as never);
+      // During maintenance the link waits for the service (`deferUntilUp`), then opens.
+      if (!deferUntilUp(go)) go();
     };
 
     void Linking.getInitialURL().then(open);
