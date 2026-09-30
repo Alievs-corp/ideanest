@@ -30,6 +30,7 @@
 
   --color-on-lime: var(--text-on-lime);
   --color-on-white: var(--text-on-white);
+  --color-on-danger: var(--text-on-danger);
   --color-reading: var(--text-reading);
 
   --radius-sm: var(--radius-sm);

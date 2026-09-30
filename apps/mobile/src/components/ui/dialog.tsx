@@ -57,9 +57,9 @@ import { SurfaceProvider, TONES } from './surface';
  *
  * On a phone the footer's buttons stack full width, the primary action FIRST — the thumb reaches
  * the top of the stack, and the order a screen reader meets them in is the order of importance.
- * Pass `fullWidth` pills. Note that `Pill`'s `primary` is white and vanishes on this white panel;
- * a dialog's confirming action is `danger` for a destructive one and `accent` for the one urgent
- * one, with `ghost` or `outline` for the way out.
+ * Pass `fullWidth` pills. `Pill`'s `primary` reads the white surface this provides and turns
+ * near-black, so it is the ordinary confirming action here; `danger` for a destructive one,
+ * `accent` for the one urgent one, and `ghost` or `outline` for the way out.
  *
  * <h2>Motion</h2>
  *

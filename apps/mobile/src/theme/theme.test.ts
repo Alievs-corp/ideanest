@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { colors, radius, shadow, spacing } from '@ideanest/design-tokens';
 import { toneColor, type Tone } from '../components/text';
+import { DANGER_PRESSED_ALPHA } from '../components/ui/pill';
 import { focusRingColor, TONES, type Surface } from '../components/ui/surface';
 import * as theme from './index';
 import { fontSize, lineHeight, motion, tint, tracking } from './index';
@@ -271,6 +272,33 @@ describe('contrast of every tone on every surface it can land on', () => {
     expect(ratio(colors.textSecondary, colors.lime500)).toBeLessThan(LARGE_OR_NON_TEXT);
   });
 
+  /**
+   * `danger` pills, icon buttons and the down badge (#229). The pressed fill is `--danger` at
+   * `DANGER_PRESSED_ALPHA` over whatever is behind, so it is measured over the darkest surface
+   * and over white, the two ends of what a control can sit on.
+   */
+  it('reads near-black on danger, at rest and pressed', () => {
+    expect(ratio(colors.textOnDanger, colors.danger)).toBeGreaterThanOrEqual(BODY);
+    for (const behind of [colors.surface1, colors.whiteSurface]) {
+      const pressed = flatten(colors.danger, DANGER_PRESSED_ALPHA, behind);
+      expect(ratio(colors.textOnDanger, pressed)).toBeGreaterThanOrEqual(BODY);
+    }
+  });
+
+  /** Why `textOnDanger` exists: white on danger, measured. */
+  it('refuses white on danger as a label colour', () => {
+    expect(ratio(colors.textPrimary, colors.danger)).toBeLessThan(BODY);
+  });
+
+  /** `primary` and `light` on a white surface (#232): the fill has an edge, the label reads. */
+  it('gives the inverted primary an edge on white and a legible label', () => {
+    for (const [, white] of SURFACES.white) {
+      expect(ratio(colors.surface1, white)).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+      expect(ratio(colors.surface3, white)).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+    }
+    expect(ratio(colors.textPrimary, colors.surface3)).toBeGreaterThanOrEqual(BODY);
+  });
+
   /** And the rule's own number: lime as text on white. */
   it('refuses lime as a text colour on white', () => {
     expect(ratio(colors.lime500, colors.whiteSurface)).toBeLessThan(LARGE_OR_NON_TEXT);
@@ -296,6 +324,14 @@ function ratio(foreground: string, background: string): number {
     number,
   ];
   return (lighter + 0.05) / (darker + 0.05);
+}
+
+/** `colour` at `alpha` composited over an opaque `background`, as an opaque colour. */
+function flatten(colour: string, alpha: number, background: string): string {
+  const top = parse(colour);
+  const back = parse(background);
+  const mix = (a: number, b: number) => Math.round(a * alpha + b * (1 - alpha));
+  return `rgba(${mix(top.red, back.red)},${mix(top.green, back.green)},${mix(top.blue, back.blue)},1)`;
 }
 
 interface Rgba {

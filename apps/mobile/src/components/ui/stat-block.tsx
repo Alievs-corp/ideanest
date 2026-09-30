@@ -40,7 +40,7 @@ const TREND: Record<
   down: {
     icon: ArrowDown,
     background: colors.danger,
-    text: colors.textPrimary,
+    text: colors.textOnDanger,
     key: 'change.down',
   },
   neutral: {

@@ -104,6 +104,9 @@ export function Modal({
         // Focusable so a dialog with no controls still receives focus rather
         // than leaving it stranded on the page behind.
         tabIndex={-1}
+        // Tells what sits inside that it is on white: `Pill`'s primary inverts
+        // and the focus ring turns near-black (theme.css).
+        data-on-white=""
         className={cn(modalPanel({ size }), className)}
         {...entry}
         {...props}

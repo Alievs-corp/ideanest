@@ -99,6 +99,10 @@ two faces, and they suit it differently:
 | `--text-reading` | `rgb(255 255 255 / 0.92)` | Long-form body copy | 17.5:1 |
 | `--text-on-lime` | `#0A0A0A` | Text on a lime surface | **15.8:1** AAA |
 | `--text-on-white` | `#0A0A0A` | Text on a white surface | **19.3:1** AAA |
+| `--text-on-danger` | `#0A0A0A` | Label on a `--danger` fill | **5.8:1** on `--danger` AA |
+
+White on `--danger` measures 3.4:1, which fails AA for a button label at
+13–16px. A danger fill takes near-black text, exactly as lime does.
 
 ### 2.3 Lime — the brand accent
 
@@ -372,6 +376,12 @@ Three variants at one size, encoding **state** rather than elevation:
 .pill--accent  { background: var(--lime-500);     color: var(--text-on-lime); }
 .pill--ghost   { background: var(--surface-3);    color: var(--text-primary); }
 .pill--outline { background: transparent; border: 1px solid var(--border-strong); }
+.pill--danger  { background: var(--danger);       color: var(--text-on-danger); }
+
+/* On a white surface a white pill has no edge: primary inverts. */
+[data-on-white] .pill--primary { background: var(--surface-1); color: var(--text-primary); }
+[data-on-white] .pill--primary:hover { background: var(--surface-3); }
+[data-on-white] .pill--outline { border-color: rgb(0 0 0 / 0.16); color: var(--text-on-white); }
 
 .pill:hover  { transform: translateY(-1px); }
 .pill:active { transform: translateY(0) scale(0.98); }
@@ -379,6 +389,13 @@ Three variants at one size, encoding **state** rather than elevation:
 
 **At most one `accent` pill per screen.** Beyond that, urgency stops meaning
 anything.
+
+**`primary` is surface-aware.** On the dark surfaces it is white; inside a
+`Modal` or `FloatingPanel`, which carry `data-on-white`, it becomes the dark
+system's own fill with a white label, so the confirming action in a white
+dialog is still a button and not a line of text. `outline` swaps its white
+label and hairline for near-black ones there, for the same reason. The native
+`Pill` reads `SurfaceProvider surface="white"` for the same switch.
 
 ### 7.3 Filter chip
 
@@ -442,7 +459,9 @@ and colour and icon never carry it alone (§9.2).
 .icon-btn:hover { background: var(--surface-4); transform: scale(1.06); }
 ```
 
-Variants: `light` (white), `accent` (lime), `danger`, `ghost`.
+Variants: `light` (white), `accent` (lime), `danger`, `ghost`. `light`
+inverts on a white surface and `danger` draws a near-black glyph, for §7.2's
+reasons.
 An accessible name is mandatory.
 
 **Expand affordance (↗)** — top-right of a card, revealed on hover **and on
@@ -510,7 +529,7 @@ initials are derived from the name.
 .stat__badge { height: 20px; padding: 0 7px; border-radius: var(--radius-full);
                font-size: 11px; font-weight: 600; }
 .stat__badge--up   { background: var(--lime-500); color: var(--text-on-lime); }
-.stat__badge--down { background: var(--danger);   color: var(--white-surface); }
+.stat__badge--down { background: var(--danger);   color: var(--text-on-danger); }
 ```
 
 Figures animate on entry, but over 800ms — not the two seconds a marketing site
@@ -551,7 +570,8 @@ to say the clock is running.
 ```
 
 Text inside is near-black, so `--text-secondary` does not apply. Use
-`--text-on-white` at reduced opacity.
+`--text-on-white` at reduced opacity. The panel carries `data-on-white`, which
+inverts a primary pill (§7.2) and turns the focus ring near-black (§9.3).
 
 ### 7.10 Navigation rail
 
@@ -1256,6 +1276,12 @@ holding fails the build rather than quietly ageing in this table.
   outline: 2px solid var(--lime-500);
   outline-offset: 2px;
   border-radius: inherit;
+}
+
+/* A lime ring on white measures under 3:1. */
+[data-on-white] :focus-visible,
+[data-on-white]:focus-visible {
+  outline-color: var(--text-on-white);
 }
 
 /* A lime ring on a lime surface is invisible. */

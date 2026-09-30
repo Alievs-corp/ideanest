@@ -39,7 +39,7 @@ describe('StatBlock', () => {
 
   it.each([
     ['up', 'Up: +12%', colors.lime500, colors.textOnLime],
-    ['down', 'Down: −3', colors.danger, colors.textPrimary],
+    ['down', 'Down: −3', colors.danger, colors.textOnDanger],
     ['neutral', 'Unchanged: 0', colors.surface4, colors.textSecondary],
   ] as const)(
     'pairs the %s colour with an arrow and with words',

@@ -27,6 +27,8 @@ export const colors = {
   textReading: 'rgba(255,255,255,0.92)',
   textOnLime: '#0A0A0A',
   textOnWhite: '#0A0A0A',
+  /** Near-black on `--danger`: white there measures 3.4:1, under AA for a button label. */
+  textOnDanger: '#0A0A0A',
 
   lime300: '#DCFB7A',
   lime400: '#D2F95C',
