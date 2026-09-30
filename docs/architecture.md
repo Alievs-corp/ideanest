@@ -1613,6 +1613,26 @@ Preferences are per category and per channel, with a digest option.
 > real ones. A partner with no percentage is told a super admin has to set it, rather than
 > that they do not work here. The navigation rail shows a partner only what their
 > capabilities open, and the API is what refuses the rest.
+>
+> **The console's front page (#222).** `GET /v1/admin/dashboard` assembles the platform's key
+> figures from **sections that each module publishes** through the shared
+> `DashboardSection` interface, so the dashboard module knows none of them and cannot form
+> a cycle with them. A section declares the capability its own screen already asks for
+> (`requiresAny`), and the caller receives only the sections they hold one of: a moderator's
+> page has the campaign and report queues and no revenue, finance has the money and the
+> support queue, and a partner or curator, who hold none of them, gets an empty page rather
+> than an error. The request has two parameters, the first and last day; nothing else can
+> widen the answer. Each section is read on its own and a failure is served as `UNAVAILABLE`
+> while the others are untouched; the service opens no transaction of its own, because
+> PostgreSQL aborts a transaction at the first SQL error and would fail every section after
+> it. Values are decimal strings and there is no field that could carry a transaction or a
+> person. The first sections: `figures` (pledge volume, pledge count, backers, average pledge,
+> success rate, daily trend; `VIEW_FINANCE`), `campaigns` (running = live, closing window and
+> extended; awaiting moderation with the oldest wait; awaiting launch; changes requested;
+> every state; created in the period; `MODERATE_CONTENT`), `reports` (open, oldest wait;
+> `MODERATE_CONTENT`), `support` (open and pending, oldest wait; `HANDLE_SUPPORT`) and
+> `accounts` (opened in the period; `ADMINISTER_ACCOUNTS`). Each read is audited with the
+> sections served and failed. The screen follows in the next pull request.
 
 > **All sixteen have a screen now, and #259 is what built them.** The
 > distinction that table used to hide is between a capability's *record* and its

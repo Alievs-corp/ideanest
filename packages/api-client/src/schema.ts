@@ -308,6 +308,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["consoleDashboardRead"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/directory": {
         parameters: {
             query?: never;
@@ -4676,6 +4692,39 @@ export interface components {
         ConfirmTwoFactorRequest: {
             code: string;
         };
+        ConsoleDashboardFigure: {
+            currency?: string;
+            key?: string;
+            /** @enum {string} */
+            kind?: "COUNT" | "MONEY" | "RATIO";
+            /** Format: date-time */
+            since?: string;
+            value?: string;
+        };
+        ConsoleDashboardPoint: {
+            amount?: string;
+            /** Format: int64 */
+            count?: number;
+            /** Format: date */
+            date?: string;
+        };
+        ConsoleDashboardResponse: {
+            /** Format: date-time */
+            computedAt?: string;
+            /** Format: date */
+            from?: string;
+            sections?: components["schemas"]["ConsoleDashboardSection"][];
+            timeZone?: string;
+            /** Format: date */
+            to?: string;
+        };
+        ConsoleDashboardSection: {
+            figures?: components["schemas"]["ConsoleDashboardFigure"][];
+            key?: string;
+            series?: components["schemas"]["ConsoleDashboardPoint"][];
+            /** @enum {string} */
+            status?: "READY" | "UNAVAILABLE";
+        };
         ConsoleList: {
             subscriptions?: components["schemas"]["ConsoleRow"][];
         };
@@ -7178,6 +7227,10 @@ export type SchemaCommentResponse = components['schemas']['CommentResponse'];
 export type SchemaConfirmEmailChangeRequest = components['schemas']['ConfirmEmailChangeRequest'];
 export type SchemaConfirmPledgeRequest = components['schemas']['ConfirmPledgeRequest'];
 export type SchemaConfirmTwoFactorRequest = components['schemas']['ConfirmTwoFactorRequest'];
+export type SchemaConsoleDashboardFigure = components['schemas']['ConsoleDashboardFigure'];
+export type SchemaConsoleDashboardPoint = components['schemas']['ConsoleDashboardPoint'];
+export type SchemaConsoleDashboardResponse = components['schemas']['ConsoleDashboardResponse'];
+export type SchemaConsoleDashboardSection = components['schemas']['ConsoleDashboardSection'];
 export type SchemaConsoleList = components['schemas']['ConsoleList'];
 export type SchemaConsoleRow = components['schemas']['ConsoleRow'];
 export type SchemaCopyBody = components['schemas']['CopyBody'];
@@ -7984,6 +8037,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminCollectionResponse"];
+                };
+            };
+        };
+    };
+    consoleDashboardRead: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsoleDashboardResponse"];
                 };
             };
         };

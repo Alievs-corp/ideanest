@@ -413,6 +413,16 @@ public enum AuditAction {
     PARTNER_STATISTICS_READ("partner.statistics_read", "account"),
 
     /**
+     * #222: a member of staff opened the console's front page.
+     *
+     * <p>Recorded with the window and with which sections were served and which could not be
+     * read, so "who has been looking at the platform's figures, and what were they shown" is
+     * answerable. The entity is the reader's own account. Written independently of the read,
+     * like the other console reads.
+     */
+    DASHBOARD_READ("dashboard.read", "account"),
+
+    /**
      * AD-11 (#311): the platform changed what it charges.
      *
      * <p>The entity is the schedule that was opened rather than the one that was closed:
