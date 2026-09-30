@@ -65,14 +65,14 @@ IdeaNest2026!
 
 | Email | Name | Role | What it is for |
 |---|---|---|---|
-| `admin@ideanest.az` | Aysel Məmmədova | `ADMINISTRATOR` | Full console |
+| `admin@ideanest.az` | Aysel Məmmədova | `SUPER_ADMIN` | Full console |
 | `moderator@ideanest.az` | Rəşad Quliyev | `MODERATOR` | Moderation queue, content and profile reports |
 | `curator@ideanest.az` | Nigar Həsənova | `CURATOR` | Collections, badges, open calls, placement |
 | `finance@ideanest.az` | Elvin Abbasov | `FINANCE` | Payments, ledger, refunds, chargebacks, fees |
 | `superadmin@ideanest.az` | Kamran Əliyev | all four | Convenience account for moving between screens |
 
 Note that `FINANCE` deliberately does not confer payout approval — approving a
-payout needs `ADMINISTRATOR`. The seeded payout waiting on its second approver
+payout needs `SUPER_ADMIN`. The seeded payout waiting on its second approver
 is there to make that visible.
 
 ### Creators

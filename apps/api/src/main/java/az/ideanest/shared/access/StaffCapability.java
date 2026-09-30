@@ -124,7 +124,7 @@ public enum StaffCapability {
      * agreement changes what every creator submitting after it is bound by and cannot be
      * reversed at all, because V65's trigger makes a published version immutable.
      *
-     * <p>Held by {@code ADMINISTRATOR} alone today, which is where it already was. The
+     * <p>Held by {@code SUPER_ADMIN} alone today, which is where it already was. The
      * point of separating it is that it can now be narrowed further, or granted to a
      * fifth role, without also handing over the feature flags.
      */
@@ -153,7 +153,7 @@ public enum StaffCapability {
      * under §17.4 and is the strongest identifying material the platform holds outside
      * V58's documents.
      *
-     * <p>So it is narrow on purpose: {@code COMPLIANCE} and {@code ADMINISTRATOR}. A
+     * <p>So it is narrow on purpose: {@code COMPLIANCE} and {@code SUPER_ADMIN}. A
      * support agent answering "did I sign this" does not need to read the certificate to
      * answer it, and {@code READ_ACCEPTANCE_RECORD} is the question they are actually
      * asking.
@@ -187,7 +187,7 @@ public enum StaffCapability {
      * of somebody's passport from nobody.
      *
      * <p>Narrower than moderation and narrower than administration in intent; in the role
-     * table it is {@code COMPLIANCE} and {@code ADMINISTRATOR}, and the second is there
+     * table it is {@code COMPLIANCE} and {@code SUPER_ADMIN}, and the second is there
      * because an administrator can grant themselves the first — see {@code StaffRole} on
      * why a listed subset there would describe a restriction that does not exist.
      */
@@ -223,7 +223,7 @@ public enum StaffCapability {
     /**
      * Grant and withdraw the roles above. #295 itself.
      *
-     * <p>Held by {@code ADMINISTRATOR} alone. Anybody who can grant themselves a
+     * <p>Held by {@code SUPER_ADMIN} alone. Anybody who can grant themselves a
      * capability effectively holds every capability, so this is the one that decides
      * what the rest of the enum is worth.
      */

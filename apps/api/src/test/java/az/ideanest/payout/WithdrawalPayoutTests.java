@@ -482,7 +482,7 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
         jdbc().update(
                 """
                 INSERT INTO staff_role_grants (account_id, role, granted_by, note)
-                VALUES (?, 'ADMINISTRATOR', ?, '#182 fixture')
+                VALUES (?, 'SUPER_ADMIN', ?, '#182 fixture')
                 ON CONFLICT DO NOTHING
                 """,
                 admin.id(),

@@ -2826,7 +2826,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR", "SUPER_ADMIN", "PARTNER" ]
+            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "SUPER_ADMIN", "PARTNER" ]
           }
         } ],
         "responses" : {
@@ -2859,7 +2859,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR", "SUPER_ADMIN", "PARTNER" ]
+            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "SUPER_ADMIN", "PARTNER" ]
           }
         } ],
         "requestBody" : {
@@ -12936,7 +12936,7 @@
           },
           "role" : {
             "type" : "string",
-            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR", "SUPER_ADMIN", "PARTNER" ]
+            "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "SUPER_ADMIN", "PARTNER" ]
           }
         }
       },
@@ -13493,7 +13493,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "ADMINISTRATOR", "SUPER_ADMIN", "PARTNER" ]
+              "enum" : [ "MODERATOR", "CURATOR", "FINANCE", "COMPLIANCE", "SUPER_ADMIN", "PARTNER" ]
             }
           },
           "staff" : {

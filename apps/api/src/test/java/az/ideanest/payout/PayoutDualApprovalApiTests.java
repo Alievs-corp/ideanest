@@ -272,7 +272,7 @@ class PayoutDualApprovalApiTests extends AbstractIntegrationTest {
                         ON CONFLICT DO NOTHING
                         """,
                         id,
-                        StaffRole.ADMINISTRATOR.name(),
+                        StaffRole.SUPER_ADMIN.name(),
                         administrator(),
                         "#398 fixture");
         return id;

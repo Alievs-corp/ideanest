@@ -649,7 +649,7 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
         jdbc().update(
                 """
                 INSERT INTO staff_role_grants (account_id, role, granted_by, note)
-                VALUES (?, 'ADMINISTRATOR', ?, '#175 fixture')
+                VALUES (?, 'SUPER_ADMIN', ?, '#175 fixture')
                 ON CONFLICT DO NOTHING
                 """,
                 id,

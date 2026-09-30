@@ -72,7 +72,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>V55 makes {@code (payout_id, approver_id)} the primary key, so "two different people"
  * is a constraint rather than a check somebody has to remember. {@code APPROVE_PAYOUT} is
- * held by {@code ADMINISTRATOR} alone and deliberately not by {@code FINANCE} — a role
+ * held by {@code SUPER_ADMIN} alone and deliberately not by {@code FINANCE} — a role
  * conferring both issuing and approving would make the second signature a formality
  * whenever the finance team is one person.
  */

@@ -28,12 +28,11 @@ import java.util.Set;
  * is the pair. Nothing here takes a capability away, which is what makes a union the
  * right combination and leaves no precedence rule to get wrong.
  *
- * <p><strong>{@link #SUPER_ADMIN} is {@link #ADMINISTRATOR} under its new name, and both
- * exist for one release.</strong> The name is stored in {@code staff_role_grants}, so a
- * rolling deployment cannot rename it in place — V88's header has the argument. New grants
- * use {@code SUPER_ADMIN}; {@code ADMINISTRATOR} is what rows and bootstrap accounts hold
- * until the contract release converts them and removes it. Code that asks "is this an
- * administrator" must ask {@link #isSuperAdmin()}, never compare against one of the two.
+ * <p><strong>{@link #SUPER_ADMIN} is what this role was called {@code ADMINISTRATOR}
+ * until #212.</strong> The name is stored in {@code staff_role_grants}, so it could not be
+ * renamed in place under a rolling deployment: V88 taught the application both names, and
+ * V90 converted the rows and removed the old one. Code that asks "is this an administrator"
+ * asks {@link #isSuperAdmin()}, which is the one place that knows which role that is.
  *
  * <p><strong>{@link #PARTNER} is the one role that sees no individual record.</strong> It
  * holds a single capability, so on its own it opens nothing but the aggregate statistics.
@@ -74,7 +73,7 @@ public enum StaffRole {
      * <p><strong>{@link StaffCapability#APPROVE_PAYOUT} is deliberately absent.</strong>
      * §4.11 requires dual approval on a payout above a threshold, and a role that
      * conferred both issuing and approving would make the second signature a formality
-     * whenever the finance team is one person. Approving is {@link #ADMINISTRATOR}'s,
+     * whenever the finance team is one person. Approving is {@link #SUPER_ADMIN}'s,
      * so the second signature is somebody else by construction.
      */
     FINANCE(Set.of(
@@ -104,7 +103,7 @@ public enum StaffRole {
      * <p><strong>{@link StaffCapability#GRANT_COMPLIANCE_OVERRIDE} is deliberately
      * absent</strong>, and it is the same argument a third time. A reviewer who could waive
      * the requirement they enforce holds both halves of it, and the waiver would stop being
-     * an exception somebody escalated for. Overrides are {@link #ADMINISTRATOR}'s, so an
+     * an exception somebody escalated for. Overrides are {@link #SUPER_ADMIN}'s, so an
      * exception to a compliance rule is always signed by somebody outside compliance.
      */
     COMPLIANCE(Set.of(
@@ -116,12 +115,14 @@ public enum StaffRole {
             StaffCapability.VIEW_AUDIT)),
 
     /**
-     * Everything, including the ability to grant it.
+     * Everything, including the ability to grant it: sees and may do everything, including
+     * the real, unscaled financial figures, and is the only kind of account that can create
+     * or change a {@link #PARTNER}. Called {@code ADMINISTRATOR} until #212.
      *
      * <p>Every capability rather than a listed subset, and that is a decision to
-     * re-examine rather than a shortcut: an administrator can grant themselves any role
+     * re-examine rather than a shortcut: a super admin can grant themselves any role
      * anyway, so a listed subset here would describe a restriction that does not exist
-     * and would be believed. What limits an administrator is that every one of these
+     * and would be believed. What limits a super admin is that every one of these
      * actions is audited under their name.
      *
      * <p>That includes {@link StaffCapability#OPEN_IDENTITY_DOCUMENT}, which #436 asks to
@@ -130,18 +131,6 @@ public enum StaffRole {
      * restriction that does not exist. What answers it is {@code compliance_overrides}'
      * argument applied to reads: every opening is audited under a name, and the audit
      * trail is the control on the role that can grant itself anything.
-     */
-    ADMINISTRATOR(Set.of(StaffCapability.values())),
-
-    /**
-     * {@link #ADMINISTRATOR} under the name the owner gave it: sees and may do everything,
-     * including the real, unscaled financial figures, and is the only kind of account that
-     * can create or change a {@link #PARTNER}.
-     *
-     * <p>Every capability rather than a listed subset, for the reason {@link #ADMINISTRATOR}
-     * gives: a listed subset would describe a restriction that does not exist, because a
-     * holder of {@code ADMINISTER_STAFF} can grant themselves anything. What limits this
-     * role is that every action is audited under the holder's name.
      */
     SUPER_ADMIN(Set.of(StaffCapability.values())),
 
@@ -173,11 +162,11 @@ public enum StaffRole {
     }
 
     /**
-     * Whether this is the highest role, under either of its two names. The one question to
-     * ask instead of comparing against {@link #ADMINISTRATOR} or {@link #SUPER_ADMIN}, so
-     * that the release which removes the old name changes this method and nothing else.
+     * Whether this is the highest role. The one question to ask instead of comparing against
+     * {@link #SUPER_ADMIN} directly, so that a future change to which roles count as highest
+     * is made here and nowhere else.
      */
     public boolean isSuperAdmin() {
-        return this == SUPER_ADMIN || this == ADMINISTRATOR;
+        return this == SUPER_ADMIN;
     }
 }

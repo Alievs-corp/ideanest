@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>{@link #isWaived} is asked by gates and needs no capability: a gate is the platform
  * asking itself a question about a rule it is enforcing, and there is no caller for it to
  * authorise. Everything that writes needs
- * {@link StaffCapability#GRANT_COMPLIANCE_OVERRIDE}, which only {@code ADMINISTRATOR} holds
+ * {@link StaffCapability#GRANT_COMPLIANCE_OVERRIDE}, which only {@code SUPER_ADMIN} holds
  * — deliberately not {@code COMPLIANCE}, because a reviewer who could waive the requirement
  * they enforce holds both halves of it and the waiver stops being an exception anybody
  * escalated for.

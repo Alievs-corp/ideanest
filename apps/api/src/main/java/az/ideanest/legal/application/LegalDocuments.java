@@ -31,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>{@link #inForce} and {@link #published} are public: these are the pages a stranger and
  * a regulator read, and a terms of use behind authentication is a document nobody can
  * decide to be bound by. Everything that writes needs
- * {@link StaffCapability#PUBLISH_LEGAL_DOCUMENT}, which only {@code ADMINISTRATOR} holds.
+ * {@link StaffCapability#PUBLISH_LEGAL_DOCUMENT}, which only {@code SUPER_ADMIN} holds.
  *
  * <p>The capability is checked here rather than by an annotation on the controller,
  * following {@code SubscriptionPlans} and {@code FeeSchedules}: this is also where the

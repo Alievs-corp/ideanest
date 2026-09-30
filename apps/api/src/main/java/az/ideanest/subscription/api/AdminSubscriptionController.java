@@ -49,7 +49,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <h2>Needs {@code CONFIGURE_PLATFORM}, checked in the services</h2>
  *
- * <p>Which only {@code ADMINISTRATOR} holds. Not an annotation here, following
+ * <p>Which only {@code SUPER_ADMIN} holds. Not an annotation here, following
  * {@code FeeScheduleController}: the service is also where the change is recorded, and an
  * authorised action nobody recorded and a recorded action nobody authorised are the same
  * defect from opposite ends.

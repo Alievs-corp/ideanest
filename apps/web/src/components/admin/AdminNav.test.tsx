@@ -77,11 +77,11 @@ function renderRail(membership: StaffMembership | null): void {
   );
 }
 
-const ADMINISTRATOR = reader('ADMINISTRATOR');
+const SUPER_ADMIN = reader('SUPER_ADMIN');
 
 describe('the console rail', () => {
   it('is its own scroll container above the breakpoint, bounded by the viewport', () => {
-    renderRail(ADMINISTRATOR);
+    renderRail(SUPER_ADMIN);
 
     const rail = screen.getByRole('navigation', { name: COPY.navLabel });
 
@@ -95,7 +95,7 @@ describe('the console rail', () => {
   });
 
   it('keeps room for the focus ring the scroll container would otherwise clip', () => {
-    renderRail(ADMINISTRATOR);
+    renderRail(SUPER_ADMIN);
 
     const rail = screen.getByRole('navigation', { name: COPY.navLabel });
 
@@ -112,7 +112,7 @@ describe('the console rail', () => {
    * and gives them back there, and resets above the breakpoint where the rail does it instead.
    */
   it('keeps room for the focus ring on the phone row too', () => {
-    renderRail(ADMINISTRATOR);
+    renderRail(SUPER_ADMIN);
 
     const row = screen.getByRole('navigation', { name: COPY.navLabel }).querySelector('ul') as HTMLElement;
     expect(row).toHaveClass('overflow-x-auto');
@@ -124,7 +124,7 @@ describe('the console rail', () => {
   });
 
   it('still draws every destination for a reader who holds every capability', () => {
-    renderRail(ADMINISTRATOR);
+    renderRail(SUPER_ADMIN);
 
     const destinations = CONSOLE_GROUPS.flatMap((group) => group.links);
 
@@ -143,7 +143,7 @@ describe('the console rail', () => {
    */
   it('scrolls a link fully into view when it takes focus', () => {
     const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView');
-    renderRail(ADMINISTRATOR);
+    renderRail(SUPER_ADMIN);
 
     const links = screen.getAllByRole('link');
     const target = links[links.length - 1] as HTMLElement;
@@ -238,7 +238,7 @@ describe('the rail and what the reader may open', () => {
     // A member of staff with every role withdrawn, which is what an account mid-revocation
     // looks like. An empty `<nav>` is a landmark an assistive technology still offers to jump
     // to, and there would be nothing there when it did.
-    renderRail({ ...ADMINISTRATOR, roles: [], capabilities: [] });
+    renderRail({ ...SUPER_ADMIN, roles: [], capabilities: [] });
 
     expect(screen.queryByRole('navigation', { name: COPY.navLabel })).not.toBeInTheDocument();
   });

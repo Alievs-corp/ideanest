@@ -52,7 +52,7 @@ public class AdminUserExceptionHandler {
      * and only the second can be fixed by asking an administrator for a role. The console
      * reads {@code meta.capability} off this body and says which — and it is what the rail
      * hides an entry on, so the two agree about account administration, which {@code StaffRole.MODERATOR} and
-     * {@code StaffRole.ADMINISTRATOR} hold and the other roles do not.
+     * {@code StaffRole.SUPER_ADMIN} hold and the other roles do not.
      */
     @ExceptionHandler(InsufficientStaffCapabilityException.class)
     public ProblemDetail handleInsufficient(InsufficientStaffCapabilityException exception) {
