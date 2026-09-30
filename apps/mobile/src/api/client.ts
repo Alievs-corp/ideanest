@@ -1,4 +1,5 @@
-import { createApiClient, type ApiClient, type Fetch } from '@ideanest/api-client';
+import { ApiError, createApiClient, type ApiClient, type Fetch } from '@ideanest/api-client';
+import { traceIdOf } from '@ideanest/api-client/trace';
 import { apiOrigin } from './config';
 import { currentLocale } from '../lib/locale';
 import { refreshAccessToken } from '../lib/auth';
@@ -95,12 +96,44 @@ function withBearer(init: RequestInit | undefined, token: string | null): Reques
   return { ...init, headers };
 }
 
+/**
+ * The `X-Trace-Id` each refusal came back with, keyed by the error — issue #150.
+ *
+ * `ApiError` is `@ideanest/api-client`'s and deliberately has no field for it: the web's route
+ * bundles carry that class and are budgeted to the tenth of a KiB, and the web does not print
+ * trace ids from it. So the app keeps the id beside the error rather than on it. A `WeakMap`,
+ * so an error nobody holds any more takes its entry with it.
+ */
+const TRACES = new WeakMap<object, string>();
+
+/** The trace id of a failed read made through {@link api}, or null (`route-error-boundary.tsx`). */
+export function traceIdOfError(error: unknown): string | null {
+  return typeof error === 'object' && error !== null ? (TRACES.get(error) ?? null) : null;
+}
+
 export function api(): ApiClient {
-  return createApiClient({
-    baseUrl: apiOrigin(),
-    headers: { 'Accept-Language': currentLocale() },
-    fetch: sessionFetch,
-  });
+  const get: ApiClient['get'] = (path, options) => {
+    /*
+     * A client per read, so the response a refusal came from is this read's and not a
+     * concurrent one's: `sessionFetch` sees the response before `createApiClient` turns it
+     * into an `ApiError`, and this remembers its trace id until the error appears.
+     */
+    let traceId: string | null = null;
+    const client = createApiClient({
+      baseUrl: apiOrigin(),
+      headers: { 'Accept-Language': currentLocale() },
+      fetch: async (url, init) => {
+        const response = await sessionFetch(url, init);
+        traceId = traceIdOf(response);
+        return response;
+      },
+    });
+    return client.get(path, options).catch((cause: unknown) => {
+      if (cause instanceof ApiError && traceId !== null) TRACES.set(cause, traceId);
+      throw cause;
+    });
+  };
+  return { get };
 }
 
 /**

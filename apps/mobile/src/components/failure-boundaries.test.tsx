@@ -12,7 +12,8 @@ import NotFoundScreen from '../app/+not-found';
 import * as locale from '../lib/locale';
 import { colors } from '../theme';
 import { RootFailure, fatalCopy } from './root-failure';
-import { RouteErrorBoundary, traceIdOf } from './route-error-boundary';
+import { RouteErrorBoundary } from './route-error-boundary';
+import { api, traceIdOfError } from '../api/client';
 
 /**
  * The failure screens that are not maintenance — issue #150: not found, a render error inside a
@@ -45,6 +46,23 @@ const METRICS = {
 };
 
 const copy = en.shell.failure.pages.error;
+const TRACE = '4bf92f3577b34da6a3ce929d0e0e4736';
+
+/** A read through the app's own client that the service refused, with these headers. */
+async function failedRead(headers: Record<string, string> = {}): Promise<Error> {
+  global.fetch = jest.fn(async () =>
+    new Response(JSON.stringify({ title: 'Internal detail' }), {
+      status: 500,
+      headers: { 'content-type': 'application/problem+json', ...headers },
+    }),
+  ) as unknown as typeof fetch;
+  return api()
+    .get('/v1/discover')
+    .then(
+      () => new Error('the read was expected to fail'),
+      (cause: unknown) => cause as Error,
+    );
+}
 
 /* FailureState pulls in the WhatsApp sheet's module graph; a cold first render is slow on CI. */
 jest.setTimeout(20_000);
@@ -94,23 +112,25 @@ describe('a render error inside a route', () => {
   });
 
   it('prints the X-Trace-Id as the reference when the failure was a response', async () => {
-    const error = new ApiError(500, null, 'Internal detail', '4bf92f3577b34da6a3ce929d0e0e4736');
+    const error = await failedRead({ 'X-Trace-Id': TRACE });
     await inApp(<RouteErrorBoundary error={error} retry={async () => {}} />);
 
-    expect(screen.getByText('4bf92f3577b34da6a3ce929d0e0e4736')).toBeTruthy();
+    expect(screen.getByText(TRACE)).toBeTruthy();
     expect(screen.getByText(new RegExp(copy.referenceHint))).toBeTruthy();
     expect(screen.queryByText(/Internal detail/)).toBeNull();
   });
 
   it('has no reference line for a response that carried no trace id', async () => {
-    await inApp(<RouteErrorBoundary error={new ApiError(500)} retry={async () => {}} />);
+    await inApp(<RouteErrorBoundary error={await failedRead()} retry={async () => {}} />);
     expect(screen.queryByText(new RegExp(copy.referenceLabel))).toBeNull();
   });
 
-  it('reads the trace id only off a service response', () => {
-    expect(traceIdOf(new ApiError(502, null, undefined, 'abc'))).toBe('abc');
-    expect(traceIdOf(Object.assign(new Error('x'), { traceId: 'forged' }))).toBeNull();
-    expect(traceIdOf('a string')).toBeNull();
+  it('keeps the trace id of the read that failed, and of nothing else', async () => {
+    expect(traceIdOfError(await failedRead({ 'X-Trace-Id': TRACE }))).toBe(TRACE);
+    expect(traceIdOfError(await failedRead({ 'X-Trace-Id': 'not a trace id' }))).toBeNull();
+    expect(traceIdOfError(new ApiError(500))).toBeNull();
+    expect(traceIdOfError(Object.assign(new Error('x'), { traceId: TRACE }))).toBeNull();
+    expect(traceIdOfError('a string')).toBeNull();
   });
 
   it('re-renders the screen on "Try again", through Expo Router’s own boundary', async () => {

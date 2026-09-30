@@ -1,5 +1,5 @@
-import { ApiError } from '@ideanest/api-client';
 import type { ErrorBoundaryProps } from 'expo-router';
+import { traceIdOfError } from '../api/client';
 import { useT } from '../lib/i18n';
 import { FailureState } from './failure-state';
 
@@ -20,7 +20,7 @@ import { FailureState } from './failure-state';
  *
  * Never `error.message` or a stack: they are written for whoever reads the logs, and a message
  * from the service is English prose in any language. What it does print is the `X-Trace-Id` of
- * the response that failed, when the failure was one (`ApiError.traceId`) — the web prints the
+ * the response that failed, when the failure was one (`traceIdOfError`) — the web prints the
  * digest for the same reason: a reference a reader can quote and be believed. A failure that
  * did not come from a response has no reference line at all.
  */
@@ -32,12 +32,8 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
       description={t('description')}
       actionLabel={t('retry')}
       onAction={() => void retry()}
-      reference={traceIdOf(error)}
+      reference={traceIdOfError(error)}
     />
   );
 }
 
-/** The trace id of a failure that came from a service response, or null. */
-export function traceIdOf(error: unknown): string | null {
-  return error instanceof ApiError ? error.traceId : null;
-}
