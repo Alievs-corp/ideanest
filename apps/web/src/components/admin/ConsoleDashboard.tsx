@@ -270,8 +270,8 @@ function FigureTile({ figure, copy }: { readonly figure: DashboardFigure; readon
           only terms and descriptions, and a paragraph between them fails the rule and confuses a
           screen reader about which term the age belongs to. */}
       <dd className="mt-1 text-2xl font-semibold tabular-nums text-white">
-        {figure.value === null ? <span className="text-base font-normal text-white/48">{copy.noSuccessRate}</span> : display(figure)}
-        {duration !== null && Number(figure.value) > 0 && (
+        {hasValue(figure) ? display(figure) : <span className="text-base font-normal text-white/48">{copy.noSuccessRate}</span>}
+        {duration !== null && hasValue(figure) && Number(figure.value) > 0 && (
           <span className="mt-1 block text-xs font-normal text-white/48">
             {fillPlaceholders(copy.oldest, { duration })}
           </span>
@@ -279,6 +279,14 @@ function FigureTile({ figure, copy }: { readonly figure: DashboardFigure; readon
       </dd>
     </div>
   );
+}
+
+/**
+ * Whether the service gave a value. It omits a null from the JSON, so an absent field and an
+ * explicit `null` both mean "not computable yet", and neither may be drawn as an empty number.
+ */
+function hasValue(figure: DashboardFigure): boolean {
+  return figure.value !== null && figure.value !== undefined && figure.value !== '';
 }
 
 /** A figure's value for reading: money formatted, a ratio with its sign, a count grouped. */
