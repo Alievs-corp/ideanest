@@ -12,7 +12,9 @@ import { deviceStore } from './storage';
  * The web carries the language in the path. A phone has no path, so the answer is
  * resolved in this order, first hit wins:
  *
- * 1. the reader's stored choice (MMKV);
+ * 1. the reader's stored choice (MMKV) — forgotten when the phone's own language changed
+ *    since the last launch, which is how the system's per-app setting speaks
+ *    (`deviceLanguageChanged`);
  * 2. when signed in, the account's language — it wins over the stored choice and
  *    overwrites it, as the web's `SessionProvider` does with its cookie;
  * 3. first launch: the device's preferred languages, first one that is one of the four
@@ -43,8 +45,35 @@ export function resolveLocale(inputs: LocaleInputs): Locale {
   return localeForCountry(inputs.region) ?? DEFAULT_LOCALE;
 }
 
+/** The phone's first language as this app last saw it at launch. */
+const DEVICE_KEY = 'locale.device';
+
+/**
+ * Whether the phone's language changed since the last launch — which is how a change in the
+ * operating system's per-app language setting arrives (`CFBundleLocalizations` and Android's
+ * `localeConfig` list the four there, see `app.config.ts`): as a new first entry in
+ * `getLocales()`, and nothing else.
+ *
+ * Such a change is a fresh preference and outranks the choice stored earlier in the app;
+ * otherwise the phone's own setting would silently do nothing once somebody had tapped a
+ * language here. Compared by language, not by full tag, so a new region (`en-US` → `en-GB`)
+ * is not read as a new language. No record yet — the first launch, or the first since this
+ * rule existed — is not a change.
+ */
+export function deviceLanguageChanged(
+  lastSeen: string | null | undefined,
+  now: string | null | undefined,
+): boolean {
+  return lastSeen != null && now != null && lastSeen !== now;
+}
+
 function fromDevice(): Locale {
   const locales = getLocales();
+  const language = locales[0]?.languageCode?.toLowerCase() ?? null;
+  if (deviceLanguageChanged(deviceStore.getString(DEVICE_KEY), language)) {
+    deviceStore.remove(STORAGE_KEY);
+  }
+  if (language !== null) deviceStore.set(DEVICE_KEY, language);
   return resolveLocale({
     stored: deviceStore.getString(STORAGE_KEY),
     account: null,

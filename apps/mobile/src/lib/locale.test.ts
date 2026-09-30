@@ -1,5 +1,5 @@
 import { deviceStore } from './storage';
-import { currentLocale, resolveLocale, setLocale } from './locale';
+import { currentLocale, deviceLanguageChanged, resolveLocale, setLocale } from './locale';
 
 const none = { stored: null, account: null, languages: [], region: null } as const;
 
@@ -48,5 +48,39 @@ describe('setLocale persistence', () => {
   it('stores the choice even when it equals the language already in use', () => {
     setLocale('az');
     expect(deviceStore.getString('locale')).toBe('az');
+  });
+});
+
+describe('a change of the phone’s own language', () => {
+  it('is a change only when there is a record to compare with', () => {
+    expect(deviceLanguageChanged('az', 'tr')).toBe(true);
+    expect(deviceLanguageChanged('az', 'az')).toBe(false);
+    expect(deviceLanguageChanged(undefined, 'tr')).toBe(false);
+    expect(deviceLanguageChanged('az', null)).toBe(false);
+  });
+
+  /** A launch: a fresh module registry over a store holding what the last launch left. */
+  function launch(saved: Record<string, string>): { locale: string; stored: string | undefined } {
+    let result = { locale: '', stored: undefined as string | undefined };
+    jest.isolateModules(() => {
+      const { deviceStore: store } = require('./storage') as typeof import('./storage');
+      for (const [key, value] of Object.entries(saved)) store.set(key, value);
+      const fresh = require('./locale') as typeof import('./locale');
+      result = { locale: fresh.currentLocale(), stored: store.getString('locale') };
+    });
+    return result;
+  }
+
+  // The phone reads Azerbaijani (jest.setup.ts's expo-localization mock).
+  it('outranks a choice stored before it: the per-app setting is heard', () => {
+    expect(launch({ 'locale.device': 'ru', locale: 'tr' })).toEqual({ locale: 'az', stored: undefined });
+  });
+
+  it('leaves the stored choice alone while the phone’s language stays put', () => {
+    expect(launch({ 'locale.device': 'az', locale: 'tr' })).toEqual({ locale: 'tr', stored: 'tr' });
+  });
+
+  it('leaves it alone on the first launch that keeps a record', () => {
+    expect(launch({ locale: 'tr' })).toEqual({ locale: 'tr', stored: 'tr' });
   });
 });

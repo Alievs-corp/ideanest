@@ -107,6 +107,22 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     [
+      'expo-localization',
+      {
+        /**
+         * The four languages, registered with the operating system (issue #150): iOS
+         * `CFBundleLocalizations` and Android's `localeConfig`, so the per-app language
+         * setting on both lists exactly these.
+         *
+         * Spelled out rather than imported from `@ideanest/messages`: the Expo CLI loads this
+         * file with Node's own ESM loader, which cannot resolve that package's extensionless
+         * TypeScript imports. `src/lib/locale-registration.test.ts` holds the two lists level,
+         * so a fifth language cannot reach the catalogues without reaching the settings too.
+         */
+        supportedLocales: ['az', 'en', 'ru', 'tr'],
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         image: './assets/splash-icon.png',
