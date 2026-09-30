@@ -42,14 +42,16 @@ function inApp(ui: ReactNode) {
   );
 }
 
-const dev = (globalThis as { __DEV__: boolean }).__DEV__;
+/** React Native's `__DEV__` global, which the route reads when it renders. */
+const runtime = globalThis as unknown as { __DEV__: boolean };
+const dev = runtime.__DEV__;
 afterEach(() => {
-  (globalThis as { __DEV__: boolean }).__DEV__ = dev;
+  runtime.__DEV__ = dev;
 });
 
 describe('the kit gallery', () => {
   it('shows every section of the barrel in a development build', async () => {
-    (globalThis as { __DEV__: boolean }).__DEV__ = true;
+    runtime.__DEV__ = true;
     await inApp(<KitGalleryRoute />);
 
     expect(screen.queryByTestId('redirect')).toBeNull();
@@ -103,7 +105,7 @@ describe('the kit gallery', () => {
   });
 
   it('redirects to not-found in a release build, drawing none of the kit', async () => {
-    (globalThis as { __DEV__: boolean }).__DEV__ = false;
+    runtime.__DEV__ = false;
     await inApp(<KitGalleryRoute />);
 
     expect(screen.getByTestId('redirect')).toHaveTextContent('/+not-found');
