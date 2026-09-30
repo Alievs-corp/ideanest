@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
+import { Check } from 'lucide-react-native';
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from '@ideanest/messages';
 import { Button } from '../../components/form';
 import { Body, CardTitle, Heading } from '../../components/text';
+import { Icon } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { useQueryClient } from '@tanstack/react-query';
 import { ACCOUNT_KEYS } from '../../lib/account';
@@ -102,13 +104,11 @@ export default function LanguageScreen() {
               >
                 {LOCALE_NAMES[locale]}
               </CardTitle>
-              <CardTitle
-                style={{ color: colors.lime500 }}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              >
-                {selected ? '✓' : ''}
-              </CardTitle>
+              {/*
+               * A check, not a lime tick: lime is never text (issue #151). The row's
+               * `accessibilityState.selected` is what a screen reader hears; this is for the eye.
+               */}
+              {selected ? <Icon icon={Check} size={20} color={colors.textPrimary} /> : null}
             </Pressable>
           );
         })}

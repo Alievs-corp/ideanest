@@ -280,6 +280,45 @@ jest.mock('expo-web-browser', () => ({
 }));
 
 /**
+ * Haptics — the UI kit's `ui/haptics.ts`, issue #151. Spies, so a test can assert which of the
+ * five `docs/motion-system.md` §7 events a screen fired, and nothing else.
+ */
+jest.mock('expo-haptics', () => ({
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
+  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
+  impactAsync: jest.fn(async () => {}),
+  selectionAsync: jest.fn(async () => {}),
+  notificationAsync: jest.fn(async () => {}),
+}));
+
+/**
+ * The photo library and the camera — the UI kit's `FilePicker`, issue #151. Cancelled by default,
+ * which is what a test that says nothing should get; a test that picks sets the next result.
+ */
+jest.mock('expo-image-picker', () => {
+  let next: Record<string, unknown> = { canceled: true, assets: null };
+  return {
+    MediaTypeOptions: { Images: 'Images' },
+    PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
+    launchImageLibraryAsync: jest.fn(async () => next),
+    launchCameraAsync: jest.fn(async () => next),
+    getCameraPermissionsAsync: jest.fn(async () => ({ granted: true, status: 'granted' })),
+    getMediaLibraryPermissionsAsync: jest.fn(async () => ({ granted: true, status: 'granted' })),
+    requestCameraPermissionsAsync: jest.fn(async () => ({ granted: true, status: 'granted' })),
+    requestMediaLibraryPermissionsAsync: jest.fn(async () => ({
+      granted: true,
+      status: 'granted',
+    })),
+    __setNextResult: (result: Record<string, unknown>) => {
+      next = result;
+    },
+    __reset: () => {
+      next = { canceled: true, assets: null };
+    },
+  };
+});
+
+/**
  * Expo Router, replaced by the three things the components under test use.
  *
  * <h2>Why the real one is not loaded</h2>
@@ -334,7 +373,11 @@ jest.mock('expo-router', () => {
      * it changes is which element receives the press, and no test here presses.
      */
     Link: ({ children, href, asChild: _asChild, ...rest }: Record<string, unknown>) =>
-      React.createElement(View, { ...rest, testID: 'link', accessibilityValue: { text: hrefOf(href) } }, children),
+      React.createElement(
+        View,
+        { ...rest, testID: 'link', accessibilityValue: { text: hrefOf(href) } },
+        children,
+      ),
     Stack: Object.assign(() => null, { Screen: () => null }),
     Tabs: Object.assign(() => null, { Screen: () => null }),
     useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),

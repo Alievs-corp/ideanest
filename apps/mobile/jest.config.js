@@ -87,6 +87,16 @@ module.exports = {
   ],
   moduleNameMapper: {
     '^@/(.*)$': path.join(__dirname, 'src/$1'),
+    /*
+     * The UI kit's icons (issue #151), as the package's CommonJS build.
+     *
+     * `lucide-react-native`'s exports map sends the `react-native` condition — which jest-expo
+     * resolves with, as Metro does — to `.mjs` files. The preset's Babel transform matches
+     * `\.[jt]sx?$` and not `.mjs`, so allowlisting the package above is not enough: the file is
+     * never offered to Babel and Jest stops at its first `export`. The `require` entry is the
+     * same icons compiled to CommonJS, which is what Node's own resolution picks here.
+     */
+    '^lucide-react-native$': require.resolve('lucide-react-native'),
   },
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.test.{ts,tsx}'],
 };
