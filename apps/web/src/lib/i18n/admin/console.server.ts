@@ -56,6 +56,7 @@ import {
   type ReconciliationCopy,
   type RefundConsoleCopy,
 } from './money-copy';
+import { consoleDashboardCopyFrom, type ConsoleDashboardCopy } from './dashboard-copy';
 import {
   partnerManagerCopyFrom,
   partnerStatisticsCopyFrom,
@@ -272,4 +273,9 @@ export async function partnerManagerCopy(): Promise<PartnerManagerCopy> {
 /** #206: the financial statistics as a partner, or a super admin, is entitled to see them. */
 export async function partnerStatisticsCopy(): Promise<PartnerStatisticsCopy> {
   return partnerStatisticsCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+/** #222: the console's front page. */
+export async function consoleDashboardCopy(): Promise<ConsoleDashboardCopy> {
+  return consoleDashboardCopyFrom(await getTranslations('admin'), await consoleChrome());
 }

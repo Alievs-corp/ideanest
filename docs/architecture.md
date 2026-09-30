@@ -1632,7 +1632,19 @@ Preferences are per category and per channel, with a digest option.
 > every state; created in the period; `MODERATE_CONTENT`), `reports` (open, oldest wait;
 > `MODERATE_CONTENT`), `support` (open and pending, oldest wait; `HANDLE_SUPPORT`) and
 > `accounts` (opened in the period; `ADMINISTER_ACCOUNTS`). Each read is audited with the
-> sections served and failed. The screen follows in the next pull request.
+> sections served and failed.
+>
+> **The front page screen (#222).** The console's logo opens `/admin`, which is now this
+> dashboard; the list of sixteen modules moved whole to `/admin/modules` and is one link away,
+> because it is epic #259's definition of done and the dashboard has nowhere to say what a
+> module is waiting on. The period is chosen from today, 7 days, 30 days (the service's own
+> default, so nothing is sent) and this month, in Baku's calendar. Each section is a labelled
+> card of figures; a queue says how long its oldest item has waited; the daily trend is bars with
+> a text summary and the same figures as a table; campaigns are also listed by state. A section
+> the service could not read says so in place and leaves the others alone, and a section the
+> screen has no words for is drawn from its key rather than dropped. A partner, who is given an
+> empty page, is sent on to their own statistics screen. Like the module list before it, the
+> page imports nothing from the `@ideanest/ui` barrel, which costs this route 47 KiB.
 
 > **All sixteen have a screen now, and #259 is what built them.** The
 > distinction that table used to hide is between a capability's *record* and its
