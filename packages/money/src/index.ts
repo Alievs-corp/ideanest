@@ -1,4 +1,12 @@
 import Decimal from 'decimal.js';
+import { MONEY_SCALE, formatMoney } from './format';
+
+/*
+ * `formatMoney` and `MONEY_SCALE` live in `./format`, which imports nothing, so that a screen that
+ * only has to print an amount can import `@ideanest/money/format` without dragging `decimal.js`
+ * into its bundle. They are re-exported here, so every existing import of this module is unchanged.
+ */
+export { MONEY_SCALE, formatMoney } from './format';
 
 /**
  * Money on the client.
@@ -47,8 +55,6 @@ export function isSupportedCurrency(value: string): value is Currency {
   return (SUPPORTED_CURRENCIES as readonly string[]).includes(value);
 }
 
-/** Digits after the point. `numeric(14,2)` on the server side. */
-export const MONEY_SCALE = 2;
 
 /** Digits before the point, from the same `numeric(14,2)`. */
 export const MONEY_MAX_INTEGER_DIGITS = 14 - MONEY_SCALE;
@@ -171,35 +177,6 @@ export function toMoney(value: Decimal, currency: string): Money {
  */
 export function amountFieldValue(money: Money | null | undefined): string {
   return money?.amount ?? '';
-}
-
-/**
- * An amount as a reader sees it: grouped, at the scale the column holds, with
- * its currency after it.
- *
- * FORMATTED FROM THE DIGITS, NOT FROM A NUMBER. `Intl.NumberFormat` takes a
- * `number`, and putting `999999999999.99` through one loses the last digit
- * before any formatting happens — which is the entire reason this module
- * refuses to parse with `Number()` in the first place. So the grouping is done
- * on the integer digits as a string and the fraction is copied across
- * untouched.
- *
- * Grouping in threes with a comma, and the code after the amount rather than a
- * symbol before it. There is no agreed symbol for the manat in either of the
- * two languages the product ships in (docs/architecture.md §21.1), and
- * `Intl`'s own answer differs by locale — so the ISO code, which is the same
- * string the API sent, is what is shown. Consumers that render this into a
- * table cell get a pre-formatted string, which is what docs/ui-kit.md §7.15
- * asks for: a table that formats is a table that rounds.
- */
-export function formatMoney(money: Money | null | undefined): string {
-  if (money == null) return '';
-
-  const [whole = '', fraction] = money.amount.split('.');
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  const scaled = (fraction ?? '').padEnd(MONEY_SCALE, '0').slice(0, MONEY_SCALE);
-
-  return `${grouped}.${scaled} ${money.currency}`.trim();
 }
 
 /**

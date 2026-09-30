@@ -272,3 +272,23 @@ describe('rateFor', () => {
     expect(rateFor(rates, null)).toBeNull();
   });
 });
+
+describe('the format entry', () => {
+  it('is the same function the whole module exports, so there is one implementation', async () => {
+    const whole = await import('./index');
+    const only = await import('./format');
+
+    expect(whole.formatMoney).toBe(only.formatMoney);
+    expect(whole.MONEY_SCALE).toBe(only.MONEY_SCALE);
+    expect(only.formatMoney({ amount: '12500.5', currency: 'AZN' })).toBe('12,500.50 AZN');
+  });
+
+  it('imports nothing, which is the whole reason it is a separate entry', async () => {
+    // The file's own text, through Vite's `?raw`, so no Node types are needed here.
+    const { default: source } = await import('./format.ts?raw');
+
+    // Not a `decimal.js` import, and not an import of the module that has one: the day this file
+    // imports either, a screen that only prints an amount is carrying the arithmetic library again.
+    expect(source).not.toMatch(/^\s*import\s/m);
+  });
+});
