@@ -8,6 +8,9 @@ import az from '@ideanest/messages/az.json';
 import { formatCount, formatDate, pluralCategory, translate } from './i18n';
 import { currentLocale, setLocale } from './locale';
 
+/* The rich-text case renders through React Native; a cold first render is slow on a CI runner. */
+jest.setTimeout(20_000);
+
 /** The catalogue the app renders from behaves as the web's does under `use-intl`. */
 describe('use-intl over the shared catalogue', () => {
   const t = createTranslator({ locale: 'ru', messages: ru });

@@ -27,6 +27,9 @@ jest.mock('../api/client', () => ({ saveAccountLocale: jest.fn(async () => true)
 
 const failed = en.mobile.language.saveFailed;
 
+/* The screen's module graph loads on the first render, which took past 5 s on a CI runner elsewhere. */
+jest.setTimeout(20_000);
+
 async function renderScreen() {
   const client = new QueryClient();
   // English words whatever language is chosen: what is under test is the behaviour, not the copy.

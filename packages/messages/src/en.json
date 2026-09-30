@@ -138,8 +138,8 @@
         },
         "fatal": {
           "title": "IdeyaNest could not start",
-          "description": "Something failed before the app could draw its first screen. Reloading is worth one attempt; if it keeps happening, the problem is on our side rather than your phone’s.",
-          "action": "Reload the app"
+          "description": "Something failed before the app could draw its first screen. Restarting it is worth one attempt; if it keeps happening, the problem is on our side rather than your phone’s.",
+          "action": "Restart the app"
         }
       }
     },

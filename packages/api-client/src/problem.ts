@@ -45,10 +45,20 @@ export interface Problem {
 /**
  * The header the service names a request's trace in (`Correlation.TRACE_ID_HEADER`, §18.1).
  *
- * The same string as the web's `lib/rum/correlation.ts`, whose test holds that one level with
- * the Java constant.
+ * `problem.test.ts` pins it, and the trace shape below, against `Correlation.java` itself.
  */
 export const TRACE_ID_HEADER = 'X-Trace-Id';
+
+/**
+ * A W3C trace id: thirty-two lower-case hex characters, never all zeros — the trace group of
+ * `Correlation.TRACEPARENT`, and the web's `isTraceId` rule (`lib/rum/correlation.ts`).
+ */
+const TRACE_ID = /^(?!0{32})[0-9a-f]{32}$/;
+
+/** Whether a string is shaped like a trace id the service would have minted. */
+export function isTraceId(candidate: string): boolean {
+  return TRACE_ID.test(candidate);
+}
 
 export class ApiError extends Error {
   readonly status: number;
@@ -78,10 +88,16 @@ export class ApiError extends Error {
   }
 }
 
-/** The response's trace id, or null when the header is absent or blank. */
+/**
+ * The response's trace id, or null when the header is absent or is not one.
+ *
+ * Checked rather than trusted: a failure screen prints it for a reader to quote, and a proxy or
+ * a hostile network in between can put anything in a header — a sentence, a URL, a megabyte.
+ * Only a value shaped like the service's own trace ids is worth showing.
+ */
 export function traceIdOf(response: Response): string | null {
   const value = response.headers.get(TRACE_ID_HEADER)?.trim();
-  return value === undefined || value === '' ? null : value;
+  return value !== undefined && isTraceId(value) ? value : null;
 }
 
 /** Reads the problem body, or returns null when there is nothing to read. */

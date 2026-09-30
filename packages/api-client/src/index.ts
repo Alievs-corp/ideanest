@@ -23,7 +23,14 @@ export type {
   GetResponse,
 } from './client';
 
-export { ApiError, TRACE_ID_HEADER, errorFrom, problemFrom, traceIdOf } from './problem';
+export {
+  ApiError,
+  TRACE_ID_HEADER,
+  errorFrom,
+  isTraceId,
+  problemFrom,
+  traceIdOf,
+} from './problem';
 export type { Problem } from './problem';
 
 export type { components, operations, paths } from './schema';

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { isLocale, type Locale } from '@ideanest/messages';
@@ -23,9 +23,10 @@ import { Body, CardTitle, Heading } from './text';
  *
  * So it depends on React Native, the theme's constants and the text roles, which are both plain
  * values, and nothing else. The words come straight from the bundled catalogue (the four files
- * the provider would have used, already in the bundle), in the language `lib/locale.ts` holds —
- * a synchronous read of a variable resolved at startup — and in English when even that cannot
- * be read. Unlike the web's `global-error.tsx`, which is English only, these are catalogue keys
+ * the provider would have used, already in the bundle), in the language `lib/locale.ts` holds.
+ * That is a synchronous read of a variable resolved when the module loaded, which cannot throw
+ * here: a module that failed to load would have taken this file down with it. English is the
+ * answer only for a value the catalogues do not have (`fatalCopy`). Unlike the web's `global-error.tsx`, which is English only, these are catalogue keys
  * (`shell.failure.pages.fatal`), so the four languages cannot drift.
  *
  * <h2>What the action does</h2>
@@ -39,9 +40,10 @@ import { Body, CardTitle, Heading } from './text';
  * Never `error.message`, never a stack: see `route-error-boundary.tsx`.
  */
 export function RootFailure({ retry }: ErrorBoundaryProps) {
-  const copy = fatalCopy(fatalLocale());
+  const copy = fatalCopy(currentLocale());
   return (
-    <View style={styles.screen}>
+    // Scrolls, so the words and the pill stay reachable at a large font scale.
+    <ScrollView style={styles.fill} contentContainerStyle={styles.screen}>
       {/* The tree that set light glyphs is gone; the surface under them is still dark. */}
       <StatusBar style="light" />
       <Heading accessibilityRole="header" style={styles.centred}>
@@ -58,7 +60,7 @@ export function RootFailure({ retry }: ErrorBoundaryProps) {
           {copy.action}
         </CardTitle>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -76,18 +78,10 @@ export function fatalCopy(locale: string): FatalCopy {
   return isLocale(locale) ? FATAL[locale] : FATAL.en;
 }
 
-/** The language in use, if it can be read at all; English if the read itself fails. */
-function fatalLocale(): string {
-  try {
-    return currentLocale();
-  } catch {
-    return 'en';
-  }
-}
-
 const styles = StyleSheet.create({
+  fill: { flex: 1, backgroundColor: colors.surface1 },
   screen: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing[4],

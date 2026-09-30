@@ -94,10 +94,10 @@ describe('a render error inside a route', () => {
   });
 
   it('prints the X-Trace-Id as the reference when the failure was a response', async () => {
-    const error = new ApiError(500, null, 'Internal detail', '4bf92f3577b34da6');
+    const error = new ApiError(500, null, 'Internal detail', '4bf92f3577b34da6a3ce929d0e0e4736');
     await inApp(<RouteErrorBoundary error={error} retry={async () => {}} />);
 
-    expect(screen.getByText('4bf92f3577b34da6')).toBeTruthy();
+    expect(screen.getByText('4bf92f3577b34da6a3ce929d0e0e4736')).toBeTruthy();
     expect(screen.getByText(new RegExp(copy.referenceHint))).toBeTruthy();
     expect(screen.queryByText(/Internal detail/)).toBeNull();
   });
@@ -160,10 +160,8 @@ describe('the root failure', () => {
     expect(style.backgroundColor).not.toBe(colors.lime500);
   });
 
-  it('falls back to English when the language cannot be read', async () => {
-    const read = jest.spyOn(locale, 'currentLocale').mockImplementation(() => {
-      throw new Error('storage unavailable');
-    });
+  it('falls back to English for a language the catalogues do not have', async () => {
+    const read = jest.spyOn(locale, 'currentLocale').mockReturnValue('ka' as never);
     await render(<RootFailure error={new Error('x')} retry={async () => {}} />);
     expect(screen.getByRole('header', { name: en.shell.failure.pages.fatal.title })).toBeTruthy();
     read.mockRestore();

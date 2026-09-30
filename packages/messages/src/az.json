@@ -138,8 +138,8 @@
         },
         "fatal": {
           "title": "IdeyaNest açıla bilmədi",
-          "description": "Tətbiq ilk ekranını göstərməzdən əvvəl nəsə xəta baş verdi. Bir dəfə yenidən yükləməyə dəyər; problem təkrarlanarsa, səbəb telefonunuzda deyil, bizim tərəfimizdədir.",
-          "action": "Tətbiqi yenidən yükləyin"
+          "description": "Tətbiq ilk ekranı göstərməzdən əvvəl xəta baş verdi. Bir dəfə yenidən başladıb yoxlayın; problem təkrarlanarsa, səbəb telefonunuzda deyil, bizdədir.",
+          "action": "Tətbiqi yenidən başladın"
         }
       }
     },

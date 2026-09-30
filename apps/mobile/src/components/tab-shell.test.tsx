@@ -57,6 +57,9 @@ function given(state: SessionState, unread?: number): void {
   jest.mocked(useUnreadCount).mockReturnValue(unread);
 }
 
+/* The tab layout and its header's module graph load on the first render; slow on a CI runner. */
+jest.setTimeout(20_000);
+
 async function renderTabs() {
   return render(
     <IntlProvider locale="en" messages={en}>
