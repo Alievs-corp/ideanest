@@ -5,6 +5,7 @@ import { IntlProvider } from 'use-intl';
 import { colors } from '@ideanest/design-tokens';
 import en from '@ideanest/messages/en.json';
 import { PROGRESS_FILL, ProgressBar } from './progress';
+import { MotionBudgetProvider } from './ui/motion-budget';
 
 /**
  * The two rules from CLAUDE.md §2 that this component is where you break.
@@ -22,6 +23,11 @@ import { PROGRESS_FILL, ProgressBar } from './progress';
  *
  * <p>The words come from the catalogue (issue #150), so every render is in English through
  * the provider the application wraps every screen in.
+ *
+ * <p>The bar moved into the UI kit (issue #151) and this path re-exports it. The fill is now always
+ * the track's full width and draws its fraction as `transform: scaleX`, because animating `width`
+ * forces layout on every frame; so the figure is read from the transform, under a `none` motion
+ * budget where the fill is drawn at its value rather than rising towards it.
  */
 
 function render(ui: ReactElement) {
@@ -34,9 +40,18 @@ function render(ui: ReactElement) {
 
 async function fill(percent: string) {
   const { getByTestId } = await render(
-    <ProgressBar completionPercent={percent} label="Funding" />,
+    <MotionBudgetProvider level="none">
+      <ProgressBar completionPercent={percent} label="Funding" />
+    </MotionBudgetProvider>,
   );
   return StyleSheet.flatten(getByTestId(PROGRESS_FILL).props.style);
+}
+
+/** The drawn fraction of the track, from the fill's `scaleX`. */
+function scaleX(style: { transform?: unknown }): unknown {
+  return Array.isArray(style.transform)
+    ? (style.transform as Record<string, unknown>[]).find((step) => 'scaleX' in step)?.scaleX
+    : undefined;
 }
 
 describe('ProgressBar', () => {
@@ -52,7 +67,7 @@ describe('ProgressBar', () => {
 
   it('clamps the bar at 100 while the label keeps the real figure', async () => {
     // 340% is earned and worth printing. A bar drawn at 340% of its track is a layout bug.
-    expect((await fill('340')).width).toBe('100%');
+    expect(scaleX(await fill('340'))).toBe(1);
 
     const { getByText } = await render(<ProgressBar completionPercent="340" label="Funding" />);
     expect(getByText('340% — funded')).toBeTruthy();
@@ -85,7 +100,7 @@ describe('ProgressBar', () => {
   it('draws nothing rather than throwing on a figure it cannot read', async () => {
     // The value arrives from the network. A campaign page that crashes on a malformed
     // percentage is worse than one that shows zero.
-    expect((await fill('not-a-number')).width).toBe('0%');
-    expect((await fill('')).width).toBe('0%');
+    expect(scaleX(await fill('not-a-number'))).toBe(0);
+    expect(scaleX(await fill(''))).toBe(0);
   });
 });

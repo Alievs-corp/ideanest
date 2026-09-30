@@ -65,6 +65,13 @@ export {
 } from './chip';
 export { FloatingPanel, type FloatingPanelProps } from './floating-panel';
 export {
+  PROGRESS_FILL,
+  ProgressBar,
+  fillFraction,
+  type ProgressBarProps,
+  type ProgressBarSize,
+} from './progress';
+export {
   StatBlock,
   StatRow,
   type StatBlockProps,
