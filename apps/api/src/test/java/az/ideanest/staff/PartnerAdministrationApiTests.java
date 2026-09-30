@@ -328,6 +328,22 @@ class PartnerAdministrationApiTests extends AbstractIntegrationTest {
         assertThat(unknown.getBody()).containsEntry("code", "ACCOUNT_NOT_FOUND");
     }
 
+    @Test
+    @DisplayName("an account that already holds another staff role cannot be made a partner")
+    void aPartnerHoldsNoOtherRole() {
+        // Roles add up. A partner who also held FINANCE would read the payments journal and the
+        // ledger through that role, and the percentage would protect nothing.
+        Account admin = staff("partner-admin", StaffRole.SUPER_ADMIN);
+        Account finance = staff("partner-finance", StaffRole.FINANCE);
+
+        ResponseEntity<Map<String, Object>> refused = put(finance.id(), "10", List.of(), admin);
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody()).containsEntry("code", "PARTNER_HOLDS_OTHER_ROLES");
+        assertThat(refused.getBody()).extracting("meta").hasToString("{roles=FINANCE}");
+        assertThat(roster(admin).getBody().get("partners")).isEqualTo(List.of());
+    }
+
     // ------------------------------------------------------------------
     // Sections
     // ------------------------------------------------------------------

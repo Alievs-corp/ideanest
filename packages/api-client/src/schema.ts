@@ -788,6 +788,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/partner-statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["partnerStatisticsRead"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/partners": {
         parameters: {
             query?: never;
@@ -4952,6 +4968,12 @@ export interface components {
             items?: components["schemas"]["Card"][];
             nextCursor?: string;
         };
+        Figures: {
+            currency?: string;
+            revenue?: string;
+            reversals?: string;
+            subscriptions?: string;
+        };
         Finding: {
             account?: string;
             amount?: string;
@@ -5305,6 +5327,10 @@ export interface components {
             amount: string;
             /** @example AZN */
             currency: string;
+        };
+        Month: {
+            currencies?: components["schemas"]["Figures"][];
+            month?: string;
         };
         MyAgreement: {
             /** Format: date-time */
@@ -6408,6 +6434,19 @@ export interface components {
             source?: string;
             value?: components["schemas"]["Money"];
         };
+        Statistics: {
+            byPlan?: components["schemas"]["Plan"][];
+            daily?: components["schemas"]["Day"][];
+            /** Format: date-time */
+            generatedAt?: string;
+            monthly?: components["schemas"]["Month"][];
+            sharePercentage?: string;
+            thisMonth?: components["schemas"]["Month"];
+            timeZone?: string;
+            today?: components["schemas"]["Day"];
+            /** @enum {string} */
+            view?: "REAL" | "PARTNER";
+        };
         StoryVersionDetail: {
             /** Format: uuid */
             authorId?: string;
@@ -7025,6 +7064,7 @@ export type SchemaExtendCampaignRequest = components['schemas']['ExtendCampaignR
 export type SchemaFacets = components['schemas']['Facets'];
 export type SchemaFaqPatchRequest = components['schemas']['FaqPatchRequest'];
 export type SchemaFeed = components['schemas']['Feed'];
+export type SchemaFigures = components['schemas']['Figures'];
 export type SchemaFinding = components['schemas']['Finding'];
 export type SchemaFlag = components['schemas']['Flag'];
 export type SchemaFlagList = components['schemas']['FlagList'];
@@ -7066,6 +7106,7 @@ export type SchemaMine = components['schemas']['Mine'];
 export type SchemaModerationDecisionRequest = components['schemas']['ModerationDecisionRequest'];
 export type SchemaModerationOutcomeBody = components['schemas']['ModerationOutcomeBody'];
 export type SchemaMoney = components['schemas']['Money'];
+export type SchemaMonth = components['schemas']['Month'];
 export type SchemaMyAgreement = components['schemas']['MyAgreement'];
 export type SchemaMyAgreements = components['schemas']['MyAgreements'];
 export type SchemaMySignature = components['schemas']['MySignature'];
@@ -7186,6 +7227,7 @@ export type SchemaSignInRequest = components['schemas']['SignInRequest'];
 export type SchemaSocialLink = components['schemas']['SocialLink'];
 export type SchemaSocialLinkBody = components['schemas']['SocialLinkBody'];
 export type SchemaSource = components['schemas']['Source'];
+export type SchemaStatistics = components['schemas']['Statistics'];
 export type SchemaStoryVersionDetail = components['schemas']['StoryVersionDetail'];
 export type SchemaStoryVersionSummary = components['schemas']['StoryVersionSummary'];
 export type SchemaSubcategory = components['schemas']['Subcategory'];
@@ -8549,6 +8591,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectEdit"];
+                };
+            };
+        };
+    };
+    partnerStatisticsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Statistics"];
                 };
             };
         };

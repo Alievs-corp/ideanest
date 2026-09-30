@@ -1576,8 +1576,28 @@ Preferences are per category and per channel, with a digest option.
 > individual transaction, a person, or a platform figure at 100%, so it cannot be
 > named in a request. A section is a capability computed from the partner's rows on
 > every request, so closing one takes effect on the next call. Every save and removal
-> is audited with the old and new percentage. The statistics endpoint that applies the
-> percentage follows in #205; until then a partner sees no figures.
+> is audited with the old and new percentage. An account that holds any other staff
+> role cannot be made a partner, because roles add up and another role could open the
+> transactions the share exists to keep from them.
+>
+> **Partner statistics (#205).** `GET /v1/admin/partner-statistics` needs
+> `VIEW_PARTNER_STATISTICS` and takes **no parameters**, so there is nothing for a
+> partner to change in a request. The server decides the answer: a super admin gets the
+> real figures (`view: REAL`, `sharePercentage: "100.00"`); a partner gets every figure
+> multiplied by their percentage, `partnerVisibleValue = realValue x percentage / 100`
+> (`view: PARTNER`); a partner with no percentage is refused, never shown the real
+> figures. The real journal is read as it is and never split, copied or changed; the
+> percentage is applied to sums and counts when the response is produced, once per
+> displayed figure, `BigDecimal`, two decimals, half-even. Counts are scaled too and may
+> be fractional (7 subscriptions at 50% is 3.50). Because each displayed figure is
+> rounded by itself, a total may differ from the sum of its displayed parts by up to
+> half a cent per part. The response holds today, this month, the days of this month
+> with activity, the last twelve months and this month's plans, in Baku's calendar.
+> **It holds no transaction**: the query behind it returns only `SUM` and `COUNT`, so
+> there is no payment id, payer, reference or per-payment amount to leak. The subscription
+> module answers through the shared `RevenueFigures` contract, which keeps `staff` and
+> `subscription` from forming a cycle. Every read is audited with the view and the
+> percentage it was scaled by.
 
 > **All sixteen have a screen now, and #259 is what built them.** The
 > distinction that table used to hide is between a capability's *record* and its
