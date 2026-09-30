@@ -628,6 +628,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/maintenance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["maintenanceOverview"];
+        put?: never;
+        post: operations["maintenanceSchedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/maintenance/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["maintenanceCancel"];
+        options?: never;
+        head?: never;
+        patch: operations["maintenanceChange"];
+        trace?: never;
+    };
+    "/v1/admin/maintenance/{id}/end-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["maintenanceEndNow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/maintenance/{id}/start-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["maintenanceStartNow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/me": {
         parameters: {
             query?: never;
@@ -3812,6 +3876,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["statusCurrent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/surveys/{surveyId}": {
         parameters: {
             query?: never;
@@ -4463,6 +4543,11 @@ export interface components {
             currentPassword: string;
             /** Format: email */
             newEmail: string;
+        };
+        ChangeMaintenanceRequest: {
+            /** Format: date-time */
+            endsAt?: string;
+            note?: string;
         };
         ChangePasswordRequest: {
             currentPassword: string;
@@ -5253,6 +5338,53 @@ export interface components {
             status?: string;
             transactions?: components["schemas"]["Transaction"][];
         };
+        MaintenanceOverview: {
+            current?: components["schemas"]["MaintenanceWindowView"];
+            recent?: components["schemas"]["MaintenanceWindowView"][];
+            upcoming?: components["schemas"]["MaintenanceWindowView"][];
+        };
+        /** @description The maintenance problem (issue #214). Any other 5xx, including a 503 without this `type`, is an ordinary failure. */
+        MaintenanceProblem: {
+            /**
+             * Format: date-time
+             * @description Null when no end is announced.
+             */
+            endsAt?: string | null;
+            /** @enum {string} */
+            source: "api" | "edge";
+            /** Format: date-time */
+            startsAt: string;
+            /**
+             * Format: int32
+             * @example 503
+             */
+            status: number;
+            /** @example Scheduled maintenance */
+            title: string;
+            /** @example https://ideanest.az/problems/maintenance */
+            type: string;
+        };
+        MaintenanceWindowView: {
+            /** Format: date-time */
+            announceFrom?: string;
+            /** Format: date-time */
+            cancelledAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: uuid */
+            createdBy?: string;
+            /** Format: date-time */
+            endedAt?: string;
+            /** Format: date-time */
+            endsAt?: string;
+            /** Format: uuid */
+            id?: string;
+            note?: string;
+            /** Format: date-time */
+            startsAt?: string;
+            /** @enum {string} */
+            state?: "SCHEDULED" | "ANNOUNCED" | "ACTIVE" | "ENDED" | "CANCELLED";
+        };
         MeResponse: {
             currency?: string;
             /** Format: date-time */
@@ -5595,6 +5727,14 @@ export interface components {
             /** Format: date */
             to?: string;
             totals?: components["schemas"]["Totals"];
+        };
+        PlatformStatus: {
+            /** @description The window in force, or null. */
+            maintenance?: components["schemas"]["StatusWindow"];
+            /** @enum {string} */
+            state: "operational" | "maintenance";
+            /** @description The window announced and not yet started, or null. */
+            upcoming?: components["schemas"]["StatusWindow"];
         };
         PledgeAddonBody: {
             /** Format: int32 */
@@ -6307,6 +6447,15 @@ export interface components {
             /** Format: uuid */
             scopeRef?: string;
         };
+        ScheduleMaintenanceRequest: {
+            /** Format: date-time */
+            announceFrom?: string;
+            /** Format: date-time */
+            endsAt?: string;
+            note?: string;
+            /** Format: date-time */
+            startsAt: string;
+        };
         SendMessageRequest: {
             body: string;
             /** Format: uuid */
@@ -6446,6 +6595,15 @@ export interface components {
             today?: components["schemas"]["Day"];
             /** @enum {string} */
             view?: "REAL" | "PARTNER";
+        };
+        StatusWindow: {
+            /**
+             * Format: date-time
+             * @description Null when no end is announced.
+             */
+            endsAt?: string | null;
+            /** Format: date-time */
+            startsAt: string;
         };
         StoryVersionDetail: {
             /** Format: uuid */
@@ -7004,6 +7162,7 @@ export type SchemaCategoryCount = components['schemas']['CategoryCount'];
 export type SchemaCategoryResponse = components['schemas']['CategoryResponse'];
 export type SchemaChange = components['schemas']['Change'];
 export type SchemaChangeEmailRequest = components['schemas']['ChangeEmailRequest'];
+export type SchemaChangeMaintenanceRequest = components['schemas']['ChangeMaintenanceRequest'];
 export type SchemaChangePasswordRequest = components['schemas']['ChangePasswordRequest'];
 export type SchemaChangePlanRequest = components['schemas']['ChangePlanRequest'];
 export type SchemaChannelTotal = components['schemas']['ChannelTotal'];
@@ -7098,6 +7257,9 @@ export type SchemaLocationBody = components['schemas']['LocationBody'];
 export type SchemaLocationIndex = components['schemas']['LocationIndex'];
 export type SchemaLockAddressesResponse = components['schemas']['LockAddressesResponse'];
 export type SchemaLogPage = components['schemas']['LogPage'];
+export type SchemaMaintenanceOverview = components['schemas']['MaintenanceOverview'];
+export type SchemaMaintenanceProblem = components['schemas']['MaintenanceProblem'];
+export type SchemaMaintenanceWindowView = components['schemas']['MaintenanceWindowView'];
 export type SchemaMeResponse = components['schemas']['MeResponse'];
 export type SchemaMedia = components['schemas']['Media'];
 export type SchemaMembership = components['schemas']['Membership'];
@@ -7131,6 +7293,7 @@ export type SchemaPayoutRecord = components['schemas']['PayoutRecord'];
 export type SchemaPayoutSummary = components['schemas']['PayoutSummary'];
 export type SchemaPlan = components['schemas']['Plan'];
 export type SchemaPlatformAnalyticsResponse = components['schemas']['PlatformAnalyticsResponse'];
+export type SchemaPlatformStatus = components['schemas']['PlatformStatus'];
 export type SchemaPledgeAddonBody = components['schemas']['PledgeAddonBody'];
 export type SchemaPledgeRaiseBody = components['schemas']['PledgeRaiseBody'];
 export type SchemaPledgeResponse = components['schemas']['PledgeResponse'];
@@ -7210,6 +7373,7 @@ export type SchemaSaveRequest = components['schemas']['SaveRequest'];
 export type SchemaSaveStateResponse = components['schemas']['SaveStateResponse'];
 export type SchemaSavedListResponse = components['schemas']['SavedListResponse'];
 export type SchemaSchedule = components['schemas']['Schedule'];
+export type SchemaScheduleMaintenanceRequest = components['schemas']['ScheduleMaintenanceRequest'];
 export type SchemaSendMessageRequest = components['schemas']['SendMessageRequest'];
 export type SchemaSessionOpened = components['schemas']['SessionOpened'];
 export type SchemaSessionProgress = components['schemas']['SessionProgress'];
@@ -7228,6 +7392,7 @@ export type SchemaSocialLink = components['schemas']['SocialLink'];
 export type SchemaSocialLinkBody = components['schemas']['SocialLinkBody'];
 export type SchemaSource = components['schemas']['Source'];
 export type SchemaStatistics = components['schemas']['Statistics'];
+export type SchemaStatusWindow = components['schemas']['StatusWindow'];
 export type SchemaStoryVersionDetail = components['schemas']['StoryVersionDetail'];
 export type SchemaStoryVersionSummary = components['schemas']['StoryVersionSummary'];
 export type SchemaSubcategory = components['schemas']['Subcategory'];
@@ -8348,6 +8513,142 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Document"];
+                };
+            };
+        };
+    };
+    maintenanceOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceOverview"];
+                };
+            };
+        };
+    };
+    maintenanceSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleMaintenanceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceWindowView"];
+                };
+            };
+        };
+    };
+    maintenanceCancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceWindowView"];
+                };
+            };
+        };
+    };
+    maintenanceChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeMaintenanceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceWindowView"];
+                };
+            };
+        };
+    };
+    maintenanceEndNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceWindowView"];
+                };
+            };
+        };
+    };
+    maintenanceStartNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MaintenanceWindowView"];
                 };
             };
         };
@@ -14064,6 +14365,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Suggestions"];
+                };
+            };
+        };
+    };
+    statusCurrent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Whether the platform is open, and any window in force or announced. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformStatus"];
+                };
+            };
+            /** @description Only from the edge, when this service is not running at all: the maintenance problem with source "edge". This endpoint is exempt from the API's own gate. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["MaintenanceProblem"];
                 };
             };
         };

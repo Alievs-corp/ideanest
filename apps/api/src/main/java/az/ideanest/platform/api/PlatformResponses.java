@@ -1,13 +1,18 @@
 package az.ideanest.platform.api;
 
+import az.ideanest.platform.application.MaintenanceWindows;
 import az.ideanest.platform.application.SystemHealth;
 import az.ideanest.platform.domain.FeatureFlag;
+import az.ideanest.platform.domain.MaintenanceWindow;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * AD-12 and AD-16, as the service describes them — issues #312 and #316.
+ * AD-12, AD-16 and maintenance windows, as the service describes them — issues #312, #316
+ * and #214.
  */
 public final class PlatformResponses {
 
@@ -127,6 +132,64 @@ public final class PlatformResponses {
                     provider.available(),
                     provider.detail(),
                     provider.status().name());
+        }
+    }
+
+    /**
+     * One maintenance window as the console sees it — #214.
+     *
+     * <p>Every field is sent, nulls included: the console reads a null {@code endsAt} as
+     * "until further notice" and must not have to tell that apart from a field that is
+     * missing.
+     *
+     * @param state judged when the response was built: {@code SCHEDULED}, {@code ANNOUNCED},
+     *     {@code ACTIVE}, {@code ENDED} or {@code CANCELLED}
+     * @param note internal only; never in the public status response
+     */
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public record MaintenanceWindowView(
+            UUID id,
+            @Schema(allowableValues = {"SCHEDULED", "ANNOUNCED", "ACTIVE", "ENDED", "CANCELLED"}) String state,
+            Instant startsAt,
+            Instant endsAt,
+            Instant announceFrom,
+            String note,
+            UUID createdBy,
+            Instant createdAt,
+            Instant endedAt,
+            Instant cancelledAt) {
+
+        public static MaintenanceWindowView of(MaintenanceWindow window, Instant now) {
+            return new MaintenanceWindowView(
+                    window.id(),
+                    window.stateAt(now).name(),
+                    window.startsAt(),
+                    window.endsAt(),
+                    window.announceFrom(),
+                    window.note(),
+                    window.createdBy(),
+                    window.createdAt(),
+                    window.endedAt(),
+                    window.cancelledAt());
+        }
+    }
+
+    /**
+     * The console's maintenance screen.
+     *
+     * @param current the window in force, or null
+     * @param upcoming every window still to come, announced or not, soonest first
+     * @param recent the last twenty by start, in any state, newest first
+     */
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public record MaintenanceOverview(
+            MaintenanceWindowView current, List<MaintenanceWindowView> upcoming, List<MaintenanceWindowView> recent) {
+
+        public static MaintenanceOverview of(MaintenanceWindows.Overview overview, Instant now) {
+            return new MaintenanceOverview(
+                    overview.current().map(window -> MaintenanceWindowView.of(window, now)).orElse(null),
+                    overview.upcoming().stream().map(window -> MaintenanceWindowView.of(window, now)).toList(),
+                    overview.recent().stream().map(window -> MaintenanceWindowView.of(window, now)).toList());
         }
     }
 }

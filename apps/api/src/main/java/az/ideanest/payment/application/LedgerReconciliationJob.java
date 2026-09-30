@@ -65,6 +65,16 @@ public class LedgerReconciliationJob implements ScheduledJob, ReconciliationStat
         this.properties = properties;
     }
 
+    /**
+     * Paused while a maintenance window is in force (#214). A reconciliation pass reads the
+     * provider's side while the ledger may be mid-migration, and would raise alarms about a
+     * difference the maintenance itself is causing.
+     */
+    @Override
+    public boolean pausesDuringMaintenance() {
+        return true;
+    }
+
     /** §8.4's {@code ledger-reconciliation}. */
     @Override
     public String name() {

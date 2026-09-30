@@ -1,6 +1,7 @@
 package az.ideanest.config;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
+import az.ideanest.platform.api.MaintenanceFilter;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 
@@ -62,12 +64,19 @@ public class SecurityConfiguration {
                     + "-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/)[^/]+/[^/]+$";
 
     @Bean
-    public SecurityFilterChain apiSecurity(HttpSecurity http) throws Exception {
+    public SecurityFilterChain apiSecurity(HttpSecurity http, MaintenanceFilter maintenance) throws Exception {
         return http.authorizeHttpRequests(requests -> requests
                         // The platform reads these to decide whether this
                         // instance takes traffic. They carry a status and no
                         // component detail; see application.yml.
                         .requestMatchers("/actuator/health", "/actuator/health/**")
+                        .permitAll()
+                        // ---- #214: is the platform open ------------------
+                        // What clients poll during maintenance, so it must
+                        // answer without a session: a reader cannot obtain one
+                        // while a window is in force. Nothing in it belongs to
+                        // anybody. GET only, for the categories rule's reason.
+                        .requestMatchers(HttpMethod.GET, "/v1/status")
                         .permitAll()
                         // The published contract (#136). Public because that is
                         // what "published" means: §10.1 makes OpenAPI the way a
@@ -657,6 +666,13 @@ public class SecurityConfiguration {
                 // issued. That window is the token's lifetime, and it is why
                 // the lifetime is fifteen minutes.
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(accountStanding())))
+                // #214's maintenance gate: after the bearer token has been
+                // read, so it can let a staff token through, and before
+                // authorization, so an anonymous request during a window gets
+                // the maintenance answer rather than a 401 that would send the
+                // client to a sign-in it cannot complete. MaintenanceFilter has
+                // the list of what passes.
+                .addFilterBefore(maintenance, AuthorizationFilter.class)
                 // Stateless. No server-side session means nothing to fixate, and
                 // nothing that has to be shared between instances.
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

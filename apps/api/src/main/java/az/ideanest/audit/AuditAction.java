@@ -752,7 +752,28 @@ public enum AuditAction {
      * that destinations are waiting, and opening one is what discloses a name. Auditing the
      * list would write fifty rows per refresh, which is how a trail stops being readable.
      */
-    PAYOUT_DESTINATION_READ("compliance.payout_destination_read", "account");
+    PAYOUT_DESTINATION_READ("compliance.payout_destination_read", "account"),
+
+    // --- #214: maintenance windows -------------------------------------------------
+    //
+    // One action per verb rather than one "changed", because the trail is read during and
+    // after an incident and "who started it early" and "who extended it" are different
+    // questions. Every detail carries the window before and after the change.
+
+    /** A maintenance window was scheduled. */
+    MAINTENANCE_WINDOW_SCHEDULED("maintenance.window_scheduled", "maintenance_window"),
+
+    /** A scheduled window was started before its time: the platform closed now. */
+    MAINTENANCE_WINDOW_STARTED("maintenance.window_started", "maintenance_window"),
+
+    /** A running window was ended before its announced end: the platform reopened now. */
+    MAINTENANCE_WINDOW_ENDED("maintenance.window_ended", "maintenance_window"),
+
+    /** A window's announced end or its internal note was changed. */
+    MAINTENANCE_WINDOW_CHANGED("maintenance.window_changed", "maintenance_window"),
+
+    /** An upcoming window was called off before it started. */
+    MAINTENANCE_WINDOW_CANCELLED("maintenance.window_cancelled", "maintenance_window");
 
 
 
