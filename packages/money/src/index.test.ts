@@ -284,8 +284,8 @@ describe('the format entry', () => {
   });
 
   it('imports nothing, which is the whole reason it is a separate entry', async () => {
-    const { readFileSync } = await import('node:fs');
-    const source = readFileSync(new URL('./format.ts', import.meta.url), 'utf8');
+    // The file's own text, through Vite's `?raw`, so no Node types are needed here.
+    const { default: source } = await import('./format.ts?raw');
 
     // Not a `decimal.js` import, and not an import of the module that has one: the day this file
     // imports either, a screen that only prints an amount is carrying the arithmetic library again.
