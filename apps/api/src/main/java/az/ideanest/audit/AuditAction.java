@@ -384,6 +384,24 @@ public enum AuditAction {
     STAFF_ROLE_REVOKED("staff.role_revoked", "account"),
 
     /**
+     * #204: a super admin made an account a partner, or changed their percentage or the
+     * sections opened to them.
+     *
+     * <p>The entity is the partner's account, so "what has been done to this account" answers
+     * with it. The detail carries the percentage, the percentage it replaced and both sets of
+     * sections, because a share is a money decision and "who changed it from 50 to 30, and
+     * when" must be answerable after the row has been overwritten.
+     */
+    PARTNER_PROFILE_SAVED("partner.profile_saved", "account"),
+
+    /**
+     * #204: a partnership ended. Recorded although the row is gone, for
+     * {@link #STAFF_ROLE_REVOKED}'s reason: the deleted profile leaves no trace, and this is the
+     * only place that can say what share somebody used to be given.
+     */
+    PARTNER_PROFILE_REMOVED("partner.profile_removed", "account"),
+
+    /**
      * AD-11 (#311): the platform changed what it charges.
      *
      * <p>The entity is the schedule that was opened rather than the one that was closed:

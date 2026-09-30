@@ -1813,6 +1813,79 @@
         "tags" : [ "project-moderation-controller" ]
       }
     },
+    "/v1/admin/partners" : {
+      "get" : {
+        "operationId" : "partnerRoster",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Roster"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "partner-controller" ]
+      }
+    },
+    "/v1/admin/partners/{accountId}" : {
+      "delete" : {
+        "operationId" : "partnerRemove",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "accountId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "partner-controller" ]
+      },
+      "put" : {
+        "operationId" : "partnerSave",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "accountId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SaveRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Partner"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "partner-controller" ]
+      }
+    },
     "/v1/admin/payments" : {
       "get" : {
         "operationId" : "paymentLogLog",
@@ -13856,6 +13929,41 @@
           }
         }
       },
+      "Partner" : {
+        "type" : "object",
+        "properties" : {
+          "accountId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "percentage" : {
+            "type" : "string"
+          },
+          "sections" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "CURATION", "HEALTH" ]
+            }
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updatedBy" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
       "PatchPledgeRequest" : {
         "type" : "object",
         "properties" : {
@@ -15984,6 +16092,25 @@
           }
         },
         "required" : [ "description" ]
+      },
+      "SaveRequest" : {
+        "type" : "object",
+        "properties" : {
+          "percentage" : {
+            "type" : "string",
+            "maxLength" : 10,
+            "minLength" : 0
+          },
+          "sections" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "CURATION", "HEALTH" ]
+            },
+            "uniqueItems" : true
+          }
+        },
+        "required" : [ "percentage", "sections" ]
       },
       "SaveStateResponse" : {
         "type" : "object",
