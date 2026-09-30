@@ -5,7 +5,7 @@ import { ApiError } from '@ideanest/api-client';
 import { Button, TextField } from '../components/form';
 import { Body, Heading, Meta } from '../components/text';
 import { signIn, verifyTwoFactor } from '../lib/auth';
-import { useT } from '../lib/i18n';
+import { useT, type Translate } from '../lib/i18n';
 import { safeNext } from '../lib/guard';
 import { colors, size, spacing } from '../theme';
 
@@ -59,8 +59,6 @@ const styles = StyleSheet.create({
 });
 
 type Step = 'credentials' | 'two-factor';
-
-type Translate = ReturnType<typeof useT>;
 
 export default function SignInScreen() {
   const router = useRouter();

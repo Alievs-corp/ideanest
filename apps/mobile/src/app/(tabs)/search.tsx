@@ -158,13 +158,14 @@ export default function SearchScreen() {
       }}
       empty={
         /*
-         * The web's empty feed, in its three shapes: a term, a term inside a category, and a
-         * category chip on its own — which has no term to quote back.
+         * The web's empty feed for a term and for a term inside a category. A category chip on
+         * its own has no term to quote back, and the web's "nothing published" body would be
+         * untrue of it, so its body is the app's: try another category.
          */
         query.q === undefined ? (
           <EmptyState
             title={t('discovery.feed.emptyFilteredTitle')}
-            detail={t('discovery.feed.emptyBody')}
+            detail={t('mobile.search.emptyCategoryBody')}
           />
         ) : (
           <EmptyState

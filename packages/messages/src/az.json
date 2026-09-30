@@ -5199,7 +5199,8 @@
     },
     "search": {
       "minimum": "{count, plural, other {Ən azı # simvol yazın və ya təkliflərdən birini seçin.}}",
-      "narrow": "Axtarışı daralt: {label}"
+      "narrow": "Axtarışı daralt: {label}",
+      "emptyCategoryBody": "Bu kateqoriyada hələ uyğun kampaniya yoxdur. Başqa kateqoriya seçin və ya axtarış sözü yazın."
     },
     "campaign": {
       "untitled": "Adsız kampaniya",
@@ -5207,20 +5208,20 @@
       "failedDetail": "Kampaniya geri çəkilmiş ola bilər, ya da bu cihazda internet yoxdur.",
       "stale": "Bu cihazda saxlanılıb. Maliyyələşmə rəqəmləri o vaxtdan dəyişmiş ola bilər.",
       "story": "Kampaniya haqqında",
-      "storyOnWeb": "Formatlama, şəkillər və video veb səhifədədir. Onu açmaq üçün «Paylaş» düyməsinə toxunun.",
-      "commentsOnWeb": "Şərhlər hələlik veb səhifədədir. Kampaniyanı orada açmaq üçün «Paylaş» düyməsinə toxunun.",
+      "storyOnWeb": "Formatlama, şəkillər və video kampaniyanın veb səhifəsindədir. «Bu kampaniyanı dəstəklə» düyməsi onu açır.",
+      "commentsOnWeb": "Şərhlər hələlik kampaniyanın veb səhifəsindədir. «Bu kampaniyanı dəstəklə» düyməsi onu açır.",
       "backOnWeb": "{title} kampaniyasını saytda dəstəklə"
     },
     "funding": {
       "progressFor": "Maliyyələşmə gedişatı: {title}",
       "reached": "{percent}% — maliyyələşdi",
-      "pledged": "{amount} toplanıb"
+      "pledged": "{amount} dəstəklənib"
     },
     "signIn": {
-      "credentialsRefused": "Bu e-poçt ünvanı və parol heç bir hesaba uyğun gəlmir.",
-      "codeRefused": "Kod qəbul edilmədi. Onun vaxtı bitmiş ola bilər — yeni sorğu almaq üçün yenidən daxil olun.",
+      "credentialsRefused": "Bu e-poçt ünvanı və şifrə heç bir hesaba uyğun gəlmir.",
+      "codeRefused": "Kod qəbul edilmədi. Doğrulamanın vaxtı bitmiş ola bilər — yenisini almaq üçün yenidən daxil olun.",
       "recoveryHint": "Bərpa kodu da burada işləyir.",
-      "webOnly": "Qeydiyyat, parolun bərpası və xarici hesabla giriş saytdadır. Yeni hesabın e-poçtu təsdiqlənməlidir, bu isə ekran deyil, keçiddir."
+      "webOnly": "Qeydiyyat, şifrənin sıfırlanması və xarici hesabla giriş saytdadır. Yeni hesabın e-poçtu təsdiqlənməlidir, bu isə ekran deyil, keçiddir."
     }
   }
 }

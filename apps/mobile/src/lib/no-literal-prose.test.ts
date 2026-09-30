@@ -17,15 +17,21 @@ import ts from 'typescript';
  *   (`accessibilityLabel`, `accessibilityHint`, `placeholder`, `title`, `label`, and the
  *   header and tab options), whether written `label="Saved"`, `label={'Saved'}` or
  *   `options={{ title: 'Saved' }}`;
- * - a literal *sentence* (letters and a space) given to any other prop — `detail`, `hint` —
- *   since a component prop with a space in its value is copy; a one-word value there is
- *   usually a token (`accessibilityRole="button"`, `autoComplete="email"`) and passes;
- * - the string arguments of `Alert.alert` and `announceForAccessibility`.
+ * - the same for the copy-carrying props and properties `text`, `message`, `hint`, `detail`
+ *   and `description`, wherever they appear — `accessibilityValue={{ text: '43%' }}`, an
+ *   `Alert.alert` button's `{ text: 'Cancel' }` — quoted (`'title':`) or not;
+ * - a literal *sentence* (letters and a space) given to any other prop or property inside a
+ *   JSX attribute or a call below, since a value with a space in it is copy; a one-word value
+ *   there is usually a token (`accessibilityRole="button"`, `style: 'cancel'`) and passes;
+ * - the string arguments, and the objects and arrays among them, of `Alert.alert`,
+ *   `Alert.prompt`, `announceForAccessibility`, `Share.share` and `ToastAndroid.show*`;
+ * - a literal sentence returned from a function in these files (`return 'Try again.'`), which
+ *   is how a helper that picks the words for a screen hides them from the rules above.
  *
  * Literals are followed through the shapes copy hides in — `busy ? 'Saving' : 'Save'`,
  * `title ?? 'Untitled'`, `` `${n} days left` `` — so a fallback cannot slip past. A literal
- * held in a `const` and rendered later is beyond what a syntax scan can prove is prose;
- * review catches those, and each screen's own test renders through the catalogue.
+ * held in a `const` and rendered later is beyond what a syntax scan can prove is prose; those
+ * are for review.
  */
 
 const ROOT = join(__dirname, '..');
@@ -46,10 +52,23 @@ const SPOKEN_PROPS = new Set([
   'headerBackTitle',
   'tabBarLabel',
   'tabBarAccessibilityLabel',
+  'text',
+  'message',
+  'hint',
+  'detail',
+  'description',
 ]);
 
-/** Calls that put their string arguments in front of the reader. */
-const SPOKEN_CALLS = new Set(['Alert.alert', 'Alert.prompt', 'AccessibilityInfo.announceForAccessibility']);
+/** Calls that put their string arguments — and the objects among them — in front of the reader. */
+const SPOKEN_CALLS = new Set([
+  'Alert.alert',
+  'Alert.prompt',
+  'AccessibilityInfo.announceForAccessibility',
+  'Share.share',
+  'ToastAndroid.show',
+  'ToastAndroid.showWithGravity',
+  'ToastAndroid.showWithGravityAndOffset',
+]);
 
 /**
  * Deliberate exceptions, each one a string that is not prose in any language.
@@ -109,9 +128,24 @@ function literalsIn(node: ts.Node | undefined): { node: ts.Node; text: string }[
   return [];
 }
 
+/** A property's name as written, quoted or not; `undefined` for a computed one. */
+function propertyName(name: ts.PropertyName): string | undefined {
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNoSubstitutionTemplateLiteral(name)) {
+    return name.text;
+  }
+  return undefined;
+}
+
+function isSpoken(name: ts.PropertyName): boolean {
+  const text = propertyName(name);
+  return text !== undefined && SPOKEN_PROPS.has(text);
+}
+
 export function literalProse(fileName: string, source: string): Finding[] {
   const file = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const findings: Finding[] = [];
+  // One literal can be reached by two rules (a spoken property inside an alert's buttons).
+  const seen = new Set<number>();
   const at = (node: ts.Node) => {
     const { line } = file.getLineAndCharacterOfPosition(node.getStart(file));
     return `${fileName}:${line + 1}`;
@@ -119,7 +153,30 @@ export function literalProse(fileName: string, source: string): Finding[] {
   const report = (node: ts.Node | undefined, rule: RegExp) => {
     for (const found of literalsIn(node)) {
       const text = found.text.trim();
-      if (rule.test(text) && !KEY.test(text) && !ALLOWED.has(text)) findings.push({ where: at(found.node), text });
+      const start = found.node.getStart(file);
+      if (seen.has(start) || !rule.test(text) || KEY.test(text) || ALLOWED.has(text)) continue;
+      seen.add(start);
+      findings.push({ where: at(found.node), text });
+    }
+  };
+  /**
+   * Into the object and array literals a JSX attribute or a spoken call is handed: a spoken
+   * property's value is held to the letter rule, any other property's to the sentence rule.
+   */
+  const reportDeep = (node: ts.Node | undefined, rule: RegExp): void => {
+    if (node === undefined) return;
+    if (ts.isJsxExpression(node) || ts.isParenthesizedExpression(node)) {
+      reportDeep(node.expression, rule);
+    } else if (ts.isObjectLiteralExpression(node)) {
+      for (const property of node.properties) {
+        if (ts.isPropertyAssignment(property)) {
+          reportDeep(property.initializer, isSpoken(property.name) ? LETTER : SENTENCE);
+        }
+      }
+    } else if (ts.isArrayLiteralExpression(node)) {
+      for (const element of node.elements) reportDeep(element, rule);
+    } else {
+      report(node, rule);
     }
   };
 
@@ -131,11 +188,15 @@ export function literalProse(fileName: string, source: string): Finding[] {
       // A child: `<Text>{busy ? 'Saving' : 'Save'}</Text>`.
       report(node.expression, LETTER);
     } else if (ts.isJsxAttribute(node)) {
-      report(node.initializer, SPOKEN_PROPS.has(node.name.getText(file)) ? LETTER : SENTENCE);
-    } else if (ts.isPropertyAssignment(node) && SPOKEN_PROPS.has(node.name.getText(file))) {
+      reportDeep(node.initializer, SPOKEN_PROPS.has(node.name.getText(file)) ? LETTER : SENTENCE);
+    } else if (ts.isPropertyAssignment(node) && isSpoken(node.name)) {
       report(node.initializer, LETTER);
     } else if (ts.isCallExpression(node) && SPOKEN_CALLS.has(node.expression.getText(file))) {
-      for (const argument of node.arguments) report(argument, LETTER);
+      for (const argument of node.arguments) reportDeep(argument, LETTER);
+    } else if (ts.isReturnStatement(node)) {
+      report(node.expression, SENTENCE);
+    } else if (ts.isArrowFunction(node) && !ts.isBlock(node.body)) {
+      report(node.body, SENTENCE);
     }
     ts.forEachChild(node, visit);
   };
@@ -181,6 +242,13 @@ describe('literal prose in screens and components', () => {
       'Alert.alert("Sign out?");',
       'const f = <Row label="account.links.saved.label" />;',
       'const g = <Text>{`${count}%`}</Text>;',
+      'Alert.alert(t("title"), t("body"), [{ text: "Cancel", style: "cancel" }]);',
+      'const h = <View accessibilityValue={{ "text": "43 percent", now: 43 }} />;',
+      'Share.share({ message: "Look at this", url });',
+      'ToastAndroid.show("Saved", ToastAndroid.SHORT);',
+      'function why() { return "That did not work."; }',
+      'function key() { return "mobile.lock.face"; }',
+      'const route = () => "settings";',
     ].join('\n');
     expect(literalProse('y.tsx', source)).toEqual([
       { where: 'y.tsx:1', text: 'Untitled' },
@@ -189,6 +257,11 @@ describe('literal prose in screens and components', () => {
       { where: 'y.tsx:4', text: 'Nothing here yet.' },
       { where: 'y.tsx:5', text: 'Back' },
       { where: 'y.tsx:6', text: 'Sign out?' },
+      { where: 'y.tsx:9', text: 'Cancel' },
+      { where: 'y.tsx:10', text: '43 percent' },
+      { where: 'y.tsx:11', text: 'Look at this' },
+      { where: 'y.tsx:12', text: 'Saved' },
+      { where: 'y.tsx:13', text: 'That did not work.' },
     ]);
   });
 });

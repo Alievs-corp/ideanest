@@ -6,7 +6,7 @@ import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import ru from '@ideanest/messages/ru.json';
 import tr from '@ideanest/messages/tr.json';
-import { MESSAGE_MAX_LENGTH, whatsappHref } from '@ideanest/messages';
+import { MESSAGE_MAX_LENGTH, whatsappHref, type Locale } from '@ideanest/messages';
 import { FailureState } from './failure-state';
 import { WhatsAppSheet } from './whatsapp-sheet';
 
@@ -44,7 +44,7 @@ function inEnglish(ui: ReactElement) {
   return inLocale('en', en, ui);
 }
 
-function inLocale(locale: string, messages: typeof en, ui: ReactElement) {
+function inLocale(locale: Locale, messages: typeof en, ui: ReactElement) {
   return render(
     <SafeAreaProvider initialMetrics={METRICS}>
       <IntlProvider locale={locale} messages={messages}>

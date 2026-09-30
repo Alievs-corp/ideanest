@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
-import { createTranslator, IntlProvider, useTranslations } from 'use-intl';
+import {
+  createTranslator,
+  IntlProvider,
+  useTranslations,
+  type MessageKeys,
+  type NestedKeyOf,
+} from 'use-intl';
 import az from '@ideanest/messages/az.json';
 import en from '@ideanest/messages/en.json';
 import ru from '@ideanest/messages/ru.json';
@@ -20,6 +26,18 @@ import { currentLocale, useLocale } from './locale';
  * build step should strip the web-only `admin` namespace is the release-readiness issue's.
  */
 const CATALOGUES: Record<Locale, typeof en> = { az, en, ru, tr } as Record<Locale, typeof en>;
+
+/**
+ * Keys and locales are typed from the English catalogue, so `t('mobile.tabz.me')` is a
+ * compile error rather than a key rendered as its own name on a phone. `catalogue.test.ts`
+ * keeps the other three on the same key set, so one shape describes all four.
+ */
+declare module 'use-intl' {
+  interface AppConfig {
+    Messages: typeof en;
+    Locale: Locale;
+  }
+}
 
 /** A missing key renders its own name rather than taking a screen down, as on the web. */
 function fallback({ key, namespace }: { key: string; namespace?: string }): string {
@@ -42,6 +60,15 @@ export function AppIntlProvider({ children }: { readonly children: ReactNode }) 
 
 /** The translator for a namespace, or for the whole catalogue with no argument. */
 export const useT = useTranslations;
+
+/** The whole-catalogue translator, for a helper that is handed one rather than calling `useT`. */
+export type Translate = ReturnType<typeof useTranslations<never>>;
+
+/**
+ * Any key that names a message — for tables that hold a key and translate it later (the Me
+ * hub's rows, a placeholder screen's title), so a typo there fails to compile too.
+ */
+export type MessageKey = MessageKeys<typeof en, NestedKeyOf<typeof en>>;
 
 /**
  * The translator for code that runs outside the tree — a system prompt, a keychain read —

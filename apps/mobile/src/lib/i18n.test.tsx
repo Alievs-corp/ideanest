@@ -5,7 +5,7 @@ import ru from '@ideanest/messages/ru.json';
 import en from '@ideanest/messages/en.json';
 import az from '@ideanest/messages/az.json';
 import { formatCount, formatDate, pluralCategory, translate } from './i18n';
-import { setLocale } from './locale';
+import { currentLocale, setLocale } from './locale';
 
 /** The catalogue the app renders from behaves as the web's does under `use-intl`. */
 describe('use-intl over the shared catalogue', () => {
@@ -75,10 +75,14 @@ describe('the app-only strings and formats', () => {
   });
 
   it('translates outside the tree in the language chosen at the moment of the call', () => {
-    setLocale('en');
-    expect(translate()('mobile.lock.prompt')).toBe('Unlock IdeyaNest');
-    setLocale('ru');
-    expect(translate()('mobile.lock.stayLocked')).toBe('Оставить заблокированным');
-    setLocale('az');
+    const before = currentLocale();
+    try {
+      setLocale('en');
+      expect(translate()('mobile.lock.prompt')).toBe('Unlock IdeyaNest');
+      setLocale('ru');
+      expect(translate()('mobile.lock.stayLocked')).toBe('Оставить заблокированным');
+    } finally {
+      setLocale(before);
+    }
   });
 });

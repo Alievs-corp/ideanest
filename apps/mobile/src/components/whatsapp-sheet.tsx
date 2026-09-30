@@ -18,7 +18,6 @@ import {
   missingFields,
   whatsappHref,
   type EnquiryField,
-  type Locale,
 } from '@ideanest/messages';
 import { pluralCategory, useT } from '../lib/i18n';
 import { colors, radius, size, spacing } from '../theme';
@@ -63,8 +62,7 @@ export function WhatsAppSheet({
 }) {
   const t = useT('shell.whatsapp');
   const tAll = useT();
-  // The provider is only ever given one of the four (`lib/i18n.tsx`).
-  const locale = useLocale() as Locale;
+  const locale = useLocale();
   /*
    * The root `SafeAreaProvider`'s insets. React context crosses the `Modal`'s portal, so the
    * sheet reads the same numbers as every screen: its top stays clear of the status bar (the

@@ -5,7 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { siteUrl } from '../api/config';
 import { currentLocale } from '../lib/locale';
 import { isGuarded, signInHrefFor } from '../lib/guard';
-import { useT } from '../lib/i18n';
+import { useT, type MessageKey } from '../lib/i18n';
 import { useSession } from '../lib/use-session';
 import { colors, size, spacing } from '../theme';
 import { Button } from './form';
@@ -30,7 +30,7 @@ export function WebFallback({
   webPath,
 }: {
   /** A catalogue key, e.g. `shell.nav.pricing`. */
-  readonly titleKey: string;
+  readonly titleKey: MessageKey;
   readonly webPath: string;
 }) {
   const router = useRouter();
