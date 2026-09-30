@@ -385,8 +385,9 @@ Marked `[W]` web, `[M]` mobile, `[A]` admin.
 > `PATCH /v1/me/profile-visibility`'s reasoning rather than a general account
 > patch. The screen writes the column and a cookie together, because a render has
 > to know the language before its first byte and cannot wait on an API call;
-> `SessionProvider` mirrors the column into the cookie when a session bootstraps,
+> `SessionProvider` reconciles the column with the cookie when a session bootstraps,
 > so a person who chose Russian on one device is not met by English on the next.
+> Which side wins a disagreement is §21.1's "the latest explicit choice" (#216).
 > The options are named in their own languages — a list of endonyms — because
 > somebody stranded in a script they cannot read needs to find their own, and
 > "Azerbaijani" spelled in Russian is unreadable to exactly that person.
@@ -5723,9 +5724,15 @@ used to build matched no route and answered 404 — on every email about a campa
 Rows written before #249 hold no slugs and keep the old link, because nothing at
 send time can invent them.
 
-One limit is left, and it is worth stating rather than discovering: **every
-message renders in one language**, because the sender runs on a background job
-with no reader attached; `users.locale` exists and is not read yet.
+**Every message renders in the recipient's language, read when it is sent.**
+The sender runs on a background job with no reader attached, so it cannot use a
+request's language; it reads `users.locale` from the account at send time instead
+(`EmailChannelSender`, and since #216 `PushChannelSender` — push copy was
+`Locale.ROOT`, the English base catalogue, for everybody until then). Not a copy
+taken when the notification was queued: a row queued before somebody changed
+language and sent after it goes out in the new one. The authentication mails
+(verification, reset, change notices) take the account's language when the action
+happens, and a registration — which has no account yet — the request's.
 
 **Colours in the HTML layout are hex literals**, which CLAUDE.md §2 forbids in
 source. The rule cannot be honoured in a medium where Gmail, Outlook and Apple
@@ -6733,6 +6740,20 @@ than a business endpoint, whose answer could come from an HTTP cache.
 
 
 
+**Clients** read the contract through `@ideanest/api-client/maintenance`
+
+(`isMaintenanceProblem`, `maintenanceOf`, `maintenanceFromResponse`), a subpath so web
+
+routes that never meet it carry none of it, and render `shell.maintenance.*` from the
+
+catalogue. The app (`apps/mobile/README.md` → "Maintenance") opens its maintenance screen
+
+only for the problem type, polls `/v1/status` to leave it, and reads `upcoming` on launch
+
+and on return to the foreground for a banner dismissed per window.
+
+
+
 **What passes the gate during a window**, and nothing else:
 
 
@@ -6917,6 +6938,47 @@ it was written in.
 >
 > **What is still English, stated rather than left to be found.** The campaign editor. Epic
 > #78 is the list of what was on this line and how each surface came off it.
+>
+> **Which language wins across devices: the latest explicit choice, written to the account
+> (#216).** A signed-in person has one language on the account, and mail and pushes are sent
+> in it. They can also choose one on a device, in three ways — the app's language screen, the
+> phone's **per-app** language setting (iOS Settings → IdeyaNest → Language, Android 13+ app
+> languages; detected at launch as a new first entry in `getLocales()`, `perAppLanguageChosen`),
+> and the web header's switcher (or Settings → Language). Each of the three is an *explicit
+> choice*: it takes effect on that device and is written to the account with
+> `PATCH /v1/me/locale`, so mail, pushes and every other device follow it.
+>
+> The account's language is applied **to a device** only when (1) the device has no explicit
+> choice of its own — a fresh install, a first sign-in, a phone that only ever followed its own
+> language — or (2) the account's language changed elsewhere since this device last synced it.
+> No clocks are compared between devices: each remembers the account language it last applied
+> or wrote (`locale.accountSynced` in the app's MMKV, the `ideanest_locale_synced` cookie next
+> to `ideanest_locale` on the web), and an account that now says something else was changed by
+> somebody else. That is last-writer-wins. A choice whose `PATCH` has not landed stays in
+> effect, marked pending (`locale.pending`, `ideanest_locale_pending`), and outranks the
+> account's value until it is sent again — the app retries on the next foreground, the web on
+> every session read. The web's switcher is a full-page link, so it writes only the cookie; the
+> page it opens sees the cookie moved since the last sync while the account did not, and that
+> read sends the `PATCH` (and marks it pending). The rule is loaded by `SessionProvider` after
+> the session read, dynamically, so it adds only its loader to First Load JS. Signing out
+> keeps the device's choice (the next person on the phone or browser keeps the language it was
+> using) and forgets both markers, so the next sign-in follows its own account. Nothing else
+> changes the language: a whole phone moving to a language the platform does not have (German)
+> is not a choice about this app, and the browser's `Accept-Language` is never read.
+>
+> The phone's resulting order is: the device's explicit choice; the account's language when
+> (1) or (2) says so; the device's preferred languages; the region; `az`
+> (`apps/mobile/src/lib/locale.ts`). The web's language is the path's; the cookie answers the
+> bare path in `proxy.ts`, and the rule above decides what the cookie holds
+> (`apps/web/src/lib/i18n/sync.ts`).
+>
+> The alternatives were weighed and lost. **The account always wins** — the earlier rule, which
+> `SessionProvider` applied to the cookie on every session read and the app once per launch —
+> broke the phone's own per-app setting and the web switcher: the platform ignored a choice the
+> person had just made, and people read that as a bug. **The device always wins** lets mail and
+> pushes drift from what the person reads, and a second device never learns the choice. **The
+> latest explicit choice, synced** is how the operating-system vendors' own account settings
+> and most multi-device products behave, and it matches "I chose X, show me X everywhere".
 >
 > **The catalogue settled on one word per concept in #102.** All three non-English languages
 > carried two words for "creator" and Russian two for "backer" — the administration console

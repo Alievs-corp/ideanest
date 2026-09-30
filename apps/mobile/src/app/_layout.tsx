@@ -13,6 +13,7 @@ import { startConnectivity } from '../lib/connectivity';
 import { destinationFor } from '../lib/links';
 import { deferUntilUp } from '../lib/maintenance';
 import { useMaintenanceGate } from '../lib/maintenance-gate';
+import { watchUpcoming } from '../lib/upcoming-maintenance';
 import { createQueryClient, persistOptions } from '../lib/offline';
 import { lockNow } from '../lib/session';
 import { AccountSync } from '../lib/account-sync';
@@ -149,6 +150,9 @@ export default function RootLayout() {
 
   // The offline banner's source, and TanStack Query's (`lib/connectivity.ts`).
   useEffect(() => startConnectivity(), []);
+
+  // The planned-maintenance banner's source: `/v1/status` on launch and on return (#214).
+  useEffect(() => watchUpcoming(), []);
 
   useEffect(() => {
     const changed = (state: AppStateStatus) => {

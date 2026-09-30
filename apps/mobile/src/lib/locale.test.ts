@@ -11,13 +11,23 @@ var mockDevice: string | undefined;
 jest.mock('expo-localization', () => ({
   getLocales: () => [{ languageCode: mockDevice ?? 'az', languageTag: mockDevice ?? 'az' }],
 }));
-import { currentLocale, perAppLanguageChosen, resolveLocale, setLocale } from './locale';
+import {
+  currentLocale,
+  perAppLanguageChosen,
+  reconcileLocale,
+  resolveLocale,
+  setLocale,
+} from './locale';
 
 const none = { stored: null, account: null, languages: [], region: null } as const;
 
 describe('resolveLocale', () => {
-  it('takes the account language over the stored choice', () => {
-    expect(resolveLocale({ ...none, account: 'tr', stored: 'ru' })).toBe('tr');
+  it('takes the device’s explicit choice over the account language (#216)', () => {
+    expect(resolveLocale({ ...none, account: 'tr', stored: 'ru' })).toBe('ru');
+  });
+
+  it('takes the account language, when it is to be applied, over the device languages', () => {
+    expect(resolveLocale({ ...none, account: 'tr', languages: [{ languageCode: 'en' }] })).toBe('tr');
   });
 
   it('takes the stored choice over the device', () => {
@@ -80,33 +90,95 @@ describe('a change of the phone’s own language', () => {
   function launch(
     saved: Record<string, string>,
     device = 'az',
-  ): { locale: string; stored: string | undefined } {
-    let result = { locale: '', stored: undefined as string | undefined };
+  ): { locale: string; stored: string | undefined; pending: string | undefined } {
+    let result = {
+      locale: '',
+      stored: undefined as string | undefined,
+      pending: undefined as string | undefined,
+    };
     mockDevice = device;
     jest.isolateModules(() => {
       const { deviceStore: store } = require('./storage') as typeof import('./storage');
       for (const [key, value] of Object.entries(saved)) store.set(key, value);
       const fresh = require('./locale') as typeof import('./locale');
-      result = { locale: fresh.currentLocale(), stored: store.getString('locale') };
+      result = {
+        locale: fresh.currentLocale(),
+        stored: store.getString('locale'),
+        pending: store.getString('locale.pending'),
+      };
     });
     mockDevice = undefined;
     return result;
   }
 
   // The phone reads Azerbaijani unless a launch says otherwise.
-  it('outranks a choice stored before it: the per-app setting is heard', () => {
-    expect(launch({ 'locale.device': 'ru', locale: 'tr' })).toEqual({ locale: 'az', stored: undefined });
+  it('outranks a choice stored before it, and is marked for the account (#216)', () => {
+    expect(launch({ 'locale.device': 'ru', locale: 'tr' })).toEqual({
+      locale: 'az',
+      stored: 'az',
+      pending: 'az',
+    });
   });
 
   it('leaves the stored choice alone while the phone’s language stays put', () => {
-    expect(launch({ 'locale.device': 'az', locale: 'tr' })).toEqual({ locale: 'tr', stored: 'tr' });
+    expect(launch({ 'locale.device': 'az', locale: 'tr' })).toEqual({
+      locale: 'tr',
+      stored: 'tr',
+      pending: undefined,
+    });
   });
 
   it('keeps the stored choice when the whole phone moves to a language the app lacks', () => {
-    expect(launch({ 'locale.device': 'en', locale: 'tr' }, 'de')).toEqual({ locale: 'tr', stored: 'tr' });
+    expect(launch({ 'locale.device': 'en', locale: 'tr' }, 'de')).toEqual({
+      locale: 'tr',
+      stored: 'tr',
+      pending: undefined,
+    });
   });
 
   it('leaves it alone on the first launch that keeps a record', () => {
-    expect(launch({ locale: 'tr' })).toEqual({ locale: 'tr', stored: 'tr' });
+    expect(launch({ locale: 'tr' })).toEqual({ locale: 'tr', stored: 'tr', pending: undefined });
+  });
+});
+
+describe('reconcileLocale, the last-synced rule (#216)', () => {
+  const rule = { account: 'ru', chosen: undefined, synced: undefined, pending: undefined } as const;
+
+  it('applies the account on a fresh install or a first sign-in', () => {
+    expect(reconcileLocale(rule)).toEqual({ kind: 'apply', locale: 'ru' });
+    // A choice made before signing in: nothing was synced yet, so the account wins.
+    expect(reconcileLocale({ ...rule, chosen: 'en' })).toEqual({ kind: 'apply', locale: 'ru' });
+  });
+
+  it('keeps the device’s choice while the account is what this device last synced', () => {
+    expect(reconcileLocale({ ...rule, chosen: 'tr', synced: 'ru' })).toEqual({ kind: 'keep' });
+  });
+
+  it('applies an account language that changed elsewhere, over the device’s choice', () => {
+    expect(reconcileLocale({ ...rule, account: 'en', chosen: 'tr', synced: 'tr' })).toEqual({
+      kind: 'apply',
+      locale: 'en',
+    });
+  });
+
+  it('pushes a pending choice rather than letting the account win', () => {
+    const pending = { ...rule, account: 'az', chosen: 'ru', synced: 'az', pending: 'ru' } as const;
+    expect(reconcileLocale(pending)).toEqual({ kind: 'push', locale: 'ru' });
+    // Even when the account changed elsewhere meanwhile: the pending choice is the latest known.
+    expect(reconcileLocale({ ...pending, account: 'en' })).toEqual({ kind: 'push', locale: 'ru' });
+  });
+
+  it('settles a pending choice the account already carries', () => {
+    expect(reconcileLocale({ ...rule, chosen: 'ru', synced: 'az', pending: 'ru' })).toEqual({
+      kind: 'apply',
+      locale: 'ru',
+    });
+  });
+
+  it('changes nothing for an account value it cannot draw', () => {
+    expect(reconcileLocale({ ...rule, account: 'de', chosen: 'tr', synced: 'tr' })).toEqual({
+      kind: 'keep',
+    });
+    expect(reconcileLocale({ ...rule, account: undefined })).toEqual({ kind: 'keep' });
   });
 });

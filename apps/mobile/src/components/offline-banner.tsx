@@ -3,6 +3,7 @@ import { AccessibilityInfo, Platform, StyleSheet, View } from 'react-native';
 import { currentlyOnline, subscribeToConnectivity, useOnline } from '../lib/connectivity';
 import { useT } from '../lib/i18n';
 import { colors, spacing } from '../theme';
+import { UpcomingMaintenanceBanner } from './maintenance-banner';
 import { OfflineNotice } from './states';
 
 /**
@@ -50,11 +51,17 @@ export function OfflineBanner() {
   );
 }
 
-/** A screen's content with the banner above it. What the navigators' `screenLayout` returns. */
+/**
+ * A screen's content with the banners above it. What the navigators' `screenLayout` returns.
+ *
+ * <p>Also the planned-maintenance notice (issue #214, `maintenance-banner.tsx`), under the
+ * offline one: "under the header" is the same place for both, for the same reason.
+ */
 export function WithOfflineBanner({ children }: { readonly children: ReactNode }) {
   return (
     <View style={styles.screen}>
       <OfflineBanner />
+      <UpcomingMaintenanceBanner />
       {children}
     </View>
   );

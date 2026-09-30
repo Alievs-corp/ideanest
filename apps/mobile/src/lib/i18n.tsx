@@ -144,8 +144,12 @@ export function pluralCategory(locale: Locale, count: number): keyof PluralForms
 const PARTS = formatToPartsWorks();
 const COUNT_OPTIONS: Intl.NumberFormatOptions = {};
 const DATE_OPTIONS: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
+const TIME_OPTIONS: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
+const DATE_TIME_OPTIONS: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' };
 let partlessCount: ReturnType<typeof partlessAzerbaijaniNumberFormat> | undefined;
 let partlessDate: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
+let partlessTime: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
+let partlessDateTime: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
 
 function countFormat(locale: Locale): { format(value: number): string } {
   if (locale !== 'az' || PARTS.numbers) return numberFormat(locale, COUNT_OPTIONS, 'count');
@@ -155,6 +159,16 @@ function countFormat(locale: Locale): { format(value: number): string } {
 function dateFormat(locale: Locale): { format(value: Date): string } {
   if (locale !== 'az' || PARTS.dates) return dateTimeFormat(locale, DATE_OPTIONS, 'date');
   return (partlessDate ??= partlessAzerbaijaniDateTimeFormat(DATE_OPTIONS));
+}
+
+function timeFormat(locale: Locale): { format(value: Date): string } {
+  if (locale !== 'az' || PARTS.dates) return dateTimeFormat(locale, TIME_OPTIONS, 'time');
+  return (partlessTime ??= partlessAzerbaijaniDateTimeFormat(TIME_OPTIONS));
+}
+
+function dateTimeFormatFor(locale: Locale): { format(value: Date): string } {
+  if (locale !== 'az' || PARTS.dates) return dateTimeFormat(locale, DATE_TIME_OPTIONS, 'dateTime');
+  return (partlessDateTime ??= partlessAzerbaijaniDateTimeFormat(DATE_TIME_OPTIONS));
 }
 
 export function formatCount(count: number, locale: Locale): string {
@@ -187,5 +201,35 @@ export function formatDate(iso: string | null | undefined, locale: Locale): stri
     return dateFormat(locale).format(date) || iso.slice(0, 10);
   } catch {
     return iso.slice(0, 10);
+  }
+}
+
+/**
+ * A clock time from an ISO timestamp (`02:30`), in the reader's language and the phone's time
+ * zone — issue #214's maintenance times. The same fallbacks as {@link formatDate}: as it came
+ * when it will not parse, the ISO time when the engine cannot format.
+ */
+export function formatTime(iso: string | null | undefined, locale: Locale): string {
+  return formatInstant(iso, locale, timeFormat, (value) => value.slice(11, 16));
+}
+
+/** A date and a clock time (`5 Oct 2026, 01:00`), as {@link formatTime}. */
+export function formatDateTime(iso: string | null | undefined, locale: Locale): string {
+  return formatInstant(iso, locale, dateTimeFormatFor, (value) => value.slice(0, 16).replace('T', ' '));
+}
+
+function formatInstant(
+  iso: string | null | undefined,
+  locale: Locale,
+  formatter: (locale: Locale) => { format(value: Date): string },
+  bare: (iso: string) => string,
+): string {
+  if (iso == null || iso === '') return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  try {
+    return formatter(locale).format(date) || bare(iso);
+  } catch {
+    return bare(iso);
   }
 }

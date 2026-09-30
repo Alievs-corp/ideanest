@@ -81,13 +81,15 @@ public class PushComposer {
      * @param recipientName the name on the recipient's account. Slot {@code 0} in the
      *     catalogue, which most push copy does not use — a lock screen showing somebody
      *     their own name is a wasted line
+     * @param locale the recipient's language, read from the account when the push is sent
      */
-    public PushContent compose(NotificationMessage message, String recipientName) {
+    public PushContent compose(NotificationMessage message, String recipientName, Locale locale) {
         JsonNode params = facts.paramsOf(message.params());
         EmailFacts values = facts.factsFor(message.type(), params, recipientName);
         String base = PREFIX + message.type().name() + ".";
 
-        return new PushContent(copy(base + "subject", values), copy(base + "line", values), urlFor(params));
+        return new PushContent(
+                copy(base + "subject", values, locale), copy(base + "line", values, locale), urlFor(params));
     }
 
     /**
@@ -98,10 +100,12 @@ public class PushComposer {
      * {@code EmailComposer} makes for leaving the digest email without a button. Tapping
      * opens the application, where the inbox is.
      */
-    public PushContent compose(NotificationDigest digest, String recipientName) {
+    public PushContent compose(NotificationDigest digest, String recipientName, Locale locale) {
         EmailFacts values = EmailFacts.of(recipientName).withDetail(String.valueOf(digest.size()));
         return new PushContent(
-                copy("email.digest.subject", values), copy("email.digest.headline", values), NO_DESTINATION);
+                copy("email.digest.subject", values, locale),
+                copy("email.digest.headline", values, locale),
+                NO_DESTINATION);
     }
 
     private String urlFor(JsonNode params) {
@@ -110,25 +114,26 @@ public class PushComposer {
     }
 
     /**
-     * One line of copy.
+     * One line of copy, in the recipient's language.
      *
-     * <p>{@link Locale#ROOT}, and that is a limitation stated rather than hidden — the
-     * same one {@code EmailComposer} carries. This runs on a background sender with no
-     * request attached, and {@code users.locale} is a column nothing here reads yet. A
-     * phone's own language reaches the service on every read it makes
-     * ({@code apps/mobile}'s {@code api/config.ts}) and does not reach this.
+     * <p>The language is the account's ({@code users.locale}), read by
+     * {@link PushChannelSender} when the push is sent rather than when the notification was
+     * queued — issue #216: a person who changes language in the application, in the phone's
+     * per-app setting or on the web gets the next push in it, as the next email already
+     * does ({@code EmailChannelSender}). It used to be {@link Locale#ROOT}, which is the
+     * English base catalogue, for everybody.
      *
      * <p>A missing key throws, and {@code EmailCopyTests} asks for every key of every
      * type — so a type whose {@code .line} was never written is a build failure rather
      * than a push notification with a placeholder on somebody's lock screen.
      */
-    private String copy(String key, EmailFacts values) {
+    private String copy(String key, EmailFacts values, Locale locale) {
         if (!values.projectTitle().isEmpty()) {
-            String named = messages.getMessage(key + NAMED, values.arguments(), null, Locale.ROOT);
+            String named = messages.getMessage(key + NAMED, values.arguments(), null, locale);
             if (named != null) {
                 return named;
             }
         }
-        return messages.getMessage(key, values.arguments(), Locale.ROOT);
+        return messages.getMessage(key, values.arguments(), locale);
     }
 }
