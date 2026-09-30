@@ -1598,6 +1598,19 @@ Preferences are per category and per channel, with a digest option.
 > module answers through the shared `RevenueFigures` contract, which keeps `staff` and
 > `subscription` from forming a cycle. Every read is audited with the view and the
 > percentage it was scaled by.
+>
+> **Partner screens (#206).** `/admin/partners` (under AD-04, `ADMINISTER_STAFF`) lists
+> partners, shows how much of the 100 is allocated, and lets a super admin add a partner
+> through the account picker, change a percentage, tick the two openable sections and end
+> a partnership. `/admin/partner-statistics` (under AD-11, `VIEW_PARTNER_STATISTICS`)
+> shows today, this month, the days, the last twelve months and the plans as tables. The
+> screens compute nothing: every figure is formatted exactly as the service scaled it.
+> **A partner's page says once, in its header, that the figures are the partner's share**
+> (`Partner's share: 50% of the platform's figures.`), taken from the response's `view`,
+> and is never repeated beside a number; a super admin's page says the figures are the
+> real ones. A partner with no percentage is told a super admin has to set it, rather than
+> that they do not work here. The navigation rail shows a partner only what their
+> capabilities open, and the API is what refuses the rest.
 
 > **All sixteen have a screen now, and #259 is what built them.** The
 > distinction that table used to hide is between a capability's *record* and its

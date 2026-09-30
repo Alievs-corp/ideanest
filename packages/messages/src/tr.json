@@ -684,7 +684,9 @@
       "/admin/legal": "Hukuki belgeler",
       "/admin/moderation/submissions": "İncelemedeki kampanyalar",
       "/admin/campaigns": "Tüm kampanyalar",
-      "/admin/revenue": "Gelir"
+      "/admin/revenue": "Gelir",
+      "/admin/partners": "Ortaklar",
+      "/admin/partner-statistics": "Ortak istatistikleri"
     },
     "states": {
       "built": "Hazır",
@@ -1013,6 +1015,18 @@
         "metaDescription": "Aboneliklerin getirdiği gelir; döneme, plana ve ödeme yöntemine göre.",
         "title": "Gelir",
         "intro": "Planlar için yapılan ödemeler, paranın geldiği tarihe göre gruplanmış hâlde. Her para birimi ayrı gösterilir ve asla bir başkasıyla toplanmaz."
+      },
+      "partners": {
+        "metaTitle": "Ortaklar",
+        "metaDescription": "Finansal göstergelerin payını kimin gördüğü, hangi pay olduğu ve hangi bölümlerin ona açık olduğu.",
+        "title": "Ortaklar",
+        "intro": "Ortak, platformun finansal göstergelerinin bir yüzdesini yalnızca toplamlar halinde görür. Yüzdeyi belirleyin ve başka nelere erişebileceğini seçin."
+      },
+      "partnerStatistics": {
+        "metaTitle": "Ortak istatistikleri",
+        "metaDescription": "Gelir ve abonelikler, toplamlar halinde.",
+        "title": "Ortak istatistikleri",
+        "intro": "Gelir ve abonelikler toplamlar halinde: bugün, bu ay, güne, aya ve plana göre."
       }
     },
     "screens": {
@@ -2438,6 +2452,66 @@
         "alreadyDecided": "Bu itiraz için zaten karar verildi. Liste yenilendi.",
         "refundFailed": "İade reddedildi, bu yüzden itiraz hâlâ açık. Yeniden deneyin ya da iadeye iadeler ekranından bakın.",
         "failedTitle": "Olmadı"
+      },
+      "partners": {
+        "subject": "ortak listesi",
+        "noticeTitle": "Ortak bir pay görür, yalnızca payı",
+        "noticeBody": "Her ortak, platformun finansal göstergelerinin kendi yüzdesini yalnızca toplamlar halinde görür: hiçbir zaman işlemi, ödeyeni veya ödenen tutarı değil. Gerçek veriler bölünmez ve kopyalanmaz; yüzde, göstergeleri hesaplanırken uygulanır. Ortağın başka bir personel rolü olmaz.",
+        "rosterHeading": "Ortaklar",
+        "loadingRoster": "Ortaklar yükleniyor",
+        "rosterEmptyTitle": "Henüz ortak yok",
+        "rosterEmptyBody": "Aşağıdan ekleyin. Yüzdesi olmayan bir ortak hiçbir gösterge görmez.",
+        "allocation": "100%’ün {allocated}%’i dağıtıldı. {remaining}% kaldı.",
+        "updatedLine": "Güncellendi: {date}",
+        "sectionsNone": "Yalnızca istatistik",
+        "sectionsOpen": "Ayrıca açık: {sections}",
+        "percentageLabel": "Yüzde",
+        "percentageHint": "0,01 ile 100 arasında, en fazla iki ondalık basamakla. Ortaklar birlikte 100’ü aşamaz.",
+        "sectionsLegend": "Bu ortağa ayrıca açık olanlar",
+        "sectionLabel": {
+          "CURATION": "Küratörlük",
+          "HEALTH": "Sistem durumu"
+        },
+        "sectionHint": {
+          "CURATION": "Koleksiyonlar, rozetler, açık çağrılar, yerleşim ve sınıflandırma.",
+          "HEALTH": "Kuyruk derinliği, başarısız işler ve sağlayıcı durumu."
+        },
+        "sectionsNote": "Diğer her bölüm tek tek işlemleri, kişileri veya küçültülmemiş göstergeleri gösterir, bu yüzden bir ortağa açılamaz.",
+        "saveChanges": "Değişiklikleri kaydet",
+        "remove": "Ortaklığı bitir",
+        "addHeading": "Ortak ekle",
+        "addIntro": "Bir hesap seçin, yüzdeyi belirleyin ve başka nelere erişebileceğini seçin. Zaten başka bir personel rolü olan hesap ortak olamaz.",
+        "chooseAccountFirst": "Önce bir hesap seçin.",
+        "addPartner": "Ortak ekle",
+        "working": "Kaydediliyor",
+        "savedNotice": "{name} artık göstergelerin %{percentage} kadarını görüyor.",
+        "removedNotice": "{name} artık ortak değil.",
+        "doneTitle": "Tamam",
+        "failedTitle": "Olmadı"
+      },
+      "partnerStatistics": {
+        "subject": "finansal istatistikler",
+        "partnerLine": "Ortağın payı: platform göstergelerinin %{percentage} kadarı.",
+        "realLine": "Gerçek göstergeler: platformun %100’ü.",
+        "zoneNote": "Tarihler ve aylar {zone} saat dilimindedir.",
+        "loadingStatistics": "İstatistikler yükleniyor",
+        "notConfiguredTitle": "Sizin için henüz bir pay belirlenmedi",
+        "notConfiguredBody": "Göstergeler görünmeden önce bir süper yönetici yüzdenizi belirlemelidir.",
+        "todayHeading": "Bugün",
+        "monthHeading": "Bu ay",
+        "dailyHeading": "Bu ayın günleri",
+        "monthlyHeading": "Son on iki ay",
+        "planHeading": "Bu ayın planları",
+        "revenue": "Gelir",
+        "subscriptions": "Abonelikler",
+        "reversals": "Ödeme iadeleri",
+        "dateColumn": "Tarih",
+        "monthColumn": "Ay",
+        "planColumn": "Plan",
+        "nothingRecorded": "Kayıt yok",
+        "dailyCaption": "Bu ayın günlerine göre gelir ve abonelikler",
+        "monthlyCaption": "Aylara göre gelir ve abonelikler",
+        "planCaption": "Bu ayın planlarına göre gelir ve abonelikler"
       }
     },
     "moderation": {

@@ -57,6 +57,12 @@ import {
   type RefundConsoleCopy,
 } from './money-copy';
 import {
+  partnerManagerCopyFrom,
+  partnerStatisticsCopyFrom,
+  type PartnerManagerCopy,
+  type PartnerStatisticsCopy,
+} from './partner-copy';
+import {
   staffRolesCopyFrom,
   supportConsoleCopyFrom,
   type StaffRolesCopy,
@@ -256,4 +262,14 @@ export async function campaignDirectoryCopy(): Promise<CampaignDirectoryCopy> {
 
 export async function campaignPreviewCopy(): Promise<CampaignPreviewCopy> {
   return campaignPreviewCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+/** #206: the partner list, where a super admin sets a percentage and opens sections. */
+export async function partnerManagerCopy(): Promise<PartnerManagerCopy> {
+  return partnerManagerCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+/** #206: the financial statistics as a partner, or a super admin, is entitled to see them. */
+export async function partnerStatisticsCopy(): Promise<PartnerStatisticsCopy> {
+  return partnerStatisticsCopyFrom(await getTranslations('admin'), await consoleChrome());
 }

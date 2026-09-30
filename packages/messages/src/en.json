@@ -684,7 +684,9 @@
       "/admin/legal": "Legal documents",
       "/admin/moderation/submissions": "Campaigns for review",
       "/admin/campaigns": "All campaigns",
-      "/admin/revenue": "Revenue"
+      "/admin/revenue": "Revenue",
+      "/admin/partners": "Partners",
+      "/admin/partner-statistics": "Partner statistics"
     },
     "states": {
       "built": "Built",
@@ -1013,6 +1015,18 @@
         "metaDescription": "What subscriptions brought in, by period, plan and payment method.",
         "title": "Revenue",
         "intro": "What creators paid for their plans, grouped by when the money arrived. Each currency is reported on its own and never added to another."
+      },
+      "partners": {
+        "metaTitle": "Partners",
+        "metaDescription": "Who sees a share of the financial figures, what share, and which sections are open to them.",
+        "title": "Partners",
+        "intro": "A partner sees a percentage of the platform’s financial figures, in totals only. Set the percentage and choose what else they may open."
+      },
+      "partnerStatistics": {
+        "metaTitle": "Partner statistics",
+        "metaDescription": "Revenue and subscriptions, in totals.",
+        "title": "Partner statistics",
+        "intro": "Revenue and subscriptions, in totals: today, this month, by day, by month and by plan."
       }
     },
     "screens": {
@@ -2438,6 +2452,66 @@
         "alreadyDecided": "Somebody has already decided this dispute. The list has been reloaded.",
         "refundFailed": "The refund was refused, so the dispute is still open. Try again, or look at the refund on the refunds screen.",
         "failedTitle": "That did not work"
+      },
+      "partners": {
+        "subject": "the partner list",
+        "noticeTitle": "A partner sees a share, and only a share",
+        "noticeBody": "Each partner sees their percentage of the platform’s financial figures, in totals only: never a transaction, who paid, or an amount paid. The real data is never split or copied; the percentage is applied when their figures are produced. A partner holds no other staff role.",
+        "rosterHeading": "Partners",
+        "loadingRoster": "Loading partners",
+        "rosterEmptyTitle": "No partners yet",
+        "rosterEmptyBody": "Add one below. A partner without a percentage sees no figures.",
+        "allocation": "{allocated}% of 100% is allocated. {remaining}% is left.",
+        "updatedLine": "Updated {date}",
+        "sectionsNone": "Statistics only",
+        "sectionsOpen": "Also opens: {sections}",
+        "percentageLabel": "Percentage",
+        "percentageHint": "Between 0.01 and 100, with at most two decimals. The partners together may not go above 100.",
+        "sectionsLegend": "Also open to this partner",
+        "sectionLabel": {
+          "CURATION": "Curation",
+          "HEALTH": "System health"
+        },
+        "sectionHint": {
+          "CURATION": "Collections, badges, open calls, placement and the taxonomy.",
+          "HEALTH": "Queue depth, failed jobs and provider status."
+        },
+        "sectionsNote": "Every other section shows individual transactions, people or unscaled figures, so it cannot be opened to a partner.",
+        "saveChanges": "Save changes",
+        "remove": "End partnership",
+        "addHeading": "Add a partner",
+        "addIntro": "Choose an account, set the percentage and choose what else they may open. An account that already holds another staff role cannot be a partner.",
+        "chooseAccountFirst": "Choose an account first.",
+        "addPartner": "Add partner",
+        "working": "Saving",
+        "savedNotice": "{name} now sees {percentage}% of the figures.",
+        "removedNotice": "{name} is no longer a partner.",
+        "doneTitle": "Done",
+        "failedTitle": "That did not work"
+      },
+      "partnerStatistics": {
+        "subject": "the financial statistics",
+        "partnerLine": "Partner’s share: {percentage}% of the platform’s figures.",
+        "realLine": "Real figures: 100% of the platform’s.",
+        "zoneNote": "Dates and months are in {zone}.",
+        "loadingStatistics": "Loading statistics",
+        "notConfiguredTitle": "No share has been set for you yet",
+        "notConfiguredBody": "A super admin has to set your percentage before any figures are shown.",
+        "todayHeading": "Today",
+        "monthHeading": "This month",
+        "dailyHeading": "Days this month",
+        "monthlyHeading": "Last twelve months",
+        "planHeading": "Plans this month",
+        "revenue": "Revenue",
+        "subscriptions": "Subscriptions",
+        "reversals": "Reversals",
+        "dateColumn": "Date",
+        "monthColumn": "Month",
+        "planColumn": "Plan",
+        "nothingRecorded": "Nothing recorded",
+        "dailyCaption": "Revenue and subscriptions by day this month",
+        "monthlyCaption": "Revenue and subscriptions by month",
+        "planCaption": "Revenue and subscriptions by plan this month"
       }
     },
     "moderation": {

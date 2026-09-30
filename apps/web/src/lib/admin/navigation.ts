@@ -159,7 +159,7 @@ export const CONSOLE_MODULES: readonly ConsoleModule[] = Object.freeze([
      * module is the administration of people, and who among them works here is the same
      * subject seen from the platform's side. The rail lists both under People.
      */
-    otherScreens: ['/admin/staff'],
+    otherScreens: ['/admin/staff', '/admin/partners'],
     issue: 104,
   },
   {
@@ -241,7 +241,7 @@ export const CONSOLE_MODULES: readonly ConsoleModule[] = Object.freeze([
      * payments waiting to be recorded — and a report is read by the person closing a month,
      * who has no reason to scroll past a queue to reach it.
      */
-    otherScreens: ['/admin/plans', '/admin/revenue', '/admin/legal'],
+    otherScreens: ['/admin/plans', '/admin/revenue', '/admin/partner-statistics', '/admin/legal'],
     issue: 311,
   },
   {
@@ -350,6 +350,7 @@ export const CONSOLE_GROUPS: readonly ConsoleGroup[] = Object.freeze([
       '/admin/users',
       '/admin/support',
       '/admin/staff',
+      '/admin/partners',
     ],
   },
   {
@@ -364,6 +365,7 @@ export const CONSOLE_GROUPS: readonly ConsoleGroup[] = Object.freeze([
       '/admin/fees',
       '/admin/plans',
       '/admin/revenue',
+      '/admin/partner-statistics',
     ],
   },
   {
@@ -428,6 +430,8 @@ export const CONSOLE_LINK_CAPABILITIES: Readonly<Record<string, readonly StaffCa
     '/admin/users': ['ADMINISTER_ACCOUNTS'],
     '/admin/support': ['HANDLE_SUPPORT'],
     '/admin/staff': ['ADMINISTER_STAFF'],
+    // A partner is granted and recorded exactly as a role is, so it asks for the same authority.
+    '/admin/partners': ['ADMINISTER_STAFF'],
 
     /*
      * Money - VIEW_FINANCE reads, and the two narrower capabilities act rather than open.
@@ -444,6 +448,8 @@ export const CONSOLE_LINK_CAPABILITIES: Readonly<Record<string, readonly StaffCa
     '/admin/fees': ['CONFIGURE_PLATFORM'],
     '/admin/plans': ['CONFIGURE_PLATFORM'],
     '/admin/revenue': ['CONFIGURE_PLATFORM'],
+    // Held by super admins and partners only. What each of them is shown is decided by the service.
+    '/admin/partner-statistics': ['VIEW_PARTNER_STATISTICS'],
 
     /*
      * Platform - four different authorities, which is why this group is the one that proves
