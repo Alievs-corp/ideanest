@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Granting and withdrawing the roles V48 holds — #295.
  *
  * <p><strong>Every method here needs {@link StaffCapability#ADMINISTER_STAFF}</strong>,
- * which only {@code ADMINISTRATOR} confers. Anybody who can grant themselves a capability
+ * which only {@code SUPER_ADMIN} confers. Anybody who can grant themselves a capability
  * effectively holds every capability, so this is the check that decides what the rest of
  * the enum is worth.
  *

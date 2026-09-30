@@ -1770,7 +1770,6 @@
           "CURATOR": "Curator",
           "FINANCE": "Finance",
           "COMPLIANCE": "Compliance",
-          "ADMINISTRATOR": "Administrator",
           "SUPER_ADMIN": "Super admin",
           "PARTNER": "Partner"
         },

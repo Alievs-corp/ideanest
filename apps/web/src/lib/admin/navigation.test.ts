@@ -305,7 +305,7 @@ describe('what the rail offers', () => {
     }
 
     for (const href of ['/admin/fees', '/admin/flags', '/admin/legal', '/admin/staff']) {
-      expect(mayOpenConsoleLink(href, ROLE_CAPABILITIES.ADMINISTRATOR)).toBe(true);
+      expect(mayOpenConsoleLink(href, ROLE_CAPABILITIES.SUPER_ADMIN)).toBe(true);
     }
   });
 

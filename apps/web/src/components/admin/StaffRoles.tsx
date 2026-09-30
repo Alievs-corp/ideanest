@@ -28,10 +28,10 @@ import { useDirectoryNames } from './useDirectoryNames';
  * to reach it was curl.
  */
 /*
- * What can be granted from here. `SUPER_ADMIN` replaces `ADMINISTRATOR` (#203), so new grants
- * use the new name while existing rows keep their old one and are still labelled. `PARTNER` is
- * not offered yet: a partner needs a percentage and a list of modules, and a grant without them
- * opens nothing. It arrives with the partner profile screen (#204, #206).
+ * What can be granted from here. `SUPER_ADMIN` is what `ADMINISTRATOR` was called until #212.
+ * `PARTNER` is deliberately not offered: a partner needs a percentage and a list of sections,
+ * and a grant without them opens nothing, so partners are made and changed only on
+ * `/admin/partners`, where those are set together with the role.
  */
 const ROLES: readonly StaffRole[] = [
   'MODERATOR',

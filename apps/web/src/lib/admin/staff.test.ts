@@ -119,6 +119,6 @@ describe('the role vocabulary', () => {
     expect(ROLE_CAPABILITIES.MODERATOR).not.toContain('ISSUE_REFUND');
     expect(ROLE_CAPABILITIES.FINANCE).toContain('ISSUE_REFUND');
     expect(ROLE_CAPABILITIES.FINANCE).not.toContain('APPROVE_PAYOUT');
-    expect(ROLE_CAPABILITIES.ADMINISTRATOR).toContain('ADMINISTER_STAFF');
+    expect(ROLE_CAPABILITIES.SUPER_ADMIN).toContain('ADMINISTER_STAFF');
   });
 });

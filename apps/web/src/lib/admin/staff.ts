@@ -71,10 +71,9 @@ export type StaffCapability =
   | 'VIEW_PARTNER_STATISTICS';
 
 /**
- * The seven kinds of staff account.
+ * The six kinds of staff account.
  *
- * <p>`SUPER_ADMIN` is `ADMINISTRATOR` under its new name and both exist for one release (V88's
- * header has the argument); a roster can contain either. `PARTNER` sees an agreed share of the
+ * <p>`SUPER_ADMIN` is what `ADMINISTRATOR` was called until #212. `PARTNER` sees an agreed share of the
  * financial statistics, in aggregate, and nothing else (#203).
  *
  * <p>`COMPLIANCE` is the one this type was missing: §22's identity review is its own authority
@@ -86,7 +85,6 @@ export type StaffRole =
   | 'CURATOR'
   | 'FINANCE'
   | 'COMPLIANCE'
-  | 'ADMINISTRATOR'
   | 'SUPER_ADMIN'
   | 'PARTNER';
 
@@ -245,7 +243,6 @@ export const ROLE_CAPABILITIES: Readonly<Record<StaffRole, readonly StaffCapabil
       'READ_SIGNED_AGREEMENT',
       'VIEW_AUDIT',
     ],
-    ADMINISTRATOR: STAFF_CAPABILITIES,
     SUPER_ADMIN: STAFF_CAPABILITIES,
     /*
      * One capability, and not VIEW_AUDIT: the trail names accounts and amounts, which is what a

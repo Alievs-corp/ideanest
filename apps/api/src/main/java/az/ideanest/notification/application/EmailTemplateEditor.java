@@ -39,7 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <ul>
  *   <li><strong>Who.</strong> {@link StaffCapability#CONFIGURE_PLATFORM}, which only
- *       {@code ADMINISTRATOR} holds. Narrower than any other editorial permission on the
+ *       {@code SUPER_ADMIN} holds. Narrower than any other editorial permission on the
  *       platform, because this changes what the running service writes to everybody.
  *   <li><strong>What may not be removed.</strong> A payment-failure notice that no longer
  *       says which card was declined, or no longer carries the link to fix it, is worse

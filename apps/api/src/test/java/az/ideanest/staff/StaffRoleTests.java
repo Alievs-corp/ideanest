@@ -43,15 +43,15 @@ class StaffRoleTests {
     void financeCannotApproveItsOwnPayouts() {
         // §4.11 requires dual approval above a threshold, and a role conferring both issuing
         // and approving would make the second signature a formality whenever the finance team
-        // is one person. APPROVE_PAYOUT is ADMINISTRATOR's alone, so the second signature is
+        // is one person. APPROVE_PAYOUT is SUPER_ADMIN's alone, so the second signature is
         // somebody else by construction rather than by policy.
         assertThat(StaffRole.FINANCE.capabilities()).doesNotContain(StaffCapability.APPROVE_PAYOUT);
-        assertThat(StaffRole.ADMINISTRATOR.capabilities()).contains(StaffCapability.APPROVE_PAYOUT);
+        assertThat(StaffRole.SUPER_ADMIN.capabilities()).contains(StaffCapability.APPROVE_PAYOUT);
     }
 
     @Test
-    @DisplayName("only an administrator may grant a role")
-    void onlyAdministratorsGrantRoles() {
+    @DisplayName("only a super admin may grant a role")
+    void onlySuperAdminsGrantRoles() {
         // Anybody who can grant themselves a capability effectively holds every capability,
         // so this is the check that decides what the rest of the enum is worth.
         for (StaffRole role : StaffRole.values()) {
@@ -62,33 +62,29 @@ class StaffRoleTests {
     }
 
     @Test
-    @DisplayName("an administrator holds everything")
-    void administratorHoldsEverything() {
-        assertThat(StaffRole.ADMINISTRATOR.capabilities())
-                .containsExactlyInAnyOrder(StaffCapability.values());
-    }
-
-    @Test
-    @DisplayName("a super admin holds everything, exactly as the administrator it replaces")
+    @DisplayName("a super admin holds everything")
     void superAdminHoldsEverything() {
-        // The rename is two releases (V88), so for one of them both names are live and a
-        // difference between them would be a role that behaves differently depending on
-        // which row an account happened to be granted before the deployment.
-        assertThat(StaffRole.SUPER_ADMIN.capabilities())
-                .containsExactlyInAnyOrder(StaffCapability.values())
-                .isEqualTo(StaffRole.ADMINISTRATOR.capabilities());
+        assertThat(StaffRole.SUPER_ADMIN.capabilities()).containsExactlyInAnyOrder(StaffCapability.values());
         assertThat(StaffRole.SUPER_ADMIN.isSuperAdmin()).isTrue();
-        assertThat(StaffRole.ADMINISTRATOR.isSuperAdmin()).isTrue();
     }
 
     @Test
-    @DisplayName("only the two names of the highest role count as the highest role")
-    void onlyTheTwoNamesAreSuperAdmin() {
+    @DisplayName("only the super admin counts as the highest role")
+    void onlySuperAdminIsSuperAdmin() {
         for (StaffRole role : StaffRole.values()) {
             assertThat(role.isSuperAdmin())
                     .withFailMessage("%s must not count as a super admin", role)
-                    .isEqualTo(role == StaffRole.SUPER_ADMIN || role == StaffRole.ADMINISTRATOR);
+                    .isEqualTo(role == StaffRole.SUPER_ADMIN);
         }
+    }
+
+    @Test
+    @DisplayName("the role once called ADMINISTRATOR is gone, so no stored grant can name it")
+    void theOldNameIsGone() {
+        // V90 converted the rows and narrowed the CHECK. If the name came back in the enum, a
+        // row could be written that an older release's CHECK refuses, and the rename would be
+        // half undone without anything failing.
+        assertThat(StaffRole.values()).extracting(Enum::name).doesNotContain("ADMINISTRATOR");
     }
 
     @Test
@@ -212,11 +208,11 @@ class StaffRoleTests {
     @Test
     @DisplayName("compliance cannot waive the rules it enforces")
     void complianceCannotOverrideItself() {
-        // The same argument a third time, and the reason overrides are ADMINISTRATOR's alone:
+        // The same argument a third time, and the reason overrides are SUPER_ADMIN's alone:
         // a reviewer who could waive the requirement they enforce holds both halves of it, and
         // the waiver stops being an exception anybody escalated for.
         assertThat(StaffRole.COMPLIANCE.capabilities()).doesNotContain(StaffCapability.GRANT_COMPLIANCE_OVERRIDE);
-        assertThat(StaffRole.ADMINISTRATOR.capabilities()).contains(StaffCapability.GRANT_COMPLIANCE_OVERRIDE);
+        assertThat(StaffRole.SUPER_ADMIN.capabilities()).contains(StaffCapability.GRANT_COMPLIANCE_OVERRIDE);
     }
 
     @Test

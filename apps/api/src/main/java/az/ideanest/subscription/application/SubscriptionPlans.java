@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <h2>Two audiences, and only one of them is authorised</h2>
  *
  * <p>{@link #onSale} is public and is what the pricing page renders. Everything else needs
- * {@link StaffCapability#CONFIGURE_PLATFORM}, which only {@code ADMINISTRATOR} holds —
+ * {@link StaffCapability#CONFIGURE_PLATFORM}, which only {@code SUPER_ADMIN} holds —
  * the same capability AD-11's fee editor asks for, because what the platform charges a
  * creator to publish and what it charges a backer to pledge are the same kind of decision:
  * one screen, changing the behaviour of the running platform for everybody at once.

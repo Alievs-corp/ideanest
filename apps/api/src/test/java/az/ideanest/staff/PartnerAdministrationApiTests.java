@@ -124,17 +124,6 @@ class PartnerAdministrationApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("an administrator under the old name can manage partners too")
-    void theOldNameOfTheHighestRoleManagesPartners() {
-        // Both names are live for one release (V88); a deployment in the middle of the rename
-        // must not have one of them refused.
-        Account admin = staff("partner-old-admin", StaffRole.ADMINISTRATOR);
-        Account candidate = account("partner-candidate");
-
-        assertThat(put(candidate.id(), "10", List.of(), admin).getStatusCode()).isEqualTo(HttpStatus.OK);
-    }
-
-    @Test
     @DisplayName("saving again replaces the percentage and the sections, and keeps who created it")
     void savingAgainReplacesTheState() {
         Account admin = staff("partner-admin", StaffRole.SUPER_ADMIN);

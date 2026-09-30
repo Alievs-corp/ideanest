@@ -36,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <h2>Everything here needs {@code CONFIGURE_PLATFORM}</h2>
  *
- * <p>Which only {@code ADMINISTRATOR} holds. Checked in the service rather than by an
+ * <p>Which only {@code SUPER_ADMIN} holds. Checked in the service rather than by an
  * annotation, following {@code Subscriptions} and {@code FeeSchedules}: this is also where
  * the export is recorded, and an authorised action nobody recorded and a recorded action
  * nobody authorised are the same defect from opposite ends.

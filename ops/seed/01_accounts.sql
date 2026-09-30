@@ -128,11 +128,11 @@ ON CONFLICT (user_id) DO NOTHING;
 
 -- Console roles.
 INSERT INTO staff_role_grants (account_id, role, granted_at, granted_by, note) VALUES
-  (seed_id('user:admin'),      'ADMINISTRATOR', now() - interval '400 days', seed_id('user:superadmin'), 'Platforma administratoru.'),
+  (seed_id('user:admin'),      'SUPER_ADMIN', now() - interval '400 days', seed_id('user:superadmin'), 'Platforma administratoru.'),
   (seed_id('user:moderator'),  'MODERATOR',     now() - interval '380 days', seed_id('user:admin'),      'Etibar və təhlükəsizlik.'),
   (seed_id('user:curator'),    'CURATOR',       now() - interval '360 days', seed_id('user:admin'),      'Redaksiya kurasiyası.'),
   (seed_id('user:finance'),    'FINANCE',       now() - interval '350 days', seed_id('user:admin'),      'Maliyyə əməliyyatları.'),
-  (seed_id('user:superadmin'), 'ADMINISTRATOR', now() - interval '420 days', seed_id('user:superadmin'), 'Lokal demo: bütün rollar.'),
+  (seed_id('user:superadmin'), 'SUPER_ADMIN', now() - interval '420 days', seed_id('user:superadmin'), 'Lokal demo: bütün rollar.'),
   (seed_id('user:superadmin'), 'MODERATOR',     now() - interval '420 days', seed_id('user:superadmin'), 'Lokal demo: bütün rollar.'),
   (seed_id('user:superadmin'), 'CURATOR',       now() - interval '420 days', seed_id('user:superadmin'), 'Lokal demo: bütün rollar.'),
   (seed_id('user:superadmin'), 'FINANCE',       now() - interval '420 days', seed_id('user:superadmin'), 'Lokal demo: bütün rollar.')

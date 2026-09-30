@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * The way in before there is anybody to let you in — #295.
  *
- * @param bootstrapEmails accounts treated as holding {@code ADMINISTRATOR} by
+ * @param bootstrapEmails accounts treated as holding {@code SUPER_ADMIN} by
  *     configuration rather than by a grant, by verified address.
  *     <p><strong>This is not a leftover of the list V48 replaced; it is the answer to
  *     the question that table cannot answer.</strong> Granting a role needs

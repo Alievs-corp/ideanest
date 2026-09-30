@@ -564,23 +564,18 @@ class ConsoleReadApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("a super admin under either name reads the books")
-    void bothNamesOfTheHighestRoleReadTheBooks() {
+    @DisplayName("a super admin reads the books")
+    void aSuperAdminReadsTheBooks() {
         /*
-         * #203, expand half of the rename. A deployment in the middle of it has accounts
-         * granted under both names, and an endpoint that admitted one and refused the other
-         * would make the outcome depend on which row an account was given first.
+         * #203, #212. The highest role is the one that reads everything, including the subscription
+         * revenue that a partner is refused above. It is asserted here, beside the partner's
+         * refusal, so the two halves of the rule sit in one file.
          */
-        for (StaffRole role : List.of(StaffRole.SUPER_ADMIN, StaffRole.ADMINISTRATOR)) {
-            Account highest = staff("console-" + role.name().toLowerCase(java.util.Locale.ROOT), role);
+        Account highest = staff("console-super-admin", StaffRole.SUPER_ADMIN);
 
-            assertThat(get("/v1/admin/ledger", highest.accessToken()).getStatusCode())
-                    .as(role.name())
-                    .isEqualTo(HttpStatus.OK);
-            assertThat(get("/v1/admin/subscription/revenue", highest.accessToken()).getStatusCode())
-                    .as(role.name())
-                    .isEqualTo(HttpStatus.OK);
-        }
+        assertThat(get("/v1/admin/ledger", highest.accessToken()).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(get("/v1/admin/subscription/revenue", highest.accessToken()).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
     }
 
     @Test

@@ -121,7 +121,7 @@ ideanest:
     # One address, so the fail-closed default is exercised by every other
     # account in the suite: any account that is not this one is refused, which
     # is the assertion that matters. The moderator fixture registers exactly
-    # this address, and holds ADMINISTRATOR through the bootstrap -- so the
+    # this address, and holds SUPER_ADMIN through the bootstrap -- so the
     # suites written before #295 keep passing unchanged, and the ones that
     # assert a narrower capability grant a role explicitly.
     bootstrap-emails: moderator@ideanest.test

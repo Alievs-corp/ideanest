@@ -323,7 +323,7 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
         jdbc().update(
                 """
                 INSERT INTO staff_role_grants (account_id, role, granted_by, note)
-                VALUES (?, 'ADMINISTRATOR', ?, '#43 fixture')
+                VALUES (?, 'SUPER_ADMIN', ?, '#43 fixture')
                 ON CONFLICT DO NOTHING
                 """,
                 id,

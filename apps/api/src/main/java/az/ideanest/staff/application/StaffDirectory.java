@@ -36,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <h2>Two sources, and the second one is a bootstrap rather than a fallback</h2>
  *
  * A grant in V48 is the real answer. {@link StaffProperties#bootstrapEmails()} is the
- * other, and it confers {@link StaffRole#ADMINISTRATOR} — not because a configured
+ * other, and it confers {@link StaffRole#SUPER_ADMIN} — not because a configured
  * address is trusted more, but because granting a role requires
  * {@link StaffCapability#ADMINISTER_STAFF}, so a database with no grants has no way to
  * make its first one. That property's comment has the argument.
@@ -135,7 +135,7 @@ public class StaffDirectory implements PlatformStaff {
 
         boolean bootstrapped = isBootstrapAdministrator(accountId);
         if (bootstrapped) {
-            roles.add(StaffRole.ADMINISTRATOR);
+            roles.add(StaffRole.SUPER_ADMIN);
         }
 
         if (roles.isEmpty()) {
