@@ -5165,7 +5165,9 @@
       "enrol": "Telefonun parametrlərində barmaq izi, üz və ya parol əlavə edin, sonra geri qayıdın.",
       "open": "Aktivdir. Tətbiq bir neçə dəqiqə kənarda qalana qədər sessiya açıq qalır.",
       "armed": "Aktivdir. Növbəti dəfə dəstəkləriniz oxunanda telefon sizi təsdiqləməyi xahiş edəcək.",
-      "refused": "Cihaz sizin olduğunuzu təsdiqləmədi, ona görə heç nə dəyişmədi."
+      "refused": "Cihaz sizin olduğunuzu təsdiqləmədi, ona görə heç nə dəyişmədi.",
+      "prompt": "IdeyaNest kilidini açın",
+      "stayLocked": "Kilidli qalsın"
     },
     "fallback": {
       "body": "IdeyaNest-in bu hissəsi tətbiq üçün hələ hazırlanır. Saytda hazırdır.",
@@ -5179,7 +5181,46 @@
       "retry": "Yenidən cəhd et"
     },
     "offline": {
-      "banner": "İnternet bağlantısı yoxdur. Bağlantı bərpa olunana qədər gördükləriniz köhnəlmiş ola bilər."
+      "banner": "İnternet bağlantısı yoxdur. Bağlantı bərpa olunana qədər gördükləriniz köhnəlmiş ola bilər.",
+      "nothingCached": "Bu cihazda hələ heç nə saxlanmayıb, ona görə internetsiz göstəriləcək bir şey yoxdur."
+    },
+    "nav": {
+      "back": "Geri"
+    },
+    "pledges": {
+      "signedOutTitle": "Dəstəklərinizi görmək üçün daxil olun",
+      "signedOutBody": "Dəstəkləriniz bu telefona deyil, hesabınıza aiddir.",
+      "stale": "Bu cihazda saxlanmış dəstəklər göstərilir. Onlar köhnəlmiş ola bilər."
+    },
+    "saved": {
+      "signedOutTitle": "Saxladıqlarınızı görmək üçün daxil olun",
+      "signedOutBody": "Saxlanmış kampaniyalar telefona deyil, hesaba bağlıdır.",
+      "stale": "Saxlanmış kampaniyalarınız bu cihazdan göstərilir. Onlar köhnəlmiş ola bilər."
+    },
+    "search": {
+      "minimum": "{count, plural, other {Ən azı # simvol yazın və ya təkliflərdən birini seçin.}}",
+      "narrow": "Axtarışı daralt: {label}"
+    },
+    "campaign": {
+      "untitled": "Adsız kampaniya",
+      "failedTitle": "Bu kampaniya yüklənə bilmədi",
+      "failedDetail": "Kampaniya geri çəkilmiş ola bilər, ya da bu cihazda internet yoxdur.",
+      "stale": "Bu cihazda saxlanılıb. Maliyyələşmə rəqəmləri o vaxtdan dəyişmiş ola bilər.",
+      "story": "Kampaniya haqqında",
+      "storyOnWeb": "Formatlama, şəkillər və video veb səhifədədir. Onu açmaq üçün «Paylaş» düyməsinə toxunun.",
+      "commentsOnWeb": "Şərhlər hələlik veb səhifədədir. Kampaniyanı orada açmaq üçün «Paylaş» düyməsinə toxunun.",
+      "backOnWeb": "{title} kampaniyasını saytda dəstəklə"
+    },
+    "funding": {
+      "progressFor": "Maliyyələşmə gedişatı: {title}",
+      "reached": "{percent}% — maliyyələşdi",
+      "pledged": "{amount} toplanıb"
+    },
+    "signIn": {
+      "credentialsRefused": "Bu e-poçt ünvanı və parol heç bir hesaba uyğun gəlmir.",
+      "codeRefused": "Kod qəbul edilmədi. Onun vaxtı bitmiş ola bilər — yeni sorğu almaq üçün yenidən daxil olun.",
+      "recoveryHint": "Bərpa kodu da burada işləyir.",
+      "webOnly": "Qeydiyyat, parolun bərpası və xarici hesabla giriş ideanest.az saytındadır. Yeni hesabın e-poçtu təsdiqlənməlidir, bu isə ekran deyil, keçiddir."
     }
   }
 }

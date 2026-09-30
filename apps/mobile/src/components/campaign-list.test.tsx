@@ -1,6 +1,9 @@
-import { render } from '@testing-library/react-native';
+import type { ReactElement } from 'react';
+import { render as renderBare } from '@testing-library/react-native';
 import { Text } from 'react-native';
+import { IntlProvider } from 'use-intl';
 import { staggerDelay } from '@ideanest/design-tokens';
+import en from '@ideanest/messages/en.json';
 import { ANIMATED_PREFIX, CampaignList } from './campaign-list';
 import type { Card } from '../api/queries';
 
@@ -13,7 +16,21 @@ import type { Card } from '../api/queries';
  * rows, so an `entering` animation keyed off an absolute index replays halfway down a list
  * somebody is already reading, and fifty animated cards in a feed produce visible jank
  * (motion-system §8).
+ *
+ * <p>A card's words come from the catalogue (issue #150), so the list is rendered in English
+ * through the provider every screen sits in.
  */
+
+// A cold first render of FlashList with Reanimated has taken more than 5 s on CI.
+jest.setTimeout(20_000);
+
+function render(ui: ReactElement) {
+  return renderBare(
+    <IntlProvider locale="en" messages={en}>
+      {ui}
+    </IntlProvider>,
+  );
+}
 
 function cards(count: number): Card[] {
   return Array.from({ length: count }, (_, index) => ({
@@ -83,5 +100,12 @@ describe('CampaignList', () => {
     // Grouped digits and the ISO code, from `@ideanest/money` — the same module the web
     // formats with, which is the whole reason that package exists.
     expect(getByText('1,000.00 AZN pledged')).toBeTruthy();
+  });
+
+  it('counts the days left with the campaign page’s plural', async () => {
+    const { getByText } = await render(<CampaignList cards={cards(1)} />);
+
+    expect(getByText('12 days left')).toBeTruthy();
+    expect(getByText('40% funded')).toBeTruthy();
   });
 });

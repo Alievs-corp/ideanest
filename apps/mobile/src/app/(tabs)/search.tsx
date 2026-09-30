@@ -4,6 +4,7 @@ import { useSearchResults, useSuggestions, type Card } from '../../api/queries';
 import { CampaignList } from '../../components/campaign-list';
 import { EmptyState, ErrorState, Loading } from '../../components/states';
 import { Body, Meta } from '../../components/text';
+import { useT } from '../../lib/i18n';
 import { colors, fontSize, radius, size, spacing } from '../../theme';
 
 /**
@@ -61,6 +62,7 @@ const styles = StyleSheet.create({
 });
 
 export default function SearchScreen() {
+  const t = useT();
   const [term, setTerm] = useState('');
   const [category, setCategory] = useState<string | undefined>(undefined);
 
@@ -91,14 +93,14 @@ export default function SearchScreen() {
       <TextInput
         value={term}
         onChangeText={setTerm}
-        placeholder="Search campaigns"
+        placeholder={t('discovery.suggest.inputLabel')}
         placeholderTextColor={colors.textTertiary}
         style={styles.field}
         autoCorrect={false}
         returnKeyType="search"
         // A field whose only label is its placeholder is announced as its
         // current value, or as nothing at all once somebody has typed.
-        accessibilityLabel="Search campaigns"
+        accessibilityLabel={t('discovery.suggest.inputLabel')}
         // Native clear button on iOS; on Android the keyboard provides one.
         clearButtonMode="while-editing"
       />
@@ -113,7 +115,7 @@ export default function SearchScreen() {
                 onPress={() => setCategory(selected ? undefined : item.slug)}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
-                accessibilityLabel={`Narrow to ${item.label}`}
+                accessibilityLabel={t('mobile.search.narrow', { label: item.label ?? '' })}
                 style={[styles.chip, selected && styles.chipSelected]}
               >
                 {/* Near-black on lime is the only legible pairing (§9.1). */}
@@ -130,16 +132,19 @@ export default function SearchScreen() {
     return (
       <View style={{ flex: 1, padding: size.cardGap }}>
         {header}
-        <Body>Type at least {MINIMUM_QUERY} characters, or pick a suggestion.</Body>
+        <Body>{t('mobile.search.minimum', { count: MINIMUM_QUERY })}</Body>
       </View>
     );
   }
 
   if (cards.length === 0) {
-    if (results.isLoading) return <Loading label="Searching" />;
+    if (results.isLoading) return <Loading label={t('discovery.feed.loading')} />;
     if (results.isError) {
       return (
-        <ErrorState title="Search failed" detail="Check your connection and try again." />
+        <ErrorState
+          title={t('discovery.feed.errorTitle')}
+          detail={t('discovery.feed.unreachable')}
+        />
       );
     }
   }
@@ -152,10 +157,25 @@ export default function SearchScreen() {
         if (results.hasNextPage && !results.isFetchingNextPage) void results.fetchNextPage();
       }}
       empty={
-        <EmptyState
-          title="No matches"
-          detail="Nothing matched that. Try a shorter term, or a different category."
-        />
+        /*
+         * The web's empty feed, in its three shapes: a term, a term inside a category, and a
+         * category chip on its own — which has no term to quote back.
+         */
+        query.q === undefined ? (
+          <EmptyState
+            title={t('discovery.feed.emptyFilteredTitle')}
+            detail={t('discovery.feed.emptyBody')}
+          />
+        ) : (
+          <EmptyState
+            title={t('discovery.feed.emptyQueryTitle', { query: query.q })}
+            detail={
+              category === undefined
+                ? t('discovery.feed.emptyQueryBody')
+                : t('discovery.feed.emptyQueryBodyFiltered')
+            }
+          />
+        )
       }
     />
   );

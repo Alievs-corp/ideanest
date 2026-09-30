@@ -1,6 +1,9 @@
-import { render } from '@testing-library/react-native';
+import type { ReactElement } from 'react';
+import { render as renderBare } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
+import { IntlProvider } from 'use-intl';
 import { colors } from '@ideanest/design-tokens';
+import en from '@ideanest/messages/en.json';
 import { PROGRESS_FILL, ProgressBar } from './progress';
 
 /**
@@ -16,7 +19,18 @@ import { PROGRESS_FILL, ProgressBar } from './progress';
  * <p>Every `render` is awaited: it is asynchronous from `@testing-library/react-native`
  * v14 onwards, and a forgotten `await` yields a promise whose query functions are simply
  * missing — which reads as the library being broken rather than as a missing keyword.
+ *
+ * <p>The words come from the catalogue (issue #150), so every render is in English through
+ * the provider the application wraps every screen in.
  */
+
+function render(ui: ReactElement) {
+  return renderBare(
+    <IntlProvider locale="en" messages={en}>
+      {ui}
+    </IntlProvider>,
+  );
+}
 
 async function fill(percent: string) {
   const { getByTestId } = await render(
@@ -60,7 +74,12 @@ describe('ProgressBar', () => {
     );
 
     const bar = getByLabelText('Funding progress for Solar Lamp');
-    expect(bar.props.accessibilityValue).toEqual({ min: 0, max: 100, now: 43, text: '43%' });
+    expect(bar.props.accessibilityValue).toEqual({
+      min: 0,
+      max: 100,
+      now: 43,
+      text: '43 percent of the goal',
+    });
   });
 
   it('draws nothing rather than throwing on a figure it cannot read', async () => {

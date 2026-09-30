@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useDiscoveryFeed, type Card } from '../../api/queries';
 import { CampaignList } from '../../components/campaign-list';
 import { EmptyState, ErrorState, Loading } from '../../components/states';
+import { useT } from '../../lib/i18n';
 
 /**
  * Discovery — issue #112's first half.
@@ -25,6 +26,8 @@ import { EmptyState, ErrorState, Loading } from '../../components/states';
  *      nothing — a real fact about the platform rather than a failure.
  */
 export default function DiscoverScreen() {
+  // The web's own feed sentences, so a state reads the same on both.
+  const t = useT('discovery.feed');
   const feed = useDiscoveryFeed({});
 
   /*
@@ -39,14 +42,9 @@ export default function DiscoverScreen() {
   );
 
   if (cards.length === 0) {
-    if (feed.isLoading) return <Loading label="Loading campaigns" />;
+    if (feed.isLoading) return <Loading label={t('loading')} />;
     if (feed.isError) {
-      return (
-        <ErrorState
-          title="Could not load campaigns"
-          detail="Check your connection and pull down to try again."
-        />
-      );
+      return <ErrorState title={t('errorTitle')} detail={t('unreachable')} />;
     }
   }
 
@@ -60,12 +58,7 @@ export default function DiscoverScreen() {
       }}
       onRefresh={() => void feed.refetch()}
       refreshing={feed.isRefetching}
-      empty={
-        <EmptyState
-          title="Nothing here yet"
-          detail="No campaign is live right now. Pull down to check again."
-        />
-      }
+      empty={<EmptyState title={t('emptyTitle')} detail={t('emptyBody')} />}
     />
   );
 }

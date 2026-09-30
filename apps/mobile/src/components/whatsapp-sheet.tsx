@@ -18,8 +18,9 @@ import {
   missingFields,
   whatsappHref,
   type EnquiryField,
+  type Locale,
 } from '@ideanest/messages';
-import { useT } from '../lib/i18n';
+import { pluralCategory, useT } from '../lib/i18n';
 import { colors, radius, size, spacing } from '../theme';
 import { Button, TextField } from './form';
 import { InlineAlert } from './states';
@@ -62,7 +63,8 @@ export function WhatsAppSheet({
 }) {
   const t = useT('shell.whatsapp');
   const tAll = useT();
-  const locale = useLocale();
+  // The provider is only ever given one of the four (`lib/i18n.tsx`).
+  const locale = useLocale() as Locale;
   /*
    * The root `SafeAreaProvider`'s insets. React context crosses the `Modal`'s portal, so the
    * sheet reads the same numbers as every screen: its top stays clear of the status bar (the
@@ -246,19 +248,6 @@ export function WhatsAppSheet({
       </View>
     </Modal>
   );
-}
-
-/**
- * Which of the catalogue's `{one, few, many, other}` forms a number takes.
- *
- * The same rule as the web's `pluralForm`: CLDR through `Intl.PluralRules`, and `other` for a
- * category the catalogue does not carry (`zero`, `two`) or an engine without the constructor.
- * Replaced by the shared `plurals` helper when `plurals.ts` moves into `@ideanest/messages` (#150).
- */
-function pluralCategory(locale: string, count: number): 'one' | 'few' | 'many' | 'other' {
-  if (typeof Intl.PluralRules !== 'function') return 'other';
-  const category = new Intl.PluralRules(locale).select(count);
-  return category === 'one' || category === 'few' || category === 'many' ? category : 'other';
 }
 
 const styles = StyleSheet.create({
