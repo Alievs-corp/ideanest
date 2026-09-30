@@ -114,10 +114,20 @@ export {
 export { CharacterCount, type CharacterCountProps } from './character-count';
 export { Checkbox, type CheckboxProps } from './checkbox';
 export { Field, useFieldControl, type FieldProps } from './field';
+export {
+  FilePicker,
+  type FilePickerMessages,
+  type FilePickerProps,
+  type PickedFile,
+} from './file-picker';
 export { PasswordInput, type PasswordInputProps } from './password-input';
 export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './radio';
+export { SearchField, type SearchFieldProps, type SearchSuggestion } from './search-field';
+export { Select, type SelectOption, type SelectProps } from './select';
 export { Switch, type SwitchProps } from './switch';
 export { TextInput, type TextInputProps, type TextInputSize } from './text-input';
 export { Textarea, type TextareaProps } from './textarea';
 
 /* Overlay: Dialog, Sheet ---------------------------------------------------------------------- */
+export { Dialog, type DialogProps } from './dialog';
+export { Sheet, type SheetProps } from './sheet';
