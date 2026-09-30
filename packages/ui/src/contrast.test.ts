@@ -123,6 +123,40 @@ describe('contrast', () => {
     expect(ratio(colors.textOnWhite, colors.whiteMuted)).toBeGreaterThanOrEqual(BODY);
   });
 
+  /**
+   * `Pill`'s primary and `IconButton`'s light invert under `data-on-white` (issue 232): a
+   * white pill on a white modal has no edge at all. The inverted fill is `--surface-1` at rest
+   * and `--surface-3` on hover, and both have to be visible as a control against white.
+   */
+  it('gives the inverted primary pill an edge on white', () => {
+    for (const fill of [colors.surface1, colors.surface3]) {
+      expect(ratio(fill, colors.whiteSurface), fill).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+      expect(ratio(colors.textPrimary, fill), fill).toBeGreaterThanOrEqual(BODY);
+    }
+  });
+
+  /** The focus ring under `data-on-white` is near-black, because lime there is under 3:1. */
+  it('draws a visible focus ring on white once it turns near-black', () => {
+    expect(ratio(colors.textOnWhite, colors.whiteSurface)).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+  });
+
+  /* -----------------------------------------------------------------------
+   * Danger as a fill — issue 229
+   * -------------------------------------------------------------------- */
+
+  /**
+   * `Pill` and `IconButton`'s `danger` and `StatBlock`'s down badge are labels on a `--danger`
+   * fill, at 11–16px and weight 500–600, which is not large text.
+   */
+  it('reads near-black text on danger', () => {
+    expect(ratio(colors.textOnDanger, colors.danger)).toBeGreaterThanOrEqual(BODY);
+  });
+
+  /** Why `--text-on-danger` exists: the white label it replaced, measured. */
+  it('refuses white as a label colour on danger', () => {
+    expect(ratio(colors.textPrimary, colors.danger)).toBeLessThan(BODY);
+  });
+
   /* -----------------------------------------------------------------------
    * The focus ring, and the states that carry meaning
    * -------------------------------------------------------------------- */

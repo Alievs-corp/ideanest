@@ -54,6 +54,18 @@ describe('Modal', () => {
     expect(dialog).toHaveAttribute('aria-modal', 'true');
   });
 
+  /**
+   * The panel is white, and what sits in it reads that from `data-on-white`: a primary pill
+   * inverts rather than vanishing, and the focus ring turns near-black (issue 232).
+   */
+  it('marks its panel as a white surface', async () => {
+    const user = userEvent.setup();
+    render(<ModalHarness />);
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-on-white');
+  });
+
   it('moves focus into the dialog on open and back to the trigger on close', async () => {
     const user = userEvent.setup();
     render(<ModalHarness />);

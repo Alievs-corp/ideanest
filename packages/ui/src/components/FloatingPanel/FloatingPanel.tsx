@@ -25,6 +25,8 @@ export function FloatingPanel({
 }: FloatingPanelProps) {
   return (
     <div
+      // `Pill`'s primary inverts under this and the focus ring turns near-black.
+      data-on-white=""
       className={cn('overflow-hidden rounded-xl bg-white text-on-white shadow-float', className)}
       {...props}
     >

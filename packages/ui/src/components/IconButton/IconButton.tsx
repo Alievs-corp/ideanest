@@ -7,6 +7,9 @@ import { cn } from '../../lib/cn';
  *
  * `label` is REQUIRED: an icon-only control needs an accessible name, or a
  * screen reader announces "button" and nothing else.
+ *
+ * `light` inverts on a white surface, as `Pill`'s `primary` does, and
+ * `danger` draws a near-black glyph (docs/ui-kit.md §7.2).
  */
 const iconButton = cva(
   [
@@ -19,9 +22,13 @@ const iconButton = cva(
     variants: {
       variant: {
         default: 'bg-surface-3 text-white hover:bg-surface-4',
-        light: 'bg-white text-on-white hover:bg-[var(--white-muted)]',
+        light: [
+          'bg-white text-on-white hover:bg-[var(--white-muted)]',
+          'in-data-on-white:bg-surface-1 in-data-on-white:text-white',
+          'in-data-on-white:hover:bg-surface-3',
+        ],
         accent: 'bg-lime-500 text-on-lime hover:bg-lime-400',
-        danger: 'bg-danger text-white hover:brightness-110',
+        danger: 'bg-danger text-on-danger hover:brightness-110',
         ghost: 'bg-transparent text-white/64 hover:bg-surface-3 hover:text-white',
       },
       size: {

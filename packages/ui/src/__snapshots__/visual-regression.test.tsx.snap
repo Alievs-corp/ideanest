@@ -698,7 +698,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/DotIndi
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/FloatingPanel/FloatingPanel.stories.tsx — Checkout [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="rounded-xl bg-surface-1 p-10">
-<div class="overflow-hidden rounded-xl bg-white text-on-white shadow-float w-[380px]">
+<div data-on-white="" class="overflow-hidden rounded-xl bg-white text-on-white shadow-float w-[380px]">
 <div class="flex items-center justify-between gap-4 px-5 pt-5 pb-3">
 <h3 class="text-lg font-medium tracking-[-0.02em]">Confirm your pledge</h3>
 </div>
@@ -729,7 +729,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Floatin
 
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/FloatingPanel/FloatingPanel.stories.tsx — Default [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
-<div class="overflow-hidden rounded-xl bg-white text-on-white shadow-float">
+<div data-on-white="" class="overflow-hidden rounded-xl bg-white text-on-white shadow-float">
 <div class="flex items-center justify-between gap-4 px-5 pt-5 pb-3">
 <h3 class="text-lg font-medium tracking-[-0.02em]">Summary</h3>
 <div class="flex items-center gap-2">
@@ -871,7 +871,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/IconBut
 </path>
 </svg>
 </button>
-<button type="button" aria-label="Share" title="Share" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] size-10 [&amp;_svg]:size-[18px]">
+<button type="button" aria-label="Share" title="Share" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 size-10 [&amp;_svg]:size-[18px]">
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2" aria-hidden="true">
 <circle cx="18" cy="5" r="3">
 </circle>
@@ -891,7 +891,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/IconBut
 </path>
 </svg>
 </button>
-<button type="button" aria-label="End call" title="End call" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-danger text-white hover:brightness-110 size-10 [&amp;_svg]:size-[18px]">
+<button type="button" aria-label="End call" title="End call" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-danger text-on-danger hover:brightness-110 size-10 [&amp;_svg]:size-[18px]">
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone" aria-hidden="true">
 <path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384">
 </path>
@@ -922,16 +922,16 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Pill/Pi
 
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Pill/Pill.stories.tsx — Playground [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Back this project</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Back this project</button>
 </div>"
 `;
 
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Pill/Pill.stories.tsx — Sizes [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="flex flex-wrap items-center gap-3">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-8 px-3.5 text-[13px]">Small</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Medium</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-12 px-6 text-base">Large</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-8 px-3.5 text-[13px]">Small</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Medium</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-12 px-6 text-base">Large</button>
 </div>
 </div>"
 `;
@@ -939,12 +939,12 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Pill/Pi
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Pill/Pill.stories.tsx — Variants [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="flex flex-wrap items-center gap-3">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Primary</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Primary</button>
 <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-lime-500 text-on-lime hover:bg-lime-400 active:bg-lime-600 h-10 px-[18px] text-sm" data-on-lime="">Accent — urgent</button>
 <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-surface-3 text-white hover:bg-surface-4 h-10 px-[18px] text-sm">Ghost</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">Outline</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-danger text-white hover:brightness-110 h-10 px-[18px] text-sm">Danger</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm" disabled="">Disabled</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">Outline</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-danger text-on-danger hover:brightness-110 h-10 px-[18px] text-sm">Danger</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm" disabled="">Disabled</button>
 </div>
 </div>"
 `;
@@ -952,7 +952,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Pill/Pi
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/Pill/Pill.stories.tsx — WithIcons [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="flex flex-wrap items-center gap-3">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus size-4" aria-hidden="true">
 <path d="M5 12h14">
 </path>
@@ -1328,7 +1328,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/StatBlo
 <div class="flex flex-col gap-1">
 <div class="flex items-start gap-1.5">
 <span class="font-display font-semibold tracking-[-0.04em] tabular-nums text-[clamp(2.5rem,2rem+2.2vw,4rem)] leading-none">14</span>
-<span class="mt-1 inline-flex h-5 items-center rounded-full px-[7px] text-[11px] font-semibold tabular-nums bg-danger text-white">+2</span>
+<span class="mt-1 inline-flex h-5 items-center rounded-full px-[7px] text-[11px] font-semibold tabular-nums bg-danger text-on-danger">+2</span>
 </div>
 <span class="text-sm text-white/64">failed payments</span>
 </div>
@@ -1424,7 +1424,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/data/Em
 <h3 class="text-base font-medium tracking-[-0.02em] text-white">No campaigns yet</h3>
 <p class="max-w-[42ch] text-sm text-white/64">Your first campaign will appear here once you publish it.</p>
 <div class="mt-1 flex items-center gap-2">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">New campaign</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">New campaign</button>
 </div>
 </div>
 </div>"
@@ -1448,7 +1448,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/data/Em
 <h3 class="text-base font-medium tracking-[-0.02em] text-white">No campaigns match these filters</h3>
 <p class="max-w-[42ch] text-sm text-white/64">Six campaigns exist, but none of them are in Games and closing this week.</p>
 <div class="mt-1 flex items-center gap-2">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">Clear filters</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">Clear filters</button>
 </div>
 </div>
 </div>"
@@ -2920,38 +2920,38 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay
 
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay/Drawer.stories.tsx — Bottom [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Open bottom drawer</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Open bottom drawer</button>
 </div>"
 `;
 
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay/Drawer.stories.tsx — Left [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Open left drawer</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Open left drawer</button>
 </div>"
 `;
 
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay/Drawer.stories.tsx — Right [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Open right drawer</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Open right drawer</button>
 </div>"
 `;
 
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay/Modal.stories.tsx — Default [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Open modal</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Open modal</button>
 </div>"
 `;
 
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay/Modal.stories.tsx — MustDecide [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-danger text-white hover:brightness-110 h-10 px-[18px] text-sm">Cancel campaign</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-danger text-on-danger hover:brightness-110 h-10 px-[18px] text-sm">Cancel campaign</button>
 </div>"
 `;
 
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay/Popover.stories.tsx — Bottom [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
 <span class="inline-flex">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">Fee breakdown</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">Fee breakdown</button>
 </span>
 </div>"
 `;
@@ -2959,7 +2959,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay/Popover.stories.tsx — Right [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
 <span class="inline-flex">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">Fee breakdown</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">Fee breakdown</button>
 </span>
 </div>"
 `;
@@ -2967,7 +2967,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay
 exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay/Popover.stories.tsx — Top [reduced motion] 1`] = `
 "<div class="font-sans text-white antialiased">
 <span class="inline-flex">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">Fee breakdown</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">Fee breakdown</button>
 </span>
 </div>"
 `;
@@ -2979,7 +2979,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./components/overlay
 <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-surface-3 text-white hover:bg-surface-4 h-10 px-[18px] text-sm">Success</button>
 <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-surface-3 text-white hover:bg-surface-4 h-10 px-[18px] text-sm">Warning</button>
 <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-surface-3 text-white hover:bg-surface-4 h-10 px-[18px] text-sm">Error</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">With action (no timer)</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">With action (no timer)</button>
 </div>
 </div>
 <!-- portal -->
@@ -3132,7 +3132,7 @@ exports[`rendered markup (prefers-reduced-motion: reduce) > ./layout/Layout.stor
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">About</a>
 </div>
 <div class="flex shrink-0 items-center gap-2">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-8 px-3.5 text-[13px]">Sign in</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-8 px-3.5 text-[13px]">Sign in</button>
 </div>
 </div>
 </header>
@@ -4045,7 +4045,7 @@ exports[`rendered markup > ./components/DotIndicator/DotIndicator.stories.tsx �
 exports[`rendered markup > ./components/FloatingPanel/FloatingPanel.stories.tsx — Checkout 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="rounded-xl bg-surface-1 p-10">
-<div class="overflow-hidden rounded-xl bg-white text-on-white shadow-float w-[380px]">
+<div data-on-white="" class="overflow-hidden rounded-xl bg-white text-on-white shadow-float w-[380px]">
 <div class="flex items-center justify-between gap-4 px-5 pt-5 pb-3">
 <h3 class="text-lg font-medium tracking-[-0.02em]">Confirm your pledge</h3>
 </div>
@@ -4076,7 +4076,7 @@ exports[`rendered markup > ./components/FloatingPanel/FloatingPanel.stories.tsx 
 
 exports[`rendered markup > ./components/FloatingPanel/FloatingPanel.stories.tsx — Default 1`] = `
 "<div class="font-sans text-white antialiased">
-<div class="overflow-hidden rounded-xl bg-white text-on-white shadow-float">
+<div data-on-white="" class="overflow-hidden rounded-xl bg-white text-on-white shadow-float">
 <div class="flex items-center justify-between gap-4 px-5 pt-5 pb-3">
 <h3 class="text-lg font-medium tracking-[-0.02em]">Summary</h3>
 <div class="flex items-center gap-2">
@@ -4218,7 +4218,7 @@ exports[`rendered markup > ./components/IconButton/IconButton.stories.tsx — Va
 </path>
 </svg>
 </button>
-<button type="button" aria-label="Share" title="Share" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] size-10 [&amp;_svg]:size-[18px]">
+<button type="button" aria-label="Share" title="Share" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 size-10 [&amp;_svg]:size-[18px]">
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share-2" aria-hidden="true">
 <circle cx="18" cy="5" r="3">
 </circle>
@@ -4238,7 +4238,7 @@ exports[`rendered markup > ./components/IconButton/IconButton.stories.tsx — Va
 </path>
 </svg>
 </button>
-<button type="button" aria-label="End call" title="End call" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-danger text-white hover:brightness-110 size-10 [&amp;_svg]:size-[18px]">
+<button type="button" aria-label="End call" title="End call" class="inline-grid place-items-center rounded-full transition-[background-color,transform,color] duration-150 ease-in-out hover:scale-[1.06] active:scale-100 disabled:pointer-events-none disabled:opacity-40 bg-danger text-on-danger hover:brightness-110 size-10 [&amp;_svg]:size-[18px]">
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone" aria-hidden="true">
 <path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384">
 </path>
@@ -4269,16 +4269,16 @@ exports[`rendered markup > ./components/Pill/Pill.stories.tsx — InContext 1`] 
 
 exports[`rendered markup > ./components/Pill/Pill.stories.tsx — Playground 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Back this project</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Back this project</button>
 </div>"
 `;
 
 exports[`rendered markup > ./components/Pill/Pill.stories.tsx — Sizes 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="flex flex-wrap items-center gap-3">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-8 px-3.5 text-[13px]">Small</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Medium</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-12 px-6 text-base">Large</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-8 px-3.5 text-[13px]">Small</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Medium</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-12 px-6 text-base">Large</button>
 </div>
 </div>"
 `;
@@ -4286,12 +4286,12 @@ exports[`rendered markup > ./components/Pill/Pill.stories.tsx — Sizes 1`] = `
 exports[`rendered markup > ./components/Pill/Pill.stories.tsx — Variants 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="flex flex-wrap items-center gap-3">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Primary</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Primary</button>
 <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-lime-500 text-on-lime hover:bg-lime-400 active:bg-lime-600 h-10 px-[18px] text-sm" data-on-lime="">Accent — urgent</button>
 <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-surface-3 text-white hover:bg-surface-4 h-10 px-[18px] text-sm">Ghost</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">Outline</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-danger text-white hover:brightness-110 h-10 px-[18px] text-sm">Danger</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm" disabled="">Disabled</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">Outline</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-danger text-on-danger hover:brightness-110 h-10 px-[18px] text-sm">Danger</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm" disabled="">Disabled</button>
 </div>
 </div>"
 `;
@@ -4299,7 +4299,7 @@ exports[`rendered markup > ./components/Pill/Pill.stories.tsx — Variants 1`] =
 exports[`rendered markup > ./components/Pill/Pill.stories.tsx — WithIcons 1`] = `
 "<div class="font-sans text-white antialiased">
 <div class="flex flex-wrap items-center gap-3">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus size-4" aria-hidden="true">
 <path d="M5 12h14">
 </path>
@@ -4675,7 +4675,7 @@ exports[`rendered markup > ./components/StatBlock/StatBlock.stories.tsx — Dash
 <div class="flex flex-col gap-1">
 <div class="flex items-start gap-1.5">
 <span class="font-display font-semibold tracking-[-0.04em] tabular-nums text-[clamp(2.5rem,2rem+2.2vw,4rem)] leading-none">14</span>
-<span class="mt-1 inline-flex h-5 items-center rounded-full px-[7px] text-[11px] font-semibold tabular-nums bg-danger text-white">+2</span>
+<span class="mt-1 inline-flex h-5 items-center rounded-full px-[7px] text-[11px] font-semibold tabular-nums bg-danger text-on-danger">+2</span>
 </div>
 <span class="text-sm text-white/64">failed payments</span>
 </div>
@@ -4771,7 +4771,7 @@ exports[`rendered markup > ./components/data/EmptyState.stories.tsx — Empty 1`
 <h3 class="text-base font-medium tracking-[-0.02em] text-white">No campaigns yet</h3>
 <p class="max-w-[42ch] text-sm text-white/64">Your first campaign will appear here once you publish it.</p>
 <div class="mt-1 flex items-center gap-2">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">New campaign</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">New campaign</button>
 </div>
 </div>
 </div>"
@@ -4795,7 +4795,7 @@ exports[`rendered markup > ./components/data/EmptyState.stories.tsx — Filtered
 <h3 class="text-base font-medium tracking-[-0.02em] text-white">No campaigns match these filters</h3>
 <p class="max-w-[42ch] text-sm text-white/64">Six campaigns exist, but none of them are in Games and closing this week.</p>
 <div class="mt-1 flex items-center gap-2">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">Clear filters</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">Clear filters</button>
 </div>
 </div>
 </div>"
@@ -6267,38 +6267,38 @@ exports[`rendered markup > ./components/overlay/Combobox.stories.tsx — Open 1`
 
 exports[`rendered markup > ./components/overlay/Drawer.stories.tsx — Bottom 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Open bottom drawer</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Open bottom drawer</button>
 </div>"
 `;
 
 exports[`rendered markup > ./components/overlay/Drawer.stories.tsx — Left 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Open left drawer</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Open left drawer</button>
 </div>"
 `;
 
 exports[`rendered markup > ./components/overlay/Drawer.stories.tsx — Right 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Open right drawer</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Open right drawer</button>
 </div>"
 `;
 
 exports[`rendered markup > ./components/overlay/Modal.stories.tsx — Default 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-10 px-[18px] text-sm">Open modal</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-10 px-[18px] text-sm">Open modal</button>
 </div>"
 `;
 
 exports[`rendered markup > ./components/overlay/Modal.stories.tsx — MustDecide 1`] = `
 "<div class="font-sans text-white antialiased">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-danger text-white hover:brightness-110 h-10 px-[18px] text-sm">Cancel campaign</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-danger text-on-danger hover:brightness-110 h-10 px-[18px] text-sm">Cancel campaign</button>
 </div>"
 `;
 
 exports[`rendered markup > ./components/overlay/Popover.stories.tsx — Bottom 1`] = `
 "<div class="font-sans text-white antialiased">
 <span class="inline-flex">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">Fee breakdown</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">Fee breakdown</button>
 </span>
 </div>"
 `;
@@ -6306,7 +6306,7 @@ exports[`rendered markup > ./components/overlay/Popover.stories.tsx — Bottom 1
 exports[`rendered markup > ./components/overlay/Popover.stories.tsx — Right 1`] = `
 "<div class="font-sans text-white antialiased">
 <span class="inline-flex">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">Fee breakdown</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">Fee breakdown</button>
 </span>
 </div>"
 `;
@@ -6314,7 +6314,7 @@ exports[`rendered markup > ./components/overlay/Popover.stories.tsx — Right 1`
 exports[`rendered markup > ./components/overlay/Popover.stories.tsx — Top 1`] = `
 "<div class="font-sans text-white antialiased">
 <span class="inline-flex">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">Fee breakdown</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">Fee breakdown</button>
 </span>
 </div>"
 `;
@@ -6326,7 +6326,7 @@ exports[`rendered markup > ./components/overlay/Toast.stories.tsx — Default 1`
 <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-surface-3 text-white hover:bg-surface-4 h-10 px-[18px] text-sm">Success</button>
 <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-surface-3 text-white hover:bg-surface-4 h-10 px-[18px] text-sm">Warning</button>
 <button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-surface-3 text-white hover:bg-surface-4 h-10 px-[18px] text-sm">Error</button>
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 h-10 px-[18px] text-sm">With action (no timer)</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 border border-white/16 bg-transparent text-white hover:bg-surface-3 in-data-on-white:border-black/16 in-data-on-white:text-on-white in-data-on-white:hover:bg-black/6 h-10 px-[18px] text-sm">With action (no timer)</button>
 </div>
 </div>
 <!-- portal -->
@@ -6479,7 +6479,7 @@ exports[`rendered markup > ./layout/Layout.stories.tsx — CollapsingTopBar 1`] 
 <a class="text-sm font-medium tracking-[-0.01em] whitespace-nowrap opacity-80 transition-opacity duration-150 hover:opacity-100" href="#">About</a>
 </div>
 <div class="flex shrink-0 items-center gap-2">
-<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] h-8 px-3.5 text-[13px]">Sign in</button>
+<button type="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium tracking-[-0.01em] transition-[background-color,transform,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 bg-white text-on-white hover:bg-[var(--white-muted)] in-data-on-white:bg-surface-1 in-data-on-white:text-white in-data-on-white:hover:bg-surface-3 h-8 px-3.5 text-[13px]">Sign in</button>
 </div>
 </div>
 </header>

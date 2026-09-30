@@ -71,6 +71,23 @@ describe('IconButton', () => {
     expect(glyph?.props.stroke).toBe(TONES.lime.secondary);
     expect(TONES.lime.secondary).not.toBe(colors.textSecondary);
   });
+
+  it('inverts light on a white surface, as Pill does (#232)', async () => {
+    const { getByRole } = await render(
+      <SurfaceProvider surface="white">
+        <IconButton icon={X} label="Share" variant="light" onPress={noop} />
+      </SurfaceProvider>,
+    );
+    expect(styleOf(getByRole('button')).backgroundColor).toBe(colors.surface1);
+  });
+
+  it('draws a near-black glyph on danger (#229)', async () => {
+    const { container } = await render(
+      <IconButton icon={X} label="Delete" variant="danger" onPress={noop} />,
+    );
+    const [glyph] = container.queryAll((node) => node.type === 'RNSVGSvgView');
+    expect(glyph?.props.stroke).toBe(colors.textOnDanger);
+  });
 });
 
 function _typeChecks() {

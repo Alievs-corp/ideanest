@@ -60,9 +60,8 @@ export const TONES: Record<Surface, Record<RelativeTone, string>> = {
 
 /**
  * The focus ring's colour on a surface: lime on the dark surfaces, and near-black on lime and on
- * white. On lime it is the same switch `theme.css` makes under `[data-on-lime]`. On white it goes
- * one step further than the web, because `packages/ui`'s contrast test measures lime on white
- * below 3:1 — a ring there is a ring nobody sees.
+ * white — the same switch `theme.css` makes under `[data-on-lime]` and `[data-on-white]`, because
+ * `packages/ui`'s contrast test measures lime on white below 3:1.
  */
 export function focusRingColor(surface: Surface): string {
   return surface === 'dark' ? colors.lime500 : TONES[surface].primary;

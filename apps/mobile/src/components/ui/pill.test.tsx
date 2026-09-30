@@ -4,6 +4,7 @@ import { Heart } from 'lucide-react-native';
 import { colors, size } from '../../theme';
 import { MotionBudgetProvider } from './motion-budget';
 import { AccentScopeProvider, Pill } from './pill';
+import { SurfaceProvider } from './surface';
 
 /**
  * The pill is the element every screen acts through, so the rules it carries are the ones a
@@ -51,6 +52,48 @@ describe('Pill', () => {
         getByText('Back this project', { includeHiddenElements: true }).props.style,
       ).color,
     ).toBe(colors.textOnLime);
+  });
+
+  it('inverts primary on a white surface, where a white pill has no edge (#232)', async () => {
+    const { getByRole, getByText } = await render(
+      <SurfaceProvider surface="white">
+        <Pill label="Save" onPress={noop} />
+      </SurfaceProvider>,
+    );
+    expect(styleOf(getByRole('button')).backgroundColor).toBe(colors.surface1);
+    expect(
+      StyleSheet.flatten(getByText('Save', { includeHiddenElements: true }).props.style).color,
+    ).toBe(colors.textPrimary);
+  });
+
+  it('draws outline in near-black on a white surface, where white would vanish', async () => {
+    const { getByText } = await render(
+      <SurfaceProvider surface="white">
+        <Pill label="Cancel" variant="outline" onPress={noop} />
+      </SurfaceProvider>,
+    );
+    expect(
+      StyleSheet.flatten(getByText('Cancel', { includeHiddenElements: true }).props.style).color,
+    ).toBe(colors.textOnWhite);
+  });
+
+  it('keeps primary white on lime, where only white surfaces invert', async () => {
+    const { getByRole } = await render(
+      <SurfaceProvider surface="lime">
+        <Pill label="Save" onPress={noop} />
+      </SurfaceProvider>,
+    );
+    expect(styleOf(getByRole('button')).backgroundColor).toBe(colors.whiteSurface);
+  });
+
+  it('draws danger with a near-black label, not white at 3.4:1 (#229)', async () => {
+    const { getByRole, getByText } = await render(
+      <Pill label="Delete" variant="danger" onPress={noop} />,
+    );
+    expect(styleOf(getByRole('button')).backgroundColor).toBe(colors.danger);
+    expect(
+      StyleSheet.flatten(getByText('Delete', { includeHiddenElements: true }).props.style).color,
+    ).toBe(colors.textOnDanger);
   });
 
   it.each(['sm', 'md', 'lg'] as const)('reaches at least 44pt at size %s', async (pillSize) => {

@@ -29,6 +29,7 @@
   --text-disabled: rgb(255 255 255 / 0.24); /*  2.6:1  non-text only */
   --text-on-lime: #0a0a0a; /* 15.8:1  AAA */
   --text-on-white: #0a0a0a; /* 19.3:1  AAA */
+  --text-on-danger: #0a0a0a; /*  5.8:1  AA; white on --danger is 3.4:1 */
 
   /* Long-form reading. Slightly under pure white to reduce halation. */
   --text-reading: rgb(255 255 255 / 0.92);
@@ -80,6 +81,12 @@
 :focus-visible {
   outline: 2px solid var(--lime-500);
   outline-offset: 2px;
+}
+
+/* A lime ring on a white panel measures under 3:1 — switch to near-black. */
+[data-on-white] :focus-visible,
+[data-on-white]:focus-visible {
+  outline-color: var(--text-on-white);
 }
 
 /* A lime ring on a lime surface is invisible — switch to near-black. */

@@ -15,6 +15,7 @@ import {
 import { useFocusRing } from './focus';
 import { Icon, type IconComponent } from './icon';
 import { useMotionAllowed } from './motion-budget';
+import { useSurface } from './surface';
 
 /**
  * The system's action element — the native `Pill` (`packages/ui`, `docs/ui-kit.md` §7.2).
@@ -41,6 +42,18 @@ import { useMotionAllowed } from './motion-budget';
  * <p>Hover does not exist, so the web's hover colours become the pressed state, applied on the
  * frame the finger lands. The web's `active:scale-[0.98]` survives only where the surface's
  * motion budget allows it (`moderate` and up) — on checkout a pill does not move at all.
+ *
+ * <h2>Primary inverts on white</h2>
+ *
+ * A white pill on a white `Dialog` or `FloatingPanel` has no edge and reads as a line of text
+ * (issue #232). Under `SurfaceProvider surface="white"` a `primary` pill is near-black with a
+ * white label instead, and `outline` swaps its white label and hairline for near-black ones —
+ * the web does the same under `data-on-white`.
+ *
+ * <h2>Danger is near-black on red</h2>
+ *
+ * White on `--danger` measures about 3.4:1, under AA for a label this size (issue #229), so
+ * `danger` takes `textOnDanger`, as lime takes `textOnLime`.
  */
 
 export type PillVariant = 'primary' | 'accent' | 'ghost' | 'outline' | 'danger';
@@ -55,7 +68,15 @@ const LABEL: Record<PillSize, number> = {
 };
 const ICON: Record<PillSize, number> = { sm: 14, md: 16, lg: 18 };
 
-const SKIN: Record<PillVariant, { rest: ViewStyle; pressed: ViewStyle; text: string }> = {
+/**
+ * How much of `--danger` a pressed danger control keeps. Pressing darkens, and at 0.85 over the
+ * darkest surface the near-black label fell just under 4.5:1; `theme.test.ts` measures this one.
+ */
+export const DANGER_PRESSED_ALPHA = 0.9;
+
+type Skin = { rest: ViewStyle; pressed: ViewStyle; text: string };
+
+const SKIN: Record<PillVariant, Skin> = {
   primary: {
     rest: { backgroundColor: colors.whiteSurface },
     pressed: { backgroundColor: colors.whiteMuted },
@@ -87,8 +108,33 @@ const SKIN: Record<PillVariant, { rest: ViewStyle; pressed: ViewStyle; text: str
   danger: {
     rest: { backgroundColor: colors.danger },
     // The web brightens on hover. Pressed darkens instead, which is what a press looks like.
-    pressed: { backgroundColor: tint(colors.danger, 0.85) },
+    pressed: { backgroundColor: tint(colors.danger, DANGER_PRESSED_ALPHA) },
+    text: colors.textOnDanger,
+  },
+};
+
+/**
+ * The variants that are drawn in white and would vanish on a white surface. `primary` takes the
+ * dark system's own fill; `outline` takes the web's `border-black/16` and `text-on-white`.
+ */
+const ON_WHITE: Partial<Record<PillVariant, Skin>> = {
+  primary: {
+    rest: { backgroundColor: colors.surface1 },
+    pressed: { backgroundColor: colors.surface3 },
     text: colors.textPrimary,
+  },
+  outline: {
+    rest: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: tint(colors.black, 0.16),
+    },
+    pressed: {
+      backgroundColor: tint(colors.black, 0.06),
+      borderWidth: 1,
+      borderColor: tint(colors.black, 0.16),
+    },
+    text: colors.textOnWhite,
   },
 };
 
@@ -126,7 +172,8 @@ export function Pill({
   testID,
 }: PillProps) {
   const blocked = disabled || busy;
-  const skin = SKIN[variant];
+  const surface = useSurface();
+  const skin = (surface === 'white' ? ON_WHITE[variant] : undefined) ?? SKIN[variant];
   const height = HEIGHT[size];
   const reach = Math.max(0, (measure.touchTarget - height) / 2);
   const { ring, onFocus, onBlur } = useFocusRing();

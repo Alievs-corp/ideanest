@@ -71,7 +71,9 @@ design starts.
   text role and ghost icon under it switches to the on-lime or on-white tone —
   the native `data-on-lime`. `theme.test.ts` measures every tone on every
   surface it can land on.
-- **White is primary, lime is accent.** `Pill`'s `primary` is white; `accent` is
+- **White is primary, lime is accent.** `Pill`'s `primary` is white, and
+  near-black under a white surface so it keeps an edge; `danger` is near-black
+  on red, because white there is 3.4:1. `accent` is
   the one urgent action on a screen and warns in development when a screen
   mounts two. Lime is never text: `theme.test.ts` fails on a lime text colour.
 - **Motion budget.** A route declares `MotionBudgetProvider level=…` from

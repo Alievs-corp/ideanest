@@ -41,7 +41,7 @@ export function StatBlock({
               'mt-1 inline-flex h-5 items-center rounded-full px-[7px]',
               'text-[11px] font-semibold tabular-nums',
               badgeTone === 'up' && 'bg-lime-500 text-on-lime',
-              badgeTone === 'down' && 'bg-danger text-white',
+              badgeTone === 'down' && 'bg-danger text-on-danger',
               badgeTone === 'neutral' && 'bg-surface-4 text-white/64',
             )}
           >

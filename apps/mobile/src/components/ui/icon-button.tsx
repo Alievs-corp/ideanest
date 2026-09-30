@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
 import { colors, radius, size as measure, tint } from '../../theme';
 import { useFocusRing } from './focus';
 import { Icon, type IconComponent } from './icon';
+import { DANGER_PRESSED_ALPHA } from './pill';
 import { TONES, useSurface } from './surface';
 
 /**
@@ -13,7 +14,8 @@ import { TONES, useSurface } from './surface';
  *
  * <p>The visual sizes are the web's (32, 40, 48) and the hit area is never under 44pt, through
  * `hitSlop`. `ghost` reads its colour from the surface it sits on, so an X on a lime card or a
- * white dialog is on-lime or on-white rather than an invisible `white/64`.
+ * white dialog is on-lime or on-white rather than an invisible `white/64`. `light` inverts on a
+ * white surface and `danger` draws a near-black glyph, for `Pill`'s reasons (issues #229, #232).
  */
 
 export type IconButtonVariant = 'default' | 'light' | 'accent' | 'danger' | 'ghost';
@@ -87,6 +89,13 @@ function skinFor(
 ): { rest: ViewStyle; pressed: ViewStyle; glyph: string } {
   switch (variant) {
     case 'light':
+      if (surface === 'white') {
+        return {
+          rest: { backgroundColor: colors.surface1 },
+          pressed: { backgroundColor: colors.surface3 },
+          glyph: colors.textPrimary,
+        };
+      }
       return {
         rest: { backgroundColor: colors.whiteSurface },
         pressed: { backgroundColor: colors.whiteMuted },
@@ -101,8 +110,8 @@ function skinFor(
     case 'danger':
       return {
         rest: { backgroundColor: colors.danger },
-        pressed: { backgroundColor: tint(colors.danger, 0.85) },
-        glyph: colors.textPrimary,
+        pressed: { backgroundColor: tint(colors.danger, DANGER_PRESSED_ALPHA) },
+        glyph: colors.textOnDanger,
       };
     case 'ghost':
       return {
