@@ -6664,6 +6664,13 @@ platform module the question is asked through `shared.maintenance.MaintenanceGat
 without a session and without a database read (the snapshot). Clients poll it rather
 than a business endpoint, whose answer could come from an HTTP cache.
 
+**Clients** read the contract through `@ideanest/api-client/maintenance`
+(`isMaintenanceProblem`, `maintenanceOf`, `maintenanceFromResponse`), a subpath so web
+routes that never meet it carry none of it, and render `shell.maintenance.*` from the
+catalogue. The app (`apps/mobile/README.md` → "Maintenance") opens its maintenance screen
+only for the problem type, polls `/v1/status` to leave it, and reads `upcoming` on launch
+and on return to the foreground for a banner dismissed per window.
+
 **What passes the gate during a window**, and nothing else:
 
 | Path | Why |

@@ -19,6 +19,7 @@ import { WhatsAppSheet } from './whatsapp-sheet';
 export function FailureState({
   title,
   description,
+  note,
   actionLabel,
   onAction,
   reference,
@@ -27,6 +28,8 @@ export function FailureState({
 }: {
   readonly title: string;
   readonly description: string;
+  /** A second, quieter line under the description (maintenance's announced end). */
+  readonly note?: string | null;
   readonly actionLabel: string;
   readonly onAction: () => void;
   /** The `X-Trace-Id` of the failed response, when there was one. */
@@ -47,6 +50,11 @@ export function FailureState({
         {title}
       </Heading>
       <Body style={styles.centred}>{description}</Body>
+      {note ? (
+        <Body tone="secondary" style={styles.centred}>
+          {note}
+        </Body>
+      ) : null}
       {/*
         The web's digest line, word for word: label, the id in a fixed-width face so a reader
         copying it by hand can tell 0 from O, and the hint saying why it is worth quoting.
