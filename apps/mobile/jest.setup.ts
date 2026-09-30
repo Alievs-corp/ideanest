@@ -300,6 +300,12 @@ jest.mock('expo-image-picker', () => {
   return {
     MediaTypeOptions: { Images: 'Images' },
     PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
+    // SDK 57's own values, so a test can tell `Compatible` (HEIC transcoded) from the others.
+    UIImagePickerPreferredAssetRepresentationMode: {
+      Automatic: 'automatic',
+      Compatible: 'compatible',
+      Current: 'current',
+    },
     launchImageLibraryAsync: jest.fn(async () => next),
     launchCameraAsync: jest.fn(async () => next),
     getCameraPermissionsAsync: jest.fn(async () => ({ granted: true, status: 'granted' })),

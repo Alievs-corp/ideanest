@@ -189,12 +189,8 @@ describe('FilePicker', () => {
     const [options] = jest.mocked(ImagePicker.launchImageLibraryAsync).mock.calls[0] ?? [];
     expect(options).toMatchObject({ mediaTypes: 'images' });
     expect(options).toHaveProperty('preferredAssetRepresentationMode');
-    const mode = (options as Options).preferredAssetRepresentationMode;
-    // The jest mock carries no enum; on a device this is `Compatible`, which transcodes HEIC.
-    expect(
-      mode === undefined ||
-        mode === ImagePicker.UIImagePickerPreferredAssetRepresentationMode?.Compatible,
-    ).toBe(true);
+    // `Compatible` is what makes iOS transcode a HEIC library photo to JPEG.
+    expect((options as Options).preferredAssetRepresentationMode).toBe('compatible');
   });
 
   it('returns nothing, and says nothing, when the picker is cancelled', async () => {
