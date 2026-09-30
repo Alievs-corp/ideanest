@@ -65,6 +65,8 @@ export interface AdminShellCopy {
    * from one of its children would be the wrong way round.
    */
   readonly role: Readonly<Record<string, string>>;
+  /** The strip a member of staff sees while a maintenance window is in force — #214. */
+  readonly maintenanceOn: string;
 }
 
 export interface ConsoleIndexCopy {
@@ -109,6 +111,7 @@ export function adminShellCopyFrom(t: AdminTranslator): AdminShellCopy {
        has no value for the argument. */
     signedInAs: String(t.raw('signedInAs')),
     role: t.raw('screens.staff.role') as Readonly<Record<string, string>>,
+    maintenanceOn: t('maintenanceOn'),
   };
 }
 

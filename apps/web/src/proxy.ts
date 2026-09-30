@@ -1,6 +1,7 @@
 import createIntlMiddleware from 'next-intl/middleware';
 import { type NextRequest, NextResponse } from 'next/server';
 import { publicCacheControl } from './lib/cache/publicRoutes';
+import { maintenanceHeaders, maintenancePageFor, platformStatus } from './lib/maintenance/gate';
 import { COUNTRY_HEADER, localeForCountry } from './lib/i18n/country';
 import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale, isLocale } from './lib/i18n/locale';
 import { routing } from './i18n/routing';
@@ -54,7 +55,7 @@ import { routing } from './i18n/routing';
  */
 const intlMiddleware = createIntlMiddleware(routing);
 
-export default function proxy(request: NextRequest): NextResponse {
+export default async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   /*
@@ -62,6 +63,16 @@ export default function proxy(request: NextRequest): NextResponse {
    * A path that already names a language is next-intl's to handle.
    */
   if (isLocale(pathname.split('/')[1])) {
+    /*
+     * DURING A MAINTENANCE WINDOW, BEFORE ANYTHING ELSE — #214. `lib/maintenance/gate.ts` has
+     * the argument: a page cannot choose its own status once it has started rendering, and a
+     * maintenance answer has to be a `503` with a `Retry-After` for a crawler to keep the page.
+     * A rewrite rather than a redirect, so the address stays the one the reader asked for and
+     * the maintenance page can take them back to it.
+     */
+    const closed = await maintenanceAnswer(request);
+    if (closed !== null) return closed;
+
     const response = intlMiddleware(request);
 
     const cacheControl = publicCacheControl(pathname);
@@ -90,6 +101,39 @@ export default function proxy(request: NextRequest): NextResponse {
 
   return response;
 }
+
+/**
+ * The maintenance page, with the contract's status and headers, when a window is in force and
+ * this page is not one of the few that stay open; null otherwise.
+ */
+async function maintenanceAnswer(request: NextRequest): Promise<NextResponse | null> {
+  const page = maintenancePageFor(request.nextUrl.pathname);
+  if (page === null) return null;
+
+  const status = await platformStatus.current();
+  if (status?.state !== 'maintenance' || status.maintenance === null) return null;
+
+  const destination = request.nextUrl.clone();
+  destination.pathname = page;
+  destination.search = '';
+
+  /*
+   * The language travels as next-intl's own middleware hands it on, because that middleware is
+   * not run for this request: without it the page renders before the layout has said which
+   * language this is, and an Azerbaijani reader is told about the outage in English.
+   */
+  const headers = new Headers(request.headers);
+  headers.set(NEXT_INTL_LOCALE_HEADER, page.split('/')[1] ?? '');
+
+  return NextResponse.rewrite(destination, {
+    status: 503,
+    headers: maintenanceHeaders(status.maintenance),
+    request: { headers },
+  });
+}
+
+/** next-intl's `HEADER_LOCALE_NAME`, which its request config reads the language from. */
+const NEXT_INTL_LOCALE_HEADER = 'X-NEXT-INTL-LOCALE';
 
 /**
  * The language a request with none in its path is sent to — #123, then #125.

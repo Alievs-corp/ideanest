@@ -702,7 +702,8 @@
       "/admin/campaigns": "All campaigns",
       "/admin/revenue": "Revenue",
       "/admin/partners": "Partners",
-      "/admin/partner-statistics": "Partner statistics"
+      "/admin/partner-statistics": "Partner statistics",
+      "/admin/maintenance": "Maintenance"
     },
     "states": {
       "built": "Built",
@@ -1043,6 +1044,12 @@
         "metaDescription": "Revenue and subscriptions, in totals.",
         "title": "Partner statistics",
         "intro": "Revenue and subscriptions, in totals: today, this month, by day, by month and by plan."
+      },
+      "maintenance": {
+        "metaTitle": "Maintenance windows",
+        "metaDescription": "Schedule, start and end planned maintenance, with notice for readers.",
+        "title": "Maintenance",
+        "intro": "While a window is in force every reader gets the maintenance page, and the service refuses everything except sign-in, payment provider webhooks and staff. Readers are warned from the announcement time, a day ahead by default. Background jobs that send money or messages pause and resume when the window ends."
       }
     },
     "screens": {
@@ -1075,6 +1082,7 @@
           "email_template": "Email templates",
           "feature_flag": "Feature flags",
           "fee_schedule": "Fee schedules",
+          "maintenance_window": "Maintenance windows",
           "payout": "Payouts",
           "project": "Campaigns",
           "refund": "Refunds",
@@ -1128,6 +1136,13 @@
           "ledger": {
             "read": "Ledger read",
             "reconciled": "Ledger reconciled"
+          },
+          "maintenance": {
+            "window_scheduled": "Maintenance window scheduled",
+            "window_started": "Maintenance window started",
+            "window_ended": "Maintenance window ended",
+            "window_changed": "Maintenance window changed",
+            "window_cancelled": "Maintenance window cancelled"
           },
           "payment": {
             "log_read": "Payment log read"
@@ -2527,6 +2542,62 @@
         "dailyCaption": "Revenue and subscriptions by day this month",
         "monthlyCaption": "Revenue and subscriptions by month",
         "planCaption": "Revenue and subscriptions by plan this month"
+      },
+      "maintenance": {
+        "subject": "the maintenance windows",
+        "loadingList": "Loading maintenance windows",
+        "currentHeading": "In force now",
+        "currentEmpty": "Nothing is in force. The platform is open to everybody.",
+        "upcomingHeading": "Scheduled",
+        "upcomingEmpty": "Nothing is scheduled.",
+        "recentHeading": "Recent",
+        "recentEmpty": "No window has ended or been cancelled yet.",
+        "state": {
+          "SCHEDULED": "Scheduled",
+          "ANNOUNCED": "Announced",
+          "ACTIVE": "In force",
+          "ENDED": "Ended",
+          "CANCELLED": "Cancelled"
+        },
+        "startsLabel": "Starts",
+        "endsLabel": "Ends",
+        "announceLabel": "Readers warned from",
+        "endedLabel": "Ended",
+        "cancelledLabel": "Cancelled",
+        "noteLabel": "Note",
+        "untilFurtherNotice": "Until further notice",
+        "startNow": "Start now",
+        "startNowConfirm": "Start this window now? Within ten seconds every reader gets the maintenance page, and outgoing payments and messages pause.",
+        "startNowYes": "Yes, start it now",
+        "endNow": "End now",
+        "endNowConfirm": "End this window now? Within ten seconds readers get the platform back, and paused jobs resume.",
+        "endNowYes": "Yes, end it now",
+        "keep": "Not now",
+        "changeEnd": "Change the end",
+        "newEndLabel": "New end",
+        "openEndLabel": "Until further notice",
+        "saveEnd": "Save the end",
+        "cancelWindow": "Cancel the window",
+        "scheduleHeading": "Schedule a window",
+        "scheduleIntro": "Times are in your time zone, {zone}. Readers see them in theirs.",
+        "startsAtLabel": "Starts",
+        "endsAtLabel": "Ends",
+        "endsAtHint": "Leave empty for until further notice. Readers are shown the end you set.",
+        "announceFromLabel": "Warn readers from",
+        "announceFromHint": "Leave empty for a day before the start.",
+        "noteFieldLabel": "Internal note",
+        "noteHint": "Why, and who to ask. Readers never see it.",
+        "schedule": "Schedule",
+        "working": "Working",
+        "failedTitle": "That did not work",
+        "refusal": {
+          "MAINTENANCE_WINDOW_NOT_FOUND": "That window no longer exists. The list has been read again.",
+          "MAINTENANCE_WINDOW_OVERLAPS": "Another window is already in force or scheduled at that time. Only one window may be in force or upcoming at once.",
+          "MAINTENANCE_WINDOW_ALREADY_STARTED": "That window has already started, so it can only be ended.",
+          "MAINTENANCE_WINDOW_NOT_ACTIVE": "That window is not in force, so there is nothing to end.",
+          "MAINTENANCE_WINDOW_OVER": "That window is already over.",
+          "MAINTENANCE_WINDOW_INVALID": "Those times do not make a window: the start cannot be in the past, the end has to come after the start, and the warning before it."
+        }
       }
     },
     "moderation": {
@@ -2664,7 +2735,8 @@
       "creatorAccount": "Creator {id}",
       "creatorNamed": "{name}, creator account"
     },
-    "signedInAs": "Signed in as {name} — {roles}"
+    "signedInAs": "Signed in as {name} — {roles}",
+    "maintenanceOn": "Maintenance is on — readers see the maintenance page."
   },
   "settings": {
     "language": {

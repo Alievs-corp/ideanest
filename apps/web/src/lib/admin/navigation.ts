@@ -272,6 +272,12 @@ export const CONSOLE_MODULES: readonly ConsoleModule[] = Object.freeze([
     code: 'AD-16',
     state: 'partial',
     href: '/admin/health',
+    /*
+     * Maintenance windows (#214) are filed with the health board: both answer "is the
+     * platform working for readers right now", and closing it on purpose is an operational
+     * decision rather than a configuration one.
+     */
+    otherScreens: ['/admin/maintenance'],
     issue: 316,
   },
 ]);
@@ -377,6 +383,7 @@ export const CONSOLE_GROUPS: readonly ConsoleGroup[] = Object.freeze([
       '/admin/flags',
       '/admin/health',
       '/admin/legal',
+      '/admin/maintenance',
     ],
   },
 ]);
@@ -463,6 +470,8 @@ export const CONSOLE_LINK_CAPABILITIES: Readonly<Record<string, readonly StaffCa
     '/admin/flags': ['CONFIGURE_PLATFORM'],
     '/admin/health': ['VIEW_HEALTH'],
     '/admin/legal': ['PUBLISH_LEGAL_DOCUMENT'],
+    // Closing the platform to readers is configuration of the platform, and the service asks for it.
+    '/admin/maintenance': ['CONFIGURE_PLATFORM'],
   });
 
 /**

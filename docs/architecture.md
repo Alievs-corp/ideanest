@@ -6726,6 +6726,25 @@ still need. Payouts are sent by a finance action, not a job, so staff decide. In
 webhooks are recorded throughout. The health screen shows paused jobs as late, which
 they are.
 
+**The web (#214, step 3).** A Server Component cannot choose its status once it has
+started rendering, so the decision is taken in the proxy: `lib/maintenance/gate.ts` keeps a
+ten-second snapshot of `GET /v1/status` (stale-while-revalidate, one request at a time, a
+1.5 s timeout on the only request that waits) and, while a window is in force, rewrites every
+localised page except `/admin/**` and `/sign-in` to `/maintenance` with `503`, `Retry-After`
+(the contract's value) and `no-store`. A render is anonymous, so the proxy cannot tell staff
+from readers; the console stays open for them and shows a "maintenance is on" strip. Not
+knowing (an unreachable status endpoint, a bare 503) leaves every page open. A client-side
+call to `/v1/` that meets the maintenance problem `type` sends the reader to
+`/maintenance?from=…`; the page names the announced end in the reader's zone, uses the
+neutral wording for `source: "edge"`, polls `/v1/status` every 30 s (or after the edge's
+`Retry-After`) and returns the reader when the platform is operational. An announced window
+shows a notice at the top of `SiteShell`, dismissed per window on the device. The notice,
+the poll and the redirect are server markup plus inline scripts rather than client
+components, because every public route is budgeted to the tenth of a KiB of First Load JS
+and a client component there is counted whether or not it renders. The console's
+`/admin/maintenance` (`CONFIGURE_PLATFORM`) schedules, starts, ends, extends and cancels
+windows; start now and end now ask first.
+
 **Decisions.**
 
 - *A window table, not a feature flag.* A flag is on or off. Maintenance has a start,

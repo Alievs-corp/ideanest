@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { SiteFooter } from './SiteFooter';
 import { SiteHeader } from './SiteHeader';
+import { MaintenanceNotice } from './MaintenanceNotice';
 import { MAIN_CONTENT_ID, SkipLink } from './SkipLink';
 import { WhatsAppLauncher } from './WhatsAppLauncher';
 import { shellCopy, whatsappCopy } from '../../lib/i18n/shell-copy.server';
@@ -68,6 +69,13 @@ export async function SiteShell({ children }: SiteShellProps) {
      */
     <div className="relative flex min-h-dvh flex-col">
       <SkipLink label={copy.skipToContent} />
+      {/*
+        Planned maintenance, announced — #214. Above the header so it is read before the
+        navigation, and nothing at all unless a window is announced. It is server markup plus an
+        inline script and no client component, so it costs no route any First Load JS;
+        `lib/maintenance/script.ts` has the measurement that made that a requirement.
+      */}
+      <MaintenanceNotice />
       <SiteHeader copy={copy} />
       <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 focus:outline-none">
         {children}

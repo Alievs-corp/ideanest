@@ -63,7 +63,7 @@ the browser half of the auth flow work at all.
 | `/categories/[category]/[subcategory]` | Site | **Public.** A subcategory's, resolved inside its own parent (#265) |
 | `/collections` | Site | **Public.** D-08's index: staff selections, themed collections and open calls, and the crawl path to their pages (#266) |
 | `/collections/[slug]` | Site | **Public.** A collection's landing page — its campaigns in the curator's order, cursor-paginated. 404 for one that is unpublished or outside its window (#266) |
-| `/maintenance` | Site | **Public**, `noindex`. WS-09's planned-outage page. Nothing routes to it — see below (#263) |
+| `/maintenance` | Site | **Public**, `noindex`. WS-09's planned-outage page. During a maintenance window the proxy answers every page but the console and sign-in with it, `503` + `Retry-After` — see below (#263, #214) |
 | `/sign-in` | Minimal | **Public**, `noindex`. Email and password, with the suspension and the rate limit surfaced (#268) |
 | `/register` | Minimal | **Public**, `noindex`. Account creation and the "check your email" state (#269) |
 | `/verify-email` | Minimal | **Public**, `noindex`. Where the verification link lands, and the expired-token path (#270) |
@@ -137,6 +137,7 @@ the browser half of the auth flow work at all.
 | `/admin/email-templates/[type]` | Console | **Staff only.** One template: edit, preview, test send, and every version an edit produced (#86, #315) |
 | `/admin/flags` | Console | **Staff only.** Gradual rollout, with a kill switch that means what it says (#312) |
 | `/admin/health` | Console | **Staff only.** Queue depth, failed jobs and provider status, measured when you open it. It does not alert (#316) |
+| `/admin/maintenance` | Console | **Staff only**, `CONFIGURE_PLATFORM`. Schedule, start, end, extend and cancel maintenance windows (#214) |
 | `/admin/audit` | Console | **Staff only.** Every privileged action the platform has recorded (#314) |
 | `/robots.txt` | — | **Public.** Crawl directives, and the pointer to the sitemap index (#122) |
 | `/sitemap_index.xml` | — | **Public.** The index over the sitemap segments (#122) |
@@ -594,11 +595,20 @@ is the one where the browser says yes.
 keep rendering only the first of the two refusals afterwards: a moderator opening the payout
 queue was told they were not a moderator.
 
-**`/maintenance` has no switch in front of it.** It is a page an edge or a load
-balancer can be pointed at during a planned outage, and nothing in this
-application redirects to it. Whatever performs the switch is a deployment
-concern and belongs with #139's environments work; the honest scope of #263 was
-to ship the page.
+**`/maintenance` is what a maintenance window answers with (#214).** The proxy
+(`lib/maintenance/gate.ts`) keeps a ten-second snapshot of `GET /v1/status` and,
+while a window is in force, rewrites every localised page except `/admin/**` and
+`/sign-in` to `/maintenance` with `503`, `Retry-After` and `no-store`, keeping the
+reader's address. A client-side call to `/v1/` that meets the maintenance problem
+sends the reader there too (`?from=` where they were). The page names the
+announced end in the reader's zone, words an edge answer neutrally, polls the
+status every thirty seconds and takes the reader back. An announced window shows a
+dismissible notice at the top of `SiteShell`. None of this is a client component:
+the notice, the page's poll and the redirect are server markup plus inline scripts
+(`lib/maintenance/script.ts`), because a client component in `SiteShell` or the
+API client measured +0.3–2.8 KiB on routes budgeted to the tenth of a KiB. Public
+pages cached by the CDN (`s-maxage=60, stale-while-revalidate=600`) can lag the
+switch by as much as that window.
 
 **Two failure states, two frames.** `app/not-found.tsx` and `app/error.tsx` sit
 at the root of the route tree, because Next serves them for a request that
