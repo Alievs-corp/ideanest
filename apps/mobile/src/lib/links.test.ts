@@ -64,6 +64,31 @@ describe('destinationFor', () => {
     // Routing it to the campaign would show the wrong thing confidently.
     expect(destinationFor('https://ideanest.az/projects/a/b/edit', HOST)).toBeNull();
   });
+
+  it('never opens the kit gallery, from any form of link (issue #151)', () => {
+    // `app/dev/kit.tsx` is a development screen. A link — shared, pushed or crafted — must not
+    // be able to reach it, whatever its scheme, host, locale prefix or case.
+    const links = [
+      'https://ideanest.az/dev/kit',
+      'https://ideanest.az/az/dev/kit',
+      'https://ideanest.az/dev/kit/',
+      'https://IDEANEST.AZ/dev/kit?x=1',
+      'ideanest://dev/kit',
+      'ideanest:///dev/kit',
+      'ideanest://dev/kit/',
+      'ideanest://az/dev/kit',
+      'https://ideanest.az/%64ev/kit',
+    ];
+    for (const link of links) {
+      // Refused outright: none of these is a campaign, so the parser has nowhere to send it.
+      expect(destinationFor(link, HOST)).toBeNull();
+    }
+    // And a campaign whose creator happens to be called "dev" still opens the campaign, under
+    // `/projects/`, never the gallery's route.
+    expect(destinationFor('https://ideanest.az/projects/dev/kit', HOST)?.pathname).toBe(
+      '/projects/dev/kit',
+    );
+  });
 });
 
 describe('shareUrlFor', () => {

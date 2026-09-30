@@ -44,6 +44,9 @@ const CAMPAIGN_PATH = /^\/projects\/([^/]+)\/([^/]+)\/?$/;
  * is to let the browser keep it — or an application trying to drive this one
  * somewhere. Silently landing on the feed makes both look like they worked.
  *
+ * <p>Only campaign paths are answered, so a development route — the kit gallery at `dev/kit`
+ * (issue #151) — is never a destination, whatever the link says; `links.test.ts` pins that.
+ *
  * @param url the incoming link, in any of the three forms above
  * @param siteHost the host this build claims, from `app.config.ts`'s `siteUrl`
  */
