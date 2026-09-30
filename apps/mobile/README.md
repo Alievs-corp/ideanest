@@ -80,6 +80,21 @@ design starts.
   when the device has Reduce Motion on. Undeclared screens get `minimal`.
 - **Feedback without toasts.** `announce()` is the native `aria-live`, and
   `haptics` is exactly the five events in §7's table.
+- **Every screen is on the kit.** The app's first ad-hoc components are gone:
+  `components/form.tsx` (`Button`, `TextField`), `components/states.tsx`
+  (`Loading`, `EmptyState`, `ErrorState`, `OfflineNotice`), `components/avatar.tsx`
+  and the `components/progress.tsx` re-export. Their replacements are `Pill`,
+  `Field` with `TextInput`/`PasswordInput`/`Textarea`, the skeletons,
+  `EmptyState`/`ErrorState` (retry required), `InlineAlert`, `Screen`, `Avatar`
+  and `ProgressBar`, all from `components/ui`. The order of a list screen's
+  states — cached data, then the error, then empty — lives in `Screen`.
+- **The gallery.** `src/app/dev/kit.tsx` (open `ideanest://dev/kit` in a
+  development build) shows every component in every variant, size and state,
+  grouped as the barrel is, to hold beside the web's Storybook. It renders only
+  when `__DEV__` is true and redirects to `+not-found` otherwise, and the
+  deep-link parser never maps a link to it (`links.test.ts`). It has no words of
+  its own: headings are component names read from the code, and every sentence
+  is a catalogue key, so it also shows the kit in Azerbaijani and Russian.
 
 ## Configuration
 
