@@ -135,6 +135,11 @@
           "referenceLabel": "Referans",
           "referenceHint": "Bunu bize bildirirseniz, kayıtlarda tam hatayı bulabiliriz.",
           "retry": "Tekrar deneyin"
+        },
+        "fatal": {
+          "title": "IdeyaNest açılamadı",
+          "description": "Uygulama ilk ekranını göstermeden önce bir şeyler ters gitti. Bir kez yeniden başlatmayı denemeye değer; sorun sürerse kaynağı telefonunuz değil, bizim tarafımızdır.",
+          "action": "Uygulamayı yeniden başlatın"
         }
       }
     },

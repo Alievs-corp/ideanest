@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { AccessibilityInfo, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { motion, staggerDelay } from '../theme';
+import { motion, spacing, staggerDelay } from '../theme';
 
 /**
  * The one scroll-entry animation — `docs/motion-system.md` §4.1 and §7, and
@@ -83,9 +83,16 @@ export function FadeUp({ index = 0, children }: FadeUpProps) {
     return <View>{children}</View>;
   }
 
-  return (
-    <Animated.View entering={FadeInDown.duration(motion.slow).delay(staggerDelay(index))}>
-      {children}
-    </Animated.View>
-  );
+  /*
+   * Reanimated's `FadeInDown` starts 25pt low; the web's `FadeUp` (`packages/ui`) rises 24px,
+   * `spacing[6]`, and both platforms should travel the same token distance. Only the start is
+   * overridden — the end is still `translateY: 0` at full opacity, over `motion.slow`. A new
+   * builder per render, because a builder's methods change it in place and a shared one would
+   * hand every card the last card's delay.
+   */
+  const entering = FadeInDown.duration(motion.slow)
+    .delay(staggerDelay(index))
+    .withInitialValues({ opacity: 0, transform: [{ translateY: spacing[6] }] });
+
+  return <Animated.View entering={entering}>{children}</Animated.View>;
 }

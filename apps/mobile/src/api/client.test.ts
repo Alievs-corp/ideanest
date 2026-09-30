@@ -8,7 +8,7 @@ import {
 import { memoryStore } from '../lib/storage';
 
 /**
- * The session, as every read carries it — issue #29.
+ * The session, as every read carries it — §17.1 and §4.12 MB-03.
  *
  * <p>Four properties, and each one is a request somebody would otherwise spend
  * or a session somebody would otherwise lose:

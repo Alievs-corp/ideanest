@@ -20,7 +20,7 @@ import { AppIntlProvider, useT } from '../lib/i18n';
 import { colors } from '../theme';
 
 /**
- * The root of the application — issue #110.
+ * The root of the application — §14.3.
  *
  * <h2>What lives here and why nothing else does</h2>
  *
@@ -31,7 +31,7 @@ import { colors } from '../theme';
  * the tree does — gives half the screens the wrong answer on a device with a
  * notch.
  *
- * `PersistQueryClientProvider` rather than the plain one is the whole of #115's
+ * `PersistQueryClientProvider` rather than the plain one is the whole of §4.12 MB-04's
  * wiring: it restores the cache before the first render and writes it back as
  * queries settle. See `lib/offline.ts` for what it will and will not keep.
  *
@@ -43,11 +43,11 @@ import { colors } from '../theme';
  * covered — `getInitialURL` for the launch that started the process, and the
  * `url` event for a link that arrives while the application is already open —
  * because a link that works only when the app is already running is the bug
- * #114 is most often filed about.
+ * deep links (§4.12 MB-02) most often meet.
  *
  * <h2>The re-lock is here for the same reason — nothing else sees the process</h2>
  *
- * #29's gate fires when the refresh token is read, and the access token it
+ * The biometric gate (§4.12 MB-03) fires when the refresh token is read, and the access token it
  * produces then lives in memory for fifteen minutes. A phone handed to somebody
  * else inside that window reaches the pledge list without a prompt. `AppState`
  * is the only signal that the application was put away, and the root is the only
@@ -68,6 +68,13 @@ const queryClient = createQueryClient();
 
 /** The tabs are always the base of the stack, so a guarded deep link has somewhere to go back to. */
 export const unstable_settings = { initialRouteName: '(tabs)' };
+
+/*
+ * A throw in this layout — in a provider, before any screen exists — lands here, outside every
+ * provider this file sets up. `components/root-failure.tsx` explains what it can and cannot use.
+ * A throw inside a screen never gets this far: each route exports its own boundary.
+ */
+export { RootFailure as ErrorBoundary } from '../components/root-failure';
 
 /**
  * The link inside a push payload, or null when there is not one.
@@ -186,14 +193,14 @@ export default function RootLayout() {
     const subscription = Linking.addEventListener('url', (event) => open(event.url));
 
     /*
-     * A tapped push notification — issue #87, arriving at #114's parser.
+     * A tapped push notification (§4.12 MB-01), arriving at the deep-link parser (MB-02).
      *
      * It is a separate subscription rather than a second `url` event, because a
      * notification tap does not go through `Linking` on either platform: the payload's
      * `data.url` is ours, put there by `PushComposer`, and the operating system hands it
      * over as a response object. Routing it through `destinationFor` means a campaign
      * opened from a notification and one opened from a shared link land on the same
-     * screen by the same code — which is the whole of what #114 asks for, and what stops
+     * screen by the same code — which is the whole of what MB-02 asks for, and what stops
      * the two drifting into "works from a link, does nothing from a notification".
      *
      * `getLastNotificationResponseAsync` covers the cold start: a tap that launched the

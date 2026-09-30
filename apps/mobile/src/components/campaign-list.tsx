@@ -7,7 +7,7 @@ import { FadeUp } from './motion';
 import { ProjectCard } from './project-card';
 
 /**
- * A virtualised list of campaigns — issue #112. **Capped stagger so long lists
+ * A virtualised list of campaigns — §4.3. **Capped stagger so long lists
  * never crawl.**
  *
  * <h2>Why FlashList and not FlatList</h2>

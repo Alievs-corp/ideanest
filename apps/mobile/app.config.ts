@@ -2,7 +2,7 @@ import { colors } from '@ideanest/design-tokens';
 import type { ExpoConfig } from 'expo/config';
 
 /**
- * The Expo configuration — issue #110, and half of #114.
+ * The Expo configuration — §14.3, and half of the deep links (§4.12 MB-02).
  *
  * <h2>Why this is `app.config.ts` and not `app.json`</h2>
  *
@@ -60,7 +60,7 @@ const config: ExpoConfig = {
   /**
    * The custom scheme. `ideanest://project/<creator>/<campaign>` is what a push
    * notification opens, and it works with no server involvement — which is why
-   * #87 uses it rather than an https link that depends on a verification file
+   * Push (§4.12 MB-01) uses it rather than an https link that depends on a verification file
    * being reachable.
    */
   scheme: 'ideanest',
@@ -72,7 +72,7 @@ const config: ExpoConfig = {
      * Universal links. `applinks:` is what makes iOS ask
      * `https://<host>/.well-known/apple-app-site-association` whether this
      * application may open that host's URLs; the file is served by `apps/web`,
-     * so the two halves of #114 sit in one pull request on purpose.
+     * so the two halves of §4.12 MB-02 sit in one pull request on purpose.
      */
     associatedDomains: [`applinks:${siteHost}`],
     infoPlist: {
@@ -107,6 +107,22 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     [
+      'expo-localization',
+      {
+        /**
+         * The four languages, registered with the operating system (issue #150): iOS
+         * `CFBundleLocalizations` and Android's `localeConfig`, so the per-app language
+         * setting on both lists exactly these.
+         *
+         * Spelled out rather than imported from `@ideanest/messages`: the Expo CLI loads this
+         * file with Node's own ESM loader, which cannot resolve that package's extensionless
+         * TypeScript imports. `src/lib/locale-registration.test.ts` holds the two lists level,
+         * so a fifth language cannot reach the catalogues without reaching the settings too.
+         */
+        supportedLocales: ['az', 'en', 'ru', 'tr'],
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         image: './assets/splash-icon.png',
@@ -122,7 +138,7 @@ const config: ExpoConfig = {
          * stranger reads.
          *
          * iOS refuses to present a Face ID prompt at all without it — the call
-         * fails rather than the sheet appearing — so #29's whole feature is one
+         * fails rather than the sheet appearing — so the lock's (MB-03) whole feature is one
          * missing Info.plist key away from being silently unavailable on every
          * iPhone. The plugin's own default says "access your Face ID biometric
          * data", which is both alarming and untrue: the application never sees

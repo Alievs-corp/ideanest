@@ -135,6 +135,11 @@
           "referenceLabel": "İstinad",
           "referenceHint": "Onu bizə bildirsəniz, jurnalda dəqiq nasazlığı tapa bilərik.",
           "retry": "Yenidən cəhd edin"
+        },
+        "fatal": {
+          "title": "IdeyaNest açıla bilmədi",
+          "description": "Tətbiq ilk ekranı göstərməzdən əvvəl xəta baş verdi. Bir dəfə yenidən başladıb yoxlayın; problem təkrarlanarsa, səbəb telefonunuzda deyil, bizdədir.",
+          "action": "Tətbiqi yenidən başladın"
         }
       }
     },

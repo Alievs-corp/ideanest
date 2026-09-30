@@ -11,7 +11,7 @@ import {
 import { memoryStore } from './storage';
 
 /**
- * Signing in and refreshing — issue #29.
+ * Signing in and refreshing — §17.1.
  *
  * <p>The assertion this file exists for is
  * {@link concurrentRefreshesMakeOneRequest}. §17.1 revokes a whole session
@@ -58,7 +58,7 @@ describe('signing in', () => {
 
     expect(outcome).toEqual({ kind: 'signed-in' });
     expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/auth/login');
-    // §17.1: a native client has no cookie jar worth using, and #24 built this
+    // §17.1: a native client has no cookie jar worth using, and the service defines this
     // shape for exactly this caller.
     expect(bodyOf(0).tokenDelivery).toBe('body');
     expect(currentAccessToken()).toBe('access-1');
@@ -189,5 +189,20 @@ describe('signing out', () => {
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/auth/logout');
     expect(bodyOf(0).refreshToken).toBe('refresh-1');
+  });
+
+  it('drops the push registration first, while it still has a bearer to do it with', async () => {
+    await storeRefreshToken('refresh-1');
+    rememberAccessToken('access-1');
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+    await signOut();
+
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('https://api.test.invalid/v1/me/devices');
+    expect(init?.method).toBe('DELETE');
+    expect(new Headers(init?.headers).get('authorization')).toBe('Bearer access-1');
+    expect(bodyOf(0).token).toBe('ExponentPushToken[test]');
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('https://api.test.invalid/v1/auth/logout');
   });
 });

@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema.ts"
+    "./schema": "./src/schema.ts",
+    "./trace": "./src/trace.ts"
   },
   "scripts": {
     "generate": "openapi-typescript ../../apps/api/openapi.json --output src/schema.ts --root-types",

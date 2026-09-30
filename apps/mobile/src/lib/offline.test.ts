@@ -7,13 +7,13 @@ import { memoryStore } from './storage';
 import { queryKeys } from '../api/queries';
 
 /**
- * Issue #115: saved projects and pledges readable without a connection.
+ * §4.12 MB-04: saved projects and pledges readable without a connection.
  *
  * <p>The two properties that make that true rather than nearly true are asserted here.
  * The first is that the right queries survive a restart and the wrong ones do not — a
  * restored discovery feed looks current and is not. The second is `offlineFirst`: without
  * it TanStack Query pauses a query when the device reports no connection, so a cached
- * campaign sits behind a spinner that never resolves, which is the exact failure #115
+ * campaign sits behind a spinner that never resolves, which is the exact failure §4.12 MB-04
  * exists to prevent and the one that unit tests usually miss.
  */
 
@@ -47,7 +47,7 @@ describe('what survives a restart', () => {
 describe('the query client', () => {
   it('runs queries offline rather than pausing them', () => {
     // The default, `online`, is what makes a cached campaign sit behind a spinner that
-    // never resolves. This one setting is the whole of #115 working at all.
+    // never resolves. This one setting is the whole of §4.12 MB-04 working at all.
     const options = createQueryClient().getDefaultOptions().queries;
     expect(options?.networkMode).toBe('offlineFirst');
   });

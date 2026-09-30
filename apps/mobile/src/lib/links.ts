@@ -1,5 +1,5 @@
 /**
- * Deep links and universal links — issue #114. **A shared campaign link opens
+ * Deep links and universal links — §4.12 MB-02. **A shared campaign link opens
  * the app when installed.**
  *
  * <h2>Three ways in, one answer</h2>

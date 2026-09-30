@@ -13,7 +13,7 @@ import { useSession } from '../../lib/use-session';
 import { colors, radius, size, spacing } from '../../theme';
 
 /**
- * What somebody backed — the other list issue #115 promises offline.
+ * What somebody backed — the other list §4.12 MB-04 promises offline.
  *
  * <h2>Why this one matters most without a connection</h2>
  *
@@ -116,3 +116,6 @@ export default function PledgesScreen() {
 function Separator() {
   return <View style={styles.separator} />;
 }
+
+// A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
+export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

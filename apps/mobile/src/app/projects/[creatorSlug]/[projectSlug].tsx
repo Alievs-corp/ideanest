@@ -16,7 +16,7 @@ import { storyParagraphs } from '../../../lib/story';
 import { colors, radius, size, spacing } from '../../../theme';
 
 /**
- * The campaign page — issue #113. **Story, rewards, updates, comments, and a
+ * The campaign page — §4.4 and §4.9. **Story, rewards, updates, comments, and a
  * persistent call to action.**
  *
  * <h2>The call to action is pinned, and the page behind it does not animate</h2>
@@ -273,8 +273,11 @@ async function share(title: string, creatorSlug: string, projectSlug: string): P
   /*
    * The https URL, never `ideanest://`. A recipient without the application
    * installed must be able to open what they were sent; the universal-link
-   * association (#114) is what makes the same string open the application for
+   * association (§4.12 MB-02) is what makes the same string open the application for
    * everybody who does have it.
    */
   await Share.share({ message: `${title} — ${url}`, url, title });
 }
+
+// A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
+export { RouteErrorBoundary as ErrorBoundary } from '../../../components/route-error-boundary';

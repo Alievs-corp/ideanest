@@ -1,7 +1,7 @@
 import { assetLinks } from '../../../lib/mobile/association';
 
 /**
- * `/.well-known/assetlinks.json` — issue #114, Android's half.
+ * `/.well-known/assetlinks.json` — §4.12 MB-02, Android's half.
  *
  * Android fetches this at install time when an intent filter carries
  * `autoVerify` (`apps/mobile/app.config.ts`), and it retries on its own

@@ -10,7 +10,7 @@ describe('destinationFor', () => {
   });
 
   it('opens the same campaign from the custom scheme a push notification uses', () => {
-    // The two forms differ by a slash and by an authority; #114 exists because
+    // The two forms differ by a slash and by an authority; MB-02 (§4.12) exists because
     // they must not differ by a screen.
     expect(destinationFor('ideanest://projects/aysel/solar-lamp', HOST)).toEqual({
       pathname: '/projects/aysel/solar-lamp',

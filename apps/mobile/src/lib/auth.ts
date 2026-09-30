@@ -11,7 +11,7 @@ import {
 } from './session';
 
 /**
- * Signing in, refreshing, and signing out on a phone — issue #29's other half.
+ * Signing in, refreshing, and signing out on a phone — §17.1, and MB-03's other half.
  *
  * <h2>Why this is not in `@ideanest/api-client`</h2>
  *
@@ -19,7 +19,7 @@ import {
  * retry… they are decisions about a session rather than about a request, and
  * mobile's will differ". They do differ, in the two ways that matter. The web
  * holds its refresh token in a `SameSite=Strict; HttpOnly` cookie and asks for
- * `tokenDelivery: "cookie"`; this asks for `"body"` — the shape #24 built for
+ * `tokenDelivery: "cookie"`; this asks for `"body"` — the shape §17.1 defines for
  * exactly this client — and puts what comes back in the platform keychain.
  *
  * <h2>REFRESH IS SINGLE-FLIGHT, AND IT IS NOT AN OPTIMISATION</h2>
@@ -37,7 +37,7 @@ import {
  * every caller until it settles, which `auth.test.ts` asserts by driving twenty
  * simultaneous callers and counting one network call.
  *
- * <p>The lock adds a second reason. With #29 on, a refresh reads a keychain item
+ * <p>The lock adds a second reason. With the lock (MB-03) on, a refresh reads a keychain item
  * that presents a biometric prompt; two of those would be two prompts stacked on
  * top of each other, and on Android the second is refused outright.
  *

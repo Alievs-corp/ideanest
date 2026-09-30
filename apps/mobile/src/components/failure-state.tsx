@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useT } from '../lib/i18n';
 import { colors, radius, size, spacing } from '../theme';
 import { Body, CardTitle, Heading, Meta } from './text';
@@ -47,9 +47,21 @@ export function FailureState({
         {title}
       </Heading>
       <Body style={styles.centred}>{description}</Body>
-      {reference ? <Meta selectable>
-          {t('referenceLabel')}: {reference}
-        </Meta> : null}
+      {/*
+        The web's digest line, word for word: label, the id in a fixed-width face so a reader
+        copying it by hand can tell 0 from O, and the hint saying why it is worth quoting.
+        Selectable, so it can be long-pressed and pasted into a message.
+      */}
+      {reference ? (
+        <Meta selectable style={styles.centred}>
+          {t('referenceLabel')}{' '}
+          <Meta selectable tone="secondary" style={styles.reference}>
+            {reference}
+          </Meta>
+          {'. '}
+          {t('referenceHint')}
+        </Meta>
+      ) : null}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={actionLabel}
@@ -93,6 +105,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface1,
   },
   centred: { textAlign: 'center' },
+  // The platform's own fixed-width face: nothing to load, and present on every device.
+  reference: {
+    fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }),
+    fontVariant: ['tabular-nums'],
+  },
   pill: {
     minHeight: 48,
     justifyContent: 'center',

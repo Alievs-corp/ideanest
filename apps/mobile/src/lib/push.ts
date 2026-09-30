@@ -6,7 +6,7 @@ import { apiOrigin } from '../api/config';
 import { currentAccessToken } from './session';
 
 /**
- * Push notifications, the phone's half — issue #87.
+ * Push notifications, the phone's half — §4.12 MB-01, §12.2.
  *
  * <h2>The permission is asked for at the moment it means something</h2>
  *

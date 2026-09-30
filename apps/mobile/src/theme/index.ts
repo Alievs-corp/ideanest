@@ -1,7 +1,7 @@
 import { colors, duration, easing, radius, spacing, staggerDelay } from '@ideanest/design-tokens';
 
 /**
- * The mobile styling layer — issue #111. **Same values, same names, no second
+ * The mobile styling layer — §14.3 and `docs/ui-kit.md` §2. **Same values, same names, no second
  * palette.**
  *
  * <h2>Why this file holds no colour of its own</h2>

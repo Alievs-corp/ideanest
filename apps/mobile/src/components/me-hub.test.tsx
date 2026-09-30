@@ -9,6 +9,7 @@ import type { TestInstance } from 'test-renderer';
 import MeScreen from '../app/(tabs)/me';
 import { useMe, useSessionState, type Me, type SessionState } from '../lib/account';
 import { signOut } from '../lib/auth';
+import { forgetPersistedCache } from '../lib/offline';
 
 /**
  * The Me tab's three layouts — issue #150.
@@ -31,6 +32,12 @@ jest.mock('../lib/use-session', () => ({ useSession: () => mockSession }));
 jest.mock('../lib/auth', () => ({
   ...jest.requireActual('../lib/auth'),
   signOut: jest.fn(async () => {}),
+}));
+
+/* The persisted cache's removal is `lib/offline.ts`'s and tested there; here, that it is asked. */
+jest.mock('../lib/offline', () => ({
+  ...jest.requireActual('../lib/offline'),
+  forgetPersistedCache: jest.fn(),
 }));
 
 jest.mock('../lib/account', () => ({
@@ -67,8 +74,7 @@ function given(
     .mockReturnValue({ data: me, isError, fetchStatus } as ReturnType<typeof useMe>);
 }
 
-async function renderMe() {
-  const client = new QueryClient();
+async function renderMe(client = new QueryClient()) {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={client}>
@@ -298,7 +304,9 @@ describe('the Me tab', () => {
   it('asks before signing out, and signs out only on the destructive choice', async () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     given('signed-in', AYSEL);
-    await renderMe();
+    const client = new QueryClient();
+    client.setQueryData(['pledges'], [{ id: 'a pledge' }]);
+    await renderMe(client);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
 
@@ -316,6 +324,9 @@ describe('the Me tab', () => {
       buttons[1]!.onPress?.();
     });
     expect(signOut).toHaveBeenCalledTimes(1);
+    // The next person on this phone sees none of this account: memory and disk are emptied.
+    expect(client.getQueryData(['pledges'])).toBeUndefined();
+    expect(forgetPersistedCache).toHaveBeenCalledTimes(1);
     expect(mockRouter.navigate).toHaveBeenCalledWith('/');
     alert.mockRestore();
   });

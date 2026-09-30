@@ -1,6 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Link, Tabs, type ErrorBoundaryProps } from 'expo-router';
-import { FailureState } from '../../components/failure-state';
+import { Link, Tabs } from 'expo-router';
 import { WithOfflineBanner } from '../../components/offline-banner';
 import { TabIcon, type TabIconName } from '../../components/tab-icon';
 import { Meta } from '../../components/text';
@@ -160,15 +159,9 @@ export default function TabsLayout() {
   );
 }
 
-/** A render error under the tabs: try again, never a stack trace. */
-export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
-  const t = useT('shell.failure.pages.error');
-  return (
-    <FailureState
-      title={t('title')}
-      description={t('description')}
-      actionLabel={t('retry')}
-      onAction={() => void retry()}
-    />
-  );
-}
+/*
+ * A throw in the header control or the bar itself: the shared route boundary, with "Try
+ * again" and the trace reference (`components/route-error-boundary.tsx`). Each tab screen
+ * exports it as well, so a failure inside one tab keeps the bar and the other four.
+ */
+export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

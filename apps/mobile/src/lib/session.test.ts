@@ -16,7 +16,7 @@ import {
 import { memoryStore } from './storage';
 
 /**
- * The session on a phone, and #29's gate over it.
+ * The session on a phone, and the biometric gate over it (§4.12 MB-03).
  *
  * <p>Everything here is a property whose absence costs somebody either their
  * session or the protection they turned on:
@@ -88,7 +88,7 @@ describe('a session on this device', () => {
   });
 });
 
-describe('#29: the biometric lock', () => {
+describe('§4.12 MB-03: the biometric lock', () => {
   it('moves the token behind the gate and leaves nothing readable', async () => {
     await storeRefreshToken('refresh-1');
 

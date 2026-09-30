@@ -8,7 +8,7 @@ import { ANIMATED_PREFIX, CampaignList } from './campaign-list';
 import type { Card } from '../api/queries';
 
 /**
- * Issue #112's actual requirement: **capped stagger so long lists never crawl.**
+ * §4.3's actual requirement: **capped stagger so long lists never crawl.**
  *
  * <p>Two separate caps, and both are needed. `staggerDelay` bounds the delay at 300ms, so
  * the fiftieth card does not wait two and a half seconds. {@link ANIMATED_PREFIX} bounds
@@ -88,7 +88,7 @@ describe('CampaignList', () => {
   it('points each card at the campaign it is about', async () => {
     const { getAllByTestId } = await render(<CampaignList cards={cards(2)} />);
 
-    // The path both halves of #114 agree on: `apps/web` serves a campaign here and
+    // The path both halves of §4.12 MB-02 agree on: `apps/web` serves a campaign here and
     // `lib/links.ts` resolves an incoming link to the same string.
     const [first] = getAllByTestId('link');
     expect(first?.props.accessibilityValue.text).toBe('/projects/aysel/campaign-0');

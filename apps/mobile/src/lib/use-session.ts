@@ -20,7 +20,7 @@ import {
  *
  * <h2>`useSyncExternalStore` and not `useState` + `useEffect`</h2>
  *
- * Before #29 this hook read the keychain in an effect and held the answer in
+ * Before the lock (MB-03) this hook read the keychain in an effect and held the answer in
  * state, which was two problems. The read is asynchronous, so every screen
  * flashed "sign in" for a frame; and the state was per-component, so signing in
  * on one screen left the others showing the old answer until something else
@@ -41,7 +41,7 @@ import {
 export interface Session {
   /** Whether a refresh token is kept on this device. */
   readonly signedIn: boolean;
-  /** Whether reading that token needs #29's biometric prompt. */
+  /** Whether reading that token needs the biometric prompt (§4.12 MB-03). */
   readonly locked: boolean;
   /**
    * Whether this process is already holding an access token.

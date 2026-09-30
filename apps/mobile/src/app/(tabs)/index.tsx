@@ -5,7 +5,7 @@ import { EmptyState, ErrorState, Loading } from '../../components/states';
 import { useT } from '../../lib/i18n';
 
 /**
- * Discovery — issue #112's first half.
+ * Discovery — §4.3's first half.
  *
  * <h2>What the screen decides, and what it does not</h2>
  *
@@ -62,3 +62,6 @@ export default function DiscoverScreen() {
     />
   );
 }
+
+// A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
+export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

@@ -10,7 +10,7 @@ import { useSession } from '../../lib/use-session';
 import { colors, radius, size, spacing } from '../../theme';
 
 /**
- * What somebody kept — one of the two lists issue #115 promises offline.
+ * What somebody kept — one of the two lists §4.12 MB-04 promises offline.
  *
  * <h2>The stale case is the feature, not an edge case</h2>
  *
@@ -54,7 +54,7 @@ export default function SavedScreen() {
       <EmptyState
         title={t('mobile.saved.signedOutTitle')}
         detail={t('mobile.saved.signedOutBody')}
-        // #29: the invitation now has a way to accept it. Until sign-in existed
+        // §17.1: the invitation now has a way to accept it. Until sign-in existed
         // on this platform, this screen could only state the condition.
         action={
           <Button label={t('shell.actions.signIn')} onPress={() => router.push('/sign-in')} />
@@ -125,3 +125,6 @@ export default function SavedScreen() {
 function Separator() {
   return <View style={styles.separator} />;
 }
+
+// A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
+export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

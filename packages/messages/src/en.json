@@ -135,6 +135,11 @@
           "referenceLabel": "Reference",
           "referenceHint": "Quoting it lets us find the exact failure in the log.",
           "retry": "Try again"
+        },
+        "fatal": {
+          "title": "IdeyaNest could not start",
+          "description": "Something failed before the app could draw its first screen. Restarting it is worth one attempt; if it keeps happening, the problem is on our side rather than your phone’s.",
+          "action": "Restart the app"
         }
       }
     },

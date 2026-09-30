@@ -167,7 +167,7 @@ export function useProjectUpdates(projectId: string | undefined) {
   });
 }
 
-/** What this account saved. One of the two lists #115 promises offline. */
+/** What this account saved. One of the two lists §4.12 MB-04 promises offline. */
 export function useSavedProjects(enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.saved(),

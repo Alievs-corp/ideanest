@@ -1,7 +1,7 @@
 import { appleAppSiteAssociation } from '../../../lib/mobile/association';
 
 /**
- * `/.well-known/apple-app-site-association` — issue #114.
+ * `/.well-known/apple-app-site-association` — §4.12 MB-02.
  *
  * <h2>A route handler, because the content type matters and has no extension</h2>
  *

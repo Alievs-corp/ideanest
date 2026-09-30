@@ -20,7 +20,7 @@ pnpm --filter @ideanest/mobile start   # a development build, not Expo Go
 | Lists | **FlashList** |
 | Animation | **Reanimated 4** |
 | Push | **Expo notifications** |
-| Session | Refresh token in the keychain, behind an optional biometric gate (#29) |
+| Session | Refresh token in the keychain, behind an optional biometric gate (§4.12 MB-03) |
 | Tests | **jest-expo** — the one package in this repository not on vitest |
 
 ## Where it differs from §14.3, and why
@@ -74,7 +74,7 @@ at localhost.
 `eas.json` sets both per profile. `development` points at localhost, `preview`
 at staging, `production` at production.
 
-## Deep links (#114)
+## Deep links (§4.12 MB-02)
 
 A campaign is at `/projects/<creator>/<campaign>` on the web and at the same path
 here, so the link that opened the application and the route it lands on are one
@@ -105,7 +105,7 @@ wrong identifier in it for up to a week.
 application. Nothing else does, and the failure they produce is silent — the file
 is fetched, disagreed with, and links quietly stop opening the application.
 
-## Push notifications (#87)
+## Push notifications (§4.12 MB-01, §12.2)
 
 `src/lib/push.ts` asks for the permission **at the moment it means something**,
 never on launch: on iOS a declined permission cannot be asked for again from
@@ -119,7 +119,7 @@ deliver the second person's pledge confirmations to somebody else's lock screen.
 Tapping a notification goes through the same parser a shared link does, so the
 two cannot drift into "works from a link, does nothing from a notification".
 
-## Offline (#115)
+## Offline (§4.12 MB-04)
 
 `src/lib/offline.ts` persists TanStack Query's own cache to MMKV, so the screens
 never know: `useQuery` answers from the cache it already answers from, and the
@@ -134,13 +134,13 @@ current.
 default pauses a query when the device reports no connection, so a cached
 campaign would sit behind a spinner that never resolves.
 
-## Signing in, and the biometric lock (#29)
+## Signing in, and the biometric lock (§17.1, §4.12 MB-03)
 
 `src/app/sign-in.tsx` is an address, a password, and §17.1's second factor when
 the account has one. Registration, password reset and the provider buttons stay
 on the web, which is where a verification email lands anyway.
 
-It asks for `tokenDelivery: "body"` — the shape #24 built for a native client —
+It asks for `tokenDelivery: "body"` — the shape §17.1 defines for a native client —
 and the refresh token goes into the platform keychain. **Refresh is
 single-flight**, which §17.1 requires of every client and which a phone tests
 harder than a browser: six persisted queries refetch in the same tick when a
@@ -174,7 +174,7 @@ real device; what the suite covers is the keychain choreography and the refusal
 paths, with `expo-secure-store` and `expo-local-authentication` replaced by
 doubles that can refuse.
 
-## Builds and releases (#116)
+## Builds and releases (§19.2)
 
 `eas.json` has three profiles and `.github/workflows/mobile-release.yml` drives
 them. It **builds** only on a manual dispatch, because a store build is a
@@ -196,16 +196,16 @@ consequence of a workflow finishing.
 
 ## What is not built
 
-**Registration, password reset and provider sign-in.** #29 built the sign-in
+**Registration, password reset and provider sign-in.** The lock work (MB-03) built the sign-in
 form and deliberately stopped there. Registration ends in a verification email,
 a reset ends in a link, and both are a browser either way; the provider buttons
 need the Google and Apple native SDKs and a signed build to test against.
 `sign-in.tsx` says where to go for all three rather than pretending.
 
-**Checkout.** #58, blocked behind #60. The campaign page's call to action opens
+**Checkout.** §4.5, not built in the app yet. The campaign page's call to action opens
 the web checkout, which works today.
 
-**Comments.** #113 asks for them and what is here is the count and a link. §4.6's
+**Comments.** §4.4 and §4.9 ask for them and what is here is the count and a link. §4.6's
 thread is moderated, reportable and rate-limited, and half of it is meaningless
 without an account this application cannot yet create.
 
