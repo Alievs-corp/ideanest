@@ -6,7 +6,6 @@ import { formatMoney } from '@ideanest/money';
 import { siteUrl } from '../../../api/config';
 import { useProjectPage, useProjectRewards, useProjectUpdates } from '../../../api/queries';
 import { FadeUp } from '../../../components/motion';
-import { ProgressBar } from '../../../components/progress';
 import {
   Body,
   CardTitle,
@@ -20,6 +19,7 @@ import {
   InlineAlert,
   MotionBudgetProvider,
   Pill,
+  ProgressBar,
   Screen,
   Skeleton,
   SkeletonGroup,

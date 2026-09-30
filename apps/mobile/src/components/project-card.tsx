@@ -6,7 +6,7 @@ import type { Card } from '../api/queries';
 import { useT } from '../lib/i18n';
 import { colors, radius, size, spacing } from '../theme';
 import { Body, CardTitle, Meta } from './text';
-import { ProgressBar } from './progress';
+import { ProgressBar } from './ui';
 
 /**
  * One campaign in a list — `docs/ui-kit.md` §7.1.

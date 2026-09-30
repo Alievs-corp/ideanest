@@ -13,7 +13,7 @@ import { useMotionAllowed } from './motion-budget';
 
 /**
  * A campaign's funding progress — the native `ProgressBar` (`docs/ui-kit.md` §7.11), moved into
- * the kit from `components/progress.tsx`, which now re-exports it.
+ * the kit from `components/progress.tsx`, which is gone: the screens import it from here.
  *
  * <h2>Lime means urgent. Success means achieved.</h2>
  *
