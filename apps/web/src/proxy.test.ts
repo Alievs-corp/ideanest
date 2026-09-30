@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { COUNTRY_HEADER } from './lib/i18n/country';
 import { LOCALE_COOKIE } from './lib/i18n/locale';
 
@@ -18,6 +18,17 @@ vi.mock('next-intl/middleware', () => ({
 }));
 
 const { default: proxy, config } = await import('./proxy');
+const { platformStatus } = await import('./lib/maintenance/gate');
+
+/*
+ * The status endpoint is not asked from a unit test. Unknown by default, which is what an
+ * unreachable service reads as — every page open, exactly as before #214.
+ */
+const statusMock = vi.spyOn(platformStatus, 'current');
+beforeEach(() => {
+  statusMock.mockReset();
+  statusMock.mockResolvedValue(null);
+});
 
 /**
  * What happens to a request with no language in its path — issue #123.
@@ -38,20 +49,20 @@ function request(path: string, cookie?: string, country?: string): NextRequest {
 }
 
 describe('the locale proxy', () => {
-  it('sends the bare path to the default language when nothing is stored', () => {
-    const response = proxy(request('/'));
+  it('sends the bare path to the default language when nothing is stored', async () => {
+    const response = await proxy(request('/'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe('https://ideanest.az/en');
   });
 
-  it('sends the bare path to the language the reader last chose', () => {
-    const response = proxy(request('/', 'az'));
+  it('sends the bare path to the language the reader last chose', async () => {
+    const response = await proxy(request('/', 'az'));
 
     expect(response.headers.get('location')).toBe('https://ideanest.az/az');
   });
 
-  it('never answers with a permanent redirect', () => {
+  it('never answers with a permanent redirect', async () => {
     /*
      * A 308 is cached by the browser itself. One recorded from `/` to `/en` would keep
      * sending a reader to English after they chose Azerbaijani — from their own cache,
@@ -59,32 +70,32 @@ describe('the locale proxy', () => {
      * site's cookies does not fix.
      */
     for (const path of ['/', '/discover', '/projects/aysel/kilims']) {
-      expect(proxy(request(path)).status).toBe(307);
+      expect((await proxy(request(path))).status).toBe(307);
     }
   });
 
-  it('keeps the rest of the path and the query string', () => {
-    const response = proxy(request('/discover?category=games&page=2', 'ru'));
+  it('keeps the rest of the path and the query string', async () => {
+    const response = await proxy(request('/discover?category=games&page=2', 'ru'));
 
     expect(response.headers.get('location')).toBe(
       'https://ideanest.az/ru/discover?category=games&page=2',
     );
   });
 
-  it('does not put a trailing slash on the language root', () => {
+  it('does not put a trailing slash on the language root', async () => {
     /* `/az/` and `/az` would be two addresses for one page. */
-    expect(proxy(request('/', 'tr')).headers.get('location')).toBe('https://ideanest.az/tr');
+    expect((await proxy(request('/', 'tr'))).headers.get('location')).toBe('https://ideanest.az/tr');
   });
 
-  it('falls back to English rather than trusting a cookie a reader can edit', () => {
+  it('falls back to English rather than trusting a cookie a reader can edit', async () => {
     for (const value of ['xx', '', '../../etc/passwd', 'EN']) {
-      expect(proxy(request('/', value)).headers.get('location')).toBe(
+      expect((await proxy(request('/', value))).headers.get('location')).toBe(
         'https://ideanest.az/en',
       );
     }
   });
 
-  it('starts a first visit in the language of the country it came from (#125)', () => {
+  it('starts a first visit in the language of the country it came from (#125)', async () => {
     const cases: [string, string][] = [
       ['AZ', 'az'],
       ['TR', 'tr'],
@@ -94,49 +105,49 @@ describe('the locale proxy', () => {
       ['US', 'en'],
     ];
     for (const [country, locale] of cases) {
-      expect(proxy(request('/', undefined, country)).headers.get('location')).toBe(
+      expect((await proxy(request('/', undefined, country))).headers.get('location')).toBe(
         `https://ideanest.az/${locale}`,
       );
     }
   });
 
-  it('lets the reader’s own choice outrank their country', () => {
+  it('lets the reader’s own choice outrank their country', async () => {
     /* Somebody in Baku who picked English meant it. */
-    expect(proxy(request('/', 'en', 'AZ')).headers.get('location')).toBe(
+    expect((await proxy(request('/', 'en', 'AZ'))).headers.get('location')).toBe(
       'https://ideanest.az/en',
     );
   });
 
-  it('falls through to the country when the stored cookie is not a language', () => {
-    expect(proxy(request('/', 'xx', 'AZ')).headers.get('location')).toBe(
+  it('falls through to the country when the stored cookie is not a language', async () => {
+    expect((await proxy(request('/', 'xx', 'AZ'))).headers.get('location')).toBe(
       'https://ideanest.az/az',
     );
   });
 
-  it('keeps the path when the language comes from the country', () => {
-    expect(proxy(request('/discover?page=2', undefined, 'TR')).headers.get('location')).toBe(
+  it('keeps the path when the language comes from the country', async () => {
+    expect((await proxy(request('/discover?page=2', undefined, 'TR'))).headers.get('location')).toBe(
       'https://ideanest.az/tr/discover?page=2',
     );
   });
 
-  it('never lets a shared cache replay one visitor’s redirect to another', () => {
+  it('never lets a shared cache replay one visitor’s redirect to another', async () => {
     /*
      * The destination is decided by a cookie and a country. A CDN that stored the `307`
      * a visitor from Baku was given would send the next visitor, from Berlin, to `/az`.
      */
-    for (const response of [proxy(request('/')), proxy(request('/', 'ru', 'AZ'))]) {
+    for (const response of await Promise.all([proxy(request('/')), proxy(request('/', 'ru', 'AZ'))])) {
       expect(response.headers.get('cache-control')).toBe('private, no-store');
     }
   });
 
-  it('leaves a path that already names a language alone', () => {
+  it('leaves a path that already names a language alone', async () => {
     /*
      * The loop guard. next-intl's middleware answers these, and what matters here is that
      * this file does not send them round again — a second redirect on `/az/discover` would
      * be an infinite one, reproducing only for readers who have a cookie set.
      */
     for (const path of ['/az', '/en/discover', '/ru/projects/aysel/kilims', '/tr/settings']) {
-      expect(proxy(request(path, 'az', 'TR')).headers.get('location')).toBeNull();
+      expect((await proxy(request(path, 'az', 'TR'))).headers.get('location')).toBeNull();
     }
   });
 });
@@ -236,5 +247,89 @@ describe('the paths the locale proxy is asked about', () => {
     ]) {
       expect(matches(path)).toBe(true);
     }
+  });
+});
+
+/**
+ * The maintenance gate — §19.6, issue #214.
+ *
+ * <h2>Why a rewrite's status is asserted here and again against a running server</h2>
+ *
+ * These assert what the proxy hands Next. Whether Next then sends that status for a page it
+ * renders is a property of the framework, and the pull request that added this checked it
+ * with a real request against `next start` rather than trusting the object below.
+ */
+describe('the maintenance gate', () => {
+  const WINDOW = {
+    state: 'maintenance' as const,
+    maintenance: {
+      startsAt: '2026-10-04T22:00:00Z',
+      endsAt: '2026-10-04T22:30:00Z',
+      source: 'api' as const,
+      retryAfterSeconds: 1200,
+    },
+    upcoming: null,
+  };
+
+  it('answers a page with the maintenance page, a 503 and the contract’s headers', async () => {
+    statusMock.mockResolvedValue(WINDOW);
+
+    const response = await proxy(request('/az/discover?category=games'));
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('retry-after')).toBe('1200');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    // A rewrite, not a redirect: the reader's address stays, so the page can take them back.
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-rewrite')).toBe('https://ideanest.az/az/maintenance');
+    // In the reader's language: the page is told which one, as next-intl's middleware would.
+    expect(response.headers.get('x-middleware-request-x-next-intl-locale')).toBe('az');
+  });
+
+  it('closes the account pages too, because a page render cannot tell staff from a reader', async () => {
+    statusMock.mockResolvedValue(WINDOW);
+
+    for (const path of ['/en', '/ru/settings', '/tr/projects/aysel/kilims', '/az/maintenance']) {
+      expect((await proxy(request(path))).status).toBe(503);
+    }
+  });
+
+  it('keeps the console and the sign-in page open, so staff can work through a window', async () => {
+    statusMock.mockResolvedValue(WINDOW);
+
+    for (const path of ['/az/admin', '/en/admin/maintenance', '/ru/sign-in']) {
+      const response = await proxy(request(path));
+      expect(response.status).toBe(200);
+      expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    }
+  });
+
+  it('leaves every page open when the platform is operational', async () => {
+    statusMock.mockResolvedValue({ state: 'operational', maintenance: null, upcoming: null });
+
+    const response = await proxy(request('/az/discover'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+  });
+
+  it('never reads "not known" as maintenance', async () => {
+    /*
+     * An unreachable status endpoint, a bare 503: a page rendering its own failure state is
+     * honest, and a calm "planned maintenance" over an incident is not.
+     */
+    const response = await proxy(request('/az/discover'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+  });
+
+  it('sends a path with no language to its language first, and closes it there', async () => {
+    statusMock.mockResolvedValue(WINDOW);
+
+    const response = await proxy(request('/discover', 'az'));
+
+    expect(response.status).toBe(307);
+    expect(statusMock).not.toHaveBeenCalled();
   });
 });

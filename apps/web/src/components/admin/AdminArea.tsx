@@ -8,6 +8,7 @@ import { ConsoleReader } from './ConsoleReader';
 import { adminShellCopy, shellCopy } from '../../lib/i18n/shell-copy.server';
 import { consoleChrome } from '../../lib/i18n/admin/console.server';
 import { BrandMark } from '../brand/BrandMark';
+import { MaintenanceStrip } from './MaintenanceStrip';
 
 /**
  * The frame every console screen renders inside — §4.11 and §4.13 WS-01, issue #294.
@@ -147,6 +148,9 @@ export async function AdminArea({ children }: AdminAreaProps) {
             </div>
           </div>
         </div>
+
+        {/* Whether readers are shut out right now — #214. Nothing at all when they are not. */}
+        <MaintenanceStrip label={copy.maintenanceOn} />
 
         <main
           id={MAIN_CONTENT_ID}

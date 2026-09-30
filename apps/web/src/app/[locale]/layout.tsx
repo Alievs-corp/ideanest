@@ -7,8 +7,10 @@ import type { ReactNode } from 'react';
 import { WebVitals } from '../../components/rum/WebVitals';
 import { SessionProvider } from '../../components/session/SessionProvider';
 import { routing } from '../../i18n/routing';
-import { localeOrDefault } from '../../lib/i18n/locale';
+import { DEFAULT_LOCALE, localeOrDefault } from '../../lib/i18n/locale';
+import { followMaintenanceSource } from '../../lib/maintenance/script';
 import { rootMetadata } from '../../lib/seo/metadata';
+import { MAINTENANCE_PROBLEM_TYPE } from '@ideanest/api-client/maintenance';
 import '../globals.css';
 
 /**
@@ -170,6 +172,21 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={inter.variable}>
       <body className="min-h-dvh bg-surface-1">
+        {/*
+          A call to the service that meets the maintenance problem sends the reader to the
+          maintenance page — #214. An inline script that wraps `fetch`, first in the body so it
+          is in place before any bundle runs; `lib/maintenance/script.ts` has why it is not a
+          line in `lib/api/client.ts`, measured.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: followMaintenanceSource({
+              type: MAINTENANCE_PROBLEM_TYPE,
+              locales: [...routing.locales],
+              fallbackLocale: DEFAULT_LOCALE,
+            }),
+          }}
+        />
         <WebVitals />
         <SessionProvider>{children}</SessionProvider>
       </body>

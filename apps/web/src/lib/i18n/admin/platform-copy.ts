@@ -548,3 +548,108 @@ export function legalDocumentEditorCopyFrom(
     locale: t.raw('screens.legal.locale') as Readonly<Record<string, string>>,
   };
 }
+
+/**
+ * The maintenance windows — §19.6, issue #214. Filed with AD-16's health board, because
+ * closing the platform is an operational decision rather than a configuration one.
+ *
+ * <p>`refusal` is keyed by the service's code, and is open for the reason the audit tables
+ * are: a code this screen was not taught falls back to the console's ordinary refusal
+ * sentence rather than to nothing.
+ */
+export interface MaintenanceConsoleCopy extends ConsoleChromeCopy {
+  readonly subject: string;
+  readonly loadingList: string;
+  readonly currentHeading: string;
+  readonly currentEmpty: string;
+  readonly upcomingHeading: string;
+  readonly upcomingEmpty: string;
+  readonly recentHeading: string;
+  readonly recentEmpty: string;
+  /** Keyed by `MaintenanceWindowState`. */
+  readonly state: Readonly<Record<string, string>>;
+  readonly startsLabel: string;
+  readonly endsLabel: string;
+  readonly announceLabel: string;
+  readonly endedLabel: string;
+  readonly cancelledLabel: string;
+  readonly noteLabel: string;
+  readonly untilFurtherNotice: string;
+  readonly startNow: string;
+  readonly startNowConfirm: string;
+  readonly startNowYes: string;
+  readonly endNow: string;
+  readonly endNowConfirm: string;
+  readonly endNowYes: string;
+  readonly keep: string;
+  readonly changeEnd: string;
+  readonly newEndLabel: string;
+  readonly openEndLabel: string;
+  readonly saveEnd: string;
+  readonly cancelWindow: string;
+  readonly scheduleHeading: string;
+  /** Carries `{zone}`. */
+  readonly scheduleIntro: string;
+  readonly startsAtLabel: string;
+  readonly endsAtLabel: string;
+  readonly endsAtHint: string;
+  readonly announceFromLabel: string;
+  readonly announceFromHint: string;
+  readonly noteFieldLabel: string;
+  readonly noteHint: string;
+  readonly schedule: string;
+  readonly working: string;
+  readonly failedTitle: string;
+  /** Keyed by the service's refusal code. */
+  readonly refusal: Readonly<Record<string, string>>;
+}
+
+export function maintenanceConsoleCopyFrom(
+  t: AdminTranslator,
+  chrome: ConsoleChromeCopy,
+): MaintenanceConsoleCopy {
+  return {
+    ...chrome,
+    subject: t('screens.maintenance.subject'),
+    loadingList: t('screens.maintenance.loadingList'),
+    currentHeading: t('screens.maintenance.currentHeading'),
+    currentEmpty: t('screens.maintenance.currentEmpty'),
+    upcomingHeading: t('screens.maintenance.upcomingHeading'),
+    upcomingEmpty: t('screens.maintenance.upcomingEmpty'),
+    recentHeading: t('screens.maintenance.recentHeading'),
+    recentEmpty: t('screens.maintenance.recentEmpty'),
+    state: t.raw('screens.maintenance.state') as Readonly<Record<string, string>>,
+    startsLabel: t('screens.maintenance.startsLabel'),
+    endsLabel: t('screens.maintenance.endsLabel'),
+    announceLabel: t('screens.maintenance.announceLabel'),
+    endedLabel: t('screens.maintenance.endedLabel'),
+    cancelledLabel: t('screens.maintenance.cancelledLabel'),
+    noteLabel: t('screens.maintenance.noteLabel'),
+    untilFurtherNotice: t('screens.maintenance.untilFurtherNotice'),
+    startNow: t('screens.maintenance.startNow'),
+    startNowConfirm: t('screens.maintenance.startNowConfirm'),
+    startNowYes: t('screens.maintenance.startNowYes'),
+    endNow: t('screens.maintenance.endNow'),
+    endNowConfirm: t('screens.maintenance.endNowConfirm'),
+    endNowYes: t('screens.maintenance.endNowYes'),
+    keep: t('screens.maintenance.keep'),
+    changeEnd: t('screens.maintenance.changeEnd'),
+    newEndLabel: t('screens.maintenance.newEndLabel'),
+    openEndLabel: t('screens.maintenance.openEndLabel'),
+    saveEnd: t('screens.maintenance.saveEnd'),
+    cancelWindow: t('screens.maintenance.cancelWindow'),
+    scheduleHeading: t('screens.maintenance.scheduleHeading'),
+    scheduleIntro: String(t.raw('screens.maintenance.scheduleIntro')),
+    startsAtLabel: t('screens.maintenance.startsAtLabel'),
+    endsAtLabel: t('screens.maintenance.endsAtLabel'),
+    endsAtHint: t('screens.maintenance.endsAtHint'),
+    announceFromLabel: t('screens.maintenance.announceFromLabel'),
+    announceFromHint: t('screens.maintenance.announceFromHint'),
+    noteFieldLabel: t('screens.maintenance.noteFieldLabel'),
+    noteHint: t('screens.maintenance.noteHint'),
+    schedule: t('screens.maintenance.schedule'),
+    working: t('screens.maintenance.working'),
+    failedTitle: t('screens.maintenance.failedTitle'),
+    refusal: t.raw('screens.maintenance.refusal') as Readonly<Record<string, string>>,
+  };
+}
