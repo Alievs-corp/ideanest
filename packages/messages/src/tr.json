@@ -5488,6 +5488,24 @@
       "codeRefused": "Kod kabul edilmedi. Süresi dolmuş olabilir — yeni bir doğrulama için tekrar giriş yapın.",
       "recoveryHint": "Kurtarma kodu da burada çalışır.",
       "webOnly": "Kayıt, parola sıfırlama ve sağlayıcıyla giriş web sitesindedir. Yeni bir hesabın e-postasının doğrulanması gerekir; bu bir ekran değil, bir bağlantıdır."
+    },
+    "kitForm": {
+      "required": "zorunlu",
+      "requiredLabel": "{label}, zorunlu",
+      "close": "Kapat",
+      "grabber": "Sürükleme tutamacı",
+      "grabberHint": "Paneli kapatır",
+      "filePicker": {
+        "prompt": "Bu telefondan bir görsel ekleyin",
+        "choose": "Görsel seç",
+        "library": "Fotoğraflardan seç",
+        "camera": "Fotoğraf çek",
+        "tooLarge": "Bu görsel çok büyük. Üst sınır {megabytes} MB.",
+        "wrongType": "Bu dosya türü burada kabul edilmiyor.",
+        "cameraDenied": "IdeyaNest'in kamerayı kullanma izni yok. Telefonun ayarlarından izin verin, ardından yeniden deneyin.",
+        "cameraRefused": "Kameraya izin verilmedi, bu yüzden fotoğraf çekilmedi. Bir dahaki sefere yeniden sorulacak.",
+        "openFailed": "Fotoğraflar açılamadı. Yeniden deneyin."
+      }
     }
   }
 }

@@ -5488,6 +5488,24 @@
       "codeRefused": "Kod qəbul edilmədi. Doğrulamanın vaxtı bitmiş ola bilər — yenisini almaq üçün yenidən daxil olun.",
       "recoveryHint": "Bərpa kodu da burada işləyir.",
       "webOnly": "Qeydiyyat, şifrənin sıfırlanması və xarici hesabla giriş saytdadır. Yeni hesabın e-poçtu təsdiqlənməlidir, bu isə ekran deyil, keçiddir."
+    },
+    "kitForm": {
+      "required": "məcburi",
+      "requiredLabel": "{label}, məcburi",
+      "close": "Bağla",
+      "grabber": "Sürüşdürmə tutacağı",
+      "grabberHint": "Paneli bağlayır",
+      "filePicker": {
+        "prompt": "Bu telefondan şəkil əlavə edin",
+        "choose": "Şəkil seçin",
+        "library": "Qalereyadan seçin",
+        "camera": "Şəkil çəkin",
+        "tooLarge": "Bu şəkil çox böyükdür. Maksimum həcm: {megabytes} MB.",
+        "wrongType": "Bu fayl növü burada qəbul edilmir.",
+        "cameraDenied": "Kameradan istifadəyə icazə verilməyib. Telefonun ayarlarında icazə verin, sonra yenidən cəhd edin.",
+        "cameraRefused": "Kameraya icazə verilmədi, ona görə şəkil çəkilmədi. Növbəti dəfə yenidən soruşulacaq.",
+        "openFailed": "Şəkillər açılmadı. Yenidən cəhd edin."
+      }
     }
   }
 }
