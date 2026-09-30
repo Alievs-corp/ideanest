@@ -1,11 +1,13 @@
-import { Children, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
+import { useT } from '../../lib/i18n';
 import { colors, spacing } from '../../theme';
+import { ErrorState } from './empty-state';
 import { haptics } from './haptics';
 import { InlineAlert } from './inline-alert';
 import { MotionBudgetProvider, type MotionLevel } from './motion-budget';
-import { AccentScopeProvider } from './pill';
+import { AccentScopeProvider, Pill } from './pill';
 
 /**
  * The standard screen scaffold — issue #151's native-only `Screen`.
@@ -33,29 +35,51 @@ import { AccentScopeProvider } from './pill';
  *
  * `components/states.tsx` documents the order and each screen used to re-derive it: **cached data
  * first, then the error, then the empty state** (§4.12 MB-04). A screen that shows "nothing here"
- * when it failed to find out, or an error over a list it still has, is the bug that rule prevents.
- * So the scaffold decides, from what it is given:
+ * when it failed to find out, or a full-screen error over a list it still has, is the bug that rule
+ * prevents. So the scaffold decides, from what it is told:
  *
  * <ol>
- *   <li>`offlineNotice`, the sentence saying the data is from the cache, on top of whatever else is
- *       drawn — a warning `InlineAlert`, stripe, icon and words;</li>
- *   <li>then the content, if there is any — a real list, even an old one, wins;</li>
- *   <li>otherwise the error, if there is one;</li>
+ *   <li>`offlineNotice`, the sentence saying the data is from the cache, on top;</li>
+ *   <li>with content (`hasContent`), the content — a real list, even an old one, wins — and, when
+ *       there is also an `error`, a compact danger alert above it with a retry, so a failed pull to
+ *       refresh over cached data says so instead of failing silently;</li>
+ *   <li>without content, the `error` as a full `ErrorState`, if there is one;</li>
  *   <li>otherwise the empty state.</li>
  * </ol>
  *
- * <p>The global offline banner (`components/offline-banner.tsx`) still says the phone is offline,
- * under every header. `offlineNotice` is the screen's own sentence about its own data ("these
- * pledges are from your last visit"), which only the screen knows.
+ * <p>Whether there is content is a prop the screen passes, not something counted from `children`:
+ * a header, or a list component that renders nothing, is a child and is not content, and counting
+ * it would hide the error and the empty state for ever.
+ *
+ * <h2>The offline notice is read, not announced</h2>
+ *
+ * It keeps the warning look — stripe, icon, words — because stale money is worth a glance. It does
+ * not interrupt: the global offline banner (`components/offline-banner.tsx`) already announces the
+ * connection dropping, once, and a screen that announced "these pledges are from your last visit"
+ * assertively on every mount would say it again on every navigation. So it is polite — read where
+ * it sits in the screen, and on Android re-read if its words change. `offlineNotice` is the
+ * screen's own sentence about its own data, which only the screen knows.
  */
 
+/** A failure, in words; the scaffold draws it full-screen or compact depending on the content. */
+export interface ScreenError {
+  readonly title: string;
+  readonly description?: string;
+  readonly onRetry: () => void;
+  readonly retrying?: boolean;
+  /** The failed response's `X-Trace-Id`, printed on the full-screen error. */
+  readonly traceId?: string | null;
+}
+
 export interface ScreenProps {
-  /** The content. Absent (nothing, `null`, `false`), the error or the empty state is drawn instead. */
+  /** Whether the screen has content to show — cached or fresh. Decides which state is drawn. */
+  readonly hasContent: boolean;
+  /** The content, drawn when `hasContent`. */
   readonly children?: ReactNode;
   /** The sentence saying the content is from the cache. Drawn above everything else. */
   readonly offlineNotice?: string | null;
-  /** Drawn when there is no content — usually an `ErrorState`. Beats `empty`. */
-  readonly error?: ReactNode;
+  /** The last request failed. Full-screen without content; a compact alert above it with. */
+  readonly error?: ScreenError | null;
   /** Drawn when there is no content and no error — usually an `EmptyState`. */
   readonly empty?: ReactNode;
   /** Pull to refresh. Needs `scroll`: a screen that brings its own list gives it the control. */
@@ -73,6 +97,7 @@ export interface ScreenProps {
 const SIDE = spacing[5];
 
 export function Screen({
+  hasContent,
   children,
   offlineNotice,
   error,
@@ -84,10 +109,16 @@ export function Screen({
   edges = ['left', 'right'],
   testID,
 }: ScreenProps) {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const owns = (edge: Edge) => edges.includes(edge);
-  const hasContent = Children.toArray(children).length > 0;
-  const fallback = error ?? empty;
+
+  if (__DEV__ && onRefresh !== undefined && !scroll) {
+    console.warn(
+      'Screen: onRefresh needs scroll. A screen whose content is its own list gives that list ' +
+        'the RefreshControl; this one draws none.',
+    );
+  }
 
   const padding = {
     paddingTop: owns('top') ? insets.top : 0,
@@ -96,16 +127,52 @@ export function Screen({
     paddingRight: SIDE + (owns('right') ? insets.right : 0),
   };
 
+  const failed = error !== undefined && error !== null;
+  let state: ReactNode = null;
+  if (hasContent) {
+    state = (
+      <>
+        {failed ? (
+          <InlineAlert
+            variant="danger"
+            title={error.title}
+            description={error.description}
+            action={
+              <Pill
+                label={t('common.tryAgain')}
+                onPress={error.onRetry}
+                busy={error.retrying}
+                variant="ghost"
+                size="sm"
+              />
+            }
+          />
+        ) : null}
+        {children}
+      </>
+    );
+  } else if (failed) {
+    state = (
+      <View style={styles.centred}>
+        <ErrorState
+          title={error.title}
+          description={error.description}
+          onRetry={error.onRetry}
+          retrying={error.retrying}
+          traceId={error.traceId}
+        />
+      </View>
+    );
+  } else if (empty !== undefined && empty !== null) {
+    state = <View style={styles.centred}>{empty}</View>;
+  }
+
   const body = (
     <>
       {offlineNotice === undefined || offlineNotice === null || offlineNotice === '' ? null : (
-        <InlineAlert variant="warning" description={offlineNotice} />
+        <InlineAlert variant="warning" politeness="polite" description={offlineNotice} />
       )}
-      {hasContent ? (
-        children
-      ) : fallback === undefined || fallback === null ? null : (
-        <View style={styles.centred}>{fallback}</View>
-      )}
+      {state}
     </>
   );
 

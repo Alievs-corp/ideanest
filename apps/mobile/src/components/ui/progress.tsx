@@ -101,18 +101,6 @@ export function ProgressBar({
   const fraction = fillFraction(completionPercent);
   const reached = fraction >= 1;
   const readable = readablePercent(completionPercent);
-  const moves = useMotionAllowed('minimal');
-
-  const scale = useSharedValue(moves ? 0 : fraction);
-  useEffect(() => {
-    scale.value = moves
-      ? withTiming(fraction, {
-          duration: motion.progress,
-          easing: Easing.bezier(...easing.out),
-        })
-      : fraction;
-  }, [fraction, moves, scale]);
-  const rising = useAnimatedStyle(() => ({ transform: [{ scaleX: scale.value }] }));
 
   return (
     <View
@@ -135,13 +123,16 @@ export function ProgressBar({
       */}
       <View style={[styles.track, { height: HEIGHT[size] }, reached && { boxShadow: FUNDED_GLOW }]}>
         <View style={styles.clip}>
-          <Animated.View
-            testID={PROGRESS_FILL}
-            style={[
-              styles.fill,
-              { backgroundColor: reached ? colors.success : colors.lime500 },
-              moves ? rising : { transform: [{ scaleX: fraction }] },
-            ]}
+          {/*
+            Keyed by the figure, so a new figure is a new fill that rises from zero. A card in a
+            recycled FlashList row keeps its component instance when it is handed another
+            campaign, and a fill that kept its shared value would slide from the last campaign's
+            80% down to this one's 12% — motion that reads as money leaving.
+          */}
+          <Fill
+            key={String(fraction)}
+            fraction={fraction}
+            colour={reached ? colors.success : colors.lime500}
           />
         </View>
       </View>
@@ -153,6 +144,32 @@ export function ProgressBar({
         </Meta>
       ) : null}
     </View>
+  );
+}
+
+/**
+ * The fill. It only ever rises, from 0 to its figure: it starts at 0 when motion is allowed and
+ * animates up, and when motion is not allowed it starts at the figure and the effect keeps it
+ * there. The animated style is always the one passed, so there is one source for the transform
+ * whichever way the motion question is answered.
+ */
+function Fill({ fraction, colour }: { readonly fraction: number; readonly colour: string }) {
+  const moves = useMotionAllowed('minimal');
+  const scale = useSharedValue(moves ? 0 : fraction);
+
+  useEffect(() => {
+    scale.value = moves
+      ? withTiming(fraction, { duration: motion.progress, easing: Easing.bezier(...easing.out) })
+      : fraction;
+  }, [fraction, moves, scale]);
+
+  const rising = useAnimatedStyle(() => ({ transform: [{ scaleX: scale.value }] }));
+
+  return (
+    <Animated.View
+      testID={PROGRESS_FILL}
+      style={[styles.fill, { backgroundColor: colour }, rising]}
+    />
   );
 }
 

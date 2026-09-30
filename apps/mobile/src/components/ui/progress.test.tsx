@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
-import { render as renderBare } from '@testing-library/react-native';
+import { act, render as renderBare } from '@testing-library/react-native';
 import { StyleSheet, type ViewStyle } from 'react-native';
+import { getAnimatedStyle, setUpTests } from 'react-native-reanimated';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { colors } from '../../theme';
@@ -13,6 +14,13 @@ import { PROGRESS_FILL, ProgressBar, fillFraction } from './progress';
  * the catalogue. `components/progress.test.tsx` still covers the same rules through the old path
  * the screens import.
  */
+
+/*
+ * Reanimated's own Jest helpers, so `getAnimatedStyle` can read a fill's style as it animates under
+ * fake timers. Without them the rendered props keep the first frame's value for ever, and a test
+ * of where an animation goes cannot tell a rise from a slide.
+ */
+setUpTests();
 
 function render(ui: ReactElement) {
   return renderBare(
@@ -142,6 +150,46 @@ describe('ProgressBar (kit)', () => {
       heights.push(StyleSheet.flatten(track?.props.style as ViewStyle).height);
     }
     expect(heights).toEqual([6, 10]);
+  });
+
+  describe('in a recycled list row', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    const bar = (percent: string) => (
+      <IntlProvider locale="en" messages={en}>
+        <MotionBudgetProvider level="full">
+          <ProgressBar completionPercent={percent} label="Funding" />
+        </MotionBudgetProvider>
+      </IntlProvider>
+    );
+
+    function drawn(tree: Awaited<ReturnType<typeof render>>): number {
+      const style = getAnimatedStyle(tree.getByTestId(PROGRESS_FILL)) as ViewStyle;
+      return Number(scaleXOf(style));
+    }
+
+    it('rises from zero to a new figure instead of sliding from the last campaign’s', async () => {
+      const tree = await renderBare(bar('80'));
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+      expect(drawn(tree)).toBeCloseTo(0.8, 5);
+
+      // FlashList hands the same card a different campaign.
+      await tree.rerender(bar('12'));
+      const frames: number[] = [];
+      for (let step = 0; step < 10; step += 1) {
+        await act(async () => {
+          jest.advanceTimersByTime(100);
+        });
+        frames.push(drawn(tree));
+      }
+
+      // Never above the new figure: an 80% bar sliding down to 12% reads as money leaving.
+      expect(Math.max(...frames)).toBeLessThanOrEqual(0.12 + 1e-9);
+      expect(frames.at(-1)).toBeCloseTo(0.12, 5);
+    });
   });
 
   it('draws nothing rather than throwing on a figure it cannot read', async () => {

@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
-import { act, render as renderBare } from '@testing-library/react-native';
-import { StyleSheet, Text, type ViewStyle } from 'react-native';
+import { act, fireEvent, render as renderBare } from '@testing-library/react-native';
+import { AccessibilityInfo, StyleSheet, Text, type ViewStyle } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { IntlProvider } from 'use-intl';
@@ -43,34 +43,59 @@ function refreshControlOf(tree: Awaited<ReturnType<typeof render>>) {
 
 describe('Screen', () => {
   describe('the order of the states', () => {
-    const error = <Text>error</Text>;
+    const error = { title: 'Your pledges did not load', onRetry: noop };
     const empty = <Text>empty</Text>;
 
-    it('shows the content — even an old one — over the error and the empty state', async () => {
-      const { getByText, queryByText } = await render(
-        <Screen error={error} empty={empty}>
+    beforeEach(() => jest.clearAllMocks());
+
+    it('shows the content — even an old one — and no full-screen error or empty state', async () => {
+      const { getByText, queryByText, queryAllByRole } = await render(
+        <Screen hasContent empty={empty}>
           <Text>content</Text>
         </Screen>,
       );
       expect(getByText('content')).toBeTruthy();
-      expect(queryByText('error')).toBeNull();
+      expect(queryByText('empty')).toBeNull();
+      expect(queryAllByRole('header')).toHaveLength(0);
+    });
+
+    it('says a failed refresh over cached content in a compact alert above it, with a retry', async () => {
+      const onRetry = jest.fn();
+      const { getByText, toJSON, getByRole } = await render(
+        <Screen hasContent error={{ ...error, onRetry }}>
+          <Text>cached list</Text>
+        </Screen>,
+      );
+      expect(getByText('cached list')).toBeTruthy();
+      expect(getByText(error.title)).toBeTruthy();
+      const order = JSON.stringify(toJSON());
+      expect(order.indexOf(error.title)).toBeLessThan(order.indexOf('cached list'));
+
+      await fireEvent.press(getByRole('button', { name: en.common.tryAgain }));
+      expect(onRetry).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the full error, not "nothing here", when there is no content', async () => {
+      const { getByRole, queryByText } = await render(
+        <Screen hasContent={false} error={error} empty={empty} />,
+      );
+      expect(getByRole('header', { name: error.title })).toBeTruthy();
       expect(queryByText('empty')).toBeNull();
     });
 
-    it('shows the error, not "nothing here", when there is no content', async () => {
-      const { getByText, queryByText } = await render(<Screen error={error} empty={empty} />);
-      expect(getByText('error')).toBeTruthy();
-      expect(queryByText('empty')).toBeNull();
-    });
-
-    it('shows the empty state only when there is neither content nor an error', async () => {
-      const { getByText } = await render(<Screen empty={empty}>{null}</Screen>);
+    it('does not mistake a child that is not content for content', async () => {
+      // A header, or a list that renders nothing, is a child. Counting children hid the empty state.
+      const { getByText } = await render(
+        <Screen hasContent={false} empty={empty}>
+          <Text>header</Text>
+        </Screen>,
+      );
       expect(getByText('empty')).toBeTruthy();
     });
 
     it('puts the offline notice above the cached content', async () => {
       const { toJSON, getByText } = await render(
-        <Screen offlineNotice="These pledges are from your last visit.">
+        <Screen hasContent offlineNotice="These pledges are from your last visit.">
           <Text>cached list</Text>
         </Screen>,
       );
@@ -79,16 +104,38 @@ describe('Screen', () => {
       expect(order.indexOf('These pledges')).toBeGreaterThan(-1);
       expect(order.indexOf('These pledges')).toBeLessThan(order.indexOf('cached list'));
     });
+
+    it('keeps the offline notice polite: read in place, not announced on every mount', async () => {
+      const spy = jest
+        .spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions')
+        .mockImplementation(() => {});
+      await render(
+        <Screen hasContent offlineNotice="These pledges are from your last visit.">
+          <Text>cached list</Text>
+        </Screen>,
+      );
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    });
+  });
+
+  it('warns in development when pull to refresh is asked of a screen that does not scroll', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    await render(<Screen hasContent scroll={false} onRefresh={noop} />);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('onRefresh needs scroll'));
+    warn.mockRestore();
   });
 
   it('pads the sides by 20 and takes the insets only on the edges it owns', async () => {
-    const plain = contentStyle(await render(<Screen testID="screen" />));
+    const plain = contentStyle(await render(<Screen hasContent testID="screen" />));
     expect(plain.paddingLeft).toBe(20);
     expect(plain.paddingRight).toBe(20);
     expect(plain.paddingTop).toBe(0);
 
     const owned = contentStyle(
-      await render(<Screen testID="screen" edges={['top', 'bottom', 'left', 'right']} />),
+      await render(
+        <Screen hasContent testID="screen" edges={['top', 'bottom', 'left', 'right']} />,
+      ),
     );
     expect(owned.paddingTop).toBe(47);
     expect(owned.paddingBottom).toBe(34);
@@ -98,7 +145,7 @@ describe('Screen', () => {
     jest.clearAllMocks();
     const onRefresh = jest.fn();
     const tree = await render(
-      <Screen testID="screen" onRefresh={onRefresh}>
+      <Screen hasContent testID="screen" onRefresh={onRefresh}>
         <Text>content</Text>
       </Screen>,
     );
@@ -111,7 +158,7 @@ describe('Screen', () => {
 
   it('draws no refresh control without onRefresh', async () => {
     const tree = await render(
-      <Screen testID="screen">
+      <Screen hasContent testID="screen">
         <Text>content</Text>
       </Screen>,
     );
@@ -122,10 +169,10 @@ describe('Screen', () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     await render(
       <>
-        <Screen>
+        <Screen hasContent>
           <Pill label="Back this project" variant="accent" onPress={noop} />
         </Screen>
-        <Screen>
+        <Screen hasContent>
           <Pill label="Confirm pledge" variant="accent" onPress={noop} />
         </Screen>
       </>,
@@ -136,7 +183,7 @@ describe('Screen', () => {
 
   it('declares the route’s motion budget for everything under it', async () => {
     const tree = await render(
-      <Screen motion="none">
+      <Screen hasContent motion="none">
         <Pill label="Continue" onPress={noop} />
       </Screen>,
     );

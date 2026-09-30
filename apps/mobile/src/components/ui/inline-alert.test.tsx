@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
 import { fireEvent, render as renderBare } from '@testing-library/react-native';
-import { AccessibilityInfo, StyleSheet, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, Platform, StyleSheet, type ViewStyle } from 'react-native';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { colors, size } from '../../theme';
@@ -56,7 +56,7 @@ describe('InlineAlert', () => {
   });
 
   it.each(['warning', 'danger'] as const)(
-    'announces a %s assertively, once, when it appears',
+    'announces a %s assertively, once, when it appears, on iOS',
     async (variant) => {
       const spy = jest
         .spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions')
@@ -80,6 +80,38 @@ describe('InlineAlert', () => {
       .mockImplementation(() => {});
     await render(<InlineAlert variant={variant} title="Saved" />);
     expect(spy).not.toHaveBeenCalled();
+  });
+
+  describe('on Android', () => {
+    beforeEach(() => {
+      jest.replaceProperty(Platform, 'OS', 'android');
+    });
+    afterEach(() => jest.restoreAllMocks());
+
+    it('leaves the arrival to the live region and announces nothing by hand — said once, not twice', async () => {
+      const spy = jest
+        .spyOn(AccessibilityInfo, 'announceForAccessibility')
+        .mockImplementation(() => {});
+      const tree = await render(
+        <InlineAlert testID="alert" variant="danger" title="Payment failed" />,
+      );
+      expect(tree.getByTestId('alert').props.accessibilityLiveRegion).toBe('assertive');
+      expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
+  it('can look like a warning without interrupting, when told to be polite', async () => {
+    const spy = jest
+      .spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions')
+      .mockImplementation(() => {});
+    const tree = await render(
+      <InlineAlert testID="alert" variant="warning" politeness="polite" description="Old data" />,
+    );
+    expect(spy).not.toHaveBeenCalled();
+    expect(tree.getByTestId('alert').props.accessibilityLiveRegion).toBe('polite');
+    expect(
+      StyleSheet.flatten(tree.getByTestId('alert').props.style as ViewStyle).borderLeftColor,
+    ).toBe(colors.warning);
   });
 
   it('is an assertive live region for warning and danger, polite otherwise', async () => {

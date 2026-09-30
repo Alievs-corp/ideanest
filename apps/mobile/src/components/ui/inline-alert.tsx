@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { CircleAlert, CircleCheck, Info, TriangleAlert, X } from 'lucide-react-native';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, spacing } from '../../theme';
@@ -29,16 +29,23 @@ import { SurfaceProvider } from './surface';
  *
  * The web gives those two `role="alert"`, which cuts into whatever a screen reader is saying, and
  * leaves `info` and `success` plain: interrupting somebody to say "saved" is a cost with no payoff,
- * and an alert that fires for everything stops being one. Natively that is two mechanisms:
+ * and an alert that fires for everything stops being one. Natively that is **one mechanism per
+ * platform**, so nothing is read twice:
  *
  * <ul>
- *   <li>When a warning or danger alert appears, its words are announced once, assertively, through
- *       `announce()` — the one moment the web's `role="alert"` speaks.</li>
- *   <li>On Android the alert is also a live region — `assertive` for warning and danger, `polite`
- *       for info and success — so TalkBack reads the alert's words again if they change while it is
- *       on screen (a second failure replacing the first). A live region speaks on a change inside
- *       it, not on its own arrival, which is why the arrival goes through `announce()`.</li>
+ *   <li>Android: the alert is a live region — `assertive` for warning and danger, `polite` for info
+ *       and success — which TalkBack reads when the alert appears and again when its words change
+ *       (a second failure replacing the first). Nothing is announced by hand there: an
+ *       `announceForAccessibility` on top of an assertive live region is the same sentence
+ *       twice.</li>
+ *   <li>iOS has no live regions, so a warning or danger alert's words go through `announce()`,
+ *       assertively, when it appears and when they change — the moments the web's `role="alert"`
+ *       speaks. Info and success are read where they sit.</li>
  * </ul>
+ *
+ * <p>`politeness` overrides the variant's default, for a warning that must look like one without
+ * interrupting — the `Screen`'s offline notice, which the global offline banner has already
+ * announced once and which would otherwise be said again on every screen mounted.
  *
  * <p>The alert resets the surface to dark for its contents: it is always surface-2, so an action
  * placed in it inside a lime card must still be drawn for the dark surface it actually sits on.
@@ -63,6 +70,11 @@ export interface InlineAlertProps {
   readonly onDismiss?: () => void;
   /** The dismiss button's accessible name. Defaults to the catalogue's "Dismiss". */
   readonly dismissLabel?: string;
+  /**
+   * Whether the alert interrupts a screen reader. `assertive` for warning and danger and `polite`
+   * otherwise, unless overridden.
+   */
+  readonly politeness?: 'assertive' | 'polite';
   readonly testID?: string;
 }
 
@@ -73,14 +85,17 @@ export function InlineAlert({
   action,
   onDismiss,
   dismissLabel,
+  politeness,
   testID,
 }: InlineAlertProps) {
   const t = useT('mobile.kitDisplay');
   const { icon, colour } = VARIANT[variant];
-  const assertive = variant === 'warning' || variant === 'danger';
+  const assertive =
+    (politeness ?? (variant === 'warning' || variant === 'danger' ? 'assertive' : 'polite')) ===
+    'assertive';
   const words = [title, description].filter((part) => part !== undefined && part !== '').join('. ');
 
-  useAnnouncedOnArrival(assertive ? words : '');
+  useAnnouncedOnArrival(assertive && Platform.OS === 'ios' ? words : '');
 
   return (
     <View
@@ -118,9 +133,10 @@ export function InlineAlert({
 }
 
 /**
- * Says `message` once, assertively, the first time it is non-empty for this alert — the native
- * half of `role="alert"` appearing. A re-render with the same words says nothing; new words (the
- * alert re-used for a different failure) are a new arrival and are said.
+ * Says `message` once, assertively, the first time it is non-empty for this alert — iOS's half of
+ * `role="alert"` appearing. A re-render with the same words says nothing; new words (the alert
+ * re-used for a different failure) are a new arrival and are said. Android passes an empty message:
+ * its live region already speaks.
  */
 function useAnnouncedOnArrival(message: string): void {
   const said = useRef('');

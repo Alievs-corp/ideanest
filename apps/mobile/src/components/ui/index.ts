@@ -97,7 +97,7 @@ export {
   type MediaRatio,
   type MediaRatioToken,
 } from './media';
-export { Screen, type ScreenProps } from './screen';
+export { Screen, type ScreenError, type ScreenProps } from './screen';
 export {
   SKELETON_SHIMMER,
   Skeleton,
