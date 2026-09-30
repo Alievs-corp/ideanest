@@ -26,6 +26,29 @@ const campaign = await api.get('/v1/projects/{creatorSlug}/{projectSlug}', {
 | `src/schema.ts` | **Generated.** Every path, parameter and body in the service. Do not edit it. |
 | `src/problem.ts` | §10.4's error shape. Hand-written, because a failure is not an endpoint. |
 | `src/client.ts` | Fifty lines that turn a path type into a function call. No dependencies. |
+| `src/trace.ts` | `@ideanest/api-client/trace`: the `X-Trace-Id` a response carries (#150). |
+| `src/maintenance.ts` | `@ideanest/api-client/maintenance`: `isMaintenanceProblem`, `maintenanceOf`, `maintenanceFromResponse` (#214). |
+
+The two subpaths are not re-exported from the root, so a web route that never imports them
+pays nothing for them in its First Load JS budget.
+
+### Maintenance (#214)
+
+Only a `503` whose problem `type` is `https://ideanest.az/problems/maintenance` is maintenance.
+Any other `5xx`, a bare `503` included, is an ordinary failure.
+
+```ts
+import { maintenanceOf } from '@ideanest/api-client/maintenance';
+
+// { startsAt, endsAt, source, retryAfterSeconds } for the maintenance problem, else null
+const maintenance = maintenanceOf(error);
+```
+
+`source` is `api` (a window switched on in the console) or `edge` (the proxy answered because
+the service is away; both instants are null). `retryAfterSeconds` is the response's
+`Retry-After` when the caller could see it, otherwise the contract's own rule applied to
+`endsAt`. `maintenanceFromResponse(response)` reads a raw response from a clone, for a `fetch`
+wrapper that sees responses before they become errors.
 
 ---
 
