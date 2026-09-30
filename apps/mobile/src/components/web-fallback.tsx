@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { usePathname, useRouter } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { siteUrl } from '../api/config';
 import { currentLocale } from '../lib/locale';
@@ -18,6 +18,10 @@ import { Body, Heading } from './text';
  * on the web, in the reader's language. Each later issue deletes the placeholder it
  * replaces. It also applies the session guard, so a signed-out reader reaching a private
  * route is offered sign-in with the way back preserved.
+ *
+ * It names its own header from the same title key. None of these routes is registered in
+ * the root stack, and an unregistered route's header shows its file name — `u/[slug]`,
+ * `campaigns/[id]/back` — which is a path, not a title.
  *
  * @param webPath the web path, locale stripped (`/projects/<id>/back`, not `/az/projects/…`)
  */
@@ -42,9 +46,11 @@ export function WebFallback({
 
   if (blocked) return null;
 
+  const title = tAll(titleKey);
   return (
     <ScrollView contentContainerStyle={styles.screen}>
-      <Heading accessibilityRole="header">{tAll(titleKey)}</Heading>
+      <Stack.Screen options={{ title }} />
+      <Heading accessibilityRole="header">{title}</Heading>
       <Body>{t('body')}</Body>
       <Button
         label={t('open')}

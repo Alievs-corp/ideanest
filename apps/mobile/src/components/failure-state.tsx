@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useT } from '../lib/i18n';
 import { colors, radius, size, spacing } from '../theme';
 import { Body, CardTitle, Heading, Meta } from './text';
+import { WhatsAppSheet } from './whatsapp-sheet';
 
 /**
  * The failure screen — issue #150. The app's counterpart of the web's `FailureState`.
@@ -10,6 +11,10 @@ import { Body, CardTitle, Heading, Meta } from './text';
  * A centred column: heading, description, an optional reference line, and one
  * **white** pill for the way out. White rather than lime, as on the web: lime means
  * "act now" on a live surface, and a page that is not there is not one.
+ *
+ * <p>Below it, "Message us on WhatsApp" as a quiet text link. A reader stuck on a failure is
+ * the reader most likely to want a person, and the web's floating button — which is how they
+ * would reach one there — is not in the app.
  */
 export function FailureState({
   title,
@@ -28,6 +33,8 @@ export function FailureState({
   readonly children?: ReactNode;
 }) {
   const t = useT('shell.failure.pages.error');
+  const tWhatsApp = useT('shell.whatsapp');
+  const [contacting, setContacting] = useState(false);
   return (
     <ScrollView contentContainerStyle={styles.screen}>
       <Heading accessibilityRole="header" style={styles.centred}>
@@ -48,6 +55,22 @@ export function FailureState({
         </CardTitle>
       </Pressable>
       {children}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={tWhatsApp('open')}
+        onPress={() => setContacting(true)}
+        style={({ pressed }) => [styles.link, pressed && styles.linkPressed]}
+      >
+        <Body
+          tone="secondary"
+          style={styles.linkText}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
+          {tWhatsApp('open')}
+        </Body>
+      </Pressable>
+      <WhatsAppSheet visible={contacting} onClose={() => setContacting(false)} />
     </ScrollView>
   );
 }
@@ -70,4 +93,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.whiteSurface,
   },
   pillPressed: { backgroundColor: colors.whiteMuted },
+  link: {
+    minHeight: size.touchTarget,
+    justifyContent: 'center',
+    paddingHorizontal: spacing[4],
+    borderRadius: radius.full,
+  },
+  linkPressed: { backgroundColor: colors.surface3 },
+  linkText: { textDecorationLine: 'underline' },
 });

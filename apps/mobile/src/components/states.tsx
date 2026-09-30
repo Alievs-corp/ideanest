@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { colors, radius, size, spacing } from '../theme';
-import { Body, Meta, Subheading } from './text';
+import { Body, CardTitle, Meta, Subheading } from './text';
 
 /**
  * The three things every list screen has to be able to say: nothing here,
@@ -32,7 +32,16 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: colors.warning,
   },
+  alert: {
+    gap: spacing[2],
+    padding: spacing[4],
+    borderRadius: radius.md,
+    backgroundColor: colors.surface3,
+    borderLeftWidth: 3,
+  },
 });
+
+const ALERT_STRIPE = { warning: colors.warning, info: colors.info } as const;
 
 export function Loading({ label }: { readonly label: string }) {
   return (
@@ -80,6 +89,40 @@ export function ErrorState({
     <View style={styles.centre} accessibilityRole="alert">
       <Subheading>{title}</Subheading>
       <Body style={{ textAlign: 'center' }}>{detail}</Body>
+    </View>
+  );
+}
+
+/**
+ * A sentence the reader should know about, inside a screen — issue #150. The native half of
+ * `@ideanest/ui`'s `InlineAlert`.
+ *
+ * <p>A stripe **and** words, as {@link OfflineNotice}: the hue never carries the meaning alone
+ * (CLAUDE.md §2). Only `warning` asserts itself (`accessibilityRole="alert"`), the web kit's
+ * rule: an `info` note that interrupted a screen reader would be an alarm about nothing, and
+ * the WhatsApp handoff — which is `info` precisely because nothing has been sent — is one.
+ *
+ * @param action the one thing to do about it, when there is one (a link to the page that fixes it)
+ */
+export function InlineAlert({
+  variant = 'info',
+  title,
+  detail,
+  action,
+}: {
+  readonly variant?: 'warning' | 'info';
+  readonly title?: string;
+  readonly detail?: string;
+  readonly action?: ReactNode;
+}) {
+  return (
+    <View
+      accessibilityRole={variant === 'warning' ? 'alert' : undefined}
+      style={[styles.alert, { borderLeftColor: ALERT_STRIPE[variant] }]}
+    >
+      {title !== undefined ? <CardTitle>{title}</CardTitle> : null}
+      {detail !== undefined ? <Body>{detail}</Body> : null}
+      {action}
     </View>
   );
 }

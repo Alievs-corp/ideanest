@@ -235,6 +235,15 @@ jest.mock('expo-notifications', () => ({
 jest.mock('expo-device', () => ({ isDevice: false, deviceName: 'Test device' }));
 
 /**
+ * The in-app browser, for the pages the app does not draw yet (`web-fallback.tsx`, the Me
+ * tab's About rows). Native at module load like the rest, so merely rendering the Me tab
+ * would otherwise depend on jest-expo's registry.
+ */
+jest.mock('expo-web-browser', () => ({
+  openBrowserAsync: jest.fn(async () => ({ type: 'opened' })),
+}));
+
+/**
  * Expo Router, replaced by the three things the components under test use.
  *
  * <h2>Why the real one is not loaded</h2>
