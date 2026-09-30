@@ -684,7 +684,9 @@
       "/admin/legal": "Hüquqi sənədlər",
       "/admin/moderation/submissions": "Baxış gözləyən kampaniyalar",
       "/admin/campaigns": "Bütün kampaniyalar",
-      "/admin/revenue": "Gəlir"
+      "/admin/revenue": "Gəlir",
+      "/admin/partners": "Tərəfdaşlar",
+      "/admin/partner-statistics": "Tərəfdaş statistikası"
     },
     "states": {
       "built": "Hazırdır",
@@ -1013,6 +1015,18 @@
         "metaDescription": "Abunəliklərin gətirdiyi gəlir — dövr, plan və ödəniş üsulu üzrə.",
         "title": "Gəlir",
         "intro": "Müəlliflərin planlar üçün ödədikləri, pulun daxil olduğu tarixə görə qruplaşdırılıb. Hər valyuta ayrıca göstərilir və heç vaxt başqası ilə toplanmır."
+      },
+      "partners": {
+        "metaTitle": "Tərəfdaşlar",
+        "metaDescription": "Maliyyə göstəricilərinin payını kim görür, hansı payı və hansı bölmələr ona açıqdır.",
+        "title": "Tərəfdaşlar",
+        "intro": "Tərəfdaş platformanın maliyyə göstəricilərinin faizini yalnız yekunlarla görür. Faizi təyin edin və onun başqa nəyi aça biləcəyini seçin."
+      },
+      "partnerStatistics": {
+        "metaTitle": "Tərəfdaş statistikası",
+        "metaDescription": "Gəlir və abunəliklər, yekunlarla.",
+        "title": "Tərəfdaş statistikası",
+        "intro": "Gəlir və abunəliklər yekunlarla: bu gün, bu ay, günlər, aylar və planlar üzrə."
       }
     },
     "screens": {
@@ -2438,6 +2452,66 @@
         "alreadyDecided": "Bu etiraz üzrə artıq qərar verilib. Siyahı yeniləndi.",
         "refundFailed": "Geri qaytarma rədd edildi, ona görə etiraz hələ açıqdır. Yenidən cəhd edin və ya qaytarmaya geri qaytarmalar ekranında baxın.",
         "failedTitle": "Alınmadı"
+      },
+      "partners": {
+        "subject": "tərəfdaşların siyahısı",
+        "noticeTitle": "Tərəfdaş pay görür, yalnız pay",
+        "noticeBody": "Hər tərəfdaş platformanın maliyyə göstəricilərinin öz faizini yalnız yekunlarla görür: heç vaxt əməliyyatı, ödəyəni və ya ödənilən məbləği yox. Real məlumatlar bölünmür və kopyalanmır; faiz onun göstəriciləri hesablananda tətbiq olunur. Tərəfdaşın başqa işçi rolu olmur.",
+        "rosterHeading": "Tərəfdaşlar",
+        "loadingRoster": "Tərəfdaşlar yüklənir",
+        "rosterEmptyTitle": "Hələ tərəfdaş yoxdur",
+        "rosterEmptyBody": "Aşağıda əlavə edin. Faizi olmayan tərəfdaş heç bir göstərici görmür.",
+        "allocation": "100%-in {allocated}%-i bölünüb. {remaining}% qalıb.",
+        "updatedLine": "Yenilənib: {date}",
+        "sectionsNone": "Yalnız statistika",
+        "sectionsOpen": "Əlavə olaraq açıqdır: {sections}",
+        "percentageLabel": "Faiz",
+        "percentageHint": "0,01 ilə 100 arasında, vergüldən sonra ən çox iki rəqəm. Tərəfdaşlar birlikdə 100-dən çox ala bilməz.",
+        "sectionsLegend": "Bu tərəfdaşa əlavə olaraq açıq",
+        "sectionLabel": {
+          "CURATION": "Kurasiya",
+          "HEALTH": "Sistemin vəziyyəti"
+        },
+        "sectionHint": {
+          "CURATION": "Kolleksiyalar, nişanlar, açıq çağırışlar, yerləşdirmə və taksonomiya.",
+          "HEALTH": "Növbə dərinliyi, uğursuz işlər və provayder vəziyyəti."
+        },
+        "sectionsNote": "Qalan hər bölmə ayrı-ayrı əməliyyatları, insanları və ya kiçildilməmiş göstəriciləri göstərir, ona görə tərəfdaşa açıla bilməz.",
+        "saveChanges": "Dəyişiklikləri yadda saxla",
+        "remove": "Tərəfdaşlığı bitir",
+        "addHeading": "Tərəfdaş əlavə et",
+        "addIntro": "Hesab seçin, faizi təyin edin və onun başqa nəyi aça biləcəyini seçin. Artıq başqa işçi rolu olan hesab tərəfdaş ola bilməz.",
+        "chooseAccountFirst": "Əvvəlcə hesab seçin.",
+        "addPartner": "Tərəfdaş əlavə et",
+        "working": "Yadda saxlanılır",
+        "savedNotice": "{name} indi göstəricilərin {percentage}%-ni görür.",
+        "removedNotice": "{name} artıq tərəfdaş deyil.",
+        "doneTitle": "Hazırdır",
+        "failedTitle": "Alınmadı"
+      },
+      "partnerStatistics": {
+        "subject": "maliyyə statistikası",
+        "partnerLine": "Tərəfdaşın payı: platforma göstəricilərinin {percentage}%-i.",
+        "realLine": "Real göstəricilər: platformanın 100%-i.",
+        "zoneNote": "Tarixlər və aylar {zone} vaxtı ilədir.",
+        "loadingStatistics": "Statistika yüklənir",
+        "notConfiguredTitle": "Sizin üçün hələ pay təyin olunmayıb",
+        "notConfiguredBody": "Göstəricilər görünməzdən əvvəl super admin sizin faizinizi təyin etməlidir.",
+        "todayHeading": "Bu gün",
+        "monthHeading": "Bu ay",
+        "dailyHeading": "Bu ayın günləri",
+        "monthlyHeading": "Son on iki ay",
+        "planHeading": "Bu ayın planları",
+        "revenue": "Gəlir",
+        "subscriptions": "Abunəliklər",
+        "reversals": "Ödənişin ləğvləri",
+        "dateColumn": "Tarix",
+        "monthColumn": "Ay",
+        "planColumn": "Plan",
+        "nothingRecorded": "Heç nə qeyd olunmayıb",
+        "dailyCaption": "Bu ayın günləri üzrə gəlir və abunəliklər",
+        "monthlyCaption": "Aylar üzrə gəlir və abunəliklər",
+        "planCaption": "Bu ayın planları üzrə gəlir və abunəliklər"
       }
     },
     "moderation": {
