@@ -134,6 +134,27 @@ current.
 default pauses a query when the device reports no connection, so a cached
 campaign would sit behind a spinner that never resolves.
 
+## Maintenance (#214, docs/architecture.md §19.6)
+
+**Only the maintenance problem opens the maintenance screen**: a `503` whose
+`application/problem+json` body has `type: https://ideanest.az/problems/maintenance`,
+read with `@ideanest/api-client/maintenance`. A bare `503`, and every other `5xx`, is an
+ordinary error that the screen which made the request shows with its own retry. This
+replaces #198's "any 503 is maintenance" rule, which existed only because the API had no
+maintenance mode.
+
+| Piece | Where |
+|---|---|
+| The trigger: every response through `sessionFetch` and the auth calls is checked, from a clone | `src/lib/maintenance.ts` |
+| The screen: title and description from `shell.failure.pages.maintenance`, then "Back around {time}" or "no end announced"; the neutral `shell.maintenance.edge.*` wording when the proxy answered (`source: "edge"`) | `src/app/maintenance.tsx` |
+| The poll: `GET /v1/status` without the session and with `no-store`; first ask after `Retry-After` clamped to 5 s – 5 min, then every 30 s; leaves on `operational` | `src/lib/platform-status.ts` |
+| The planned-maintenance banner under the header, while `upcoming` is set and has not started; closed per window (keyed by `startsAt`) and remembered in MMKV | `src/components/maintenance-banner.tsx`, `src/lib/upcoming-maintenance.ts` |
+
+The banner learns of a window from `GET /v1/status` on launch and on each return to the
+foreground, at most once every ten minutes, and from the maintenance screen's own poll.
+There is no timer while the app is open: a window is announced a day ahead by default,
+so that is enough, and it keeps the request count at one per app open.
+
 ## Signing in, and the biometric lock (§17.1, §4.12 MB-03)
 
 `src/app/sign-in.tsx` is an address, a password, and §17.1's second factor when

@@ -1,14 +1,27 @@
 import { act, renderHook } from '@testing-library/react-native';
+import { MAINTENANCE_PROBLEM_TYPE } from '@ideanest/api-client/maintenance';
 import { setOnline } from './connectivity';
 import { deferUntilUp, leaveMaintenance, observeResponse, takeDeferred } from './maintenance';
 import { useMaintenanceGate } from './maintenance-gate';
 
 /**
- * The root's maintenance gate — issue #150: one push per outage however many requests fail,
- * nothing while it lasts, a fresh push for the next one, and a held link opened on the way out.
+ * The root's maintenance gate — issues #150 and #214: one push per window however many requests
+ * fail, nothing while it lasts, a fresh push for the next one, a held link opened on the way
+ * out — and no push at all for a 503 that is not the maintenance problem.
  */
 
-const down = () => new Response(null, { status: 503 });
+const down = () =>
+  new Response(
+    JSON.stringify({
+      type: MAINTENANCE_PROBLEM_TYPE,
+      title: 'Scheduled maintenance',
+      status: 503,
+      startsAt: '2026-10-04T22:00:00Z',
+      endsAt: null,
+      source: 'api',
+    }),
+    { status: 503, headers: { 'content-type': 'application/problem+json' } },
+  );
 
 beforeEach(() => {
   setOnline(true);
@@ -31,9 +44,7 @@ it('pushes once when a screen of requests all meet the 503 together', async () =
   const { router } = await mountGate();
 
   await act(async () => {
-    observeResponse(down());
-    observeResponse(down());
-    observeResponse(down());
+    await Promise.all([observeResponse(down()), observeResponse(down()), observeResponse(down())]);
   });
 
   expect(router.push).toHaveBeenCalledTimes(1);
@@ -48,6 +59,14 @@ it('stays quiet while the outage lasts, re-render or not', async () => {
   await act(async () => observeResponse(down()));
 
   expect(router.push).toHaveBeenCalledTimes(1);
+});
+
+it('pushes nothing for a plain 503: that is an ordinary failure', async () => {
+  const { router } = await mountGate();
+  await act(async () => {
+    await observeResponse(new Response(null, { status: 503, headers: { 'Retry-After': '30' } }));
+  });
+  expect(router.push).not.toHaveBeenCalled();
 });
 
 it('pushes again for the next outage', async () => {

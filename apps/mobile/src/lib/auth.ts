@@ -175,8 +175,8 @@ async function runRefresh(): Promise<string | null> {
       await endSession();
       return null;
     }
-    // A network fault is not a revoked session, and neither is a 5xx — a 503 is
-    // maintenance (issue #150). Nothing is cleared and the next attempt can succeed.
+    // A network fault is not a revoked session, and neither is a 5xx — maintenance
+    // included (issue #214). Nothing is cleared and the next attempt can succeed.
     rememberAccessToken(null);
     throw failure;
   }
@@ -232,13 +232,14 @@ async function adopt(body: TokenBody): Promise<void> {
  */
 async function post(path: string, body: unknown): Promise<unknown> {
   /*
-   * Shown to the maintenance trigger (issue #150) like every `sessionFetch` response. A cold
-   * start with a stored session refreshes BEFORE its first read, so during an outage the
-   * refresh is the first request to meet the 503 — and it throws here, before any read gets
+   * Shown to the maintenance trigger (issues #150, #214) like every `sessionFetch` response. A
+   * cold start with a stored session refreshes BEFORE its first read, so during a window the
+   * refresh is the first request to meet the maintenance problem (the service refuses a
+   * reader's refresh without spending the token) — and it throws here, before any read gets
    * as far as `sessionFetch`'s own check. A 503 is not a 401, so `runRefresh` keeps the
-   * session: an outage never signs anybody out.
+   * session: maintenance never signs anybody out.
    */
-  const response = observeResponse(
+  const response = await observeResponse(
     await fetch(apiOrigin() + path, {
       method: 'POST',
       headers: {
