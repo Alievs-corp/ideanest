@@ -54,10 +54,18 @@ import { size, spacing } from '../../theme';
 const MINIMUM_QUERY = 3;
 
 const styles = StyleSheet.create({
-  page: { flex: 1, padding: size.cardGap },
   fill: { flex: 1 },
-  pageHeader: { paddingHorizontal: size.cardGap, paddingTop: size.cardGap },
-  header: { gap: spacing[3], paddingBottom: spacing[2] },
+  /*
+   * The field's place: the list's own side padding, and its top. Everything under it — the hint,
+   * the skeleton, the error, the list — starts with the list's `cardGap` padding too, so the field
+   * never moves when the state under it changes.
+   */
+  header: {
+    gap: spacing[3],
+    paddingHorizontal: size.cardGap,
+    paddingTop: size.cardGap,
+  },
+  below: { padding: size.cardGap },
 });
 
 export default function SearchScreen() {
@@ -121,35 +129,37 @@ export default function SearchScreen() {
     </View>
   );
 
-  return <MotionBudgetProvider level="minimal">{body()}</MotionBudgetProvider>;
+  /*
+   * The field is drawn ONCE, in one place above whatever state is under it — never as the list's
+   * header. A field that moved between the hint, the loading state and the list's header was a
+   * different element in each, so the input remounted as a search went from typing to loading to
+   * results, and the keyboard closed under the thumb at the third character. Results from the last
+   * query stay on screen while the next one loads (`placeholderData` in `useSearchResults`), so
+   * typing does not fall back to the skeleton at every key either.
+   */
+  return (
+    <MotionBudgetProvider level="minimal">
+      <View style={styles.fill}>
+        {header}
+        {body()}
+      </View>
+    </MotionBudgetProvider>
+  );
 
   function body() {
     if (!enabled) {
       return (
-        <View style={styles.page}>
-          {header}
+        <View style={styles.below}>
           <Body>{t('mobile.search.minimum', { count: MINIMUM_QUERY })}</Body>
         </View>
       );
     }
 
-    /*
-     * The field stays above the loading and failed states, so a search that failed can be changed
-     * without leaving the tab — the old full-screen states took the field away with the results.
-     */
     if (cards.length === 0) {
-      if (results.isLoading) {
-        return (
-          <View style={styles.fill}>
-            <View style={styles.pageHeader}>{header}</View>
-            <CampaignListSkeleton label={t('discovery.feed.loading')} />
-          </View>
-        );
-      }
+      if (results.isLoading) return <CampaignListSkeleton label={t('discovery.feed.loading')} />;
       if (results.isError) {
         return (
-          <View style={styles.page}>
-            {header}
+          <View style={styles.below}>
             <ErrorState
               title={t('discovery.feed.errorTitle')}
               description={t('discovery.feed.unreachable')}
@@ -164,7 +174,6 @@ export default function SearchScreen() {
     return (
       <CampaignList
         cards={cards}
-        header={header}
         onEndReached={() => {
           if (results.hasNextPage && !results.isFetchingNextPage) void results.fetchNextPage();
         }}

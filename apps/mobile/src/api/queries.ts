@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { GetQueryParams, GetResponse } from '@ideanest/api-client';
 import { api } from './client';
 
@@ -97,6 +97,13 @@ export function useSearchResults(query: DiscoveryQuery, enabled: boolean) {
   return useInfiniteQuery({
     queryKey: queryKeys.search(query),
     enabled,
+    /*
+     * The last query's results stay while the next one loads. Every key from the third character
+     * is a new query key, and without this each one starts empty — the screen fell back to its
+     * loading state at every keystroke, and the list flashed to a skeleton and back while the
+     * reader typed.
+     */
+    placeholderData: keepPreviousData,
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam, signal }) =>
       api().get('/v1/search', {
