@@ -111,5 +111,13 @@ export {
 
 /* Form: Field, TextInput, PasswordInput, Textarea, Select, CharacterCount, Checkbox, Radio,
  * Switch, FilePicker, SearchField ------------------------------------------------------------- */
+export { CharacterCount, type CharacterCountProps } from './character-count';
+export { Checkbox, type CheckboxProps } from './checkbox';
+export { Field, useFieldControl, type FieldProps } from './field';
+export { PasswordInput, type PasswordInputProps } from './password-input';
+export { Radio, RadioGroup, type RadioGroupProps, type RadioProps } from './radio';
+export { Switch, type SwitchProps } from './switch';
+export { TextInput, type TextInputProps, type TextInputSize } from './text-input';
+export { Textarea, type TextareaProps } from './textarea';
 
 /* Overlay: Dialog, Sheet ---------------------------------------------------------------------- */
