@@ -226,7 +226,9 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
       </div>
 
       {/* The drawer's backdrop: a press outside the panel closes it without applying. */}
-      <div
+      <button
+        type="button"
+        tabIndex={-1}
         aria-hidden="true"
         onClick={closeRail}
         className={cn(
