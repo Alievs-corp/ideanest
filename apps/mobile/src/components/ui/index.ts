@@ -53,6 +53,25 @@ export {
 export { AccentScopeProvider, Pill, type PillProps, type PillSize, type PillVariant } from './pill';
 
 /* Primitives: Tag, Chip, Card, Avatar, ProgressBar, StatBlock, FloatingPanel ------------------ */
+export { Avatar, initials, type AvatarProps, type AvatarSize } from './avatar';
+export { Card, type CardProps, type CardSize, type CardVariant } from './card';
+export {
+  Chip,
+  ChipRow,
+  RemovableChip,
+  type ChipProps,
+  type ChipRowProps,
+  type RemovableChipProps,
+} from './chip';
+export { FloatingPanel, type FloatingPanelProps } from './floating-panel';
+export {
+  StatBlock,
+  StatRow,
+  type StatBlockProps,
+  type StatBlockSize,
+  type StatTrend,
+} from './stat-block';
+export { Tag, type TagProps, type TagVariant } from './tag';
 
 /* Data and media: InlineAlert, EmptyState, ErrorState, Skeleton, Media, Screen ----------------- */
 

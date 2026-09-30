@@ -5396,6 +5396,14 @@
       "pledges": "Destekler",
       "me": "Ben"
     },
+    "kitDisplay": {
+      "dismiss": "Kapat",
+      "change": {
+        "up": "Artış: {change}",
+        "down": "Düşüş: {change}",
+        "neutral": "Değişmedi: {change}"
+      }
+    },
     "header": {
       "unread": "Bildirimler, {count, plural, =0 {okunmamış yok} one {# okunmamış} other {# okunmamış}}",
       "over": "Bildirimler, 99’dan fazla okunmamış"
