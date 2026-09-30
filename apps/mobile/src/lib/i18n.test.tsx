@@ -1,6 +1,7 @@
 import { createElement, type ReactNode } from 'react';
 import { createTranslator, IntlProvider, useTranslations } from 'use-intl';
-import { renderHook } from '@testing-library/react-native';
+import { Text } from 'react-native';
+import { fireEvent, render, renderHook, screen } from '@testing-library/react-native';
 import ru from '@ideanest/messages/ru.json';
 import en from '@ideanest/messages/en.json';
 import az from '@ideanest/messages/az.json';
@@ -31,6 +32,40 @@ describe('use-intl over the shared catalogue', () => {
     });
     // @ts-expect-error deliberately not a key
     expect(tolerant('mobile.missing')).toBe('mobile.missing');
+  });
+
+  it('renders a rich message with <b> and a link tag to Text nodes', async () => {
+    const onLink = jest.fn();
+    function Rich() {
+      const t = useTranslations('static.trustSafety.account');
+      return (
+        <Text testID="rich">
+          {t.rich('twoFactor', {
+            b: (chunks) => <Text style={{ fontWeight: '700' }}>{chunks}</Text>,
+            security: (chunks) => (
+              <Text accessibilityRole="link" onPress={onLink}>
+                {chunks}
+              </Text>
+            ),
+          })}
+        </Text>
+      );
+    }
+    await render(
+      <IntlProvider locale="en" messages={en}>
+        <Rich />
+      </IntlProvider>,
+    );
+
+    const source = en.static.trustSafety.account.twoFactor;
+    const bold = /<b>(.*?)<\/b>/.exec(source)![1]!;
+    const link = /<security>(.*?)<\/security>/.exec(source)![1]!;
+    expect(screen.getByText(bold).props.style).toEqual({ fontWeight: '700' });
+    await fireEvent.press(screen.getByRole('link', { name: link }));
+    expect(onLink).toHaveBeenCalledTimes(1);
+    // No tag reaches the screen as text.
+    expect(screen.queryByText(/<\/?(b|security)>/)).toBeNull();
+    expect(screen.getByTestId('rich')).toHaveTextContent(source.replace(/<\/?(b|security)>/g, ''));
   });
 
   it('serves the mobile namespace through the provider', async () => {

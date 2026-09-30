@@ -536,3 +536,6 @@ function lockDetailKey(
   if (!locked) return 'mobile.lock.keychain';
   return unlocked ? 'mobile.lock.open' : 'mobile.lock.armed';
 }
+
+// A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
+export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

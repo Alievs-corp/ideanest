@@ -42,18 +42,46 @@ export interface Problem {
   retryAfterSeconds?: number;
 }
 
+/**
+ * The header the service names a request's trace in (`Correlation.TRACE_ID_HEADER`, §18.1).
+ *
+ * The same string as the web's `lib/rum/correlation.ts`, whose test holds that one level with
+ * the Java constant.
+ */
+export const TRACE_ID_HEADER = 'X-Trace-Id';
+
 export class ApiError extends Error {
   readonly status: number;
   readonly problem: Problem | null;
+  /**
+   * The `X-Trace-Id` the refusal came back with, or null when it carried none.
+   *
+   * On the error rather than on the problem because it is a header, not part of §10.4's body,
+   * and because a refusal with no body at all — Spring Security's bare 401, a proxy's 503 —
+   * can still carry one. A failure screen prints it as the reference a reader can quote.
+   */
+  readonly traceId: string | null;
 
-  constructor(status: number, problem: Problem | null = null, message?: string) {
+  constructor(
+    status: number,
+    problem: Problem | null = null,
+    message?: string,
+    traceId: string | null = null,
+  ) {
     super(
       message ?? problem?.detail ?? problem?.title ?? `The request failed with status ${status}.`,
     );
     this.name = 'ApiError';
     this.status = status;
     this.problem = problem;
+    this.traceId = traceId;
   }
+}
+
+/** The response's trace id, or null when the header is absent or blank. */
+export function traceIdOf(response: Response): string | null {
+  const value = response.headers.get(TRACE_ID_HEADER)?.trim();
+  return value === undefined || value === '' ? null : value;
 }
 
 /** Reads the problem body, or returns null when there is nothing to read. */
@@ -100,5 +128,5 @@ export async function errorFrom(response: Response): Promise<ApiError> {
 
   if (problem !== null && retryAfter !== null) problem.retryAfterSeconds = retryAfter;
 
-  return new ApiError(response.status, problem);
+  return new ApiError(response.status, problem, undefined, traceIdOf(response));
 }

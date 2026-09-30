@@ -274,3 +274,6 @@ function waitFor(seconds: number, t: Translate): string {
     ? t('auth.failures.waitOneMinute')
     : t('auth.failures.waitMinutes', { minutes });
 }
+
+// A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
+export { RouteErrorBoundary as ErrorBoundary } from '../components/route-error-boundary';

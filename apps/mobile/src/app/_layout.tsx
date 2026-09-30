@@ -69,6 +69,13 @@ const queryClient = createQueryClient();
 /** The tabs are always the base of the stack, so a guarded deep link has somewhere to go back to. */
 export const unstable_settings = { initialRouteName: '(tabs)' };
 
+/*
+ * A throw in this layout — in a provider, before any screen exists — lands here, outside every
+ * provider this file sets up. `components/root-failure.tsx` explains what it can and cannot use.
+ * A throw inside a screen never gets this far: each route exports its own boundary.
+ */
+export { RootFailure as ErrorBoundary } from '../components/root-failure';
+
 /**
  * The link inside a push payload, or null when there is not one.
  *

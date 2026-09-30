@@ -190,4 +190,19 @@ describe('signing out', () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/auth/logout');
     expect(bodyOf(0).refreshToken).toBe('refresh-1');
   });
+
+  it('drops the push registration first, while it still has a bearer to do it with', async () => {
+    await storeRefreshToken('refresh-1');
+    rememberAccessToken('access-1');
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+    await signOut();
+
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('https://api.test.invalid/v1/me/devices');
+    expect(init?.method).toBe('DELETE');
+    expect(new Headers(init?.headers).get('authorization')).toBe('Bearer access-1');
+    expect(bodyOf(0).token).toBe('ExponentPushToken[test]');
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('https://api.test.invalid/v1/auth/logout');
+  });
 });

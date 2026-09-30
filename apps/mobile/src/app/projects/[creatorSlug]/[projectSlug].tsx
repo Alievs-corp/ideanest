@@ -278,3 +278,6 @@ async function share(title: string, creatorSlug: string, projectSlug: string): P
    */
   await Share.share({ message: `${title} — ${url}`, url, title });
 }
+
+// A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
+export { RouteErrorBoundary as ErrorBoundary } from '../../../components/route-error-boundary';

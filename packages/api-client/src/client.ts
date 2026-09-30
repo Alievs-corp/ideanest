@@ -1,5 +1,5 @@
 import type { paths } from './schema';
-import { ApiError, problemFrom } from './problem';
+import { ApiError, problemFrom, traceIdOf } from './problem';
 
 /**
  * A typed reader for the IdeyaNest API — #136.
@@ -138,7 +138,13 @@ export function createApiClient(options: ApiClientOptions = {}): ApiClient {
       } as RequestInit);
 
       if (!response.ok) {
-        throw new ApiError(response.status, await problemFrom(response));
+        // The trace id travels with the refusal, so a failure screen can print it (§18.1).
+        throw new ApiError(
+          response.status,
+          await problemFrom(response),
+          undefined,
+          traceIdOf(response),
+        );
       }
 
       /*
