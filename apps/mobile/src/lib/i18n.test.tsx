@@ -74,6 +74,54 @@ describe('the app-only strings and formats', () => {
     expect(formatDate(undefined, 'en')).toBe('');
   });
 
+  /*
+   * The web's #401 bypass, which the app now shares: Azerbaijani is written out rather than
+   * asked of the engine's ICU. Node has real `az` data, so these would pass either way here —
+   * what they pin is that the app goes through `@ideanest/messages/formats` at all.
+   */
+  it('formats Azerbaijani through the shared bypass', () => {
+    expect(formatCount(1234567, 'az')).toBe('1.234.567');
+    expect(formatDate('2026-08-14T12:00:00Z', 'az')).toBe('14 avq 2026');
+    expect(pluralCategory('az', 1)).toBe('one');
+  });
+
+  /*
+   * Hermes: `Intl.DateTimeFormat.prototype.formatToParts` is missing on both platforms and the
+   * `NumberFormat` one on iOS. Taken away here, both ways an engine can lack it — absent, and
+   * answering nothing — and the helpers loaded fresh, because `lib/i18n.tsx` asks once per load
+   * which formatters to use. Had it kept the parts reading, the date would be the ISO day.
+   */
+  it.each([
+    ['absent', undefined],
+    ['answering nothing', () => []],
+  ] as const)('formats Azerbaijani without formatToParts (%s)', (_, stub) => {
+    const prototypes = [Intl.DateTimeFormat.prototype, Intl.NumberFormat.prototype] as const;
+    const saved = prototypes.map((prototype) => prototype.formatToParts);
+    try {
+      for (const prototype of prototypes) {
+        Object.defineProperty(prototype, 'formatToParts', {
+          value: stub,
+          configurable: true,
+          writable: true,
+        });
+      }
+      jest.isolateModules(() => {
+        const fresh = require('./i18n') as typeof import('./i18n');
+        expect(fresh.formatCount(1234567, 'az')).toBe('1.234.567');
+        expect(fresh.formatDate('2026-08-14T12:00:00Z', 'az')).toBe('14 avq 2026');
+        expect(fresh.formatDate('2026-09-30T10:00:00Z', 'en')).toMatch(/^30 Sept? 2026$/);
+      });
+    } finally {
+      prototypes.forEach((prototype, index) => {
+        Object.defineProperty(prototype, 'formatToParts', {
+          value: saved[index],
+          configurable: true,
+          writable: true,
+        });
+      });
+    }
+  });
+
   it('translates outside the tree in the language chosen at the moment of the call', () => {
     const before = currentLocale();
     try {

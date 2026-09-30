@@ -928,8 +928,9 @@ export function feeEditorCopyFrom(
  * <h2>Counts are plural forms, never a number glued to a noun</h2>
  *
  * "1 payments" is wrong in English and "21 платежей" is wrong in Russian, and the second is
- * the one a fixed suffix gets wrong. `lib/i18n/plurals.ts` chooses the form; this reads all
- * four categories in every language because `catalogue.test.ts` demands identical key sets.
+ * the one a fixed suffix gets wrong. `packages/messages/src/plurals.ts` chooses the form; this
+ * reads all four categories in every language because `catalogue.test.ts` demands identical key
+ * sets.
  */
 export interface RevenueReportCopy extends ConsoleChromeCopy {
   readonly subject: string;

@@ -21,7 +21,7 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
  *
  * `Intl.DisplayNames` already holds every ISO 3166-1 region name, in every
  * language the product ships in (§21.1), maintained by the platform. The route's
- * language picks them — `regionNames` in `lib/i18n/formats.ts` (#133). A checked-in
+ * language picks them — `regionNames` in `packages/messages/src/formats.ts` (#133). A checked-in
  * list of two hundred names would be a second copy to keep current, would be
  * English-only, and would be wrong the next time a country renames itself. The
  * code is shown when the runtime has no name for it, which is the honest fallback

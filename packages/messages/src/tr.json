@@ -5154,7 +5154,13 @@
     "me": {
       "thisPhone": "Bu telefon",
       "language": "Dil",
-      "allSettings": "Tüm ayarlar"
+      "allSettings": "Tüm ayarlar",
+      "copyright": "© IdeyaNest",
+      "version": "Sürüm {version}, derleme {build}",
+      "signOutConfirm": {
+        "title": "Bu telefonda oturum kapatılsın mı?",
+        "body": "Destekleriniz ve kaydedilen projeleriniz artık bu telefonda tutulmayacak. İstediğiniz zaman yeniden giriş yapabilirsiniz."
+      }
     },
     "lock": {
       "face": "Face ID iste",

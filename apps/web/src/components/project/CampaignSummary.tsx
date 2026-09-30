@@ -254,8 +254,8 @@ export async function CampaignSummary({
         <p className="text-sm text-white/64">
           {/*
             `raw`, because the creator is a node and next-intl would try to format `{creator}`
-            against values this side has none of — `lib/i18n/placeholders.ts` sets out why a
-            hole filled with an element is not ICU's job.
+            against values this side has none of — `packages/messages/src/placeholders.ts` sets out
+            why a hole filled with an element is not ICU's job.
           */}
           {fillNodes(String(t.raw('by')), {
             creator: (

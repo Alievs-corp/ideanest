@@ -20,7 +20,7 @@
  * does not" makes the output depend on which engine rendered it, and both engines render
  * these strings: Next renders a client component on the server first and hydrates it in the
  * browser. Two ICUs disagreeing by one space is a hydration mismatch on precisely the
- * surfaces this issue is about. So `az` is ours everywhere, and `az-formats.test.ts` asserts
+ * surfaces this issue is about. So `az` is ours everywhere, and `azerbaijani.test.ts` asserts
  * ours is byte-for-byte what full ICU produces — a test that can only run where the data
  * exists, and does, because vitest runs on Node.
  *
@@ -46,7 +46,7 @@
  * <p>`narrow` is the ordinal, which is what Azerbaijani narrow months are; a table that
  * invented letters for them would be inventing a language.
  */
-const MONTHS: Readonly<Record<'long' | 'short' | 'narrow', readonly string[]>> = {
+export const MONTHS: Readonly<Record<'long' | 'short' | 'narrow', readonly string[]>> = {
   long: [
     'yanvar',
     'fevral',
@@ -66,7 +66,7 @@ const MONTHS: Readonly<Record<'long' | 'short' | 'narrow', readonly string[]>> =
 };
 
 /** The weekdays, Sunday first, because that is what `Date.prototype.getUTCDay` counts from. */
-const WEEKDAYS: Readonly<Record<'long' | 'short' | 'narrow', readonly string[]>> = {
+export const WEEKDAYS: Readonly<Record<'long' | 'short' | 'narrow', readonly string[]>> = {
   long: [
     'bazar',
     'bazar ertəsi',
@@ -190,7 +190,7 @@ export function azerbaijaniRelativeTimeFormat(
 }
 
 /** Which width of month a set of options asks for, in `Intl`'s own vocabulary. */
-function monthStyle(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormatOptions['month'] {
+export function monthStyle(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormatOptions['month'] {
   if (options.month !== undefined) return options.month;
   if (options.dateStyle === 'full' || options.dateStyle === 'long') return 'long';
   if (options.dateStyle === 'medium') return 'short';
@@ -199,7 +199,7 @@ function monthStyle(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormatOpt
 }
 
 /** The same for the weekday, which only `dateStyle: 'full'` asks for on its own. */
-function weekdayStyle(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormatOptions['weekday'] {
+export function weekdayStyle(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormatOptions['weekday'] {
   if (options.weekday !== undefined) return options.weekday;
   return options.dateStyle === 'full' ? 'long' : undefined;
 }

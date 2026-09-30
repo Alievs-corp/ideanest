@@ -130,8 +130,8 @@ export interface CommentFailureCopy {
  *
  * `backer` against `backers` is the whole of English and none of Russian, which picks between
  * three forms by the last digit — #99 found the ternary that had been choosing for all four
- * languages. `lib/i18n/plurals.ts` carries the rest of the argument. `pluralForm` is the half
- * to call rather than `pluralise`, because the number is the `StatBlock`'s value and not a
+ * languages. `packages/messages/src/plurals.ts` carries the rest of the argument. `pluralForm` is
+ * the half to call rather than `pluralise`, because the number is the `StatBlock`'s value and not a
  * placeholder inside the word.
  */
 export interface LiveFundingCopy {

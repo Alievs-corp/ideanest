@@ -452,7 +452,8 @@ function messageFor(cause: unknown, copy: PricingCopy): string {
  *
  * <p>Through `dateTimeFormat` rather than `toLocaleDateString` since #401: Chromium claims
  * `az` and formats it from root-locale data, so this rendered `2026 M08 14` in the one
- * language the platform ships as its primary. `lib/i18n/azerbaijani.ts` has the argument.
+ * language the platform ships as its primary. `packages/messages/src/azerbaijani.ts` has the
+ * argument.
  */
 function formatDate(iso: string | null | undefined, locale: Locale): string {
   if (iso == null) return '';

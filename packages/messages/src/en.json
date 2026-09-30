@@ -5154,7 +5154,13 @@
     "me": {
       "thisPhone": "This phone",
       "language": "Language",
-      "allSettings": "All settings"
+      "allSettings": "All settings",
+      "copyright": "© IdeyaNest",
+      "version": "Version {version}, build {build}",
+      "signOutConfirm": {
+        "title": "Sign out on this phone?",
+        "body": "Your pledges and saved projects will no longer be kept on this phone. You can sign in again at any time."
+      }
     },
     "lock": {
       "face": "Require Face ID",

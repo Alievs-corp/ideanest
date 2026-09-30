@@ -11,6 +11,13 @@ import en from '@ideanest/messages/en.json';
 import ru from '@ideanest/messages/ru.json';
 import tr from '@ideanest/messages/tr.json';
 import type { Locale } from '@ideanest/messages';
+import { dateTimeFormat, numberFormat } from '@ideanest/messages/formats';
+import {
+  formatToPartsWorks,
+  partlessAzerbaijaniDateTimeFormat,
+  partlessAzerbaijaniNumberFormat,
+} from '@ideanest/messages/hermes';
+import { pluralForm, type PluralForms } from '@ideanest/messages/plurals';
 import { currentLocale, useLocale } from './locale';
 
 /**
@@ -26,6 +33,14 @@ import { currentLocale, useLocale } from './locale';
  * build step should strip the web-only `admin` namespace is the release-readiness issue's.
  */
 const CATALOGUES: Record<Locale, typeof en> = { az, en, ru, tr } as Record<Locale, typeof en>;
+
+/**
+ * One language's whole catalogue, for a table that reads a namespace as data rather than
+ * key by key (`lib/pledge-states.ts`). Typed from the English one, as the translator is.
+ */
+export function catalogue(locale: Locale): typeof en {
+  return CATALOGUES[locale];
+}
 
 /**
  * Keys and locales are typed from the English catalogue, so `t('mobile.tabz.me')` is a
@@ -85,34 +100,67 @@ export function translate() {
   });
 }
 
-/**
- * The `Intl` tag for each language, the web's own table (`lib/i18n/formats.ts`): English is
- * British English on both platforms, so a date reads `30 Sept 2026` rather than `Sep 30, 2026`.
+/*
+ * The `Intl` tag for each language is the web's `INTL_LOCALE`, read inside the helpers below
+ * rather than here: English is British English on both platforms, so a date reads
+ * `30 Sept 2026` rather than `Sep 30, 2026`.
  */
-export const INTL_LOCALE: Readonly<Record<Locale, string>> = {
-  az: 'az',
-  en: 'en-GB',
-  ru: 'ru',
-  tr: 'tr',
-};
+
+/** Each category named as itself, so the web's `pluralForm` answers with the category. */
+const CATEGORIES: PluralForms = { one: 'one', few: 'few', many: 'many', other: 'other' };
 
 /**
  * Which of the catalogue's `{one, few, many, other}` forms a number takes.
  *
- * The same rule as the web's `pluralForm`: CLDR through `Intl.PluralRules`, and `other` for a
- * category the catalogue does not carry (`zero`, `two`) or an engine without the constructor.
- * ICU `{count, plural, …}` messages do not need this — `t()` plurals them itself.
+ * The web's `pluralForm`, asked with a table whose forms are the category names, so the rule
+ * is the one rule and not a copy of it: CLDR through `Intl.PluralRules`, and `other` for a
+ * category the catalogue does not carry (`zero`, `two`) — or, here only, an engine without
+ * the constructor. ICU `{count, plural, …}` messages do not need this — `t()` plurals them
+ * itself.
  */
-export function pluralCategory(locale: Locale, count: number): 'one' | 'few' | 'many' | 'other' {
-  if (typeof Intl.PluralRules !== 'function') return 'other';
-  const category = new Intl.PluralRules(INTL_LOCALE[locale]).select(count);
-  return category === 'one' || category === 'few' || category === 'many' ? category : 'other';
+export function pluralCategory(locale: Locale, count: number): keyof PluralForms {
+  try {
+    return pluralForm(locale, CATEGORIES, count) as keyof PluralForms;
+  } catch {
+    return 'other';
+  }
 }
 
-/** A count grouped the reader's way (`1 234` in Russian, `1.234` in Turkish). Not for money. */
+/**
+ * A count grouped the reader's way (`1 234` in Russian, `1.234` in Turkish and Azerbaijani).
+ * Not for money.
+ *
+ * Through the web's `numberFormat`, so Azerbaijani takes the #401/#403 bypass: Hermes on
+ * Android formats with the platform's ICU, which may claim `az` and group it the root
+ * locale's way. An engine that cannot format at all gets the bare digits.
+ */
+/**
+ * Hermes has no `DateTimeFormat.prototype.formatToParts` and, on iOS, no `NumberFormat` one,
+ * which the shared Azerbaijani formatters read. Asked once, at import: where a method is
+ * missing or answers nothing, Azerbaijani goes to `@ideanest/messages/hermes`'s part-less
+ * formatter instead, which writes the same strings. The other three languages never read
+ * parts, and on Node and in jest both methods work, so nothing changes there.
+ */
+const PARTS = formatToPartsWorks();
+const COUNT_OPTIONS: Intl.NumberFormatOptions = {};
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = { dateStyle: 'medium' };
+let partlessCount: ReturnType<typeof partlessAzerbaijaniNumberFormat> | undefined;
+let partlessDate: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
+
+function countFormat(locale: Locale): { format(value: number): string } {
+  if (locale !== 'az' || PARTS.numbers) return numberFormat(locale, COUNT_OPTIONS, 'count');
+  return (partlessCount ??= partlessAzerbaijaniNumberFormat(COUNT_OPTIONS));
+}
+
+function dateFormat(locale: Locale): { format(value: Date): string } {
+  if (locale !== 'az' || PARTS.dates) return dateTimeFormat(locale, DATE_OPTIONS, 'date');
+  return (partlessDate ??= partlessAzerbaijaniDateTimeFormat(DATE_OPTIONS));
+}
+
 export function formatCount(count: number, locale: Locale): string {
   try {
-    return new Intl.NumberFormat(INTL_LOCALE[locale]).format(count);
+    // An empty answer is a formatter that failed without saying so; the digits are better.
+    return countFormat(locale).format(count) || String(count);
   } catch {
     return String(count);
   }
@@ -126,16 +174,17 @@ export function formatCount(count: number, locale: Locale): string {
  * Money is not formatted here: `@ideanest/money` formats amounts from their digits, the same
  * on both platforms and in every language.
  *
- * Azerbaijani goes to `Intl` as it is. The web's bypass for engines that claim `az` but format
- * it from root data (`lib/i18n/azerbaijani.ts`) arrives with `formats.ts` in the shared
- * package, and this and `formatCount` switch to it then.
+ * Through the web's `dateTimeFormat` (or, on Hermes, its part-less twin), so Azerbaijani is
+ * written out by `@ideanest/messages` on every engine rather than trusted to the platform's
+ * ICU — `14 avq 2026`, not `2026 M08 14`.
  */
 export function formatDate(iso: string | null | undefined, locale: Locale): string {
   if (iso == null || iso === '') return '';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
   try {
-    return new Intl.DateTimeFormat(INTL_LOCALE[locale], { dateStyle: 'medium' }).format(date);
+    // An empty answer is a formatter that failed without saying so; the ISO day is better.
+    return dateFormat(locale).format(date) || iso.slice(0, 10);
   } catch {
     return iso.slice(0, 10);
   }

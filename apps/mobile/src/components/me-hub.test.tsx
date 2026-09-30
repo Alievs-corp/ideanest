@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { Alert, type AlertButton } from 'react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -7,6 +8,7 @@ import en from '@ideanest/messages/en.json';
 import type { TestInstance } from 'test-renderer';
 import MeScreen from '../app/(tabs)/me';
 import { useMe, useSessionState, type Me, type SessionState } from '../lib/account';
+import { signOut } from '../lib/auth';
 
 /**
  * The Me tab's three layouts — issue #150.
@@ -24,6 +26,12 @@ jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
 
 let mockSession = { signedIn: true, locked: false, unlocked: false };
 jest.mock('../lib/use-session', () => ({ useSession: () => mockSession }));
+
+/* Signing out is `lib/auth.ts`'s and tested there; here it is only whether and when it is asked. */
+jest.mock('../lib/auth', () => ({
+  ...jest.requireActual('../lib/auth'),
+  signOut: jest.fn(async () => {}),
+}));
 
 jest.mock('../lib/account', () => ({
   ...jest.requireActual('../lib/account'),
@@ -259,6 +267,87 @@ describe('the Me tab', () => {
     // The first "Data and closure" is the alert's; the settings row comes later.
     await fireEvent.press(screen.getAllByRole('button', { name: 'Data and closure' })[0]!);
     expect(mockRouter.push).toHaveBeenCalledWith('/settings/privacy');
+  });
+
+  /*
+   * Spec item 9: the web footer's last row, in all three layouts. One text, so the assertion
+   * is the whole block — which is also what a screen reader reads in its one stop.
+   */
+  it.each([
+    ['signed-in', AYSEL],
+    ['signed-out', null],
+    ['unknown', undefined],
+  ] as const)('ends with the copyright, the currency and the build (%s)', async (state, me) => {
+    mockSession = { signedIn: state !== 'signed-out', locked: false, unlocked: false };
+    given(state, me);
+    await renderMe();
+
+    // `jest.setup.ts` gives the binary version 1.2.3, build 45.
+    expect(
+      screen.getByText(
+        ['© IdeyaNest', 'Currency: Azerbaijani manat (AZN)', 'Version 1.2.3, build 45'].join('\n'),
+      ),
+    ).toBeTruthy();
+
+    // Last on the tab: after everything, Sign out included where there is one.
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('© IdeyaNest')).toBeGreaterThan(tree.lastIndexOf('Sign out'));
+    expect(tree.indexOf('© IdeyaNest')).toBeGreaterThan(tree.lastIndexOf('Message us on WhatsApp'));
+  });
+
+  it('asks before signing out, and signs out only on the destructive choice', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    given('signed-in', AYSEL);
+    await renderMe();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
+
+    expect(signOut).not.toHaveBeenCalled();
+    expect(alert).toHaveBeenCalledTimes(1);
+    const [title, body, buttons = []] = alert.mock.calls[0]!;
+    expect(title).toBe(en.mobile.me.signOutConfirm.title);
+    expect(body).toBe(en.mobile.me.signOutConfirm.body);
+    expect(buttons.map((button: AlertButton) => [button.text, button.style])).toEqual([
+      ['Cancel', 'cancel'],
+      ['Sign out', 'destructive'],
+    ]);
+
+    await act(async () => {
+      buttons[1]!.onPress?.();
+    });
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(mockRouter.navigate).toHaveBeenCalledWith('/');
+    alert.mockRestore();
+  });
+
+  it('cancelling signs nobody out, and the pill asks again afterwards', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    given('signed-in', AYSEL);
+    await renderMe();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
+    const [, , buttons = []] = alert.mock.calls[0]!;
+    await act(async () => {
+      buttons[0]!.onPress?.();
+    });
+    expect(signOut).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Sign out' }));
+    expect(alert).toHaveBeenCalledTimes(2);
+    alert.mockRestore();
+  });
+
+  it('opens one confirmation for a double tap, not two queued ones', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    given('signed-in', AYSEL);
+    await renderMe();
+
+    const pill = screen.getByRole('button', { name: 'Sign out' });
+    await fireEvent.press(pill);
+    await fireEvent.press(pill);
+
+    expect(alert).toHaveBeenCalledTimes(1);
+    alert.mockRestore();
   });
 
   it('opens the WhatsApp sheet from the About group', async () => {

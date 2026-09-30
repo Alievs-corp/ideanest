@@ -16,8 +16,9 @@ import type { PluralForms } from './plurals';
  *
  * `count` is the collection's own total, drawn by a synchronous component; `shown` and
  * `shownMore` are drawn by a client component after a button appends a page. next-intl formats
- * ICU on the server inside an async call, so all three go through `lib/i18n/plurals.ts`
- * instead — which carries the same CLDR data and none of the runtime.
+ * ICU on the server inside an async call, so all three go through
+ * `packages/messages/src/plurals.ts` instead — which carries the same CLDR data and none of the
+ * runtime.
  *
  * <p>`shown` and `shownMore` are two sets rather than one plus a suffix. English appends ",
  * with more to load" and Russian changes the verb's agreement with the number in front of it,

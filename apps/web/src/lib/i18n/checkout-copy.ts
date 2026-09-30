@@ -273,8 +273,8 @@ function failureCopyFrom(t: CheckoutTranslator): PledgeFailureCopy {
  * Re-exported rather than defined here since #324. The substitution is not the checkout's —
  * the register form echoes an address, the rate limit says how many minutes are left, and
  * every one of them is a server-resolved sentence being finished in the browser. It lives in
- * `lib/i18n/placeholders.ts` now, and the name is kept exported from this module so that the
- * three call sites in `components/checkout` read as they did.
+ * `packages/messages/src/placeholders.ts` now, and the name is kept exported from this module so
+ * that the three call sites in `components/checkout` read as they did.
  *
  * It is deliberately not an ICU formatter, and that reasoning has moved with it.
  */

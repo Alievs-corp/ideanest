@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SUPPORTED_LOCALES } from '../api/config';
-import { PLEDGE_STATE_LABELS, readablePledgeState } from './pledge-states';
+import { pledgeStateLabels, readablePledgeState } from './pledge-states';
 
 /**
  * Every state the service can send, read from the service rather than retyped —
@@ -12,7 +12,6 @@ import { PLEDGE_STATE_LABELS, readablePledgeState } from './pledge-states';
  * of the two a pull request remembered to update.
  */
 const API = join(__dirname, '../../../api');
-const WEB_MESSAGES = join(__dirname, '../../../../packages/messages/src');
 
 function javaEnumConstants(): string[] {
   const source = readFileSync(
@@ -43,23 +42,12 @@ describe('pledge state labels', () => {
   });
 
   it.each(SUPPORTED_LOCALES)('cover exactly the Java enum in %s', (locale) => {
-    expect(Object.keys(PLEDGE_STATE_LABELS[locale]).sort()).toEqual([...JAVA].sort());
+    expect(Object.keys(pledgeStateLabels(locale)).sort()).toEqual([...JAVA].sort());
   });
 
   it('cover exactly the enum the contract publishes', () => {
     const published = CONTRACT.components.schemas.BackerFilterBody.properties.states.items.enum;
-    expect(Object.keys(PLEDGE_STATE_LABELS.en).sort()).toEqual([...published].sort());
-  });
-
-  /**
-   * The same words as the web, not a second translation of them. A backer who reads
-   * "Charged back" on a phone and something else in a browser has two answers to one question.
-   */
-  it.each(SUPPORTED_LOCALES)("match the web's wording in %s", (locale) => {
-    const catalogue = JSON.parse(readFileSync(join(WEB_MESSAGES, `${locale}.json`), 'utf8')) as {
-      account: { pledges: { states: Record<string, string> } };
-    };
-    expect(PLEDGE_STATE_LABELS[locale]).toEqual(catalogue.account.pledges.states);
+    expect(Object.keys(pledgeStateLabels('en')).sort()).toEqual([...published].sort());
   });
 
   it.each(SUPPORTED_LOCALES)('never print a raw state name in %s', (locale) => {

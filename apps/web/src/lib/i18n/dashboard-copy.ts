@@ -26,9 +26,9 @@ import type { PluralForms } from './plurals';
  *
  * "1 backer" against "2 backers" is the whole of English and none of Russian, which picks
  * between three forms by the last digit. Every counted sentence here is a {@link PluralForms}
- * resolved through `lib/i18n/plurals.ts` in the browser, beside the number, because the number
- * arrives with the fetch rather than with the render. `plurals.ts` carries the rest of that
- * argument.
+ * resolved through `packages/messages/src/plurals.ts` in the browser, beside the number, because
+ * the number arrives with the fetch rather than with the render. `plurals.ts` carries the rest of
+ * that argument.
  *
  * <h2>Two label maps moved here rather than staying constants</h2>
  *
