@@ -5177,6 +5177,9 @@
       "title": "Dil",
       "saveFailed": "Hesabınızın dili yadda saxlanmadı. Tətbiq bu telefonda artıq yeni dildədir.",
       "retry": "Yenidən cəhd et"
+    },
+    "offline": {
+      "banner": "İnternet bağlantısı yoxdur. Bağlantı bərpa olunana qədər ekranda gördükləriniz köhnə ola bilər."
     }
   }
 }

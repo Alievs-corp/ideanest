@@ -8,7 +8,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { siteUrl } from '../api/config';
+import { OfflineAnnouncer, WithOfflineBanner } from '../components/offline-banner';
+import { startConnectivity } from '../lib/connectivity';
 import { destinationFor } from '../lib/links';
+import { useMaintenance } from '../lib/maintenance';
 import { createQueryClient, persistOptions } from '../lib/offline';
 import { lockNow } from '../lib/session';
 import { AccountSync } from '../lib/account-sync';
@@ -80,9 +83,26 @@ function urlFromNotification(
   return typeof url === 'string' ? url : null;
 }
 
+/**
+ * Shows `maintenance` when `lib/maintenance.ts` says the service is away — issue #150.
+ *
+ * <p>Pushed rather than replacing the stack, so that when the service answers the screen can
+ * go back to exactly where the reader was; what stops them going back *before* then is the
+ * route's own options below and its hardware-back handler. Only the entry is here: the screen
+ * owns its polling and its exit, because it is the one that knows when it is being looked at.
+ */
+function useMaintenanceGate() {
+  const router = useRouter();
+  const down = useMaintenance();
+  useEffect(() => {
+    if (down) router.push('/maintenance');
+  }, [down, router]);
+}
+
 /** The root stack; inside the intl provider so its screen titles are translated. */
 function AppStack() {
   const t = useT();
+  useMaintenanceGate();
   return (
     <Stack
       screenOptions={{
@@ -91,8 +111,30 @@ function AppStack() {
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.surface1 },
       }}
+      /*
+       * The offline banner under each screen's header. Not on a screen with no header:
+       * that is the tab group, which draws its own under the tabs' header, or a
+       * full-screen failure state. See `components/offline-banner.tsx`.
+       */
+      screenLayout={({ children, options }) =>
+        options.headerShown === false ? children : <WithOfflineBanner>{children}</WithOfflineBanner>
+      }
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      {/*
+        No header and no swipe: the screens underneath are the ones that just
+        failed, and the way back to them is the service answering. A full-screen
+        modal, so it covers a sheet that was open (sign-in) as well as a card.
+      */}
+      <Stack.Screen
+        name="maintenance"
+        options={{
+          presentation: 'fullScreenModal',
+          headerShown: false,
+          gestureEnabled: false,
+          animation: 'fade',
+        }}
+      />
       {/*
         A modal, because signing in is an interruption of whatever somebody
         was doing rather than a place they navigated to — and because the
@@ -111,6 +153,9 @@ export default function RootLayout() {
   const router = useRouter();
   const host = useMemo(() => new URL(siteUrl()).host, []);
   const leftAt = useRef<number | null>(null);
+
+  // The offline banner's source, and TanStack Query's (`lib/connectivity.ts`).
+  useEffect(() => startConnectivity(), []);
 
   useEffect(() => {
     const changed = (state: AppStateStatus) => {
@@ -188,6 +233,7 @@ export default function RootLayout() {
           <AppIntlProvider>
             <StatusBar style="light" />
             <AccountSync />
+            <OfflineAnnouncer />
             <AppStack />
           </AppIntlProvider>
         </PersistQueryClientProvider>

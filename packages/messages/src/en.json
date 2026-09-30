@@ -5177,6 +5177,9 @@
       "title": "Language",
       "saveFailed": "Your account language was not saved. The app is already in the new language on this phone.",
       "retry": "Try again"
+    },
+    "offline": {
+      "banner": "No internet connection. Until it is back, what you see may be out of date."
     }
   }
 }

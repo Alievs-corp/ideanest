@@ -1,6 +1,6 @@
-import { QueryClient } from '@tanstack/react-query';
+import { onlineManager, QueryClient } from '@tanstack/react-query';
 import { persistQueryClientRestore, persistQueryClientSave } from '@tanstack/react-query-persist-client';
-import { createQueryClient, persistOptions, shouldPersistQuery } from './offline';
+import { createQueryClient, persistOptions, shouldPersistQuery, shouldRetry } from './offline';
 import { memoryStore } from './storage';
 import { queryKeys } from '../api/queries';
 
@@ -55,6 +55,24 @@ describe('the query client', () => {
     // expires, which would look exactly like the cache not working.
     const options = createQueryClient().getDefaultOptions().queries;
     expect(options?.gcTime).toBe(persistOptions().maxAge);
+  });
+
+  it('retries twice online, and never offline, so a retry fails rather than pauses', () => {
+    // Issue #150 tells `onlineManager` the truth. A retry decided on offline would then
+    // pause, and a paused query with no cache renders as an empty list rather than an error.
+    try {
+      onlineManager.setOnline(true);
+      expect([0, 1, 2].map(shouldRetry)).toEqual([true, true, false]);
+
+      onlineManager.setOnline(false);
+      expect(shouldRetry(0)).toBe(false);
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
+  it('fails a write offline rather than holding it for a connection', () => {
+    expect(createQueryClient().getDefaultOptions().mutations?.networkMode).toBe('offlineFirst');
   });
 });
 

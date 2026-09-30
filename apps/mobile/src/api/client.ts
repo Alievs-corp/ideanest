@@ -2,6 +2,7 @@ import { createApiClient, type ApiClient, type Fetch } from '@ideanest/api-clien
 import { apiOrigin } from './config';
 import { currentLocale } from '../lib/locale';
 import { refreshAccessToken } from '../lib/auth';
+import { observeResponse } from '../lib/maintenance';
 import { currentAccessToken, hasStoredSession } from '../lib/session';
 
 /**
@@ -64,13 +65,19 @@ const sessionFetch: Fetch = async (url, init) => {
     token = await refreshAccessToken();
   }
 
-  const response = await fetch(url, withBearer(init, token));
+  /*
+   * Every response is shown to the maintenance trigger (issue #150) on its way
+   * past, and passed on untouched: a 503 is still a 503 to the caller. It is
+   * here rather than in each screen because this is the one place every read
+   * and every write goes through.
+   */
+  const response = observeResponse(await fetch(url, withBearer(init, token)));
   if (response.status !== 401 || !hasStoredSession()) return response;
 
   const refreshed = await refreshAccessToken();
   if (refreshed === null) return response;
 
-  return await fetch(url, withBearer(init, refreshed));
+  return observeResponse(await fetch(url, withBearer(init, refreshed)));
 };
 
 function withBearer(init: RequestInit | undefined, token: string | null): RequestInit {
