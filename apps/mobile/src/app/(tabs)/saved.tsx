@@ -2,9 +2,15 @@ import { Link, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSavedProjects } from '../../api/queries';
-import { Button } from '../../components/form';
 import { CardTitle, Meta } from '../../components/text';
-import { EmptyState, InlineAlert, Screen, Skeleton, SkeletonGroup } from '../../components/ui';
+import {
+  EmptyState,
+  InlineAlert,
+  Pill,
+  Screen,
+  Skeleton,
+  SkeletonGroup,
+} from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { useSession } from '../../lib/use-session';
 import { colors, radius, size, spacing } from '../../theme';
@@ -72,7 +78,7 @@ export default function SavedScreen() {
             // §17.1: the invitation now has a way to accept it. Until sign-in existed
             // on this platform, this screen could only state the condition.
             action={
-              <Button label={t('shell.actions.signIn')} onPress={() => router.push('/sign-in')} />
+              <Pill label={t('shell.actions.signIn')} onPress={() => router.push('/sign-in')} />
             }
           />
         }

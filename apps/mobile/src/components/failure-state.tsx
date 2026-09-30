@@ -2,15 +2,16 @@ import { useState, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useT } from '../lib/i18n';
 import { colors, radius, size, spacing } from '../theme';
-import { Body, CardTitle, Heading, Meta } from './text';
+import { Body, Heading, Meta } from './text';
+import { Pill } from './ui';
 import { WhatsAppSheet } from './whatsapp-sheet';
 
 /**
  * The failure screen — issue #150. The app's counterpart of the web's `FailureState`.
  *
  * A centred column: heading, description, an optional reference line, and one
- * **white** pill for the way out. White rather than lime, as on the web: lime means
- * "act now" on a live surface, and a page that is not there is not one.
+ * **white** pill for the way out — the kit's `Pill`, `primary`, large. White rather than lime,
+ * as on the web: lime means "act now" on a live surface, and a page that is not there is not one.
  *
  * <p>Below it, "Message us on WhatsApp" as a quiet text link. A reader stuck on a failure is
  * the reader most likely to want a person, and the web's floating button — which is how they
@@ -36,7 +37,7 @@ export function FailureState({
   readonly reference?: string | null;
   /**
    * The action is running (maintenance's "Try again" asking the service). The pill says so to a
-   * screen reader (`busy`), holds its pressed shade, and ignores presses until it is done.
+   * screen reader (`busy`), shows a spinner beside its label, and ignores presses until it is done.
    */
   readonly busy?: boolean;
   readonly children?: ReactNode;
@@ -70,18 +71,7 @@ export function FailureState({
           {t('referenceHint')}
         </Meta>
       ) : null}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={actionLabel}
-        accessibilityState={{ busy, disabled: busy }}
-        disabled={busy}
-        onPress={onAction}
-        style={({ pressed }) => [styles.pill, (pressed || busy) && styles.pillPressed]}
-      >
-        <CardTitle tone="onWhite" accessibilityElementsHidden importantForAccessibility="no">
-          {actionLabel}
-        </CardTitle>
-      </Pressable>
+      <Pill label={actionLabel} onPress={onAction} busy={busy} size="lg" />
       {children}
       <Pressable
         accessibilityRole="button"
@@ -118,14 +108,6 @@ const styles = StyleSheet.create({
     fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }),
     fontVariant: ['tabular-nums'],
   },
-  pill: {
-    minHeight: 48,
-    justifyContent: 'center',
-    paddingHorizontal: size.cardPaddingLarge,
-    borderRadius: radius.full,
-    backgroundColor: colors.whiteSurface,
-  },
-  pillPressed: { backgroundColor: colors.whiteMuted },
   link: {
     minHeight: size.touchTarget,
     justifyContent: 'center',

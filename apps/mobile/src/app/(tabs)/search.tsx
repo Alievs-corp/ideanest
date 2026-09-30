@@ -1,11 +1,18 @@
 import { useDeferredValue, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useSearchResults, useSuggestions, type Card } from '../../api/queries';
 import { CampaignList, CampaignListSkeleton } from '../../components/campaign-list';
-import { Body, Meta } from '../../components/text';
-import { EmptyState, ErrorState, MotionBudgetProvider } from '../../components/ui';
+import { Body } from '../../components/text';
+import {
+  Chip,
+  ChipRow,
+  EmptyState,
+  ErrorState,
+  MotionBudgetProvider,
+  SearchField,
+} from '../../components/ui';
 import { useT } from '../../lib/i18n';
-import { colors, fontSize, radius, size, spacing } from '../../theme';
+import { size, spacing } from '../../theme';
 
 /**
  * Search — §4.3's second half.
@@ -27,9 +34,15 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  *
  * `/v1/search/suggest` answers categories, tags and locations — the things
  * `Taxonomy` has translated — and tapping one narrows the search rather than
- * opening a campaign. They are drawn as chips above the list so that the two
- * are not confused; a suggestion styled like a result is a tap somebody has to
- * undo.
+ * opening a campaign. They are drawn as the kit's chips above the list so that
+ * the two are not confused; a suggestion styled like a result is a tap somebody
+ * has to undo. A chosen chip is white with near-black text, never lime: a
+ * filter somebody picked is a choice, not an urgent action (issue #151).
+ *
+ * <p>The field is the kit's `SearchField` without its suggestion rows — the
+ * suggestions here narrow rather than submit, so they are chips instead. The
+ * keyboard's search key only commits what is already typed; the results follow
+ * the text as it changes.
  *
  * <h2>Motion: minimal</h2>
  *
@@ -45,29 +58,6 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   pageHeader: { paddingHorizontal: size.cardGap, paddingTop: size.cardGap },
   header: { gap: spacing[3], paddingBottom: spacing[2] },
-  field: {
-    backgroundColor: colors.surface3,
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    color: colors.textPrimary,
-    fontSize: fontSize.base,
-    paddingHorizontal: spacing[4],
-    // The field is a touch target before it is a field.
-    minHeight: size.touchTarget,
-  },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
-  chip: {
-    paddingVertical: spacing[2],
-    paddingHorizontal: spacing[3],
-    borderRadius: radius.full,
-    backgroundColor: colors.surface3,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    minHeight: size.touchTarget,
-    justifyContent: 'center',
-  },
-  chipSelected: { backgroundColor: colors.lime500, borderColor: colors.lime500 },
 });
 
 export default function SearchScreen() {
@@ -99,40 +89,34 @@ export default function SearchScreen() {
 
   const header = (
     <View style={styles.header}>
-      <TextInput
+      {/*
+        A field whose only label is its placeholder is announced as its current value, or as
+        nothing at all once somebody has typed — so the placeholder's words are its name too.
+      */}
+      <SearchField
+        label={t('discovery.suggest.inputLabel')}
+        placeholder={t('discovery.suggest.inputLabel')}
         value={term}
         onChangeText={setTerm}
-        placeholder={t('discovery.suggest.inputLabel')}
-        placeholderTextColor={colors.textTertiary}
-        style={styles.field}
-        autoCorrect={false}
-        returnKeyType="search"
-        // A field whose only label is its placeholder is announced as its
-        // current value, or as nothing at all once somebody has typed.
-        accessibilityLabel={t('discovery.suggest.inputLabel')}
-        // Native clear button on iOS; on Android the keyboard provides one.
-        clearButtonMode="while-editing"
+        onSubmit={setTerm}
       />
 
       {(suggestions.data?.items ?? []).length > 0 ? (
-        <View style={styles.chips}>
+        <ChipRow>
           {(suggestions.data?.items ?? []).map((item) => {
             const selected = category === item.slug;
             return (
-              <Pressable
+              <Chip
                 key={`${item.kind}:${item.slug}`}
+                label={item.label ?? ''}
+                selected={selected}
                 onPress={() => setCategory(selected ? undefined : item.slug)}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                accessibilityLabel={t('mobile.search.narrow', { label: item.label ?? '' })}
-                style={[styles.chip, selected && styles.chipSelected]}
-              >
-                {/* Near-black on lime is the only legible pairing (§9.1). */}
-                <Meta tone={selected ? 'onLime' : 'secondary'}>{item.label}</Meta>
-              </Pressable>
+                // The label is the name speech input reaches it by; what pressing it does is the hint.
+                accessibilityHint={t('mobile.search.narrow', { label: item.label ?? '' })}
+              />
             );
           })}
-        </View>
+        </ChipRow>
       ) : null}
     </View>
   );

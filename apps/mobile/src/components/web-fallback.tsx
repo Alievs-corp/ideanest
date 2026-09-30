@@ -8,8 +8,8 @@ import { isGuarded, signInHrefFor } from '../lib/guard';
 import { useT, type MessageKey } from '../lib/i18n';
 import { useSession } from '../lib/use-session';
 import { colors, size, spacing } from '../theme';
-import { Button } from './form';
 import { Body, Heading } from './text';
+import { Pill } from './ui';
 
 /**
  * The placeholder behind every route whose real screen is not built yet — issue #150.
@@ -18,6 +18,9 @@ import { Body, Heading } from './text';
  * on the web, in the reader's language. Each later issue deletes the placeholder it
  * replaces. It also applies the session guard, so a signed-out reader reaching a private
  * route is offered sign-in with the way back preserved.
+ *
+ * <p>The way to the web is a white pill, the kit's primary: it is this screen's only action, but
+ * not an urgent one, and lime is kept for the action that is.
  *
  * It names its own header from the same title key. None of these routes is registered in
  * the root stack, and an unregistered route's header shows its file name — `u/[slug]`,
@@ -52,9 +55,12 @@ export function WebFallback({
       <Stack.Screen options={{ title }} />
       <Heading accessibilityRole="header">{title}</Heading>
       <Body>{t('body')}</Body>
-      <Button
+      <Pill
         label={t('open')}
-        onPress={() => void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}${webPath}`)}
+        size="lg"
+        onPress={() =>
+          void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}${webPath}`)
+        }
       />
     </ScrollView>
   );

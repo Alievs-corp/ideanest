@@ -4,9 +4,15 @@ import { StyleSheet, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
 import { useLocale } from '../../lib/locale';
 import { usePledges } from '../../api/queries';
-import { Button } from '../../components/form';
 import { Body, CardTitle, Meta } from '../../components/text';
-import { EmptyState, InlineAlert, Screen, Skeleton, SkeletonGroup } from '../../components/ui';
+import {
+  EmptyState,
+  InlineAlert,
+  Pill,
+  Screen,
+  Skeleton,
+  SkeletonGroup,
+} from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { readablePledgeState } from '../../lib/pledge-states';
 import { useSession } from '../../lib/use-session';
@@ -74,7 +80,7 @@ export default function PledgesScreen() {
             title={t('mobile.pledges.signedOutTitle')}
             description={t('mobile.pledges.signedOutBody')}
             action={
-              <Button label={t('shell.actions.signIn')} onPress={() => router.push('/sign-in')} />
+              <Pill label={t('shell.actions.signIn')} onPress={() => router.push('/sign-in')} />
             }
           />
         }

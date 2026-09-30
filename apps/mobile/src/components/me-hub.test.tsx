@@ -207,6 +207,12 @@ describe('the Me tab', () => {
       screen.queryByTestId('identity-skeleton', { includeHiddenElements: true }),
     ).toBeNull();
     expect(await screen.findByLabelText('Require your fingerprint')).toBeTruthy();
+
+    // The kit's switch (issue #151): the whole row is one control, named by the lock's label and
+    // saying it is on — not React Native's platform switch beside a separate line of text.
+    const lock = screen.getByRole('switch', { name: 'Require your fingerprint' });
+    expect(lock.props.accessibilityState).toMatchObject({ checked: true });
+    expect(lock).toContainElement(screen.getByText('Require your fingerprint'));
   });
 
   it.each([

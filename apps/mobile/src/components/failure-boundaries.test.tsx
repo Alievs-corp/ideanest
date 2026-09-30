@@ -95,6 +95,14 @@ describe('not found', () => {
     await fireEvent.press(screen.getByRole('button', { name: en.shell.failure.pages.notFound.action }));
     expect(mockRouter.replace).toHaveBeenCalledWith('/');
   });
+
+  it('offers the way back as the kit’s white pill, never lime (issue #151)', async () => {
+    await inApp(<NotFoundScreen />);
+    const pill = screen.getByRole('button', { name: en.shell.failure.pages.notFound.action });
+    const style = [pill.props.style].flat(Infinity).reduce((all, one) => ({ ...all, ...one }), {});
+    expect(style.backgroundColor).toBe(colors.whiteSurface);
+    expect(style.backgroundColor).not.toBe(colors.lime500);
+  });
 });
 
 describe('a render error inside a route', () => {

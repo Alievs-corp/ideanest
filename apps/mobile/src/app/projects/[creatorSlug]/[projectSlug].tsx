@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
-import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
 import { siteUrl } from '../../../api/config';
 import { useProjectPage, useProjectRewards, useProjectUpdates } from '../../../api/queries';
@@ -19,6 +19,7 @@ import {
 import {
   InlineAlert,
   MotionBudgetProvider,
+  Pill,
   Screen,
   Skeleton,
   SkeletonGroup,
@@ -76,23 +77,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.surface2,
   },
-  primary: {
-    flex: 1,
-    minHeight: size.touchTarget,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.full,
-    backgroundColor: colors.lime500,
-  },
-  secondary: {
-    minHeight: size.touchTarget,
-    paddingHorizontal: size.cardPaddingSmall,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.full,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.borderStrong,
-  },
+  primary: { flex: 1 },
 });
 
 export default function ProjectScreen() {
@@ -270,24 +255,30 @@ export default function ProjectScreen() {
         budget: it is drawn, it does not arrive.
       */}
         <View style={styles.actions}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('mobile.campaign.backOnWeb', { title })}
-            style={styles.primary}
-            onPress={() => void openOnWeb(creatorSlug, projectSlug)}
-          >
-            {/* Near-black on lime. The only legible pairing (docs/ui-kit.md §9.1). */}
-            <CardTitle tone="onLime">{t('campaign.back.cta')}</CardTitle>
-          </Pressable>
+          {/*
+            The page's one urgent action, so the one lime pill on it: backing the campaign is
+            what "act now" means (docs/ui-kit.md §7.2). Its visible words are its name, so speech
+            input reaches it by what it says; which campaign, and that it opens the web, is the
+            hint. Share is an outline beside it.
+          */}
+          <View style={styles.primary}>
+            <Pill
+              label={t('campaign.back.cta')}
+              accessibilityHint={t('mobile.campaign.backOnWeb', { title })}
+              variant="accent"
+              size="lg"
+              fullWidth
+              onPress={() => void openOnWeb(creatorSlug, projectSlug)}
+            />
+          </View>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('campaign.actions.shareLabel', { title })}
-            style={styles.secondary}
+          <Pill
+            label={t('campaign.actions.share')}
+            accessibilityHint={t('campaign.actions.shareLabel', { title })}
+            variant="outline"
+            size="lg"
             onPress={() => void share(title, creatorSlug, projectSlug)}
-          >
-            <CardTitle>{t('campaign.actions.share')}</CardTitle>
-          </Pressable>
+          />
         </View>
       </View>
     </MotionBudgetProvider>

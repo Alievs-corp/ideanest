@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
-import { Check } from 'lucide-react-native';
-import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from '@ideanest/messages';
-import { Button } from '../../components/form';
-import { Body, CardTitle, Heading } from '../../components/text';
-import { Icon } from '../../components/ui';
+import { LOCALE_NAMES, SUPPORTED_LOCALES, isLocale, type Locale } from '@ideanest/messages';
+import { Heading } from '../../components/text';
+import { InlineAlert, MotionBudgetProvider, Pill, Radio, RadioGroup } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { useQueryClient } from '@tanstack/react-query';
 import { ACCOUNT_KEYS } from '../../lib/account';
@@ -25,6 +23,13 @@ import { colors, radius, size, spacing } from '../../theme';
  * choice stays, marked pending so a stale account value cannot switch it back, and the reader
  * is told the account was not saved, with a retry here; `AccountSync` also retries it on the
  * next foreground. The currency half belongs to the settings issue.
+ *
+ * <p>The list is the kit's `RadioGroup` (issue #151): each row one `Radio`, the whole row the
+ * target, the name spoken in its own language, and "selected" said by the control's state and
+ * its dot rather than by colour. A failed save is a warning `InlineAlert` with the retry as a
+ * ghost pill — trying again is not the urgent thing on the screen.
+ *
+ * <p>Motion: none. It is a settings screen, which `docs/motion-system.md` §5 keeps still.
  */
 
 const styles = StyleSheet.create({
@@ -35,21 +40,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     paddingHorizontal: size.cardPaddingSmall,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: size.touchTarget + spacing[2],
-    gap: spacing[4],
-  },
-  failure: {
-    gap: spacing[3],
-    padding: spacing[4],
-    borderRadius: radius.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.warning,
-    backgroundColor: colors.surface2,
+    paddingVertical: spacing[1],
   },
 });
 
@@ -79,52 +70,47 @@ export default function LanguageScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      {/* Unregistered in the root stack, so it names its own header rather than showing its path. */}
-      <Stack.Screen options={{ title: t('mobile.language.title') }} />
-      <Heading accessibilityRole="header">{t('mobile.language.title')}</Heading>
+    <MotionBudgetProvider level="none">
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Unregistered in the root stack, so it names its own header rather than showing its path. */}
+        <Stack.Screen options={{ title: t('mobile.language.title') }} />
+        <Heading accessibilityRole="header">{t('mobile.language.title')}</Heading>
 
-      <View style={styles.card} accessibilityRole="radiogroup">
-        {SUPPORTED_LOCALES.map((locale) => {
-          const selected = locale === active;
-          return (
-            <Pressable
-              key={locale}
-              accessibilityRole="radio"
-              accessibilityLabel={LOCALE_NAMES[locale]}
-              accessibilityLanguage={locale}
-              accessibilityState={{ selected }}
-              onPress={() => choose(locale)}
-              style={styles.row}
-            >
-              <CardTitle
-                tone={selected ? 'primary' : 'secondary'}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              >
-                {LOCALE_NAMES[locale]}
-              </CardTitle>
-              {/*
-               * A check, not a lime tick: lime is never text (issue #151). The row's
-               * `accessibilityState.selected` is what a screen reader hears; this is for the eye.
-               */}
-              {selected ? <Icon icon={Check} size={20} color={colors.textPrimary} /> : null}
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {unsaved === null ? null : (
-        <View style={styles.failure} accessibilityRole="alert">
-          <Body>{t('mobile.language.saveFailed')}</Body>
-          <Button
-            label={t('mobile.language.retry')}
-            variant="secondary"
-            onPress={() => void saveToAccount(unsaved)}
-          />
+        <View style={styles.card}>
+          <RadioGroup
+            label={t('mobile.language.title')}
+            value={active}
+            onChange={(value) => {
+              if (isLocale(value)) choose(value);
+            }}
+          >
+            {SUPPORTED_LOCALES.map((locale) => (
+              <Radio
+                key={locale}
+                value={locale}
+                label={LOCALE_NAMES[locale]}
+                accessibilityLanguage={locale}
+              />
+            ))}
+          </RadioGroup>
         </View>
-      )}
-    </ScrollView>
+
+        {unsaved === null ? null : (
+          <InlineAlert
+            variant="warning"
+            description={t('mobile.language.saveFailed')}
+            action={
+              <Pill
+                label={t('mobile.language.retry')}
+                variant="ghost"
+                size="sm"
+                onPress={() => void saveToAccount(unsaved)}
+              />
+            }
+          />
+        )}
+      </ScrollView>
+    </MotionBudgetProvider>
   );
 }
 
