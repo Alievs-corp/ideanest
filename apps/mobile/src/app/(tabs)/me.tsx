@@ -295,8 +295,13 @@ export default function MeScreen() {
   const state = useSessionState();
   const me = useMe();
   const account = state === 'signed-in' ? (me.data ?? null) : null;
-  /** Unknown because the answer is on its way — not because asking failed or would prompt. */
-  const loading = state === 'unknown' && canReadAccount(session) && !me.isError;
+  /**
+   * Unknown because the answer is on its way — not because asking failed or would prompt, and
+   * not because the read is paused for a connection (issue #150): a paused query is neither
+   * fetching nor an error, and a skeleton for it would wait as long as the phone is offline.
+   */
+  const loading =
+    state === 'unknown' && canReadAccount(session) && !me.isError && me.fetchStatus === 'fetching';
   /*
    * A session on this phone that the service has not denied. Signed in, or unknown with a token
    * — an outage, or the lock not unlocked. Either way This phone and Sign out stay: they are the

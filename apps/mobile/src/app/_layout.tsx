@@ -8,7 +8,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { siteUrl } from '../api/config';
+import { OfflineAnnouncer, WithOfflineBanner } from '../components/offline-banner';
+import { startConnectivity } from '../lib/connectivity';
 import { destinationFor } from '../lib/links';
+import { deferUntilUp } from '../lib/maintenance';
+import { useMaintenanceGate } from '../lib/maintenance-gate';
 import { createQueryClient, persistOptions } from '../lib/offline';
 import { lockNow } from '../lib/session';
 import { AccountSync } from '../lib/account-sync';
@@ -83,6 +87,8 @@ function urlFromNotification(
 /** The root stack; inside the intl provider so its screen titles are translated. */
 function AppStack() {
   const t = useT();
+  // Pushes `maintenance` when the service is away (`lib/maintenance-gate.ts`).
+  useMaintenanceGate(useRouter());
   return (
     <Stack
       screenOptions={{
@@ -91,8 +97,30 @@ function AppStack() {
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.surface1 },
       }}
+      /*
+       * The offline banner under each screen's header. Not on a screen with no header:
+       * that is the tab group, which draws its own under the tabs' header, or a
+       * full-screen failure state. See `components/offline-banner.tsx`.
+       */
+      screenLayout={({ children, options }) =>
+        options.headerShown === false ? children : <WithOfflineBanner>{children}</WithOfflineBanner>
+      }
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      {/*
+        No header and no swipe: the screens underneath are the ones that just
+        failed, and the way back to them is the service answering. A full-screen
+        modal, so it covers a sheet that was open (sign-in) as well as a card.
+      */}
+      <Stack.Screen
+        name="maintenance"
+        options={{
+          presentation: 'fullScreenModal',
+          headerShown: false,
+          gestureEnabled: false,
+          animation: 'fade',
+        }}
+      />
       {/*
         A modal, because signing in is an interruption of whatever somebody
         was doing rather than a place they navigated to — and because the
@@ -111,6 +139,9 @@ export default function RootLayout() {
   const router = useRouter();
   const host = useMemo(() => new URL(siteUrl()).host, []);
   const leftAt = useRef<number | null>(null);
+
+  // The offline banner's source, and TanStack Query's (`lib/connectivity.ts`).
+  useEffect(() => startConnectivity(), []);
 
   useEffect(() => {
     const changed = (state: AppStateStatus) => {
@@ -145,7 +176,10 @@ export default function RootLayout() {
       // `null` means "a link this application does not claim". Doing nothing is
       // the answer: Expo Router has already shown the launch route, and sending
       // somebody to the feed instead would make a bad link look like a good one.
-      if (destination !== null) router.push(destination.pathname as never);
+      if (destination === null) return;
+      const go = () => router.push(destination.pathname as never);
+      // During maintenance the link waits for the service (`deferUntilUp`), then opens.
+      if (!deferUntilUp(go)) go();
     };
 
     void Linking.getInitialURL().then(open);
@@ -188,6 +222,7 @@ export default function RootLayout() {
           <AppIntlProvider>
             <StatusBar style="light" />
             <AccountSync />
+            <OfflineAnnouncer />
             <AppStack />
           </AppIntlProvider>
         </PersistQueryClientProvider>

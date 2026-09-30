@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Link, Tabs, type ErrorBoundaryProps } from 'expo-router';
 import { FailureState } from '../../components/failure-state';
+import { WithOfflineBanner } from '../../components/offline-banner';
 import { TabIcon, type TabIconName } from '../../components/tab-icon';
 import { Meta } from '../../components/text';
 import { useT } from '../../lib/i18n';
@@ -139,6 +140,8 @@ export default function TabsLayout() {
         tabBarShowLabel: false,
         headerRight: () => <HeaderAction />,
       }}
+      // The offline banner, under the tab's header (`components/offline-banner.tsx`).
+      screenLayout={({ children }) => <WithOfflineBanner>{children}</WithOfflineBanner>}
     >
       {TABS.map((tab) => (
         <Tabs.Screen

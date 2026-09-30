@@ -1,6 +1,8 @@
-import { QueryClient } from '@tanstack/react-query';
+import { ApiError } from '@ideanest/api-client';
+import { onlineManager, QueryClient } from '@tanstack/react-query';
 import { persistQueryClientRestore, persistQueryClientSave } from '@tanstack/react-query-persist-client';
-import { createQueryClient, persistOptions, shouldPersistQuery } from './offline';
+import { NoCredentialError, retryMe } from './account';
+import { createQueryClient, persistOptions, shouldPersistQuery, shouldRetry } from './offline';
 import { memoryStore } from './storage';
 import { queryKeys } from '../api/queries';
 
@@ -55,6 +57,74 @@ describe('the query client', () => {
     // expires, which would look exactly like the cache not working.
     const options = createQueryClient().getDefaultOptions().queries;
     expect(options?.gcTime).toBe(persistOptions().maxAge);
+  });
+
+  it('retries twice online, and never offline, so a retry fails rather than pauses', () => {
+    // Issue #150 tells `onlineManager` the truth. A retry decided on offline would then
+    // pause, and a paused query with no cache renders as an empty list rather than an error.
+    try {
+      onlineManager.setOnline(true);
+      expect([0, 1, 2].map((count) => shouldRetry(count))).toEqual([true, true, false]);
+
+      onlineManager.setOnline(false);
+      expect(shouldRetry(0)).toBe(false);
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
+  it('never retries a 4xx other than a timeout or a rate limit', () => {
+    for (const status of [400, 401, 403, 404, 409, 422]) {
+      expect(shouldRetry(0, new ApiError(status))).toBe(false);
+    }
+    for (const status of [408, 429, 500, 502, 503]) {
+      expect(shouldRetry(0, new ApiError(status))).toBe(true);
+    }
+    expect(shouldRetry(0, new TypeError('Network request failed'))).toBe(true);
+  });
+
+  it("the account read's own rule declines offline too, and after a missing credential", () => {
+    try {
+      onlineManager.setOnline(true);
+      expect([0, 2, 3].map((count) => retryMe(count, new Error('5xx')))).toEqual([true, true, false]);
+      expect(retryMe(0, new NoCredentialError())).toBe(false);
+
+      onlineManager.setOnline(false);
+      expect(retryMe(0, new Error('5xx'))).toBe(false);
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+
+  it.each([
+    ['the default rule', undefined],
+    ["the account read's rule", retryMe],
+  ] as const)('offline, a failing query with %s errors rather than pausing', async (_name, retry) => {
+    const client = createQueryClient();
+    try {
+      onlineManager.setOnline(false);
+      const settled = client
+        .fetchQuery({
+          queryKey: ['offline-probe'],
+          queryFn: () => Promise.reject(new TypeError('Network request failed')),
+          retryDelay: 0,
+          ...(retry === undefined ? {} : { retry }),
+        })
+        .then(
+          () => 'resolved',
+          () => 'errored',
+        );
+      // A paused query never settles; this would time out instead.
+      await expect(settled).resolves.toBe('errored');
+      expect(client.getQueryState(['offline-probe'])?.fetchStatus).toBe('idle');
+    } finally {
+      onlineManager.setOnline(true);
+      client.clear();
+    }
+  });
+
+  it('fails a write offline rather than holding it for a connection', () => {
+    expect(createQueryClient().getDefaultOptions().mutations?.networkMode).toBe('offlineFirst');
   });
 });
 

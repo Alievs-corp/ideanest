@@ -5177,6 +5177,9 @@
       "title": "Dil",
       "saveFailed": "Hesap diliniz kaydedilmedi. Uygulama bu telefonda zaten yeni dilde.",
       "retry": "Tekrar dene"
+    },
+    "offline": {
+      "banner": "İnternet bağlantısı yok. Bağlantı geri gelene kadar gördükleriniz güncel olmayabilir."
     }
   }
 }

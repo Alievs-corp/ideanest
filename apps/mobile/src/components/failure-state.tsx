@@ -22,6 +22,7 @@ export function FailureState({
   actionLabel,
   onAction,
   reference,
+  busy = false,
   children,
 }: {
   readonly title: string;
@@ -30,6 +31,11 @@ export function FailureState({
   readonly onAction: () => void;
   /** The `X-Trace-Id` of the failed response, when there was one. */
   readonly reference?: string | null;
+  /**
+   * The action is running (maintenance's "Try again" asking the service). The pill says so to a
+   * screen reader (`busy`), holds its pressed shade, and ignores presses until it is done.
+   */
+  readonly busy?: boolean;
   readonly children?: ReactNode;
 }) {
   const t = useT('shell.failure.pages.error');
@@ -47,8 +53,10 @@ export function FailureState({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={actionLabel}
+        accessibilityState={{ busy, disabled: busy }}
+        disabled={busy}
         onPress={onAction}
-        style={({ pressed }) => [styles.pill, pressed && styles.pillPressed]}
+        style={({ pressed }) => [styles.pill, (pressed || busy) && styles.pillPressed]}
       >
         <CardTitle tone="onWhite" accessibilityElementsHidden importantForAccessibility="no">
           {actionLabel}

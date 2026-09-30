@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { onlineManager, useQuery } from '@tanstack/react-query';
 import { ApiError, type GetResponse } from '@ideanest/api-client';
 import { api } from '../api/client';
 import { currentAccessToken, hasStoredSession } from './session';
@@ -112,12 +112,21 @@ export function useMe() {
     queryFn: ({ signal }) => fetchMe(signal),
     enabled: canReadAccount(session),
     staleTime: 60_000,
-    /*
-     * Backoff, so an outage that ends while the app is open is noticed without a foreground.
-     * Never after a missing credential: each retry would be another biometric prompt.
-     */
-    retry: (failures, error) => !(error instanceof NoCredentialError) && failures < 3,
+    retry: retryMe,
   });
+}
+
+/**
+ * Whether a failed `GET /v1/me` is tried again.
+ *
+ * <p>Backoff, so an outage that ends while the app is open is noticed without a foreground.
+ * Never after a missing credential: each retry would be another biometric prompt. And never
+ * while offline — `lib/offline.ts`'s `shouldRetry` gives the reason: with `onlineManager` told
+ * the truth (issue #150), a retry decided on offline pauses instead of failing, and a paused
+ * account read would hold the Me tab on its skeleton for as long as the plane is in the air.
+ */
+export function retryMe(failures: number, error: unknown): boolean {
+  return !(error instanceof NoCredentialError) && failures < 3 && onlineManager.isOnline();
 }
 
 export function useSessionState(): SessionState {

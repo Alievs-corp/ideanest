@@ -1,5 +1,6 @@
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { QueryClient } from '@tanstack/react-query';
+import { ApiError } from '@ideanest/api-client';
+import { onlineManager, QueryClient } from '@tanstack/react-query';
 import type { Persister } from '@tanstack/react-query-persist-client';
 import { deviceStore, type KeyValueStore } from './storage';
 
@@ -113,10 +114,41 @@ export function createQueryClient(): QueryClient {
          * from being told, and the default backoff spends thirty seconds
          * discovering what the first failure already said.
          */
-        retry: 2,
+        retry: shouldRetry,
       },
+      /*
+       * The same mode for writes, and for the same reason. `lib/connectivity.ts`
+       * tells `onlineManager` when the phone is offline, and a mutation in the
+       * default `online` mode would then wait silently for a connection instead
+       * of failing with the "check your connection" every form already says.
+       */
+      mutations: { networkMode: 'offlineFirst' },
     },
   });
+}
+
+/**
+ * Whether a failed query is tried again — issue #150.
+ *
+ * <p>Twice, and never on a 4xx other than 408 (timeout) and 429 (rate limited):
+ * the rest are the service's considered answer, and asking again gets the same
+ * one. The rule the comment above always stated; the number it replaced retried
+ * those too.
+ *
+ * <p>Never while the phone is offline. Since
+ * `lib/connectivity.ts` wires `onlineManager`, a retry decided on while offline
+ * would not fail — it would **pause** until the connection returned, and a paused
+ * query with nothing cached is neither loading nor an error, so a screen would
+ * fall through to its empty state ("Nothing saved yet") on a plane. Declining the
+ * retry keeps today's behaviour: the query errors, the screen shows its error or
+ * its cached data with its notice, and `refetchOnReconnect` — the thing the
+ * wiring is for — fetches it again when the phone is back.
+ */
+export function shouldRetry(failureCount: number, error?: unknown): boolean {
+  if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+    if (error.status !== 408 && error.status !== 429) return false;
+  }
+  return failureCount < 2 && onlineManager.isOnline();
 }
 
 /**
