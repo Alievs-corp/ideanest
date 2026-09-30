@@ -2,24 +2,27 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from '@ideanest/messages';
-import { saveAccountLocale } from '../../api/client';
 import { Button } from '../../components/form';
 import { Body, CardTitle, Heading } from '../../components/text';
 import { useT } from '../../lib/i18n';
 import { useQueryClient } from '@tanstack/react-query';
-import { currentLocale, setLocale, useLocale } from '../../lib/locale';
+import { ACCOUNT_KEYS } from '../../lib/account';
+import { currentLocale, useLocale } from '../../lib/locale';
+import { chooseLocale, pushPendingLocale } from '../../lib/locale-sync';
 import { useSession } from '../../lib/use-session';
 import { colors, radius, size, spacing } from '../../theme';
 
 /**
- * Language — issue #150. The device half of the web's language and currency page.
+ * Language — issues #150 and #216. The device half of the web's language and currency page.
  *
  * A radio list of the four languages, each named in its own language and spoken in it
  * (`accessibilityLanguage`) so a screen reader pronounces it correctly. Choosing one
  * re-renders the app immediately and persists the choice. When signed in the account is
- * updated too (`PATCH /v1/me/locale`); if that fails the local choice stays and the reader
- * is told the account was not saved, with a retry. The currency half belongs to the
- * settings issue.
+ * updated too (`PATCH /v1/me/locale`), because the latest explicit choice is the account's
+ * language (#216); success records it as the last-synced value. If that fails the local
+ * choice stays, marked pending so a stale account value cannot switch it back, and the reader
+ * is told the account was not saved, with a retry here; `AccountSync` also retries it on the
+ * next foreground. The currency half belongs to the settings issue.
  */
 
 const styles = StyleSheet.create({
@@ -57,14 +60,16 @@ export default function LanguageScreen() {
 
   async function saveToAccount(locale: Locale): Promise<void> {
     if (!signedIn) return;
-    const saved = await saveAccountLocale(locale);
+    // `null`: nothing pending any more — a foreground retry got there first.
+    const saved = await pushPendingLocale();
+    if (saved === true) void queryClient.invalidateQueries({ queryKey: ACCOUNT_KEYS.me });
     // A slow answer for a language that has since been replaced says nothing about the
     // current choice, and a retry of it would overwrite the account with the older one.
-    if (locale === currentLocale()) setUnsaved(saved ? null : locale);
+    if (locale === currentLocale()) setUnsaved(saved === false ? locale : null);
   }
 
   function choose(locale: Locale): void {
-    setLocale(locale);
+    chooseLocale(locale, signedIn);
     // Category names, collection titles and facet labels arrive already translated.
     void queryClient.invalidateQueries();
     setUnsaved(null);

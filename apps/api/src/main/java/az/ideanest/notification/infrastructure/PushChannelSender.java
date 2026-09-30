@@ -7,9 +7,14 @@ import az.ideanest.notification.application.PermanentDeliveryFailure;
 import az.ideanest.notification.application.PushDevices;
 import az.ideanest.notification.domain.NotificationChannel;
 import az.ideanest.notification.domain.PushDevice;
+import az.ideanest.shared.ReaderLocale;
+import az.ideanest.user.application.UserAccount;
+import az.ideanest.user.application.UserAccounts;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -49,6 +54,16 @@ import org.springframework.stereotype.Component;
  * <p>If dropping it leaves the recipient with nothing, that is not a failure to retry
  * either — see outcome one. The row records that the platform tried.
  *
+ * <h2>The account's language, read when the push is sent</h2>
+ *
+ * <p>Issue #216: the language a person chose last — in the application, in the phone's
+ * per-app setting or on the web — is written to the account, and the next push must be in
+ * it. So {@code users.locale} is read here, at send time, and not copied onto the queued
+ * row: a notification queued before somebody changed language and sent after it is sent in
+ * the new one, which is what {@code EmailChannelSender} already does for mail. The read
+ * happens only once a registered device is found, so the many accounts with no phone cost
+ * no extra query.
+ *
  * <h2>What is not logged</h2>
  *
  * <p>No token and no recipient. A push token is an address, and these lines are read by
@@ -65,21 +80,24 @@ public class PushChannelSender implements ChannelSender {
      *
      * <p>Slot {@code 0} in the catalogue is the greeting, and no {@code .subject} or
      * {@code .line} key refers to it — a lock screen showing somebody their own name is a
-     * wasted line. Passing the empty string rather than reading {@code users} keeps one
-     * more piece of personal data out of a path that does not need it, and saves a query
-     * per notification. {@code EmailCopyTests} is what holds the assumption: it asks for
-     * every key of every type, so a key that started using {@code 0} would be visible.
+     * wasted line. The account is read for its language only (#216), and the name is not
+     * taken from it, which keeps one more piece of personal data out of a path that does not
+     * need it. {@code EmailCopyTests} is what holds the assumption: it asks for every key of
+     * every type, so a key that started using {@code 0} would be visible.
      */
     private static final String NO_GREETING = "";
 
     private final PushDevices devices;
     private final PushComposer composer;
     private final ExpoPushClient expo;
+    private final UserAccounts users;
 
-    public PushChannelSender(PushDevices devices, PushComposer composer, ExpoPushClient expo) {
+    public PushChannelSender(
+            PushDevices devices, PushComposer composer, ExpoPushClient expo, UserAccounts users) {
         this.devices = devices;
         this.composer = composer;
         this.expo = expo;
+        this.users = users;
     }
 
     @Override
@@ -89,14 +107,31 @@ public class PushChannelSender implements ChannelSender {
 
     @Override
     public void send(NotificationMessage message) {
-        PushComposer.PushContent content = composer.compose(message, NO_GREETING);
-        deliver(message.recipientId(), content, message.id(), "notification " + message.id());
+        deliver(
+                message.recipientId(),
+                locale -> composer.compose(message, NO_GREETING, locale),
+                message.id(),
+                "notification " + message.id());
     }
 
     @Override
     public void send(NotificationDigest digest) {
-        PushComposer.PushContent content = composer.compose(digest, NO_GREETING);
-        deliver(digest.recipientId(), content, digest.id(), "digest " + digest.id());
+        deliver(
+                digest.recipientId(),
+                locale -> composer.compose(digest, NO_GREETING, locale),
+                digest.id(),
+                "digest " + digest.id());
+    }
+
+    /**
+     * The recipient's language as the account holds it now.
+     *
+     * <p>An account that is gone reads as the primary language rather than failing the
+     * send: its devices are about to be swept anyway, and a push in Azerbaijani is a better
+     * outcome than a retry loop over a missing row.
+     */
+    private Locale localeOf(UUID recipientId) {
+        return ReaderLocale.of(users.findById(recipientId).map(UserAccount::locale).orElse(null));
     }
 
     /**
@@ -106,7 +141,11 @@ public class PushChannelSender implements ChannelSender {
      *     a day, which is what makes {@link ChannelSender}'s at-least-once contract
      *     tolerable here: the same message handed over twice arrives once
      */
-    private void deliver(UUID recipientId, PushComposer.PushContent content, UUID idempotencyKey, String what) {
+    private void deliver(
+            UUID recipientId,
+            Function<Locale, PushComposer.PushContent> compose,
+            UUID idempotencyKey,
+            String what) {
         List<PushDevice> registered = devices.reachable(recipientId);
         if (registered.isEmpty()) {
             // Outcome one. Debug rather than warn: this is the ordinary state of most
@@ -115,6 +154,7 @@ public class PushChannelSender implements ChannelSender {
             return;
         }
 
+        PushComposer.PushContent content = compose.apply(localeOf(recipientId));
         List<ExpoPushClient.Push> batch = new ArrayList<>(registered.size());
         for (PushDevice device : registered) {
             batch.add(new ExpoPushClient.Push(

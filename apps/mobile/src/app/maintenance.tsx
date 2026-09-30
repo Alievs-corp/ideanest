@@ -4,6 +4,7 @@ import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { FailureState } from '../components/failure-state';
 import { useT } from '../lib/i18n';
+import { useLocale } from '../lib/locale';
 import {
   POLL_INTERVAL_MS,
   createPoller,
@@ -11,17 +12,25 @@ import {
   inMaintenance,
   leaveMaintenance,
   serviceAnswers,
+  useCurrentMaintenance,
   type Poller,
 } from '../lib/maintenance';
+import { untilMessage } from '../lib/maintenance-copy';
 
 /**
- * The maintenance screen — issue #150. Pushed by the root layout (`lib/maintenance-gate.ts`)
- * when `lib/maintenance.ts` sees a 503; see there for why a 503 is the signal.
+ * The maintenance screen — issues #150 and #214. Pushed by the root layout
+ * (`lib/maintenance-gate.ts`) when `lib/maintenance.ts` meets the maintenance problem; see
+ * there for why that, and not any 503, is the signal.
  *
  * <h2>The web's words, and a way out that is a check</h2>
  *
  * Title and description are the web `/maintenance` page's own
- * (`shell.failure.pages.maintenance`), so the outage reads the same on both. The web's action
+ * (`shell.failure.pages.maintenance`), so the outage reads the same on both, with the announced
+ * end under them — "Back around 02:30", in the reader's language and time zone — or that none
+ * is announced. When the proxy answered (`source: "edge"`), the service is not running and
+ * nobody announced anything: an unplanned crash looks the same from here, so the screen says
+ * only that IdeyaNest is unavailable and is being worked on (`shell.maintenance.edge`), never
+ * "planned". Each poll updates this: an extended end, or the edge taking over. The web's action
  * is a link home, which on the web is a new request; here the equivalent is to ask the service
  * now, so the white pill says "Try again" (`shell.failure.pages.error.retry`) and does exactly
  * that — busy while it asks, and saying the description again when the answer is still no, so a
@@ -52,7 +61,10 @@ import {
  */
 export default function MaintenanceScreen() {
   const t = useT('shell.failure.pages.maintenance');
+  const tMaintenance = useT('shell.maintenance');
   const tError = useT('shell.failure.pages.error');
+  const locale = useLocale();
+  const maintenance = useCurrentMaintenance();
   const router = useRouter();
   const navigation = useNavigation();
   const queryClient = useQueryClient();
@@ -108,7 +120,10 @@ export default function MaintenanceScreen() {
     };
   }, [navigation, queryClient, router]);
 
-  const description = t('description');
+  const edge = maintenance?.source === 'edge';
+  const title = edge ? tMaintenance('edge.title') : t('title');
+  const description = edge ? tMaintenance('edge.description') : t('description');
+  const until = maintenance === null ? null : untilMessage(maintenance, locale);
 
   const tryAgain = async () => {
     if (busy || done.current) return;
@@ -127,8 +142,9 @@ export default function MaintenanceScreen() {
 
   return (
     <FailureState
-      title={t('title')}
+      title={title}
       description={description}
+      note={until === null ? null : tMaintenance(until.key, until.values)}
       actionLabel={tError('retry')}
       busy={busy}
       onAction={() => void tryAgain()}

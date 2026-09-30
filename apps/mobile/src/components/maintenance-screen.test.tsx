@@ -8,16 +8,23 @@ import en from '@ideanest/messages/en.json';
 import MaintenanceScreen from '../app/maintenance';
 import { colors } from '../theme';
 import { setOnline } from '../lib/connectivity';
+import type { Maintenance } from '@ideanest/api-client/maintenance';
 import {
+  MIN_FIRST_POLL_MS,
   POLL_INTERVAL_MS,
   enterMaintenance,
   inMaintenance,
   leaveMaintenance,
 } from '../lib/maintenance';
+import { useUpcomingStore } from '../lib/upcoming-maintenance';
+import { formatTime } from '../lib/i18n';
+import { memoryStore } from '../lib/storage';
 
 /**
- * The maintenance screen — issue #150: the web's words, a white "Try again" that checks now,
- * polling that honours `Retry-After`, and a way out — once — only when the service answers.
+ * The maintenance screen — issues #150 and #214: the web's words with the announced end under
+ * them, the edge's neutral words when the proxy answered, a white "Try again" that checks now,
+ * polling `/v1/status` that honours `Retry-After`, and a way out — once — only when the status
+ * says `operational`.
  *
  * <p>Here rather than beside `app/maintenance.tsx` because every file under `src/app` is a
  * route to Expo Router, and a test file there would be offered as a screen.
@@ -42,10 +49,21 @@ const METRICS = {
 };
 
 const copy = en.shell.failure.pages.maintenance;
+const edgeCopy = en.shell.maintenance.edge;
 const TRY_AGAIN = en.shell.failure.pages.error.retry;
 const fetchMock = jest.fn<Promise<Response>, [string, RequestInit | undefined]>();
-const down = () => new Response(null, { status: 503 });
-const up = () => new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } });
+const status = (body: unknown) =>
+  new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+const down = () => status({ state: 'maintenance', maintenance: null, upcoming: null });
+const up = () => status({ state: 'operational', maintenance: null, upcoming: null });
+
+/** A window from the service, with no announced end, whose `Retry-After` asked for `delayMs`. */
+const windowOn = (delayMs: number): Maintenance => ({
+  startsAt: '2026-10-04T22:00:00Z',
+  endsAt: null,
+  source: 'api',
+  retryAfterSeconds: delayMs / 1000,
+});
 
 /*
  * The first render pays for FailureState and the WhatsApp sheet's module graph, which is the
@@ -101,6 +119,7 @@ beforeEach(() => {
   announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => {});
   setOnline(true);
   leaveMaintenance();
+  useUpcomingStore(memoryStore());
 });
 
 afterEach(() => {
@@ -114,7 +133,7 @@ it("shows the web's maintenance copy with a white Try again, and no way back", a
     backHandlers.push(handler as () => boolean | null | undefined);
     return { remove: jest.fn() };
   });
-  enterMaintenance(POLL_INTERVAL_MS);
+  enterMaintenance(windowOn(POLL_INTERVAL_MS));
   await renderScreen();
 
   expect(screen.getByRole('header', { name: copy.title })).toBeOnTheScreen();
@@ -130,7 +149,7 @@ it("shows the web's maintenance copy with a white Try again, and no way back", a
 });
 
 it('waits for Retry-After, polls every thirty seconds, and leaves when the service answers', async () => {
-  enterMaintenance(10_000);
+  enterMaintenance(windowOn(10_000));
   fetchMock.mockResolvedValueOnce(down()).mockResolvedValueOnce(up());
   await renderScreen();
 
@@ -139,7 +158,7 @@ it('waits for Retry-After, polls every thirty seconds, and leaves when the servi
 
   await advance(1);
   expect(fetchMock).toHaveBeenCalledTimes(1);
-  expect(fetchMock.mock.calls[0]?.[0]).toMatch(/^https:\/\/api\.test\.invalid\/v1\/categories\?_=/);
+  expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/status');
   expect(mockNavigation.goBack).not.toHaveBeenCalled();
   expect(inMaintenance()).toBe(true);
 
@@ -153,17 +172,18 @@ it('waits for Retry-After, polls every thirty seconds, and leaves when the servi
 
 it('goes Home when there is nothing to go back to', async () => {
   mockNavigation.canGoBack.mockReturnValue(false);
-  enterMaintenance(0);
+  enterMaintenance(windowOn(0));
   fetchMock.mockResolvedValueOnce(up());
   await renderScreen();
 
-  await advance(0);
+  // A Retry-After of 0 still waits the shortest first wait.
+  await advance(MIN_FIRST_POLL_MS);
   expect(mockRouter.replace).toHaveBeenCalledWith('/');
   expect(mockNavigation.goBack).not.toHaveBeenCalled();
 });
 
 it('Try again checks now, busy while it asks, and says so when the answer is still no', async () => {
-  enterMaintenance(POLL_INTERVAL_MS);
+  enterMaintenance(windowOn(POLL_INTERVAL_MS));
   let answer: (response: Response) => void = () => {};
   fetchMock.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)));
   await renderScreen();
@@ -185,7 +205,7 @@ it('Try again checks now, busy while it asks, and says so when the answer is sti
 });
 
 it('Try again leaves at once when the service answers', async () => {
-  enterMaintenance(POLL_INTERVAL_MS);
+  enterMaintenance(windowOn(POLL_INTERVAL_MS));
   fetchMock.mockResolvedValueOnce(up());
   await renderScreen();
 
@@ -198,7 +218,7 @@ it('Try again leaves at once when the service answers', async () => {
 
 it('leaves once, even when Try again and a return to the foreground both answer', async () => {
   const listeners = captureAppState();
-  enterMaintenance(POLL_INTERVAL_MS);
+  enterMaintenance(windowOn(POLL_INTERVAL_MS));
   fetchMock.mockResolvedValue(up());
   await renderScreen();
 
@@ -212,7 +232,7 @@ it('leaves once, even when Try again and a return to the foreground both answer'
 
 it('stops polling when the app is put away, and asks at once when it comes back', async () => {
   const listeners = captureAppState();
-  enterMaintenance(POLL_INTERVAL_MS);
+  enterMaintenance(windowOn(POLL_INTERVAL_MS));
   fetchMock.mockResolvedValue(down());
   await renderScreen();
 
@@ -226,7 +246,7 @@ it('stops polling when the app is put away, and asks at once when it comes back'
 });
 
 it('stops polling when the screen unmounts', async () => {
-  enterMaintenance(POLL_INTERVAL_MS);
+  enterMaintenance(windowOn(POLL_INTERVAL_MS));
   fetchMock.mockResolvedValue(down());
   const view = await renderScreen();
 
@@ -241,4 +261,63 @@ it('reached with no outage (a stray ideanest://maintenance), it goes Home at onc
   expect(mockRouter.replace).toHaveBeenCalledWith('/');
   await advance(POLL_INTERVAL_MS * 2);
   expect(fetchMock).not.toHaveBeenCalled();
+});
+
+describe('what it says about the window', () => {
+  const NOW = Date.parse('2026-10-04T12:00:00Z');
+
+  it('the announced end, in the phone time zone: "Back around …"', async () => {
+    jest.setSystemTime(NOW);
+    enterMaintenance({
+      startsAt: '2026-10-04T11:45:00Z',
+      endsAt: '2026-10-04T12:30:00Z',
+      source: 'api',
+      retryAfterSeconds: 1800,
+    });
+    await renderScreen();
+
+    expect(screen.getByRole('header', { name: copy.title })).toBeOnTheScreen();
+    const time = formatTime('2026-10-04T12:30:00Z', 'en');
+    expect(screen.getByText(en.shell.maintenance.until.replace('{time}', time))).toBeOnTheScreen();
+  });
+
+  it('that no end is announced, when none is', async () => {
+    enterMaintenance(windowOn(POLL_INTERVAL_MS));
+    await renderScreen();
+    expect(screen.getByText(en.shell.maintenance.untilUnknown)).toBeOnTheScreen();
+  });
+
+  it('only the neutral words when the edge answered: never "planned", and no end', async () => {
+    enterMaintenance({ startsAt: null, endsAt: null, source: 'edge', retryAfterSeconds: 120 });
+    await renderScreen();
+
+    expect(screen.getByRole('header', { name: edgeCopy.title })).toBeOnTheScreen();
+    expect(screen.getByText(edgeCopy.description)).toBeOnTheScreen();
+    expect(screen.queryByText(copy.title)).toBeNull();
+    expect(screen.queryByText(copy.description)).toBeNull();
+    expect(screen.queryByText(en.shell.maintenance.untilUnknown)).toBeNull();
+  });
+
+  it('takes the newer word when the poll hears the window was extended', async () => {
+    jest.setSystemTime(NOW);
+    enterMaintenance({
+      startsAt: '2026-10-04T11:45:00Z',
+      endsAt: '2026-10-04T12:30:00Z',
+      source: 'api',
+      retryAfterSeconds: 30,
+    });
+    fetchMock.mockResolvedValueOnce(
+      status({
+        state: 'maintenance',
+        maintenance: { startsAt: '2026-10-04T11:45:00Z', endsAt: '2026-10-04T12:45:00Z' },
+        upcoming: null,
+      }),
+    );
+    await renderScreen();
+
+    await advance(30_000);
+    const later = formatTime('2026-10-04T12:45:00Z', 'en');
+    expect(screen.getByText(en.shell.maintenance.until.replace('{time}', later))).toBeOnTheScreen();
+    expect(mockNavigation.goBack).not.toHaveBeenCalled();
+  });
 });
