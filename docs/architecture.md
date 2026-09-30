@@ -1612,6 +1612,26 @@ Preferences are per category and per channel, with a digest option.
 > real ones. A partner with no percentage is told a super admin has to set it, rather than
 > that they do not work here. The navigation rail shows a partner only what their
 > capabilities open, and the API is what refuses the rest.
+>
+> **The console's front page (#222).** `GET /v1/admin/dashboard` assembles the platform's key
+> figures from **sections that each module publishes** through the shared
+> `DashboardSection` interface, so the dashboard module knows none of them and cannot form
+> a cycle with them. A section declares the capability its own screen already asks for
+> (`requiresAny`), and the caller receives only the sections they hold one of: a moderator's
+> page has the campaign and report queues and no revenue, finance has the money and the
+> support queue, and a partner or curator, who hold none of them, gets an empty page rather
+> than an error. The request has two parameters, the first and last day; nothing else can
+> widen the answer. Each section is read on its own and a failure is served as `UNAVAILABLE`
+> while the others are untouched; the service opens no transaction of its own, because
+> PostgreSQL aborts a transaction at the first SQL error and would fail every section after
+> it. Values are decimal strings and there is no field that could carry a transaction or a
+> person. The first sections: `figures` (pledge volume, pledge count, backers, average pledge,
+> success rate, daily trend; `VIEW_FINANCE`), `campaigns` (running = live, closing window and
+> extended; awaiting moderation with the oldest wait; awaiting launch; changes requested;
+> every state; created in the period; `MODERATE_CONTENT`), `reports` (open, oldest wait;
+> `MODERATE_CONTENT`), `support` (open and pending, oldest wait; `HANDLE_SUPPORT`) and
+> `accounts` (opened in the period; `ADMINISTER_ACCOUNTS`). Each read is audited with the
+> sections served and failed. The screen follows in the next pull request.
 
 > **All sixteen have a screen now, and #259 is what built them.** The
 > distinction that table used to hide is between a capability's *record* and its
@@ -6615,97 +6635,188 @@ collection failure.
 | Campaign close | Collection workers scale on queue depth |
 | Viral project | Project and discovery pages served from the edge with a short cache; WebSocket scales separately |
 | Database pressure | Reads to replicas; connection pooling in front of PostgreSQL |
-
-### 19.6 Maintenance (#214)
-
-Maintenance is **one contract with two sources**. Whoever answers, a client sees the
-same response and renders its own copy from it, in the reader's language:
-
-```
-HTTP/1.1 503 Service Unavailable
-Retry-After: 1200                  # seconds to the announced end, clamped 30 s – 1 h; 300 with no end
-Cache-Control: no-store
-Content-Type: application/problem+json
-
-{
-  "type": "https://ideanest.az/problems/maintenance",
-  "title": "Scheduled maintenance",
-  "status": 503,
-  "startsAt": "2026-10-04T22:00:00Z",
-  "endsAt": "2026-10-04T22:30:00Z",   # null = until further notice
-  "source": "api"                     # or "edge"
-}
-```
-
-The body carries no `detail` and no other prose. **Any other 5xx, including a 503
-without this `type`, is an ordinary failure**: an error state and a retry with backoff,
-never the maintenance screen. A 503 also means overload, a failed dependency or a
-restart, and calling those "planned maintenance" would hide a real incident.
-
-| Source | When | How |
-|---|---|---|
-| `api` | A window scheduled or started in the console is in force | `MaintenanceFilter`, from `maintenance_windows` (V91) |
-| `edge` | The API is not running at all — a deploy, a migration, a crash | Traefik's `errors` middleware serves a static copy, `endsAt: null`, `Retry-After: 120` (`ops/`, the runbook in `ops/deploy/README.md`) |
-
-**Windows.** One row per window: start, end (nullable), `announce_from` (default a day
-before the start, never in the past), an internal note that readers never see, and
-`ended_at` / `cancelled_at` for an early end and a cancellation. A window is *active*
-from its start until its end, an early end or a cancellation; it is *upcoming* from
-`announce_from` until its start. At most one window is active or upcoming at a time:
-the service refuses an overlap with a 409 and V91's exclusion constraint holds it
-under concurrent edits. `MaintenanceWindows` caches the live windows exactly as
-`FeatureFlags` caches flags — ten seconds, cleared on every edit and again on commit —
-and judges "active" against the clock on every call, so a scheduled start happens at
-its instant and an edit reaches every instance within ten seconds. Outside the
-platform module the question is asked through `shared.maintenance.MaintenanceGate`.
-
-**`GET /v1/status`** answers `{ "state": "operational" | "maintenance", "maintenance":
-{ startsAt, endsAt } | null, "upcoming": { startsAt, endsAt } | null }`, `no-store`,
-without a session and without a database read (the snapshot). Clients poll it rather
-than a business endpoint, whose answer could come from an HTTP cache.
-
-**What passes the gate during a window**, and nothing else:
-
-| Path | Why |
-|---|---|
-| `GET /v1/status` | What clients poll to learn it is over |
-| `/actuator/**` | The platform's own health checks and metrics |
-| `POST /v1/auth/login`, `/v1/auth/refresh`, `/v1/auth/2fa/verify`, `/v1/auth/logout` | Staff must be able to sign in. A non-staff account is refused with the maintenance problem **after** its credentials are checked and before anything is issued — no session, no refresh token, no two-factor challenge. A reader's refresh is refused before rotation, so the token still works afterwards |
-| `POST /v1/webhooks/psp/{provider}` | A provider may stop retrying, and the ledger must not miss a settlement. If the database itself is migrating they fail at the edge and the provider retries |
-| Any request with a staff access token (any role) | Staff can look at the platform while it is closed |
-
-The filter sits inside Spring Security's chain, after the bearer token is read and
-before authorization, so it can recognise a staff token and so an anonymous request
-gets the maintenance answer rather than a 401. The access token carries no role, so
-"staff" is `PlatformStaff.isStaff`, one query per token-carrying request during a
-window only.
-
-**Background work pauses.** The jobs that send money or messages out return
-`pausesDuringMaintenance() = true` and `JobRunner` does not claim them while a window
-is active: `charge-processor`, `charge-retry`, `campaign-refunds`,
-`ledger-reconciliation`, `notification-sender`, `notification-digest` and
-`reminder-sender`. Not claiming means no attempt is counted and no backoff starts;
-they resume on the first tick after the window. The outbox relay keeps running: it
-only writes rows inside the platform (the notifications it fans out wait for the
-paused sender) and it carries cache invalidation that staff edits during a window
-still need. Payouts are sent by a finance action, not a job, so staff decide. Inbound
-webhooks are recorded throughout. The health screen shows paused jobs as late, which
-they are.
-
-**Decisions.**
-
-- *A window table, not a feature flag.* A flag is on or off. Maintenance has a start,
-  an end that may be unknown and an announcement period, and is scheduled ahead so
-  readers are warned; as a flag it would be somebody switching it on by hand at 02:00
-  with nobody told. It keeps the flags' caching and audit discipline: every change is
-  audited (`maintenance.window_scheduled`, `_started`, `_ended`, `_changed`,
-  `_cancelled`) with the window before and after.
-- *The edge is Traefik, not Cloudflare.* `api.ideyanest.com` is DNS-only on Cloudflare,
-  so Cloudflare never sees its traffic and cannot answer for it; the first thing in
-  front of the API that can is Traefik on the Coolify server. The edge cannot tell an
-  intended stop from a crash, so an unplanned crash also answers with `source: "edge"`
-  and no end — more honest than a raw `502`, and clients word `edge` neutrally.
-
+
+
+### 19.6 Maintenance (#214)
+
+
+
+Maintenance is **one contract with two sources**. Whoever answers, a client sees the
+
+same response and renders its own copy from it, in the reader's language:
+
+
+
+```
+
+HTTP/1.1 503 Service Unavailable
+
+Retry-After: 1200                  # seconds to the announced end, clamped 30 s – 1 h; 300 with no end
+
+Cache-Control: no-store
+
+Content-Type: application/problem+json
+
+
+
+{
+
+  "type": "https://ideanest.az/problems/maintenance",
+
+  "title": "Scheduled maintenance",
+
+  "status": 503,
+
+  "startsAt": "2026-10-04T22:00:00Z",
+
+  "endsAt": "2026-10-04T22:30:00Z",   # null = until further notice
+
+  "source": "api"                     # or "edge"
+
+}
+
+```
+
+
+
+The body carries no `detail` and no other prose. **Any other 5xx, including a 503
+
+without this `type`, is an ordinary failure**: an error state and a retry with backoff,
+
+never the maintenance screen. A 503 also means overload, a failed dependency or a
+
+restart, and calling those "planned maintenance" would hide a real incident.
+
+
+
+| Source | When | How |
+
+|---|---|---|
+
+| `api` | A window scheduled or started in the console is in force | `MaintenanceFilter`, from `maintenance_windows` (V91) |
+
+| `edge` | The API is not running at all — a deploy, a migration, a crash | Traefik's `errors` middleware serves a static copy, `endsAt: null`, `Retry-After: 120` (`ops/`, the runbook in `ops/deploy/README.md`) |
+
+
+
+**Windows.** One row per window: start, end (nullable), `announce_from` (default a day
+
+before the start, never in the past), an internal note that readers never see, and
+
+`ended_at` / `cancelled_at` for an early end and a cancellation. A window is *active*
+
+from its start until its end, an early end or a cancellation; it is *upcoming* from
+
+`announce_from` until its start. At most one window is active or upcoming at a time:
+
+the service refuses an overlap with a 409 and V91's exclusion constraint holds it
+
+under concurrent edits. `MaintenanceWindows` caches the live windows exactly as
+
+`FeatureFlags` caches flags — ten seconds, cleared on every edit and again on commit —
+
+and judges "active" against the clock on every call, so a scheduled start happens at
+
+its instant and an edit reaches every instance within ten seconds. Outside the
+
+platform module the question is asked through `shared.maintenance.MaintenanceGate`.
+
+
+
+**`GET /v1/status`** answers `{ "state": "operational" | "maintenance", "maintenance":
+
+{ startsAt, endsAt } | null, "upcoming": { startsAt, endsAt } | null }`, `no-store`,
+
+without a session and without a database read (the snapshot). Clients poll it rather
+
+than a business endpoint, whose answer could come from an HTTP cache.
+
+
+
+**What passes the gate during a window**, and nothing else:
+
+
+
+| Path | Why |
+
+|---|---|
+
+| `GET /v1/status` | What clients poll to learn it is over |
+
+| `/actuator/**` | The platform's own health checks and metrics |
+
+| `POST /v1/auth/login`, `/v1/auth/refresh`, `/v1/auth/2fa/verify`, `/v1/auth/logout` | Staff must be able to sign in. A non-staff account is refused with the maintenance problem **after** its credentials are checked and before anything is issued — no session, no refresh token, no two-factor challenge. A reader's refresh is refused before rotation, so the token still works afterwards |
+
+| `POST /v1/webhooks/psp/{provider}` | A provider may stop retrying, and the ledger must not miss a settlement. If the database itself is migrating they fail at the edge and the provider retries |
+
+| Any request with a staff access token (any role) | Staff can look at the platform while it is closed |
+
+
+
+The filter sits inside Spring Security's chain, after the bearer token is read and
+
+before authorization, so it can recognise a staff token and so an anonymous request
+
+gets the maintenance answer rather than a 401. The access token carries no role, so
+
+"staff" is `PlatformStaff.isStaff`, one query per token-carrying request during a
+
+window only.
+
+
+
+**Background work pauses.** The jobs that send money or messages out return
+
+`pausesDuringMaintenance() = true` and `JobRunner` does not claim them while a window
+
+is active: `charge-processor`, `charge-retry`, `campaign-refunds`,
+
+`ledger-reconciliation`, `notification-sender`, `notification-digest` and
+
+`reminder-sender`. Not claiming means no attempt is counted and no backoff starts;
+
+they resume on the first tick after the window. The outbox relay keeps running: it
+
+only writes rows inside the platform (the notifications it fans out wait for the
+
+paused sender) and it carries cache invalidation that staff edits during a window
+
+still need. Payouts are sent by a finance action, not a job, so staff decide. Inbound
+
+webhooks are recorded throughout. The health screen shows paused jobs as late, which
+
+they are.
+
+
+
+**Decisions.**
+
+
+
+- *A window table, not a feature flag.* A flag is on or off. Maintenance has a start,
+
+  an end that may be unknown and an announcement period, and is scheduled ahead so
+
+  readers are warned; as a flag it would be somebody switching it on by hand at 02:00
+
+  with nobody told. It keeps the flags' caching and audit discipline: every change is
+
+  audited (`maintenance.window_scheduled`, `_started`, `_ended`, `_changed`,
+
+  `_cancelled`) with the window before and after.
+
+- *The edge is Traefik, not Cloudflare.* `api.ideyanest.com` is DNS-only on Cloudflare,
+
+  so Cloudflare never sees its traffic and cannot answer for it; the first thing in
+
+  front of the API that can is Traefik on the Coolify server. The edge cannot tell an
+
+  intended stop from a crash, so an unplanned crash also answers with `source: "edge"`
+
+  and no end — more honest than a raw `502`, and clients word `edge` neutrally.
+
+
+
 ---
 
 ## 20. Testing strategy
