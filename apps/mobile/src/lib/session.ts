@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { translate } from './i18n';
 import { deviceStore, type KeyValueStore } from './storage';
 
 /**
@@ -75,8 +76,13 @@ const LOCKED_KEYCHAIN_SERVICE = 'az.ideanest.app.locked';
 const PRESENT_KEY = 'session.present';
 const LOCKED_KEY = 'session.locked';
 
-/** What the system prompt says when a request needs the token and the lock is on. */
-const UNLOCK_PROMPT = 'Unlock IdeyaNest';
+/**
+ * What the system prompt says when a request needs the token and the lock is on — read at
+ * the moment of the prompt, so it is in the language the app is in then.
+ */
+function unlockPrompt(): string {
+  return translate()('mobile.lock.prompt');
+}
 
 let accessToken: string | null = null;
 
@@ -167,7 +173,7 @@ export async function storedRefreshToken(): Promise<string | null> {
       ? await SecureStore.getItemAsync(LOCKED_REFRESH_TOKEN_KEY, {
           keychainService: LOCKED_KEYCHAIN_SERVICE,
           requireAuthentication: true,
-          authenticationPrompt: UNLOCK_PROMPT,
+          authenticationPrompt: unlockPrompt(),
         })
       : await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
 
@@ -260,7 +266,7 @@ export async function disableLock(): Promise<boolean> {
   await SecureStore.deleteItemAsync(LOCKED_REFRESH_TOKEN_KEY, {
     keychainService: LOCKED_KEYCHAIN_SERVICE,
     requireAuthentication: true,
-    authenticationPrompt: UNLOCK_PROMPT,
+    authenticationPrompt: unlockPrompt(),
   });
   return true;
 }
@@ -306,7 +312,7 @@ async function writeLocked(token: string): Promise<void> {
   await SecureStore.setItemAsync(LOCKED_REFRESH_TOKEN_KEY, token, {
     keychainService: LOCKED_KEYCHAIN_SERVICE,
     requireAuthentication: true,
-    authenticationPrompt: UNLOCK_PROMPT,
+    authenticationPrompt: unlockPrompt(),
     /*
      * `WHEN_PASSCODE_SET_THIS_DEVICE_ONLY` rather than the plain
      * `WHEN_UNLOCKED_THIS_DEVICE_ONLY` used for the readable entry. It is the

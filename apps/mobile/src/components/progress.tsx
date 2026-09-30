@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { useT } from '../lib/i18n';
 import { colors, radius, spacing } from '../theme';
 import { Meta } from './text';
 
@@ -68,6 +69,7 @@ const styles = StyleSheet.create({
 });
 
 export function ProgressBar({ completionPercent, label }: ProgressBarProps) {
+  const t = useT();
   const percent = widthPercent(completionPercent);
   const reached = percent >= 100;
   const readable = readablePercent(completionPercent);
@@ -80,7 +82,12 @@ export function ProgressBar({ completionPercent, label }: ProgressBarProps) {
       accessibilityLabel={label}
       // Spoken rather than shown as a colour. The one thing a screen reader
       // cannot infer from a lime bar is what lime means.
-      accessibilityValue={{ min: 0, max: 100, now: Math.round(percent), text: `${readable}%` }}
+      accessibilityValue={{
+        min: 0,
+        max: 100,
+        now: Math.round(percent),
+        text: t('common.card.progressLabel', { percent: readable }),
+      }}
     >
       <View style={styles.track}>
         <View
@@ -94,7 +101,11 @@ export function ProgressBar({ completionPercent, label }: ProgressBarProps) {
           ]}
         />
       </View>
-      <Meta>{reached ? `${readable}% — funded` : `${readable}% funded`}</Meta>
+      <Meta>
+        {reached
+          ? t('mobile.funding.reached', { percent: readable })
+          : t('common.card.funded', { percent: readable })}
+      </Meta>
     </View>
   );
 }

@@ -1,4 +1,5 @@
 import * as LocalAuthentication from 'expo-local-authentication';
+import { translate } from './i18n';
 
 /**
  * The device's own answer to "is the owner here?" — issue #29.
@@ -111,7 +112,7 @@ export async function unlock(reason: string): Promise<boolean> {
       // Not "Cancel". The button ends the attempt and leaves the session
       // locked, and a reader who has just been asked to prove they are present
       // reads "Cancel" as "cancel what?".
-      cancelLabel: 'Stay locked',
+      cancelLabel: translate()('mobile.lock.stayLocked'),
     });
     return result.success;
   } catch {

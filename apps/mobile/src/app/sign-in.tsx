@@ -5,6 +5,7 @@ import { ApiError } from '@ideanest/api-client';
 import { Button, TextField } from '../components/form';
 import { Body, Heading, Meta } from '../components/text';
 import { signIn, verifyTwoFactor } from '../lib/auth';
+import { useT, type Translate } from '../lib/i18n';
 import { safeNext } from '../lib/guard';
 import { colors, size, spacing } from '../theme';
 
@@ -61,6 +62,7 @@ type Step = 'credentials' | 'two-factor';
 
 export default function SignInScreen() {
   const router = useRouter();
+  const t = useT();
   const { next } = useLocalSearchParams<{ next?: string }>();
   const passwordField = useRef<TextInput>(null);
 
@@ -100,7 +102,7 @@ export default function SignInScreen() {
       }
       done();
     } catch (cause) {
-      setFailure(readable(cause, 'credentials'));
+      setFailure(readable(cause, 'credentials', t));
     } finally {
       setBusy(false);
     }
@@ -115,7 +117,7 @@ export default function SignInScreen() {
       await verifyTwoFactor(challenge, code.trim());
       done();
     } catch (cause) {
-      setFailure(readable(cause, 'two-factor'));
+      setFailure(readable(cause, 'two-factor', t));
     } finally {
       setBusy(false);
     }
@@ -134,11 +136,11 @@ export default function SignInScreen() {
         keyboardDismissMode="on-drag"
       >
         <View style={styles.intro}>
-          <Heading>{step === 'credentials' ? 'Sign in' : 'One more step'}</Heading>
+          <Heading>
+            {step === 'credentials' ? t('auth.signIn.title') : t('auth.register.twoFactorTitle')}
+          </Heading>
           <Body>
-            {step === 'credentials'
-              ? 'Your saved campaigns and your pledges belong to your account, not to this phone.'
-              : 'Enter the six-digit code from your authenticator app, or one of your recovery codes.'}
+            {step === 'credentials' ? t('auth.signIn.intro') : t('auth.twoFactor.acceptedDetail')}
           </Body>
         </View>
 
@@ -151,7 +153,7 @@ export default function SignInScreen() {
         {step === 'credentials' ? (
           <View style={styles.fields}>
             <TextField
-              label="Email address"
+              label={t('auth.fields.email')}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -166,7 +168,7 @@ export default function SignInScreen() {
             />
             <TextField
               ref={passwordField}
-              label="Password"
+              label={t('auth.fields.password')}
               value={password}
               onChangeText={setPassword}
               autoCapitalize="none"
@@ -179,7 +181,7 @@ export default function SignInScreen() {
               editable={!busy}
             />
             <Button
-              label="Sign in"
+              label={t('auth.signIn.submit')}
               busy={busy}
               disabled={email.trim() === '' || password === ''}
               onPress={() => void submitCredentials()}
@@ -188,7 +190,7 @@ export default function SignInScreen() {
         ) : (
           <View style={styles.fields}>
             <TextField
-              label="Authentication code"
+              label={t('auth.twoFactor.codeLabel')}
               value={code}
               onChangeText={setCode}
               autoComplete="one-time-code"
@@ -199,10 +201,10 @@ export default function SignInScreen() {
               textContentType="oneTimeCode"
               onSubmitEditing={() => void submitCode()}
               editable={!busy}
-              hint="A recovery code works here too."
+              hint={t('mobile.signIn.recoveryHint')}
             />
             <Button
-              label="Verify"
+              label={t('auth.twoFactor.submit')}
               busy={busy}
               disabled={code.trim() === ''}
               onPress={() => void submitCode()}
@@ -210,10 +212,7 @@ export default function SignInScreen() {
           </View>
         )}
 
-        <Meta>
-          Registration, password reset and provider sign-in are on ideanest.az. A new account
-          needs an email to be verified, which is a link rather than a screen.
-        </Meta>
+        <Meta>{t('mobile.signIn.webOnly')}</Meta>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -228,16 +227,22 @@ export default function SignInScreen() {
  * are the three somebody can act on; everything else is one message, because a
  * network fault, an outage and an unexpected refusal are answered by the same
  * thing.
+ *
+ * <p>The sentences are the web's `auth.failures` where the web has one — the rate limit reads
+ * the same, wait included — and `mobile.signIn` for the two this screen words for itself.
  */
-function readable(cause: unknown, step: Step): string {
+function readable(cause: unknown, step: Step, t: Translate): string {
   if (!(cause instanceof ApiError)) {
-    return 'Could not reach IdeyaNest. Check your connection and try again.';
+    return t('auth.failures.unreachableDetail');
   }
   if (cause.status === 429) {
     const seconds = cause.problem?.retryAfterSeconds;
     return seconds === undefined
-      ? 'Too many attempts. Wait a little and try again.'
-      : `Too many attempts. Try again in about ${Math.ceil(seconds / 60)} minutes.`;
+      ? t('auth.failures.rateLimitedDetail')
+      : t('auth.failures.retryAfter', {
+          detail: t('auth.failures.rateLimitedShort'),
+          wait: waitFor(seconds, t),
+        });
   }
   if (cause.status === 401 || cause.status === 400) {
     /*
@@ -248,12 +253,24 @@ function readable(cause: unknown, step: Step): string {
      * named — it is the case where trying the same code again cannot work.
      */
     if (step === 'two-factor') {
-      return 'That code was not accepted. It may have expired — sign in again to get a new challenge.';
+      return t('mobile.signIn.codeRefused');
     }
     // Deliberately not "that address is unknown". Which half was wrong is what
     // an attacker enumerating accounts wants to be told, and the service does
     // not distinguish them either.
-    return 'That email address and password do not match an account.';
+    return t('mobile.signIn.credentialsRefused');
   }
-  return 'Something went wrong signing in. Try again.';
+  return t('auth.failures.unexpectedDetail');
+}
+
+/**
+ * How long a rate-limited reader waits, in the web's three phrasings (`lib/auth/failures.ts`):
+ * "in under a minute" is a different claim from "in about a minute", not a plural form of it.
+ */
+function waitFor(seconds: number, t: Translate): string {
+  if (seconds <= 60) return t('auth.failures.waitUnderMinute');
+  const minutes = Math.ceil(seconds / 60);
+  return minutes === 1
+    ? t('auth.failures.waitOneMinute')
+    : t('auth.failures.waitMinutes', { minutes });
 }

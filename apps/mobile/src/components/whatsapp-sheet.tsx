@@ -19,7 +19,7 @@ import {
   whatsappHref,
   type EnquiryField,
 } from '@ideanest/messages';
-import { useT } from '../lib/i18n';
+import { pluralCategory, useT } from '../lib/i18n';
 import { colors, radius, size, spacing } from '../theme';
 import { Button, TextField } from './form';
 import { InlineAlert } from './states';
@@ -246,19 +246,6 @@ export function WhatsAppSheet({
       </View>
     </Modal>
   );
-}
-
-/**
- * Which of the catalogue's `{one, few, many, other}` forms a number takes.
- *
- * The same rule as the web's `pluralForm`: CLDR through `Intl.PluralRules`, and `other` for a
- * category the catalogue does not carry (`zero`, `two`) or an engine without the constructor.
- * Replaced by the shared `plurals` helper when `plurals.ts` moves into `@ideanest/messages` (#150).
- */
-function pluralCategory(locale: string, count: number): 'one' | 'few' | 'many' | 'other' {
-  if (typeof Intl.PluralRules !== 'function') return 'other';
-  const category = new Intl.PluralRules(locale).select(count);
-  return category === 'one' || category === 'few' || category === 'many' ? category : 'other';
 }
 
 const styles = StyleSheet.create({

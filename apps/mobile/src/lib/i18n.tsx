@@ -1,11 +1,17 @@
 import type { ReactNode } from 'react';
-import { IntlProvider, useTranslations } from 'use-intl';
+import {
+  createTranslator,
+  IntlProvider,
+  useTranslations,
+  type MessageKeys,
+  type NestedKeyOf,
+} from 'use-intl';
 import az from '@ideanest/messages/az.json';
 import en from '@ideanest/messages/en.json';
 import ru from '@ideanest/messages/ru.json';
 import tr from '@ideanest/messages/tr.json';
 import type { Locale } from '@ideanest/messages';
-import { useLocale } from './locale';
+import { currentLocale, useLocale } from './locale';
 
 /**
  * Every word on every screen comes through here — issue #150.
@@ -20,6 +26,18 @@ import { useLocale } from './locale';
  * build step should strip the web-only `admin` namespace is the release-readiness issue's.
  */
 const CATALOGUES: Record<Locale, typeof en> = { az, en, ru, tr } as Record<Locale, typeof en>;
+
+/**
+ * Keys and locales are typed from the English catalogue, so `t('mobile.tabz.me')` is a
+ * compile error rather than a key rendered as its own name on a phone. `catalogue.test.ts`
+ * keeps the other three on the same key set, so one shape describes all four.
+ */
+declare module 'use-intl' {
+  interface AppConfig {
+    Messages: typeof en;
+    Locale: Locale;
+  }
+}
 
 /** A missing key renders its own name rather than taking a screen down, as on the web. */
 function fallback({ key, namespace }: { key: string; namespace?: string }): string {
@@ -42,3 +60,83 @@ export function AppIntlProvider({ children }: { readonly children: ReactNode }) 
 
 /** The translator for a namespace, or for the whole catalogue with no argument. */
 export const useT = useTranslations;
+
+/** The whole-catalogue translator, for a helper that is handed one rather than calling `useT`. */
+export type Translate = ReturnType<typeof useTranslations<never>>;
+
+/**
+ * Any key that names a message — for tables that hold a key and translate it later (the Me
+ * hub's rows, a placeholder screen's title), so a typo there fails to compile too.
+ */
+export type MessageKey = MessageKeys<typeof en, NestedKeyOf<typeof en>>;
+
+/**
+ * The translator for code that runs outside the tree — a system prompt, a keychain read —
+ * in the language in use at the moment of the call. A component uses `useT()` instead, so
+ * it re-renders when the language changes.
+ */
+export function translate() {
+  const locale = currentLocale();
+  return createTranslator({
+    locale,
+    messages: CATALOGUES[locale],
+    getMessageFallback: fallback,
+    onError: () => {},
+  });
+}
+
+/**
+ * The `Intl` tag for each language, the web's own table (`lib/i18n/formats.ts`): English is
+ * British English on both platforms, so a date reads `30 Sept 2026` rather than `Sep 30, 2026`.
+ */
+export const INTL_LOCALE: Readonly<Record<Locale, string>> = {
+  az: 'az',
+  en: 'en-GB',
+  ru: 'ru',
+  tr: 'tr',
+};
+
+/**
+ * Which of the catalogue's `{one, few, many, other}` forms a number takes.
+ *
+ * The same rule as the web's `pluralForm`: CLDR through `Intl.PluralRules`, and `other` for a
+ * category the catalogue does not carry (`zero`, `two`) or an engine without the constructor.
+ * ICU `{count, plural, …}` messages do not need this — `t()` plurals them itself.
+ */
+export function pluralCategory(locale: Locale, count: number): 'one' | 'few' | 'many' | 'other' {
+  if (typeof Intl.PluralRules !== 'function') return 'other';
+  const category = new Intl.PluralRules(INTL_LOCALE[locale]).select(count);
+  return category === 'one' || category === 'few' || category === 'many' ? category : 'other';
+}
+
+/** A count grouped the reader's way (`1 234` in Russian, `1.234` in Turkish). Not for money. */
+export function formatCount(count: number, locale: Locale): string {
+  try {
+    return new Intl.NumberFormat(INTL_LOCALE[locale]).format(count);
+  } catch {
+    return String(count);
+  }
+}
+
+/**
+ * A calendar date from an ISO timestamp, in the reader's language.
+ *
+ * An unparseable value is shown as it came rather than as `Invalid Date`, and an engine with
+ * no data for the locale falls back to the ISO day — never to an English month name.
+ * Money is not formatted here: `@ideanest/money` formats amounts from their digits, the same
+ * on both platforms and in every language.
+ *
+ * Azerbaijani goes to `Intl` as it is. The web's bypass for engines that claim `az` but format
+ * it from root data (`lib/i18n/azerbaijani.ts`) arrives with `formats.ts` in the shared
+ * package, and this and `formatCount` switch to it then.
+ */
+export function formatDate(iso: string | null | undefined, locale: Locale): string {
+  if (iso == null || iso === '') return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  try {
+    return new Intl.DateTimeFormat(INTL_LOCALE[locale], { dateStyle: 'medium' }).format(date);
+  } catch {
+    return iso.slice(0, 10);
+  }
+}

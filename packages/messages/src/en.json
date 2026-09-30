@@ -5165,7 +5165,9 @@
       "enrol": "Add a fingerprint, a face or a passcode in your phone’s settings, then come back.",
       "open": "On. This session is open until the app has been away for a few minutes.",
       "armed": "On. The next time your pledges are read, the phone will ask for you.",
-      "refused": "The device did not confirm it was you, so nothing changed."
+      "refused": "The device did not confirm it was you, so nothing changed.",
+      "prompt": "Unlock IdeyaNest",
+      "stayLocked": "Stay locked"
     },
     "fallback": {
       "body": "This part of IdeyaNest is still being built for the app. It is ready on the website.",
@@ -5179,7 +5181,47 @@
       "retry": "Try again"
     },
     "offline": {
-      "banner": "No internet connection. Until it is back, what you see may be out of date."
+      "banner": "No internet connection. Until it is back, what you see may be out of date.",
+      "nothingCached": "Nothing was cached on this device yet, so there is nothing to show offline."
+    },
+    "nav": {
+      "back": "Back"
+    },
+    "pledges": {
+      "signedOutTitle": "Sign in to see your pledges",
+      "signedOutBody": "Your pledges belong to your account, not to this phone.",
+      "stale": "Showing pledges saved on this device. They may be out of date."
+    },
+    "saved": {
+      "signedOutTitle": "Sign in to see what you saved",
+      "signedOutBody": "Saved campaigns follow the account rather than the phone.",
+      "stale": "Showing your saved campaigns from this device. They may be out of date."
+    },
+    "search": {
+      "minimum": "{count, plural, one {Type at least # character, or pick a suggestion.} other {Type at least # characters, or pick a suggestion.}}",
+      "narrow": "Narrow to {label}",
+      "emptyCategoryBody": "No campaign in this category matches yet. Try another category, or type a search."
+    },
+    "campaign": {
+      "untitled": "Untitled campaign",
+      "failedTitle": "This campaign could not be loaded",
+      "failedDetail": "It may have been withdrawn, or this device may be offline.",
+      "stale": "Saved on this device. The funding figures may have moved since.",
+      "story": "About this campaign",
+      "storyOnWeb": "Formatting, images and video are on the campaign’s web page. “Back this campaign” opens it.",
+      "commentsOnWeb": "The comment thread is on the campaign’s web page for now. “Back this campaign” opens it.",
+      "backOnWeb": "Back {title} on the web"
+    },
+    "funding": {
+      "progressFor": "Funding progress for {title}",
+      "reached": "{percent}% — funded",
+      "pledged": "{amount} pledged"
+    },
+    "signIn": {
+      "credentialsRefused": "That email address and password do not match an account.",
+      "codeRefused": "That code was not accepted. It may have expired — sign in again to get a new challenge.",
+      "recoveryHint": "A recovery code works here too.",
+      "webOnly": "Registration, password reset and provider sign-in are on the website. A new account needs an email to be verified, which is a link rather than a screen."
     }
   }
 }

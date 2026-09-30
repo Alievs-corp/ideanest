@@ -9,7 +9,9 @@ import { ErrorState, Loading, OfflineNotice } from '../../../components/states';
 import { FadeUp } from '../../../components/motion';
 import { ProgressBar } from '../../../components/progress';
 import { Body, CardTitle, Display, Heading, Meta, Story, Subheading } from '../../../components/text';
+import { formatCount, formatDate, pluralCategory, useT } from '../../../lib/i18n';
 import { shareUrlFor } from '../../../lib/links';
+import { useLocale } from '../../../lib/locale';
 import { storyParagraphs } from '../../../lib/story';
 import { colors, radius, size, spacing } from '../../../theme';
 
@@ -82,6 +84,8 @@ export default function ProjectScreen() {
     creatorSlug: string;
     projectSlug: string;
   }>();
+  const t = useT();
+  const locale = useLocale();
 
   const project = useProjectPage(creatorSlug, projectSlug);
   const rewards = useProjectRewards(project.data?.id);
@@ -90,22 +94,23 @@ export default function ProjectScreen() {
   const paragraphs = useMemo(() => storyParagraphs(project.data?.story), [project.data?.story]);
 
   if (project.data === undefined) {
-    if (project.isLoading) return <Loading label="Loading campaign" />;
+    if (project.isLoading) return <Loading label={t('campaign.prelaunch.loading')} />;
     return (
       <ErrorState
-        title="Could not load this campaign"
-        detail="It may have been withdrawn, or this device may be offline."
+        title={t('mobile.campaign.failedTitle')}
+        detail={t('mobile.campaign.failedDetail')}
       />
     );
   }
 
   const page = project.data;
-  const title = page.title ?? 'Campaign';
+  const title = page.title ?? t('mobile.campaign.untitled');
+  const backers = page.backersCount ?? 0;
   const percent = fundedPercent(page.pledged?.amount, page.goal?.amount);
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title, headerBackTitle: 'Back' }} />
+      <Stack.Screen options={{ title, headerBackTitle: t('mobile.nav.back') }} />
 
       <ScrollView contentInsetAdjustmentBehavior="automatic">
         {page.coverImage?.url == null ? null : (
@@ -120,14 +125,16 @@ export default function ProjectScreen() {
 
         <View style={styles.body}>
           {project.isStale && project.isError ? (
-            <OfflineNotice detail="Saved on this device. The funding figures may have moved since." />
+            <OfflineNotice detail={t('mobile.campaign.stale')} />
           ) : null}
 
           <FadeUp index={0}>
             <View style={styles.section}>
               <Heading>{title}</Heading>
               {page.blurb == null ? null : <Body>{page.blurb}</Body>}
-              {page.creator?.name == null ? null : <Meta>by {page.creator.name}</Meta>}
+              {page.creator?.name == null ? null : (
+                <Meta>{t('campaign.by', { creator: page.creator.name })}</Meta>
+              )}
             </View>
           </FadeUp>
 
@@ -136,27 +143,29 @@ export default function ProjectScreen() {
               <View style={styles.figures}>
                 <View style={styles.figure}>
                   <Display>{formatMoney(page.pledged)}</Display>
-                  <Meta>pledged of {formatMoney(page.goal)}</Meta>
+                  <Meta>{t('common.card.ofGoal', { amount: formatMoney(page.goal) })}</Meta>
                 </View>
                 <View style={styles.figure}>
-                  <Display>{String(page.backersCount ?? 0)}</Display>
-                  <Meta>backers</Meta>
+                  <Display>{formatCount(backers, locale)}</Display>
+                  {/* The web's word under the figure: `{one, few, many, other}`, not ICU. */}
+                  <Meta>{t(`campaign.funding.backers.${pluralCategory(locale, backers)}`)}</Meta>
                 </View>
               </View>
-              <ProgressBar completionPercent={percent} label={`Funding progress for ${title}`} />
+              <ProgressBar
+                completionPercent={percent}
+                label={t('mobile.funding.progressFor', { title })}
+              />
             </View>
           </FadeUp>
 
           {paragraphs.length === 0 ? null : (
             <FadeUp index={2}>
               <View style={styles.section}>
-                <Subheading>About this campaign</Subheading>
+                <Subheading>{t('mobile.campaign.story')}</Subheading>
                 {paragraphs.map((paragraph, index) => (
                   <Story key={index}>{paragraph}</Story>
                 ))}
-                <Meta>
-                  Formatting, images and video are on the web page. Tap Share to open it.
-                </Meta>
+                <Meta>{t('mobile.campaign.storyOnWeb')}</Meta>
               </View>
             </FadeUp>
           )}
@@ -164,7 +173,7 @@ export default function ProjectScreen() {
           {(rewards.data?.rewards ?? []).length === 0 ? null : (
             <FadeUp index={3}>
               <View style={styles.section}>
-                <Subheading>Rewards</Subheading>
+                <Subheading>{t('campaign.rewards.heading')}</Subheading>
                 {(rewards.data?.rewards ?? []).map((reward) => (
                   <View key={reward.id} style={styles.reward}>
                     <CardTitle>{reward.title ?? ''}</CardTitle>
@@ -176,10 +185,10 @@ export default function ProjectScreen() {
                         is colour carrying the difference on its own. */}
                     <Meta>
                       {reward.remainingQuantity == null
-                        ? 'Unlimited'
+                        ? t('campaignEditor.rewards.vocabulary.stock.unlimited')
                         : reward.remainingQuantity === 0
-                          ? 'None left'
-                          : `${reward.remainingQuantity} left`}
+                          ? t('campaign.rewards.soldOut')
+                          : t('campaign.rewards.remaining', { count: reward.remainingQuantity })}
                     </Meta>
                   </View>
                 ))}
@@ -190,11 +199,11 @@ export default function ProjectScreen() {
           {(updates.data?.updates ?? []).length === 0 ? null : (
             <FadeUp index={4}>
               <View style={styles.section}>
-                <Subheading>Updates</Subheading>
+                <Subheading>{t('campaign.updates.heading')}</Subheading>
                 {(updates.data?.updates ?? []).map((update) => (
                   <View key={update.number} style={styles.update}>
                     <CardTitle numberOfLines={2}>{update.title ?? ''}</CardTitle>
-                    <Meta>{update.publishedAt ?? ''}</Meta>
+                    <Meta>{formatDate(update.publishedAt, locale)}</Meta>
                   </View>
                 ))}
               </View>
@@ -202,11 +211,8 @@ export default function ProjectScreen() {
           )}
 
           <View style={styles.section}>
-            <Subheading>Comments</Subheading>
-            <Body>
-              The comment thread is on the web page for now. Tap Share to open this campaign
-              there.
-            </Body>
+            <Subheading>{t('campaign.comments.heading')}</Subheading>
+            <Body>{t('mobile.campaign.commentsOnWeb')}</Body>
           </View>
         </View>
       </ScrollView>
@@ -218,21 +224,21 @@ export default function ProjectScreen() {
       <View style={styles.actions}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Back ${title} on the web`}
+          accessibilityLabel={t('mobile.campaign.backOnWeb', { title })}
           style={styles.primary}
           onPress={() => void openOnWeb(creatorSlug, projectSlug)}
         >
           {/* Near-black on lime. The only legible pairing (docs/ui-kit.md §9.1). */}
-          <CardTitle tone="onLime">Back this campaign</CardTitle>
+          <CardTitle tone="onLime">{t('campaign.back.cta')}</CardTitle>
         </Pressable>
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Share ${title}`}
+          accessibilityLabel={t('campaign.actions.shareLabel', { title })}
           style={styles.secondary}
           onPress={() => void share(title, creatorSlug, projectSlug)}
         >
-          <CardTitle>Share</CardTitle>
+          <CardTitle>{t('campaign.actions.share')}</CardTitle>
         </Pressable>
       </View>
     </View>

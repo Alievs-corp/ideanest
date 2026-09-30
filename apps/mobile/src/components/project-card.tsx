@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
 import type { Card } from '../api/queries';
+import { useT } from '../lib/i18n';
 import { colors, radius, size, spacing } from '../theme';
 import { Body, CardTitle, Meta } from './text';
 import { ProgressBar } from './progress';
@@ -45,7 +46,8 @@ const styles = StyleSheet.create({
 });
 
 export function ProjectCard({ card }: ProjectCardProps) {
-  const title = card.title ?? 'Untitled campaign';
+  const t = useT();
+  const title = card.title ?? t('mobile.campaign.untitled');
   const creator = card.creator?.name ?? '';
   const pledged = formatMoney(card.pledged);
 
@@ -69,7 +71,9 @@ export function ProjectCard({ card }: ProjectCardProps) {
         accessibilityRole="link"
         // One name for the whole card. Without it a reader announces the image,
         // the title, the creator and the progress bar as four separate items.
-        accessibilityLabel={`${title}${creator === '' ? '' : `, by ${creator}`}`}
+        accessibilityLabel={
+          creator === '' ? title : `${title}, ${t('discovery.card.by', { creator })}`
+        }
         style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
         <Image
@@ -90,13 +94,14 @@ export function ProjectCard({ card }: ProjectCardProps) {
 
           <ProgressBar
             completionPercent={card.completionPercent ?? '0'}
-            label={`Funding progress for ${title}`}
+            label={t('mobile.funding.progressFor', { title })}
           />
 
           <View style={styles.footer}>
-            <Meta>{pledged === '' ? '' : `${pledged} pledged`}</Meta>
+            <Meta>{pledged === '' ? '' : t('mobile.funding.pledged', { amount: pledged })}</Meta>
             {typeof daysLeft === 'number' ? (
-              <Meta>{daysLeft === 1 ? '1 day left' : `${daysLeft} days left`}</Meta>
+              // The campaign page's ICU plural, so the last day reads "Last day" on both.
+              <Meta>{t('campaign.daysLeft', { days: daysLeft })}</Meta>
             ) : null}
           </View>
         </View>

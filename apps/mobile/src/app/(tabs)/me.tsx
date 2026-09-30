@@ -12,7 +12,7 @@ import { WhatsAppSheet } from '../../components/whatsapp-sheet';
 import { canReadAccount, useMe, useSessionState, type Me } from '../../lib/account';
 import { signOut } from '../../lib/auth';
 import { biometricCapability, canLock, type BiometricCapability } from '../../lib/biometrics';
-import { useT } from '../../lib/i18n';
+import { useT, type MessageKey } from '../../lib/i18n';
 import { currentLocale } from '../../lib/locale';
 import { forgetPersistedCache } from '../../lib/offline';
 import { disableLock, enableLock } from '../../lib/session';
@@ -47,7 +47,7 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
 
 interface Row {
   /** A catalogue key. */
-  readonly label: string;
+  readonly label: MessageKey;
   readonly href?: Href;
   /** A tab rather than a screen: switched to, so the tab keeps its own history. */
   readonly tab?: boolean;
@@ -159,7 +159,7 @@ function Group({
   rows,
   children,
 }: {
-  readonly titleKey: string;
+  readonly titleKey: MessageKey;
   readonly rows: readonly Row[];
   /** Rows that do something other than navigate, after the ones that do. */
   readonly children?: ReactNode;
@@ -438,7 +438,7 @@ export default function MeScreen() {
 }
 
 /** What to call the control, in the words of whatever the device actually has. */
-function lockLabelKey(capability: BiometricCapability | null): string {
+function lockLabelKey(capability: BiometricCapability | null): MessageKey {
   switch (capability) {
     case 'face':
       return 'mobile.lock.face';
@@ -459,7 +459,7 @@ function lockDetailKey(
   capability: BiometricCapability | null,
   locked: boolean,
   unlocked: boolean,
-): string {
+): MessageKey {
   if (capability === null) return 'mobile.lock.wait';
   if (capability === 'unavailable') return 'mobile.lock.keychain';
   if (capability === 'not-enrolled') return 'mobile.lock.enrol';

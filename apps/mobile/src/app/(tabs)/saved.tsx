@@ -5,6 +5,7 @@ import { useSavedProjects } from '../../api/queries';
 import { Button } from '../../components/form';
 import { EmptyState, ErrorState, Loading, OfflineNotice } from '../../components/states';
 import { CardTitle, Meta } from '../../components/text';
+import { useT } from '../../lib/i18n';
 import { useSession } from '../../lib/use-session';
 import { colors, radius, size, spacing } from '../../theme';
 
@@ -44,37 +45,41 @@ const styles = StyleSheet.create({
 
 export default function SavedScreen() {
   const router = useRouter();
+  const t = useT();
   const { signedIn } = useSession();
   const saved = useSavedProjects(signedIn);
 
   if (!signedIn) {
     return (
       <EmptyState
-        title="Sign in to see what you saved"
-        detail="Saved campaigns follow the account rather than the phone."
+        title={t('mobile.saved.signedOutTitle')}
+        detail={t('mobile.saved.signedOutBody')}
         // #29: the invitation now has a way to accept it. Until sign-in existed
         // on this platform, this screen could only state the condition.
-        action={<Button label="Sign in" onPress={() => router.push('/sign-in')} />}
+        action={
+          <Button label={t('shell.actions.signIn')} onPress={() => router.push('/sign-in')} />
+        }
       />
     );
   }
 
   const items = saved.data?.items ?? [];
 
+  // The web's saved-list sentences; only the offline one is the app's.
   if (items.length === 0) {
-    if (saved.isLoading) return <Loading label="Loading saved campaigns" />;
+    if (saved.isLoading) return <Loading label={t('account.signals.saved.loading')} />;
     if (saved.isError) {
       return (
         <ErrorState
-          title="Could not load your saved campaigns"
-          detail="Nothing was cached on this device yet, so there is nothing to show offline."
+          title={t('account.signals.saved.failedTitle')}
+          detail={t('mobile.offline.nothingCached')}
         />
       );
     }
     return (
       <EmptyState
-        title="Nothing saved yet"
-        detail="Save a campaign from its page and it will be here, with or without a connection."
+        title={t('account.signals.saved.emptyTitle')}
+        detail={t('account.signals.saved.emptyBody')}
       />
     );
   }
@@ -89,7 +94,7 @@ export default function SavedScreen() {
         // Shown only when a refetch actually failed. A cache being used while
         // the network is fine is not worth a banner.
         saved.isError ? (
-          <OfflineNotice detail="Showing your saved campaigns from this device. They may be out of date." />
+          <OfflineNotice detail={t('mobile.saved.stale')} />
         ) : undefined
       }
       renderItem={({ item }) => (
@@ -105,10 +110,10 @@ export default function SavedScreen() {
         >
           <Pressable
             accessibilityRole="link"
-            accessibilityLabel={item.title ?? 'Saved campaign'}
+            accessibilityLabel={item.title ?? t('mobile.campaign.untitled')}
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}
           >
-            <CardTitle numberOfLines={2}>{item.title ?? 'Saved campaign'}</CardTitle>
+            <CardTitle numberOfLines={2}>{item.title ?? t('mobile.campaign.untitled')}</CardTitle>
             <Meta>{item.creatorSlug ?? ''}</Meta>
           </Pressable>
         </Link>
