@@ -51,10 +51,11 @@ import { LOCALE_NAMES, SUPPORTED_LOCALES, isLocale, type Locale } from '../../li
  *
  * <h2>What this deliberately does not do: re-read `GET /v1/me`</h2>
  *
- * Nothing in the client reads `session.locale` except the mirror in `SessionProvider`, whose
- * only job is to make the cookie agree with the account — which this panel has just done
- * directly, and from the authoritative direction. Spending a round trip to be told the value
- * we just wrote would be a request that can only confirm what we already know.
+ * Nothing in the client reads `session.locale` except `SessionProvider`, which keeps the cookie
+ * and the account in step by `lib/i18n/sync.ts`'s last-synced rule (#216) — and this panel has
+ * just made them agree directly. The next session read sees the account carrying the cookie's
+ * value and records it as synced; nothing here needs to. Spending a round trip to be told the
+ * value we just wrote would be a request that can only confirm what we already know.
  *
  * <h2>The call is inline rather than in a `lib/` module</h2>
  *
