@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 /**
  * What the application was built pointing at, read back at run time.
  *
- * `app.config.ts` resolves the two origins from the environment at build time
+ * `app.config.ts` resolves the origins from the environment at build time
  * and puts them in `extra`; this is the only module that reads them out again,
  * so a screen that needs the site URL asks here rather than reaching into
  * `Constants` and getting `undefined` on the one build where the variable was
@@ -13,6 +13,7 @@ import Constants from 'expo-constants';
 interface Extra {
   readonly apiOrigin?: string;
   readonly siteUrl?: string;
+  readonly realtimeOrigin?: string;
   readonly googleIosClientId?: string;
   readonly appleSignIn?: boolean;
 }
@@ -45,6 +46,21 @@ export function siteUrl(): string {
   }
   return url;
 }
+
+/**
+ * Where the campaign page's live counter may open its socket (#155), or `undefined` for none.
+ *
+ * <p>The one origin here that does <strong>not</strong> throw when missing. A build without it is
+ * an ordinary build — the web ships the same way — whose campaign figures are the ones the page
+ * read, refreshed by pulling down; `@ideanest/campaign/realtime`'s `realtimeUrl` turns
+ * `undefined` into "no socket". There is deliberately no default host: guessing one would point
+ * every phone at a server nobody configured for it.
+ */
+export function realtimeOrigin(): string | undefined {
+  const origin = extra().realtimeOrigin;
+  return typeof origin === 'string' && origin.trim() !== '' ? origin.trim() : undefined;
+}
+
 export {
   SUPPORTED_LOCALES,
   isLocale as isSupportedLocale,

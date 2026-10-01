@@ -181,22 +181,27 @@ the reminder write and the failure wording — are `src/lib/prelaunch.ts`.
 
 ## Configuration
 
-Two variables, read at **build** time by `app.config.ts` and surfaced through
-`Constants.expoConfig.extra`. Both are the names `apps/web` already uses, so a
-deployment answers "where is the API" once rather than twice.
+Three origins, read at **build** time by `app.config.ts` and surfaced through
+`Constants.expoConfig.extra` (`src/api/config.ts` reads them back). All three are
+the names `apps/web` already uses, so a deployment answers "where is the API"
+once rather than twice.
 
-| Variable | Meaning |
-|---|---|
-| `IDEANEST_API_ORIGIN` | Where the Spring Boot service listens |
-| `IDEANEST_SITE_URL` | The public origin whose links this application claims |
+| Variable | Meaning | Unset |
+|---|---|---|
+| `IDEANEST_API_ORIGIN` | Where the Spring Boot service listens | `http://localhost:8080` |
+| `IDEANEST_SITE_URL` | The public origin whose links this application claims | `https://ideyanest.com` |
+| `IDEANEST_REALTIME_ORIGIN` | Where the campaign page opens §12.1's live-counter socket (#155): `http(s)://` becomes `ws(s)://`, a `ws(s)://` origin is used as it is | **no socket** — the figures stay as the page read them |
 
 A value that is set but unusable **throws the build** rather than falling back.
 An unset variable is somebody running locally; `IDEANEST_SITE_URL=ideanest.az`
 with no scheme is a misconfiguration that would otherwise ship a build pointing
-at localhost.
+at localhost. The realtime origin accepts `http`, `https`, `ws` and `wss`.
 
-`eas.json` sets both per profile. `development` points at localhost, `preview`
-at staging, `production` at production.
+`eas.json` sets the first two per profile. `development` points at localhost,
+`preview` at staging, `production` at production. **No profile sets
+`IDEANEST_REALTIME_ORIGIN` yet**: whether production opens a socket, and to which
+host, is the owner's decision (the web leaves it unset by default for the same
+reason — `@ideanest/campaign/realtime` says why). There is no default host.
 
 Two more decide which provider sign-ins a build offers (issue #152). Unset means
 the button is not drawn, because the service would refuse the token:
