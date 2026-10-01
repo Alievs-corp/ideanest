@@ -6,6 +6,7 @@ import {
   looksLikeAnAddress,
   noPrelaunchPage,
   prelaunchFailure,
+  prelaunchReadFailure,
   remindersClosed,
   remindMe,
 } from './prelaunch';
@@ -45,38 +46,79 @@ describe('looksLikeAnAddress', () => {
   });
 });
 
+const GUEST = { signedIn: false };
+const ACCOUNT = { signedIn: true };
+
 describe('prelaunchFailure', () => {
   it('rounds the wait up to whole minutes on a 429', () => {
     const limited = new ApiError(429, { status: 429, retryAfterSeconds: 150 });
-    expect(prelaunchFailure(limited)).toEqual({ key: 'rateLimitedIn', minutes: 3 });
-    expect(prelaunchFailure(new ApiError(429, { retryAfterSeconds: 60 }))).toEqual({
+    expect(prelaunchFailure(limited, GUEST)).toEqual({ key: 'rateLimitedIn', minutes: 3 });
+    expect(prelaunchFailure(new ApiError(429, { retryAfterSeconds: 60 }), GUEST)).toEqual({
       key: 'rateLimitedIn',
       minutes: 1,
     });
-    expect(prelaunchFailure(new ApiError(429, { retryAfterSeconds: 1 }))).toEqual({
+    expect(prelaunchFailure(new ApiError(429, { retryAfterSeconds: 1 }), GUEST)).toEqual({
       key: 'rateLimitedIn',
       minutes: 1,
     });
   });
 
   it('says only that it is rate limited when the service gave no figure', () => {
-    expect(prelaunchFailure(new ApiError(429, null))).toEqual({ key: 'rateLimited' });
-    expect(prelaunchFailure(new ApiError(429, { title: 'Too many' }))).toEqual({
+    expect(prelaunchFailure(new ApiError(429, null), GUEST)).toEqual({ key: 'rateLimited' });
+    expect(prelaunchFailure(new ApiError(429, { title: 'Too many' }), GUEST)).toEqual({
       key: 'rateLimited',
     });
   });
 
   it('answers any other refusal with the catalogue sentence, not the service prose', () => {
-    expect(prelaunchFailure(new ApiError(500, { detail: 'Boom' }))).toEqual({ key: 'notSaved' });
-    expect(prelaunchFailure(new ApiError(400, { code: 'VALIDATION_FAILED' }))).toEqual({
+    expect(prelaunchFailure(new ApiError(500, { detail: 'Boom' }), GUEST)).toEqual({ key: 'notSaved' });
+    expect(prelaunchFailure(new ApiError(400, { code: 'VALIDATION_FAILED' }), GUEST)).toEqual({
       key: 'notSaved',
     });
   });
 
   it('answers no response at all as unreachable', () => {
-    expect(prelaunchFailure(new TypeError('Network request failed'))).toEqual({
+    expect(prelaunchFailure(new TypeError('Network request failed'), GUEST)).toEqual({
       key: 'unreachable',
     });
+  });
+
+  it('asks for a new sign-in on a 401, and on a 400 to an account request', () => {
+    // A 400 to `{}` is the service refusing a guest request with no address: the bearer was lost.
+    expect(prelaunchFailure(new ApiError(401, null), GUEST)).toEqual({ key: 'sessionExpired' });
+    expect(prelaunchFailure(new ApiError(401, null), ACCOUNT)).toEqual({ key: 'sessionExpired' });
+    expect(prelaunchFailure(new ApiError(400, null), ACCOUNT)).toEqual({ key: 'sessionExpired' });
+    // A guest's 400 is about the address they typed, not about a session they never had.
+    expect(prelaunchFailure(new ApiError(400, null), GUEST)).toEqual({ key: 'notSaved' });
+  });
+});
+
+describe('prelaunchReadFailure', () => {
+  it('reads a refusal as the web does: the service’s detail, then its title, then nothing', () => {
+    expect(
+      prelaunchReadFailure(new ApiError(500, { detail: 'Rebuilding.', title: 'Server error' })),
+    ).toEqual({ key: 'detail', text: 'Rebuilding.' });
+    expect(prelaunchReadFailure(new ApiError(500, { title: 'Server error' }))).toEqual({
+      key: 'detail',
+      text: 'Server error',
+    });
+    expect(prelaunchReadFailure(new ApiError(502, null))).toEqual({ key: 'none' });
+    expect(prelaunchReadFailure(new ApiError(500, { detail: '  ' }))).toEqual({ key: 'none' });
+  });
+
+  it('never says a read could not be saved', () => {
+    for (const status of [400, 401, 403, 500, 503]) {
+      expect(prelaunchReadFailure(new ApiError(status, null)).key).not.toBe('notSaved');
+    }
+  });
+
+  it('keeps the rate limit and the unreachable sentence', () => {
+    expect(prelaunchReadFailure(new ApiError(429, { retryAfterSeconds: 90 }))).toEqual({
+      key: 'rateLimitedIn',
+      minutes: 2,
+    });
+    expect(prelaunchReadFailure(new ApiError(429, null))).toEqual({ key: 'rateLimited' });
+    expect(prelaunchReadFailure(new TypeError('offline'))).toEqual({ key: 'unreachable' });
   });
 });
 
@@ -137,6 +179,6 @@ describe('remindMe', () => {
     ) as unknown as typeof fetch;
     const failure = await remindMe(ID, null).catch((cause: unknown) => cause);
     expect(failure).toBeInstanceOf(ApiError);
-    expect(prelaunchFailure(failure)).toEqual({ key: 'rateLimitedIn', minutes: 3 });
+    expect(prelaunchFailure(failure, GUEST)).toEqual({ key: 'rateLimitedIn', minutes: 3 });
   });
 });

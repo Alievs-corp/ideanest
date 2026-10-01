@@ -156,7 +156,12 @@ the reminder write and the failure wording — are `src/lib/prelaunch.ts`.
   it was. `REMINDERS_CLOSED` (the campaign opened while the page was open) goes
   to the same state with "already opened". Anything else is an error with retry.
 - A 429 names the wait in whole minutes, rounded up from `retryAfterSeconds`.
-  Other refusals use the catalogue's sentence rather than the service's prose.
+  A failed reminder otherwise says it could not be saved, except a 401 — or a
+  400 to the account's `{}`, which means the bearer was lost to a dismissed
+  prompt or a failed refresh — which asks the reader to sign in again. A failed
+  read shows the service's `detail` (then `title`), as the web does.
+- `REMINDERS_CLOSED` also drops the persisted page, so an offline cold start
+  cannot show "Coming soon" again; a pull that finds the page again leaves it.
 - One `FadeUp`, on the cover, title and count; the form is outside it. The one
   lime control is "Remind me".
 
@@ -205,7 +210,7 @@ The pages the web keys by project id — `/projects/<uuid>/prelaunch`, `/back`,
 `/edit`, `/dashboard` — open under `campaigns/<uuid>/…`, because Expo Router
 cannot hold `projects/[id]` beside `projects/[creatorSlug]`. They are matched
 with a strict UUID before the creator/slug pattern, and the checkout keeps
-`?reward=`. `/projects/alice/prelaunch` (not a UUID) opens the campaign slugged
+`?reward=` (the placeholder passes it on to the web checkout until #157). `/projects/alice/prelaunch` (not a UUID) opens the campaign slugged
 `prelaunch`, where the web would show its pre-launch page for an id of `alice`
 (#148).
 

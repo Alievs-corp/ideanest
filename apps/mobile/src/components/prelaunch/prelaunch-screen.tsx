@@ -9,7 +9,7 @@ import { queryKeys, usePrelaunchPage, type PrelaunchPage } from '../../api/queri
 import { useOnline } from '../../lib/connectivity';
 import { formatCount, pluralCategory, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
-import { noPrelaunchPage, prelaunchFailure } from '../../lib/prelaunch';
+import { noPrelaunchPage, prelaunchReadFailure } from '../../lib/prelaunch';
 import { useSession } from '../../lib/use-session';
 import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
 import { FadeUp } from '../motion';
@@ -31,8 +31,9 @@ import { PrelaunchForm } from './prelaunch-form';
  *       what other people are preparing. One info alert says so without saying which. The same
  *       state, with `alreadyOpen`, follows a `REMINDERS_CLOSED` refusal.</li>
  *   <li><strong>Failed</strong> — anything else with nothing cached: a danger alert with the
- *       reason and a retry, never the unavailable wording, which would be untrue of a phone that
- *       is only offline.</li>
+ *       reason (`prelaunchReadFailure`: the service's own words for a refusal, as on the web) and a
+ *       retry, never the unavailable wording, which would be untrue of a phone that is only
+ *       offline.</li>
  *   <li><strong>Ready</strong>, then <strong>following</strong> once the form is sent.</li>
  *   <li><strong>Offline</strong> — the cached page (`queryKeys.prelaunch` sits under the persisted
  *       `project` root), a notice that the count may have moved, and the form disabled with the
@@ -54,9 +55,28 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
   const [closed, setClosed] = useState(false);
   const [pulling, setPulling] = useState(false);
 
+  /*
+   * A read the reader asked for — the pull, or the retry. A page that answers again ends the
+   * `REMINDERS_CLOSED` state: what the service says now outranks what it refused a moment ago.
+   */
+  const reread = () =>
+    query.refetch().then((result) => {
+      if (result.isSuccess) setClosed(false);
+    });
+
   const refresh = () => {
     setPulling(true);
-    void query.refetch().finally(() => setPulling(false));
+    void reread().finally(() => setPulling(false));
+  };
+
+  /*
+   * `REMINDERS_CLOSED`: the campaign opened while the page was on screen. The cached page goes
+   * too, because it is persisted (`project` root): left in place, the next cold start offline
+   * would show "Coming soon" with a live form for a campaign that is already open.
+   */
+  const close = () => {
+    setClosed(true);
+    queryClient.removeQueries({ queryKey: queryKeys.prelaunch(projectId), exact: true });
   };
 
   /** Writes the service's new count into the cached page, so a restart shows it too. */
@@ -90,7 +110,7 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
 
   if (page === undefined) {
     if (query.isError) {
-      const reason = prelaunchFailure(query.error);
+      const reason = prelaunchReadFailure(query.error);
       return (
         <Screen hasContent motion="moderate" onRefresh={refresh} refreshing={pulling}>
           {header(fallbackTitle)}
@@ -101,12 +121,16 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
               description={
                 reason.key === 'rateLimitedIn'
                   ? t('errors.rateLimitedIn', { minutes: String(reason.minutes) })
-                  : t(`errors.${reason.key}`)
+                  : reason.key === 'detail'
+                    ? reason.text
+                    : reason.key === 'none'
+                      ? undefined
+                      : t(`errors.${reason.key}`)
               }
               action={
                 <Pill
                   label={tAll('common.tryAgain')}
-                  onPress={() => void query.refetch()}
+                  onPress={() => void reread()}
                   busy={query.isFetching}
                   variant="ghost"
                   size="sm"
@@ -164,7 +188,7 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
           signedIn={signedIn}
           offline={offline}
           onFollowerCount={setFollowerCount}
-          onClosed={() => setClosed(true)}
+          onClosed={close}
         />
       </View>
     </Screen>

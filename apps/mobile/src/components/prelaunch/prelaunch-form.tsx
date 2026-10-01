@@ -61,6 +61,7 @@ export function PrelaunchForm({
   onClosed,
 }: PrelaunchFormProps) {
   const t = useT('campaign.prelaunch');
+  const tAll = useT();
   const [email, setEmail] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -70,7 +71,10 @@ export function PrelaunchForm({
   const describe = (reason: PrelaunchFailure): string =>
     reason.key === 'rateLimitedIn'
       ? t('errors.rateLimitedIn', { minutes: String(reason.minutes) })
-      : t(`errors.${reason.key}`);
+      : reason.key === 'sessionExpired'
+        ? // The comment composer's sentence for the same refusal: "Sign in and try again."
+          tAll('campaign.comments.failures.sessionExpired')
+        : t(`errors.${reason.key}`);
 
   async function submit(): Promise<void> {
     if (offline || submitting) return;
@@ -83,9 +87,15 @@ export function PrelaunchForm({
     }
     setFieldError(null);
     setSubmitting(true);
+    /*
+     * Which request this was, held across the await: a refresh refused while it is out ends the
+     * session, `signedIn` turns false on the next render, and the refusal must still be read as
+     * the account request it was.
+     */
+    const asAccount = signedIn;
 
     try {
-      const result = await remindMe(projectId, signedIn ? null : email.trim());
+      const result = await remindMe(projectId, asAccount ? null : email.trim());
       if (result.followerCount !== null) onFollowerCount(result.followerCount);
       setFollowing(true);
       // Polite: an outcome the reader asked for, not an interruption — the web's `role="status"`.
@@ -99,7 +109,7 @@ export function PrelaunchForm({
         onClosed();
         return;
       }
-      const message = describe(prelaunchFailure(cause));
+      const message = describe(prelaunchFailure(cause, { signedIn: asAccount }));
       setFailure(message);
       // The web's `role="alert"`: somebody who pressed the button and heard nothing believes it worked.
       announce(message, { assertive: true });

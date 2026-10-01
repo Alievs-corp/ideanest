@@ -73,29 +73,68 @@ export function noPrelaunchPage(cause: unknown): boolean {
   return cause instanceof ApiError && cause.status === 404;
 }
 
+/** A 429, with the wait in whole minutes when the service gave one. */
+export type RateLimit =
+  | { readonly key: 'rateLimitedIn'; readonly minutes: number }
+  | { readonly key: 'rateLimited' };
+
 /**
- * What a failure says, as a key under `campaign.prelaunch.errors` and its one value.
+ * The minutes rounded UP from `retryAfterSeconds` (150 seconds is "about 3 minutes", never 2), or
+ * no figure when the service gave none — or gave 0, which would read "about 0 minutes".
+ */
+function rateLimit(cause: ApiError): RateLimit {
+  const seconds = cause.problem?.retryAfterSeconds;
+  return typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0
+    ? { key: 'rateLimitedIn', minutes: Math.ceil(seconds / 60) }
+    : { key: 'rateLimited' };
+}
+
+/**
+ * What a failed reminder says. Every key but `sessionExpired` is under `campaign.prelaunch.errors`.
  *
  * <ul>
- *   <li>429: `rateLimitedIn` with the minutes rounded UP from `retryAfterSeconds` (150 seconds is
- *       "about 3 minutes", never 2), or `rateLimited` when the service gave no figure;</li>
+ *   <li>429: the rate limit, as {@link rateLimit};</li>
+ *   <li>401, and a 400 on the signed-in path: `sessionExpired`. The form chose `{}` because the
+ *       device holds a session, but the request may still have gone without a bearer — a dismissed
+ *       biometric prompt, a refresh that failed — and the service then refuses `{}` as a guest
+ *       request with no address. "Could not be saved" would send the reader to press the same
+ *       button again; signing in again is what fixes it;</li>
  *   <li>any other refusal: `notSaved`. The web prints the service's `detail` here; the issue's
- *       specification asks for the catalogue's sentence instead, because `detail` is prose the
- *       service may word in one language and reword at any time (`Problem.code`'s note);</li>
+ *       specification asks for the catalogue's sentence, because `detail` is prose the service may
+ *       word in one language and reword at any time (`Problem.code`'s note);</li>
  *   <li>no answer at all: `unreachable`.</li>
  * </ul>
  */
 export type PrelaunchFailure =
-  | { readonly key: 'rateLimitedIn'; readonly minutes: number }
-  | { readonly key: 'rateLimited' | 'notSaved' | 'unreachable' };
+  | RateLimit
+  | { readonly key: 'notSaved' | 'unreachable' | 'sessionExpired' };
 
-export function prelaunchFailure(cause: unknown): PrelaunchFailure {
+export function prelaunchFailure(
+  cause: unknown,
+  { signedIn }: { readonly signedIn: boolean },
+): PrelaunchFailure {
   if (!(cause instanceof ApiError)) return { key: 'unreachable' };
-  if (cause.status === 429) {
-    const seconds = cause.problem?.retryAfterSeconds;
-    return typeof seconds === 'number' && Number.isFinite(seconds) && seconds > 0
-      ? { key: 'rateLimitedIn', minutes: Math.ceil(seconds / 60) }
-      : { key: 'rateLimited' };
-  }
+  if (cause.status === 429) return rateLimit(cause);
+  if (cause.status === 401 || (signedIn && cause.status === 400)) return { key: 'sessionExpired' };
   return { key: 'notSaved' };
+}
+
+/**
+ * What a failed READ of the page says, under the `failedTitle` heading — never `notSaved`, which
+ * is about a write. The web's rule (`messageFor` in `PrelaunchView`): no answer is `unreachable`, a
+ * 429 the rate limit, and any other refusal the service's own `detail ?? title`, because the
+ * endpoint knows which of its rules refused and this screen does not. With neither, there is no
+ * description: the heading and the retry say enough.
+ */
+export type PrelaunchReadFailure =
+  | RateLimit
+  | { readonly key: 'unreachable' }
+  | { readonly key: 'detail'; readonly text: string }
+  | { readonly key: 'none' };
+
+export function prelaunchReadFailure(cause: unknown): PrelaunchReadFailure {
+  if (!(cause instanceof ApiError)) return { key: 'unreachable' };
+  if (cause.status === 429) return rateLimit(cause);
+  const text = (cause.problem?.detail ?? cause.problem?.title ?? '').trim();
+  return text === '' ? { key: 'none' } : { key: 'detail', text };
 }

@@ -1,27 +1,57 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { AccessibilityInfo, StyleSheet, type ViewStyle } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
+import * as SecureStore from 'expo-secure-store';
 import en from '@ideanest/messages/en.json';
 import { queryKeys, type PrelaunchPage } from '../../api/queries';
 import { setOnline } from '../../lib/connectivity';
 import { setLocale } from '../../lib/locale';
+import {
+  enableLock,
+  rememberAccessToken,
+  storeRefreshToken,
+  useFlagStore,
+} from '../../lib/session';
+import { memoryStore } from '../../lib/storage';
 import { colors } from '../../theme';
 import { PrelaunchScreen } from './prelaunch-screen';
 
 /**
  * The pre-launch screen — issue #155: every phase the web's `PrelaunchView` has (loading,
  * unavailable, failed, ready, following) plus the app's offline one, and the form's rules — the
- * guest address check, `{}` for an account, the count the service answers, `REMINDERS_CLOSED`
- * and the minutes of a 429.
+ * guest address check, `{}` for an account with its bearer and a guest's request with none, the
+ * count the service answers, `REMINDERS_CLOSED` and the minutes of a 429.
  */
 
-let mockSignedIn = false;
-jest.mock('../../lib/use-session', () => ({
-  useSession: () => ({ signedIn: mockSignedIn, locked: false, unlocked: mockSignedIn }),
-}));
+/*
+ * The session is real, not a mocked `useSession`: the form decides `{}` from the device's session,
+ * and whether a bearer actually goes with it is `api/client.ts`'s business. Only the keychain and
+ * the flag store are doubles (`jest.setup.ts`, `memoryStore`).
+ */
+const keychain = SecureStore as unknown as {
+  __setBiometryAllowed: (allowed: boolean) => void;
+  __reset: () => void;
+};
+
+/** A signed-in reader whose access token is in memory, so every request carries it. */
+async function signIn() {
+  await storeRefreshToken('refresh-1');
+  rememberAccessToken('access-1');
+}
+
+/**
+ * A session on the device whose token cannot be read: the lock is on and the biometric prompt was
+ * dismissed. `useSession` says signed in, and every request goes without a bearer.
+ */
+async function signInLockedAndDismissed() {
+  await storeRefreshToken('refresh-1');
+  await enableLock();
+  keychain.__setBiometryAllowed(false);
+  rememberAccessToken(null);
+}
 
 jest.setTimeout(30_000);
 
@@ -56,23 +86,36 @@ const problem = (status: number, body: unknown, headers: Record<string, string> 
 const unreachable = () => Promise.reject(new TypeError('Network request failed'));
 
 type Route = () => Response | Promise<Response>;
-let routes: { page: Route; remind: Route };
+let routes: { page: Route; remind: Route; refresh: Route };
 let posts: unknown[];
+let bearers: (string | null)[];
 let client: QueryClient;
 
 beforeEach(async () => {
   await act(async () => setLocale('en'));
-  mockSignedIn = false;
+  keychain.__reset();
+  useFlagStore(memoryStore());
+  rememberAccessToken(null);
   posts = [];
+  bearers = [];
   routes = {
     page: () => json(PAGE),
     remind: () => json({ following: true, followerCount: 13 }),
+    refresh: () => json({ accessToken: 'access-2', refreshToken: 'refresh-2' }),
   };
   global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     if (url.pathname === `/v1/projects/${ID}/prelaunch`) return routes.page();
+    if (url.pathname === '/v1/auth/refresh') return routes.refresh();
     if (url.pathname === `/v1/projects/${ID}/remind` && init?.method === 'POST') {
-      posts.push(JSON.parse(String(init.body)));
+      const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+      const bearer = new Headers(init.headers).get('Authorization');
+      posts.push(body);
+      bearers.push(bearer);
+      // The service's answer to `{}` from nobody: a guest request with no address.
+      if (bearer === null && body.email === undefined) {
+        return problem(400, { status: 400, code: 'VALIDATION_FAILED' });
+      }
       return routes.remind();
     }
     return json({}, 404);
@@ -138,18 +181,39 @@ describe('the pre-launch screen, phase by phase', () => {
     expect(screen.queryByRole('button', { name: P.submit })).toBeNull();
   });
 
-  it('shows a failure with a retry for anything else, and the retry reads again', async () => {
-    routes.page = () => problem(500, { status: 500, detail: 'Database on fire' });
+  it('shows a failure with the service’s words and a retry, and the retry reads again', async () => {
+    routes.page = () => problem(500, { status: 500, detail: 'The catalogue is being rebuilt.' });
     await show();
     expect(screen.getByTestId('prelaunch-failed')).toBeTruthy();
     expect(screen.getByText(P.failedTitle)).toBeTruthy();
-    expect(screen.getByText(P.errors.notSaved)).toBeTruthy();
-    // The catalogue's sentence, not the service's prose.
-    expect(screen.queryByText('Database on fire')).toBeNull();
+    // The web's rule for a read: the service's detail. Never "could not be saved" — nothing was.
+    expect(screen.getByText('The catalogue is being rebuilt.')).toBeTruthy();
+    expect(screen.queryByText(P.errors.notSaved)).toBeNull();
 
     routes.page = () => json(PAGE);
     await press(screen.getByRole('button', { name: en.common.tryAgain }));
     expect(screen.getByTestId('prelaunch-ready')).toBeTruthy();
+  });
+
+  it('falls back to the title for a refusal without a detail', async () => {
+    routes.page = () => problem(500, { status: 500, title: 'Internal Server Error' });
+    await show();
+    expect(screen.getByText('Internal Server Error')).toBeTruthy();
+  });
+
+  it('draws no description for a refusal with neither, only the heading and the retry', async () => {
+    routes.page = () => problem(502, null);
+    await show();
+    expect(screen.getByText(P.failedTitle)).toBeTruthy();
+    expect(screen.queryByText(P.errors.notSaved)).toBeNull();
+    expect(screen.getByRole('button', { name: en.common.tryAgain })).toBeTruthy();
+  });
+
+  it('names the wait on a rate-limited read', async () => {
+    // In the body: the read client keeps the problem as sent (`createApiClient`), not the header.
+    routes.page = () => problem(429, { status: 429, retryAfterSeconds: 61 });
+    await show();
+    expect(screen.getByText(P.errors.rateLimitedIn.replace('{minutes}', '2'))).toBeTruthy();
   });
 
   it('says the service could not be reached when nothing answered and nothing is cached', async () => {
@@ -229,18 +293,50 @@ describe('asking to be reminded', () => {
   });
 
   it('sends an empty body for a signed-in reader, who is shown no address field', async () => {
-    mockSignedIn = true;
+    await signIn();
     await show();
     expect(screen.queryByTestId('prelaunch-email')).toBeNull();
     expect(screen.getByText(P.accountAddress)).toBeTruthy();
 
     await press(submit());
     expect(posts).toEqual([{}]);
+    // `{}` means "the account's address" only because the bearer goes with it.
+    expect(bearers).toEqual(['Bearer access-1']);
     expect(screen.getByText(P.onListSignedIn)).toBeTruthy();
   });
 
+  it('sends a guest’s request with no Authorization at all', async () => {
+    await show();
+    await fireEvent.changeText(screen.getByTestId('prelaunch-email'), 'you@example.com');
+    await press(submit());
+    expect(bearers).toEqual([null]);
+  });
+
+  it('asks the reader to sign in again when the account request went without a bearer', async () => {
+    // The device has a session, so the form sends `{}`; the dismissed prompt means no token.
+    await signInLockedAndDismissed();
+    await show();
+    expect(screen.queryByTestId('prelaunch-email')).toBeNull();
+
+    await press(submit());
+    expect(posts).toEqual([{}]);
+    expect(bearers).toEqual([null]);
+    expect(screen.getByText(en.campaign.comments.failures.sessionExpired)).toBeTruthy();
+    expect(screen.queryByText(P.errors.notSaved)).toBeNull();
+  });
+
+  it('asks the reader to sign in again on a 401 the refresh cannot cure', async () => {
+    await signIn();
+    routes.remind = () => problem(401, { status: 401 });
+    // The session was revoked: the one refresh `sessionFetch` tries is refused as well.
+    routes.refresh = () => problem(401, { status: 401 });
+    await show();
+    await press(submit());
+    expect(screen.getByText(en.campaign.comments.failures.sessionExpired)).toBeTruthy();
+  });
+
   it('keeps the count it has when the answer carries none', async () => {
-    mockSignedIn = true;
+    await signIn();
     routes.remind = () => json({ following: true });
     await show();
     await press(submit());
@@ -249,18 +345,38 @@ describe('asking to be reminded', () => {
   });
 
   it('goes to the unavailable state, saying it has opened, on REMINDERS_CLOSED', async () => {
-    mockSignedIn = true;
+    await signIn();
     routes.remind = () => problem(409, { status: 409, code: 'REMINDERS_CLOSED' });
     await show();
+    // The page now 404s too, as it does once a campaign has launched.
+    routes.page = () => problem(404, { status: 404 });
     await press(submit());
     expect(screen.getByTestId('prelaunch-unavailable')).toBeTruthy();
     expect(screen.getByText(P.unavailableTitle)).toBeTruthy();
     expect(screen.getByText(P.alreadyOpen)).toBeTruthy();
     expect(screen.queryByTestId('prelaunch-form')).toBeNull();
+    // And the persisted page is gone, so an offline cold start cannot show "Coming soon" again.
+    expect(client.getQueryData(queryKeys.prelaunch(ID))).toBeUndefined();
+  });
+
+  it('leaves the closed state when a pull to refresh finds the page again', async () => {
+    await signIn();
+    routes.remind = () => problem(409, { status: 409, code: 'REMINDERS_CLOSED' });
+    const view = await show();
+    await press(submit());
+    expect(screen.getByText(P.alreadyOpen)).toBeTruthy();
+
+    routes.page = () => json(PAGE);
+    const [scroller] = view.container.queryAll((node) => node.props.refreshControl !== undefined);
+    const pull = scroller?.props.refreshControl as ReactElement<{ onRefresh: () => void }>;
+    await act(async () => pull.props.onRefresh());
+    await settle();
+    expect(screen.getByTestId('prelaunch-ready')).toBeTruthy();
+    expect(screen.queryByText(P.alreadyOpen)).toBeNull();
   });
 
   it('names the wait in minutes, rounded up, on a 429', async () => {
-    mockSignedIn = true;
+    await signIn();
     routes.remind = () =>
       problem(429, { status: 429 }, { 'Retry-After': '150' });
     const assertive = jest
@@ -276,7 +392,7 @@ describe('asking to be reminded', () => {
   });
 
   it('says only that it is rate limited when the 429 carries no wait', async () => {
-    mockSignedIn = true;
+    await signIn();
     routes.remind = () => problem(429, { status: 429 });
     await show();
     await press(submit());
@@ -284,7 +400,7 @@ describe('asking to be reminded', () => {
   });
 
   it('answers another refusal with notSaved and no answer with unreachable', async () => {
-    mockSignedIn = true;
+    await signIn();
     routes.remind = () => problem(500, { status: 500, detail: 'Boom' });
     await show();
     await press(submit());
