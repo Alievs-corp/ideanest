@@ -3966,6 +3966,14 @@ sequenceDiagram
 > The rest of the branch is as drawn: the pledge becomes `COLLECTED`, the decline path
 > becomes `CHARGE_FAILED`, and §9.6's four retries follow.
 
+> **One temporary exception, #243 (owner's decision, 2026-10-01).** Until Epoint's keys are in
+> place, the `local` profile registers payout cards through `SandboxPaymentProvider`: a page the
+> service draws itself, and a real webhook through `ProviderWebhooks`. It is not the stub this
+> section refuses, because it approves nothing that moves money — charges, refunds and payouts
+> refuse exactly as they do with no provider — and it refuses to start outside the `local` and
+> `test` profiles. `PaymentProviderBoundaryTests` names it as the one exception. It is removed,
+> with V93's widening of `payout_destinations.provider`, once Epoint is configured.
+
 ### 9.3 Provider requirements
 
 **Confirm each of these in writing before signing.** Without them the design

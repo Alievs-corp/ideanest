@@ -39,6 +39,11 @@ public class PaymentProviderStatus implements ProviderStatusSource {
 
         for (ProviderName provider : ProviderName.values()) {
             boolean configured = registered.contains(provider);
+            // #243's local sandbox is not a provider a deployment could configure, so a
+            // deployment's health screen does not list it as one that is missing.
+            if (provider == ProviderName.SANDBOX && !configured) {
+                continue;
+            }
             boolean available = configured && breaker.isAvailable(provider);
 
             statuses.add(new ProviderStatus(
