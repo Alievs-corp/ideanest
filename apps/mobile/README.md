@@ -55,6 +55,20 @@ A runner that does not go through Babel stops at the first import of the
 framework. `jest.config.js` explains the two settings that make this work under
 pnpm's non-flat `node_modules`.
 
+**A custom entry, `index.ts`, for `Intl.PluralRules`.** `package.json`'s `main` is
+`index.ts`, which imports `src/lib/intl-polyfill.ts` and then `expo-router/entry`.
+Hermes ships without `Intl.PluralRules` (and without `Intl.Locale`) on Android and
+iOS, so every ICU `{count, plural, …}` message failed in `intl-messageformat` and
+`use-intl` printed its key — a release APK showed `campaign.daysLeft` on a campaign
+card (#155). The polyfill is `@formatjs/intl-pluralrules`, installed only when the
+engine lacks the constructor, with CLDR data for `en`, `az`, `ru` and `tr` and no
+other language. It runs from the entry rather than the root layout because any
+module Expo Router loads may translate at import time, and the entry is the one
+place that is first for all of them. `@ideanest/messages`' `pluralForm` asks with
+`localeMatcher: 'lookup'`, so `en-GB` resolves to `en` without `Intl.Locale`.
+Jest runs on Node, which has both constructors; `src/lib/intl-polyfill.test.ts`
+deletes them to show the bug and the fix.
+
 ## The UI kit (#151)
 
 `@ideanest/ui` is React DOM, so the app has its own half of the same design in
