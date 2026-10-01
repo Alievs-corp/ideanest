@@ -26,6 +26,7 @@ export function FailureState({
   reference,
   busy = false,
   children,
+  testID,
 }: {
   readonly title: string;
   readonly description: string;
@@ -41,12 +42,13 @@ export function FailureState({
    */
   readonly busy?: boolean;
   readonly children?: ReactNode;
+  readonly testID?: string;
 }) {
   const t = useT('shell.failure.pages.error');
   const tWhatsApp = useT('shell.whatsapp');
   const [contacting, setContacting] = useState(false);
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <ScrollView contentContainerStyle={styles.screen} testID={testID}>
       <Heading accessibilityRole="header" style={styles.centred}>
         {title}
       </Heading>

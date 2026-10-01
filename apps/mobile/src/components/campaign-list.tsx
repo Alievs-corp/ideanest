@@ -46,6 +46,7 @@ export interface CampaignListProps {
   readonly empty?: React.ReactElement;
   /** Rendered after the last card — "Show more", the end of the feed, a next-page error. */
   readonly footer?: React.ReactElement;
+  readonly testID?: string;
 }
 
 const styles = StyleSheet.create({
@@ -62,9 +63,11 @@ export function CampaignList({
   header,
   empty,
   footer,
+  testID,
 }: CampaignListProps) {
   return (
     <FlashList
+      testID={testID}
       data={cards as Card[]}
       renderItem={renderCard}
       /*

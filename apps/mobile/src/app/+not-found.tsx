@@ -1,6 +1,4 @@
-import { Stack, useRouter } from 'expo-router';
-import { FailureState } from '../components/failure-state';
-import { useT } from '../lib/i18n';
+import { NotFoundState } from '../components/not-found-state';
 
 /**
  * Where an unmatched route lands.
@@ -10,22 +8,11 @@ import { useT } from '../lib/i18n';
  * route it names. `lib/links.ts` refuses a link from a host we do not claim
  * before it gets here; what reaches this screen is one of ours that this build
  * does not know about, and the useful thing to offer is the way back rather than
- * an apology. The action is a white pill, as on the web's failure pages.
+ * an apology. The browse routes draw the same screen for a slug that names
+ * nothing (#154), so both are `NotFoundState`.
  */
 export default function NotFoundScreen() {
-  const router = useRouter();
-  const t = useT('shell.failure.pages.notFound');
-  return (
-    <>
-      <Stack.Screen options={{ title: t('metaTitle') }} />
-      <FailureState
-        title={t('title')}
-        description={t('description')}
-        actionLabel={t('action')}
-        onAction={() => router.replace('/')}
-      />
-    </>
-  );
+  return <NotFoundState />;
 }
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).

@@ -28,9 +28,9 @@ import { parseFilters, searchParamsFrom, toSearchParams } from '@ideanest/discov
 
 /**
  * A route, and the params it opens with. `params` is only ever the feed's own parameters
- * (Discover) or the query (Search), rebuilt from the link rather than passed through: a link
- * carries whatever its author wrote, and a `utm_source` or a mistyped status is not a param any
- * screen should receive.
+ * (Discover), the query (Search) or the decoded slugs of a browse route (#154), rebuilt from the
+ * link rather than passed through: a link carries whatever its author wrote, and a `utm_source`
+ * or a mistyped status is not a param any screen should receive.
  */
 export type Destination = {
   readonly pathname: string;
@@ -55,7 +55,7 @@ const CAMPAIGN_PATH = /^\/projects\/([^/]+)\/([^/]+)\/?$/;
  * is to let the browser keep it — or an application trying to drive this one
  * somewhere. Silently landing on the feed makes both look like they worked.
  *
- * <p>Only campaign paths are answered, so this parser never names a development route — the kit
+ * <p>Only the paths below are answered, so this parser never names a development route — the kit
  * gallery at `dev/kit` (issue #151) — as a destination; `links.test.ts` pins that. Expo Router's
  * own linking is off (`app/+native-intent.tsx`), and the gallery's `__DEV__` redirect is the
  * second guard that keeps a release build from showing it.
@@ -158,11 +158,79 @@ function discoveryDestination(path: string, search: string): Destination | null 
   return null;
 }
 
+/*
+ * The browse pages (#154): the categories index, a category, a subcategory within it, the
+ * collections index and one collection — each the web's path, so a link shared from a landing
+ * page opens the same landing page. Nothing deeper is claimed: `/categories/a/b/c` is a page
+ * neither platform has.
+ */
+const CATEGORIES_INDEX = /^\/categories\/?$/;
+const CATEGORY_PAGE = /^\/categories\/([^/]+)\/?$/;
+const SUBCATEGORY_PAGE = /^\/categories\/([^/]+)\/([^/]+)\/?$/;
+const COLLECTIONS_INDEX = /^\/collections\/?$/;
+const COLLECTION_PAGE = /^\/collections\/([^/]+)\/?$/;
+
+/**
+ * Each segment decoded exactly once, or `null` when one will not decode, decodes to nothing, or
+ * decodes to a slash — the rule `campaignDestination` states for a campaign's two slugs.
+ */
+function decodedSegments(raw: readonly (string | undefined)[]): string[] | null {
+  const decoded: string[] = [];
+  for (const segment of raw) {
+    if (segment === undefined) return null;
+    let value: string;
+    try {
+      value = decodeURIComponent(segment);
+    } catch {
+      return null;
+    }
+    if (value === '' || value.includes('/')) return null;
+    decoded.push(value);
+  }
+  return decoded;
+}
+
+/**
+ * The slugs go to the screen as params against the route's own pattern rather than spliced into
+ * a path, so a slug the router would read as syntax (`?`, `#`) is still one slug.
+ */
+function browseDestination(path: string): Destination | null {
+  if (CATEGORIES_INDEX.test(path)) return { pathname: '/categories' };
+  if (COLLECTIONS_INDEX.test(path)) return { pathname: '/collections' };
+
+  const sub = SUBCATEGORY_PAGE.exec(path);
+  if (sub !== null) {
+    const [category, subcategory] = decodedSegments([sub[1], sub[2]]) ?? [];
+    return category === undefined || subcategory === undefined
+      ? null
+      : { pathname: '/categories/[category]/[subcategory]', params: { category, subcategory } };
+  }
+
+  const one = CATEGORY_PAGE.exec(path);
+  if (one !== null) {
+    const [category] = decodedSegments([one[1]]) ?? [];
+    return category === undefined
+      ? null
+      : { pathname: '/categories/[category]', params: { category } };
+  }
+
+  const collection = COLLECTION_PAGE.exec(path);
+  if (collection !== null) {
+    const [slug] = decodedSegments([collection[1]]) ?? [];
+    return slug === undefined ? null : { pathname: '/collections/[slug]', params: { slug } };
+  }
+
+  return null;
+}
+
 function campaignDestination(rawPath: string, search = ''): Destination | null {
   const path = rawPath.replace(LOCALE_PREFIX, '') || '/';
 
   const discovery = discoveryDestination(path, search);
   if (discovery !== null) return discovery;
+
+  const browse = browseDestination(path);
+  if (browse !== null) return browse;
 
   for (const [pattern, toRoute] of ID_ROUTES) {
     const idMatch = pattern.exec(path);

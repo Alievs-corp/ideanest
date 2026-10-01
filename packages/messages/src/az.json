@@ -5414,6 +5414,12 @@
     "failed": "Alınmadı. Bir azdan yenidən cəhd edin."
   },
   "mobile": {
+    "browse": {
+      "loadingCategories": "Kateqoriyalar yüklənir",
+      "loadingCategory": "Kateqoriya yüklənir",
+      "loadingCollections": "Kolleksiyalar yüklənir",
+      "loadingCollection": "Kolleksiya yüklənir"
+    },
     "tabs": {
       "home": "Ana səhifə",
       "search": "Axtarış",

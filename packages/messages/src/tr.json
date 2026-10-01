@@ -5414,6 +5414,12 @@
     "failed": "Olmadı. Birazdan yeniden deneyin."
   },
   "mobile": {
+    "browse": {
+      "loadingCategories": "Kategoriler yükleniyor",
+      "loadingCategory": "Kategori yükleniyor",
+      "loadingCollections": "Derlemeler yükleniyor",
+      "loadingCollection": "Derleme yükleniyor"
+    },
     "tabs": {
       "home": "Ana sayfa",
       "search": "Arama",

@@ -121,6 +121,27 @@ are **the route's params**, under the service's own names, parsed and written by
 - The card (`components/project-card.tsx`) is the web card field by field. It
   is one link, and what it prints is its accessibility value.
 
+## Categories and collections (#154)
+
+Five routes, each at the web's path: `categories`, `categories/[category]`,
+`categories/[category]/[subcategory]`, `collections` and `collections/[slug]`.
+The screens are in `src/components/browse/`; the slug lookups, the wire
+narrowing and a collection's window are `@ideanest/discovery/taxonomy` and
+`@ideanest/discovery/collections`, the modules the web reads too.
+
+- A breadcrumb sits above each landing's heading. A link opens these screens
+  with no back stack, and the trail is the way up.
+- A category landing shows 24 cards and hands off to Discover with the filter
+  applied, as the web does. A collection pages in place, in the curator's
+  order: by itself near the end of the list, and with "Show more", which is
+  disabled while a page loads. A cursor is asked for once.
+- A slug that names nothing, and a collection the service answers 404 for, is
+  `NotFoundState`. A read that failed is an error with retry, where the web
+  can only say "nothing here".
+- Collection dates are long dates in UTC (`formatWindowDate`), so a window
+  closing at 23:30 UTC on the 31st reads the 31st on every phone.
+- The taxonomy and collections are cached for the session, never persisted.
+
 ## Configuration
 
 Two variables, read at **build** time by `app.config.ts` and surfaced through
@@ -160,6 +181,13 @@ environment variables.
 A campaign is at `/projects/<creator>/<campaign>` on the web and at the same path
 here, so the link that opened the application and the route it lands on are one
 string.
+
+The browse pages are claimed too (#154): `/categories` and `/collections`, and
+everything under each (exactly, on both platforms). `links.ts` decodes a slug
+once and hands it on as a route param; Expo Router then encodes it into the path
+and decodes what the screen reads, so a slug carrying a literal `%XX` would not
+survive the trip. The service's slugs are `[a-z0-9-]`, so none does today.
+`/categories/a/b/c` is refused.
 
 Three discovery paths are claimed as well (#153): `/` opens Home, `/discover?…`
 opens Discover with the filters in the query string, and `/search?q=` opens

@@ -108,7 +108,7 @@ function CategoryTile({ category }: { readonly category: Category }) {
   const name = category.name ?? slug;
   return (
     <View style={styles.cell}>
-      <Link href={{ pathname: '/categories/[slug]', params: { slug } }} asChild>
+      <Link href={{ pathname: '/categories/[category]', params: { category: slug } }} asChild>
         <Pressable
           accessibilityRole="link"
           accessibilityLabel={name}

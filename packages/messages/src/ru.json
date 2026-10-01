@@ -5414,6 +5414,12 @@
     "failed": "Не получилось. Попробуйте ещё раз чуть позже."
   },
   "mobile": {
+    "browse": {
+      "loadingCategories": "Загружаем категории",
+      "loadingCategory": "Загружаем категорию",
+      "loadingCollections": "Загружаем подборки",
+      "loadingCollection": "Загружаем подборку"
+    },
     "tabs": {
       "home": "Главная",
       "search": "Поиск",

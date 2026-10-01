@@ -11,6 +11,17 @@
  * people who ship the SDK.
  */
 const path = require('node:path');
+
+/*
+ * EVERY SUITE RUNS IN BAKU'S TIME ZONE, on a laptop in Baku and on a CI runner in UTC alike.
+ *
+ * Set here, in the process that starts the workers, because a worker reads `TZ` once: assigning
+ * it inside a test file worked on Windows and did nothing on Linux. Baku rather than UTC because
+ * it is where the readers are, and because a zone east of Greenwich is the one that catches a
+ * date formatted in the device's zone instead of UTC (#154's collection windows) — in UTC the
+ * two are the same and the test cannot tell them apart.
+ */
+process.env.TZ = 'Asia/Baku';
 const preset = require('jest-expo/jest-preset');
 
 /*

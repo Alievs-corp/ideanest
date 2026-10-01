@@ -7,7 +7,7 @@ import {
   type paths,
 } from '@ideanest/api-client';
 import type { ExchangeRate } from '@ideanest/money';
-import type { Category } from '../categories/api';
+import { taxonomyFrom, type Category } from '../categories/api';
 import {
   collectionFrom,
   collectionQueryParams,
@@ -308,18 +308,11 @@ export async function fetchCategories(options: ServerReadOptions = {}): Promise<
      * Narrowed to the three fields the browse pages use, rather than cast wholesale.
      * `CategoryResponse` also carries `names`, `nameAz` and `nameEn`, which the controller
      * marks interim; copying them here would spread an interim shape through every consumer
-     * and make removing it a change to all of them.
+     * and make removing it a change to all of them. `taxonomyFrom` is the narrowing the app
+     * applies too (`@ideanest/discovery/taxonomy`, #154), so a missing name falls back to the
+     * slug on both.
      */
-    return (tree as readonly RawCategory[]).map((category) => ({
-      id: category.id ?? '',
-      slug: category.slug ?? '',
-      name: category.name ?? category.slug ?? '',
-      subcategories: (category.subcategories ?? []).map((subcategory) => ({
-        id: subcategory.id ?? '',
-        slug: subcategory.slug ?? '',
-        name: subcategory.name ?? subcategory.slug ?? '',
-      })),
-    }));
+    return taxonomyFrom(tree);
   } catch (cause) {
     return refusalOrRethrow(cause);
   }
@@ -456,14 +449,6 @@ export async function fetchCollection(
   } catch (cause) {
     return refusalOrRethrow(cause);
   }
-}
-
-/** Just the fields read above, as the generated schema types them — every one optional. */
-interface RawCategory {
-  id?: string;
-  slug?: string;
-  name?: string;
-  subcategories?: readonly { id?: string; slug?: string; name?: string }[];
 }
 
 /**

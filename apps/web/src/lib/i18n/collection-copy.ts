@@ -1,3 +1,4 @@
+import type { WindowCopy } from '@ideanest/discovery/collections';
 import type { PluralForms } from './plurals';
 
 /**
@@ -33,10 +34,7 @@ export interface CollectionTranslator {
 }
 
 /** The two terms a collection's window is stated with. `windowFacts` takes it. */
-export interface WindowCopy {
-  readonly closes: string;
-  readonly openSince: string;
-}
+export type { WindowCopy };
 
 export interface CollectionCardCopy {
   /** Keyed by the service's kind; a kind not in the table renders no tag at all. */
