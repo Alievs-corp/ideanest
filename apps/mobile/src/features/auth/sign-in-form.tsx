@@ -6,6 +6,7 @@ import { describeAuthFailure, fieldErrorsOf, type AuthFailure } from '../../lib/
 import { useT } from '../../lib/i18n';
 import { spacing } from '../../theme';
 import { FormErrorSummary } from './form-error-summary';
+import { ProviderButtons } from './provider-buttons';
 import { TwoFactorStep } from './two-factor-step';
 import { useSignInOutcome } from './use-sign-in-outcome';
 
@@ -154,6 +155,9 @@ export function SignInForm({
       )}
 
       {footer}
+
+      {/* Below the form, as on the web: the address and password are the primary path. */}
+      <ProviderButtons intent="sign-in" onOutcome={settle} />
     </View>
   );
 }

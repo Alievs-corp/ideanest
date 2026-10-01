@@ -5512,7 +5512,9 @@
       "close": "Close",
       "wordmark": "IdeyaNest",
       "wordmarkHint": "Goes to Home",
-      "deviceFallback": "IdeyaNest on mobile"
+      "deviceFallback": "IdeyaNest on mobile",
+      "googleSignIn": "Sign in with Google",
+      "googleRegister": "Sign up with Google"
     },
     "kitForm": {
       "required": "required",

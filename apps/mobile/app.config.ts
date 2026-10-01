@@ -73,6 +73,24 @@ const INTER_FACES = [
   },
 ];
 
+/** The bundle identifier, which is also the scheme Google's iOS client redirects to. */
+const BUNDLE_ID = 'az.ideanest.app';
+
+/**
+ * The provider sign-ins this build offers (issue #152) — the web's `configuredProviders()`,
+ * decided at build time.
+ *
+ *   - `IDEANEST_GOOGLE_IOS_CLIENT_ID`: Google's iOS OAuth client. Unset means no Google button
+ *     on iOS, because the service would refuse a token whose audience it does not list
+ *     (`GOOGLE_CLIENT_IDS` must carry the same value).
+ *   - `IDEANEST_APPLE_SIGN_IN`: `true` turns on Sign in with Apple — the entitlement, the
+ *     plugin and the button. The bundle identifier must be in `APPLE_CLIENT_IDS`.
+ *
+ * Google on Android is not offered yet; `src/lib/providers.ts` says why.
+ */
+const googleIosClientId = process.env.IDEANEST_GOOGLE_IOS_CLIENT_ID?.trim() ?? '';
+const appleSignIn = process.env.IDEANEST_APPLE_SIGN_IN?.trim() === 'true';
+
 const config: ExpoConfig = {
   name: 'IdeyaNest',
   slug: 'ideanest',
@@ -87,10 +105,16 @@ const config: ExpoConfig = {
    * Push (§4.12 MB-01) uses it rather than an https link that depends on a verification file
    * being reachable.
    */
-  scheme: 'ideanest',
+  /*
+   * The bundle identifier as well, when Google is configured: the iOS OAuth client redirects to
+   * `az.ideanest.app:/oauthredirect`, and a scheme the app does not register is a redirect the
+   * system browser cannot hand back.
+   */
+  scheme: googleIosClientId === '' ? 'ideanest' : ['ideanest', BUNDLE_ID],
 
   ios: {
-    bundleIdentifier: 'az.ideanest.app',
+    bundleIdentifier: BUNDLE_ID,
+    usesAppleSignIn: appleSignIn,
     supportsTablet: false,
     /**
      * Universal links. `applinks:` is what makes iOS ask
@@ -107,7 +131,7 @@ const config: ExpoConfig = {
   },
 
   android: {
-    package: 'az.ideanest.app',
+    package: BUNDLE_ID,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: colors.surface1,
@@ -235,6 +259,7 @@ const config: ExpoConfig = {
         icon: './assets/notification-icon.png',
       },
     ],
+    ...(appleSignIn ? ['expo-apple-authentication'] : []),
   ],
 
   experiments: { typedRoutes: true },
@@ -242,6 +267,8 @@ const config: ExpoConfig = {
   extra: {
     apiOrigin: origin(API_ORIGIN_VARIABLE, DEFAULT_API_ORIGIN),
     siteUrl,
+    googleIosClientId,
+    appleSignIn,
   },
 };
 
