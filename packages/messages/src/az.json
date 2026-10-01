@@ -1707,7 +1707,32 @@
           "CASH": "Nağd",
           "OTHER": "Digər"
         },
-        "reversal": "Geri qaytarma"
+        "reversal": "Geri qaytarma",
+        "payoutHeading": "VÖEN və biznes kartı",
+        "loadingPayout": "Bu hesabın ödəniş məlumatları yüklənir",
+        "subjectLabel": "Alıcı",
+        "subjectKind": {
+          "INDIVIDUAL": "Fiziki şəxs",
+          "LEGAL_ENTITY": "Şirkət"
+        },
+        "subjectNone": "Göstərilməyib",
+        "subjectIncomplete": "Tam doldurulmayıb",
+        "taxIdLabel": "VÖEN",
+        "taxIdMissing": "Göstərilməyib",
+        "legalSubjectForbidden": "VÖEN şəxsiyyət yoxlamasını aparan əməkdaşlara göstərilir.",
+        "legalSubjectFailed": "Bu hesabın VÖEN-i oxunmadı. Səhifədəki qalan hər şey yazıldığı kimidir.",
+        "cardLabel": "Biznes kartı",
+        "cardHolder": "sahibi {name}",
+        "cardStanding": {
+          "NONE": "Əlavə edilməyib",
+          "AWAITING_VERIFICATION": "Yoxlama gözlənilir",
+          "VERIFIED": "Yoxlanılıb",
+          "WAIVED": "Yoxlamadan azad edilib",
+          "NAME_MISMATCH": "Ad uyğun gəlmir",
+          "REJECTED": "Rədd edilib"
+        },
+        "cardForbidden": "Biznes kartı ödəniş rekvizitlərini yoxlayan əməkdaşlara göstərilir.",
+        "cardFailed": "Bu hesabın biznes kartı oxunmadı. Səhifədəki qalan hər şey yazıldığı kimidir."
       },
       "support": {
         "subject": "dəstək növbəsini",

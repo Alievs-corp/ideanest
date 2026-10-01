@@ -119,6 +119,7 @@ describe('the campaign directory', () => {
     // member of staff there is somebody to write to.
     expect(await screen.findByText(COPY.creatorGone)).toBeInTheDocument();
     expect(screen.getByText('Xari Bulbul Ceramics')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: COPY.creatorGone })).not.toBeInTheDocument();
   });
 
   it('narrows by state through the service rather than in the browser', async () => {
@@ -185,6 +186,13 @@ describe('the campaign directory', () => {
     render(<CampaignDirectory copy={COPY} />);
 
     expect(await screen.findByRole('button', { name: COPY.tryAgain })).toBeInTheDocument();
+  });
+
+  it('links the creator to their account', async () => {
+    render(<CampaignDirectory copy={COPY} />);
+
+    const link = await screen.findByRole('link', { name: 'Aysel Səfərova' });
+    expect(link).toHaveAttribute('href', `/en/admin/users/${DRAFT.creatorId}`);
   });
 
   it('links a campaign to the staff preview, not to a public page half these rows do not have', async () => {

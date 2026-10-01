@@ -1707,7 +1707,32 @@
           "CASH": "Cash",
           "OTHER": "Other"
         },
-        "reversal": "Reversal"
+        "reversal": "Reversal",
+        "payoutHeading": "VÖEN and business card",
+        "loadingPayout": "Loading this account's payout details",
+        "subjectLabel": "Paid as",
+        "subjectKind": {
+          "INDIVIDUAL": "Individual",
+          "LEGAL_ENTITY": "Company"
+        },
+        "subjectNone": "Not stated",
+        "subjectIncomplete": "Incomplete",
+        "taxIdLabel": "VÖEN",
+        "taxIdMissing": "Not provided",
+        "legalSubjectForbidden": "The VÖEN is shown to staff who review identity verification.",
+        "legalSubjectFailed": "The VÖEN on this account could not be read. Everything else on this page is as written.",
+        "cardLabel": "Business card",
+        "cardHolder": "holder {name}",
+        "cardStanding": {
+          "NONE": "Not attached",
+          "AWAITING_VERIFICATION": "Waiting for verification",
+          "VERIFIED": "Verified",
+          "WAIVED": "Verification waived",
+          "NAME_MISMATCH": "Name does not match",
+          "REJECTED": "Rejected"
+        },
+        "cardForbidden": "The business card is shown to staff who verify payout destinations.",
+        "cardFailed": "The business card on this account could not be read. Everything else on this page is as written."
       },
       "support": {
         "subject": "the support queue",

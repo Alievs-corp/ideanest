@@ -89,6 +89,17 @@ describe('the campaign review queue', () => {
     expect(link).toHaveAttribute('target', '_blank');
   });
 
+  it('links the creator to their account, where their VÖEN and business card are read', async () => {
+    render(<SubmissionQueue copy={COPY} />);
+
+    const link = await screen.findByRole('link', { name: 'Aysel Səfərova' });
+    expect(link).toHaveAttribute(
+      'href',
+      expect.stringContaining(`/admin/users/${encodeURIComponent(WAITING.creatorId)}`),
+    );
+    expect(link).toHaveAttribute('target', '_blank');
+  });
+
   it('says how long the campaign has been waiting', async () => {
     render(<SubmissionQueue copy={COPY} />);
 
@@ -120,6 +131,8 @@ describe('the campaign review queue', () => {
 
     // §17.4 removes the person and leaves the campaign, so the row outlives its author.
     expect(await screen.findByText(COPY.creatorGone)).toBeInTheDocument();
+    // Nobody is left to open, so the placeholder is not a link.
+    expect(screen.queryByRole('link', { name: COPY.creatorGone })).not.toBeInTheDocument();
   });
 
   it('offers the three outcomes only where they can be reached', async () => {

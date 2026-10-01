@@ -361,6 +361,26 @@ export interface AccountDetailCopy extends ConsoleChromeCopy {
   /** Keyed by the service's own spelling of the method. */
   readonly paymentMethod: Readonly<Record<string, string>>;
   readonly reversal: string;
+
+  /* Who they are paid as, and where — the VÖEN and the business card. */
+  readonly payoutHeading: string;
+  readonly loadingPayout: string;
+  readonly subjectLabel: string;
+  /** Keyed by V70's two kinds. */
+  readonly subjectKind: Readonly<Record<string, string>>;
+  readonly subjectNone: string;
+  readonly subjectIncomplete: string;
+  readonly taxIdLabel: string;
+  readonly taxIdMissing: string;
+  readonly legalSubjectForbidden: string;
+  readonly legalSubjectFailed: string;
+  readonly cardLabel: string;
+  /** Carries `{name}`. */
+  readonly cardHolder: string;
+  /** Keyed by `DestinationStanding`. `NONE` is the card that was never attached. */
+  readonly cardStanding: Readonly<Record<string, string>>;
+  readonly cardForbidden: string;
+  readonly cardFailed: string;
 }
 
 export function accountDetailCopyFrom(
@@ -414,6 +434,21 @@ export function accountDetailCopyFrom(
     paymentReceived: String(t.raw(at('paymentReceived'))),
     paymentMethod: t.raw(at('paymentMethod')) as Readonly<Record<string, string>>,
     reversal: t(at('reversal')),
+    payoutHeading: t(at('payoutHeading')),
+    loadingPayout: t(at('loadingPayout')),
+    subjectLabel: t(at('subjectLabel')),
+    subjectKind: t.raw(at('subjectKind')) as Readonly<Record<string, string>>,
+    subjectNone: t(at('subjectNone')),
+    subjectIncomplete: t(at('subjectIncomplete')),
+    taxIdLabel: t(at('taxIdLabel')),
+    taxIdMissing: t(at('taxIdMissing')),
+    legalSubjectForbidden: t(at('legalSubjectForbidden')),
+    legalSubjectFailed: t(at('legalSubjectFailed')),
+    cardLabel: t(at('cardLabel')),
+    cardHolder: String(t.raw(at('cardHolder'))),
+    cardStanding: t.raw(at('cardStanding')) as Readonly<Record<string, string>>,
+    cardForbidden: t(at('cardForbidden')),
+    cardFailed: t(at('cardFailed')),
   };
 }
 

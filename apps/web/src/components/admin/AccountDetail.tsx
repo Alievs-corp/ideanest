@@ -3,10 +3,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
 import {
+  readAccountLegalSubject,
+  readAccountPayoutDestination,
   readAccountSubscriptions,
   readUser,
   readUserPledges,
   type AdminAccountSubscriptions,
+  type AdminLegalSubject,
+  type AdminPayoutDestination,
   type AdminUser,
   type AdminUserPledge,
 } from '../../lib/admin/api';
@@ -171,6 +175,7 @@ export function AccountDetail({ userId, copy }: AccountDetailProps) {
       {status === 'ready' && account !== null && (
         <>
           <Standing account={account} locale={locale} copy={copy} />
+          <PayoutDetails key={`payout-${account.id}`} userId={account.id} copy={copy} />
           {/*
             Rendered only once the account has resolved, so that a 404 for somebody who does
             not exist is one refusal rather than three. Keyed by the identifier for the
@@ -264,6 +269,200 @@ function Standing({
         )}
       </div>
     </section>
+  );
+}
+
+/** One half of the payout panel: still loading, read, refused for want of a capability, or failed. */
+type Half<T> =
+  | { readonly kind: 'loading' }
+  | { readonly kind: 'ready'; readonly value: T }
+  | { readonly kind: 'forbidden' }
+  | { readonly kind: 'failed' };
+
+function useHalf<T>(read: (signal: AbortSignal) => Promise<T>, userId: string): Half<T> {
+  const [half, setHalf] = useState<Half<T>>({ kind: 'loading' });
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function load(): Promise<void> {
+      try {
+        const value = await read(controller.signal);
+        if (controller.signal.aborted) return;
+        setHalf({ kind: 'ready', value });
+      } catch (cause) {
+        if (controller.signal.aborted || wasAborted(cause)) return;
+        setHalf({ kind: statusFor(cause) === 'forbidden' ? 'forbidden' : 'failed' });
+      }
+    }
+
+    void load();
+    return () => controller.abort();
+    // `read` is one of two module functions and never changes; the account is the dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  return half;
+}
+
+/**
+ * Whether this person can be paid: the VÖEN they entered and the business card they attached.
+ *
+ * <p><strong>Two reads, two capabilities, two answers.</strong> The VÖEN is served to staff who
+ * review identity (`REVIEW_IDENTITY_VERIFICATION`) and the card to staff who verify payout
+ * destinations (`VERIFY_PAYOUT_DESTINATION`) — V66 keeps those apart on purpose. A moderator who
+ * holds one and not the other sees the half they may see and is told who sees the other, rather
+ * than the whole panel failing on the first refusal.
+ *
+ * <p><strong>Read-only.</strong> Verifying or rejecting a card is COMPLIANCE's decision and has its
+ * own audited controls; this panel answers "has this person given us a VÖEN and a card", which is
+ * what a moderator approving a campaign needs to know.
+ *
+ * <p>"Not provided" and "Not attached" are words, not an empty cell — docs/ui-kit.md §9.2.
+ */
+function PayoutDetails({
+  userId,
+  copy,
+}: {
+  readonly userId: string;
+  readonly copy: AccountDetailCopy;
+}) {
+  const subject = useHalf<AdminLegalSubject>(
+    (signal) => readAccountLegalSubject(userId, signal),
+    userId,
+  );
+  const card = useHalf<AdminPayoutDestination>(
+    (signal) => readAccountPayoutDestination(userId, signal),
+    userId,
+  );
+
+  const loading = subject.kind === 'loading' || card.kind === 'loading';
+
+  return (
+    <section aria-labelledby="account-payout-heading" className="mt-8">
+      <h2
+        id="account-payout-heading"
+        className="text-base font-medium tracking-[-0.02em] text-white"
+      >
+        {copy.payoutHeading}
+      </h2>
+
+      {loading ? (
+        <SkeletonGroup label={copy.loadingPayout} className="mt-3">
+          <div className="rounded-lg border border-white/8 bg-surface-1 p-4">
+            <Skeleton height="1rem" width="40%" />
+            <Skeleton height="0.875rem" width="30%" className="mt-2" />
+          </div>
+        </SkeletonGroup>
+      ) : (
+        <dl className="mt-3 flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-1 p-4 text-sm">
+          <LegalSubjectRows half={subject} copy={copy} />
+          <CardRow half={card} copy={copy} />
+        </dl>
+      )}
+    </section>
+  );
+}
+
+function LegalSubjectRows({
+  half,
+  copy,
+}: {
+  readonly half: Half<AdminLegalSubject>;
+  readonly copy: AccountDetailCopy;
+}) {
+  if (half.kind === 'forbidden' || half.kind === 'failed') {
+    return (
+      <div className="flex flex-wrap gap-x-3 gap-y-1">
+        <dt className="text-white/40">{copy.taxIdLabel}</dt>
+        <dd className="text-white/64">
+          {half.kind === 'forbidden' ? copy.legalSubjectForbidden : copy.legalSubjectFailed}
+        </dd>
+      </div>
+    );
+  }
+  if (half.kind === 'loading') return null;
+
+  const recorded = half.value.recorded;
+  const taxId = recorded.recorded ? recorded.taxId ?? null : null;
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <dt className="text-white/40">{copy.subjectLabel}</dt>
+        <dd className="flex flex-wrap items-center gap-2 text-white/80">
+          {recorded.recorded ? (
+            <>
+              <span>
+                {copy.subjectKind[recorded.subjectKind ?? ''] ?? recorded.subjectKind}
+                {recorded.legalName != null && ` · ${recorded.legalName}`}
+              </span>
+              {!recorded.complete && <Tag variant="warning">{copy.subjectIncomplete}</Tag>}
+            </>
+          ) : (
+            <span className="text-white/64">{copy.subjectNone}</span>
+          )}
+        </dd>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <dt className="text-white/40">{copy.taxIdLabel}</dt>
+        <dd className="flex items-center gap-2">
+          {taxId === null ? (
+            <Tag>{copy.taxIdMissing}</Tag>
+          ) : (
+            <>
+              <span className="font-mono text-white">{taxId}</span>
+              <CopyIdentifier id={taxId} copy={copy.identity} />
+            </>
+          )}
+        </dd>
+      </div>
+    </>
+  );
+}
+
+/** The standing as a word, toned to agree with it. */
+const STANDING_TONE: Readonly<Record<string, 'success' | 'warning' | 'danger' | 'default'>> = {
+  VERIFIED: 'success',
+  WAIVED: 'success',
+  AWAITING_VERIFICATION: 'warning',
+  NAME_MISMATCH: 'danger',
+  REJECTED: 'danger',
+};
+
+function CardRow({
+  half,
+  copy,
+}: {
+  readonly half: Half<AdminPayoutDestination>;
+  readonly copy: AccountDetailCopy;
+}) {
+  if (half.kind === 'loading') return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <dt className="text-white/40">{copy.cardLabel}</dt>
+      <dd className="flex flex-wrap items-center gap-2 text-white/80">
+        {half.kind === 'forbidden' && <span className="text-white/64">{copy.cardForbidden}</span>}
+        {half.kind === 'failed' && <span className="text-white/64">{copy.cardFailed}</span>}
+        {half.kind === 'ready' && (
+          <>
+            {half.value.recorded && (
+              <span>
+                {half.value.displayHint != null && (
+                  <span className="font-mono">{half.value.displayHint}</span>
+                )}
+                {half.value.holderName != null &&
+                  ` · ${fillPlaceholders(copy.cardHolder, { name: half.value.holderName })}`}
+              </span>
+            )}
+            <Tag variant={half.value.recorded ? STANDING_TONE[half.value.standing] ?? 'default' : 'default'}>
+              {copy.cardStanding[half.value.recorded ? half.value.standing : 'NONE'] ?? half.value.standing}
+            </Tag>
+          </>
+        )}
+      </dd>
+    </div>
   );
 }
 

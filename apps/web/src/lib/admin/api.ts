@@ -1,5 +1,6 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
+import type { DestinationStanding, LegalSubject } from '../account/payout';
 import type { ConsoleSubscription } from './plans';
 import type { SubscriptionPayment } from './revenue';
 
@@ -242,4 +243,65 @@ export async function readAccountSubscriptions(
   if (!response.ok) throw await errorFrom(response);
 
   return (await response.json()) as AdminAccountSubscriptions;
+}
+
+/**
+ * Who an account is paid as, as staff see it — the VÖEN half of a creator's payout details.
+ *
+ * <p>`recorded` is the creator's own subject, the same shape their settings screen reads, so a
+ * moderator and the creator are looking at one description. The frozen per-campaign copies the
+ * service also returns are left untyped here because nothing on the account screen draws them.
+ *
+ * <p>The service answers only a caller holding `REVIEW_IDENTITY_VERIFICATION`, and records the
+ * read.
+ */
+export interface AdminLegalSubject {
+  readonly accountId: string;
+  readonly recorded: LegalSubject;
+}
+
+export async function readAccountLegalSubject(
+  id: string,
+  signal?: AbortSignal,
+): Promise<AdminLegalSubject> {
+  const response = await authorizedFetch(
+    `/v1/admin/accounts/${encodeURIComponent(id)}/legal-subject`,
+    { cache: 'no-store', signal },
+  );
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as AdminLegalSubject;
+}
+
+/**
+ * The business card an account is paid to, as staff see it — the other half.
+ *
+ * <p>Never the card number or the provider's token: `displayHint` is the masked form the
+ * provider gave back, and it is all the service sends. Null fields may be absent rather than
+ * null — the service serialises `non_null`.
+ *
+ * <p>The service answers only a caller holding `VERIFY_PAYOUT_DESTINATION`.
+ */
+export interface AdminPayoutDestination {
+  readonly creatorId: string;
+  readonly recorded: boolean;
+  readonly standing: DestinationStanding;
+  readonly provider?: string | null;
+  readonly holderName?: string | null;
+  readonly displayHint?: string | null;
+  readonly verifiedAt?: string | null;
+  readonly updatedAt?: string | null;
+}
+
+export async function readAccountPayoutDestination(
+  id: string,
+  signal?: AbortSignal,
+): Promise<AdminPayoutDestination> {
+  const response = await authorizedFetch(
+    `/v1/admin/accounts/${encodeURIComponent(id)}/payout-destination`,
+    { cache: 'no-store', signal },
+  );
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as AdminPayoutDestination;
 }
