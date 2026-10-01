@@ -336,7 +336,21 @@ function CampaignRow({ campaign, locale, copy }: CampaignRowProps) {
             </a>
           </h3>
           <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm text-white/64">
-            <span>{campaign.creatorName ?? copy.creatorGone}</span>
+            {/*
+              The creator's account, so the person behind a campaign — their standing, their
+              other campaigns, their VÖEN and business card — is one click from the row. An
+              anonymised creator has no account to open and keeps the plain placeholder.
+            */}
+            {campaign.creatorName == null ? (
+              <span>{copy.creatorGone}</span>
+            ) : (
+              <a
+                className="underline-offset-4 hover:underline"
+                href={localeHref(`/admin/users/${encodeURIComponent(campaign.creatorId)}`, locale)}
+              >
+                {campaign.creatorName}
+              </a>
+            )}
             {/*
               #402: four console screens take a campaign identifier typed by hand — the
               payout calculator, the ledger filter, the refund console and the payment log —

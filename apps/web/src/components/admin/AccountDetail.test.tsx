@@ -3,6 +3,8 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import {
+  readAccountLegalSubject,
+  readAccountPayoutDestination,
   readAccountSubscriptions,
   readUser,
   readUserPledges,
@@ -28,7 +30,14 @@ const COPY = accountDetailCopyFrom(
 
 vi.mock('../../lib/admin/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/admin/api')>();
-  return { ...actual, readUser: vi.fn(), readUserPledges: vi.fn(), readAccountSubscriptions: vi.fn() };
+  return {
+    ...actual,
+    readUser: vi.fn(),
+    readUserPledges: vi.fn(),
+    readAccountSubscriptions: vi.fn(),
+    readAccountLegalSubject: vi.fn(),
+    readAccountPayoutDestination: vi.fn(),
+  };
 });
 
 vi.mock('../../lib/admin/campaigns', async (importOriginal) => {
@@ -39,6 +48,8 @@ vi.mock('../../lib/admin/campaigns', async (importOriginal) => {
 const readUserMock = vi.mocked(readUser);
 const readUserPledgesMock = vi.mocked(readUserPledges);
 const readAccountSubscriptionsMock = vi.mocked(readAccountSubscriptions);
+const readAccountLegalSubjectMock = vi.mocked(readAccountLegalSubject);
+const readAccountPayoutDestinationMock = vi.mocked(readAccountPayoutDestination);
 const listCampaignsMock = vi.mocked(listCampaigns);
 
 const USER_ID = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -100,6 +111,8 @@ beforeEach(() => {
   listCampaignsMock.mockResolvedValue({ campaigns: [CAMPAIGN], nextCursor: null });
   readUserPledgesMock.mockResolvedValue({ pledges: [PLEDGE], nextCursor: null });
   readAccountSubscriptionsMock.mockResolvedValue({ subscriptions: [], payments: [] });
+  readAccountLegalSubjectMock.mockResolvedValue({ accountId: USER_ID, recorded: { recorded: false, complete: false } });
+  readAccountPayoutDestinationMock.mockResolvedValue({ creatorId: USER_ID, recorded: false, standing: 'NONE' });
 });
 
 describe('the account detail screen — issue #404', () => {
@@ -338,5 +351,102 @@ describe('what the account held and paid — #23', () => {
     render(<AccountDetail userId={USER_ID} copy={COPY} />);
 
     expect(await screen.findByText(COPY.noSubscriptionsTitle)).toBeInTheDocument();
+  });
+});
+
+describe('the VÖEN and business card a creator attached', () => {
+  /** The panel, so a "Not provided" elsewhere on the page cannot satisfy an assertion. */
+  async function panel(): Promise<HTMLElement> {
+    const heading = await screen.findByRole('heading', { name: COPY.payoutHeading });
+    const section = heading.closest('section');
+    if (section === null) throw new Error('the payout heading is not inside its section');
+    await waitFor(() => expect(within(section).queryByText(COPY.loadingPayout)).not.toBeInTheDocument());
+    return section;
+  }
+
+  function word(table: Readonly<Record<string, string>>, key: string): string {
+    const found = table[key];
+    if (found === undefined) throw new Error(`the catalogue has no word for ${key}`);
+    return found;
+  }
+
+  it('shows the VÖEN and the card when both are on file', async () => {
+    readAccountLegalSubjectMock.mockResolvedValue({
+      accountId: USER_ID,
+      recorded: {
+        recorded: true,
+        subjectKind: 'LEGAL_ENTITY',
+        legalName: 'Xari Bulbul MMC',
+        taxId: '1234567890',
+        complete: true,
+      },
+    });
+    readAccountPayoutDestinationMock.mockResolvedValue({
+      creatorId: USER_ID,
+      recorded: true,
+      standing: 'VERIFIED',
+      holderName: 'XARI BULBUL MMC',
+      displayHint: '•••• 4242',
+    });
+
+    render(<AccountDetail userId={USER_ID} copy={COPY} />);
+    const section = await panel();
+
+    expect(within(section).getByText('1234567890')).toBeInTheDocument();
+    expect(within(section).getByText(/Xari Bulbul MMC/)).toBeInTheDocument();
+    expect(within(section).getByText('•••• 4242')).toBeInTheDocument();
+    expect(within(section).getByText(word(COPY.cardStanding, 'VERIFIED'))).toBeInTheDocument();
+    expect(readAccountLegalSubjectMock).toHaveBeenCalledWith(USER_ID, expect.anything());
+    expect(readAccountPayoutDestinationMock).toHaveBeenCalledWith(USER_ID, expect.anything());
+  });
+
+  it('says in words that neither was given, rather than leaving the cells blank', async () => {
+    render(<AccountDetail userId={USER_ID} copy={COPY} />);
+    const section = await panel();
+
+    expect(within(section).getByText(COPY.taxIdMissing)).toBeInTheDocument();
+    expect(within(section).getByText(word(COPY.cardStanding, 'NONE'))).toBeInTheDocument();
+  });
+
+  it('marks a company that has not finished its details as incomplete', async () => {
+    readAccountLegalSubjectMock.mockResolvedValue({
+      accountId: USER_ID,
+      recorded: { recorded: true, subjectKind: 'LEGAL_ENTITY', legalName: 'Half Done MMC', complete: false },
+    });
+
+    render(<AccountDetail userId={USER_ID} copy={COPY} />);
+    const section = await panel();
+
+    expect(within(section).getByText(COPY.subjectIncomplete)).toBeInTheDocument();
+    expect(within(section).getByText(COPY.taxIdMissing)).toBeInTheDocument();
+  });
+
+  it('keeps the card when the VÖEN is refused, because they are two capabilities', async () => {
+    readAccountLegalSubjectMock.mockRejectedValue(
+      new ApiError(403, { code: 'MISSING_CAPABILITY', title: 'Missing capability' }),
+    );
+    readAccountPayoutDestinationMock.mockResolvedValue({
+      creatorId: USER_ID,
+      recorded: true,
+      standing: 'AWAITING_VERIFICATION',
+      displayHint: '•••• 1111',
+    });
+
+    render(<AccountDetail userId={USER_ID} copy={COPY} />);
+    const section = await panel();
+
+    expect(within(section).getByText(COPY.legalSubjectForbidden)).toBeInTheDocument();
+    expect(within(section).getByText('•••• 1111')).toBeInTheDocument();
+    expect(screen.getByText('Ayan Məmmədova')).toBeInTheDocument();
+  });
+
+  it('says the card could not be read when the service failed', async () => {
+    readAccountPayoutDestinationMock.mockRejectedValue(new Error('network'));
+
+    render(<AccountDetail userId={USER_ID} copy={COPY} />);
+    const section = await panel();
+
+    expect(within(section).getByText(COPY.cardFailed)).toBeInTheDocument();
+    expect(within(section).getByText(COPY.taxIdMissing)).toBeInTheDocument();
   });
 });

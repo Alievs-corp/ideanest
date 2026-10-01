@@ -1707,7 +1707,32 @@
           "CASH": "Наличные",
           "OTHER": "Другое"
         },
-        "reversal": "Возврат"
+        "reversal": "Возврат",
+        "payoutHeading": "VÖEN и бизнес-карта",
+        "loadingPayout": "Загрузка платёжных данных этой учётной записи",
+        "subjectLabel": "Получатель",
+        "subjectKind": {
+          "INDIVIDUAL": "Физическое лицо",
+          "LEGAL_ENTITY": "Компания"
+        },
+        "subjectNone": "Не указан",
+        "subjectIncomplete": "Заполнено не полностью",
+        "taxIdLabel": "VÖEN",
+        "taxIdMissing": "Не указан",
+        "legalSubjectForbidden": "VÖEN видят сотрудники, которые проверяют личность.",
+        "legalSubjectFailed": "VÖEN этой учётной записи прочитать не удалось. Всё остальное на этой странице — то, что написано.",
+        "cardLabel": "Бизнес-карта",
+        "cardHolder": "владелец {name}",
+        "cardStanding": {
+          "NONE": "Не прикреплена",
+          "AWAITING_VERIFICATION": "Ожидает проверки",
+          "VERIFIED": "Проверена",
+          "WAIVED": "Проверка не требуется",
+          "NAME_MISMATCH": "Имя не совпадает",
+          "REJECTED": "Отклонена"
+        },
+        "cardForbidden": "Бизнес-карту видят сотрудники, которые проверяют реквизиты выплат.",
+        "cardFailed": "Бизнес-карту этой учётной записи прочитать не удалось. Всё остальное на этой странице — то, что написано."
       },
       "support": {
         "subject": "очередь поддержки",

@@ -403,7 +403,21 @@ function SubmissionRow({
               name — §17.4 removes the person, not the campaign, and a placeholder here
               would tell a moderator there is somebody to write to.
             */}
-            {submission.creatorName ?? copy.creatorGone}
+            {submission.creatorName == null ? (
+              copy.creatorGone
+            ) : (
+              /* The creator's account in a new tab, for the reason the title's link opens
+                 one: the queue and its filters survive the trip. That screen is where the
+                 creator's VÖEN and business card are read before deciding. */
+              <a
+                className="underline-offset-4 hover:underline"
+                href={localeHref(`/admin/users/${encodeURIComponent(submission.creatorId)}`, locale)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {submission.creatorName}
+              </a>
+            )}
             <span className="text-white/32"> · {shortId(submission.projectId)}</span>
           </p>
         </div>

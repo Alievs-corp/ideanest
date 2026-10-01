@@ -1707,7 +1707,32 @@
           "CASH": "Nakit",
           "OTHER": "Diğer"
         },
-        "reversal": "İade"
+        "reversal": "İade",
+        "payoutHeading": "VÖEN ve iş kartı",
+        "loadingPayout": "Bu hesabın ödeme bilgileri yükleniyor",
+        "subjectLabel": "Alıcı",
+        "subjectKind": {
+          "INDIVIDUAL": "Bireysel",
+          "LEGAL_ENTITY": "Şirket"
+        },
+        "subjectNone": "Belirtilmedi",
+        "subjectIncomplete": "Eksik",
+        "taxIdLabel": "VÖEN",
+        "taxIdMissing": "Belirtilmedi",
+        "legalSubjectForbidden": "VÖEN, kimlik doğrulamasını inceleyen personele gösterilir.",
+        "legalSubjectFailed": "Bu hesabın VÖEN'i okunamadı. Sayfadaki diğer her şey yazıldığı gibidir.",
+        "cardLabel": "İş kartı",
+        "cardHolder": "sahibi {name}",
+        "cardStanding": {
+          "NONE": "Eklenmedi",
+          "AWAITING_VERIFICATION": "Doğrulama bekleniyor",
+          "VERIFIED": "Doğrulandı",
+          "WAIVED": "Doğrulamadan muaf",
+          "NAME_MISMATCH": "Ad eşleşmiyor",
+          "REJECTED": "Reddedildi"
+        },
+        "cardForbidden": "İş kartı, ödeme hesaplarını doğrulayan personele gösterilir.",
+        "cardFailed": "Bu hesabın iş kartı okunamadı. Sayfadaki diğer her şey yazıldığı gibidir."
       },
       "support": {
         "subject": "destek kuyruğunu",

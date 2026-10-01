@@ -47,7 +47,7 @@
     "/[locale]/admin/support": 590,
     "/[locale]/admin/taxonomy": 589,
     "/[locale]/admin/users": 713,
-    "/[locale]/admin/users/[userId]": 633,
+    "/[locale]/admin/users/[userId]": 637,
     "/[locale]/categories": 587,
     "/[locale]/categories/[category]": 601,
     "/[locale]/categories/[category]/[subcategory]": 601,
