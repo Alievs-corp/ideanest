@@ -522,12 +522,12 @@ export async function campaignCountdownCopy(): Promise<CampaignCountdownCopy> {
   return campaignCountdownCopyFrom(await getTranslations('campaign'));
 }
 
-/** The composer and the two comment controls, which share one section. */
 /** The story's hidden heading and embed suffix (#155) — `CampaignStory` is not always a server component. */
 export async function campaignStoryCopy(): Promise<CampaignStoryCopy> {
   return campaignStoryCopyFrom(await getTranslations('campaign.story'));
 }
 
+/** The composer and the two comment controls, which share one section. */
 export async function commentCopy(): Promise<CommentCopy> {
   return commentCopyFrom(await getTranslations('campaign.comments'));
 }

@@ -111,6 +111,21 @@ export interface CommentFailureCopy {
 }
 
 /**
+ * The story's two fixed phrases — #155 found both typed into `CampaignStory` in English.
+ *
+ * <p>A copy prop rather than a catalogue read inside the component, because `CampaignStory` is
+ * rendered by the campaign page on the server and by the admin console's `CampaignPreview`
+ * inside a client component, where nothing can read the catalogue. Both are templates, read
+ * with `raw`, because the title and the provider are filled in by the component.
+ */
+export interface CampaignStoryCopy {
+  /** The hidden heading that names the story for the page outline. Carries `{title}`. */
+  readonly about: string;
+  /** After an embed's title, naming where it plays. Carries `{provider}`. */
+  readonly watchOn: string;
+}
+
+/**
  * The funding block's five words — issue #99.
  *
  * <h2>Why these are not `common.card`'s, which say the same things</h2>
@@ -136,21 +151,6 @@ export interface CommentFailureCopy {
  * the half to call rather than `pluralise`, because the number is the `StatBlock`'s value and not a
  * placeholder inside the word.
  */
-/**
- * The story's two fixed phrases — #155 found both typed into `CampaignStory` in English.
- *
- * <p>A copy prop rather than a catalogue read inside the component, because `CampaignStory` is
- * rendered by the campaign page on the server and by the admin console's `CampaignPreview`
- * inside a client component, where nothing can read the catalogue. Both are templates, read
- * with `raw`, because the title and the provider are filled in by the component.
- */
-export interface CampaignStoryCopy {
-  /** The hidden heading that names the story for the page outline. Carries `{title}`. */
-  readonly about: string;
-  /** After an embed's title, naming where it plays. Carries `{provider}`. */
-  readonly watchOn: string;
-}
-
 export interface LiveFundingCopy {
   /** Carries `{percent}`. The accessible name of the progress bar. */
   readonly progressLabel: string;
