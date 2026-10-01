@@ -5523,6 +5523,13 @@
         "body": "This part of the campaign is not in the app yet. It is on the campaign’s web page.",
         "open": "Open on the web",
         "openLabel": "Open “{section}” on the campaign’s web page"
+      },
+      "comments": {
+        "offline": "Posting, replying, withdrawing and reporting need a connection.",
+        "olderFailed": "The older comments could not be loaded."
+      },
+      "report": {
+        "offline": "Reporting needs a connection."
       }
     },
     "funding": {

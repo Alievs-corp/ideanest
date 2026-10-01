@@ -5523,6 +5523,13 @@
         "body": "Kampanyanın bu bölümü henüz uygulamada yok. Kampanyanın web sayfasında yer alıyor.",
         "open": "Web sitesinde aç",
         "openLabel": "«{section}» bölümünü kampanyanın web sayfasında aç"
+      },
+      "comments": {
+        "offline": "Yorum yazmak, yanıtlamak, geri çekmek ve şikayet etmek için bağlantı gerekir.",
+        "olderFailed": "Daha eski yorumlar yüklenemedi."
+      },
+      "report": {
+        "offline": "Şikayet göndermek için bağlantı gerekir."
       }
     },
     "funding": {
