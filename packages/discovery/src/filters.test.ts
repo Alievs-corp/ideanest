@@ -1,13 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filterVocabularyCopyFrom } from '../i18n/feed-copy';
-import { translatorFor } from '../../test-copy';
-/*
- * The vocabularies the route resolves, built from `messages/en.json` by the same function it
- * calls — issue #324. The group names and the band labels are asserted below, so building them
- * from the catalogue is what makes this fail when a word is edited to something the feed no
- * longer draws.
- */
-const VOCABULARY = filterVocabularyCopyFrom(translatorFor('discovery.filters'));
+import { VOCABULARY } from './test-vocabulary';
 import {
   NO_FILTERS,
   activeFilters,
@@ -21,6 +13,7 @@ import {
   removeFilter,
   toHref,
   toSearchParams,
+  searchParamsFrom,
   toggleTag,
 } from './filters';
 
@@ -346,5 +339,41 @@ describe('money bounds', () => {
     expect(boundsAreOrdered('10', '9.99')).toBe(false);
     // Equal ends are a range of exactly one amount, which is legitimate.
     expect(boundsAreOrdered('5000.00', '5000')).toBe(true);
+  });
+});
+
+/**
+ * `searchParamsFrom` is how the app reads a link (#153). React Native's own
+ * `URLSearchParams` constructor disagrees with the standard on exactly the
+ * links people type by hand, so the app parses here and the result must match
+ * what the browser reads from the same string.
+ */
+describe('searchParamsFrom', () => {
+  it('reads a query string as the standard constructor does', () => {
+    for (const raw of [
+      '?q=solar+lamp&tag=a,b&tag=c',
+      'q=a=b&status=live',
+      'tag&goalMin=&category=games',
+      'q=%C3%A7ay%20evi',
+    ]) {
+      expect([...searchParamsFrom(raw)]).toEqual([...new URLSearchParams(raw)]);
+    }
+  });
+
+  it('keeps an undecodable part as written instead of throwing', () => {
+    expect(searchParamsFrom('q=100%&category=games').get('q')).toBe('100%');
+    expect(searchParamsFrom('q=100%&category=games').get('category')).toBe('games');
+  });
+
+  it('reads a router params object, one value or several', () => {
+    const params = searchParamsFrom({ tag: ['a', 'b'], status: 'live', q: undefined });
+    expect(params.getAll('tag')).toEqual(['a', 'b']);
+    expect(params.get('status')).toBe('live');
+    expect(params.has('q')).toBe(false);
+  });
+
+  it('round-trips the filters it reads', () => {
+    const filters = parseFilters(searchParamsFrom('category=games&sort=ending_soon&goalMin=2500'));
+    expect(parseFilters(searchParamsFrom(toSearchParams(filters).toString()))).toEqual(filters);
   });
 });

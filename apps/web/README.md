@@ -1144,13 +1144,18 @@ fingerprinted to the query it was issued for, so one in a link would be answered
 
 | Module | Holds |
 |---|---|
-| `lib/discovery/vocabulary.ts` | The closed vocabularies, copied from `az.ideanest.discovery.domain` |
-| `lib/discovery/filters.ts` | The filter state, the URL it serialises to, and the active-chip set |
-| `lib/discovery/bounds.ts` | The custom money range, checked with `decimal.js` |
+| `@ideanest/discovery/vocabulary` | The closed vocabularies, copied from `az.ideanest.discovery.domain` |
+| `@ideanest/discovery/filters` | The filter state, the URL it serialises to, and the active-chip set |
+| `@ideanest/discovery/bounds` | The custom money range, checked with `decimal.js` |
+| `@ideanest/discovery/facets` | The facet shapes, the page size, and the slug-to-name map |
+| `@ideanest/discovery/emptiness` | Which filter emptied the feed |
 | `lib/discovery/api.ts` | `GET /v1/discover` and `/v1/discover/facets` |
 | `lib/discovery/useDiscoveryFeed.ts` | D-04's paging, and the one-request-per-cursor guard |
 | `lib/discovery/useDiscoveryFacets.ts` | D-10's live counts |
-| `lib/discovery/emptiness.ts` | Which filter emptied the feed |
+
+The `@ideanest/discovery` modules are shared with `apps/mobile` (#153), so a
+filter link means the same feed in both; see `packages/discovery/README.md`. The
+fetches and the hooks stay here.
 
 **Filters the service refuses today are not rendered.** Location (country, city,
 proximity), `showOnly=saved`, `showOnly=recommended`, `showOnly=featured`, free

@@ -9,7 +9,7 @@ import {
   type DiscoveryFeed,
   type ProjectCard as ProjectCardData,
 } from '../../lib/discovery/api';
-import type { DiscoveryFilters } from '../../lib/discovery/filters';
+import type { DiscoveryFilters } from '@ideanest/discovery/filters';
 import { expectNoViolations } from '../../test-axe';
 import { DiscoveryView } from './DiscoveryView';
 import { projectCardCopyFrom } from '../../lib/i18n/card-copy';

@@ -14,8 +14,8 @@ import {
   toggleTag,
   withAmountRange,
   type DiscoveryFilters,
-} from '../../lib/discovery/filters';
-import { AMOUNT_BANDS, COMPLETION_BANDS, STATUSES, labelOf } from '../../lib/discovery/vocabulary';
+} from '@ideanest/discovery/filters';
+import { AMOUNT_BANDS, COMPLETION_BANDS, STATUSES, labelOf } from '@ideanest/discovery/vocabulary';
 import type { FeedCopy } from '../../lib/i18n/feed-copy';
 import type { Locale } from '../../lib/i18n/locale';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getDiscoveryFacets, type DiscoveryFacets } from './api';
-import { filterKey, type DiscoveryFilters } from './filters';
+import { filterKey, type DiscoveryFilters } from '@ideanest/discovery/filters';
 
 /**
  * D-10's live counts, kept beside the controls they belong to.

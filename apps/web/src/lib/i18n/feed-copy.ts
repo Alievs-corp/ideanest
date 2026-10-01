@@ -1,9 +1,10 @@
+import { filterVocabularyCopyFrom, type FilterVocabularyCopy } from '@ideanest/discovery/copy';
 import type { PluralForms } from './plurals';
 
 /**
  * Every word the discovery feed draws — issue #324.
  *
- * <h2>Why the vocabularies moved out of `lib/discovery/vocabulary.ts`</h2>
+ * <h2>Why the vocabularies moved out of `@ideanest/discovery/vocabulary`</h2>
  *
  * That module pairs each value of a closed vocabulary with the word a reader sees:
  * `{ value: 'successful', label: 'Successful' }`. The values are the service's and must not
@@ -33,30 +34,11 @@ export interface FeedTranslator {
   raw(key: string): unknown;
 }
 
-/** The closed vocabularies, keyed by the service's own value. */
-export interface FilterVocabularyCopy {
-  readonly status: Readonly<Record<string, string>>;
-  readonly sort: Readonly<Record<string, string>>;
-  readonly completion: Readonly<Record<string, string>>;
-  readonly amount: Readonly<Record<string, string>>;
-  /** What each dimension is called, for a chip's accessible name and a fieldset's legend. */
-  readonly groups: {
-    readonly status: string;
-    readonly category: string;
-    readonly subcategory: string;
-    readonly completion: string;
-    readonly goal: string;
-    readonly raised: string;
-    readonly tag: string;
-    readonly tags: string;
-  };
-  /** A custom money range, which has no value in the vocabulary. Each carries placeholders. */
-  readonly range: {
-    readonly between: string;
-    readonly from: string;
-    readonly upTo: string;
-  };
-}
+/*
+ * The vocabularies' shape and builder live beside `activeFilters` in `@ideanest/discovery`
+ * (#153), because the app draws the same chips from the same keys.
+ */
+export { filterVocabularyCopyFrom, type FilterVocabularyCopy };
 
 export interface SuggestCopy {
   readonly formLabel: string;
@@ -137,19 +119,6 @@ export interface FeedCopy {
   readonly announceMore: PluralForms;
   readonly filters: FilterVocabularyCopy;
   readonly suggest: SuggestCopy;
-}
-
-export function filterVocabularyCopyFrom(t: FeedTranslator): FilterVocabularyCopy {
-  const record = (key: string) => t.raw(key) as Readonly<Record<string, string>>;
-
-  return {
-    status: record('status'),
-    sort: record('sort'),
-    completion: record('completion'),
-    amount: record('amount'),
-    groups: record('groups') as FilterVocabularyCopy['groups'],
-    range: record('range') as unknown as FilterVocabularyCopy['range'],
-  };
 }
 
 export function suggestCopyFrom(t: FeedTranslator): SuggestCopy {

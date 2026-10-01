@@ -15,6 +15,7 @@
     "@expo-google-fonts/inter": "^0.4.2",
     "@ideanest/api-client": "workspace:*",
     "@ideanest/design-tokens": "workspace:*",
+    "@ideanest/discovery": "workspace:*",
     "@ideanest/messages": "workspace:*",
     "@ideanest/money": "workspace:*",
     "@shopify/flash-list": "2.3.2",

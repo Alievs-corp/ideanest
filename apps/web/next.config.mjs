@@ -189,6 +189,7 @@ const nextConfig = {
     '@ideanest/api-client',
     '@ideanest/money',
     '@ideanest/messages',
+    '@ideanest/discovery',
   ],
 
   /**

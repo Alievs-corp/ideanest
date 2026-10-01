@@ -11,8 +11,8 @@ import {
   type DiscoverySort,
   type DiscoveryStatus,
 } from './vocabulary';
-import type { FilterVocabularyCopy } from '../i18n/feed-copy';
-import { fillPlaceholders } from '../i18n/placeholders';
+import type { FilterVocabularyCopy } from './copy';
+import { fillPlaceholders } from '@ideanest/messages/placeholders';
 
 /**
  * The filter, sort, and range state of the discovery feed — and the URL it is
@@ -108,6 +108,13 @@ export const NO_FILTERS: DiscoveryFilters = {
 function values(params: URLSearchParams, name: string): string[] {
   return params
     .getAll(name)
+    /*
+     * A string check rather than a type assertion: React Native's `URLSearchParams` stores
+     * `undefined` for a parameter written without `=` (`?tag`), where the standard stores `''`.
+     * The app builds its params with `searchParamsFrom`, which never does that; this keeps a
+     * native instance built elsewhere from throwing on `.split`.
+     */
+    .filter((raw): raw is string => typeof raw === 'string')
     .flatMap((raw) => raw.split(','))
     .map((part) => part.trim())
     .filter((part) => part !== '');
@@ -131,8 +138,8 @@ function unique<T>(items: readonly T[]): readonly T[] {
  * it may be applied at all.
  */
 function bound(params: URLSearchParams, name: string): string | null {
-  const raw = params.get(name);
-  if (raw === null) return null;
+  const raw: unknown = params.get(name);
+  if (typeof raw !== 'string') return null; // `undefined` on React Native; see `values`.
   const trimmed = raw.trim();
   return trimmed === '' ? null : trimmed;
 }
@@ -143,6 +150,51 @@ function amountFilter(params: URLSearchParams, prefix: 'goal' | 'raised'): Amoun
     min: bound(params, `${prefix}Min`),
     max: bound(params, `${prefix}Max`),
   };
+}
+
+/** One parameter's values as a router hands them over: one, several, or none. */
+export type RawParams = Readonly<Record<string, string | readonly string[] | undefined>>;
+
+/**
+ * A `URLSearchParams` built the same way on every runtime, from a query string or from a
+ * router's params object.
+ *
+ * WHY NOT `new URLSearchParams(input)`. On Hermes that is React Native's own "small subset from
+ * whatwg-url", and its constructors disagree with the standard exactly where a hand-written or
+ * truncated link lives: `?tag` (no `=`) is stored as `undefined`, `?q=a=b` keeps only `a`, a
+ * stray `%` throws a `URIError`, and an object whose value is an array is stored as one array
+ * rather than as several values. Parsing here and `append`ing the strings means the app reads a
+ * link exactly as the browser does: the first `=` splits, `+` is a space, a parameter with no
+ * value is empty, and an undecodable part is kept as written instead of taking the screen down.
+ */
+export function searchParamsFrom(input: string | RawParams): URLSearchParams {
+  const params = new URLSearchParams();
+
+  if (typeof input === 'string') {
+    for (const pair of input.replace(/^\?/, '').split('&')) {
+      if (pair === '') continue;
+      const split = pair.indexOf('=');
+      const name = split === -1 ? pair : pair.slice(0, split);
+      const value = split === -1 ? '' : pair.slice(split + 1);
+      params.append(decodePart(name), decodePart(value));
+    }
+    return params;
+  }
+
+  for (const [name, value] of Object.entries(input)) {
+    if (value === undefined) continue;
+    for (const one of typeof value === 'string' ? [value] : value) params.append(name, one);
+  }
+  return params;
+}
+
+function decodePart(part: string): string {
+  const spaced = part.replace(/\+/g, ' ');
+  try {
+    return decodeURIComponent(spaced);
+  } catch {
+    return spaced;
+  }
 }
 
 /**

@@ -1,16 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { slugNames, type DiscoveryFacets } from './api';
+import { slugNames, type DiscoveryFacets } from './facets';
 import { blameFor } from './emptiness';
 import { activeFilters, parseFilters } from './filters';
-import { filterVocabularyCopyFrom } from '../i18n/feed-copy';
-import { translatorFor } from '../../test-copy';
-/*
- * The vocabularies the route resolves, built from `messages/en.json` by the same function it
- * calls — issue #324. The group names and the band labels are asserted below, so building them
- * from the catalogue is what makes this fail when a word is edited to something the feed no
- * longer draws.
- */
-const VOCABULARY = filterVocabularyCopyFrom(translatorFor('discovery.filters'));
+import { VOCABULARY } from './test-vocabulary';
 
 /**
  * "No results" is the least useful sentence an interface can produce: it is

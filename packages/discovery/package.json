@@ -1,0 +1,35 @@
+{
+  "name": "@ideanest/discovery",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "description": "The discovery feed's filter state, wire vocabularies, money bounds and empty-state blame, shared by apps/web and apps/mobile.",
+  "exports": {
+    "./vocabulary": "./src/vocabulary.ts",
+    "./filters": "./src/filters.ts",
+    "./bounds": "./src/bounds.ts",
+    "./facets": "./src/facets.ts",
+    "./emptiness": "./src/emptiness.ts",
+    "./copy": "./src/copy.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@ideanest/messages": "workspace:*",
+    "@ideanest/money": "workspace:*",
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

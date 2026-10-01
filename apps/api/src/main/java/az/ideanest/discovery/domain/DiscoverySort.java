@@ -145,7 +145,7 @@ public enum DiscoverySort {
      *
      * <p><strong>An unstated sort still resolves to {@link #DEFAULT} or
      * {@link #DEFAULT_WITH_TEXT}, and this is deliberately not either.</strong> A
-     * merged web client (`apps/web/src/lib/discovery/filters.ts`) resolves an absent
+     * merged web client (`packages/discovery/src/filters.ts`) resolves an absent
      * sort the same way and shows the reader which order is in force; making relevance
      * the default here would silently change what every existing link means and would
      * make that control lie. It is opt-in — {@code ?sort=relevance} — until somebody
