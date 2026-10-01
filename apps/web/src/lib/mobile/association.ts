@@ -1,3 +1,5 @@
+import { SUPPORTED_LOCALES } from '@ideanest/messages/locale';
+
 /**
  * The two files that let a link on this site open the mobile application —
  * §4.12 MB-02, the half that lives on the web.
@@ -51,8 +53,36 @@ export const ANDROID_PACKAGE_VARIABLE = 'IDEANEST_ANDROID_PACKAGE';
  */
 export const ANDROID_FINGERPRINTS_VARIABLE = 'IDEANEST_ANDROID_SHA256_FINGERPRINTS';
 
-/** The paths the mobile application claims. The campaign page, and nothing else. */
+/** The campaign pages, which the mobile application claims. */
 export const CLAIMED_PATH_PREFIX = '/projects/';
+
+/**
+ * The discovery entry points the mobile application also claims (#153): the home page, the feed
+ * and the search results. Exact paths — the filters and the query ride in the query string, which
+ * `components` ignores unless told otherwise — so `/discover/anything` stays the browser's.
+ * `apps/mobile/src/lib/links.ts` answers the same three, and `app.config.ts`'s intent filters
+ * claim them on Android.
+ */
+export const CLAIMED_DISCOVERY_PATHS = ['/', '/discover', '/search'] as const;
+
+/**
+ * Every path claimed, bare and under each locale prefix.
+ *
+ * The site serves every page under its locale (`i18n/routing.ts`, `localePrefix: 'always'`), so
+ * the URL somebody copies from the address bar is `/az/discover?…`, never `/discover?…`. A claim
+ * on the bare path alone would be a claim on links nobody shares. The bare forms stay because the
+ * site redirects them, and a link typed by hand starts there.
+ */
+export function claimedComponents(): { '/': string; comment: string }[] {
+  const roots = ['', ...SUPPORTED_LOCALES.map((locale) => `/${locale}`)];
+  return roots.flatMap((root) => [
+    { '/': `${root}${CLAIMED_PATH_PREFIX}*`, comment: 'Campaign pages' },
+    ...CLAIMED_DISCOVERY_PATHS.map((path) => ({
+      '/': root === '' ? path : path === '/' ? root : `${root}${path}`,
+      comment: 'Discovery',
+    })),
+  ]);
+}
 
 type Env = Record<string, string | undefined>;
 
@@ -85,7 +115,7 @@ export function appleAppSiteAssociation(env: Env = process.env): unknown | null 
       details: [
         {
           appIDs: [appId],
-          components: [{ '/': `${CLAIMED_PATH_PREFIX}*`, comment: 'Campaign pages' }],
+          components: claimedComponents(),
         },
       ],
     },

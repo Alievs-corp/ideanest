@@ -1,4 +1,5 @@
 import { colors } from '@ideanest/design-tokens';
+import { SUPPORTED_LOCALES } from '@ideanest/messages/locale';
 import type { ExpoConfig } from 'expo/config';
 import { withEntitlementsPlist, type ConfigPlugin } from 'expo/config-plugins';
 
@@ -160,7 +161,20 @@ const config: ExpoConfig = {
       {
         action: 'VIEW',
         autoVerify: true,
-        data: [{ scheme: 'https', host: siteHost, pathPrefix: '/projects' }],
+        /*
+         * Campaign pages, and #153's discovery entry points: the home page, the feed and search,
+         * each an exact path whose state rides in the query string — bare, and under every locale
+         * prefix, because the site serves every page there and that is the URL people share. The
+         * entries share one scheme and one host, so they add up to these paths and nothing more.
+         * The web's association file (`apps/web/src/lib/mobile/association.ts`) claims the same,
+         * for iOS.
+         */
+        data: ['', ...SUPPORTED_LOCALES.map((locale) => `/${locale}`)].flatMap((root) => [
+          { scheme: 'https', host: siteHost, pathPrefix: `${root}/projects` },
+          { scheme: 'https', host: siteHost, path: root === '' ? '/' : root },
+          { scheme: 'https', host: siteHost, path: `${root}/discover` },
+          { scheme: 'https', host: siteHost, path: `${root}/search` },
+        ]),
         category: ['BROWSABLE', 'DEFAULT'],
       },
     ],

@@ -161,6 +161,14 @@ A campaign is at `/projects/<creator>/<campaign>` on the web and at the same pat
 here, so the link that opened the application and the route it lands on are one
 string.
 
+Three discovery paths are claimed as well (#153): `/` opens Home, `/discover?…`
+opens Discover with the filters in the query string, and `/search?q=` opens
+Search with the query. Each is an exact path, so `/discover/anything` stays the
+browser's. Discover's params are rebuilt from the link through the shared
+`parseFilters` rather than passed through, so a `utm_source` or an unknown status
+never reaches the screen. `links.ts`, the Android intent filters in
+`app.config.ts`, and the web's `association.ts` claim the same paths.
+
 Three ways in — a push payload (`ideanest://…`), a shared https link, and a cold
 start — all go through `src/lib/links.ts`, which **refuses** anything it does not
 recognise. Expo Router can route an incoming URL by itself; what it cannot do is

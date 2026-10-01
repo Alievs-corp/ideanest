@@ -62,6 +62,16 @@ export function routeParamsFor(filters: DiscoveryFilters): Record<string, string
   return next;
 }
 
+/**
+ * The params for opening Discover on a filter set: the set ones only. A push starts from no params,
+ * so the cleared names `routeParamsFor` writes for `setParams` would only be noise in the URL.
+ */
+export function definedRouteParams(filters: DiscoveryFilters): Record<string, string> {
+  const params: Record<string, string> = {};
+  for (const [name, value] of toSearchParams(filters)) params[name] = value;
+  return params;
+}
+
 /** The chips' and the sheet's words, from `discovery.filters` in the reader's language. */
 export function useFilterVocabulary(): FilterVocabularyCopy {
   const t = useT('discovery.filters');

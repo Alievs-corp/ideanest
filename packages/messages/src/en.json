@@ -5489,9 +5489,7 @@
       "stale": "Showing your saved campaigns from this device. They may be out of date."
     },
     "search": {
-      "minimum": "{count, plural, one {Type at least # character, or pick a suggestion.} other {Type at least # characters, or pick a suggestion.}}",
-      "narrow": "Narrow to {label}",
-      "emptyCategoryBody": "No campaign in this category matches yet. Try another category, or type a search."
+      "minimum": "{count, plural, one {Type at least # character, or pick a suggestion.} other {Type at least # characters, or pick a suggestion.}}"
     },
     "campaign": {
       "untitled": "Untitled campaign",

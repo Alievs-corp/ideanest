@@ -67,10 +67,9 @@ describe('destinationFor', () => {
 
   it('never sends a link to the kit gallery, from any form of link (issue #151)', () => {
     // `app/dev/kit.tsx` is a development screen, and this parser never names it as a destination,
-    // whatever the link's scheme, host, locale prefix or case. That is this module's half only:
-    // Expo Router's own linking still maps `ideanest://dev/kit` to the file by itself, and what
-    // keeps a release build from showing it is the route's `__DEV__` redirect to `+not-found`
-    // (tested in `components/kit-gallery.test.tsx`).
+    // whatever the link's scheme, host, locale prefix or case. Expo Router's own linking is off
+    // (`app/+native-intent.tsx`), and the route's `__DEV__` redirect to `+not-found` is the second
+    // guard (tested in `components/kit-gallery.test.tsx`).
     const links = [
       'https://ideanest.az/dev/kit',
       'https://ideanest.az/az/dev/kit',
@@ -91,6 +90,81 @@ describe('destinationFor', () => {
     expect(destinationFor('https://ideanest.az/projects/dev/kit', HOST)?.pathname).toBe(
       '/projects/dev/kit',
     );
+  });
+});
+
+describe('destinationFor, the discovery entry points (#153)', () => {
+  it('opens Home from the site root, with or without a locale or a slash', () => {
+    for (const url of [
+      'https://ideanest.az',
+      'https://ideanest.az/',
+      'https://ideanest.az/az',
+      'https://ideanest.az/en/',
+      'ideanest://',
+    ]) {
+      expect(destinationFor(url, HOST)).toEqual({ pathname: '/' });
+    }
+  });
+
+  it('opens Discover with the filters the link carries, read as the web reads them', () => {
+    expect(
+      destinationFor('https://ideanest.az/discover?category=games&sort=ending_soon', HOST),
+    ).toEqual({ pathname: '/discover', params: { category: 'games', sort: 'ending_soon' } });
+  });
+
+  it('drops what is not a feed parameter, and what the service would refuse', () => {
+    expect(
+      destinationFor(
+        'https://ideanest.az/az/discover?utm_source=x&status=finished,live&tag=Eco&sort=newest',
+        HOST,
+      ),
+    ).toEqual({ pathname: '/discover', params: { status: 'live', tag: 'eco' } });
+  });
+
+  it('opens Discover from the custom scheme, and survives a hand-written query', () => {
+    expect(destinationFor('ideanest://discover?tag&q=100%', HOST)).toEqual({
+      pathname: '/discover',
+      params: { q: '100%' },
+    });
+  });
+
+  it('opens Search with the query, and Search alone without one', () => {
+    expect(destinationFor('https://ideanest.az/search?q=solar+lamp', HOST)).toEqual({
+      pathname: '/search',
+      params: { q: 'solar lamp' },
+    });
+    expect(destinationFor('https://ideanest.az/search', HOST)).toEqual({ pathname: '/search' });
+    expect(destinationFor('https://ideanest.az/search?q=%20', HOST)).toEqual({
+      pathname: '/search',
+    });
+  });
+
+  it('still refuses a foreign host for every one of them', () => {
+    for (const path of ['/', '/discover?category=games', '/search?q=lamp']) {
+      expect(destinationFor(`https://evil-ideanest.az${path}`, HOST)).toBeNull();
+      expect(destinationFor(`http://ideanest.az${path}`, HOST)).toBeNull();
+    }
+  });
+
+  it('claims nothing deeper under them', () => {
+    expect(destinationFor('https://ideanest.az/discover/games', HOST)).toBeNull();
+    expect(destinationFor('https://ideanest.az/search/lamp', HOST)).toBeNull();
+  });
+});
+
+describe('Expo Router’s own link handling', () => {
+  it('is off, so a link moves the application only through destinationFor', () => {
+    const { redirectSystemPath } = require('../app/+native-intent') as {
+      redirectSystemPath: (event: { path: string; initial: boolean }) => string | null;
+    };
+    for (const path of [
+      'https://ideanest.az/az/discover?utm_source=x',
+      'ideanest://dev/kit',
+      'https://evil.example/projects/a/b',
+    ]) {
+      expect(redirectSystemPath({ path, initial: true })).toBeNull();
+      expect(redirectSystemPath({ path, initial: false })).toBeNull();
+    }
   });
 });
 
