@@ -86,6 +86,11 @@ export default function DiscoverScreen() {
   const feed = useDiscoveryFeed(filters);
   const facetsQuery = useDiscoveryFacets(filters);
   const facets = facetsQuery.isError ? null : (facetsQuery.data ?? null);
+  /*
+   * The counts the empty state may blame from: this filter set's, never the previous set's that
+   * the sheet keeps on screen while the new ones load. Without counts every filter is named.
+   */
+  const facetsForBlame = facetsQuery.isPlaceholderData ? null : facets;
   const vocabulary = useFilterVocabulary();
   const names = useMemo(() => slugNames(facets), [facets]);
   const active = useMemo(
@@ -94,6 +99,8 @@ export default function DiscoverScreen() {
   );
   const problem = useFeedProblem(feed.error);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // The pull's own spinner: a retry or a background refetch is not somebody pulling.
+  const [pulling, setPulling] = useState(false);
 
   const cards = useMemo(
     () => (feed.data?.pages ?? []).flatMap((page) => (page.items ?? []) as Card[]),
@@ -111,7 +118,13 @@ export default function DiscoverScreen() {
   /*
    * The cursor last asked for, by filter set. A guard on `isFetchingNextPage` alone is a render
    * late: two presses, or a press and the end of the list, land before the flag is set, and both
-   * would ask for the same page. A failed page may be asked for again, by the button only.
+   * would ask for the same page.
+   *
+   * The mark is cleared when the ask settles without failing. That covers a page that arrived
+   * (the cursor moves on anyway) and an ask TanStack folded into a refetch already running —
+   * `cancelRefetch: false` hands back that fetch instead of starting one — which would otherwise
+   * leave the feed refusing its own next page until the filters changed. A page that failed keeps
+   * its mark, so the end of the list does not hammer it; the button is how it is retried.
    */
   const asked = useRef<string | null>(null);
   const nextCursor = feed.data?.pages.at(-1)?.nextCursor ?? null;
@@ -121,7 +134,9 @@ export default function DiscoverScreen() {
     const ask = `${key}|${nextCursor}`;
     if (asked.current === ask && !(retry && nextPageFailed)) return;
     asked.current = ask;
-    void feed.fetchNextPage({ cancelRefetch: false });
+    void feed.fetchNextPage({ cancelRefetch: false }).then((result) => {
+      if (!result.isError && asked.current === ask) asked.current = null;
+    });
   }
 
   useFeedAnnouncements(key, feed.data?.pages);
@@ -186,10 +201,12 @@ export default function DiscoverScreen() {
         footer={cards.length > 0 ? footer() : undefined}
         onEndReached={() => loadMore()}
         onRefresh={() => {
-          void feed.refetch();
-          void facetsQuery.refetch();
+          setPulling(true);
+          void Promise.allSettled([feed.refetch(), facetsQuery.refetch()]).then(() =>
+            setPulling(false),
+          );
         }}
-        refreshing={feed.isRefetching && !feed.isFetchingNextPage}
+        refreshing={pulling}
       />
       <FilterSheet
         visible={sheetOpen}
@@ -235,7 +252,9 @@ export default function DiscoverScreen() {
       );
     }
 
-    return <FeedEmpty filters={filters} active={active} facets={facets} onApply={apply} />;
+    return (
+      <FeedEmpty filters={filters} active={active} facets={facetsForBlame} onApply={apply} />
+    );
   }
 
   /** After the last card: more, the end, or the next page's failure above "Show more". */
@@ -279,9 +298,10 @@ export default function DiscoverScreen() {
 }
 
 /**
- * The polite announcement the web makes from its live region: how many projects the first page
- * showed (or that none match), then how many each further page added. Fired once per page that
- * settles, never on a re-render, and reset when the filters change.
+ * The polite announcement the web makes from its live region: how many projects are shown (or
+ * that none match) when a filter set's results arrive, then how many each further page added.
+ * Fired once per page that settles, never on a re-render. A filter set already in the cache can
+ * arrive with several pages at once, and is announced by its total, not by its last page.
  */
 function useFeedAnnouncements(
   key: string,
@@ -289,20 +309,22 @@ function useFeedAnnouncements(
 ) {
   const t = useT();
   const locale = useLocale();
-  const said = useRef<{ key: string; pages: number }>({ key: '', pages: 0 });
+  // Null rather than '': the unfiltered feed's key is the empty string, and must count as new.
+  const said = useRef<{ key: string | null; pages: number }>({ key: null, pages: 0 });
 
   useEffect(() => {
     if (pages === undefined) return;
-    if (said.current.key !== key) said.current = { key, pages: 0 };
-    if (pages.length <= said.current.pages) return;
+    const fresh = said.current.key !== key;
+    if (!fresh && pages.length <= said.current.pages) return;
 
     const last = pages[pages.length - 1]?.items?.length ?? 0;
-    if (pages.length === 1) {
+    if (fresh) {
+      const total = pages.reduce((sum, page) => sum + (page.items?.length ?? 0), 0);
       announce(
-        last === 0
+        total === 0
           ? t('discovery.feed.announceNone')
-          : t(`discovery.feed.announceShown.${pluralCategory(locale, last)}`, {
-              count: String(last),
+          : t(`discovery.feed.announceShown.${pluralCategory(locale, total)}`, {
+              count: String(total),
             }),
       );
     } else {

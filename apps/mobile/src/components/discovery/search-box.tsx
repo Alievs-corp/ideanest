@@ -161,9 +161,10 @@ export function SearchBox({ query, onSubmitQuery, onChooseFilter, testID }: Sear
   );
 }
 
-/** The web's two failure sentences: with the problem's own detail when it gave one. */
+/** The web's two failure sentences: with the problem's own words when it gave any. */
 function failedLine(error: unknown, fallback: string, withDetail: string): string {
-  const detail = error instanceof ApiError ? error.problem?.detail : undefined;
+  const problem = error instanceof ApiError ? error.problem : null;
+  const detail = problem?.detail ?? problem?.title;
   return detail === undefined || detail === null || detail === ''
     ? fallback
     : fillPlaceholders(withDetail, { detail });

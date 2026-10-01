@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { AccessibilityInfo } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -141,6 +142,27 @@ describe('the request follows the route', () => {
     expect(url?.searchParams.get('category')).toBe('games');
     expect(url?.searchParams.get('sort')).toBe('ending_soon');
     expect(url?.searchParams.get('limit')).toBe('24');
+  });
+
+  it('a ticked box comes back as the next request, through the route', async () => {
+    const view = await renderDiscover();
+    await fireEvent.press(screen.getByTestId('filters-button'));
+    await fireEvent.press(screen.getByRole('checkbox', { name: 'Live' }));
+
+    // What the router would do with `setParams`: merge, and render the screen with the result.
+    mockParams = { ...mockParams, ...lastSetParams() } as typeof mockParams;
+    await view.rerender(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <QueryClientProvider client={client}>
+          <IntlProvider locale="en" messages={en}>
+            <DiscoverScreen />
+          </IntlProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>,
+    );
+    await settle();
+    expect(feedRequests().at(-1)?.searchParams.get('status')).toBe('live');
+    expect(screen.getByRole('button', { name: 'Remove Status filter: Live' })).toBeTruthy();
   });
 
   it('omits the default sort and an unknown status', async () => {
@@ -351,6 +373,25 @@ describe('suggestions', () => {
     expect(lastSetParams()).toMatchObject({ q: undefined, category: 'games' });
   });
 
+  it('drops an answer that arrives after the term has changed', async () => {
+    const held = new Map<string, () => void>();
+    routes.suggest = (url) => {
+      const q = url.searchParams.get('q') ?? '';
+      return new Promise<Response>((resolve) => {
+        held.set(q, () => resolve(json({ items: [{ kind: 'tag', label: `tag for ${q}`, slug: q }] })));
+      });
+    };
+    await renderDiscover();
+    await typeAndWait('sol');
+    await typeAndWait('sola');
+    held.get('sola')?.();
+    await settle();
+    held.get('sol')?.(); // the slow, stale answer
+    await settle();
+    expect(screen.getByRole('button', { name: 'tag for sola, Tag' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'tag for sol, Tag' })).toBeNull();
+  });
+
   it('asks at most once per settled term, with limit 10, and draws only the current term’s answer', async () => {
     routes.suggest = (url) =>
       json({ items: [{ kind: 'tag', label: `tag for ${url.searchParams.get('q')}`, slug: 'x' }] });
@@ -382,6 +423,25 @@ describe('suggestions', () => {
 });
 
 describe('what a screen reader hears', () => {
+  it('is told how many projects are shown when they arrive', async () => {
+    const spoken = jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions');
+    spoken.mockClear();
+    await renderDiscover();
+    expect(spoken).toHaveBeenCalledWith('1 project shown.', { queue: true });
+    // The unfiltered feed's key is '', which once read as "already announced".
+    expect(spoken).not.toHaveBeenCalledWith(expect.stringContaining('more'), expect.anything());
+    spoken.mockRestore();
+  });
+
+  it('is told when nothing matches', async () => {
+    const spoken = jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions');
+    spoken.mockClear();
+    routes.feed = () => json({ items: [] });
+    await renderDiscover();
+    expect(spoken).toHaveBeenCalledWith(T.announceNone, { queue: true });
+    spoken.mockRestore();
+  });
+
   it('names the controls', async () => {
     mockParams = { status: 'live' };
     await renderDiscover();
