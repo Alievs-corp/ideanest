@@ -9,7 +9,7 @@ import { DETAIL_MAX_LENGTH, REPORT_REASONS } from '@ideanest/campaign/report';
 import { setLocale } from '../../lib/locale';
 import { rememberAccessToken, storeRefreshToken, useFlagStore } from '../../lib/session';
 import { memoryStore } from '../../lib/storage';
-import { ReportLink } from './report-link';
+import { ReportLink, ReportTrigger } from './report-link';
 
 /**
  * The report sheet — issue #155's tests: Send is disabled until a reason is chosen, `OTHER`
@@ -68,6 +68,7 @@ beforeEach(async () => {
       body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined,
     });
     if (url.pathname === `/v1/projects/${ID}/report`) return report();
+    if (url.pathname === '/v1/comments/c1/report') return report();
     return json({}, 404);
   }) as unknown as typeof fetch;
 });
@@ -227,6 +228,39 @@ describe('the form', () => {
     await fireEvent.press(submit());
     await settle();
     expect(screen.getByText(R.unreachable)).toBeTruthy();
+  });
+});
+
+describe('a comment', () => {
+  it('is reported to the comment, titled as a comment on the campaign, and acknowledged as one', async () => {
+    await signIn();
+    client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <QueryClientProvider client={client}>
+          <IntlProvider locale="en" messages={en}>
+            {children}
+          </IntlProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    );
+    const name = R.commentOn.replace('{title}', TITLE);
+    await render(
+      <ReportTrigger target={{ kind: 'comment', id: 'c1' }} name={name} offline={false} />,
+      { wrapper },
+    );
+    await fireEvent.press(screen.getByRole('button', { name: R.triggerOn.comment }));
+    await settle();
+    expect(
+      screen.getByRole('header', { name: R.dialogLabel.replace('{name}', name) }),
+    ).toBeTruthy();
+    expect(screen.getByRole('header', { name: `Report a comment on ${TITLE}` })).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('radio', { name: REASONS.OFFENSIVE }));
+    await fireEvent.press(submit());
+    await settle();
+    expect(writes).toEqual([{ path: 'POST /v1/comments/c1/report', body: { reason: 'OFFENSIVE' } }]);
+    expect(screen.getByText(R.filedBody.comment)).toBeTruthy();
   });
 });
 
