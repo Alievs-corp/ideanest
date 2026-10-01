@@ -45,6 +45,8 @@ describe('route failure boundaries', () => {
   it('puts the shared route boundary on every other route', () => {
     const missing = files
       .filter(({ route }) => route !== '_layout.tsx')
+      // Not a screen: Expo Router's link hook (#153), which renders nothing to fail.
+      .filter(({ route }) => route !== '+native-intent.tsx')
       .filter(({ boundary }) => boundary !== 'RouteErrorBoundary')
       .map(({ route, boundary }) => `${route}: ${boundary ?? 'none'}`);
     expect(missing).toEqual([]);

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { NO_FILTERS, type DiscoveryFilters } from '@ideanest/discovery/filters';
@@ -57,15 +57,11 @@ export default function HomeScreen() {
   const taxonomy = categories.data ?? [];
 
   const bothFailed = closing.isError && launched.isError;
-  const refreshing =
-    (closing.isRefetching || launched.isRefetching || categories.isRefetching) &&
-    !closing.isPending &&
-    !launched.isPending;
+  // The pull's own spinner: a retry, a reconnect or a stale refetch is not somebody pulling.
+  const [pulling, setPulling] = useState(false);
 
-  function refresh(): void {
-    void closing.refetch();
-    void launched.refetch();
-    void categories.refetch();
+  function refresh(): Promise<unknown> {
+    return Promise.allSettled([closing.refetch(), launched.refetch(), categories.refetch()]);
   }
 
   function openFeed(filters: DiscoveryFilters = NO_FILTERS): void {
@@ -79,10 +75,11 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={pulling}
             onRefresh={() => {
               haptics.refresh();
-              refresh();
+              setPulling(true);
+              void refresh().then(() => setPulling(false));
             }}
             tintColor={colors.textSecondary}
             colors={[colors.textPrimary]}
@@ -147,7 +144,7 @@ export default function HomeScreen() {
                   variant="ghost"
                   size="sm"
                   busy={closing.isFetching || launched.isFetching}
-                  onPress={refresh}
+                  onPress={() => void refresh()}
                 />
               </View>
             }

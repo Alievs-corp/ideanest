@@ -33,12 +33,21 @@ describe('appleAppSiteAssociation', () => {
 
     expect(association.applinks.details[0]?.appIDs).toEqual(['ABCDE12345.az.ideanest.app']);
     expect(association.applinks.details[0]?.components[0]?.['/']).toBe('/projects/*');
-    // #153: the home page, the feed and search, exactly — nothing under them.
-    expect(association.applinks.details[0]?.components.slice(1).map((c) => c['/'])).toEqual([
-      '/',
-      '/discover',
-      '/search',
-    ]);
+    // #153: the home page, the feed and search, exactly — and every claim under each locale
+    // prefix too, because the site serves every page there (`localePrefix: 'always'`).
+    const claimed = association.applinks.details[0]?.components.map((c) => c['/']) ?? [];
+    expect(claimed.slice(0, 4)).toEqual(['/projects/*', '/', '/discover', '/search']);
+    for (const locale of ['az', 'en', 'ru', 'tr']) {
+      expect(claimed).toEqual(
+        expect.arrayContaining([
+          `/${locale}/projects/*`,
+          `/${locale}`,
+          `/${locale}/discover`,
+          `/${locale}/search`,
+        ]),
+      );
+    }
+    expect(claimed).toHaveLength(20);
   });
 
   it('keeps the empty apps array iOS reads as well-formed', () => {

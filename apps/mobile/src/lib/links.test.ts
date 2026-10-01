@@ -67,10 +67,9 @@ describe('destinationFor', () => {
 
   it('never sends a link to the kit gallery, from any form of link (issue #151)', () => {
     // `app/dev/kit.tsx` is a development screen, and this parser never names it as a destination,
-    // whatever the link's scheme, host, locale prefix or case. That is this module's half only:
-    // Expo Router's own linking still maps `ideanest://dev/kit` to the file by itself, and what
-    // keeps a release build from showing it is the route's `__DEV__` redirect to `+not-found`
-    // (tested in `components/kit-gallery.test.tsx`).
+    // whatever the link's scheme, host, locale prefix or case. Expo Router's own linking is off
+    // (`app/+native-intent.tsx`), and the route's `__DEV__` redirect to `+not-found` is the second
+    // guard (tested in `components/kit-gallery.test.tsx`).
     const links = [
       'https://ideanest.az/dev/kit',
       'https://ideanest.az/az/dev/kit',
@@ -150,6 +149,22 @@ describe('destinationFor, the discovery entry points (#153)', () => {
   it('claims nothing deeper under them', () => {
     expect(destinationFor('https://ideanest.az/discover/games', HOST)).toBeNull();
     expect(destinationFor('https://ideanest.az/search/lamp', HOST)).toBeNull();
+  });
+});
+
+describe('Expo Router’s own link handling', () => {
+  it('is off, so a link moves the application only through destinationFor', () => {
+    const { redirectSystemPath } = require('../app/+native-intent') as {
+      redirectSystemPath: (event: { path: string; initial: boolean }) => string | null;
+    };
+    for (const path of [
+      'https://ideanest.az/az/discover?utm_source=x',
+      'ideanest://dev/kit',
+      'https://evil.example/projects/a/b',
+    ]) {
+      expect(redirectSystemPath({ path, initial: true })).toBeNull();
+      expect(redirectSystemPath({ path, initial: false })).toBeNull();
+    }
   });
 });
 

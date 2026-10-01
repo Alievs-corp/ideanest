@@ -1,3 +1,5 @@
+import { SUPPORTED_LOCALES } from '@ideanest/messages/locale';
+
 /**
  * The two files that let a link on this site open the mobile application —
  * §4.12 MB-02, the half that lives on the web.
@@ -63,6 +65,25 @@ export const CLAIMED_PATH_PREFIX = '/projects/';
  */
 export const CLAIMED_DISCOVERY_PATHS = ['/', '/discover', '/search'] as const;
 
+/**
+ * Every path claimed, bare and under each locale prefix.
+ *
+ * The site serves every page under its locale (`i18n/routing.ts`, `localePrefix: 'always'`), so
+ * the URL somebody copies from the address bar is `/az/discover?…`, never `/discover?…`. A claim
+ * on the bare path alone would be a claim on links nobody shares. The bare forms stay because the
+ * site redirects them, and a link typed by hand starts there.
+ */
+export function claimedComponents(): { '/': string; comment: string }[] {
+  const roots = ['', ...SUPPORTED_LOCALES.map((locale) => `/${locale}`)];
+  return roots.flatMap((root) => [
+    { '/': `${root}${CLAIMED_PATH_PREFIX}*`, comment: 'Campaign pages' },
+    ...CLAIMED_DISCOVERY_PATHS.map((path) => ({
+      '/': root === '' ? path : path === '/' ? root : `${root}${path}`,
+      comment: 'Discovery',
+    })),
+  ]);
+}
+
 type Env = Record<string, string | undefined>;
 
 function configured(env: Env, variable: string): string | null {
@@ -94,10 +115,7 @@ export function appleAppSiteAssociation(env: Env = process.env): unknown | null 
       details: [
         {
           appIDs: [appId],
-          components: [
-            { '/': `${CLAIMED_PATH_PREFIX}*`, comment: 'Campaign pages' },
-            ...CLAIMED_DISCOVERY_PATHS.map((path) => ({ '/': path, comment: 'Discovery' })),
-          ],
+          components: claimedComponents(),
         },
       ],
     },

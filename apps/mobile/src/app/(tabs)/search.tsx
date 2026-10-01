@@ -146,14 +146,20 @@ export default function SearchScreen() {
     }
 
     if (cards.length === 0) {
+      // The count line first, as on the web: "No campaigns matched", the ICU plural's `=0`.
       return (
-        <EmptyState
+        <View style={styles.results}>
+          <Meta tone="secondary" style={styles.count}>
+            {t('count', { count: 0 })}
+          </Meta>
+          <EmptyState
           variant="filtered"
           title={t('emptyTitle', { query })}
           description={t('emptyBody')}
-          action={<Pill label={t('emptyAction')} onPress={() => openFeed(false)} />}
-          testID="search-empty"
-        />
+            action={<Pill label={t('emptyAction')} onPress={() => openFeed(false)} />}
+            testID="search-empty"
+          />
+        </View>
       );
     }
 

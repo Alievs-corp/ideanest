@@ -163,6 +163,7 @@ describe('the Search tab with a query', () => {
     routes.search = () => json({ items: [] });
     await renderSearch();
     expect(screen.getByText('Nothing matched “zzz”')).toBeTruthy();
+    expect(screen.getByText('No campaigns matched')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: S.emptyAction }));
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/discover', params: {} });
   });

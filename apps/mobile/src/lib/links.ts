@@ -15,12 +15,12 @@
  *
  * <h2>Why this is a pure function and not Expo Router's own parser</h2>
  *
- * Expo Router can map an incoming URL to a route by itself, and it does — this
- * is not a replacement for it. What it cannot do is refuse: its matcher will
- * happily route a link from a host this application has nothing to do with, and
- * on Android an implicit intent from any installed application can carry one. So
- * the URL is checked here, against the host this build claims, before it is
- * handed over. Being pure is what lets that check be tested without a simulator.
+ * Expo Router can map an incoming URL to a route by itself, but it cannot refuse:
+ * its matcher will happily route a link from a host this application has nothing
+ * to do with, and on Android an implicit intent from any installed application
+ * can carry one. So its own handling is switched off (`app/+native-intent.tsx`)
+ * and every link goes through here, checked against the host this build claims.
+ * Being pure is what lets that check be tested without a simulator.
  */
 
 /** A destination inside the application, as a path Expo Router understands. */
@@ -56,9 +56,9 @@ const CAMPAIGN_PATH = /^\/projects\/([^/]+)\/([^/]+)\/?$/;
  * somewhere. Silently landing on the feed makes both look like they worked.
  *
  * <p>Only campaign paths are answered, so this parser never names a development route — the kit
- * gallery at `dev/kit` (issue #151) — as a destination; `links.test.ts` pins that. It does not
- * make the route unreachable: Expo Router's own linking maps a matching URL to the file by itself,
- * and the gallery's `__DEV__` redirect is what keeps a release build from showing it.
+ * gallery at `dev/kit` (issue #151) — as a destination; `links.test.ts` pins that. Expo Router's
+ * own linking is off (`app/+native-intent.tsx`), and the gallery's `__DEV__` redirect is the
+ * second guard that keeps a release build from showing it.
  *
  * @param url the incoming link, in any of the three forms above
  * @param siteHost the host this build claims, from `app.config.ts`'s `siteUrl`
