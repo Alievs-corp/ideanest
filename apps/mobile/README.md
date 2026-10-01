@@ -199,13 +199,17 @@ are `@ideanest/campaign`'s, the same functions the web calls.
   `?tab=` mirrors the selection (`router.setParams`; the default is left out), and an
   unknown value is the Campaign tab. Comments opens the same tab on the web for now.
 - **Creator, FAQ and Updates** (`tabs/creator/`, `tabs/faq/`, `tabs/updates/`) read only
-  once their tab opens. Creator reads `GET /v1/users/{slug}` and seven of the creator's
+  once their tab opens, and **as nobody** (`publicApi()` in `src/api/client.ts`, no
+  `Authorization`), as the web does: the service shows a campaign's team updates and FAQ
+  the public cannot see, and the page and its offline copy are the public's. Creator reads `GET /v1/users/{slug}` and seven of the creator's
   campaigns (six shown, this one left out) under the unpersisted `profile` root; a refused
   profile is the campaign's own name and avatar, with no link. FAQ is every answer open, no
   accordion. Updates page by 20 on the numeric cursor and **append**: the end of the list and
   a visible "Older updates" pill both ask for the next page, never the same cursor twice; a
-  failed next page keeps the loaded cards and offers "Try again". Pull to refresh rereads
-  the first page only.
+  failed next page keeps the loaded cards and offers "Try again". TanStack's own refetches
+  (mount, focus, reconnect), which would re-read every loaded page, are off; pull to refresh,
+  and opening the tab on a stale list, read the first page alone and replace the loaded
+  pages only once it has arrived.
 - **Back this campaign** and **Select this reward** are shown only where `acceptsPledges`
   is true, and push the app's `campaigns/[id]/back[?reward=]` (`checkoutHref` in
   `src/lib/campaign-actions.ts`), which hands over to the web checkout until #157 builds it.
@@ -228,7 +232,9 @@ are `@ideanest/campaign`'s, the same functions the web calls.
   screen; a failure with nothing cached is an error with retry; a cached page that could
   not be refreshed carries the offline notice, opens no socket and disables Save and
   Remind with the reason. The page, rewards, FAQ, updates and obligation persist under
-  `project`; comments (`comments`) and profiles (`profile`) never do.
+  `project`; comments (`comments`) and profiles (`profile`) never do. A query whose refresh
+  failed is still written, as the success it last was (`holdsData` in `src/lib/offline.ts`),
+  so a page opened offline survives the next restart.
 - No entry animation anywhere on the page.
 
 ## Configuration

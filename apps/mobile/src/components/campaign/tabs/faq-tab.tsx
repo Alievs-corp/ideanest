@@ -19,13 +19,15 @@ import {
  * the tab is open and persisted with the page under `project`.
  *
  * <p>Unpaged, so there is no `onEndReached` and no footer. A refused read is
- * `campaign.faqs.failed` with "Try again" — never the empty sentence, which is a claim about the
+ * `mobile.campaign.faq.failed` with "Try again" — the web's `campaign.faqs.failed` says "reload
+ * the page", which has no meaning here — never the empty sentence, which is a claim about the
  * creator and must only be made when it is true — and a campaign with no questions is
  * `campaign.faqs.empty`. While the first answer is on its way the body is empty and `loading`,
  * and the screen draws its placeholder. A cached list whose refresh failed stays on screen.
  */
 export function useFaqTab(context: CampaignTabContext): CampaignTabBody {
   const t = useT('campaign.faqs');
+  const tMobile = useT('mobile.campaign.faq');
   const faqs = useProjectFaqs(context.campaign.id, context.active);
   if (!context.active) return INACTIVE_TAB;
 
@@ -44,7 +46,7 @@ export function useFaqTab(context: CampaignTabContext): CampaignTabBody {
       key: 'failed',
       render: () => (
         <TabNote
-          text={t('failed')}
+          text={tMobile('failed')}
           onRetry={() => void faqs.refetch()}
           retrying={faqs.isFetching}
           testID="faq-failed"

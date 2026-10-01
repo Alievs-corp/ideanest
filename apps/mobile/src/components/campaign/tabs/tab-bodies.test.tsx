@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { focusManager, onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  persistQueryClientRestore,
+  persistQueryClientSave,
+} from '@tanstack/react-query-persist-client';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
@@ -9,16 +13,23 @@ import type { ProjectPage } from '../../../api/queries';
 import { readCampaignPage, type CampaignPage } from '../../../lib/campaign-page';
 import { formatDay } from '../../../lib/i18n';
 import { setLocale } from '../../../lib/locale';
+import { createQueryClient, persistOptions } from '../../../lib/offline';
+import { rememberAccessToken } from '../../../lib/session';
+import { memoryStore } from '../../../lib/storage';
 import type { CampaignTabBody, CampaignTabHook } from './contract';
 import { useCreatorTab } from './creator-tab';
 import { useFaqTab } from './faq-tab';
 import { useUpdatesTab } from './updates-tab';
+import { projectUpdatesKey } from './updates/use-project-updates';
 
 /**
  * The Creator, FAQ and Updates tabs — issue #155. Each hook is drawn the way the screen draws it
  * (its rows in order, then its footer, the placeholder while `loading` with no rows), over the
  * app's real client and TanStack Query; only `fetch` is a double, so "read only when the tab
  * opens" and "no duplicate cursor" are statements about requests, not about mocked hooks.
+ *
+ * <p>A reader is signed in throughout (an access token in memory), so "read as nobody" is a
+ * statement about the requests too: none of these reads may carry it.
  */
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), setParams: jest.fn() };
@@ -72,6 +83,8 @@ function deferred() {
 type Route = (url: URL) => Response | Promise<Response>;
 let routes: Record<string, Route>;
 let requests: URL[];
+/** The `Authorization` each request carried, by path — `null` when it carried none. */
+let authorizations: { path: string; value: string | null }[];
 let client: QueryClient;
 
 beforeEach(async () => {
@@ -79,9 +92,15 @@ beforeEach(async () => {
   jest.clearAllMocks();
   routes = {};
   requests = [];
-  global.fetch = jest.fn(async (input: RequestInfo | URL) => {
+  authorizations = [];
+  rememberAccessToken('signed-in-reader');
+  global.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     requests.push(url);
+    authorizations.push({
+      path: url.pathname,
+      value: new Headers(init?.headers).get('Authorization'),
+    });
     const route = routes[url.pathname];
     return route === undefined ? problem(404) : route(url);
   }) as unknown as typeof fetch;
@@ -89,6 +108,8 @@ beforeEach(async () => {
 
 afterEach(() => {
   client?.clear();
+  rememberAccessToken(null);
+  jest.restoreAllMocks();
 });
 
 /** What the screen does with a tab's body, and nothing else. */
@@ -113,8 +134,20 @@ function Harness({ hook, active }: { readonly hook: CampaignTabHook; readonly ac
   );
 }
 
-async function show(hook: CampaignTabHook, { active = true }: { active?: boolean } = {}) {
-  client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+/**
+ * Draws a tab. `app: true` is the application's own client (`createQueryClient()`: its staleTime,
+ * its retry rule, `offlineFirst`) — for what depends on those; otherwise a client that does not
+ * retry, so a refusal settles at once.
+ */
+async function show(
+  hook: CampaignTabHook,
+  { active = true, app = false }: { active?: boolean; app?: boolean } = {},
+) {
+  client = app
+    ? createQueryClient()
+    : new QueryClient({
+        defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: 60_000 } },
+      });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={client}>
@@ -130,6 +163,10 @@ async function show(hook: CampaignTabHook, { active = true }: { active?: boolean
     ...view,
     activate: async () => {
       await view.rerender(<Harness hook={hook} active />);
+      await settle();
+    },
+    deactivate: async () => {
+      await view.rerender(<Harness hook={hook} active={false} />);
       await settle();
     },
   };
@@ -194,6 +231,13 @@ describe('the Creator tab', () => {
   beforeEach(() => {
     routes['/v1/users/aysel'] = () => json(PROFILE);
     routes['/v1/users/aysel/projects'] = () => json(PROJECTS);
+  });
+
+  it('reads the profile and its campaigns as nobody, whoever is signed in', async () => {
+    await show(useCreatorTab);
+    const reads = authorizations.filter((entry) => entry.path.startsWith('/v1/users/'));
+    expect(reads).toHaveLength(2);
+    expect(reads.every((entry) => entry.value === null)).toBe(true);
   });
 
   it('reads the profile and seven campaigns only once the tab opens', async () => {
@@ -319,12 +363,15 @@ describe('the FAQ tab', () => {
   };
   const path = `/v1/projects/${ID}/faqs`;
 
-  it('reads nothing until the tab opens', async () => {
+  it('reads nothing until the tab opens, and then reads as nobody', async () => {
     routes[path] = () => json(FAQS);
     const view = await show(useFaqTab, { active: false });
     expect(requested(path)).toHaveLength(0);
     await view.activate();
     expect(requested(path)).toHaveLength(1);
+    expect(authorizations.filter((entry) => entry.path === path)).toEqual([
+      { path, value: null },
+    ]);
   });
 
   it('shows every answer at once, in the creator’s order — no accordion', async () => {
@@ -350,13 +397,15 @@ describe('the FAQ tab', () => {
     routes[path] = () => answer;
     await show(useFaqTab);
 
-    expect(screen.getByText(C.faqs.failed)).toBeTruthy();
+    // The app's sentence: the web's says "reload the page", and there is no page to reload.
+    expect(screen.getByText(M.faq.failed)).toBeTruthy();
+    expect(screen.queryByText(C.faqs.failed)).toBeNull();
     expect(screen.queryByText(C.faqs.empty)).toBeNull();
 
     answer = json(FAQS);
     await fireEvent.press(screen.getByRole('button', { name: en.common.tryAgain }));
     await settle();
-    expect(screen.queryByText(C.faqs.failed)).toBeNull();
+    expect(screen.queryByText(M.faq.failed)).toBeNull();
     expect(screen.getByText('Is it waterproof?')).toBeTruthy();
   });
 
@@ -394,10 +443,15 @@ describe('the Updates tab', () => {
     updates: Array.from({ length: 20 }, (_, i) => update(top - i)),
     nextCursor,
   });
+  /** Two pages: 40–21 then 20–1, the second asked for with cursor 20. */
+  const twoPages: Route = (url) =>
+    json(url.searchParams.has('cursor') ? page(20, null) : page(40, 20));
 
   const olderPill = () => screen.queryByRole('button', { name: C.updates.older });
+  const cards = () => screen.queryAllByTestId(/^update-\d+$/);
+  const withCursor = () => requested(path).filter((url) => url.searchParams.has('cursor'));
 
-  it('reads nothing until the tab opens, then the newest twenty with no cursor', async () => {
+  it('reads nothing until the tab opens, then the newest twenty with no cursor, as nobody', async () => {
     routes[path] = () => json(page(45, 25));
     const view = await show(useUpdatesTab, { active: false });
     expect(requested(path)).toHaveLength(0);
@@ -407,7 +461,12 @@ describe('the Updates tab', () => {
     expect(first?.searchParams.get('limit')).toBe('20');
     expect(first?.searchParams.has('cursor')).toBe(false);
     expect(screen.getByRole('header', { name: C.updates.heading })).toBeTruthy();
-    expect(screen.getAllByTestId(/^update-\d+$/)).toHaveLength(20);
+    expect(cards()).toHaveLength(20);
+
+    // A team member signed in would be sent scheduled updates; the public page must not be.
+    expect(authorizations.filter((entry) => entry.path === path)).toEqual([
+      { path, value: null },
+    ]);
   });
 
   it('prints the service’s number, the device’s day, and a backers-only tag with a word', async () => {
@@ -418,11 +477,12 @@ describe('the Updates tab', () => {
       });
     await show(useUpdatesTab);
 
-    // The service's numbers — 7 and 3 — never the list's positions.
-    expect(screen.getByText('Update 7')).toBeTruthy();
-    expect(screen.getByText('Update 3')).toBeTruthy();
-    expect(screen.queryByText('Update 1')).toBeNull();
-    expect(screen.queryByText('Update 2')).toBeNull();
+    // The service's numbers — 7 and 3 — never the list's positions; capitals drawn, words spoken.
+    expect(screen.getByText('UPDATE 7')).toBeTruthy();
+    expect(screen.getByLabelText('Update 7')).toBeTruthy();
+    expect(screen.getByText('UPDATE 3')).toBeTruthy();
+    expect(screen.queryByText('UPDATE 1')).toBeNull();
+    expect(screen.queryByText('UPDATE 2')).toBeNull();
 
     // 21:30 UTC on the 30th is the 1st in Baku, the zone every suite runs in.
     const day = formatDay('2026-09-30T21:30:00Z', 'en') as string;
@@ -439,37 +499,32 @@ describe('the Updates tab', () => {
     expect(screen.queryByText(C.updates.noOlder)).toBeNull();
   });
 
-  it('appends the next twenty and never asks for the same cursor twice', async () => {
+  it('appends the next twenty and asks for nothing while a page is in flight', async () => {
     const second = deferred();
     routes[path] = (url) => (url.searchParams.has('cursor') ? second.promise : json(page(40, 20)));
     await show(useUpdatesTab);
 
     expect(olderPill()).toBeTruthy();
-    expect(body.onEndReached).not.toBeNull();
-
-    // The end of the list, twice, and the pill — one request.
-    await act(async () => {
-      body.onEndReached?.();
-      body.onEndReached?.();
-    });
+    await act(async () => body.onEndReached?.());
     await settle();
+
+    // In flight: the pill says so and is disabled, and neither it nor the list's end asks again.
     const loading = screen.getByRole('button', { name: M.updates.loadingOlder });
     expect(loading.props.accessibilityState).toMatchObject({ disabled: true });
     await fireEvent.press(loading);
     await act(async () => body.onEndReached?.());
-    const older = requested(path).filter((url) => url.searchParams.has('cursor'));
-    expect(older).toHaveLength(1);
-    expect(older[0]?.searchParams.get('cursor')).toBe('20');
-    expect(older[0]?.searchParams.get('limit')).toBe('20');
+    expect(withCursor()).toHaveLength(1);
+    expect(withCursor()[0]?.searchParams.get('cursor')).toBe('20');
+    expect(withCursor()[0]?.searchParams.get('limit')).toBe('20');
 
     await act(async () => second.release(json(page(20, null))));
     await settle();
 
     // Appended: the first page's cards are still there, the second's follow them.
-    const cards = screen.getAllByTestId(/^update-\d+$/).map((node) => node.props.testID);
-    expect(cards).toHaveLength(40);
-    expect(cards[0]).toBe('update-40');
-    expect(cards[39]).toBe('update-1');
+    const ids = cards().map((node) => node.props.testID);
+    expect(ids).toHaveLength(40);
+    expect(ids[0]).toBe('update-40');
+    expect(ids[39]).toBe('update-1');
 
     // The end of a paged list says so, and nothing more is asked for.
     expect(screen.getByText(C.updates.noOlder)).toBeTruthy();
@@ -478,23 +533,42 @@ describe('the Updates tab', () => {
     expect(requested(path)).toHaveLength(2);
   });
 
+  it('never asks for a cursor twice, even through a handler from before it was asked for', async () => {
+    routes[path] = (url) => (url.searchParams.has('cursor') ? problem(400) : json(page(40, 20)));
+    await show(useUpdatesTab);
+
+    // A caller may hold the handler of an earlier render — the screen's ref between renders, a
+    // press queued behind a re-render. Taken here, while nothing is in flight.
+    const early = body.onEndReached;
+    expect(early).not.toBeNull();
+    await act(async () => early?.());
+    await settle();
+    expect(withCursor()).toHaveLength(1);
+    expect(screen.getByText(M.updates.olderFailed)).toBeTruthy();
+
+    // Idle again, and that handler still believes nothing failed: it is the remembered cursor,
+    // not the fetch state, that refuses it.
+    await act(async () => early?.());
+    await settle();
+    expect(withCursor()).toHaveLength(1);
+  });
+
   it('offers "Older updates" as a named control that loads the next page', async () => {
-    routes[path] = (url) =>
-      json(url.searchParams.has('cursor') ? page(20, null) : page(40, 20));
+    routes[path] = twoPages;
     await show(useUpdatesTab);
     await fireEvent.press(olderPill()!);
     await settle();
-    expect(screen.getAllByTestId(/^update-\d+$/)).toHaveLength(40);
+    expect(cards()).toHaveLength(40);
   });
 
   it('keeps the loaded cards when the next page fails, and retries only when asked', async () => {
-    let olderAnswer: () => Response = () => problem(503);
+    let olderAnswer: () => Response = () => problem(400);
     routes[path] = (url) => (url.searchParams.has('cursor') ? olderAnswer() : json(page(40, 20)));
-    await show(useUpdatesTab);
+    await show(useUpdatesTab, { app: true });
 
     await act(async () => body.onEndReached?.());
     await settle();
-    expect(screen.getAllByTestId(/^update-\d+$/)).toHaveLength(20);
+    expect(cards()).toHaveLength(20);
     expect(screen.getByText(M.updates.olderFailed)).toBeTruthy();
     expect(olderPill()).toBeNull();
     // The end of the list does not hammer a page that failed.
@@ -504,14 +578,40 @@ describe('the Updates tab', () => {
     await fireEvent.press(screen.getByRole('button', { name: en.common.tryAgain }));
     await settle();
     expect(screen.queryByText(M.updates.olderFailed)).toBeNull();
-    expect(screen.getAllByTestId(/^update-\d+$/)).toHaveLength(40);
+    expect(cards()).toHaveLength(40);
     expect(requested(path).filter((url) => url.searchParams.get('cursor') === '20')).toHaveLength(2);
+  });
+
+  it('keeps a list whose next page failed in the offline cache', async () => {
+    routes[path] = (url) => (url.searchParams.has('cursor') ? problem(400) : json(page(40, 20)));
+    await show(useUpdatesTab, { app: true });
+    await act(async () => body.onEndReached?.());
+    await settle();
+    expect(client.getQueryState(projectUpdatesKey(ID))?.status).toBe('error');
+
+    const store = memoryStore();
+    await act(async () => {
+      await persistQueryClientSave({ queryClient: client, ...persistOptions(store, 0) });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const restored = createQueryClient();
+    try {
+      await persistQueryClientRestore({ queryClient: restored, ...persistOptions(store, 0) });
+      const state = restored.getQueryState(projectUpdatesKey(ID));
+      expect(state?.status).toBe('success');
+      const data = state?.data as { pages: { updates: unknown[] }[] } | undefined;
+      expect(data?.pages[0]?.updates).toHaveLength(20);
+    } finally {
+      restored.clear();
+    }
   });
 
   it('says the read failed, not that nothing was posted', async () => {
     routes[path] = () => problem(500);
     await show(useUpdatesTab);
-    expect(screen.getByText(C.updates.failed)).toBeTruthy();
+    // The app's sentence: the web's says "reload the page", and there is no page to reload.
+    expect(screen.getByText(M.updates.failed)).toBeTruthy();
+    expect(screen.queryByText(C.updates.failed)).toBeNull();
     expect(screen.queryByText(C.updates.none)).toBeNull();
     expect(screen.getByRole('button', { name: en.common.tryAgain })).toBeTruthy();
   });
@@ -523,13 +623,12 @@ describe('the Updates tab', () => {
     expect(olderPill()).toBeNull();
   });
 
-  it('refreshes the first page only', async () => {
-    routes[path] = (url) =>
-      json(url.searchParams.has('cursor') ? page(20, null) : page(40, 20));
-    await show(useUpdatesTab);
+  it('refreshes the first page only, replacing the loaded pages once it arrives', async () => {
+    routes[path] = twoPages;
+    await show(useUpdatesTab, { app: true });
     await act(async () => body.onEndReached?.());
     await settle();
-    expect(screen.getAllByTestId(/^update-\d+$/)).toHaveLength(40);
+    expect(cards()).toHaveLength(40);
 
     requests = [];
     await act(async () => {
@@ -538,7 +637,61 @@ describe('the Updates tab', () => {
     await settle();
     expect(requested(path)).toHaveLength(1);
     expect(requested(path)[0]?.searchParams.has('cursor')).toBe(false);
-    expect(screen.getAllByTestId(/^update-\d+$/)).toHaveLength(20);
+    expect(cards()).toHaveLength(20);
     expect(olderPill()).toBeTruthy();
+  });
+
+  it('keeps every loaded page when a refresh fails', async () => {
+    let offline = false;
+    routes[path] = (url) => {
+      if (offline) throw new TypeError('Network request failed');
+      return twoPages(url);
+    };
+    await show(useUpdatesTab, { app: true });
+    await act(async () => body.onEndReached?.());
+    await settle();
+    expect(cards()).toHaveLength(40);
+
+    offline = true;
+    await act(async () => {
+      await expect(body.refresh()).resolves.toBeUndefined();
+    });
+    await settle();
+    expect(cards()).toHaveLength(40);
+    const data = client.getQueryData(projectUpdatesKey(ID)) as { pages: unknown[] };
+    expect(data.pages).toHaveLength(2);
+    expect(screen.getByText(C.updates.noOlder)).toBeTruthy();
+  });
+
+  it('does not re-read every page on reconnect or focus, and reads the first one again when reopened stale', async () => {
+    routes[path] = twoPages;
+    const view = await show(useUpdatesTab, { app: true });
+    await act(async () => body.onEndReached?.());
+    await settle();
+    expect(cards()).toHaveLength(40);
+
+    // Five minutes on: past the client's staleTime.
+    const later = Date.now() + 5 * 60_000;
+    jest.spyOn(Date, 'now').mockReturnValue(later);
+    requests = [];
+
+    await act(async () => {
+      onlineManager.setOnline(false);
+      onlineManager.setOnline(true);
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await settle();
+    expect(requested(path)).toHaveLength(0);
+    expect(cards()).toHaveLength(40);
+
+    await view.deactivate();
+    await view.activate();
+    // One read, of the first page, replacing the two loaded ones.
+    expect(requested(path)).toHaveLength(1);
+    expect(requested(path)[0]?.searchParams.has('cursor')).toBe(false);
+    expect(cards()).toHaveLength(20);
+
+    focusManager.setFocused(undefined);
   });
 });

@@ -27,19 +27,22 @@ import {
  * page is one virtualised list, so the next twenty are appended to it: `onEndReached` asks for them
  * as the reader nears the end, and the footer carries a visible "Older updates" pill — the path a
  * screen reader or a switch user can take, since neither scrolls to trigger an end-reached. While
- * a page is on its way the pill is disabled and says so; the same cursor is never asked for twice.
+ * a page is on its way the pill says so, and while anything is being read it is disabled; the same
+ * cursor is never asked for twice.
  * At the end of a list that has paged, "There are no older updates."; a list that fitted on one
  * page ends without a sentence, as on the web.
  *
  * <h2>Failure</h2>
  *
- * A first page that could not be read is `campaign.updates.failed` with "Try again" — never the
+ * A first page that could not be read is `mobile.campaign.updates.failed` with "Try again" (the
+ * web's `campaign.updates.failed` says "reload the page", which has no meaning here) — never the
  * #133 "has not posted an update yet" sentence, which is a claim about the creator. A next page
  * that failed keeps every card already loaded and puts its own notice, with "Try again", where the
  * pill was; the end of the list does not retry it on its own.
  */
 export function useUpdatesTab(context: CampaignTabContext): CampaignTabBody {
   const t = useT('campaign.updates');
+  const tMobile = useT('mobile.campaign.updates');
   const updates = useProjectUpdates(context.campaign.id, context.active);
   if (!context.active) return INACTIVE_TAB;
 
@@ -60,9 +63,9 @@ export function useUpdatesTab(context: CampaignTabContext): CampaignTabBody {
       key: 'failed',
       render: () => (
         <TabNote
-          text={t('failed')}
+          text={tMobile('failed')}
           onRetry={() => void updates.retry()}
-          retrying={updates.fetching}
+          retrying={updates.busy}
           testID="updates-failed"
         />
       ),
@@ -125,7 +128,7 @@ function UpdatesFooter({ updates }: { readonly updates: ProjectUpdates }) {
               : t('campaign.updates.older')
           }
           variant="outline"
-          disabled={updates.fetchingMore}
+          disabled={updates.busy}
           onPress={() => updates.loadMore()}
           testID="updates-older"
         />
