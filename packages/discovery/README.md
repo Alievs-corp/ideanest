@@ -33,7 +33,7 @@ that genuinely differs.
 | Import | Holds |
 |---|---|
 | `@ideanest/discovery/vocabulary` | The closed vocabularies, copied from `az.ideanest.discovery.domain`, and `sortsFor` |
-| `@ideanest/discovery/filters` | `DiscoveryFilters`, `parseFilters` / `toSearchParams` / `toHref`, the toggles, `withQuery`, `clearFilters`, `addSlugFilter`, `activeFilters`, `removeFilter` |
+| `@ideanest/discovery/filters` | `DiscoveryFilters`, `searchParamsFrom`, `parseFilters` / `toSearchParams` / `toHref`, the toggles, `withQuery`, `clearFilters`, `addSlugFilter`, `activeFilters`, `removeFilter` |
 | `@ideanest/discovery/bounds` | `isValidBound` and `boundsAreOrdered`, with `decimal.js` and never `Number()` |
 | `@ideanest/discovery/facets` | The facet response, `PAGE_SIZE` (24), `countOf`, `slugNames` |
 | `@ideanest/discovery/emptiness` | `blameFor`: which applied filters emptied the feed |
@@ -45,7 +45,13 @@ needs `sortsFor` does not pull the filter parser into its bundle.
 ## Runtime
 
 Everything here is plain TypeScript over `URLSearchParams`. On Hermes that is
-React Native's own partial implementation, not the WHATWG one, so
+React Native's own partial implementation, not the WHATWG one, and its
+constructors disagree with the standard on hand-written links: `?tag` with no
+`=` reads as `undefined`, `?q=a=b` loses `=b`, a stray `%` throws, and an object
+holding an array becomes one value. **Read a link with `searchParamsFrom`**, from
+a query string or a router's params object, never with `new URLSearchParams(...)`
+directly: it parses the same way on every runtime.
+
 `apps/mobile/src/lib/discovery-shared.test.ts` repeats the round trips against
-React Native's class. A change that relies on a `URLSearchParams` method React
+React Native's class, so a change that relies on a method or behaviour React
 Native does not have fails there first.

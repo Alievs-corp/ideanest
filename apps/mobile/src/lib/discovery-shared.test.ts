@@ -8,6 +8,7 @@ import {
   clearFilters,
   parseFilters,
   removeFilter,
+  searchParamsFrom,
   toSearchParams,
   withQuery,
   type DiscoveryFilters,
@@ -18,10 +19,15 @@ import { boundsAreOrdered, isValidBound } from '@ideanest/discovery/bounds';
  * The feed's shared logic, run where the app runs it — issue #153.
  *
  * `packages/discovery` is tested under vitest with Node's `URLSearchParams`. The app runs it on
- * Hermes, where `URLSearchParams` is React Native's own "small subset from whatwg-url". The two
- * differ in ways a filter link would notice — RN's splits a string on `&` and `=` by hand and
- * keeps keys in insertion order — so the round trips are repeated here against RN's class, and
- * a difference shows up as a red test rather than as a link that opens the wrong feed.
+ * Hermes, where `URLSearchParams` is React Native's own "small subset from whatwg-url". Its
+ * constructors differ from the standard where a hand-written link lives — `?tag` with no `=`, a
+ * second `=` in a value, a stray `%`, an object holding an array — so the app never hands them a
+ * link: it builds its params with `searchParamsFrom`, and the round trips run here against RN's
+ * class, so a difference is a red test rather than a link that opens the wrong feed.
+ *
+ * <p>One difference is left alone on purpose: RN's `toString` leaves `'!()~` unencoded where the
+ * standard escapes them, so a query string built on the phone is not byte-identical to the web's.
+ * Both read back to the same filters, which is what a link has to do.
  */
 const { URLSearchParams: NativeSearchParams } = require('react-native/Libraries/Blob/URLSearchParams');
 
@@ -56,7 +62,34 @@ describe.each([
 
   it('round-trips every dimension through a query string', () => {
     const query = toSearchParams(FILTERED).toString();
-    expect(parseFilters(new Implementation(query))).toEqual(FILTERED);
+    expect(parseFilters(searchParamsFrom(query))).toEqual(FILTERED);
+  });
+
+  it('round-trips text the two encoders escape differently', () => {
+    const awkward = withQuery(FILTERED, "kids' (3–6) toys ~ eco! 50% off & more = fun");
+    expect(parseFilters(searchParamsFrom(toSearchParams(awkward).toString()))).toEqual(awkward);
+  });
+
+  it('reads a router params object, arrays included', () => {
+    const parsed = parseFilters(
+      searchParamsFrom({ tag: ['handmade', 'eco'], status: 'live', q: undefined }),
+    );
+    expect(parsed.tags).toEqual(['handmade', 'eco']);
+    expect(parsed.statuses).toEqual(['live']);
+    expect(parsed.query).toBe('');
+  });
+
+  it('survives a parameter with no value, a second "=", and a stray "%"', () => {
+    const parsed = parseFilters(searchParamsFrom('?tag&goalMin&q=a=b&category=100%&status=live'));
+    expect(parsed.tags).toEqual([]);
+    expect(parsed.goal.min).toBeNull();
+    expect(parsed.query).toBe('a=b');
+    expect(parsed.categories).toEqual(['100%']);
+    expect(parsed.statuses).toEqual(['live']);
+  });
+
+  it("does not throw on the platform class's own reading of a value-less parameter", () => {
+    expect(() => parseFilters(new Implementation('tag&goalMin'))).not.toThrow();
   });
 
   it('omits the default sort, with and without a query', () => {
@@ -65,7 +98,7 @@ describe.each([
   });
 
   it('reads comma-joined lists and lower-cases slugs, as a pasted link carries them', () => {
-    const parsed = parseFilters(new Implementation('category=Games,Comics&status=live,finished'));
+    const parsed = parseFilters(searchParamsFrom('category=Games,Comics&status=live,finished'));
     expect(parsed.categories).toEqual(['games', 'comics']);
     expect(parsed.statuses).toEqual(['live']);
   });

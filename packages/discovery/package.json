@@ -17,6 +17,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
   "dependencies": {
     "@ideanest/messages": "workspace:*",
     "@ideanest/money": "workspace:*",
@@ -24,6 +27,8 @@
   },
   "devDependencies": {
     "@types/node": "~22.20.2",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
   }

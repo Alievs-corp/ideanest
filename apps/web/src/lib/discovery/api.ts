@@ -105,7 +105,7 @@ export {
  *
  * The filters serialise exactly as they do into the address bar, because the
  * parameter names ARE the service's (D-12). The cursor is added here and never
- * there — see the note on `filters.ts`.
+ * there — see the note on `@ideanest/discovery/filters`.
  */
 export function feedQuery(
   filters: DiscoveryFilters,
