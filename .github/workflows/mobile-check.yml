@@ -49,7 +49,7 @@ jobs:
       - name: Test
         run: pnpm --filter @ideanest/mobile test
 
-      # `app.config.ts` reads two environment variables and THROWS on a value it
+      # `app.config.ts` reads its origins from the environment and THROWS on a value it
       # cannot use, which is deliberate (see the file). Resolving it here is what
       # turns that throw into a failed check rather than into a failed build
       # twenty minutes into an EAS queue.
@@ -58,6 +58,26 @@ jobs:
           IDEANEST_API_ORIGIN: https://api.ideyanest.com
           IDEANEST_SITE_URL: https://ideyanest.com
         run: pnpm --filter @ideanest/mobile exec expo config --type public > /dev/null
+
+      # Jest never bundles the application: it resolves each test's imports with
+      # its own resolver and Babel, so an entry point Metro cannot follow, a
+      # package export it cannot resolve, or syntax Hermes cannot compile passes
+      # every test and fails the first EAS build. #155 made `index.ts` the entry,
+      # ahead of `expo-router/entry`, so that the `Intl.PluralRules` polyfill runs
+      # before anything translates. Exporting the Android bundle runs Metro from
+      # that entry over the whole route tree and compiles it to Hermes bytecode,
+      # which is the part of a release build that can break on a commit whose
+      # tests are green. Android only: the JavaScript is the same on iOS, and one
+      # platform keeps the step under a minute.
+      - name: Bundle the application with Metro
+        env:
+          CI: 'true'
+          IDEANEST_API_ORIGIN: https://api.ideyanest.com
+          IDEANEST_SITE_URL: https://ideyanest.com
+        run: >-
+          pnpm --filter @ideanest/mobile exec expo export
+          --platform android
+          --output-dir "${{ runner.temp }}/mobile-export"
 
       # The two files that let a link open the application (#114) name the same
       # bundle identifier and package that `app.config.ts` does. They are
