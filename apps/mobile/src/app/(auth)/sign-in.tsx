@@ -1,5 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { AuthHeader, AuthScreen } from '../../features/auth/auth-screen';
+import { AuthLink } from '../../features/auth/auth-link';
+import { useAuthNavigation } from '../../features/auth/navigation';
 import { SignInForm } from '../../features/auth/sign-in-form';
 import { safeReturnTo } from '../../lib/guard';
 import { useT } from '../../lib/i18n';
@@ -15,12 +17,27 @@ import { useT } from '../../lib/i18n';
  */
 export default function SignInScreen() {
   const t = useT('auth.signIn');
+  const navigate = useAuthNavigation();
   const { returnTo, notice } = useLocalSearchParams<{ returnTo?: string; notice?: string }>();
+  const safe = safeReturnTo(returnTo);
 
   return (
     <AuthScreen>
       <AuthHeader title={t('title')} intro={t('intro')} />
-      <SignInForm returnTo={safeReturnTo(returnTo)} notice={notice} />
+      <SignInForm
+        returnTo={safe}
+        notice={notice}
+        footer={
+          <>
+            <AuthLink label={t('forgot')} onPress={() => navigate.toResetRequest()} />
+            <AuthLink
+              prompt={t('noAccount')}
+              label={t('createOne')}
+              onPress={() => navigate.toRegister(safe)}
+            />
+          </>
+        }
+      />
     </AuthScreen>
   );
 }
