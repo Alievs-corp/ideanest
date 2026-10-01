@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { NO_FILTERS } from '@ideanest/discovery/filters';
 import { useDiscoveryFeed, type Card } from '../../api/queries';
 import { CampaignList, CampaignListSkeleton } from '../../components/campaign-list';
 import { EmptyState, MotionBudgetProvider, Screen } from '../../components/ui';
@@ -36,7 +37,7 @@ import { useT } from '../../lib/i18n';
 export default function DiscoverScreen() {
   // The web's own feed sentences, so a state reads the same on both.
   const t = useT('discovery.feed');
-  const feed = useDiscoveryFeed({});
+  const feed = useDiscoveryFeed(NO_FILTERS);
 
   /*
    * Flattened once per data change rather than on every render. The pages are

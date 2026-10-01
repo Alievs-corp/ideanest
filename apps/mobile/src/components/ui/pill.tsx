@@ -155,6 +155,11 @@ export interface PillProps {
   readonly busy?: boolean;
   /** What happens on press, when the label alone does not say. */
   readonly accessibilityHint?: string;
+  /**
+   * A fuller name than the visible words, for a pill whose label only makes sense beside its
+   * neighbours: "Apply range" under a goal field is "Apply the custom goal range" (#153).
+   */
+  readonly accessibilityLabel?: string;
   readonly testID?: string;
 }
 
@@ -169,6 +174,7 @@ export function Pill({
   disabled = false,
   busy = false,
   accessibilityHint,
+  accessibilityLabel,
   testID,
 }: PillProps) {
   const blocked = disabled || busy;
@@ -198,7 +204,7 @@ export function Pill({
     <Animated.View style={[fullWidth ? styles.fill : styles.hug, scales && pressStyle]}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={label}
+        accessibilityLabel={accessibilityLabel ?? label}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled: blocked, busy }}
         disabled={blocked}

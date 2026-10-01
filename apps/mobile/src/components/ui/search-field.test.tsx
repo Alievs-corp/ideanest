@@ -107,6 +107,14 @@ describe('SearchField', () => {
     expect(typed.getByLabelText(LABEL).props.value).toBe('');
   });
 
+  it('draws a suggestion’s kind after its label and reads both (#153)', async () => {
+    const { getByRole, getByText } = await renderEn(
+      <Search suggestions={[{ key: 'games', label: 'Games', detail: 'Category' }]} />,
+    );
+    expect(getByText('Category')).toBeTruthy();
+    expect(getByRole('button', { name: 'Games, Category' })).toBeTruthy();
+  });
+
   it('renders no list when there are no suggestions', async () => {
     const { queryAllByRole } = await renderEn(<Search suggestions={[]} />);
     expect(queryAllByRole('button')).toHaveLength(0);

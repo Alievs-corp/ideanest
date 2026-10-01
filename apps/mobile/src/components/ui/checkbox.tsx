@@ -31,6 +31,11 @@ export interface CheckboxProps {
   readonly indeterminate?: boolean;
   readonly description?: string;
   readonly disabled?: boolean;
+  /**
+   * A figure on the right of the row — a facet count, or "None" (#153). Tertiary and in tabular
+   * figures, and announced as the checkbox's value, so it is heard as well as seen.
+   */
+  readonly count?: string;
   readonly testID?: string;
 }
 
@@ -43,6 +48,7 @@ export function Checkbox({
   indeterminate = false,
   description,
   disabled = false,
+  count,
   testID,
 }: CheckboxProps) {
   const surface = useSurface();
@@ -56,6 +62,7 @@ export function Checkbox({
       accessibilityLabel={label}
       accessibilityHint={description}
       accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}
+      accessibilityValue={count === undefined || count === '' ? undefined : { text: count }}
       disabled={disabled}
       // From indeterminate, a press selects everything — what the web's native checkbox does.
       onPress={() => onChange(indeterminate ? true : !checked)}
@@ -75,6 +82,9 @@ export function Checkbox({
         primary={tones.primary}
         secondary={tones.secondary}
       />
+      {count === undefined ? null : (
+        <Text style={[rowStyles.count, { color: tones.tertiary }]}>{count}</Text>
+      )}
     </Pressable>
   );
 }
@@ -118,6 +128,12 @@ export const rowStyles = StyleSheet.create({
   words: { flex: 1, gap: 2 },
   label: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small },
   description: { ...font.regular, fontSize: fontSize.caption, lineHeight: lineHeight.small },
+  count: {
+    ...font.regular,
+    fontSize: fontSize.xs,
+    lineHeight: lineHeight.small,
+    fontVariant: ['tabular-nums'],
+  },
 });
 
 const styles = StyleSheet.create({
