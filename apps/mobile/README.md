@@ -183,8 +183,11 @@ here, so the link that opened the application and the route it lands on are one
 string.
 
 The browse pages are claimed too (#154): `/categories` and `/collections`, and
-everything under each. A slug is decoded once and handed to the screen as a
-route param; `/categories/a/b/c` is refused.
+everything under each (exactly, on both platforms). `links.ts` decodes a slug
+once and hands it on as a route param; Expo Router then encodes it into the path
+and decodes what the screen reads, so a slug carrying a literal `%XX` would not
+survive the trip. The service's slugs are `[a-z0-9-]`, so none does today.
+`/categories/a/b/c` is refused.
 
 Three discovery paths are claimed as well (#153): `/` opens Home, `/discover?…`
 opens Discover with the filters in the query string, and `/search?q=` opens

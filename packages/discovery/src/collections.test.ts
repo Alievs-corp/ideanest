@@ -74,6 +74,10 @@ describe('windowFacts', () => {
     expect(facts[0]?.date).toBe('15 October 2026');
   });
 
+  it('asks every client for a long date in UTC, never the device zone', () => {
+    expect(WINDOW_DATE_OPTIONS).toEqual({ dateStyle: 'long', timeZone: 'UTC' });
+  });
+
   it('dates an instant in UTC, so 23:30 on the 31st is the 31st everywhere', () => {
     const [fact] = windowFacts({ opensAt: null, closesAt: '2026-10-31T23:30:00Z' }, COPY, englishUtc);
     expect(fact?.date).toBe('31 October 2026');

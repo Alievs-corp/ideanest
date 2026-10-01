@@ -177,8 +177,11 @@ const config: ExpoConfig = {
           { scheme: 'https', host: siteHost, path: root === '' ? '/' : root },
           { scheme: 'https', host: siteHost, path: `${root}/discover` },
           { scheme: 'https', host: siteHost, path: `${root}/search` },
-          { scheme: 'https', host: siteHost, pathPrefix: `${root}/categories` },
-          { scheme: 'https', host: siteHost, pathPrefix: `${root}/collections` },
+          // Exactly as the web's association file does: the index, and everything under it.
+          { scheme: 'https', host: siteHost, path: `${root}/categories` },
+          { scheme: 'https', host: siteHost, pathPrefix: `${root}/categories/` },
+          { scheme: 'https', host: siteHost, path: `${root}/collections` },
+          { scheme: 'https', host: siteHost, pathPrefix: `${root}/collections/` },
         ]),
         category: ['BROWSABLE', 'DEFAULT'],
       },

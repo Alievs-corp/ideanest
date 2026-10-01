@@ -1,3 +1,9 @@
+/*
+ * A device east of Greenwich, set before anything formats a date: 23:30 UTC on the 31st is
+ * already the 1st here, so a window date that followed the device's zone would fail below.
+ */
+process.env.TZ = 'Asia/Baku';
+
 import type { ReactElement, ReactNode } from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -159,12 +165,8 @@ describe('the collection card', () => {
       'Closes, 31 October 2026',
       'Open since, 1 September 2026',
     ]);
-    // The same instant is the 1st in Baku: the card is not reading the device's zone.
-    expect(
-      new Intl.DateTimeFormat('en-GB', { day: 'numeric', timeZone: 'Asia/Baku' }).format(
-        new Date('2026-10-31T23:30:00Z'),
-      ),
-    ).toBe('1');
+    // On this device the same instant is the 1st: the card is not reading the device's zone.
+    expect(new Date('2026-10-31T23:30:00Z').getDate()).toBe(1);
   });
 
   it('writes the date in the app’s language, Azerbaijani included', async () => {
@@ -264,7 +266,6 @@ describe('one collection', () => {
     expect(pages()[0]?.searchParams.get('limit')).toBe('24');
     expect(pages()[0]?.searchParams.has('cursor')).toBe(false);
     expect(screen.getByTestId('collection-count')).toHaveTextContent('1 campaign shown, with more to load');
-    expect(screen.getByLabelText('Campaigns in Spring picks')).toBeTruthy();
   });
 
   it('appends the next page on Show more, named for the collection', async () => {
@@ -318,6 +319,43 @@ describe('one collection', () => {
     expect(screen.getByRole('link', { name: /Solar Lamp/ })).toBeTruthy();
     // The button stays, and is how the page is retried.
     expect(screen.getByTestId('show-more')).not.toBeDisabled();
+
+    routes.collection = (url) =>
+      url.searchParams.has('cursor')
+        ? json({ collection: SPRING, items: [card('Kite', 1)] })
+        : json({ collection: SPRING, items: [card('Solar Lamp', 0)], nextCursor: 'c1' });
+    await fireEvent.press(screen.getByTestId('show-more'));
+    await settle();
+    expect(pages().filter((url) => url.searchParams.get('cursor') === 'c1')).toHaveLength(2);
+    expect(screen.queryByTestId('next-page-error')).toBeNull();
+    expect(screen.getByRole('link', { name: /Kite/ })).toBeTruthy();
+  });
+
+  it('pages again after a refresh hands back the cursor that had failed', async () => {
+    let nextFails = true;
+    routes.collection = (url) =>
+      url.searchParams.has('cursor')
+        ? nextFails
+          ? fail()
+          : json({ collection: SPRING, items: [card('Kite', 1)] })
+        : json({ collection: SPRING, items: [card('Solar Lamp', 0)], nextCursor: 'c1' });
+
+    await show(<CollectionPage slug="spring-picks" />);
+    await fireEvent.press(screen.getByTestId('show-more'));
+    await settle();
+    expect(screen.getByTestId('next-page-error')).toBeTruthy();
+
+    // A pull, or a reconnect: the first page again, with the same cursor (the service buckets it).
+    nextFails = false;
+    await act(async () => {
+      await client.refetchQueries();
+    });
+    await settle();
+    expect(screen.queryByTestId('next-page-error')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('show-more'));
+    await settle();
+    expect(screen.getByRole('link', { name: /Kite/ })).toBeTruthy();
   });
 
   it('is the not-found screen when the service answers 404', async () => {

@@ -97,7 +97,13 @@ export function CategoryLanding({ categorySlug, subcategorySlug }: CategoryLandi
 
   if (categories.isPending) {
     return (
-      <LandingSkeleton label={tAll('mobile.browse.loadingCategory')} chips={subcategorySlug === undefined} />
+      <>
+        <Stack.Screen options={{ title: tAll('shell.nav.categories') }} />
+        <LandingSkeleton
+          label={tAll('mobile.browse.loadingCategory')}
+          chips={subcategorySlug === undefined}
+        />
+      </>
     );
   }
 

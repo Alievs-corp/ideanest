@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { ApiError } from '@ideanest/api-client';
@@ -68,6 +68,17 @@ export function CollectionPage({ slug }: { readonly slug: string }) {
    */
   const asked = useRef<string | null>(null);
 
+  /*
+   * A refresh, a reconnect or a retry of the first page is new data, and the mark is about the
+   * old: the service buckets its cursor to the minute, so a first page reloaded after a failed
+   * Show more can hand back the very cursor that is still marked, and the button would do
+   * nothing. New pages that did not come with a next-page failure clear it.
+   */
+  const { dataUpdatedAt, isFetchNextPageError } = query;
+  useEffect(() => {
+    if (!isFetchNextPageError) asked.current = null;
+  }, [dataUpdatedAt, isFetchNextPageError]);
+
   function loadMore({ retry = false }: { retry?: boolean } = {}): void {
     if (!hasMore || nextCursor === undefined) return;
     if (asked.current === nextCursor && !(retry && nextPageFailed)) return;
@@ -82,6 +93,7 @@ export function CollectionPage({ slug }: { readonly slug: string }) {
   if (query.isPending) {
     return (
       <View style={styles.loading}>
+        <Stack.Screen options={{ title: tAll('common.trail.collections') }} />
         <SkeletonGroup label={tAll('mobile.browse.loadingCollection')}>
           <View style={styles.loadingBody}>
             <CollectionHeaderSkeleton />
@@ -177,7 +189,6 @@ export function CollectionPage({ slug }: { readonly slug: string }) {
         header={header}
         empty={empty}
         footer={footer}
-        label={t('gridLabel', { title })}
         onEndReached={() => {
           if (!nextPageFailed) loadMore();
         }}

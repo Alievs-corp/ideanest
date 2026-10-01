@@ -46,8 +46,6 @@ export interface CampaignListProps {
   readonly empty?: React.ReactElement;
   /** Rendered after the last card — "Show more", the end of the feed, a next-page error. */
   readonly footer?: React.ReactElement;
-  /** The list's accessible name, when its heading is not enough — a collection's campaigns. */
-  readonly label?: string;
   readonly testID?: string;
 }
 
@@ -65,12 +63,10 @@ export function CampaignList({
   header,
   empty,
   footer,
-  label,
   testID,
 }: CampaignListProps) {
   return (
     <FlashList
-      accessibilityLabel={label}
       testID={testID}
       data={cards as Card[]}
       renderItem={renderCard}
