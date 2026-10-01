@@ -31,8 +31,11 @@ export type TransactionType =
  */
 export type TransactionStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED';
 
-/** §9.3 requires at least two, so which one made a call is a fact about the row. */
-export type ProviderName = 'PAYRIFF' | 'EPOINT' | 'AZERICARD';
+/**
+ * §9.3 requires at least two, so which one made a call is a fact about the row. `SANDBOX` only
+ * ever appears on a developer's machine — #243, temporary.
+ */
+export type ProviderName = 'PAYRIFF' | 'EPOINT' | 'AZERICARD' | 'SANDBOX';
 
 /**
  * An amount of money, as `lib/money.ts` already defines it.

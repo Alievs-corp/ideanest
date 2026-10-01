@@ -23,6 +23,12 @@ spring:
         format_sql: true
 
 ideanest:
+  payment:
+    provider:
+      # #243, temporary: payout cards register on the service's own sandbox page until
+      # Epoint's keys exist. No money moves through it. Set PAYMENT_PROVIDER=EPOINT (with
+      # its keys) to use Epoint instead, and remove this when the sandbox is removed.
+      primary: ${PAYMENT_PROVIDER:SANDBOX}
   project:
     collaborators:
       # Same reason, same scope: without a mail transport an invitation cannot be

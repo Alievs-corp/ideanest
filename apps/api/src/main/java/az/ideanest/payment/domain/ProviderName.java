@@ -34,7 +34,18 @@ public enum ProviderName {
     EPOINT,
 
     /** The national processing centre. Direct integration is typically bank-intermediated. */
-    AZERICARD;
+    AZERICARD,
+
+    /**
+     * Local development only, and temporary — issue #243.
+     *
+     * <p>Registers a payout card on a page the service draws itself, so the card's path can be
+     * walked before Epoint's keys exist. It moves no money: every charge, refund and payout
+     * refuses. {@code SandboxPaymentProvider} refuses to start outside the {@code local} and
+     * {@code test} profiles, and a deployment naming it has no adapter to resolve, which is a
+     * start-up failure. Removed once Epoint is configured.
+     */
+    SANDBOX;
 
     /**
      * The name as it is written in a URL and in configuration: lower case.

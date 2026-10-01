@@ -561,6 +561,14 @@ public class SecurityConfiguration {
                         // anything but a delivery.
                         .requestMatchers(HttpMethod.POST, "/v1/webhooks/psp/*")
                         .permitAll()
+                        // #243's local sandbox card page, temporary. A browser arrives
+                        // here from a redirect and carries no bearer token, exactly as it
+                        // arrives on Epoint's page. The controller exists only when the
+                        // primary provider is SANDBOX, which refuses to start outside the
+                        // local and test profiles, so everywhere else this matches nothing
+                        // and answers 404.
+                        .requestMatchers("/v1/sandbox/payout-cards/*")
+                        .permitAll()
                         // How someone with no credentials gets one, and how a
                         // client whose access token expired gets another. Each
                         // authenticates by its own means — a password, a

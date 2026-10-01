@@ -36,6 +36,17 @@ delivers none. Anything the platform emails locally is at
 campaign the finaliser closed, which is the quickest way to see a real
 notification end to end.
 
+**Payout cards register on a local sandbox (#243, temporary).** With no
+provider keys there is nothing to register a business card with, so the `local`
+profile defaults `PAYMENT_PROVIDER` to `SANDBOX`. "Register a business card" on
+`/settings/payout` opens a plain page served by this service: give a holder name
+and register or decline, and a real webhook settles it, so the destination, its
+standing and the console's verification all run as they will with Epoint. **It
+moves no money** — charges, refunds and payouts refuse as if no provider were
+configured — and it refuses to start outside the `local` and `test` profiles.
+Set `PAYMENT_PROVIDER=EPOINT` with its keys to use Epoint instead. It is removed
+once Epoint is configured.
+
 ---
 
 ## The creator's financial summary
