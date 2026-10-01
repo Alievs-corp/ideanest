@@ -5489,9 +5489,7 @@
       "stale": "Saxlanmış kampaniyalarınız bu cihazdan göstərilir. Onlar köhnəlmiş ola bilər."
     },
     "search": {
-      "minimum": "{count, plural, other {Ən azı # simvol yazın və ya təkliflərdən birini seçin.}}",
-      "narrow": "Axtarışı daralt: {label}",
-      "emptyCategoryBody": "Bu kateqoriyada hələ uyğun kampaniya yoxdur. Başqa kateqoriya seçin və ya axtarış sözü yazın."
+      "minimum": "{count, plural, other {Ən azı # simvol yazın və ya təkliflərdən birini seçin.}}"
     },
     "campaign": {
       "untitled": "Adsız kampaniya",

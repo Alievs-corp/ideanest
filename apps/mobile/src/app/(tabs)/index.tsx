@@ -1,91 +1,180 @@
 import { useMemo } from 'react';
-import { NO_FILTERS } from '@ideanest/discovery/filters';
-import { useDiscoveryFeed, type Card } from '../../api/queries';
-import { CampaignList, CampaignListSkeleton } from '../../components/campaign-list';
-import { EmptyState, MotionBudgetProvider, Screen } from '../../components/ui';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { NO_FILTERS, type DiscoveryFilters } from '@ideanest/discovery/filters';
+import { useCategories, useDiscoveryFeed, type Card } from '../../api/queries';
+import { CampaignColumn } from '../../components/campaign-column';
+import {
+  CategoryTiles,
+  HomeEmpty,
+  HomeHero,
+  HomeSection,
+  RailSkeleton,
+  TilesSkeleton,
+} from '../../components/home/home-parts';
+import { InlineAlert, MotionBudgetProvider, Pill, haptics } from '../../components/ui';
+import { definedRouteParams } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
+import { colors, size, spacing } from '../../theme';
 
 /**
- * Discovery — §4.3's first half.
+ * Home — the web's `/` (`app/[locale]/(site)/page.tsx`), issue #153.
  *
- * <h2>What the screen decides, and what it does not</h2>
+ * Top to bottom, as on the web: a small hero, then "Ending soon", "Recently launched" and
+ * "Browse by category", each only when it has something in it, and the empty card when both
+ * campaign rails are empty. The three reads run in parallel.
  *
- * The ranking is the service's (§6.2's `DiscoverySort`), the paging is
- * `useDiscoveryFeed`'s, and the virtualisation and the stagger cap are
- * `CampaignList`'s. What is left here is the order in which the four possible
- * states are answered, and that order is the only thing on this screen anybody
- * gets wrong:
+ * <h2>Failure is per section</h2>
  *
- *   1. **Cards, if there are any** — including cards from a previous fetch while
- *      the next one is in flight. A list that empties itself on every refetch is
- *      a list that flickers.
- *   2. **The error**, but only when there is nothing to show. An error banner
- *      over a working list is noise; an error instead of a working list is a
- *      regression.
- *   3. **Loading**, on the first fetch only.
- *   4. **Empty**, which means the service answered and there is genuinely
- *      nothing — a real fact about the platform rather than a failure.
+ * A rail whose read failed is absent, as on the web. Unlike the web, the app can tell "nothing is
+ * live" from "the service could not be reached", so when both campaign reads failed it says so,
+ * with a retry, instead of drawing the empty card — which would tell a backer the platform is
+ * empty when it is only out of reach.
  *
- * <h2>Motion: minimal</h2>
+ * <h2>Motion</h2>
  *
- * This tab is the discovery feed, not the web's marketing home (`/`), so it takes
- * discovery's budget from `docs/motion-system.md` §5 — **minimal** — rather than
- * the home row's **full**: the cards do not animate (§5.1), and what may move is
- * the skeleton's shimmer and the progress bars. The marketing home's hero has no
- * counterpart in the app to spend a full budget on.
+ * Discovery's budget: the hero and the rail headings fade up once, the cards never move, and
+ * Reduce Motion turns the fades off.
  */
-export default function DiscoverScreen() {
-  // The web's own feed sentences, so a state reads the same on both.
-  const t = useT('discovery.feed');
-  const feed = useDiscoveryFeed(NO_FILTERS);
 
-  /*
-   * Flattened once per data change rather than on every render. The pages are
-   * an array of arrays and this is the one place they become a list; doing it
-   * inline would hand `CampaignList` a new array identity every render and
-   * defeat its recycling.
-   */
-  const cards = useMemo(
-    () => (feed.data?.pages ?? []).flatMap((page) => (page.items ?? []) as Card[]),
-    [feed.data],
-  );
+/** Six to a rail, the web's `RAIL_SIZE`. */
+const RAIL_SIZE = 6;
 
-  return <MotionBudgetProvider level="minimal">{body()}</MotionBudgetProvider>;
+const CLOSING: DiscoveryFilters = { ...NO_FILTERS, statuses: ['live'], sort: 'ending_soon' };
+const LAUNCHED: DiscoveryFilters = { ...NO_FILTERS, statuses: ['live'] };
 
-  function body() {
-    if (cards.length === 0) {
-      if (feed.isLoading) return <CampaignListSkeleton label={t('loading')} />;
-      if (feed.isError) {
-        // Retry is the query's own refetch: an error with no way to ask again is a dead end.
-        return (
-          <Screen
-            hasContent={false}
-            error={{
-              title: t('errorTitle'),
-              description: t('unreachable'),
-              onRetry: () => void feed.refetch(),
-              retrying: feed.isFetching,
-            }}
-          />
-        );
-      }
-    }
+export default function HomeScreen() {
+  const t = useT('home');
+  const tFeed = useT('discovery.feed');
+  const router = useRouter();
 
-    return (
-      <CampaignList
-        cards={cards}
-        onEndReached={() => {
-          // Guarded rather than fired blind: `fetchNextPage` while a fetch is
-          // already in flight queues a duplicate request for the same cursor.
-          if (feed.hasNextPage && !feed.isFetchingNextPage) void feed.fetchNextPage();
-        }}
-        onRefresh={() => void feed.refetch()}
-        refreshing={feed.isRefetching}
-        empty={<EmptyState title={t('emptyTitle')} description={t('emptyBody')} />}
-      />
-    );
+  const closing = useDiscoveryFeed(CLOSING, { limit: RAIL_SIZE });
+  const launched = useDiscoveryFeed(LAUNCHED, { limit: RAIL_SIZE });
+  const categories = useCategories();
+
+  const closingCards = useFirstPage(closing.data);
+  const launchedCards = useFirstPage(launched.data);
+  const taxonomy = categories.data ?? [];
+
+  const bothFailed = closing.isError && launched.isError;
+  const refreshing =
+    (closing.isRefetching || launched.isRefetching || categories.isRefetching) &&
+    !closing.isPending &&
+    !launched.isPending;
+
+  function refresh(): void {
+    void closing.refetch();
+    void launched.refetch();
+    void categories.refetch();
   }
+
+  function openFeed(filters: DiscoveryFilters = NO_FILTERS): void {
+    router.push({ pathname: '/discover', params: definedRouteParams(filters) });
+  }
+
+  return (
+    <MotionBudgetProvider level="minimal">
+      <ScrollView
+        style={styles.fill}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              haptics.refresh();
+              refresh();
+            }}
+            tintColor={colors.textSecondary}
+            colors={[colors.textPrimary]}
+            progressBackgroundColor={colors.surface3}
+          />
+        }
+      >
+        <HomeHero onBrowse={() => openFeed()} onStart={() => router.push('/campaigns/new')} />
+
+        {closing.isPending ? (
+          <RailSkeleton label={tFeed('loading')} />
+        ) : closingCards.length > 0 ? (
+          <HomeSection
+            heading={t('closing.heading')}
+            standfirst={t('closing.standfirst')}
+            href={{ pathname: '/discover', params: definedRouteParams(CLOSING) }}
+            linkLabel={t('closing.link')}
+            testID="rail-closing"
+          >
+            {/* The only rail whose covers are fetched first: it is what the screen opens on. */}
+            <CampaignColumn cards={closingCards} priority={3} />
+          </HomeSection>
+        ) : null}
+
+        {launched.isPending ? (
+          <RailSkeleton label={tFeed('loading')} />
+        ) : launchedCards.length > 0 ? (
+          <HomeSection
+            heading={t('launched.heading')}
+            standfirst={t('launched.standfirst')}
+            href={{ pathname: '/discover', params: definedRouteParams(LAUNCHED) }}
+            linkLabel={t('launched.link')}
+            testID="rail-launched"
+          >
+            <CampaignColumn cards={launchedCards} />
+          </HomeSection>
+        ) : null}
+
+        {categories.isPending ? (
+          <TilesSkeleton label={tFeed('loading')} />
+        ) : taxonomy.length > 0 ? (
+          <HomeSection
+            heading={t('categories.heading')}
+            standfirst={t('categories.standfirst')}
+            href="/categories"
+            linkLabel={t('categories.link')}
+            testID="categories"
+          >
+            <CategoryTiles categories={taxonomy} />
+          </HomeSection>
+        ) : null}
+
+        {closing.isPending || launched.isPending ? null : bothFailed ? (
+          <InlineAlert
+            variant="danger"
+            title={tFeed('errorTitle')}
+            description={tFeed('unreachable')}
+            action={
+              <View style={styles.retry}>
+                <Pill
+                  label={tFeed('tryAgain')}
+                  variant="ghost"
+                  size="sm"
+                  busy={closing.isFetching || launched.isFetching}
+                  onPress={refresh}
+                />
+              </View>
+            }
+            testID="home-error"
+          />
+        ) : closingCards.length === 0 && launchedCards.length === 0 ? (
+          <HomeEmpty onOpenFeed={() => openFeed()} />
+        ) : null}
+      </ScrollView>
+    </MotionBudgetProvider>
+  );
 }
+
+/** The first page's cards, flattened once per data change. */
+function useFirstPage(data: { pages: readonly { items?: readonly Card[] }[] } | undefined) {
+  return useMemo(() => (data?.pages[0]?.items ?? []) as Card[], [data]);
+}
+
+const styles = StyleSheet.create({
+  fill: { flex: 1, backgroundColor: colors.surface1 },
+  content: {
+    padding: size.cardGap,
+    paddingBottom: spacing[12],
+    gap: spacing[12],
+  },
+  retry: { flexDirection: 'row' },
+});
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

@@ -94,6 +94,65 @@ describe('destinationFor', () => {
   });
 });
 
+describe('destinationFor, the discovery entry points (#153)', () => {
+  it('opens Home from the site root, with or without a locale or a slash', () => {
+    for (const url of [
+      'https://ideanest.az',
+      'https://ideanest.az/',
+      'https://ideanest.az/az',
+      'https://ideanest.az/en/',
+      'ideanest://',
+    ]) {
+      expect(destinationFor(url, HOST)).toEqual({ pathname: '/' });
+    }
+  });
+
+  it('opens Discover with the filters the link carries, read as the web reads them', () => {
+    expect(
+      destinationFor('https://ideanest.az/discover?category=games&sort=ending_soon', HOST),
+    ).toEqual({ pathname: '/discover', params: { category: 'games', sort: 'ending_soon' } });
+  });
+
+  it('drops what is not a feed parameter, and what the service would refuse', () => {
+    expect(
+      destinationFor(
+        'https://ideanest.az/az/discover?utm_source=x&status=finished,live&tag=Eco&sort=newest',
+        HOST,
+      ),
+    ).toEqual({ pathname: '/discover', params: { status: 'live', tag: 'eco' } });
+  });
+
+  it('opens Discover from the custom scheme, and survives a hand-written query', () => {
+    expect(destinationFor('ideanest://discover?tag&q=100%', HOST)).toEqual({
+      pathname: '/discover',
+      params: { q: '100%' },
+    });
+  });
+
+  it('opens Search with the query, and Search alone without one', () => {
+    expect(destinationFor('https://ideanest.az/search?q=solar+lamp', HOST)).toEqual({
+      pathname: '/search',
+      params: { q: 'solar lamp' },
+    });
+    expect(destinationFor('https://ideanest.az/search', HOST)).toEqual({ pathname: '/search' });
+    expect(destinationFor('https://ideanest.az/search?q=%20', HOST)).toEqual({
+      pathname: '/search',
+    });
+  });
+
+  it('still refuses a foreign host for every one of them', () => {
+    for (const path of ['/', '/discover?category=games', '/search?q=lamp']) {
+      expect(destinationFor(`https://evil-ideanest.az${path}`, HOST)).toBeNull();
+      expect(destinationFor(`http://ideanest.az${path}`, HOST)).toBeNull();
+    }
+  });
+
+  it('claims nothing deeper under them', () => {
+    expect(destinationFor('https://ideanest.az/discover/games', HOST)).toBeNull();
+    expect(destinationFor('https://ideanest.az/search/lamp', HOST)).toBeNull();
+  });
+});
+
 describe('shareUrlFor', () => {
   it('shares the https URL rather than the custom scheme', () => {
     // A recipient without the application installed has to be able to open it.

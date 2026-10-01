@@ -33,6 +33,12 @@ describe('appleAppSiteAssociation', () => {
 
     expect(association.applinks.details[0]?.appIDs).toEqual(['ABCDE12345.az.ideanest.app']);
     expect(association.applinks.details[0]?.components[0]?.['/']).toBe('/projects/*');
+    // #153: the home page, the feed and search, exactly — nothing under them.
+    expect(association.applinks.details[0]?.components.slice(1).map((c) => c['/'])).toEqual([
+      '/',
+      '/discover',
+      '/search',
+    ]);
   });
 
   it('keeps the empty apps array iOS reads as well-formed', () => {

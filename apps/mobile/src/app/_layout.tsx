@@ -185,7 +185,12 @@ export default function RootLayout() {
       // the answer: Expo Router has already shown the launch route, and sending
       // somebody to the feed instead would make a bad link look like a good one.
       if (destination === null) return;
-      const go = () => router.push(destination.pathname as never);
+      const go = () =>
+        router.push(
+          (destination.params === undefined
+            ? destination.pathname
+            : { pathname: destination.pathname, params: destination.params }) as never,
+        );
       // During maintenance the link waits for the service (`deferUntilUp`), then opens.
       if (!deferUntilUp(go)) go();
     };

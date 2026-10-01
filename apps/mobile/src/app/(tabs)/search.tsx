@@ -1,210 +1,190 @@
-import { useDeferredValue, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { useSearchResults, useSuggestions, type Card } from '../../api/queries';
-import { CampaignList, CampaignListSkeleton } from '../../components/campaign-list';
-import { Body } from '../../components/text';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NO_FILTERS, addSlugFilter, withQuery } from '@ideanest/discovery/filters';
+import { useSearchResults, type Card } from '../../api/queries';
+import { CampaignColumn, CampaignColumnSkeleton } from '../../components/campaign-column';
+import { SearchBox } from '../../components/discovery/search-box';
+import { Body, Heading, Meta } from '../../components/text';
 import {
-  Chip,
-  ChipRow,
   EmptyState,
-  ErrorState,
+  InlineAlert,
   MotionBudgetProvider,
-  SearchField,
+  Pill,
+  haptics,
 } from '../../components/ui';
+import { definedRouteParams, useFeedProblem } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
-import { size, spacing } from '../../theme';
+import { colors, font, size, spacing } from '../../theme';
 
 /**
- * Search — §4.3's second half.
+ * Search — the web's `/search` (`app/[locale]/(site)/search/page.tsx`), issue #153.
  *
- * <h2>Why `useDeferredValue` and not a debounce timer</h2>
+ * <h2>Results on submit, at most twenty-four</h2>
  *
- * A `setTimeout` debounce is the usual answer and it is worse in the way that
- * matters on a phone: it delays the FIELD as well as the request, so the letters
- * appear late under the thumb. `useDeferredValue` keeps the input at full speed
- * and lets the expensive half — the query, and the list that re-renders with it
- * — lag behind by a render. There is no timer to tune and no timer to leak.
+ * The query is this tab's `q` param, so `/search?q=lamp` opens it with the results. Results are
+ * fetched when the query is submitted — not as it is typed — and any non-empty text counts. The
+ * screen shows the first page only; "See more results in the feed" opens Discover with the same
+ * query, where paging and the filters are.
  *
- * The request is still not made for one or two characters: `useSuggestions`
- * refuses under two, and results wait for three. A single-letter full-text
- * search against a trigram index is the most expensive query on the platform and
- * the least useful.
+ * <h2>The suggestion list is Discover's</h2>
  *
- * <h2>Suggestions are not results</h2>
+ * The web's `/search` field has none, but a phone has no header search box, so this tab is the
+ * only place to type. The suggestions behave as they do on Discover: a campaign opens, a category,
+ * subcategory or tag opens Discover with that filter.
  *
- * `/v1/search/suggest` answers categories, tags and locations — the things
- * `Taxonomy` has translated — and tapping one narrows the search rather than
- * opening a campaign. They are drawn as the kit's chips above the list so that
- * the two are not confused; a suggestion styled like a result is a tap somebody
- * has to undo. A chosen chip is white with near-black text, never lime: a
- * filter somebody picked is a choice, not an urgent action (issue #151).
+ * <h2>A failure is a failure</h2>
  *
- * <p>The field is the kit's `SearchField` without its suggestion rows — the
- * suggestions here narrow rather than submit, so they are chips instead. The
- * keyboard's search key only commits what is already typed; the results follow
- * the text as it changes.
- *
- * <h2>Motion: minimal</h2>
- *
- * Discovery's budget (`docs/motion-system.md` §5 and §5.1): no card moves, the
- * suggestions appear and disappear, a chip changes colour and nothing else. The
- * skeleton's shimmer is what is left.
+ * The web shows a failed search as "Nothing matched". The app says it failed, with a retry: a
+ * backer told that nothing matches will not search again.
  */
-
-const MINIMUM_QUERY = 3;
-
-const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  /*
-   * The field's place: the list's own side padding, and its top. Everything under it — the hint,
-   * the skeleton, the error, the list — starts with the list's `cardGap` padding too, so the field
-   * never moves when the state under it changes.
-   */
-  header: {
-    gap: spacing[3],
-    paddingHorizontal: size.cardGap,
-    paddingTop: size.cardGap,
-  },
-  below: { padding: size.cardGap },
-});
-
 export default function SearchScreen() {
-  const t = useT();
-  const [term, setTerm] = useState('');
-  const [category, setCategory] = useState<string | undefined>(undefined);
+  const t = useT('discovery.search');
+  const tFeed = useT('discovery.feed');
+  const tAll = useT();
+  const router = useRouter();
+  const params = useLocalSearchParams<{ q?: string | string[] }>();
+  const query = (Array.isArray(params.q) ? params.q[0] : params.q)?.trim() ?? '';
 
-  const deferredTerm = useDeferredValue(term);
-  const trimmed = deferredTerm.trim();
-  const enabled = trimmed.length >= MINIMUM_QUERY || category !== undefined;
+  const results = useSearchResults(query);
+  const problem = useFeedProblem(results.error);
+  const cards = (results.data?.items ?? []) as Card[];
+  const hasMore = results.data?.nextCursor != null && results.data.nextCursor !== '';
 
-  const query = useMemo(
-    () => ({
-      q: trimmed === '' ? undefined : trimmed,
-      // A list because the contract binds several; this screen offers one chip
-      // at a time, which is one element rather than a different shape.
-      category: category === undefined ? undefined : [category],
-    }),
-    [trimmed, category],
-  );
+  function openFeed(withText: boolean): void {
+    const filters = withText ? withQuery(NO_FILTERS, query) : NO_FILTERS;
+    router.push({ pathname: '/discover', params: definedRouteParams(filters) });
+  }
 
-  const results = useSearchResults(query, enabled);
-  const suggestions = useSuggestions(deferredTerm);
-
-  const cards = useMemo(
-    () => (results.data?.pages ?? []).flatMap((page) => (page.items ?? []) as Card[]),
-    [results.data],
-  );
-
-  const header = (
-    <View style={styles.header}>
-      {/*
-        A field whose only label is its placeholder is announced as its current value, or as
-        nothing at all once somebody has typed — so the placeholder's words are its name too.
-      */}
-      <SearchField
-        label={t('discovery.suggest.inputLabel')}
-        placeholder={t('discovery.suggest.inputLabel')}
-        value={term}
-        onChangeText={setTerm}
-        onSubmit={setTerm}
-      />
-
-      {(suggestions.data?.items ?? []).length > 0 ? (
-        <ChipRow>
-          {(suggestions.data?.items ?? []).map((item) => {
-            const selected = category === item.slug;
-            return (
-              <Chip
-                key={`${item.kind}:${item.slug}`}
-                label={item.label ?? ''}
-                selected={selected}
-                onPress={() => setCategory(selected ? undefined : item.slug)}
-                // The label is the name speech input reaches it by; what pressing it does is the hint.
-                accessibilityHint={t('mobile.search.narrow', { label: item.label ?? '' })}
-              />
-            );
-          })}
-        </ChipRow>
-      ) : null}
-    </View>
-  );
-
-  /*
-   * The field is drawn ONCE, in one place above whatever state is under it — never as the list's
-   * header. A field that moved between the hint, the loading state and the list's header was a
-   * different element in each, so the input remounted as a search went from typing to loading to
-   * results, and the keyboard closed under the thumb at the third character. Results from the last
-   * query stay on screen while the next one loads (`placeholderData` in `useSearchResults`), so
-   * typing does not fall back to the skeleton at every key either.
-   */
   return (
     <MotionBudgetProvider level="minimal">
-      <View style={styles.fill}>
-        {header}
+      <ScrollView
+        style={styles.fill}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          query === '' ? undefined : (
+            <RefreshControl
+              refreshing={results.isRefetching}
+              onRefresh={() => {
+                haptics.refresh();
+                void results.refetch();
+              }}
+              tintColor={colors.textSecondary}
+              colors={[colors.textPrimary]}
+              progressBackgroundColor={colors.surface3}
+            />
+          )
+        }
+      >
+        <Heading accessibilityRole="header">
+          {query === '' ? t('title') : t('resultsTitle', { query })}
+        </Heading>
+
+        {/*
+          Drawn once, above every state, so the field is the same element from typing to loading
+          to results and the keyboard does not close under the thumb.
+        */}
+        <SearchBox
+          query={query}
+          label={tAll('shell.search.label')}
+          placeholder={tAll('shell.search.label')}
+          onSubmitQuery={(text) => router.setParams({ q: text === '' ? undefined : text })}
+          onChooseFilter={(kind, slug) =>
+            router.push({
+              pathname: '/discover',
+              params: definedRouteParams(addSlugFilter(NO_FILTERS, kind, slug)),
+            })
+          }
+        />
+
         {body()}
-      </View>
+      </ScrollView>
     </MotionBudgetProvider>
   );
 
   function body() {
-    if (!enabled) {
+    if (query === '') {
       return (
-        <View style={styles.below}>
-          <Body>{t('mobile.search.minimum', { count: MINIMUM_QUERY })}</Body>
-        </View>
+        <Body testID="search-prompt">
+          {t.rich('prompt', {
+            feed: (chunks) => (
+              <Text
+                accessibilityRole="link"
+                onPress={() => openFeed(false)}
+                style={styles.inlineLink}
+              >
+                {chunks}
+              </Text>
+            ),
+          })}
+        </Body>
+      );
+    }
+
+    if (results.isPending) return <CampaignColumnSkeleton label={tFeed('loading')} />;
+
+    if (results.isError) {
+      return (
+        <InlineAlert
+          variant="danger"
+          title={tFeed('errorTitle')}
+          description={problem.detail}
+          action={
+            <View style={styles.row}>
+              <Pill
+                label={tFeed('tryAgain')}
+                variant="ghost"
+                size="sm"
+                busy={results.isFetching}
+                onPress={() => void results.refetch()}
+              />
+            </View>
+          }
+          testID="search-error"
+        />
       );
     }
 
     if (cards.length === 0) {
-      if (results.isLoading) return <CampaignListSkeleton label={t('discovery.feed.loading')} />;
-      if (results.isError) {
-        return (
-          <View style={styles.below}>
-            <ErrorState
-              title={t('discovery.feed.errorTitle')}
-              description={t('discovery.feed.unreachable')}
-              onRetry={() => void results.refetch()}
-              retrying={results.isFetching}
-            />
-          </View>
-        );
-      }
+      return (
+        <EmptyState
+          variant="filtered"
+          title={t('emptyTitle', { query })}
+          description={t('emptyBody')}
+          action={<Pill label={t('emptyAction')} onPress={() => openFeed(false)} />}
+          testID="search-empty"
+        />
+      );
     }
 
     return (
-      <CampaignList
-        cards={cards}
-        onEndReached={() => {
-          if (results.hasNextPage && !results.isFetchingNextPage) void results.fetchNextPage();
-        }}
-        empty={
-          /*
-           * The web's empty feed for a term and for a term inside a category. A category chip on
-           * its own has no term to quote back, and the web's "nothing published" body would be
-           * untrue of it, so its body is the app's: try another category.
-           */
-          query.q === undefined ? (
-            <EmptyState
-              variant="filtered"
-              title={t('discovery.feed.emptyFilteredTitle')}
-              description={t('mobile.search.emptyCategoryBody')}
-            />
-          ) : (
-            <EmptyState
-              variant="filtered"
-              title={t('discovery.feed.emptyQueryTitle', { query: query.q })}
-              description={
-                category === undefined
-                  ? t('discovery.feed.emptyQueryBody')
-                  : t('discovery.feed.emptyQueryBodyFiltered')
-              }
-            />
-          )
-        }
-      />
+      <View style={styles.results}>
+        <Meta tone="secondary" style={styles.count}>
+          {hasMore ? t('countMore', { count: cards.length }) : t('count', { count: cards.length })}
+        </Meta>
+        <CampaignColumn cards={cards} priority={3} />
+        <View style={styles.centred}>
+          <Pill
+            label={hasMore ? t('moreInFeed') : t('refineInFeed')}
+            variant="outline"
+            onPress={() => openFeed(true)}
+            testID="search-in-feed"
+          />
+        </View>
+      </View>
     );
   }
 }
+
+const styles = StyleSheet.create({
+  fill: { flex: 1, backgroundColor: colors.surface1 },
+  content: { padding: size.cardGap, paddingBottom: spacing[12], gap: spacing[4] },
+  results: { gap: spacing[4] },
+  count: { ...font.regular, fontVariant: ['tabular-nums'] },
+  centred: { alignItems: 'center', paddingTop: spacing[2] },
+  row: { flexDirection: 'row' },
+  inlineLink: { color: colors.textPrimary, textDecorationLine: 'underline' },
+});
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

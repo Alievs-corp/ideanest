@@ -40,6 +40,9 @@ export interface SearchBoxProps {
   readonly onSubmitQuery: (text: string) => void;
   /** A category, subcategory or tag suggestion was chosen. */
   readonly onChooseFilter: (kind: SlugKind, slug: string) => void;
+  /** The field's name and placeholder, when the screen's own words differ from Discover's. */
+  readonly label?: string;
+  readonly placeholder?: string;
   readonly testID?: string;
 }
 
@@ -57,7 +60,14 @@ function isSlugKind(kind: string | undefined): kind is SlugKind {
   return kind === 'category' || kind === 'subcategory' || kind === 'tag';
 }
 
-export function SearchBox({ query, onSubmitQuery, onChooseFilter, testID }: SearchBoxProps) {
+export function SearchBox({
+  query,
+  onSubmitQuery,
+  onChooseFilter,
+  label,
+  placeholder,
+  testID,
+}: SearchBoxProps) {
   const t = useT('discovery.suggest');
   const router = useRouter();
   const [draft, setDraft] = useState(query);
@@ -133,8 +143,8 @@ export function SearchBox({ query, onSubmitQuery, onChooseFilter, testID }: Sear
       <View style={styles.row}>
         <View style={styles.field}>
           <SearchField
-            label={t('inputLabel')}
-            placeholder={t('placeholder')}
+            label={label ?? t('inputLabel')}
+            placeholder={placeholder ?? t('placeholder')}
             value={draft}
             onChangeText={(next) => {
               setDraft(next);

@@ -22,6 +22,7 @@ export type Feed = GetResponse<'/v1/discover'>;
 export type Card = NonNullable<Feed['items']>[number];
 export type Suggestions = GetResponse<'/v1/search/suggest'>;
 export type Suggestion = NonNullable<Suggestions['items']>[number];
+export type Category = GetResponse<'/v1/categories'>[number];
 export type ProjectPage = GetResponse<'/v1/projects/{creatorSlug}/{projectSlug}'>;
 export type PublicRewards = GetResponse<'/v1/projects/{projectId}/rewards/public'>;
 export type ProjectUpdates = GetResponse<'/v1/projects/{projectId}/updates'>;
@@ -39,7 +40,8 @@ export const queryKeys = {
   /** Keyed by `filterKey`: the filters and the sort, and nothing else (no cursor). */
   discover: (key: string) => ['discover', key] as const,
   discoverFacets: (key: string) => ['discoverFacets', key] as const,
-  search: (query: DiscoveryQuery) => ['search', query] as const,
+  search: (query: string) => ['search', query] as const,
+  categories: () => ['categories'] as const,
   suggestions: (term: string) => ['suggestions', term] as const,
   project: (creatorSlug: string, projectSlug: string) =>
     ['project', creatorSlug, projectSlug] as const,
@@ -50,22 +52,12 @@ export const queryKeys = {
 } as const;
 
 /**
- * The query the search screen sends.
- *
- * Every field is **taken from the generated contract** rather than declared as
- * `string`: `category` is a list, because the service binds a `MultiValueMap`,
- * and `sort` is the contract's closed set. The contract's set has eight names;
- * `relevance` and `near_me` are answered `DISCOVERY_OPTION_UNSUPPORTED` (#44,
- * #47) and no screen offers them — `@ideanest/discovery/vocabulary`'s `SORTS`
- * is the list a screen draws, not this type.
+ * The feed's query parameters, from the generated contract. Its `sort` is a closed set of eight
+ * names; `relevance` and `near_me` are answered `DISCOVERY_OPTION_UNSUPPORTED` (#44, #47) and no
+ * screen offers them — `@ideanest/discovery/vocabulary`'s `SORTS` is the list a screen draws, not
+ * this type.
  */
 type DiscoveryParams = NonNullable<GetQueryParams<'/v1/discover'>>;
-
-export interface DiscoveryQuery {
-  readonly q?: DiscoveryParams['q'];
-  readonly category?: DiscoveryParams['category'];
-  readonly sort?: DiscoveryParams['sort'];
-}
 
 /**
  * How many cards one page of a feed carries: the web's 24 (`@ideanest/discovery/facets`), so
@@ -157,25 +149,34 @@ function namedCount(entry: { slug?: string; name?: string; count?: number }) {
   return { slug: entry.slug ?? '', name: entry.name ?? entry.slug ?? '', count: entry.count ?? 0 };
 }
 
-/** Full-text search, paged the same way. */
-export function useSearchResults(query: DiscoveryQuery, enabled: boolean) {
-  return useInfiniteQuery({
-    queryKey: queryKeys.search(query),
-    enabled,
-    /*
-     * The last query's results stay while the next one loads. Every key from the third character
-     * is a new query key, and without this each one starts empty — the screen fell back to its
-     * loading state at every keystroke, and the list flashed to a skeleton and back while the
-     * reader typed.
-     */
-    placeholderData: keepPreviousData,
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam, signal }) =>
-      api().get('/v1/search', {
-        query: { ...query, limit: FEED_PAGE_SIZE, cursor: pageParam },
-        signal,
-      }),
-    getNextPageParam: (page: Feed) => page.nextCursor ?? undefined,
+/**
+ * The Search tab's results for a query: the first page only, at most 24, as the web's `/search`
+ * shows them. More is one tap away in the Discover feed, where the filters are, so this screen
+ * never pages.
+ *
+ * Disabled for an empty query: no text, no request. Not retried and not kept across restarts,
+ * like every feed.
+ */
+export function useSearchResults(query: string) {
+  const text = query.trim();
+  return useQuery({
+    queryKey: queryKeys.search(text),
+    enabled: text !== '',
+    retry: false,
+    queryFn: ({ signal }) =>
+      api().get('/v1/search', { query: { q: text, limit: FEED_PAGE_SIZE }, signal }),
+  });
+}
+
+/**
+ * The category taxonomy, for Home's "Browse by category". Small and slow to change, but still not
+ * persisted: a renamed category restored from last month would be a tile that opens nothing.
+ */
+export function useCategories() {
+  return useQuery({
+    queryKey: queryKeys.categories(),
+    retry: false,
+    queryFn: ({ signal }) => api().get('/v1/categories', { signal }),
   });
 }
 

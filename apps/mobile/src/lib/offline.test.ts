@@ -29,7 +29,8 @@ describe('what survives a restart', () => {
     // looks current.
     expect(shouldPersistQuery(queryKeys.discover(''))).toBe(false);
     expect(shouldPersistQuery(queryKeys.discoverFacets(''))).toBe(false);
-    expect(shouldPersistQuery(queryKeys.search({ q: 'lamp' }))).toBe(false);
+    expect(shouldPersistQuery(queryKeys.categories())).toBe(false);
+    expect(shouldPersistQuery(queryKeys.search('lamp'))).toBe(false);
     expect(shouldPersistQuery(queryKeys.suggestions('lam'))).toBe(false);
   });
 

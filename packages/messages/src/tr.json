@@ -5489,9 +5489,7 @@
       "stale": "Kaydettiğiniz kampanyalar bu cihazdan gösteriliyor. Güncel olmayabilirler."
     },
     "search": {
-      "minimum": "{count, plural, other {En az # karakter yazın veya bir öneri seçin.}}",
-      "narrow": "Aramayı daralt: {label}",
-      "emptyCategoryBody": "Bu kategoride henüz eşleşen kampanya yok. Başka bir kategori seçin ya da bir arama yazın."
+      "minimum": "{count, plural, other {En az # karakter yazın veya bir öneri seçin.}}"
     },
     "campaign": {
       "untitled": "Adsız kampanya",

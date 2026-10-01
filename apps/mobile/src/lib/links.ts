@@ -24,7 +24,18 @@
  */
 
 /** A destination inside the application, as a path Expo Router understands. */
-export type Destination = { readonly pathname: string };
+import { parseFilters, searchParamsFrom, toSearchParams } from '@ideanest/discovery/filters';
+
+/**
+ * A route, and the params it opens with. `params` is only ever the feed's own parameters
+ * (Discover) or the query (Search), rebuilt from the link rather than passed through: a link
+ * carries whatever its author wrote, and a `utm_source` or a mistyped status is not a param any
+ * screen should receive.
+ */
+export type Destination = {
+  readonly pathname: string;
+  readonly params?: Readonly<Record<string, string>>;
+};
 
 /**
  * The campaign path shape, on both the web and here.
@@ -70,7 +81,7 @@ export function destinationFor(url: string, siteHost: string): Destination | nul
      * differ by a slash.
      */
     const path = `/${parsed.host}${parsed.pathname}`.replace(/\/{2,}/g, '/');
-    return campaignDestination(path);
+    return campaignDestination(path, parsed.search);
   }
 
   if (parsed.protocol !== 'https:') {
@@ -87,7 +98,7 @@ export function destinationFor(url: string, siteHost: string): Destination | nul
     return null;
   }
 
-  return campaignDestination(parsed.pathname);
+  return campaignDestination(parsed.pathname, parsed.search);
 }
 
 /** The web carries the locale in the path; the app has a chosen locale instead. */
@@ -118,8 +129,40 @@ const ID_ROUTES: readonly [RegExp, (m: RegExpExecArray) => string][] = [
   ],
 ];
 
-function campaignDestination(rawPath: string): Destination | null {
+/*
+ * The discovery entry points (#153): the home page, the feed with its filters in the query
+ * string, and the search results. Each opens its screen with the state the web would show for the
+ * same URL — the filters through the shared `parseFilters`, so an unknown status is dropped and a
+ * slug is lower-cased exactly as the browser does it.
+ */
+const HOME_PATH = /^\/?$/;
+const DISCOVER_PATH = /^\/discover\/?$/;
+const SEARCH_PATH = /^\/search\/?$/;
+
+function discoveryDestination(path: string, search: string): Destination | null {
+  if (HOME_PATH.test(path)) return { pathname: '/' };
+
+  if (DISCOVER_PATH.test(path)) {
+    const params: Record<string, string> = {};
+    for (const [name, value] of toSearchParams(parseFilters(searchParamsFrom(search)))) {
+      params[name] = value;
+    }
+    return { pathname: '/discover', params };
+  }
+
+  if (SEARCH_PATH.test(path)) {
+    const query = searchParamsFrom(search).get('q')?.trim() ?? '';
+    return query === '' ? { pathname: '/search' } : { pathname: '/search', params: { q: query } };
+  }
+
+  return null;
+}
+
+function campaignDestination(rawPath: string, search = ''): Destination | null {
   const path = rawPath.replace(LOCALE_PREFIX, '') || '/';
+
+  const discovery = discoveryDestination(path, search);
+  if (discovery !== null) return discovery;
 
   for (const [pattern, toRoute] of ID_ROUTES) {
     const idMatch = pattern.exec(path);

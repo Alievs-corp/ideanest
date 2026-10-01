@@ -160,7 +160,17 @@ const config: ExpoConfig = {
       {
         action: 'VIEW',
         autoVerify: true,
-        data: [{ scheme: 'https', host: siteHost, pathPrefix: '/projects' }],
+        /*
+         * Campaign pages, and #153's discovery entry points: the home page, the feed and search,
+         * each an exact path whose state rides in the query string. The web's association file
+         * (`apps/web/src/lib/mobile/association.ts`) claims the same, for iOS.
+         */
+        data: [
+          { scheme: 'https', host: siteHost, pathPrefix: '/projects' },
+          { scheme: 'https', host: siteHost, path: '/' },
+          { scheme: 'https', host: siteHost, path: '/discover' },
+          { scheme: 'https', host: siteHost, path: '/search' },
+        ],
         category: ['BROWSABLE', 'DEFAULT'],
       },
     ],
