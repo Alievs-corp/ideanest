@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MessageSquareOff, Reply, Trash2 } from 'lucide-react-native';
 import type { CampaignComment } from '@ideanest/campaign/comments';
@@ -19,6 +19,7 @@ import {
   tint,
 } from '../../../../theme';
 import { Icon, Pill, Tag, announce, useFocusRing, type IconComponent } from '../../../ui';
+import { FOCUS_DELAY_MS, focusOn } from '../../../ui/overlay';
 import { ReportTrigger } from '../../report-link';
 import { CommentComposer } from './comment-composer';
 
@@ -54,6 +55,10 @@ import { CommentComposer } from './comment-composer';
  * - **Report this comment**, opening the report sheet about "a comment on {title}".
  *
  * Offline, Withdraw and Report are disabled and say why; Reply still opens, and its Post says why.
+ *
+ * <p>Screen-reader focus follows the panel that opens in place: to the warning when Withdraw is
+ * pressed, and back to Withdraw on "Keep it"; back to Reply when its form closes — cancelled or
+ * posted — so a reader is never left on a control that has just been removed.
  */
 export interface CommentCardProps {
   readonly comment: CampaignComment;
@@ -113,6 +118,28 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const replyButton = useRef<View>(null);
+  const withdrawButton = useRef<View>(null);
+  const warning = useRef<Text>(null);
+  /** Where screen-reader focus goes once the next render has drawn it. */
+  const [focusNext, setFocusNext] = useState<'warning' | 'withdraw' | 'reply' | null>(null);
+
+  useEffect(() => {
+    if (focusNext === null) return undefined;
+    const target = { warning, withdraw: withdrawButton, reply: replyButton }[focusNext];
+    // After the frame that mounts it: a focus event sent to a view drawn in the same frame is lost.
+    const timer = setTimeout(() => {
+      focusOn(target.current);
+      setFocusNext(null);
+    }, FOCUS_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [focusNext]);
+
+  const closeReply = () => {
+    setReplying(false);
+    setFocusNext('reply');
+  };
+
   const viewerId = signedIn ? (me.data?.id ?? null) : null;
   const isAuthor = viewerId !== null && comment.authorId !== null && viewerId === comment.authorId;
   const offlineReason = tAll('mobile.campaign.comments.offline');
@@ -146,6 +173,7 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
       <View style={styles.controlRow}>
         {comment.acceptsReplies ? (
           <TextButton
+            ref={replyButton}
             icon={Reply}
             label={t('reply')}
             expanded={replying}
@@ -155,11 +183,15 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
         ) : null}
         {isAuthor && !confirming ? (
           <TextButton
+            ref={withdrawButton}
             icon={Trash2}
             label={t('withdraw')}
             disabled={offline}
             hint={offline ? offlineReason : undefined}
-            onPress={() => setConfirming(true)}
+            onPress={() => {
+              setConfirming(true);
+              setFocusNext('warning');
+            }}
             testID={`withdraw-${comment.id}`}
           />
         ) : null}
@@ -173,7 +205,9 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
 
       {confirming ? (
         <View style={styles.confirm} testID={`withdraw-confirm-${comment.id}`}>
-          <Text style={styles.warning}>{t('withdrawWarning')}</Text>
+          <Text ref={warning} style={styles.warning} testID={`withdraw-warning-${comment.id}`}>
+            {t('withdrawWarning')}
+          </Text>
           <View style={styles.confirmActions}>
             <Pill
               label={busy ? t('withdrawing') : t('withdrawConfirm')}
@@ -192,6 +226,7 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
               onPress={() => {
                 setConfirming(false);
                 setError(null);
+                setFocusNext('withdraw');
               }}
             />
           </View>
@@ -216,7 +251,7 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
           submitLabel={t('postReply')}
           offline={offline}
           onPosted={onChanged}
-          onCancel={() => setReplying(false)}
+          onCancel={closeReply}
           testID={`reply-composer-${comment.id}`}
         />
       ) : null}
@@ -228,26 +263,22 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
 const REACH = Math.max(0, (size.touchTarget - lineHeight.small) / 2);
 
 /** A small, quiet control under a comment: an icon and a word, a 44pt target. */
-function TextButton({
-  icon,
-  label,
-  onPress,
-  disabled = false,
-  hint,
-  expanded,
-  testID,
-}: {
-  readonly icon: IconComponent;
-  readonly label: string;
-  readonly onPress: () => void;
-  readonly disabled?: boolean;
-  readonly hint?: string | undefined;
-  readonly expanded?: boolean;
-  readonly testID?: string;
-}) {
+const TextButton = forwardRef<
+  View,
+  {
+    readonly icon: IconComponent;
+    readonly label: string;
+    readonly onPress: () => void;
+    readonly disabled?: boolean;
+    readonly hint?: string | undefined;
+    readonly expanded?: boolean;
+    readonly testID?: string;
+  }
+>(function TextButton({ icon, label, onPress, disabled = false, hint, expanded, testID }, ref) {
   const { ring, onFocus, onBlur } = useFocusRing();
   return (
     <Pressable
+      ref={ref}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={hint}
@@ -264,7 +295,7 @@ function TextButton({
       <Text style={styles.textButtonLabel}>{label}</Text>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

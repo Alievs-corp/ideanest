@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { View } from 'react-native';
+import { AccessibilityInfo, View } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -164,17 +164,18 @@ function Harness({ tabContext }: { readonly tabContext: CampaignTabContext }) {
 async function show({
   thread,
   offline = false,
-}: { thread?: string; offline?: boolean } = {}) {
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  staleTime = 0,
+}: { thread?: string; offline?: boolean; staleTime?: number } = {}) {
+  client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime } } });
   context = { setParam: jest.fn(), scrollToTabs: jest.fn() };
-  const tabContext: CampaignTabContext = {
+  const contextFor = (view: string | undefined): CampaignTabContext => ({
     campaign: CAMPAIGN,
     active: true,
     offline,
-    params: thread === undefined ? {} : { thread },
+    params: view === undefined ? {} : { thread: view },
     setParam: context.setParam,
     scrollToTabs: context.scrollToTabs,
-  };
+  });
   const wrapper = ({ children }: { children: ReactNode }) => (
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={client}>
@@ -184,8 +185,34 @@ async function show({
       </QueryClientProvider>
     </SafeAreaProvider>
   );
-  await render(<Harness tabContext={tabContext} />, { wrapper });
+  const result = await render(<Harness tabContext={contextFor(thread)} />, { wrapper });
   await settle();
+  /** The same tab, over the same cache, with `?thread=` set to `view` (or cleared). */
+  return async (view: string | undefined) => {
+    await result.rerender(<Harness tabContext={contextFor(view)} />);
+    await settle();
+  };
+}
+
+/** A response held until the test lets it go. */
+function held(): { promise: Promise<Response>; release: (response: Response) => void } {
+  let release: (response: Response) => void = () => {};
+  const promise = new Promise<Response>((resolve) => (release = resolve));
+  return { promise, release };
+}
+
+type FocusCall = [unknown, string];
+/** The testIDs of everything screen-reader focus was sent to, in order. */
+const focused = () =>
+  (jest.mocked(AccessibilityInfo.sendAccessibilityEvent).mock.calls as FocusCall[])
+    .filter(([, type]) => type === 'focus')
+    .map(([node]) => (node as { props?: { testID?: unknown } } | null)?.props?.testID);
+
+/** Past the focus move's delay (`FOCUS_DELAY_MS`), so the effect has sent it. */
+async function afterFocusDelay() {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  });
 }
 
 async function settle() {
@@ -259,6 +286,28 @@ describe('the list', () => {
     latest.onEndReached?.();
     await settle();
     expect(reads).toHaveLength(2);
+  });
+
+  it('keeps a next page asked for during a re-read, and asks for it once the re-read settles', async () => {
+    await show();
+    const reread = held();
+    routes.comments = (url) =>
+      url.searchParams.get('cursor') === 'cursor-2' ? json(SECOND_PAGE) : reread.promise;
+    await act(async () => {
+      void latest.refresh();
+    });
+    await settle();
+    expect(reads).toEqual(['?limit=10', '?limit=10']);
+
+    // The end is reached while the first page is still being read again: not dropped.
+    await act(async () => latest.onEndReached?.());
+    await settle();
+    expect(reads).toHaveLength(2);
+
+    await act(async () => reread.release(json(FIRST_PAGE)));
+    await settle();
+    expect(reads).toEqual(['?limit=10', '?limit=10', '?limit=10&cursor=cursor-2']);
+    expect(screen.getByTestId('thread-c4')).toBeTruthy();
   });
 
   it('offers a retry when the next page fails, and stops asking on its own', async () => {
@@ -347,6 +396,24 @@ describe('the composer', () => {
     expect(screen.queryByTestId('thread-c4')).toBeNull();
   });
 
+  it('frees the pill as soon as the post is accepted, and says "Posted." once the list is re-read', async () => {
+    await signIn();
+    await show();
+    const reread = held();
+    routes.comments = () => reread.promise;
+    await fireEvent.changeText(screen.getByLabelText(C.composerLabel), 'Hello there');
+    await fireEvent.press(screen.getByRole('button', { name: C.postComment }));
+    await settle();
+    expect(writes).toHaveLength(1);
+    const post = screen.getByTestId('comment-composer-submit');
+    expect(post.props.accessibilityState).toEqual(expect.objectContaining({ busy: false }));
+    expect(screen.getByTestId('comment-composer-notice').props.children).toBe('');
+
+    await act(async () => reread.release(json(FIRST_PAGE)));
+    await settle();
+    expect(screen.getByTestId('comment-composer-notice').props.children).toBe(C.posted);
+  });
+
   it('is disabled offline and says why', async () => {
     await signIn();
     await show({ offline: true });
@@ -355,6 +422,19 @@ describe('the composer', () => {
     expect(screen.getByTestId('comment-composer-notice').props.children).toBe(
       en.mobile.campaign.comments.offline,
     );
+    // Said once, by the composer: no second line under the heading.
+    expect(screen.queryByTestId('comments-offline')).toBeNull();
+  });
+
+  it('says once why the writes are disabled offline where there is no composer to say it', async () => {
+    await show({ offline: true });
+    expect(screen.getAllByText(en.mobile.campaign.comments.offline)).toHaveLength(1);
+    client.clear();
+
+    await signIn();
+    await show({ offline: true, thread: 'c1' });
+    expect(screen.queryByTestId('comment-composer')).toBeNull();
+    expect(screen.getAllByText(en.mobile.campaign.comments.offline)).toHaveLength(1);
   });
 });
 
@@ -385,6 +465,66 @@ describe('replying and withdrawing', () => {
     expect(writes).toEqual(['DELETE /v1/comments/c1']);
     expect(reads).toEqual(['?limit=10', '?limit=10']);
     expect(screen.queryByText(C.withdrawWarning)).toBeNull();
+  });
+
+  it('moves focus to the warning, and back to Withdraw when the comment is kept', async () => {
+    await signIn();
+    await show();
+    await fireEvent.press(screen.getByTestId('withdraw-c1'));
+    await afterFocusDelay();
+    expect(focused().at(-1)).toBe('withdraw-warning-c1');
+
+    await fireEvent.press(screen.getByRole('button', { name: C.keep }));
+    await afterFocusDelay();
+    expect(focused().at(-1)).toBe('withdraw-c1');
+  });
+
+  it('returns focus to Reply when the reply form closes, cancelled or posted', async () => {
+    await signIn();
+    await show();
+    await fireEvent.press(screen.getByTestId('reply-c1'));
+    await fireEvent.press(screen.getByRole('button', { name: C.cancel }));
+    await afterFocusDelay();
+    expect(focused().at(-1)).toBe('reply-c1');
+
+    jest.mocked(AccessibilityInfo.sendAccessibilityEvent).mockClear();
+    await fireEvent.press(screen.getByTestId('reply-c1'));
+    await fireEvent.changeText(screen.getByLabelText(C.replyLabel), 'Thanks');
+    await fireEvent.press(screen.getByRole('button', { name: C.postReply }));
+    await settle();
+    await afterFocusDelay();
+    expect(focused().at(-1)).toBe('reply-c1');
+  });
+
+  it('withdrawn in the thread view, it is no longer drawn whole on the tab', async () => {
+    await signIn();
+    let withdrawn = false;
+    const c1 = () =>
+      withdrawn ? row('c1', { deleted: true, body: null, authorId: null }) : row('c1', { authorId: ME });
+    routes.comments = (url) =>
+      json(
+        url.searchParams.get('thread') === 'c1'
+          ? { threads: [{ root: c1(), replies: [replyRow('c1-r1', 'c1')], nextReplyCursor: null }], nextCursor: null }
+          : { threads: [{ root: c1(), replies: [], nextReplyCursor: null }], nextCursor: null },
+      );
+    routes.withdraw = () => {
+      withdrawn = true;
+      return new Response(null, { status: 204 });
+    };
+    // A long staleTime: only the invalidation can make the tab read again.
+    const go = await show({ staleTime: 600_000 });
+    expect(screen.getByText('Comment c1')).toBeTruthy();
+
+    await go('c1');
+    await fireEvent.press(screen.getByTestId('withdraw-c1'));
+    await fireEvent.press(screen.getByRole('button', { name: C.withdrawConfirm }));
+    await settle();
+    expect(screen.getByText(C.withdrawn)).toBeTruthy();
+
+    await go(undefined);
+    expect(reads.filter((search) => search === '?limit=10')).toHaveLength(2);
+    expect(screen.queryByText('Comment c1')).toBeNull();
+    expect(screen.getByText(C.withdrawn)).toBeTruthy();
   });
 
   it('says why a withdrawal failed, as an alert', async () => {

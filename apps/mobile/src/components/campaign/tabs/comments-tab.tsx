@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { CAMPAIGN_THREAD_PARAM, campaignCursorFrom } from '@ideanest/campaign/tabs';
 import { conversationOf, threadsOf, useCommentThreads } from '../../../lib/comments';
 import { useT } from '../../../lib/i18n';
+import { useSession } from '../../../lib/use-session';
 import { colors, font, fontSize, lineHeight, spacing, tracking } from '../../../theme';
 import { Icon, Pill } from '../../ui';
 import { CommentCard } from './comments/comment-card';
@@ -46,13 +47,16 @@ import {
  * is at its top); a reply or a withdrawal re-reads every page shown, so the change appears where
  * the reader is.
  *
- * <p>Offline, every write is disabled and says why; what is already in memory is still shown.
+ * <p>Offline, every write is disabled and says why; what is already in memory is still shown. The
+ * sentence is the composer's own notice where there is a composer; in the single-thread view and
+ * for a signed-out reader there is none, so it stands once under the heading instead.
  */
 export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
   const { campaign, active, offline, params, setParam, scrollToTabs } = context;
   const thread = campaignCursorFrom(params[CAMPAIGN_THREAD_PARAM]);
 
   // Every hook before the early return: all five tabs' hooks run on every render.
+  const { signedIn } = useSession();
   const { query, loadMore, refreshFirstPage, refreshAll } = useCommentThreads(
     campaign.id,
     thread,
@@ -87,6 +91,9 @@ export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
   const failed = pages === undefined;
 
   const rows: CampaignTabRow[] = [{ key: 'heading', render: () => spaced(<CommentsHeading />, 8) }];
+  if (offline && (thread !== null || !signedIn)) {
+    rows.push({ key: 'offline', render: () => spaced(<OfflineNote />, 3) });
+  }
 
   if (thread === null) {
     rows.push({
@@ -214,6 +221,16 @@ function AllComments({ onPress }: { readonly onPress: () => void }) {
   );
 }
 
+/** Why the writes under the comments are disabled, where no composer is there to say it. */
+function OfflineNote() {
+  const t = useT();
+  return (
+    <Text style={styles.note} testID="comments-offline">
+      {t('mobile.campaign.comments.offline')}
+    </Text>
+  );
+}
+
 function Note({ kind }: { readonly kind: 'failed' | 'empty' }) {
   const t = useT('campaign.comments');
   return (
@@ -262,7 +279,7 @@ function OlderFailed({ onRetry }: { readonly onRetry: () => void }) {
 }
 
 /** The space above a row: the web's `gap-8` before the tab's heading, `gap-6` between threads. */
-function spaced(block: ReactElement, above: 4 | 6 | 8): ReactElement {
+function spaced(block: ReactElement, above: 3 | 4 | 6 | 8): ReactElement {
   return <View style={{ paddingTop: spacing[above] }}>{block}</View>;
 }
 

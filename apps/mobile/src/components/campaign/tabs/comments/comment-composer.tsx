@@ -20,7 +20,7 @@ import { Field, InlineAlert, Pill, Textarea, announce } from '../../../ui';
  *
  * <h2>It does not build the new comment; it asks for the list again</h2>
  *
- * On success the field is cleared, "Posted." is said, and `onPosted` re-reads the list — the first
+ * On success the field is cleared, `onPosted` re-reads the list, and then "Posted." is said — the first
  * page for a new conversation, which arrives at its top; every page shown for a reply, so the
  * reader stays where they are. Splicing the comment in locally would mean this component deciding
  * where a reply nests and whether its author speaks for the campaign, and §4.9 settles both on the
@@ -129,20 +129,25 @@ export function CommentComposer({
     try {
       if (target.kind === 'campaign') await postComment(target.projectId, body);
       else await replyToComment(target.commentId, body);
-      setBody('');
-      setPosted(true);
-      await onPosted();
-      /*
-       * A reply's form closes after posting, taking its live region with it, so it is said
-       * outright; the tab's composer stays, and its region below speaks on Android (iOS has none).
-       */
-      if (onCancel !== undefined || Platform.OS === 'ios') announce(t('posted'));
-      onCancel?.();
     } catch (cause) {
       setError(messageFor(postFailureOf(cause)));
-    } finally {
       setBusy(false);
+      return;
     }
+    // Posted: the pill is free again at once, and the field is empty for the next one.
+    setBusy(false);
+    setBody('');
+    /*
+     * "Posted." once the list has been re-read, so it is said when the comment is there to be
+     * found — on both platforms at the same moment. The tab's composer fills its live region
+     * (Android reads it) and says it outright on iOS, which has none; a reply's form closes after
+     * posting, taking its region with it, so it is said outright everywhere. The re-read never
+     * rejects (`onPosted` settles either way).
+     */
+    await onPosted();
+    setPosted(true);
+    if (onCancel !== undefined || Platform.OS === 'ios') announce(t('posted'));
+    onCancel?.();
   };
 
   const offlineReason = tAll('mobile.campaign.comments.offline');

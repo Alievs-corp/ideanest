@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 import {
@@ -185,11 +185,19 @@ export function nextCursorOf(page: CampaignCommentPage, thread: string | null): 
  * time. Reads nothing while `enabled` is false — the tab is not on screen.
  *
  * - `loadMore` asks for the next page, at most once at a time; it is what `onEndReached` and the
- *   "Older comments" pill both call.
+ *   "Older comments" pill both call. Asked while the pages already shown are being re-read, it is
+ *   remembered and made once that settles — the screen asks once per list height, so a request
+ *   dropped here would never be repeated and the list would stop growing.
  * - `refreshFirstPage` drops every page but the first and reads that one again — pull to refresh,
  *   and a new conversation, which arrives at the top of the first page.
  * - `refreshAll` reads every page already shown again, in order — after a reply or a withdrawal,
  *   so the change appears where the reader is instead of the list collapsing to its first page.
+ *
+ * Both refreshes invalidate **every** comments query of the campaign, not only this one: a comment
+ * withdrawn in the single-thread view must not still be drawn, whole, when the reader goes back to
+ * the tab, and a reply posted from the tab must be in the thread view the next time it opens —
+ * whatever `staleTime` would otherwise have allowed. Only the query on screen is read again now;
+ * the others are read when they are next shown.
  */
 export function useCommentThreads(projectId: string, thread: string | null, enabled: boolean) {
   const queryClient = useQueryClient();
@@ -203,12 +211,29 @@ export function useCommentThreads(projectId: string, thread: string | null, enab
     getNextPageParam: (page: CampaignCommentPage) => nextCursorOf(page, thread),
   });
 
-  const { hasNextPage, isFetching, fetchNextPage, refetch } = query;
+  const { hasNextPage, isFetching, isFetchingNextPage, fetchNextPage } = query;
+
+  /** A next page asked for while the pages shown were being re-read, still owed. */
+  const owed = useRef(false);
 
   const loadMore = useCallback(() => {
-    if (!hasNextPage || isFetching) return;
+    if (!hasNextPage || isFetchingNextPage) return;
+    if (isFetching) {
+      owed.current = true;
+      return;
+    }
     void fetchNextPage({ cancelRefetch: false });
-  }, [hasNextPage, isFetching, fetchNextPage]);
+  }, [hasNextPage, isFetching, isFetchingNextPage, fetchNextPage]);
+
+  useEffect(() => {
+    if (!owed.current || isFetching) return;
+    owed.current = false;
+    // The re-read may have found the end: then there is nothing left to ask for.
+    if (hasNextPage) void fetchNextPage({ cancelRefetch: false });
+  }, [isFetching, hasNextPage, fetchNextPage]);
+
+  /** Every comments query of this campaign — the tab's and each thread's. */
+  const everyView = useMemo(() => queryKeys.comments(projectId, null).slice(0, 2), [projectId]);
 
   const refreshFirstPage = useCallback(async () => {
     queryClient.setQueryData<InfiniteData<CampaignCommentPage, string | null>>(queryKey, (data) =>
@@ -216,12 +241,12 @@ export function useCommentThreads(projectId: string, thread: string | null, enab
         ? data
         : { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) },
     );
-    await queryClient.refetchQueries({ queryKey, exact: true });
-  }, [queryClient, queryKey]);
+    await queryClient.invalidateQueries({ queryKey: everyView });
+  }, [queryClient, queryKey, everyView]);
 
   const refreshAll = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
+    await queryClient.invalidateQueries({ queryKey: everyView });
+  }, [queryClient, everyView]);
 
   return { query, loadMore, refreshFirstPage, refreshAll };
 }
