@@ -1,9 +1,3 @@
-/*
- * A device east of Greenwich, set before anything formats a date: 23:30 UTC on the 31st is
- * already the 1st here, so a window date that followed the device's zone would fail below.
- */
-process.env.TZ = 'Asia/Baku';
-
 import type { ReactElement, ReactNode } from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -165,7 +159,8 @@ describe('the collection card', () => {
       'Closes, 31 October 2026',
       'Open since, 1 September 2026',
     ]);
-    // On this device the same instant is the 1st: the card is not reading the device's zone.
+    // In the suites' zone (Baku, `jest.config.js`) the same instant is the 1st: the card is not
+    // reading the device's zone.
     expect(new Date('2026-10-31T23:30:00Z').getDate()).toBe(1);
   });
 
