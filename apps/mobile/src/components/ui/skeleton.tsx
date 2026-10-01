@@ -267,7 +267,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardBody: { padding: measure.cardPaddingSmall, gap: spacing[3] },
-  progress: { gap: spacing[2] },
+  // The card's `funding` block: 8 between rows and 8 above, so nothing moves when it arrives.
+  progress: { gap: spacing[2], paddingTop: spacing[2] },
   footer: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[3] },
   line: { justifyContent: 'center' },
 });

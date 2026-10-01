@@ -41,7 +41,7 @@ import { TONES, useSurface, type Surface } from './surface';
  */
 
 export type TagVariant =
-  'default' | 'onLime' | 'onWhite' | 'success' | 'warning' | 'danger' | 'hot';
+  'default' | 'onLime' | 'onWhite' | 'success' | 'warning' | 'danger' | 'hot' | 'urgent';
 
 export interface TagProps {
   /** The visible text AND what a screen reader reads. Required: a tag is never colour alone. */
@@ -61,6 +61,11 @@ const SKIN: Record<TagVariant, { background: string; text: string }> = {
   warning: { background: tint(colors.warning, 0.12), text: colors.warning },
   danger: { background: tint(colors.danger, 0.12), text: colors.danger },
   hot: { background: tint(colors.hot, 0.12), text: colors.hot },
+  /*
+   * "Act now": a lime FILL with near-black words — the one way lime may carry text (§2.3, §9.1).
+   * The campaign card's last-48-hours countdown (#153), and nothing else on a card is lime.
+   */
+  urgent: { background: colors.lime500, text: colors.textOnLime },
 };
 
 /** The neutral variant that is legible on each surface. */
@@ -74,7 +79,11 @@ export function Tag({ label, variant = 'default', icon, testID }: TagProps) {
   const surface = useSurface();
   const resolved = variant === 'default' ? NEUTRAL[surface] : variant;
   const skin = SKIN[resolved];
-  const status = resolved !== 'default' && resolved !== 'onLime' && resolved !== 'onWhite';
+  const status =
+    resolved !== 'default' &&
+    resolved !== 'onLime' &&
+    resolved !== 'onWhite' &&
+    resolved !== 'urgent';
   // On lime or white a status colour is illegible as text; the surface's own ink is not.
   const words = status && surface !== 'dark' ? TONES[surface].primary : skin.text;
 

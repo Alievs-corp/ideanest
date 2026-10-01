@@ -15,9 +15,9 @@ import type { DiscoveryStatus } from '@ideanest/discovery/vocabulary';
 import { formatMoney } from '@ideanest/money';
 import { fillNodes } from '@ideanest/messages/placeholders';
 import type { Card } from '../api/queries';
-import { formatCount, pluralCategory, useT } from '../lib/i18n';
+import { pluralCategory, useT } from '../lib/i18n';
 import { useLocale } from '../lib/locale';
-import { colors, font, fontSize, lineHeight, radius, size, spacing, tint, tracking } from '../theme';
+import { colors, font, fontSize, lineHeight, radius, size, spacing, tint } from '../theme';
 import { Body, CardTitle, Meta } from './text';
 import { Icon, MediaFrame, ProgressBar, Tag, type IconComponent, type TagVariant } from './ui';
 
@@ -31,6 +31,11 @@ import { Icon, MediaFrame, ProgressBar, Tag, type IconComponent, type TagVariant
  * A thumb aims at the picture, so the `Pressable` wraps everything, takes the `link` role and is
  * named "title, by creator". A screen reader announces one link per campaign rather than the
  * cover, the title, the tags and the bar as separate stops — the web's stretched anchor, natively.
+ *
+ * An accessible parent swallows its children on iOS, so the facts the card prints — the status,
+ * the countdown, the percent funded, the backers — are its `accessibilityValue`, read after the
+ * name. The bar inside is decorative for the same reason: its figure is already in that value,
+ * and as an element of its own it would be a second stop on Android and unreachable on iOS.
  *
  * <h2>Money is never a number</h2>
  *
@@ -124,21 +129,34 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
   const live = card.state === 'LIVE';
   const showDays = days !== null && (days > 0 || live);
   const urgent = showDays && live && days !== null && days <= URGENT_DAYS;
+  /*
+   * The bare count, as the web's `pluralise` writes it: "1234 backers" on both platforms rather
+   * than the phone grouping the digits and the browser not.
+   */
   const daysLabel =
     days === null
       ? ''
       : days === 0
         ? t('discovery.card.lastDay')
-        : t(`discovery.card.daysLeft.${pluralCategory(locale, days)}`, {
-            count: formatCount(days, locale),
-          });
+        : t(`discovery.card.daysLeft.${pluralCategory(locale, days)}`, { count: String(days) });
 
   const backers = card.backersCount ?? 0;
   const backersLabel = t(`common.card.backers.${pluralCategory(locale, backers)}`, {
-    count: formatCount(backers, locale),
+    count: String(backers),
   });
 
   const tagged = status !== null || card.extended === true || card.closingSoon === true || urgent;
+
+  /** What the card prints, in reading order, for the one element a screen reader stops on. */
+  const facts = [
+    status === null ? null : t(`discovery.card.badges.${status}`),
+    card.extended === true ? t('discovery.card.badges.extended') : null,
+    card.closingSoon === true ? t('discovery.card.badges.closing_soon') : null,
+    urgent ? daysLabel : null,
+    completion === null ? t('discovery.card.notOpen') : t('common.card.funded', { percent }),
+    backersLabel,
+    !urgent && showDays ? daysLabel : null,
+  ].filter((fact): fact is string => fact !== null && fact !== '');
 
   return (
     <Link
@@ -151,6 +169,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
       <Pressable
         accessibilityRole="link"
         accessibilityLabel={byline === '' ? title : `${title}, ${byline}`}
+        accessibilityValue={{ text: facts.join(', ') }}
         style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
         {/*
@@ -192,14 +211,20 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
                   variant="warning"
                 />
               ) : null}
-              {urgent ? <UrgencyChip label={daysLabel} /> : null}
+              {/*
+                The last-48-hours countdown, and the one lime element on the card: a lime fill
+                with near-black words. Lime text on a dark surface is what §9.1 forbids.
+              */}
+              {urgent ? (
+                <Tag label={daysLabel} icon={Clock} variant="urgent" testID="urgency-chip" />
+              ) : null}
             </View>
           ) : null}
 
           <CardTitle numberOfLines={2}>{title}</CardTitle>
 
           {creator === '' ? null : (
-            <Body style={styles.byline} numberOfLines={1}>
+            <Body style={styles.byline}>
               {fillNodes(String(t.raw('discovery.card.by')), {
                 creator: <Text style={styles.creator}>{creator}</Text>,
               })}
@@ -209,13 +234,14 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
           {completion !== null ? (
             <View style={styles.funding}>
               {/*
-                No words on the bar: the figure is printed beside it. Its name is the catalogue's
-                "{percent} percent of the goal", as on the web.
+                No words on the bar: the figure is printed beside it. The completion goes in as
+                the decimal's own digits, unrounded, so 99.999 is not drawn as funded.
               */}
               <ProgressBar
-                completionPercent={completion.toFixed(2)}
+                completionPercent={completion.toFixed()}
                 label={t('common.card.progressLabel', { percent })}
                 showLabel={false}
+                decorative
               />
               <View style={styles.figures}>
                 <Text style={styles.pledged}>{formatMoney(card.pledged)}</Text>
@@ -239,36 +265,19 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
           <View style={styles.footer}>
             <View style={styles.fact}>
               <Icon icon={Users} size={14} color={colors.textTertiary} />
-              <Meta style={styles.tabular}>{backersLabel}</Meta>
+              <Meta style={[styles.small, styles.tabular]}>{backersLabel}</Meta>
             </View>
             {/* Days left as text whenever it is not already the lime chip. */}
             {!urgent && showDays ? (
               <View style={styles.fact}>
                 <Icon icon={Clock} size={14} color={colors.textTertiary} />
-                <Meta style={styles.tabular}>{daysLabel}</Meta>
+                <Meta style={[styles.small, styles.tabular]}>{daysLabel}</Meta>
               </View>
             ) : null}
           </View>
         </View>
       </Pressable>
     </Link>
-  );
-}
-
-/**
- * The last-48-hours countdown: a lime fill with near-black text and a clock. Lime text on a dark
- * surface is what §9.1 forbids; a lime surface with on-lime text is what lime is for.
- */
-function UrgencyChip({ label }: { readonly label: string }) {
-  return (
-    <View style={styles.hug}>
-      <View style={styles.urgent} testID="urgency-chip">
-        <Icon icon={Clock} size={12} color={colors.textOnLime} />
-        <Text style={styles.urgentLabel} numberOfLines={1}>
-          {label}
-        </Text>
-      </View>
-    </View>
   );
 }
 
@@ -315,22 +324,4 @@ const styles = StyleSheet.create({
   notOpen: { fontSize: fontSize.sm, lineHeight: lineHeight.small, paddingTop: spacing[2] },
   footer: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: spacing[4] },
   fact: { flexDirection: 'row', alignItems: 'center', gap: spacing[1] },
-  hug: { alignItems: 'flex-start', maxWidth: '100%' },
-  urgent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[1],
-    minHeight: 26,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    backgroundColor: colors.lime500,
-  },
-  urgentLabel: {
-    ...font.medium,
-    fontSize: fontSize.xs,
-    letterSpacing: tracking.tag,
-    color: colors.textOnLime,
-    flexShrink: 1,
-  },
 });

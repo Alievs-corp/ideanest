@@ -79,6 +79,7 @@ describe('the status badge', () => {
   it('draws no badge for a value this build does not know, and none when absent', async () => {
     await renderCard({ ...LIVE, badge: 'cancelled' });
     expect(screen.queryByText('Live')).toBeNull();
+    expect(screen.queryByText(/cancelled|badges/)).toBeNull();
     await renderCard({ ...LIVE, badge: undefined });
     expect(screen.queryByText('Live')).toBeNull();
   });
@@ -188,6 +189,24 @@ describe('the money on the card', () => {
     expect(completionOf({ completionPercent: '79.995' })?.toFixed(0)).toBe('80');
   });
 
+  it('never goes through a float: 84.49999999999999999 is 84, where Number() makes it 85', async () => {
+    await renderCard({ ...LIVE, completionPercent: '84.49999999999999999' });
+    expect(screen.getByText('84% funded')).toBeTruthy();
+    expect(screen.queryByText('85% funded')).toBeNull();
+  });
+
+  it('does not draw a bar at 99.999% as funded', async () => {
+    await renderCard({ ...LIVE, completionPercent: '99.999' });
+    const fill = screen.getByTestId(PROGRESS_FILL, { includeHiddenElements: true });
+    expect(StyleSheet.flatten(fill.props.style).backgroundColor).toBe(colors.lime500);
+  });
+
+  it('draws a bar at 100% in the success colour', async () => {
+    await renderCard({ ...LIVE, completionPercent: '100.00' });
+    const fill = screen.getByTestId(PROGRESS_FILL, { includeHiddenElements: true });
+    expect(StyleSheet.flatten(fill.props.style).backgroundColor).toBe(colors.success);
+  });
+
   it('formats pledged and the goal with @ideanest/money', async () => {
     await renderCard(LIVE);
     expect(screen.getByText(formatMoney(LIVE.pledged))).toBeTruthy();
@@ -197,10 +216,8 @@ describe('the money on the card', () => {
   it('prints the 80% rule, and no words on the bar itself', async () => {
     await renderCard(LIVE);
     expect(screen.getByText('Succeeds at 80% of the goal')).toBeTruthy();
-    expect(screen.getByRole('progressbar')).toHaveAccessibilityValue({
-      text: '43 percent of the goal',
-    });
-    expect(screen.getByRole('progressbar', { name: '43 percent of the goal' })).toBeTruthy();
+    // Printed once, beside the bar: the bar's own "% funded" line is off.
+    expect(screen.getAllByText('43% funded', { includeHiddenElements: true })).toHaveLength(1);
   });
 
   it('leaves out "of goal" when there is no goal', async () => {
@@ -221,6 +238,8 @@ describe('backers, in each language', () => {
     ['ru', 1, '1 бэкер'],
     ['ru', 3, '3 бэкера'],
     ['ru', 12, '12 бэкеров'],
+    // The bare count, as the web's `pluralise` writes it — not grouped.
+    ['en', 1234, '1234 backers'],
   ])('in %s, %i reads "%s"', async (locale, backersCount, words) => {
     await renderCard({ ...LIVE, backersCount }, locale);
     expect(screen.getByText(words)).toBeTruthy();
@@ -228,6 +247,25 @@ describe('backers, in each language', () => {
 });
 
 describe('the card as one link', () => {
+  it('carries what it prints as its value, so a screen reader hears it on the one stop', async () => {
+    await renderCard({ ...LIVE, extended: true, daysLeft: 2 });
+    expect(screen.getByRole('link')).toHaveAccessibilityValue({
+      text: 'Live, Extended, 2 days left, 43% funded, 12 backers',
+    });
+  });
+
+  it('has no second stop: the bar inside is not an accessible element', async () => {
+    await renderCard(LIVE);
+    expect(screen.queryByRole('progressbar')).toBeNull();
+  });
+
+  it('says "not open" in its value when there is no completion', async () => {
+    await renderCard({ ...LIVE, completionPercent: undefined, daysLeft: undefined });
+    expect(screen.getByRole('link')).toHaveAccessibilityValue({
+      text: 'Live, Not open for pledges yet, 12 backers',
+    });
+  });
+
   it('is named by its title and byline, and points at the campaign', async () => {
     await renderCard(LIVE);
     const card = screen.getByRole('link', { name: 'Solar Lamp, by Aysel' });
