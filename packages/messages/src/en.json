@@ -5414,6 +5414,12 @@
     "failed": "That did not work. Try again in a moment."
   },
   "mobile": {
+    "browse": {
+      "loadingCategories": "Loading the categories",
+      "loadingCategory": "Loading the category",
+      "loadingCollections": "Loading the collections",
+      "loadingCollection": "Loading the collection"
+    },
     "tabs": {
       "home": "Home",
       "search": "Search",

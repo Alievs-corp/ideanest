@@ -17,7 +17,8 @@ sortsFor(filters.query !== '');     // best_match first
 ## Why this is a package
 
 It used to be `apps/web/src/lib/discovery/{filters,vocabulary,bounds,emptiness}.ts`.
-It moved when the app's Discover screen (#153) needed the same feed: a link
+It moved when the app's Discover screen (#153) needed the same feed, and the
+taxonomy and collection modules followed with the browse screens (#154): a link
 `/discover?category=games&sort=ending_soon` has to open the same campaigns in a
 browser and on a phone, "Clear all filters" has to keep the same things, and the
 chip a reader removes has to remove the same filter. Two copies would agree on
@@ -38,6 +39,8 @@ that genuinely differs.
 | `@ideanest/discovery/facets` | The facet response, `PAGE_SIZE` (24), `countOf`, `slugNames` |
 | `@ideanest/discovery/emptiness` | `blameFor`: which applied filters emptied the feed |
 | `@ideanest/discovery/copy` | `FilterVocabularyCopy` and the builder both translators call |
+| `@ideanest/discovery/taxonomy` | `Category`, `taxonomyFrom`, `categoryPath` / `subcategoryPath`, `findCategory` / `findSubcategory` (scoped to the parent) |
+| `@ideanest/discovery/collections` | `Collection`, `collectionFrom` / `collectionsFrom`, `collectionPath`, `collectionQueryParams` (`limit` as a string), `isOpenCall`, `windowFacts` with the client's own date formatter |
 
 There is no barrel. Each module is imported by its own path, so a screen that
 needs `sortsFor` does not pull the filter parser into its bundle.

@@ -1,7 +1,14 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { GetQueryParams, GetResponse } from '@ideanest/api-client';
 import { PAGE_SIZE, type DiscoveryFacets } from '@ideanest/discovery/facets';
+import {
+  collectionFrom,
+  collectionQueryParams,
+  collectionsFrom,
+  type Collection,
+} from '@ideanest/discovery/collections';
 import { filterKey, toSearchParams, type DiscoveryFilters } from '@ideanest/discovery/filters';
+import { taxonomyFrom } from '@ideanest/discovery/taxonomy';
 import { api } from './client';
 
 /**
@@ -22,7 +29,9 @@ export type Feed = GetResponse<'/v1/discover'>;
 export type Card = NonNullable<Feed['items']>[number];
 export type Suggestions = GetResponse<'/v1/search/suggest'>;
 export type Suggestion = NonNullable<Suggestions['items']>[number];
-export type Category = GetResponse<'/v1/categories'>[number];
+export type { Category, Subcategory } from '@ideanest/discovery/taxonomy';
+export type { Collection } from '@ideanest/discovery/collections';
+export type CollectionPage = GetResponse<'/v1/collections/{slug}'>;
 export type ProjectPage = GetResponse<'/v1/projects/{creatorSlug}/{projectSlug}'>;
 export type PublicRewards = GetResponse<'/v1/projects/{projectId}/rewards/public'>;
 export type ProjectUpdates = GetResponse<'/v1/projects/{projectId}/updates'>;
@@ -42,6 +51,9 @@ export const queryKeys = {
   discoverFacets: (key: string) => ['discoverFacets', key] as const,
   search: (query: string) => ['search', query] as const,
   categories: () => ['categories'] as const,
+  collections: () => ['collections'] as const,
+  /** The collection and its pages, by slug. Not under `project`, which is persisted. */
+  collection: (slug: string) => ['collection', slug] as const,
   suggestions: (term: string) => ['suggestions', term] as const,
   project: (creatorSlug: string, projectSlug: string) =>
     ['project', creatorSlug, projectSlug] as const,
@@ -169,15 +181,69 @@ export function useSearchResults(query: string) {
 }
 
 /**
- * The category taxonomy, for Home's "Browse by category". Small and slow to change, but still not
- * persisted: a renamed category restored from last month would be a tile that opens nothing.
+ * The category taxonomy — Home's "Browse by category", the categories index and every landing
+ * page, under one key, so opening a category from Home costs no second read (#154). Small and
+ * slow to change, but still not persisted: a renamed category restored from last month would be
+ * a tile that opens nothing.
+ *
+ * Narrowed with the shared `taxonomyFrom` (a missing name reads as the slug), so a screen reads
+ * `category.slug` without a guard on every field.
  */
 export function useCategories() {
   return useQuery({
     queryKey: queryKeys.categories(),
     retry: false,
     queryFn: ({ signal }) => api().get('/v1/categories', { signal }),
+    select: taxonomyFrom,
   });
+}
+
+/**
+ * Every visible collection, in the curator's order (#154). Not paged: the service sends the
+ * whole index at once. Rows with no slug or no title are dropped (`collectionFrom` says why).
+ * Not persisted, like the taxonomy.
+ */
+export function useCollections() {
+  return useQuery({
+    queryKey: queryKeys.collections(),
+    retry: false,
+    queryFn: ({ signal }) => api().get('/v1/collections', { signal }),
+    select: (index): readonly Collection[] => collectionsFrom(index.items ?? []),
+  });
+}
+
+/**
+ * One collection and its campaigns, paged by cursor in the curator's order (#154).
+ *
+ * Every page carries the collection again; the header reads it from the first page only, so a
+ * later page cannot change the heading half way down a scroll. `limit` goes as a string because
+ * the contract types it that way (`collectionQueryParams`).
+ *
+ * `getNextPageParam` returns `undefined` at the end — the value TanStack reads as "no next page"
+ * — and treats an empty cursor as the end too. Not retried: a 404 is the answer for a slug that
+ * names nothing, for an unpublished collection and for one outside its window, and asking three
+ * times will not change it.
+ */
+export function useCollection(slug: string) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.collection(slug),
+    enabled: slug !== '',
+    retry: false,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam, signal }) =>
+      api().get('/v1/collections/{slug}', {
+        path: { slug },
+        query: collectionQueryParams({ cursor: pageParam }, FEED_PAGE_SIZE),
+        signal,
+      }),
+    getNextPageParam: (page: CollectionPage) =>
+      page.nextCursor === undefined || page.nextCursor === '' ? undefined : page.nextCursor,
+  });
+}
+
+/** The collection a page of `useCollection` describes, narrowed — `null` when it cannot be drawn. */
+export function collectionOf(page: CollectionPage | undefined): Collection | null {
+  return page?.collection === undefined ? null : collectionFrom(page.collection);
 }
 
 /**

@@ -1,8 +1,8 @@
-import { CategoryIndex } from '../../components/browse/category-index';
+import { CollectionIndex } from '../../components/browse/collection-index';
 
-/** The categories index — the web's `/categories` (issue #154). See `CategoryIndex`. */
+/** The collections index — the web's `/collections` (issue #154). See `CollectionIndex`. */
 export default function Screen() {
-  return <CategoryIndex />;
+  return <CollectionIndex />;
 }
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).

@@ -162,10 +162,13 @@ const config: ExpoConfig = {
         action: 'VIEW',
         autoVerify: true,
         /*
-         * Campaign pages, and #153's discovery entry points: the home page, the feed and search,
-         * each an exact path whose state rides in the query string — bare, and under every locale
-         * prefix, because the site serves every page there and that is the URL people share. The
-         * entries share one scheme and one host, so they add up to these paths and nothing more.
+         * Campaign pages; #153's discovery entry points: the home page, the feed and search, each
+         * an exact path whose state rides in the query string; and #154's browse pages, the
+         * category and collection indexes and everything under them — bare, and under every
+         * locale prefix, because the site serves every page there and that is the URL people
+         * share. The entries share one scheme and one host, so they add up to these paths and
+         * nothing more. A path under a prefix that the app has no screen for (`/categories/a/b/c`)
+         * is refused by `lib/links.ts`, as a deeper path under `/projects` already is.
          * The web's association file (`apps/web/src/lib/mobile/association.ts`) claims the same,
          * for iOS.
          */
@@ -174,6 +177,8 @@ const config: ExpoConfig = {
           { scheme: 'https', host: siteHost, path: root === '' ? '/' : root },
           { scheme: 'https', host: siteHost, path: `${root}/discover` },
           { scheme: 'https', host: siteHost, path: `${root}/search` },
+          { scheme: 'https', host: siteHost, pathPrefix: `${root}/categories` },
+          { scheme: 'https', host: siteHost, pathPrefix: `${root}/collections` },
         ]),
         category: ['BROWSABLE', 'DEFAULT'],
       },

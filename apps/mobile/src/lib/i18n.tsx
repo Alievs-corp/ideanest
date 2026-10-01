@@ -18,6 +18,7 @@ import {
   partlessAzerbaijaniNumberFormat,
 } from '@ideanest/messages/hermes';
 import { pluralForm, type PluralForms } from '@ideanest/messages/plurals';
+import { WINDOW_DATE_OPTIONS } from '@ideanest/discovery/collections';
 import { currentLocale, useLocale } from './locale';
 
 /**
@@ -150,6 +151,7 @@ let partlessCount: ReturnType<typeof partlessAzerbaijaniNumberFormat> | undefine
 let partlessDate: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
 let partlessTime: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
 let partlessDateTime: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
+let partlessWindow: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
 
 function countFormat(locale: Locale): { format(value: number): string } {
   if (locale !== 'az' || PARTS.numbers) return numberFormat(locale, COUNT_OPTIONS, 'count');
@@ -169,6 +171,11 @@ function timeFormat(locale: Locale): { format(value: Date): string } {
 function dateTimeFormatFor(locale: Locale): { format(value: Date): string } {
   if (locale !== 'az' || PARTS.dates) return dateTimeFormat(locale, DATE_TIME_OPTIONS, 'dateTime');
   return (partlessDateTime ??= partlessAzerbaijaniDateTimeFormat(DATE_TIME_OPTIONS));
+}
+
+function windowFormat(locale: Locale): { format(value: Date): string } {
+  if (locale !== 'az' || PARTS.dates) return dateTimeFormat(locale, WINDOW_DATE_OPTIONS, 'window');
+  return (partlessWindow ??= partlessAzerbaijaniDateTimeFormat(WINDOW_DATE_OPTIONS));
 }
 
 export function formatCount(count: number, locale: Locale): string {
@@ -201,6 +208,22 @@ export function formatDate(iso: string | null | undefined, locale: Locale): stri
     return dateFormat(locale).format(date) || iso.slice(0, 10);
   } catch {
     return iso.slice(0, 10);
+  }
+}
+
+/**
+ * One end of a collection's window (#154): a long date in **UTC**, in the reader's language —
+ * the web's `formatWindowDate`, so a window closing at 23:30 UTC on the 31st reads "31" on a
+ * phone in Baku as it does in a browser anywhere. `null` for a value that is not a date, which
+ * `windowFacts` drops rather than printing; the ISO day when the engine cannot format.
+ */
+export function formatWindowDate(iso: string, locale: Locale): string | null {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    return windowFormat(locale).format(date) || date.toISOString().slice(0, 10);
+  } catch {
+    return date.toISOString().slice(0, 10);
   }
 }
 
