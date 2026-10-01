@@ -217,6 +217,9 @@ it closes all of it.
 | One `settle()` for every sign-in path, so a provider cannot skip the second factor | `src/features/auth/use-sign-in-outcome.ts` |
 | The web's `describeAuthFailure`: suspension withdraws the submit, a 429 says the wait, no body means unreachable | `src/lib/auth-failures.ts` |
 | `returnTo`: the web's `?next=` sanitising, and every auth path refused as a destination | `src/lib/guard.ts` |
+| Register: always "check your email", whatever the address — the service hides whether it had an account, so the screen does too | `src/app/(auth)/register.tsx`, `src/features/auth/register-form.tsx` |
+| The reset request and confirm: mismatched passwords send nothing, a weak password keeps the unspent link, a dead link shows the service's sentence | `src/app/(auth)/reset-password/`, `src/features/auth/reset-*-form.tsx` |
+| The emailed links — verify-email, the reset confirm, confirm-email-change: the token is read once, taken off the route, and spent exactly once per mount (Strict Mode included) | `src/features/auth/link-token.ts`, `verify-email-view.tsx`, `email-change-view.tsx` |
 
 After a sign-in, push is re-registered only where notifications are already
 allowed (`registerIfAllowed`): signing in never shows a permission prompt.
@@ -277,10 +280,13 @@ consequence of a workflow finishing.
 
 ## What is not built
 
-**Registration, password reset, the emailed links and provider sign-in.** Issue #152
-brings them in parts: the client calls for all of them are in `src/lib/auth.ts`
-already (`register`, `requestPasswordReset`, `resetPassword`, `verifyEmail`,
-`confirmEmailChange`, `signInWithProvider`), and the screens follow.
+**Provider sign-in.** `signInWithProvider` is in `src/lib/auth.ts` and goes through the
+same `settle()`; the Google and Apple buttons come in the next part of #152.
+
+**Opening the emailed links in the app.** The screens exist and read the link's
+`token`; claiming `/verify-email`, `/reset-password/confirm` and `/confirm-email-change`
+(unprefixed and under `/{az|en|ru|tr}/`) in the association files and `lib/links.ts` is
+#165's. Until then the links open the website, which does the same thing.
 
 **Checkout.** §4.5, not built in the app yet. The campaign page's call to action opens
 the web checkout, which works today.

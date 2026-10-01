@@ -48,6 +48,28 @@ export function AuthLink({
   );
 }
 
+interface LinkSpec {
+  readonly label: string;
+  readonly onPress: () => void;
+  readonly testID?: string;
+}
+
+/**
+ * Two links on one line with a middle dot between them — "Ask for a new link · Sign in". The dot
+ * is decoration and is not read out; each link is its own stop for the screen reader.
+ */
+export function AuthLinkPair({ first, second }: { readonly first: LinkSpec; readonly second: LinkSpec }) {
+  return (
+    <View style={styles.row}>
+      <AuthLink {...first} />
+      <Body accessibilityElementsHidden importantForAccessibility="no">
+        ·
+      </Body>
+      <AuthLink {...second} />
+    </View>
+  );
+}
+
 /**
  * A native accordion row: collapsed by default, `accessibilityState.expanded` said with it.
  * The web's `<details>`; nothing animates open, under the auth screens' motion budget of none.

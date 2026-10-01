@@ -1,8 +1,17 @@
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { Body, Heading, Meta, MotionBudgetProvider } from '../../components/ui';
+import { CircleCheck } from 'lucide-react-native';
+import {
+  Body,
+  Card,
+  Heading,
+  Icon,
+  Meta,
+  MotionBudgetProvider,
+  type IconComponent,
+} from '../../components/ui';
 import { useT } from '../../lib/i18n';
-import { formMeasure, spacing } from '../../theme';
+import { colors, formMeasure, spacing } from '../../theme';
 
 /**
  * The frame every authentication screen sits in — the web's `(auth)/layout.tsx` and
@@ -53,7 +62,48 @@ export function AuthHeader({ title, intro }: { readonly title: string; readonly 
   );
 }
 
+/**
+ * A finished outcome — an address verified, a password set, an email moved: the success icon
+ * above the header. Colour, icon AND words, never colour alone; `success` and not lime, because
+ * lime means "act now" and this is done (docs/ui-kit.md §2.4). The icon is decorative — the
+ * header beside it says the same thing.
+ */
+export function SuccessHeader({ title, intro }: { readonly title: string; readonly intro: string }) {
+  return (
+    <View style={styles.success}>
+      <Icon icon={CircleCheck} size={32} color={colors.success} />
+      <AuthHeader title={title} intro={intro} />
+    </View>
+  );
+}
+
+/**
+ * The quiet card that explains what a link or an email is — how long it lasts, what happens if
+ * it is used twice. An optional decorative icon, hidden from the screen reader.
+ */
+export function ExplainCard({
+  icon,
+  children,
+  testID,
+}: {
+  readonly icon?: IconComponent;
+  readonly children: ReactNode;
+  readonly testID?: string;
+}) {
+  return (
+    <Card size="sm" testID={testID}>
+      <View style={styles.explain}>
+        {icon === undefined ? null : <Icon icon={icon} size={20} color={colors.textTertiary} />}
+        <View style={styles.explainWords}>{children}</View>
+      </View>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
+  success: { gap: spacing[4] },
+  explain: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[3] },
+  explainWords: { flex: 1, minWidth: 0, gap: spacing[2] },
   fill: { flex: 1 },
   content: {
     flexGrow: 1,
