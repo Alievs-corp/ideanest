@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import { parseAmount } from '../money';
+import { parseAmount } from '@ideanest/money';
 
 /**
  * The custom money range, checked before it is applied.

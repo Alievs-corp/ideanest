@@ -21,7 +21,7 @@ import type { Locale } from '../../../../lib/i18n/locale';
  *
  * §4.3 gives curated collections, themed collections and open calls one address each, and
  * before this page there was no link on the site that reached any of them. The `programme`
- * filter on `/v1/discover` narrows to an open call's members, but `lib/discovery/filters.ts`
+ * filter on `/v1/discover` narrows to an open call's members, but `@ideanest/discovery/filters`
  * does not expose it and robots.txt disallows `/discover?` wholesale in any case
  * (`lib/seo/indexability.ts`) — so a filter could never have been the answer. This page is the
  * crawl path, the header and footer's destination for curation, and the parent of every

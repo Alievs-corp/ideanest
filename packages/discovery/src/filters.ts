@@ -11,8 +11,8 @@ import {
   type DiscoverySort,
   type DiscoveryStatus,
 } from './vocabulary';
-import type { FilterVocabularyCopy } from '../i18n/feed-copy';
-import { fillPlaceholders } from '../i18n/placeholders';
+import type { FilterVocabularyCopy } from './copy';
+import { fillPlaceholders } from '@ideanest/messages/placeholders';
 
 /**
  * The filter, sort, and range state of the discovery feed — and the URL it is

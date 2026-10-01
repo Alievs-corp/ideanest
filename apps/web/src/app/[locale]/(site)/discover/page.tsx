@@ -5,7 +5,7 @@ import { DiscoveryView } from '../../../../components/discovery/DiscoveryView';
 import { StructuredData } from '../../../../components/seo/StructuredData';
 import { fetchDiscoveryFeed } from '../../../../lib/api/server';
 import { feedQuery } from '../../../../lib/discovery/api';
-import { filterKey, parseFilters } from '../../../../lib/discovery/filters';
+import { filterKey, parseFilters } from '@ideanest/discovery/filters';
 import type { SeededFeed } from '../../../../lib/discovery/useDiscoveryFeed';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { publicPageMetadata } from '../../../../lib/seo/metadata';

@@ -5,7 +5,7 @@ import { CampaignGrid } from '../../../../components/browse/CampaignGrid';
 import { SearchField } from '../../../../components/search/SearchField';
 import { fetchSearchResults } from '../../../../lib/api/server';
 import { PAGE_SIZE } from '../../../../lib/discovery/api';
-import { NO_FILTERS, toHref } from '../../../../lib/discovery/filters';
+import { NO_FILTERS, toHref } from '@ideanest/discovery/filters';
 import { SEARCH_QUERY_PARAM, readSearchQuery } from '../../../../lib/search/query';
 import { privatePageMetadata } from '../../../../lib/seo/metadata';
 import { getLocale, getTranslations } from 'next-intl/server';

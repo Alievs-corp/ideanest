@@ -164,7 +164,7 @@ export function metadataBase(env: EnvSource = process.env): URL {
  * Every query string is dropped, and that is the whole mechanism rather than an
  * oversight:
  *
- *   - **Discovery's filters live in the query string** (`lib/discovery/filters.ts`)
+ *   - **Discovery's filters live in the query string** (`@ideanest/discovery/filters`)
  *     and the feed they select is fetched and rendered in the browser. Every
  *     filter combination therefore has the SAME server-rendered document, so one
  *     canonical is not a simplification — it is the truth about what a crawler

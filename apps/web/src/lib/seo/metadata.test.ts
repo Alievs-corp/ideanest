@@ -99,7 +99,7 @@ describe('canonicalUrl', () => {
   it('drops pagination parameters', () => {
     /*
      * The feed's cursor is deliberately absent from the URL
-     * (`lib/discovery/filters.ts`), so a `?cursor=` or `?page=` in one came from
+     * (`@ideanest/discovery/filters`), so a `?cursor=` or `?page=` in one came from
      * a crawler's invention or somebody else's scroll. Either way it names the
      * same document.
      */

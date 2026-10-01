@@ -1,4 +1,4 @@
-import { countOf, type DiscoveryFacets } from './api';
+import { countOf, type DiscoveryFacets } from './facets';
 import type { ActiveFilter } from './filters';
 
 /**

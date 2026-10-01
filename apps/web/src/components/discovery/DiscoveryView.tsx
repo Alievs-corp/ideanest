@@ -8,7 +8,7 @@ import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup, cn, useDismiss 
 import { FadeUp } from '@ideanest/ui/motion';
 import type { ApiError } from '../../lib/api/problem';
 import { PAGE_SIZE, slugNames } from '../../lib/discovery/api';
-import { blameFor } from '../../lib/discovery/emptiness';
+import { blameFor } from '@ideanest/discovery/emptiness';
 import {
   activeFilters,
   clearFilters,
@@ -18,7 +18,7 @@ import {
   withQuery,
   type ActiveFilter,
   type DiscoveryFilters,
-} from '../../lib/discovery/filters';
+} from '@ideanest/discovery/filters';
 import { useDiscoveryFacets } from '../../lib/discovery/useDiscoveryFacets';
 import { useDiscoveryFeed, type SeededFeed } from '../../lib/discovery/useDiscoveryFeed';
 import { ActiveFilters } from './ActiveFilters';

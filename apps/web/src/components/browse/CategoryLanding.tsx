@@ -5,7 +5,7 @@ import { Link } from '../../i18n/navigation';
 import { ArrowRight } from 'lucide-react';
 import { EmptyState } from '@ideanest/ui/server';
 import type { ProjectCard } from '../../lib/discovery/api';
-import { NO_FILTERS, toHref } from '../../lib/discovery/filters';
+import { NO_FILTERS, toHref } from '@ideanest/discovery/filters';
 import type { Category, Subcategory } from '../../lib/categories/api';
 import { subcategoryPath } from '../../lib/categories/api';
 import { CampaignGrid } from './CampaignGrid';

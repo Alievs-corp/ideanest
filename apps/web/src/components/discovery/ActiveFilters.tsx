@@ -1,7 +1,7 @@
 'use client';
 
 import { ChipRow, Pill, RemovableChip } from '@ideanest/ui';
-import type { ActiveFilter } from '../../lib/discovery/filters';
+import type { ActiveFilter } from '@ideanest/discovery/filters';
 import type { FeedCopy } from '../../lib/i18n/feed-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 

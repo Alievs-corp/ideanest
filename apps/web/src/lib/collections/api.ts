@@ -128,7 +128,7 @@ export const COLLECTIONS_PATH = '/collections';
  *
  * `/collections/{slug}` rather than a filter on the feed, and that is the whole point of the
  * route. `?programme={slug}` on `/v1/discover` narrows to an `OPEN_CALL` collection and the
- * web feed does not expose it — `lib/discovery/filters.ts` has nine filters and that is not
+ * web feed does not expose it — `@ideanest/discovery/filters` has nine filters and that is not
  * one of them — but even if it did, robots.txt disallows `/discover?` wholesale
  * (`lib/seo/indexability.ts`), so the only URL that reached a collection would be one no
  * crawler is allowed to fetch. And a filter cannot reproduce **the curator's order**, which

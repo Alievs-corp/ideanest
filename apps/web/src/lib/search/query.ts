@@ -2,7 +2,7 @@
  * The search route's query string — §4.13 WS-06.
  *
  * ONE PARAMETER NAME, WRITTEN AND READ IN ONE PLACE. It is `q`, because that is what
- * `GET /v1/search` calls it and what `lib/discovery/filters.ts` already writes into
+ * `GET /v1/search` calls it and what `@ideanest/discovery/filters` already writes into
  * `/discover`. The header writes this URL, the results page reads it, and the results page
  * hands the same word straight to the service — a second spelling anywhere in that chain is
  * a search box that silently searches for nothing.
@@ -33,7 +33,7 @@ export function searchHref(text: string): string {
  *
  * NEVER FOLDED. Folding is the service's (`ideanest_fold`), and a client that folded would
  * echo "secenek" back at somebody who typed "seç" — their own language spelled wrong at
- * them. `lib/discovery/filters.ts` states the same rule for the same parameter.
+ * them. `@ideanest/discovery/filters` states the same rule for the same parameter.
  *
  * A repeated `?q=a&q=b` takes the first. The service binds one value and the alternative —
  * joining them — would search for a phrase nobody typed.

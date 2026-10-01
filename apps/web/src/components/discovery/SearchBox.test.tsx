@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
-import { NO_FILTERS, parseFilters, toHref, type DiscoveryFilters } from '../../lib/discovery/filters';
+import { NO_FILTERS, parseFilters, toHref, type DiscoveryFilters } from '@ideanest/discovery/filters';
 import { getSuggestions, type Suggestion } from '../../lib/discovery/suggest';
 import { SearchBox } from './SearchBox';
 import { suggestCopyFrom } from '../../lib/i18n/feed-copy';

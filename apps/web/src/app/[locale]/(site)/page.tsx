@@ -9,7 +9,7 @@ import { fetchCategories, fetchDiscoveryFeed } from '../../../lib/api/server';
 import { categoryPath } from '../../../lib/categories/api';
 import { feedQuery, type ProjectCard } from '../../../lib/discovery/api';
 import { localeOrDefault } from '../../../lib/i18n/locale';
-import { NO_FILTERS, toHref } from '../../../lib/discovery/filters';
+import { NO_FILTERS, toHref } from '@ideanest/discovery/filters';
 import { homePageMetadata } from '../../../lib/seo/metadata';
 import { homePageGraph } from '../../../lib/seo/structured-data/graphs';
 import { graphContext } from '../../../lib/i18n/shell-copy.server';

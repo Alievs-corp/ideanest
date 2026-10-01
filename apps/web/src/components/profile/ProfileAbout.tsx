@@ -27,7 +27,7 @@ import type { ProfileAboutCopy } from '../../lib/i18n/profile-copy';
  * `location.slug` is V16's shared vocabulary and §4.2 records that it is the vocabulary
  * `/discover?city=` reads — but `?city=` is one of the four options the discovery service
  * declares and refuses, answering `DISCOVERY_OPTION_UNSUPPORTED` and naming #47.
- * `lib/discovery/vocabulary.ts` lists it among the gaps for exactly this reason: a control
+ * `@ideanest/discovery/vocabulary` lists it among the gaps for exactly this reason: a control
  * that cannot work is a promise the interface breaks the first time somebody uses it. When
  * #47 lands, this becomes a link and nothing else about it changes.
  *

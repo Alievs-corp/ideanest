@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError } from '../api/problem';
 import { getDiscoveryFeed, type DiscoveryFeed, type ProjectCard } from './api';
-import { filterKey, type DiscoveryFilters } from './filters';
+import { filterKey, type DiscoveryFilters } from '@ideanest/discovery/filters';
 import type { FeedCopy } from '../i18n/feed-copy';
 import type { Locale } from '../i18n/locale';
 import { pluralise } from '../i18n/plurals';

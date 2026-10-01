@@ -1,6 +1,6 @@
 import { fetchCategories, fetchDiscoveryFeed } from '../api/server';
 import { PAGE_SIZE, feedQuery, type ProjectCard } from '../discovery/api';
-import { NO_FILTERS } from '../discovery/filters';
+import { NO_FILTERS } from '@ideanest/discovery/filters';
 import { findCategory, findSubcategory, type Category, type Subcategory } from './api';
 
 /**

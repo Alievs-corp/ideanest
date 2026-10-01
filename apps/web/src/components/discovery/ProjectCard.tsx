@@ -16,7 +16,7 @@ import { DISCOVERY_CARD_SIZES } from '../../lib/images/sizes';
 import { canOptimise } from '../../lib/images/source';
 import { formatMoney } from '../../lib/money';
 import type { ProjectCard as ProjectCardData } from '../../lib/discovery/api';
-import type { DiscoveryStatus } from '../../lib/discovery/vocabulary';
+import type { DiscoveryStatus } from '@ideanest/discovery/vocabulary';
 import type { ProjectCardCopy } from '../../lib/i18n/card-copy';
 import type { Locale } from '../../lib/i18n/locale';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';

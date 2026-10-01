@@ -5,7 +5,7 @@ import { useRouter } from '../../i18n/navigation';
 import { Search } from 'lucide-react';
 import { Combobox, Pill, type ComboboxOption } from '@ideanest/ui';
 import type { ApiError } from '../../lib/api/problem';
-import { addSlugFilter, withQuery, type DiscoveryFilters } from '../../lib/discovery/filters';
+import { addSlugFilter, withQuery, type DiscoveryFilters } from '@ideanest/discovery/filters';
 import { suggestionId, type Suggestion } from '../../lib/discovery/suggest';
 import type { SuggestCopy } from '../../lib/i18n/feed-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';

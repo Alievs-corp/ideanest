@@ -1,8 +1,9 @@
 import { publicFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { Money } from '../money';
-import { toSearchParams, type DiscoveryFilters } from './filters';
-import type { AmountBand, CompletionBand, DiscoveryStatus } from './vocabulary';
+import { toSearchParams, type DiscoveryFilters } from '@ideanest/discovery/filters';
+import type { AmountBand, CompletionBand, DiscoveryStatus } from '@ideanest/discovery/vocabulary';
+import { PAGE_SIZE, type DiscoveryFacets } from '@ideanest/discovery/facets';
 
 /**
  * The typed client for `GET /v1/discover` and `GET /v1/discover/facets`.
@@ -83,49 +84,21 @@ export interface DiscoveryFeed {
   nextCursor?: string | null;
 }
 
-export interface ValueCount {
-  value: string;
-  count: number;
-}
-
-export interface NamedCount {
-  slug: string;
-  name: string;
-  count: number;
-}
-
-export interface CategoryCount extends NamedCount {
-  subcategories: readonly NamedCount[];
-}
-
-/**
- * D-10's live faceted counts.
- *
- * A FACET EXCLUDES ITS OWN DIMENSION and applies every other. That is what
- * makes the panel usable: counted under the category filter already chosen,
- * every other category would read zero, and a backer who picked Games could
- * never learn there are four campaigns in Comics matching everything else they
- * chose. The fixed vocabularies answer for all of their values including the
- * empty ones; `tags` lists only tags with campaigns behind them, because the
- * vocabulary is free and unbounded.
+/*
+ * The facet shapes, the page size and the two readings of the panel live in
+ * `@ideanest/discovery` since #153, because the app reads the same response.
+ * They are re-exported here so every web caller keeps one import for
+ * "discovery's wire shapes".
  */
-export interface DiscoveryFacets {
-  status: readonly ValueCount[];
-  categories: readonly CategoryCount[];
-  tags: readonly NamedCount[];
-  completion: readonly ValueCount[];
-  goalAmount: readonly ValueCount[];
-  amountRaised: readonly ValueCount[];
-}
-
-/**
- * Cards per page.
- *
- * Twenty-four, which is the service's own default and divides exactly by two,
- * three, four, and six — every column count the grid takes between a phone and
- * a wide desktop — so a page never ends in a half-filled row.
- */
-export const PAGE_SIZE = 24;
+export {
+  PAGE_SIZE,
+  countOf,
+  slugNames,
+  type CategoryCount,
+  type DiscoveryFacets,
+  type NamedCount,
+  type ValueCount,
+} from '@ideanest/discovery/facets';
 
 /**
  * The query string for a request, filters plus paging.
@@ -173,36 +146,6 @@ export async function getDiscoveryFacets(
   });
   if (!response.ok) throw await errorFrom(response);
   return (await response.json()) as DiscoveryFacets;
-}
-
-/* -------------------------------------------------------------------------
- * Reading the panel
- * ---------------------------------------------------------------------- */
-
-/** The count for one value of a fixed vocabulary, or zero when the panel has not loaded. */
-export function countOf(counts: readonly ValueCount[] | undefined, value: string): number {
-  return counts?.find((entry) => entry.value === value)?.count ?? 0;
-}
-
-/**
- * Slug to translated name, over every category, subcategory, and tag the panel
- * carries.
- *
- * One map rather than three: a chip holds a slug and wants a name, and which
- * dimension it came from does not change the answer. Names are localised by the
- * service against `Accept-Language`, which the browser sends on every fetch.
- */
-export function slugNames(facets: DiscoveryFacets | null): ReadonlyMap<string, string> {
-  const names = new Map<string, string>();
-  if (facets === null) return names;
-
-  for (const category of facets.categories) {
-    names.set(category.slug, category.name);
-    for (const subcategory of category.subcategories) names.set(subcategory.slug, subcategory.name);
-  }
-  for (const tag of facets.tags) names.set(tag.slug, tag.name);
-
-  return names;
 }
 
 export type { DiscoveryStatus, CompletionBand, AmountBand };

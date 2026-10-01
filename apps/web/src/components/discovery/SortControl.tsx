@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn, useDismiss } from '@ideanest/ui';
-import { isSort, labelOf, sortsFor, type DiscoverySort } from '../../lib/discovery/vocabulary';
+import { isSort, labelOf, sortsFor, type DiscoverySort } from '@ideanest/discovery/vocabulary';
 import type { FeedCopy } from '../../lib/i18n/feed-copy';
 
 /**
