@@ -1,5 +1,17 @@
 import * as SecureStore from 'expo-secure-store';
-import { refreshAccessToken, signIn, signOut, verifyTwoFactor } from './auth';
+import {
+  confirmEmailChange,
+  register,
+  refreshAccessToken,
+  requestPasswordReset,
+  resetPassword,
+  signIn,
+  signInWithProvider,
+  signOut,
+  verifyEmail,
+  verifyTwoFactor,
+} from './auth';
+import { currentLocale } from './locale';
 import {
   currentAccessToken,
   enableLock,
@@ -82,11 +94,54 @@ describe('signing in', () => {
   it('finishes with the code, and sends the delivery again', async () => {
     fetchMock.mockResolvedValueOnce(json({ accessToken: 'access-2', refreshToken: 'refresh-2' }));
 
-    await verifyTwoFactor('chal-1', '123456');
+    await verifyTwoFactor('chal-1', { kind: 'code', code: '123456' });
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/auth/2fa/verify');
-    expect(bodyOf(0)).toMatchObject({ challenge: 'chal-1', code: '123456', tokenDelivery: 'body' });
+    expect(bodyOf(0)).toEqual({
+      challenge: 'chal-1',
+      code: '123456',
+      recoveryCode: null,
+      tokenDelivery: 'body',
+    });
     expect(currentAccessToken()).toBe('access-2');
+  });
+
+  /*
+   * The bug the old single field had (issue #152): `SecondFactors.accepts` reads a non-blank
+   * `code` as a TOTP and never falls back, so a recovery code sent as `code` is always refused.
+   */
+  it('sends a recovery code as recoveryCode, never as code', async () => {
+    fetchMock.mockResolvedValueOnce(json({ accessToken: 'access-2', refreshToken: 'refresh-2' }));
+
+    await verifyTwoFactor('chal-1', { kind: 'recovery-code', recoveryCode: 'abcd-efgh-ijkl' });
+
+    expect(bodyOf(0)).toEqual({
+      challenge: 'chal-1',
+      code: null,
+      recoveryCode: 'abcd-efgh-ijkl',
+      tokenDelivery: 'body',
+    });
+  });
+
+  it('refuses a verify answer that carries no pair rather than half-adopting it', async () => {
+    fetchMock.mockResolvedValueOnce(json({ accessToken: 'access-2' }));
+
+    await expect(verifyTwoFactor('chal-1', { kind: 'code', code: '1' })).rejects.toThrow(
+      /no token pair/,
+    );
+    expect(currentAccessToken()).toBeNull();
+    expect(hasStoredSession()).toBe(false);
+  });
+
+  it('sends the device label with a sign-in', async () => {
+    fetchMock.mockResolvedValueOnce(json({ accessToken: 'access-1', refreshToken: 'refresh-1' }));
+
+    await signIn('backer@example.com', 'correct horse');
+
+    expect(bodyOf(0)).toMatchObject({ deviceLabel: 'Test device' });
+    expect(new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get('X-IdeaNest-Client')).toBe(
+      'ideanest-mobile',
+    );
   });
 
   it('throws the refusal, so a screen can say which one it was', async () => {
@@ -99,6 +154,109 @@ describe('signing in', () => {
 
     await expect(signIn('backer@example.com', 'wrong')).rejects.toMatchObject({ status: 401 });
     expect(hasStoredSession()).toBe(false);
+  });
+});
+
+describe('provider sign-in', () => {
+  it('posts the ID token and its nonce, with the delivery, device and language', async () => {
+    fetchMock.mockResolvedValueOnce(json({ accessToken: 'access-3', refreshToken: 'refresh-3' }));
+
+    const outcome = await signInWithProvider({
+      provider: 'apple',
+      idToken: 'id-token',
+      nonce: 'hashed-nonce',
+      name: '  Aysel Məmmədova ',
+    });
+
+    expect(outcome).toEqual({ kind: 'signed-in' });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/auth/oauth/apple');
+    expect(bodyOf(0)).toEqual({
+      idToken: 'id-token',
+      nonce: 'hashed-nonce',
+      name: 'Aysel Məmmədova',
+      locale: currentLocale(),
+      deviceLabel: 'Test device',
+      tokenDelivery: 'body',
+    });
+    expect(currentAccessToken()).toBe('access-3');
+  });
+
+  it('sends no name when the provider gave none', async () => {
+    fetchMock.mockResolvedValueOnce(json({ accessToken: 'access-3', refreshToken: 'refresh-3' }));
+
+    await signInWithProvider({ provider: 'google', idToken: 'id-token', nonce: 'nonce-1' });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/auth/oauth/google');
+    expect(bodyOf(0)).not.toHaveProperty('name');
+  });
+
+  it('turns a challenge from a provider into the two-factor step, adopting nothing', async () => {
+    fetchMock.mockResolvedValueOnce(
+      json({ twoFactorRequired: true, challenge: 'chal-9', expiresInSeconds: 300 }),
+    );
+
+    const outcome = await signInWithProvider({
+      provider: 'google',
+      idToken: 'id-token',
+      nonce: 'nonce-1',
+    });
+
+    expect(outcome).toEqual({ kind: 'two-factor', challenge: 'chal-9', expiresInSeconds: 300 });
+    expect(currentAccessToken()).toBeNull();
+  });
+});
+
+describe('the account lifecycle', () => {
+  function accepted(): Response {
+    return new Response(null, { status: 202 });
+  }
+
+  it('registers with the app language, and creates no session', async () => {
+    fetchMock.mockResolvedValueOnce(accepted());
+
+    await register({ email: 'new@example.com', password: 'a long password', name: 'Aysel' });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/auth/register');
+    expect(bodyOf(0)).toEqual({
+      email: 'new@example.com',
+      password: 'a long password',
+      name: 'Aysel',
+      locale: currentLocale(),
+    });
+    expect(hasStoredSession()).toBe(false);
+  });
+
+  it.each([
+    ['verify-email', () => verifyEmail('tok-1'), { token: 'tok-1' }],
+    ['forgot-password', () => requestPasswordReset('a@example.com'), { email: 'a@example.com' }],
+    [
+      'reset-password',
+      () => resetPassword('tok-2', 'new password'),
+      { token: 'tok-2', password: 'new password' },
+    ],
+    ['confirm-email-change', () => confirmEmailChange('tok-3'), { token: 'tok-3' }],
+  ] as const)('posts %s with its body', async (path, call, body) => {
+    fetchMock.mockResolvedValueOnce(accepted());
+
+    await call();
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`https://api.test.invalid/v1/auth/${path}`);
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('POST');
+    expect(bodyOf(0)).toEqual(body);
+  });
+
+  it('throws a refusal with its problem, so a screen can name it', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ code: 'WEAK_PASSWORD', detail: 'Too short.' }), {
+        status: 400,
+        headers: { 'content-type': 'application/problem+json' },
+      }),
+    );
+
+    await expect(resetPassword('tok', 'x')).rejects.toMatchObject({
+      status: 400,
+      problem: { code: 'WEAK_PASSWORD' },
+    });
   });
 });
 

@@ -35,7 +35,7 @@ import ts from 'typescript';
  */
 
 const ROOT = join(__dirname, '..');
-const SCANNED = ['app', 'components'].map((dir) => join(ROOT, dir));
+const SCANNED = ['app', 'components', 'features'].map((dir) => join(ROOT, dir));
 
 /**
  * Props whose string value is shown or spoken, so any letter in one is prose. The header

@@ -202,9 +202,24 @@ so that is enough, and it keeps the request count at one per app open.
 
 ## Signing in, and the biometric lock (§17.1, §4.12 MB-03)
 
-`src/app/sign-in.tsx` is an address, a password, and §17.1's second factor when
-the account has one. Registration, password reset and the provider buttons stay
-on the web, which is where a verification email lands anyway.
+The authentication screens are one route group, `src/app/(auth)/`, which the root
+presents as a modal with no tab bar (issue #152). Its only chrome is the wordmark,
+which leaves to Home, and a close control. Nothing in it animates — §5 of
+`docs/motion-system.md` gives authentication no motion — and its screens replace
+one another rather than push, so the group is always one screen deep and closing
+it closes all of it.
+
+| What | Where |
+|---|---|
+| The frame: one column capped at `formMeasure` (the web's 26rem), the footer rule | `src/features/auth/auth-screen.tsx` |
+| Sign-in: address, password with show/hide, refusals, the `password-changed` notice | `src/app/(auth)/sign-in.tsx`, `src/features/auth/sign-in-form.tsx` |
+| The second factor: a code field, and a recovery-code field behind a disclosure, sent as `recoveryCode` — never as `code`, which the service reads only as a TOTP; one expiry timer, no countdown | `src/features/auth/two-factor-step.tsx` |
+| One `settle()` for every sign-in path, so a provider cannot skip the second factor | `src/features/auth/use-sign-in-outcome.ts` |
+| The web's `describeAuthFailure`: suspension withdraws the submit, a 429 says the wait, no body means unreachable | `src/lib/auth-failures.ts` |
+| `returnTo`: the web's `?next=` sanitising, and every auth path refused as a destination | `src/lib/guard.ts` |
+
+After a sign-in, push is re-registered only where notifications are already
+allowed (`registerIfAllowed`): signing in never shows a permission prompt.
 
 It asks for `tokenDelivery: "body"` — the shape §17.1 defines for a native client —
 and the refresh token goes into the platform keychain. **Refresh is
@@ -262,11 +277,10 @@ consequence of a workflow finishing.
 
 ## What is not built
 
-**Registration, password reset and provider sign-in.** The lock work (MB-03) built the sign-in
-form and deliberately stopped there. Registration ends in a verification email,
-a reset ends in a link, and both are a browser either way; the provider buttons
-need the Google and Apple native SDKs and a signed build to test against.
-`sign-in.tsx` says where to go for all three rather than pretending.
+**Registration, password reset, the emailed links and provider sign-in.** Issue #152
+brings them in parts: the client calls for all of them are in `src/lib/auth.ts`
+already (`register`, `requestPasswordReset`, `resetPassword`, `verifyEmail`,
+`confirmEmailChange`, `signInWithProvider`), and the screens follow.
 
 **Checkout.** §4.5, not built in the app yet. The campaign page's call to action opens
 the web checkout, which works today.
