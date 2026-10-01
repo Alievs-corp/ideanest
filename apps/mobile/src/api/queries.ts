@@ -35,6 +35,7 @@ export type CollectionPage = GetResponse<'/v1/collections/{slug}'>;
 export type ProjectPage = GetResponse<'/v1/projects/{creatorSlug}/{projectSlug}'>;
 export type PublicRewards = GetResponse<'/v1/projects/{projectId}/rewards/public'>;
 export type ProjectUpdates = GetResponse<'/v1/projects/{projectId}/updates'>;
+export type PrelaunchPage = GetResponse<'/v1/projects/{id}/prelaunch'>;
 export type SavedList = GetResponse<'/v1/me/saved'>;
 export type PledgeList = GetResponse<'/v1/me/pledges'>;
 
@@ -59,6 +60,11 @@ export const queryKeys = {
     ['project', creatorSlug, projectSlug] as const,
   projectRewards: (projectId: string) => ['project', projectId, 'rewards'] as const,
   projectUpdates: (projectId: string) => ['project', projectId, 'updates'] as const,
+  /**
+   * The public pre-launch page (#155). Under `project`, so it survives a restart like the campaign
+   * page: it is public — a title, a blurb, a cover and a count — and nothing in it is anybody's.
+   */
+  prelaunch: (projectId: string) => ['project', projectId, 'prelaunch'] as const,
   saved: () => ['saved'] as const,
   pledges: () => ['pledges'] as const,
 } as const;
@@ -303,6 +309,23 @@ export function useProjectUpdates(projectId: string | undefined) {
         query: { limit: 5 },
         signal,
       }),
+  });
+}
+
+/**
+ * A campaign's public pre-launch page, by project id (#155) — what is coming and how many are
+ * waiting for it.
+ *
+ * The service answers 404 alike for no such campaign, a draft and one that has already launched,
+ * and the default retry rule (`lib/offline.ts`) does not ask a 4xx twice, so that answer arrives
+ * at once. Disabled for an empty id, which only a malformed route could give.
+ */
+export function usePrelaunchPage(projectId: string) {
+  return useQuery({
+    queryKey: queryKeys.prelaunch(projectId),
+    enabled: projectId !== '',
+    queryFn: ({ signal }) =>
+      api().get('/v1/projects/{id}/prelaunch', { path: { id: projectId }, signal }),
   });
 }
 

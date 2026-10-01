@@ -1,4 +1,10 @@
-import { ApiError, createApiClient, type ApiClient, type Fetch } from '@ideanest/api-client';
+import {
+  ApiError,
+  createApiClient,
+  errorFrom,
+  type ApiClient,
+  type Fetch,
+} from '@ideanest/api-client';
 import { traceIdOf } from '@ideanest/api-client/trace';
 import { apiOrigin } from './config';
 import { currentLocale } from '../lib/locale';
@@ -135,6 +141,45 @@ export function api(): ApiClient {
     });
   };
   return { get };
+}
+
+/**
+ * One JSON write through the session — the pre-launch reminder (#155) is the first caller.
+ *
+ * <p>Through {@link sessionFetch}, like every read, so a signed-in reader's write carries the
+ * bearer (and survives an expired access token by the same one refresh), and a guest's carries
+ * none. That is the arrangement the web's `publicFetch` makes for the same endpoints: a write
+ * that needs no session still says who is asking when there is somebody to say.
+ *
+ * <p>A refusal is thrown as the shared `ApiError`, from `errorFrom`, so `retryAfterSeconds` is
+ * filled from the `Retry-After` header and the screen reads `problem.code` exactly as the web
+ * does. A body-less success (`204`) answers `null`. Not for a payment: a pledge needs an
+ * `Idempotency-Key`, which this deliberately does not add, and checkout writes its own.
+ */
+export async function sendJson(
+  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+  path: string,
+  body?: unknown,
+): Promise<unknown> {
+  const response = await sessionFetch(`${apiOrigin()}${path}`, {
+    method,
+    headers: {
+      'content-type': 'application/json',
+      accept: 'application/json',
+      'Accept-Language': currentLocale(),
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+
+  if (!response.ok) {
+    const error = await errorFrom(response);
+    const traceId = traceIdOf(response);
+    if (traceId !== null) TRACES.set(error, traceId);
+    throw error;
+  }
+  // Read as text first: `json()` on an empty body throws, which would turn a 204 into a failure.
+  const text = await response.text();
+  return text === '' ? null : (JSON.parse(text) as unknown);
 }
 
 /**

@@ -142,6 +142,29 @@ narrowing and a collection's window are `@ideanest/discovery/taxonomy` and
   closing at 23:30 UTC on the 31st reads the 31st on every phone.
 - The taxonomy and collections are cached for the session, never persisted.
 
+## The pre-launch page (#155)
+
+`campaigns/[id]/prelaunch`, the web's `/projects/{id}/prelaunch` (`PrelaunchView`).
+The screen is `src/components/prelaunch/`; its rules — the web's address check,
+the reminder write and the failure wording — are `src/lib/prelaunch.ts`.
+
+- Public. A guest types an address; a signed-in reader is shown none and the
+  request goes with `{}`, registered against the account.
+- `GET /v1/projects/{id}/prelaunch` sits under the persisted `project` root, so
+  the page opens offline with a notice, the form disabled and the reason given.
+- A 404 is "nothing to see here", whichever of no campaign, a draft or launched
+  it was. `REMINDERS_CLOSED` (the campaign opened while the page was open) goes
+  to the same state with "already opened". Anything else is an error with retry.
+- A 429 names the wait in whole minutes, rounded up from `retryAfterSeconds`.
+  A failed reminder otherwise says it could not be saved, except a 401 — or a
+  400 to the account's `{}`, which means the bearer was lost to a dismissed
+  prompt or a failed refresh — which asks the reader to sign in again. A failed
+  read shows the service's `detail` (then `title`), as the web does.
+- `REMINDERS_CLOSED` also drops the persisted page, so an offline cold start
+  cannot show "Coming soon" again; a pull that finds the page again leaves it.
+- One `FadeUp`, on the cover, title and count; the form is outside it. The one
+  lime control is "Remind me".
+
 ## Configuration
 
 Two variables, read at **build** time by `app.config.ts` and surfaced through
@@ -180,7 +203,16 @@ environment variables.
 
 A campaign is at `/projects/<creator>/<campaign>` on the web and at the same path
 here, so the link that opened the application and the route it lands on are one
-string.
+string. Its `?tab=` (one of the four non-default tabs) and, on the Comments tab,
+`?thread=` are kept; the rest of the query is dropped.
+
+The pages the web keys by project id — `/projects/<uuid>/prelaunch`, `/back`,
+`/edit`, `/dashboard` — open under `campaigns/<uuid>/…`, because Expo Router
+cannot hold `projects/[id]` beside `projects/[creatorSlug]`. They are matched
+with a strict UUID before the creator/slug pattern, and the checkout keeps
+`?reward=` (the placeholder passes it on to the web checkout until #157). `/projects/alice/prelaunch` (not a UUID) opens the campaign slugged
+`prelaunch`, where the web would show its pre-launch page for an id of `alice`
+(#148).
 
 The browse pages are claimed too (#154): `/categories` and `/collections`, and
 everything under each (exactly, on both platforms). `links.ts` decodes a slug

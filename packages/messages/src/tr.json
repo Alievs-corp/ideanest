@@ -5512,6 +5512,9 @@
       "reached": "%{percent} — fonlandı",
       "pledged": "{amount} toplandı"
     },
+    "prelaunch": {
+      "stale": "Bu cihazda kayıtlı. Bekleyenlerin sayısı o zamandan beri değişmiş olabilir."
+    },
     "auth": {
       "close": "Kapat",
       "wordmark": "IdeyaNest",
