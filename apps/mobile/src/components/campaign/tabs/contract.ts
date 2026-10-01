@@ -29,8 +29,8 @@ import type { CampaignPage } from '../../../lib/campaign-page';
  *   `if (!context.active) return INACTIVE_TAB` would run on some renders and not others, and React
  *   throws ("Rendered more hooks than during the previous render") on the first tab switch. Call
  *   the queries with `enabled: context.active`, then return `INACTIVE_TAB` when inactive.
- *   (`campaign-tab.tsx` is the example; the interim bodies return at once only because they call
- *   no hook. `campaign-screen.test.tsx` cycles through all five tabs and back.)
+ *   (`campaign-tab.tsx` and `comments-tab.tsx` are examples. `campaign-screen.test.tsx` cycles
+ *   through all five tabs and back.)
  * - **Its reads and writes live in its own file**, or in a module beside it. The query keys are
  *   already in `api/queries.ts`'s `queryKeys` (`projectFaqs`, `projectUpdates`, `comments`,
  *   `profile`, `profileProjects`), so a tab does not need to change that file; `api/client.ts`'s

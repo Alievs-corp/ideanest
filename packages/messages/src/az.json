@@ -5519,10 +5519,12 @@
         "loadingOlder": "Köhnə yeniliklər yüklənir…",
         "olderFailed": "Köhnə yenilikləri yükləmək alınmadı."
       },
-      "interim": {
-        "body": "Kampaniyanın bu hissəsi hələ tətbiqdə yoxdur. O, kampaniyanın veb səhifəsindədir.",
-        "open": "Saytda aç",
-        "openLabel": "Kampaniyanın veb səhifəsində «{section}» bölməsini aç"
+      "comments": {
+        "offline": "Şərh yazmaq, cavab vermək, şərhi geri götürmək və şikayət etmək üçün internet bağlantısı lazımdır.",
+        "olderFailed": "Köhnə şərhləri yükləmək mümkün olmadı."
+      },
+      "report": {
+        "offline": "Şikayət göndərmək üçün internet bağlantısı lazımdır."
       }
     },
     "funding": {

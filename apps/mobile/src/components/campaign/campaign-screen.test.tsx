@@ -460,16 +460,14 @@ describe('the tabs', () => {
     expect(screen.getByRole('tab', { name: C.tabs.campaign, selected: true })).toBeTruthy();
   });
 
-  it('offers the four tabs the app does not draw yet on the web, by name', async () => {
+  it('draws the Comments tab in the app, from a deep link, with the report link under it', async () => {
     mockParams = { tab: 'comments' };
     await show();
-    const open = screen.getByRole('button', {
-      name: en.mobile.campaign.interim.openLabel.replace('{section}', C.tabs.comments),
-    });
-    await fireEvent.press(open);
-    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(
-      'https://test.invalid/en/projects/aysel/solar-lamp?tab=comments',
-    );
+    expect(screen.getByRole('tab', { name: C.tabs.comments, selected: true })).toBeTruthy();
+    expect(screen.getByRole('header', { name: C.comments.heading })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: en.moderation.report.triggerOn.campaign }),
+    ).toBeTruthy();
   });
 });
 
