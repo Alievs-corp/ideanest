@@ -5483,11 +5483,11 @@
       "reached": "{percent}% — funded",
       "pledged": "{amount} pledged"
     },
-    "signIn": {
-      "credentialsRefused": "That email address and password do not match an account.",
-      "codeRefused": "That code was not accepted. It may have expired — sign in again to get a new challenge.",
-      "recoveryHint": "A recovery code works here too.",
-      "webOnly": "Registration, password reset and provider sign-in are on the website. A new account needs an email to be verified, which is a link rather than a screen."
+    "auth": {
+      "close": "Close",
+      "wordmark": "IdeyaNest",
+      "wordmarkHint": "Goes to Home",
+      "deviceFallback": "IdeyaNest on mobile"
     },
     "kitForm": {
       "required": "required",

@@ -1,6 +1,8 @@
 import { ApiError, errorFrom } from '@ideanest/api-client';
 import * as Device from 'expo-device';
 import { apiOrigin } from '../api/config';
+import { translate } from './i18n';
+import { currentLocale } from './locale';
 import { observeResponse } from './maintenance';
 import { unregisterFromPush } from './push';
 import {
@@ -58,16 +60,30 @@ const TOKEN_DELIVERY = 'body';
 const CLIENT_HEADER = 'X-IdeaNest-Client';
 const CLIENT_HEADER_VALUE = 'ideanest-mobile';
 
-/** What the account's session list calls this phone. Display only; never trusted. */
-function deviceLabel(): string {
-  return Device.deviceName ?? 'IdeyaNest on mobile';
+/**
+ * What the account's session list calls this phone. Display only; never trusted.
+ *
+ * <p>The phone's own name where the platform gives one ("Aysel's iPhone"), because that is what
+ * the owner recognises on the Devices screen. The fallback is a catalogue sentence rather than an
+ * English literal: it is read back to the owner in their language on every device they own.
+ */
+export function deviceLabel(): string {
+  const name = Device.deviceName?.trim();
+  const label = name !== undefined && name !== '' ? name : translate()('mobile.auth.deviceFallback');
+  // `SignInRequest` caps it at 120, and a longer phone name would refuse every sign-in with a
+  // sentence about a field the owner cannot see. Cut by code point, not by UTF-16 unit.
+  return Array.from(label).slice(0, DEVICE_LABEL_MAX).join('');
 }
+
+/** `SignInRequest.deviceLabel` and `OAuthSignInRequest.deviceLabel`: `@Size(max = 120)`. */
+const DEVICE_LABEL_MAX = 120;
 
 /** The two shapes `POST /v1/auth/login` can answer with. */
 export type SignInOutcome =
   | { readonly kind: 'signed-in' }
   /**
-   * The password was right and §17.1's second factor is owed.
+   * The credentials were right and §17.1's second factor is owed — after a password or after a
+   * provider, which is why both reach the same two-factor step.
    *
    * <p>The challenge is a credential for the next few minutes, so it is returned
    * to the caller and held in component state rather than written anywhere — the
@@ -100,9 +116,58 @@ export async function signIn(email: string, password: string): Promise<SignInOut
     deviceLabel: deviceLabel(),
     tokenDelivery: TOKEN_DELIVERY,
   });
+  return await outcomeOf(body);
+}
 
-  const challenge = body as ChallengeBody;
-  if (challenge.twoFactorRequired === true && typeof challenge.challenge === 'string') {
+/** The two identity providers the service verifies (`OAuthSignInRequest`). */
+export type ProviderId = 'google' | 'apple';
+
+export interface ProviderSignInInput {
+  readonly provider: ProviderId;
+  /** The provider's ID token, exactly as the provider issued it. */
+  readonly idToken: string;
+  /**
+   * The value the token's `nonce` claim carries — for Apple, the SHA-256 the sheet was given,
+   * not the raw value (see `OAuthSignInRequest`). The service has `require-nonce: true`.
+   */
+  readonly nonce: string;
+  /** Apple sends the person's name on the first authorisation only, and never again. */
+  readonly name?: string;
+}
+
+/**
+ * Signs in — or registers — with a provider's ID token.
+ *
+ * <p>The same answer as {@link signIn}: a provider account with two-factor switched on owes the
+ * second factor exactly as a password sign-in does, so it reaches the same step. `locale` is the
+ * app's language, which becomes the account's when the token creates one; the web sends none and
+ * every account it creates starts in Azerbaijani.
+ */
+export async function signInWithProvider(input: ProviderSignInInput): Promise<SignInOutcome> {
+  const name = input.name?.trim() ?? '';
+  const body = await post(`/v1/auth/oauth/${input.provider}`, {
+    idToken: input.idToken,
+    nonce: input.nonce,
+    ...(name === '' ? {} : { name }),
+    locale: currentLocale(),
+    deviceLabel: deviceLabel(),
+    tokenDelivery: TOKEN_DELIVERY,
+  });
+  return await outcomeOf(body);
+}
+
+/** A sign-in answer: a session to adopt, or a challenge to hand back. */
+async function outcomeOf(body: unknown): Promise<SignInOutcome> {
+  const challenge = body as ChallengeBody | null;
+  if (challenge?.twoFactorRequired === true) {
+    /*
+     * Nothing is adopted. Half a sign-in is not a session, and a client that ignored the flag
+     * would store `undefined` and believe itself signed in. A flag with no challenge is a
+     * contract this build does not understand: the step it leads to could never be answered.
+     */
+    if (typeof challenge.challenge !== 'string' || challenge.challenge === '') {
+      throw new Error('The sign-in response asked for a second factor and carried no challenge.');
+    }
     return {
       kind: 'two-factor',
       challenge: challenge.challenge,
@@ -110,29 +175,98 @@ export async function signIn(email: string, password: string): Promise<SignInOut
     };
   }
 
-  await adopt(body as TokenBody);
+  await adopt(issuedPair(body, 'The sign-in response carried neither a token pair nor a challenge.'));
   return { kind: 'signed-in' };
 }
 
 /**
- * Finishes a sign-in that owed a second factor.
+ * The pair a token-issuing call answered with, or a throw.
  *
- * <p>`code` and `recoveryCode` are both sent and the service reads the recovery
- * code only when no code arrived, so a form that filled in both is one attempt
- * rather than two — its own request object says so.
+ * <p>A 200 carrying no pair is a contract this build does not understand. Treating it as success
+ * would leave the phone believing it is signed in while every request 401s — the confusing half
+ * of that failure.
  */
-export async function verifyTwoFactor(
-  challenge: string,
-  code: string,
-  recoveryCode?: string,
-): Promise<void> {
+function issuedPair(body: unknown, complaint: string): Required<TokenBody> {
+  const tokens = body as TokenBody | null;
+  if (typeof tokens?.accessToken !== 'string' || typeof tokens.refreshToken !== 'string') {
+    throw new Error(complaint);
+  }
+  return { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
+}
+
+/**
+ * What answers a two-factor challenge: a code from the authenticator, or a recovery code.
+ *
+ * <p>Two shapes rather than two optional strings, because the service reads them differently:
+ * `SecondFactors.accepts` treats any non-blank `code` as a TOTP and never falls back, and `code`
+ * is at most 16 characters. A recovery code typed into the code field is therefore always
+ * refused — which is the bug the old single field had.
+ */
+export type TwoFactorProof =
+  | { readonly kind: 'code'; readonly code: string }
+  | { readonly kind: 'recovery-code'; readonly recoveryCode: string };
+
+/** Finishes a sign-in that owed a second factor. */
+export async function verifyTwoFactor(challenge: string, proof: TwoFactorProof): Promise<void> {
   const body = await post('/v1/auth/2fa/verify', {
     challenge,
-    code: code === '' ? null : code,
-    recoveryCode: recoveryCode === undefined || recoveryCode === '' ? null : recoveryCode,
+    code: proof.kind === 'code' ? proof.code : null,
+    recoveryCode: proof.kind === 'recovery-code' ? proof.recoveryCode : null,
     tokenDelivery: TOKEN_DELIVERY,
   });
-  await adopt(body as TokenBody);
+  await adopt(issuedPair(body, 'The two-factor response carried no token pair.'));
+}
+
+/* ------------------------------------------------------------------------------------------
+ * The account lifecycle. None of these issues a session.
+ * --------------------------------------------------------------------------------------- */
+
+export interface RegistrationInput {
+  readonly email: string;
+  readonly password: string;
+  readonly name: string;
+}
+
+/**
+ * Asks for an account. The answer is always 202, whether or not the address already has one —
+ * the service hides that on purpose, and the email says which it was.
+ *
+ * <p>`locale` is the app's language, which the service accepts (`az|en|ru|tr`) and keeps as the
+ * account's language and the verification email's.
+ */
+export async function register(input: RegistrationInput): Promise<void> {
+  await post('/v1/auth/register', {
+    email: input.email,
+    password: input.password,
+    name: input.name,
+    locale: currentLocale(),
+  });
+}
+
+/** Spends an emailed verification link. Creates no session. */
+export async function verifyEmail(token: string): Promise<void> {
+  await post('/v1/auth/verify-email', { token });
+}
+
+/** Asks for a reset link. Always 202, for the reason {@link register} gives. */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await post('/v1/auth/forgot-password', { email });
+}
+
+/**
+ * Sets a new password with an emailed reset link.
+ *
+ * <p>The service revokes every session of that account. Nothing is signed out here: the account
+ * this phone holds may be a different one, and if it is the same one its next refresh answers
+ * 401, which {@link refreshAccessToken} already turns into a sign-out.
+ */
+export async function resetPassword(token: string, password: string): Promise<void> {
+  await post('/v1/auth/reset-password', { token, password });
+}
+
+/** Spends an emailed email-change link. Sessions are not revoked by it. */
+export async function confirmEmailChange(token: string): Promise<void> {
+  await post('/v1/auth/confirm-email-change', { token });
 }
 
 let refreshInFlight: Promise<string | null> | null = null;
@@ -252,5 +386,11 @@ async function post(path: string, body: unknown): Promise<unknown> {
   );
 
   if (!response.ok) throw await errorFrom(response);
-  return response.status === 204 ? null : await response.json();
+  /*
+   * Read as text first: register, forgot-password and the reset answer 202 with no body at all,
+   * and `json()` on an empty body throws — which would turn every accepted request into a
+   * failure on screen.
+   */
+  const text = await response.text();
+  return text === '' ? null : (JSON.parse(text) as unknown);
 }

@@ -5483,11 +5483,11 @@
       "reached": "%{percent} — fonlandı",
       "pledged": "{amount} toplandı"
     },
-    "signIn": {
-      "credentialsRefused": "Bu e-posta adresi ve parola hiçbir hesapla eşleşmiyor.",
-      "codeRefused": "Kod kabul edilmedi. Süresi dolmuş olabilir — yeni bir doğrulama için tekrar giriş yapın.",
-      "recoveryHint": "Kurtarma kodu da burada çalışır.",
-      "webOnly": "Kayıt, parola sıfırlama ve sağlayıcıyla giriş web sitesindedir. Yeni bir hesabın e-postasının doğrulanması gerekir; bu bir ekran değil, bir bağlantıdır."
+    "auth": {
+      "close": "Kapat",
+      "wordmark": "IdeyaNest",
+      "wordmarkHint": "Ana sayfaya gider",
+      "deviceFallback": "Mobilde IdeyaNest"
     },
     "kitForm": {
       "required": "zorunlu",

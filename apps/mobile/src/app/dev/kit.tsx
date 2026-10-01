@@ -441,7 +441,7 @@ function KitGallery() {
 
         {/* Form ------------------------------------------------------------------------- */}
         <Section title={heading([Field, TextInput, PasswordInput, Textarea, CharacterCount])}>
-          <Field label={t('auth.fields.email')} hint={t('mobile.signIn.recoveryHint')} required>
+          <Field label={t('auth.fields.email')} hint={t('auth.twoFactor.recoveryHint')} required>
             <TextInput value={text} onChangeText={setText} />
           </Field>
           <Field label={t('auth.fields.email')} error={t('shell.whatsapp.errors.firstName')}>

@@ -17,7 +17,7 @@ import { watchUpcoming } from '../lib/upcoming-maintenance';
 import { createQueryClient, persistOptions } from '../lib/offline';
 import { lockNow } from '../lib/session';
 import { AccountSync } from '../lib/account-sync';
-import { AppIntlProvider, useT } from '../lib/i18n';
+import { AppIntlProvider } from '../lib/i18n';
 import { colors } from '../theme';
 
 /**
@@ -92,9 +92,8 @@ function urlFromNotification(
   return typeof url === 'string' ? url : null;
 }
 
-/** The root stack; inside the intl provider so its screen titles are translated. */
+/** The root stack; inside the intl provider so the screens it presents are translated. */
 function AppStack() {
-  const t = useT();
   // Pushes `maintenance` when the service is away (`lib/maintenance-gate.ts`).
   useMaintenanceGate(useRouter());
   return (
@@ -132,13 +131,11 @@ function AppStack() {
       {/*
         A modal, because signing in is an interruption of whatever somebody
         was doing rather than a place they navigated to — and because the
-        swipe that dismisses it is the "not now" this screen must always
+        swipe that dismisses it is the "not now" these screens must always
         offer. Nothing on this platform requires an account to be useful.
+        The group draws its own header: `app/(auth)/_layout.tsx`.
       */}
-      <Stack.Screen
-        name="sign-in"
-        options={{ presentation: 'modal', title: t('shell.actions.signIn') }}
-      />
+      <Stack.Screen name="(auth)" options={{ presentation: 'modal', headerShown: false }} />
     </Stack>
   );
 }

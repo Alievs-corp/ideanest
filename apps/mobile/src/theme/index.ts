@@ -182,6 +182,13 @@ export const lineHeight = {
  */
 export const readingMeasure = 640;
 
+/**
+ * The widest a single-column form gets, in points: the web's `max-w-[26rem]` on the
+ * authentication screens (`app/[locale]/(auth)/layout.tsx`), where a label, a field and its
+ * error read as one column. A phone is narrower and fills its width; a tablet centres it.
+ */
+export const formMeasure = 416;
+
 /** Weights as React Native spells them. */
 export const fontWeight = {
   regular: '400',
