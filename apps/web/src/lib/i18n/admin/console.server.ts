@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { campaignStoryCopyFrom } from '../campaign-copy';
 import {
   type ConsoleChromeCopy,
   type NoteDialogCopy,
@@ -268,7 +269,11 @@ export async function campaignDirectoryCopy(): Promise<CampaignDirectoryCopy> {
 }
 
 export async function campaignPreviewCopy(): Promise<CampaignPreviewCopy> {
-  return campaignPreviewCopyFrom(await getTranslations('admin'), await consoleChrome());
+  return campaignPreviewCopyFrom(
+    await getTranslations('admin'),
+    await consoleChrome(),
+    campaignStoryCopyFrom(await getTranslations('campaign.story')),
+  );
 }
 
 /** #206: the partner list, where a super admin sets a percentage and opens sections. */

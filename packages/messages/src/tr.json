@@ -3959,6 +3959,10 @@
     "media": {
       "hasVideo": "Bu kampanyanın videosu var."
     },
+    "story": {
+      "about": "{title} hakkında",
+      "watchOn": "— {provider} platformunda izleyin"
+    },
     "creator": {
       "heading": "Yaratıcı hakkında",
       "memberSince": "<date></date> tarihinden beri üye",
@@ -3988,8 +3992,8 @@
       "notFunded": "Bu kampanya fonlanamadı",
       "reached": "Hedefinin en az %80'ini topladı.",
       "notReached": "Zamanında hedefinin %80'ini toplayamadı.",
-      "raised": "Topladığı",
-      "closedOn": "{date} tarihinde",
+      "summary": "{date} tarihinde {backers, plural, other {# destekçiden}} <b>{pledged}</b> topladı; hedefi {goal} idi.",
+      "summaryUndated": "{backers, plural, other {# destekçiden}} <b>{pledged}</b> topladı; hedefi {goal} idi.",
       "settling": "Yukarıdaki rakamlar kampanyanın kapandığı anda topladığı tutardır. Sonrasındaki bir iade yaratıcıya ödenen tutarı azaltır, sonucu değiştirmez.",
       "refunded": "Her destekçiye tutarın tamamı iade edilir. Hedefinin %80'ini toplayamayan bir kampanya komisyon ödemez."
     },
@@ -4036,6 +4040,7 @@
       "postComment": "Yorumu gönder",
       "postReply": "Yanıtı gönder",
       "posting": "Gönderiliyor",
+      "posted": "Gönderildi.",
       "failures": {
         "emptyBody": "Önce bir şey yazın.",
         "sessionExpired": "Oturumunuzun süresi doldu. Giriş yapıp tekrar deneyin.",

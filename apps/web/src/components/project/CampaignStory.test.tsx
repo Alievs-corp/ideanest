@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { StoryDocument } from '../../lib/projects/story';
 import { CampaignStory } from './CampaignStory';
+import { campaignStoryCopyFrom } from '../../lib/i18n/campaign-copy';
+import { translatorFor } from '../../test-copy';
+import az from '@ideanest/messages/az.json';
 
 /**
  * The story, rendered — the content #119 exists to put in the HTML.
@@ -27,11 +30,15 @@ function spans(text: string, marks: ('strong' | 'em')[] = []) {
 
 afterEach(cleanup);
 
+/** Through the builder the page calls, so an empty catalogue fails here (`src/test-copy.ts`). */
+const COPY = campaignStoryCopyFrom(translatorFor('campaign.story'));
+
 describe('the campaign story', () => {
   it('renders the prose into the markup', () => {
     render(
       <CampaignStory
         title="A coffee table book"
+        copy={COPY}
         story={story([
           { type: 'paragraph', spans: spans('Two hundred photographs, printed in Baku.') },
         ])}
@@ -50,6 +57,7 @@ describe('the campaign story', () => {
     render(
       <CampaignStory
         title="A coffee table book"
+        copy={COPY}
         story={story([
           { type: 'heading', level: 2, id: 'the-book', text: 'The book' },
           { type: 'heading', level: 3, id: 'the-paper', text: 'The paper' },
@@ -72,6 +80,7 @@ describe('the campaign story', () => {
     const { container } = render(
       <CampaignStory
         title="A coffee table book"
+        copy={COPY}
         story={story([
           {
             type: 'paragraph',
@@ -99,6 +108,7 @@ describe('the campaign story', () => {
     const { container } = render(
       <CampaignStory
         title="A coffee table book"
+        copy={COPY}
         story={story([
           {
             type: 'embed',
@@ -111,7 +121,7 @@ describe('the campaign story', () => {
     );
 
     expect(container.querySelector('iframe')).toBeNull();
-    const link = screen.getByRole('link', { name: /How the book is bound/ });
+    const link = screen.getByRole('link', { name: 'How the book is bound — watch on YouTube' });
     expect(link).toHaveAttribute('href', 'https://www.youtube.com/watch?v=abc');
     expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
   });
@@ -125,6 +135,7 @@ describe('the campaign story', () => {
     const { container } = render(
       <CampaignStory
         title="A coffee table book"
+        copy={COPY}
         story={story([
           { type: 'paragraph', spans: spans('<img src=x onerror="alert(1)">') },
         ])}
@@ -139,6 +150,7 @@ describe('the campaign story', () => {
     render(
       <CampaignStory
         title="A coffee table book"
+        copy={COPY}
         story={story([{ type: 'paragraph', spans: spans('Prose.') }])}
       />,
     );
@@ -146,5 +158,25 @@ describe('the campaign story', () => {
     expect(
       screen.getByRole('heading', { level: 2, name: 'About A coffee table book' }),
     ).toBeInTheDocument();
+  });
+
+  /**
+   * #155: both phrases were English literals on every campaign in every language. Azerbaijani
+   * is the case that could not have passed before, and its suffix sits on a noun, never on the
+   * title or the provider.
+   */
+  it('names the story and the embed in the reader’s language', () => {
+    render(
+      <CampaignStory
+        title="Kitab"
+        copy={{ about: az.campaign.story.about, watchOn: az.campaign.story.watchOn }}
+        story={story([
+          { type: 'embed', provider: 'vimeo', url: 'https://vimeo.com/1', title: 'Cildləmə' },
+        ])}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Kitab haqqında' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Cildləmə — Vimeo platformasında baxın' })).toBeInTheDocument();
   });
 });

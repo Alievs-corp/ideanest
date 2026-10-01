@@ -10,6 +10,7 @@ import type { AuditActionLabels } from '../../admin/audit';
 import type { ProjectState } from '../../projects/api';
 import type { AdminTranslator } from '../admin-copy';
 import type { PluralForms } from '../plurals';
+import type { CampaignStoryCopy } from '../campaign-copy';
 import type { ConsoleChromeCopy } from './common-copy';
 
 /**
@@ -489,11 +490,14 @@ export interface CampaignPreviewCopy extends ConsoleChromeCopy {
   /** Carries `{title}`. */
   readonly coverAlt: string;
   readonly state: Readonly<Record<ProjectState, string>>;
+  /** `CampaignStory`'s own phrases, from `campaign.story` — the preview draws the public story (#155). */
+  readonly story: CampaignStoryCopy;
 }
 
 export function campaignPreviewCopyFrom(
   t: AdminTranslator,
   chrome: ConsoleChromeCopy,
+  story: CampaignStoryCopy,
 ): CampaignPreviewCopy {
   const at = (key: string) => `screens.campaignPreview.${key}`;
 
@@ -524,6 +528,7 @@ export function campaignPreviewCopyFrom(
        has no value for the argument — `src/test-copy.ts` refuses the same mistake in tests. */
     coverAlt: String(t.raw(at('coverAlt'))),
     state: t.raw('screens.campaignDirectory.state') as Readonly<Record<ProjectState, string>>,
+    story,
   };
 }
 

@@ -283,7 +283,7 @@ export function CampaignPreview({ projectId, copy }: CampaignPreviewProps) {
           <p className="mt-2 max-w-[62ch] text-sm text-white/40">{copy.noStory}</p>
         ) : (
           <div className="mt-4">
-            <CampaignStory story={campaign.story} title={campaign.title} />
+            <CampaignStory story={campaign.story} title={campaign.title} copy={copy.story} />
           </div>
         )}
       </section>

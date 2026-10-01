@@ -213,7 +213,7 @@ export function CommentComposer({
           it fills, which a region inserted at that moment usually is not.
         */}
         <span id={noticeId} aria-live="polite" className="text-xs text-white/64">
-          {posted ? 'Posted.' : ''}
+          {posted ? copy.posted : ''}
         </span>
       </div>
     </form>

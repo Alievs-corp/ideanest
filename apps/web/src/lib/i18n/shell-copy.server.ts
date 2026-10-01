@@ -72,10 +72,12 @@ import {
 import {
   type CampaignActionsCopy,
   type CampaignCountdownCopy,
+  type CampaignStoryCopy,
   type CommentCopy,
   type LiveFundingCopy,
   campaignActionsCopyFrom,
   campaignCountdownCopyFrom,
+  campaignStoryCopyFrom,
   commentCopyFrom,
   liveFundingCopyFrom,
 } from './campaign-copy';
@@ -521,6 +523,11 @@ export async function campaignCountdownCopy(): Promise<CampaignCountdownCopy> {
 }
 
 /** The composer and the two comment controls, which share one section. */
+/** The story's hidden heading and embed suffix (#155) — `CampaignStory` is not always a server component. */
+export async function campaignStoryCopy(): Promise<CampaignStoryCopy> {
+  return campaignStoryCopyFrom(await getTranslations('campaign.story'));
+}
+
 export async function commentCopy(): Promise<CommentCopy> {
   return commentCopyFrom(await getTranslations('campaign.comments'));
 }
