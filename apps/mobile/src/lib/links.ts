@@ -28,7 +28,8 @@ import { parseFilters, searchParamsFrom, toSearchParams } from '@ideanest/discov
 
 /**
  * A route, and the params it opens with. `params` is only ever the feed's own parameters
- * (Discover), the query (Search) or the decoded slugs of a browse route (#154), rebuilt from the
+ * (Discover), the query (Search), the decoded slugs of a browse route (#154), or a campaign's
+ * `tab` and `thread` and the checkout's `reward` (#155), rebuilt from the
  * link rather than passed through: a link carries whatever its author wrote, and a `utm_source`
  * or a mistyped status is not a param any screen should receive.
  */
@@ -107,27 +108,83 @@ const LOCALE_PREFIX = /^\/(az|en|ru|tr)(?=\/|$)/;
 const UUID = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
 
 /**
- * The web paths keyed by a project **id** and the app routes they open — issue #150.
+ * The web paths keyed by a project **id** and the app routes they open — issues #150, #155.
  *
  * Expo Router cannot hold `projects/[creatorSlug]` and `projects/[id]` as siblings, so
  * these live under `campaigns/`. They are tested BEFORE the creator/slug pattern, and
  * with a strict UUID: otherwise `/projects/<uuid>/back` would open a campaign slugged
  * `back`, and `/projects/alice/back` (not a UUID) would open the checkout.
+ *
+ * <p>The checkout keeps the one parameter it is opened with, `?reward=` — the tier a reader chose
+ * under "Select this reward" — so a link from the campaign page lands on that tier rather than
+ * on the picker. Nothing else in the query reaches any of these screens.
  */
-const ID_ROUTES: readonly [RegExp, (m: RegExpExecArray) => string][] = [
-  [/^\/projects\/new\/?$/, () => '/campaigns/new'],
-  [new RegExp(`^/projects/(${UUID})/(back|prelaunch)/?$`), (m) => `/campaigns/${m[1]}/${m[2]}`],
+const ID_ROUTES: readonly [RegExp, (m: RegExpExecArray, query: URLSearchParams) => Destination][] = [
+  [/^\/projects\/new\/?$/, () => ({ pathname: '/campaigns/new' })],
+  [
+    new RegExp(`^/projects/(${UUID})/back/?$`),
+    (m, query) => withParams(`/campaigns/${m[1]}/back`, { reward: opaqueParam(query.get('reward')) }),
+  ],
+  [new RegExp(`^/projects/(${UUID})/prelaunch/?$`), (m) => ({ pathname: `/campaigns/${m[1]}/prelaunch` })],
   [
     new RegExp(`^/projects/(${UUID})/edit/(basics|story|rewards|faq|prelaunch|review)/?$`),
-    (m) => `/campaigns/${m[1]}/edit/${m[2]}`,
+    (m) => ({ pathname: `/campaigns/${m[1]}/edit/${m[2]}` }),
   ],
   // A bare `/edit` opens the first step rather than a campaign slugged "edit".
-  [new RegExp(`^/projects/(${UUID})/edit/?$`), (m) => `/campaigns/${m[1]}/edit/basics`],
+  [new RegExp(`^/projects/(${UUID})/edit/?$`), (m) => ({ pathname: `/campaigns/${m[1]}/edit/basics` })],
   [
     new RegExp(`^/projects/(${UUID})/dashboard(?:/(charts|backers|finance|surveys))?/?$`),
-    (m) => `/campaigns/${m[1]}/dashboard${m[2] === undefined ? '' : `/${m[2]}`}`,
+    (m) => ({ pathname: `/campaigns/${m[1]}/dashboard${m[2] === undefined ? '' : `/${m[2]}`}` }),
   ],
 ];
+
+/**
+ * The campaign page's tabs other than the default, as the web names them in `?tab=`
+ * (`apps/web/src/lib/projects/tabs.ts`, `CAMPAIGN_TABS`). `campaign` is not here because the web
+ * never writes it: the bare path is the default tab, and a link that says `?tab=campaign` opens
+ * the same page with no param. An unknown value is dropped for the same reason the web's
+ * `campaignTabFrom` answers the default — a mistyped link still opens the campaign.
+ */
+const LINKED_TABS: ReadonlySet<string> = new Set(['creator', 'faq', 'updates', 'comments']);
+
+/**
+ * Longer than any id or cursor the service mints — a UUID is 36 — and short enough to be a
+ * bound: the web's `campaignCursorFrom` draws the line at the same length for the same reason.
+ */
+const MAX_OPAQUE_LENGTH = 128;
+
+/**
+ * A value the service minted — a comment thread's id, a reward tier's id — carried through the
+ * link untouched, or `undefined`. Trimmed and length-bounded and otherwise not read: its shape is
+ * the service's business, and a malformed one is refused by the service the screen asks.
+ */
+function opaqueParam(value: string | null): string | undefined {
+  const trimmed = value?.trim() ?? '';
+  return trimmed === '' || trimmed.length > MAX_OPAQUE_LENGTH ? undefined : trimmed;
+}
+
+/** A destination whose `params` holds only the values that are present — none means no `params`. */
+function withParams(pathname: string, params: Record<string, string | undefined>): Destination {
+  const present: Record<string, string> = {};
+  for (const [name, value] of Object.entries(params)) {
+    if (value !== undefined) present[name] = value;
+  }
+  return Object.keys(present).length === 0 ? { pathname } : { pathname, params: present };
+}
+
+/**
+ * The campaign page's own query — `?tab=` and, on the Comments tab, `?thread=` — rebuilt from the
+ * link, so `/projects/a/b?tab=comments` opens the comments rather than the story (#155). The
+ * web's `from` cursor is not carried: the app appends older pages in place rather than
+ * addressing one, so a cursor in a link would name a page the screen never asks for.
+ */
+function campaignParams(query: URLSearchParams): Record<string, string | undefined> {
+  const tab = query.get('tab')?.trim().toLowerCase();
+  const linkedTab = tab !== undefined && LINKED_TABS.has(tab) ? tab : undefined;
+  // A thread is a conversation on the Comments tab; the web ignores it on every other tab.
+  const thread = linkedTab === 'comments' ? opaqueParam(query.get('thread')) : undefined;
+  return { tab: linkedTab, thread };
+}
 
 /*
  * The discovery entry points (#153): the home page, the feed with its filters in the query
@@ -232,11 +289,25 @@ function campaignDestination(rawPath: string, search = ''): Destination | null {
   const browse = browseDestination(path);
   if (browse !== null) return browse;
 
+  const query = searchParamsFrom(search);
+
   for (const [pattern, toRoute] of ID_ROUTES) {
     const idMatch = pattern.exec(path);
-    if (idMatch !== null) return { pathname: toRoute(idMatch) };
+    if (idMatch !== null) return toRoute(idMatch, query);
   }
 
+  /*
+   * What is left under `/projects/` is a creator and a campaign slug — including
+   * `/projects/alice/prelaunch` and `/projects/alice/back`, whose first segment is not an id.
+   *
+   * THE WEB ANSWERS THOSE TWO DIFFERENTLY, and that is deliberately not copied. Next's static
+   * `prelaunch` and `back` segments win over `[projectSlug]`, so the browser renders the pre-launch
+   * page (or the checkout) for a project "id" of `alice`, which the service answers 404, and a
+   * campaign slugged `prelaunch` is unreachable there (#148). This application's own share sheet
+   * builds `/projects/{creator}/{slug}` for every campaign (`shareUrlFor`), so such a link is one
+   * a reader was really sent, and the only page it can mean is that campaign: it opens the
+   * campaign page. `links-campaigns.test.ts` pins both.
+   */
   const match = CAMPAIGN_PATH.exec(path);
   if (match === null) return null;
 
@@ -258,7 +329,7 @@ function campaignDestination(rawPath: string, search = ''): Destination | null {
     return null; // a malformed escape such as %zz is a bad link, not a crash
   }
   if (creator.includes('/') || slug.includes('/')) return null;
-  return { pathname: `/projects/${creator}/${slug}` };
+  return withParams(`/projects/${creator}/${slug}`, campaignParams(query));
 }
 
 /**
