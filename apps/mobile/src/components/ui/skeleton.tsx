@@ -158,9 +158,9 @@ export function SkeletonGroup({ label, children, testID }: SkeletonGroupProps) {
 /**
  * A placeholder shaped like `components/project-card.tsx`, line for line, so the feed does not
  * jump when the cards arrive: the 16:9 cover, then a body padded 20 with 12 between rows — the
- * title, the creator, the progress bar and its line, and the footer. Each text line is a row of
- * that role's line height with a thinner bar centred in it, which is the height the text will
- * take.
+ * status tag, the title, the byline, the progress bar with its figures, the 80% rule and the goal,
+ * and the footer (issue #153's card). Each text line is a row of that role's line height with a
+ * thinner bar centred in it, which is the height the text will take.
  */
 export function SkeletonCard({ testID }: { readonly testID?: string }) {
   return (
@@ -172,10 +172,16 @@ export function SkeletonCard({ testID }: { readonly testID?: string }) {
     >
       <Skeleton aspectRatio={16 / 9} radius="none" />
       <View style={styles.cardBody}>
+        <Skeleton height={26} width={72} radius="sm" />
         <Line height={lineHeight.cardTitle} bar={14} width="70%" />
-        <Line height={lineHeight.body} bar={12} width="40%" />
+        <Line height={lineHeight.small} bar={12} width="40%" />
         <View style={styles.progress}>
           <Skeleton height={6} radius="lg" />
+          <View style={styles.footer}>
+            <Line height={lineHeight.small} bar={12} width="30%" />
+            <Line height={lineHeight.small} bar={10} width="20%" />
+          </View>
+          <Line height={lineHeight.body} bar={10} width="45%" />
           <Line height={lineHeight.body} bar={10} width="30%" />
         </View>
         <View style={styles.footer}>
@@ -261,7 +267,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardBody: { padding: measure.cardPaddingSmall, gap: spacing[3] },
-  progress: { gap: spacing[2] },
+  // The card's `funding` block: 8 between rows and 8 above, so nothing moves when it arrives.
+  progress: { gap: spacing[2], paddingTop: spacing[2] },
   footer: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[3] },
   line: { justifyContent: 'center' },
 });

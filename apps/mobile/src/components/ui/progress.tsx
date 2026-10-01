@@ -1,3 +1,4 @@
+import Decimal from 'decimal.js';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
@@ -65,6 +66,12 @@ export interface ProgressBarProps {
    * beside it; the bar still announces it either way.
    */
   readonly showLabel?: boolean;
+  /**
+   * Drawn for the eye only: no accessible element, no value. For a bar inside a control that
+   * already says the figure in its own name or value — the campaign card (#153), which is one
+   * link — where a second focus stop, or a value swallowed by the parent on iOS, helps nobody.
+   */
+  readonly decorative?: boolean;
   readonly testID?: string;
 }
 
@@ -84,10 +91,21 @@ export function fillFraction(completionPercent: string): number {
   return Math.min(Number(completionPercent), 100) / 100;
 }
 
-/** Rounded for display. The exact figure is a percentage of somebody's money, not a score. */
+/**
+ * Rounded for display with `decimal.js`, as the web card rounds: "84.49999999999999999" is 84, where
+ * `Math.round(Number(...))` makes it 85. The exact figure is a percentage of somebody's money.
+ */
 function readablePercent(completionPercent: string): string {
   if (!PERCENT.test(completionPercent)) return '0';
-  return String(Math.round(Number(completionPercent)));
+  return new Decimal(completionPercent).toFixed(0);
+}
+
+/**
+ * Whether the goal is met, decided on the decimal: 99.999 is not funded, and a float compare after
+ * any rounding would draw it in `success` with the funded glow before the goal is reached.
+ */
+function goalReached(completionPercent: string): boolean {
+  return PERCENT.test(completionPercent) && new Decimal(completionPercent).greaterThanOrEqualTo(100);
 }
 
 export function ProgressBar({
@@ -95,25 +113,31 @@ export function ProgressBar({
   label,
   size = 'sm',
   showLabel = true,
+  decorative = false,
   testID,
 }: ProgressBarProps) {
   const t = useT();
   const fraction = fillFraction(completionPercent);
-  const reached = fraction >= 1;
+  const reached = goalReached(completionPercent);
   const readable = readablePercent(completionPercent);
 
   return (
     <View
       style={styles.column}
-      accessible
-      accessibilityRole="progressbar"
-      accessibilityLabel={label}
-      accessibilityValue={{
-        min: 0,
-        max: 100,
-        now: Math.round(fraction * 100),
-        text: t('common.card.progressLabel', { percent: readable }),
-      }}
+      {...(decorative
+        ? { accessible: false, importantForAccessibility: 'no-hide-descendants' as const }
+        : {
+            accessible: true,
+            accessibilityRole: 'progressbar' as const,
+            accessibilityLabel: label,
+            accessibilityValue: {
+              min: 0,
+              max: 100,
+              now: Math.min(Number(readable), 100),
+              text: t('common.card.progressLabel', { percent: readable }),
+            },
+          })}
+      accessibilityElementsHidden={decorative}
       testID={testID}
     >
       {/*
