@@ -160,6 +160,12 @@ export interface PillProps {
    * neighbours: "Apply range" under a goal field is "Apply the custom goal range" (#153).
    */
   readonly accessibilityLabel?: string;
+  /**
+   * A toggle's state — the campaign page's Save and Remind (#155). Set only on a pill that is a
+   * toggle, so a screen reader says "selected" where the web says `aria-pressed`; the icon and
+   * the word change too, so the state is never carried by the announcement alone.
+   */
+  readonly selected?: boolean;
   readonly testID?: string;
 }
 
@@ -175,6 +181,7 @@ export function Pill({
   busy = false,
   accessibilityHint,
   accessibilityLabel,
+  selected,
   testID,
 }: PillProps) {
   const blocked = disabled || busy;
@@ -206,7 +213,7 @@ export function Pill({
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityHint={accessibilityHint}
-        accessibilityState={{ disabled: blocked, busy }}
+        accessibilityState={{ disabled: blocked, busy, ...(selected === undefined ? {} : { selected }) }}
         disabled={blocked}
         onPress={onPress}
         onPressIn={() => press(motion.pressScale)}
