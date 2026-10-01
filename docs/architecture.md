@@ -2004,7 +2004,7 @@ Preferences are per category and per channel, with a digest option.
 > card; a closed campaign that did not succeed says its backers are refunded rather than
 > that nobody was charged; the campaign page badges `CLOSING_WINDOW`, `EXTENDED` and
 > `WITHDRAWN`. The tagline, home, about, how-it-works, editor hint and metadata say the
-> same in all four languages. The 80% is written down in `lib/projects/threshold.ts` for
+> same in all four languages. The 80% is written down in `@ideanest/campaign/threshold` for
 > the sentences only; the campaign's state decides every outcome. The checkout's own
 > wording changes with the payment page it describes.
 
@@ -5966,7 +5966,7 @@ product. Public read surfaces — discovery, prelaunch — go through it.
 | Dates | **date-fns** with timezone support |
 | Money | **decimal.js** |
 | Internationalisation | **next-intl** |
-| Real-time | WebSocket client | The platform's own `WebSocket`, no library (#91). Opt-in and unset by default — `lib/realtime/updates.ts` explains why a socket cannot use the `/v1` rewrite every other browser call goes through |
+| Real-time | WebSocket client | The platform's own `WebSocket`, no library (#91). Opt-in and unset by default — `@ideanest/campaign/realtime` (`packages/campaign`, #155) explains why a socket cannot use the `/v1` rewrite every other browser call goes through |
 | Analytics | Product analytics with feature flags |
 | Errors | Error tracking with source maps |
 

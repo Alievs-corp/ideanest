@@ -1,0 +1,38 @@
+{
+  "name": "@ideanest/campaign",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "description": "The campaign page's platform-neutral rules: which states have a page and take pledges, the 80% threshold, the countdown, the tabs, the story reader, the live counter's wire format and reconnect policy, the community wire readers and the report vocabulary, shared by apps/web and apps/mobile.",
+  "exports": {
+    "./states": "./src/states.ts",
+    "./pledgeable": "./src/pledgeable.ts",
+    "./threshold": "./src/threshold.ts",
+    "./completion": "./src/completion.ts",
+    "./deadline": "./src/deadline.ts",
+    "./days-left": "./src/days-left.ts",
+    "./tabs": "./src/tabs.ts",
+    "./story": "./src/story.ts",
+    "./realtime": "./src/realtime.ts",
+    "./comments": "./src/comments.ts",
+    "./updates": "./src/updates.ts",
+    "./faqs": "./src/faqs.ts",
+    "./obligation": "./src/obligation.ts",
+    "./report": "./src/report.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ideanest/messages": "workspace:*",
+    "@ideanest/money": "workspace:*",
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

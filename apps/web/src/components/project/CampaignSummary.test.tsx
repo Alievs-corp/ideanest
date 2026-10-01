@@ -263,6 +263,8 @@ describe('the outcome notice', () => {
     expect(screen.getByRole('heading', { name: /was funded/ })).toBeInTheDocument();
     expect(screen.getByText(/12,?500/)).toBeInTheDocument();
     expect(screen.getByText(/80 backers/)).toBeInTheDocument();
+    // #155: the sentence is the catalogue's, and the day is written out rather than ISO.
+    expect(screen.getByText(/of a .*10,000\.00.* goal from 80 backers on 18 August 2026\./)).toBeInTheDocument();
   });
 
   it('tells the backers of a failed campaign that nobody was charged', async () => {

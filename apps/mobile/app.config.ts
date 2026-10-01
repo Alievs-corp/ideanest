@@ -8,8 +8,9 @@ import { withEntitlementsPlist, type ConfigPlugin } from 'expo/config-plugins';
  *
  * <h2>Why this is `app.config.ts` and not `app.json`</h2>
  *
- * Two of the values below are per-environment: the origin the application talks
- * to, and the origin whose links it claims. A static `app.json` would hard-code
+ * Three of the values below are per-environment: the origin the application talks
+ * to, the origin whose links it claims, and — optionally — the origin of the live
+ * campaign counter's socket. A static `app.json` would hard-code
  * production into every build, which is the same mistake `lib/seo/sitemap/config.ts`
  * refuses on the web — a staging build that advertises production URLs is a lie
  * somebody eventually believes. The variable names are deliberately the web's
@@ -21,20 +22,36 @@ const API_ORIGIN_VARIABLE = 'IDEANEST_API_ORIGIN';
 /** The public origin whose links this application claims. */
 const SITE_URL_VARIABLE = 'IDEANEST_SITE_URL';
 
+/**
+ * Where the campaign page may open §12.1's live-counter socket (#155) — the web's own variable,
+ * spelled out because this file cannot import `@ideanest/campaign` (see the `expo-localization`
+ * note below).
+ *
+ * Unlike the two above it has **no default**. Unset means the build opens no socket and the
+ * campaign figures stay as the page read them, which is exactly what the web does when the
+ * same variable is unset; a guessed host would be a build that quietly holds a connection
+ * attempt open against somebody else's server.
+ */
+const REALTIME_ORIGIN_VARIABLE = 'IDEANEST_REALTIME_ORIGIN';
+
 const DEFAULT_API_ORIGIN = 'http://localhost:8080';
 const DEFAULT_SITE_URL = 'https://ideyanest.com';
 
+const HTTP = ['http:', 'https:'] as const;
+/** A socket origin may be written as the API's (`https://`) or as a socket's own (`wss://`). */
+const HTTP_OR_SOCKET = ['http:', 'https:', 'ws:', 'wss:'] as const;
+
 /**
- * An origin, with no trailing slash, or a thrown build.
+ * A set variable as an origin with no trailing slash, `undefined` when unset, or a thrown build.
  *
  * Set-but-unusable throws rather than falling back, for `siteUrl()`'s reason: an
  * unset variable is somebody running locally, and a variable set to `ideyanest.com`
  * without a scheme is a misconfiguration that would otherwise ship a build
  * pointing at localhost.
  */
-function origin(variable: string, fallback: string): string {
+function optionalOrigin(variable: string, protocols: readonly string[]): string | undefined {
   const raw = process.env[variable]?.trim();
-  if (raw === undefined || raw === '') return fallback;
+  if (raw === undefined || raw === '') return undefined;
 
   let url: URL;
   try {
@@ -42,13 +59,21 @@ function origin(variable: string, fallback: string): string {
   } catch {
     throw new Error(`${variable} is not an absolute URL: ${JSON.stringify(raw)}`);
   }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new Error(`${variable} must be http or https, not ${url.protocol}`);
+  if (!protocols.includes(url.protocol)) {
+    throw new Error(
+      `${variable} must be ${protocols.map((protocol) => protocol.slice(0, -1)).join(' or ')}, not ${url.protocol}`,
+    );
   }
   return url.origin + url.pathname.replace(/\/+$/, '');
 }
 
+/** {@link optionalOrigin} for a variable that has a local default. */
+function origin(variable: string, fallback: string): string {
+  return optionalOrigin(variable, HTTP) ?? fallback;
+}
+
 const siteUrl = origin(SITE_URL_VARIABLE, DEFAULT_SITE_URL);
+const realtimeOrigin = optionalOrigin(REALTIME_ORIGIN_VARIABLE, HTTP_OR_SOCKET);
 const siteHost = new URL(siteUrl).host;
 
 /**
@@ -303,6 +328,8 @@ const config: ExpoConfig = {
   extra: {
     apiOrigin: origin(API_ORIGIN_VARIABLE, DEFAULT_API_ORIGIN),
     siteUrl,
+    // Omitted rather than `undefined` when unset, so the manifest says nothing about a socket.
+    ...(realtimeOrigin === undefined ? {} : { realtimeOrigin }),
     googleIosClientId,
     appleSignIn,
   },

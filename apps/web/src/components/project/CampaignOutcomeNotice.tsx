@@ -1,7 +1,9 @@
 import { CircleCheck, CircleSlash } from 'lucide-react';
 import { formatMoney } from '../../lib/money';
+import { formatDay, SERVER_TIME_ZONE } from '../../lib/projects/deadline';
+import { localeOrDefault } from '../../lib/i18n/locale';
 import type { CampaignPage } from '../../lib/projects/publicPage';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 /**
  * What happened at the deadline — §5.1, as a backer reads it.
@@ -47,10 +49,13 @@ export async function CampaignOutcomeNotice({ campaign }: CampaignOutcomeNoticeP
    */
   const funded = campaign.state !== 'UNSUCCESSFUL' && campaign.state !== 'CANCELED';
 
-  const closed = new Date(outcome.finalisedAt);
-  const closedLabel = Number.isNaN(closed.getTime())
-    ? null
-    : closed.toISOString().slice(0, 10);
+  /*
+   * The day the campaign closed, in the reader's language and in UTC — the same day the ISO
+   * string named before #155 put the sentence in the catalogue, written out the way the trust
+   * block writes its deadline rather than as `2026-08-18`.
+   */
+  const locale = localeOrDefault(await getLocale());
+  const closedLabel = formatDay(outcome.finalisedAt, SERVER_TIME_ZONE, locale);
 
   return (
     <section
@@ -74,11 +79,14 @@ export async function CampaignOutcomeNotice({ campaign }: CampaignOutcomeNoticeP
             t('notReached')
           )
         ) : (
-          <>{t('raised')}<strong className="font-medium text-white">{formatMoney(outcome.pledged)}</strong> of a{' '}
-            {formatMoney(outcome.goal)} goal from{' '}
-            {outcome.backersCount === 1 ? '1 backer' : `${outcome.backersCount} backers`}
-            {closedLabel === null ? '' : ` on ${closedLabel}`}.
-          </>
+          t.rich(closedLabel === null ? 'summaryUndated' : 'summary', {
+            b: (chunks) => <strong className="font-medium text-white">{chunks}</strong>,
+            pledged: formatMoney(outcome.pledged),
+            goal: formatMoney(outcome.goal),
+            // ICU declines it: one backer, two бэкеров, five бэкеров, twenty-one бэкера.
+            backers: outcome.backersCount,
+            date: closedLabel ?? '',
+          })
         )}
       </p>
 

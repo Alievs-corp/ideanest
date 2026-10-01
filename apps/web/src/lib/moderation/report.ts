@@ -1,6 +1,12 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
-import type { ReportReason } from './api';
+import {
+  reportBody,
+  reportPath,
+  type ReportReason,
+  type ReportTarget,
+  type SubmittedReport,
+} from '@ideanest/campaign/report';
 
 /**
  * §4.9's C-06 and C-07 — how somebody tells the platform that something is wrong.
@@ -11,6 +17,12 @@ import type { ReportReason } from './api';
  * the reporter's, and the only thing they share is the vocabulary. Keeping them apart is what
  * stops a public surface importing the admin reads — every route that ships a Report control
  * would otherwise pull the queue's types and its client into its first load.
+ *
+ * <h2>The vocabulary is shared</h2>
+ *
+ * The reasons, `requiresDetail`, `DETAIL_MAX_LENGTH`, the target type, the paths and the body
+ * are `@ideanest/campaign/report` since #155, so the app's report sheet files exactly what this
+ * dialog files. They are re-exported below under the same names; sending is this file's.
  *
  * <h2>Three targets, one budget, one function</h2>
  *
@@ -34,79 +46,13 @@ import type { ReportReason } from './api';
  * pretend the second one added weight.
  */
 
-/**
- * What is being reported.
- *
- * An account is named by its public **slug**, not an id (#143): the public profile carries
- * the slug and deliberately no identifier, and the follow route beside it is keyed the same
- * way. The field is called `slug` so an id cannot be passed where a slug belongs.
- */
-export type ReportTarget =
-  | { readonly kind: 'campaign'; readonly id: string }
-  | { readonly kind: 'account'; readonly slug: string }
-  | { readonly kind: 'comment'; readonly id: string };
-
-/** The path each target reports to. One place, so a fourth cannot be spelled two ways. */
-function pathOf(target: ReportTarget): string {
-  switch (target.kind) {
-    case 'campaign':
-      return `/v1/projects/${encodeURIComponent(target.id)}/report`;
-    case 'account':
-      return `/v1/users/${encodeURIComponent(target.slug)}/report`;
-    case 'comment':
-      return `/v1/comments/${encodeURIComponent(target.id)}/report`;
-  }
-}
-
-/*
- * `TARGET_NOUNS` WAS HERE. It was three English nouns the dialog dropped into "Report this
- * ___", which is a sentence only English builds that way: Russian declines the noun after
- * the preposition and agrees the demonstrative with its gender. #85 replaced it with three
- * whole phrases per language under `moderation.report.triggerOn`, keyed by the same three
- * kinds — the shape `admin/content-copy.ts` had already reached for the queue.
- */
-
-/**
- * The reasons, in the order they are offered.
- *
- * `OTHER` is last because a list that opens with it is a list nobody reads to the end of, and
- * a queue of `OTHER` is a queue with no shape. The rest follow §5.4's own order.
- */
-export const REPORT_REASONS: readonly ReportReason[] = Object.freeze([
-  'PROHIBITED_ITEM',
-  'MISREPRESENTATION',
-  'NOT_ORIGINAL',
-  'INTELLECTUAL_PROPERTY',
-  'OFFENSIVE',
-  'DISCRIMINATION',
-  'SPAM',
-  'FRAUD',
-  'OTHER',
-]);
-
-/*
- * `REASON_DESCRIPTIONS` WAS HERE — a sentence per reason, for the person choosing one, since
- * "Not original work" is self-explanatory to a moderator who knows §5.4's taxonomy and to
- * nobody else. The nine sentences are `moderation.report.descriptions` in four languages
- * since #85. One of them states a protected-characteristic clause, which is why they are
- * translated rather than transliterated.
- */
-
-/** §5.4's `OTHER` is the one reason a moderator cannot act on without a sentence. */
-export function requiresDetail(reason: ReportReason): boolean {
-  return reason === 'OTHER';
-}
-
-/** `ContentReport.DETAIL_MAX_LENGTH`, and the service refuses anything longer. */
-export const DETAIL_MAX_LENGTH = 2000;
-
-export interface SubmittedReport {
-  readonly id: string;
-  readonly target: { readonly type: string; readonly id: string };
-  readonly reason: string;
-  readonly state: string;
-  readonly createdAt: string;
-}
+export {
+  DETAIL_MAX_LENGTH,
+  REPORT_REASONS,
+  requiresDetail,
+  type ReportTarget,
+  type SubmittedReport,
+} from '@ideanest/campaign/report';
 
 /**
  * Files a report — 202, and nothing to go and read afterwards.
@@ -119,12 +65,10 @@ export async function submitReport(
   reason: ReportReason,
   detail: string,
 ): Promise<SubmittedReport> {
-  const trimmed = detail.trim();
-
-  const response = await authorizedFetch(pathOf(target), {
+  const response = await authorizedFetch(reportPath(target), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ reason, ...(trimmed === '' ? {} : { detail: trimmed }) }),
+    body: JSON.stringify(reportBody(reason, detail)),
   });
 
   if (!response.ok) throw await errorFrom(response);

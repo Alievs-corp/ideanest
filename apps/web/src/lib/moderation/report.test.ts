@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAccessToken } from '../api/access-token';
-import en from '@ideanest/messages/en.json';
-import { REPORT_REASONS, requiresDetail, submitReport } from './report';
+import { submitReport } from './report';
 
 /**
  * §4.9's C-06 and C-07 — issue #286.
+ *
+ * The vocabulary and the body builder are tested in `packages/campaign` since #155; what is here
+ * is the request this page sends with them.
  *
  * WHAT THESE COVER:
  *
@@ -44,43 +46,6 @@ afterEach(() => {
   setAccessToken(null);
   globalThis.fetch = originalFetch;
   vi.restoreAllMocks();
-});
-
-describe('the vocabulary', () => {
-  it('offers exactly the taxonomy the moderation queue reads back', () => {
-    /*
-     * One table since #85: the queue and the public dialog both name the nine from
-     * `admin.moderation.reason`. This catches a tenth reason reaching the catalogue without
-     * reaching the order the dialog offers them in — and the reverse, which is a radio with
-     * no label.
-     */
-    expect([...REPORT_REASONS].sort()).toEqual(Object.keys(en.admin.moderation.reason).sort());
-  });
-
-  it('explains every reason to somebody who does not know the taxonomy', () => {
-    /*
-     * "Not original work" is self-explanatory to a moderator who knows §5.4 and to nobody
-     * else, so every reason carries a sentence under it. Read from the catalogue rather than
-     * from a constant, because the sentences are in four languages since #85.
-     */
-    const descriptions: Record<string, string | undefined> = en.moderation.report.descriptions;
-
-    for (const reason of REPORT_REASONS) {
-      expect(descriptions[reason], reason).toBeTypeOf('string');
-      expect(descriptions[reason]?.trim(), reason).not.toBe('');
-    }
-  });
-
-  it('ends on “Other”, so the list is read rather than escaped from', () => {
-    expect(REPORT_REASONS[REPORT_REASONS.length - 1]).toBe('OTHER');
-  });
-
-  it('requires a sentence for “Other” and for nothing else', () => {
-    expect(requiresDetail('OTHER')).toBe(true);
-    for (const reason of REPORT_REASONS.filter((value) => value !== 'OTHER')) {
-      expect(requiresDetail(reason)).toBe(false);
-    }
-  });
 });
 
 describe('submitReport', () => {

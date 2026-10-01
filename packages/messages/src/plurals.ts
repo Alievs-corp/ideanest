@@ -50,9 +50,16 @@ export type PluralForms = Readonly<Record<'one' | 'few' | 'many' | 'other', stri
  * The rules object is constructed per call rather than cached. It is built from a four-value
  * table, `Intl` implementations memoise their own, and a module-level cache keyed by locale
  * would be state in a module that is imported by both a server render and a client bundle.
+ *
+ * <p><strong>`localeMatcher: 'lookup'`, for Hermes (#155).</strong> The app runs on an engine with
+ * no `Intl.PluralRules` and no `Intl.Locale`, and installs `@formatjs/intl-pluralrules` with data
+ * for `en`, `az`, `ru` and `tr`. Asked for `en-GB` with the default "best fit" matcher, that
+ * polyfill reaches for `Intl.Locale` to find the nearest locale and throws. "Lookup" truncates
+ * `en-GB` to `en` and needs nothing else. For these four tags the two matchers pick the same
+ * rules on every engine that has its own, so a browser and a server render are unchanged.
  */
 export function pluralForm(locale: Locale, forms: PluralForms, count: number): string {
-  const category = new Intl.PluralRules(INTL_LOCALE[locale]).select(count);
+  const category = new Intl.PluralRules(INTL_LOCALE[locale], { localeMatcher: 'lookup' }).select(count);
 
   /*
    * `other` is the fallback rather than a throw. Every CLDR locale defines it, so the only way

@@ -3959,6 +3959,10 @@
     "media": {
       "hasVideo": "This campaign has a video."
     },
+    "story": {
+      "about": "About {title}",
+      "watchOn": "— watch on {provider}"
+    },
     "creator": {
       "heading": "About the creator",
       "memberSince": "Member since <date></date>",
@@ -3988,8 +3992,8 @@
       "notFunded": "This campaign was not funded",
       "reached": "It raised at least 80% of its goal.",
       "notReached": "It did not raise 80% of its goal in time.",
-      "raised": "It raised",
-      "closedOn": "on {date}",
+      "summary": "It raised <b>{pledged}</b> of a {goal} goal from {backers, plural, one {# backer} other {# backers}} on {date}.",
+      "summaryUndated": "It raised <b>{pledged}</b> of a {goal} goal from {backers, plural, one {# backer} other {# backers}}.",
       "settling": "The figures above are what the campaign had raised when it closed. A refund after that lowers what the creator is paid; it does not change the outcome.",
       "refunded": "Every backer is refunded in full. A campaign that does not raise 80% of its goal pays no fee."
     },
@@ -4036,6 +4040,7 @@
       "postComment": "Post comment",
       "postReply": "Post reply",
       "posting": "Posting",
+      "posted": "Posted.",
       "failures": {
         "emptyBody": "Write something first.",
         "sessionExpired": "Your session has expired. Sign in and try again.",

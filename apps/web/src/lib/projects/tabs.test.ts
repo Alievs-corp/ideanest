@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CAMPAIGN_TABS,
-  campaignCursorFrom,
-  campaignTabFrom,
-  campaignTabHref,
-} from './tabs';
+import { campaignTabHref } from './tabs';
 
 /**
  * The campaign page's tabs, as addresses — #282, #284, #285.
+ *
+ * Reading a tab or a cursor out of the address is `packages/campaign/src/tabs.test.ts` since
+ * #155; building the web's own href is tested here.
  *
  * WHAT THESE COVER, and why each one is worth a test rather than a comment:
  *
@@ -35,59 +33,6 @@ import {
 
 const PATH = '/projects/ayan/coffee-table-book';
 
-describe('reading the tab from the address', () => {
-  it('answers the default for an absent parameter', () => {
-    expect(campaignTabFrom(undefined)).toBe('campaign');
-  });
-
-  it('answers the default rather than refusing an unknown tab', () => {
-    expect(campaignTabFrom('nonsense')).toBe('campaign');
-  });
-
-  it('reads each tab it publishes', () => {
-    for (const tab of CAMPAIGN_TABS) {
-      expect(campaignTabFrom(tab.id)).toBe(tab.id);
-    }
-  });
-
-  it('is not case sensitive, because a link is typed by people', () => {
-    expect(campaignTabFrom('Comments')).toBe('comments');
-  });
-
-  it('takes the first of a repeated parameter rather than refusing the page', () => {
-    expect(campaignTabFrom(['updates', 'comments'])).toBe('updates');
-  });
-
-  /** #283. The tab that had no endpoint until the service published one. */
-  it('resolves ?tab=faq', () => {
-    expect(campaignTabFrom('faq')).toBe('faq');
-    expect(campaignTabFrom('FAQ')).toBe('faq');
-  });
-});
-
-describe('which tabs the page publishes', () => {
-  it('lists FAQ after Creator and before Updates, where §4.4 puts it', () => {
-    expect(CAMPAIGN_TABS.map((tab) => tab.id)).toEqual([
-      'campaign',
-      'creator',
-      'faq',
-      'updates',
-      'comments',
-    ]);
-  });
-
-  /**
-   * §4.4's table has seven rows. Rewards is the column beside the story rather than a tab,
-   * and Community is blocked on #209 — a backer-statistics bucket below a minimum cell size
-   * identifies the person in it, and the minimum is a product and legal answer.
-   */
-  it('publishes neither Rewards nor Community, and the module says why', () => {
-    const ids = CAMPAIGN_TABS.map((tab) => tab.id);
-    expect(ids).not.toContain('rewards');
-    expect(ids).not.toContain('community');
-  });
-});
-
 describe('building a tab address', () => {
   it('gives the default tab the bare path and no parameter', () => {
     expect(campaignTabHref(PATH, 'campaign')).toBe(PATH);
@@ -114,29 +59,3 @@ describe('building a tab address', () => {
   });
 });
 
-describe('reading a cursor from the address', () => {
-  it('passes an opaque value through untouched', () => {
-    expect(campaignCursorFrom('0193f2a1-0000-7000-8000-000000000001')).toBe(
-      '0193f2a1-0000-7000-8000-000000000001',
-    );
-  });
-
-  it('accepts an integer cursor, which is what an update page uses', () => {
-    expect(campaignCursorFrom('7')).toBe('7');
-  });
-
-  it('answers null for an absent or empty parameter', () => {
-    expect(campaignCursorFrom(undefined)).toBeNull();
-    expect(campaignCursorFrom('   ')).toBeNull();
-  });
-
-  /**
-   * A bound rather than a format. The point is not to validate the encoding — this module is
-   * told not to read it — but to refuse to put a kilobyte of somebody else's query string
-   * into an outbound request to the service.
-   */
-  it('refuses a value longer than any cursor the service mints', () => {
-    expect(campaignCursorFrom('x'.repeat(129))).toBeNull();
-    expect(campaignCursorFrom('x'.repeat(128))).toBe('x'.repeat(128));
-  });
-});

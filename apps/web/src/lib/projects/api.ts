@@ -2,6 +2,7 @@ import { authorizedFetch, publicFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { Money } from '../money';
 import type { StoryDocument } from './story';
+import type { ProjectState } from '@ideanest/campaign/states';
 
 /**
  * The typed client for the creator's project endpoints.
@@ -28,35 +29,11 @@ export type { Money } from '../money';
  * Lifecycle — contract §5 (#31)
  * ---------------------------------------------------------------------- */
 
-/**
- * Exactly the nineteen states of docs/architecture.md §6.1, no more. IDN-EXT-01 added
- * `CLOSING_WINDOW`, `EXTENDED` and `WITHDRAWN` (#32); `COLLECTING` and `LATE_PLEDGE` stay
- * until stage 4 removes them (#45).
- *
- * The editor only ever renders these; the transitions themselves are the
- * server's business and there is deliberately no client-side copy of the
- * transition table to fall out of step with it.
+/*
+ * The nineteen states of docs/architecture.md §6.1 live in `@ideanest/campaign/states` since
+ * #155, so the app's campaign screen reads the same vocabulary. Re-exported under the same name.
  */
-export type ProjectState =
-  | 'DRAFT'
-  | 'PRELAUNCH'
-  | 'SUBMITTED'
-  | 'CHANGES_REQUESTED'
-  | 'REJECTED'
-  | 'APPROVED'
-  | 'SCHEDULED'
-  | 'LIVE'
-  | 'CLOSING_WINDOW'
-  | 'EXTENDED'
-  | 'SUSPENDED'
-  | 'CANCELED'
-  | 'SUCCESSFUL'
-  | 'UNSUCCESSFUL'
-  | 'WITHDRAWN'
-  | 'COLLECTING'
-  | 'LATE_PLEDGE'
-  | 'FULFILLING'
-  | 'COMPLETED';
+export type { ProjectState };
 
 /**
  * The cover image, as three plain fields.

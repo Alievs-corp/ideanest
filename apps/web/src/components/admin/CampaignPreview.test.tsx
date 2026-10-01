@@ -7,6 +7,7 @@ import { CampaignPreview } from './CampaignPreview';
 import { translatorFor } from '../../test-copy';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
 import { campaignPreviewCopyFrom } from '../../lib/i18n/admin/content-copy';
+import { campaignStoryCopyFrom } from '../../lib/i18n/campaign-copy';
 
 /*
  * Copy built from `messages/en.json` through the same builder the route calls, for the
@@ -16,6 +17,7 @@ import { campaignPreviewCopyFrom } from '../../lib/i18n/admin/content-copy';
 const COPY = campaignPreviewCopyFrom(
   translatorFor('admin'),
   consoleChromeCopyFrom(translatorFor('admin'), translatorFor('common')),
+  campaignStoryCopyFrom(translatorFor('campaign.story')),
 );
 
 vi.mock('../../lib/admin/campaigns', async (importOriginal) => {

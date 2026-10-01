@@ -2,6 +2,8 @@ import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { MediaFrame } from '@ideanest/ui/server';
 import { canOptimise } from '../../lib/images/source';
+import type { CampaignStoryCopy } from '../../lib/i18n/campaign-copy';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { StoryBlock, StoryDocument, StorySpans } from '../../lib/projects/story';
 
 /**
@@ -45,9 +47,11 @@ const BODY = 'wrap-anywhere text-[1.0625rem] leading-[1.75] text-reading';
 export interface CampaignStoryProps {
   readonly story: StoryDocument;
   readonly title: string;
+  /** The two fixed phrases, resolved by the caller — see {@link CampaignStoryCopy}. */
+  readonly copy: CampaignStoryCopy;
 }
 
-export function CampaignStory({ story, title }: CampaignStoryProps) {
+export function CampaignStory({ story, title, copy }: CampaignStoryProps) {
   return (
     <section aria-labelledby="campaign-story" className="rounded-xl bg-surface-2 p-6 sm:p-10">
       {/*
@@ -57,18 +61,18 @@ export function CampaignStory({ story, title }: CampaignStoryProps) {
         heading would find the story's sections with no idea what they belong to.
       */}
       <h2 id="campaign-story" className="sr-only">
-        About {title}
+        {fillPlaceholders(copy.about, { title })}
       </h2>
       <div className={MEASURE}>
         {story.blocks.map((block, index) => (
-          <Block key={index} block={block} />
+          <Block key={index} block={block} watchOn={copy.watchOn} />
         ))}
       </div>
     </section>
   );
 }
 
-function Block({ block }: { block: StoryBlock }): ReactNode {
+function Block({ block, watchOn }: { block: StoryBlock; watchOn: string }): ReactNode {
   switch (block.type) {
     case 'heading':
       /*
@@ -183,9 +187,12 @@ function Block({ block }: { block: StoryBlock }): ReactNode {
             className={`rounded-sm text-white underline underline-offset-4 hover:text-lime-400 ${BODY}`}
           >
             {block.title}
+            {/* Outside the span, so the link's accessible name keeps the space (#155). */}{' '}
             <span className="text-white/64">
-              {' '}
-              — watch on {block.provider === 'youtube' ? 'YouTube' : 'Vimeo'}
+              {fillPlaceholders(watchOn, {
+                // The service's names, which are brands and are not translated.
+                provider: block.provider === 'youtube' ? 'YouTube' : 'Vimeo',
+              })}
             </span>
           </a>
         </p>

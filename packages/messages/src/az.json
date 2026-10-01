@@ -3959,6 +3959,10 @@
     "media": {
       "hasVideo": "Bu kampaniyanın videosu var."
     },
+    "story": {
+      "about": "{title} haqqında",
+      "watchOn": "— {provider} platformasında baxın"
+    },
     "creator": {
       "heading": "Müəllif haqqında",
       "memberSince": "<date></date> tarixindən üzvdür",
@@ -3988,8 +3992,8 @@
       "notFunded": "Bu kampaniya maliyyələşmədi",
       "reached": "Hədəfinin ən azı 80%-ini topladı.",
       "notReached": "Vaxtında hədəfinin 80%-ini toplaya bilmədi.",
-      "raised": "Topladığı",
-      "closedOn": "{date} tarixində",
+      "summary": "{date} tarixində {backers, plural, other {# dəstəkçidən}} <b>{pledged}</b> topladı; hədəfi {goal} idi.",
+      "summaryUndated": "{backers, plural, other {# dəstəkçidən}} <b>{pledged}</b> topladı; hədəfi {goal} idi.",
       "settling": "Yuxarıdakı rəqəmlər kampaniyanın bağlandığı anda topladığı məbləğdir. Ondan sonrakı geri qaytarma müəllifə ödəniləni azaldır, nəticəni isə dəyişmir.",
       "refunded": "Hər dəstəkçiyə məbləğ tam qaytarılır. Hədəfinin 80%-ini toplamayan kampaniya heç bir komissiya ödəmir."
     },
@@ -4036,6 +4040,7 @@
       "postComment": "Şərhi göndər",
       "postReply": "Cavabı göndər",
       "posting": "Göndərilir",
+      "posted": "Göndərildi.",
       "failures": {
         "emptyBody": "Əvvəlcə nəsə yazın.",
         "sessionExpired": "Sessiyanızın vaxtı bitib. Daxil olub yenidən cəhd edin.",

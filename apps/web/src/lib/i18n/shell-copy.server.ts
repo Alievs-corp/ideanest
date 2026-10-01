@@ -72,10 +72,12 @@ import {
 import {
   type CampaignActionsCopy,
   type CampaignCountdownCopy,
+  type CampaignStoryCopy,
   type CommentCopy,
   type LiveFundingCopy,
   campaignActionsCopyFrom,
   campaignCountdownCopyFrom,
+  campaignStoryCopyFrom,
   commentCopyFrom,
   liveFundingCopyFrom,
 } from './campaign-copy';
@@ -518,6 +520,11 @@ export async function liveFundingCopy(): Promise<LiveFundingCopy> {
 /** §4.4's live countdown, which ticks in the browser and so cannot read a catalogue (#101). */
 export async function campaignCountdownCopy(): Promise<CampaignCountdownCopy> {
   return campaignCountdownCopyFrom(await getTranslations('campaign'));
+}
+
+/** The story's hidden heading and embed suffix (#155) — `CampaignStory` is not always a server component. */
+export async function campaignStoryCopy(): Promise<CampaignStoryCopy> {
+  return campaignStoryCopyFrom(await getTranslations('campaign.story'));
 }
 
 /** The composer and the two comment controls, which share one section. */

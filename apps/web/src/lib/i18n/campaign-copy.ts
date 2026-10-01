@@ -80,6 +80,8 @@ export interface CommentCopy {
   readonly postReply: string;
   /** What the button says while the request is in flight. */
   readonly posting: string;
+  /** The polite announcement once a comment is posted (#155; it was an English literal). */
+  readonly posted: string;
   readonly withdraw: string;
   readonly withdrawWarning: string;
   /** The confirmation's own button, and what it says while the request is in flight. */
@@ -106,6 +108,21 @@ export interface CommentFailureCopy {
   readonly unreachable: string;
   readonly notWithdrawn: string;
   readonly withdrawUnreachable: string;
+}
+
+/**
+ * The story's two fixed phrases — #155 found both typed into `CampaignStory` in English.
+ *
+ * <p>A copy prop rather than a catalogue read inside the component, because `CampaignStory` is
+ * rendered by the campaign page on the server and by the admin console's `CampaignPreview`
+ * inside a client component, where nothing can read the catalogue. Both are templates, read
+ * with `raw`, because the title and the provider are filled in by the component.
+ */
+export interface CampaignStoryCopy {
+  /** The hidden heading that names the story for the page outline. Carries `{title}`. */
+  readonly about: string;
+  /** After an embed's title, naming where it plays. Carries `{provider}`. */
+  readonly watchOn: string;
 }
 
 /**
@@ -231,6 +248,7 @@ export function commentCopyFrom(t: FundingTranslator): CommentCopy {
     postComment: t('postComment'),
     postReply: t('postReply'),
     posting: t('posting'),
+    posted: t('posted'),
     withdraw: t('withdraw'),
     withdrawWarning: t('withdrawWarning'),
     withdrawConfirm: t('withdrawConfirm'),
@@ -247,6 +265,11 @@ export function commentCopyFrom(t: FundingTranslator): CommentCopy {
       withdrawUnreachable: t('failures.withdrawUnreachable'),
     },
   };
+}
+
+/** From `campaign.story`. */
+export function campaignStoryCopyFrom(t: FundingTranslator): CampaignStoryCopy {
+  return { about: String(t.raw('about')), watchOn: String(t.raw('watchOn')) };
 }
 
 export function liveFundingCopyFrom(t: FundingTranslator): LiveFundingCopy {

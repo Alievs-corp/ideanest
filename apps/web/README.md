@@ -816,7 +816,8 @@ Two thirds of the original overage was avoidable and was avoided: a client
 component pulls its **whole import graph** into the browser bundle, so
 `@ideanest/ui` became `@ideanest/ui/server` — the lean entry is the right one
 from a client component too — and `completionOf` moved out of `publicPage.ts`
-into `lib/projects/completion.ts`, a leaf whose only dependency is `decimal.js`.
+into `lib/projects/completion.ts`, a leaf whose only dependency is `decimal.js`
+(since #155 that file re-exports `@ideanest/campaign/completion`, still a leaf).
 What remains is `decimal.js` itself, which is not negotiable: CLAUDE.md forbids
 floating point for money, and this is the one place on the platform where an
 amount is accumulated repeatedly in a browser.
@@ -826,6 +827,32 @@ were confirmed, and a pledge is not always a new backer — somebody raising the
 pledge confirms again. Adding it would make the count drift upwards over a
 campaign's life with no way to correct itself, which is worse than a count that
 is right at page load.
+
+### The campaign page's rules are shared with the app (#155)
+
+The platform-neutral half of the campaign page lives in `packages/campaign`, so
+the app's campaign screen gives the same answers on a phone. The web modules
+that held it re-export it under the same names, so no component changed:
+
+| Web module | Re-exports | Keeps |
+|---|---|---|
+| `lib/projects/api.ts` | `ProjectState` (`@ideanest/campaign/states`) | the editor's client |
+| `lib/projects/publicPage.ts` | `RENDERABLE_STATES`; reads `daysLeftOf` | `readCampaignPage`, `tiersOf` |
+| `lib/projects/pledgeable.ts` | `acceptsPledges`, `PLEDGEABLE_PROJECT_STATES` | — |
+| `lib/projects/threshold.ts` | `successThresholdOf`, `SUCCESS_THRESHOLD` | — |
+| `lib/projects/completion.ts` | `completionOf` | — |
+| `lib/projects/deadline.ts` | `remainingUntil`, `countdownLabel`, `countdownIntervalMs`, `daysLeftOf` | `formatInstant`, `formatDay`, `viewerTimeZone` |
+| `lib/projects/tabs.ts` | the tab ids and order, the `tab`/`from`/`thread` names, `campaignTabFrom`, `campaignCursorFrom` | `campaignTabHref` |
+| `lib/projects/story.ts` | the block types, `STORY_SCHEMA_VERSION`, `EMBED_PROVIDERS`, `readStoryDocument` | the editor's operations |
+| `lib/realtime/updates.ts` | everything; `useCampaignUpdates` calls the shared `reconnectDelayMs` | the hook |
+| `lib/community/{comments,updates,faqs}.ts` | the shapes, page sizes and readers | the server fetches and the comment writes |
+| `lib/obligations/api.ts` | everything | — (`server.ts` fetches) |
+| `lib/moderation/report.ts` | the reasons, `requiresDetail`, `DETAIL_MAX_LENGTH`, the target type | `submitReport`, over the shared `reportPath` and `reportBody` |
+
+Their unit tests moved with them and run under vitest in the package; what
+stayed here tests what stayed here. Each shared module is imported by its own
+subpath and the package is `sideEffects: false`, so a client component that
+needs `completionOf` does not pull the story reader into its bundle.
 
 ### The seeded feed
 
