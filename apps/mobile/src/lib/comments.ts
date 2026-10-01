@@ -8,7 +8,7 @@ import {
   type CampaignCommentPage,
   type CampaignCommentThread,
 } from '@ideanest/campaign/comments';
-import { api, sendJson } from '../api/client';
+import { publicApi, sendJson } from '../api/client';
 import { queryKeys } from '../api/queries';
 
 /**
@@ -18,8 +18,20 @@ import { queryKeys } from '../api/queries';
  *
  * The shapes, the page size and the reader that narrows a response (a tombstone kept as a row, an
  * unreadable reply dropped on its own) are `@ideanest/campaign/comments`, which the web's tab
- * reads too. What lives here is how this app asks: the typed client for the read, `sendJson` for
- * the three writes, so each carries the session the way every other request does.
+ * reads too. What lives here is how this app asks: `publicApi()` for the read, `sendJson` for the
+ * three writes, which carry the session the way every other write does.
+ *
+ * <h2>The read is made as nobody</h2>
+ *
+ * `PublicCommentController` serves every caller the same page: a comment has no backers-only
+ * variant and no scheduling, and `CommentResponse` carries nothing that depends on who asks —
+ * `acceptsReplies`, `byCreator` and the tombstone are the comment's own. The one thing a token
+ * adds is reading the comments of a campaign that is not public yet, for its team, which is the
+ * creator's dashboard and not this page. So the read goes out without `Authorization`, as the
+ * web's `fetchCommentThreads` does and as the page's FAQ and updates do: nothing a team member's
+ * session could unlock is ever drawn here, and reading the comments never asks a locked phone
+ * for the biometric prompt. Who may withdraw is decided by comparing `authorId` with the
+ * account (`GET /v1/me`), which needs no session on this read.
  *
  * <h2>Append, never replace — and never the same cursor twice</h2>
  *
@@ -46,7 +58,7 @@ export async function fetchCommentPage(
   location: { readonly cursor: string | null; readonly thread: string | null },
   signal?: AbortSignal,
 ): Promise<CampaignCommentPage> {
-  const body = await api().get('/v1/projects/{projectId}/comments', {
+  const body = await publicApi().get('/v1/projects/{projectId}/comments', {
     path: { projectId },
     query: {
       limit: COMMENT_PAGE_SIZE,

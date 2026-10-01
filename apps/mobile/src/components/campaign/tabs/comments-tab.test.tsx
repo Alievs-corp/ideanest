@@ -101,6 +101,8 @@ const SECOND_PAGE = {
 type Route = (url: URL) => Response | Promise<Response>;
 let routes: { comments: Route; post: Route; reply: Route; withdraw: Route; me: Route };
 let reads: string[];
+/** The `Authorization` each comments read carried, in order — `null` for none. */
+let readAuthorization: (string | null)[];
 let writes: string[];
 let client: QueryClient;
 let latest: CampaignTabBody;
@@ -113,6 +115,7 @@ beforeEach(async () => {
   rememberAccessToken(null);
   jest.clearAllMocks();
   reads = [];
+  readAuthorization = [];
   writes = [];
   routes = {
     comments: (url) => json(url.searchParams.get('cursor') === 'cursor-2' ? SECOND_PAGE : FIRST_PAGE),
@@ -128,6 +131,7 @@ beforeEach(async () => {
     if (url.pathname === '/v1/me') return routes.me(url);
     if (method === 'GET' && url.pathname === `/v1/projects/${ID}/comments`) {
       reads.push(url.search);
+      readAuthorization.push(new Headers(init?.headers).get('Authorization'));
       return routes.comments(url);
     }
     writes.push(`${method} ${url.pathname} ${typeof init?.body === 'string' ? init.body : ''}`.trim());
@@ -235,6 +239,18 @@ describe('the list', () => {
     expect(screen.getByText('Comment c1-r1')).toBeTruthy();
     expect(screen.getByTestId('show-replies-c1')).toBeTruthy();
     expect(screen.queryByTestId('show-replies-c2')).toBeNull();
+  });
+
+  it('reads the comments as nobody, even signed in, and after a write too', async () => {
+    await signIn();
+    await show();
+    expect(readAuthorization).toEqual([null]);
+
+    await fireEvent.changeText(screen.getByLabelText(C.composerLabel), 'Hello');
+    await fireEvent.press(screen.getByRole('button', { name: C.postComment }));
+    await settle();
+    expect(writes).toHaveLength(1);
+    expect(readAuthorization.every((value) => value === null)).toBe(true);
   });
 
   it("marks the campaign's own answer with its tag", async () => {

@@ -197,7 +197,12 @@ are `@ideanest/campaign`'s, the same functions the web calls.
   while it is not the active tab. The screen calls the end-reached handler near the end of
   the tab's rows — not of the list, whose end is the rewards — once per list height.
   `?tab=` mirrors the selection (`router.setParams`; the default is left out), and an
-  unknown value is the Campaign tab.
+  unknown value is the Campaign tab. All five are drawn in the app; none sends the reader
+  to the web page.
+- **Campaign** (`tabs/campaign-tab.tsx`): how a closed campaign ended, the story (the
+  version-1 document from `@ideanest/campaign/story`, drawn as native text; an invalid one
+  draws nothing, an embed opens outside the app) and the risks — everything from the page's
+  own read, so the tab reads nothing of its own.
 - **Creator, FAQ and Updates** (`tabs/creator/`, `tabs/faq/`, `tabs/updates/`) read only
   once their tab opens, and **as nobody** (`publicApi()` in `src/api/client.ts`, no
   `Authorization`), as the web does: the service shows a campaign's team updates and FAQ
@@ -210,14 +215,18 @@ are `@ideanest/campaign`'s, the same functions the web calls.
   (mount, focus, reconnect), which would re-read every loaded page, are off; pull to refresh,
   and opening the tab on a stale list, read the first page alone and replace the loaded
   pages only once it has arrived.
-- **Comments** (`tabs/comments-tab.tsx`, `tabs/comments/*`, `src/lib/comments.ts`): the
-  composer above the threads (a sign-in card when signed out), pages of ten appended by
-  opaque cursor — `onEndReached` and an "Older comments" pill, never the same cursor twice —
-  Reply where the service says `acceptsReplies`, Withdraw for the author only (the account
-  id from `GET /v1/me`), a tombstone for a withdrawn comment, and "Report this comment".
-  "Show more replies" sets `?thread=` for the single-thread view: that conversation alone,
-  no composer, its replies paged with the thread's own cursor. A new comment and pull to
-  refresh re-read the first page; a reply or a withdrawal re-reads every page shown.
+- **Comments** (`tabs/comments-tab.tsx`, `tabs/comments/*`, `src/lib/comments.ts`): read
+  **as nobody** too (`publicApi()`) — the service gives every caller the same page — and
+  never persisted (the `comments` root). The composer sits above the threads (a sign-in card
+  when signed out); pages of ten append by opaque cursor — the end of the list and an "Older
+  comments" pill, never the same cursor twice, and a page asked for during a re-read is made
+  once it settles. Reply where the service says `acceptsReplies`, Withdraw for the author
+  only (the account id from `GET /v1/me`, confirmed in place, focus moved to the warning), a
+  tombstone for a withdrawn comment, and "Report this comment". "Show more replies" sets
+  `?thread=` for the single-thread view: that conversation alone, no composer, its replies
+  paged with the thread's own cursor. Every write invalidates all of the campaign's comment
+  views; a new comment and pull to refresh read the first page alone, a reply or a
+  withdrawal every page shown.
 - **Report** (`report-link.tsx`, `report-sheet.tsx`, `src/lib/report.ts`): block 14's link
   and each comment's open the kit's `Sheet` — the nine reasons from
   `@ideanest/campaign/report` named by `admin.moderation.reason.*`, a detail capped at 2000

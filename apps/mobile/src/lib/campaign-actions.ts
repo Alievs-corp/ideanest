@@ -1,11 +1,8 @@
-import * as WebBrowser from 'expo-web-browser';
 import { ApiError } from '@ideanest/api-client';
 import { sendJson } from '../api/client';
-import { siteUrl } from '../api/config';
-import { currentLocale } from './locale';
 
 /**
- * The campaign page's writes and its one way out to the web — #155.
+ * The campaign page's writes, and where its checkout is — #155.
  *
  * <p>Each write is the endpoint the web's `CampaignActions` calls, through `sendJson`, so it
  * carries the session the way every read does and a refusal arrives as the shared `ApiError`.
@@ -75,20 +72,4 @@ export function checkoutHref(
     pathname: '/campaigns/[id]/back',
     params: rewardId === undefined ? { id: projectId } : { id: projectId, reward: rewardId },
   };
-}
-
-/**
- * One tab of the campaign's web page in the in-app browser — the interim body of a tab the app
- * does not draw yet (#155). The locale is in the address so the page opens in the language the
- * reader is using here, and `?tab=` is the web's own parameter.
- */
-export async function openCampaignTabOnWeb(
-  creatorSlug: string,
-  projectSlug: string,
-  tab: string,
-): Promise<void> {
-  const path = `/projects/${encodeURIComponent(creatorSlug)}/${encodeURIComponent(projectSlug)}`;
-  await WebBrowser.openBrowserAsync(
-    `${siteUrl()}/${currentLocale()}${path}?tab=${encodeURIComponent(tab)}`,
-  );
 }
