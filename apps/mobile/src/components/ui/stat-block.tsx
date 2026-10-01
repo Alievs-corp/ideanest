@@ -60,6 +60,14 @@ export interface StatBlockProps {
   readonly badge?: string;
   readonly badgeTone?: StatTrend;
   readonly size?: StatBlockSize;
+  /**
+   * The figure's colour. `success` is a goal that has been met — the campaign page's funded
+   * percent (#155) — and only on the dark surface, where it reads; the label beside it says the
+   * same thing in words, so the hue is never the only signal.
+   */
+  readonly tone?: 'default' | 'success';
+  /** A glyph before the figure (`Users` before a backer count). Decorative: the label names it. */
+  readonly icon?: IconComponent;
   readonly testID?: string;
 }
 
@@ -69,6 +77,8 @@ export function StatBlock({
   badge,
   badgeTone = 'up',
   size = 'lg',
+  tone = 'default',
+  icon,
   testID,
 }: StatBlockProps) {
   const t = useT('mobile.kitDisplay');
@@ -79,6 +89,11 @@ export function StatBlock({
   return (
     <View style={styles.block} testID={testID}>
       <View style={styles.figureRow}>
+        {icon === undefined ? null : (
+          <View style={[styles.glyph, { height: points }]}>
+            <Icon icon={icon} size={20} color={TONES[surface].tertiary} />
+          </View>
+        )}
         <Text
           style={[
             styles.value,
@@ -86,7 +101,8 @@ export function StatBlock({
               fontSize: points,
               lineHeight: points,
               letterSpacing: points * -0.04,
-              color: TONES[surface].primary,
+              color:
+                tone === 'success' && surface === 'dark' ? colors.success : TONES[surface].primary,
             },
           ]}
         >
@@ -130,6 +146,7 @@ const styles = StyleSheet.create({
   // off it. Never truncated: an ellipsis in the middle of a sum of money is a different sum.
   figureRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', gap: 6 },
   value: { ...font.semibold, fontVariant: ['tabular-nums'], flexShrink: 1 },
+  glyph: { justifyContent: 'center', marginRight: 2 },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',

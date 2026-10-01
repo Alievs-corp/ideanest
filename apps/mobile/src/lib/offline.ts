@@ -57,9 +57,23 @@ export const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
  */
 const PERSISTED_ROOTS: readonly string[] = ['saved', 'pledges', 'project'];
 
+/**
+ * Roots that are refused even though they hold campaign-page data — #155. Listed rather than left
+ * to fall through the allowlist, because each one is a decision somebody could otherwise "fix" by
+ * moving its key under `project`:
+ *
+ * - `comments`: a comment can be withdrawn by its author or removed by moderation, and the copy
+ *   restored from this unencrypted store would put it back on a stranger's screen for a week.
+ * - `profile`: somebody else's public profile (#156, and the campaign page's Creator tab), which
+ *   they can rename or delete; last week's is a page about a person as they no longer are.
+ */
+export const UNPERSISTED_ROOTS: readonly string[] = ['comments', 'profile'];
+
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {
   const root = queryKey[0];
-  return typeof root === 'string' && PERSISTED_ROOTS.includes(root);
+  return (
+    typeof root === 'string' && PERSISTED_ROOTS.includes(root) && !UNPERSISTED_ROOTS.includes(root)
+  );
 }
 
 /**

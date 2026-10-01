@@ -1,0 +1,296 @@
+import { Fragment, type ReactNode } from 'react';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { ExternalLink } from 'lucide-react-native';
+import type { StoryBlock, StoryDocument, StorySpans } from '@ideanest/campaign/story';
+import { useT } from '../../lib/i18n';
+import {
+  colors,
+  font,
+  fontSize,
+  lineHeight,
+  radius,
+  readingMeasure,
+  size,
+  spacing,
+  tracking,
+} from '../../theme';
+import { Icon, MediaFrame, useFocusRing } from '../ui';
+
+/**
+ * The story — the web's `CampaignStory` (#155, #140), as native text.
+ *
+ * <h2>The real schema, read by the shared reader</h2>
+ *
+ * The service stores and sends `{version: 1, blocks: [...]}`. The app's old reader walked a
+ * TipTap tree, found nothing on that root, and drew every real story as empty. This one is handed
+ * the document `readStoryDocument` (`@ideanest/campaign/story`) accepted — the same function the
+ * web validates with — so a story renders on a phone exactly when it renders in a browser, and a
+ * document that fails validation (version 2, an unknown block, a malformed span) is no story
+ * section at all, on both.
+ *
+ * <h2>Every block, as `Text`</h2>
+ *
+ * Headings (level 2 at 24 semibold, level 3 at 20 medium, both `header` to a screen reader),
+ * paragraphs with `em` and `strong` spans, ordered and unordered lists, quotes on a lime-700 rule,
+ * dividers, images at their own aspect ratio with the creator's `alt` as their name, and embeds.
+ * Never HTML and never a WebView: the creator's words are data.
+ *
+ * <p>Reading text is 17 on 1.75 with a 68-character measure, on a surface-2 card. No height is
+ * fixed and nothing is truncated, so Dynamic Type grows the story rather than clipping it.
+ *
+ * <h2>Embeds are links out</h2>
+ *
+ * The web has no player and neither does the app: an embed is "{title} — watch on YouTube", and a
+ * tap hands the address to the system (`Linking.openURL`), which opens the YouTube or Vimeo app
+ * when it is installed. Only an `http(s)` address is handed over — a story is somebody else's
+ * text, and a custom scheme in it is not something to launch on a reader's phone.
+ */
+export interface CampaignStoryProps {
+  readonly story: StoryDocument;
+  /** The campaign's title, for the heading a screen reader navigates to ("About {title}"). */
+  readonly title: string;
+}
+
+export function CampaignStory({ story, title }: CampaignStoryProps) {
+  const t = useT('campaign.story');
+  return (
+    <View style={styles.card} testID="campaign-story">
+      {/*
+        A heading the outline needs and the design does not show: without it the story's own
+        headings hang off nothing for somebody moving by heading.
+      */}
+      <Text accessibilityRole="header" style={styles.hidden}>
+        {t('about', { title })}
+      </Text>
+      <View style={styles.measure}>
+        {story.blocks.map((block, index) => (
+          <Block
+            key={index}
+            block={block}
+            first={index === 0}
+            last={index === story.blocks.length - 1}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function Block({
+  block,
+  first,
+  last,
+}: {
+  readonly block: StoryBlock;
+  readonly first: boolean;
+  /** The last block keeps no space under it; the card's padding is the space. */
+  readonly last: boolean;
+}): ReactNode {
+  const end = last ? styles.last : null;
+  switch (block.type) {
+    case 'heading':
+      return (
+        <Text
+          accessibilityRole="header"
+          style={[block.level === 2 ? styles.h2 : styles.h3, first && styles.first]}
+          testID={`story-heading-${block.level}`}
+        >
+          {block.text}
+        </Text>
+      );
+
+    case 'paragraph':
+      return (
+        <Text style={[styles.paragraph, end]}>
+          <Spans spans={block.spans} />
+        </Text>
+      );
+
+    case 'list':
+      return (
+        <View
+          style={[styles.list, end]}
+          testID={block.ordered ? 'story-ordered' : 'story-unordered'}
+        >
+          {block.items.map((item, index) => (
+            <View key={index} style={styles.item}>
+              <Text style={[styles.reading, styles.marker]} accessibilityElementsHidden>
+                {block.ordered ? `${index + 1}.` : '•'}
+              </Text>
+              <Text style={[styles.reading, styles.itemText]}>
+                <Spans spans={item} />
+              </Text>
+            </View>
+          ))}
+        </View>
+      );
+
+    case 'quote':
+      return (
+        <View style={[styles.quote, end]} testID="story-quote">
+          <Text style={[styles.reading, styles.italic]}>
+            <Spans spans={block.spans} />
+          </Text>
+        </View>
+      );
+
+    case 'rule':
+      return <View style={[styles.rule, end]} testID="story-rule" />;
+
+    case 'image':
+      return (
+        <View style={[styles.figure, end]}>
+          {/*
+            Its own proportions rather than a crop token: a story image illustrates something
+            specific, and a 16:9 cut through it may remove the part that mattered. The frame
+            still reserves the box so the paragraph below does not jump.
+          */}
+          <MediaFrame ratio={{ width: block.width, height: block.height }} radius="md">
+            <Image
+              source={{ uri: block.url }}
+              contentFit="cover"
+              transition={0}
+              style={styles.fill}
+              accessible
+              accessibilityRole="image"
+              accessibilityLabel={block.alt}
+              testID="story-image"
+            />
+          </MediaFrame>
+        </View>
+      );
+
+    case 'embed':
+      return (
+        <View style={[styles.embedBlock, end]}>
+          <EmbedLink title={block.title} url={block.url} provider={block.provider} />
+        </View>
+      );
+  }
+}
+
+/** The services' own names: brands, not words, and the same in every language. */
+const PROVIDER_NAMES = { youtube: 'YouTube', vimeo: 'Vimeo' } as const;
+
+function EmbedLink({
+  title,
+  url,
+  provider,
+}: {
+  readonly title: string;
+  readonly url: string;
+  readonly provider: keyof typeof PROVIDER_NAMES;
+}) {
+  const t = useT('campaign.story');
+  const { ring, onFocus, onBlur } = useFocusRing();
+  const suffix = t('watchOn', { provider: PROVIDER_NAMES[provider] });
+  const openable = /^https?:\/\//i.test(url);
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={`${title} ${suffix}`}
+      disabled={!openable}
+      onPress={() => void Linking.openURL(url).catch(() => undefined)}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      style={({ pressed }) => [styles.embed, pressed && styles.pressed, ring]}
+      testID="story-embed"
+    >
+      <Text style={[styles.reading, styles.embedText]}>
+        <Text style={styles.embedTitle}>{title}</Text> {suffix}
+      </Text>
+      <Icon icon={ExternalLink} size={16} color={colors.textSecondary} />
+    </Pressable>
+  );
+}
+
+/** A run of text with its marks: `em` italic, `strong` semibold white — the web's `Spans`. */
+function Spans({ spans }: { readonly spans: StorySpans }) {
+  return (
+    <>
+      {spans.map((span, index) => {
+        const em = span.marks.includes('em');
+        const strong = span.marks.includes('strong');
+        if (!em && !strong) return <Fragment key={index}>{span.text}</Fragment>;
+        return (
+          <Text key={index} style={[em && styles.italic, strong && styles.strong]}>
+            {span.text}
+          </Text>
+        );
+      })}
+    </>
+  );
+}
+
+const reading = {
+  ...font.regular,
+  fontSize: fontSize.reading,
+  lineHeight: lineHeight.story,
+  letterSpacing: tracking.reading,
+  color: colors.textReading,
+} as const;
+
+const styles = StyleSheet.create({
+  card: { padding: spacing[6], borderRadius: radius.xl, backgroundColor: colors.surface2 },
+  measure: { maxWidth: readingMeasure },
+  hidden: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    overflow: 'hidden',
+    color: 'transparent',
+  },
+  reading,
+  paragraph: { ...reading, marginBottom: spacing[6] },
+  h2: {
+    ...font.semibold,
+    fontSize: fontSize.h2,
+    lineHeight: lineHeight.h2,
+    letterSpacing: tracking.h2,
+    color: colors.textPrimary,
+    marginTop: spacing[10],
+    marginBottom: spacing[4],
+  },
+  h3: {
+    ...font.medium,
+    fontSize: fontSize.h3,
+    lineHeight: lineHeight.h3,
+    letterSpacing: tracking.h3,
+    color: colors.textPrimary,
+    marginTop: spacing[8],
+    marginBottom: spacing[3],
+  },
+  first: { marginTop: 0 },
+  list: { gap: spacing[2], marginBottom: spacing[6] },
+  item: { flexDirection: 'row', gap: spacing[2] },
+  marker: { minWidth: spacing[5] },
+  itemText: { flex: 1 },
+  quote: {
+    borderLeftWidth: 2,
+    borderLeftColor: colors.lime700,
+    paddingLeft: spacing[5],
+    marginBottom: spacing[6],
+  },
+  italic: { fontStyle: 'italic' },
+  strong: { ...font.semibold, color: colors.textPrimary },
+  rule: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginVertical: spacing[10],
+  },
+  figure: { marginBottom: spacing[6] },
+  fill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  embed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    minHeight: size.touchTarget,
+    borderRadius: radius.sm,
+  },
+  embedBlock: { marginBottom: spacing[6] },
+  last: { marginBottom: 0 },
+  embedText: { flex: 1 },
+  embedTitle: { color: colors.textPrimary, textDecorationLine: 'underline' },
+  pressed: { opacity: 0.64 },
+});

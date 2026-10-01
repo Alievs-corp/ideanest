@@ -34,6 +34,20 @@ describe('what survives a restart', () => {
     expect(shouldPersistQuery(queryKeys.suggestions('lam'))).toBe(false);
   });
 
+  it('keeps the campaign page’s own reads, and never its comments or anybody’s profile', () => {
+    // #155: the page, its rewards, its FAQ and its update clock open offline with the page.
+    expect(shouldPersistQuery(queryKeys.projectRewards('p1'))).toBe(true);
+    expect(shouldPersistQuery(queryKeys.projectFaqs('p1'))).toBe(true);
+    expect(shouldPersistQuery(queryKeys.projectObligation('p1'))).toBe(true);
+    expect(shouldPersistQuery(queryKeys.projectUpdates('p1'))).toBe(true);
+    // A withdrawn or moderated comment must not survive in a stranger's offline cache, and a
+    // profile is somebody else's to rename or delete.
+    expect(shouldPersistQuery(queryKeys.comments('p1', null))).toBe(false);
+    expect(shouldPersistQuery(queryKeys.comments('p1', 'c1'))).toBe(false);
+    expect(shouldPersistQuery(queryKeys.profile('aysel'))).toBe(false);
+    expect(shouldPersistQuery(queryKeys.profileProjects('aysel'))).toBe(false);
+  });
+
   it('matches on the root of the key, so a paged variant is one decision', () => {
     // ['saved'] and ['saved', cursor] must not disagree; the second spelling silently
     // not being cached is a bug that only shows on a phone with no signal.

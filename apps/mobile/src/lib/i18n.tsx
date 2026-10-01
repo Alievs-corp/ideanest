@@ -233,15 +233,15 @@ export function formatWindowDate(iso: string, locale: Locale): string | null {
  * when it will not parse, the ISO time when the engine cannot format.
  */
 export function formatTime(iso: string | null | undefined, locale: Locale): string {
-  return formatInstant(iso, locale, timeFormat, (value) => value.slice(11, 16));
+  return formatWith(iso, locale, timeFormat, (value) => value.slice(11, 16));
 }
 
 /** A date and a clock time (`5 Oct 2026, 01:00`), as {@link formatTime}. */
 export function formatDateTime(iso: string | null | undefined, locale: Locale): string {
-  return formatInstant(iso, locale, dateTimeFormatFor, (value) => value.slice(0, 16).replace('T', ' '));
+  return formatWith(iso, locale, dateTimeFormatFor, (value) => value.slice(0, 16).replace('T', ' '));
 }
 
-function formatInstant(
+function formatWith(
   iso: string | null | undefined,
   locale: Locale,
   formatter: (locale: Locale) => { format(value: Date): string },
@@ -254,5 +254,109 @@ function formatInstant(
     return formatter(locale).format(date) || bare(iso);
   } catch {
     return bare(iso);
+  }
+}
+
+/*
+ * The campaign page's two dates (#155) — the web's `formatInstant` and `formatDay`
+ * (`apps/web/src/lib/projects/deadline.ts`), with the same fields, so a deadline reads the same
+ * in a browser and on a phone in the same zone.
+ *
+ * The web formats twice — UTC on the server, the reader's zone once hydrated (`ViewerInstant`).
+ * The app has no server render to match, so it writes the device's zone from the first frame.
+ */
+const UNZONED_INSTANT_OPTIONS: Intl.DateTimeFormatOptions = {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+};
+const INSTANT_OPTIONS: Intl.DateTimeFormatOptions = {
+  ...UNZONED_INSTANT_OPTIONS,
+  timeZoneName: 'short',
+};
+const DAY_OPTIONS: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+let partlessInstant: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
+const partlessDays = new Map<string, ReturnType<typeof partlessAzerbaijaniDateTimeFormat>>();
+
+/**
+ * The device zone's short name as CLDR writes a zone without an abbreviation — `GMT+4`,
+ * `GMT+5:30`, `GMT` — which is what the shared Azerbaijani formatter prints for Baku. Computed
+ * from the offset because the part-less path below cannot read a zone name out of `format()`.
+ */
+function gmtLabel(at: Date): string {
+  const offset = -at.getTimezoneOffset();
+  if (offset === 0) return 'GMT';
+  const hours = Math.floor(Math.abs(offset) / 60);
+  const minutes = Math.abs(offset) % 60;
+  return `GMT${offset < 0 ? '-' : '+'}${hours}${minutes === 0 ? '' : `:${twoDigits(minutes)}`}`;
+}
+
+function twoDigits(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+/**
+ * An instant a reader may have to act before — a campaign's deadline — as day, month, year,
+ * hour and minute **in the device's time zone, with the zone named** (`3 October 2026, 18:00 GMT+4`).
+ *
+ * <p>`null` for a value that is not an instant, so the caller draws nothing rather than "Invalid
+ * Date" (the web's rule). On Hermes, whose `DateTimeFormat` has no `formatToParts`, Azerbaijani
+ * takes the part-less formatter without the zone name — it cannot reproduce one — and the zone is
+ * appended as the shared formatter would write it.
+ */
+export function formatInstant(iso: string | null | undefined, locale: Locale): string | null {
+  if (iso == null || iso === '') return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    if (locale === 'az' && !PARTS.dates) {
+      /*
+       * `hour: '2-digit'` here only. The shared formatter on an engine with parts writes the
+       * hour as `en-GB` does, padded (`09:06`); the part-less one leaves `hour: 'numeric'` beside
+       * minutes unpadded (`9:06`). Asking it for two digits is what makes the two engines print
+       * the same deadline.
+       */
+      partlessInstant ??= partlessAzerbaijaniDateTimeFormat({
+        ...UNZONED_INSTANT_OPTIONS,
+        hour: '2-digit',
+      });
+      return `${partlessInstant.format(date)} ${gmtLabel(date)}`;
+    }
+    return dateTimeFormat(locale, INSTANT_OPTIONS, 'campaignInstant').format(date) || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A calendar day (`3 October 2026`) — the web's `formatDay`. In the device's zone by default;
+ * `timeZone: 'UTC'` where the web deliberately prints the UTC day (the update obligation's dates,
+ * the day a campaign closed), so a phone and a browser name the same day. `null` for a value that
+ * is not an instant.
+ */
+export function formatDay(
+  iso: string | null | undefined,
+  locale: Locale,
+  timeZone?: string,
+): string | null {
+  if (iso == null || iso === '') return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  const options = timeZone === undefined ? DAY_OPTIONS : { ...DAY_OPTIONS, timeZone };
+  const key = `campaignDay:${timeZone ?? ''}`;
+  try {
+    if (locale === 'az' && !PARTS.dates) {
+      let formatter = partlessDays.get(key);
+      if (formatter === undefined) {
+        formatter = partlessAzerbaijaniDateTimeFormat(options);
+        partlessDays.set(key, formatter);
+      }
+      return formatter.format(date) || null;
+    }
+    return dateTimeFormat(locale, options, key).format(date) || null;
+  } catch {
+    return null;
   }
 }

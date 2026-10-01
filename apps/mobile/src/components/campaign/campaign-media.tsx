@@ -1,0 +1,43 @@
+import { StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
+import type { CampaignCover } from '../../lib/campaign-page';
+import { MediaFrame } from '../ui';
+
+/**
+ * Block 1 — the web's `CampaignMedia`: the cover in a 16:9 box with the large radius.
+ *
+ * <p><strong>The box is reserved whether or not there is a cover</strong>, so the title below it
+ * does not jump when the photograph decodes, and a campaign without one keeps the page's shape
+ * instead of opening on its title. Asked for at high priority: it is the largest thing on the
+ * first screen.
+ *
+ * <p>No play affordance and no "has a video" badge: no response carries a video, and the web's
+ * page never passes one either (#155, "Story video handling").
+ *
+ * <p>Decorative to a screen reader — the title right under it names the campaign — and drawn
+ * without a fade: nothing on this page has an entry animation (docs/motion-system.md §5, the
+ * page's own decision on the web).
+ */
+export function CampaignMedia({ cover }: { readonly cover: CampaignCover | null }) {
+  return (
+    <MediaFrame ratio="16/9" radius="lg" testID="campaign-media">
+      {cover === null ? null : (
+        <Image
+          source={{ uri: cover.url }}
+          contentFit="cover"
+          priority="high"
+          transition={0}
+          style={styles.fill}
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          testID="campaign-cover"
+        />
+      )}
+    </MediaFrame>
+  );
+}
+
+const styles = StyleSheet.create({
+  fill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+});

@@ -123,6 +123,12 @@ export function LiveFunding({
 
   const completion = completionOf(total, goal);
   const funded = completion !== null && completion.greaterThanOrEqualTo(new Decimal(100));
+  /*
+   * The whole percent a reader is shown, rounded DOWN. `toFixed(0)` rounds half up, so a campaign
+   * at 99.5% read "100%" beside the words "of goal" and a bar that had not turned — the goal named
+   * as met when it was not.
+   */
+  const percent = completion === null ? '0' : completion.toFixed(0, Decimal.ROUND_DOWN);
 
   if (goal === null) {
     return null;
@@ -138,9 +144,7 @@ export function LiveFunding({
          * rather than an amount: the width of a track in pixels. Everything a reader is told is
          * rendered from the Decimal.
          */
-        label={fillPlaceholders(copy.progressLabel, {
-          percent: completion === null ? '0' : completion.toFixed(0),
-        })}
+        label={fillPlaceholders(copy.progressLabel, { percent })}
       />
 
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
@@ -153,7 +157,7 @@ export function LiveFunding({
              * never lime: reaching a goal is an achievement, and lime on this platform means
              * "act now".
              */
-            value={<span className={funded ? 'text-success' : undefined}>{completion.toFixed(0)}%</span>}
+            value={<span className={funded ? 'text-success' : undefined}>{percent}%</span>}
             label={funded ? copy.funded : copy.ofGoal}
           />
         )}
