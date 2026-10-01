@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { addToTotal, commentsChannel, counterChannel, parseUpdate, realtimeUrl } from './updates';
+import {
+  BASE_BACKOFF_MS,
+  MAX_BACKOFF_MS,
+  MAX_RECONNECT_ATTEMPTS,
+  addToTotal,
+  commentsChannel,
+  counterChannel,
+  parseUpdate,
+  realtimeUrl,
+  reconnectDelayMs,
+} from './realtime';
 
 /**
  * §12.1's messages, and the arithmetic a page does with them.
@@ -30,6 +40,18 @@ describe('realtimeUrl', () => {
   it('accepts an https origin and connects over wss', () => {
     expect(realtimeUrl('https://api.ideanest.az', commentsChannel('abc'))).toBe(
       'wss://api.ideanest.az/v1/realtime?channel=project%3Aabc%3Acomments',
+    );
+  });
+
+  it('accepts a plain ws origin as it is', () => {
+    expect(realtimeUrl('ws://10.0.2.2:8080', counterChannel('abc'))).toBe(
+      'ws://10.0.2.2:8080/v1/realtime?channel=project%3Aabc',
+    );
+  });
+
+  it('trims a trailing slash from an http origin too', () => {
+    expect(realtimeUrl('https://api.ideanest.az//', counterChannel('abc'))).toBe(
+      'wss://api.ideanest.az/v1/realtime?channel=project%3Aabc',
     );
   });
 
@@ -159,5 +181,51 @@ describe('addToTotal', () => {
   it('ignores a window in another currency rather than adding it', () => {
     const total = { amount: '5000.00', currency: 'AZN' };
     expect(addToTotal(total, { amount: '25.00', currency: 'USD' })).toBe(total);
+  });
+});
+
+/**
+ * #155: one reconnect policy for the browser's hook and the app's. Each close asks
+ * `reconnectDelayMs(attempts)`; a socket that opens resets `attempts` to zero.
+ */
+describe('reconnecting', () => {
+  it('waits a second, then doubles: 1s, 2s, 4s, 8s, 16s, 32s', () => {
+    const waits = Array.from({ length: MAX_RECONNECT_ATTEMPTS }, (_, attempts) => reconnectDelayMs(attempts));
+    expect(waits).toEqual([1_000, 2_000, 4_000, 8_000, 16_000, 32_000]);
+    expect(BASE_BACKOFF_MS).toBe(1_000);
+  });
+
+  it('gives up after six consecutive attempts', () => {
+    expect(MAX_RECONNECT_ATTEMPTS).toBe(6);
+    expect(reconnectDelayMs(6)).toBeNull();
+    expect(reconnectDelayMs(50)).toBeNull();
+  });
+
+  it('never waits longer than a minute, whatever the attempt', () => {
+    expect(MAX_BACKOFF_MS).toBe(60_000);
+    for (let attempts = 0; attempts < MAX_RECONNECT_ATTEMPTS; attempts += 1) {
+      expect(reconnectDelayMs(attempts)).toBeLessThanOrEqual(MAX_BACKOFF_MS);
+    }
+  });
+
+  /**
+   * The sequence a socket that fails three times, opens, and fails again sees: the open resets
+   * the count, so the fourth failure waits a second rather than eight.
+   */
+  it('starts again from a second after a socket opens', () => {
+    let attempts = 0;
+    const waits: (number | null)[] = [];
+    const close = () => {
+      const wait = reconnectDelayMs(attempts);
+      waits.push(wait);
+      if (wait !== null) attempts += 1;
+    };
+    close();
+    close();
+    close();
+    attempts = 0; // onopen
+    close();
+
+    expect(waits).toEqual([1_000, 2_000, 4_000, 1_000]);
   });
 });

@@ -1,6 +1,7 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { ProjectState } from '../projects/api';
+import type { ReportReason } from '@ideanest/campaign/report';
 
 /**
  * ONE MODULE, ONE PLACE for everything the moderation queue asks the service.
@@ -45,16 +46,8 @@ export const REPORT_STATES: readonly ReportState[] = ['OPEN', 'UPHELD', 'DISMISS
  */
 export type ReportTargetType = 'PROJECT' | 'PROJECT_UPDATE' | 'COMMENT' | 'USER';
 
-export type ReportReason =
-  | 'PROHIBITED_ITEM'
-  | 'MISREPRESENTATION'
-  | 'NOT_ORIGINAL'
-  | 'INTELLECTUAL_PROPERTY'
-  | 'OFFENSIVE'
-  | 'DISCRIMINATION'
-  | 'SPAM'
-  | 'FRAUD'
-  | 'OTHER';
+/* §5.4's nine reasons are `@ideanest/campaign/report`'s since #155 — the app files them too. */
+export type { ReportReason };
 
 /** What was reported. No foreign key behind it, so the id may outlive the thing. */
 export interface ReportTarget {

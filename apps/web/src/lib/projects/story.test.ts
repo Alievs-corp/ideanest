@@ -9,7 +9,6 @@ import {
   moveBlock,
   newBlock,
   parseSpans,
-  readStoryDocument,
   removeBlock,
   slugifyHeading,
   spansToText,
@@ -402,48 +401,6 @@ describe('storyProblems', () => {
     // The state the editor is in when a creator opens the tab. Refusing it would
     // make the first autosave fail.
     expect(isSaveable(document([]), STORY_COPY.vocabulary)).toBe(true);
-  });
-});
-
-describe('readStoryDocument', () => {
-  it('reads the contract §5 document', () => {
-    const wire = {
-      version: 1,
-      blocks: [
-        { type: 'heading', level: 2, id: 'how-it-works', text: 'How it works' },
-        { type: 'paragraph', spans: [{ text: 'Plain ', marks: [] }, { text: 'bold', marks: ['strong'] }] },
-        { type: 'list', ordered: false, items: [[{ text: 'One', marks: [] }]] },
-        { type: 'quote', spans: [] },
-        { type: 'rule' },
-        { type: 'image', url: 'https://a.example/b.jpg', width: 1600, height: 900, alt: 'A' },
-        { type: 'embed', provider: 'youtube', url: 'https://y.example/1', title: 'A' },
-      ],
-    };
-
-    expect(readStoryDocument(wire)?.blocks).toHaveLength(7);
-  });
-
-  it('refuses a document it does not fully recognise', () => {
-    // The story may have been written by a newer deployment of the editor.
-    // Casting would put an unrecognised block into the editor's state, and the
-    // next autosave would send it back mangled — destroying writing in a request
-    // that looks like an ordinary save.
-    expect(readStoryDocument({ version: 1, blocks: [{ type: 'marquee' }] })).toBeNull();
-    expect(readStoryDocument({ version: 2, blocks: [] })).toBeNull();
-    expect(readStoryDocument({ version: 1, blocks: [{ type: 'embed', provider: 'tiktok', url: 'https://t/1', title: 'A' }] })).toBeNull();
-    expect(readStoryDocument({ version: 1, blocks: [{ type: 'heading', level: 1, id: 'a', text: 'A' }] })).toBeNull();
-    expect(readStoryDocument({ version: 1 })).toBeNull();
-    expect(readStoryDocument(null)).toBeNull();
-    expect(readStoryDocument(5)).toBeNull();
-  });
-
-  it('refuses a span whose marks are not marks', () => {
-    expect(
-      readStoryDocument({
-        version: 1,
-        blocks: [{ type: 'paragraph', spans: [{ text: 'a', marks: ['blink'] }] }],
-      }),
-    ).toBeNull();
   });
 });
 

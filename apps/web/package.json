@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ideanest/api-client": "workspace:*",
+    "@ideanest/campaign": "workspace:*",
     "@ideanest/design-tokens": "workspace:*",
     "@ideanest/discovery": "workspace:*",
     "@ideanest/money": "workspace:*",

@@ -14,6 +14,7 @@
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
     "@ideanest/api-client": "workspace:*",
+    "@ideanest/campaign": "workspace:*",
     "@ideanest/design-tokens": "workspace:*",
     "@ideanest/discovery": "workspace:*",
     "@ideanest/messages": "workspace:*",

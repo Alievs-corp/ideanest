@@ -190,6 +190,7 @@ const nextConfig = {
     '@ideanest/money',
     '@ideanest/messages',
     '@ideanest/discovery',
+    '@ideanest/campaign',
   ],
 
   /**

@@ -6,6 +6,8 @@ import type { PublicProjectPreview } from '../seo/metadata';
 import type { PublicRewardTier } from '../seo/structured-data/product';
 import type { ProjectState } from './api';
 import { readStoryDocument, type StoryDocument } from './story';
+import { RENDERABLE_STATES } from '@ideanest/campaign/states';
+import { daysLeftOf } from '@ideanest/campaign/days-left';
 
 /**
  * The campaign page's view model — what §4.4's page actually renders.
@@ -37,45 +39,11 @@ import { readStoryDocument, type StoryDocument } from './story';
  * the same way; this endpoint does not send one, so it is computed with the same library.
  */
 
-/**
- * The states that have a campaign page — `PublicProjects.VISIBLE`, restated.
- *
- * <strong>This is deliberately NOT `isPubliclyVisible`, and the difference is not a
- * mistake in either of them.</strong> They answer two different questions and disagree
- * about exactly two states:
- *
- * <ul>
- *   <li><strong>`CANCELED` has a page and must not be described.</strong> Backers
- *       committed money to it and are owed the page that explains what happened;
- *       `isPubliclyVisible` refuses it because a social card is a presentation of a
- *       campaign to back, and this is not one.
- *   <li><strong>`SCHEDULED` is described and has no page here.</strong> Its public surface
- *       is the pre-launch route, which the service serves from a different endpoint; the
- *       campaign page 404s for it, because there is no campaign yet.
- * </ul>
- *
- * Two independent statements of one rule, checked against each other in a test, is the
- * arrangement the service already uses for the same list — `PublicProjects` and
- * `DiscoveryStatus` each write the nine down rather than deriving one from the other. The
- * alternative here is no statement at all, which would mean trusting a single service-side
- * check to be the only thing standing between a draft and the HTML.
+/*
+ * `RENDERABLE_STATES` lives in `@ideanest/campaign/states` since #155, so the app shows its
+ * not-found screen for exactly the states this page 404s. Re-exported under the same name.
  */
-export const RENDERABLE_STATES: readonly ProjectState[] = [
-  'PRELAUNCH',
-  'LIVE',
-  'CANCELED',
-  'SUCCESSFUL',
-  'UNSUCCESSFUL',
-  'COLLECTING',
-  'LATE_PLEDGE',
-  'FULFILLING',
-  'COMPLETED',
-  // IDN-EXT-01 (#32): public like their siblings — two still take pledges, and a withdrawn
-  // campaign is a successful one that owes its backers every reward.
-  'CLOSING_WINDOW',
-  'EXTENDED',
-  'WITHDRAWN',
-];
+export { RENDERABLE_STATES };
 
 export interface CampaignCreator {
   readonly slug: string;
@@ -364,27 +332,4 @@ function readOutcome(value: unknown): CampaignOutcome | null {
     backersCount: typeof source['backersCount'] === 'number' ? (source['backersCount'] as number) : 0,
     finalisedAt,
   };
-}
-
-/* -------------------------------------------------------------------------
- * The two derived values
- * ---------------------------------------------------------------------- */
-
-
-/**
- * Whole days from now until the deadline, floored at zero.
- *
- * Floored rather than allowed to go negative: a campaign that closed a fortnight ago has no
- * days left, and a negative countdown is a number nobody has a sentence for. Whether a zero
- * means "last day" or "closed" is the state's to say, which is why this returns the number
- * and the component decides the words — the same split `ProjectCard` makes.
- */
-function daysLeftOf(deadline: string | null, now: Date): number | null {
-  if (deadline === null) return null;
-
-  const closesAt = Date.parse(deadline);
-  if (Number.isNaN(closesAt)) return null;
-
-  const millis = closesAt - now.getTime();
-  return millis <= 0 ? 0 : Math.floor(millis / 86_400_000);
 }

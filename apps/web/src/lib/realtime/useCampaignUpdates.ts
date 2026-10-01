@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { reconnectDelayMs } from '@ideanest/campaign/realtime';
 import type { CampaignUpdate } from './updates';
 import { parseUpdate } from './updates';
 
@@ -19,8 +20,9 @@ import { parseUpdate } from './updates';
  *
  * <h2>Reconnection gives up, and that is the point</h2>
  *
- * Backoff doubles from a second to a minute, and after `MAX_ATTEMPTS` consecutive failures it
- * stops for good. A live counter that reconnected forever would be every abandoned tab on the
+ * Backoff doubles from a second towards a minute, and after six consecutive failures it stops
+ * for good — `reconnectDelayMs` in `@ideanest/campaign/realtime`, which the app's hook calls
+ * too. A live counter that reconnected forever would be every abandoned tab on the
  * platform holding a connection attempt open against the service — and the page it is on is
  * already correct without it. The reader who wants fresh numbers reloads, which is the same
  * action they would take anyway.
@@ -32,14 +34,6 @@ import { parseUpdate } from './updates';
  * server-rendered numbers is the one that applies a delta to them, which keeps this reusable
  * for the comments tab without it learning about money.
  */
-
-/** The first backoff, doubling to {@link MAX_BACKOFF_MS}. */
-const BASE_BACKOFF_MS = 1_000;
-
-const MAX_BACKOFF_MS = 60_000;
-
-/** Consecutive failures before the page stops trying. See the note above. */
-const MAX_ATTEMPTS = 6;
 
 export interface CampaignUpdatesState {
   /** Every window that has arrived since mount, newest last. */
@@ -98,10 +92,13 @@ export function useCampaignUpdates(url: string | null): CampaignUpdatesState {
 
       socket.onclose = () => {
         setConnected(false);
-        if (closedByUs || attempts.current >= MAX_ATTEMPTS) {
+        if (closedByUs) {
           return;
         }
-        const wait = Math.min(BASE_BACKOFF_MS * 2 ** attempts.current, MAX_BACKOFF_MS);
+        const wait = reconnectDelayMs(attempts.current);
+        if (wait === null) {
+          return;
+        }
         attempts.current += 1;
         retry.current = setTimeout(open, wait);
       };

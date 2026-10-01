@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readCreatorObligations, readUpdateObligation } from './api';
+import { readCreatorObligations, readUpdateObligation } from './obligation';
 
 /**
  * The narrowing behind §5.5's state — issue #437.
