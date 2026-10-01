@@ -1,7 +1,7 @@
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { ApiError } from '@ideanest/api-client';
 import { onlineManager, QueryClient } from '@tanstack/react-query';
-import type { Persister } from '@tanstack/react-query-persist-client';
+import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { deviceStore, type KeyValueStore } from './storage';
 
 /**
@@ -103,7 +103,55 @@ export function createPersister(
       setItem: (key, value) => store.set(key, value),
       removeItem: (key) => store.remove(key),
     },
+    serialize: (client) => JSON.stringify(withRefusalsSettled(client)),
   });
+}
+
+/**
+ * Whether a query holds something worth keeping: it succeeded, or it failed *with data* — a
+ * cached campaign whose refresh failed offline, an Updates list whose next page failed (#155).
+ *
+ * <p>Only `success` was kept before, and that dropped exactly the data this module exists for:
+ * a backer opens a saved campaign on a plane, the refresh fails, the query's status becomes
+ * `error` with the old page still in it, and the next write of the cache left the page out — so
+ * the restart after that had nothing to show. The data in a failed query is the last answer that
+ * arrived, which is what a success would have kept.
+ */
+export function holdsData(state: { readonly status: string; readonly data: unknown }): boolean {
+  return state.status === 'success' || (state.status === 'error' && state.data !== undefined);
+}
+
+/**
+ * The persisted cache with every failed-with-data query written as the success it last was.
+ *
+ * <p>The failure is this session's, not the data's: restored as `error`, a cached page would open
+ * after a restart saying it could not be reached before it had even asked. Written as `success`,
+ * with its own `dataUpdatedAt`, it opens as old data — stale, so it is refetched at once — which is
+ * what it is. The error itself is not written at all.
+ */
+function withRefusalsSettled(client: PersistedClient): PersistedClient {
+  return {
+    ...client,
+    clientState: {
+      ...client.clientState,
+      queries: client.clientState.queries.map((query) =>
+        query.state.status === 'error' && query.state.data !== undefined
+          ? {
+              ...query,
+              state: {
+                ...query.state,
+                status: 'success',
+                error: null,
+                fetchStatus: 'idle',
+                fetchFailureCount: 0,
+                fetchFailureReason: null,
+                fetchMeta: null,
+              },
+            }
+          : query,
+      ),
+    },
+  };
 }
 
 /**
@@ -191,8 +239,11 @@ export function persistOptions(store?: KeyValueStore, throttleTime?: number) {
     persister: createPersister(store, throttleTime),
     maxAge: MAX_CACHE_AGE_MS,
     dehydrateOptions: {
-      shouldDehydrateQuery: (query: { queryKey: readonly unknown[]; state: { status: string } }) =>
-        query.state.status === 'success' && shouldPersistQuery(query.queryKey),
+      shouldDehydrateQuery: (query: {
+        queryKey: readonly unknown[];
+        state: { status: string; data: unknown };
+      }) =>
+        holdsData(query.state) && shouldPersistQuery(query.queryKey),
     },
   };
 }

@@ -389,7 +389,7 @@ describe('the tabs', () => {
     mockParams = { tab: 'updates' };
     await show();
     expect(screen.getByRole('tab', { name: C.tabs.updates, selected: true })).toBeTruthy();
-    expect(screen.getByTestId('interim-updates')).toBeTruthy();
+    expect(screen.getByTestId('updates-heading')).toBeTruthy();
     client.clear();
 
     mockParams = { tab: 'nonsense' };
@@ -401,8 +401,16 @@ describe('the tabs', () => {
     routes.page = () => json(page('LIVE', { risks: 'Shipping may be late.' }));
     await show();
     expect(screen.getByText('Shipping may be late.')).toBeTruthy();
+    // The Creator tab's profile is read when that tab opens, and not before (#155).
+    const profileReads = () =>
+      (global.fetch as jest.Mock).mock.calls.filter(([input]) =>
+        new URL(String(input)).pathname.startsWith('/v1/users/aysel'),
+      );
+    expect(profileReads()).toHaveLength(0);
 
     await fireEvent.press(screen.getByRole('tab', { name: C.tabs.creator }));
+    await settle();
+    expect(profileReads()).toHaveLength(2);
     expect(mockRouter.setParams).toHaveBeenLastCalledWith({ tab: 'creator', thread: undefined });
     expect(screen.getByRole('tab', { name: C.tabs.creator, selected: true })).toBeTruthy();
     expect(screen.queryByText('Shipping may be late.')).toBeNull();

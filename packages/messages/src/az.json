@@ -5510,6 +5510,15 @@
       "backOnWeb": "{title} kampaniyasını saytda dəstəklə",
       "actionsOffline": "Yadda saxlamaq və xatırlatma üçün internet bağlantısı lazımdır.",
       "shareFailed": "Paylaşmaq mümkün olmadı. Yenidən cəhd edin.",
+      "faq": {
+        "failed": "Suallar və cavablar hal-hazırda yüklənə bilmədi.",
+        "questionLabel": "Sual {index}, cəmi {count}: {question}"
+      },
+      "updates": {
+        "failed": "Yeniliklər hal-hazırda yüklənə bilmədi.",
+        "loadingOlder": "Köhnə yeniliklər yüklənir…",
+        "olderFailed": "Köhnə yenilikləri yükləmək alınmadı."
+      },
       "interim": {
         "body": "Kampaniyanın bu hissəsi hələ tətbiqdə yoxdur. O, kampaniyanın veb səhifəsindədir.",
         "open": "Saytda aç",

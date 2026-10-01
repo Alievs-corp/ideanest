@@ -2,7 +2,13 @@ import { ApiError } from '@ideanest/api-client';
 import { onlineManager, QueryClient } from '@tanstack/react-query';
 import { persistQueryClientRestore, persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import { NoCredentialError, retryMe } from './account';
-import { createQueryClient, persistOptions, shouldPersistQuery, shouldRetry } from './offline';
+import {
+  createQueryClient,
+  holdsData,
+  persistOptions,
+  shouldPersistQuery,
+  shouldRetry,
+} from './offline';
 import { memoryStore } from './storage';
 import { queryKeys } from '../api/queries';
 
@@ -205,5 +211,57 @@ describe('the persisted cache', () => {
     // The saved list came back and the feed did not, from one persisted document.
     expect(reading.getQueryData(queryKeys.saved())).toEqual({ items: [] });
     expect(reading.getQueryData(queryKeys.discover(''))).toBeUndefined();
+  });
+
+  it('keeps a cached page whose refresh failed, and restores it as old data, not as a failure', async () => {
+    // A saved campaign opened on a plane: the refetch fails and the query's status becomes
+    // `error` with the page still in it. Writing only `success` dropped it from the next save.
+    const store = memoryStore();
+    const writing = client();
+    const key = queryKeys.project('aysel', 'solar-lamp');
+    writing.setQueryData(key, { id: 'p1', title: 'Solar Lamp' });
+    await writing
+      .fetchQuery({
+        queryKey: key,
+        queryFn: () => Promise.reject(new TypeError('Network request failed')),
+        retry: false,
+        staleTime: 0,
+      })
+      .catch(() => undefined);
+    expect(writing.getQueryState(key)?.status).toBe('error');
+
+    await persistQueryClientSave({ queryClient: writing, ...persistOptions(store, 0) });
+    await written();
+
+    const reading = client();
+    await persistQueryClientRestore({ queryClient: reading, ...persistOptions(store, 0) });
+    expect(reading.getQueryData(key)).toEqual({ id: 'p1', title: 'Solar Lamp' });
+    const state = reading.getQueryState(key);
+    expect(state?.status).toBe('success');
+    expect(state?.error).toBeNull();
+  });
+
+  it('still drops a failed query with nothing in it', async () => {
+    const store = memoryStore();
+    const writing = client();
+    const key = queryKeys.saved();
+    await writing
+      .fetchQuery({ queryKey: key, queryFn: () => Promise.reject(new Error('500')), retry: false })
+      .catch(() => undefined);
+    await persistQueryClientSave({ queryClient: writing, ...persistOptions(store, 0) });
+    await written();
+
+    const reading = client();
+    await persistQueryClientRestore({ queryClient: reading, ...persistOptions(store, 0) });
+    expect(reading.getQueryState(key)).toBeUndefined();
+  });
+});
+
+describe('holdsData', () => {
+  it('is a success, or a failure that still holds the last answer', () => {
+    expect(holdsData({ status: 'success', data: [] })).toBe(true);
+    expect(holdsData({ status: 'error', data: { pages: [] } })).toBe(true);
+    expect(holdsData({ status: 'error', data: undefined })).toBe(false);
+    expect(holdsData({ status: 'pending', data: undefined })).toBe(false);
   });
 });
