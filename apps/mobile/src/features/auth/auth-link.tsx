@@ -55,13 +55,23 @@ export function AuthLink({
 export function Disclosure({
   label,
   children,
+  open: controlled,
+  onToggle,
   testID,
 }: {
   readonly label: string;
   readonly children: ReactNode;
+  /** Controlled when given, for a parent that has to know whether its contents are showing. */
+  readonly open?: boolean;
+  readonly onToggle?: (open: boolean) => void;
   readonly testID?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const open = controlled ?? own;
+  const toggle = () => {
+    if (controlled === undefined) setOwn(!open);
+    onToggle?.(!open);
+  };
   const { ring, onFocus, onBlur } = useFocusRing();
   return (
     <View style={styles.disclosure}>
@@ -69,7 +79,7 @@ export function Disclosure({
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityState={{ expanded: open }}
-        onPress={() => setOpen((current) => !current)}
+        onPress={toggle}
         onFocus={onFocus}
         onBlur={onBlur}
         testID={testID}

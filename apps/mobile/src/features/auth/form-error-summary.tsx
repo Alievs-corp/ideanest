@@ -21,8 +21,17 @@ export function FormErrorSummary({
   const container = useRef<View>(null);
 
   useEffect(() => {
-    if (failure === null || container.current === null) return;
-    AccessibilityInfo.sendAccessibilityEvent(container.current, 'focus');
+    if (failure === null) return;
+    /*
+     * A tick later, not in the commit that mounts the view: VoiceOver does not yet have a node
+     * that was added in the same frame, and focusing nothing is silent.
+     */
+    const timer = setTimeout(() => {
+      if (container.current !== null) {
+        AccessibilityInfo.sendAccessibilityEvent(container.current, 'focus');
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [failure]);
 
   if (failure === null) return null;

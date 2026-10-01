@@ -69,8 +69,14 @@ const CLIENT_HEADER_VALUE = 'ideanest-mobile';
  */
 export function deviceLabel(): string {
   const name = Device.deviceName?.trim();
-  return name !== undefined && name !== '' ? name : translate()('mobile.auth.deviceFallback');
+  const label = name !== undefined && name !== '' ? name : translate()('mobile.auth.deviceFallback');
+  // `SignInRequest` caps it at 120, and a longer phone name would refuse every sign-in with a
+  // sentence about a field the owner cannot see. Cut by code point, not by UTF-16 unit.
+  return Array.from(label).slice(0, DEVICE_LABEL_MAX).join('');
 }
+
+/** `SignInRequest.deviceLabel` and `OAuthSignInRequest.deviceLabel`: `@Size(max = 120)`. */
+const DEVICE_LABEL_MAX = 120;
 
 /** The two shapes `POST /v1/auth/login` can answer with. */
 export type SignInOutcome =
@@ -156,11 +162,15 @@ async function outcomeOf(body: unknown): Promise<SignInOutcome> {
   if (challenge?.twoFactorRequired === true) {
     /*
      * Nothing is adopted. Half a sign-in is not a session, and a client that ignored the flag
-     * would store `undefined` and believe itself signed in.
+     * would store `undefined` and believe itself signed in. A flag with no challenge is a
+     * contract this build does not understand: the step it leads to could never be answered.
      */
+    if (typeof challenge.challenge !== 'string' || challenge.challenge === '') {
+      throw new Error('The sign-in response asked for a second factor and carried no challenge.');
+    }
     return {
       kind: 'two-factor',
-      challenge: challenge.challenge ?? '',
+      challenge: challenge.challenge,
       expiresInSeconds: challenge.expiresInSeconds ?? 0,
     };
   }

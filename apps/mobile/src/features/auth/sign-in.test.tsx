@@ -18,6 +18,7 @@ import { registerIfAllowed } from '../../lib/push';
 
 const mockRouter = {
   replace: jest.fn(),
+  dismissTo: jest.fn(),
   back: jest.fn(),
   canGoBack: jest.fn(() => true),
   push: jest.fn(),
@@ -58,8 +59,8 @@ async function renderScreen() {
       </QueryClientProvider>
     </SafeAreaProvider>
   );
-  await render(<SignInScreen />, { wrapper });
-  return { invalidate };
+  const view = await render(<SignInScreen />, { wrapper });
+  return { invalidate, view };
 }
 
 async function fillAndSubmit(email = 'backer@example.com', password = 'correct horse') {
@@ -103,15 +104,37 @@ describe('the credentials step', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['me'] });
   });
 
-  it('replaces the modal with a safe returnTo', async () => {
+  /*
+   * `dismissTo`, not `replace`: a returnTo that is already in the stack — a tab — is popped back
+   * to, where a replace would stack a second tab bar on the first.
+   */
+  it('goes back to a safe returnTo', async () => {
     mockParams = { returnTo: '/settings/language' };
     jest.mocked(signIn).mockResolvedValueOnce({ kind: 'signed-in' });
     await renderScreen();
 
     await fillAndSubmit();
 
-    expect(mockRouter.replace).toHaveBeenCalledWith('/settings/language');
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith('/settings/language');
+    expect(mockRouter.replace).not.toHaveBeenCalled();
     expect(mockRouter.back).not.toHaveBeenCalled();
+  });
+
+  it('does not navigate when the modal was closed while the request was in flight', async () => {
+    let answer: (outcome: SignInOutcome) => void = () => {};
+    jest.mocked(signIn).mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+    const { view } = await renderScreen();
+
+    await fillAndSubmit();
+    await view.unmount();
+    await act(async () => answer({ kind: 'signed-in' }));
+
+    // The person is somewhere else by now; a back() would pop the screen they went back to.
+    expect(mockRouter.back).not.toHaveBeenCalled();
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+    expect(mockRouter.dismissTo).not.toHaveBeenCalled();
+    // The session was still completed.
+    expect(registerIfAllowed).toHaveBeenCalledTimes(1);
   });
 
   it.each(['/register', '//evil.example', 'https://evil.example'])(
@@ -124,6 +147,7 @@ describe('the credentials step', () => {
       await fillAndSubmit();
 
       expect(mockRouter.replace).not.toHaveBeenCalled();
+      expect(mockRouter.dismissTo).not.toHaveBeenCalled();
       expect(mockRouter.back).toHaveBeenCalledTimes(1);
     },
   );
@@ -261,6 +285,21 @@ describe('the two-factor step', () => {
       kind: 'recovery-code',
       recoveryCode: 'abcd-efgh-ijkl',
     });
+  });
+
+  it('does not send a recovery code left behind a collapsed disclosure', async () => {
+    jest.mocked(signIn).mockResolvedValueOnce(challenge());
+    jest.mocked(verifyTwoFactor).mockResolvedValueOnce();
+    await renderScreen();
+    await fillAndSubmit();
+
+    await fireEvent.press(screen.getByRole('button', { name: copy.twoFactor.cannotReach }));
+    await fireEvent.changeText(screen.getByLabelText(copy.twoFactor.recoveryLabel), 'abcd-efgh');
+    await fireEvent.press(screen.getByRole('button', { name: copy.twoFactor.cannotReach }));
+    await fireEvent.changeText(screen.getByLabelText(copy.twoFactor.codeLabel), '123456');
+    await fireEvent.press(screen.getByRole('button', { name: copy.twoFactor.submit }));
+
+    expect(verifyTwoFactor).toHaveBeenCalledWith('chal-1', { kind: 'code', code: '123456' });
   });
 
   it('clears both fields after a refusal and says the service’s sentence', async () => {

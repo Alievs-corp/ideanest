@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { ACCOUNT_KEYS } from '../../lib/account';
@@ -22,8 +22,13 @@ import { registerIfAllowed } from '../../lib/push';
  *   - Push is re-registered only where notifications are ALREADY allowed: signing in never puts a
  *     permission prompt on screen (#160 owns asking).
  *   - `GET /v1/me` is asked for again, so Me shows the account that just arrived.
- *   - With a `returnTo`, the auth modal is replaced by it; without one it is dismissed back to where
- *     the person was. Either way nothing of sign-in is left in history.
+ *   - With a `returnTo`, the stack is taken back to it — popped to it when it is already there (a
+ *     tab, say, which a `replace` would stack a second tab bar for), swapped in for the modal when
+ *     it is not. Without one the modal is dismissed back to where the person was. Either way
+ *     nothing of sign-in is left in history.
+ *   - ONLY WHILE THE SCREEN IS STILL THERE. The router is global: somebody who swiped the modal
+ *     away while the request was in flight is already somewhere else, and a `back()` then would
+ *     pop the screen they went back to. The session is still adopted and the rest still happens.
  */
 export interface PendingChallenge {
   readonly value: string;
@@ -34,6 +39,13 @@ export function useSignInOutcome(returnTo: string | null) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [challenge, setChallenge] = useState<PendingChallenge | null>(null);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const finish = useCallback(async () => {
     // Neither is awaited: a slow push service or account read must not hold somebody on a
@@ -41,7 +53,8 @@ export function useSignInOutcome(returnTo: string | null) {
     void registerIfAllowed().catch(() => undefined);
     void queryClient.invalidateQueries({ queryKey: ACCOUNT_KEYS.me });
 
-    if (returnTo !== null) router.replace(returnTo as never);
+    if (!mounted.current) return;
+    if (returnTo !== null) router.dismissTo(returnTo as never);
     else if (router.canGoBack()) router.back();
     else router.replace('/');
   }, [queryClient, returnTo, router]);

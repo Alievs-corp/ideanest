@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Field, InlineAlert, Pill, TextInput } from '../../components/ui';
 import { verifyTwoFactor } from '../../lib/auth';
@@ -23,7 +23,9 @@ import { FormErrorSummary } from './form-error-summary';
  * `SecondFactors.accepts` treats a non-blank `code` as a TOTP and never falls back to the recovery
  * code, and `code` is at most 16 characters. The old single field promised "a recovery code works
  * here too" and always refused one. The recovery code has its own field behind "I cannot reach my
- * authenticator", and when both are filled the recovery code wins, as on the web.
+ * authenticator", and when both are filled the recovery code wins, as on the web — but only while
+ * that field is showing: a recovery code left behind a collapsed disclosure is not what somebody
+ * who then typed a code meant to send.
  *
  * <h2>Expiry</h2>
  *
@@ -49,6 +51,10 @@ export function TwoFactorStep({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<AuthFailure | null>(null);
   const [expired, setExpired] = useState(false);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  // `busy` is a value from the last render; two presses in one frame (the keyboard's go key and
+  // the pill) would both pass it. A second /2fa/verify after the first succeeded is a refusal.
+  const inFlight = useRef(false);
 
   useEffect(() => {
     if (expiresInSeconds <= 0) return;
@@ -57,10 +63,11 @@ export function TwoFactorStep({
   }, [expiresInSeconds]);
 
   const typedCode = code.trim();
-  const typedRecovery = recoveryCode.trim();
+  const typedRecovery = recoveryOpen ? recoveryCode.trim() : '';
 
   async function submit(): Promise<void> {
-    if (busy || expired || (typedCode === '' && typedRecovery === '')) return;
+    if (inFlight.current || expired || (typedCode === '' && typedRecovery === '')) return;
+    inFlight.current = true;
     setBusy(true);
     setFailure(null);
     try {
@@ -77,6 +84,7 @@ export function TwoFactorStep({
       setCode('');
       setRecoveryCode('');
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   }
@@ -123,7 +131,12 @@ export function TwoFactorStep({
         />
       </Field>
 
-      <Disclosure label={t('auth.twoFactor.cannotReach')} testID="two-factor-cannot-reach">
+      <Disclosure
+        label={t('auth.twoFactor.cannotReach')}
+        open={recoveryOpen}
+        onToggle={setRecoveryOpen}
+        testID="two-factor-cannot-reach"
+      >
         <Field label={t('auth.twoFactor.recoveryLabel')} hint={t('auth.twoFactor.recoveryHint')}>
           <TextInput
             value={recoveryCode}

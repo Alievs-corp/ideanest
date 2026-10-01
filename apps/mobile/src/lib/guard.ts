@@ -41,17 +41,31 @@ export function isGuarded(path: string): boolean {
  * auth path would leave them where they started.
  *
  * Pattern-matched rather than parsed: React Native's `URL` does not implement `pathname`,
- * so the web's parse-against-a-dummy-base is not available here.
+ * so the web's parse-against-a-dummy-base is not available here. The checks run on the value
+ * as Expo Router will read it as well as on the value as written: the router decodes each
+ * segment (`/%73ign-in` is `/sign-in`) and matches a `(group)` segment (`/(auth)/sign-in`),
+ * and either would otherwise slip an auth route past the list.
  */
 export function safeReturnTo(value: string | readonly string[] | null | undefined): string | null {
   if (typeof value !== 'string') return null;
   const raw = value.trim();
-  if (raw === '') return null;
-  if (/[\u0000-\u001f\u007f]/.test(raw)) return null;
-  if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\')) return null;
-  if (/^\/[a-z][a-z0-9+.-]*:/i.test(raw)) return null;
-  if (/\s/.test(raw)) return null;
-  if (AUTH_PATHS.test(raw)) return null;
+  // An unescaped space is not a path anything in this app writes; an escaped one (`%20`) is.
+  if (raw === '' || /\s/.test(raw)) return null;
+
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+  const routed = decoded.replace(/\/\([^/]*\)(?=\/|$)/g, '') || '/';
+
+  for (const form of [raw, decoded, routed]) {
+    if (/[\u0000-\u001f\u007f]/.test(form)) return null;
+    if (!form.startsWith('/') || form.startsWith('//') || form.includes('\\')) return null;
+    if (/^\/[a-z][a-z0-9+.-]*:/i.test(form)) return null;
+    if (AUTH_PATHS.test(form)) return null;
+  }
   return raw;
 }
 

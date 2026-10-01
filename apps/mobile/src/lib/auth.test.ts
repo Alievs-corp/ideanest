@@ -35,6 +35,18 @@ import { memoryStore } from './storage';
  * cannot be reached.
  */
 
+/*
+ * The phone's name, behind a getter so a test can change it: Babel copies a CommonJS mock's
+ * properties into the namespace `lib/auth.ts` imports, and a getter is copied as a getter.
+ */
+let mockDeviceName: string | null = 'Test device';
+jest.mock('expo-device', () => ({
+  isDevice: false,
+  get deviceName() {
+    return mockDeviceName;
+  },
+}));
+
 const keychain = SecureStore as unknown as {
   __setBiometryAllowed: (allowed: boolean) => void;
   __reset: () => void;
@@ -131,6 +143,27 @@ describe('signing in', () => {
     );
     expect(currentAccessToken()).toBeNull();
     expect(hasStoredSession()).toBe(false);
+  });
+
+  it('refuses a second-factor answer that carries no challenge', async () => {
+    fetchMock.mockResolvedValueOnce(json({ twoFactorRequired: true, expiresInSeconds: 300 }));
+
+    await expect(signIn('backer@example.com', 'correct horse')).rejects.toThrow(/no challenge/);
+  });
+
+  it('cuts a device name longer than the service accepts, by code point', async () => {
+    mockDeviceName = 'İ'.repeat(130);
+    try {
+      fetchMock.mockResolvedValueOnce(
+        json({ accessToken: 'access-1', refreshToken: 'refresh-1' }),
+      );
+
+      await signIn('backer@example.com', 'correct horse');
+
+      expect(Array.from(String(bodyOf(0).deviceLabel))).toHaveLength(120);
+    } finally {
+      mockDeviceName = 'Test device';
+    }
   });
 
   it('sends the device label with a sign-in', async () => {

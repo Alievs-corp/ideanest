@@ -47,9 +47,16 @@ export function SignInForm({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<AuthFailure | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Readonly<Record<string, string>>>({});
+  /*
+   * `busy` is a value from the last render, so two presses in one frame — the keyboard's go key
+   * and the pill — would both pass it. Two /login calls issue two challenges and the service
+   * retires the first; answered out of order, the step would hold the dead one.
+   */
+  const inFlight = useRef(false);
 
   async function submit(): Promise<void> {
-    if (busy || email.trim() === '' || password === '') return;
+    if (inFlight.current || email.trim() === '' || password === '') return;
+    inFlight.current = true;
     setBusy(true);
     setFailure(null);
     setFieldErrors({});
@@ -59,6 +66,7 @@ export function SignInForm({
       setFailure(describeAuthFailure(cause, t));
       setFieldErrors(fieldErrorsOf(cause));
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   }
