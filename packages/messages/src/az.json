@@ -5512,6 +5512,9 @@
       "reached": "{percent}% — maliyyələşdi",
       "pledged": "{amount} dəstəklənib"
     },
+    "prelaunch": {
+      "stale": "Bu cihazda saxlanılıb. Gözləyənlərin sayı o vaxtdan dəyişmiş ola bilər."
+    },
     "auth": {
       "close": "Bağla",
       "wordmark": "IdeyaNest",
