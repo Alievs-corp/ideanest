@@ -8,6 +8,7 @@ import {
   type Collection,
 } from '@ideanest/discovery/collections';
 import { filterKey, toSearchParams, type DiscoveryFilters } from '@ideanest/discovery/filters';
+import { readUpdateObligation, type UpdateObligation } from '@ideanest/campaign/obligation';
 import { taxonomyFrom } from '@ideanest/discovery/taxonomy';
 import { api } from './client';
 
@@ -59,6 +60,7 @@ export const queryKeys = {
   project: (creatorSlug: string, projectSlug: string) =>
     ['project', creatorSlug, projectSlug] as const,
   projectRewards: (projectId: string) => ['project', projectId, 'rewards'] as const,
+  /** The Updates tab's pages (#155), under `project` so they survive a restart with the page. */
   projectUpdates: (projectId: string) => ['project', projectId, 'updates'] as const,
   /**
    * The public pre-launch page (#155). Under `project`, so it survives a restart like the campaign
@@ -67,6 +69,31 @@ export const queryKeys = {
   prelaunch: (projectId: string) => ['project', projectId, 'prelaunch'] as const,
   saved: () => ['saved'] as const,
   pledges: () => ['pledges'] as const,
+  /*
+   * The campaign page's other reads (#155). Every key a tab of that page needs is named here
+   * already, so the tabs can be built in parallel without two changes to this object.
+   */
+  /**
+   * §5.5's update clock for one campaign — the notice above the tabs. Under `project`, so it
+   * survives a restart with the page it belongs to; `null` when the campaign has no clock.
+   */
+  projectObligation: (projectId: string) => ['project', projectId, 'obligation'] as const,
+  /** The FAQ tab's list (at most fifty, unpaged). Under `project`, persisted with the page. */
+  projectFaqs: (projectId: string) => ['project', projectId, 'faqs'] as const,
+  /**
+   * The Comments tab: one query per campaign and thread (`''` for every thread). Its own root,
+   * `comments`, which `lib/offline.ts` never persists: a withdrawn or moderated comment must not
+   * survive in a stranger's offline cache.
+   */
+  comments: (projectId: string, thread: string | null) =>
+    ['comments', projectId, thread ?? ''] as const,
+  /**
+   * A public profile and its campaigns — #156's screen and the campaign page's Creator tab. Its
+   * own root, `profile`, not persisted: a profile is somebody else's, and one restored from last
+   * week would describe a person as they no longer describe themselves.
+   */
+  profile: (slug: string) => ['profile', slug] as const,
+  profileProjects: (slug: string) => ['profile', slug, 'projects'] as const,
 } as const;
 
 /**
@@ -344,5 +371,27 @@ export function usePledges(enabled: boolean) {
     queryKey: queryKeys.pledges(),
     enabled,
     queryFn: ({ signal }) => api().get('/v1/me/pledges', { signal }),
+  });
+}
+
+/**
+ * §5.5's update clock for one campaign (#155) — the notice above the campaign page's tabs.
+ *
+ * Narrowed with the shared `readUpdateObligation`, so a body the web would not draw is not drawn
+ * here either. A campaign without a clock answers `204`, which reads as `null`: "nothing to say
+ * about this campaign's updates", exactly as the web treats it. Not retried beyond the default
+ * rule, and never an error on screen — a notice that could not be loaded is a notice nobody owes.
+ */
+export function useUpdateObligation(projectId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.projectObligation(projectId ?? ''),
+    enabled: projectId !== undefined,
+    queryFn: async ({ signal }): Promise<UpdateObligation | null> =>
+      readUpdateObligation(
+        await api().get('/v1/projects/{projectId}/update-obligation', {
+          path: { projectId: projectId as string },
+          signal,
+        }),
+      ),
   });
 }

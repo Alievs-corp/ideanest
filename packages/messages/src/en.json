@@ -5510,7 +5510,14 @@
       "story": "About this campaign",
       "storyOnWeb": "Formatting, images and video are on the campaign’s web page. “Back this campaign” opens it.",
       "commentsOnWeb": "The comment thread is on the campaign’s web page for now. “Back this campaign” opens it.",
-      "backOnWeb": "Back {title} on the web"
+      "backOnWeb": "Back {title} on the web",
+      "actionsOffline": "Saving and reminders need a connection.",
+      "shareFailed": "That could not be shared. Try again.",
+      "interim": {
+        "body": "This part of the campaign is not in the app yet. It is on the campaign’s web page.",
+        "open": "Open on the web",
+        "openLabel": "Open “{section}” on the campaign’s web page"
+      }
     },
     "funding": {
       "progressFor": "Funding progress for {title}",

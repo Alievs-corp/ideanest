@@ -5510,7 +5510,14 @@
       "story": "Kampanya hakkında",
       "storyOnWeb": "Biçimlendirme, görseller ve video kampanyanın web sayfasında. «Bu kampanyayı destekle» düğmesi onu açar.",
       "commentsOnWeb": "Yorumlar şimdilik kampanyanın web sayfasında. «Bu kampanyayı destekle» düğmesi onu açar.",
-      "backOnWeb": "{title} kampanyasını web sitesinde destekle"
+      "backOnWeb": "{title} kampanyasını web sitesinde destekle",
+      "actionsOffline": "Kaydetmek ve hatırlatıcı kurmak için bağlantı gerekir.",
+      "shareFailed": "Paylaşılamadı. Tekrar deneyin.",
+      "interim": {
+        "body": "Kampanyanın bu bölümü henüz uygulamada yok. Kampanyanın web sayfasında yer alıyor.",
+        "open": "Web sitesinde aç",
+        "openLabel": "«{section}» bölümünü kampanyanın web sayfasında aç"
+      }
     },
     "funding": {
       "progressFor": "Fonlama durumu: {title}",

@@ -5510,7 +5510,14 @@
       "story": "Kampaniya haqqında",
       "storyOnWeb": "Formatlama, şəkillər və video kampaniyanın veb səhifəsindədir. «Bu kampaniyanı dəstəklə» düyməsi onu açır.",
       "commentsOnWeb": "Şərhlər hələlik kampaniyanın veb səhifəsindədir. «Bu kampaniyanı dəstəklə» düyməsi onu açır.",
-      "backOnWeb": "{title} kampaniyasını saytda dəstəklə"
+      "backOnWeb": "{title} kampaniyasını saytda dəstəklə",
+      "actionsOffline": "Yadda saxlamaq və xatırlatma üçün internet bağlantısı lazımdır.",
+      "shareFailed": "Paylaşmaq mümkün olmadı. Yenidən cəhd edin.",
+      "interim": {
+        "body": "Kampaniyanın bu hissəsi hələ tətbiqdə yoxdur. O, kampaniyanın veb səhifəsindədir.",
+        "open": "Saytda aç",
+        "openLabel": "Kampaniyanın veb səhifəsində «{section}» bölməsini aç"
+      }
     },
     "funding": {
       "progressFor": "Maliyyələşmə gedişatı: {title}",
