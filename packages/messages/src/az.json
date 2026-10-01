@@ -5512,7 +5512,9 @@
       "close": "Bağla",
       "wordmark": "IdeyaNest",
       "wordmarkHint": "Ana səhifəyə keçir",
-      "deviceFallback": "IdeyaNest mobil tətbiqi"
+      "deviceFallback": "IdeyaNest mobil tətbiqi",
+      "googleSignIn": "Google ilə daxil ol",
+      "googleRegister": "Google ilə qeydiyyatdan keç"
     },
     "kitForm": {
       "required": "məcburi",

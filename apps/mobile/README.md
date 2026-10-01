@@ -119,6 +119,21 @@ at localhost.
 `eas.json` sets both per profile. `development` points at localhost, `preview`
 at staging, `production` at production.
 
+Two more decide which provider sign-ins a build offers (issue #152). Unset means
+the button is not drawn, because the service would refuse the token:
+
+| Variable | Meaning | The service needs |
+|---|---|---|
+| `IDEANEST_GOOGLE_IOS_CLIENT_ID` | Google's **iOS** OAuth client. It redirects to `az.ideanest.app:/oauthredirect`; prebuild registers the bundle identifier as a scheme already | the same value in `GOOGLE_CLIENT_IDS` |
+| `IDEANEST_APPLE_SIGN_IN` | `true` keeps the Sign in with Apple entitlement and draws the button. Unset, `app.config.ts` removes the entitlement the autolinked `expo-apple-authentication` plugin would otherwise add to every build | `az.ideanest.app` in `APPLE_CLIENT_IDS`, and the capability on the App ID |
+
+Google appears on iOS only when Apple does too: App Store guideline 4.8 requires
+Sign in with Apple beside any other third-party sign-in.
+
+They are not in `eas.json` yet: the Google client and the Apple capability are
+created in the owners' Google Cloud and Apple Developer accounts, then set as EAS
+environment variables.
+
 ## Deep links (§4.12 MB-02)
 
 A campaign is at `/projects/<creator>/<campaign>` on the web and at the same path
@@ -219,7 +234,9 @@ it closes all of it.
 | `returnTo`: the web's `?next=` sanitising, and every auth path refused as a destination | `src/lib/guard.ts` |
 | Register: always "check your email", whatever the address — the service hides whether it had an account, so the screen does too | `src/app/(auth)/register.tsx`, `src/features/auth/register-form.tsx` |
 | The reset request and confirm: mismatched passwords send nothing, a weak password keeps the unspent link, a dead link shows the service's sentence | `src/app/(auth)/reset-password/`, `src/features/auth/reset-*-form.tsx` |
-| The emailed links — verify-email, the reset confirm, confirm-email-change: the token is read once, taken off the route, and spent exactly once per mount (Strict Mode included) | `src/features/auth/link-token.ts`, `verify-email-view.tsx`, `email-change-view.tsx` |
+| The emailed links — verify-email, the reset confirm, confirm-email-change: the token is taken off the route, a newer link replaces it, and each token is requested once per process — a second mount reads the first answer | `src/features/auth/link-token.ts`, `verify-email-view.tsx`, `email-change-view.tsx` |
+| Google (iOS, a system browser session with PKCE) and Apple (iOS, the native sheet) under the forms, each with a fresh nonce in the form its token carries; every answer through the same `settle()` | `src/lib/providers.ts`, `src/features/auth/provider-buttons.tsx` |
+| Google's button artwork — the one file allowed colour literals, held by the theme test to Google's seven | `src/features/auth/google-brand.ts` |
 
 After a sign-in, push is re-registered only where notifications are already
 allowed (`registerIfAllowed`): signing in never shows a permission prompt.
@@ -280,8 +297,12 @@ consequence of a workflow finishing.
 
 ## What is not built
 
-**Provider sign-in.** `signInWithProvider` is in `src/lib/auth.ts` and goes through the
-same `settle()`; the Google and Apple buttons come in the next part of #152.
+**Google sign-in on Android.** The iOS flow cannot be used there: Google refuses
+custom-scheme redirects for Android OAuth clients, and there is no https endpoint of
+ours to redirect to. The native route, Credential Manager, has to put our nonce in
+the token (the service has `require-nonce: true`), which the free Google Sign-In
+library does not do. It needs a small native module and a device to check it on.
+Apple has no Android SDK. Android offers email and password meanwhile (#241).
 
 **Opening the emailed links in the app.** The screens exist and read the link's
 `token`; claiming `/verify-email`, `/reset-password/confirm` and `/confirm-email-change`

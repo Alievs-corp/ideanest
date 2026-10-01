@@ -5512,7 +5512,9 @@
       "close": "Kapat",
       "wordmark": "IdeyaNest",
       "wordmarkHint": "Ana sayfaya gider",
-      "deviceFallback": "Mobilde IdeyaNest"
+      "deviceFallback": "Mobilde IdeyaNest",
+      "googleSignIn": "Google ile oturum açın",
+      "googleRegister": "Google ile kaydolun"
     },
     "kitForm": {
       "required": "zorunlu",

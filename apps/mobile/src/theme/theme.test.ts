@@ -33,7 +33,26 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 describe('colour discipline: use a token from @ideanest/design-tokens, never a literal (docs/ui-kit.md §2)', () => {
-  const files = walk(SRC).filter((file) => !file.endsWith('theme.test.ts'));
+  /*
+   * THE ONE EXCEPTION, NAMED (issue #152): Google's sign-in button, whose colours are Google's
+   * brand rules rather than ours. It is listed by path so that a second file can never inherit
+   * the exemption, and the test below holds it to carrying nothing but those colours.
+   */
+  const BRAND_EXCEPTION = join('features', 'auth', 'google-brand.ts');
+  const files = walk(SRC).filter(
+    (file) => !file.endsWith('theme.test.ts') && relative(SRC, file) !== BRAND_EXCEPTION,
+  );
+
+  it('confines the brand exception to Google’s published colours', () => {
+    const source = readFileSync(join(SRC, BRAND_EXCEPTION), 'utf8');
+    // The main scan's pattern and its issue-number exception (`#152` is not a colour).
+    const found = new Set(
+      (source.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).filter((hex) => !/^#\d{1,4}$/.test(hex)),
+    );
+    expect([...found].sort()).toEqual(
+      ['#131314', '#34A853', '#4285F4', '#8E918F', '#E3E3E3', '#EA4335', '#FBBC05'].sort(),
+    );
+  });
 
   it('finds source files to scan', () => {
     expect(files.length).toBeGreaterThan(5);

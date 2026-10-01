@@ -325,6 +325,73 @@ jest.mock('expo-image-picker', () => {
 });
 
 /**
+ * The provider sign-ins (issue #152): `expo-crypto`, `expo-apple-authentication` and
+ * `expo-auth-session`, each native at module load.
+ *
+ * <p>`expo-crypto` is real arithmetic over Node's own `crypto`, not a stub: a test of the Apple
+ * nonce has to see the actual SHA-256 of what was generated, or "the hash sent equals the hash
+ * given to the sheet" would pass for two equal stubs. The other two default to the person
+ * closing the sheet or the browser, which is the case that must say nothing; a test that wants an
+ * answer sets one with `jest.mocked(...)`.
+ */
+jest.mock('expo-crypto', () => {
+  const { createHash, randomBytes } = require('node:crypto');
+  return {
+    CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+    CryptoEncoding: { HEX: 'hex', BASE64: 'base64' },
+    getRandomBytes: (count: number) => new Uint8Array(randomBytes(count)),
+    digestStringAsync: async (_algorithm: string, data: string, options?: { encoding?: string }) =>
+      createHash('sha256')
+        .update(data)
+        .digest(options?.encoding === 'base64' ? 'base64' : 'hex'),
+  };
+});
+
+jest.mock('expo-apple-authentication', () => {
+  const { Pressable } = require('react-native');
+  const React = require('react');
+  return {
+    AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 },
+    AppleAuthenticationButtonType: { SIGN_IN: 0, CONTINUE: 1, SIGN_UP: 2 },
+    AppleAuthenticationButtonStyle: { WHITE: 0, WHITE_OUTLINE: 1, BLACK: 2 },
+    isAvailableAsync: jest.fn(async () => true),
+    signInAsync: jest.fn(async () => {
+      throw Object.assign(new Error('The user canceled the authorization attempt.'), {
+        code: 'ERR_REQUEST_CANCELED',
+      });
+    }),
+    AppleAuthenticationButton: ({ onPress, buttonType }: { onPress: () => void; buttonType: number }) =>
+      React.createElement(Pressable, { onPress, testID: `apple-native-button-${buttonType}` }),
+  };
+});
+
+jest.mock('expo-auth-session', () => {
+  class AuthRequest {
+    static last: AuthRequest | null = null;
+    /** What the next prompt answers; a test sets it. Cancelled by default. */
+    static nextResult: unknown = null;
+    /** Made inside `promptAsync`, as the real class does — never before it. */
+    codeVerifier: string | undefined = undefined;
+    readonly config: Record<string, unknown>;
+    constructor(options: Record<string, unknown>) {
+      this.config = options;
+      AuthRequest.last = this;
+    }
+    promptAsync = jest.fn(async () => {
+      this.codeVerifier = 'test-code-verifier';
+      return AuthRequest.nextResult ?? { type: 'cancel' };
+    });
+  }
+  return {
+    AuthRequest,
+    ResponseType: { Code: 'code', Token: 'token', IdToken: 'id_token' },
+    makeRedirectUri: ({ native }: { native?: string } = {}) => native ?? 'ideanest://redirect',
+    exchangeCodeAsync: jest.fn(async () => ({ idToken: undefined })),
+  };
+});
+
+
+/**
  * Expo Router, replaced by the three things the components under test use.
  *
  * <h2>Why the real one is not loaded</h2>

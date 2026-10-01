@@ -5512,7 +5512,9 @@
       "close": "Закрыть",
       "wordmark": "IdeyaNest",
       "wordmarkHint": "Переход на главную",
-      "deviceFallback": "IdeyaNest на телефоне"
+      "deviceFallback": "IdeyaNest на телефоне",
+      "googleSignIn": "Войти через Google",
+      "googleRegister": "Зарегистрироваться через Google"
     },
     "kitForm": {
       "required": "обязательно",

@@ -13,6 +13,8 @@ import Constants from 'expo-constants';
 interface Extra {
   readonly apiOrigin?: string;
   readonly siteUrl?: string;
+  readonly googleIosClientId?: string;
+  readonly appleSignIn?: boolean;
 }
 
 function extra(): Extra {
@@ -55,3 +57,19 @@ export {
  * actually in use is `lib/locale.ts`'s question (stored choice, account, device).
  */
 export const DEFAULT_LOCALE = 'az' as const;
+
+/** The provider sign-ins this build was configured with (issue #152); see `app.config.ts`. */
+export interface ProviderSettings {
+  /** Google's iOS OAuth client, or `''` when this build has none. */
+  readonly googleIosClientId: string;
+  /** Whether this build carries the Sign in with Apple entitlement. */
+  readonly appleSignIn: boolean;
+}
+
+export function providerSettings(): ProviderSettings {
+  const { googleIosClientId, appleSignIn } = extra();
+  return {
+    googleIosClientId: typeof googleIosClientId === 'string' ? googleIosClientId.trim() : '',
+    appleSignIn: appleSignIn === true,
+  };
+}

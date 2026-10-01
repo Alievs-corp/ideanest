@@ -17,6 +17,7 @@ import { AuthHeader, ExplainCard } from './auth-screen';
 import { AuthLink } from './auth-link';
 import { FormErrorSummary } from './form-error-summary';
 import { useAuthNavigation } from './navigation';
+import { ProviderButtons } from './provider-buttons';
 import { TwoFactorStep } from './two-factor-step';
 import { useSignInOutcome } from './use-sign-in-outcome';
 
@@ -43,7 +44,7 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
   const navigate = useAuthNavigation();
   const emailField = useRef<RNTextInput>(null);
   const passwordField = useRef<RNTextInput>(null);
-  const { challenge, finish, clearChallenge } = useSignInOutcome(returnTo);
+  const { challenge, settle, finish, clearChallenge } = useSignInOutcome(returnTo);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -54,11 +55,13 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
   const [sentTo, setSentTo] = useState<string | null>(null);
   // `busy` is a value from the last render; two presses in one frame would both pass it.
   const inFlight = useRef(false);
+  // A provider sign-in in flight; the two paths block each other (`ProviderButtons`).
+  const [providerBusy, setProviderBusy] = useState(false);
 
   const complete = name.trim() !== '' && email.trim() !== '' && password !== '';
 
   async function submit(): Promise<void> {
-    if (inFlight.current || !complete) return;
+    if (inFlight.current || providerBusy || !complete) return;
     inFlight.current = true;
     setBusy(true);
     setFailure(null);
@@ -193,7 +196,7 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
         size="lg"
         fullWidth
         busy={busy}
-        disabled={!complete}
+        disabled={providerBusy || !complete}
         onPress={() => void submit()}
         testID="register-submit"
       />
@@ -204,6 +207,16 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
         onPress={() => navigate.toSignIn(returnTo)}
       />
 
+      {/*
+        The same request as sign-in: the service decides whether an account is created (§17.1's
+        linking table), and a provider account with two-factor on reaches the step above.
+      */}
+      <ProviderButtons
+        intent="register"
+        onOutcome={settle}
+        disabled={busy}
+        onBusyChange={setProviderBusy}
+      />
     </View>
   );
 }
