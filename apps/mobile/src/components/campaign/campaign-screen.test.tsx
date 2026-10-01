@@ -389,7 +389,7 @@ describe('the tabs', () => {
     mockParams = { tab: 'updates' };
     await show();
     expect(screen.getByRole('tab', { name: C.tabs.updates, selected: true })).toBeTruthy();
-    expect(screen.getByTestId('interim-updates')).toBeTruthy();
+    expect(screen.getByTestId('updates-heading')).toBeTruthy();
     client.clear();
 
     mockParams = { tab: 'nonsense' };
