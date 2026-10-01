@@ -54,9 +54,11 @@ export function SignInForm({
    * retires the first; answered out of order, the step would hold the dead one.
    */
   const inFlight = useRef(false);
+  // A provider sign-in in flight; the two paths block each other (`ProviderButtons`).
+  const [providerBusy, setProviderBusy] = useState(false);
 
   async function submit(): Promise<void> {
-    if (inFlight.current || email.trim() === '' || password === '') return;
+    if (inFlight.current || providerBusy || email.trim() === '' || password === '') return;
     inFlight.current = true;
     setBusy(true);
     setFailure(null);
@@ -148,7 +150,7 @@ export function SignInForm({
           size="lg"
           fullWidth
           busy={busy}
-          disabled={email.trim() === '' || password === ''}
+          disabled={providerBusy || email.trim() === '' || password === ''}
           onPress={() => void submit()}
           testID="sign-in-submit"
         />
@@ -157,7 +159,12 @@ export function SignInForm({
       {footer}
 
       {/* Below the form, as on the web: the address and password are the primary path. */}
-      <ProviderButtons intent="sign-in" onOutcome={settle} />
+      <ProviderButtons
+        intent="sign-in"
+        onOutcome={settle}
+        disabled={busy}
+        onBusyChange={setProviderBusy}
+      />
     </View>
   );
 }

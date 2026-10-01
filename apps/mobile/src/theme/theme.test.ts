@@ -45,7 +45,10 @@ describe('colour discipline: use a token from @ideanest/design-tokens, never a l
 
   it('confines the brand exception to Google’s published colours', () => {
     const source = readFileSync(join(SRC, BRAND_EXCEPTION), 'utf8');
-    const found = new Set(source.match(/#[0-9a-fA-F]{6}\b/g) ?? []);
+    // The main scan's pattern and its issue-number exception (`#152` is not a colour).
+    const found = new Set(
+      (source.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).filter((hex) => !/^#\d{1,4}$/.test(hex)),
+    );
     expect([...found].sort()).toEqual(
       ['#131314', '#34A853', '#4285F4', '#8E918F', '#E3E3E3', '#EA4335', '#FBBC05'].sort(),
     );

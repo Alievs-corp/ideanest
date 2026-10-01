@@ -124,8 +124,11 @@ the button is not drawn, because the service would refuse the token:
 
 | Variable | Meaning | The service needs |
 |---|---|---|
-| `IDEANEST_GOOGLE_IOS_CLIENT_ID` | Google's **iOS** OAuth client. Also registers `az.ideanest.app` as a URL scheme, which is where that client redirects | the same value in `GOOGLE_CLIENT_IDS` |
-| `IDEANEST_APPLE_SIGN_IN` | `true` adds the Sign in with Apple entitlement, the `expo-apple-authentication` plugin and the button | `az.ideanest.app` in `APPLE_CLIENT_IDS`, and the capability on the App ID |
+| `IDEANEST_GOOGLE_IOS_CLIENT_ID` | Google's **iOS** OAuth client. It redirects to `az.ideanest.app:/oauthredirect`; prebuild registers the bundle identifier as a scheme already | the same value in `GOOGLE_CLIENT_IDS` |
+| `IDEANEST_APPLE_SIGN_IN` | `true` keeps the Sign in with Apple entitlement and draws the button. Unset, `app.config.ts` removes the entitlement the autolinked `expo-apple-authentication` plugin would otherwise add to every build | `az.ideanest.app` in `APPLE_CLIENT_IDS`, and the capability on the App ID |
+
+Google appears on iOS only when Apple does too: App Store guideline 4.8 requires
+Sign in with Apple beside any other third-party sign-in.
 
 They are not in `eas.json` yet: the Google client and the Apple capability are
 created in the owners' Google Cloud and Apple Developer accounts, then set as EAS

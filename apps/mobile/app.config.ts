@@ -1,5 +1,6 @@
 import { colors } from '@ideanest/design-tokens';
 import type { ExpoConfig } from 'expo/config';
+import { withEntitlementsPlist, type ConfigPlugin } from 'expo/config-plugins';
 
 /**
  * The Expo configuration — §14.3, and half of the deep links (§4.12 MB-02).
@@ -83,13 +84,29 @@ const BUNDLE_ID = 'az.ideanest.app';
  *   - `IDEANEST_GOOGLE_IOS_CLIENT_ID`: Google's iOS OAuth client. Unset means no Google button
  *     on iOS, because the service would refuse a token whose audience it does not list
  *     (`GOOGLE_CLIENT_IDS` must carry the same value).
- *   - `IDEANEST_APPLE_SIGN_IN`: `true` turns on Sign in with Apple — the entitlement, the
- *     plugin and the button. The bundle identifier must be in `APPLE_CLIENT_IDS`.
+ *   - `IDEANEST_APPLE_SIGN_IN`: `true` turns on Sign in with Apple — the entitlement and the
+ *     button. The bundle identifier must be in `APPLE_CLIENT_IDS`.
  *
  * Google on Android is not offered yet; `src/lib/providers.ts` says why.
  */
 const googleIosClientId = process.env.IDEANEST_GOOGLE_IOS_CLIENT_ID?.trim() ?? '';
 const appleSignIn = process.env.IDEANEST_APPLE_SIGN_IN?.trim() === 'true';
+
+/**
+ * Takes the Sign in with Apple entitlement back out when this build does not offer it.
+ *
+ * <p>`expo-apple-authentication`'s config plugin is AUTOLINKED — it runs because the package is
+ * installed, listed or not (the trap `expo-image-picker` set in #151) — and it adds
+ * `com.apple.developer.applesignin` unconditionally. A build whose provisioning profile lacks the
+ * capability would then fail to sign, and EAS-managed credentials would switch the capability on
+ * for the App ID without anybody deciding to. So the variable decides; see the export for why
+ * it is applied where it is.
+ */
+const withAppleSignInOnlyWhenEnabled: ConfigPlugin<boolean> = (expoConfig, enabled) =>
+  withEntitlementsPlist(expoConfig, (entitlements) => {
+    if (!enabled) delete entitlements.modResults['com.apple.developer.applesignin'];
+    return entitlements;
+  });
 
 const config: ExpoConfig = {
   name: 'IdeyaNest',
@@ -105,12 +122,9 @@ const config: ExpoConfig = {
    * Push (§4.12 MB-01) uses it rather than an https link that depends on a verification file
    * being reachable.
    */
-  /*
-   * The bundle identifier as well, when Google is configured: the iOS OAuth client redirects to
-   * `az.ideanest.app:/oauthredirect`, and a scheme the app does not register is a redirect the
-   * system browser cannot hand back.
-   */
-  scheme: googleIosClientId === '' ? 'ideanest' : ['ideanest', BUNDLE_ID],
+  // Google's redirect (`az.ideanest.app:/oauthredirect`) needs no scheme here: prebuild already
+  // registers the bundle identifier on iOS, and the browser session hands the callback back itself.
+  scheme: 'ideanest',
 
   ios: {
     bundleIdentifier: BUNDLE_ID,
@@ -259,7 +273,7 @@ const config: ExpoConfig = {
         icon: './assets/notification-icon.png',
       },
     ],
-    ...(appleSignIn ? ['expo-apple-authentication'] : []),
+    'expo-apple-authentication',
   ],
 
   experiments: { typedRoutes: true },
@@ -272,4 +286,9 @@ const config: ExpoConfig = {
   },
 };
 
-export default config;
+/*
+ * Applied to the configuration itself rather than listed in `plugins`, so that its mod is
+ * registered before every listed and autolinked plugin's — and Expo runs mods in reverse order of
+ * registration, so this one sees the entitlements last, after `expo-apple-authentication` wrote them.
+ */
+export default withAppleSignInOnlyWhenEnabled(config, appleSignIn);

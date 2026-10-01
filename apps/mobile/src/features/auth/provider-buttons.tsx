@@ -28,10 +28,18 @@ import { GoogleButton, PROVIDER_BUTTON_HEIGHT } from './provider-brand';
 export function ProviderButtons({
   intent,
   onOutcome,
+  disabled = false,
+  onBusyChange,
 }: {
   /** Only the wording changes: the service decides whether an account is created. */
   readonly intent: 'sign-in' | 'register';
   readonly onOutcome: (outcome: SignInOutcome) => Promise<void>;
+  /**
+   * The form's own request is in flight. The two paths block each other both ways: two sign-ins
+   * settling would run `finish()` twice, and the second `back()` pops the screen underneath.
+   */
+  readonly disabled?: boolean;
+  readonly onBusyChange?: (busy: boolean) => void;
 }) {
   const t = useT();
   const [offered] = useState(() => configuredProviders());
@@ -59,10 +67,13 @@ export function ProviderButtons({
   const apple = wantsApple && appleAvailable;
   if (!google && !apple) return null;
 
+  const blocked = busy !== null || disabled;
+
   async function run(provider: ProviderId): Promise<void> {
-    if (inFlight.current) return;
+    if (inFlight.current || disabled) return;
     inFlight.current = true;
     setBusy(provider);
+    onBusyChange?.(true);
     setFailure(null);
     try {
       await onOutcome(await (provider === 'google' ? signInWithGoogle() : signInWithApple()));
@@ -71,6 +82,7 @@ export function ProviderButtons({
     } finally {
       inFlight.current = false;
       setBusy(null);
+      onBusyChange?.(false);
     }
   }
 
@@ -98,7 +110,7 @@ export function ProviderButtons({
             intent === 'register' ? t('mobile.auth.googleRegister') : t('mobile.auth.googleSignIn')
           }
           busy={busy === 'google'}
-          disabled={busy !== null}
+          disabled={blocked}
           onPress={() => void run('google')}
         />
       ) : null}
@@ -113,10 +125,10 @@ export function ProviderButtons({
           accessible
           accessibilityRole="button"
           accessibilityLabel={appleLabel}
-          accessibilityState={{ disabled: busy !== null, busy: busy === 'apple' }}
+          accessibilityState={{ disabled: blocked, busy: busy === 'apple' }}
           onAccessibilityTap={() => void run('apple')}
-          pointerEvents={busy === null ? 'auto' : 'none'}
-          style={busy === null ? undefined : styles.dimmed}
+          pointerEvents={blocked ? 'none' : 'auto'}
+          style={blocked ? styles.dimmed : undefined}
           testID="provider-apple"
         >
           <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>

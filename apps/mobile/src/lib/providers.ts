@@ -44,16 +44,17 @@ import { signInWithProvider, type ProviderId, type SignInOutcome } from './auth'
 /**
  * Which providers this build offers on this platform, in the web's order. A provider with no
  * configuration renders no button, because the service would answer 501 or refuse the audience.
+ *
+ * <p>On iOS, Google only alongside Apple: App Store guideline 4.8 requires Sign in with Apple in
+ * any app that offers another third-party sign-in, and a build configured with Google alone would
+ * be one the review rejects.
  */
 export function configuredProviders(
   os: string = Platform.OS,
   settings: ProviderSettings = providerSettings(),
 ): readonly ProviderId[] {
-  if (os !== 'ios') return [];
-  const offered: ProviderId[] = [];
-  if (settings.googleIosClientId !== '') offered.push('google');
-  if (settings.appleSignIn) offered.push('apple');
-  return offered;
+  if (os !== 'ios' || !settings.appleSignIn) return [];
+  return settings.googleIosClientId === '' ? ['apple'] : ['google', 'apple'];
 }
 
 /** A nonce: 32 bytes from the platform CSPRNG, base64url without padding — the web's shape. */
@@ -154,6 +155,11 @@ export async function signInWithGoogle(
 
   const result = await request.promptAsync(GOOGLE_DISCOVERY);
   if (result.type === 'cancel' || result.type === 'dismiss') throw new ProviderCancelled();
+  // Google's own "Cancel" on its consent page comes back as `error=access_denied`: the person
+  // said no, which is a cancellation and not a failure to describe.
+  if (result.type === 'error' && result.error?.code === 'access_denied') {
+    throw new ProviderCancelled();
+  }
   if (result.type !== 'success') {
     throw result.type === 'error' && result.error !== null && result.error !== undefined
       ? result.error
@@ -162,13 +168,18 @@ export async function signInWithGoogle(
 
   const code = result.params.code;
   if (code === undefined || code === '') throw new Error('Google returned no authorisation code.');
+  // Made inside `promptAsync`; an exchange without it is refused by Google with a message that
+  // reads like a configuration problem.
+  if (request.codeVerifier === undefined || request.codeVerifier === '') {
+    throw new Error('The Google request has no PKCE verifier.');
+  }
 
   const tokens = await exchangeCodeAsync(
     {
       clientId,
       code,
       redirectUri,
-      extraParams: { code_verifier: request.codeVerifier ?? '' },
+      extraParams: { code_verifier: request.codeVerifier },
     },
     GOOGLE_DISCOVERY,
   );

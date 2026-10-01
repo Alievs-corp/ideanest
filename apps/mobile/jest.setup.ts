@@ -370,13 +370,17 @@ jest.mock('expo-auth-session', () => {
     static last: AuthRequest | null = null;
     /** What the next prompt answers; a test sets it. Cancelled by default. */
     static nextResult: unknown = null;
-    readonly codeVerifier = 'test-code-verifier';
+    /** Made inside `promptAsync`, as the real class does — never before it. */
+    codeVerifier: string | undefined = undefined;
     readonly config: Record<string, unknown>;
     constructor(options: Record<string, unknown>) {
       this.config = options;
       AuthRequest.last = this;
     }
-    promptAsync = jest.fn(async () => AuthRequest.nextResult ?? { type: 'cancel' });
+    promptAsync = jest.fn(async () => {
+      this.codeVerifier = 'test-code-verifier';
+      return AuthRequest.nextResult ?? { type: 'cancel' };
+    });
   }
   return {
     AuthRequest,

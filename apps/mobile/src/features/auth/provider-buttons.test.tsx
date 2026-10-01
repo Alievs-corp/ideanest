@@ -131,6 +131,39 @@ it('takes an Apple account with two-factor on to the two-factor step', async () 
   expect(mockRouter.back).not.toHaveBeenCalled();
 });
 
+it('signs in when the native Apple button itself is pressed', async () => {
+  jest.mocked(signInWithApple).mockResolvedValueOnce({ kind: 'signed-in' });
+  await show(<SignInScreen />);
+
+  // The native control's own press, which is what a finger reaches.
+  await fireEvent.press(
+    screen.getByTestId(
+      `apple-native-button-${AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}`,
+      { includeHiddenElements: true },
+    ),
+  );
+
+  expect(signInWithApple).toHaveBeenCalledTimes(1);
+  expect(mockRouter.back).toHaveBeenCalledTimes(1);
+});
+
+it('holds the password submit while a provider sign-in is in flight', async () => {
+  let answer: () => void = () => {};
+  jest.mocked(signInWithGoogle).mockReturnValueOnce(
+    new Promise((resolve) => (answer = () => resolve({ kind: 'signed-in' }))),
+  );
+  await show(<SignInScreen />);
+  await fireEvent.changeText(screen.getByLabelText(copy.fields.email), 'a@example.com');
+  await fireEvent.changeText(screen.getByLabelText(copy.fields.password), 'correct horse');
+
+  await fireEvent.press(screen.getByRole('button', { name: mobile.googleSignIn }));
+
+  expect(
+    screen.getByRole('button', { name: copy.signIn.submit }).props.accessibilityState,
+  ).toMatchObject({ disabled: true });
+  await act(async () => answer());
+});
+
 it('says nothing when the person closes the browser', async () => {
   jest.mocked(signInWithGoogle).mockRejectedValueOnce(new ProviderCancelled());
   await show(<SignInScreen />);

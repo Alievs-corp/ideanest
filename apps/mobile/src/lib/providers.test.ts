@@ -36,7 +36,8 @@ beforeEach(() => {
 describe('configuredProviders', () => {
   it.each([
     ['ios', { googleIosClientId: 'g', appleSignIn: true }, ['google', 'apple']],
-    ['ios', { googleIosClientId: 'g', appleSignIn: false }, ['google']],
+    // App Store guideline 4.8: no Google on iOS without Apple beside it.
+    ['ios', { googleIosClientId: 'g', appleSignIn: false }, []],
     ['ios', { googleIosClientId: '', appleSignIn: true }, ['apple']],
     ['ios', { googleIosClientId: '', appleSignIn: false }, []],
     // Neither on Android yet: no Apple SDK, and Google's flow there cannot carry our nonce.
@@ -137,6 +138,14 @@ describe('Sign in with Google', () => {
     Request.nextResult = { type };
     await expect(signInWithGoogle('ios-client-id')).rejects.toBeInstanceOf(ProviderCancelled);
     expect(AuthSession.exchangeCodeAsync).not.toHaveBeenCalled();
+  });
+
+  it('reads Google’s own Cancel (access_denied) as a cancellation', async () => {
+    Request.nextResult = {
+      type: 'error',
+      error: Object.assign(new Error('access_denied'), { code: 'access_denied' }),
+    };
+    await expect(signInWithGoogle('ios-client-id')).rejects.toBeInstanceOf(ProviderCancelled);
   });
 
   it('throws the provider’s error', async () => {
