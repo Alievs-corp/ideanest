@@ -179,6 +179,46 @@ the reminder write and the failure wording — are `src/lib/prelaunch.ts`.
 - One `FadeUp`, on the cover, title and count; the form is outside it. The one
   lime control is "Remind me".
 
+## The campaign page (#155)
+
+`projects/[creatorSlug]/[projectSlug]`, the web's `/projects/{creatorSlug}/{projectSlug}`.
+The screen is `src/components/campaign/campaign-screen.tsx`; the page's rules (states,
+pledgeability, the 80% threshold, the countdown, the story schema, the realtime wire format)
+are `@ideanest/campaign`'s, the same functions the web calls.
+
+- **One `FlatList`.** Blocks 1–10 (cover, tags, title, byline, funding, countdown, Back,
+  Save/Share/Remind, trust, update obligation) are its header; the tab bar is its sticky
+  first row; the active tab's rows are its body; the rewards and the report link are its
+  footer, on every tab. Switching tabs never remounts the header.
+- **Tabs are hooks** (`src/components/campaign/tabs/contract.ts`): each of
+  `campaign-tab`, `creator-tab`, `faq-tab`, `updates-tab` and `comments-tab` exports a
+  `use…Tab(context)` that hands the list its rows, a footer, an end-reached handler (pages
+  append), a refresh and a loading flag, and reads nothing while it is not the active tab.
+  `?tab=` mirrors the selection (`router.setParams`; the default is left out), and an
+  unknown value is the Campaign tab. Creator, FAQ, Updates and Comments open the same tab
+  on the web for now.
+- **Back this campaign** and **Select this reward** are shown only where `acceptsPledges`
+  is true, and open the web checkout (`/{locale}/projects/{id}/back[?reward=]`) through
+  `openCheckout` in `src/lib/campaign-actions.ts`, the one place #157 changes. The pill is
+  white; the only lime on the page is the two-days-left chip. A bar with the same pill is
+  pinned under the list while the header's one is out of view; it has no animation and is
+  hidden from screen readers, which meet the header's pill in reading order.
+- **Save** starts "off" until #137 publishes the viewer's state; it toggles at once, rolls
+  back on a refusal and refreshes the Saved tab on success. **Remind** is offered before
+  launch only. Signed out, Save opens sign-in and Remind the pre-launch page.
+- **Live funding** opens `IDEANEST_REALTIME_ORIGIN`'s socket only while the screen is
+  focused, the app is in the foreground and the device is online
+  (`src/lib/use-campaign-updates.ts`); frames are added with `decimal.js`. The countdown
+  pauses in the background and is a `timer`, not a live region.
+- **Dates** are the device's zone (`formatInstant`, `formatDay` in `src/lib/i18n.tsx`);
+  the update obligation and the day a campaign closed are UTC days, as on the web.
+- **States**: a 404, an unreadable response or a non-public state is the not-found
+  screen; a failure with nothing cached is an error with retry; a cached page that could
+  not be refreshed carries the offline notice, opens no socket and disables Save and
+  Remind with the reason. The page, rewards, FAQ, updates and obligation persist under
+  `project`; comments (`comments`) and profiles (`profile`) never do.
+- No entry animation anywhere on the page.
+
 ## Configuration
 
 Three origins, read at **build** time by `app.config.ts` and surfaced through
@@ -417,16 +457,13 @@ Apple has no Android SDK. Android offers email and password meanwhile (#241).
 (unprefixed and under `/{az|en|ru|tr}/`) in the association files and `lib/links.ts` is
 #165's. Until then the links open the website, which does the same thing.
 
-**Checkout.** §4.5, not built in the app yet. The campaign page's call to action opens
-the web checkout, which works today.
+**Checkout.** §4.5, not built in the app yet (#157). "Back this campaign" and "Select
+this reward" open the web checkout, which works today.
 
-**Comments.** §4.4 and §4.9 ask for them and what is here is the count and a link. §4.6's
-thread is moderated, reportable and rate-limited, and half of it is meaningless
-without an account this application cannot yet create.
-
-**Rich story formatting.** The story is a TipTap document and is rendered as
-paragraphs of plain text — `src/lib/story.ts` argues why a second renderer that
-disagreed with the web about list nesting would be worse than the missing bold.
+**Four of the campaign page's tabs and its report sheet.** Creator, FAQ, Updates and
+Comments open the same tab on the campaign's web page, and "Report this campaign" is not
+drawn yet; each is a file of its own under `src/components/campaign/` (see "The campaign
+page" above) that the rest of #155 replaces.
 
 **A device.** Nothing here has been run on one. The tests, the typecheck and the
 Expo config resolution all pass; what they cannot cover is push delivery, the

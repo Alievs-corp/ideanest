@@ -325,20 +325,6 @@ export function useProjectRewards(projectId: string | undefined) {
   });
 }
 
-/** A campaign's updates, newest first, first page only on this screen. */
-export function useProjectUpdates(projectId: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.projectUpdates(projectId ?? ''),
-    enabled: projectId !== undefined,
-    queryFn: ({ signal }) =>
-      api().get('/v1/projects/{projectId}/updates', {
-        path: { projectId: projectId as string },
-        query: { limit: 5 },
-        signal,
-      }),
-  });
-}
-
 /**
  * A campaign's public pre-launch page, by project id (#155) — what is coming and how many are
  * waiting for it.
