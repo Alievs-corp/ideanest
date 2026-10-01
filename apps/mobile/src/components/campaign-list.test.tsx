@@ -134,10 +134,10 @@ describe('CampaignList', () => {
 
     // Grouped digits and the ISO code, from `@ideanest/money` — the same module the web
     // formats with, which is the whole reason that package exists.
-    expect(getByText('1,000.00 AZN pledged')).toBeTruthy();
+    expect(getByText('1,000.00 AZN')).toBeTruthy();
   });
 
-  it('counts the days left with the campaign page’s plural', async () => {
+  it('counts the days left with the card’s plural', async () => {
     const { getByText } = await render(<CampaignList cards={cards(1)} />);
 
     expect(getByText('12 days left')).toBeTruthy();

@@ -99,9 +99,12 @@ export function CampaignList({
   );
 }
 
+/** How many covers at the top of a feed are fetched first: the ones on screen when it opens. */
+const PRIORITY_COVERS = 3;
+
 /** Module-level, so FlashList gets the same function on every render and keeps its recycling. */
-function renderCard({ item }: { item: Card }) {
-  return <ProjectCard card={item} />;
+function renderCard({ item, index }: { item: Card; index: number }) {
+  return <ProjectCard card={item} priority={index < PRIORITY_COVERS} />;
 }
 
 function Separator() {
