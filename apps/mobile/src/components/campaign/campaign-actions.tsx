@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Platform, Share, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -72,6 +72,12 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
   const [reminding, setReminding] = useState(false);
   const [shared, setShared] = useState(false);
   const [busy, setBusy] = useState<Busy>(null);
+  /*
+   * The guard against a second tap is a ref, not `busy`: two presses inside one frame both read
+   * the `busy` of the render they were delivered to, which is still `null`, and would send two
+   * writes. The ref is set synchronously by the first. `busy` is what the pill draws.
+   */
+  const inFlight = useRef(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   const say = (message: string) => {
@@ -99,7 +105,8 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
       router.push('/sign-in');
       return;
     }
-    if (busy !== null) return;
+    if (inFlight.current) return;
+    inFlight.current = true;
     const was = saved;
     haptics.save();
     setBusy('save');
@@ -120,6 +127,7 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
       setSaved(was);
       say(failure(cause));
     } finally {
+      inFlight.current = false;
       setBusy(null);
     }
   };
@@ -141,7 +149,8 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
       router.push({ pathname: '/campaigns/[id]/prelaunch', params: { id: projectId } });
       return;
     }
-    if (busy !== null) return;
+    if (inFlight.current) return;
+    inFlight.current = true;
     const was = reminding;
     setBusy('remind');
     setReminding(!was);
@@ -154,6 +163,7 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
       setReminding(was);
       say(failure(cause));
     } finally {
+      inFlight.current = false;
       setBusy(null);
     }
   };

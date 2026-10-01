@@ -60,7 +60,10 @@ export function CampaignCountdown({ deadline, active }: CampaignCountdownProps) 
       setNow(at);
       const remaining = remainingUntil(deadline, at);
       if (remaining === null || remaining.past) return;
-      timer = setTimeout(tick, countdownIntervalMs(remaining));
+      // The shared interval, but never past the deadline itself: the last tick lands on it, so
+      // the count stops at zero rather than showing "0 seconds" for up to another second.
+      const toDeadline = Date.parse(deadline) - at.getTime() + 1;
+      timer = setTimeout(tick, Math.min(countdownIntervalMs(remaining), toDeadline));
     };
 
     // Recomputed on every return, so a phone that slept for an hour shows the hour gone.

@@ -73,20 +73,32 @@ export const STATE_BADGES: Partial<Record<ProjectState, StateBadge>> = {
 };
 
 /**
- * Whether the page counts days down at all: LIVE with a deadline. `daysLeft` is floored at zero,
- * so a campaign that closed a fortnight ago and one closing tonight report the same number, and
- * "Last day" on the first would be a loud lie.
+ * Whether the page counts days down at all: LIVE with a deadline that has not passed at `now` (the
+ * page's clock, `lib/campaign-clock.ts`). `daysLeft` is floored at zero, so a campaign that closed
+ * a fortnight ago and one closing tonight report the same number, and "Last day" on the first
+ * would be a loud lie — so would "Last day" on a campaign whose deadline passed a minute ago while
+ * the service has not yet moved its state on.
  */
-export function showsDaysLeft(campaign: CampaignPage): boolean {
-  return campaign.state === 'LIVE' && campaign.daysLeft !== null;
+export function showsDaysLeft(campaign: CampaignPage, now: Date): boolean {
+  if (campaign.state !== 'LIVE' || campaign.daysLeft === null || campaign.deadline === null) {
+    return false;
+  }
+  return Date.parse(campaign.deadline) > now.getTime();
 }
 
-export function CampaignHeader({ campaign }: { readonly campaign: CampaignPage }) {
+export function CampaignHeader({
+  campaign,
+  now,
+}: {
+  readonly campaign: CampaignPage;
+  /** The page's clock — see `showsDaysLeft`. */
+  readonly now: Date;
+}) {
   const t = useT();
   const router = useRouter();
   const badge = STATE_BADGES[campaign.state];
   const urgent =
-    showsDaysLeft(campaign) && campaign.daysLeft !== null && campaign.daysLeft <= URGENT_DAYS;
+    showsDaysLeft(campaign, now) && campaign.daysLeft !== null && campaign.daysLeft <= URGENT_DAYS;
   const byline = t('campaign.by', { creator: campaign.creator.name });
 
   return (

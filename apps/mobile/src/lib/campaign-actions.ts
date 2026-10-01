@@ -59,19 +59,22 @@ export function actionFailureOf(cause: unknown): ActionFailure {
 }
 
 /**
- * The checkout for this campaign, optionally on one tier — "Back this campaign" and "Select this
- * reward".
+ * Where the checkout for this campaign is, optionally on one tier — "Back this campaign" and
+ * "Select this reward" push it.
  *
- * <p><strong>The one place that knows where checkout is.</strong> Until #157 builds
- * `campaigns/[id]/back`, it is the web's `/{locale}/projects/{id}/back[?reward=]` in the in-app
- * browser — the checkout, never the campaign page, which is where the old button sent a reader
- * who had already decided. #157 changes this function, and nothing that calls it.
+ * <p><strong>The app's own route, `campaigns/[id]/back[?reward=]`</strong> — never the campaign
+ * page, which is where the old button sent a reader who had already decided. Until #157 builds it,
+ * that route is the placeholder that carries `reward` on to the web checkout; when #157 lands it is
+ * the checkout, and nothing on the campaign page has to change.
  */
-export async function openCheckout(projectId: string, rewardId?: string): Promise<void> {
-  const reward = rewardId === undefined ? '' : `?reward=${encodeURIComponent(rewardId)}`;
-  await WebBrowser.openBrowserAsync(
-    `${siteUrl()}/${currentLocale()}/projects/${encodeURIComponent(projectId)}/back${reward}`,
-  );
+export function checkoutHref(
+  projectId: string,
+  rewardId?: string,
+): { readonly pathname: '/campaigns/[id]/back'; readonly params: Record<string, string> } {
+  return {
+    pathname: '/campaigns/[id]/back',
+    params: rewardId === undefined ? { id: projectId } : { id: projectId, reward: rewardId },
+  };
 }
 
 /**

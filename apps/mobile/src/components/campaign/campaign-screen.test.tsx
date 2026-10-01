@@ -114,6 +114,7 @@ beforeEach(async () => {
   global.fetch = jest.fn(async (input: RequestInfo | URL) => {
     const url = new URL(String(input));
     if (url.pathname === '/v1/projects/aysel/solar-lamp') return routes.page();
+    if (url.pathname === '/v1/projects/aysel/other-lamp') return routes.page();
     if (url.pathname === `/v1/projects/${ID}/rewards/public`) return routes.rewards();
     if (url.pathname === `/v1/projects/${ID}/update-obligation`) return routes.obligation();
     return json({}, 404);
@@ -125,7 +126,7 @@ afterEach(() => {
   setOnline(true);
 });
 
-async function show({ cached }: { cached?: ProjectPage } = {}) {
+async function show({ cached, now = NOW }: { cached?: ProjectPage; now?: Date } = {}) {
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   if (cached !== undefined) client.setQueryData(['project', 'aysel', 'solar-lamp'], cached);
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -138,7 +139,7 @@ async function show({ cached }: { cached?: ProjectPage } = {}) {
     </SafeAreaProvider>
   );
   const view = await render(
-    <CampaignScreen creatorSlug="aysel" projectSlug="solar-lamp" now={NOW} />,
+    <CampaignScreen creatorSlug="aysel" projectSlug="solar-lamp" now={now} />,
     { wrapper },
   );
   await settle();
@@ -309,21 +310,54 @@ describe('the campaign page, state by state', () => {
 });
 
 describe('Back this campaign and Select this reward', () => {
-  it('open the web checkout, never the campaign page, and Back is white', async () => {
+  it('open the app’s checkout route, never the campaign page, and Back is white', async () => {
     await show();
     const back = backPill();
     expect(back).not.toBeNull();
     expect(background(back as TestInstance)).toBe(colors.whiteSurface);
 
+    // `campaigns/[id]/back` carries `reward` on to the web checkout until #157 builds it.
     await fireEvent.press(back as TestInstance);
-    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(
-      `https://test.invalid/en/projects/${ID}/back`,
-    );
+    expect(mockRouter.push).toHaveBeenLastCalledWith({
+      pathname: '/campaigns/[id]/back',
+      params: { id: ID },
+    });
 
     await fireEvent.press(selectFor('Early lamp') as TestInstance);
-    expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith(
-      `https://test.invalid/en/projects/${ID}/back?reward=tier-1`,
-    );
+    expect(mockRouter.push).toHaveBeenLastCalledWith({
+      pathname: '/campaigns/[id]/back',
+      params: { id: ID, reward: 'tier-1' },
+    });
+    expect(WebBrowser.openBrowserAsync).not.toHaveBeenCalled();
+  });
+
+  it('withdraws Back, the bar, Select and the "Last day" chip when the deadline passes on screen', async () => {
+    // Real time: the page's clock is a timer set to the deadline, and nothing else moves it.
+    routes.page = () =>
+      json(page('LIVE', { deadline: new Date(Date.now() + 1_500).toISOString() }));
+    await show({ now: new Date() });
+    expect(textOf(screen.getByTestId('campaign-urgency'))).toBe('Last day');
+    expect(selectFor('Early lamp')).not.toBeNull();
+
+    // The header's pill below the fold of an 800pt list: the persistent bar is up.
+    await fireEvent(screen.getByTestId('campaign-list'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 800 } },
+    });
+    await fireEvent(screen.getByTestId('back-cta'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 2_000, width: 350, height: 48 } },
+    });
+    expect(screen.getByTestId('persistent-back', { includeHiddenElements: true })).toBeTruthy();
+    expect(backPill()).not.toBeNull();
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1_700));
+    });
+
+    expect(backPill()).toBeNull();
+    expect(screen.queryByTestId('persistent-back', { includeHiddenElements: true })).toBeNull();
+    expect(selectFor('Early lamp')).toBeNull();
+    expect(screen.queryByTestId('campaign-urgency')).toBeNull();
+    expect(screen.queryByRole('timer')).toBeNull();
   });
 
   it('has no lime control on the page', async () => {
@@ -378,6 +412,44 @@ describe('the tabs', () => {
 
     await fireEvent.press(screen.getByRole('tab', { name: C.tabs.campaign }));
     expect(mockRouter.setParams).toHaveBeenLastCalledWith({ tab: undefined, thread: undefined });
+  });
+
+  it('goes through all five tabs and back without the hook order changing', async () => {
+    // A tab hook that skipped a hook while inactive would throw on one of these switches.
+    const errors = jest.spyOn(console, 'error');
+    routes.page = () => json(page('LIVE', { risks: 'Shipping may be late.' }));
+    await show();
+    for (const name of [
+      C.tabs.creator,
+      C.tabs.faq,
+      C.tabs.updates,
+      C.tabs.comments,
+      C.tabs.campaign,
+      C.tabs.comments,
+      C.tabs.campaign,
+    ]) {
+      await fireEvent.press(screen.getByRole('tab', { name }));
+      expect(screen.getByRole('tab', { name, selected: true })).toBeTruthy();
+    }
+    expect(screen.getByText('Shipping may be late.')).toBeTruthy();
+    expect(errors).not.toHaveBeenCalledWith(expect.stringContaining('hooks'), expect.anything());
+    errors.mockRestore();
+  });
+
+  it('starts again when the same screen is given another campaign', async () => {
+    const view = await show();
+    await fireEvent.press(screen.getByRole('tab', { name: C.tabs.creator }));
+    expect(screen.getByRole('tab', { name: C.tabs.creator, selected: true })).toBeTruthy();
+
+    // Another campaign in the same screen instance: its own tab state, not the last one's.
+    routes.page = () =>
+      json(page('LIVE', { id: 'other-id', slug: 'other-lamp', title: 'Other Lamp' }));
+    await view.rerender(
+      <CampaignScreen creatorSlug="aysel" projectSlug="other-lamp" now={NOW} />,
+    );
+    await settle();
+    expect(textOf(screen.getByTestId('campaign-title'))).toBe('Other Lamp');
+    expect(screen.getByRole('tab', { name: C.tabs.campaign, selected: true })).toBeTruthy();
   });
 
   it('offers the four tabs the app does not draw yet on the web, by name', async () => {

@@ -37,6 +37,19 @@ export function useCampaignUpdates(url: string | null, active: boolean): Campaig
   const [updates, setUpdates] = useState<readonly CampaignUpdate[]>([]);
   const [connected, setConnected] = useState(false);
 
+  /*
+   * Frames belong to the channel they came on. A different address is a different campaign's
+   * counter (a screen reused for another campaign, or a changed origin), and its frames must not
+   * be added to this one's figure, so they are dropped in the same render the address changes.
+   * `null` is not a channel — offline, or no origin — and keeps what was received: the base figure
+   * has not changed, so neither has what the frames add to it.
+   */
+  const [channel, setChannel] = useState(url);
+  if (url !== null && url !== channel) {
+    setChannel(url);
+    if (channel !== null) setUpdates([]);
+  }
+
   useEffect(() => {
     if (url === null || !active) return undefined;
     // A test environment, or a platform build without the global. Static figures, no error.

@@ -23,8 +23,14 @@ import type { CampaignPage } from '../../../lib/campaign-page';
  *   the one on screen. A tab reads nothing while it is inactive — `enabled: context.active` on
  *   each query — so the Creator tab's profile is requested only once the Creator tab opens
  *   (#155's "tab data loads lazily"). An inactive tab returns `INACTIVE_TAB` or any body; the
- *   screen draws only the active one. A tab with hooks of its own calls all of them *before*
- *   returning early — the interim bodies return at once only because they have none.
+ *   screen draws only the active one.
+ * - **Every hook a tab calls, it calls on every render, before any early return.** The screen
+ *   calls all five tab hooks on every render and switches which one is `active`; a hook behind
+ *   `if (!context.active) return INACTIVE_TAB` would run on some renders and not others, and React
+ *   throws ("Rendered more hooks than during the previous render") on the first tab switch. Call
+ *   the queries with `enabled: context.active`, then return `INACTIVE_TAB` when inactive.
+ *   (`campaign-tab.tsx` is the example; the interim bodies return at once only because they call
+ *   no hook. `campaign-screen.test.tsx` cycles through all five tabs and back.)
  * - **Its reads and writes live in its own file**, or in a module beside it. The query keys are
  *   already in `api/queries.ts`'s `queryKeys` (`projectFaqs`, `projectUpdates`, `comments`,
  *   `profile`, `profileProjects`), so a tab does not need to change that file; `api/client.ts`'s
@@ -75,7 +81,17 @@ export interface CampaignTabBody {
    * next page), "There are no older updates.", or a next-page failure with a retry.
    */
   readonly footer: ReactElement | null;
-  /** Called as the list nears its end, to append the next page. `null` when nothing pages. */
+  /**
+   * Called to append the next page; `null` when nothing pages.
+   *
+   * <strong>"End" is the end of this tab's rows, not of the list.</strong> The rewards and the
+   * report link below the body do not count: the screen calls this when the bottom of the viewport
+   * comes within half a screen of the last row (plus `footer`), so the next page arrives below what
+   * the reader is looking at, before they reach the rewards. It is called once per list height —
+   * the page it asked for growing the list is what re-arms it — and again on a tab that is
+   * switched to; it is not called while the tab's `rows` are still empty. Guard against a fetch
+   * already in flight and against the last page (`hasNextPage`) all the same.
+   */
   readonly onEndReached: (() => void) | null;
   /**
    * Pull to refresh: refetch this tab's first page. Called only on the active tab, alongside the

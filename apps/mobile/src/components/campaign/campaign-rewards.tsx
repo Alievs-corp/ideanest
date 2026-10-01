@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { formatMoney } from '@ideanest/money';
 import type { RewardTier } from '../../lib/campaign-page';
-import { openCheckout } from '../../lib/campaign-actions';
+import { checkoutHref } from '../../lib/campaign-actions';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, spacing, tracking } from '../../theme';
 import { Pill, haptics } from '../ui';
@@ -18,7 +19,8 @@ import { Pill, haptics } from '../ui';
  * <p>"Select this reward" only where it can be acted on: the campaign takes pledges
  * (`acceptsPledges`, decided by the caller) and the tier is not sold out. Its accessible name
  * names the tier, because a list of buttons all called "Select this reward" is a list nobody can
- * tell apart. It opens the checkout on that tier (`openCheckout`, the web's until #157).
+ * tell apart. It opens the checkout on that tier (`checkoutHref`: the app's checkout route, which
+ * hands over to the web's until #157).
  *
  * <p>Drawn only when there is at least one tier; no images, as on the web.
  */
@@ -30,6 +32,7 @@ export interface CampaignRewardsProps {
 
 export function CampaignRewards({ projectId, tiers, pledgeable }: CampaignRewardsProps) {
   const t = useT('campaign.rewards');
+  const router = useRouter();
   if (tiers.length === 0) return null;
 
   return (
@@ -61,7 +64,7 @@ export function CampaignRewards({ projectId, tiers, pledgeable }: CampaignReward
                   variant="outline"
                   onPress={() => {
                     haptics.selectReward();
-                    void openCheckout(projectId, tier.id);
+                    router.push(checkoutHref(projectId, tier.id));
                   }}
                   testID={`reward-select-${tier.id}`}
                 />

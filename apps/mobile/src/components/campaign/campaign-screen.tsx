@@ -25,6 +25,7 @@ import {
 import { realtimeOrigin, siteUrl } from '../../api/config';
 import { useProjectPage, useProjectRewards, useUpdateObligation } from '../../api/queries';
 import { useAppActive } from '../../lib/app-active';
+import { useCampaignClock } from '../../lib/campaign-clock';
 import { readCampaignPage, tiersOf, type CampaignPage } from '../../lib/campaign-page';
 import { useOnline } from '../../lib/connectivity';
 import { useT } from '../../lib/i18n';
@@ -100,8 +101,9 @@ export interface CampaignScreenProps {
   readonly creatorSlug: string;
   readonly projectSlug: string;
   /**
-   * The instant "now" is for the page's rules — days left and whether pledges are taken. A test's
-   * way to ask what the page says on a campaign's last day; the route never passes it.
+   * The instant the page's clock starts at — a test's way to ask what the page says on a campaign's
+   * last day. The clock moves on from the device's time either way (`lib/campaign-clock.ts`); the
+   * route never passes it.
    */
   readonly now?: Date;
 }
@@ -111,9 +113,15 @@ export function CampaignScreen({ creatorSlug, projectSlug, now }: CampaignScreen
   const router = useRouter();
   const online = useOnline();
   const query = useProjectPage(creatorSlug, projectSlug);
+  /*
+   * The page's clock: moved on at the deadline and at each day boundary before it while the
+   * campaign is LIVE, so days left, the chip and every Back control follow the time rather than
+   * the moment the screen opened.
+   */
+  const clock = useCampaignClock(query.data?.deadline, query.data?.state === 'LIVE', now);
   const campaign = useMemo(
-    () => readCampaignPage(query.data, creatorSlug, now ?? new Date()),
-    [query.data, creatorSlug, now],
+    () => readCampaignPage(query.data, creatorSlug, clock),
+    [query.data, creatorSlug, clock],
   );
 
   const missing = query.error instanceof ApiError && query.error.status === 404;
@@ -161,12 +169,18 @@ export function CampaignScreen({ creatorSlug, projectSlug, now }: CampaignScreen
   const unreachable = query.isError && !(query.error instanceof ApiError);
   const offline = !online || unreachable;
 
+  /*
+   * Keyed by the campaign, so a screen instance reused for another campaign (a link from one
+   * campaign's page to another's) starts again: its tab, its Save state, its realtime frames and
+   * its Back bar measurements are the last campaign's otherwise.
+   */
   return (
     <CampaignView
+      key={campaign.id}
       campaign={campaign}
       offline={offline}
       stale={offline || query.isError}
-      now={now}
+      now={clock}
       refetchPage={() => query.refetch()}
     />
   );
@@ -177,7 +191,8 @@ interface CampaignViewProps {
   readonly offline: boolean;
   /** The figures are the cached ones: say so above the page. */
   readonly stale: boolean;
-  readonly now: Date | undefined;
+  /** The page's clock (`lib/campaign-clock.ts`). */
+  readonly now: Date;
   readonly refetchPage: () => Promise<unknown>;
 }
 
@@ -201,7 +216,7 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
   const rewards = useProjectRewards(campaign.id);
   const obligation = useUpdateObligation(campaign.id);
   const tiers = useMemo(() => tiersOf(rewards.data), [rewards.data]);
-  const pledgeable = acceptsPledges(campaign.state, campaign.deadline, now ?? new Date());
+  const pledgeable = acceptsPledges(campaign.state, campaign.deadline, now);
 
   /* ---- Tabs: local state, mirrored to `?tab=` ------------------------------------------ */
 
@@ -276,9 +291,42 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
 
   useEffect(placeBar, [placeBar]);
 
+  /* ---- The next page: measured against the end of the body, not of the list ---------------- */
+
+  /*
+   * FlatList's own `onEndReached` measures to the end of the list, which here is the rewards and
+   * the report link: Updates and Comments would ask for their next page only once the reader had
+   * scrolled through every reward, and the page would then arrive above them, pushing what they
+   * were reading down. So the screen asks the active tab itself, when the bottom of the viewport
+   * comes within half a screen of the end of the tab's rows — the list's height less the footer's.
+   * Once per list height per tab: a new page grows the list, which is what re-arms it.
+   *
+   * `maintainVisibleContentPosition` is not used. With this trigger a page is appended while the
+   * reader is still in the body, so nothing above the viewport moves; and the property anchors on
+   * whatever child is first on screen — the sticky tab bar among them — which would also act on
+   * every tab switch, in ways no test here can see.
+   */
+  const contentHeight = useRef(0);
+  const footerHeight = useRef(0);
+  const askedAt = useRef<string | null>(null);
+  const endReached = useRef(body.onEndReached);
+  endReached.current = body.rows.length === 0 ? null : body.onEndReached;
+
+  const askForMore = () => {
+    const ask = endReached.current;
+    if (ask === null || viewport.current === 0 || contentHeight.current === 0) return;
+    const bodyEnd = contentHeight.current - footerHeight.current;
+    if (offset.current + viewport.current < bodyEnd - viewport.current / 2) return;
+    const at = `${tab}:${contentHeight.current}`;
+    if (askedAt.current === at) return;
+    askedAt.current = at;
+    ask();
+  };
+
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     offset.current = event.nativeEvent.contentOffset.y;
     placeBar();
+    askForMore();
   };
 
   /* ---- Pull to refresh ---------------------------------------------------------------- */
@@ -327,7 +375,7 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
       ) : null}
 
       <CampaignMedia cover={campaign.coverImage} />
-      <CampaignHeader campaign={campaign} />
+      <CampaignHeader campaign={campaign} now={now} />
 
       {campaign.goal === null ? null : (
         <View style={styles.funding}>
@@ -340,7 +388,7 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
           />
           <Text style={styles.meta} testID="funding-of-goal">
             {t('common.card.ofGoal', { amount: formatMoney(campaign.goal) })}
-            {showsDaysLeft(campaign) && campaign.daysLeft !== null
+            {showsDaysLeft(campaign, now) && campaign.daysLeft !== null
               ? ` · ${t('campaign.daysLeft', { days: campaign.daysLeft })}`
               : ''}
           </Text>
@@ -348,7 +396,7 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
         </View>
       )}
 
-      {campaign.state === 'LIVE' && campaign.deadline !== null ? (
+      {campaign.deadline !== null && showsDaysLeft(campaign, now) ? (
         <CampaignCountdown deadline={campaign.deadline} active={active} />
       ) : null}
 
@@ -380,7 +428,14 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
   );
 
   const footer = (
-    <View style={styles.footer}>
+    <View
+      style={styles.footer}
+      onLayout={(event: LayoutChangeEvent) => {
+        footerHeight.current = event.nativeEvent.layout.height;
+        askForMore();
+      }}
+      testID="campaign-footer"
+    >
       {body.footer === null ? null : <View style={styles.gutter}>{body.footer}</View>}
       <View style={[styles.gutter, styles.rewards]}>
         <CampaignRewards projectId={campaign.id} tiers={tiers} pledgeable={pledgeable} />
@@ -403,15 +458,21 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
             ListFooterComponent={footer}
             // The tab bar is data[0]; with a header, the list counts the header as index 0.
             stickyHeaderIndices={[1]}
-            onEndReached={body.onEndReached ?? undefined}
-            onEndReachedThreshold={0.5}
             onScroll={onScroll}
             scrollEventThrottle={16}
+            onContentSizeChange={(_width, height) => {
+              contentHeight.current = height;
+              askForMore();
+            }}
             onLayout={(event) => {
               viewport.current = event.nativeEvent.layout.height;
               placeBar();
+              askForMore();
             }}
             keyboardShouldPersistTaps="handled"
+            // The comment composers (the Comments tab) sit in this list; iOS lifts it over the
+            // keyboard rather than covering the field being typed in.
+            automaticallyAdjustKeyboardInsets
             contentInsetAdjustmentBehavior="automatic"
             refreshControl={
               <RefreshControl

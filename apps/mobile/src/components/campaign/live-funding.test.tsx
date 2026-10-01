@@ -131,6 +131,25 @@ describe('useCampaignUpdates', () => {
     expect(latest().closed).toBe(false);
   });
 
+  it('drops the frames of one channel when it is given another', async () => {
+    const OTHER = 'wss://realtime.test.invalid/v1/realtime?channel=project%3Ap2';
+    const { result, rerender } = await renderHook(
+      ({ url }: { url: string | null }) => useCampaignUpdates(url, true),
+      { initialProps: { url: URL_ as string | null } },
+    );
+    await act(async () => latest().onmessage?.({ data: frame('10.00') }));
+    expect(result.current.updates).toHaveLength(1);
+
+    // Offline: no channel, and nothing the page reads has changed, so the frames stay.
+    await rerender({ url: null });
+    expect(result.current.updates).toHaveLength(1);
+
+    // Another campaign's counter: none of the last one's frames may be added to it.
+    await rerender({ url: OTHER });
+    expect(result.current.updates).toHaveLength(0);
+    expect(latest().url).toBe(OTHER);
+  });
+
   it('closes the socket when the app goes to the background', async () => {
     let listener: (state: AppStateStatus) => void = () => {};
     jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, handler) => {
@@ -203,6 +222,17 @@ describe('LiveFunding', () => {
     );
     expect(textOf(screen.getByTestId('funding-pledged'))).toContain('15.00');
     expect(textOf(screen.getByTestId('funding-pledged'))).not.toContain('20.00');
+  });
+
+  it('rounds the percent down, so 99.5% is never "100%"', async () => {
+    await show('99.50');
+    expect(textOf(screen.getByTestId('funding-percent'))).toContain('99%');
+    expect(textOf(screen.getByTestId('funding-percent'))).toContain(en.campaign.funding.ofGoal);
+    const bar = screen.getByRole('progressbar');
+    expect(bar.props.accessibilityLabel).toBe(
+      en.campaign.funding.progressLabel.replace('{percent}', '99'),
+    );
+    expect(bar.props.accessibilityValue.text).not.toContain('100');
   });
 
   it('labels the bar with the funded percent', async () => {

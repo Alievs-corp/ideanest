@@ -1,6 +1,7 @@
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { openCheckout } from '../../lib/campaign-actions';
+import { checkoutHref } from '../../lib/campaign-actions';
 import { useT } from '../../lib/i18n';
 import { colors, spacing } from '../../theme';
 import { Pill } from '../ui';
@@ -22,9 +23,9 @@ import { Pill } from '../ui';
  *
  * <h2>Where it goes</h2>
  *
- * `openCheckout` (`lib/campaign-actions.ts`): the web checkout until #157, never the campaign
- * page. Its hint says it opens on the web, because a reader who expected a screen of the app is
- * otherwise surprised by a browser.
+ * `checkoutHref` (`lib/campaign-actions.ts`): the app's `campaigns/[id]/back`, which hands over to
+ * the web checkout until #157 and is the checkout after it — never the campaign page. Its hint says
+ * it goes on to the web, which stays true until #157.
  */
 export interface BackCampaignCtaProps {
   readonly projectId: string;
@@ -35,6 +36,7 @@ export interface BackCampaignCtaProps {
 
 export function BackCampaignCta({ projectId, title, onLayout }: BackCampaignCtaProps) {
   const t = useT();
+  const router = useRouter();
   return (
     <View onLayout={onLayout} testID="back-cta">
       <Pill
@@ -43,7 +45,7 @@ export function BackCampaignCta({ projectId, title, onLayout }: BackCampaignCtaP
         variant="primary"
         size="lg"
         fullWidth
-        onPress={() => void openCheckout(projectId)}
+        onPress={() => router.push(checkoutHref(projectId))}
       />
     </View>
   );
@@ -63,6 +65,7 @@ export function BackCampaignCta({ projectId, title, onLayout }: BackCampaignCtaP
  */
 export function PersistentBackBar({ projectId, title }: Omit<BackCampaignCtaProps, 'onLayout'>) {
   const t = useT();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -76,7 +79,7 @@ export function PersistentBackBar({ projectId, title }: Omit<BackCampaignCtaProp
         variant="primary"
         size="lg"
         fullWidth
-        onPress={() => void openCheckout(projectId)}
+        onPress={() => router.push(checkoutHref(projectId))}
         accessibilityHint={t('mobile.campaign.backOnWeb', { title })}
       />
     </View>

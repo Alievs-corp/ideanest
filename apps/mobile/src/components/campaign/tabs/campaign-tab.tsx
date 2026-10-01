@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { useMemo, type ReactElement } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { spacing } from '../../../theme';
 import { CampaignOutcomeNotice } from '../campaign-outcome-notice';
@@ -14,11 +14,18 @@ import { INACTIVE_TAB, type CampaignTabBody, type CampaignTabContext, type Campa
  * valid version 1), and the risks (`CampaignRisks`). Everything comes with the page itself, so
  * there is nothing to load, nothing to page and nothing of its own to refresh — the page's
  * pull-to-refresh already rereads the campaign these rows are drawn from.
+ *
+ * <p>Its one hook runs before the inactive check, on every render, as the contract requires of
+ * every tab: a hook behind `if (!context.active) return` is called on some renders and not on
+ * others, and React fails the screen the first time the tab is switched.
  */
 export function useCampaignTab(context: CampaignTabContext): CampaignTabBody {
-  if (!context.active) return INACTIVE_TAB;
   const { campaign } = context;
+  const body = useMemo(() => campaignTabBody(campaign), [campaign]);
+  return context.active ? body : INACTIVE_TAB;
+}
 
+function campaignTabBody(campaign: CampaignTabContext['campaign']): CampaignTabBody {
   const rows: CampaignTabRow[] = [];
   if (campaign.outcome !== null) {
     rows.push({ key: 'outcome', render: () => spaced(<CampaignOutcomeNotice campaign={campaign} />) });

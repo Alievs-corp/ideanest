@@ -51,6 +51,9 @@ export function LiveFunding({ goal, pledged, backersCount, socketUrl, active }: 
   const since = useRef({ base: pledged.amount, from: 0 });
   if (since.current.base !== pledged.amount) {
     since.current = { base: pledged.amount, from: updates.length };
+  } else if (updates.length < since.current.from) {
+    // The hook dropped its frames (another channel): count from the start of the new ones.
+    since.current = { base: pledged.amount, from: 0 };
   }
   const from = since.current.from;
 
@@ -61,12 +64,20 @@ export function LiveFunding({ goal, pledged, backersCount, socketUrl, active }: 
 
   const completion = completionOf(total, goal);
   const funded = completion !== null && completion.greaterThanOrEqualTo(new Decimal(100));
-  const percent = completion === null ? '0' : completion.toFixed(0);
+  /*
+   * Down, never to the nearest: 99.5% is not "100%", and a figure that read 100 beside a bar that
+   * has not turned would say the goal was met when it was not.
+   */
+  const percent = completion === null ? '0' : completion.toFixed(0, Decimal.ROUND_DOWN);
 
   return (
     <View style={styles.column} testID="live-funding">
+      {/*
+        The whole percent, already rounded down: the kit reads its accessible value to the nearest
+        whole number, which would say "100 percent" of a bar at 99.5.
+      */}
       <ProgressBar
-        completionPercent={completion === null ? '0' : completion.toFixed(2)}
+        completionPercent={percent}
         size="md"
         showLabel={false}
         label={t('progressLabel', { percent })}

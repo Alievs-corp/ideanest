@@ -193,13 +193,18 @@ are `@ideanest/campaign`'s, the same functions the web calls.
 - **Tabs are hooks** (`src/components/campaign/tabs/contract.ts`): each of
   `campaign-tab`, `creator-tab`, `faq-tab`, `updates-tab` and `comments-tab` exports a
   `use…Tab(context)` that hands the list its rows, a footer, an end-reached handler (pages
-  append), a refresh and a loading flag, and reads nothing while it is not the active tab.
+  append), a refresh and a loading flag, calls its hooks on every render and reads nothing
+  while it is not the active tab. The screen calls the end-reached handler near the end of
+  the tab's rows — not of the list, whose end is the rewards — once per list height.
   `?tab=` mirrors the selection (`router.setParams`; the default is left out), and an
   unknown value is the Campaign tab. Creator, FAQ, Updates and Comments open the same tab
   on the web for now.
 - **Back this campaign** and **Select this reward** are shown only where `acceptsPledges`
-  is true, and open the web checkout (`/{locale}/projects/{id}/back[?reward=]`) through
-  `openCheckout` in `src/lib/campaign-actions.ts`, the one place #157 changes. The pill is
+  is true, and push the app's `campaigns/[id]/back[?reward=]` (`checkoutHref` in
+  `src/lib/campaign-actions.ts`), which hands over to the web checkout until #157 builds it.
+  The page's clock (`src/lib/campaign-clock.ts`) moves at the deadline and at each day
+  boundary of a live campaign, so Back, the bar, Select, the days left and the "Last day"
+  chip follow the time rather than the moment the screen opened. The pill is
   white; the only lime on the page is the two-days-left chip. A bar with the same pill is
   pinned under the list while the header's one is out of view; it has no animation and is
   hidden from screen readers, which meet the header's pill in reading order.
