@@ -5508,11 +5508,11 @@
       "reached": "{percent}% — maliyyələşdi",
       "pledged": "{amount} dəstəklənib"
     },
-    "signIn": {
-      "credentialsRefused": "Bu e-poçt ünvanı və şifrə heç bir hesaba uyğun gəlmir.",
-      "codeRefused": "Kod qəbul edilmədi. Doğrulamanın vaxtı bitmiş ola bilər — yenisini almaq üçün yenidən daxil olun.",
-      "recoveryHint": "Bərpa kodu da burada işləyir.",
-      "webOnly": "Qeydiyyat, şifrənin sıfırlanması və xarici hesabla giriş saytdadır. Yeni hesabın e-poçtu təsdiqlənməlidir, bu isə ekran deyil, keçiddir."
+    "auth": {
+      "close": "Bağla",
+      "wordmark": "IdeyaNest",
+      "wordmarkHint": "Ana səhifəyə keçir",
+      "deviceFallback": "IdeyaNest mobil tətbiqi"
     },
     "kitForm": {
       "required": "məcburi",

@@ -50,6 +50,21 @@ Notifications.setNotificationHandler({
 });
 
 /**
+ * Registers this phone for the account that has just signed in — but only where the owner has
+ * ALREADY allowed notifications, so signing in never puts a permission prompt on screen (#160
+ * owns asking). A phone that has not decided, or said no, is left alone and answers `denied`.
+ *
+ * <p>Needed on every sign-in rather than once: sign-out drops the registration (`signOut`), and
+ * a token belongs to whoever signed in most recently.
+ */
+export async function registerIfAllowed(): Promise<PushRegistration> {
+  if (!Device.isDevice) return { status: 'unsupported' };
+  const existing = await Notifications.getPermissionsAsync();
+  if (!existing.granted) return { status: 'denied' };
+  return await registerForPush();
+}
+
+/**
  * Asks for permission, gets a token, and tells the service about it.
  *
  * <p>Called on every cold start once somebody is signed in, not only the first: the
