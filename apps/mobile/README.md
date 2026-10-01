@@ -197,8 +197,15 @@ are `@ideanest/campaign`'s, the same functions the web calls.
   while it is not the active tab. The screen calls the end-reached handler near the end of
   the tab's rows — not of the list, whose end is the rewards — once per list height.
   `?tab=` mirrors the selection (`router.setParams`; the default is left out), and an
-  unknown value is the Campaign tab. Creator, FAQ, Updates and Comments open the same tab
-  on the web for now.
+  unknown value is the Campaign tab. Comments opens the same tab on the web for now.
+- **Creator, FAQ and Updates** (`tabs/creator/`, `tabs/faq/`, `tabs/updates/`) read only
+  once their tab opens. Creator reads `GET /v1/users/{slug}` and seven of the creator's
+  campaigns (six shown, this one left out) under the unpersisted `profile` root; a refused
+  profile is the campaign's own name and avatar, with no link. FAQ is every answer open, no
+  accordion. Updates page by 20 on the numeric cursor and **append**: the end of the list and
+  a visible "Older updates" pill both ask for the next page, never the same cursor twice; a
+  failed next page keeps the loaded cards and offers "Try again". Pull to refresh rereads
+  the first page only.
 - **Back this campaign** and **Select this reward** are shown only where `acceptsPledges`
   is true, and push the app's `campaigns/[id]/back[?reward=]` (`checkoutHref` in
   `src/lib/campaign-actions.ts`), which hands over to the web checkout until #157 builds it.
