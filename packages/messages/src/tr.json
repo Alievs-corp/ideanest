@@ -5510,6 +5510,13 @@
       "backOnWeb": "{title} kampanyasını web sitesinde destekle",
       "actionsOffline": "Kaydetmek ve hatırlatıcı kurmak için bağlantı gerekir.",
       "shareFailed": "Paylaşılamadı. Tekrar deneyin.",
+      "faq": {
+        "questionLabel": "Soru {index}, toplam {count}: {question}"
+      },
+      "updates": {
+        "loadingOlder": "Daha eski güncellemeler yükleniyor…",
+        "olderFailed": "Daha eski güncellemeler yüklenemedi."
+      },
       "interim": {
         "body": "Kampanyanın bu bölümü henüz uygulamada yok. Kampanyanın web sayfasında yer alıyor.",
         "open": "Web sitesinde aç",
