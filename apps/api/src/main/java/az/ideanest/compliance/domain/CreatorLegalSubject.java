@@ -75,9 +75,13 @@ public class CreatorLegalSubject {
      * Replace what is recorded.
      *
      * <p>A whole-row replacement rather than a patch, because the fields are not independent:
-     * moving from {@code INDIVIDUAL} to {@code LEGAL_ENTITY} arrives with three new fields, and
-     * moving back must clear them rather than leave a VÖEN attached to a person. The record
-     * that arrives is the row that results.
+     * moving from {@code INDIVIDUAL} to {@code LEGAL_ENTITY} arrives with two new fields, and
+     * moving back must clear them rather than leave a company's address attached to a person.
+     * The record that arrives is the row that results.
+     *
+     * <p>The VÖEN is kept for both kinds (#239). An individual entrepreneur has one, and §6.3
+     * approves no payout without it; clearing it here is what made the settings form say
+     * "Saved" while the number was thrown away.
      */
     public void apply(LegalSubject subject, Instant now) {
         replace(subject, now);
@@ -91,7 +95,6 @@ public class CreatorLegalSubject {
         this.registeredAddress = subject.address().orElse(null);
         this.registrationNumber = subject.registration().orElse(null);
         if (subjectKind == SubjectKind.INDIVIDUAL) {
-            this.taxId = null;
             this.registeredAddress = null;
             this.registrationNumber = null;
         }

@@ -19,8 +19,8 @@ import java.util.Optional;
  *
  * <h2>Why the entity fields are optional rather than a second type</h2>
  *
- * <p>An {@code INDIVIDUAL} has a name and nothing else; a {@code LEGAL_ENTITY} has a VÖEN, a
- * registered address and a registration number as well. Two records — one per subject kind —
+ * <p>An {@code INDIVIDUAL} has a name and may have a VÖEN, as an individual entrepreneur does
+ * (#239); a {@code LEGAL_ENTITY} has a VÖEN, a registered address and a registration number. Two records — one per subject kind —
  * would model that more precisely and would make every caller switch on the kind before it
  * could ask for a name, which is the one field they all want and the one field both kinds
  * have. So it is one record with optional halves, and {@link #isComplete()} is what a gate
@@ -41,7 +41,8 @@ import java.util.Optional;
  * @param subjectKind an individual or a registered entity, in V58's vocabulary
  * @param legalName the name that must agree with #429's certificate subject and #432's
  *     account holder. Present for both kinds
- * @param taxId the VÖEN, for a legal entity. Shape-validated and nothing more — see
+ * @param taxId the VÖEN — a legal entity's, or an individual entrepreneur's. Shape-validated
+ *     and nothing more — see
  *     {@code TaxIdentifier}
  * @param registeredAddress the address on the registration extract, for a legal entity
  * @param registrationNumber the entity's registration number, for a legal entity
@@ -64,7 +65,7 @@ public record LegalSubject(
         registrationNumber = blankToNull(registrationNumber);
     }
 
-    /** An individual, who has a name and no registration. */
+    /** An individual with no VÖEN recorded, who has a name and no registration. */
     public static LegalSubject individual(String legalName) {
         return new LegalSubject(SubjectKind.INDIVIDUAL, legalName, null, null, null);
     }

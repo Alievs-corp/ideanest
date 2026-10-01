@@ -98,6 +98,40 @@ class CreatorLegalSubjectApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("an individual entrepreneur keeps the VÖEN they entered — #239")
+    void anIndividualEntrepreneur() {
+        Account creator = account();
+
+        Map<String, Object> body = individual("Aygün Məmmədova");
+        body.put("taxId", "1234 567 890");
+        Map<String, Object> saved = record(creator, body);
+
+        // The form said "Saved" and the service threw this away, so an individual could never
+        // reach §6.3's approval: a payout is approved only against a real VÖEN.
+        assertThat(saved.get("subjectKind")).isEqualTo("INDIVIDUAL");
+        assertThat(saved.get("taxId")).isEqualTo("1234567890");
+        assertThat(saved.get("complete")).isEqualTo(true);
+        assertThat(recorded.findById(creator.id()).orElseThrow().getTaxId()).isEqualTo("1234567890");
+        assertThat(mine(creator).get("taxId")).isEqualTo("1234567890");
+    }
+
+    @Test
+    @DisplayName("an individual carries no company address or registration number, even if sent one")
+    void anIndividualHasNoCompanyFields() {
+        Account creator = account();
+
+        Map<String, Object> body = individual("Aygün Məmmədova");
+        body.put("taxId", "1234567890");
+        body.put("registeredAddress", "Bakı, Nizami küçəsi 1");
+        body.put("registrationNumber", "AZ-1234");
+        Map<String, Object> saved = record(creator, body);
+
+        assertThat(saved.get("taxId")).isEqualTo("1234567890");
+        assertThat(saved.get("registeredAddress")).isNull();
+        assertThat(saved.get("registrationNumber")).isNull();
+    }
+
+    @Test
     @DisplayName("a company records its VÖEN, its address and its registration number")
     void aLegalEntity() {
         Account creator = account();
@@ -134,8 +168,8 @@ class CreatorLegalSubjectApiTests extends AbstractIntegrationTest {
 
         Map<String, Object> now = record(creator, individual("Aygün Məmmədova"));
 
-        // A row carrying a VÖEN against a person would be read as a company by anything that
-        // switched on the presence of the field rather than on the kind.
+        // A whole-row replacement: the body named no VÖEN, so none is left behind, and the
+        // company's address and number go with the kind.
         assertThat(now.get("taxId")).isNull();
         assertThat(now.get("registeredAddress")).isNull();
         assertThat(recorded.findById(creator.id()).orElseThrow().getTaxId()).isNull();
