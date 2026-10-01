@@ -224,6 +224,24 @@ describe('LiveFunding', () => {
     expect(screen.getByLabelText('Funding: 50 percent of the goal')).toBeTruthy();
   });
 
+  it('rounds the percent down, so 99.5% never reads as 100%', () => {
+    render(
+      <LiveFunding
+        projectId={PROJECT}
+        goal={{ amount: '10000.00', currency: 'AZN' }}
+        pledged={{ amount: '9950.00', currency: 'AZN' }}
+        backersCount={40}
+        realtimeOrigin={undefined}
+        copy={copyFor('en')}
+      />,
+    );
+
+    expect(screen.getByText('99%')).toBeTruthy();
+    expect(screen.queryByText('100%')).toBeNull();
+    expect(screen.getByText(EN.campaign.funding.ofGoal)).toBeTruthy();
+    expect(screen.getByLabelText('Funding: 99 percent of the goal')).toBeTruthy();
+  });
+
   it('says "funded" rather than "of goal" once the goal is reached', () => {
     render(
       <LiveFunding
