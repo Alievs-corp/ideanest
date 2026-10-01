@@ -5511,9 +5511,11 @@
       "actionsOffline": "Kaydetmek ve hatırlatıcı kurmak için bağlantı gerekir.",
       "shareFailed": "Paylaşılamadı. Tekrar deneyin.",
       "faq": {
+        "failed": "Sorular ve yanıtlar şu anda yüklenemedi.",
         "questionLabel": "Soru {index}, toplam {count}: {question}"
       },
       "updates": {
+        "failed": "Güncellemeler şu anda yüklenemedi.",
         "loadingOlder": "Daha eski güncellemeler yükleniyor…",
         "olderFailed": "Daha eski güncellemeler yüklenemedi."
       },

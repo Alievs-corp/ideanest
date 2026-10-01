@@ -5511,9 +5511,11 @@
       "actionsOffline": "Saving and reminders need a connection.",
       "shareFailed": "That could not be shared. Try again.",
       "faq": {
+        "failed": "The questions and answers could not be loaded just now.",
         "questionLabel": "Question {index} of {count}: {question}"
       },
       "updates": {
+        "failed": "The updates could not be loaded just now.",
         "loadingOlder": "Loading older updates…",
         "olderFailed": "The older updates could not be loaded."
       },
