@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { readFaqList, type CampaignFaq } from '@ideanest/campaign/faqs';
-import { api } from '../../../../api/client';
+import { publicApi } from '../../../../api/client';
 import { queryKeys } from '../../../../api/queries';
 
 /**
@@ -13,6 +13,10 @@ import { queryKeys } from '../../../../api/queries';
  * <p>Under `queryKeys.projectFaqs`, the `project` root, which `lib/offline.ts` persists: the
  * answers are public and belong to the page, so a backer on a plane reads them with the rest of
  * it. `enabled` is the tab's `active` — the list is asked for when the FAQ tab opens, not before.
+ *
+ * <p>Read as nobody (`publicApi()`): the service answers the campaign's team with the list of a
+ * campaign that is not public yet, and what this page draws and persists is the public's — the
+ * web reads it anonymously too.
  */
 export function useProjectFaqs(projectId: string, enabled: boolean) {
   return useQuery({
@@ -20,7 +24,7 @@ export function useProjectFaqs(projectId: string, enabled: boolean) {
     enabled,
     queryFn: async ({ signal }): Promise<readonly CampaignFaq[]> =>
       readFaqList(
-        await api().get('/v1/projects/{projectId}/faqs', { path: { projectId }, signal }),
+        await publicApi().get('/v1/projects/{projectId}/faqs', { path: { projectId }, signal }),
       ),
   });
 }

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../../../api/client';
+import { publicApi } from '../../../../api/client';
 import { queryKeys } from '../../../../api/queries';
 
 /**
@@ -11,6 +11,9 @@ import { queryKeys } from '../../../../api/queries';
  * `GET /v1/users/{slug}` and `GET /v1/users/{slug}/projects?limit=7`. `enabled` is the tab's
  * `active`, so a reader who never opens the Creator tab costs the service nothing (#155's "tab
  * data loads lazily").
+ *
+ * Both are read as nobody (`publicApi()`), as the web reads them (`credentials: 'omit'`): a public
+ * profile is the same for everyone, and the campaign page is not the place to say who is asking.
  *
  * <h2>Never persisted, and stored as the service sent it</h2>
  *
@@ -118,7 +121,7 @@ export function useCreatorProfile(slug: string, enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.profile(slug),
     enabled,
-    queryFn: ({ signal }) => api().get('/v1/users/{slug}', { path: { slug }, signal }),
+    queryFn: ({ signal }) => publicApi().get('/v1/users/{slug}', { path: { slug }, signal }),
     select: readCreatorProfile,
   });
 }
@@ -128,7 +131,7 @@ export function useCreatorProjects(slug: string, enabled: boolean) {
     queryKey: [...queryKeys.profileProjects(slug), CREATOR_PROJECT_ASK] as const,
     enabled,
     queryFn: ({ signal }) =>
-      api().get('/v1/users/{slug}/projects', {
+      publicApi().get('/v1/users/{slug}/projects', {
         path: { slug },
         query: { limit: CREATOR_PROJECT_ASK },
         signal,

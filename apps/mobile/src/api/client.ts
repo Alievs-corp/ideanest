@@ -119,10 +119,43 @@ export function traceIdOfError(error: unknown): string | null {
 }
 
 export function api(): ApiClient {
+  return readsThrough(sessionFetch);
+}
+
+/**
+ * `fetch` with no session on it: no `Authorization`, whatever the keychain holds. Still shown to
+ * the maintenance trigger, like every response.
+ */
+const anonymousFetch: Fetch = async (url, init) => {
+  const headers = new Headers(init?.headers);
+  headers.delete('Authorization');
+  return await observeResponse(await fetch(url, { ...init, headers }));
+};
+
+/**
+ * Reads made as nobody — the public campaign page's FAQ and updates, and a creator's public
+ * profile (#155).
+ *
+ * <h2>Why a public page must not say who is reading</h2>
+ *
+ * `GET /v1/projects/{id}/updates` and `/faqs` answer a member of the campaign's team with more
+ * than the public sees: updates scheduled for later, and the lists of a campaign that is not
+ * public at all (the service answers `Cache-Control: private` when it does). That is right
+ * for the creator's dashboard and wrong for the campaign page, which is the public's — and on a
+ * phone it is worse, because the page's reads are persisted to an unencrypted store (`lib/
+ * offline.ts`), where the team's private text would sit for a week. The web reads these endpoints
+ * anonymously on purpose (`apps/web/src/lib/community/updates.ts`, `lib/profiles/server.ts`), and
+ * this is the same arrangement: the page shows what everybody is shown.
+ */
+export function publicApi(): ApiClient {
+  return readsThrough(anonymousFetch);
+}
+
+function readsThrough(transport: Fetch): ApiClient {
   const get: ApiClient['get'] = (path, options) => {
     /*
      * A client per read, so the response a refusal came from is this read's and not a
-     * concurrent one's: `sessionFetch` sees the response before `createApiClient` turns it
+     * concurrent one's: the transport sees the response before `createApiClient` turns it
      * into an `ApiError`, and this remembers its trace id until the error appears.
      */
     let traceId: string | null = null;
@@ -130,7 +163,7 @@ export function api(): ApiClient {
       baseUrl: apiOrigin(),
       headers: { 'Accept-Language': currentLocale() },
       fetch: async (url, init) => {
-        const response = await sessionFetch(url, init);
+        const response = await transport(url, init);
         traceId = traceIdOf(response);
         return response;
       },

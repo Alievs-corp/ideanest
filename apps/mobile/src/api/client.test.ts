@@ -1,4 +1,4 @@
-import { api, saveAccountLocale } from './client';
+import { api, publicApi, saveAccountLocale } from './client';
 import {
   hasStoredSession,
   rememberAccessToken,
@@ -116,6 +116,24 @@ it('stops carrying a credential once the session is gone', async () => {
   // a token that no longer exists.
   expect(hasStoredSession()).toBe(false);
   expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+describe('publicApi', () => {
+  it('reads as nobody while somebody is signed in, and still negotiates the language', async () => {
+    // The campaign page's updates and FAQ (#155): a team member's token would bring back what
+    // the public cannot see, onto a public page and into the unencrypted offline cache.
+    rememberAccessToken('team-member-token');
+    fetchMock.mockResolvedValueOnce(json({ updates: [], nextCursor: null }));
+    fetchMock.mockResolvedValueOnce(json({ updates: [], nextCursor: null }));
+
+    await publicApi().get('/v1/projects/{projectId}/updates', { path: { projectId: 'p1' } });
+    await api().get('/v1/projects/{projectId}/updates', { path: { projectId: 'p1' } });
+
+    expect(headersOf(0).has('Authorization')).toBe(false);
+    expect(headersOf(0).get('Accept-Language')).toBe('az');
+    // The same read through the session client does carry it — the difference is the point.
+    expect(headersOf(1).get('Authorization')).toBe('Bearer team-member-token');
+  });
 });
 
 describe('saveAccountLocale', () => {
