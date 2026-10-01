@@ -29,6 +29,11 @@ import { TextInput } from './text-input';
 export interface SearchSuggestion {
   readonly key: string;
   readonly label: string;
+  /**
+   * What the suggestion is — "Category", "Tag" (#153) — drawn on the right of the row and read
+   * after the label, so a campaign and a category with the same name can be told apart.
+   */
+  readonly detail?: string;
   readonly accessibilityLanguage?: string;
 }
 
@@ -131,7 +136,11 @@ function SuggestionRow({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={suggestion.label}
+      accessibilityLabel={
+        suggestion.detail === undefined
+          ? suggestion.label
+          : `${suggestion.label}, ${suggestion.detail}`
+      }
       accessibilityLanguage={suggestion.accessibilityLanguage}
       accessibilityState={{ disabled }}
       disabled={disabled}
@@ -143,6 +152,9 @@ function SuggestionRow({
       <Text numberOfLines={2} style={styles.rowLabel}>
         {suggestion.label}
       </Text>
+      {suggestion.detail === undefined ? null : (
+        <Text style={styles.rowDetail}>{suggestion.detail}</Text>
+      )}
     </Pressable>
   );
 }
@@ -159,15 +171,24 @@ const styles = StyleSheet.create({
   },
   row: {
     minHeight: measure.touchTarget,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
     paddingHorizontal: 14,
   },
   // The web's active row: surface-4.
   rowPressed: { backgroundColor: colors.surface4 },
   rowLabel: {
     ...font.regular,
+    flex: 1,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
     color: colors.textPrimary,
+  },
+  rowDetail: {
+    ...font.regular,
+    fontSize: fontSize.xs,
+    lineHeight: lineHeight.small,
+    color: colors.textTertiary,
   },
 });

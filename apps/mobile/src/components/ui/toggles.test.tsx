@@ -41,6 +41,19 @@ describe('Checkbox', () => {
     expect(flat(getByRole('checkbox')).minHeight).toBeGreaterThanOrEqual(size.touchTarget);
   });
 
+  it('draws a count on the right and reads it as the value (#153)', async () => {
+    const { getByRole, getByText } = await render(
+      <Checkbox label="Live" checked={false} onChange={noop} count="12" />,
+    );
+    expect(getByText('12')).toBeTruthy();
+    expect(getByRole('checkbox', { name: 'Live' })).toHaveAccessibilityValue({ text: '12' });
+  });
+
+  it('has no value when there is no count', async () => {
+    const { getByRole } = await render(<Checkbox label="Live" checked={false} onChange={noop} count="" />);
+    expect(getByRole('checkbox').props.accessibilityValue?.text).toBeUndefined();
+  });
+
   it('toggles on press', async () => {
     const onChange = jest.fn();
     const { getByRole } = await render(

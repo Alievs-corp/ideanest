@@ -44,6 +44,8 @@ export interface CampaignListProps {
   readonly header?: React.ReactElement;
   /** Rendered when `cards` is empty. */
   readonly empty?: React.ReactElement;
+  /** Rendered after the last card — "Show more", the end of the feed, a next-page error. */
+  readonly footer?: React.ReactElement;
 }
 
 const styles = StyleSheet.create({
@@ -59,6 +61,7 @@ export function CampaignList({
   refreshing = false,
   header,
   empty,
+  footer,
 }: CampaignListProps) {
   return (
     <FlashList
@@ -74,6 +77,7 @@ export function CampaignList({
       ItemSeparatorComponent={Separator}
       ListHeaderComponent={header}
       ListEmptyComponent={empty}
+      ListFooterComponent={footer}
       onEndReached={onEndReached}
       /*
        * Half a screen rather than the default. A funding feed is read fast, and

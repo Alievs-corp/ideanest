@@ -27,7 +27,8 @@ describe('what survives a restart', () => {
   it('drops a feed, which is a ranking computed at a moment', () => {
     // Restoring last week's is worse than showing that the device is offline, because it
     // looks current.
-    expect(shouldPersistQuery(queryKeys.discover({}))).toBe(false);
+    expect(shouldPersistQuery(queryKeys.discover(''))).toBe(false);
+    expect(shouldPersistQuery(queryKeys.discoverFacets(''))).toBe(false);
     expect(shouldPersistQuery(queryKeys.search({ q: 'lamp' }))).toBe(false);
     expect(shouldPersistQuery(queryKeys.suggestions('lam'))).toBe(false);
   });
@@ -179,7 +180,7 @@ describe('the persisted cache', () => {
 
     const writing = client();
     writing.setQueryData(queryKeys.saved(), { items: [] });
-    writing.setQueryData(queryKeys.discover({}), { items: [{ id: 'c1' }] });
+    writing.setQueryData(queryKeys.discover(''), { items: [{ id: 'c1' }] });
     await persistQueryClientSave({ queryClient: writing, ...persistOptions(store, 0) });
     await written();
 
@@ -188,6 +189,6 @@ describe('the persisted cache', () => {
 
     // The saved list came back and the feed did not, from one persisted document.
     expect(reading.getQueryData(queryKeys.saved())).toEqual({ items: [] });
-    expect(reading.getQueryData(queryKeys.discover({}))).toBeUndefined();
+    expect(reading.getQueryData(queryKeys.discover(''))).toBeUndefined();
   });
 });

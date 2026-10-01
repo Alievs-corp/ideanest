@@ -100,6 +100,27 @@ design starts.
   its own: headings are component names read from the code, and every sentence
   is a catalogue key, so it also shows the kit in Azerbaijani and Russian.
 
+## Discovery (#153)
+
+`src/app/discover.tsx` is the web's `/discover`. Its filters, query and sort
+are **the route's params**, under the service's own names, parsed and written by
+`@ideanest/discovery` (`packages/discovery`), the same module the web uses.
+`/discover?category=games&sort=ending_soon` is therefore the same feed on both.
+
+- A change is `router.setParams`, which replaces the params rather than pushing
+  another screen. Back leaves Discover; it does not walk through filter states.
+- Read a link with `searchParamsFrom`, never with `new URLSearchParams(...)`.
+  React Native's constructor misreads `?tag`, `?q=a=b` and a stray `%`; see
+  `packages/discovery/README.md`.
+- The filters sit in a sheet (`components/discovery/filter-sheet.tsx`) and apply
+  as they are ticked. Only the two custom money ranges have an Apply button.
+- Pages are 24 cards, as on the web. The list asks for the next page about half
+  a screen before the end, and "Show more projects" is the same request. A
+  cursor is asked for once per filter set, so after a failure only the button
+  retries.
+- The card (`components/project-card.tsx`) is the web card field by field. It
+  is one link, and what it prints is its accessibility value.
+
 ## Configuration
 
 Two variables, read at **build** time by `app.config.ts` and surfaced through
