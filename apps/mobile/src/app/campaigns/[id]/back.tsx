@@ -1,24 +1,26 @@
 import { useLocalSearchParams } from 'expo-router';
-import { WebFallback } from '../../../components/web-fallback';
+import { CheckoutScreen } from '../../../features/checkout/checkout-screen';
 
-/**
- * The checkout — the web's `/projects/{id}/back`, a placeholder until #157 builds it here.
- *
- * It carries `?reward=` on to the web checkout, so "Select this reward" — and a link that
- * `lib/links.ts` opened here with the tier it named — lands on that tier rather than on the
- * picker. Encoded once, as a query value; the id is the service's and is not read here.
- */
-export default function Screen() {
-  const { id, reward } = useLocalSearchParams<{ id: string; reward?: string | string[] }>();
-  const tier = (Array.isArray(reward) ? reward[0] : reward)?.trim() ?? '';
-  const query = tier === '' ? '' : `?reward=${encodeURIComponent(tier)}`;
-  return (
-    <WebFallback
-      titleKey="checkout.title"
-      webPath={`/projects/${encodeURIComponent(id)}/back${query}`}
-    />
-  );
+function first(value: string | string[] | undefined): string | null {
+  const raw = (Array.isArray(value) ? value[0] : value)?.trim() ?? '';
+  return raw === '' ? null : raw;
 }
 
-// A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
+function tokensOf(value: string | string[] | undefined): readonly string[] {
+  const values = value === undefined ? [] : Array.isArray(value) ? value : [value];
+  return values
+    .flatMap((entry) => entry.split(','))
+    .map((token) => token.trim())
+    .filter((token) => token !== '');
+}
+
+export default function Screen() {
+  const { id, reward, token } = useLocalSearchParams<{
+    id: string;
+    reward?: string | string[];
+    token?: string | string[];
+  }>();
+  return <CheckoutScreen projectId={id} initialRewardId={first(reward)} tokens={tokensOf(token)} />;
+}
+
 export { RouteErrorBoundary as ErrorBoundary } from '../../../components/route-error-boundary';

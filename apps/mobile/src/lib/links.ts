@@ -123,7 +123,11 @@ const ID_ROUTES: readonly [RegExp, (m: RegExpExecArray, query: URLSearchParams) 
   [/^\/projects\/new\/?$/, () => ({ pathname: '/campaigns/new' })],
   [
     new RegExp(`^/projects/(${UUID})/back/?$`),
-    (m, query) => withParams(`/campaigns/${m[1]}/back`, { reward: opaqueParam(query.get('reward')) }),
+    (m, query) =>
+      withParams(`/campaigns/${m[1]}/back`, {
+        reward: opaqueParam(query.get('reward')),
+        token: tokenParam(query.getAll('token')),
+      }),
   ],
   [new RegExp(`^/projects/(${UUID})/prelaunch/?$`), (m) => ({ pathname: `/campaigns/${m[1]}/prelaunch` })],
   [
@@ -161,6 +165,14 @@ const MAX_OPAQUE_LENGTH = 128;
 function opaqueParam(value: string | null): string | undefined {
   const trimmed = value?.trim() ?? '';
   return trimmed === '' || trimmed.length > MAX_OPAQUE_LENGTH ? undefined : trimmed;
+}
+
+/** Every `?token=` that unlocks hidden tiers (#157), comma-joined; one with a comma is dropped. */
+function tokenParam(values: readonly string[]): string | undefined {
+  const tokens = values
+    .map((value) => opaqueParam(value))
+    .filter((value): value is string => value !== undefined && !value.includes(','));
+  return tokens.length === 0 ? undefined : tokens.join(',');
 }
 
 /** A destination whose `params` holds only the values that are present — none means no `params`. */

@@ -3616,7 +3616,10 @@
       "approximately": "Yaklaşık {amount}",
       "noReward": "Ödülsüz destek",
       "yourSupport": "Destek tutarı",
-      "rewardLine": "Ödül"
+      "rewardLine": "Ödül",
+      "sourcePreview": "Bu sayfadaki fiyatlara göre bir tahmindir. Kampanya ödülünüzü ayırdığında tutarları onaylar.",
+      "sourceQuoted": "Kampanya ödülünüzü ayırırken onayladı.",
+      "to": "Teslimat: {country}"
     },
     "payment": {
       "heading": "Ödeme",
@@ -3801,7 +3804,8 @@
       "windowClosed": "Bu ödemeye artık IdeyaNest üzerinden itiraz edilemez: kampanya için bekletilen bir ödeme yok.",
       "nothing": "Bu ödemeden iade edilecek bir şey kalmadı.",
       "failed": "Olmadı. Birazdan yeniden deneyin."
-    }
+    },
+    "heldFor": "Ödülünüz {time} daha sizin için ayrılmış durumda. Bu süre dolunca stok kampanyaya geri döner ve yeniden ayırmanız gerekir."
   },
   "pricing": {
     "metaTitle": "Planlar ve fiyatlar",
@@ -5507,7 +5511,6 @@
       "failedTitle": "Bu kampanya yüklenemedi",
       "failedDetail": "Kampanya geri çekilmiş olabilir ya da bu cihaz çevrimdışı olabilir.",
       "stale": "Bu cihazda kayıtlı. Fonlama rakamları o zamandan beri değişmiş olabilir.",
-      "backOnWeb": "{title} kampanyasını web sitesinde destekle",
       "actionsOffline": "Kaydetmek ve hatırlatıcı kurmak için bağlantı gerekir.",
       "shareFailed": "Paylaşılamadı. Tekrar deneyin.",
       "faq": {
@@ -5560,6 +5563,20 @@
         "cameraRefused": "Kameraya izin verilmedi, bu yüzden fotoğraf çekilmedi. Bir dahaki sefere yeniden sorulacak.",
         "openFailed": "Fotoğraflar açılamadı. Yeniden deneyin."
       }
+    },
+    "checkout": {
+      "close": "Destek ekranını kapat",
+      "leaveTitle": "Ekrandan çıkılsın mı?",
+      "leaveBody": "Ödülünüz {time} daha ayrılmış kalır. Hiçbir ücret alınmadı.",
+      "leave": "Çık",
+      "stay": "Kal",
+      "signIn": "Giriş yap",
+      "openPledge": "Desteğinizi açın",
+      "offline": "Ayırma ve ödeme için bağlantı gerekir. Hiçbir şey gönderilmedi.",
+      "step": "Adım {index} / {count}: {name}",
+      "increase": "Bir tane ekle: {title}",
+      "decrease": "Bir tane çıkar: {title}",
+      "backHint": "Bir ödül seçin ve {title} kampanyasını destekleyin"
     }
   }
 }

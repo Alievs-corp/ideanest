@@ -234,7 +234,7 @@ are `@ideanest/campaign`'s, the same functions the web calls.
   place of the form once filed.
 - **Back this campaign** and **Select this reward** are shown only where `acceptsPledges`
   is true, and push the app's `campaigns/[id]/back[?reward=]` (`checkoutHref` in
-  `src/lib/campaign-actions.ts`), which hands over to the web checkout until #157 builds it.
+  `src/lib/campaign-actions.ts`), the native checkout (see "Checkout" below).
   The page's clock (`src/lib/campaign-clock.ts`) moves at the deadline and at each day
   boundary of a live campaign, so Back, the bar, Select, the days left and the "Last day"
   chip follow the time rather than the moment the screen opened. The pill is
@@ -309,7 +309,7 @@ The pages the web keys by project id — `/projects/<uuid>/prelaunch`, `/back`,
 `/edit`, `/dashboard` — open under `campaigns/<uuid>/…`, because Expo Router
 cannot hold `projects/[id]` beside `projects/[creatorSlug]`. They are matched
 with a strict UUID before the creator/slug pattern, and the checkout keeps
-`?reward=` (the placeholder passes it on to the web checkout until #157). `/projects/alice/prelaunch` (not a UUID) opens the campaign slugged
+`?reward=` and every `?token=` (comma-joined in the route param). `/projects/alice/prelaunch` (not a UUID) opens the campaign slugged
 `prelaunch`, where the web would show its pre-launch page for an id of `alice`
 (#148).
 
@@ -483,6 +483,26 @@ The Android submit goes to the `internal` track as a **draft**, which makes the
 staged rollout a decision somebody takes in Play Console rather than a
 consequence of a workflow finishing.
 
+## Checkout
+
+`campaigns/[id]/back` (#157) is a full-screen modal with no motion: choose → review → pay.
+The rules are `@ideanest/checkout`'s, shared with the web: the preview quote on
+`decimal.js`, the draft body, idempotency keys bound to the request body (minted by
+`expo-crypto`, kept in memory), the refusal table, and `attemptWithRetry`. Money writes go
+through `src/api/mutate.ts`, whose signature requires an `Idempotency-Key`; nothing is sent
+offline and nothing is queued. `src/features/checkout/use-checkout.ts` is the web's state
+machine; `checkout-screen.tsx` draws it.
+
+**The payment return.** The API accepts only site-origin return addresses
+(`docs/architecture.md` §9.4), so the app pays with
+`https://<site>/{locale}/pledges/{id}?payment=returned|failed&via=app`. The web proxy answers
+that address with a `303` to `ideanest://pledges/{id}?payment=…`, which ends
+`WebBrowser.openAuthSessionAsync(redirectUrl, 'ideanest://pledges/{id}')`. A dismissed browser
+reads the pledge once: anything but `DRAFT` goes to the pledge, otherwise step 2 stays with
+the hold running and paying again replays the same key. Not yet exercised against the Epoint
+sandbox (no merchant account); the provider only ever sees the site origin. `pledges/[id]`
+is a web placeholder until #158.
+
 ## What is not built
 
 **Google sign-in on Android.** The iOS flow cannot be used there: Google refuses
@@ -496,9 +516,6 @@ Apple has no Android SDK. Android offers email and password meanwhile (#241).
 `token`; claiming `/verify-email`, `/reset-password/confirm` and `/confirm-email-change`
 (unprefixed and under `/{az|en|ru|tr}/`) in the association files and `lib/links.ts` is
 #165's. Until then the links open the website, which does the same thing.
-
-**Checkout.** §4.5, not built in the app yet (#157). "Back this campaign" and "Select
-this reward" open the web checkout, which works today.
 
 **Four of the campaign page's tabs and its report sheet.** Creator, FAQ, Updates and
 Comments open the same tab on the campaign's web page, and "Report this campaign" is not

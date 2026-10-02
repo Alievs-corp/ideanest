@@ -3616,7 +3616,10 @@
       "approximately": "Təxminən {amount}",
       "noReward": "Mükafatsız dəstək",
       "yourSupport": "Dəstək məbləği",
-      "rewardLine": "Mükafat"
+      "rewardLine": "Mükafat",
+      "sourcePreview": "Bu səhifədəki qiymətlərə əsasən təxmini hesablamadır. Kampaniya mükafatınızı rezerv edəndə məbləğləri təsdiqləyir.",
+      "sourceQuoted": "Kampaniya mükafatınızı rezerv edəndə təsdiqləyib.",
+      "to": "Çatdırılma: {country}"
     },
     "payment": {
       "heading": "Ödəniş",
@@ -3801,7 +3804,8 @@
       "windowClosed": "Bu ödənişə artıq IdeyaNest vasitəsilə etiraz etmək olmaz: kampaniya üzrə saxlanılan ödəniş yoxdur.",
       "nothing": "Bu ödənişdən qaytarılacaq heç nə qalmayıb.",
       "failed": "Alınmadı. Bir azdan yenidən cəhd edin."
-    }
+    },
+    "heldFor": "Mükafatınız hələ {time} sizin üçün saxlanılır. Bundan sonra o, kampaniyaya qayıdır və onu yenidən rezerv etməli olarsınız."
   },
   "pricing": {
     "metaTitle": "Planlar və qiymətlər",
@@ -5507,7 +5511,6 @@
       "failedTitle": "Bu kampaniya yüklənə bilmədi",
       "failedDetail": "Kampaniya geri çəkilmiş ola bilər, ya da bu cihazda internet yoxdur.",
       "stale": "Bu cihazda saxlanılıb. Maliyyələşmə rəqəmləri o vaxtdan dəyişmiş ola bilər.",
-      "backOnWeb": "{title} kampaniyasını saytda dəstəklə",
       "actionsOffline": "Yadda saxlamaq və xatırlatma üçün internet bağlantısı lazımdır.",
       "shareFailed": "Paylaşmaq mümkün olmadı. Yenidən cəhd edin.",
       "faq": {
@@ -5560,6 +5563,20 @@
         "cameraRefused": "Kameraya icazə verilmədi, ona görə şəkil çəkilmədi. Növbəti dəfə yenidən soruşulacaq.",
         "openFailed": "Şəkillər açılmadı. Yenidən cəhd edin."
       }
+    },
+    "checkout": {
+      "close": "Dəstək pəncərəsini bağla",
+      "leaveTitle": "Pəncərədən çıxırsınız?",
+      "leaveBody": "Mükafatınız hələ {time} saxlanılacaq. Heç bir məbləğ tutulmayıb.",
+      "leave": "Çıx",
+      "stay": "Qal",
+      "signIn": "Daxil ol",
+      "openPledge": "Dəstəyinizi açın",
+      "offline": "Rezerv və ödəniş üçün internet bağlantısı lazımdır. Heç nə göndərilməyib.",
+      "step": "Addım {index} / {count}: {name}",
+      "increase": "Bir ədəd artır: {title}",
+      "decrease": "Bir ədəd azalt: {title}",
+      "backHint": "Mükafat seçin və {title} kampaniyasını dəstəkləyin"
     }
   }
 }
