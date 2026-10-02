@@ -5614,11 +5614,17 @@
           "unknownBody": "IdeyaNest profilinizin hazırda görünüb-görünmədiyini yoxlaya bilmədi, ona görə açar əmin olmadığı vəziyyəti göstərmək əvəzinə söndürülüb."
         },
         "export": {
-          "intro": "IdeyaNest-in hesabınız haqqında saxladığı hər şey bir JSON faylında. Fayl paylaşma pəncərəsində açılır, hara göndəriləcəyini siz seçirsiniz, sonra isə bu telefonda onun nüsxəsi qalmır.",
-          "sharedTitle": "Paylaşma pəncərəsinə verildi",
-          "sharedBody": "{filename} faylını paylaşma pəncərəsindən göndərdiyiniz yerdə axtarın: Fayllar, bulud diski və ya mesaj. Bu telefonda artıq onun nüsxəsi saxlanılmır.",
+          "intro": "IdeyaNest-in hesabınız haqqında saxladığı hər şey bir JSON faylında. Fayl paylaşma pəncərəsində açılır, hara göndəriləcəyini siz seçirsiniz, sonra isə IdeyaNest öz nüsxəsini bu telefondan silir.",
+          "sharedTitle": "Nüsxə paylaşmaq üçün hazır idi",
+          "sharedBody": "Onu bir yerə göndərmisinizsə, {filename} faylını orada axtarın.",
           "unavailable": "Bu telefon paylaşma pəncərəsini aça bilmir, ona görə nüsxəni burada vermək mümkün deyil. Onu IdeyaNest-in veb saytından götürün.",
-          "writeFailed": "Nüsxə gəldi, amma bu telefona yazıla bilmədi, ona görə heç nə saxlanılmadı. Yenidən cəhd edin."
+          "writeFailed": "Nüsxə gəldi, amma bu telefona yazıla bilmədi, ona görə heç nə saxlanılmadı. Yenidən cəhd edin.",
+          "removedNow": "Bu telefondakı nüsxə silindi.",
+          "removedLater": "Seçdiyiniz tətbiq onu hələ oxuya bildiyi üçün nüsxə bu telefonda qalır və IdeyaNest növbəti dəfə açılanda, bu ekrana qayıdanda və ya hesabdan çıxanda silinir.",
+          "shareFailed": "Paylaşma pəncərəsi açılmadı, ona görə nüsxə ötürülmədi və bu telefondan silindi. Yenidən cəhd edin."
+        },
+        "closure": {
+          "rereadFailed": "Xidmət cavab verdi, amma hesabınızı indi yenidən oxumaq mümkün olmadı, ona görə burada hesabın özü deyil, həmin cavab göstərilir."
         }
       }
     }

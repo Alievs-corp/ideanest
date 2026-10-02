@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +21,7 @@ import {
   Switch,
 } from '../../../components/ui';
 import { ACCOUNT_KEYS, useMe } from '../../../lib/account';
+import { sweepAccountExports } from '../../../lib/account-export-files';
 import { useOnline } from '../../../lib/connectivity';
 import { formatDateTime, useT } from '../../../lib/i18n';
 import { useLocale } from '../../../lib/locale';
@@ -35,7 +36,13 @@ import {
   setProfileVisibility,
   type ProfileVisibility,
 } from './api';
-import { ExportWriteError, canShareFiles, shareAccountExport } from './share-export';
+import {
+  ExportWriteError,
+  ShareSheetError,
+  canShareFiles,
+  shareAccountExport,
+  type ExportCopy,
+} from './share-export';
 
 /**
  * `settings/privacy` — the web's `/settings/privacy` (#161): who can see the profile, a copy of
@@ -44,6 +51,8 @@ import { ExportWriteError, canShareFiles, shareAccountExport } from './share-exp
  */
 export function PrivacySettingsScreen() {
   const t = useT('settings.pages.privacy');
+  // A copy an earlier export on Android had to leave behind for its receiving app.
+  useEffect(() => sweepAccountExports(), []);
   return (
     <SettingsPage section="privacy" title={t('title')} intro={t('intro')} testID="privacy-settings">
       <PrivacyPanels />
@@ -239,48 +248,53 @@ function VisibilityPanel({ slug }: { readonly slug: string | null }) {
   );
 }
 
-type ExportState = 'idle' | 'busy' | 'shared';
+type ExportState =
+  | { readonly kind: 'idle' }
+  | { readonly kind: 'busy' }
+  | { readonly kind: 'shared'; readonly copy: ExportCopy };
 
 /**
- * The web's `DataExportPanel`, through the share sheet instead of a download: the file is
- * written to the cache directory, handed over, and deleted when the sheet closes. A 429 is
- * shown rather than retried — the allowance is the account's, and spending it on the
- * reader's behalf would be spending somebody else's.
+ * The web's `DataExportPanel`, through the share sheet instead of a download. The sheet also
+ * closes when it is dismissed, so the notice never claims the file was sent. A 429 is shown
+ * rather than retried — the allowance is the account's, and spending it on the reader's behalf
+ * would be spending somebody else's.
  */
 function DataExportPanel() {
   const t = useT('settings.panels.export');
   const tAll = useT();
   const online = useOnline();
-  const [state, setState] = useState<ExportState>('idle');
+  const [state, setState] = useState<ExportState>({ kind: 'idle' });
   const [error, setError] = useState<string | null>(null);
 
   async function download(): Promise<void> {
-    if (state === 'busy' || !online) return;
-    setState('busy');
+    if (state.kind === 'busy' || !online) return;
+    setState({ kind: 'busy' });
     setError(null);
     try {
       if (!(await canShareFiles())) {
         setError(tAll('mobile.settings.privacy.export.unavailable'));
-        setState('idle');
+        setState({ kind: 'idle' });
         return;
       }
-      await shareAccountExport(await fetchAccountExport());
-      setState('shared');
+      const copy = await shareAccountExport(await fetchAccountExport());
+      setState({ kind: 'shared', copy });
     } catch (cause) {
       setError(
         cause instanceof ExportWriteError
           ? tAll('mobile.settings.privacy.export.writeFailed')
-          : describeFailure(cause, {
-              rateLimited: t('rateLimited'),
-              refused: t('refused'),
-              unreachable: tAll('auth.failures.unreachableDetail'),
-            }),
+          : cause instanceof ShareSheetError
+            ? tAll('mobile.settings.privacy.export.shareFailed')
+            : describeFailure(cause, {
+                rateLimited: t('rateLimited'),
+                refused: t('refused'),
+                unreachable: tAll('auth.failures.unreachableDetail'),
+              }),
       );
-      setState('idle');
+      setState({ kind: 'idle' });
     }
   }
 
-  const busy = state === 'busy';
+  const busy = state.kind === 'busy';
   return (
     <SettingsCard
       title={t('heading')}
@@ -295,13 +309,16 @@ function DataExportPanel() {
           testID="privacy-export-failed"
         />
       )}
-      {state === 'shared' ? (
+      {state.kind === 'shared' ? (
         <View style={styles.notice} testID="privacy-export-shared" accessibilityLiveRegion="polite">
           <Subheading>{tAll('mobile.settings.privacy.export.sharedTitle')}</Subheading>
           <Body>
             {fillNodes(String(tAll.raw('mobile.settings.privacy.export.sharedBody')), {
               filename: <Strong>{EXPORT_FILENAME}</Strong>,
-            })}
+            })}{' '}
+            {state.copy === 'removed'
+              ? tAll('mobile.settings.privacy.export.removedNow')
+              : tAll('mobile.settings.privacy.export.removedLater')}
           </Body>
         </View>
       ) : null}
@@ -320,10 +337,16 @@ function DataExportPanel() {
 }
 
 /**
+ * What the service answered to the last close or keep, held until `GET /v1/me` agrees: a re-read
+ * that fails must not put the form back over an account that is scheduled to close.
+ * `scheduledFor` null means the closure was withdrawn.
+ */
+type AnsweredSchedule = { readonly scheduledFor: string | null };
+
+/**
  * The web's `AccountClosurePanel`. Closing takes the password; keeping the account takes only
  * the session — the safe direction is not obstructed for somebody whose account was closed by
- * someone else. The schedule is read back from `GET /v1/me`, not held here, so every screen
- * agrees on it.
+ * someone else. The schedule is read back from `GET /v1/me`, so every screen agrees on it.
  */
 function AccountClosurePanel({ scheduledFor }: { readonly scheduledFor: string | null }) {
   const t = useT('settings.panels.closure');
@@ -337,6 +360,18 @@ function AccountClosurePanel({ scheduledFor }: { readonly scheduledFor: string |
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [gone, setGone] = useState(false);
+  const [answered, setAnswered] = useState<AnsweredSchedule | null>(null);
+  const [rereadFailed, setRereadFailed] = useState(false);
+
+  // The account caught up with the answer, so the account is the source again.
+  useEffect(() => {
+    if (answered !== null && (answered.scheduledFor === null) === (scheduledFor === null)) {
+      setAnswered(null);
+      setRereadFailed(false);
+    }
+  }, [answered, scheduledFor]);
+
+  const shownSchedule = answered === null ? scheduledFor : answered.scheduledFor;
 
   const failureCopy = {
     rateLimited: t('rateLimited'),
@@ -344,39 +379,54 @@ function AccountClosurePanel({ scheduledFor }: { readonly scheduledFor: string |
     unreachable: tAll('auth.failures.unreachableDetail'),
   };
 
+  async function reread(): Promise<void> {
+    setRereadFailed(false);
+    try {
+      await queryClient.refetchQueries({ queryKey: ACCOUNT_KEYS.me }, { throwOnError: true });
+    } catch {
+      setRereadFailed(true);
+    }
+  }
+
   async function close(): Promise<void> {
     if (busy || !online || !understood || password === '') return;
     setBusy(true);
     setError(null);
+    let accepted = false;
     try {
       const outcome = await requestDeletion(password);
       setPassword('');
-      if (outcome === 'already-gone') {
+      if (outcome.kind === 'already-gone') {
         // Nothing was closed, and saying "done" would report a deletion that did not happen.
         setGone(true);
         return;
       }
-      await queryClient.invalidateQueries({ queryKey: ACCOUNT_KEYS.me });
+      if (outcome.scheduledFor !== null) setAnswered({ scheduledFor: outcome.scheduledFor });
+      accepted = true;
     } catch (cause) {
       setError(describeFailure(cause, failureCopy));
     } finally {
       setBusy(false);
     }
+    if (accepted) await reread();
   }
 
   async function keep(): Promise<void> {
     if (busy || !online) return;
     setBusy(true);
     setError(null);
+    let accepted = false;
     try {
       await cancelDeletion();
-      await queryClient.invalidateQueries({ queryKey: ACCOUNT_KEYS.me });
+      setAnswered({ scheduledFor: null });
       setUnderstood(false);
+      accepted = true;
     } catch (cause) {
       setError(describeFailure(cause, failureCopy));
     } finally {
       setBusy(false);
     }
+    if (accepted) await reread();
   }
 
   return (
@@ -400,12 +450,29 @@ function AccountClosurePanel({ scheduledFor }: { readonly scheduledFor: string |
             testID="privacy-closure-gone"
           />
         ) : null}
-        {scheduledFor !== null ? (
+        {rereadFailed ? (
+          <InlineAlert
+            variant="warning"
+            description={tAll('mobile.settings.privacy.closure.rereadFailed')}
+            action={
+              <Pill
+                label={tAll('common.tryAgain')}
+                variant="ghost"
+                size="sm"
+                disabled={!online}
+                onPress={() => void reread()}
+                testID="privacy-closure-reread"
+              />
+            }
+            testID="privacy-closure-reread-failed"
+          />
+        ) : null}
+        {shownSchedule !== null ? (
           <View style={styles.form} testID="privacy-closure-scheduled">
             <InlineAlert
               variant="warning"
               title={t('scheduledTitle')}
-              description={t('scheduledBody', { date: formatDateTime(scheduledFor, locale) })}
+              description={t('scheduledBody', { date: formatDateTime(shownSchedule, locale) })}
             />
             <View style={styles.start}>
               <Pill

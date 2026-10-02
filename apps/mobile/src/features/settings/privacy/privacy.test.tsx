@@ -28,6 +28,19 @@ jest.mock('../../../api/client', () => ({
 }));
 jest.mock('expo-file-system', () => ({
   Paths: { cache: { uri: 'file:///cache/' } },
+  Directory: class {
+    readonly uri: string;
+    constructor(parent: { uri: string }, name: string) {
+      this.uri = `${parent.uri}${name}/`;
+    }
+    get exists(): boolean {
+      return [...mockFiles.keys()].some((uri) => uri.startsWith(this.uri));
+    }
+    create(): void {}
+    delete(): void {
+      for (const uri of [...mockFiles.keys()]) if (uri.startsWith(this.uri)) mockFiles.delete(uri);
+    }
+  },
   File: class {
     readonly uri: string;
     constructor(directory: { uri: string }, name: string) {
@@ -58,7 +71,7 @@ const V = en.profile.editor.visibility;
 const X = en.settings.panels.export;
 const C = en.settings.panels.closure;
 const M = en.mobile.settings.privacy;
-const EXPORT_URI = 'file:///cache/ideanest-account.json';
+const EXPORT_URI = 'file:///cache/account-export/ideanest-account.json';
 const METRICS = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
   insets: { top: 47, left: 0, right: 0, bottom: 34 },
@@ -213,6 +226,25 @@ describe('export', () => {
     expect(mockFiles.has(EXPORT_URI)).toBe(false);
     expect(screen.getByText(M.export.sharedTitle)).toBeTruthy();
     expect(screen.getByText('ideanest-account.json')).toBeTruthy();
+    // iOS (the test platform) deletes at once, and the notice says so — never that it was sent.
+    expect(screen.getByText(/has been removed/)).toBeTruthy();
+  });
+
+  it('says the share sheet would not open, not that the connection failed', async () => {
+    shareAsync.mockRejectedValueOnce(new Error('activity failed'));
+    await show();
+    await fireEvent.press(screen.getByTestId('privacy-export-download'));
+    await settle();
+
+    expect(screen.getByText(M.export.shareFailed)).toBeTruthy();
+    expect(screen.queryByText(en.auth.failures.unreachableDetail)).toBeNull();
+    expect(mockFiles.has(EXPORT_URI)).toBe(false);
+  });
+
+  it('sweeps an export an earlier visit left behind when the screen opens', async () => {
+    mockFiles.set(EXPORT_URI, 'left for a Bluetooth transfer');
+    await show();
+    expect(mockFiles.has(EXPORT_URI)).toBe(false);
   });
 
   it('shows the rate limit rather than retrying into it', async () => {
@@ -273,6 +305,52 @@ describe('closure', () => {
 
     expect(sendJson).toHaveBeenCalledWith('DELETE', '/v1/me/deletion');
     expect(screen.getByTestId('privacy-closure-submit')).toBeTruthy();
+  });
+
+  it('shows the schedule the service answered when the account cannot be re-read, and says so', async () => {
+    await show();
+    sendJson.mockResolvedValueOnce({ requestedAt: '2026-10-02T10:00:00Z', scheduledFor: '2026-11-01T10:00:00Z' });
+    let readable = false;
+    mockGet.mockImplementation(async (path: string) => {
+      if (path === '/v1/me' && !readable) throw refusal(503);
+      return { ...me, deletionScheduledAt: '2026-11-01T10:00:00Z' };
+    });
+    await fireEvent.changeText(screen.getByTestId('privacy-closure-password'), 'a long password');
+    await fireEvent.press(screen.getByTestId('privacy-closure-understood'));
+    await fireEvent.press(screen.getByTestId('privacy-closure-submit'));
+    await settle();
+
+    // At once, from the 202 — not the form again over an account that is closing.
+    expect(screen.getByTestId('privacy-closure-scheduled')).toBeTruthy();
+    expect(screen.getByText(/It will be anonymised on .*2026/)).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId('privacy-closure-reread-failed')).toBeTruthy(), {
+      timeout: 15_000,
+    });
+    expect(screen.queryByTestId('privacy-closure-submit')).toBeNull();
+
+    readable = true;
+    await fireEvent.press(screen.getByTestId('privacy-closure-reread'));
+    await settle();
+    expect(screen.queryByTestId('privacy-closure-reread-failed')).toBeNull();
+    expect(screen.getByTestId('privacy-closure-scheduled')).toBeTruthy();
+  });
+
+  it('shows the form after Keep even when the account cannot be re-read, and says so', async () => {
+    me = { ...me, deletionScheduledAt: '2026-11-01T10:00:00Z' };
+    await show();
+    mockGet.mockImplementation(async (path: string) => {
+      if (path === '/v1/me') throw refusal(503);
+      return null;
+    });
+    await fireEvent.press(screen.getByTestId('privacy-closure-keep'));
+    await settle();
+
+    expect(sendJson).toHaveBeenCalledWith('DELETE', '/v1/me/deletion');
+    expect(screen.getByTestId('privacy-closure-submit')).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId('privacy-closure-reread-failed')).toBeTruthy(), {
+      timeout: 15_000,
+    });
+    expect(screen.queryByTestId('privacy-closure-scheduled')).toBeNull();
   });
 
   it('says the account is already gone on a 404 rather than reporting a closure', async () => {

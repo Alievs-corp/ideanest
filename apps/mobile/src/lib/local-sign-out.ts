@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { sweepAccountExports } from './account-export-files';
 import { forgetPersistedCache } from './offline';
 import { unregisterFromPush } from './push';
 import { endSession } from './session';
@@ -21,6 +22,7 @@ export async function endLocalSession(queryClient: QueryClient): Promise<void> {
       // Whatever the keychain did, nothing of this account stays in either cache.
       queryClient.clear();
       forgetPersistedCache();
+      sweepAccountExports();
     }
   }
 }

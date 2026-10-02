@@ -46,18 +46,26 @@ export async function fetchAccountExport(): Promise<string> {
   return JSON.stringify(body, null, 2);
 }
 
-export type DeletionOutcome = 'scheduled' | 'already-gone';
+export type DeletionOutcome =
+  /** `scheduledFor` is the 202's date, or null when the body did not carry one. */
+  | { readonly kind: 'scheduled'; readonly scheduledFor: string | null }
+  | { readonly kind: 'already-gone' };
 
 /**
- * `POST /v1/me/deletion {password}` — 202 with the schedule, which the screen reads back from
- * `GET /v1/me`'s `deletionScheduledAt`. A 404 is a token for an account that is no longer there.
+ * `POST /v1/me/deletion {password}` — 202 with the schedule. The screen reads it back from
+ * `GET /v1/me`'s `deletionScheduledAt`, and holds this answer's date until that read agrees. A
+ * 404 is a token for an account that is no longer there.
  */
 export async function requestDeletion(password: string): Promise<DeletionOutcome> {
   try {
-    await sendJson('POST', '/v1/me/deletion', { password });
-    return 'scheduled';
+    const body = await sendJson('POST', '/v1/me/deletion', { password });
+    const scheduledFor =
+      typeof body === 'object' && body !== null && 'scheduledFor' in body && typeof body.scheduledFor === 'string'
+        ? body.scheduledFor
+        : null;
+    return { kind: 'scheduled', scheduledFor };
   } catch (cause) {
-    if (cause instanceof ApiError && cause.status === 404) return 'already-gone';
+    if (cause instanceof ApiError && cause.status === 404) return { kind: 'already-gone' };
     throw cause;
   }
 }

@@ -5614,11 +5614,17 @@
           "unknownBody": "IdeyaNest could not check whether your profile is currently visible, so the switch is disabled rather than showing a position it is not sure of."
         },
         "export": {
-          "intro": "One JSON file with everything IdeyaNest holds about your account. It opens in the share sheet, so you choose where it goes, and this phone keeps no copy afterwards.",
-          "sharedTitle": "Handed to the share sheet",
-          "sharedBody": "Look for {filename} wherever you sent it from the share sheet: Files, a cloud drive or a message. This phone no longer keeps a copy.",
+          "intro": "One JSON file with everything IdeyaNest holds about your account. It opens in the share sheet, so you choose where it goes, and IdeyaNest then removes its copy from this phone.",
+          "sharedTitle": "Your copy was ready to share",
+          "sharedBody": "If you sent it somewhere, look for {filename} there.",
           "unavailable": "This phone cannot open a share sheet, so the copy cannot be handed over here. Take it from IdeyaNest on the web instead.",
-          "writeFailed": "The copy arrived but could not be written to this phone, so nothing was kept. Try again."
+          "writeFailed": "The copy arrived but could not be written to this phone, so nothing was kept. Try again.",
+          "removedNow": "The copy on this phone has been removed.",
+          "removedLater": "The copy on this phone stays while the app you chose may still be reading it, and is removed the next time IdeyaNest starts, you open this screen or you sign out.",
+          "shareFailed": "The share sheet could not be opened, so the copy was not handed over and has been removed from this phone. Try again."
+        },
+        "closure": {
+          "rereadFailed": "The service answered, but your account could not be re-read just now, so this shows that answer rather than the account."
         }
       }
     }

@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { siteUrl } from '../api/config';
 import { OfflineAnnouncer, WithOfflineBanner } from '../components/offline-banner';
+import { sweepAccountExports } from '../lib/account-export-files';
 import { startConnectivity } from '../lib/connectivity';
 import { destinationFor } from '../lib/links';
 import { deferUntilUp } from '../lib/maintenance';
@@ -151,6 +152,9 @@ export default function RootLayout() {
 
   // The offline banner's source, and TanStack Query's (`lib/connectivity.ts`).
   useEffect(() => startConnectivity(), []);
+
+  // An account export Android could not delete when its share sheet returned (#161).
+  useEffect(() => sweepAccountExports(), []);
 
   // The planned-maintenance banner's source: `/v1/status` on launch and on return (#214).
   useEffect(() => watchUpcoming(), []);

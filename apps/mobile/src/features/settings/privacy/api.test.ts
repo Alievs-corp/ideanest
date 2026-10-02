@@ -72,12 +72,15 @@ describe('the writes', () => {
 
   it('reads a 404 on closing as an account that is already gone', async () => {
     fetchMock.mockResolvedValueOnce(respond({ status: 404, title: 'Not Found' }, 404));
-    await expect(requestDeletion('a long password')).resolves.toBe('already-gone');
+    await expect(requestDeletion('a long password')).resolves.toEqual({ kind: 'already-gone' });
 
     fetchMock.mockResolvedValueOnce(
       respond({ requestedAt: '2026-10-02T10:00:00Z', scheduledFor: '2026-11-01T10:00:00Z' }, 202),
     );
-    await expect(requestDeletion('a long password')).resolves.toBe('scheduled');
+    await expect(requestDeletion('a long password')).resolves.toEqual({
+      kind: 'scheduled',
+      scheduledFor: '2026-11-01T10:00:00Z',
+    });
     expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toEqual({
       password: 'a long password',
     });
