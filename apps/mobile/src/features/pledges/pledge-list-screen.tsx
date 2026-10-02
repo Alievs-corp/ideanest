@@ -73,6 +73,7 @@ function PledgeListBody() {
                 title: t('account.pledges.list.failedTitle'),
                 description: t('mobile.offline.nothingCached'),
                 onRetry: list.retry,
+                retrying: list.retrying,
               }
             : null
         }

@@ -37,7 +37,18 @@ export function PledgeCard({ pledge, onOpen }: PledgeCardProps) {
   return (
     <Pressable
       accessibilityRole="link"
-      accessibilityLabel={[title, stateLabel, total].join(', ')}
+      accessibilityLabel={[
+        title,
+        stateLabel,
+        total,
+        pledge.isAnonymous === true ? t('anonymous') : null,
+        pledge.latePledge === true ? t('latePledge') : null,
+        note === null ? null : t(`list.${note}`),
+        pledge.rewardTitle ?? t('list.noReward'),
+        byline === '' ? null : byline,
+      ]
+        .filter((part): part is string => part !== null)
+        .join(', ')}
       disabled={id === undefined}
       onPress={() => {
         if (id !== undefined) onOpen(id);

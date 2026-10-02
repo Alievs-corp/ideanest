@@ -63,7 +63,7 @@ async function settle() {
 }
 
 async function show(seed?: (client: QueryClient) => void) {
-  client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: 60_000 } } });
   seed?.(client);
   await render(
     <SafeAreaProvider initialMetrics={METRICS}>
@@ -75,6 +75,11 @@ async function show(seed?: (client: QueryClient) => void) {
     </SafeAreaProvider>,
   );
   await settle();
+}
+
+async function pull() {
+  const control = screen.getByTestId('pledge-list').props.refreshControl as { props: { onRefresh: () => void } };
+  await act(async () => control.props.onRefresh());
 }
 
 async function endReached() {
@@ -186,5 +191,89 @@ describe('PledgeListScreen', () => {
     expect(api.listMyPledges).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByLabelText(en.shell.actions.signIn));
     expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/sign-in', params: { returnTo: '/pledges' } });
+  });
+
+  it('announces the placeholders while the first page loads', async () => {
+    api.listMyPledges.mockReturnValueOnce(new Promise(() => undefined));
+    await show();
+
+    expect(screen.getByLabelText(en.account.pledges.list.loading)).toBeTruthy();
+  });
+
+  it('says so when nothing is cached and the first page fails, and retries', async () => {
+    api.listMyPledges
+      .mockRejectedValueOnce(new Error('down'))
+      .mockResolvedValueOnce({ items: [summary('a')], nextCursor: null });
+    await show();
+
+    expect(screen.getByText(en.account.pledges.list.failedTitle)).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText(en.common.tryAgain));
+    await settle();
+    expect(screen.getByTestId('pledge-card-a')).toBeTruthy();
+  });
+
+  it('shows the loading footer while the next page is on its way', async () => {
+    api.listMyPledges
+      .mockResolvedValueOnce({ items: [summary('a')], nextCursor: 'c2' })
+      .mockReturnValueOnce(new Promise(() => undefined));
+    await show();
+    await endReached();
+    await settle();
+
+    expect(screen.getByTestId('pledges-loading-more').props.accessibilityLabel).toBe(
+      en.account.pledges.list.loadingMore,
+    );
+  });
+
+  it('refreshes only the first page on pull, dropping the later ones', async () => {
+    api.listMyPledges
+      .mockResolvedValueOnce({ items: [summary('a')], nextCursor: 'c2' })
+      .mockResolvedValueOnce({ items: [summary('b')], nextCursor: null })
+      .mockResolvedValueOnce({ items: [summary('z'), summary('a')], nextCursor: 'c3' });
+    await show();
+    await endReached();
+    await settle();
+    expect(screen.getByTestId('pledge-card-b')).toBeTruthy();
+
+    await pull();
+    await settle();
+
+    expect(api.listMyPledges).toHaveBeenLastCalledWith(null);
+    expect(screen.queryByTestId('pledge-card-b')).toBeNull();
+    expect(
+      client.getQueryData<{ pages: { items: BackerPledgeSummary[] }[] }>(queryKeys.pledgeList())?.pages.flatMap(
+        (page) => page.items.map((item) => item.pledgeId),
+      ),
+    ).toEqual(['z', 'a']);
+  });
+
+  it('keeps every page and says the list may be old when a pull fails', async () => {
+    api.listMyPledges
+      .mockResolvedValueOnce({ items: [summary('a')], nextCursor: null })
+      .mockRejectedValueOnce(new Error('offline'));
+    await show();
+
+    await pull();
+    await settle();
+
+    expect(screen.getByTestId('pledge-card-a')).toBeTruthy();
+    expect(screen.getByText(en.mobile.pledges.stale)).toBeTruthy();
+  });
+
+  it('drops a refresh that lands after the cache was cleared by signing out', async () => {
+    let answer: (page: { items: BackerPledgeSummary[]; nextCursor: null }) => void = () => undefined;
+    api.listMyPledges
+      .mockResolvedValueOnce({ items: [summary('a')], nextCursor: null })
+      .mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+    await show();
+
+    await pull();
+    await act(async () => client.clear());
+    await act(async () => answer({ items: [summary('old')], nextCursor: null }));
+    await settle();
+
+    expect(client.getQueryData<{ pages: unknown[] }>(queryKeys.pledgeList())?.pages ?? []).not.toContainEqual(
+      expect.objectContaining({ items: [expect.objectContaining({ pledgeId: 'old' })] }),
+    );
   });
 });
