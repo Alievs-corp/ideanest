@@ -77,8 +77,10 @@ async function wait(ms: number) {
   await settle();
 }
 
-async function show(card?: string) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+async function show(
+  card?: string,
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   const view = await render(
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={queryClient}>
@@ -164,6 +166,19 @@ describe('payout details', () => {
     expect(screen.getByText(P.standingAwaiting)).toBeTruthy();
     expect(screen.getByLabelText(P.replace)).toBeTruthy();
     expect(screen.getByTestId('payout-tax-id').props.keyboardType).toBe('number-pad');
+  });
+
+  it('fills the form from a fresh read on every visit, never from an earlier one', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    subject = COMPANY;
+    const first = await show(undefined, queryClient);
+    expect(screen.getByTestId('payout-legal-name').props.value).toBe('Kilim Studio MMC');
+    await act(async () => first.unmount());
+
+    // Changed on the web in the meantime.
+    subject = { ...COMPANY, legalName: 'Kilim Studio Holding MMC' };
+    await show(undefined, queryClient);
+    expect(screen.getByTestId('payout-legal-name').props.value).toBe('Kilim Studio Holding MMC');
   });
 
   it('asks for the company fields only for a company, and saves what it shows', async () => {

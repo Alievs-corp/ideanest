@@ -116,7 +116,15 @@ function PayoutDetails({ card }: { readonly card?: unknown }) {
   const checks = useCardSettling(settling, active && online, reread, cardReturn.epoch);
   const waiting = cardReturn.kind === 'returned' && settling && checks < CHECKS;
 
-  if (subject.data === undefined || current === undefined) {
+  /*
+   * The form copies the record once, so it waits for this visit's read: a copy kept in memory
+   * from an earlier visit could be saved back over a change made on the web since. Offline the
+   * cached copy is shown, read-only.
+   */
+  const subjectReady =
+    subject.data !== undefined && (subject.isFetchedAfterMount || subject.fetchStatus === 'paused');
+
+  if (!subjectReady || current === undefined) {
     if (subject.isError || destination.isError) {
       return (
         <ErrorState
@@ -142,7 +150,7 @@ function PayoutDetails({ card }: { readonly card?: unknown }) {
 
   return (
     <>
-      <SubjectForm initial={subject.data} onSaved={() => void reread()} />
+      <SubjectForm initial={subject.data!} onSaved={() => void reread()} />
       <CardSection
         destination={current}
         waiting={waiting}
