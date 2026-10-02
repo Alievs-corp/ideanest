@@ -15,6 +15,7 @@ import {
   Switch,
 } from '../../components/ui';
 import { WhatsAppSheet } from '../../components/whatsapp-sheet';
+import { SETTINGS_SECTIONS, sectionLabelKey, sectionPath } from '../../features/settings/sections';
 import { canReadAccount, useMe, useSessionState, type Me } from '../../lib/account';
 import { signOut } from '../../lib/auth';
 import { biometricCapability, canLock, type BiometricCapability } from '../../lib/biometrics';
@@ -93,19 +94,10 @@ const CREATOR: readonly Row[] = [
 ];
 
 /** `ACCOUNT_GROUPS.settings`, in its order: one row per `settings/<key>`. */
-const SETTINGS: readonly Row[] = (
-  [
-    'profile',
-    'notifications',
-    'sessions',
-    'email',
-    'password',
-    'security',
-    'privacy',
-    'payout',
-    'language',
-  ] as const
-).map((key) => ({ label: `account.links.${key}.label`, href: `/settings/${key}` as const }));
+const SETTINGS: readonly Row[] = SETTINGS_SECTIONS.map((section) => ({
+  label: sectionLabelKey(section),
+  href: sectionPath(section),
+}));
 
 const LANGUAGE_ONLY: readonly Row[] = [{ label: 'mobile.me.language', href: '/settings/language' }];
 

@@ -25,6 +25,7 @@
 
 /** A destination inside the application, as a path Expo Router understands. */
 import { parseFilters, searchParamsFrom, toSearchParams } from '@ideanest/discovery/filters';
+import { isSettingsSection } from '../features/settings/sections';
 
 /**
  * A route, and the params it opens with. `params` is only ever the feed's own parameters
@@ -306,6 +307,24 @@ function browseDestination(path: string): Destination | null {
   return null;
 }
 
+/*
+ * The account settings (#161): the list, and each of the web's nine `/settings/*` pages — the
+ * address in every notification email. The payout page keeps the one parameter its card
+ * registration returns with, `?card=returned|failed`.
+ */
+const SETTINGS_PATH = /^\/settings(?:\/([a-z]+))?\/?$/;
+
+function settingsDestination(path: string, query: URLSearchParams): Destination | null {
+  const match = SETTINGS_PATH.exec(path);
+  if (match === null) return null;
+  const section = match[1];
+  if (section === undefined) return { pathname: '/settings' };
+  if (!isSettingsSection(section)) return null;
+  return section === 'payout'
+    ? withParams('/settings/payout', { card: returnHintParam(query.get('card')) })
+    : { pathname: `/settings/${section}` };
+}
+
 function campaignDestination(rawPath: string, search = ''): Destination | null {
   const path = rawPath.replace(LOCALE_PREFIX, '') || '/';
 
@@ -316,6 +335,9 @@ function campaignDestination(rawPath: string, search = ''): Destination | null {
   if (browse !== null) return browse;
 
   const query = searchParamsFrom(search);
+
+  const settings = settingsDestination(path, query);
+  if (settings !== null) return settings;
 
   for (const [pattern, toRoute] of ID_ROUTES) {
     const idMatch = pattern.exec(path);

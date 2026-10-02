@@ -68,8 +68,15 @@ const PERSISTED_ROOTS: readonly string[] = ['saved', 'pledges', 'project'];
  *   they can rename or delete; last week's is a page about a person as they no longer are.
  * - `shippingAddress`: a backer's postal address and phone number (#158), which must not sit in
  *   an unencrypted store.
+ * - `settings`: the account settings screens (#161) — signed-in devices with their IP addresses,
+ *   a VÖEN, a payout card's holder.
  */
-export const UNPERSISTED_ROOTS: readonly string[] = ['comments', 'profile', 'shippingAddress'];
+export const UNPERSISTED_ROOTS: readonly string[] = [
+  'comments',
+  'profile',
+  'shippingAddress',
+  'settings',
+];
 
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {
   const root = queryKey[0];
