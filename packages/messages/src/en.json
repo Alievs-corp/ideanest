@@ -5588,6 +5588,23 @@
       "currency": {
         "failed": "That currency could not be saved. Try again.",
         "loadFailed": "Your display currency could not be read, so it cannot be changed yet. Check the connection and try again."
+      },
+      "security": {
+        "offline": "You are offline. Two-factor changes need a connection; the app lock on this phone works without one.",
+        "scanElsewhere": "Or scan this from another device",
+        "qrLabel": "QR code for your authenticator",
+        "noAuthenticator": "No authenticator app on this phone. Scan the QR code from another device, or enter the key by hand.",
+        "copy": "Copy",
+        "copyAll": "Copy all",
+        "copyKey": "Copy the key",
+        "copyCodes": "Copy all recovery codes",
+        "copied": "Copied",
+        "keyCopied": "The key is on the clipboard.",
+        "codesCopied": "The recovery codes are on the clipboard.",
+        "copyFailed": "That could not be copied. Select the text and copy it instead.",
+        "appLockTitle": "On this phone",
+        "appLockIntro": "The lock belongs to this phone rather than to your account: it changes nothing on your other devices, and it works without a connection.",
+        "appLockLink": "App lock"
       }
     }
   }

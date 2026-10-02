@@ -293,6 +293,15 @@ jest.mock('expo-haptics', () => ({
 }));
 
 /**
+ * The clipboard — the two-factor key and recovery codes, issue #161. A spy that succeeds, so a
+ * test can assert exactly what was copied.
+ */
+jest.mock('expo-clipboard', () => ({
+  setStringAsync: jest.fn(async () => true),
+  getStringAsync: jest.fn(async () => ''),
+}));
+
+/**
  * The photo library and the camera — the UI kit's `FilePicker`, issue #151. Cancelled by default,
  * which is what a test that says nothing should get; a test that picks sets the next result.
  */

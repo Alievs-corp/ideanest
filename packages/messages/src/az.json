@@ -5588,6 +5588,23 @@
       "currency": {
         "failed": "Valyuta yadda saxlanıla bilmədi. Yenidən cəhd edin.",
         "loadFailed": "Göstərilən valyutanı oxumaq mümkün olmadı, ona görə hələlik dəyişmək olmur. Bağlantını yoxlayıb yenidən cəhd edin."
+      },
+      "security": {
+        "offline": "İnternet bağlantısı yoxdur. İki mərhələli doğrulamanı dəyişmək üçün bağlantı lazımdır; bu telefondakı tətbiq kilidi isə bağlantısız da işləyir.",
+        "scanElsewhere": "Və ya bunu başqa cihazdan skan edin",
+        "qrLabel": "Autentifikatorunuz üçün QR kod",
+        "noAuthenticator": "Bu telefonda autentifikator tətbiqi yoxdur. QR kodu başqa cihazdan skan edin və ya açarı əl ilə daxil edin.",
+        "copy": "Kopyala",
+        "copyAll": "Hamısını kopyala",
+        "copyKey": "Açarı kopyala",
+        "copyCodes": "Bütün bərpa kodlarını kopyala",
+        "copied": "Kopyalandı",
+        "keyCopied": "Açar mübadilə buferinə kopyalandı.",
+        "codesCopied": "Bərpa kodları mübadilə buferinə kopyalandı.",
+        "copyFailed": "Kopyalamaq alınmadı. Mətni seçib özünüz kopyalayın.",
+        "appLockTitle": "Bu telefonda",
+        "appLockIntro": "Kilid hesabınıza deyil, bu telefona aiddir: digər cihazlarınızda heç nəyi dəyişmir və bağlantı olmadan da işləyir.",
+        "appLockLink": "Tətbiq kilidi"
       }
     }
   }

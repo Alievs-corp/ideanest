@@ -1,7 +1,12 @@
 import { colors } from '@ideanest/design-tokens';
 import { SUPPORTED_LOCALES } from '@ideanest/messages/locale';
 import type { ExpoConfig } from 'expo/config';
-import { withEntitlementsPlist, type ConfigPlugin } from 'expo/config-plugins';
+import {
+  withAndroidManifest,
+  withEntitlementsPlist,
+  type AndroidConfig,
+  type ConfigPlugin,
+} from 'expo/config-plugins';
 
 /**
  * The Expo configuration — §14.3, and half of the deep links (§4.12 MB-02).
@@ -134,6 +139,41 @@ const withAppleSignInOnlyWhenEnabled: ConfigPlugin<boolean> = (expoConfig, enabl
     return entitlements;
   });
 
+/**
+ * The scheme an authenticator app answers to. Two-factor enrolment (#161) asks
+ * `Linking.canOpenURL` whether one is installed before offering "Open in your authenticator app",
+ * and both platforms answer "no" for a scheme the app did not declare: iOS reads
+ * `LSApplicationQueriesSchemes` (below), Android 11+ reads the manifest's `<queries>`.
+ */
+const AUTHENTICATOR_SCHEME = 'otpauth';
+
+/** Adds `<queries><intent>VIEW otpauth:</intent></queries>`, once, beside whatever is there. */
+export function addAuthenticatorQuery(
+  manifest: AndroidConfig.Manifest.AndroidManifest,
+): AndroidConfig.Manifest.AndroidManifest {
+  const queries = manifest.manifest.queries ?? [];
+  const declared = queries.some((query) =>
+    (query.intent ?? []).some((intent) =>
+      (intent.data ?? []).some((data) => data.$['android:scheme'] === AUTHENTICATOR_SCHEME),
+    ),
+  );
+  if (declared) return manifest;
+  const intent = {
+    action: [{ $: { 'android:name': 'android.intent.action.VIEW' } }],
+    data: [{ $: { 'android:scheme': AUTHENTICATOR_SCHEME } }],
+  };
+  return {
+    ...manifest,
+    manifest: { ...manifest.manifest, queries: [...queries, { intent: [intent] }] },
+  };
+}
+
+const withAuthenticatorQueries: ConfigPlugin = (expoConfig) =>
+  withAndroidManifest(expoConfig, (manifest) => {
+    manifest.modResults = addAuthenticatorQuery(manifest.modResults);
+    return manifest;
+  });
+
 const config: ExpoConfig = {
   name: 'IdeyaNest',
   slug: 'ideanest',
@@ -167,6 +207,8 @@ const config: ExpoConfig = {
       // A shared campaign opened from Safari must reach the same screen a push
       // does, and a phone with no network still has to render the saved copy.
       ITSAppUsesNonExemptEncryption: false,
+      // Without it `canOpenURL('otpauth://…')` is always false; see AUTHENTICATOR_SCHEME.
+      LSApplicationQueriesSchemes: [AUTHENTICATOR_SCHEME],
     },
   },
 
@@ -340,4 +382,4 @@ const config: ExpoConfig = {
  * registered before every listed and autolinked plugin's — and Expo runs mods in reverse order of
  * registration, so this one sees the entitlements last, after `expo-apple-authentication` wrote them.
  */
-export default withAppleSignInOnlyWhenEnabled(config, appleSignIn);
+export default withAuthenticatorQueries(withAppleSignInOnlyWhenEnabled(config, appleSignIn));

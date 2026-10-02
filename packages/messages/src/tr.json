@@ -5588,6 +5588,23 @@
       "currency": {
         "failed": "Para birimi kaydedilemedi. Tekrar deneyin.",
         "loadFailed": "Görüntüleme para birimi okunamadı, bu yüzden şimdilik değiştirilemiyor. Bağlantıyı kontrol edip tekrar deneyin."
+      },
+      "security": {
+        "offline": "İnternet bağlantısı yok. İki adımlı doğrulamadaki değişiklikler için bağlantı gerekir; bu telefondaki uygulama kilidi ise bağlantı olmadan da çalışır.",
+        "scanElsewhere": "Ya da bunu başka bir cihazdan tarayın",
+        "qrLabel": "Doğrulayıcınız için QR kodu",
+        "noAuthenticator": "Bu telefonda doğrulayıcı uygulama yok. QR kodunu başka bir cihazdan tarayın ya da anahtarı elle girin.",
+        "copy": "Kopyala",
+        "copyAll": "Tümünü kopyala",
+        "copyKey": "Anahtarı kopyala",
+        "copyCodes": "Tüm kurtarma kodlarını kopyala",
+        "copied": "Kopyalandı",
+        "keyCopied": "Anahtar panoya kopyalandı.",
+        "codesCopied": "Kurtarma kodları panoya kopyalandı.",
+        "copyFailed": "Kopyalanamadı. Metni seçip kendiniz kopyalayın.",
+        "appLockTitle": "Bu telefonda",
+        "appLockIntro": "Kilit hesabınıza değil, bu telefona aittir: diğer cihazlarınızda hiçbir şeyi değiştirmez ve bağlantı olmadan da çalışır.",
+        "appLockLink": "Uygulama kilidi"
       }
     }
   }

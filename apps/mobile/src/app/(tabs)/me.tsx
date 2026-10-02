@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import * as Application from 'expo-application';
 import { useRouter, type Href } from 'expo-router';
@@ -6,33 +6,23 @@ import * as WebBrowser from 'expo-web-browser';
 import { useQueryClient } from '@tanstack/react-query';
 import { siteUrl } from '../../api/config';
 import { Body, CardTitle, Meta, Subheading } from '../../components/text';
-import {
-  Avatar,
-  InlineAlert,
-  MotionBudgetProvider,
-  Pill,
-  Skeleton,
-  Switch,
-} from '../../components/ui';
+import { Avatar, InlineAlert, MotionBudgetProvider, Pill, Skeleton } from '../../components/ui';
 import { WhatsAppSheet } from '../../components/whatsapp-sheet';
 import { SETTINGS_SECTIONS, sectionLabelKey, sectionPath } from '../../features/settings/sections';
 import { canReadAccount, useMe, useSessionState, type Me } from '../../lib/account';
 import { signOut } from '../../lib/auth';
-import { biometricCapability, canLock, type BiometricCapability } from '../../lib/biometrics';
 import { useT, type MessageKey } from '../../lib/i18n';
 import { currentLocale } from '../../lib/locale';
 import { forgetPersistedCache } from '../../lib/offline';
-import { disableLock, enableLock } from '../../lib/session';
 import { useSession } from '../../lib/use-session';
 import { colors, fontSize, radius, size, spacing } from '../../theme';
 
 /**
  * The Me tab — issue #150. The web's account menu, settings list and footer, in one place.
  *
- * It replaces `app/account.tsx`, and the biometric lock moves here unchanged in
- * behaviour under "This phone" (the switch is offered only when the device can honour it,
- * and signing out clears the offline cache because §4.12 MB-04 keeps the saved and pledge lists
- * on disk).
+ * It replaces `app/account.tsx`. "This phone" is the way to the biometric lock, which lives in
+ * `settings/security` (#161) because it belongs to this phone rather than to the account; signing
+ * out clears the offline cache because §4.12 MB-04 keeps the saved and pledge lists on disk.
  *
  * Every word is a catalogue key: the web's own where the web has the sentence, the
  * `mobile` namespace where only the app does. The staff console link is never rendered:
@@ -54,19 +44,17 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  * All three end with the web footer's last row (`Colophon`), after Sign out where there is one,
  * and Sign out asks first.
  *
- * <h2>Kit controls, and no lime but the switch's own track</h2>
+ * <h2>Kit controls, and no lime</h2>
  *
  * The actions are the kit's pills (issue #151): Register is the white primary, Sign in and Sign
  * out are outlines beside or below it, and nothing here is the lime accent — this tab has no
- * urgent action. The biometric row is the kit's `Switch`: the whole row is the control, named by
- * the lock's own label and described by the line under it, and its track is lime only while on,
- * as a surface, never as text.
+ * urgent action.
  *
  * <h2>Motion: none</h2>
  *
  * The tab is the web's account menu and settings, which `docs/motion-system.md` §5 gives no
- * motion: the route declares `none`, so the switch's knob is placed rather than slid, the
- * skeleton does not shimmer, and a pill does not scale under the thumb.
+ * motion: the route declares `none`, so the skeleton does not shimmer and a pill does not scale
+ * under the thumb.
  */
 
 interface Row {
@@ -100,6 +88,11 @@ const SETTINGS: readonly Row[] = SETTINGS_SECTIONS.map((section) => ({
 }));
 
 const LANGUAGE_ONLY: readonly Row[] = [{ label: 'mobile.me.language', href: '/settings/language' }];
+
+/** The app lock, which is this phone's rather than the account's (#161). */
+const THIS_PHONE: readonly Row[] = [
+  { label: 'mobile.settings.security.appLockLink', href: '/settings/security' },
+];
 
 /** The web footer's `FOOTER_GROUPS.about`, with the same paths. */
 const ABOUT: readonly Row[] = [
@@ -324,7 +317,6 @@ export default function MeScreen() {
   const queryClient = useQueryClient();
   const t = useT();
   const session = useSession();
-  const { locked, unlocked } = session;
   const state = useSessionState();
   const me = useMe();
   const account = state === 'signed-in' ? (me.data ?? null) : null;
@@ -342,9 +334,7 @@ export default function MeScreen() {
    */
   const holdsSession = session.signedIn && state !== 'signed-out';
 
-  const [capability, setCapability] = useState<BiometricCapability | null>(null);
   const [busy, setBusy] = useState(false);
-  const [refused, setRefused] = useState(false);
   const [contacting, setContacting] = useState(false);
   /*
    * Refs, not state, for the two guards: a second tap lands before the re-render that would
@@ -354,33 +344,6 @@ export default function MeScreen() {
    */
   const asking = useRef(false);
   const ending = useRef(false);
-
-  useEffect(() => {
-    let live = true;
-    void biometricCapability().then((answer) => {
-      if (live) setCapability(answer);
-    });
-    return () => {
-      live = false;
-    };
-  }, []);
-
-  const toggleLock = useCallback(
-    async (next: boolean): Promise<void> => {
-      if (busy) return;
-      setBusy(true);
-      setRefused(false);
-      try {
-        // Both directions can be refused, and for the same reason: turning the
-        // lock off has to read the token, which is what presents the prompt.
-        const moved = next ? await enableLock() : await disableLock();
-        if (!moved) setRefused(true);
-      } finally {
-        setBusy(false);
-      }
-    },
-    [busy],
-  );
 
   /**
    * Sign out, once the reader has said so. It ends the session and forgets the offline copy of
@@ -425,8 +388,6 @@ export default function MeScreen() {
     }
   }
 
-  const lockLabel = t(lockLabelKey(capability));
-
   return (
     <MotionBudgetProvider level="none">
       <ScrollView contentContainerStyle={styles.content}>
@@ -442,38 +403,7 @@ export default function MeScreen() {
           </>
         ) : null}
 
-        {holdsSession ? (
-          <View style={styles.section}>
-            <Subheading accessibilityRole="header">{t('mobile.me.thisPhone')}</Subheading>
-            <View style={styles.card}>
-              {capability !== null && canLock(capability) ? (
-                /*
-                 * The whole row is the switch: label, the line under it, and the track are one
-                 * control, announced as "Require Face ID, switch, on" with the line as its hint.
-                 */
-                <Switch
-                  label={lockLabel}
-                  description={t(lockDetailKey(capability, locked, unlocked))}
-                  value={locked}
-                  onValueChange={(next) => void toggleLock(next)}
-                  disabled={busy}
-                />
-              ) : (
-                <View style={styles.row}>
-                  <View style={styles.rowText}>
-                    <Body tone="primary">{lockLabel}</Body>
-                    <Meta>{t(lockDetailKey(capability, locked, unlocked))}</Meta>
-                  </View>
-                </View>
-              )}
-              {refused ? (
-                <Body accessibilityRole="alert" style={{ color: colors.danger }}>
-                  {t('mobile.lock.refused')}
-                </Body>
-              ) : null}
-            </View>
-          </View>
-        ) : null}
+        {holdsSession ? <Group titleKey="mobile.me.thisPhone" rows={THIS_PHONE} /> : null}
 
         {state === 'signed-out' ? (
           <>
@@ -520,36 +450,6 @@ export default function MeScreen() {
       </ScrollView>
     </MotionBudgetProvider>
   );
-}
-
-/** What to call the control, in the words of whatever the device actually has. */
-function lockLabelKey(capability: BiometricCapability | null): MessageKey {
-  switch (capability) {
-    case 'face':
-      return 'mobile.lock.face';
-    case 'fingerprint':
-      return 'mobile.lock.fingerprint';
-    case 'other':
-      return 'mobile.lock.other';
-    case 'not-enrolled':
-      return 'mobile.lock.notEnrolled';
-    case 'unavailable':
-      return 'mobile.lock.unavailable';
-    case null:
-      return 'mobile.lock.checking';
-  }
-}
-
-function lockDetailKey(
-  capability: BiometricCapability | null,
-  locked: boolean,
-  unlocked: boolean,
-): MessageKey {
-  if (capability === null) return 'mobile.lock.wait';
-  if (capability === 'unavailable') return 'mobile.lock.keychain';
-  if (capability === 'not-enrolled') return 'mobile.lock.enrol';
-  if (!locked) return 'mobile.lock.keychain';
-  return unlocked ? 'mobile.lock.open' : 'mobile.lock.armed';
 }
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
