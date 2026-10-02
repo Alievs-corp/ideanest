@@ -318,6 +318,7 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges, mode = 'edit' }: 
 
     try {
       const next = await editPledge(pledge.id, edit, keyring.current.keyFor(edit));
+      keyring.current.retire(edit);
       onSaved(next);
       setSaved(true);
     } catch (cause) {

@@ -268,6 +268,22 @@ describe('the editor’s account of the money', () => {
     expect(vi.mocked(editPledge).mock.calls.at(-1)?.[1]).toEqual({ isAnonymous: true });
   });
 
+  it('mints a new key for an edit sent again after it succeeded, so it is not replayed', async () => {
+    vi.mocked(editPledge).mockResolvedValue(pledge({ ...noReward, isAnonymous: true }));
+    const user = userEvent.setup();
+    await renderEditor();
+
+    await user.click(screen.getByRole('checkbox', { name: new RegExp(`^${CHECKOUT.anonymous.label}`, 'u') }));
+    await user.click(screen.getByRole('button', { name: EDITOR.save }));
+    await screen.findByText(EDITOR.savedBody);
+    await user.click(screen.getByRole('button', { name: EDITOR.save }));
+    await screen.findByText(EDITOR.savedBody);
+
+    const calls = vi.mocked(editPledge).mock.calls;
+    expect(calls).toHaveLength(2);
+    expect(calls[0]?.[2]).not.toBe(calls[1]?.[2]);
+  });
+
   it('never tells a backer the charge happens later', () => {
     for (const sentence of [EDITOR.intro, EDITOR.savedBody]) {
       expect(sentence).not.toMatch(/when the campaign closes|collection happens|nothing has been charged/iu);

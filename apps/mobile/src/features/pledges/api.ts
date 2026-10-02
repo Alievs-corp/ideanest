@@ -1,6 +1,12 @@
 import type { components } from '@ideanest/api-client';
-import type { PledgeResponse } from '@ideanest/checkout/types';
+import type {
+  PledgeEdit,
+  PledgeRaiseRequest,
+  PledgeRaiseResponse,
+  PledgeResponse,
+} from '@ideanest/checkout/types';
 import { api, sendJson } from '../../api/client';
+import { sendIdempotent } from '../../api/mutate';
 
 export type BackerPledgeSummary = components['schemas']['BackerPledgeSummary'];
 
@@ -28,4 +34,16 @@ export async function readPledge(id: string, signal?: AbortSignal): Promise<Pled
 
 export async function openBackerDispute(pledgeId: string, reason: string): Promise<void> {
   await sendJson('POST', `/v1/pledges/${encodeURIComponent(pledgeId)}/disputes`, { reason });
+}
+
+export function editPledge(id: string, edit: PledgeEdit, idempotencyKey: string): Promise<PledgeResponse> {
+  return sendIdempotent<PledgeResponse>(`/v1/pledges/${encodeURIComponent(id)}`, edit, idempotencyKey, 'PATCH');
+}
+
+export function raisePledge(
+  id: string,
+  body: PledgeRaiseRequest,
+  idempotencyKey: string,
+): Promise<PledgeRaiseResponse> {
+  return sendIdempotent<PledgeRaiseResponse>(`/v1/pledges/${encodeURIComponent(id)}/raise`, body, idempotencyKey);
 }
