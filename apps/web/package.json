@@ -13,10 +13,11 @@
   "dependencies": {
     "@ideanest/api-client": "workspace:*",
     "@ideanest/campaign": "workspace:*",
+    "@ideanest/checkout": "workspace:*",
     "@ideanest/design-tokens": "workspace:*",
     "@ideanest/discovery": "workspace:*",
-    "@ideanest/money": "workspace:*",
     "@ideanest/messages": "workspace:*",
+    "@ideanest/money": "workspace:*",
     "@ideanest/ui": "workspace:*",
     "decimal.js": "^10.6.0",
     "lucide-react": "^1.45.0",
