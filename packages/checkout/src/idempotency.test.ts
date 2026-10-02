@@ -93,3 +93,15 @@ describe('IdempotencyKeyring', () => {
     expect(keyring.keyFor({ ...body })).not.toBe(first);
   });
 });
+
+describe('IdempotencyKeyring with an injected minter', () => {
+  it('mints through the given function, once per intent', () => {
+    let count = 0;
+    const keyring = new IdempotencyKeyring(() => `key-${++count}`);
+    expect(keyring.keyFor({ a: 1 })).toBe('key-1');
+    expect(keyring.keyFor({ a: 1 })).toBe('key-1');
+    expect(keyring.keyFor({ a: 2 })).toBe('key-2');
+    keyring.retire({ a: 1 });
+    expect(keyring.keyFor({ a: 1 })).toBe('key-3');
+  });
+});

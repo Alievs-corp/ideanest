@@ -1,0 +1,30 @@
+{
+  "name": "@ideanest/checkout",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "description": "The checkout's platform-neutral rules: the pledge wire types, the client preview quote, idempotency keys, the refusal behaviour table and the field refusal wording, shared by apps/web and apps/mobile.",
+  "exports": {
+    "./types": "./src/types.ts",
+    "./quote": "./src/quote.ts",
+    "./idempotency": "./src/idempotency.ts",
+    "./failure": "./src/failure.ts",
+    "./refusals": "./src/refusals.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ideanest/api-client": "workspace:*",
+    "@ideanest/messages": "workspace:*",
+    "@ideanest/money": "workspace:*",
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

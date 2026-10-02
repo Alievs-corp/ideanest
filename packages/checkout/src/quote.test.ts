@@ -1,6 +1,6 @@
 import Decimal from 'decimal.js';
 import { describe, expect, it } from 'vitest';
-import type { PublicReward } from './api';
+import type { PublicReward } from './types';
 import {
   destinationOptions,
   quoteSelection,
