@@ -302,6 +302,20 @@ jest.mock('expo-clipboard', () => ({
 }));
 
 /**
+ * The on-device image conversion behind the avatar upload, issue #161. Its native module does not
+ * exist under Jest; a screen test that loads `lib/media/upload` for real must not die on import.
+ * `upload.test.ts` mocks it with a spy of its own to assert the conversion.
+ */
+jest.mock('expo-image-manipulator', () => ({
+  SaveFormat: { JPEG: 'jpeg', PNG: 'png', WEBP: 'webp' },
+  ImageManipulator: {
+    manipulate: () => {
+      throw new Error('expo-image-manipulator is not available under Jest; mock it in the test.');
+    },
+  },
+}));
+
+/**
  * The photo library and the camera — the UI kit's `FilePicker`, issue #151. Cancelled by default,
  * which is what a test that says nothing should get; a test that picks sets the next result.
  */
