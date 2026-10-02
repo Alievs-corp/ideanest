@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,6 +17,7 @@ const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navig
 let mockSession = { signedIn: true, locked: false, unlocked: false };
 const mockGet = jest.fn();
 const mockPublicGet = jest.fn();
+const mockDeleteFile = jest.fn();
 
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
@@ -27,6 +28,18 @@ jest.mock('../../../api/client', () => ({
   api: () => ({ get: mockGet }),
   publicApi: () => ({ get: mockPublicGet }),
   sendJson: jest.fn(),
+}));
+jest.mock('expo-file-system', () => ({
+  Paths: { cache: { uri: 'file:///app/cache' } },
+  File: class {
+    readonly uri: string;
+    constructor(uri: string) {
+      this.uri = uri;
+    }
+    delete() {
+      mockDeleteFile(this.uri);
+    }
+  },
 }));
 jest.mock('../../../lib/media/upload', () => ({
   ...jest.requireActual('../../../lib/media/upload'),
@@ -85,8 +98,10 @@ async function settle() {
 
 let queryClient: QueryClient;
 
-async function show() {
+async function show(cached?: unknown) {
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // What an earlier visit left in memory (the cache keeps it for days).
+  if (cached !== undefined) queryClient.setQueryData(['settings', 'profile'], cached);
   await render(
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={queryClient}>
@@ -163,6 +178,55 @@ describe('states', () => {
   });
 });
 
+describe('a profile already in memory', () => {
+  const STALE = { ...PROFILE, name: 'Old Name', socialLinks: [] };
+
+  it('waits for the read made on this visit and seeds the form from it, not from the cache', async () => {
+    await show(STALE);
+    expect(screen.getByTestId('profile-name').props.value).toBe(PROFILE.name);
+    expect(screen.getByLabelText('Instagram address')).toBeTruthy();
+
+    // Saving untouched therefore cannot wipe the link the cached copy did not have.
+    sendJson.mockResolvedValueOnce(PROFILE);
+    await fireEvent.press(screen.getByTestId('profile-save'));
+    await settle();
+    expect(sendJson).toHaveBeenCalledWith('PATCH', '/v1/me/profile', {});
+  });
+
+  it('takes a newer answer while untouched, and keeps an edit in progress', async () => {
+    await show();
+    mockGet.mockResolvedValueOnce({ ...PROFILE, bio: 'Edited on the web.' });
+    await act(async () => {
+      await queryClient.refetchQueries({ queryKey: ['settings', 'profile'] });
+    });
+    await settle();
+    expect(screen.getByTestId('profile-bio').props.value).toBe('Edited on the web.');
+
+    await fireEvent.changeText(screen.getByTestId('profile-name'), 'Typing here');
+    mockGet.mockResolvedValueOnce({ ...PROFILE, bio: 'Edited again.' });
+    await act(async () => {
+      await queryClient.refetchQueries({ queryKey: ['settings', 'profile'] });
+    });
+    await settle();
+    expect(screen.getByTestId('profile-name').props.value).toBe('Typing here');
+    expect(screen.getByTestId('profile-bio').props.value).toBe('Edited on the web.');
+  });
+
+  it('shows the cached copy read-only when the read is paused offline', async () => {
+    setOnline(false);
+    onlineManager.setOnline(false);
+    try {
+      await show(STALE);
+      expect(screen.getByTestId('profile-name').props.value).toBe('Old Name');
+      expect(screen.getByTestId('profile-name').props.editable).toBe(false);
+      expect(screen.getByTestId('profile-save').props.accessibilityState.disabled).toBe(true);
+      expect(mockGet).not.toHaveBeenCalled();
+    } finally {
+      onlineManager.setOnline(true);
+    }
+  });
+});
+
 describe('how you appear', () => {
   it('links the public profile in-app, says the handle is fixed, and links privacy', async () => {
     await show();
@@ -191,6 +255,8 @@ describe('saving', () => {
     expect(screen.getByText(T.savedTitle)).toBeTruthy();
     expect(screen.getByText('It is live at /u/aysel.')).toBeTruthy();
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['me'] });
+    // The public profile "It is live at" points to, and its campaign list under the same root.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['profile', 'aysel'] });
     invalidate.mockRestore();
 
     // Editing again withdraws the confirmation.
@@ -314,7 +380,7 @@ describe('profile picture', () => {
   });
 
   it('picks from the library with a square crop, uploads, and saves avatarUrl at once', async () => {
-    picker.__setNextResult({ canceled: false, assets: [{ uri: 'file:///picked/a.heic' }] });
+    picker.__setNextResult({ canceled: false, assets: [{ uri: 'file:///app/cache/ImagePicker/a.jpg' }] });
     upload.mockImplementation(async (_uri, options) => {
       options?.onStage?.('uploading');
       return UPLOADED;
@@ -329,11 +395,13 @@ describe('profile picture', () => {
     expect(ImagePicker.launchImageLibraryAsync).toHaveBeenCalledWith(
       expect.objectContaining({ mediaTypes: 'images', allowsEditing: true, aspect: [1, 1] }),
     );
-    expect(upload).toHaveBeenCalledWith('file:///picked/a.heic', expect.anything());
+    expect(upload).toHaveBeenCalledWith('file:///app/cache/ImagePicker/a.jpg', expect.anything());
     expect(sendJson).toHaveBeenCalledWith('PATCH', '/v1/me/profile', { avatarUrl: UPLOADED.url });
     expect(screen.getByTestId('avatar-saved')).toBeTruthy();
     expect(screen.getByTestId('avatar-preview-image', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByText(T.avatar.cropped)).toBeTruthy();
+    // The picker's cache copy is removed once the upload is over.
+    expect(mockDeleteFile).toHaveBeenCalledWith('file:///app/cache/ImagePicker/a.jpg');
     // The rest of the draft is left as it was, and is not yet saved.
     expect(screen.getByTestId('profile-bio').props.value).toBe('An unsaved edit.');
 
@@ -352,6 +420,8 @@ describe('profile picture', () => {
     expect(screen.getByText(COVER.notUsedTitle)).toBeTruthy();
     expect(screen.getByText(COVER.failures.UPLOADS_UNAVAILABLE)).toBeTruthy();
     expect(sendJson).not.toHaveBeenCalled();
+    // A file outside this app's cache is never deleted.
+    expect(mockDeleteFile).not.toHaveBeenCalled();
   });
 
   it('puts a refused avatarUrl under the picture', async () => {
@@ -416,7 +486,9 @@ describe('upload failure messages', () => {
     ['EMPTY', COVER.failures.EMPTY],
     ['UPLOADS_UNAVAILABLE', COVER.failures.UPLOADS_UNAVAILABLE],
     ['MEDIA_STORAGE_UNREACHABLE', COVER.failures.MEDIA_STORAGE_UNREACHABLE],
-    ['UPLOAD_STILL_PROCESSING', COVER.failures.UPLOAD_STILL_PROCESSING],
+    ['UPLOAD_TRANSFER_FAILED', COVER.failures.UPLOAD_TRANSFER_FAILED],
+    // Not the cover's "may appear if you come back": an avatar keeps no media id.
+    ['UPLOAD_STILL_PROCESSING', en.mobile.settings.profile.avatar.stillProcessing],
   ])('%s has its own sentence', (code, sentence) => {
     expect(describeUploadFailure(new UploadFailed(code), translate())).toBe(sentence);
   });

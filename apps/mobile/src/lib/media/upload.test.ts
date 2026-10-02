@@ -263,6 +263,47 @@ describe('uploadImage', () => {
     expect(mockDelete).toHaveBeenCalled();
   });
 
+  it('reads a dropped connection as the connection, never as a refused file', async () => {
+    sendJson.mockRejectedValueOnce(new TypeError('Network request failed'));
+    expect(((await run()).result as { error: UploadFailed }).error.code).toBe(
+      'UPLOAD_TRANSFER_FAILED',
+    );
+
+    sendJson.mockImplementation(async (_method, path) => {
+      if (path === '/v1/media/uploads') return TICKET;
+      throw new TypeError('Network request failed');
+    });
+    expect(((await run()).result as { error: UploadFailed }).error.code).toBe(
+      'UPLOAD_TRANSFER_FAILED',
+    );
+  });
+
+  it('asks again on the next tick after a dropped poll or a 5xx', async () => {
+    mockGet
+      .mockRejectedValueOnce(new TypeError('Network request failed'))
+      .mockRejectedValueOnce(refusal(502))
+      .mockResolvedValueOnce(READY);
+
+    const { result } = await run();
+
+    expect(result.ok).toBe(true);
+    expect(mockGet).toHaveBeenCalledTimes(3);
+  });
+
+  it('says the connection went when every poll in the 90 seconds got no answer', async () => {
+    mockGet.mockRejectedValue(new TypeError('Network request failed'));
+    const { result } = await run();
+    expect((result as { error: UploadFailed }).error.code).toBe('UPLOAD_TRANSFER_FAILED');
+    expect(mockGet).toHaveBeenCalledTimes(POLL_LIMIT);
+  });
+
+  it('stops at once on a 4xx poll', async () => {
+    mockGet.mockRejectedValueOnce(refusal(404));
+    const { result } = await run();
+    expect((result as { error: UploadFailed }).error.code).toBe('MEDIA_NOT_FOUND');
+    expect(mockGet).toHaveBeenCalledTimes(1);
+  });
+
   it('stops when aborted while waiting', async () => {
     mockGet.mockResolvedValue({ id: 'media-1', status: 'PROCESSING' });
     const controller = new AbortController();

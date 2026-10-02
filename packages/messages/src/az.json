@@ -5631,7 +5631,8 @@
         "loadFailed": "Profiliniz yüklənə bilmədi. Bağlantını yoxlayın və yenidən cəhd edin.",
         "avatar": {
           "useAddress": "Şəklin ünvanını yazın",
-          "saved": "Yeni şəkliniz saxlanıldı və profilinizdə göstərilir."
+          "saved": "Yeni şəkliniz saxlanıldı və profilinizdə göstərilir.",
+          "stillProcessing": "Şəklin işlənməsi adətkindən uzun çəkir. Bir azdan yenidən cəhd edin."
         }
       }
     }

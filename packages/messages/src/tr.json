@@ -5631,7 +5631,8 @@
         "loadFailed": "Profiliniz yüklenemedi. Bağlantınızı kontrol edip yeniden deneyin.",
         "avatar": {
           "useAddress": "Görsel adresi gir",
-          "saved": "Yeni fotoğrafınız kaydedildi ve profilinizde gösteriliyor."
+          "saved": "Yeni fotoğrafınız kaydedildi ve profilinizde gösteriliyor.",
+          "stillProcessing": "Fotoğrafınızın işlenmesi her zamankinden uzun sürüyor. Birazdan yeniden deneyin."
         }
       }
     }

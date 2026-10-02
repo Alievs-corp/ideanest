@@ -42,7 +42,8 @@ export interface UploadOptions {
  * `message` is the service's own sentence when it sent one, and `''` otherwise.
  *
  * Ours: `UPLOADS_UNAVAILABLE` (a 503 without a code), `UNREADABLE` (the phone could not convert
- * it), `UPLOAD_REFUSED`, `UPLOAD_TRANSFER_FAILED`, `UPLOAD_UNFINISHED`, `MEDIA_NOT_FOUND` and
+ * it), `UPLOAD_REFUSED`, `UPLOAD_TRANSFER_FAILED` (also every request that got no answer at all:
+ * a dropped connection is not a fault of the file), `UPLOAD_UNFINISHED`, `MEDIA_NOT_FOUND` and
  * `UPLOAD_STILL_PROCESSING` — the same names the web's cover uploader has copy for.
  */
 export class UploadFailed extends Error {
@@ -89,7 +90,7 @@ export async function uploadImage(
     await announceArrival(ticket.mediaId, signal);
     return await waitUntilReady(ticket.mediaId, signal);
   } finally {
-    // The JPEG is a copy in the cache; the original stays where the picker found it.
+    // The JPEG is this helper's own cache copy. The picked file is the caller's to remove.
     try {
       file.delete();
     } catch {
@@ -128,6 +129,7 @@ async function requestAddress(byteSize: number, signal?: AbortSignal): Promise<T
     // The size is this phone's word; the service measures the bytes again on arrival.
     body = await sendJson('POST', '/v1/media/uploads', { contentType: JPEG, byteSize });
   } catch (cause) {
+    if (isAbortError(cause)) throw cause;
     throw refusal(cause, 'UPLOAD_REFUSED');
   }
   throwIfAborted(signal);
@@ -168,12 +170,15 @@ async function announceArrival(mediaId: string, signal?: AbortSignal): Promise<v
     // Safe to repeat: the service answers the current state for anything past PENDING.
     await sendJson('POST', `/v1/media/${encodeURIComponent(mediaId)}/complete`);
   } catch (cause) {
+    if (isAbortError(cause)) throw cause;
     throw refusal(cause, 'UPLOAD_UNFINISHED');
   }
 }
 
 async function waitUntilReady(mediaId: string, signal?: AbortSignal): Promise<UploadedImage> {
+  let lastWasUnreachable = false;
   for (let attempt = 0; attempt < POLL_LIMIT; attempt += 1) {
+    if (attempt > 0) await pause(POLL_INTERVAL_MS, signal);
     throwIfAborted(signal);
     let state;
     try {
@@ -183,8 +188,14 @@ async function waitUntilReady(mediaId: string, signal?: AbortSignal): Promise<Up
       });
     } catch (cause) {
       if (isAbortError(cause)) throw cause;
+      // A dropped connection or a 5xx on one poll is asked again on the next tick.
+      if (isTransient(cause)) {
+        lastWasUnreachable = !(cause instanceof ApiError);
+        continue;
+      }
       throw refusal(cause, 'MEDIA_NOT_FOUND');
     }
+    lastWasUnreachable = false;
 
     if (
       state.status === 'READY' &&
@@ -201,13 +212,20 @@ async function waitUntilReady(mediaId: string, signal?: AbortSignal): Promise<Up
       };
     }
     if (state.status === 'FAILED') throw new UploadFailed(state.failureReason ?? 'UNREADABLE');
-    await pause(POLL_INTERVAL_MS, signal);
   }
-  // Not the image's fault: it is still being worked on, and may appear later.
-  throw new UploadFailed('UPLOAD_STILL_PROCESSING');
+  // Not the image's fault: the connection went, or it is still being worked on.
+  throw new UploadFailed(lastWasUnreachable ? 'UPLOAD_TRANSFER_FAILED' : 'UPLOAD_STILL_PROCESSING');
 }
 
-/** A refusal as one of ours: the service's `code`, else 503's "unavailable", else `fallback`. */
+/** No answer at all, or a server-side failure: worth asking again. */
+function isTransient(cause: unknown): boolean {
+  return !(cause instanceof ApiError) || cause.status >= 500;
+}
+
+/**
+ * A refusal as one of ours: the service's `code`, else 503's "unavailable", else `fallback`.
+ * A request that got no answer is the connection's fault, never the file's.
+ */
 function refusal(cause: unknown, fallback: string): UploadFailed {
   if (cause instanceof ApiError) {
     const code = cause.problem?.code;
@@ -217,7 +235,7 @@ function refusal(cause: unknown, fallback: string): UploadFailed {
     if (cause.status === 503) return new UploadFailed('UPLOADS_UNAVAILABLE');
     return new UploadFailed(fallback, cause.problem?.detail ?? '');
   }
-  return new UploadFailed(fallback);
+  return new UploadFailed('UPLOAD_TRANSFER_FAILED');
 }
 
 function abortError(): Error {

@@ -5631,7 +5631,8 @@
         "loadFailed": "Your profile could not be loaded. Check your connection and try again.",
         "avatar": {
           "useAddress": "Use an image address",
-          "saved": "Your new picture is saved and shown on your profile."
+          "saved": "Your new picture is saved and shown on your profile.",
+          "stillProcessing": "Your picture is taking longer than usual to process. Try again in a moment."
         }
       }
     }

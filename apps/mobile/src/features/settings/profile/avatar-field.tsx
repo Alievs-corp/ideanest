@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
+import { File, Paths } from 'expo-file-system';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera, Images } from 'lucide-react-native';
@@ -42,7 +43,6 @@ const KNOWN_FAILURES = [
   'UNREADABLE',
   'UPLOADS_UNAVAILABLE',
   'MEDIA_STORAGE_UNREACHABLE',
-  'UPLOAD_STILL_PROCESSING',
   'UPLOAD_TRANSFER_FAILED',
   'UPLOAD_REFUSED',
   'UPLOAD_UNFINISHED',
@@ -58,6 +58,11 @@ function isKnownFailure(code: string): code is KnownFailure {
 /** The sentence for a failed upload: the code's own where there is one, else the service's. */
 export function describeUploadFailure(cause: unknown, t: Translate): string {
   if (cause instanceof UploadFailed) {
+    // The cover's sentence says the image may still appear; an avatar keeps no media id, so it
+    // never will.
+    if (cause.code === 'UPLOAD_STILL_PROCESSING') {
+      return t('mobile.settings.profile.avatar.stillProcessing');
+    }
     if (cause.code === 'TOO_SMALL') {
       return t('campaignEditor.cover.failures.TOO_SMALL', {
         minimum: `${MINIMUM_EDGE}×${MINIMUM_EDGE}`,
@@ -67,6 +72,19 @@ export function describeUploadFailure(cause: unknown, t: Translate): string {
     if (cause.message !== '') return cause.message;
   }
   return t('campaignEditor.cover.unusable');
+}
+
+/**
+ * The system picker hands over a copy in this app's cache (the crop is always a new file), which
+ * nothing else removes. Anything outside the cache is not ours to delete.
+ */
+function forgetPicked(uri: string): void {
+  try {
+    const cache = Paths.cache.uri.endsWith('/') ? Paths.cache.uri : `${Paths.cache.uri}/`;
+    if (uri.startsWith(cache)) new File(uri).delete();
+  } catch {
+    // Already gone: nothing to tidy.
+  }
 }
 
 type Note = { readonly tone: 'success' | 'danger'; readonly title?: string; readonly text: string };
@@ -132,6 +150,7 @@ export function AvatarField({
       if (isAbortError(cause)) return;
       setNote({ tone: 'danger', title: tCover('notUsedTitle'), text: describeUploadFailure(cause, tAll) });
     } finally {
+      forgetPicked(uri);
       if (inFlight.current === controller) {
         inFlight.current = null;
         setStage(null);

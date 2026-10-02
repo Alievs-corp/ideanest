@@ -102,12 +102,24 @@ function ProfileEditor() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<ProfileField, string>>>({});
   const inFlight = useRef(false);
 
+  /*
+   * Only a read made since this screen opened seeds the form: the cache can be days old, and a
+   * save of `socialLinks` replaces the whole list, so a stale baseline would delete a link added
+   * on the web. Offline (the read paused) the cached copy is shown, read-only.
+   */
+  const ready =
+    query.data !== undefined && (query.isFetchedAfterMount || query.fetchStatus === 'paused');
+  const cachedOnly = !query.isFetchedAfterMount;
+
   useEffect(() => {
-    if (query.data !== undefined && baseline === null) {
-      setBaseline(query.data);
-      setDraft(draftFrom(query.data));
-    }
-  }, [query.data, baseline]);
+    if (!ready || query.data === undefined || query.data === baseline) return;
+    // A newer answer replaces the form only while nothing in it has been changed.
+    const untouched =
+      baseline === null || draft === null || Object.keys(editFrom(baseline, draft)).length === 0;
+    if (!untouched) return;
+    setBaseline(query.data);
+    setDraft(draftFrom(query.data));
+  }, [ready, query.data, baseline, draft]);
 
   const savedWords =
     saved && baseline !== null ? `${t('savedTitle')}. ${t('savedBody', { address: profilePath(baseline.slug) })}` : '';
@@ -116,10 +128,10 @@ function ProfileEditor() {
     if (Platform.OS === 'ios' && savedWords !== '') announce(savedWords);
   }, [savedWords]);
 
-  if (baseline === null || draft === null) {
+  if (!ready || baseline === null || draft === null) {
     // Offline with nothing in memory: a service refusal is still shown as one.
     const answered = query.error instanceof ApiError;
-    if (!answered && (!online || query.fetchStatus === 'paused')) {
+    if (query.data === undefined && !answered && (!online || query.fetchStatus === 'paused')) {
       return (
         <InlineAlert
           variant="warning"
@@ -162,7 +174,7 @@ function ProfileEditor() {
   }
 
   const profile = baseline;
-  const readOnly = saving || !online;
+  const readOnly = saving || !online || cachedOnly;
   const address = profilePath(profile.slug);
   const profileHref = { pathname: '/u/[slug]', params: { slug: profile.slug } } as const;
 
@@ -177,6 +189,8 @@ function ProfileEditor() {
     queryClient.setQueryData(queryKeys.ownProfile(), answer);
     // The account's name is on `GET /v1/me`, which the Me tab prints.
     void queryClient.invalidateQueries({ queryKey: ACCOUNT_KEYS.me });
+    // And `u/[slug]`, which "It is live at /u/{slug}" sends somebody to (its projects too).
+    void queryClient.invalidateQueries({ queryKey: queryKeys.profile(answer.slug) });
   }
 
   function describeFailure(cause: unknown): string {
