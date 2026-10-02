@@ -1,5 +1,6 @@
 import type { components } from '@ideanest/api-client';
-import { api } from '../../api/client';
+import type { PledgeResponse } from '@ideanest/checkout/types';
+import { api, sendJson } from '../../api/client';
 
 export type BackerPledgeSummary = components['schemas']['BackerPledgeSummary'];
 
@@ -9,7 +10,6 @@ export interface PledgePage {
 }
 
 export const PLEDGE_PAGE_SIZE = 24;
-export const LOOKUP_PAGE_LIMIT = 3;
 
 export async function listMyPledges(cursor: string | null, signal?: AbortSignal): Promise<PledgePage> {
   const body = await api().get('/v1/me/pledges', {
@@ -19,21 +19,13 @@ export async function listMyPledges(cursor: string | null, signal?: AbortSignal)
   return { items: body.pledges ?? [], nextCursor: body.nextCursor ?? null };
 }
 
-export async function findMyPledge(
-  pledgeId: string,
-  cached: readonly BackerPledgeSummary[],
-  signal?: AbortSignal,
-): Promise<BackerPledgeSummary | null> {
-  const known = cached.find((summary) => summary.pledgeId === pledgeId);
-  if (known !== undefined) return known;
+export async function readPledge(id: string, signal?: AbortSignal): Promise<PledgeResponse> {
+  return (await api().get('/v1/pledges/{id}', {
+    path: { id },
+    ...(signal === undefined ? {} : { signal }),
+  })) as unknown as PledgeResponse;
+}
 
-  let cursor: string | null = null;
-  for (let page = 0; page < LOOKUP_PAGE_LIMIT; page += 1) {
-    const answer: PledgePage = await listMyPledges(cursor, signal);
-    const found = answer.items.find((summary) => summary.pledgeId === pledgeId);
-    if (found !== undefined) return found;
-    if (answer.nextCursor === null) return null;
-    cursor = answer.nextCursor;
-  }
-  return null;
+export async function openBackerDispute(pledgeId: string, reason: string): Promise<void> {
+  await sendJson('POST', `/v1/pledges/${encodeURIComponent(pledgeId)}/disputes`, { reason });
 }

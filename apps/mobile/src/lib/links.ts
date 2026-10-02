@@ -140,7 +140,21 @@ const ID_ROUTES: readonly [RegExp, (m: RegExpExecArray, query: URLSearchParams) 
     new RegExp(`^/projects/(${UUID})/dashboard(?:/(charts|backers|finance|surveys))?/?$`),
     (m) => ({ pathname: `/campaigns/${m[1]}/dashboard${m[2] === undefined ? '' : `/${m[2]}`}` }),
   ],
+  [/^\/pledges\/?$/, () => ({ pathname: '/pledges' })],
+  [
+    new RegExp(`^/pledges/(${UUID})/?$`),
+    (m, query) =>
+      withParams(`/pledges/${m[1]}`, {
+        payment: returnHintParam(query.get('payment')),
+        raise: returnHintParam(query.get('raise')),
+      }),
+  ],
+  [new RegExp(`^/pledges/(${UUID})/address/?$`), (m) => ({ pathname: `/pledges/${m[1]}/address` })],
 ];
+
+function returnHintParam(value: string | null): string | undefined {
+  return value === 'returned' || value === 'failed' ? value : undefined;
+}
 
 /**
  * The campaign page's tabs other than the default, as the web names them in `?tab=`
