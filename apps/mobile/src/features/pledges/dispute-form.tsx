@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ApiError } from '@ideanest/api-client';
 import {
@@ -9,6 +9,7 @@ import {
   Pill,
   Subheading,
   Textarea,
+  announce,
 } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { colors, radius, size, spacing } from '../../theme';
@@ -28,6 +29,9 @@ export function DisputeForm({ pledgeId, disabled }: DisputeFormProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState(false);
+  useEffect(() => {
+    if (opened) announce(t('opened'));
+  }, [opened, t]);
 
   async function submit() {
     const trimmed = reason.trim();
@@ -57,7 +61,7 @@ export function DisputeForm({ pledgeId, disabled }: DisputeFormProps) {
         variant="info"
         title={t('heading')}
         description={t('opened')}
-        politeness="polite"
+        politeness="off"
         testID="dispute-opened"
       />
     );

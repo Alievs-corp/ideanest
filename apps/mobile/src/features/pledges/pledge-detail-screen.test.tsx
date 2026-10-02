@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -77,23 +77,24 @@ async function settle() {
   }
 }
 
-async function show(props: { payment?: string; raise?: string; editor?: boolean } = {}) {
-  client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: 60_000 } } });
-  await render(
+function tree(props: { payment?: string; raise?: string }) {
+  return (
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={client}>
         <IntlProvider locale="en" messages={en}>
-          <PledgeDetailScreen
-            id="pl-1"
-            payment={props.payment}
-            raise={props.raise}
-            renderEditor={props.editor === false ? undefined : () => <EditorStub />}
-          />
+          <PledgeDetailScreen id="pl-1" payment={props.payment} raise={props.raise} renderEditor={() => <EditorStub />} />
         </IntlProvider>
       </QueryClientProvider>
-    </SafeAreaProvider>,
+    </SafeAreaProvider>
   );
+}
+
+async function show(props: { payment?: string; raise?: string } = {}, before?: (client: QueryClient) => void) {
+  client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: 60_000 } } });
+  before?.(client);
+  const view = await render(tree(props));
   await settle();
+  return view;
 }
 
 function EditorStub() {
@@ -133,8 +134,10 @@ describe('the payment return notice', () => {
 
   it('confirms a returned payment once: one success haptic and the pledges re-read', async () => {
     api.readPledge.mockResolvedValue(pledge({ state: 'COLLECTED' }));
-    await show({ payment: 'returned' });
-    const invalidate = jest.spyOn(client, 'invalidateQueries');
+    let invalidate: jest.SpyInstance | null = null;
+    await show({ payment: 'returned' }, (seed) => {
+      invalidate = jest.spyOn(seed, 'invalidateQueries');
+    });
     await act(async () => {
       await client.refetchQueries({ queryKey: queryKeys.pledge('pl-1') });
     });
@@ -142,7 +145,54 @@ describe('the payment return notice', () => {
 
     expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledTimes(1);
     expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledWith('success');
-    expect(invalidate).not.toHaveBeenCalled();
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['pledges'] });
+  });
+
+  it('keeps the notice after the hint is cleared from the route', async () => {
+    api.readPledge.mockResolvedValue(pledge({ state: 'DRAFT' }));
+    const view = await show({ payment: 'failed' });
+    await view.rerender(tree({}));
+    await settle();
+
+    expect(screen.getByTestId('payment-failed')).toBeTruthy();
+  });
+
+  it('reads a returned draft every 3 s until it is paid, then stops', async () => {
+    jest.useFakeTimers();
+    try {
+      api.readPledge
+        .mockResolvedValueOnce(pledge({ state: 'DRAFT' }))
+        .mockResolvedValueOnce(pledge({ state: 'DRAFT' }))
+        .mockResolvedValue(pledge({ state: 'COLLECTED' }));
+      client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: 60_000 } } });
+      await render(tree({ payment: 'returned' }));
+      const flush = async (ms: number) => {
+        await act(async () => {
+          jest.advanceTimersByTime(ms);
+          for (let i = 0; i < 5; i += 1) await Promise.resolve();
+        });
+      };
+      await flush(0);
+      expect(screen.getByTestId('payment-waiting')).toBeTruthy();
+      expect(api.readPledge).toHaveBeenCalledTimes(1);
+
+      await flush(3000);
+      await flush(0);
+      expect(api.readPledge).toHaveBeenCalledTimes(2);
+      await flush(3000);
+      await flush(0);
+      expect(api.readPledge).toHaveBeenCalledTimes(4);
+      expect(screen.getByTestId('payment-paid')).toBeTruthy();
+      expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledTimes(1);
+
+      await flush(0);
+      const afterPaid = api.readPledge.mock.calls.length;
+      for (let i = 0; i < 10; i += 1) await flush(3000);
+      expect(api.readPledge).toHaveBeenCalledTimes(afterPaid);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('reads the raise rather than the pledge after a raise return', async () => {
@@ -187,11 +237,10 @@ describe('which controls a state offers', () => {
     expect(screen.queryByTestId('pledge-locked') !== null).toBe(!editable);
     expect(screen.queryByTestId('dispute-open') !== null).toBe(state === 'COLLECTED');
 
-    const controls = [
-      ...screen.queryAllByRole('button'),
-      ...screen.queryAllByRole('link'),
-    ].map((node) => String(node.props.accessibilityLabel ?? ''));
-    for (const label of controls) expect(label).not.toMatch(/cancel|withdraw/i);
+    for (const control of [...screen.queryAllByRole('button'), ...screen.queryAllByRole('link')]) {
+      expect(String(control.props.accessibilityLabel ?? '')).not.toMatch(/cancel|withdraw/i);
+      expect(within(control).queryByText(/cancel|withdraw/i)).toBeNull();
+    }
   });
 
   it('offers the raise editor for a paid pledge the service calls raisable', async () => {
@@ -209,7 +258,10 @@ describe('which controls a state offers', () => {
     );
     await settle();
 
-    expect(editor).toHaveBeenCalledWith(expect.objectContaining({ state: 'COLLECTED' }), { disabled: false, raising: true });
+    expect(editor).toHaveBeenCalledWith(
+      expect.objectContaining({ state: 'COLLECTED' }),
+      expect.objectContaining({ disabled: false, raising: true }),
+    );
     expect(screen.queryByTestId('pledge-locked')).toBeNull();
   });
 });

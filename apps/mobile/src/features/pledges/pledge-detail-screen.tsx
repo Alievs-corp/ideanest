@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +13,7 @@ import {
   pledgeTone,
   quotedRate,
   readReturnHint,
+  type PaymentReturnHint,
 } from '@ideanest/checkout/pledge';
 import type { PledgeResponse } from '@ideanest/checkout/types';
 import {
@@ -49,7 +50,21 @@ export interface PledgeDetailScreenProps {
   readonly id: string;
   readonly payment?: unknown;
   readonly raise?: unknown;
-  readonly renderEditor?: (pledge: PledgeResponse, options: { readonly disabled: boolean; readonly raising: boolean }) => ReactNode;
+  readonly renderEditor?: (pledge: PledgeResponse, options: EditorSlot) => ReactNode;
+}
+
+export interface EditorSlot {
+  readonly disabled: boolean;
+  readonly raising: boolean;
+  readonly onSaved: (next: PledgeResponse) => void;
+  readonly onReload: () => void;
+  readonly onRaiseReturned: (hint: PaymentReturnHint | null) => void;
+}
+
+interface Hints {
+  readonly payment: PaymentReturnHint | null;
+  readonly raise: PaymentReturnHint | null;
+  readonly epoch: number;
 }
 
 export function PledgeDetailScreen(props: PledgeDetailScreenProps) {
@@ -67,11 +82,17 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
   const locale = useLocale();
   const online = useOnline();
   const active = useAppActive();
-  const [paymentHint] = useState(() => readReturnHint(payment));
-  const [raiseHint] = useState(() => readReturnHint(raise));
+  const [hints, setHints] = useState<Hints>({ payment: null, raise: null, epoch: 0 });
+  const paymentHint = hints.payment;
+  const raiseHint = hints.raise;
 
   useEffect(() => {
-    if (payment !== undefined || raise !== undefined) router.setParams({ payment: undefined, raise: undefined });
+    if (payment === undefined && raise === undefined) return;
+    const next = { payment: readReturnHint(payment), raise: readReturnHint(raise) };
+    if (next.payment !== null || next.raise !== null) {
+      setHints((current) => ({ ...next, epoch: current.epoch + 1 }));
+    }
+    router.setParams({ payment: undefined, raise: undefined });
   }, [payment, raise, router]);
 
   const query = useQuery({
@@ -93,18 +114,34 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
 
   const settling = pledge !== undefined && isSettling(pledge, paymentHint, raiseHint);
   const { refetch } = query;
-  usePaymentSettling(settling, active, refetch);
+  const reread = useCallback(() => refetch({ cancelRefetch: false }), [refetch]);
+  usePaymentSettling(settling, active && online, reread, hints.epoch);
 
-  const celebrated = useRef(false);
+  const celebrated = useRef(0);
   useEffect(() => {
-    if (celebrated.current || pledge === undefined) return;
+    if (celebrated.current === hints.epoch || pledge === undefined) return;
     const paid = paymentHint !== null && pledge.state === 'COLLECTED';
     const raised = raiseHint !== null && pledge.latestRaise?.state === 'SUCCEEDED';
     if (!paid && !raised) return;
-    celebrated.current = true;
+    celebrated.current = hints.epoch;
     if (paid) haptics.pledgeConfirmed();
     void client.invalidateQueries({ queryKey: queryKeys.pledges() });
-  }, [client, paymentHint, pledge, raiseHint]);
+  }, [client, hints.epoch, paymentHint, pledge, raiseHint]);
+
+  const slot = useMemo(
+    () => ({
+      onSaved: (next: PledgeResponse) => {
+        client.setQueryData(queryKeys.pledge(id), next);
+        void client.invalidateQueries({ queryKey: queryKeys.pledgeList() });
+      },
+      onReload: () => void reread(),
+      onRaiseReturned: (hint: PaymentReturnHint | null) => {
+        if (hint !== null) setHints((current) => ({ payment: null, raise: hint, epoch: current.epoch + 1 }));
+        void reread();
+      },
+    }),
+    [client, id, reread],
+  );
 
   const [pulling, setPulling] = useState(false);
   const failure = useMemo(
@@ -269,7 +306,7 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
         </View>
 
         {editable || raisable ? (
-          (renderEditor?.(pledge, { disabled: !online, raising: !editable }) ?? null)
+          (renderEditor?.(pledge, { ...slot, disabled: !online, raising: !editable }) ?? null)
         ) : (
           <InlineAlert
             variant="info"
