@@ -1,4 +1,4 @@
-import { paymentReturnHint } from './payment';
+import { paymentReturnHint, raiseReturnHint } from './payment';
 
 const PLEDGE_PAGE = /^\/(?:(?:az|en|ru|tr)\/)?pledges\/([0-9A-Za-z-]{1,64})\/?$/;
 
@@ -10,7 +10,9 @@ const PLEDGE_PAGE = /^\/(?:(?:az|en|ru|tr)\/)?pledges\/([0-9A-Za-z-]{1,64})\/?$/
 export function appPaymentReturn(url: URL): string | null {
   if (url.searchParams.get('via') !== 'app') return null;
   const match = PLEDGE_PAGE.exec(url.pathname);
-  const hint = paymentReturnHint(url.search);
-  if (match === null || hint === null) return null;
-  return `ideanest://pledges/${match[1]}?payment=${hint}`;
+  if (match === null) return null;
+  const payment = paymentReturnHint(url.search);
+  if (payment !== null) return `ideanest://pledges/${match[1]}?payment=${payment}`;
+  const raise = raiseReturnHint(url.search);
+  return raise === null ? null : `ideanest://pledges/${match[1]}?raise=${raise}`;
 }

@@ -1,6 +1,5 @@
 import { authorizedFetch, publicFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
-import type { Money } from '../money';
 
 /**
  * The typed client for the backer's pledge endpoints.
@@ -46,12 +45,17 @@ export type {
   DraftPledgeRequest,
   PayPledgeRequest,
   PaymentPageResponse,
+  PledgeEdit,
+  PledgeRaiseRequest,
+  PledgeRaiseResponse,
 } from '@ideanest/checkout/types';
 import type {
   DraftPledgeRequest,
   PayPledgeRequest,
   PaymentPageResponse,
-  PledgeAddon,
+  PledgeEdit,
+  PledgeRaiseRequest,
+  PledgeRaiseResponse,
   PledgeResponse,
   PublicRewardList,
 } from '@ideanest/checkout/types';
@@ -249,44 +253,6 @@ export async function payForPledge(
  * ---------------------------------------------------------------------- */
 
 /**
- * What §4.5's PL-09 lets a backer change.
- *
- * <h2>ABSENT AND NULL ARE DIFFERENT HERE, AND THE DIFFERENCE IS MONEY</h2>
- *
- * The endpoint takes JSON Merge-Patch semantics (RFC 7396) and `PatchPledgeRequest` on the
- * service is built out of a `Patched<T>` for exactly this reason. `"rewardTierId": null` gives
- * up the reward and makes the pledge support-only (PL-02); **leaving the key out keeps the
- * reward**. A client that sent every field on every save — which is what
- * `lib/fulfilment/api.ts` correctly does for a shipping address — would strip the reward off a
- * pledge whose backer only raised their contribution.
- *
- * TypeScript expresses the distinction the same way the wire does: an optional property that
- * is not set is absent, because `JSON.stringify` drops `undefined`. So a caller builds the
- * object with only the keys it means to change, and `editPledge` does not helpfully fill in
- * the rest.
- *
- * `shippingCountry: null` clears the destination, which is a real edit: a backer who drops the
- * posted item from their selection has nowhere for it to go, and reading that as "leave it
- * alone" would go on charging them postage for a download.
- *
- * `projectId` is not here and never will be. A pledge backs the campaign it was made for, so
- * moving it is not an edit. Neither is `referrerCode`: which link brought somebody is a fact
- * about how they arrived rather than a preference they can revise.
- */
-export interface PledgeEdit {
-  /** The new tier, or `null` for PL-02. Absent keeps the tier the pledge has. */
-  rewardTierId?: string | null;
-  /** The whole selection, replaced. An empty array removes every add-on. */
-  addons?: readonly PledgeAddon[];
-  /** Tier price plus PL-03's bonus, or the whole of a support-only pledge. */
-  contribution?: Money;
-  /** ISO 3166-1 alpha-2, or `null` to clear it. */
-  shippingCountry?: string | null;
-  isAnonymous?: boolean;
-  paymentMethodId?: string | null;
-}
-
-/**
  * §4.5's PL-09 — `PATCH /v1/pledges/{id}`.
  *
  * **The whole pledge comes back, not the fields that changed**, and the caller replaces its
@@ -337,42 +303,6 @@ export async function editPledge(
 /* -------------------------------------------------------------------------
  * Raising a paid pledge — POST /v1/pledges/{id}/raise (#171)
  * ---------------------------------------------------------------------- */
-
-/**
- * What raising a paid pledge sends.
- *
- * The selection is {@link PledgeEdit}'s, with its Merge-Patch meaning — absent keeps, `null`
- * clears — minus the two things a raise does not change: the anonymity flag and the card.
- * `expectedAmount` is the difference the backer was shown and agreed to pay; the service refuses
- * with `RAISE_AMOUNT_CHANGED` rather than charge any other figure. The rest is
- * {@link PayPledgeRequest}'s: the provider page's language and where it sends the backer back.
- */
-export interface PledgeRaiseRequest {
-  rewardTierId?: string | null;
-  addons?: readonly PledgeAddon[];
-  contribution?: Money;
-  shippingCountry?: string | null;
-  expectedAmount: Money;
-  language: string;
-  successUrl: string;
-  errorUrl: string;
-}
-
-/**
- * The provider's page for the difference, and what it is for.
- *
- * Nothing about the pledge has changed yet: it carries the new selection only once the provider's
- * webhook says the difference was paid, and until then its `latestRaise` is `PENDING`.
- */
-export interface PledgeRaiseResponse {
-  pledgeId: string;
-  raiseId: string;
-  amount: Money;
-  total: Money;
-  holdExpiresAt: string;
-  providerTransactionId: string;
-  redirectUrl: string;
-}
 
 /**
  * #171 — `POST /v1/pledges/{id}/raise`.

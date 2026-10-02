@@ -20,8 +20,6 @@ import {
   editPledge,
   getPublicRewards,
   raisePledge,
-  type PledgeAddon,
-  type PledgeEdit,
   type PledgeResponse,
   type PublicReward,
   type PublicRewardList,
@@ -42,6 +40,18 @@ import type { PledgeEditorCopy } from '../../lib/i18n/pledges-copy';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { formatExactTime } from '../../lib/time';
 import { contributionMessage, refusalMessage } from '../checkout/refusals';
+import {
+  changesFrom,
+  draftOf,
+  isEmptyEdit as isEmpty,
+  raiseDifference,
+  seedOf,
+  type PledgeDraft,
+} from '@ideanest/checkout/edit';
+import { raiseInFlight } from '@ideanest/checkout/pledge';
+
+export { changesFrom };
+export type Draft = PledgeDraft;
 
 /**
  * §4.5's PL-09 — the backer changes their mind while the campaign runs. Issue #287.
@@ -102,97 +112,6 @@ import { contributionMessage, refusalMessage } from '../checkout/refusals';
  * change and the button changes its label while the request is in flight.
  */
 
-/** The contribution the pledge currently records: its base plus PL-03's bonus. */
-function contributionOf(pledge: PledgeResponse): Decimal {
-  return new Decimal(pledge.amounts.base.amount).plus(pledge.amounts.bonus.amount);
-}
-
-/** Add-ons in a stable order, so two equal selections compare equal. */
-function normaliseAddons(addons: readonly PledgeAddon[]): readonly PledgeAddon[] {
-  return [...addons]
-    .filter((addon) => addon.quantity > 0)
-    .sort((left, right) => (left.rewardTierId < right.rewardTierId ? -1 : 1));
-}
-
-function sameAddons(left: readonly PledgeAddon[], right: readonly PledgeAddon[]): boolean {
-  const a = normaliseAddons(left);
-  const b = normaliseAddons(right);
-  if (a.length !== b.length) return false;
-
-  return a.every((addon, index) => {
-    const other = b[index];
-    return (
-      other !== undefined &&
-      other.rewardTierId === addon.rewardTierId &&
-      other.quantity === addon.quantity
-    );
-  });
-}
-
-export interface Draft {
-  readonly choice: string;
-  readonly contributionText: string;
-  readonly addons: readonly PledgeAddon[];
-  readonly destination: string | null;
-  readonly isAnonymous: boolean;
-}
-
-function draftOf(pledge: PledgeResponse): Draft {
-  return {
-    choice: pledge.rewardTierId ?? NO_REWARD,
-    // The wire value verbatim: it is already a decimal string of the right scale, and putting
-    // it through a formatter on the way into a text field is how a group separator ends up in
-    // the next request body (`lib/money.ts`).
-    contributionText: contributionOf(pledge).toFixed(2),
-    addons: pledge.addons,
-    destination: pledge.shippingCountry ?? null,
-    isAnonymous: pledge.isAnonymous,
-  };
-}
-
-/**
- * The Merge-Patch body: only what differs from the pledge as the server last described it.
- *
- * An empty object is "nothing to save", and the button is disabled for it rather than sending
- * a patch that changes nothing — which would spend an idempotency key and re-quote a pledge
- * for no reason.
- */
-export function changesFrom(pledge: PledgeResponse, draft: Draft, contribution: Decimal): PledgeEdit {
-  const edit: PledgeEdit = {};
-  const original = draftOf(pledge);
-
-  if (draft.choice !== original.choice) {
-    // `null` is the explicit clear that makes the pledge support-only (PL-02). It is a value
-    // the body must carry, not a key it may omit.
-    edit.rewardTierId = draft.choice === NO_REWARD ? null : draft.choice;
-  }
-
-  if (!sameAddons(draft.addons, original.addons)) {
-    edit.addons = normaliseAddons(draft.addons);
-  }
-
-  if (!contribution.equals(contributionOf(pledge))) {
-    edit.contribution = toMoney(contribution, pledge.amounts.total.currency);
-  }
-
-  if (draft.destination !== original.destination) {
-    // An empty destination is sent as null, which clears it. The service reads a blank string
-    // the same way, and sending null rather than '' means one spelling of "nowhere".
-    edit.shippingCountry = draft.destination;
-  }
-
-  if (draft.isAnonymous !== original.isAnonymous) {
-    edit.isAnonymous = draft.isAnonymous;
-  }
-
-  return edit;
-}
-
-/** Whether the body would change anything. */
-function isEmpty(edit: PledgeEdit): boolean {
-  return Object.keys(edit).length === 0;
-}
-
 export interface PledgeEditorProps {
   /**
    * The checkout's words, threaded through from the page.
@@ -213,23 +132,6 @@ export interface PledgeEditorProps {
    * `raise` for a paid one, where saving opens the provider's page for the difference (#171).
    */
   readonly mode?: 'edit' | 'raise';
-}
-
-/** Whether a raise is waiting for its payment and still holds its places. */
-function raiseInFlight(pledge: PledgeResponse, now: number): boolean {
-  const latest = pledge.latestRaise;
-  return latest != null && latest.state === 'PENDING' && Date.parse(latest.holdExpiresAt) > now;
-}
-
-/**
- * What the form was seeded from: the pledge's identity, the fields the form edits, and its figures.
- *
- * The manager reads the pledge again every few seconds while a payment settles, and every read is a
- * new object. Re-seeding on the object would put back, every three seconds, whatever the backer had
- * chosen since; re-seeding on this only happens when the pledge the form describes has changed.
- */
-function seedOf(pledge: PledgeResponse): string {
-  return JSON.stringify([pledge.id, draftOf(pledge), pledge.amounts]);
 }
 
 /** `setTimeout`'s ceiling. A hold is minutes long; this only stops a far date firing at once. */
@@ -364,7 +266,7 @@ export function PledgeEditor({ pledge, onSaved, copy, pledges, mode = 'edit' }: 
    */
   const difference: Decimal | null = useMemo(() => {
     if (!raising || quote === null || !quote.ok) return null;
-    return quote.quote.total.minus(new Decimal(pledge.amounts.total.amount));
+    return raiseDifference(quote.quote.total, pledge);
   }, [raising, quote, pledge]);
 
   /* Nothing is due for a form that changes nothing, even where the preview's arithmetic and the

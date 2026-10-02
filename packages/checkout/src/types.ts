@@ -371,3 +371,33 @@ export interface PaymentPageResponse {
   providerTransactionId: string;
   redirectUrl: string;
 }
+
+export interface PledgeEdit {
+  rewardTierId?: string | null;
+  addons?: readonly PledgeAddon[];
+  contribution?: Money;
+  shippingCountry?: string | null;
+  isAnonymous?: boolean;
+  paymentMethodId?: string | null;
+}
+
+export interface PledgeRaiseRequest {
+  rewardTierId?: string | null;
+  addons?: readonly PledgeAddon[];
+  contribution?: Money;
+  shippingCountry?: string | null;
+  expectedAmount: Money;
+  language: string;
+  successUrl: string;
+  errorUrl: string;
+}
+
+export interface PledgeRaiseResponse {
+  pledgeId: string;
+  raiseId: string;
+  amount: Money;
+  total: Money;
+  holdExpiresAt: string;
+  providerTransactionId: string;
+  redirectUrl: string;
+}
