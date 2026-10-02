@@ -16,9 +16,10 @@ export interface AddonChoiceProps {
   readonly addons: readonly PublicReward[];
   readonly quantity: (rewardId: string) => number;
   readonly onChange: (rewardId: string, quantity: number) => void;
+  readonly disabled?: boolean;
 }
 
-export function AddonChoice({ addons, quantity, onChange }: AddonChoiceProps) {
+export function AddonChoice({ addons, quantity, onChange, disabled = false }: AddonChoiceProps) {
   const t = useT('checkout.addons');
   if (addons.length === 0) return null;
   return (
@@ -28,7 +29,7 @@ export function AddonChoice({ addons, quantity, onChange }: AddonChoiceProps) {
       </Text>
       <Text style={styles.muted}>{t('intro')}</Text>
       {addons.map((addon) => (
-        <AddonCard key={addon.id} addon={addon} value={quantity(addon.id)} onChange={onChange} />
+        <AddonCard key={addon.id} addon={addon} value={quantity(addon.id)} onChange={onChange} disabled={disabled} />
       ))}
     </View>
   );
@@ -38,15 +39,19 @@ function AddonCard({
   addon,
   value,
   onChange,
+  disabled,
 }: {
   readonly addon: PublicReward;
   readonly value: number;
   readonly onChange: (rewardId: string, quantity: number) => void;
+  readonly disabled: boolean;
 }) {
   const t = useT();
   const soldOut = isSoldOut(addon);
   const max = addonMaximum(addon);
-  const set = (next: number) => onChange(addon.id, Math.max(0, Math.min(max, next)));
+  const set = (next: number) => {
+    if (!disabled) onChange(addon.id, Math.max(0, Math.min(max, next)));
+  };
   return (
     <View style={[styles.card, soldOut && styles.disabled]} testID={`addon-${addon.id}`}>
       <View style={styles.titleRow}>
@@ -64,7 +69,7 @@ function AddonCard({
             icon={Minus}
             size="lg"
             label={t('mobile.checkout.decrease', { title: addon.title })}
-            disabled={value <= 0}
+            disabled={disabled || value <= 0}
             onPress={() => set(value - 1)}
             testID={`addon-decrease-${addon.id}`}
           />
@@ -86,7 +91,7 @@ function AddonCard({
             icon={Plus}
             size="lg"
             label={t('mobile.checkout.increase', { title: addon.title })}
-            disabled={value >= max}
+            disabled={disabled || value >= max}
             onPress={() => set(value + 1)}
             testID={`addon-increase-${addon.id}`}
           />

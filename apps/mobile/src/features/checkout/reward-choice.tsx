@@ -12,9 +12,10 @@ export interface RewardChoiceProps {
   readonly rewards: readonly PublicReward[];
   readonly value: string | null;
   readonly onChange: (value: string) => void;
+  readonly disabled?: boolean;
 }
 
-export function RewardChoice({ rewards, value, onChange }: RewardChoiceProps) {
+export function RewardChoice({ rewards, value, onChange, disabled = false }: RewardChoiceProps) {
   const t = useT('checkout.reward');
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={t('legend')} accessibilityHint={t('hint')} style={styles.group}>
@@ -28,9 +29,10 @@ export function RewardChoice({ rewards, value, onChange }: RewardChoiceProps) {
         onSelect={onChange}
         title={t('none')}
         lines={[t('noneHint')]}
+        locked={disabled}
       />
       {rewards.map((reward) => (
-        <TierCard key={reward.id} reward={reward} selected={value === reward.id} onSelect={onChange} />
+        <TierCard key={reward.id} reward={reward} selected={value === reward.id} onSelect={onChange} locked={disabled} />
       ))}
     </View>
   );
@@ -40,10 +42,12 @@ function TierCard({
   reward,
   selected,
   onSelect,
+  locked,
 }: {
   readonly reward: PublicReward;
   readonly selected: boolean;
   readonly onSelect: (value: string) => void;
+  readonly locked: boolean;
 }) {
   const t = useT('checkout.reward');
   const locale = useLocale();
@@ -81,6 +85,7 @@ function TierCard({
       tags={tags}
       lines={lines}
       soldOut={soldOut ? t('soldOut') : null}
+      locked={locked}
     />
   );
 }
@@ -94,6 +99,7 @@ function RewardCard({
   tags = [],
   lines,
   soldOut = null,
+  locked = false,
 }: {
   readonly value: string;
   readonly selected: boolean;
@@ -103,9 +109,10 @@ function RewardCard({
   readonly tags?: readonly string[];
   readonly lines: readonly string[];
   readonly soldOut?: string | null;
+  readonly locked?: boolean;
 }) {
   const { ring, onFocus, onBlur } = useFocusRing();
-  const disabled = soldOut !== null;
+  const disabled = soldOut !== null || locked;
   const spoken = [title, price, ...tags, soldOut].filter(Boolean).join(', ');
   return (
     <Pressable
