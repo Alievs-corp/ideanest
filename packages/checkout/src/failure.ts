@@ -131,6 +131,13 @@ export interface CheckoutFailure {
    * offers "try again" for something that will fail identically every time.
    */
   readonly clientBug: boolean;
+  /** `meta.pledgeId`, which `PLEDGE_ALREADY_EXISTS` carries. */
+  readonly pledgeId?: string | null;
+}
+
+function pledgeIdIn(problem: Problem | null): string | null {
+  const value = problem?.meta?.['pledgeId'];
+  return typeof value === 'string' && value !== '' ? value : null;
 }
 
 /** Reads `meta.availableAlternatives` without trusting its shape. */
@@ -396,5 +403,6 @@ export function describeFailure(cause: unknown, copy: PledgeFailureCopy): Checko
     retireKey: behaviour.retireKey ?? false,
     retryAfterMs: retryAfterMsIn(problem),
     clientBug: behaviour.clientBug ?? false,
+    pledgeId: pledgeIdIn(problem),
   };
 }

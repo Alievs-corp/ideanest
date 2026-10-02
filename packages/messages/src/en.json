@@ -3616,7 +3616,10 @@
       "approximately": "Approximately {amount}",
       "noReward": "Support with no reward",
       "yourSupport": "Your support",
-      "rewardLine": "Reward"
+      "rewardLine": "Reward",
+      "sourcePreview": "An estimate from the prices on this page. The campaign confirms the amounts when it reserves your reward.",
+      "sourceQuoted": "Confirmed by the campaign when it reserved your reward.",
+      "to": "Delivered to {country}"
     },
     "payment": {
       "heading": "Payment",
@@ -3801,7 +3804,8 @@
       "windowClosed": "This payment can no longer be disputed through IdeyaNest: no payout is being held for the campaign.",
       "nothing": "There is nothing left of this payment to refund.",
       "failed": "That did not work. Try again in a moment."
-    }
+    },
+    "heldFor": "Your reward is held for {time}. After that the stock goes back to the campaign and you would reserve it again."
   },
   "pricing": {
     "metaTitle": "Plans and pricing",
@@ -5507,7 +5511,6 @@
       "failedTitle": "This campaign could not be loaded",
       "failedDetail": "It may have been withdrawn, or this device may be offline.",
       "stale": "Saved on this device. The funding figures may have moved since.",
-      "backOnWeb": "Back {title} on the web",
       "actionsOffline": "Saving and reminders need a connection.",
       "shareFailed": "That could not be shared. Try again.",
       "faq": {
@@ -5560,6 +5563,20 @@
         "cameraRefused": "The camera was not allowed, so no photo was taken. You will be asked again next time.",
         "openFailed": "Your photos could not be opened. Try again."
       }
+    },
+    "checkout": {
+      "close": "Close the checkout",
+      "leaveTitle": "Leave the checkout?",
+      "leaveBody": "Your reward stays held for {time}. Nothing has been charged.",
+      "leave": "Leave",
+      "stay": "Stay",
+      "signIn": "Sign in",
+      "openPledge": "Open your pledge",
+      "offline": "Reserving and paying need a connection. Nothing has been sent.",
+      "step": "Step {index} of {count}: {name}",
+      "increase": "Add one: {title}",
+      "decrease": "Remove one: {title}",
+      "backHint": "Choose a reward and back {title}"
     }
   }
 }

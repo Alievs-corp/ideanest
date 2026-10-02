@@ -41,7 +41,7 @@ export function BackCampaignCta({ projectId, title, onLayout }: BackCampaignCtaP
     <View onLayout={onLayout} testID="back-cta">
       <Pill
         label={t('campaign.back.cta')}
-        accessibilityHint={t('mobile.campaign.backOnWeb', { title })}
+        accessibilityHint={t('mobile.checkout.backHint', { title })}
         variant="primary"
         size="lg"
         fullWidth
@@ -80,7 +80,7 @@ export function PersistentBackBar({ projectId, title }: Omit<BackCampaignCtaProp
         size="lg"
         fullWidth
         onPress={() => router.push(checkoutHref(projectId))}
-        accessibilityHint={t('mobile.campaign.backOnWeb', { title })}
+        accessibilityHint={t('mobile.checkout.backHint', { title })}
       />
     </View>
   );

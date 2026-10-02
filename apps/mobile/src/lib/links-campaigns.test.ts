@@ -51,6 +51,9 @@ describe('the pre-launch page and the checkout, by id (#155)', () => {
     expect(
       destinationFor(`https://ideanest.az/projects/${ID}/back?reward=t1&utm_source=x`, HOST),
     ).toEqual({ pathname: `/campaigns/${ID}/back`, params: { reward: 't1' } });
+    expect(
+      destinationFor(`https://ideanest.az/az/projects/${ID}/back?token=a1&token=b%2Cc&token=d2&reward=t1`, HOST),
+    ).toEqual({ pathname: `/campaigns/${ID}/back`, params: { reward: 't1', token: 'a1,d2' } });
     expect(destinationFor(`ideanest://projects/${ID}/back?reward=t1`, HOST)).toEqual({
       pathname: `/campaigns/${ID}/back`,
       params: { reward: 't1' },

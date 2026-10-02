@@ -136,6 +136,10 @@ function AppStack() {
         The group draws its own header: `app/(auth)/_layout.tsx`.
       */}
       <Stack.Screen name="(auth)" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen
+        name="campaigns/[id]/back"
+        options={{ presentation: 'fullScreenModal', headerShown: false, animation: 'none' }}
+      />
     </Stack>
   );
 }

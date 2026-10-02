@@ -8,6 +8,7 @@ import { NO_REWARD, draftBodyFor, paymentIntentFor } from '@ideanest/checkout/dr
 import { describeFailure, type CheckoutFailure, type PledgeFailureCopy } from '@ideanest/checkout/failure';
 import { IdempotencyKeyring } from '@ideanest/checkout/idempotency';
 import {
+  destinationOptions,
   quoteSelection,
   requiresDestination,
   type QuoteResult,
@@ -63,6 +64,7 @@ export interface CheckoutState {
   readonly addonQuantity: (rewardId: string) => number;
   readonly setAddonQuantity: (rewardId: string, quantity: number) => void;
   readonly needsDestination: boolean;
+  readonly destinations: readonly string[];
   readonly destination: string | null;
   readonly setDestination: (code: string | null) => void;
   readonly isAnonymous: boolean;
@@ -184,16 +186,15 @@ export function useCheckout(options: CheckoutOptions): CheckoutState {
 
   const quote = useMemo(() => (selection === null ? null : quoteSelection(selection)), [selection]);
 
-  const needsDestination = useMemo(() => {
-    if (catalogue === null || choice === null) return false;
-    return requiresDestination({
-      currency,
-      reward,
-      addons: chosenAddons,
-      contribution: new Decimal(0),
-      destination,
-    });
-  }, [catalogue, choice, currency, reward, chosenAddons, destination]);
+  const shape = useMemo<Selection | null>(
+    () =>
+      catalogue === null || choice === null
+        ? null
+        : { currency, reward, addons: chosenAddons, contribution: new Decimal(0), destination },
+    [catalogue, choice, currency, reward, chosenAddons, destination],
+  );
+  const needsDestination = shape !== null && requiresDestination(shape);
+  const destinations = useMemo(() => (shape === null ? [] : destinationOptions(shape)), [shape]);
 
   const draftBody = useMemo<DraftPledgeRequest | null>(() => {
     if (selection === null || quote === null || !quote.ok) return null;
@@ -332,6 +333,7 @@ export function useCheckout(options: CheckoutOptions): CheckoutState {
     addonQuantity,
     setAddonQuantity,
     needsDestination,
+    destinations,
     destination,
     setDestination,
     isAnonymous,
