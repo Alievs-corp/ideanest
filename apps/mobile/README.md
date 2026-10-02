@@ -549,6 +549,20 @@ dismissed browser, the screen re-reads `GET /v1/me/payout-destination` every 3 s
 until its `updatedAt` changes; only a return says it is waiting for the provider. The card number
 is entered on the provider's page, never in the app.
 
+## Uploading an image
+
+`src/lib/media/upload.ts` (#161, reused by #162's cover) takes a local picture to a servable one:
+`expo-image-manipulator` converts it to JPEG on the phone (an iPhone's HEIC is not something the
+transcoder promises to read) and scales the longest edge to 2048, then `POST /v1/media/uploads`,
+a native `File.upload` PUT to the presigned address carrying **only** the signed `Content-Type`
+(never the bearer token), `POST /v1/media/{id}/complete`, and `GET /v1/media/{id}` every 700 ms
+for up to 90 s. It reports `preparing`, `uploading` and `processing`, and fails with the service's
+`code` (or `UPLOADS_UNAVAILABLE` for a 503 without one, and `UPLOAD_TRANSFER_FAILED` for a request
+that got no answer — a dropped connection is never reported as a fault of the file). A poll that
+drops or answers 5xx is asked again on the next tick. The caller picks the words, from
+`campaignEditor.cover.failures`. `settings/profile` saves the result as `avatarUrl` at once and
+removes the picker's cache copy.
+
 ## Pledges
 
 The Pledges tab (#158) pages `GET /v1/me/pledges` 24 at a time in an infinite query keyed

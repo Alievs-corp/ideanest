@@ -5626,6 +5626,14 @@
         "closure": {
           "rereadFailed": "Hizmet yanıt verdi ama hesabınız şu anda yeniden okunamadı, bu yüzden burada hesabın kendisi değil, o yanıt gösteriliyor."
         }
+      },
+      "profile": {
+        "loadFailed": "Profiliniz yüklenemedi. Bağlantınızı kontrol edip yeniden deneyin.",
+        "avatar": {
+          "useAddress": "Görsel adresi gir",
+          "saved": "Yeni fotoğrafınız kaydedildi ve profilinizde gösteriliyor.",
+          "stillProcessing": "Fotoğrafınızın işlenmesi her zamankinden uzun sürüyor. Birazdan yeniden deneyin."
+        }
       }
     }
   }

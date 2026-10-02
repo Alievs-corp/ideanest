@@ -5626,6 +5626,14 @@
         "closure": {
           "rereadFailed": "Xidmət cavab verdi, amma hesabınızı indi yenidən oxumaq mümkün olmadı, ona görə burada hesabın özü deyil, həmin cavab göstərilir."
         }
+      },
+      "profile": {
+        "loadFailed": "Profiliniz yüklənə bilmədi. Bağlantını yoxlayın və yenidən cəhd edin.",
+        "avatar": {
+          "useAddress": "Şəklin ünvanını yazın",
+          "saved": "Yeni şəkliniz saxlanıldı və profilinizdə göstərilir.",
+          "stillProcessing": "Şəklin işlənməsi adətkindən uzun çəkir. Bir azdan yenidən cəhd edin."
+        }
       }
     }
   }
