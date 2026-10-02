@@ -16,7 +16,10 @@ import { PledgeDetailScreen } from './pledge-detail-screen';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn(), setParams: jest.fn() };
 
+let mockSession = { signedIn: true, locked: false, unlocked: false };
+
 jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
+jest.mock('../../lib/use-session', () => ({ useSession: () => mockSession }));
 jest.mock('./api', () => ({
   ...jest.requireActual('./api'),
   readPledge: jest.fn(),
@@ -105,6 +108,7 @@ beforeEach(async () => {
   await act(async () => setLocale('en'));
   jest.clearAllMocks();
   setOnline(true);
+  mockSession = { signedIn: true, locked: false, unlocked: false };
   api.listMyPledges.mockResolvedValue({ items: [summary()], nextCursor: null });
 });
 
@@ -341,6 +345,16 @@ describe('the pledge', () => {
 
     expect(screen.getByText(en.mobile.offline.banner)).toBeTruthy();
     expect(screen.getByLabelText(en.checkout.dispute.heading)).toBeDisabled();
+  });
+});
+
+describe('signed out', () => {
+  it('sends the reader to sign in and back to this pledge, reading nothing', async () => {
+    mockSession = { signedIn: false, locked: false, unlocked: false };
+    await show({ payment: 'returned' });
+
+    expect(mockRouter.replace).toHaveBeenCalledWith({ pathname: '/sign-in', params: { returnTo: '/pledges/pl-1' } });
+    expect(api.readPledge).not.toHaveBeenCalled();
   });
 });
 

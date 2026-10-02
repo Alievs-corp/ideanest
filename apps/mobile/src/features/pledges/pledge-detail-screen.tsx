@@ -33,9 +33,11 @@ import {
 import { queryKeys } from '../../api/queries';
 import { useAppActive } from '../../lib/app-active';
 import { useOnline } from '../../lib/connectivity';
+import { signInHrefFor } from '../../lib/guard';
 import { catalogue, formatDateTime, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { readablePledgeState } from '../../lib/pledge-states';
+import { useSession } from '../../lib/use-session';
 import { colors, font, fontSize, lineHeight, radius, size, spacing, tint } from '../../theme';
 import { countryName } from '../checkout/format';
 import { PledgeSummary } from '../checkout/pledge-summary';
@@ -68,11 +70,13 @@ interface Hints {
 }
 
 export function PledgeDetailScreen(props: PledgeDetailScreenProps) {
-  return (
-    <MotionBudgetProvider level="none">
-      <PledgeDetail {...props} />
-    </MotionBudgetProvider>
-  );
+  const router = useRouter();
+  const { signedIn } = useSession();
+  useEffect(() => {
+    if (!signedIn) router.replace(signInHrefFor(`/pledges/${encodeURIComponent(props.id)}`));
+  }, [props.id, router, signedIn]);
+
+  return <MotionBudgetProvider level="none">{signedIn ? <PledgeDetail {...props} /> : null}</MotionBudgetProvider>;
 }
 
 function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenProps) {
