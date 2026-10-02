@@ -108,8 +108,11 @@ const ABOUT = [
   'Message us on WhatsApp',
 ];
 
+/** The way to the app lock, which lives in `settings/security` (#161). */
+const THIS_PHONE = ['This phone', 'App lock'];
+
 /** What a session the service has not answered for still offers: the lock, and the way out. */
-const HELD = ['This phone', ...ABOUT, 'Sign out'];
+const HELD = [...THIS_PHONE, ...ABOUT, 'Sign out'];
 
 /*
  * The whole Me tab plus a role query over it: the first render also pays for loading the
@@ -149,7 +152,7 @@ describe('the Me tab', () => {
       'Data and closure',
       'Payout details',
       'Language and currency',
-      'This phone',
+      ...THIS_PHONE,
       ...ABOUT,
       'Sign out',
     ]);
@@ -193,7 +196,7 @@ describe('the Me tab', () => {
     ).toBeNull();
   });
 
-  it('locked, prompt dismissed: still no "Sign in", and the lock can still be turned off', async () => {
+  it('locked, prompt dismissed: still no "Sign in", and the lock is still within reach', async () => {
     // The lock armed, nothing unlocked: the account is not read, so the state is unknown.
     mockSession = { signedIn: true, locked: true, unlocked: false };
     given('unknown', undefined);
@@ -206,13 +209,11 @@ describe('the Me tab', () => {
     expect(
       screen.queryByTestId('identity-skeleton', { includeHiddenElements: true }),
     ).toBeNull();
-    expect(await screen.findByLabelText('Require your fingerprint')).toBeTruthy();
 
-    // The kit's switch (issue #151): the whole row is one control, named by the lock's label and
-    // saying it is on — not React Native's platform switch beside a separate line of text.
-    const lock = screen.getByRole('switch', { name: 'Require your fingerprint' });
-    expect(lock.props.accessibilityState).toMatchObject({ checked: true });
-    expect(lock).toContainElement(screen.getByText('Require your fingerprint'));
+    // The lock itself is `settings/security`'s now (#161; `features/settings/app-lock.test.tsx`).
+    // What the Me tab owes this reader is the way to it, with no account answer needed.
+    await fireEvent.press(screen.getByRole('button', { name: 'App lock' }));
+    expect(mockRouter.push).toHaveBeenCalledWith('/settings/security');
   });
 
   it.each([
