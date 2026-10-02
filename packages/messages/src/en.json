@@ -5626,6 +5626,13 @@
         "closure": {
           "rereadFailed": "The service answered, but your account could not be re-read just now, so this shows that answer rather than the account."
         }
+      },
+      "profile": {
+        "loadFailed": "Your profile could not be loaded. Check your connection and try again.",
+        "avatar": {
+          "useAddress": "Use an image address",
+          "saved": "Your new picture is saved and shown on your profile."
+        }
       }
     }
   }
