@@ -192,6 +192,7 @@ const nextConfig = {
     '@ideanest/discovery',
     '@ideanest/campaign',
     '@ideanest/checkout',
+    '@ideanest/account',
   ],
 
   /**

@@ -389,6 +389,18 @@ describe('signing out', () => {
     expect(bodyOf(0).refreshToken).toBe('refresh-1');
   });
 
+  it('can return once the device has forgotten the session, leaving the logout to finish', async () => {
+    await storeRefreshToken('refresh-1');
+    let answer: (response: Response) => void = () => {};
+    fetchMock.mockReturnValueOnce(new Promise<Response>((resolve) => (answer = resolve)));
+
+    await signOut({ waitForService: false });
+
+    expect(hasStoredSession()).toBe(false);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test.invalid/v1/auth/logout');
+    answer(new Response(null, { status: 204 }));
+  });
+
   it('drops the push registration first, while it still has a bearer to do it with', async () => {
     await storeRefreshToken('refresh-1');
     rememberAccessToken('access-1');

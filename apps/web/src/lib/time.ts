@@ -9,7 +9,8 @@ import type { Locale } from './i18n/locale';
  * — a second module importing `lib/sessions` for a formatter — would have made the inbox
  * depend on the device list for no reason anybody could find later.
  *
- * `lib/sessions/describe.ts` re-exports both, so its own callers and tests are unchanged.
+ * The rest of that module — naming a device — is `@ideanest/account/sessions` now (#161), shared
+ * with the app; the session row imports these two from here.
  *
  * <h2>THE LOCALE IS A PARAMETER NOW, AND IT IS NOT OPTIONAL — #324</h2>
  *

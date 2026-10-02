@@ -1,4 +1,11 @@
 import type { components } from '@ideanest/api-client';
+import type {
+  DeliveryMode,
+  NotificationCategory,
+  NotificationChannel,
+  PreferenceChange,
+  PreferenceSwitch,
+} from '@ideanest/account/notifications';
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 
@@ -26,12 +33,17 @@ import { errorFrom } from '../api/problem';
 
 type ContractNotification = components['schemas']['NotificationResponse'];
 type ContractInbox = components['schemas']['NotificationInboxResponse'];
-type ContractPreference = components['schemas']['Preference'];
 
 export type NotificationType = NonNullable<ContractNotification['type']>;
-export type NotificationCategory = NonNullable<ContractNotification['category']>;
-export type NotificationChannel = NonNullable<ContractPreference['channel']>;
-export type DeliveryMode = NonNullable<ContractPreference['mode']>;
+
+/* The preference table is shared with the app (#161), so its types live in `@ideanest/account`. */
+export type {
+  DeliveryMode,
+  NotificationCategory,
+  NotificationChannel,
+  PreferenceChange,
+  PreferenceSwitch,
+};
 
 /** One row of the inbox. */
 export interface InboxNotification {
@@ -69,27 +81,6 @@ export interface InboxPage {
   readonly nextCursorId?: string;
   /** Across the whole inbox, not this page. */
   readonly unreadCount: number;
-}
-
-/** One switch on the settings page, resolved through the service's own policy. */
-export interface PreferenceSwitch {
-  readonly category: NotificationCategory;
-  readonly channel: NotificationChannel;
-  /** What happens today — the resolved answer, not the stored value. */
-  readonly mode: DeliveryMode;
-  /** Whether the account has ever said anything about this switch. */
-  readonly stored: boolean;
-  /** False on a mandatory category, where the control is shown disabled rather than hidden. */
-  readonly changeable: boolean;
-  /** Whether `DIGEST` is one of the choices here. */
-  readonly digestOffered: boolean;
-}
-
-/** A switch being set. */
-export interface PreferenceChange {
-  readonly category: NotificationCategory;
-  readonly channel: NotificationChannel;
-  readonly mode: DeliveryMode;
 }
 
 /** The position to continue an inbox listing from. Both halves or neither. */

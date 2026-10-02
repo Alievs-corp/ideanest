@@ -89,6 +89,8 @@ export interface PreferencesCopy extends NotificationsCopy {
   readonly unreachable: string;
   /** Carries `{category}`, `{channel}` and `{mode}`. What a saved switch announces. */
   readonly saved: string;
+  /** Carries `{change}`, the `saved` sentence: "Saved. …" (#161). */
+  readonly savedNotice: string;
 }
 
 function sharedFrom(t: NotificationsTranslator): NotificationsCopy {
@@ -151,5 +153,6 @@ export function preferencesCopyFrom(t: NotificationsTranslator): PreferencesCopy
     refused: t('preferences.refused'),
     unreachable: t('preferences.unreachable'),
     saved: String(t.raw('preferences.saved')),
+    savedNotice: String(t.raw('preferences.savedNotice')),
   };
 }

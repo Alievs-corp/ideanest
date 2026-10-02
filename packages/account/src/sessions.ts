@@ -1,14 +1,45 @@
-import type { SessionSummary } from './api';
-import { fillPlaceholders } from '../i18n/placeholders';
+import { fillPlaceholders } from '@ideanest/messages/placeholders';
 
 /**
- * Turning a session row into something a person can recognise.
+ * Turning a session row into something a person can recognise — the device list of
+ * `apps/web` and `apps/mobile` (#161). Moved here from the web's `lib/sessions/describe.ts`
+ * unchanged, so both clients name a device the same way.
  *
- * The point of this screen is that a user spots the device that is not theirs.
+ * The point of the screen is that a user spots the device that is not theirs.
  * A raw user-agent string does not support that judgement, so the strings here
  * are deliberately coarse: the browser and the platform, and nothing that
  * pretends to more precision than a user-agent can honestly carry.
  */
+
+/**
+ * One live device, as `GET /v1/auth/sessions` returns it.
+ *
+ * Three fields are optional because the service serialises with
+ * `default-property-inclusion: non_null` — a null `deviceLabel` is absent from
+ * the JSON rather than present and null. They are also null for real reasons:
+ * `deviceLabel` is only set when the client sent one at sign-in, and all three
+ * are stripped when an account is anonymised.
+ */
+export interface SessionSummary {
+  id: string;
+  /** Client-supplied at sign-in, so untrusted. Only ever rendered as text. */
+  deviceLabel?: string;
+  userAgent?: string;
+  ipAddress?: string;
+  /** ISO-8601 instant, UTC. */
+  createdAt: string;
+  /** Advances on refresh, not on every request — so "last active" is coarse. */
+  lastSeenAt: string;
+  expiresAt: string;
+  /** Matched against the `sid` claim on the caller's own access token. */
+  current: boolean;
+}
+
+/**
+ * What `DELETE /v1/auth/sessions/{id}` came to. A 404 means "unknown identifier" or "not
+ * yours", deliberately indistinguishable; both mean the row is gone, which is what was asked.
+ */
+export type RevokeOutcome = 'revoked' | 'already-gone';
 
 /**
  * Ordered — first match wins, and the order is the whole trick. Every
@@ -64,9 +95,8 @@ export function platformOf(userAgent: string | undefined): string | null {
  * A browser is called Chrome in every language and a platform is called macOS in every
  * language; those are names and they are left alone. What joins them is a preposition, and
  * "Chrome on macOS" is English — Azerbaijani and Turkish put the platform first. The
- * admission for a session with neither is prose too. Both arrive as an argument, the shape
- * `lib/moderation/describe.ts` is in: this module is imported by a client bundle and cannot
- * read a catalogue.
+ * admission for a session with neither is prose too. Both arrive as an argument: this module
+ * is imported by client bundles and cannot read a catalogue.
  */
 export interface DeviceNameCopy {
   /** Carries `{browser}` and `{platform}`. */
@@ -95,18 +125,6 @@ export function deviceNameOf(
   if (browser && platform) return fillPlaceholders(copy.onPlatform, { browser, platform });
   return browser ?? platform ?? copy.unknownDevice;
 }
-
-/**
- * "3 hours ago", and the exact timestamp behind it.
- *
- * Both now live in `lib/time.ts`, because the notification inbox (#88) needs the
- * same two functions and nothing about them is about a session. Re-exported
- * rather than moved outright so that this module stays the one place a session
- * row is described from — `lastSeenAt` only advances when the session
- * refreshes, so "3 hours ago" here is coarser than the words imply, and that is
- * a fact about sessions rather than about the formatter.
- */
-export { formatRelativeTime, formatExactTime } from '../time';
 
 /**
  * The second line of a row: where the session is signed in from.

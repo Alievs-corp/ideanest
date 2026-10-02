@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Chip, ChipRow, EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup } from '@ideanest/ui';
+import { CATEGORIES } from '@ideanest/account/notifications';
 import { ApiError } from '../../lib/api/problem';
 import {
   listNotifications,
@@ -10,7 +11,7 @@ import {
   type InboxNotification,
   type NotificationCategory,
 } from '../../lib/notifications/api';
-import { CATEGORIES, categoryLabel, dayKeyOf, dayLabelOf } from '../../lib/notifications/describe';
+import { categoryLabel, dayKeyOf, dayLabelOf } from '../../lib/notifications/describe';
 import { NotificationRow } from './NotificationRow';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { InboxCopy } from '../../lib/i18n/notifications-copy';

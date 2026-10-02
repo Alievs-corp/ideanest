@@ -657,7 +657,8 @@
         "refused": "Xidmət dəyişikliyi rədd etdi. Yenidən cəhd edin.",
         "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
         "saved": "{category} — {channel}: {mode}.",
-        "heading": "Sizə nə göndərilir"
+        "heading": "Sizə nə göndərilir",
+        "savedNotice": "Yadda saxlanıldı. {change}"
       }
     }
   },
@@ -5634,6 +5635,21 @@
           "saved": "Yeni şəkliniz saxlanıldı və profilinizdə göstərilir.",
           "stillProcessing": "Şəklin işlənməsi adətkindən uzun çəkir. Bir azdan yenidən cəhd edin."
         }
+      },
+      "sessions": {
+        "emptyBody": "Bu telefonda hesabınıza daxil olduğunuz halda bu baş verməməlidir. Yoxlamaq üçün yenidən cəhd edin.",
+        "offlineEmpty": "Cihazlarınız bağlantı bərpa olunanda yüklənəcək.",
+        "stillSignedIn": "Hesabdan çıxarılmayan cihazlar: {devices}."
+      },
+      "notifications": {
+        "pushOffTitle": "IdeyaNest üçün push bildirişləri telefonunuzun ayarlarında söndürülüb",
+        "pushOffBody": "Push seçimləriniz yadda saxlanılıb, lakin IdeyaNest üçün bildirişlərə icazə verməyənə qədər bu telefona heç nə gəlməyəcək.",
+        "openSettings": "Telefon ayarlarını aç",
+        "cellLabel": "{category} — {channel}",
+        "chooseHint": "Çatdırılma seçimlərini açır",
+        "conflict": "Bu ayarı eyni anda başqa yerdən də dəyişdilər. Siyahı indi yadda saxlanılanı göstərir; yenidən cəhd edin.",
+        "offlineEmpty": "Bildiriş ayarlarınız bağlantı bərpa olunanda yüklənəcək.",
+        "pushFailed": "Seçiminiz yadda saxlanılıb, lakin bu telefonda push bildirişlərini qurmaq mümkün olmadı. Bir az sonra yenidən cəhd edin."
       }
     }
   }

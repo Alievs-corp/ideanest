@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup } from '@ideanest/ui';
 import { Modal } from '@ideanest/ui/motion';
+import { deviceNameOf } from '@ideanest/account/sessions';
 import { ApiError } from '../../lib/api/problem';
 import { signOut as endThisSession } from '../../lib/api/access-token';
 import { listSessions, revokeSession, type SessionSummary } from '../../lib/sessions/api';
-import { deviceNameOf } from '../../lib/sessions/describe';
 import { SessionRow } from './SessionRow';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { SessionsPanelCopy } from '../../lib/i18n/settings-copy';

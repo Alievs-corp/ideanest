@@ -657,7 +657,8 @@
         "refused": "Servis değişikliği reddetti. Yeniden deneyin.",
         "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "saved": "{category} — {channel}: {mode}.",
-        "heading": "Size ne gönderilir"
+        "heading": "Size ne gönderilir",
+        "savedNotice": "Kaydedildi. {change}"
       }
     }
   },
@@ -5634,6 +5635,21 @@
           "saved": "Yeni fotoğrafınız kaydedildi ve profilinizde gösteriliyor.",
           "stillProcessing": "Fotoğrafınızın işlenmesi her zamankinden uzun sürüyor. Birazdan yeniden deneyin."
         }
+      },
+      "sessions": {
+        "emptyBody": "Bu telefonda oturumunuz açıkken bu olmamalı. Kontrol etmek için yeniden deneyin.",
+        "offlineEmpty": "Cihazlarınız bağlantı geri geldiğinde yüklenecek.",
+        "stillSignedIn": "Hâlâ oturumu açık olanlar: {devices}."
+      },
+      "notifications": {
+        "pushOffTitle": "IdeyaNest için anlık bildirimler telefonunuzun ayarlarında kapalı",
+        "pushOffBody": "Anlık bildirim tercihleriniz kaydedildi, ancak IdeyaNest için bildirimlere izin verene kadar bu telefona hiçbir şey gelmeyecek.",
+        "openSettings": "Telefon ayarlarını aç",
+        "cellLabel": "{category} — {channel}",
+        "chooseHint": "Teslim seçeneklerini açar",
+        "conflict": "Bu ayar aynı anda başka bir yerden değiştirildi. Liste artık kaydedileni gösteriyor; yeniden deneyin.",
+        "offlineEmpty": "Bildirim ayarlarınız bağlantı geri geldiğinde yüklenecek.",
+        "pushFailed": "Seçiminiz kaydedildi, ancak bu telefonda anlık bildirimler kurulamadı. Daha sonra yeniden deneyin."
       }
     }
   }

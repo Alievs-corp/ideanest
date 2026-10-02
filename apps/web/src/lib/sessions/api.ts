@@ -1,29 +1,9 @@
+import type { RevokeOutcome, SessionSummary } from '@ideanest/account/sessions';
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 
-/**
- * One live device, as `GET /v1/auth/sessions` returns it.
- *
- * Three fields are optional because the service serialises with
- * `default-property-inclusion: non_null` — a null `deviceLabel` is absent from
- * the JSON rather than present and null. They are also null for real reasons:
- * `deviceLabel` is only set when the client sent one at sign-in, and all three
- * are stripped when an account is anonymised.
- */
-export interface SessionSummary {
-  id: string;
-  /** Client-supplied at sign-in, so untrusted. Only ever rendered as text. */
-  deviceLabel?: string;
-  userAgent?: string;
-  ipAddress?: string;
-  /** ISO-8601 instant, UTC. */
-  createdAt: string;
-  /** Advances on refresh, not on every request — so "last active" is coarse. */
-  lastSeenAt: string;
-  expiresAt: string;
-  /** Matched against the `sid` claim on the caller's own access token. */
-  current: boolean;
-}
+/* The row's shape is shared with the app (#161), so it lives in `@ideanest/account`. */
+export type { RevokeOutcome, SessionSummary };
 
 /**
  * The account's live devices, newest activity first.
@@ -37,8 +17,6 @@ export async function listSessions(signal?: AbortSignal): Promise<SessionSummary
 
   return (await response.json()) as SessionSummary[];
 }
-
-export type RevokeOutcome = 'revoked' | 'already-gone';
 
 /**
  * Ends one device's session.

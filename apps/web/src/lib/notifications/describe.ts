@@ -248,29 +248,10 @@ function hrefOf(notification: InboxNotification, campaignHref: string | null): s
   return campaignHref;
 }
 
-/**
- * The categories, in §4.10's order.
- *
- * Declared as a list rather than derived from the response so that the settings page has a
- * stable row order even before it has loaded, and so that a category the service starts
- * sending which nobody has labelled here is a type error.
+/*
+ * `CATEGORIES`, `CHANNELS` and `modesFor` — the table's order and the modes a switch offers —
+ * are `@ideanest/account/notifications` now, shared with the app (#161).
  */
-export const CATEGORIES: readonly NotificationCategory[] = [
-  'PLEDGES',
-  'CAMPAIGN',
-  'PAYMENTS',
-  'COMMUNITY',
-  'REWARDS',
-  'DISCOVERY',
-  'SECURITY',
-];
-
-/** The three columns of §4.10's table. */
-export const CHANNELS: readonly NotificationChannel[] = ['IN_APP', 'EMAIL', 'PUSH'];
-
-
-
-
 
 export function categoryLabel(category: NotificationCategory, copy: NotificationsCopy): string {
   return copy.category[category] ?? category;
@@ -304,17 +285,6 @@ export function mandatoryReason(
 
 export function modeLabel(mode: DeliveryMode, copy: NotificationsCopy): string {
   return copy.mode[mode] ?? mode;
-}
-
-/**
- * The modes this switch may be set to.
- *
- * Built from the response rather than from a rule restated here: `digestOffered` is the
- * service's answer to "can this channel batch", and a client that decided it independently
- * would drift from §4.10 the first time the table changed.
- */
-export function modesFor(digestOffered: boolean): readonly DeliveryMode[] {
-  return digestOffered ? ['IMMEDIATE', 'DIGEST', 'OFF'] : ['IMMEDIATE', 'OFF'];
 }
 
 /**

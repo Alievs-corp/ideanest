@@ -24,8 +24,10 @@ WORKDIR /repo
 # invalidate the install layer, which is most of the build.
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/web/package.json apps/web/
+COPY packages/account/package.json packages/account/
 COPY packages/api-client/package.json packages/api-client/
 COPY packages/campaign/package.json packages/campaign/
+COPY packages/checkout/package.json packages/checkout/
 COPY packages/design-tokens/package.json packages/design-tokens/
 COPY packages/discovery/package.json packages/discovery/
 COPY packages/messages/package.json packages/messages/

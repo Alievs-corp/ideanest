@@ -657,7 +657,8 @@
         "refused": "The service refused the change. Try again.",
         "unreachable": "The service could not be reached. Check your connection and try again.",
         "saved": "{category} by {channel}: {mode}.",
-        "heading": "What you are sent"
+        "heading": "What you are sent",
+        "savedNotice": "Saved. {change}"
       }
     }
   },
@@ -5634,6 +5635,21 @@
           "saved": "Your new picture is saved and shown on your profile.",
           "stillProcessing": "Your picture is taking longer than usual to process. Try again in a moment."
         }
+      },
+      "sessions": {
+        "emptyBody": "That should not happen while this phone is signed in. Try again to check.",
+        "offlineEmpty": "Your devices will load once the connection is back.",
+        "stillSignedIn": "Still signed in: {devices}."
+      },
+      "notifications": {
+        "pushOffTitle": "Push is turned off for IdeyaNest in your phone's settings",
+        "pushOffBody": "Your Push choices are saved, but nothing will reach this phone until you allow notifications for IdeyaNest.",
+        "openSettings": "Open phone settings",
+        "cellLabel": "{category} — {channel}",
+        "chooseHint": "Opens the delivery choices",
+        "conflict": "Something else changed this setting at the same time. The list now shows what is saved; try again.",
+        "offlineEmpty": "Your notification settings will load once the connection is back.",
+        "pushFailed": "Your choice is saved, but push could not be set up on this phone. Try again later."
       }
     }
   }

@@ -1,15 +1,14 @@
 import { Monitor, Smartphone } from 'lucide-react';
 import { Pill, Tag } from '@ideanest/ui';
-import type { Locale } from '../../lib/i18n/locale';
-import type { SessionSummary } from '../../lib/sessions/api';
 import {
   browserOf,
   deviceNameOf,
-  formatExactTime,
-  formatRelativeTime,
   locationOf,
   platformOf,
-} from '../../lib/sessions/describe';
+  type SessionSummary,
+} from '@ideanest/account/sessions';
+import type { Locale } from '../../lib/i18n/locale';
+import { formatExactTime, formatRelativeTime } from '../../lib/time';
 import type { SessionRowCopy } from '../../lib/i18n/settings-copy';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 
