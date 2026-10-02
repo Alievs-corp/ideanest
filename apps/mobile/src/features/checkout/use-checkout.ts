@@ -111,6 +111,8 @@ export function useCheckout(options: CheckoutOptions): CheckoutState {
   keyring.current ??= new IdempotencyKeyring(options.mintKey ?? Crypto.randomUUID);
   const keys = keyring.current;
   const lastMutation = useRef<'reserve' | 'pay'>('reserve');
+  const inFlight = useRef(false);
+  const reservedBody = useRef<DraftPledgeRequest | null>(null);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -202,7 +204,8 @@ export function useCheckout(options: CheckoutOptions): CheckoutState {
     (reserveOptions?: { readonly fresh?: boolean }) => {
       setAttempted(true);
       const body = draftBody;
-      if (body === null || !latest.current.online) return;
+      if (body === null || !latest.current.online || inFlight.current) return;
+      inFlight.current = true;
       lastMutation.current = 'reserve';
       if (reserveOptions?.fresh === true) keys.retire(body);
       setPhase('reserving');
@@ -212,8 +215,10 @@ export function useCheckout(options: CheckoutOptions): CheckoutState {
           () => createPledgeDraft(body, keys.keyFor(body)),
           latest.current.failures,
         );
+        inFlight.current = false;
         if (!mounted.current) return;
         if (outcome.ok) {
+          reservedBody.current = body;
           setPledge(outcome.value);
           setHeldUntil(outcome.value.reservationExpiresAt ?? null);
           setPhase('reserved');
@@ -230,8 +235,8 @@ export function useCheckout(options: CheckoutOptions): CheckoutState {
 
   const pay = useCallback(() => {
     const current = pledge;
-    const body = draftBody;
-    if (current === null || !latest.current.online) return;
+    if (current === null || !latest.current.online || inFlight.current) return;
+    inFlight.current = true;
     lastMutation.current = 'pay';
     const acknowledgedAgreementVersion = latest.current.agreementVersion;
     const intent = paymentIntentFor(current.id, acknowledgedAgreementVersion);
@@ -248,32 +253,39 @@ export function useCheckout(options: CheckoutOptions): CheckoutState {
           ),
         latest.current.failures,
       );
-      if (!mounted.current) return;
+      if (!mounted.current) {
+        inFlight.current = false;
+        return;
+      }
       if (outcome.ok) {
         setPhase('redirecting');
-        const session = await openPaymentPage(outcome.value.redirectUrl, current.id);
-        if (!mounted.current) return;
-        if (session.kind === 'returned') {
-          latest.current.onPaid(current.id, session.hint);
-          return;
-        }
         try {
+          const session = await openPaymentPage(outcome.value.redirectUrl, current.id);
+          if (!mounted.current) return;
+          if (session.kind === 'returned') {
+            latest.current.onPaid(current.id, session.hint);
+            return;
+          }
           const fresh = await getPledge(current.id);
           if (!mounted.current) return;
-          if (fresh.state === 'COLLECTED') {
+          if (fresh.state !== 'DRAFT') {
             latest.current.onPaid(current.id, 'returned');
             return;
           }
         } catch {
-          // The pledge read is a courtesy; the reservation is still held either way.
+          // A browser that would not open, or a pledge read that failed: the hold is unchanged.
+        } finally {
+          inFlight.current = false;
         }
         if (mounted.current) setPhase('reserved');
         return;
       }
+      inFlight.current = false;
       const described = outcome.failure;
       if (described.retireKey) keys.retire(intent);
       if (described.recovery === 'redraft') {
-        if (body !== null) keys.retire(body);
+        if (reservedBody.current !== null) keys.retire(reservedBody.current);
+        reservedBody.current = null;
         setPledge(null);
         setHeldUntil(null);
         setPhase('selecting');
@@ -286,7 +298,7 @@ export function useCheckout(options: CheckoutOptions): CheckoutState {
       }
       setFailure(described);
     })();
-  }, [pledge, draftBody, keys]);
+  }, [pledge, keys]);
 
   const retry = useCallback(() => {
     if (lastMutation.current === 'pay') pay();

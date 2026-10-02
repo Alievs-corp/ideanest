@@ -286,13 +286,51 @@ describe('useCheckout — payment hand-off', () => {
     expect(api.payForPledge.mock.calls.map((call) => call[2])).toEqual(['key-2', 'key-2']);
   });
 
-  it('a dismissed browser on a collected pledge goes to the pledge as returned', async () => {
+  it.each(['COLLECTED', 'CHARGE_PENDING', 'CHARGE_FAILED'] as const)(
+    'a dismissed browser on a %s pledge goes to the pledge as returned',
+    async (state) => {
+      api.payForPledge.mockResolvedValue({ pledgeId: 'pl-1', providerTransactionId: 't', redirectUrl: 'https://pay/x' });
+      api.getPledge.mockResolvedValue({ ...draft(), state });
+      const { view, onPaid } = await reserved();
+      await act(async () => view.result.current.pay());
+      await settle();
+      expect(onPaid).toHaveBeenCalledWith('pl-1', 'returned');
+    },
+  );
+
+  it('a browser that will not open returns to step 2 instead of hanging', async () => {
     api.payForPledge.mockResolvedValue({ pledgeId: 'pl-1', providerTransactionId: 't', redirectUrl: 'https://pay/x' });
-    api.getPledge.mockResolvedValue({ ...draft(), state: 'COLLECTED' });
+    browser.openAuthSessionAsync.mockRejectedValueOnce(new Error('WebBrowser is already open'));
     const { view, onPaid } = await reserved();
     await act(async () => view.result.current.pay());
     await settle();
-    expect(onPaid).toHaveBeenCalledWith('pl-1', 'returned');
+    expect(view.result.current.phase).toBe('reserved');
+    expect(onPaid).not.toHaveBeenCalled();
+  });
+
+  it('a second tap while a request is in flight sends nothing', async () => {
+    let finish: (value: PledgeResponse) => void = () => undefined;
+    api.createPledgeDraft.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)));
+    const { view } = await mount({ initialRewardId: 'r1' });
+    await act(async () => view.result.current.reserve());
+    await act(async () => view.result.current.reserve());
+    expect(api.createPledgeDraft).toHaveBeenCalledTimes(1);
+    await act(async () => finish(draft()));
+    await settle();
+    expect(view.result.current.phase).toBe('reserved');
+  });
+
+  it('a redraft retires the key of the selection that was reserved, not the one on screen', async () => {
+    api.payForPledge.mockRejectedValueOnce(refusal(409, 'RESERVATION_EXPIRED'));
+    api.createPledgeDraft.mockResolvedValue(draft());
+    const { view } = await reserved();
+    await act(async () => view.result.current.setAddonQuantity('a1', 1));
+    await act(async () => view.result.current.pay());
+    await settle();
+    await act(async () => view.result.current.setAddonQuantity('a1', 0));
+    await act(async () => view.result.current.reserve());
+    await settle();
+    expect(api.createPledgeDraft.mock.calls.map((call) => call[1])).toEqual(['key-1', 'key-3']);
   });
 
   it('a failure while paying returns to reserved; a redraft returns to selecting with no pledge', async () => {
