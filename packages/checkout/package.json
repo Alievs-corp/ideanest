@@ -10,7 +10,10 @@
     "./quote": "./src/quote.ts",
     "./idempotency": "./src/idempotency.ts",
     "./failure": "./src/failure.ts",
-    "./refusals": "./src/refusals.ts"
+    "./refusals": "./src/refusals.ts",
+    "./attempt": "./src/attempt.ts",
+    "./reservation": "./src/reservation.ts",
+    "./draft": "./src/draft.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

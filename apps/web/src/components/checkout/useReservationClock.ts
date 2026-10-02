@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { reservationLabel } from '@ideanest/checkout/reservation';
 
 /**
  * How long the stock is held for — PL-13's five minutes, counted down.
@@ -32,14 +33,6 @@ export interface ReservationClock {
   readonly label: string;
 }
 
-/** `4:32`. Minutes are not padded and seconds always are, as a clock reads. */
-function format(remainingMs: number): string {
-  const total = Math.ceil(remainingMs / 1000);
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
-}
-
 export function useReservationClock(expiresAt: string | null | undefined): ReservationClock {
   /*
    * `Date.parse` rather than a `Date` object in state: the deadline is a fixed
@@ -69,5 +62,5 @@ export function useReservationClock(expiresAt: string | null | undefined): Reser
   }
 
   const remainingMs = Math.max(0, deadline - now);
-  return { remainingMs, expired: remainingMs === 0, label: format(remainingMs) };
+  return { remainingMs, expired: remainingMs === 0, label: reservationLabel(remainingMs) };
 }

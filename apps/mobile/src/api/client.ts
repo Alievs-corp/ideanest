@@ -193,6 +193,7 @@ export async function sendJson(
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
+  extraHeaders: Readonly<Record<string, string>> = {},
 ): Promise<unknown> {
   const response = await sessionFetch(`${apiOrigin()}${path}`, {
     method,
@@ -200,6 +201,7 @@ export async function sendJson(
       'content-type': 'application/json',
       accept: 'application/json',
       'Accept-Language': currentLocale(),
+      ...extraHeaders,
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });

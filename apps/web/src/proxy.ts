@@ -5,6 +5,7 @@ import { maintenanceHeaders, maintenancePageFor, platformStatus } from './lib/ma
 import { COUNTRY_HEADER, localeForCountry } from './lib/i18n/country';
 import { DEFAULT_LOCALE, LOCALE_COOKIE, type Locale, isLocale } from './lib/i18n/locale';
 import { routing } from './i18n/routing';
+import { appPaymentReturn } from './lib/pledges/app-return';
 
 /**
  * Where a request with no language in its path is sent — issue #123.
@@ -57,6 +58,14 @@ const intlMiddleware = createIntlMiddleware(routing);
 
 export default async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
+
+  const appReturn = appPaymentReturn(request.nextUrl);
+  if (appReturn !== null) {
+    return new NextResponse(null, {
+      status: 303,
+      headers: { location: appReturn, 'cache-control': 'private, no-store' },
+    });
+  }
 
   /*
    * `/az/discover` splits to `['', 'az', 'discover']`, so the candidate is always index 1.

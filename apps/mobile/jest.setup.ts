@@ -277,6 +277,7 @@ jest.mock('expo-network', () => {
  */
 jest.mock('expo-web-browser', () => ({
   openBrowserAsync: jest.fn(async () => ({ type: 'opened' })),
+  openAuthSessionAsync: jest.fn(async () => ({ type: 'cancel' })),
 }));
 
 /**

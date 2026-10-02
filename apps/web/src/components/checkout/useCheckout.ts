@@ -6,6 +6,8 @@ import { parseAmount, toMoney, type AmountParse } from '../../lib/money';
 import { describeFailure, type CheckoutFailure } from '../../lib/pledges/failure';
 import type { PledgeFailureCopy } from '../../lib/i18n/checkout-copy';
 import { IdempotencyKeyring } from '../../lib/pledges/idempotency';
+import { attemptWithRetry } from '@ideanest/checkout/attempt';
+import { NO_REWARD } from '@ideanest/checkout/draft';
 import {
   createPledgeDraft,
   payForPledge,
@@ -73,73 +75,7 @@ import { leaveForPaymentPage, paymentReturnFor } from '../../lib/pledges/payment
  * tries.
  */
 
-/** The value the "no reward" radio carries. A tier id is a UUID and cannot collide. */
-export const NO_REWARD = 'none';
-
-/**
- * How long to wait when the service asked us to wait but did not say how long.
- *
- * One second, which is what the service's own `Retry-After` carries: the work
- * being waited on is a database transaction.
- */
-const DEFAULT_RETRY_AFTER_MS = 1000;
-
-/**
- * The longest single wait, however long the service asked for.
- *
- * A `Retry-After` of a minute would leave a backer looking at "Reserving…" with
- * nothing happening, and somebody looking at that reloads the page — which is
- * the one thing that loses the in-memory key and turns a safe replay into a
- * second request. Trying sooner than asked costs at worst one more refusal, and
- * the number of those is bounded on the line below.
- */
-const MAX_RETRY_AFTER_MS = 5000;
-
-/**
- * How many times a request is re-sent after `IDEMPOTENT_REQUEST_IN_PROGRESS`.
- *
- * BOUNDED, and this is the point of the constant. The refusal says "the first
- * attempt is still running", so a client that retried on a loop would keep
- * asking for as long as the first attempt is stuck — which is precisely when
- * asking is least useful. After this many the failure is shown, with the button
- * that sends it again if the backer wants to.
- */
-const IN_PROGRESS_RETRY_LIMIT = 3;
-
-/** Either what the request returned, or what refused it. */
-type Attempted<T> =
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly failure: CheckoutFailure };
-
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Runs a request, waiting out the refusal that means it is already running.
- *
- * `run` is called again rather than its promise retained, and it reads the key
- * from the keyring each time — which returns the same key, because the intent is
- * the same and nothing retires it here. That is the whole guarantee: a retry
- * under a fresh key would be a second pledge.
- */
-async function attemptWithRetry<T>(
-  run: () => Promise<T>,
-  copy: PledgeFailureCopy,
-): Promise<Attempted<T>> {
-  for (let retries = 0; ; retries += 1) {
-    try {
-      return { ok: true, value: await run() };
-    } catch (cause) {
-      const failure = describeFailure(cause, copy);
-      if (failure.recovery !== 'wait-and-retry' || retries >= IN_PROGRESS_RETRY_LIMIT) {
-        return { ok: false, failure };
-      }
-
-      await wait(Math.min(failure.retryAfterMs ?? DEFAULT_RETRY_AFTER_MS, MAX_RETRY_AFTER_MS));
-    }
-  }
-}
+export { NO_REWARD } from '@ideanest/checkout/draft';
 
 export type CatalogueStatus = 'loading' | 'ready' | 'failed';
 
