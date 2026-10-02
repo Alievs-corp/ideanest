@@ -5605,6 +5605,21 @@
         "appLockTitle": "Bu telefonda",
         "appLockIntro": "Kilid hesabınıza deyil, bu telefona aiddir: digər cihazlarınızda heç nəyi dəyişmir və bağlantı olmadan da işləyir.",
         "appLockLink": "Tətbiq kilidi"
+      },
+      "privacy": {
+        "loading": "Məxfilik ayarlarınız yüklənir",
+        "loadFailedTitle": "Hesabınız oxuna bilmədi",
+        "loadFailedBody": "Profilinizi kimin görə bildiyi və hesabın bağlanmasının planlaşdırılıb-planlaşdırılmadığı hesabınızdan gəlir. Bağlantını yoxlayın və yenidən cəhd edin.",
+        "visibility": {
+          "unknownBody": "IdeyaNest profilinizin hazırda görünüb-görünmədiyini yoxlaya bilmədi, ona görə açar əmin olmadığı vəziyyəti göstərmək əvəzinə söndürülüb."
+        },
+        "export": {
+          "intro": "IdeyaNest-in hesabınız haqqında saxladığı hər şey bir JSON faylında. Fayl paylaşma pəncərəsində açılır, hara göndəriləcəyini siz seçirsiniz, sonra isə bu telefonda onun nüsxəsi qalmır.",
+          "sharedTitle": "Paylaşma pəncərəsinə verildi",
+          "sharedBody": "{filename} faylını paylaşma pəncərəsindən göndərdiyiniz yerdə axtarın: Fayllar, bulud diski və ya mesaj. Bu telefonda artıq onun nüsxəsi saxlanılmır.",
+          "unavailable": "Bu telefon paylaşma pəncərəsini aça bilmir, ona görə nüsxəni burada vermək mümkün deyil. Onu IdeyaNest-in veb saytından götürün.",
+          "writeFailed": "Nüsxə gəldi, amma bu telefona yazıla bilmədi, ona görə heç nə saxlanılmadı. Yenidən cəhd edin."
+        }
       }
     }
   }

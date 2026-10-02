@@ -5605,6 +5605,21 @@
         "appLockTitle": "On this phone",
         "appLockIntro": "The lock belongs to this phone rather than to your account: it changes nothing on your other devices, and it works without a connection.",
         "appLockLink": "App lock"
+      },
+      "privacy": {
+        "loading": "Loading your privacy settings",
+        "loadFailedTitle": "Your account could not be read",
+        "loadFailedBody": "Who can see your profile and whether a closure is scheduled both come from your account. Check your connection and try again.",
+        "visibility": {
+          "unknownBody": "IdeyaNest could not check whether your profile is currently visible, so the switch is disabled rather than showing a position it is not sure of."
+        },
+        "export": {
+          "intro": "One JSON file with everything IdeyaNest holds about your account. It opens in the share sheet, so you choose where it goes, and this phone keeps no copy afterwards.",
+          "sharedTitle": "Handed to the share sheet",
+          "sharedBody": "Look for {filename} wherever you sent it from the share sheet: Files, a cloud drive or a message. This phone no longer keeps a copy.",
+          "unavailable": "This phone cannot open a share sheet, so the copy cannot be handed over here. Take it from IdeyaNest on the web instead.",
+          "writeFailed": "The copy arrived but could not be written to this phone, so nothing was kept. Try again."
+        }
       }
     }
   }
