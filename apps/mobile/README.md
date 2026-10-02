@@ -516,6 +516,14 @@ reads the pledge once: anything but `DRAFT` goes to the pledge, otherwise step 2
 the hold running and paying again replays the same key. Not yet exercised against the Epoint
 sandbox (no merchant account); the provider only ever sees the site origin.
 
+**The payout card return** (`settings/payout`, #161) is the same mechanism: the app asks for
+`https://<site>/{locale}/settings/payout?card=returned|failed&via=app`, the proxy answers with
+`ideanest://settings/payout?card=…`, and that ends
+`WebBrowser.openAuthSessionAsync(redirectUrl, 'ideanest://settings/payout')`. After a return, or a
+dismissed browser, the screen re-reads `GET /v1/me/payout-destination` every 3 s, at most 20 times,
+until its `updatedAt` changes; only a return says it is waiting for the provider. The card number
+is entered on the provider's page, never in the app.
+
 ## Pledges
 
 The Pledges tab (#158) pages `GET /v1/me/pledges` 24 at a time in an infinite query keyed

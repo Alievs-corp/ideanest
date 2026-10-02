@@ -4145,6 +4145,11 @@ single-file change.
 > (`lib/pledges/app-return.ts`), which ends the session. The provider still only ever sees the site
 > origin, so the allow-list above is unchanged.
 >
+> **#161 uses the same return for the payout card.** The app registers a card with
+> `/{locale}/settings/payout?card=returned|failed&via=app`, which the proxy answers with a `303` to
+> `ideanest://settings/payout?card=…` (`lib/account/app-return.ts`). Without `via=app` the page is the
+> web's own, unchanged. The service still forwards these addresses unchecked (#139).
+>
 > Two departures from the sketch above, both small. `ProviderCapabilities` gains
 > `schemeChaining`, because R-03 is one of the three the design cannot work without and
 > the record had no field for it; `preAuthHoldDays` stays, as the number that records
