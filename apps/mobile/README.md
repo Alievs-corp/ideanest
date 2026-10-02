@@ -69,6 +69,20 @@ place that is first for all of them. `@ideanest/messages`' `pluralForm` asks wit
 Jest runs on Node, which has both constructors; `src/lib/intl-polyfill.test.ts`
 deletes them to show the bug and the fix.
 
+**The same entry installs `Intl.DisplayNames`.** Hermes lacks it too, so
+`regionNames` in `@ideanest/messages/formats` returned nothing and every country
+picker (checkout, the pledge editor, the shipping address) listed bare ISO codes
+on a device. The polyfill is `@formatjs/intl-displaynames`, pinned like the plural
+rules, installed only when the engine lacks a working constructor, with CLDR data
+for `en`, `az`, `ru` and `tr` only. `regionNames` asks with
+`localeMatcher: 'lookup'` for the reason `pluralForm` does: the app's English is
+`en-GB`, and the default "best fit" matcher reaches for `Intl.Locale` to resolve a
+tag it holds no data for, which Hermes does not have. Adding `@formatjs/intl-locale`
+would also work, at the cost of another polyfill on every launch. The Metro export
+in `mobile-check.yml` bundles it from `index.ts` like the plural rules, and
+`src/lib/intl-polyfill.test.ts` deletes `Intl.DisplayNames` to show both the bare
+codes and the localised names.
+
 ## The UI kit (#151)
 
 `@ideanest/ui` is React DOM, so the app has its own half of the same design in

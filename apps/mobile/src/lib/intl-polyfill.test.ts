@@ -14,12 +14,13 @@
  * build on Hermes can show it.
  */
 
-type MutableIntl = { PluralRules?: unknown; Locale?: unknown };
+type MutableIntl = { PluralRules?: unknown; Locale?: unknown; DisplayNames?: unknown };
 
 const NATIVE_PLURAL_RULES = Intl.PluralRules;
 const NATIVE_LOCALE = Intl.Locale;
+const NATIVE_DISPLAY_NAMES = Intl.DisplayNames;
 
-function restore(name: 'PluralRules' | 'Locale', value: unknown): void {
+function restore(name: 'PluralRules' | 'Locale' | 'DisplayNames', value: unknown): void {
   Object.defineProperty(Intl, name, { value, writable: true, configurable: true, enumerable: false });
 }
 
@@ -27,17 +28,20 @@ function restore(name: 'PluralRules' | 'Locale', value: unknown): void {
 function likeHermes(): void {
   delete (Intl as MutableIntl).PluralRules;
   delete (Intl as MutableIntl).Locale;
+  delete (Intl as MutableIntl).DisplayNames;
 }
 
 afterEach(() => {
   restore('PluralRules', NATIVE_PLURAL_RULES);
   restore('Locale', NATIVE_LOCALE);
+  restore('DisplayNames', NATIVE_DISPLAY_NAMES);
 });
 
 interface Loaded {
   readonly translate: typeof import('./i18n').translate;
   readonly setLocale: typeof import('./locale').setLocale;
   readonly pluralForm: typeof import('@ideanest/messages/plurals').pluralForm;
+  readonly countryName: typeof import('../features/checkout/format').countryName;
 }
 
 function load(withPolyfill: boolean): Loaded {
@@ -49,6 +53,8 @@ function load(withPolyfill: boolean): Loaded {
       setLocale: (require('./locale') as typeof import('./locale')).setLocale,
       pluralForm: (require('@ideanest/messages/plurals') as typeof import('@ideanest/messages/plurals'))
         .pluralForm,
+      countryName: (require('../features/checkout/format') as typeof import('../features/checkout/format'))
+        .countryName,
     };
   });
   if (loaded === undefined) throw new Error('modules did not load');
@@ -62,6 +68,13 @@ describe('without the polyfill, as the release build was', () => {
     setLocale('en');
 
     expect(translate()('campaign.daysLeft', { days: 3 })).toBe('campaign.daysLeft');
+  });
+
+  it('names a country by its bare code', () => {
+    likeHermes();
+    const { countryName } = load(false);
+
+    expect(countryName('DE', 'az')).toBe('DE');
   });
 });
 
@@ -112,6 +125,19 @@ describe('with the polyfill loaded first', () => {
     const forms = { one: 'one', few: 'few', many: 'many', other: 'other' };
 
     expect(pluralForm(locale, forms, count)).toBe(category);
+  });
+
+  it.each([
+    ['en', 'Germany'],
+    ['az', 'Almaniya'],
+    ['ru', 'Германия'],
+    ['tr', 'Almanya'],
+  ] as const)('names a country in %s', (locale, expected) => {
+    likeHermes();
+    const { countryName } = load(true);
+
+    expect(typeof Intl.DisplayNames).toBe('function');
+    expect(countryName('DE', locale)).toBe(expected);
   });
 });
 

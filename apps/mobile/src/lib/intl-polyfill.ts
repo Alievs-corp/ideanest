@@ -1,5 +1,5 @@
 /**
- * `Intl.PluralRules` on Hermes — loaded before anything in the application translates.
+ * `Intl.PluralRules` and `Intl.DisplayNames` on Hermes — loaded before anything in the application translates.
  *
  * <h2>What was broken</h2>
  *
@@ -38,3 +38,8 @@ import '@formatjs/intl-pluralrules/locale-data/en.js';
 import '@formatjs/intl-pluralrules/locale-data/az.js';
 import '@formatjs/intl-pluralrules/locale-data/ru.js';
 import '@formatjs/intl-pluralrules/locale-data/tr.js';
+import '@formatjs/intl-displaynames/polyfill.js';
+import '@formatjs/intl-displaynames/locale-data/en.js';
+import '@formatjs/intl-displaynames/locale-data/az.js';
+import '@formatjs/intl-displaynames/locale-data/ru.js';
+import '@formatjs/intl-displaynames/locale-data/tr.js';

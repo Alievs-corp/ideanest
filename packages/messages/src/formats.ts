@@ -210,7 +210,7 @@ export function regionNames(locale: Locale): Intl.DisplayNames | null {
   return cached(`region:${locale}`, () => {
     for (const tag of [INTL_LOCALE[locale], INTL_LOCALE.en]) {
       try {
-        const names = new Intl.DisplayNames([tag], { type: 'region' });
+        const names = new Intl.DisplayNames([tag], { type: 'region', localeMatcher: 'lookup' });
         if (names.of(REGION_CANARY) !== REGION_CANARY) return names;
       } catch {
         // A runtime built without the locale's display names; try the next.

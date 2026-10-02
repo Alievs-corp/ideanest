@@ -75,6 +75,7 @@ export const queryKeys = {
   saved: () => ['saved'] as const,
   pledges: () => ['pledges'] as const,
   pledgeList: () => ['pledges', 'list'] as const,
+  shippingAddress: (pledgeId: string) => ['shippingAddress', pledgeId] as const,
   /*
    * The campaign page's other reads (#155). Every key a tab of that page needs is named here
    * already, so the tabs can be built in parallel without two changes to this object.

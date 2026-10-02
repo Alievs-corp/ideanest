@@ -54,6 +54,11 @@ describe('what survives a restart', () => {
     expect(shouldPersistQuery(queryKeys.profileProjects('aysel'))).toBe(false);
   });
 
+  it('never writes a shipping address or a phone number to the device', () => {
+    expect(shouldPersistQuery(queryKeys.shippingAddress('pl-1'))).toBe(false);
+    expect(queryKeys.shippingAddress('pl-1')[0]).not.toBe(queryKeys.pledges()[0]);
+  });
+
   it('matches on the root of the key, so a paged variant is one decision', () => {
     // ['saved'] and ['saved', cursor] must not disagree; the second spelling silently
     // not being cached is a bug that only shows on a phone with no signal.
