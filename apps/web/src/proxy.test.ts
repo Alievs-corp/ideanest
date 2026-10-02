@@ -350,3 +350,27 @@ describe('the native app payment return', () => {
     expect(response.headers.get('location')).toBeNull();
   });
 });
+
+describe('the native app payout-card return', () => {
+  it('is a path the matcher lets through, with and without a language', () => {
+    const matches = (path: string): boolean => new RegExp(`^${config.matcher[0]}$`).test(path);
+    expect(matches('/az/settings/payout')).toBe(true);
+    expect(matches('/settings/payout')).toBe(true);
+  });
+
+  it('answers via=app on the payout page with the app scheme, before the locale or maintenance', async () => {
+    statusMock.mockResolvedValue({ state: 'maintenance', maintenance: null } as never);
+    const response = await proxy(request('/en/settings/payout?card=failed&via=app'));
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe('ideanest://settings/payout?card=failed');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('leaves the payout page without via=app to the site', async () => {
+    const response = await proxy(request('/az/settings/payout?card=returned'));
+
+    expect(response.status).not.toBe(303);
+    expect(response.headers.get('location')).toBeNull();
+  });
+});
