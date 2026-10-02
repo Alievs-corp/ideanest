@@ -12,7 +12,7 @@ import { setOnline } from '../../lib/connectivity';
 import { colors } from '../../theme';
 import { setLocale } from '../../lib/locale';
 import * as checkoutApi from './api';
-import { CheckoutScreen } from './checkout-screen';
+import { CheckoutScreen, backActionFor } from './checkout-screen';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
 
@@ -171,10 +171,11 @@ describe('checkout step 1', () => {
     expect(api.createPledgeDraft).not.toHaveBeenCalled();
   });
 
-  it('refuses a comma and an amount below the tier price', async () => {
+  it('reads a decimal-pad comma as the point, and refuses an amount below the tier price', async () => {
     await show({ initialRewardId: 'r1' });
     await fireEvent.changeText(screen.getByTestId('contribution'), '45,50');
-    expect(screen.getByText(en.checkout.errors.amountComma)).toBeTruthy();
+    expect(screen.getByTestId('contribution').props.value).toBe('45.50');
+    expect(screen.getByTestId('summary-total')).toHaveTextContent('45.50 AZN');
     await fireEvent.changeText(screen.getByTestId('contribution'), '40');
     expect(screen.getByText('This reward costs 45.00 AZN. Give that or more, or choose a cheaper reward.')).toBeTruthy();
   });
@@ -203,6 +204,21 @@ describe('checkout step 1', () => {
     await act(async () => setOnline(false));
     expect(screen.getByTestId('checkout-offline')).toBeTruthy();
     expect(screen.getByTestId('reserve')).toBeDisabled();
+  });
+
+  it('drops the destination from the summary once nothing is posted', async () => {
+    await show({ initialRewardId: 'r3' });
+    await fireEvent.press(screen.getByTestId('destination'));
+    await fireEvent.press(screen.getByText('Azerbaijan'));
+    expect(screen.getByTestId('pledge-summary')).toHaveTextContent(/Delivered to Azerbaijan/);
+    await fireEvent.press(screen.getByTestId('reward-option-r1'));
+    expect(screen.getByTestId('pledge-summary')).not.toHaveTextContent(/Delivered to/);
+  });
+
+  it('says nothing about fees until they have loaded', async () => {
+    api.getFeeDisclosure.mockReturnValue(new Promise(() => undefined));
+    await show();
+    expect(screen.queryByTestId('fee-disclosure')).toBeNull();
   });
 
   it('shows the fee disclosure with percentages', async () => {
@@ -252,6 +268,15 @@ describe('checkout step 2', () => {
     expect(mockRouter.back).not.toHaveBeenCalled();
     await fireEvent.press(screen.getByTestId('leave'));
     expect(mockRouter.back).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the Android back button', () => {
+  it('leaves freely with nothing held, asks while a reward is held, and never leaves mid-request', () => {
+    expect(backActionFor(false, 0)).toBe('leave');
+    expect(backActionFor(false, 120_000)).toBe('ask');
+    expect(backActionFor(true, 120_000)).toBe('block');
+    expect(backActionFor(true, 0)).toBe('block');
   });
 });
 

@@ -8,7 +8,13 @@ import { colors, font, fontSize, lineHeight, radius, spacing } from '../../theme
 import type { FeeDisclosure as Disclosure } from './api';
 import { percentOf } from './format';
 
-export function FeeDisclosure({ disclosure }: { readonly disclosure: Disclosure | null }) {
+export function FeeDisclosure({
+  disclosure,
+  onPricing,
+}: {
+  readonly disclosure: Disclosure | null;
+  readonly onPricing: () => void;
+}) {
   const t = useT('fees.disclosure');
   const locale = useLocale();
 
@@ -17,7 +23,13 @@ export function FeeDisclosure({ disclosure }: { readonly disclosure: Disclosure 
   if (disclosure !== null && !disclosure.configured) {
     body = t('unconfigured');
   } else if (disclosure === null || disclosure.platformRate === null || disclosure.processingRate === null) {
-    body = t.rich('unavailable', { pricing: (chunks) => chunks });
+    body = t.rich('unavailable', {
+      pricing: (chunks) => (
+        <Text accessibilityRole="link" onPress={onPricing} style={styles.link}>
+          {chunks}
+        </Text>
+      ),
+    });
   } else {
     body = t('backerBody', {
       platform: percentOf(disclosure.platformRate, locale),
@@ -53,4 +65,5 @@ const styles = StyleSheet.create({
   },
   heading: { ...font.medium, fontSize: fontSize.base, lineHeight: lineHeight.body, color: colors.textPrimary },
   body: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textReading },
+  link: { color: colors.textPrimary, textDecorationLine: 'underline' },
 });

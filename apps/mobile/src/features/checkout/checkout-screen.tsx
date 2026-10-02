@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -64,6 +65,11 @@ export function checkoutPath(projectId: string, rewardId: string | null, tokens:
   return `/campaigns/${encodeURIComponent(projectId)}/back${search === '' ? '' : `?${search}`}`;
 }
 
+export function backActionFor(locked: boolean, heldMs: number): 'block' | 'ask' | 'leave' {
+  if (locked) return 'block';
+  return heldMs > 0 ? 'ask' : 'leave';
+}
+
 export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutScreenProps) {
   const t = useT();
   const locale = useLocale();
@@ -112,10 +118,21 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
 
   const [leaving, setLeaving] = useState(false);
   const busy = phase === 'reserving' || phase === 'paying';
+  const locked = busy || phase === 'redirecting';
   const close = () => {
     if (held.remainingMs > 0) setLeaving(true);
     else router.back();
   };
+  const backPress = useRef<() => boolean>(() => false);
+  backPress.current = () => {
+    const action = backActionFor(locked, held.remainingMs);
+    if (action === 'ask') setLeaving(true);
+    return action !== 'leave';
+  };
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => backPress.current());
+    return () => subscription.remove();
+  }, []);
 
   if (agreement.isError && agreement.data === undefined) {
     return (
@@ -164,7 +181,8 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
   const destinationChoices = checkout.destinations
     .map((code) => ({ value: code, label: countryName(code, locale) }))
     .sort((left, right) => left.label.localeCompare(right.label, locale));
-  const destinationLabel = checkout.destination === null ? null : countryName(checkout.destination, locale);
+  const destinationLabel =
+    checkout.needsDestination && checkout.destination !== null ? countryName(checkout.destination, locale) : null;
 
   const offlineNotice = online ? null : (
     <InlineAlert variant="warning" description={t('mobile.checkout.offline')} testID="checkout-offline" />
@@ -224,7 +242,7 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
               >
                 <TextInput
                   value={checkout.contributionText}
-                  onChangeText={checkout.setContributionText}
+                  onChangeText={(value) => checkout.setContributionText(value.replace(',', '.'))}
                   keyboardType="decimal-pad"
                   inputMode="decimal"
                   autoComplete="off"
@@ -300,11 +318,16 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
             description={t('checkout.expired')}
             testID="reservation-expired"
             action={
-              <Pill size="sm" variant="ghost" label={t('checkout.reserveAgain')} onPress={() => checkout.reserve({ fresh: true })} />
+              <Pill size="sm" variant="ghost" label={t('checkout.reserveAgain')} onPress={() => {
+                  checkout.startOver();
+                  checkout.reserve({ fresh: true });
+                }}
+                testID="reserve-again"
+              />
             }
           />
         ) : (
-          <Text style={styles.muted} testID="reservation-clock">
+          <Text style={[styles.muted, styles.tabular]} testID="reservation-clock">
             {t('checkout.heldFor', { time: clock.label })}
           </Text>
         )}
@@ -400,14 +423,14 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
   return (
     <MotionBudgetProvider level="none">
       <AccentScopeProvider>
-        <Stack.Screen options={{ headerShown: false, gestureEnabled: !busy && phase !== 'redirecting' }} />
+        <Stack.Screen options={{ headerShown: false, gestureEnabled: !locked && held.remainingMs === 0 }} />
         <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
             contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing[4], paddingBottom: insets.bottom + spacing[8] }]}
             keyboardShouldPersistTaps="handled"
             testID="checkout"
           >
-            <Header onClose={close} disabled={busy || phase === 'redirecting'} />
+            <Header onClose={close} disabled={locked} />
             <Text ref={heading} accessibilityRole="header" style={styles.h1} testID="checkout-step">
               {t(`checkout.steps.${step}`)}
             </Text>
@@ -431,7 +454,9 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
               </View>
               {summary === null ? null : <View style={wide ? styles.summaryWide : undefined}>{summary}</View>}
             </View>
-            <FeeDisclosure disclosure={fees.data ?? null} />
+            {fees.isPending ? null : (
+              <FeeDisclosure disclosure={fees.data ?? null} onPricing={() => router.push('/pricing')} />
+            )}
           </ScrollView>
         </KeyboardAvoidingView>
         <Dialog
@@ -485,6 +510,7 @@ const styles = StyleSheet.create({
   formWide: { flex: 1 },
   summaryWide: { width: SUMMARY_WIDTH },
   muted: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textSecondary },
+  tabular: { fontVariant: ['tabular-nums'] },
   currency: { ...font.medium, fontSize: fontSize.sm, color: colors.textSecondary },
   section: { gap: spacing[2] },
   subheading: { ...font.medium, fontSize: fontSize.base, lineHeight: lineHeight.body, color: colors.textPrimary },
