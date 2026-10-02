@@ -492,7 +492,10 @@ QR service), and the key with a Copy button. `canOpenURL` answers "no" for an
 undeclared scheme, so `app.config.ts` declares `otpauth` in iOS
 `LSApplicationQueriesSchemes` and in an Android `<queries>` intent. The
 recovery codes live only in component state — never MMKV, never the query
-cache.
+cache. While a request is in flight or the codes are on screen, the screen
+cannot be left: the iOS swipe and the header back are turned off and Android's
+back button is consumed, as checkout does, because a confirmation that lands
+after the reader has gone switches two-factor on with codes nobody saw.
 
 **It cannot be verified in CI, and never will be.** Biometric enrolment needs a
 real device; what the suite covers is the keychain choreography and the refusal

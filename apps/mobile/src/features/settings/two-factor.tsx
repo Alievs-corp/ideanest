@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { Stack } from 'expo-router';
 import { fillNodes } from '@ideanest/messages/placeholders';
 import {
   Body,
@@ -57,6 +58,23 @@ export function TwoFactorCard() {
   const heading = useRef<View>(null);
   const inFlight = useRef(false);
   const { step, busy } = state;
+
+  /*
+   * The screen cannot be left mid-request or while the codes are up. A swipe back during "Switch
+   * it on" would switch two-factor on with the codes never shown, and one on the codes step would
+   * drop them unacknowledged — and neither can be shown again. So the iOS swipe and the header's
+   * back go while holding, and Android's back button is consumed, as checkout does.
+   */
+  const holding = busy || step.kind === 'codes';
+  const holdingNow = useRef(holding);
+  holdingNow.current = holding;
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => holdingNow.current,
+    );
+    return () => subscription.remove();
+  }, []);
 
   /*
    * On every step change: the one-time fields start empty, and screen-reader focus moves to the
@@ -144,6 +162,7 @@ export function TwoFactorCard() {
 
   return (
     <SettingsCard testID="two-factor">
+      <Stack.Screen options={{ gestureEnabled: !holding, headerBackVisible: !holding }} />
       <View ref={heading} accessible accessibilityRole="header" testID="two-factor-heading">
         <Subheading>{t(headingKey(step))}</Subheading>
       </View>
@@ -453,6 +472,8 @@ function CopyButton({
   const [outcome, setOutcome] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   async function copy(): Promise<void> {
+    // Back to idle first, so a second failure mounts the alert afresh and is announced again.
+    setOutcome('idle');
     let copied = false;
     try {
       copied = await Clipboard.setStringAsync(text);
@@ -476,9 +497,13 @@ function CopyButton({
         />
       </View>
       {outcome === 'failed' ? (
-        <Body accessibilityRole="alert" tone="primary">
-          {tAll('mobile.settings.security.copyFailed')}
-        </Body>
+        // A danger alert: a live region on Android and an assertive announcement on iOS, so a
+        // screen-reader user hears that nothing reached the clipboard.
+        <InlineAlert
+          variant="danger"
+          description={tAll('mobile.settings.security.copyFailed')}
+          testID={testID === undefined ? undefined : `${testID}-failed`}
+        />
       ) : null}
     </View>
   );

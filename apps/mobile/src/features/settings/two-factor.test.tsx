@@ -1,4 +1,4 @@
-import { AccessibilityInfo, Linking } from 'react-native';
+import { AccessibilityInfo, BackHandler, Linking } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
@@ -21,9 +21,16 @@ import { SecuritySettingsScreen } from './security-screen';
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() };
 let mockSession = { signedIn: true, locked: false, unlocked: true };
 
+/** Every `<Stack.Screen options>` the screen renders, in order: the last one is what applies. */
+const mockScreenOptions: Record<string, unknown>[] = [];
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
-  Stack: Object.assign(() => null, { Screen: () => null }),
+  Stack: Object.assign(() => null, {
+    Screen: ({ options }: { options?: Record<string, unknown> }) => {
+      if (options !== undefined) mockScreenOptions.push(options);
+      return null;
+    },
+  }),
 }));
 jest.mock('../../lib/use-session', () => ({ useSession: () => mockSession }));
 jest.mock('../../api/client', () => ({ sendJson: jest.fn() }));
@@ -101,24 +108,63 @@ async function enrolToCodes() {
   await press('two-factor-switch-on');
 }
 
+/**
+ * Whether `target` — what was handed to `sendAccessibilityEvent` — is the host view the step
+ * heading is drawn in: the one node carrying the heading's testID and the header role, and the
+ * one on screen now. Checked through its props rather than with `toHaveBeenCalledWith`, whose
+ * failure message would try to print the whole renderer graph hanging off a host node.
+ */
+function isHeadingNode(target: unknown): boolean {
+  if (target === null || typeof target !== 'object') return false;
+  const props = (target as { props?: Record<string, unknown> }).props;
+  const onScreen = screen.getByTestId('two-factor-heading');
+  return (
+    props?.testID === 'two-factor-heading' &&
+    props.accessibilityRole === 'header' &&
+    props.accessible === true &&
+    onScreen.props.accessibilityRole === 'header'
+  );
+}
+
+/** The navigation options the two-factor card set last: whether the screen may be left. */
+function leaveOptions(): Record<string, unknown> | undefined {
+  return [...mockScreenOptions].reverse().find((options) => 'gestureEnabled' in options);
+}
+
+/** Android's back button: true when the screen consumed it. */
+function pressAndroidBack(): boolean {
+  const handler = backHandlers.at(-1);
+  if (handler === undefined) throw new Error('no hardwareBackPress listener');
+  return handler() === true;
+}
+
 let canOpen: jest.SpyInstance;
 let openURL: jest.SpyInstance;
 let focus: jest.SpyInstance;
+let backHandlers: (() => boolean | null | undefined)[];
+let listen: jest.SpyInstance;
 
 beforeEach(async () => {
   await act(async () => setLocale('en'));
   jest.clearAllMocks();
   mockSession = { signedIn: true, locked: false, unlocked: true };
+  mockScreenOptions.length = 0;
   setOnline(true);
   canOpen = jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(true);
   openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
   focus = jest.spyOn(AccessibilityInfo, 'sendAccessibilityEvent').mockImplementation(() => {});
+  backHandlers = [];
+  listen = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((type, handler) => {
+    if (type === 'hardwareBackPress') backHandlers.push(handler as () => boolean | null | undefined);
+    return { remove: jest.fn() };
+  });
 });
 
 afterEach(() => {
   canOpen.mockRestore();
   openURL.mockRestore();
   focus.mockRestore();
+  listen.mockRestore();
 });
 
 describe('two-factor: idle', () => {
@@ -159,22 +205,63 @@ describe('two-factor: switching it on', () => {
     expect(screen.queryByText(CODES[0]!)).toBeNull();
   });
 
-  it('moves screen-reader focus to the heading on every step', async () => {
+  /** Focus moved once more, onto the heading's host node, which now reads `words`. */
+  function expectFocusOnHeading(times: number, words: string) {
+    expect(headingText()).toBe(words);
+    expect(focus).toHaveBeenCalledTimes(times);
+    const [target, event] = focus.mock.lastCall ?? [];
+    expect(isHeadingNode(target)).toBe(true);
+    expect(event).toBe('focus');
+  }
+
+  it('moves screen-reader focus to the step heading on every step of switching it on', async () => {
     await show();
     await press('two-factor-set-up');
-    expect(headingText()).toBe(T.passwordHeading);
-    expect(focus).toHaveBeenCalledTimes(1);
-    expect(focus).toHaveBeenLastCalledWith(expect.anything(), 'focus');
+    expectFocusOnHeading(1, T.passwordHeading);
 
-    sendJson.mockResolvedValueOnce(ENROLMENT);
+    sendJson.mockResolvedValueOnce(ENROLMENT).mockResolvedValueOnce({ recoveryCodes: CODES });
     await fireEvent.changeText(screen.getByTestId('two-factor-password'), PASSWORD);
     await press('two-factor-continue');
-    expect(headingText()).toBe(T.scanHeading);
-    expect(focus).toHaveBeenCalledTimes(2);
+    expectFocusOnHeading(2, T.scanHeading);
+
+    await fireEvent.changeText(screen.getByTestId('two-factor-code'), '123456');
+    await press('two-factor-switch-on');
+    expectFocusOnHeading(3, T.codesHeading);
+
+    await press('two-factor-acknowledge');
+    expect(focus).toHaveBeenCalledTimes(3);
+    await press('two-factor-done');
+    expectFocusOnHeading(4, T.heading);
+  });
+
+  it('moves focus to the heading on the way to switching it off, and back', async () => {
+    await show();
+    await press('two-factor-turn-off');
+    expectFocusOnHeading(1, T.disableHeading);
 
     await press('two-factor-cancel');
-    expect(headingText()).toBe(T.heading);
-    expect(focus).toHaveBeenCalledTimes(3);
+    expectFocusOnHeading(2, T.heading);
+  });
+
+  it('moves focus to the off-path heading when the service says it is already on', async () => {
+    await show();
+    await press('two-factor-set-up');
+    expectFocusOnHeading(1, T.passwordHeading);
+
+    sendJson.mockRejectedValueOnce(refusal(400, 'Two-factor authentication is already enabled.'));
+    await fireEvent.changeText(screen.getByTestId('two-factor-password'), PASSWORD);
+    await press('two-factor-continue');
+    expectFocusOnHeading(2, T.disableHeading);
+  });
+
+  it('leaves focus where it is on a refusal that keeps the step', async () => {
+    await show();
+    await press('two-factor-set-up');
+    sendJson.mockRejectedValueOnce(refusal(400, 'The password is not right.'));
+    await fireEvent.changeText(screen.getByTestId('two-factor-password'), PASSWORD);
+    await press('two-factor-continue');
+    // Only the error summary takes focus, not the heading a second time.
+    expect(focus.mock.calls.filter(([node]) => isHeadingNode(node))).toHaveLength(1);
   });
 
   it('keeps "Done" disabled until the box is ticked', async () => {
@@ -237,6 +324,92 @@ describe('two-factor: switching it on', () => {
 
     expect(screen.getByText('That code is not right.')).toBeTruthy();
     expect(headingText()).toBe(T.scanHeading);
+  });
+});
+
+describe('two-factor: leaving the screen', () => {
+  it('may be left freely while nothing is pending', async () => {
+    await show();
+    expect(leaveOptions()).toEqual({ gestureEnabled: true, headerBackVisible: true });
+    expect(pressAndroidBack()).toBe(false);
+  });
+
+  it('cannot be left while "Switch it on" is in flight, or the codes would never be seen', async () => {
+    await show();
+    sendJson.mockResolvedValueOnce(ENROLMENT);
+    await press('two-factor-set-up');
+    await fireEvent.changeText(screen.getByTestId('two-factor-password'), PASSWORD);
+    await press('two-factor-continue');
+    expect(pressAndroidBack()).toBe(false);
+
+    let answer: (value: unknown) => void = () => undefined;
+    sendJson.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+    await fireEvent.changeText(screen.getByTestId('two-factor-code'), '123456');
+    await press('two-factor-switch-on');
+
+    // In flight: no iOS swipe, no header back, and Android's back button is consumed.
+    expect(leaveOptions()).toEqual({ gestureEnabled: false, headerBackVisible: false });
+    expect(pressAndroidBack()).toBe(true);
+    expect(mockRouter.back).not.toHaveBeenCalled();
+
+    await act(async () => answer({ recoveryCodes: CODES }));
+    await settle();
+    expect(headingText()).toBe(T.codesHeading);
+  });
+
+  it('cannot be left from the codes until they are acknowledged and Done is pressed', async () => {
+    await show();
+    await enrolToCodes();
+    expect(leaveOptions()).toEqual({ gestureEnabled: false, headerBackVisible: false });
+    expect(pressAndroidBack()).toBe(true);
+
+    await press('two-factor-acknowledge');
+    // Ticking the box is not leaving the step: Done is still the only way off.
+    expect(pressAndroidBack()).toBe(true);
+    expect(leaveOptions()).toEqual({ gestureEnabled: false, headerBackVisible: false });
+
+    await press('two-factor-done');
+    expect(leaveOptions()).toEqual({ gestureEnabled: true, headerBackVisible: true });
+    expect(pressAndroidBack()).toBe(false);
+  });
+
+  it('cannot be left while turning it off is in flight', async () => {
+    await show();
+    await press('two-factor-turn-off');
+    sendJson.mockReturnValueOnce(new Promise(() => undefined));
+    await fireEvent.changeText(screen.getByTestId('two-factor-disable-password'), PASSWORD);
+    await fireEvent.changeText(screen.getByTestId('two-factor-disable-code'), '654321');
+    await press('two-factor-disable-submit');
+    expect(leaveOptions()).toEqual({ gestureEnabled: false, headerBackVisible: false });
+    expect(pressAndroidBack()).toBe(true);
+  });
+});
+
+describe('two-factor: copying', () => {
+  it('says so, as a danger alert a screen reader hears, when the codes could not be copied', async () => {
+    jest.mocked(Clipboard.setStringAsync).mockResolvedValueOnce(false);
+    const said = jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions');
+    await show();
+    await enrolToCodes();
+
+    await fireEvent.press(screen.getByRole('button', { name: S.copyCodes }));
+    await settle();
+
+    expect(screen.getByTestId('two-factor-copy-codes-failed')).toBeTruthy();
+    expect(screen.getByText(S.copyFailed)).toBeTruthy();
+    // iOS has no live regions: the danger alert speaks through an assertive announcement.
+    expect(said).toHaveBeenCalledWith(S.copyFailed, { queue: false });
+    expect(screen.queryByText(S.copied, { includeHiddenElements: true })).toBeNull();
+    said.mockRestore();
+  });
+
+  it('a thrown clipboard error is the same failure', async () => {
+    jest.mocked(Clipboard.setStringAsync).mockRejectedValueOnce(new Error('denied'));
+    await show();
+    await enrolToCodes();
+    await fireEvent.press(screen.getByRole('button', { name: S.copyCodes }));
+    await settle();
+    expect(screen.getByTestId('two-factor-copy-codes-failed')).toBeTruthy();
   });
 });
 
