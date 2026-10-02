@@ -500,8 +500,24 @@ that address with a `303` to `ideanest://pledges/{id}?payment=…`, which ends
 `WebBrowser.openAuthSessionAsync(redirectUrl, 'ideanest://pledges/{id}')`. A dismissed browser
 reads the pledge once: anything but `DRAFT` goes to the pledge, otherwise step 2 stays with
 the hold running and paying again replays the same key. Not yet exercised against the Epoint
-sandbox (no merchant account); the provider only ever sees the site origin. `pledges/[id]`
-is a web placeholder until #158.
+sandbox (no merchant account); the provider only ever sees the site origin.
+
+## Pledges
+
+The Pledges tab (#158) pages `GET /v1/me/pledges` 24 at a time in an infinite query keyed
+`['pledges', 'list']`, under the persisted root. It reads the first page again on pull and when
+opened stale, and never re-reads every loaded page on its own. `pledges/[id]` reads
+`GET /v1/pledges/{id}` under `['pledges', id]`, so a pledge opened once is readable offline;
+writes are disabled offline and never queued. The rules — which states edit, raise or dispute,
+what a payment or raise return means, the Merge-Patch diff — are `@ideanest/checkout/pledge` and
+`/edit`, shared with the web.
+
+**A payment return** is decided by `pledge.state`, never by `?payment=`: `COLLECTED` is paid, a
+returned `DRAFT` re-reads every 3 s up to 20 times (paused in the background, stopped on leaving
+the screen), anything else took nothing. The hint is read once and dropped from the route. The
+campaign's name comes from the cached list or at most three list pages; a pledge whose campaign
+cannot be named still renders. `pledges/[id]/address` is a web placeholder until its own pull
+request.
 
 ## What is not built
 

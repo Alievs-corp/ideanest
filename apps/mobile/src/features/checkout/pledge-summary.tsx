@@ -1,7 +1,7 @@
 import Decimal from 'decimal.js';
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { formatMoney, type Money } from '@ideanest/money';
+import { formatApproximate, formatMoney, type Money } from '@ideanest/money';
 import type { PledgeAmounts } from '@ideanest/checkout/types';
 import { FloatingPanel } from '../../components/ui';
 import { useT } from '../../lib/i18n';
@@ -13,6 +13,7 @@ export interface PledgeSummaryProps {
   readonly rewardTitle: string | null;
   readonly destination: string | null;
   readonly waiting: 'empty' | 'pending';
+  readonly approximateTotal?: Money | null;
   readonly children?: ReactNode;
 }
 
@@ -33,6 +34,7 @@ export function PledgeSummary({
   rewardTitle,
   destination,
   waiting,
+  approximateTotal = null,
   children,
 }: PledgeSummaryProps) {
   const t = useT('checkout.summary');
@@ -58,6 +60,15 @@ export function PledgeSummary({
               {formatMoney(amounts.total)}
             </Text>
           </View>
+          {approximateTotal === null ? null : (
+            <Text
+              style={styles.approximate}
+              accessibilityLabel={t('approximately', { amount: formatMoney(approximateTotal) })}
+              testID="summary-approximate"
+            >
+              {formatApproximate(approximateTotal)}
+            </Text>
+          )}
           <Text style={styles.source}>{source === 'preview' ? t('sourcePreview') : t('sourceQuoted')}</Text>
         </View>
       )}
@@ -88,6 +99,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     lineHeight: lineHeight.cardTitle,
     color: colors.textOnWhite,
+    fontVariant: ['tabular-nums'],
+  },
+  approximate: {
+    ...font.regular,
+    fontSize: fontSize.caption,
+    lineHeight: lineHeight.small,
+    color: muted,
+    textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
   source: { ...font.regular, fontSize: fontSize.caption, lineHeight: lineHeight.small, color: muted },
