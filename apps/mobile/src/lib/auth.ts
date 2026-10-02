@@ -1,6 +1,7 @@
 import { ApiError, errorFrom } from '@ideanest/api-client';
 import * as Device from 'expo-device';
 import { apiOrigin } from '../api/config';
+import { sweepAccountExports } from './account-export-files';
 import { translate } from './i18n';
 import { currentLocale } from './locale';
 import { observeResponse } from './maintenance';
@@ -335,6 +336,8 @@ async function runRefresh(): Promise<string | null> {
  * service's retention sweep is the backstop.
  */
 export async function signOut(): Promise<void> {
+  // An account export still waiting in the cache is this account's, not the next reader's.
+  sweepAccountExports();
   const refreshToken = await storedRefreshToken();
   await unregisterFromPush();
   await endSession();

@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { sweepAccountExports } from './account-export-files';
 import {
   confirmEmailChange,
   register,
@@ -46,6 +47,8 @@ jest.mock('expo-device', () => ({
     return mockDeviceName;
   },
 }));
+
+jest.mock('./account-export-files', () => ({ sweepAccountExports: jest.fn() }));
 
 const keychain = SecureStore as unknown as {
   __setBiometryAllowed: (allowed: boolean) => void;
@@ -361,6 +364,8 @@ describe('refreshing', () => {
 });
 
 describe('signing out', () => {
+  beforeEach(() => jest.mocked(sweepAccountExports).mockClear());
+
   it('clears the device even when the service cannot be told', async () => {
     await storeRefreshToken('refresh-1');
     rememberAccessToken('access-1');
@@ -370,6 +375,8 @@ describe('signing out', () => {
 
     expect(hasStoredSession()).toBe(false);
     expect(currentAccessToken()).toBeNull();
+    // An account export left in the cache for Android's receiving app goes with the session.
+    expect(sweepAccountExports).toHaveBeenCalled();
   });
 
   it('revokes the session on the service too', async () => {
