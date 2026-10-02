@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -249,6 +249,18 @@ describe('the edit', () => {
     expect(key(2)).not.toBe(key(0));
   });
 
+  it('never replays an edit sent again after it succeeded', async () => {
+    api.editPledge.mockResolvedValue(pledge());
+    await show();
+    await fireEvent.press(screen.getByTestId('editor-anonymous'));
+    await save();
+    await save();
+
+    expect(api.editPledge).toHaveBeenCalledTimes(2);
+    expect(api.editPledge.mock.calls[0]?.[1]).toEqual({ isAnonymous: true });
+    expect(key(1)).not.toBe(key(0));
+  });
+
   it('retires a reused key so the next attempt mints another', async () => {
     api.editPledge
       .mockRejectedValueOnce(new ApiError(409, { status: 409, code: 'IDEMPOTENCY_KEY_REUSED' }))
@@ -280,13 +292,60 @@ describe('the edit', () => {
     ['PLEDGE_NOT_EDITABLE'],
     ['PLEDGE_NOT_FOUND'],
     ['REWARD_NOT_FOUND'],
+    ['PLEDGE_CANNOT_BE_CANCELLED'],
   ] as const)('words %s from the catalogue', async (code) => {
     api.editPledge.mockRejectedValue(new ApiError(409, { status: 409, code }));
     await show();
-    await type('30');
+    await type('50');
     await save();
 
     expect(screen.getByTestId('editor-failure')).toHaveTextContent(new RegExp(en.checkout.failures.codes[code].title));
+  });
+
+  it.each([['IDEMPOTENCY_KEY_REQUIRED'], ['IDEMPOTENCY_KEY_INVALID']] as const)(
+    'offers no retry for the client bug %s',
+    async (code) => {
+      api.editPledge.mockRejectedValue(new ApiError(400, { status: 400, code }));
+      await show();
+      await type('50');
+      await save();
+
+      expect(screen.getByTestId('editor-failure')).toBeTruthy();
+      expect(screen.queryByTestId('editor-try-again')).toBeNull();
+    },
+  );
+
+  it('puts an unpriced destination under the field', async () => {
+    api.editPledge.mockRejectedValue(new ApiError(422, { status: 422, code: 'SHIPPING_DESTINATION_UNPRICED' }));
+    await show(
+      pledge({
+        rewardTierId: 'r2',
+        shippingCountry: 'AZ',
+        amounts: {
+          base: money('60.00'),
+          addons: money('0.00'),
+          bonus: money('0.00'),
+          shipping: money('5.00'),
+          tax: money('0.00'),
+          total: money('65.00'),
+        },
+      }),
+    );
+    await type('70');
+    await save();
+
+    expect(
+      screen.getAllByText(en.checkout.failures.codes.SHIPPING_DESTINATION_UNPRICED.detail).length,
+    ).toBeGreaterThan(1);
+  });
+
+  it('reloads the pledge when it changed underneath the edit', async () => {
+    api.editPledge.mockRejectedValue(new ApiError(409, { status: 409, code: 'PLEDGE_MODIFIED' }));
+    await show();
+    await type('50');
+    await save();
+
+    expect(onReload).toHaveBeenCalledTimes(1);
   });
 
   it('puts a refused contribution under the field', async () => {
@@ -351,6 +410,85 @@ describe('the edit', () => {
 
 describe('the raise', () => {
   const paid = () => pledge({ state: 'COLLECTED', raisable: true });
+  const opened = {
+    pledgeId: 'pl-1',
+    raiseId: 'r',
+    amount: money('5.00'),
+    total: money('50.00'),
+    holdExpiresAt: '2026-10-02T12:00:00Z',
+    providerTransactionId: 'x',
+    redirectUrl: 'https://pay.example/r',
+  };
+  const raiseKey = (call: number) => api.raisePledge.mock.calls[call]?.[2];
+  const pay = async () => {
+    await fireEvent.press(screen.getByTestId('editor-raise'));
+    await settle();
+  };
+
+  it('retries a dropped raise with the same key, and a different amount with a new one', async () => {
+    api.raisePledge.mockRejectedValueOnce(new TypeError('Network request failed')).mockResolvedValue(opened);
+    await show(paid(), 'raise');
+    await type('50');
+    await pay();
+    await fireEvent.press(screen.getByTestId('editor-try-again'));
+    await settle();
+    expect(raiseKey(1)).toBe(raiseKey(0));
+
+    await type('55');
+    await pay();
+    expect(raiseKey(2)).not.toBe(raiseKey(0));
+    expect(api.raisePledge.mock.calls[2]?.[1]).toMatchObject({ expectedAmount: money('10.00') });
+  });
+
+  it('starts a fresh payment for the same raise once the last one came back', async () => {
+    api.raisePledge.mockResolvedValue(opened);
+    await show(paid(), 'raise');
+    await type('50');
+    await pay();
+    await pay();
+
+    expect(raiseKey(1)).not.toBe(raiseKey(0));
+  });
+
+  it.each([['RAISE_AMOUNT_CHANGED'], ['PLEDGE_RAISE_IN_PROGRESS'], ['PLEDGE_NOT_RAISABLE']] as const)(
+    'words %s from the catalogue',
+    async (code) => {
+      api.raisePledge.mockRejectedValue(new ApiError(409, { status: 409, code }));
+      await show(paid(), 'raise');
+      await type('50');
+      await pay();
+
+      expect(screen.getByTestId('editor-failure')).toHaveTextContent(new RegExp(en.checkout.failures.codes[code].title));
+    },
+  );
+
+  it('reloads the pledge when the difference changed', async () => {
+    api.raisePledge.mockRejectedValue(new ApiError(409, { status: 409, code: 'RAISE_AMOUNT_CHANGED' }));
+    await show(paid(), 'raise');
+    await type('50');
+    await pay();
+
+    expect(onReload).toHaveBeenCalledTimes(1);
+  });
+
+  it('puts RAISE_NOT_AN_INCREASE under the contribution', async () => {
+    api.raisePledge.mockRejectedValue(new ApiError(409, { status: 409, code: 'RAISE_NOT_AN_INCREASE' }));
+    await show(paid(), 'raise');
+    await type('50');
+    await pay();
+
+    expect(screen.getAllByText(en.checkout.failures.codes.RAISE_NOT_AN_INCREASE.detail).length).toBeGreaterThan(1);
+  });
+
+  it.each([['edit'], ['raise']] as const)('offers nothing that cancels or withdraws in %s mode', async (mode) => {
+    await show(mode === 'raise' ? paid() : pledge(), mode);
+    await type('50');
+
+    for (const control of [...screen.queryAllByRole('button'), ...screen.queryAllByRole('link')]) {
+      expect(String(control.props.accessibilityLabel ?? '')).not.toMatch(/cancel|withdraw/i);
+      expect(within(control).queryByText(/cancel|withdraw/i)).toBeNull();
+    }
+  });
 
   it('offers only an increase, priced as the difference, without the anonymity box', async () => {
     await show(paid(), 'raise');

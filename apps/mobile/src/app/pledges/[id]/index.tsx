@@ -12,6 +12,7 @@ export default function Screen() {
       raise={raise}
       renderEditor={(pledge, slot) => (
         <PledgeEditor
+          key={slot.raising ? 'raise' : 'edit'}
           pledge={pledge}
           mode={slot.raising ? 'raise' : 'edit'}
           disabled={slot.disabled}

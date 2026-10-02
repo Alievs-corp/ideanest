@@ -226,7 +226,7 @@ export function usePledgeEditor(options: PledgeEditorOptions): PledgeEditorState
     (described: CheckoutFailure, body: unknown) => {
       if (described.retireKey) keys.retire(body);
       setFailure(described);
-      if (described.recovery === 'redraft') latest.current.onReload();
+      if (described.recovery === 'redraft' || described.code === 'RAISE_AMOUNT_CHANGED') latest.current.onReload();
     },
     [keys],
   );
@@ -247,6 +247,7 @@ export function usePledgeEditor(options: PledgeEditorOptions): PledgeEditorState
       if (!mounted.current) return;
       setSaving(false);
       if (outcome.ok) {
+        keys.retire(body);
         latest.current.onSaved(outcome.value);
         setSaved(true);
         return;
@@ -287,6 +288,7 @@ export function usePledgeEditor(options: PledgeEditorOptions): PledgeEditorState
       } catch {
         hint = null;
       }
+      keys.retire(intent);
       busy.current = false;
       if (!mounted.current) return;
       setSaving(false);
