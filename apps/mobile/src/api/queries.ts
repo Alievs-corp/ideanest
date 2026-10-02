@@ -60,6 +60,11 @@ export const queryKeys = {
   project: (creatorSlug: string, projectSlug: string) =>
     ['project', creatorSlug, projectSlug] as const,
   projectRewards: (projectId: string) => ['project', projectId, 'rewards'] as const,
+  checkoutRewards: (projectId: string, tokens: readonly string[]) =>
+    ['project', projectId, 'rewards', 'checkout', ...tokens] as const,
+  feeDisclosure: (projectId: string) => ['project', projectId, 'fee-disclosure'] as const,
+  legalDocument: (kind: string) => ['legal', kind] as const,
+  pledge: (id: string) => ['pledges', id] as const,
   /** The Updates tab's pages (#155), under `project` so they survive a restart with the page. */
   projectUpdates: (projectId: string) => ['project', projectId, 'updates'] as const,
   /**

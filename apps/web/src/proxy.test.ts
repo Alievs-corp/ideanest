@@ -333,3 +333,20 @@ describe('the maintenance gate', () => {
     expect(statusMock).not.toHaveBeenCalled();
   });
 });
+
+describe('the native app payment return', () => {
+  it('answers via=app on a pledge page with the app scheme, before the locale or maintenance', async () => {
+    statusMock.mockResolvedValue({ state: 'maintenance', maintenance: null } as never);
+    const response = await proxy(request('/az/pledges/abc-1?payment=returned&via=app'));
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe('ideanest://pledges/abc-1?payment=returned');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('leaves a pledge page without via=app to the site', async () => {
+    const response = await proxy(request('/az/pledges/abc-1?payment=returned'));
+
+    expect(response.headers.get('location')).toBeNull();
+  });
+});

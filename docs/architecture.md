@@ -4139,6 +4139,12 @@ single-file change.
 > if Epoint confirms custom-scheme redirects in writing, and then as a configured scheme next to
 > the origins, never as "any scheme".
 >
+> **#157 refined the return.** An auth session in an in-app browser does not hand an https
+> navigation to the app, so the app asks for `/{locale}/pledges/{id}?payment=…&via=app` and
+> `apps/web/src/proxy.ts` answers that one address with a `303` to `ideanest://pledges/{id}?payment=…`
+> (`lib/pledges/app-return.ts`), which ends the session. The provider still only ever sees the site
+> origin, so the allow-list above is unchanged.
+>
 > Two departures from the sketch above, both small. `ProviderCapabilities` gains
 > `schemeChaining`, because R-03 is one of the three the design cannot work without and
 > the record had no field for it; `preAuthHoldDays` stays, as the number that records
