@@ -1,13 +1,15 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import { ApiError } from '@ideanest/api-client';
+import type { PledgeResponse } from '@ideanest/checkout/types';
 import en from '@ideanest/messages/en.json';
 import * as client from '../../api/client';
 import { queryKeys } from '../../api/queries';
 import { setOnline } from '../../lib/connectivity';
 import { setLocale } from '../../lib/locale';
+import * as pledgeApi from '../pledges/api';
 import type { StoredAddress } from './api';
 import { ShippingAddressScreen } from './shipping-address-screen';
 
@@ -21,10 +23,12 @@ jest.mock('../../api/client', () => ({
   api: () => ({ get: mockGet }),
   sendJson: jest.fn(),
 }));
+jest.mock('../pledges/api', () => ({ readPledge: jest.fn() }));
 
 jest.setTimeout(30_000);
 
 const sendJson = jest.mocked(client.sendJson);
+const readPledge = jest.mocked(pledgeApi.readPledge);
 const F = en.account.fulfilment.form;
 const METRICS = {
   frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -63,7 +67,7 @@ async function settle() {
 
 async function show(seed?: StoredAddress | null) {
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: 60_000 } } });
-  if (seed !== undefined) queryClient.setQueryData(queryKeys.pledgeAddress('pl-1'), seed);
+  if (seed !== undefined) queryClient.setQueryData(queryKeys.shippingAddress('pl-1'), seed);
   await render(
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={queryClient}>
@@ -81,7 +85,24 @@ beforeEach(async () => {
   jest.clearAllMocks();
   mockSession = { signedIn: true, locked: false, unlocked: false };
   setOnline(true);
+  onlineManager.setOnline(true);
+  readPledge.mockRejectedValue(new Error('not cached'));
 });
+
+afterAll(() => {
+  onlineManager.setOnline(true);
+});
+
+function quotedTo(shippingCountry: string | null) {
+  readPledge.mockResolvedValue({ id: 'pl-1', shippingCountry } as unknown as PledgeResponse);
+}
+
+async function refetchAddress() {
+  await act(async () => {
+    await queryClient.refetchQueries({ queryKey: queryKeys.shippingAddress('pl-1') });
+  });
+  await settle();
+}
 
 describe('reading the address', () => {
   it('shows four skeleton fields while it loads', async () => {
@@ -130,6 +151,41 @@ describe('reading the address', () => {
     await fireEvent.press(screen.getByLabelText(en.common.tryAgain));
     await settle();
     expect(screen.getByTestId('address-line1').props.value).toBe('12 Nizami street');
+  });
+
+  it('names a stored country code the list does not hold, and keeps it', async () => {
+    mockGet.mockResolvedValue(wire({ address: { ...wire().address, countryCode: 'XK' } }));
+    sendJson.mockResolvedValue(wire({ address: { ...wire().address, countryCode: 'XK' } }));
+    await show();
+
+    expect(screen.getByTestId('address-countryCode').props.accessibilityValue).toEqual({ text: 'Kosovo' });
+    await fireEvent.press(screen.getByTestId('address-countryCode'));
+    expect(screen.getByLabelText('Kosovo').props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
+    await fireEvent.press(screen.getByLabelText('Kosovo'));
+    await fireEvent.press(screen.getByTestId('address-save'));
+    await settle();
+
+    expect(sendJson).toHaveBeenCalledWith('PATCH', PATH, expect.objectContaining({ countryCode: 'XK' }));
+  });
+
+  it('shows the offline notice, not an endless skeleton, when offline with nothing in memory', async () => {
+    setOnline(false);
+    mockGet.mockReturnValue(new Promise(() => undefined));
+    await show();
+
+    expect(screen.getByTestId('address-offline-empty')).toHaveTextContent(new RegExp(en.mobile.offline.nothingCached));
+    expect(screen.queryByLabelText(F.loading)).toBeNull();
+    expect(screen.queryByTestId('address-save')).toBeNull();
+  });
+
+  it('shows the offline notice when the read is paused for want of a network', async () => {
+    onlineManager.setOnline(false);
+    mockGet.mockResolvedValue(wire());
+    await show();
+
+    expect(mockGet).not.toHaveBeenCalled();
+    expect(screen.getByTestId('address-offline-empty')).toBeTruthy();
+    expect(screen.queryByLabelText(F.loading)).toBeNull();
   });
 
   it('sends a signed-out reader to sign in and back here', async () => {
@@ -204,6 +260,69 @@ describe('saving the address', () => {
     expect(sendJson).toHaveBeenCalledWith('PATCH', PATH, expect.objectContaining({ countryCode: 'TR' }));
   });
 
+  it('keeps an edit in progress when the address is read again', async () => {
+    mockGet.mockResolvedValue(wire());
+    await show();
+
+    await fireEvent.changeText(screen.getByTestId('address-line1'), '14 Nizami street');
+    mockGet.mockResolvedValue(wire({ address: { ...wire().address, line1: '1 Other street' } }));
+    await refetchAddress();
+
+    expect(mockGet).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('address-line1').props.value).toBe('14 Nizami street');
+    expect(screen.getByTestId('address-save')).toBeTruthy();
+  });
+
+  it('pre-selects the pledge’s destination when no address was given, and lists it first', async () => {
+    quotedTo('TR');
+    mockGet.mockResolvedValue(undefined);
+    sendJson.mockResolvedValue(wire());
+    await show();
+
+    expect(screen.getByTestId('address-countryCode').props.accessibilityValue).toEqual({ text: 'Türkiye' });
+    await fireEvent.press(screen.getByTestId('address-countryCode'));
+    expect(screen.getAllByRole('radio')[0]?.props.accessibilityLabel).toBe('Türkiye');
+    await fireEvent.press(screen.getByLabelText('Türkiye'));
+
+    await fireEvent.changeText(screen.getByTestId('address-recipient'), 'Aysel');
+    await fireEvent.changeText(screen.getByTestId('address-line1'), 'Nizami 12');
+    await fireEvent.changeText(screen.getByTestId('address-locality'), 'Istanbul');
+    await fireEvent.press(screen.getByTestId('address-save'));
+    await settle();
+
+    expect(sendJson).toHaveBeenCalledWith('PATCH', PATH, expect.objectContaining({ countryCode: 'TR' }));
+  });
+
+  it('keeps a given address’s own country over the pledge’s destination', async () => {
+    quotedTo('TR');
+    mockGet.mockResolvedValue(wire());
+    await show();
+
+    expect(screen.getByTestId('address-countryCode').props.accessibilityValue).toEqual({ text: 'Azerbaijan' });
+  });
+
+  it('re-reads the pledge when the service says the country is not where it ships', async () => {
+    quotedTo('AZ');
+    mockGet.mockResolvedValue(wire());
+    sendJson.mockRejectedValue(
+      new ApiError(422, {
+        type: 'about:blank',
+        title: 'Address is not where this pledge ships',
+        status: 422,
+        detail: 'Shipping on this pledge was quoted to AZ.',
+        code: 'ADDRESS_DESTINATION_MISMATCH',
+      }),
+    );
+    await show();
+    const invalidate = jest.spyOn(queryClient, 'invalidateQueries');
+
+    await fireEvent.press(screen.getByTestId('address-save'));
+    await settle();
+
+    expect(screen.getByTestId('address-save-failed')).toHaveTextContent(/quoted to AZ/);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.pledge('pl-1'), exact: true });
+  });
+
   it('shows the danger alert with the service detail when the save is refused', async () => {
     mockGet.mockResolvedValue(wire());
     sendJson.mockRejectedValue(
@@ -244,6 +363,45 @@ describe('when the address cannot be changed', () => {
     }
     expect(screen.queryByTestId('address-save')).toBeNull();
     expect(screen.queryByTestId('address-never-given')).toBeNull();
+  });
+
+  it('shows the stored address, not the draft, once a re-read finds it locked', async () => {
+    mockGet.mockResolvedValue(wire());
+    await show();
+
+    await fireEvent.changeText(screen.getByTestId('address-line1'), '14 Nizami street');
+    mockGet.mockResolvedValue(wire({ locked: true, lockedAt: '2026-09-28T09:00:00Z' }));
+    await refetchAddress();
+
+    expect(screen.getByTestId('address-locked')).toBeTruthy();
+    expect(screen.getByTestId('address-line1').props.value).toBe('12 Nizami street');
+    expect(screen.getByTestId('address-line1')).toBeDisabled();
+    expect(screen.queryByTestId('address-save')).toBeNull();
+  });
+
+  it('re-reads the address after a 409, so a lock taken mid-edit shows', async () => {
+    mockGet.mockResolvedValue(wire());
+    sendJson.mockRejectedValue(
+      new ApiError(409, {
+        type: 'about:blank',
+        title: 'Address locked',
+        status: 409,
+        detail: 'This campaign has locked its shipping addresses.',
+        code: 'ADDRESS_LOCKED',
+      }),
+    );
+    await show();
+
+    await fireEvent.changeText(screen.getByTestId('address-line1'), '14 Nizami street');
+    mockGet.mockResolvedValue(wire({ locked: true, lockedAt: '2026-09-28T09:00:00Z' }));
+    await fireEvent.press(screen.getByTestId('address-save'));
+    await settle();
+
+    expect(mockGet).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('address-save-failed')).toHaveTextContent(/locked its shipping addresses/);
+    expect(screen.getByTestId('address-locked')).toBeTruthy();
+    expect(screen.getByTestId('address-line1').props.value).toBe('12 Nizami street');
+    expect(screen.queryByTestId('address-save')).toBeNull();
   });
 
   it('keeps the cached address readable offline, with the notice and writes disabled', async () => {

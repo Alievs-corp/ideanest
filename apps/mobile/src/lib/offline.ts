@@ -66,8 +66,10 @@ const PERSISTED_ROOTS: readonly string[] = ['saved', 'pledges', 'project'];
  *   restored from this unencrypted store would put it back on a stranger's screen for a week.
  * - `profile`: somebody else's public profile (#156, and the campaign page's Creator tab), which
  *   they can rename or delete; last week's is a page about a person as they no longer are.
+ * - `shippingAddress`: a backer's postal address and phone number (#158), which must not sit in
+ *   an unencrypted store.
  */
-export const UNPERSISTED_ROOTS: readonly string[] = ['comments', 'profile'];
+export const UNPERSISTED_ROOTS: readonly string[] = ['comments', 'profile', 'shippingAddress'];
 
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {
   const root = queryKey[0];

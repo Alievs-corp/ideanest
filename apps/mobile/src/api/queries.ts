@@ -65,7 +65,6 @@ export const queryKeys = {
   feeDisclosure: (projectId: string) => ['project', projectId, 'fee-disclosure'] as const,
   legalDocument: (kind: string) => ['legal', kind] as const,
   pledge: (id: string) => ['pledges', id] as const,
-  pledgeAddress: (id: string) => ['pledges', id, 'address'] as const,
   /** The Updates tab's pages (#155), under `project` so they survive a restart with the page. */
   projectUpdates: (projectId: string) => ['project', projectId, 'updates'] as const,
   /**
@@ -76,6 +75,7 @@ export const queryKeys = {
   saved: () => ['saved'] as const,
   pledges: () => ['pledges'] as const,
   pledgeList: () => ['pledges', 'list'] as const,
+  shippingAddress: (pledgeId: string) => ['shippingAddress', pledgeId] as const,
   /*
    * The campaign page's other reads (#155). Every key a tab of that page needs is named here
    * already, so the tabs can be built in parallel without two changes to this object.

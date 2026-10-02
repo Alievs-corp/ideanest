@@ -25,6 +25,7 @@ import { useLocale } from '../../lib/locale';
 import { useSession } from '../../lib/use-session';
 import { formMeasure, size, spacing } from '../../theme';
 import { countryName } from '../checkout/format';
+import { readPledge } from '../pledges/api';
 import { EMPTY_ADDRESS, readShippingAddress, saveShippingAddress, type PostalAddress } from './api';
 import { COUNTRY_CODES } from './countries';
 
@@ -146,10 +147,18 @@ function ShippingAddress({ id }: { readonly id: string }) {
   const link = useFocusRing();
 
   const query = useQuery({
-    queryKey: queryKeys.pledgeAddress(id),
+    queryKey: queryKeys.shippingAddress(id),
     queryFn: ({ signal }) => readShippingAddress(id, signal),
   });
   const stored = query.data;
+
+  const pledge = useQuery({
+    queryKey: queryKeys.pledge(id),
+    queryFn: ({ signal }) => readPledge(id, signal),
+    retry: false,
+  });
+  const quoted = pledge.data?.shippingCountry?.trim().toUpperCase() ?? '';
+  const destination = quoted === '' ? null : quoted;
 
   const [draft, setDraft] = useState<PostalAddress | null>(null);
   const [missing, setMissing] = useState<Partial<Record<keyof PostalAddress, string>>>({});
@@ -157,14 +166,24 @@ function ShippingAddress({ id }: { readonly id: string }) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const currentCountry = (draft ?? stored?.address)?.countryCode.trim().toUpperCase() ?? '';
+  const locked = stored?.locked === true;
+  const base = stored?.address ?? { ...EMPTY_ADDRESS, countryCode: destination ?? '' };
+  const address = locked || draft === null ? base : draft;
+  const currentCountry = address.countryCode.trim().toUpperCase();
+
   const countries = useMemo(() => {
-    const codes =
-      currentCountry === '' || COUNTRY_CODES.includes(currentCountry) ? COUNTRY_CODES : [...COUNTRY_CODES, currentCountry];
-    return codes
+    const extra = new Set(
+      [currentCountry, destination].filter(
+        (code): code is string => code !== null && code !== '' && !COUNTRY_CODES.includes(code),
+      ),
+    );
+    const named = [...COUNTRY_CODES, ...extra]
       .map((code) => ({ value: code, label: countryName(code, locale) }))
       .sort((left, right) => left.label.localeCompare(right.label, locale));
-  }, [currentCountry, locale]);
+    return destination === null
+      ? named
+      : [...named.filter((option) => option.value === destination), ...named.filter((option) => option.value !== destination)];
+  }, [currentCountry, destination, locale]);
 
   const header = (
     <View style={styles.header}>
@@ -189,12 +208,22 @@ function ShippingAddress({ id }: { readonly id: string }) {
   );
 
   if (stored === undefined) {
-    const notFound = query.error instanceof ApiError && query.error.status === 404;
+    const failure = query.error;
+    const answered = failure instanceof ApiError;
+    const notFound = failure instanceof ApiError && failure.status === 404;
+    const unreachable = !answered && (!online || query.fetchStatus === 'paused');
     return (
       <Screen hasContent offlineNotice={online ? null : tAll('mobile.offline.banner')}>
         <View style={styles.stack}>
           {header}
-          {query.isError ? (
+          {unreachable ? (
+            <InlineAlert
+              variant="warning"
+              description={tAll('mobile.offline.nothingCached')}
+              politeness="polite"
+              testID="address-offline-empty"
+            />
+          ) : query.isError ? (
             <InlineAlert
               variant="danger"
               title={t('form.loadFailedTitle')}
@@ -235,13 +264,11 @@ function ShippingAddress({ id }: { readonly id: string }) {
     );
   }
 
-  const address = draft ?? stored?.address ?? EMPTY_ADDRESS;
-  const locked = stored?.locked === true;
   const neverGiven = stored === null;
   const readOnly = locked || !online;
 
   function edit(key: keyof PostalAddress, value: string) {
-    setDraft((previous) => ({ ...(previous ?? stored?.address ?? EMPTY_ADDRESS), [key]: value }));
+    setDraft((previous) => ({ ...(previous ?? base), [key]: value }));
     setSaved(false);
   }
 
@@ -263,11 +290,17 @@ function ShippingAddress({ id }: { readonly id: string }) {
     setBusy(true);
     try {
       const next = await saveShippingAddress(id, address);
-      client.setQueryData(queryKeys.pledgeAddress(id), next);
+      client.setQueryData(queryKeys.shippingAddress(id), next);
       setDraft(null);
       setSaved(true);
     } catch (cause) {
       setSaved(false);
+      if (cause instanceof ApiError && cause.status === 409) {
+        void client.invalidateQueries({ queryKey: queryKeys.shippingAddress(id) });
+      }
+      if (cause instanceof ApiError && cause.problem?.code === 'ADDRESS_DESTINATION_MISMATCH') {
+        void client.invalidateQueries({ queryKey: queryKeys.pledge(id), exact: true });
+      }
       setSaveError(
         cause instanceof ApiError
           ? (cause.problem?.detail ?? cause.problem?.title ?? t('form.refused'))
