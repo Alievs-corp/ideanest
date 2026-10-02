@@ -145,7 +145,7 @@ describe('the Me tab', () => {
       'Devices',
       'Email address',
       'Password',
-      'Two-factor authentication',
+      'Security',
       'Data and closure',
       'Payout details',
       'Language and currency',

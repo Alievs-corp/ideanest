@@ -5577,6 +5577,18 @@
       "increase": "Bir ədəd artır: {title}",
       "decrease": "Bir ədəd azalt: {title}",
       "backHint": "Mükafat seçin və {title} kampaniyasını dəstəkləyin"
+    },
+    "settings": {
+      "securityLabel": "Təhlükəsizlik",
+      "offline": "İnternet bağlantısı yoxdur. Dəyişiklikləri bağlantı bərpa olunanda yadda saxlaya bilərsiniz.",
+      "password": {
+        "alertBody": "Şifrənizi dəyişmək hesabdakı bütün seansları, bu seans da daxil olmaqla, bitirir — məsələ elə budur: şifrə məhz köhnəsinin bilinə biləcəyi vaxt dəyişdirilir. Həm bu telefonda, həm də hər yerdə yeni şifrə ilə yenidən daxil olmağınız istəniləcək.",
+        "repeatHint": "Bu telefonda müqayisə olunur və heç vaxt göndərilmir."
+      },
+      "currency": {
+        "failed": "Valyuta yadda saxlanıla bilmədi. Yenidən cəhd edin.",
+        "loadFailed": "Göstərilən valyutanı oxumaq mümkün olmadı, ona görə hələlik dəyişmək olmur. Bağlantını yoxlayıb yenidən cəhd edin."
+      }
     }
   }
 }

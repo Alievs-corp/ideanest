@@ -20,14 +20,21 @@ import { deviceStore } from '../lib/storage';
  * route to Expo Router, and a test file there would be offered as a screen.
  */
 
-jest.mock('expo-router', () => ({ Stack: Object.assign(() => null, { Screen: () => null }) }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: jest.fn(), push: jest.fn() }),
+  Stack: Object.assign(() => null, { Screen: () => null }),
+}));
 
 let mockSignedIn = false;
 jest.mock('../lib/use-session', () => ({
   useSession: () => ({ signedIn: mockSignedIn, locked: false, unlocked: false }),
 }));
 
-jest.mock('../api/client', () => ({ saveAccountLocale: jest.fn(async () => true) }));
+jest.mock('../api/client', () => ({
+  saveAccountLocale: jest.fn(async () => true),
+  api: () => ({ get: jest.fn(async () => ({})) }),
+  sendJson: jest.fn(),
+}));
 
 const failed = en.mobile.language.saveFailed;
 

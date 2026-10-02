@@ -101,6 +101,19 @@ export const queryKeys = {
    */
   profile: (slug: string) => ['profile', slug] as const,
   profileProjects: (slug: string) => ['profile', slug, 'projects'] as const,
+  /** `GET /v1/exchange-rates`: public, and an hour old at worst. */
+  exchangeRates: () => ['exchangeRates'] as const,
+  /**
+   * The account settings screens (#161). One root, `settings`, never persisted: devices and their
+   * IP addresses, a VÖEN and a payout card do not belong in an unencrypted store.
+   */
+  ownProfile: () => ['settings', 'profile'] as const,
+  locations: () => ['settings', 'locations'] as const,
+  sessions: () => ['settings', 'sessions'] as const,
+  notificationPreferences: () => ['settings', 'notifications'] as const,
+  profileVisibility: (slug: string) => ['settings', 'visibility', slug] as const,
+  legalSubject: () => ['settings', 'legalSubject'] as const,
+  payoutDestination: () => ['settings', 'payoutDestination'] as const,
 } as const;
 
 /**

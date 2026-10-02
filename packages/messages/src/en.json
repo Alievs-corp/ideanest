@@ -5577,6 +5577,18 @@
       "increase": "Add one: {title}",
       "decrease": "Remove one: {title}",
       "backHint": "Choose a reward and back {title}"
+    },
+    "settings": {
+      "securityLabel": "Security",
+      "offline": "You are offline. Changes can be saved once the connection is back.",
+      "password": {
+        "alertBody": "Changing your password ends every session on the account, including this one — which is the point: a password is changed precisely when the old one might be known. You will be asked to sign in again with the new password, on this phone and everywhere else.",
+        "repeatHint": "Compared on this phone and never sent."
+      },
+      "currency": {
+        "failed": "That currency could not be saved. Try again.",
+        "loadFailed": "Your display currency could not be read, so it cannot be changed yet. Check the connection and try again."
+      }
     }
   }
 }

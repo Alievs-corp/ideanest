@@ -5577,6 +5577,18 @@
       "increase": "Bir tane ekle: {title}",
       "decrease": "Bir tane çıkar: {title}",
       "backHint": "Bir ödül seçin ve {title} kampanyasını destekleyin"
+    },
+    "settings": {
+      "securityLabel": "Güvenlik",
+      "offline": "İnternet bağlantısı yok. Değişiklikleri bağlantı geri geldiğinde kaydedebilirsiniz.",
+      "password": {
+        "alertBody": "Parolanızı değiştirmek hesaptaki bütün oturumları, bu oturum da dahil, sonlandırır — asıl mesele bu: bir parola tam da eskisinin bilinebileceği anda değiştirilir. Hem bu telefonda hem de her yerde yeni parolayla yeniden girmeniz istenecek.",
+        "repeatHint": "Bu telefonda karşılaştırılır ve asla gönderilmez."
+      },
+      "currency": {
+        "failed": "Para birimi kaydedilemedi. Tekrar deneyin.",
+        "loadFailed": "Görüntüleme para birimi okunamadı, bu yüzden şimdilik değiştirilemiyor. Bağlantıyı kontrol edip tekrar deneyin."
+      }
     }
   }
 }
