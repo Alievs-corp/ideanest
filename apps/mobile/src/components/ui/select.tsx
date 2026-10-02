@@ -43,6 +43,7 @@ export interface SelectProps {
   readonly label?: string;
   /** Shown, and announced as the value, while nothing is chosen. */
   readonly placeholder?: string;
+  readonly accessibilityHint?: string;
   readonly invalid?: boolean;
   readonly disabled?: boolean;
   readonly testID?: string;
@@ -54,11 +55,12 @@ export function Select({
   onChange,
   label,
   placeholder,
+  accessibilityHint,
   invalid,
   disabled = false,
   testID,
 }: SelectProps) {
-  const field = useFieldControl({ accessibilityLabel: label, invalid });
+  const field = useFieldControl({ accessibilityLabel: label, accessibilityHint, invalid });
   const { ring, onFocus, onBlur } = useFocusRing();
   const [open, setOpen] = useState(false);
   const trigger = useRef<View>(null);
