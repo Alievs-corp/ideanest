@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { InlineAlert, Pill, Select, Skeleton, SkeletonGroup } from '@ideanest/ui';
+import { CATEGORIES, CHANNELS, modesFor } from '@ideanest/account/notifications';
 import { ApiError } from '../../lib/api/problem';
 import type { PreferencesCopy } from '../../lib/i18n/notifications-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -15,14 +16,11 @@ import {
   type PreferenceSwitch,
 } from '../../lib/notifications/api';
 import {
-  CATEGORIES,
-  CHANNELS,
   categoryDescription,
   categoryLabel,
   channelLabel,
   mandatoryReason,
   modeLabel,
-  modesFor,
 } from '../../lib/notifications/describe';
 
 type Status = 'loading' | 'ready' | 'failed' | 'signed-out';
@@ -170,7 +168,7 @@ export function PreferencesPanel({ copy }: PreferencesPanelProps) {
   if (status === 'signed-out') {
     return (
       <InlineAlert variant="info" title={copy.signedOut}>
-        Sign in again to change what you are sent.
+        {copy.signedOutBody}
       </InlineAlert>
     );
   }
@@ -198,7 +196,7 @@ export function PreferencesPanel({ copy }: PreferencesPanelProps) {
       <div role="status" aria-live="polite" className="empty:hidden">
         {notice && (
           <InlineAlert variant="success" className="mt-4">
-            Saved. {notice}
+            {fillPlaceholders(copy.savedNotice, { change: notice })}
           </InlineAlert>
         )}
       </div>

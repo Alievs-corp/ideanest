@@ -657,7 +657,8 @@
         "refused": "The service refused the change. Try again.",
         "unreachable": "The service could not be reached. Check your connection and try again.",
         "saved": "{category} by {channel}: {mode}.",
-        "heading": "What you are sent"
+        "heading": "What you are sent",
+        "savedNotice": "Saved. {change}"
       }
     }
   },

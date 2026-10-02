@@ -657,7 +657,8 @@
         "refused": "Servis değişikliği reddetti. Yeniden deneyin.",
         "unreachable": "Servise ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "saved": "{category} — {channel}: {mode}.",
-        "heading": "Size ne gönderilir"
+        "heading": "Size ne gönderilir",
+        "savedNotice": "Kaydedildi. {change}"
       }
     }
   },

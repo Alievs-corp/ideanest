@@ -10,9 +10,8 @@ import { translatorFor } from '../../test-copy';
  * catalogue says, which is the opposite of what it is for.
  */
 const COPY = inboxCopyFrom(translatorFor('account.notifications'));
+import { CATEGORIES, CHANNELS } from '@ideanest/account/notifications';
 import {
-  CATEGORIES,
-  CHANNELS,
   campaignOf,
   categoryDescription,
   categoryLabel,
@@ -22,7 +21,6 @@ import {
   describeNotification,
   mandatoryReason,
   modeLabel,
-  modesFor,
   readParams,
 } from './describe';
 
@@ -227,15 +225,7 @@ describe('labels', () => {
     expect(mandatoryReason('PAYMENTS', COPY)).not.toContain('somebody else reaches your account');
   });
 
-  /*
-   * `digestOffered` is the service's answer to "can this channel batch". A client that
-   * decided it independently would drift from §4.10 the first time the table changed, and
-   * the drift would show as an option the service then refuses with a 422.
-   */
-  it('offers a digest only where the service says one is offered', () => {
-    expect(modesFor(true)).toEqual(['IMMEDIATE', 'DIGEST', 'OFF']);
-    expect(modesFor(false)).toEqual(['IMMEDIATE', 'OFF']);
-  });
+  /* `modesFor` and its digest rule are tested where they live, `@ideanest/account`. */
 });
 
 describe('grouping by day', () => {

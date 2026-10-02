@@ -15,6 +15,7 @@
     "@expo-google-fonts/inter": "^0.4.2",
     "@formatjs/intl-displaynames": "7.3.15",
     "@formatjs/intl-pluralrules": "6.3.15",
+    "@ideanest/account": "workspace:*",
     "@ideanest/api-client": "workspace:*",
     "@ideanest/campaign": "workspace:*",
     "@ideanest/checkout": "workspace:*",

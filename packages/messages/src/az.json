@@ -657,7 +657,8 @@
         "refused": "Xidmət dəyişikliyi rədd etdi. Yenidən cəhd edin.",
         "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
         "saved": "{category} — {channel}: {mode}.",
-        "heading": "Sizə nə göndərilir"
+        "heading": "Sizə nə göndərilir",
+        "savedNotice": "Yadda saxlanıldı. {change}"
       }
     }
   },

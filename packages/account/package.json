@@ -1,0 +1,30 @@
+{
+  "name": "@ideanest/account",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "description": "The account settings rules with one right answer, shared by apps/web and apps/mobile: naming a signed-in device from its user agent, and the notification preference table's order and modes.",
+  "exports": {
+    "./sessions": "./src/sessions.ts",
+    "./notifications": "./src/notifications.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@ideanest/api-client": "workspace:*",
+    "@ideanest/messages": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "@types/react": "^19.3.0",
+    "react": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}
