@@ -381,6 +381,13 @@ deliver the second person's pledge confirmations to somebody else's lock screen.
 Tapping a notification goes through the same parser a shared link does, so the
 two cannot drift into "works from a link, does nothing from a notification".
 
+`settings/notifications` (#161) is one of those moments: turning a Push switch to
+anything but Off while the phone has not allowed IdeyaNest calls `registerForPush()`.
+A refusal keeps the account's preference, and the screen says push is off in the
+phone's settings, with a button to them, whenever the permission is denied. The
+table's order and modes are `@ideanest/account/notifications`, shared with the web;
+`settings/sessions` names devices with `@ideanest/account/sessions`.
+
 ## Offline (§4.12 MB-04)
 
 `src/lib/offline.ts` persists TanStack Query's own cache to MMKV, so the screens
