@@ -5648,7 +5648,8 @@
         "cellLabel": "{category} — {channel}",
         "chooseHint": "Teslim seçeneklerini açar",
         "conflict": "Bu ayar aynı anda başka bir yerden değiştirildi. Liste artık kaydedileni gösteriyor; yeniden deneyin.",
-        "offlineEmpty": "Bildirim ayarlarınız bağlantı geri geldiğinde yüklenecek."
+        "offlineEmpty": "Bildirim ayarlarınız bağlantı geri geldiğinde yüklenecek.",
+        "pushFailed": "Seçiminiz kaydedildi, ancak bu telefonda anlık bildirimler kurulamadı. Daha sonra yeniden deneyin."
       }
     }
   }

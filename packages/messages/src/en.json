@@ -5648,7 +5648,8 @@
         "cellLabel": "{category} — {channel}",
         "chooseHint": "Opens the delivery choices",
         "conflict": "Something else changed this setting at the same time. The list now shows what is saved; try again.",
-        "offlineEmpty": "Your notification settings will load once the connection is back."
+        "offlineEmpty": "Your notification settings will load once the connection is back.",
+        "pushFailed": "Your choice is saved, but push could not be set up on this phone. Try again later."
       }
     }
   }

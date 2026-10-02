@@ -335,7 +335,16 @@ async function runRefresh(): Promise<string | null> {
  * fail loudly — sign-out completes whatever the network is doing — and the
  * service's retention sweep is the backstop.
  */
-export async function signOut(): Promise<void> {
+export async function signOut({
+  waitForService = true,
+}: {
+  /**
+   * False resolves as soon as this device has forgotten the session and leaves the logout
+   * request to finish on its own — for a screen that must move on (#161's device list) rather
+   * than wait on a request with no timeout.
+   */
+  readonly waitForService?: boolean;
+} = {}): Promise<void> {
   // An account export still waiting in the cache is this account's, not the next reader's.
   sweepAccountExports();
   const refreshToken = await storedRefreshToken();
@@ -343,15 +352,17 @@ export async function signOut(): Promise<void> {
   await endSession();
 
   if (refreshToken === null) return;
-  try {
-    await post('/v1/auth/logout', { refreshToken });
-  } catch {
-    /*
-     * Swallowed deliberately. The token is already gone from this device, and
-     * the session expires on its own; surfacing a failure would ask somebody to
-     * retry an action that has, from their side, already happened.
-     */
-  }
+  const told = post('/v1/auth/logout', { refreshToken }).then(
+    () => undefined,
+    () => {
+      /*
+       * Swallowed deliberately. The token is already gone from this device, and
+       * the session expires on its own; surfacing a failure would ask somebody to
+       * retry an action that has, from their side, already happened.
+       */
+    },
+  );
+  if (waitForService) await told;
 }
 
 /** Puts an issued pair where each half belongs. */

@@ -14,14 +14,33 @@ import { relativeTime } from './relative-time';
 import { SessionsSettingsScreen } from './sessions-screen';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() };
-let mockSession = { signedIn: true, locked: false, unlocked: false };
+const mockSessionStore = {
+  value: { signedIn: true, locked: false, unlocked: false },
+  listeners: new Set<() => void>(),
+  set(signedIn: boolean) {
+    this.value = { ...this.value, signedIn };
+    this.listeners.forEach((listener) => listener());
+  },
+};
 const mockGet = jest.fn();
 
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
   Stack: Object.assign(() => null, { Screen: () => null }),
 }));
-jest.mock('../../../lib/use-session', () => ({ useSession: () => mockSession }));
+jest.mock('../../../lib/use-session', () => {
+  const { useSyncExternalStore } = jest.requireActual<typeof import('react')>('react');
+  return {
+    useSession: () =>
+      useSyncExternalStore(
+        (listener: () => void) => {
+          mockSessionStore.listeners.add(listener);
+          return () => mockSessionStore.listeners.delete(listener);
+        },
+        () => mockSessionStore.value,
+      ),
+  };
+});
 jest.mock('../../../api/client', () => ({ api: () => ({ get: mockGet }), sendJson: jest.fn() }));
 jest.mock('../../../lib/auth', () => ({ signOut: jest.fn(async () => undefined) }));
 jest.mock('../../../lib/offline', () => ({ forgetPersistedCache: jest.fn() }));
@@ -84,7 +103,7 @@ async function show() {
 beforeEach(async () => {
   await act(async () => setLocale('en'));
   jest.clearAllMocks();
-  mockSession = { signedIn: true, locked: false, unlocked: false };
+  mockSessionStore.value = { signedIn: true, locked: false, unlocked: false };
   setOnline(true);
   mockGet.mockResolvedValue([THIS_PHONE, LAPTOP, DESKTOP]);
   sendJson.mockResolvedValue(null);
@@ -144,13 +163,23 @@ describe('the device list', () => {
   });
 
   it('signs this phone out locally and never DELETEs its own session', async () => {
+    // The real sign-out empties the keychain, which flips the flag the signed-in gate reads.
+    jest.mocked(signOut).mockImplementationOnce(async () => {
+      mockSessionStore.set(false);
+    });
     await show();
     const clear = jest.spyOn(queryClient, 'clear');
-    await fireEvent.press(screen.getByTestId('session-sign-out-here'));
+    const button = screen.getByTestId('session-sign-out-here');
+    await fireEvent.press(button);
+    await fireEvent.press(button);
     await settle();
 
     expect(sendJson).not.toHaveBeenCalled();
     expect(signOut).toHaveBeenCalledTimes(1);
+    // Moves on once this phone has forgotten the session; the logout request is not awaited.
+    expect(signOut).toHaveBeenCalledWith({ waitForService: false });
+    // The screen leads the way out, so the gate does not race it to sign-in.
+    expect(mockRouter.replace).not.toHaveBeenCalled();
     expect(clear).toHaveBeenCalled();
     expect(forgetPersistedCache).toHaveBeenCalled();
     expect(mockRouter.navigate).toHaveBeenCalledWith('/');
@@ -207,6 +236,19 @@ describe('signing out everywhere else', () => {
   });
 });
 
+describe('when the account is closing', () => {
+  it('says so when every device is refused with 403', async () => {
+    sendJson.mockRejectedValue(refusal(403, 'Forbidden.'));
+    await show();
+    await fireEvent.press(screen.getByTestId('sessions-sign-out-others'));
+    await fireEvent.press(screen.getByTestId('sessions-confirm-sign-out'));
+    await settle();
+
+    expect(within(screen.getByTestId('sessions-error')).getByText(S.deletionScheduled)).toBeTruthy();
+    expect(screen.queryByText(/could not be signed out/u)).toBeNull();
+  });
+});
+
 describe('the states around the list', () => {
   it('shows three skeleton rows while loading', async () => {
     mockGet.mockReturnValue(new Promise(() => {}));
@@ -241,7 +283,7 @@ describe('the states around the list', () => {
   });
 
   it('sends a signed-out reader to sign in, coming back here', async () => {
-    mockSession = { signedIn: false, locked: false, unlocked: false };
+    mockSessionStore.value = { signedIn: false, locked: false, unlocked: false };
     await show();
 
     expect(mockGet).not.toHaveBeenCalled();

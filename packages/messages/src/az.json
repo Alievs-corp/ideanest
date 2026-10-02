@@ -5648,7 +5648,8 @@
         "cellLabel": "{category} — {channel}",
         "chooseHint": "Çatdırılma seçimlərini açır",
         "conflict": "Bu ayarı eyni anda başqa yerdən də dəyişdilər. Siyahı indi yadda saxlanılanı göstərir; yenidən cəhd edin.",
-        "offlineEmpty": "Bildiriş ayarlarınız bağlantı bərpa olunanda yüklənəcək."
+        "offlineEmpty": "Bildiriş ayarlarınız bağlantı bərpa olunanda yüklənəcək.",
+        "pushFailed": "Seçiminiz yadda saxlanılıb, lakin bu telefonda push bildirişlərini qurmaq mümkün olmadı. Bir az sonra yenidən cəhd edin."
       }
     }
   }

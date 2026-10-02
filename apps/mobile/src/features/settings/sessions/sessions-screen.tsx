@@ -61,6 +61,7 @@ function SessionsPanel() {
   const queryClient = useQueryClient();
   const leave = useLeavingSettings();
   const heading = useRef<View>(null);
+  const endingHere = useRef(false);
 
   const sessions = useQuery({
     queryKey: queryKeys.sessions(),
@@ -104,13 +105,19 @@ function SessionsPanel() {
    * This phone does not DELETE its own session: `signOut()` posts `/v1/auth/logout` with the
    * refresh token, which is what actually ends it, drops the push registration and the keychain;
    * then both caches go, as the Me tab's sign-out does, and the reader lands on home.
+   *
+   * <p>Without waiting for the logout request: once the keychain is empty this frame renders
+   * nothing, and that request has no timeout. A ref, not state, guards a second tap — it lands
+   * before the re-render that would carry `busy`.
    */
   async function endThisDevice(session: SessionSummary): Promise<void> {
+    if (endingHere.current) return;
+    endingHere.current = true;
     markBusy(session.id, true);
     setError(null);
     leave();
     try {
-      await signOut();
+      await signOut({ waitForService: false });
     } finally {
       queryClient.clear();
       forgetPersistedCache();

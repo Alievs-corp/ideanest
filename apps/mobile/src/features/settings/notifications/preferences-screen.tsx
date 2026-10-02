@@ -100,6 +100,10 @@ function PreferencesPanel() {
   // The row that opened the sheet keeps the ref after it closes, so focus can go back to it.
   const [openedKey, setOpenedKey] = useState<string | null>(null);
   const opener = useRef<View>(null);
+  const [pushFailed, setPushFailed] = useState(false);
+  const latestWrite = useRef(0);
+  const writesInFlight = useRef(0);
+  const staleWrite = useRef(false);
 
   useEffect(() => {
     if (notice !== null && Platform.OS === 'ios') announce(notice);
@@ -133,13 +137,26 @@ function PreferencesPanel() {
     setError(null);
     setNotice(null);
 
+    /*
+     * Rows save independently, so two PATCHes can be in flight and each answers the WHOLE table.
+     * Only the latest request's answer is adopted; an older one arriving after it would put the
+     * newer change back. A discarded answer means the cache may be behind, so the table is read
+     * again once nothing is in flight.
+     */
+    const ticket = ++latestWrite.current;
+    writesInFlight.current += 1;
     try {
       const page = await updatePreference({
         category: preference.category,
         channel: preference.channel,
         mode,
       });
-      queryClient.setQueryData(queryKeys.notificationPreferences(), page);
+      await queryClient.cancelQueries({ queryKey: queryKeys.notificationPreferences() });
+      if (ticket === latestWrite.current) {
+        queryClient.setQueryData(queryKeys.notificationPreferences(), page);
+      } else {
+        staleWrite.current = true;
+      }
       const saved = fillPlaceholders(String(t.raw('preferences.saved')), {
         category: categoryLabel(preference.category),
         channel: channelLabel(preference.channel).toLocaleLowerCase(locale),
@@ -153,6 +170,11 @@ function PreferencesPanel() {
       return;
     } finally {
       markBusy(key, false);
+      writesInFlight.current -= 1;
+      if (writesInFlight.current === 0 && staleWrite.current) {
+        staleWrite.current = false;
+        void queryClient.invalidateQueries({ queryKey: queryKeys.notificationPreferences() });
+      }
     }
 
     /*
@@ -161,8 +183,18 @@ function PreferencesPanel() {
      * notice at the top then explains why nothing will arrive, with the way to the settings.
      */
     if (preference.channel === 'PUSH' && mode !== 'OFF' && permission !== 'granted') {
-      await registerForPush();
-      await refresh();
+      setPushFailed(false);
+      try {
+        const outcome = await registerForPush();
+        const now = await refresh();
+        if (outcome.status === 'failed') setPushFailed(true);
+        // iOS has no live regions, so the notice appearing is said out loud here, once.
+        if (now === 'denied' && Platform.OS === 'ios') {
+          announce(tAll('mobile.settings.notifications.pushOffTitle'), { assertive: true });
+        }
+      } catch {
+        setPushFailed(true);
+      }
     }
   }
 
@@ -184,6 +216,14 @@ function PreferencesPanel() {
             />
           }
           testID="preferences-push-off"
+        />
+      ) : null}
+
+      {pushFailed ? (
+        <InlineAlert
+          variant="warning"
+          description={tAll('mobile.settings.notifications.pushFailed')}
+          testID="preferences-push-failed"
         />
       ) : null}
 

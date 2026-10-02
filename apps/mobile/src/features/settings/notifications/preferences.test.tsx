@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
-import { Linking } from 'react-native';
+import { AccessibilityInfo, AppState, Linking } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -111,6 +111,10 @@ beforeEach(async () => {
   mockGet.mockResolvedValue({ preferences: table() });
 });
 
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe('the table', () => {
   it('draws seven categories by three channels, in order, at their defaults', async () => {
     await show();
@@ -212,6 +216,38 @@ describe('changing a switch', () => {
   });
 });
 
+describe('two switches saved at once', () => {
+  it('keeps the newer change when the older answer arrives last', async () => {
+    const answers: Array<(value: unknown) => void> = [];
+    sendJson.mockImplementation(() => new Promise((resolve) => answers.push(resolve)));
+    const both = table([
+      { category: 'PLEDGES', channel: 'IN_APP', mode: 'OFF', stored: true },
+      { category: 'PLEDGES', channel: 'EMAIL', mode: 'DIGEST', stored: true },
+    ]);
+    await show();
+    mockGet.mockResolvedValue({ preferences: both });
+
+    await choose('PLEDGES', 'IN_APP', 'OFF');
+    await choose('PLEDGES', 'EMAIL', 'DIGEST');
+    expect(answers).toHaveLength(2);
+
+    // The second request answers first, with both changes; the first answers last, without it.
+    await act(async () => answers[1]?.({ preferences: both }));
+    await settle();
+    await act(async () =>
+      answers[0]?.({
+        preferences: table([{ category: 'PLEDGES', channel: 'IN_APP', mode: 'OFF', stored: true }]),
+      }),
+    );
+    await settle();
+
+    expect(within(screen.getByTestId('preference-PLEDGES-EMAIL')).getByText(N.mode.DIGEST)).toBeTruthy();
+    expect(within(screen.getByTestId('preference-PLEDGES-IN_APP')).getByText(N.mode.OFF)).toBeTruthy();
+    // The discarded answer means the cache may be behind, so the table is read again.
+    expect(mockGet).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('push and the phone’s permission', () => {
   it('asks for the permission when a Push switch is turned on and the phone has not decided', async () => {
     sendJson.mockResolvedValueOnce({ preferences: table() });
@@ -265,6 +301,64 @@ describe('push and the phone’s permission', () => {
     expect(openSettings).toHaveBeenCalled();
   });
 
+  it('says the refusal out loud on iOS, where a new notice is not announced by itself', async () => {
+    const said = jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions');
+    sendJson.mockResolvedValueOnce({ preferences: table() });
+    mockGet.mockResolvedValue({
+      preferences: table([{ category: 'PLEDGES', channel: 'PUSH', mode: 'OFF', stored: true }]),
+    });
+    jest.mocked(registerForPush).mockImplementationOnce(async () => {
+      permission(false, 'denied');
+      return { status: 'denied' };
+    });
+    await show();
+    await choose('PLEDGES', 'PUSH', 'IMMEDIATE');
+
+    expect(said).toHaveBeenCalledWith(M.pushOffTitle, expect.anything());
+  });
+
+  it('says when push could not be set up, and never leaves a failure unhandled', async () => {
+    sendJson.mockResolvedValue({ preferences: table() });
+    mockGet.mockResolvedValue({
+      preferences: table([
+        { category: 'PLEDGES', channel: 'PUSH', mode: 'OFF', stored: true },
+        { category: 'CAMPAIGN', channel: 'PUSH', mode: 'OFF', stored: true },
+      ]),
+    });
+    jest
+      .mocked(registerForPush)
+      .mockImplementationOnce(async () => ({ status: 'failed', detail: 'No token.' }))
+      .mockImplementationOnce(async () => {
+        throw new Error('The module is missing.');
+      });
+    await show();
+
+    await choose('PLEDGES', 'PUSH', 'IMMEDIATE');
+    expect(screen.getByTestId('preferences-push-failed')).toBeTruthy();
+    expect(screen.getByText(M.pushFailed)).toBeTruthy();
+
+    await choose('CAMPAIGN', 'PUSH', 'IMMEDIATE');
+    expect(screen.getByTestId('preferences-push-failed')).toBeTruthy();
+  });
+
+  it('reads the permission again when the app comes back from the phone’s settings', async () => {
+    const listeners: Array<(state: string) => void> = [];
+    jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
+      listeners.push(listener as (state: string) => void);
+      return { remove: () => {} } as ReturnType<typeof AppState.addEventListener>;
+    });
+    permission(false, 'denied');
+    await show();
+    expect(screen.getByTestId('preferences-push-off')).toBeTruthy();
+
+    permission(true, 'granted');
+    await act(async () => listeners.forEach((listener) => listener('background')));
+    await act(async () => listeners.forEach((listener) => listener('active')));
+    await settle();
+
+    expect(screen.queryByTestId('preferences-push-off')).toBeNull();
+  });
+
   it('says so at the top whenever the phone has push turned off', async () => {
     permission(false, 'denied');
     await show();
@@ -291,6 +385,16 @@ describe('the states around the table', () => {
     await fireEvent.press(screen.getByRole('button', { name: en.common.tryAgain }));
     await settle();
     expect(screen.getByTestId('preferences-PLEDGES')).toBeTruthy();
+  });
+
+  it('says the table loads later when offline with nothing cached', async () => {
+    setOnline(false);
+    mockGet.mockRejectedValue(new TypeError('Network request failed'));
+    await show();
+
+    expect(screen.getByTestId('settings-offline')).toBeTruthy();
+    expect(screen.getByText(M.offlineEmpty)).toBeTruthy();
+    expect(screen.queryByTestId('preferences-loading')).toBeNull();
   });
 
   it('sends a signed-out reader to sign in, coming back here', async () => {
