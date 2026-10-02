@@ -141,7 +141,7 @@ function PledgeListBody() {
                 <Pill
                   size="sm"
                   variant="ghost"
-                  label={t('checkout.tryAgain')}
+                  label={t('common.tryAgain')}
                   busy={list.fetchingMore}
                   onPress={() => list.loadMore({ retry: true })}
                   testID="pledges-next-retry"
