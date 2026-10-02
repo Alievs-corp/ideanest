@@ -14,7 +14,17 @@ import {
 } from '../../lib/pledges/backer';
 import { describeFailure, type CheckoutFailure } from '../../lib/pledges/failure';
 import { formatExactTime } from '../../lib/time';
-import { approximate, formatMoney, type ExchangeRate } from '../../lib/money';
+import { approximate, formatMoney } from '../../lib/money';
+import {
+  PAYMENT_CHECKS,
+  PAYMENT_CHECK_INTERVAL_MS,
+  isEditable,
+  isRaisable,
+  isSettling,
+  paymentReturnOutcome,
+  quotedRate,
+  raiseReturnOutcome,
+} from '@ideanest/checkout/pledge';
 import { BackerDisputeForm } from './BackerDisputeForm';
 import { PledgeEditor } from './PledgeEditor';
 import {
@@ -81,20 +91,6 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  * docs/motion-system.md §5: pledge and checkout are "near zero — every animation here reads as
  * hesitation". Nothing on this screen enters, fades or slides.
  */
-
-/** §6.2's two editable states. The service's `PledgeState.EDITABLE`, and nothing more. */
-const EDITABLE = new Set(['DRAFT', 'CONFIRMED']);
-
-/**
- * IDN-EXT-01 (#44): how long a page the payment provider returned to keeps asking.
- *
- * The provider's webhook settles the pledge and may land after the browser does. Twenty reads,
- * three seconds apart, is a minute: long enough for an ordinary webhook, short enough that a
- * page left open does not poll for ever. After that the page stops and says it is still waiting,
- * which is true, rather than guessing either way.
- */
-const PAYMENT_CHECKS = 20;
-const PAYMENT_CHECK_INTERVAL_MS = 3000;
 
 type Status = 'loading' | 'ready' | 'failed';
 
@@ -179,10 +175,7 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
    * door is a hint like the other one, and the raise is still pending until its webhook says what
    * happened — which may be that the payment went through after all.
    */
-  const settling =
-    pledge !== null &&
-    ((returned === 'returned' && pledge.state === 'DRAFT') ||
-      (raiseReturned !== null && pledge.latestRaise?.state === 'PENDING'));
+  const settling = pledge !== null && isSettling(pledge, returned, raiseReturned);
 
   useEffect(() => {
     if (!settling) return;
@@ -223,9 +216,9 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
     );
   }
 
-  const editable = EDITABLE.has(pledge.state);
+  const editable = isEditable(pledge.state);
   /* #171: the service's own answer, and only for a paid pledge. See the module comment. */
-  const raisable = pledge.state === 'COLLECTED' && pledge.raisable === true;
+  const raisable = isRaisable(pledge);
   const rewardTitle = summary?.rewardTitle ?? null;
   const destination =
     pledge.shippingCountry == null ? null : countryName(pledge.shippingCountry, display);
@@ -397,9 +390,6 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
   );
 }
 
-/** #171: the raise states that changed nothing and charged nothing. */
-const RAISE_NOT_CHARGED = new Set(['FAILED', 'EXPIRED', 'ABANDONED']);
-
 /**
  * What a backer the provider sent back from paying a raise is told — #171.
  *
@@ -433,64 +423,40 @@ export function RaiseReturnNotice({
   /** When the hold is compared with. A prop so a test can say. */
   readonly now?: number;
 }) {
-  if (raise == null) return null;
-  if (raise.state === 'SUCCEEDED') {
-    return (
-      <InlineAlert variant="success" title={copy.raisedTitle}>
-        <p>{copy.raisedBody}</p>
-      </InlineAlert>
-    );
-  }
-  if (raise.state === 'UNAPPLIED') {
-    return (
-      <InlineAlert variant="warning" title={copy.unappliedTitle}>
-        <p>{copy.unappliedBody}</p>
-      </InlineAlert>
-    );
-  }
-  if (raise.state === 'PENDING') {
-    if (hint === 'returned') {
+  switch (raiseReturnOutcome(hint, raise, now)) {
+    case 'raised':
+      return (
+        <InlineAlert variant="success" title={copy.raisedTitle}>
+          <p>{copy.raisedBody}</p>
+        </InlineAlert>
+      );
+    case 'unapplied':
+      return (
+        <InlineAlert variant="warning" title={copy.unappliedTitle}>
+          <p>{copy.unappliedBody}</p>
+        </InlineAlert>
+      );
+    case 'waiting':
       return (
         <InlineAlert variant="info" title={checkout.returned.waitingTitle}>
           <p>{checkout.returned.waitingBody}</p>
         </InlineAlert>
       );
-    }
-    if (Date.parse(raise.holdExpiresAt) > now) {
-      return (
+    case 'held':
+      return raise == null ? null : (
         <InlineAlert variant="warning" title={copy.failedTitle}>
           <p>{fillPlaceholders(copy.heldBody, { time: formatExactTime(raise.holdExpiresAt, locale) })}</p>
         </InlineAlert>
       );
-    }
-    /* Past its hold, the pledge editor offers a new raise, and the sentence below says so. */
-  } else if (!RAISE_NOT_CHARGED.has(raise.state)) {
-    return null;
+    case 'failed':
+      return (
+        <InlineAlert variant="warning" title={copy.failedTitle}>
+          <p>{copy.failedBody}</p>
+        </InlineAlert>
+      );
+    default:
+      return null;
   }
-  return (
-    <InlineAlert variant="warning" title={copy.failedTitle}>
-      <p>{copy.failedBody}</p>
-    </InlineAlert>
-  );
-}
-
-/**
- * The rate this pledge was quoted at, as `@ideanest/money` takes one — issue #327.
- *
- * <p>`publishedFor` is empty because the pledge does not carry it and does not need to:
- * `approximate` reads the rate and the currency, and the date on the response would be a
- * fourth thing to keep in step for a field nothing here draws. The day it is drawn — "at the
- * rate on 27 August" — is the day it belongs on the response.
- *
- * <p>Null unless both halves are present. V60 refuses a currency without its rate, so a
- * response carrying one and not the other is a service that predates #327 rather than a
- * pledge in a half state, and drawing an approximation from half of it would be inventing
- * the other half.
- */
-function quotedRate(pledge: PledgeResponse): ExchangeRate | null {
-  const currency = pledge.displayCurrency;
-  const rate = pledge.displayRate;
-  return currency == null || rate == null ? null : { currency, rate, publishedFor: '' };
 }
 
 /**
@@ -510,26 +476,26 @@ function PaymentReturnNotice({
   readonly state: PledgeResponse['state'];
   readonly copy: CheckoutCopy;
 }) {
-  if (state === 'COLLECTED') {
-    return (
-      <InlineAlert variant="success" title={copy.returned.paidTitle}>
-        <p>{copy.returned.paidBody}</p>
-      </InlineAlert>
-    );
+  switch (paymentReturnOutcome(hint, state)) {
+    case 'paid':
+      return (
+        <InlineAlert variant="success" title={copy.returned.paidTitle}>
+          <p>{copy.returned.paidBody}</p>
+        </InlineAlert>
+      );
+    case 'waiting':
+      return (
+        <InlineAlert variant="info" title={copy.returned.waitingTitle}>
+          <p>{copy.returned.waitingBody}</p>
+        </InlineAlert>
+      );
+    case 'failed':
+      return (
+        <InlineAlert variant="warning" title={copy.returned.failedTitle}>
+          <p>{copy.returned.failedBody}</p>
+        </InlineAlert>
+      );
+    default:
+      return null;
   }
-  if (hint === 'returned' && state === 'DRAFT') {
-    return (
-      <InlineAlert variant="info" title={copy.returned.waitingTitle}>
-        <p>{copy.returned.waitingBody}</p>
-      </InlineAlert>
-    );
-  }
-  if (state === 'DRAFT' || state === 'EXPIRED') {
-    return (
-      <InlineAlert variant="warning" title={copy.returned.failedTitle}>
-        <p>{copy.returned.failedBody}</p>
-      </InlineAlert>
-    );
-  }
-  return null;
 }

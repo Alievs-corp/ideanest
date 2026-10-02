@@ -17,6 +17,7 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { PledgeListCopy } from '../../lib/i18n/pledges-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { Locale } from '../../lib/i18n/locale';
+import { chargeNoteOf as chargeNoteKey, pledgeTone } from '@ideanest/checkout/pledge';
 
 /**
  * Every pledge this account has made — the way in to §4.5's PL-09 and PL-10. Issue #287.
@@ -48,25 +49,6 @@ import type { Locale } from '../../lib/i18n/locale';
  * docs/motion-system.md §5 puts the account area at none and §8 forbids animating a list
  * regardless. The "show more" button changes its label while it waits.
  */
-
-/**
- * The one pledge state that is a `--danger` tag, and the two that are `--warning`.
- *
- * Deliberately sparse. A list where every row is coloured has spent the signal, and the states
- * that are not here are ordinary facts about a pledge rather than things to be alarmed by — a
- * cancelled pledge is not a failure, it is a decision somebody made.
- */
-const STATE_VARIANT: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
-  DRAFT: 'warning',
-  CHARGE_PENDING: 'warning',
-  CHARGE_FAILED: 'danger',
-  COLLECTED: 'success',
-  FULFILLED: 'success',
-};
-
-function stateVariant(state: string): 'default' | 'success' | 'warning' | 'danger' {
-  return STATE_VARIANT[state] ?? 'default';
-}
 
 /**
  * The instant that best describes where a pledge is, as a finished sentence.
@@ -101,9 +83,8 @@ function momentOf(pledge: BackerPledgeSummary, copy: PledgeListCopy, locale: Loc
  * a later collection.
  */
 export function chargeNoteOf(state: string, copy: PledgeListCopy): string | null {
-  if (state === 'COLLECTED' || state === 'FULFILLED') return copy.charged;
-  if (state === 'DRAFT' || state === 'EXPIRED' || state === 'CANCELED_BY_BACKER') return copy.notCharged;
-  return null;
+  const key = chargeNoteKey(state);
+  return key === null ? null : copy[key];
 }
 
 export interface PledgeListProps {
@@ -191,7 +172,7 @@ export function PledgeList({ copy }: PledgeListProps) {
                 </p>
 
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <Tag variant={stateVariant(pledge.state)}>
+                  <Tag variant={pledgeTone(pledge.state)}>
                     {pledgeStateLabel(pledge.state, copy.states)}
                   </Tag>
                   {pledge.isAnonymous && <Tag>{copy.anonymous}</Tag>}

@@ -74,6 +74,7 @@ export const queryKeys = {
   prelaunch: (projectId: string) => ['project', projectId, 'prelaunch'] as const,
   saved: () => ['saved'] as const,
   pledges: () => ['pledges'] as const,
+  pledgeList: () => ['pledges', 'list'] as const,
   /*
    * The campaign page's other reads (#155). Every key a tab of that page needs is named here
    * already, so the tabs can be built in parallel without two changes to this object.
@@ -353,15 +354,6 @@ export function useSavedProjects(enabled: boolean) {
     queryKey: queryKeys.saved(),
     enabled,
     queryFn: ({ signal }) => api().get('/v1/me/saved', { signal }),
-  });
-}
-
-/** What this account backed. The other one. */
-export function usePledges(enabled: boolean) {
-  return useQuery({
-    queryKey: queryKeys.pledges(),
-    enabled,
-    queryFn: ({ signal }) => api().get('/v1/me/pledges', { signal }),
   });
 }
 

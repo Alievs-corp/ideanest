@@ -4,7 +4,7 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "description": "The checkout's platform-neutral rules: the pledge wire types, the client preview quote, idempotency keys, the refusal behaviour table and the field refusal wording, shared by apps/web and apps/mobile.",
+  "description": "The checkout's platform-neutral rules: the pledge wire types, the client preview quote, idempotency keys, the refusal behaviour table, the field refusal wording, and the pledge manager's rules (controls by state, payment-return outcomes, the Merge-Patch edit), shared by apps/web and apps/mobile.",
   "exports": {
     "./types": "./src/types.ts",
     "./quote": "./src/quote.ts",
@@ -13,7 +13,9 @@
     "./refusals": "./src/refusals.ts",
     "./attempt": "./src/attempt.ts",
     "./reservation": "./src/reservation.ts",
-    "./draft": "./src/draft.ts"
+    "./draft": "./src/draft.ts",
+    "./pledge": "./src/pledge.ts",
+    "./edit": "./src/edit.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

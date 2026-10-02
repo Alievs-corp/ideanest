@@ -11,6 +11,12 @@ describe('appPaymentReturn', () => {
     expect(at('/pledges/abc?via=app&payment=failed&extra=1')).toBe('ideanest://pledges/abc?payment=failed');
   });
 
+  it('forwards a raise return the same way', () => {
+    expect(at('/en/pledges/abc?raise=returned&via=app')).toBe('ideanest://pledges/abc?raise=returned');
+    expect(at('/pledges/abc?via=app&raise=failed')).toBe('ideanest://pledges/abc?raise=failed');
+    expect(at('/en/pledges/abc?raise=paid&via=app')).toBeNull();
+  });
+
   it('leaves everything else to the site', () => {
     expect(at('/az/pledges/abc?payment=returned')).toBeNull();
     expect(at('/az/pledges/abc?payment=paid&via=app')).toBeNull();
