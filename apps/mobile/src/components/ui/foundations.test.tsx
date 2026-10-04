@@ -11,7 +11,7 @@ import {
 import { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors, font, tint } from '../../theme';
-import { FadeUp } from '../motion';
+import { FadeUp, FIRST_SCREENFUL } from '../motion';
 import { Body, Heading, Story } from '../text';
 import { announce } from './announce';
 import { haptics } from './haptics';
@@ -95,6 +95,20 @@ describe('the motion budget and Reduce Motion', () => {
   it('animates FadeUp where the budget allows it', async () => {
     await render(<MotionBudgetProvider level="full">{fadeUp}</MotionBudgetProvider>);
     expect(built).toHaveBeenCalled();
+  });
+
+  it('animates FadeUp under the default budget, which is full on mobile', async () => {
+    await render(fadeUp);
+    expect(built).toHaveBeenCalled();
+  });
+
+  it('leaves FadeUp still past the first screenful (mobile-design skill §6.5)', async () => {
+    await render(
+      <FadeUp index={FIRST_SCREENFUL}>
+        <View testID="child" />
+      </FadeUp>,
+    );
+    expect(built).not.toHaveBeenCalled();
   });
 
   /** The one question every animated primitive asks, answered with the device setting on. */

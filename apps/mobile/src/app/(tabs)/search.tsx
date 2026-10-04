@@ -8,7 +8,6 @@ import { Body, Heading, Meta } from '../../components/text';
 import {
   EmptyState,
   InlineAlert,
-  MotionBudgetProvider,
   Pill,
   haptics,
 } from '../../components/ui';
@@ -56,50 +55,48 @@ export default function SearchScreen() {
   }
 
   return (
-    <MotionBudgetProvider level="minimal">
-      <ScrollView
-        style={styles.fill}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          query === '' ? undefined : (
-            <RefreshControl
-              refreshing={results.isRefetching}
-              onRefresh={() => {
-                haptics.refresh();
-                void results.refetch();
-              }}
-              tintColor={colors.textSecondary}
-              colors={[colors.textPrimary]}
-              progressBackgroundColor={colors.surface3}
-            />
-          )
+    <ScrollView
+      style={styles.fill}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      refreshControl={
+        query === '' ? undefined : (
+          <RefreshControl
+            refreshing={results.isRefetching}
+            onRefresh={() => {
+              haptics.refresh();
+              void results.refetch();
+            }}
+            tintColor={colors.textSecondary}
+            colors={[colors.textPrimary]}
+            progressBackgroundColor={colors.surface3}
+          />
+        )
+      }
+    >
+      <Heading accessibilityRole="header">
+        {query === '' ? t('title') : t('resultsTitle', { query })}
+      </Heading>
+
+      {/*
+        Drawn once, above every state, so the field is the same element from typing to loading
+        to results and the keyboard does not close under the thumb.
+      */}
+      <SearchBox
+        query={query}
+        label={tAll('shell.search.label')}
+        placeholder={tAll('shell.search.label')}
+        onSubmitQuery={(text) => router.setParams({ q: text === '' ? undefined : text })}
+        onChooseFilter={(kind, slug) =>
+          router.push({
+            pathname: '/discover',
+            params: definedRouteParams(addSlugFilter(NO_FILTERS, kind, slug)),
+          })
         }
-      >
-        <Heading accessibilityRole="header">
-          {query === '' ? t('title') : t('resultsTitle', { query })}
-        </Heading>
+      />
 
-        {/*
-          Drawn once, above every state, so the field is the same element from typing to loading
-          to results and the keyboard does not close under the thumb.
-        */}
-        <SearchBox
-          query={query}
-          label={tAll('shell.search.label')}
-          placeholder={tAll('shell.search.label')}
-          onSubmitQuery={(text) => router.setParams({ q: text === '' ? undefined : text })}
-          onChooseFilter={(kind, slug) =>
-            router.push({
-              pathname: '/discover',
-              params: definedRouteParams(addSlugFilter(NO_FILTERS, kind, slug)),
-            })
-          }
-        />
-
-        {body()}
-      </ScrollView>
-    </MotionBudgetProvider>
+      {body()}
+    </ScrollView>
   );
 
   function body() {

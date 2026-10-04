@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { BadgeCheck } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { isCollectionKind, isOpenCall, type Collection } from '@ideanest/discovery/collections';
 import { pluralCategory, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
@@ -75,7 +75,7 @@ export function CollectionHeader({ collection }: { readonly collection: Collecti
 
       {collection.grantsBadge ? (
         <View style={styles.badge} testID="collection-badge">
-          <Icon icon={BadgeCheck} size={16} color={colors.textTertiary} />
+          <Icon icon={Glyphs.Verify} size={16} color={colors.textTertiary} />
           <Text style={styles.badgeText}>
             {t('badge')} {isOpenCall(collection) ? t('badgeOpenCall') : t('badgeCurated')}
           </Text>

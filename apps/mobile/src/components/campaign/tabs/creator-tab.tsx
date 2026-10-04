@@ -14,7 +14,7 @@ import {
  * <p>`GET /v1/users/{slug}` and `GET /v1/users/{slug}/projects?limit=7`
  * (`./creator/creator-profile.ts`), asked for only once the tab opens and never persisted. Two
  * rows (`./creator/creator-panel.tsx`): the heading, the avatar (the profile's, else the
- * campaign's), the name — a link to `u/[slug]` with ArrowUpRight only when the profile was read —
+ * campaign's), the name — a link to `u/[slug]` with an arrow only when the profile was read —
  * "Member since {day}" and the biography; then up to six of the creator's other campaigns, this
  * one left out, and "See everything {name} has made".
  *

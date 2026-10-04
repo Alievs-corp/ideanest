@@ -66,7 +66,7 @@ describe('Checkbox', () => {
   it('is lime with a near-black mark when checked — a glyph, not only a colour', async () => {
     const { container } = await render(<Checkbox label="Agree" checked onChange={noop} />);
     const [mark] = container.queryAll((node) => node.type === 'RNSVGSvgView');
-    expect(mark?.props.stroke).toBe(colors.textOnLime);
+    expect(mark?.props.color).toBe(colors.textOnLime);
     const limeBoxes = container.queryAll(
       (node) => node.type === 'View' && flat(node).backgroundColor === colors.lime500,
     );

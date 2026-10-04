@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
-import { X } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { colors, shadow, size } from '../../theme';
 import { Body, CardTitle } from '../text';
 import { Card } from './card';
@@ -108,9 +108,10 @@ describe('Card and SurfaceContext', () => {
       await fireEvent.press(card);
       expect(onPress).toHaveBeenCalledTimes(1);
 
-      // At rest it is the plain card, and nothing about it moves: no lift, no scale.
+      // At rest it is the plain card. It never lifts; the only transform is the press scale
+      // (`usePressScale`, mobile-design skill §6.3), resting at 1.
       expect(styleOf(card).backgroundColor).toBe(colors.surface2);
-      expect(styleOf(card).transform).toBeUndefined();
+      expect(styleOf(card).transform).toEqual([{ scale: 1 }]);
     });
 
     it('is at least a thumb tall', async () => {
@@ -166,10 +167,10 @@ describe('FloatingPanel', () => {
     const { container } = await render(
       <FloatingPanel
         title="Your pledge"
-        actions={<IconButton icon={X} label="Close" variant="ghost" onPress={noop} />}
+        actions={<IconButton icon={Glyphs.Close} label="Close" variant="ghost" onPress={noop} />}
       />,
     );
     const glyph = container.queryAll((node) => (node.type as unknown) === 'RNSVGSvgView');
-    expect(glyph[0]?.props.stroke).toBe(TONES.white.secondary);
+    expect(glyph[0]?.props.color).toBe(TONES.white.secondary);
   });
 });

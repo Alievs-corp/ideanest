@@ -1,6 +1,6 @@
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
-import { HeartHandshake } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native';
 import {
   Body,
@@ -8,7 +8,6 @@ import {
   Heading,
   InlineAlert,
   Meta,
-  MotionBudgetProvider,
   Pill,
   Screen,
   Skeleton,
@@ -25,9 +24,7 @@ const PLACEHOLDER_ROWS = [0, 1, 2] as const;
 
 export function PledgeListScreen() {
   return (
-    <MotionBudgetProvider level="none">
-      <PledgeListBody />
-    </MotionBudgetProvider>
+    <PledgeListBody />
   );
 }
 
@@ -81,7 +78,7 @@ function PledgeListBody() {
           <View style={styles.emptyWrap}>
             {header}
             <EmptyState
-              icon={HeartHandshake}
+              icon={Glyphs.HeartTick}
               title={t('account.pledges.list.emptyTitle')}
               description={t('account.pledges.list.emptyBody')}
               action={<Pill label={t('account.pledges.list.browse')} onPress={() => router.push('/discover')} />}

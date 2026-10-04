@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Platform, Share, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Bell, BellOff, Bookmark, BookmarkCheck, Check, Share2 } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import type { ProjectState } from '@ideanest/campaign/states';
 import { queryKeys } from '../../api/queries';
 import {
@@ -178,7 +178,7 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
           accessibilityLabel={saved ? t('savedLabel', { title }) : t('saveLabel', { title })}
           accessibilityHint={offline ? offlineReason : undefined}
           selected={saved}
-          iconLeft={saved ? BookmarkCheck : Bookmark}
+          iconLeft={saved ? Glyphs.ArchiveTick : Glyphs.Archive}
           variant="ghost"
           size="sm"
           disabled={offline}
@@ -189,7 +189,7 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
         <Pill
           label={t('share')}
           accessibilityLabel={t('shareLabel', { title })}
-          iconLeft={shared ? Check : Share2}
+          iconLeft={shared ? Glyphs.Tick : Glyphs.Share}
           variant="ghost"
           size="sm"
           onPress={() => void share()}
@@ -203,7 +203,7 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
             }
             accessibilityHint={offline ? offlineReason : undefined}
             selected={reminding}
-            iconLeft={reminding ? BellOff : Bell}
+            iconLeft={reminding ? Glyphs.NotificationBing : Glyphs.Notification}
             variant="ghost"
             size="sm"
             disabled={offline}

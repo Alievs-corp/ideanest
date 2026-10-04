@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { MailQuestion } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { fillNodes } from '@ideanest/messages';
 import { Body, Field, Pill, TextInput } from '../../components/ui';
 import { requestPasswordReset } from '../../lib/auth';
@@ -59,7 +59,7 @@ export function ResetRequestForm() {
             address: <Text style={styles.address}>{askedFor}</Text>,
           })}
         </Body>
-        <ExplainCard icon={MailQuestion}>
+        <ExplainCard icon={Glyphs.SmsSearch}>
           <Body>{t('auth.reset.sentLifetime', { lifetime: t('auth.reset.lifetime') })}</Body>
           <Body>
             {fillNodes(t.raw('auth.reset.sentRetry') as string, {

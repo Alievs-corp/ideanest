@@ -1,15 +1,7 @@
 import Decimal from 'decimal.js';
 import { Link } from 'expo-router';
 import { Image } from 'expo-image';
-import {
-  CalendarClock,
-  CalendarPlus,
-  CircleCheck,
-  CircleDot,
-  Clock,
-  Hourglass,
-  Users,
-} from 'lucide-react-native';
+import { Glyphs } from '../icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { DiscoveryStatus } from '@ideanest/discovery/vocabulary';
 import { formatMoney } from '@ideanest/money';
@@ -53,8 +45,8 @@ import { Icon, MediaFrame, ProgressBar, Tag, type IconComponent, type TagVariant
  *
  * <h2>No entry animation</h2>
  *
- * Cards never animate in (`docs/motion-system.md` §5.1); the progress bar's rise is the one
- * sanctioned motion on a card.
+ * Cards do not animate in (they live in unbounded lists, `mobile-design` skill §6.5); the progress
+ * bar's rise and the press feedback are the motion on a card.
  */
 
 /** Two days or fewer left — what §8.1 calls "closing within 48 hours". */
@@ -71,10 +63,10 @@ interface BadgeSpec {
  * matches the tag below.
  */
 const BADGES: Record<DiscoveryStatus, BadgeSpec> = {
-  upcoming: { icon: CalendarClock, variant: 'default' },
-  live: { icon: CircleDot, variant: 'default' },
-  extended: { icon: CalendarPlus, variant: 'default' },
-  successful: { icon: CircleCheck, variant: 'success' },
+  upcoming: { icon: Glyphs.Calendar, variant: 'default' },
+  live: { icon: Glyphs.RecordCircle, variant: 'default' },
+  extended: { icon: Glyphs.CalendarAdd, variant: 'default' },
+  successful: { icon: Glyphs.TickCircle, variant: 'success' },
 };
 
 function isStatus(value: string | undefined): value is DiscoveryStatus {
@@ -202,12 +194,12 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
                 />
               )}
               {card.extended === true ? (
-                <Tag label={t('discovery.card.badges.extended')} icon={CalendarPlus} />
+                <Tag label={t('discovery.card.badges.extended')} icon={Glyphs.CalendarAdd} />
               ) : null}
               {card.closingSoon === true ? (
                 <Tag
                   label={t('discovery.card.badges.closing_soon')}
-                  icon={Hourglass}
+                  icon={Glyphs.Timer1}
                   variant="warning"
                 />
               ) : null}
@@ -216,7 +208,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
                 with near-black words. Lime text on a dark surface is what §9.1 forbids.
               */}
               {urgent ? (
-                <Tag label={daysLabel} icon={Clock} variant="urgent" testID="urgency-chip" />
+                <Tag label={daysLabel} icon={Glyphs.Clock} variant="urgent" testID="urgency-chip" />
               ) : null}
             </View>
           ) : null}
@@ -264,13 +256,13 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
 
           <View style={styles.footer}>
             <View style={styles.fact}>
-              <Icon icon={Users} size={14} color={colors.textTertiary} />
+              <Icon icon={Glyphs.People} size={14} color={colors.textTertiary} />
               <Meta style={[styles.small, styles.tabular]}>{backersLabel}</Meta>
             </View>
             {/* Days left as text whenever it is not already the lime chip. */}
             {!urgent && showDays ? (
               <View style={styles.fact}>
-                <Icon icon={Clock} size={14} color={colors.textTertiary} />
+                <Icon icon={Glyphs.Clock} size={14} color={colors.textTertiary} />
                 <Meta style={[styles.small, styles.tabular]}>{daysLabel}</Meta>
               </View>
             ) : null}

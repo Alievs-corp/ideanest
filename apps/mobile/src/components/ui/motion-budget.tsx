@@ -2,29 +2,18 @@ import { createContext, useContext, useSyncExternalStore, type ReactNode } from 
 import { AccessibilityInfo } from 'react-native';
 
 /**
- * How much a surface may move — `docs/motion-system.md` §5, as something a component can ask.
+ * How much a surface may move, as something a component can ask.
  *
- * <h2>Why a budget and not a per-component switch</h2>
+ * <h2>Every surface moves now</h2>
  *
- * §5's rule is about the surface, not the element: "when the user is spending money or doing
- * work, motion decreases". A `Pill` does not know whether it is on the home screen or on the
- * last step of a pledge, and it should not have to. The route declares its level once, and every
- * animated primitive underneath — `FadeUp`, the pill's press scale, a dialog's entry, the
- * skeleton crossfade — asks whether its kind of motion fits.
+ * The web keeps `docs/motion-system.md` §5's per-surface budget. The mobile app does not: the
+ * `mobile-design` skill (§6, issue #273) gives every surface, checkout included, the same motion
+ * vocabulary, under its input and performance rules. So the default is `full` and no route
+ * declares a level.
  *
- * <p>The levels, from §5's table:
- *
- * <ul>
- *   <li>`full` — home.</li>
- *   <li>`moderate` — the project page.</li>
- *   <li>`minimal` — discovery, search, the creator dashboard. The skeleton crossfade and one
- *       heading fade survive; §5.1 lists exactly what else does not.</li>
- *   <li>`none` — checkout, the campaign editor, authentication and settings. Nothing moves.</li>
- * </ul>
- *
- * <p>A screen that declares nothing gets `minimal`, not `full`. The direction of the default is
- * the direction of the rule: a screen somebody forgot to classify should move too little rather
- * than too much, and a missing declaration on the checkout route must not be what animates it.
+ * <p>The levels stay as an explicit opt-down — the kit gallery and the tests use them to pin a
+ * primitive's behaviour at each level — and every primitive still asks `useMotionAllowed`, which
+ * is also where Reduce Motion stops everything.
  */
 export type MotionLevel = 'none' | 'minimal' | 'moderate' | 'full';
 
@@ -35,7 +24,7 @@ const ORDER: Record<MotionLevel, number> = {
   full: 3,
 };
 
-const MotionBudgetContext = createContext<MotionLevel>('minimal');
+const MotionBudgetContext = createContext<MotionLevel>('full');
 
 export function MotionBudgetProvider({
   level,

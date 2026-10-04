@@ -104,10 +104,28 @@ design starts.
   on red, because white there is 3.4:1. `accent` is
   the one urgent action on a screen and warns in development when a screen
   mounts two. Lime is never text: `theme.test.ts` fails on a lime text colour.
-- **Motion budget.** A route declares `MotionBudgetProvider level=…` from
-  `docs/motion-system.md` §5 (checkout, the editor, auth and settings are
-  `none`); every animated primitive asks `useMotionAllowed`, which also says no
-  when the device has Reduce Motion on. Undeclared screens get `minimal`.
+- **Design language.** The `mobile-design` skill
+  (`.claude/skills/mobile-design/SKILL.md`) defines how the app looks and moves;
+  CLAUDE.md points mobile work at it.
+- **Motion.** Every surface moves, checkout included (the skill's §6; the web's
+  per-surface budget does not apply here). The default budget is `full` and no
+  route declares one; every animated primitive still asks `useMotionAllowed`,
+  which says no when the device has Reduce Motion on. Springs come from
+  `spring` in `src/theme`, press feedback from `PressableScale` /
+  `usePressScale`, and `FadeUp` animates only the first screenful.
+- **Checking an animation's cost.** On a release build (not a development
+  one), open the Perf Monitor, run the animation ten times on a low-end Android
+  device and on an iPhone, and confirm the UI thread holds the refresh rate and
+  the JS thread drops no frames because of it. Write the devices and the result
+  in the pull request.
+- **Icons.** Iconsax, generated into `src/icons/glyphs.ts` by
+  `scripts/generate-icons.mjs` from the MIT-licensed source
+  (`iconsax-react-native`, a devDependency the app never imports). Use them as
+  `<Icon icon={Glyphs.Heart} variant="bulk" />`; to add one, add its name to the
+  script and run `node scripts/generate-icons.mjs`.
+- **Accent surfaces.** `accent.sun`, `accent.mint` and `accent.sky` from
+  `src/theme` (`mobileAccent` in `@ideanest/design-tokens`), each with its own
+  text token and glow. Surfaces for cards only; they carry no meaning.
 - **Feedback without toasts.** `announce()` is the native `aria-live`, and
   `haptics` is exactly the five events in §7's table.
 - **Every screen is on the kit.** The app's first ad-hoc components are gone:

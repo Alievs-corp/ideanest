@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { StyleSheet, View, type TextInput as RNTextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LogOut } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { Field, InlineAlert, PasswordInput, Pill } from '../../components/ui';
 import {
   describeAuthFailure,
@@ -159,7 +159,7 @@ function PasswordChange() {
         </Field>
         <Pill
           label={busy ? t('submitting') : t('submit')}
-          iconLeft={LogOut}
+          iconLeft={Glyphs.Logout}
           busy={busy}
           disabled={!online || !complete}
           onPress={() => void submit()}

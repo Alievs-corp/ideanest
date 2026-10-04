@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { CircleAlert } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
 import { announce } from './announce';
@@ -193,7 +193,7 @@ export function Field({
         {errored ? (
           <View style={styles.error} accessible accessibilityLabel={error}>
             <View style={styles.errorIcon}>
-              <Icon icon={CircleAlert} size={14} color={colors.danger} />
+              <Icon icon={Glyphs.Warning2} size={14} color={colors.danger} />
             </View>
             <Text style={[styles.caption, styles.errorText]}>{error}</Text>
           </View>

@@ -1,15 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  CalendarClock,
-  CalendarPlus,
-  CircleCheck,
-  CircleDot,
-  CircleSlash,
-  Clock,
-  Hourglass,
-} from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import type { ProjectState } from '@ideanest/campaign/states';
 import { fillNodes } from '@ideanest/messages/placeholders';
 import type { CampaignPage } from '../../lib/campaign-page';
@@ -58,18 +50,18 @@ const STATE_KEYS = {
 
 /** The web's `BADGES`, state for state: the word, the icon and the variant (#155's table). */
 export const STATE_BADGES: Partial<Record<ProjectState, StateBadge>> = {
-  PRELAUNCH: { labelKey: 'PRELAUNCH', icon: CalendarClock, variant: 'default' },
-  LIVE: { labelKey: 'LIVE', icon: CircleDot, variant: 'default' },
-  SUCCESSFUL: { labelKey: 'SUCCESSFUL', icon: CircleCheck, variant: 'success' },
-  COLLECTING: { labelKey: 'SUCCESSFUL', icon: CircleCheck, variant: 'success' },
-  LATE_PLEDGE: { labelKey: 'LATE_PLEDGE', icon: Hourglass, variant: 'warning' },
-  FULFILLING: { labelKey: 'FULFILLING', icon: Hourglass, variant: 'success' },
-  COMPLETED: { labelKey: 'COMPLETED', icon: CircleCheck, variant: 'success' },
-  UNSUCCESSFUL: { labelKey: 'UNSUCCESSFUL', icon: CircleSlash, variant: 'default' },
-  CANCELED: { labelKey: 'CANCELED', icon: CircleSlash, variant: 'default' },
-  CLOSING_WINDOW: { labelKey: 'CLOSING_WINDOW', icon: Hourglass, variant: 'warning' },
-  EXTENDED: { labelKey: 'EXTENDED', icon: CalendarPlus, variant: 'default' },
-  WITHDRAWN: { labelKey: 'WITHDRAWN', icon: CircleCheck, variant: 'success' },
+  PRELAUNCH: { labelKey: 'PRELAUNCH', icon: Glyphs.Calendar, variant: 'default' },
+  LIVE: { labelKey: 'LIVE', icon: Glyphs.RecordCircle, variant: 'default' },
+  SUCCESSFUL: { labelKey: 'SUCCESSFUL', icon: Glyphs.TickCircle, variant: 'success' },
+  COLLECTING: { labelKey: 'SUCCESSFUL', icon: Glyphs.TickCircle, variant: 'success' },
+  LATE_PLEDGE: { labelKey: 'LATE_PLEDGE', icon: Glyphs.Timer1, variant: 'warning' },
+  FULFILLING: { labelKey: 'FULFILLING', icon: Glyphs.Timer1, variant: 'success' },
+  COMPLETED: { labelKey: 'COMPLETED', icon: Glyphs.TickCircle, variant: 'success' },
+  UNSUCCESSFUL: { labelKey: 'UNSUCCESSFUL', icon: Glyphs.Slash, variant: 'default' },
+  CANCELED: { labelKey: 'CANCELED', icon: Glyphs.Slash, variant: 'default' },
+  CLOSING_WINDOW: { labelKey: 'CLOSING_WINDOW', icon: Glyphs.Timer1, variant: 'warning' },
+  EXTENDED: { labelKey: 'EXTENDED', icon: Glyphs.CalendarAdd, variant: 'default' },
+  WITHDRAWN: { labelKey: 'WITHDRAWN', icon: Glyphs.TickCircle, variant: 'success' },
 };
 
 /**
@@ -116,7 +108,7 @@ export function CampaignHeader({
         {urgent && campaign.daysLeft !== null ? (
           <Tag
             label={t('campaign.daysLeft', { days: campaign.daysLeft })}
-            icon={Clock}
+            icon={Glyphs.Clock}
             variant="urgent"
             testID="campaign-urgency"
           />

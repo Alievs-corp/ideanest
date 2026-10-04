@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { Body, Icon, useFocusRing } from '../../components/ui';
 import { colors, radius, size, spacing } from '../../theme';
 
@@ -72,7 +72,8 @@ export function AuthLinkPair({ first, second }: { readonly first: LinkSpec; read
 
 /**
  * A native accordion row: collapsed by default, `accessibilityState.expanded` said with it.
- * The web's `<details>`; nothing animates open, under the auth screens' motion budget of none.
+ * The web's `<details>`; nothing animates open — an accordion would animate height, which the
+ * `mobile-design` skill §6.1 rules out.
  */
 export function Disclosure({
   label,
@@ -108,7 +109,7 @@ export function Disclosure({
         style={({ pressed }) => [styles.summary, ring, pressed && styles.pressed]}
       >
         <Body style={styles.summaryText}>{label}</Body>
-        <Icon icon={open ? ChevronUp : ChevronDown} size={16} color={colors.textTertiary} />
+        <Icon icon={open ? Glyphs.ArrowUp2 : Glyphs.ArrowDown2} size={16} color={colors.textTertiary} />
       </Pressable>
       {open ? <View style={styles.details}>{children}</View> : null}
     </View>

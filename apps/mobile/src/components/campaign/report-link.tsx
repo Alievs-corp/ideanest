@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Flag } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import type { ReportTarget } from '@ideanest/campaign/report';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, size, spacing } from '../../theme';
@@ -81,7 +81,7 @@ export function ReportTrigger({
         style={[styles.link, offline && styles.disabled, ring]}
         testID={`report-trigger-${target.kind}`}
       >
-        <Icon icon={Flag} size={16} color={colors.textTertiary} />
+        <Icon icon={Glyphs.Flag} size={16} color={colors.textTertiary} />
         <Text style={styles.label}>{label}</Text>
       </Pressable>
       {offline && showsOfflineReason ? <Text style={styles.offline}>{offlineReason}</Text> : null}

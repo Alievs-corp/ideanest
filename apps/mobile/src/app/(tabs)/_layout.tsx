@@ -149,8 +149,12 @@ export default function TabsLayout() {
           options={{
             title: t(tab.key),
             tabBarAccessibilityLabel: t(tab.key),
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name={tab.icon} color={color} focused={focused} />
+            tabBarIcon: ({ focused }) => (
+              <TabIcon
+                name={tab.icon}
+                color={focused ? colors.lime500 : colors.textTertiary}
+                focused={focused}
+              />
             ),
           }}
         />

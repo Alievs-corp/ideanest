@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { ExternalLink } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import type { StoryBlock, StoryDocument, StorySpans } from '@ideanest/campaign/story';
 import { useT } from '../../lib/i18n';
 import {
@@ -200,7 +200,7 @@ function EmbedLink({
       <Text style={[styles.reading, styles.embedText]}>
         <Text style={styles.embedTitle}>{title}</Text> {suffix}
       </Text>
-      <Icon icon={ExternalLink} size={16} color={colors.textSecondary} />
+      <Icon icon={Glyphs.ExportSquare} size={16} color={colors.textSecondary} />
     </Pressable>
   );
 }

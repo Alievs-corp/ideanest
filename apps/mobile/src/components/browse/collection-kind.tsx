@@ -1,4 +1,4 @@
-import { CalendarClock, Sparkles, Tags } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { isCollectionKind, type CollectionKind } from '@ideanest/discovery/collections';
 import { useT } from '../../lib/i18n';
 import { Tag, type IconComponent } from '../ui';
@@ -13,9 +13,9 @@ import { Tag, type IconComponent } from '../ui';
  * A kind this build does not know has no tag — not the raw `festival`, not a guess.
  */
 const KIND_ICONS: Readonly<Record<CollectionKind, IconComponent>> = {
-  staff_selection: Sparkles,
-  themed: Tags,
-  open_call: CalendarClock,
+  staff_selection: Glyphs.MagicStar,
+  themed: Glyphs.Tag,
+  open_call: Glyphs.Calendar,
 };
 
 /** The kind's label in the reader's language, or `null` for a kind this build does not know. */

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { X } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { WithOfflineBanner } from '../../components/offline-banner';
 import { IconButton, Subheading, useFocusRing } from '../../components/ui';
 import { useT } from '../../lib/i18n';
@@ -20,8 +20,9 @@ import { colors, radius, size } from '../../theme';
  *
  * <h2>Nothing animates</h2>
  *
- * `docs/motion-system.md` §5 gives authentication no entry or transition motion, so moving between
- * these screens is `animation: 'none'`. They `replace` one another rather than push, which keeps
+ * Moving between these screens is still `animation: 'none'`, from the old per-surface budget; the
+ * `mobile-design` skill (§6.3, stack transitions) replaces it when #281 reaches this stack. They
+ * `replace` one another rather than push, which keeps
  * this stack one screen deep: closing always closes the whole modal, and nothing of sign-in is
  * left in history behind it.
  */
@@ -42,7 +43,7 @@ export default function AuthLayout() {
         headerLeft: () => <Wordmark label={t('wordmark')} hint={t('wordmarkHint')} />,
         headerRight: () => (
           <IconButton
-            icon={X}
+            icon={Glyphs.Close}
             label={t('close')}
             variant="ghost"
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}

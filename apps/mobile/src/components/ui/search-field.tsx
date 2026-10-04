@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Pressable, StyleSheet, Text, View, type TextInput as RNTextInput } from 'react-native';
-import { Search, X } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, size as measure, spacing } from '../../theme';
 import { useFocusRing } from './focus';
@@ -88,11 +88,11 @@ export const SearchField = forwardRef<RNTextInput, SearchFieldProps>(function Se
         autoCorrect={false}
         autoCapitalize="none"
         onSubmitEditing={(event) => submit(event.nativeEvent.text)}
-        leading={<Icon icon={Search} size={16} color={colors.textTertiary} />}
+        leading={<Icon icon={Glyphs.SearchNormal1} size={16} color={colors.textTertiary} />}
         trailing={
           value !== '' ? (
             <IconButton
-              icon={X}
+              icon={Glyphs.Close}
               label={t('clearSearch')}
               variant="ghost"
               size="sm"

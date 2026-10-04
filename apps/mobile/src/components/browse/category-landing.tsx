@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link, Stack, useRouter } from 'expo-router';
-import { ArrowRight } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { NO_FILTERS, type DiscoveryFilters } from '@ideanest/discovery/filters';
 import { findCategory, findSubcategory } from '@ideanest/discovery/taxonomy';
 import {
@@ -22,7 +22,6 @@ import {
   EmptyState,
   ErrorState,
   InlineAlert,
-  MotionBudgetProvider,
   Pill,
   Skeleton,
   SkeletonGroup,
@@ -63,7 +62,8 @@ import { Breadcrumb, type Crumb } from './breadcrumb';
  * <h2>Motion: none of its own</h2>
  *
  * The web's landing takes no fade, and neither does this: the heading, the chips and the cards
- * never move. Discovery's minimal budget is still the one in force, for the cards' progress bars.
+ * never move (the cards are an unbounded list, `mobile-design` skill §6.5). The kit's own motion —
+ * the cards' progress bars, press feedback — still runs, under the skill's §6 rules.
  */
 
 export interface CategoryLandingProps {
@@ -129,31 +129,31 @@ export function CategoryLanding({ categorySlug, subcategorySlug }: CategoryLandi
   }
 
   return (
-    <MotionBudgetProvider level="minimal">
-      <Stack.Screen options={{ title: subcategory?.name ?? category.name }} />
-      <ScrollView
-        style={styles.fill}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={pulling}
-            onRefresh={() => {
-              haptics.refresh();
-              setPulling(true);
-              void Promise.allSettled([categories.refetch(), feed.refetch()]).then(() =>
-                setPulling(false),
-              );
-            }}
-            tintColor={colors.textSecondary}
-            colors={[colors.textPrimary]}
-            progressBackgroundColor={colors.surface3}
-          />
-        }
-        testID="category-landing"
-      >
-        <LandingBody category={category} subcategory={subcategory} feed={feed} />
-      </ScrollView>
-    </MotionBudgetProvider>
+    <>
+    <Stack.Screen options={{ title: subcategory?.name ?? category.name }} />
+    <ScrollView
+      style={styles.fill}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={pulling}
+          onRefresh={() => {
+            haptics.refresh();
+            setPulling(true);
+            void Promise.allSettled([categories.refetch(), feed.refetch()]).then(() =>
+              setPulling(false),
+            );
+          }}
+          tintColor={colors.textSecondary}
+          colors={[colors.textPrimary]}
+          progressBackgroundColor={colors.surface3}
+        />
+      }
+      testID="category-landing"
+    >
+      <LandingBody category={category} subcategory={subcategory} feed={feed} />
+    </ScrollView>
+  </>
   );
 }
 
@@ -274,7 +274,7 @@ function LandingBody({
                 <Pill
                   label={hasMore ? t('seeEvery', { title }) : t('filterAndSort', { title })}
                   variant="outline"
-                  iconRight={ArrowRight}
+                  iconRight={Glyphs.ArrowRight}
                   onPress={() => openFeed(feedFilters)}
                   testID="feed-pill"
                 />

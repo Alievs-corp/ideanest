@@ -3,7 +3,7 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, Images } from 'lucide-react-native';
+import { Glyphs } from '../../../icons';
 import {
   announce,
   Body,
@@ -250,7 +250,7 @@ export function AvatarField({
         <View style={styles.actions}>
           <Pill
             label={tPicker('library')}
-            iconLeft={Images}
+            iconLeft={Glyphs.Gallery}
             variant="ghost"
             disabled={disabled || busy}
             busy={busy}
@@ -259,7 +259,7 @@ export function AvatarField({
           />
           <Pill
             label={tPicker('camera')}
-            iconLeft={Camera}
+            iconLeft={Glyphs.Camera}
             variant="ghost"
             disabled={disabled || busy}
             onPress={() => void pick('camera')}

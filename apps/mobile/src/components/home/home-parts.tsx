@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
-import { ArrowRight } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import type { Category } from '../../api/queries';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, size, spacing, tracking } from '../../theme';
@@ -33,7 +33,7 @@ export function HomeHero({ onBrowse, onStart }: HomeHeroProps) {
         <Display accessibilityRole="header">{t('title')}</Display>
         <Body>{t('standfirst')}</Body>
         <View style={styles.actions}>
-          <Pill label={t('browse')} iconRight={ArrowRight} size="lg" onPress={onBrowse} />
+          <Pill label={t('browse')} iconRight={Glyphs.ArrowRight} size="lg" onPress={onBrowse} />
           <Pill label={t('start')} variant="outline" size="lg" onPress={onStart} />
         </View>
       </View>
@@ -85,7 +85,7 @@ function SectionLink({ href, label }: { readonly href: Href; readonly label: str
         style={({ pressed }) => [styles.link, pressed && styles.linkPressed, ring]}
       >
         <Text style={styles.linkLabel}>{label}</Text>
-        <Icon icon={ArrowRight} size={16} color={colors.textSecondary} />
+        <Icon icon={Glyphs.ArrowRight} size={16} color={colors.textSecondary} />
       </Pressable>
     </Link>
   );
@@ -117,7 +117,7 @@ function CategoryTile({ category }: { readonly category: Category }) {
           style={({ pressed }) => [styles.tile, pressed && styles.tilePressed, ring]}
         >
           <Text style={styles.tileName}>{name}</Text>
-          <Icon icon={ArrowRight} size={16} color={colors.textTertiary} />
+          <Icon icon={Glyphs.ArrowRight} size={16} color={colors.textTertiary} />
         </Pressable>
       </Link>
     </View>

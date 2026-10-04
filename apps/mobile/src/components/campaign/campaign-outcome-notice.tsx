@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { CircleCheck, CircleSlash } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { formatMoney } from '@ideanest/money';
 import type { CampaignPage } from '../../lib/campaign-page';
 import { formatDay, useT } from '../../lib/i18n';
@@ -34,7 +34,7 @@ export function CampaignOutcomeNotice({ campaign }: { readonly campaign: Campaig
     <View style={styles.card} testID="outcome-notice">
       <View style={styles.heading}>
         <Icon
-          icon={funded ? CircleCheck : CircleSlash}
+          icon={funded ? Glyphs.TickCircle : Glyphs.Slash}
           size={20}
           color={funded ? colors.success : colors.textSecondary}
         />

@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ban } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { formatMoney } from '@ideanest/money';
 import { NO_REWARD } from '@ideanest/checkout/draft';
 import { isSoldOut, type PublicReward } from '@ideanest/checkout/types';
@@ -143,7 +143,7 @@ function RewardCard({
         ))}
         {soldOut === null ? null : (
           <View style={styles.soldOut}>
-            <Icon icon={Ban} size={16} color={colors.textSecondary} />
+            <Icon icon={Glyphs.Slash} size={16} color={colors.textSecondary} />
             <Text style={styles.line}>{soldOut}</Text>
           </View>
         )}

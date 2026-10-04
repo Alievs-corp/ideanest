@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
-import { ChevronDown } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { colors } from '../../theme';
 import { useFieldControl } from './field';
 import { useFocusRing } from './focus';
@@ -106,7 +106,7 @@ export function Select({
           {shown}
         </Text>
         <View style={styles.chevron}>
-          <Icon icon={ChevronDown} size={16} color={colors.textTertiary} />
+          <Icon icon={Glyphs.ArrowDown2} size={16} color={colors.textTertiary} />
         </View>
       </Pressable>
 

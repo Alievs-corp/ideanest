@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { ShieldCheck } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { formatMoney } from '@ideanest/money';
 import type { ProjectState } from '@ideanest/campaign/states';
 import { successThresholdOf } from '@ideanest/campaign/threshold';
@@ -56,7 +56,7 @@ export function CampaignTrustBlock({ campaign }: { readonly campaign: CampaignPa
   return (
     <View style={styles.card} testID="trust-block">
       <View style={styles.heading}>
-        <Icon icon={ShieldCheck} size={20} color={colors.textSecondary} />
+        <Icon icon={Glyphs.ShieldTick} size={20} color={colors.textSecondary} />
         <Text accessibilityRole="header" style={styles.title}>
           {t('heading')}
         </Text>

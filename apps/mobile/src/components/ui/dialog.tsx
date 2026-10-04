@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { X } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import {
   colors,
@@ -142,7 +142,7 @@ export function Dialog({
           ) : null}
         </View>
         {showClose ? (
-          <IconButton icon={X} label={t('close')} variant="ghost" size="sm" onPress={onClose} />
+          <IconButton icon={Glyphs.Close} label={t('close')} variant="ghost" size="sm" onPress={onClose} />
         ) : null}
       </View>
 

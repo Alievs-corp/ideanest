@@ -27,8 +27,9 @@ import { AccentScopeProvider, Pill } from './pill';
  *   <li><strong>One accent per screen.</strong> The content sits in an `AccentScopeProvider`, the
  *       scope `Pill`'s two-accent warning counts in, so a stack that keeps the last screen mounted
  *       does not count both screens' accents together.</li>
- *   <li><strong>The motion budget</strong>, when `motion` is given: the route declares its level
- *       once (`docs/motion-system.md` §5) and every animated primitive under it reads it.</li>
+ *   <li><strong>The motion budget</strong>, when `motion` is given: an explicit level for every
+ *       animated primitive under it. Routes no longer declare one — the `mobile-design` skill §6
+ *       gives every surface the same vocabulary — so this is for the kit gallery and tests.</li>
  * </ul>
  *
  * <h2>The order of the states is fixed here</h2>
@@ -86,7 +87,7 @@ export interface ScreenProps {
   /** Pull to refresh. Needs `scroll`: a screen that brings its own list gives it the control. */
   readonly onRefresh?: () => void;
   readonly refreshing?: boolean;
-  /** The route's motion budget, `docs/motion-system.md` §5. Inherited when absent. */
+  /** An explicit motion budget for this subtree (gallery and tests). Inherited when absent. */
   readonly motion?: MotionLevel;
   /** A scroll view (the default), or a plain view for a screen whose content is its own list. */
   readonly scroll?: boolean;

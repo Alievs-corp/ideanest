@@ -7,7 +7,6 @@ import { colors, font, fontSize, lineHeight, radius, size, spacing, tracking } f
 import { FadeUp } from '../motion';
 import { Body, Heading } from '../text';
 import {
-  MotionBudgetProvider,
   Pill,
   Skeleton,
   SkeletonGroup,
@@ -32,7 +31,7 @@ import {
  *
  * <h2>Motion</h2>
  *
- * The heading and the intro fade up once; the sections never move.
+ * The heading and the intro fade up once; the sections never move (`mobile-design` skill §6.5).
  */
 
 interface Section {
@@ -53,50 +52,50 @@ export function CategoryIndex() {
   }));
 
   return (
-    <MotionBudgetProvider level="minimal">
-      <Stack.Screen options={{ title: t('title') }} />
-      <SectionList
-        style={styles.fill}
-        contentContainerStyle={styles.content}
-        sections={sections}
-        keyExtractor={(subcategory) => subcategory.id || subcategory.slug}
-        stickySectionHeadersEnabled={false}
-        ListHeaderComponent={
-          <FadeUp>
-            <View style={styles.titles}>
-              <Heading accessibilityRole="header">{t('title')}</Heading>
-              <Body>{t('intro')}</Body>
-            </View>
-          </FadeUp>
-        }
-        renderSectionHeader={({ section }) => <CategoryHeading category={section.category} />}
-        renderItem={({ item, section }) => (
-          <SubcategoryLink category={section.category} subcategory={item} />
-        )}
-        renderSectionFooter={() => <View style={styles.sectionGap} />}
-        ListEmptyComponent={
-          categories.isPending ? (
-            <IndexSkeleton label={tAll('mobile.browse.loadingCategories')} />
-          ) : (
-            <Unavailable retrying={categories.isFetching} onRetry={() => void categories.refetch()} />
-          )
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={pulling}
-            onRefresh={() => {
-              haptics.refresh();
-              setPulling(true);
-              void categories.refetch().finally(() => setPulling(false));
-            }}
-            tintColor={colors.textSecondary}
-            colors={[colors.textPrimary]}
-            progressBackgroundColor={colors.surface3}
-          />
-        }
-        testID="category-index"
-      />
-    </MotionBudgetProvider>
+    <>
+    <Stack.Screen options={{ title: t('title') }} />
+    <SectionList
+      style={styles.fill}
+      contentContainerStyle={styles.content}
+      sections={sections}
+      keyExtractor={(subcategory) => subcategory.id || subcategory.slug}
+      stickySectionHeadersEnabled={false}
+      ListHeaderComponent={
+        <FadeUp>
+          <View style={styles.titles}>
+            <Heading accessibilityRole="header">{t('title')}</Heading>
+            <Body>{t('intro')}</Body>
+          </View>
+        </FadeUp>
+      }
+      renderSectionHeader={({ section }) => <CategoryHeading category={section.category} />}
+      renderItem={({ item, section }) => (
+        <SubcategoryLink category={section.category} subcategory={item} />
+      )}
+      renderSectionFooter={() => <View style={styles.sectionGap} />}
+      ListEmptyComponent={
+        categories.isPending ? (
+          <IndexSkeleton label={tAll('mobile.browse.loadingCategories')} />
+        ) : (
+          <Unavailable retrying={categories.isFetching} onRetry={() => void categories.refetch()} />
+        )
+      }
+      refreshControl={
+        <RefreshControl
+          refreshing={pulling}
+          onRefresh={() => {
+            haptics.refresh();
+            setPulling(true);
+            void categories.refetch().finally(() => setPulling(false));
+          }}
+          tintColor={colors.textSecondary}
+          colors={[colors.textPrimary]}
+          progressBackgroundColor={colors.surface3}
+        />
+      }
+      testID="category-index"
+    />
+  </>
   );
 }
 

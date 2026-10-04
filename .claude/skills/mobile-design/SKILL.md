@@ -88,9 +88,9 @@ under the epic that introduced the skill. Do not copy an old pattern because it 
 
 ## 4. Colour additions
 
-Mobile accent tokens live in `@ideanest/design-tokens` (`index.ts`, under a mobile-only
-group) — added by the epic's token sub-issue, with measured contrast for the text that
-sits on each. Until they land, do not approximate them with literals. Rules:
+Mobile accent tokens live in `@ideanest/design-tokens` as `mobileAccent` and reach the app
+as `accent` from `src/theme`: `accent.sun`, `accent.mint`, `accent.sky`, each with
+`surface`, `text` and `glow`. Contrast is asserted in `src/theme/theme.test.ts`. Rules:
 
 - Accents are **surfaces** for cards and illustrations. They carry no meaning (not
   status, not urgency): lime keeps "act now", `success` keeps "funded/sent".
@@ -101,19 +101,20 @@ sits on each. Until they land, do not approximate them with literals. Rules:
 ## 5. Icons — Iconsax
 
 - Every mobile icon comes from **Iconsax**, through the kit's `Icon` component
-  (`apps/mobile/src/components/ui/icon.tsx`). Screens never import an icon package or an
-  SVG directly. `lucide-react-native` is being removed from `apps/mobile`.
-- The icons are our own generated components (from the MIT-licensed Iconsax SVG source),
-  so they are tree-shaken, take token colours only, and do not depend on an unmaintained
-  package.
-- **Styles have jobs:**
+  (`apps/mobile/src/components/ui/icon.tsx`): `<Icon icon={Glyphs.TickCircle} />`, with
+  `Glyphs` from `src/icons`. Screens never import an icon package or an SVG directly.
+- The glyphs are generated data (`src/icons/glyphs.ts`) from the MIT-licensed Iconsax
+  source by `apps/mobile/scripts/generate-icons.mjs`. To add one, add its Iconsax name to
+  the script's list and run `node scripts/generate-icons.mjs` from `apps/mobile`. Never
+  edit `glyphs.ts` by hand.
+- **Styles have jobs** (`variant` prop):
 
   | Style | Use |
   |---|---|
-  | `bulk` (default) | Feature and action icons: card actions, quick actions, empty states, list leading icons |
+  | `linear` (the `Icon` default) | Inline icons beside text, dense meta rows, inactive tabs |
+  | `bulk` | Feature and action icons: circular buttons (`IconButton` uses it), empty states, quick actions |
   | `bold` | Selected state (active tab, toggled save) |
-  | `linear` | Inactive tabs, inline icons beside text, dense meta rows |
-  | `twotone` / `broken` / `outline` | Not used |
+  | `twotone` / `broken` / `outline` | Not generated |
 
 - Bulk's secondary layer is the same token colour at reduced opacity — never a second
   colour.

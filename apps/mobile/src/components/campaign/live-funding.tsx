@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Decimal from 'decimal.js';
-import { Users } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { formatMoney, type Money } from '@ideanest/money';
 import { completionOf } from '@ideanest/campaign/completion';
 import { addToTotal } from '@ideanest/campaign/realtime';
@@ -100,7 +100,7 @@ export function LiveFunding({ goal, pledged, backersCount, socketUrl, active }: 
         )}
         <StatBlock
           size="md"
-          icon={Users}
+          icon={Glyphs.People}
           value={formatCount(backersCount, locale)}
           label={t(`backers.${pluralCategory(locale, backersCount)}`)}
           testID="funding-backers"

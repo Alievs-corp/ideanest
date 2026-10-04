@@ -6,7 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useQueryClient } from '@tanstack/react-query';
 import { siteUrl } from '../../api/config';
 import { Body, CardTitle, Meta, Subheading } from '../../components/text';
-import { Avatar, InlineAlert, MotionBudgetProvider, Pill, Skeleton } from '../../components/ui';
+import { Avatar, InlineAlert, Pill, Skeleton } from '../../components/ui';
 import { WhatsAppSheet } from '../../components/whatsapp-sheet';
 import { SETTINGS_SECTIONS, sectionLabelKey, sectionPath } from '../../features/settings/sections';
 import { canReadAccount, useMe, useSessionState, type Me } from '../../lib/account';
@@ -50,11 +50,10 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  * out are outlines beside or below it, and nothing here is the lime accent — this tab has no
  * urgent action.
  *
- * <h2>Motion: none</h2>
+ * <h2>Motion</h2>
  *
- * The tab is the web's account menu and settings, which `docs/motion-system.md` §5 gives no
- * motion: the route declares `none`, so the skeleton does not shimmer and a pill does not scale
- * under the thumb.
+ * The `mobile-design` skill §6 governs it like every other surface: the skeleton shimmers and a
+ * pill gives under the thumb, and Reduce Motion stops both.
  */
 
 interface Row {
@@ -389,66 +388,64 @@ export default function MeScreen() {
   }
 
   return (
-    <MotionBudgetProvider level="none">
-      <ScrollView contentContainerStyle={styles.content}>
-        {loading ? <IdentitySkeleton /> : null}
+    <ScrollView contentContainerStyle={styles.content}>
+      {loading ? <IdentitySkeleton /> : null}
 
-        {account !== null ? (
-          <>
-            <IdentityRow me={account} />
-            <AccountAlerts me={account} />
-            <Group titleKey="account.groups.yourAccount" rows={YOUR_ACCOUNT} />
-            <Group titleKey="shell.footer.groups.creators" rows={CREATOR} />
-            <Group titleKey="account.groups.settings" rows={SETTINGS} />
-          </>
-        ) : null}
+      {account !== null ? (
+        <>
+          <IdentityRow me={account} />
+          <AccountAlerts me={account} />
+          <Group titleKey="account.groups.yourAccount" rows={YOUR_ACCOUNT} />
+          <Group titleKey="shell.footer.groups.creators" rows={CREATOR} />
+          <Group titleKey="account.groups.settings" rows={SETTINGS} />
+        </>
+      ) : null}
 
-        {holdsSession ? <Group titleKey="mobile.me.thisPhone" rows={THIS_PHONE} /> : null}
+      {holdsSession ? <Group titleKey="mobile.me.thisPhone" rows={THIS_PHONE} /> : null}
 
-        {state === 'signed-out' ? (
-          <>
-            <View style={styles.section}>
-              <Body>{t('shell.tagline')}</Body>
-              <Pill
-                label={t('shell.actions.register')}
-                size="lg"
-                fullWidth
-                onPress={() =>
-                  void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}/register`)
-                }
-              />
-              <Pill
-                label={t('shell.actions.signIn')}
-                variant="outline"
-                size="lg"
-                fullWidth
-                onPress={() => router.push('/sign-in')}
-              />
-            </View>
-            <Group titleKey="account.groups.settings" rows={LANGUAGE_ONLY} />
-          </>
-        ) : null}
+      {state === 'signed-out' ? (
+        <>
+          <View style={styles.section}>
+            <Body>{t('shell.tagline')}</Body>
+            <Pill
+              label={t('shell.actions.register')}
+              size="lg"
+              fullWidth
+              onPress={() =>
+                void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}/register`)
+              }
+            />
+            <Pill
+              label={t('shell.actions.signIn')}
+              variant="outline"
+              size="lg"
+              fullWidth
+              onPress={() => router.push('/sign-in')}
+            />
+          </View>
+          <Group titleKey="account.groups.settings" rows={LANGUAGE_ONLY} />
+        </>
+      ) : null}
 
-        <Group titleKey="shell.footer.groups.about" rows={ABOUT}>
-          <NavRow row={{ label: 'shell.whatsapp.open' }} onPress={() => setContacting(true)} />
-        </Group>
+      <Group titleKey="shell.footer.groups.about" rows={ABOUT}>
+        <NavRow row={{ label: 'shell.whatsapp.open' }} onPress={() => setContacting(true)} />
+      </Group>
 
-        {holdsSession ? (
-          <Pill
-            label={t('shell.actions.signOut')}
-            variant="outline"
-            size="lg"
-            fullWidth
-            busy={busy}
-            onPress={confirmSignOut}
-          />
-        ) : null}
+      {holdsSession ? (
+        <Pill
+          label={t('shell.actions.signOut')}
+          variant="outline"
+          size="lg"
+          fullWidth
+          busy={busy}
+          onPress={confirmSignOut}
+        />
+      ) : null}
 
-        <Colophon />
+      <Colophon />
 
-        <WhatsAppSheet visible={contacting} onClose={() => setContacting(false)} />
-      </ScrollView>
-    </MotionBudgetProvider>
+      <WhatsAppSheet visible={contacting} onClose={() => setContacting(false)} />
+    </ScrollView>
   );
 }
 

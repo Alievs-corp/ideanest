@@ -75,9 +75,9 @@ export const ENTRY_OFFSET = 24;
  * only — `packages/ui`'s `overlayMotion`. There is no exit animation, for the web's reason: a
  * dialog that lingers after it was dismissed reads as an unresponsive interface.
  *
- * <p>Only when `useMotionAllowed('minimal')` agrees. Under Reduce Motion or a budget of `none`
- * (checkout, the editor) `animated` is false and the caller draws the panel in its final place
- * with no animated style at all — an instant state change, not a fast animation.
+ * <p>Only when `useMotionAllowed('minimal')` agrees. Under Reduce Motion or an explicit budget of
+ * `none` `animated` is false and the caller draws the panel in its final place with no animated
+ * style at all — an instant state change, not a fast animation.
  */
 export function useOverlayEntry(visible: boolean) {
   const animated = useMotionAllowed('minimal');

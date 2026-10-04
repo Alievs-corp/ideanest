@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { ArrowDown, ArrowRight, ArrowUp } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, radius, spacing } from '../../theme';
 import { Icon, type IconComponent } from './icon';
@@ -36,15 +36,15 @@ const TREND: Record<
   StatTrend,
   { icon: IconComponent; background: string; text: string; key: `change.${StatTrend}` }
 > = {
-  up: { icon: ArrowUp, background: colors.lime500, text: colors.textOnLime, key: 'change.up' },
+  up: { icon: Glyphs.ArrowUp, background: colors.lime500, text: colors.textOnLime, key: 'change.up' },
   down: {
-    icon: ArrowDown,
+    icon: Glyphs.ArrowDown,
     background: colors.danger,
     text: colors.textOnDanger,
     key: 'change.down',
   },
   neutral: {
-    icon: ArrowRight,
+    icon: Glyphs.ArrowRight,
     background: colors.surface4,
     text: colors.textSecondary,
     key: 'change.neutral',

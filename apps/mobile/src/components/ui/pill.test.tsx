@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { StyleSheet, Text } from 'react-native';
-import { Heart } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { colors, size } from '../../theme';
 import { MotionBudgetProvider } from './motion-budget';
 import { AccentScopeProvider, Pill } from './pill';
@@ -145,7 +145,7 @@ describe('Pill', () => {
 
   it('draws its icon in the colour of its label and keeps it out of the announcement', async () => {
     const { getByRole } = await render(
-      <Pill label="Save" variant="accent" iconLeft={Heart} onPress={noop} />,
+      <Pill label="Save" variant="accent" iconLeft={Glyphs.Heart} onPress={noop} />,
     );
     const button = getByRole('button', { name: 'Save' });
     // One accessible element: the pill. The icon is decoration beside the word that says it.
@@ -201,7 +201,7 @@ describe('Pill', () => {
       return wrapper === null ? undefined : styleOf(wrapper).transform;
     }
 
-    it('does not scale on a surface whose budget is none — checkout, the editor', async () => {
+    it('does not scale under an explicit budget of none', async () => {
       const tree = await render(
         <MotionBudgetProvider level="none">
           <Pill label="Confirm pledge" variant="accent" onPress={noop} />
@@ -210,17 +210,8 @@ describe('Pill', () => {
       expect(transformOf(tree)).toBeUndefined();
     });
 
-    it('does not scale under the default budget, which is minimal', async () => {
-      const tree = await render(<Pill label="Filter" onPress={noop} />);
-      expect(transformOf(tree)).toBeUndefined();
-    });
-
-    it('may scale where the budget is moderate or more', async () => {
-      const tree = await render(
-        <MotionBudgetProvider level="full">
-          <Pill label="Explore" onPress={noop} />
-        </MotionBudgetProvider>,
-      );
+    it('scales under the default budget, checkout included (mobile-design skill §6.4)', async () => {
+      const tree = await render(<Pill label="Confirm pledge" variant="accent" onPress={noop} />);
       expect(transformOf(tree)).toEqual([{ scale: 1 }]);
     });
   });

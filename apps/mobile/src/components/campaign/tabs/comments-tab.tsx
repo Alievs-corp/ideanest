@@ -1,6 +1,6 @@
 import { useMemo, type ReactElement } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { ArrowLeft } from 'lucide-react-native';
+import { Glyphs } from '../../../icons';
 import { CAMPAIGN_THREAD_PARAM, campaignCursorFrom } from '@ideanest/campaign/tabs';
 import { conversationOf, threadsOf, useCommentThreads } from '../../../lib/comments';
 import { useT } from '../../../lib/i18n';
@@ -215,7 +215,7 @@ function AllComments({ onPress }: { readonly onPress: () => void }) {
     <QuietLink
       label={t('all')}
       onPress={onPress}
-      leading={<Icon icon={ArrowLeft} size={16} color={colors.textPrimary} />}
+      leading={<Icon icon={Glyphs.ArrowLeft} size={16} color={colors.textPrimary} />}
       testID="comments-all"
     />
   );

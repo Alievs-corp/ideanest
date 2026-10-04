@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowUpRight } from 'lucide-react-native';
+import { Glyphs } from '../../../../icons';
 import type { CampaignCreator } from '../../../../lib/campaign-page';
 import { formatDay, useT } from '../../../../lib/i18n';
 import { useLocale } from '../../../../lib/locale';
@@ -106,7 +106,7 @@ export function CreatorAbout({
             >
               <View style={styles.nameLink}>
                 <Text style={styles.name}>{name}</Text>
-                <Icon icon={ArrowUpRight} size={16} color={colors.textPrimary} />
+                <Icon icon={Glyphs.ArrowRight} size={16} color={colors.textPrimary} />
               </View>
             </Link>
           )}

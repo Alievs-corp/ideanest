@@ -21,7 +21,6 @@ import {
   Heading,
   InlineAlert,
   Meta,
-  MotionBudgetProvider,
   Pill,
   Screen,
   Skeleton,
@@ -76,7 +75,7 @@ export function PledgeDetailScreen(props: PledgeDetailScreenProps) {
     if (!signedIn) router.replace(signInHrefFor(`/pledges/${encodeURIComponent(props.id)}`));
   }, [props.id, router, signedIn]);
 
-  return <MotionBudgetProvider level="none">{signedIn ? <PledgeDetail {...props} /> : null}</MotionBudgetProvider>;
+  return signedIn ? <PledgeDetail {...props} /> : null;
 }
 
 function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenProps) {

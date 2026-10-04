@@ -5,16 +5,13 @@ import { motion, spacing, staggerDelay } from '../theme';
 import { useMotionAllowed, useReducedMotion } from './ui/motion-budget';
 
 /**
- * The one scroll-entry animation — `docs/motion-system.md` §4.1 and §7, and
- * CLAUDE.md §2's "one scroll-entry animation, `FadeUp`, everywhere".
+ * The entry rise — the `mobile-design` skill's `FadeUp` / `Stagger` (§6.3).
  *
- * <h2>Why there is exactly one component here</h2>
+ * <h2>Only the first screenful</h2>
  *
- * A second entry animation is a design change rather than an implementation
- * detail, and the way a codebase acquires one is never a decision — it is a
- * screen that needed something slightly different and had a whole animation
- * library within reach. Having one exported component makes the second one a
- * diff somebody has to justify.
+ * Elements at `index` {@link FIRST_SCREENFUL} or later render still. That is the skill's §6.5:
+ * per-item entry is for what is on screen when it opens, and items a list appends while somebody
+ * scrolls never animate in.
  *
  * <h2>Transform and opacity only</h2>
  *
@@ -48,14 +45,14 @@ export interface FadeUpProps {
  *
  * With Reduce Motion on this renders a plain `View` — not a shorter animation.
  * A 10ms fade is still a fade, and the setting is a request to stop moving
- * things rather than to move them faster. The same is true on a surface whose
- * motion budget is `none` — checkout, the editor, settings — which is how a
- * heading shared with one of those screens stays still there.
+ * things rather than to move them faster.
  */
+export const FIRST_SCREENFUL = 8;
+
 export function FadeUp({ index = 0, children }: FadeUpProps) {
   const allowed = useMotionAllowed('minimal');
 
-  if (!allowed) {
+  if (!allowed || index >= FIRST_SCREENFUL) {
     return <View>{children}</View>;
   }
 

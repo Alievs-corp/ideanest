@@ -12,7 +12,7 @@ import {
   RailSkeleton,
   TilesSkeleton,
 } from '../../components/home/home-parts';
-import { InlineAlert, MotionBudgetProvider, Pill, haptics } from '../../components/ui';
+import { InlineAlert, Pill, haptics } from '../../components/ui';
 import { definedRouteParams } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
 import { colors, size, spacing } from '../../theme';
@@ -33,8 +33,8 @@ import { colors, size, spacing } from '../../theme';
  *
  * <h2>Motion</h2>
  *
- * Discovery's budget: the hero and the rail headings fade up once, the cards never move, and
- * Reduce Motion turns the fades off.
+ * The `mobile-design` skill §6: the hero and the rail headings fade up once, the cards in the
+ * rails do not animate in (§6.5), and Reduce Motion turns the fades off.
  */
 
 /** Six to a rail, the web's `RAIL_SIZE`. */
@@ -69,92 +69,90 @@ export default function HomeScreen() {
   }
 
   return (
-    <MotionBudgetProvider level="minimal">
-      <ScrollView
-        style={styles.fill}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={pulling}
-            onRefresh={() => {
-              haptics.refresh();
-              setPulling(true);
-              void refresh().then(() => setPulling(false));
-            }}
-            tintColor={colors.textSecondary}
-            colors={[colors.textPrimary]}
-            progressBackgroundColor={colors.surface3}
-          />
-        }
-      >
-        <HomeHero onBrowse={() => openFeed()} onStart={() => router.push('/campaigns/new')} />
+    <ScrollView
+      style={styles.fill}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={pulling}
+          onRefresh={() => {
+            haptics.refresh();
+            setPulling(true);
+            void refresh().then(() => setPulling(false));
+          }}
+          tintColor={colors.textSecondary}
+          colors={[colors.textPrimary]}
+          progressBackgroundColor={colors.surface3}
+        />
+      }
+    >
+      <HomeHero onBrowse={() => openFeed()} onStart={() => router.push('/campaigns/new')} />
 
-        {closing.isPending ? (
-          <RailSkeleton label={tFeed('loading')} />
-        ) : closingCards.length > 0 ? (
-          <HomeSection
-            heading={t('closing.heading')}
-            standfirst={t('closing.standfirst')}
-            href={{ pathname: '/discover', params: definedRouteParams(CLOSING) }}
-            linkLabel={t('closing.link')}
-            testID="rail-closing"
-          >
-            {/* The only rail whose covers are fetched first: it is what the screen opens on. */}
-            <CampaignColumn cards={closingCards} priority={3} />
-          </HomeSection>
-        ) : null}
+      {closing.isPending ? (
+        <RailSkeleton label={tFeed('loading')} />
+      ) : closingCards.length > 0 ? (
+        <HomeSection
+          heading={t('closing.heading')}
+          standfirst={t('closing.standfirst')}
+          href={{ pathname: '/discover', params: definedRouteParams(CLOSING) }}
+          linkLabel={t('closing.link')}
+          testID="rail-closing"
+        >
+          {/* The only rail whose covers are fetched first: it is what the screen opens on. */}
+          <CampaignColumn cards={closingCards} priority={3} />
+        </HomeSection>
+      ) : null}
 
-        {launched.isPending ? (
-          <RailSkeleton label={tFeed('loading')} />
-        ) : launchedCards.length > 0 ? (
-          <HomeSection
-            heading={t('launched.heading')}
-            standfirst={t('launched.standfirst')}
-            href={{ pathname: '/discover', params: definedRouteParams(LAUNCHED) }}
-            linkLabel={t('launched.link')}
-            testID="rail-launched"
-          >
-            <CampaignColumn cards={launchedCards} />
-          </HomeSection>
-        ) : null}
+      {launched.isPending ? (
+        <RailSkeleton label={tFeed('loading')} />
+      ) : launchedCards.length > 0 ? (
+        <HomeSection
+          heading={t('launched.heading')}
+          standfirst={t('launched.standfirst')}
+          href={{ pathname: '/discover', params: definedRouteParams(LAUNCHED) }}
+          linkLabel={t('launched.link')}
+          testID="rail-launched"
+        >
+          <CampaignColumn cards={launchedCards} />
+        </HomeSection>
+      ) : null}
 
-        {categories.isPending ? (
-          <TilesSkeleton label={tFeed('loading')} />
-        ) : taxonomy.length > 0 ? (
-          <HomeSection
-            heading={t('categories.heading')}
-            standfirst={t('categories.standfirst')}
-            href="/categories"
-            linkLabel={t('categories.link')}
-            testID="categories"
-          >
-            <CategoryTiles categories={taxonomy} />
-          </HomeSection>
-        ) : null}
+      {categories.isPending ? (
+        <TilesSkeleton label={tFeed('loading')} />
+      ) : taxonomy.length > 0 ? (
+        <HomeSection
+          heading={t('categories.heading')}
+          standfirst={t('categories.standfirst')}
+          href="/categories"
+          linkLabel={t('categories.link')}
+          testID="categories"
+        >
+          <CategoryTiles categories={taxonomy} />
+        </HomeSection>
+      ) : null}
 
-        {closing.isPending || launched.isPending ? null : bothFailed ? (
-          <InlineAlert
-            variant="danger"
-            title={tFeed('errorTitle')}
-            description={tFeed('unreachable')}
-            action={
-              <View style={styles.retry}>
-                <Pill
-                  label={tFeed('tryAgain')}
-                  variant="ghost"
-                  size="sm"
-                  busy={closing.isFetching || launched.isFetching}
-                  onPress={() => void refresh()}
-                />
-              </View>
-            }
-            testID="home-error"
-          />
-        ) : closingCards.length === 0 && launchedCards.length === 0 ? (
-          <HomeEmpty onOpenFeed={() => openFeed()} />
-        ) : null}
-      </ScrollView>
-    </MotionBudgetProvider>
+      {closing.isPending || launched.isPending ? null : bothFailed ? (
+        <InlineAlert
+          variant="danger"
+          title={tFeed('errorTitle')}
+          description={tFeed('unreachable')}
+          action={
+            <View style={styles.retry}>
+              <Pill
+                label={tFeed('tryAgain')}
+                variant="ghost"
+                size="sm"
+                busy={closing.isFetching || launched.isFetching}
+                onPress={() => void refresh()}
+              />
+            </View>
+          }
+          testID="home-error"
+        />
+      ) : closingCards.length === 0 && launchedCards.length === 0 ? (
+        <HomeEmpty onOpenFeed={() => openFeed()} />
+      ) : null}
+    </ScrollView>
   );
 }
 

@@ -58,6 +58,8 @@ describe('the kit gallery', () => {
     // The sections are headed by the components' own names, in the barrel's order.
     for (const heading of [
       'Icon',
+      'PressableScale',
+      'accent',
       'Pill',
       'IconButton',
       'Tag',

@@ -349,7 +349,7 @@ describe('checkout source rules', () => {
     }
   });
 
-  it('has no motion', () => {
+  it('animates only through the kit, never with Reanimated of its own (mobile-design skill §6.3)', () => {
     for (const [name, source] of sources) {
       expect([name, /\bentering=|\bexiting=|\blayout=\{|FadeUp|react-native-reanimated/.test(source)]).toEqual([name, false]);
     }

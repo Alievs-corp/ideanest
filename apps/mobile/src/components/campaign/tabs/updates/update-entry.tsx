@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Lock } from 'lucide-react-native';
+import { Glyphs } from '../../../../icons';
 import type { CampaignUpdate } from '@ideanest/campaign/updates';
 import { formatDay, useT } from '../../../../lib/i18n';
 import { useLocale } from '../../../../lib/locale';
@@ -48,7 +48,7 @@ export function UpdateEntry({ update }: { readonly update: CampaignUpdate }) {
           {update.visibility === 'BACKERS_ONLY' ? (
             <Tag
               variant="warning"
-              icon={Lock}
+              icon={Glyphs.Lock}
               label={t('backersOnly')}
               testID={`update-${update.number}-backers-only`}
             />

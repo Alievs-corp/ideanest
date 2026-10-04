@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import {
-  Pressable,
   StyleSheet,
   View,
   type AccessibilityRole,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { colors, radius, shadow, size as measure, spacing } from '../../theme';
 import { useFocusRing } from './focus';
+import { AnimatedPressable, usePressScale } from './press-scale';
 import { SurfaceProvider, type Surface } from './surface';
 
 /**
@@ -37,7 +37,8 @@ import { SurfaceProvider, type Surface } from './surface';
  *
  * With `onPress` the card is one control. The web lifts an interactive card 2px on hover; a phone
  * has no hover, and a lift under a finger is a card moving away from the thumb pressing it. So the
- * pressed state is a background swap on the frame the finger lands, and nothing moves.
+ * pressed state is a background swap on the frame the finger lands, and the card gives slightly
+ * under the thumb (`usePressScale`, `mobile-design` skill §6.3).
  */
 
 export type CardVariant = 'default' | 'active' | 'floating';
@@ -112,6 +113,7 @@ export function Card(props: CardProps) {
   // The ring is drawn outside the card, on whatever the card sits on — so it asks the outer
   // surface, not the one the card provides to its children.
   const { ring, onFocus, onBlur } = useFocusRing();
+  const press = usePressScale();
 
   const content = <SurfaceProvider surface={skin.surface}>{children}</SurfaceProvider>;
 
@@ -127,7 +129,7 @@ export function Card(props: CardProps) {
   const role = props.accessibilityRole ?? 'button';
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole={role}
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
@@ -137,21 +139,24 @@ export function Card(props: CardProps) {
       }}
       disabled={disabled}
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       onFocus={onFocus}
       onBlur={onBlur}
       testID={testID}
-      style={({ pressed }) => [
+      style={[
         styles.card,
         styles.interactive,
         SHAPE[size],
-        pressed && !disabled ? skin.pressed : skin.rest,
+        press.pressed && !disabled ? skin.pressed : skin.rest,
         disabled && styles.disabled,
         ring,
         style,
+        press.style,
       ]}
     >
       {content}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
-import { CreditCard } from 'lucide-react-native';
+import { Glyphs } from '../../../icons';
 import { queryKeys } from '../../../api/queries';
 import {
   Body,
@@ -354,7 +354,7 @@ function CardSection({
       {failed ? <InlineAlert variant="warning" description={t('cardFailed')} testID="payout-card-failed" /> : null}
 
       <View style={styles.onFile}>
-        <Icon icon={CreditCard} size={20} color={colors.textTertiary} />
+        <Icon icon={Glyphs.Card} size={20} color={colors.textTertiary} />
         {recorded ? (
           <View style={styles.onFileWords} accessible testID="payout-card-on-file">
             <Body tone="primary">
