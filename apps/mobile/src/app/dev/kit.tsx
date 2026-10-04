@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Redirect, Stack } from 'expo-router';
 import { Glyphs, type IconVariant } from '../../icons';
@@ -6,6 +6,7 @@ import { LOCALE_NAMES, SUPPORTED_LOCALES } from '@ideanest/messages';
 import { siteUrl } from '../../api/config';
 import {
   AccentCard,
+  AmountKeypad,
   CardStack,
   AnimatedAmount,
   Avatar,
@@ -57,7 +58,9 @@ import {
   StatRow,
   Story,
   Subheading,
+  SuccessReveal,
   SurfaceProvider,
+  SwipeToConfirm,
   Switch,
   Tag,
   TextInput,
@@ -166,6 +169,9 @@ const ACCENTS = Object.keys(accent) as Accent[];
 const STACK_CARD_HEIGHT = 136;
 const BADGES: Record<StatTrend, string> = { up: '+12', down: '-3', neutral: '0' };
 const TRACE = '4bf92f3577b34da6a3ce929d0e0e4736';
+/** A limit low enough to reach by hand, so the over-limit message can be seen. */
+const KEYPAD_MAX = '10000';
+const SWIPE_REQUEST_MS = 1500;
 
 const noop = () => {};
 
@@ -189,6 +195,15 @@ function KitGallery() {
   const [sheet, setSheet] = useState(false);
   const [amount, setAmount] = useState(0);
   const [segment, setSegment] = useState<'home' | 'search'>('home');
+  const [keyed, setKeyed] = useState('');
+  const [sending, setSending] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  // The swipe's request "finishes" by itself, so the thumb can be seen coming back for a retry.
+  useEffect(() => {
+    if (!sending) return undefined;
+    const timer = setTimeout(() => setSending(false), SWIPE_REQUEST_MS);
+    return () => clearTimeout(timer);
+  }, [sending]);
   const money = { amount: AMOUNTS[amount % AMOUNTS.length] ?? AMOUNTS[0], currency: 'AZN' };
   const backers = 128;
   const backersLabel = t(`common.card.backers.${pluralCategory(locale, backers)}`, {
@@ -332,6 +347,43 @@ function KitGallery() {
               />
             </SurfaceProvider>
           </View>
+        </Section>
+
+        <Section title={heading([AmountKeypad])}>
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <Field label={t('checkout.contribution.legend')} grouped>
+                <AmountKeypad
+                  value={keyed}
+                  onChange={setKeyed}
+                  currency={money.currency}
+                  max={KEYPAD_MAX}
+                  overLimitMessage={t('checkout.errors.amountTooLarge')}
+                />
+              </Field>
+            </SurfaceProvider>
+          </View>
+        </Section>
+
+        <Section title={heading([SwipeToConfirm])}>
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <SwipeToConfirm
+                label={t('mobile.checkout.swipeToPay')}
+                actionLabel={t('checkout.review.confirm')}
+                amount={formatMoney(money)}
+                busy={sending}
+                onConfirm={() => setSending(true)}
+              />
+            </SurfaceProvider>
+          </View>
+          <SwipeToConfirm
+            label={t('mobile.checkout.swipeToPay')}
+            actionLabel={t('checkout.review.confirm')}
+            onConfirm={noop}
+            disabled
+            testID="swipe-to-confirm-disabled"
+          />
         </Section>
 
         <Section title={heading([IconButton])}>
@@ -853,10 +905,11 @@ function KitGallery() {
         </Section>
 
         {/* Overlay ---------------------------------------------------------------------- */}
-        <Section title={heading([Dialog, Sheet])}>
+        <Section title={heading([Dialog, Sheet, SuccessReveal])}>
           <Row>
             <Pill label={nameOf(Dialog)} variant="outline" onPress={() => setDialog(true)} />
             <Pill label={nameOf(Sheet)} variant="outline" onPress={() => setSheet(true)} />
+            <Pill label={nameOf(SuccessReveal)} variant="outline" onPress={() => setRevealed(true)} />
           </Row>
         </Section>
       </ScrollView>
@@ -882,6 +935,13 @@ function KitGallery() {
             />
           </>
         }
+      />
+
+      <SuccessReveal
+        visible={revealed}
+        title={formatMoney(money)}
+        caption={t('checkout.returned.paidTitle')}
+        onClose={() => setRevealed(false)}
       />
 
       <Sheet

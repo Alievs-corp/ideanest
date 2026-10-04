@@ -8,6 +8,7 @@
 
 /* Foundations: surfaces, motion, focus, feedback ---------------------------------------------- */
 export { announce } from './announce';
+export { useAssistiveTechnology } from './assistive-tech';
 export { useFocusRing } from './focus';
 export { haptics, type HapticEvent } from './haptics';
 export { Icon, type IconComponent, type IconProps } from './icon';
@@ -58,6 +59,14 @@ export {
   type IconButtonVariant,
 } from './icon-button';
 export { AccentScopeProvider, Pill, type PillProps, type PillSize, type PillVariant } from './pill';
+export { AmountKeypad, type AmountKeypadProps } from './amount-keypad';
+export {
+  SWIPE_COMMIT,
+  SwipeToConfirm,
+  swipeCommits,
+  swipeProgress,
+  type SwipeToConfirmProps,
+} from './swipe-to-confirm';
 export {
   SegmentedPill,
   type SegmentOption,
@@ -155,6 +164,7 @@ export { Textarea, type TextareaProps } from './textarea';
 /* Overlay: Dialog, Sheet ---------------------------------------------------------------------- */
 export { Dialog, type DialogProps } from './dialog';
 export { SHEET_PAGE_SCALE, Sheet, SheetHost, type SheetProps } from './sheet';
+export { REVEAL_TOTAL_MS, SuccessReveal, type SuccessRevealProps } from './success-reveal';
 
 /* Navigation motion: SharedTransition, CardStack ---------------------------------------------- */
 export {

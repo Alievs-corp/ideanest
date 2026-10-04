@@ -564,6 +564,8 @@ two and a half seconds.
 | Payment failed | `notificationAsync(Error)` |
 | Pull to refresh | `impactAsync(Medium)` |
 | Start a campaign (mobile tab bar Create button) | `impactAsync(Medium)` |
+| A key of the mobile amount keypad (digit, point, operator, result) | `selectionAsync()` |
+| Mobile swipe to confirm crosses its line | `impactAsync(Medium)` |
 
 **Mobile durations run about 20% shorter.** Travel distance is smaller on a
 phone, so an identical duration reads as sluggish. Web 600ms becomes mobile

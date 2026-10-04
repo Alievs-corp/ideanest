@@ -63,6 +63,8 @@ describe('the kit gallery', () => {
       'accent',
       'Pill',
       'SegmentedPill',
+      'AmountKeypad',
+      'SwipeToConfirm',
       'IconButton',
       'Tag',
       'Chip · ChipRow · RemovableChip',
@@ -83,7 +85,7 @@ describe('the kit gallery', () => {
       'Field · TextInput · PasswordInput · Textarea · CharacterCount',
       'Select · Checkbox · Radio · Switch',
       'FilePicker · SearchField',
-      'Dialog · Sheet',
+      'Dialog · Sheet · SuccessReveal',
     ]) {
       // At least one: a panel titled with its own name (FloatingPanel) is a second header.
       expect(screen.getAllByRole('header', { name: heading }).length).toBeGreaterThan(0);
@@ -110,6 +112,12 @@ describe('the kit gallery', () => {
     expect(screen.getByRole('switch', { name: en.mobile.lock.face, checked: true })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Dialog' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sheet' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'SuccessReveal' })).toBeTruthy();
+    // #280: the keypad's keys, and the swipe as a named button with its activate action.
+    expect(screen.getByRole('keyboardkey', { name: en.mobile.kitMoney.backspace })).toBeTruthy();
+    expect(screen.getByRole('button', { name: en.mobile.kitMoney.divide })).toBeTruthy();
+    expect(screen.getByTestId('swipe-to-confirm').props.accessibilityActions).toEqual([{ name: 'activate' }]);
+    expect(screen.getByTestId('swipe-to-confirm-disabled')).toBeDisabled();
     // #282 retired the dark sheet: there is one sheet, and it is white.
     expect(screen.queryByRole('button', { name: 'Sheet · dark' })).toBeNull();
     expect(screen.getAllByRole('radio', { name: en.mobile.tabs.home, checked: true })).toHaveLength(2);

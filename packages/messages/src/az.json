@@ -5565,6 +5565,19 @@
         "openFailed": "Şəkillər açılmadı. Yenidən cəhd edin."
       }
     },
+    "kitMoney": {
+      "point": "Onluq nöqtə",
+      "backspace": "Son rəqəmi sil",
+      "add": "Üstəgəl",
+      "subtract": "Çıx",
+      "multiply": "Vur",
+      "divide": "Böl",
+      "useResult": "Nəticəni götür: {amount}",
+      "divideByZero": "Məbləğ sıfıra bölünə bilməz.",
+      "belowZero": "Nəticə sıfırdan azdır, məbləğ isə mənfi ola bilməz.",
+      "swipeHint": "Təsdiqləmək üçün düyməni sona qədər sürüşdürün",
+      "tapToClose": "Bağlamaq üçün istənilən yerə toxunun"
+    },
     "checkout": {
       "close": "Dəstək pəncərəsini bağla",
       "leaveTitle": "Pəncərədən çıxırsınız?",
@@ -5577,7 +5590,8 @@
       "step": "Addım {index} / {count}: {name}",
       "increase": "Bir ədəd artır: {title}",
       "decrease": "Bir ədəd azalt: {title}",
-      "backHint": "Mükafat seçin və {title} kampaniyasını dəstəkləyin"
+      "backHint": "Mükafat seçin və {title} kampaniyasını dəstəkləyin",
+      "swipeToPay": "Ödənişə keçmək üçün sürüşdürün"
     },
     "settings": {
       "securityLabel": "Təhlükəsizlik",

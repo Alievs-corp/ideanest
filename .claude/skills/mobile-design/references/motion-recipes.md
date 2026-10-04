@@ -126,7 +126,10 @@ on device — the same numbers feel different at 60 and 120 Hz.
 - While dragging, the amount above crossfades to its success-tone layer in proportion to
   progress.
 - Accessibility: `accessibilityRole="button"`, `accessibilityActions=[{name:'activate'}]`;
-  with a screen reader or switch control on, it renders as a normal confirm button.
+  with a screen reader or switch control on, it renders as a normal confirm button. Android
+  reports Switch Access as an accessibility service and is detected; iOS exposes no Switch
+  Control signal to React Native, so there the `activate` action (which Switch Control's tap
+  performs) is what makes the track operable.
 - Disabled while the request is in flight; a retry reuses the idempotency key.
 
 ## SuccessReveal

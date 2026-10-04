@@ -305,6 +305,15 @@ describe('contrast of every tone on every surface it can land on', () => {
     }
   });
 
+  /**
+   * `SuccessReveal` and `SwipeToConfirm`'s success layer (#280) put near-black words on `success`;
+   * success itself is never text on white, where it measures about 2:1.
+   */
+  it('reads near-black on success, and refuses success as text on white', () => {
+    expect(ratio(colors.textOnWhite, colors.success)).toBeGreaterThanOrEqual(BODY);
+    expect(ratio(colors.success, colors.whiteSurface)).toBeLessThan(LARGE_OR_NON_TEXT);
+  });
+
   /** Why `textOnDanger` exists: white on danger, measured. */
   it('refuses white on danger as a label colour', () => {
     expect(ratio(colors.textPrimary, colors.danger)).toBeLessThan(BODY);

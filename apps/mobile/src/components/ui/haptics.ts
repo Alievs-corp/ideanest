@@ -13,10 +13,10 @@ import {
  *
  * A buzz is motion you feel, and it has the same failure mode as motion you see: it is cheap to
  * add, each one seems harmless, and a screen that vibrates on every tap has told the hand nothing.
- * The six events below are the ones that mean something — a thing was kept, a choice was made,
- * money moved or did not, a list refreshed. Every haptic in the application goes through this
- * object, so a sixth is a change to this file and to the table, not a call somebody slipped into
- * a screen.
+ * The events below are the ones that mean something — a thing was kept, a choice was made, money
+ * moved or did not, a list refreshed, a key of an amount went in. Every haptic in the application
+ * goes through this object, so another is a change to this file and to the table, not a call
+ * somebody slipped into a screen.
  *
  * <p>Failures are swallowed: a phone without a vibration motor, or with system haptics turned off,
  * is not an error the person holding it can do anything about.
@@ -40,6 +40,10 @@ export const haptics = {
   refresh: quietly(() => impactAsync(ImpactFeedbackStyle.Medium)),
   /** The tab bar's Create button: a campaign is about to begin. */
   create: quietly(() => impactAsync(ImpactFeedbackStyle.Medium)),
+  /** A key of `AmountKeypad`: a digit, the point, an operator, the result. */
+  keypadKey: quietly(() => selectionAsync()),
+  /** `SwipeToConfirm` crossed its line: the confirmation is being sent. */
+  swipeConfirm: quietly(() => impactAsync(ImpactFeedbackStyle.Medium)),
 } as const;
 
 export type HapticEvent = keyof typeof haptics;

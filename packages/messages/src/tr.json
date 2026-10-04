@@ -5565,6 +5565,19 @@
         "openFailed": "Fotoğraflar açılamadı. Yeniden deneyin."
       }
     },
+    "kitMoney": {
+      "point": "Ondalık nokta",
+      "backspace": "Son rakamı sil",
+      "add": "Artı",
+      "subtract": "Eksi",
+      "multiply": "Çarpı",
+      "divide": "Bölü",
+      "useResult": "Sonucu kullan: {amount}",
+      "divideByZero": "Bir tutar sıfıra bölünemez.",
+      "belowZero": "Sonuç sıfırın altında ve bir tutar negatif olamaz.",
+      "swipeHint": "Onaylamak için tutamacı sonuna kadar kaydırın",
+      "tapToClose": "Kapatmak için herhangi bir yere dokunun"
+    },
     "checkout": {
       "close": "Destek ekranını kapat",
       "leaveTitle": "Ekrandan çıkılsın mı?",
@@ -5577,7 +5590,8 @@
       "step": "Adım {index} / {count}: {name}",
       "increase": "Bir tane ekle: {title}",
       "decrease": "Bir tane çıkar: {title}",
-      "backHint": "Bir ödül seçin ve {title} kampanyasını destekleyin"
+      "backHint": "Bir ödül seçin ve {title} kampanyasını destekleyin",
+      "swipeToPay": "Ödemeye geçmek için kaydırın"
     },
     "settings": {
       "securityLabel": "Güvenlik",
