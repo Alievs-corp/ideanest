@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { useT } from '../../lib/i18n';
 import { spacing } from '../../theme';
 import { Skeleton, SkeletonGroup } from '../ui';
+import { ArrivingCover } from './campaign-media';
 
 /**
  * The campaign page before its first answer (#155): its own shape, block for block, so nothing
@@ -11,12 +12,19 @@ import { Skeleton, SkeletonGroup } from '../ui';
  * <p>One accessible element ("Loading this campaign", busy), as `SkeletonGroup` makes every
  * placeholder: the wait is one announcement, not a dozen grey shapes.
  */
-export function CampaignSkeleton() {
+export function CampaignSkeleton({ coverTag }: { readonly coverTag?: string }) {
   const t = useT('campaign.prelaunch');
   return (
     <SkeletonGroup label={t('loading')} testID="campaign-loading">
       <View style={styles.page}>
-        <Skeleton aspectRatio={16 / 9} radius="lg" />
+        {coverTag === undefined ? (
+          <Skeleton aspectRatio={16 / 9} radius="lg" />
+        ) : (
+          <ArrivingCover
+            tag={coverTag}
+            fallback={<Skeleton aspectRatio={16 / 9} radius="lg" />}
+          />
+        )}
         <View style={styles.tags}>
           <Skeleton height={26} width={88} radius="sm" />
           <Skeleton height={26} width={64} radius="sm" />

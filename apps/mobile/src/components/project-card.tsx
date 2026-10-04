@@ -1,6 +1,7 @@
 import Decimal from 'decimal.js';
 import { Link } from 'expo-router';
 import { Image } from 'expo-image';
+import Animated from 'react-native-reanimated';
 import { Glyphs } from '../icons';
 import { StyleSheet, Text, View } from 'react-native';
 import type { DiscoveryStatus } from '@ideanest/discovery/vocabulary';
@@ -10,6 +11,7 @@ import type { Card } from '../api/queries';
 import { pluralCategory, useT } from '../lib/i18n';
 import { useLocale } from '../lib/locale';
 import { font, fontSize, lineHeight, radius, spacing, type Accent } from '../theme';
+import { coverSnapshot, coverTag } from './campaign/campaign-media';
 import { Body, CardTitle, Meta } from './text';
 import {
   AccentCard,
@@ -21,6 +23,7 @@ import {
   TONES,
   Tag,
   useFocusRing,
+  useSharedSource,
   type IconComponent,
   type TagVariant,
 } from './ui';
@@ -62,6 +65,11 @@ import {
  *
  * The press gives (`PressableScale`). The entry rise belongs to the list that draws the card
  * (`CampaignColumn`, `CampaignList`), which knows whether it is the first screenful.
+ *
+ * The cover is the shared element of the card → campaign page transition (`SharedTransition`,
+ * #279): pressing the card launches the flight and pushes the page with `transition: 'shared'`,
+ * which the root stack answers with a fade so the cover is the thing that moves. Under Reduce
+ * Motion the param is left out and the page pushes like any other.
  */
 
 /** Two days or fewer left — what §8.1 calls "closing within 48 hours". */
@@ -137,6 +145,8 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
   const t = useT();
   const locale = useLocale();
   const ring = useFocusRing();
+  const cover = card.image?.url ?? null;
+  const shared = useSharedSource(coverTag(card.creatorSlug, card.slug), coverSnapshot(cover));
 
   const title = card.title ?? t('mobile.campaign.untitled');
   const creator = card.creator?.name ?? '';
@@ -188,7 +198,11 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
     <Link
       href={{
         pathname: '/projects/[creatorSlug]/[projectSlug]',
-        params: { creatorSlug: card.creatorSlug ?? '', projectSlug: card.slug ?? '' },
+        params: {
+          creatorSlug: card.creatorSlug ?? '',
+          projectSlug: card.slug ?? '',
+          ...(shared.enabled ? { transition: 'shared' } : {}),
+        },
       }}
       asChild
     >
@@ -198,6 +212,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
         accessibilityValue={{ text: facts.join(', ') }}
         onFocus={ring.onFocus}
         onBlur={ring.onBlur}
+        onPress={shared.launch}
         contentStyle={[styles.target, ring.ring]}
       >
         <AccentCard accent={accentFor(card)}>
@@ -206,10 +221,11 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
             same height before anything decodes. The cover is decorative: the card's name already
             says what it is a picture of.
           */}
+          <Animated.View {...shared.props}>
           <MediaFrame ratio="16/9" radius="lg">
-            {card.image?.url === undefined ? null : (
+            {cover === null ? null : (
               <Image
-                source={{ uri: card.image.url }}
+                source={{ uri: cover }}
                 style={styles.cover}
                 contentFit="cover"
                 priority={priority ? 'high' : 'normal'}
@@ -219,6 +235,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
               />
             )}
           </MediaFrame>
+          </Animated.View>
 
           {tagged ? (
             <View style={styles.tags}>

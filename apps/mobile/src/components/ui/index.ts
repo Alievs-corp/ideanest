@@ -155,3 +155,28 @@ export { Textarea, type TextareaProps } from './textarea';
 /* Overlay: Dialog, Sheet ---------------------------------------------------------------------- */
 export { Dialog, type DialogProps } from './dialog';
 export { SHEET_PAGE_SCALE, Sheet, SheetHost, type SheetProps } from './sheet';
+
+/* Navigation motion: SharedTransition, CardStack ---------------------------------------------- */
+export {
+  CardStack,
+  LAYER_SCALE,
+  PEEK,
+  STACK_DEPTH,
+  stackHeight,
+  type CardStackItem,
+  type CardStackProps,
+} from './card-stack';
+export {
+  ARRIVAL_WINDOW_MS,
+  SharedTarget,
+  SharedTransitionHost,
+  sharedMeasure,
+  useSharedArrival,
+  useSharedSnapshot,
+  useSharedSource,
+  useSharedTargetDisplay,
+  type SharedFrame,
+  type SharedSnapshot,
+  type SharedSource,
+  type SharedTargetProps,
+} from './shared-transition';

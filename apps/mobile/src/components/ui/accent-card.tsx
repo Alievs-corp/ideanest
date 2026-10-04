@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { accent as accents, radius, spacing, type Accent } from '../../theme';
 import { useFocusRing } from './focus';
@@ -25,7 +25,21 @@ export interface AccentCardProps {
   readonly accessibilityLabel?: string;
   readonly action?: ReactNode;
   readonly style?: StyleProp<ViewStyle>;
+  /**
+   * False draws the card without its glow, for a parent that draws the glow itself and times it
+   * (`CardStack` fades the glows in after the cards settle).
+   */
+  readonly glow?: boolean;
+  /** The pressable card itself, for a parent that moves screen-reader focus onto it. */
+  readonly pressableRef?: Ref<View>;
   readonly testID?: string;
+}
+
+/** The soft same-hue glow under an accent card: the accent's own `glow` token, never a new colour. */
+export function accentGlow(accent: Accent): ViewStyle['boxShadow'] {
+  return [
+    { offsetX: 0, offsetY: 16, blurRadius: 32, spreadDistance: -12, color: accents[accent].glow },
+  ];
 }
 
 export function AccentCard({
@@ -35,6 +49,8 @@ export function AccentCard({
   accessibilityLabel,
   action,
   style,
+  glow = true,
+  pressableRef,
   testID,
 }: AccentCardProps) {
   const press = usePressScale();
@@ -44,7 +60,7 @@ export function AccentCard({
     styles.card,
     {
       backgroundColor: tone.surface,
-      boxShadow: [{ offsetX: 0, offsetY: 16, blurRadius: 32, spreadDistance: -12, color: tone.glow }],
+      boxShadow: glow ? accentGlow(accent) : undefined,
     },
   ];
 
@@ -60,6 +76,7 @@ export function AccentCard({
         <View style={skin}>{body}</View>
       ) : (
         <AnimatedPressable
+          ref={pressableRef}
           accessibilityRole="button"
           accessibilityLabel={accessibilityLabel}
           onPress={onPress}
@@ -85,6 +102,7 @@ const styles = StyleSheet.create({
   frame: { position: 'relative' },
   withAction: { paddingTop: spacing[3] },
   card: {
+    flexGrow: 1,
     borderRadius: radius.xl,
     padding: spacing[5],
     gap: spacing[3],

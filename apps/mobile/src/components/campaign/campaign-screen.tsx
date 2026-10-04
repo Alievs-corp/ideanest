@@ -43,12 +43,13 @@ import {
   SurfaceProvider,
   TONES,
   haptics,
+  useSharedArrival,
 } from '../ui';
 import { BackCampaignCta, PersistentBackBar, persistentBarClearance } from './back-campaign-cta';
 import { CampaignActions } from './campaign-actions';
 import { CampaignCountdown } from './campaign-countdown';
 import { CampaignHeader, showsDaysLeft } from './campaign-header';
-import { CampaignMedia } from './campaign-media';
+import { CampaignMedia, coverTag } from './campaign-media';
 import { CampaignRewards } from './campaign-rewards';
 import { CampaignSkeleton } from './campaign-skeleton';
 import { CampaignTabs } from './campaign-tabs';
@@ -171,7 +172,7 @@ export function CampaignScreen({ creatorSlug, projectSlug, now }: CampaignScreen
         testID={query.isError ? 'campaign-error' : undefined}
       >
         <Stack.Screen options={{ title: '', headerBackTitle: t('mobile.nav.back') }} />
-        <CampaignSkeleton />
+        <CampaignSkeleton coverTag={coverTag(creatorSlug, projectSlug)} />
       </Screen>
     );
   }
@@ -231,6 +232,8 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
   const appActive = useAppActive();
   const active = focused && appActive;
 
+  const tag = coverTag(campaign.creatorSlug, campaign.slug);
+  const arriving = useSharedArrival(tag);
   const rewards = useProjectRewards(campaign.id);
   const obligation = useUpdateObligation(campaign.id);
   const tiers = useMemo(() => tiersOf(rewards.data), [rewards.data]);
@@ -400,9 +403,17 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
           />
         ) : null}
 
-        <FadeUp index={0}>
-          <CampaignMedia cover={campaign.coverImage} />
-        </FadeUp>
+        {/*
+          Arriving from a card, the cover is the shared element and lands where it is; a rise on top
+          of the flight would be the same motion twice (`SharedTransition`).
+        */}
+        {arriving ? (
+          <CampaignMedia cover={campaign.coverImage} tag={tag} />
+        ) : (
+          <FadeUp index={0}>
+            <CampaignMedia cover={campaign.coverImage} tag={tag} />
+          </FadeUp>
+        )}
         <FadeUp index={1}>
           <CampaignHeader campaign={campaign} now={now} />
         </FadeUp>
