@@ -12,7 +12,6 @@ import { MotionBudgetProvider, SharedTransitionHost, type MotionLevel } from './
 
 let mockHref: unknown;
 jest.mock('expo-router', () => ({
-  ...jest.requireActual('expo-router'),
   Link: ({ href, children }: { href: unknown; children: unknown }) => {
     mockHref = href;
     return children;
