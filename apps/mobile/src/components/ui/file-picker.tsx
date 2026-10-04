@@ -249,6 +249,7 @@ export function FilePicker({
       ) : null}
 
       <Sheet
+        surface="dark"
         visible={open}
         onClose={() => setOpen(false)}
         // The plain label: a visible title, never "Cover image, required".

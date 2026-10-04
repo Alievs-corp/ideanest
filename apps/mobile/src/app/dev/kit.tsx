@@ -5,7 +5,10 @@ import { Glyphs, type IconVariant } from '../../icons';
 import { LOCALE_NAMES, SUPPORTED_LOCALES } from '@ideanest/messages';
 import { siteUrl } from '../../api/config';
 import {
+  AccentCard,
+  AnimatedAmount,
   Avatar,
+  AvatarStack,
   Body,
   Caption,
   Card,
@@ -16,6 +19,7 @@ import {
   ChipRow,
   Dialog,
   Display,
+  EdgeFade,
   EmptyState,
   ErrorState,
   Eyebrow,
@@ -23,6 +27,7 @@ import {
   FilePicker,
   FloatingPanel,
   Heading,
+  HeroFigure,
   Icon,
   IconButton,
   InlineAlert,
@@ -39,20 +44,24 @@ import {
   RemovableChip,
   Screen,
   SearchField,
+  SegmentedPill,
   Select,
   Sheet,
   Skeleton,
   SkeletonCard,
   SkeletonGroup,
+  SourceDot,
   StatBlock,
   StatRow,
   Story,
   Subheading,
+  SurfaceProvider,
   Switch,
   Tag,
   TextInput,
   Textarea,
   haptics,
+  type AnimatedAmountMode,
   type AvatarSize,
   type CardVariant,
   type HapticEvent,
@@ -62,12 +71,23 @@ import {
   type MediaRatioToken,
   type PillSize,
   type PillVariant,
+  type SheetSurface,
   type StatTrend,
   type TagVariant,
 } from '../../components/ui';
-import { formatCount, useT } from '../../lib/i18n';
+import { formatMoney } from '@ideanest/money';
+import { formatCount, pluralCategory, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
-import { accent, colors, radius, size, spacing, type Accent } from '../../theme';
+import {
+  accent,
+  colors,
+  fontSize,
+  lineHeight,
+  radius,
+  size,
+  spacing,
+  type Accent,
+} from '../../theme';
 
 /**
  * The kit gallery — issue #151. Every component in `components/ui`, in every variant, size and
@@ -124,6 +144,7 @@ const ICON_BUTTON_VARIANTS: readonly IconButtonVariant[] = [
   'accent',
   'danger',
   'ghost',
+  'translucent',
 ];
 const ICON_BUTTON_SIZES: readonly IconButtonSize[] = ['sm', 'md', 'lg'];
 const DARK_TAGS: readonly TagVariant[] = ['default', 'success', 'warning', 'danger', 'hot'];
@@ -137,10 +158,17 @@ const HAPTICS = Object.keys(haptics) as HapticEvent[];
 const ICON_VARIANTS: readonly IconVariant[] = ['linear', 'bold', 'bulk'];
 /** The token group's own name, read from the code like every other heading here. */
 const ACCENT_SECTION = Object.keys({ accent })[0] ?? '';
+const AMOUNT_MODES: readonly AnimatedAmountMode[] = ['roll', 'enter', 'count'];
+const AMOUNTS = ['1280.00', '1314.50', '99.00', '100.00'] as const;
+const ACCENTS = Object.keys(accent) as Accent[];
+const DARK_SHEET: SheetSurface = 'dark';
 const BADGES: Record<StatTrend, string> = { up: '+12', down: '-3', neutral: '0' };
 const TRACE = '4bf92f3577b34da6a3ce929d0e0e4736';
 
 const noop = () => {};
+
+/** Faces for the stack: the language names, so the sample needs no invented people. */
+const LOCALES_AS_PEOPLE = SUPPORTED_LOCALES.map((code) => ({ name: LOCALE_NAMES[code] }));
 
 function KitGallery() {
   const t = useT();
@@ -156,6 +184,14 @@ function KitGallery() {
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [darkSheet, setDarkSheet] = useState(false);
+  const [amount, setAmount] = useState(0);
+  const [segment, setSegment] = useState<'home' | 'search'>('home');
+  const money = { amount: AMOUNTS[amount % AMOUNTS.length] ?? AMOUNTS[0], currency: 'AZN' };
+  const backers = 128;
+  const backersLabel = t(`common.card.backers.${pluralCategory(locale, backers)}`, {
+    count: formatCount(backers, locale),
+  });
 
   const trail = [
     { key: 'discover', label: t('common.trail.discover') },
@@ -207,6 +243,16 @@ function KitGallery() {
           >
             <Body>{nameOf(PressableScale)}</Body>
           </PressableScale>
+        </Section>
+
+        <Section title={heading([AnimatedAmount])}>
+          {AMOUNT_MODES.map((mode) => (
+            <Row key={`${mode}-${mode === 'count' ? amount : 0}`}>
+              <Meta>{mode}</Meta>
+              <AnimatedAmount value={formatMoney(money)} mode={mode} style={styles.amount} />
+            </Row>
+          ))}
+          <Pill label={nameOf(AnimatedAmount)} variant="outline" onPress={() => setAmount((n) => n + 1)} />
         </Section>
 
         <Section title={ACCENT_SECTION}>
@@ -261,6 +307,29 @@ function KitGallery() {
             </Row>
           ))}
           <Pill label={nameOf(Pill)} iconLeft={Glyphs.Heart} iconRight={Glyphs.Share} fullWidth onPress={noop} />
+        </Section>
+
+        <Section title={heading([SegmentedPill])}>
+          <SegmentedPill
+            options={[
+              { value: 'home', label: t('mobile.tabs.home') },
+              { value: 'search', label: t('mobile.tabs.search') },
+            ]}
+            value={segment}
+            onChange={setSegment}
+          />
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <SegmentedPill
+                options={[
+                  { value: 'home', label: t('mobile.tabs.home') },
+                  { value: 'search', label: t('mobile.tabs.search') },
+                ]}
+                value={segment}
+                onChange={setSegment}
+              />
+            </SurfaceProvider>
+          </View>
         </Section>
 
         <Section title={heading([IconButton])}>
@@ -363,6 +432,46 @@ function KitGallery() {
               <Meta>{nameOf(Card)}</Meta>
             </Card>
           </Row>
+        </Section>
+
+        <Section title={heading([AccentCard])}>
+          {ACCENTS.map((name) => (
+            <AccentCard
+              key={name}
+              accent={name}
+              onPress={noop}
+              accessibilityLabel={name}
+              action={
+                <IconButton icon={Glyphs.Heart} label={t('common.save')} variant="translucent" onPress={noop} />
+              }
+            >
+              <CardTitle>{name}</CardTitle>
+              <Body>{t('common.card.rule')}</Body>
+            </AccentCard>
+          ))}
+        </Section>
+
+        <Section title={heading([HeroFigure])}>
+          <HeroFigure money={money} label={t('campaign.funding.backers.other')} />
+          <HeroFigure money={money} size="md" mode="count" />
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <HeroFigure money={money} size="md" />
+            </SurfaceProvider>
+          </View>
+        </Section>
+
+        <Section title={heading([AvatarStack, SourceDot])}>
+          <AvatarStack
+            people={LOCALES_AS_PEOPLE}
+            total={backers}
+            label={backersLabel}
+          />
+          {ACCENTS.map((name) => (
+            <SourceDot key={name} accent={name} label={name}>
+              <Avatar name={`${name} ${nameOf(Avatar)}`} size="sm" decorative />
+            </SourceDot>
+          ))}
         </Section>
 
         <Section title={heading([Avatar])}>
@@ -475,6 +584,15 @@ function KitGallery() {
           ))}
         </Section>
 
+        <Section title={heading([EdgeFade])}>
+          <View style={styles.fadeBox}>
+            {SUPPORTED_LOCALES.map((code) => (
+              <Body key={code}>{LOCALE_NAMES[code]}</Body>
+            ))}
+            <EdgeFade height={64} />
+          </View>
+        </Section>
+
         <Section title={heading([Screen])}>
           {/* The scaffold in a box: no content and no error, so it draws its empty state. */}
           <View style={styles.screenBox}>
@@ -563,6 +681,7 @@ function KitGallery() {
           <Row>
             <Pill label={nameOf(Dialog)} variant="outline" onPress={() => setDialog(true)} />
             <Pill label={nameOf(Sheet)} variant="outline" onPress={() => setSheet(true)} />
+            <Pill label={`${nameOf(Sheet)} · ${DARK_SHEET}`} variant="ghost" onPress={() => setDarkSheet(true)} />
           </Row>
         </Section>
       </ScrollView>
@@ -595,6 +714,16 @@ function KitGallery() {
         onClose={() => setSheet(false)}
         title={t('shell.whatsapp.title')}
         footer={<Pill label={t('common.cancel')} fullWidth onPress={() => setSheet(false)} />}
+      >
+        <Body>{t('shell.whatsapp.intro')}</Body>
+        <HeroFigure money={money} size="md" />
+      </Sheet>
+
+      <Sheet
+        visible={darkSheet}
+        surface="dark"
+        onClose={() => setDarkSheet(false)}
+        title={t('shell.whatsapp.title')}
       >
         <Body>{t('shell.whatsapp.intro')}</Body>
       </Sheet>
@@ -637,6 +766,15 @@ const styles = StyleSheet.create({
     minHeight: size.touchTarget,
   },
   pressablePressed: { backgroundColor: colors.surface3 },
+  amount: { fontSize: fontSize.h2, lineHeight: lineHeight.h2, color: colors.textPrimary },
+  whiteBlock: { padding: spacing[4], borderRadius: radius.xl, backgroundColor: colors.whiteSurface },
+  fadeBox: {
+    height: 120,
+    overflow: 'hidden',
+    padding: spacing[4],
+    borderRadius: radius.xl,
+    backgroundColor: colors.whiteSurface,
+  },
   swatch: {
     width: 96,
     height: 64,

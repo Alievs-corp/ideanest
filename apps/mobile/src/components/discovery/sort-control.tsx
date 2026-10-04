@@ -51,6 +51,7 @@ export function SortControl({ sort, hasQuery, onChange }: SortControlProps) {
       </Pressable>
 
       <Sheet
+        surface="dark"
         visible={open}
         onClose={() => setOpen(false)}
         title={t('sortLabel')}

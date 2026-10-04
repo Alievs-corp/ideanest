@@ -135,6 +135,7 @@ export function WhatsAppSheet({
 
   return (
     <Sheet
+      surface="dark"
       visible={visible}
       onClose={close}
       title={t('title')}

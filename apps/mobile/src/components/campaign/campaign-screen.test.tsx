@@ -154,8 +154,12 @@ async function settle() {
   }
 }
 
+/** What a reader gets: a moving figure (#278) is read by its final value, not its frames. */
 function textOf(node: TestInstance | string): string {
   if (typeof node === 'string') return node;
+  if (node.props.accessibilityRole === 'text' && typeof node.props.accessibilityLabel === 'string') {
+    return node.props.accessibilityLabel;
+  }
   return node.children.map(textOf).join('');
 }
 
@@ -273,9 +277,9 @@ describe('the campaign page, state by state', () => {
     const percent = screen.getByTestId('funding-percent');
     expect(textOf(percent)).toContain('124%');
     expect(textOf(percent)).toContain(C.funding.funded);
-    expect(screen.getByText('124%').props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: colors.success })]),
-    );
+    // The figure counts up on first view (#278); its colour is the success token throughout.
+    const figure = within(percent).getByTestId('animated-amount-count', { includeHiddenElements: true });
+    expect(StyleSheet.flatten(figure.props.style).color).toBe(colors.success);
     expect(textOf(screen.getByTestId('campaign-state'))).toBe(C.state.SUCCESSFUL);
   });
 

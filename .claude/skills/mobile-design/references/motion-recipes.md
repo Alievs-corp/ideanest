@@ -81,7 +81,8 @@ on device — the same numbers feel different at 60 and 120 Hz.
 - `roll` mode: changing digits slide vertically (old out up, new in from below), columns
   staggered by 30 ms left → right.
 - `count` mode: count-up over `motion.countUp` (800 ms), ease-out; the final value is set
-  exactly at the end (never a float rounding artefact).
+  exactly at the end (never a float rounding artefact). After the count it behaves as `roll`,
+  so a live figure counts once on first view and rolls on each later update.
 - Width changes are handled by the cells' layout snapping, not by animating width.
 - Reduced motion: the new string, at once.
 

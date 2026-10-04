@@ -1,4 +1,13 @@
-import { useContext, useEffect, useMemo, useRef, type ReactNode, type RefObject } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -9,8 +18,16 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, {
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
@@ -19,21 +36,22 @@ import {
   font,
   fontSize,
   lineHeight,
-  motion,
   radius,
   size as measure,
   spacing,
+  spring,
   tint,
   tracking,
 } from '../../theme';
 import { useFocusRing } from './focus';
 import { IconButton } from './icon-button';
 import { useMotionAllowed } from './motion-budget';
-import { useOverlayEntry, useOverlayFocus } from './overlay';
+import { useOverlayFocus } from './overlay';
+import { SurfaceProvider, TONES } from './surface';
 
 /**
- * A bottom sheet for a TRANSIENT picker — `Select`'s options, `FilePicker`'s two sources, the
- * WhatsApp form. The native half of the web's bottom `Drawer` (`docs/ui-kit.md` §7.14).
+ * A bottom sheet for a TRANSIENT picker or form — `Select`'s options, `FilePicker`'s two sources,
+ * the WhatsApp form. Issues #151 and #277, `mobile-design` skill §2 and §6.3.
  *
  * <h2>A sheet is not a place</h2>
  *
@@ -44,10 +62,20 @@ import { useOverlayEntry, useOverlayFocus } from './overlay';
  *
  * <h2>Shape</h2>
  *
- * The web's bottom drawer: `--surface-2`, a top radius of 28, at most 85% of the screen, a title
- * and a close `IconButton`, a scrolling body and an optional footer. It stays dark, as every
- * overlay but the dialog does: it belongs to the screen rather than interrupting it. The scrim is
- * black at 64%, derived from the token.
+ * The skill's white sheet: `whiteSurface`, a top radius of `radius.xl`, a grabber, at most 85% of
+ * the screen, a title and a close `IconButton`, a scrolling body and an optional footer, over a
+ * black/64 scrim. Its content reads in the white surface's tones. `surface="dark"` keeps the
+ * earlier dark panel for the overlays #282 has not moved yet.
+ *
+ * <h2>Motion</h2>
+ *
+ * It rises from its own height on `spring.sheet` while the scrim fades in, and falls back the same
+ * way when closed: the modal stays mounted until the fall ends, so `onDismiss` still means "gone",
+ * but from the moment it is closed nothing in it takes a touch or reaches a screen reader.
+ * Under a {@link SheetHost} the page behind scales to 0.96 as the sheet rises. A drag on the header
+ * follows the finger — direct manipulation, so it survives Reduce Motion — and on release the
+ * distance or the velocity decides: past either, it closes; short of both, it springs back. With
+ * Reduce Motion on, it appears and goes at once.
  *
  * <h2>Closing, every way</h2>
  *
@@ -58,20 +86,19 @@ import { useOverlayEntry, useOverlayFocus } from './overlay';
  *
  * <p>The drag is React Native's `PanResponder` rather than `react-native-gesture-handler`: the
  * handler's gesture detectors need its native module, which the test environment does not
- * provide and this kit may not mock, and a pan on a sheet's header is the one thing the built-in
- * responder does as well as the library.
+ * provide, and a pan on a sheet's header is the one thing the built-in responder does as well.
  *
  * <p>Focus moves to the title on open and back to `returnFocusTo` on close, as the dialog's does.
- * Entry is the overlay's 200ms rise, only where motion is allowed; there is no exit animation.
  *
  * <h2>The keyboard</h2>
  *
- * The body can hold a form (the WhatsApp enquiry moves into a sheet), so the panel sits in a
- * `KeyboardAvoidingView` — `padding` on iOS, where the keyboard overlays the window; Android
- * resizes the window itself — and the body's `ScrollView` keeps `keyboardShouldPersistTaps` at
- * `handled`, so the first tap on a button under an open keyboard presses the button instead of
- * only closing the keyboard.
+ * The panel sits in a `KeyboardAvoidingView` — `padding` on iOS, where the keyboard overlays the
+ * window; Android resizes the window itself — and the body keeps `keyboardShouldPersistTaps` at
+ * `handled`, so the first tap on a button under an open keyboard presses the button. The footer's
+ * controls sit above the bottom safe area.
  */
+
+export type SheetSurface = 'white' | 'dark';
 
 export interface SheetProps {
   readonly visible: boolean;
@@ -80,10 +107,12 @@ export interface SheetProps {
   readonly title: string;
   readonly children: ReactNode;
   readonly footer?: ReactNode;
+  /** `white`, the skill's sheet (the default), or the earlier dark panel. */
+  readonly surface?: SheetSurface;
   /** The control that opened the sheet, which gets focus back when it closes. */
   readonly returnFocusTo?: RefObject<unknown>;
   /**
-   * Called once the modal has actually gone — after it was closed, not at the moment it was.
+   * Called once the modal has actually gone — after it was closed and its fall ended.
    *
    * <p>iOS presents one modal view controller at a time. Presenting another — the system photo
    * picker, a share sheet, a second sheet — while this one is still being dismissed fails without
@@ -99,35 +128,112 @@ const DISMISS_DISTANCE = 96;
 /** Or how fast, in points per millisecond: a flick closes it from a shorter pull. */
 const DISMISS_VELOCITY = 1;
 
+/** Whether letting go of a drag closes the sheet: far enough, or fast enough. */
+export function dragDismisses(distance: number, velocity: number): boolean {
+  return distance > DISMISS_DISTANCE || velocity > DISMISS_VELOCITY;
+}
+
+/** The page behind, at full rise. */
+export const SHEET_PAGE_SCALE = 0.96;
+
+/** How far up the sheet is, 0 (gone) to 1 (fully risen), from its offset and its height. */
+export function sheetRise(offset: number, travel: number): number {
+  'worklet';
+  return travel > 0 ? Math.max(0, Math.min(1, 1 - offset / travel)) : 0;
+}
+
+/** The page behind's scale at a given rise. */
+export function pageScale(rise: number): number {
+  'worklet';
+  return 1 - (1 - SHEET_PAGE_SCALE) * rise;
+}
+
+const SheetHostContext = createContext<SharedValue<number> | null>(null);
+
+/**
+ * The page a sheet rises over. Wrap the app's content once; a sheet open anywhere under it scales
+ * the page to {@link SHEET_PAGE_SCALE} in step with its rise. Transform only.
+ */
+export function SheetHost({ children }: { readonly children: ReactNode }) {
+  const lift = useSharedValue(0);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: pageScale(lift.value) }],
+  }));
+  return (
+    <SheetHostContext.Provider value={lift}>
+      <Animated.View style={[styles.host, style]}>{children}</Animated.View>
+    </SheetHostContext.Provider>
+  );
+}
+
 export function Sheet({
   visible,
   onClose,
   title,
   children,
   footer,
+  surface = 'white',
   returnFocusTo,
   onDismiss,
   testID,
 }: SheetProps) {
   const t = useT('mobile.kitForm');
   const heading = useRef<Text>(null);
-  const entry = useOverlayEntry(visible);
-  const settles = useMotionAllowed('minimal');
+  const moves = useMotionAllowed('minimal');
+  const window = useWindowDimensions();
   // The context rather than the hook: a sheet rendered outside a provider (a test, a story) gets
   // no insets instead of throwing.
   const insets = useContext(SafeAreaInsetsContext);
+  const host = useContext(SheetHostContext);
   const handleRing = useFocusRing();
+  const white = surface === 'white';
 
   useOverlayFocus(visible, heading, returnFocusTo);
 
-  const drag = useSharedValue(0);
-  const dragStyle = useAnimatedStyle(() => ({ transform: [{ translateY: drag.value }] }));
+  const [mounted, setMounted] = useState(visible);
+  const travel = useSharedValue(window.height);
+  const offset = useSharedValue(moves ? window.height : 0);
 
-  // A sheet dismissed by a drag keeps its offset until it has gone (resetting first would snap it
-  // back up for a frame); the next opening starts from the top.
   useEffect(() => {
-    if (visible) drag.value = 0;
-  }, [visible, drag]);
+    if (visible) {
+      setMounted(true);
+      if (moves) {
+        offset.value = travel.value;
+        offset.value = withSpring(0, spring.sheet);
+      } else {
+        offset.value = 0;
+      }
+      return;
+    }
+    if (!moves) {
+      offset.value = travel.value;
+      setMounted(false);
+      return;
+    }
+    offset.value = withSpring(travel.value, spring.sheet, (finished) => {
+      if (finished === true) runOnJS(setMounted)(false);
+    });
+  }, [visible, moves, offset, travel]);
+
+  useAnimatedReaction(
+    () => sheetRise(offset.value, travel.value),
+    (risen) => {
+      if (host !== null) host.value = risen;
+    },
+    [host],
+  );
+
+  useEffect(
+    () => () => {
+      if (host !== null) host.value = 0;
+    },
+    [host],
+  );
+
+  const panelStyle = useAnimatedStyle(() => ({ transform: [{ translateY: offset.value }] }));
+  const scrimStyle = useAnimatedStyle(() => ({
+    opacity: sheetRise(offset.value, travel.value),
+  }));
 
   const pan = useMemo(
     () =>
@@ -137,62 +243,28 @@ export function Sheet({
         onMoveShouldSetPanResponder: (_, gesture) =>
           gesture.dy > 4 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
         onPanResponderMove: (_, gesture) => {
-          // Follows the finger — direct manipulation, not an animation, so it survives Reduce
-          // Motion. Upward is clamped: the sheet is already as tall as it gets.
-          drag.value = Math.max(0, gesture.dy);
+          // Upward is clamped: the sheet is already as tall as it gets.
+          offset.value = Math.max(0, gesture.dy);
         },
         onPanResponderRelease: (_, gesture) => {
-          if (gesture.dy > DISMISS_DISTANCE || gesture.vy > DISMISS_VELOCITY) {
+          if (dragDismisses(gesture.dy, gesture.vy)) {
             onClose();
             return;
           }
-          drag.value = settles ? withTiming(0, { duration: motion.fast }) : 0;
+          offset.value = moves ? withSpring(0, { ...spring.sheet, velocity: gesture.vy * 1000 }) : 0;
         },
         onPanResponderTerminate: () => {
-          drag.value = 0;
+          offset.value = moves ? withSpring(0, spring.sheet) : 0;
         },
       }),
-    [drag, onClose, settles],
+    [offset, onClose, moves],
   );
 
-  const body = (
-    <>
-      <View {...pan.panHandlers} style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t('grabber')}
-          accessibilityHint={t('grabberHint')}
-          onPress={onClose}
-          onFocus={handleRing.onFocus}
-          onBlur={handleRing.onBlur}
-          hitSlop={{ top: HANDLE_SLOP, bottom: HANDLE_SLOP }}
-          style={[styles.handleTarget, handleRing.ring]}
-        >
-          <View style={styles.handle} />
-        </Pressable>
-        <View style={styles.titleRow}>
-          <Text ref={heading} accessibilityRole="header" style={styles.title}>
-            {title}
-          </Text>
-          <IconButton icon={Glyphs.Close} label={t('close')} variant="ghost" size="sm" onPress={onClose} />
-        </View>
-      </View>
-
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={styles.bodyContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {children}
-      </ScrollView>
-
-      {footer !== undefined && footer !== null ? <View style={styles.footer}>{footer}</View> : null}
-    </>
-  );
+  const tones = white ? TONES.white : TONES.dark;
 
   return (
     <Modal
-      visible={visible}
+      visible={mounted}
       transparent
       statusBarTranslucent
       animationType="none"
@@ -203,28 +275,67 @@ export function Sheet({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.root}
       >
-        <Pressable
-          style={styles.scrim}
-          onPress={onClose}
-          accessible={false}
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        />
+        <Animated.View style={[styles.scrim, scrimStyle]} pointerEvents={visible ? 'box-none' : 'none'}>
+          <Pressable
+            style={styles.fill}
+            onPress={onClose}
+            accessible={false}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            testID={testID === undefined ? undefined : `${testID}-scrim`}
+          />
+        </Animated.View>
         <Animated.View
           testID={testID}
-          accessibilityViewIsModal
+          accessibilityViewIsModal={visible}
+          accessibilityElementsHidden={!visible}
+          importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
+          pointerEvents={visible ? 'auto' : 'none'}
           onAccessibilityEscape={onClose}
+          onLayout={(event) => {
+            travel.value = event.nativeEvent.layout.height;
+          }}
           style={[
             styles.panel,
+            white ? styles.panelWhite : styles.panelDark,
             { paddingBottom: Math.max(insets?.bottom ?? 0, spacing[4]) },
-            dragStyle,
+            panelStyle,
           ]}
         >
-          {entry.animated ? (
-            <Animated.View style={[styles.fill, entry.style]}>{body}</Animated.View>
-          ) : (
-            <View style={styles.fill}>{body}</View>
-          )}
+          <SurfaceProvider surface={white ? 'white' : 'dark'}>
+            <View {...pan.panHandlers} style={styles.header}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('grabber')}
+                accessibilityHint={t('grabberHint')}
+                onPress={onClose}
+                onFocus={handleRing.onFocus}
+                onBlur={handleRing.onBlur}
+                hitSlop={{ top: HANDLE_SLOP, bottom: HANDLE_SLOP }}
+                style={[styles.handleTarget, handleRing.ring]}
+              >
+                <View style={[styles.handle, white ? styles.handleWhite : styles.handleDark]} />
+              </Pressable>
+              <View style={styles.titleRow}>
+                <Text ref={heading} accessibilityRole="header" style={[styles.title, { color: tones.primary }]}>
+                  {title}
+                </Text>
+                <IconButton icon={Glyphs.Close} label={t('close')} variant="ghost" size="sm" onPress={onClose} />
+              </View>
+            </View>
+
+            <ScrollView
+              style={styles.body}
+              contentContainerStyle={styles.bodyContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {children}
+            </ScrollView>
+
+            {footer !== undefined && footer !== null ? (
+              <View style={[styles.footer, white ? styles.footerWhite : styles.footerDark]}>{footer}</View>
+            ) : null}
+          </SurfaceProvider>
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
@@ -235,6 +346,7 @@ const HANDLE_TARGET_HEIGHT = 24;
 const HANDLE_SLOP = (measure.touchTarget - HANDLE_TARGET_HEIGHT) / 2;
 
 const styles = StyleSheet.create({
+  host: { flex: 1 },
   root: { flex: 1, justifyContent: 'flex-end' },
   scrim: {
     position: 'absolute',
@@ -244,17 +356,20 @@ const styles = StyleSheet.create({
     left: 0,
     backgroundColor: tint(colors.black, 0.64),
   },
+  fill: { flex: 1 },
   panel: {
     maxHeight: '85%',
-    backgroundColor: colors.surface2,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
+    overflow: 'hidden',
+  },
+  panelWhite: { backgroundColor: colors.whiteSurface },
+  panelDark: {
+    backgroundColor: colors.surface2,
     borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: colors.border,
-    overflow: 'hidden',
   },
-  fill: { flexShrink: 1 },
   header: { paddingHorizontal: spacing[5] },
   handleTarget: {
     alignSelf: 'center',
@@ -264,12 +379,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.sm,
   },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: radius.full,
-    backgroundColor: colors.borderStrong,
-  },
+  handle: { width: 36, height: 4, borderRadius: radius.full },
+  handleWhite: { backgroundColor: TONES.white.tertiary },
+  handleDark: { backgroundColor: colors.borderStrong },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -279,7 +391,6 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     ...font.medium,
-    color: colors.textPrimary,
     fontSize: fontSize.lg,
     lineHeight: lineHeight.cardTitle,
     letterSpacing: tracking.cardTitle,
@@ -291,6 +402,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[5],
     paddingTop: spacing[3],
     borderTopWidth: 1,
-    borderTopColor: colors.divider,
   },
+  footerWhite: { borderTopColor: tint(colors.black, 0.08) },
+  footerDark: { borderTopColor: colors.divider },
 });

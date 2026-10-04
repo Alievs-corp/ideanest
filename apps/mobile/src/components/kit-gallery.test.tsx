@@ -59,12 +59,17 @@ describe('the kit gallery', () => {
     for (const heading of [
       'Icon',
       'PressableScale',
+      'AnimatedAmount',
       'accent',
       'Pill',
+      'SegmentedPill',
       'IconButton',
       'Tag',
       'Chip · ChipRow · RemovableChip',
       'Card',
+      'AccentCard',
+      'HeroFigure',
+      'AvatarStack · SourceDot',
       'Avatar',
       'ProgressBar',
       'StatBlock · StatRow',
@@ -73,6 +78,7 @@ describe('the kit gallery', () => {
       'EmptyState · ErrorState',
       'Skeleton · SkeletonGroup · SkeletonCard',
       'Media · MediaFrame',
+      'EdgeFade',
       'Screen',
       'Field · TextInput · PasswordInput · Textarea · CharacterCount',
       'Select · Checkbox · Radio · Switch',
@@ -104,6 +110,11 @@ describe('the kit gallery', () => {
     expect(screen.getByRole('switch', { name: en.mobile.lock.face, checked: true })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Dialog' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sheet' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Sheet · dark' })).toBeTruthy();
+    expect(screen.getAllByRole('radio', { name: en.mobile.tabs.home, checked: true })).toHaveLength(2);
+    for (const name of ['sun', 'mint', 'sky']) {
+      expect(screen.getByRole('button', { name })).toBeTruthy();
+    }
   });
 
   it('redirects to not-found in a release build, drawing none of the kit', async () => {

@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { colors, tint } from '../../theme';
+import { accent, colors, tint } from '../../theme';
 
 /**
  * Which surface a piece of text or an icon is sitting on — the native `data-on-lime`.
@@ -16,7 +16,13 @@ import { colors, tint } from '../../theme';
  * <p>Without it, the choice is made at every call site, which is where it goes wrong: the
  * sentence written for a dark card gets moved into a lime one and nobody reads the colour again.
  */
-export type Surface = 'dark' | 'lime' | 'white';
+export type Surface = 'dark' | 'lime' | 'white' | 'accent';
+
+/**
+ * Every mobile accent names the same near-black text token (`theme.test.ts` holds them to it), so
+ * one `accent` row serves the three accent cards (#277).
+ */
+const ON_ACCENT = accent.sun.text;
 
 /** The three tones a role asks for, relative to whichever surface is underneath. */
 export type RelativeTone = 'primary' | 'secondary' | 'tertiary';
@@ -55,6 +61,11 @@ export const TONES: Record<Surface, Record<RelativeTone, string>> = {
     secondary: tint(colors.textOnWhite, 0.64),
     // Not the web's occasional `/40`: on `--white-muted` that measures under 3:1.
     tertiary: tint(colors.textOnWhite, 0.5),
+  },
+  accent: {
+    primary: ON_ACCENT,
+    secondary: tint(ON_ACCENT, 0.72),
+    tertiary: tint(ON_ACCENT, 0.56),
   },
 };
 

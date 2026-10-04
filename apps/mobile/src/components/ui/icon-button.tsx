@@ -17,9 +17,12 @@ import { TONES, useSurface } from './surface';
  * `hitSlop`. `ghost` reads its colour from the surface it sits on, so an X on a lime card or a
  * white dialog is on-lime or on-white rather than an invisible `white/64`. `light` inverts on a
  * white surface and `danger` draws a near-black glyph, for `Pill`'s reasons (issues #229, #232).
+ * `translucent` is the reference app's circular button over a card's edge (#277): a veil of the
+ * surface's own ink under a Bulk glyph in its primary tone, legible on the canvas, a white sheet
+ * and an accent card alike.
  */
 
-export type IconButtonVariant = 'default' | 'light' | 'accent' | 'danger' | 'ghost';
+export type IconButtonVariant = 'default' | 'light' | 'accent' | 'danger' | 'ghost' | 'translucent';
 export type IconButtonSize = 'sm' | 'md' | 'lg';
 
 const DIAMETER: Record<IconButtonSize, number> = { sm: 32, md: 40, lg: 48 };
@@ -118,6 +121,18 @@ function skinFor(
         pressed: { backgroundColor: tint(colors.danger, DANGER_PRESSED_ALPHA) },
         glyph: colors.textOnDanger,
       };
+    case 'translucent':
+      return surface === 'dark'
+        ? {
+            rest: { backgroundColor: tint(colors.whiteSurface, 0.12) },
+            pressed: { backgroundColor: tint(colors.whiteSurface, 0.2) },
+            glyph: TONES.dark.primary,
+          }
+        : {
+            rest: { backgroundColor: tint(colors.black, 0.08) },
+            pressed: { backgroundColor: tint(colors.black, 0.14) },
+            glyph: TONES[surface].primary,
+          };
     case 'ghost':
       return {
         rest: { backgroundColor: 'transparent' },

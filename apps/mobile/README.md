@@ -127,7 +127,24 @@ design starts.
   `src/theme` (`mobileAccent` in `@ideanest/design-tokens`), each with its own
   text token and glow. Surfaces for cards only; they carry no meaning.
 - **Feedback without toasts.** `announce()` is the native `aria-live`, and
-  `haptics` is exactly the five events in §7's table.
+  `haptics` is exactly the six events in §7's table (the sixth is the tab bar's
+  Create button).
+- **The floating tab bar (#276).** `src/components/tab-bar.tsx`: Home · Search ·
+  [ + ] · Pledges · Me over the content, lifted above the bottom safe area. The
+  centre is a button that starts a campaign (through sign-in when signed out),
+  not a tab. Saved is a row of the Me hub and a stack route at `/saved`. Every
+  tab screen pads its scrolling content with `useTabBarInset()`, which `Screen`
+  applies by itself; it is zero outside the tab group. On Android the bar steps
+  away while the keyboard is up.
+- **The design-language primitives (#277, #278).** The white `Sheet` (rise on
+  `spring.sheet`, velocity drag, the page behind scaled by `SheetHost` in the root
+  layout; `surface="dark"` keeps the earlier panel for the overlays #282 has not
+  moved), `SegmentedPill`, `HeroFigure`, `AvatarStack` and `SourceDot`,
+  `AccentCard` with `IconButton variant="translucent"`, and `EdgeFade`. Every
+  moving number goes through `AnimatedAmount`: a formatted string in, `enter`,
+  `roll` or `count` (count once, then roll), the exact string as the last frame
+  and as what a screen reader hears. The campaign page's funding figures count
+  up on first view through `StatBlock motion="count"`.
 - **Every screen is on the kit.** The app's first ad-hoc components are gone:
   `components/form.tsx` (`Button`, `TextField`), `components/states.tsx`
   (`Loading`, `EmptyState`, `ErrorState`, `OfflineNotice`), `components/avatar.tsx`
@@ -274,7 +291,7 @@ are `@ideanest/campaign`'s, the same functions the web calls.
   pinned under the list while the header's one is out of view; it has no animation and is
   hidden from screen readers, which meet the header's pill in reading order.
 - **Save** starts "off" until #137 publishes the viewer's state; it toggles at once, rolls
-  back on a refusal and refreshes the Saved tab on success. **Remind** is offered before
+  back on a refusal and refreshes the Saved list on success. **Remind** is offered before
   launch only. Signed out, Save opens sign-in and Remind the pre-launch page.
 - **Live funding** opens `IDEANEST_REALTIME_ORIGIN`'s socket only while the screen is
   focused, the app is in the foreground and the device is online

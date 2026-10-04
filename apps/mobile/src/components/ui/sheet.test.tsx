@@ -10,11 +10,13 @@ import {
 } from 'react-native';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
+import { Body } from '../text';
 import { colors, radius, size, tint } from '../../theme';
 import { Field } from './field';
 import { MotionBudgetProvider } from './motion-budget';
 import { Select, type SelectOption } from './select';
-import { Sheet } from './sheet';
+import { SHEET_PAGE_SCALE, Sheet, SheetHost, dragDismisses, pageScale, sheetRise } from './sheet';
+import { TONES } from './surface';
 
 /**
  * The sheet, and the select that is its main consumer. The sheet's contract is every way out
@@ -73,19 +75,97 @@ describe('Sheet', () => {
     expect(shown.getByText('Azerbaijani manat')).toBeTruthy();
   });
 
-  it('is a dark surface-2 panel with a 28pt top radius, at most 85% tall, over a black/64 scrim', async () => {
-    const { getByTestId, container } = await renderEn(sheet(true));
+  it('is a white sheet with a 28pt top radius, at most 85% tall, over a black/64 scrim', async () => {
+    const { getByTestId, getByRole, container } = await renderEn(sheet(true));
     expect(flat(getByTestId('sheet'))).toMatchObject({
-      backgroundColor: colors.surface2,
+      backgroundColor: colors.whiteSurface,
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
       maxHeight: '85%',
     });
+    // Its own words in the white surface's tones: dark text tokens are never used on white.
+    expect(flat(getByRole('header', { name: 'Currency' })).color).toBe(TONES.white.primary);
     expect(
       container.queryAll(
         (node) => node.type === 'View' && flat(node).backgroundColor === tint(colors.black, 0.64),
       ),
     ).toHaveLength(1);
+  });
+
+  it('puts what it holds on the white surface, so kit text reads on it', async () => {
+    const { getByText } = await renderEn(
+      <Sheet visible onClose={jest.fn()} title="Currency">
+        <Body>Azerbaijani manat</Body>
+      </Sheet>,
+    );
+    expect(flat(getByText('Azerbaijani manat')).color).toBe(TONES.white.secondary);
+  });
+
+  it('keeps the earlier dark panel for overlays #282 has not moved', async () => {
+    const { getByTestId, getByRole } = await renderEn(
+      <Sheet visible onClose={jest.fn()} title="Currency" surface="dark" testID="sheet">
+        <Text>Azerbaijani manat</Text>
+      </Sheet>,
+    );
+    expect(flat(getByTestId('sheet')).backgroundColor).toBe(colors.surface2);
+    expect(flat(getByRole('header', { name: 'Currency' })).color).toBe(TONES.dark.primary);
+  });
+
+  it('stays mounted while it falls, out of reach and unheard, then goes and reports it', async () => {
+    const onDismiss = jest.fn();
+    const ui = (visible: boolean) => (
+      <Sheet visible={visible} onClose={jest.fn()} onDismiss={onDismiss} title="Currency" testID="sheet">
+        <Text>Azerbaijani manat</Text>
+      </Sheet>
+    );
+    const view = await renderEn(ui(true));
+    await view.rerender(ui(false));
+
+    const panel = view.getByTestId('sheet', { includeHiddenElements: true });
+    expect(panel.props.pointerEvents).toBe('none');
+    expect(panel.props.accessibilityElementsHidden).toBe(true);
+    expect(view.queryByRole('header', { name: 'Currency' })).toBeNull();
+
+    await waitFor(
+      () => expect(view.queryByText('Azerbaijani manat', { includeHiddenElements: true })).toBeNull(),
+      { timeout: 3000 },
+    );
+  });
+
+  it('with motion off, goes at once', async () => {
+    const ui = (visible: boolean) => (
+      <MotionBudgetProvider level="none">
+        <Sheet visible={visible} onClose={jest.fn()} title="Currency">
+          <Text>Azerbaijani manat</Text>
+        </Sheet>
+      </MotionBudgetProvider>
+    );
+    const view = await renderEn(ui(true));
+    await view.rerender(ui(false));
+    expect(view.queryByText('Azerbaijani manat', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('closes on a long pull or a flick, and springs back from a short slow one', () => {
+    expect(dragDismisses(120, 0.2)).toBe(true);
+    expect(dragDismisses(40, 1.4)).toBe(true);
+    expect(dragDismisses(40, 0.3)).toBe(false);
+  });
+
+  it('scales the page behind to 0.96 in step with its rise, and leaves it whole at rest', async () => {
+    expect(sheetRise(0, 400)).toBe(1);
+    expect(sheetRise(200, 400)).toBe(0.5);
+    expect(sheetRise(400, 400)).toBe(0);
+    expect(sheetRise(-20, 400)).toBe(1);
+    expect(pageScale(0)).toBe(1);
+    expect(pageScale(1)).toBeCloseTo(SHEET_PAGE_SCALE, 5);
+
+    const view = await renderEn(
+      <SheetHost>
+        <View testID="page" />
+      </SheetHost>,
+    );
+    const host = view.getByTestId('page').parent as never;
+    expect(flat(host).transform).toEqual([{ scale: 1 }]);
   });
 
   it('closes from its X, from the handle as a named button, and from Android back', async () => {
