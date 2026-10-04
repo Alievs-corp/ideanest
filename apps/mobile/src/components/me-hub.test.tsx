@@ -253,6 +253,16 @@ describe('the Me tab', () => {
     expect(mockRouter.push).not.toHaveBeenCalled();
   });
 
+  it('opens Saved as a screen of its own: it left the tab bar for the Me hub (#276)', async () => {
+    given('signed-in', AYSEL);
+    await renderMe();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Saved projects' }));
+
+    expect(mockRouter.push).toHaveBeenCalledWith('/saved');
+    expect(mockRouter.navigate).not.toHaveBeenCalled();
+  });
+
   it('says the address is unverified, naming it, only when it is', async () => {
     given('signed-in', { ...AYSEL, emailVerified: false });
     await renderMe();

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { NO_FILTERS, type DiscoveryFilters } from '@ideanest/discovery/filters';
 import { useCategories, useDiscoveryFeed, type Card } from '../../api/queries';
 import { CampaignColumn } from '../../components/campaign-column';
+import { useTabBarInset } from '../../components/tab-bar';
 import {
   CategoryTiles,
   HomeEmpty,
@@ -47,6 +48,7 @@ export default function HomeScreen() {
   const t = useT('home');
   const tFeed = useT('discovery.feed');
   const router = useRouter();
+  const tabInset = useTabBarInset();
 
   const closing = useDiscoveryFeed(CLOSING, { limit: RAIL_SIZE });
   const launched = useDiscoveryFeed(LAUNCHED, { limit: RAIL_SIZE });
@@ -71,7 +73,7 @@ export default function HomeScreen() {
   return (
     <ScrollView
       style={styles.fill}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: tabInset + spacing[8] }]}
       refreshControl={
         <RefreshControl
           refreshing={pulling}
@@ -165,7 +167,6 @@ const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.surface1 },
   content: {
     padding: size.cardGap,
-    paddingBottom: spacing[12],
     gap: spacing[12],
   },
   retry: { flexDirection: 'row' },

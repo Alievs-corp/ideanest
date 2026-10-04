@@ -5,6 +5,7 @@ import { useRouter, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useQueryClient } from '@tanstack/react-query';
 import { siteUrl } from '../../api/config';
+import { useTabBarInset } from '../../components/tab-bar';
 import { Body, CardTitle, Meta, Subheading } from '../../components/text';
 import { Avatar, InlineAlert, Pill, Skeleton } from '../../components/ui';
 import { WhatsAppSheet } from '../../components/whatsapp-sheet';
@@ -65,11 +66,11 @@ interface Row {
   readonly web?: string;
 }
 
-/** `ACCOUNT_GROUPS.yourAccount`, in its order. Pledges and Saved are tabs here. */
+/** `ACCOUNT_GROUPS.yourAccount`, in its order. Pledges is a tab here; Saved is a screen (#276). */
 const YOUR_ACCOUNT: readonly Row[] = [
   { label: 'account.links.pledges.label', href: '/pledges', tab: true },
   { label: 'account.links.campaigns.label', href: '/account/campaigns' },
-  { label: 'account.links.saved.label', href: '/saved', tab: true },
+  { label: 'account.links.saved.label', href: '/saved' },
   { label: 'account.links.following.label', href: '/account/following' },
   { label: 'account.links.surveys.label', href: '/account/surveys' },
   { label: 'account.links.deliveries.label', href: '/account/deliveries' },
@@ -102,7 +103,7 @@ const ABOUT: readonly Row[] = [
 ];
 
 const styles = StyleSheet.create({
-  content: { padding: size.cardPaddingLarge, gap: spacing[6], paddingBottom: spacing[10] },
+  content: { padding: size.cardPaddingLarge, gap: spacing[6] },
   section: { gap: spacing[3] },
   card: {
     backgroundColor: colors.surface2,
@@ -313,6 +314,7 @@ function Colophon() {
 
 export default function MeScreen() {
   const router = useRouter();
+  const tabInset = useTabBarInset();
   const queryClient = useQueryClient();
   const t = useT();
   const session = useSession();
@@ -388,7 +390,7 @@ export default function MeScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabInset + spacing[6] }]}>
       {loading ? <IdentitySkeleton /> : null}
 
       {account !== null ? (

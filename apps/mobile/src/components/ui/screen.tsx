@@ -3,6 +3,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 import { useT } from '../../lib/i18n';
 import { colors, spacing } from '../../theme';
+import { useTabBarInset } from '../tab-bar';
 import { ErrorState } from './empty-state';
 import { haptics } from './haptics';
 import { InlineAlert } from './inline-alert';
@@ -17,8 +18,8 @@ import { AccentScopeProvider, Pill } from './pill';
  * <ul>
  *   <li><strong>Safe areas.</strong> The insets from `react-native-safe-area-context`, on the edges
  *       the screen owns. Left and right by default; a screen with no header adds `top`, and one
- *       with no tab bar under it adds `bottom` — a header and a tab bar already clear their own
- *       edge, and a second inset there is a gap.</li>
+ *       with no tab bar under it adds `bottom`. Under the floating tab bar the content always
+ *       clears the bar's footprint (`useTabBarInset()`, #276), whatever the edges say.</li>
  *   <li><strong>20pt sides</strong>, `size.cardPaddingSmall`, the web's page gutter at phone
  *       width.</li>
  *   <li><strong>Pull to refresh</strong>, when `onRefresh` is given: a `RefreshControl` in token
@@ -113,6 +114,7 @@ export function Screen({
 }: ScreenProps) {
   const t = useT();
   const insets = useSafeAreaInsets();
+  const tabInset = useTabBarInset();
   const owns = (edge: Edge) => edges.includes(edge);
 
   if (__DEV__ && onRefresh !== undefined && !scroll) {
@@ -124,7 +126,7 @@ export function Screen({
 
   const padding = {
     paddingTop: owns('top') ? insets.top : 0,
-    paddingBottom: owns('bottom') ? insets.bottom : 0,
+    paddingBottom: Math.max(owns('bottom') ? insets.bottom : 0, tabInset),
     paddingLeft: SIDE + (owns('left') ? insets.left : 0),
     paddingRight: SIDE + (owns('right') ? insets.right : 0),
   };
