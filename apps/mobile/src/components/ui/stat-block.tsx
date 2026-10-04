@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, radius, spacing } from '../../theme';
+import { AnimatedAmount, type AnimatedAmountMode } from './animated-amount';
 import { Icon, type IconComponent } from './icon';
 import { TONES, useSurface } from './surface';
 
@@ -68,6 +69,8 @@ export interface StatBlockProps {
   readonly tone?: 'default' | 'success';
   /** A glyph before the figure (`Users` before a backer count). Decorative: the label names it. */
   readonly icon?: IconComponent;
+  /** Moves the figure through `AnimatedAmount` (#278): `count` on first view, then rolls. */
+  readonly motion?: AnimatedAmountMode;
   readonly testID?: string;
 }
 
@@ -79,12 +82,19 @@ export function StatBlock({
   size = 'lg',
   tone = 'default',
   icon,
+  motion,
   testID,
 }: StatBlockProps) {
   const t = useT('mobile.kitDisplay');
   const surface = useSurface();
   const points = VALUE_SIZE[size];
   const trend = TREND[badgeTone];
+  const figure = {
+    fontSize: points,
+    lineHeight: points,
+    letterSpacing: points * -0.04,
+    color: tone === 'success' && surface === 'dark' ? colors.success : TONES[surface].primary,
+  };
 
   return (
     <View style={styles.block} testID={testID}>
@@ -94,20 +104,11 @@ export function StatBlock({
             <Icon icon={icon} size={20} color={TONES[surface].tertiary} />
           </View>
         )}
-        <Text
-          style={[
-            styles.value,
-            {
-              fontSize: points,
-              lineHeight: points,
-              letterSpacing: points * -0.04,
-              color:
-                tone === 'success' && surface === 'dark' ? colors.success : TONES[surface].primary,
-            },
-          ]}
-        >
-          {value}
-        </Text>
+        {motion === undefined ? (
+          <Text style={[styles.value, figure]}>{value}</Text>
+        ) : (
+          <AnimatedAmount value={value} mode={motion} style={[styles.value, figure]} />
+        )}
         {badge === undefined || badge === '' ? null : (
           <View
             accessible

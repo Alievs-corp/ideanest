@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { siteUrl } from '../api/config';
 import { OfflineAnnouncer, WithOfflineBanner } from '../components/offline-banner';
+import { SheetHost } from '../components/ui/sheet';
 import { sweepAccountExports } from '../lib/account-export-files';
 import { startConnectivity } from '../lib/connectivity';
 import { destinationFor } from '../lib/links';
@@ -244,7 +245,10 @@ export default function RootLayout() {
             <StatusBar style="light" />
             <AccountSync />
             <OfflineAnnouncer />
-            <AppStack />
+            {/* The page a white sheet rises over scales back under it (`ui/sheet.tsx`, #277). */}
+            <SheetHost>
+              <AppStack />
+            </SheetHost>
           </AppIntlProvider>
         </PersistQueryClientProvider>
       </SafeAreaProvider>

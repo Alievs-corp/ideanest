@@ -249,6 +249,7 @@ const SURFACES: Record<Surface, readonly (readonly [string, string])[]> = {
     ['white', colors.whiteSurface],
     ['white-muted', colors.whiteMuted],
   ],
+  accent: Object.entries(accent).map(([name, tone]) => [`accent-${name}`, tone.surface] as const),
 };
 
 const PAIRS = (Object.keys(SURFACES) as Surface[]).flatMap((surface) =>
@@ -333,6 +334,11 @@ describe('contrast of every tone on every surface it can land on', () => {
     for (const [, surface] of SURFACES.dark) {
       expect(ratio(tone.surface, surface)).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
     }
+  });
+
+  /** The `accent` surface row (`ui/surface.tsx`) is one row because the accents share a text token. */
+  it('gives every accent the same text token', () => {
+    expect(new Set(Object.values(accent).map((tone) => tone.text)).size).toBe(1);
   });
 
   /** Why each accent names near-black: white on them, measured. */

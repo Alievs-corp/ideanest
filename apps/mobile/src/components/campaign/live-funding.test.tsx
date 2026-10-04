@@ -171,8 +171,12 @@ describe('useCampaignUpdates', () => {
 });
 
 describe('LiveFunding', () => {
+  /** What a reader gets: a moving figure (#278) is read by its final value, not its frames. */
   function textOf(node: TestInstance | string): string {
     if (typeof node === 'string') return node;
+    if (node.props.accessibilityRole === 'text' && typeof node.props.accessibilityLabel === 'string') {
+      return node.props.accessibilityLabel;
+    }
     return node.children.map(textOf).join('');
   }
 

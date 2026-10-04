@@ -18,6 +18,12 @@ export {
   useReducedMotion,
   type MotionLevel,
 } from './motion-budget';
+export {
+  AnimatedAmount,
+  countFrame,
+  type AnimatedAmountMode,
+  type AnimatedAmountProps,
+} from './animated-amount';
 export { PressableScale, usePressScale, type PressableScaleProps } from './press-scale';
 export {
   SurfaceProvider,
@@ -52,10 +58,25 @@ export {
   type IconButtonVariant,
 } from './icon-button';
 export { AccentScopeProvider, Pill, type PillProps, type PillSize, type PillVariant } from './pill';
+export {
+  SegmentedPill,
+  type SegmentOption,
+  type SegmentedPillProps,
+} from './segmented-pill';
 
 /* Primitives: Tag, Chip, Card, Avatar, ProgressBar, StatBlock, FloatingPanel ------------------ */
+export { AccentCard, type AccentCardProps } from './accent-card';
 export { Avatar, initials, type AvatarProps, type AvatarSize } from './avatar';
+export {
+  AVATAR_STACK_MAX,
+  AvatarStack,
+  SourceDot,
+  type AvatarStackProps,
+  type SourceDotProps,
+  type StackPerson,
+} from './avatar-stack';
 export { Card, type CardProps, type CardSize, type CardVariant } from './card';
+export { HeroFigure, minorStart, type HeroFigureProps, type HeroFigureSize } from './hero-figure';
 export {
   Chip,
   ChipRow,
@@ -82,6 +103,7 @@ export {
 export { Tag, type TagProps, type TagVariant } from './tag';
 
 /* Data and media: InlineAlert, EmptyState, ErrorState, Skeleton, Media, Screen ----------------- */
+export { EdgeFade, type EdgeFadeProps } from './edge-fade';
 export { EmptyState, ErrorState, type EmptyStateProps, type ErrorStateProps } from './empty-state';
 export { InlineAlert, type InlineAlertProps, type InlineAlertVariant } from './inline-alert';
 export {
@@ -131,4 +153,4 @@ export { Textarea, type TextareaProps } from './textarea';
 
 /* Overlay: Dialog, Sheet ---------------------------------------------------------------------- */
 export { Dialog, type DialogProps } from './dialog';
-export { Sheet, type SheetProps } from './sheet';
+export { SHEET_PAGE_SCALE, Sheet, SheetHost, type SheetProps, type SheetSurface } from './sheet';

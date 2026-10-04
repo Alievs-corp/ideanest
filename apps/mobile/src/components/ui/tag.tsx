@@ -73,6 +73,7 @@ const NEUTRAL: Record<Surface, TagVariant> = {
   dark: 'default',
   lime: 'onLime',
   white: 'onWhite',
+  accent: 'onWhite',
 };
 
 export function Tag({ label, variant = 'default', icon, testID }: TagProps) {

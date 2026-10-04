@@ -4,6 +4,7 @@ import { NO_FILTERS, addSlugFilter, withQuery } from '@ideanest/discovery/filter
 import { useSearchResults, type Card } from '../../api/queries';
 import { CampaignColumn, CampaignColumnSkeleton } from '../../components/campaign-column';
 import { SearchBox } from '../../components/discovery/search-box';
+import { useTabBarInset } from '../../components/tab-bar';
 import { Body, Heading, Meta } from '../../components/text';
 import {
   EmptyState,
@@ -41,6 +42,7 @@ export default function SearchScreen() {
   const tFeed = useT('discovery.feed');
   const tAll = useT();
   const router = useRouter();
+  const tabInset = useTabBarInset();
   const params = useLocalSearchParams<{ q?: string | string[] }>();
   const query = (Array.isArray(params.q) ? params.q[0] : params.q)?.trim() ?? '';
 
@@ -57,7 +59,7 @@ export default function SearchScreen() {
   return (
     <ScrollView
       style={styles.fill}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: tabInset + spacing[8] }]}
       keyboardShouldPersistTaps="handled"
       refreshControl={
         query === '' ? undefined : (
@@ -181,7 +183,7 @@ export default function SearchScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.surface1 },
-  content: { padding: size.cardGap, paddingBottom: spacing[12], gap: spacing[4] },
+  content: { padding: size.cardGap, gap: spacing[4] },
   results: { gap: spacing[4] },
   count: { ...font.regular, fontVariant: ['tabular-nums'] },
   centred: { alignItems: 'center', paddingTop: spacing[2] },

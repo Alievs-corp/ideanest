@@ -86,6 +86,7 @@ export function LiveFunding({ goal, pledged, backersCount, socketUrl, active }: 
         <StatBlock
           size="md"
           value={formatMoney(total)}
+          motion="count"
           label={t('pledged')}
           testID="funding-pledged"
         />
@@ -93,6 +94,7 @@ export function LiveFunding({ goal, pledged, backersCount, socketUrl, active }: 
           <StatBlock
             size="md"
             value={`${percent}%`}
+            motion="count"
             label={funded ? t('funded') : t('ofGoal')}
             tone={funded ? 'success' : 'default'}
             testID="funding-percent"
@@ -102,6 +104,7 @@ export function LiveFunding({ goal, pledged, backersCount, socketUrl, active }: 
           size="md"
           icon={Glyphs.People}
           value={formatCount(backersCount, locale)}
+          motion="count"
           label={t(`backers.${pluralCategory(locale, backersCount)}`)}
           testID="funding-backers"
         />

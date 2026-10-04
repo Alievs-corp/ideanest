@@ -1,46 +1,44 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Link, Tabs } from 'expo-router';
+import { Link, Tabs, useRouter } from 'expo-router';
 import { WithOfflineBanner } from '../../components/offline-banner';
-import { TabIcon, type TabIconName } from '../../components/tab-icon';
+import { FloatingTabBar, TabBarInsetProvider } from '../../components/tab-bar';
+import { TAB_GLYPHS, TabIcon } from '../../components/tab-icon';
 import { Meta } from '../../components/text';
 import { useT } from '../../lib/i18n';
 import { badgeText, useSessionState, useUnreadCount } from '../../lib/account';
+import { signInHrefFor } from '../../lib/guard';
 import { colors, radius, size, spacing } from '../../theme';
 
 /**
- * The five tabs — issue #150.
+ * The tab group — issues #150 and #276.
+ *
+ * <h2>Five slots: four tabs and Create</h2>
+ *
+ * Home · Search · [ + ] · Pledges · Me, drawn by the floating bar (`components/tab-bar.tsx`,
+ * `mobile-design` skill §3). The centre is a button that starts a campaign — signed out, through
+ * sign-in and back — not a tab. Saved moved into the Me hub (`/saved` is a stack route now), by
+ * the skill's overflow rule: no sixth slot, no "More".
  *
  * <h2>Icons only, on purpose</h2>
  *
- * The tab bar draws a glyph and no label. That is a design decision, not an oversight:
- * the bar stays the same height at every font scale and in every one of the four
- * languages. CLAUDE.md §2 still needs an accessible name on an icon-only control, so every
- * tab carries `tabBarAccessibilityLabel` — a screen reader announces "Home, tab, 1 of 5" —
- * and colour is never the only signal: the active glyph is heavier as well as lime.
+ * The bar draws a glyph and no label, so it stays the same height at every font scale and in all
+ * four languages. Every tab carries `tabBarAccessibilityLabel` from the catalogue, and the active
+ * tab changes shape (white capsule, Bold glyph), never colour alone.
  *
- * <h2>Five, and the fifth is "Me"</h2>
- *
- * Home, Search, Saved, Pledges and Me. The web's header account menu, settings and footer
- * become the Me tab, so nothing needs a header "Account" link any more. The header keeps
- * one control: "Sign in" while nobody is signed in, mirroring the web header.
- *
- * <h2>The colours are the site's</h2>
- *
- * `--surface-2` bar, `--border` hairline, `--lime-500` when active and `--text-tertiary`
- * otherwise (§2.2 measures the latter at 4.9:1).
+ * <p>The header keeps one control: "Sign in" while nobody is signed in, the bell otherwise.
  */
 
 const TABS: readonly {
-  readonly name: string;
-  readonly key: 'home' | 'search' | 'saved' | 'pledges' | 'me';
-  readonly icon: TabIconName;
+  readonly name: keyof typeof TAB_GLYPHS;
+  readonly key: 'home' | 'search' | 'pledges' | 'me';
 }[] = [
-  { name: 'index', key: 'home', icon: 'home' },
-  { name: 'search', key: 'search', icon: 'search' },
-  { name: 'saved', key: 'saved', icon: 'saved' },
-  { name: 'pledges', key: 'pledges', icon: 'pledges' },
-  { name: 'me', key: 'me', icon: 'me' },
+  { name: 'index', key: 'home' },
+  { name: 'search', key: 'search' },
+  { name: 'pledges', key: 'pledges' },
+  { name: 'me', key: 'me' },
 ];
+
+const CREATE_PATH = '/campaigns/new';
 
 const styles = StyleSheet.create({
   signIn: {
@@ -113,7 +111,7 @@ function HeaderAction() {
         accessibilityLabel={label}
         style={({ pressed }) => [styles.bell, pressed && styles.signInPressed]}
       >
-        <TabIcon name="bell" color={colors.textPrimary} focused={false} size={24} />
+        <TabIcon name="bell" color={colors.textPrimary} size={24} />
         {badge === null ? null : (
           <View style={styles.badge} accessibilityElementsHidden importantForAccessibility="no">
             <Meta style={styles.badgeText}>{badge}</Meta>
@@ -126,40 +124,44 @@ function HeaderAction() {
 
 export default function TabsLayout() {
   const t = useT('mobile.tabs');
+  const tActions = useT('shell.actions');
+  const router = useRouter();
+  const session = useSessionState();
+
+  const create = () =>
+    router.push(session === 'signed-out' ? signInHrefFor(CREATE_PATH) : CREATE_PATH);
+
   return (
-    <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.surface1 },
-        headerTintColor: colors.textPrimary,
-        headerShadowVisible: false,
-        sceneStyle: { backgroundColor: colors.surface1 },
-        tabBarStyle: { backgroundColor: colors.surface2, borderTopColor: colors.border },
-        tabBarActiveTintColor: colors.lime500,
-        tabBarInactiveTintColor: colors.textTertiary,
-        tabBarShowLabel: false,
-        headerRight: () => <HeaderAction />,
-      }}
-      // The offline banner, under the tab's header (`components/offline-banner.tsx`).
-      screenLayout={({ children }) => <WithOfflineBanner>{children}</WithOfflineBanner>}
-    >
-      {TABS.map((tab) => (
-        <Tabs.Screen
-          key={tab.name}
-          name={tab.name}
-          options={{
-            title: t(tab.key),
-            tabBarAccessibilityLabel: t(tab.key),
-            tabBarIcon: ({ focused }) => (
-              <TabIcon
-                name={tab.icon}
-                color={focused ? colors.lime500 : colors.textTertiary}
-                focused={focused}
-              />
-            ),
-          }}
-        />
-      ))}
-    </Tabs>
+    <TabBarInsetProvider>
+      <Tabs
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.surface1 },
+          headerTintColor: colors.textPrimary,
+          headerShadowVisible: false,
+          sceneStyle: { backgroundColor: colors.surface1 },
+          tabBarShowLabel: false,
+          headerRight: () => <HeaderAction />,
+        }}
+        tabBar={(props) => (
+          <FloatingTabBar
+            {...props}
+            glyphs={TAB_GLYPHS}
+            createLabel={tActions('startCampaign')}
+            onCreate={create}
+          />
+        )}
+        // The offline banner, under the tab's header (`components/offline-banner.tsx`).
+        screenLayout={({ children }) => <WithOfflineBanner>{children}</WithOfflineBanner>}
+      >
+        {TABS.map((tab) => (
+          <Tabs.Screen
+            key={tab.name}
+            name={tab.name}
+            options={{ title: t(tab.key), tabBarAccessibilityLabel: t(tab.key) }}
+          />
+        ))}
+      </Tabs>
+    </TabBarInsetProvider>
   );
 }
 

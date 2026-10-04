@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 
-/** The web's `/account/saved` is the Saved tab in the app. */
+/** The web's `/account/saved` is the Me hub's Saved screen in the app (`app/saved.tsx`). */
 export default function AccountSaved() {
   return <Redirect href="/saved" />;
 }

@@ -2,34 +2,34 @@ import { Glyphs, type IconGlyph } from '../icons';
 import { Icon } from './ui/icon';
 
 /**
- * The tab and header glyphs — Iconsax (issue #274, `mobile-design` skill §3.1 and §5).
+ * The tab and header glyphs — Iconsax (issues #274 and #276, `mobile-design` skill §3.1 and §5).
  *
- * The tab bar carries no labels, so the drawing is the whole of the control. The active tab
- * takes the Bold drawing and the rest the Linear one: a change of shape as well as of colour,
- * because colour alone must not be the only signal of where somebody is (CLAUDE.md §2).
+ * The tab bar carries no labels, so the drawing is the whole of the control. `TAB_GLYPHS` is keyed
+ * by route name for the floating bar, which draws the Bold glyph on the active tab and the Linear
+ * one on the rest. The header's bell is a Linear glyph beside its own name.
  */
 
-export type TabIconName = 'home' | 'search' | 'saved' | 'pledges' | 'me' | 'bell';
+export const TAB_GLYPHS = {
+  index: Glyphs.Home,
+  search: Glyphs.SearchNormal1,
+  pledges: Glyphs.Heart,
+  me: Glyphs.User,
+} as const satisfies Record<string, IconGlyph>;
+
+export type TabIconName = 'bell';
 
 const GLYPHS: Record<TabIconName, IconGlyph> = {
-  home: Glyphs.Home,
-  search: Glyphs.SearchNormal1,
-  saved: Glyphs.Archive,
-  pledges: Glyphs.Heart,
   bell: Glyphs.Notification,
-  me: Glyphs.User,
 };
 
 export function TabIcon({
   name,
   color,
-  focused,
-  size = 26,
+  size = 24,
 }: {
   readonly name: TabIconName;
   readonly color: string;
-  readonly focused: boolean;
   readonly size?: number;
 }) {
-  return <Icon icon={GLYPHS[name]} variant={focused ? 'bold' : 'linear'} color={color} size={size} />;
+  return <Icon icon={GLYPHS[name]} variant="linear" color={color} size={size} />;
 }

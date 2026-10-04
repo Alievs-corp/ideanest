@@ -13,6 +13,7 @@ import {
   Skeleton,
   SkeletonGroup,
 } from '../../components/ui';
+import { useTabBarInset } from '../../components/tab-bar';
 import { useT } from '../../lib/i18n';
 import { signInHrefFor } from '../../lib/guard';
 import { useSession } from '../../lib/use-session';
@@ -30,6 +31,7 @@ export function PledgeListScreen() {
 
 function PledgeListBody() {
   const router = useRouter();
+  const tabInset = useTabBarInset();
   const t = useT();
   const { signedIn } = useSession();
   const list = usePledgeList(signedIn);
@@ -106,7 +108,7 @@ function PledgeListBody() {
     <FlashList
       data={list.items}
       keyExtractor={(item, index) => item.pledgeId ?? `row-${index}`}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: tabInset + spacing[4] }]}
       ItemSeparatorComponent={Separator}
       onEndReached={() => list.loadMore()}
       onEndReachedThreshold={0.5}

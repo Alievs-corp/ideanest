@@ -1,8 +1,9 @@
-import { Link, useRouter } from 'expo-router';
+import { Link, Stack, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useSavedProjects } from '../../api/queries';
-import { CardTitle, Meta } from '../../components/text';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSavedProjects } from '../api/queries';
+import { CardTitle, Meta } from '../components/text';
 import {
   EmptyState,
   InlineAlert,
@@ -10,13 +11,17 @@ import {
   Screen,
   Skeleton,
   SkeletonGroup,
-} from '../../components/ui';
-import { useT } from '../../lib/i18n';
-import { useSession } from '../../lib/use-session';
-import { colors, radius, size, spacing } from '../../theme';
+} from '../components/ui';
+import { useT } from '../lib/i18n';
+import { useSession } from '../lib/use-session';
+import { colors, radius, size, spacing } from '../theme';
 
 /**
  * What somebody kept — one of the two lists §4.12 MB-04 promises offline.
+ *
+ * A row of the Me hub since #276, not a tab: the floating bar has five slots and Saved is the
+ * destination the `mobile-design` skill's overflow rule moves into Me. `/saved` and the web's
+ * `/account/saved` both still land here.
  *
  * <h2>The stale case is the feature, not an edge case</h2>
  *
@@ -64,14 +69,19 @@ const PLACEHOLDER_ROWS = [0, 1, 2] as const;
  * list itself — not only the ones `Screen` draws.
  */
 export default function SavedScreen() {
+  const t = useT();
   return (
-    <SavedList />
+    <>
+      <Stack.Screen options={{ title: t('account.links.saved.label') }} />
+      <SavedList />
+    </>
   );
 }
 
 function SavedList() {
   const router = useRouter();
   const t = useT();
+  const insets = useSafeAreaInsets();
   const { signedIn } = useSession();
   const saved = useSavedProjects(signedIn);
 
@@ -140,7 +150,7 @@ function SavedList() {
     <FlashList
       data={items}
       keyExtractor={(item) => item.projectId ?? ''}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing[6] }]}
       ItemSeparatorComponent={Separator}
       ListHeaderComponent={
         // Shown only when a refetch actually failed. A cache being used while
@@ -186,4 +196,4 @@ function Separator() {
 }
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
-export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';
+export { RouteErrorBoundary as ErrorBoundary } from '../components/route-error-boundary';

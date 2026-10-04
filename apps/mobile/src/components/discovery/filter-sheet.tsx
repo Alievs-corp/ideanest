@@ -70,7 +70,7 @@ export function FilterSheet({ visible, onClose, filters, facets, onChange }: Fil
   const tags = facets?.tags ?? [];
 
   return (
-    <Sheet visible={visible} onClose={onClose} title={t('railLabel')} testID="filter-sheet">
+    <Sheet surface="dark" visible={visible} onClose={onClose} title={t('railLabel')} testID="filter-sheet">
       <Group legend={vocabulary.groups.status} first>
         {STATUSES.map((status) => (
           <FacetCheckbox

@@ -110,7 +110,7 @@ export function Select({
         </View>
       </Pressable>
 
-      <Sheet visible={open} onClose={() => setOpen(false)} title={title} returnFocusTo={trigger}>
+      <Sheet surface="dark" visible={open} onClose={() => setOpen(false)} title={title} returnFocusTo={trigger}>
         <RadioGroup
           label={title}
           value={value}

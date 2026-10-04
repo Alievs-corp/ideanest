@@ -158,6 +158,7 @@ export function ReportSheet({
 
   return (
     <Sheet
+      surface="dark"
       visible={visible}
       onClose={close}
       title={t('dialogLabel', { name })}
