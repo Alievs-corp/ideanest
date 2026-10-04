@@ -45,6 +45,14 @@ describe('countFrame', () => {
     expect(countFrame('2,500.00 AZN', 0.5)).toBe('1,250.00 AZN');
   });
 
+  it('trims across any locale\'s group separator, never a decimal point', () => {
+    expect(countFrame('1.234', 0.01)).toBe('12');
+    expect(countFrame('1\u00a0234', 0.01)).toBe('12');
+    expect(countFrame('1,234', 0.5)).toBe('617');
+    expect(countFrame('1.234', 0.5)).toBe('617');
+    expect(countFrame('1,000.00 AZN', 0)).toBe('0.00 AZN');
+  });
+
   it('keeps the currency and any text around the number untouched', () => {
     expect(countFrame('100.00 AZN', 0.5).endsWith(' AZN')).toBe(true);
     expect(countFrame('no digits', 0.5)).toBe('no digits');
@@ -85,6 +93,19 @@ describe('AnimatedAmount', () => {
     );
     expect(screen.getByText('.00 AZN', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByRole('text', { name: '2,500.00 AZN' })).toBeTruthy();
+  });
+
+  it('keeps counting through a parent re-render, and rolls once it has landed', async () => {
+    const view = await render(<AnimatedAmount value="2,500" mode="count" testID="amount" />);
+    await view.rerender(<AnimatedAmount value="2,500" mode="count" testID="amount" />);
+    expect(screen.getByTestId('animated-amount-count', { includeHiddenElements: true })).toBeTruthy();
+    await waitFor(
+      () => expect(screen.queryByTestId('animated-amount-count', { includeHiddenElements: true })).toBeNull(),
+      { timeout: 3000 },
+    );
+    expect(cells()).toBe('2,500');
+    await view.rerender(<AnimatedAmount value="2,510" mode="count" testID="amount" />);
+    await waitFor(() => expect(cells()).toBe('2,510'), { timeout: 3000 });
   });
 
   it('with motion off: the string at once, as plain text, in every mode', async () => {

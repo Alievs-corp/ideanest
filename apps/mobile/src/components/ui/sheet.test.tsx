@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { Body } from '../text';
@@ -166,6 +167,30 @@ describe('Sheet', () => {
     );
     const host = view.getByTestId('page').parent as never;
     expect(flat(host).transform).toEqual([{ scale: 1 }]);
+  });
+
+  it('keeps the page scaled while it is up, though a closed sheet mounts or goes beside it', async () => {
+    const page = (extra: boolean) => (
+      <SheetHost>
+        <View testID="page" />
+        <Sheet visible onClose={jest.fn()} title="Currency">
+          <Text>Azerbaijani manat</Text>
+        </Sheet>
+        {extra ? (
+          <Sheet visible={false} onClose={jest.fn()} title="Other">
+            <Text>Other</Text>
+          </Sheet>
+        ) : null}
+      </SheetHost>
+    );
+    const view = await renderEn(page(false));
+    const scale = () =>
+      (getAnimatedStyle(view.getByTestId('page').parent as never) as { transform?: { scale: number }[] })
+        .transform?.[0]?.scale;
+    await waitFor(() => expect(scale()).toBeCloseTo(SHEET_PAGE_SCALE, 2), { timeout: 3000 });
+    await view.rerender(page(true));
+    await view.rerender(page(false));
+    expect(scale()).toBeCloseTo(SHEET_PAGE_SCALE, 2);
   });
 
   it('closes from its X, from the handle as a named button, and from Android back', async () => {

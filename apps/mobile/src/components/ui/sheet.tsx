@@ -188,46 +188,62 @@ export function Sheet({
   const handleRing = useFocusRing();
   const white = surface === 'white';
 
-  useOverlayFocus(visible, heading, returnFocusTo);
-
   const [mounted, setMounted] = useState(visible);
+  // Focus goes back to the opener once the modal has gone: a window still presented swallows it.
+  useOverlayFocus(visible || mounted, heading, returnFocusTo);
+  const shown = useRef(visible);
+  const active = useSharedValue(visible);
   const travel = useSharedValue(window.height);
   const offset = useSharedValue(moves ? window.height : 0);
 
   useEffect(() => {
     if (visible) {
+      const wasShown = shown.current;
+      shown.current = true;
+      active.value = true;
       setMounted(true);
       if (moves) {
-        offset.value = travel.value;
+        // Reopened while it was still falling: rise from where it is, not from the bottom.
+        if (!wasShown) offset.value = travel.value;
         offset.value = withSpring(0, spring.sheet);
       } else {
         offset.value = 0;
       }
       return;
     }
+    const gone = () => {
+      shown.current = false;
+      setMounted(false);
+    };
     if (!moves) {
       offset.value = travel.value;
-      setMounted(false);
+      if (host !== null && active.value) host.value = 0;
+      active.value = false;
+      gone();
       return;
     }
     offset.value = withSpring(travel.value, spring.sheet, (finished) => {
-      if (finished === true) runOnJS(setMounted)(false);
+      if (finished === true) {
+        active.value = false;
+        runOnJS(gone)();
+      }
     });
-  }, [visible, moves, offset, travel]);
+  }, [visible, moves, offset, travel, active, host]);
 
   useAnimatedReaction(
     () => sheetRise(offset.value, travel.value),
     (risen) => {
-      if (host !== null) host.value = risen;
+      // Only a sheet that is up drives the page: a closed one mounting elsewhere leaves it alone.
+      if (host !== null && active.value) host.value = risen;
     },
     [host],
   );
 
   useEffect(
     () => () => {
-      if (host !== null) host.value = 0;
+      if (host !== null && active.value) host.value = 0;
     },
-    [host],
+    [host, active],
   );
 
   const panelStyle = useAnimatedStyle(() => ({ transform: [{ translateY: offset.value }] }));

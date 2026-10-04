@@ -143,6 +143,7 @@ export function FloatingTabBar({
         label={label}
         glyph={glyph}
         focused={focused}
+        shaped={target !== undefined}
         onLayout={measure(route.key)}
         onPress={() => {
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -173,6 +174,7 @@ function TabSlot({
   label,
   glyph,
   focused,
+  shaped,
   onPress,
   onLongPress,
   onLayout,
@@ -180,17 +182,20 @@ function TabSlot({
   readonly label: string;
   readonly glyph: IconGlyph;
   readonly focused: boolean;
+  /** The capsule is behind this slot: until then the near-black Bold glyph would sit on the dark bar. */
+  readonly shaped: boolean;
   readonly onPress: () => void;
   readonly onLongPress: () => void;
   readonly onLayout: (event: LayoutChangeEvent) => void;
 }) {
   const moves = useMotionAllowed('minimal');
   const ring = useFocusRing();
-  const active = useSharedValue(focused ? 1 : 0);
+  const lit = focused && shaped;
+  const active = useSharedValue(lit ? 1 : 0);
 
   useEffect(() => {
-    active.value = moves ? withTiming(focused ? 1 : 0, { duration: motion.fast }) : focused ? 1 : 0;
-  }, [focused, moves, active]);
+    active.value = moves ? withTiming(lit ? 1 : 0, { duration: motion.fast }) : lit ? 1 : 0;
+  }, [lit, moves, active]);
 
   const boldStyle = useAnimatedStyle(() => ({ opacity: active.value }));
   const linearStyle = useAnimatedStyle(() => ({ opacity: 1 - active.value }));

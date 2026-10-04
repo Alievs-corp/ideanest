@@ -59,7 +59,7 @@ export function AvatarStack({ people, total = people.length, label, size = 'sm',
           style={[
             styles.more,
             { height: side, minWidth: side, marginLeft: shown.length > 0 ? overlap : 0 },
-            surface === 'white' ? styles.moreOnWhite : styles.moreOnDark,
+            surface === 'dark' ? styles.moreOnDark : styles.moreOnWhite,
           ]}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
@@ -92,7 +92,10 @@ export function SourceDot({ accent, label, children, testID }: SourceDotProps) {
         <View
           style={[
             styles.dot,
-            { backgroundColor: accents[accent].surface, borderColor: surface === 'white' ? colors.whiteSurface : colors.surface1 },
+            {
+              backgroundColor: accents[accent].surface,
+              borderColor: surface === 'dark' ? colors.surface1 : colors.whiteSurface,
+            },
           ]}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"

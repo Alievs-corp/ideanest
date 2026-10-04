@@ -62,6 +62,7 @@ export interface AnimatedAmountProps {
 }
 
 const ROLL_STEP = 30;
+const COLUMN_BLEED = 4;
 const ENTER_RISE = 6;
 const ENTER_SCALE = 0.85;
 
@@ -130,7 +131,7 @@ export function AnimatedAmount({
 
   return (
     <View {...container} style={styles.row}>
-      <LayoutAnimationConfig skipEntering>
+      <LayoutAnimationConfig skipEntering skipExiting>
         {cells.map((cell) => (
           <View
             key={`c${cell.column}`}
@@ -165,17 +166,21 @@ function CountUp({
   readonly onDone: () => void;
 }) {
   const progress = useSharedValue(0);
+  const done = useRef(onDone);
+  done.current = onDone;
 
+  // Restarts for a new value only: a parent re-rendering mid-count must not send it back to 0.
   useEffect(() => {
+    const finish = () => done.current();
     progress.value = 0;
     progress.value = withTiming(
       1,
       { duration: motion.countUp, easing: Easing.out(Easing.cubic) },
       (finished) => {
-        if (finished === true) runOnJS(onDone)();
+        if (finished === true) runOnJS(finish)();
       },
     );
-  }, [template, progress, onDone]);
+  }, [template, progress]);
 
   const animatedProps = useAnimatedProps(() => {
     return { text: countFrame(template, progress.value) } as unknown as Partial<{ defaultValue: string }>;
@@ -193,6 +198,28 @@ function CountUp({
       importantForAccessibility="no-hide-descendants"
       testID="animated-amount-count"
     />
+  );
+}
+
+function isDigit(char: string): boolean {
+  'worklet';
+  return char >= '0' && char <= '9';
+}
+
+/**
+ * Whether the character at `at` separates thousands — `,`, `.`, a space, whatever the locale uses:
+ * a non-digit followed by exactly three digits. A decimal point is followed by the minor units,
+ * never by three digits and a stop, so `0.00` keeps its zero.
+ */
+function isGroupAt(text: string, at: number): boolean {
+  'worklet';
+  const char = text.charAt(at);
+  if (char === '' || isDigit(char)) return false;
+  return (
+    isDigit(text.charAt(at + 1)) &&
+    isDigit(text.charAt(at + 2)) &&
+    isDigit(text.charAt(at + 3)) &&
+    !isDigit(text.charAt(at + 4))
   );
 }
 
@@ -230,13 +257,16 @@ export function countFrame(template: string, progress: number): string {
 
   let start = 0;
   while (start < filled.length && !(filled.charAt(start) >= '0' && filled.charAt(start) <= '9')) start += 1;
-  let end = start;
-  while (end < filled.length && (filled.charAt(end) === ',' || (filled.charAt(end) >= '0' && filled.charAt(end) <= '9'))) {
-    end += 1;
-  }
   let cut = start;
-  while (cut < end - 1 && (filled.charAt(cut) === '0' || filled.charAt(cut) === ',')) cut += 1;
-  if (filled.charAt(cut) === ',') cut += 1;
+  while (filled.charAt(cut) === '0') {
+    if (isDigit(filled.charAt(cut + 1))) {
+      cut += 1;
+    } else if (isGroupAt(filled, cut + 1)) {
+      cut += 2;
+    } else {
+      break;
+    }
+  }
   return filled.slice(0, start) + filled.slice(cut);
 }
 
@@ -286,7 +316,8 @@ function lineHeightOf(style: StyleProp<TextStyle>): number {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'nowrap' },
-  column: { overflow: 'hidden' },
+  // Clipped for the roll, with room above and below so a tall glyph is not cut by a tight line box.
+  column: { overflow: 'hidden', paddingVertical: COLUMN_BLEED, marginVertical: -COLUMN_BLEED },
   figure: { fontVariant: ['tabular-nums'] },
   input: { padding: 0, margin: 0, borderWidth: 0 },
 });

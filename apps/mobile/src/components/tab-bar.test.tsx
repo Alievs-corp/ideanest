@@ -134,6 +134,13 @@ describe('the capsule and the glyphs', () => {
 
   it('draws each tab in both shapes, the Bold one showing only on the focused tab', async () => {
     await render(<MotionBudgetProvider level="none">{bar(0)}</MotionBudgetProvider>);
+    const layer = (name: string) =>
+      screen
+        .getAllByTestId(name, { includeHiddenElements: true })
+        .map((icon) => (getAnimatedStyle(icon.parent as never) as { opacity?: number }).opacity);
+    // Before the capsule is placed, the near-black Bold glyph would sit on the dark bar.
+    expect(layer('icon-Home')).toEqual([1, 0]);
+    await layOut();
     const home = screen.getAllByTestId('icon-Home', { includeHiddenElements: true });
     expect(home).toHaveLength(2);
     const layers = home.map((icon) => getAnimatedStyle(icon.parent as never) as { opacity?: number });
