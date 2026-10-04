@@ -25,7 +25,19 @@ export interface AccentCardProps {
   readonly accessibilityLabel?: string;
   readonly action?: ReactNode;
   readonly style?: StyleProp<ViewStyle>;
+  /**
+   * False draws the card without its glow, for a parent that draws the glow itself and times it
+   * (`CardStack` fades the glows in after the cards settle).
+   */
+  readonly glow?: boolean;
   readonly testID?: string;
+}
+
+/** The soft same-hue glow under an accent card: the accent's own `glow` token, never a new colour. */
+export function accentGlow(accent: Accent): ViewStyle['boxShadow'] {
+  return [
+    { offsetX: 0, offsetY: 16, blurRadius: 32, spreadDistance: -12, color: accents[accent].glow },
+  ];
 }
 
 export function AccentCard({
@@ -35,6 +47,7 @@ export function AccentCard({
   accessibilityLabel,
   action,
   style,
+  glow = true,
   testID,
 }: AccentCardProps) {
   const press = usePressScale();
@@ -44,7 +57,7 @@ export function AccentCard({
     styles.card,
     {
       backgroundColor: tone.surface,
-      boxShadow: [{ offsetX: 0, offsetY: 16, blurRadius: 32, spreadDistance: -12, color: tone.glow }],
+      boxShadow: glow ? accentGlow(accent) : undefined,
     },
   ];
 
@@ -85,6 +98,7 @@ const styles = StyleSheet.create({
   frame: { position: 'relative' },
   withAction: { paddingTop: spacing[3] },
   card: {
+    flexGrow: 1,
     borderRadius: radius.xl,
     padding: spacing[5],
     gap: spacing[3],

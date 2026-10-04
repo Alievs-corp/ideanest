@@ -6,6 +6,7 @@ import { LOCALE_NAMES, SUPPORTED_LOCALES } from '@ideanest/messages';
 import { siteUrl } from '../../api/config';
 import {
   AccentCard,
+  CardStack,
   AnimatedAmount,
   Avatar,
   AvatarStack,
@@ -161,6 +162,8 @@ const ACCENT_SECTION = Object.keys({ accent })[0] ?? '';
 const AMOUNT_MODES: readonly AnimatedAmountMode[] = ['roll', 'enter', 'count'];
 const AMOUNTS = ['1280.00', '1314.50', '99.00', '100.00'] as const;
 const ACCENTS = Object.keys(accent) as Accent[];
+/** The gallery stack's fixed card height: a title and a line of body, padded like an accent card. */
+const STACK_CARD_HEIGHT = 136;
 const BADGES: Record<StatTrend, string> = { up: '+12', down: '-3', neutral: '0' };
 const TRACE = '4bf92f3577b34da6a3ce929d0e0e4736';
 
@@ -175,6 +178,7 @@ function KitGallery() {
 
   const [chosen, setChosen] = useState<string | null>('discover');
   const [removed, setRemoved] = useState(false);
+  const [spread, setSpread] = useState(false);
   const [checked, setChecked] = useState(true);
   const [radio, setRadio] = useState<string | null>(SUPPORTED_LOCALES[0] ?? null);
   const [switched, setSwitched] = useState(true);
@@ -476,6 +480,33 @@ function KitGallery() {
               <Body>{t('common.card.rule')}</Body>
             </AccentCard>
           ))}
+        </Section>
+
+        <Section title={heading([CardStack])}>
+          <CardStack
+            items={ACCENTS.map((name) => ({
+              key: name,
+              accent: name,
+              accessibilityLabel: name,
+              onPress: noop,
+              children: (
+                <>
+                  <CardTitle>{name}</CardTitle>
+                  <Body>{t('common.card.rule')}</Body>
+                </>
+              ),
+            }))}
+            expanded={spread}
+            onExpand={() => setSpread(true)}
+            label={nameOf(CardStack)}
+            cardHeight={STACK_CARD_HEIGHT}
+            testID="kit-card-stack"
+          />
+          {spread ? (
+            <Row>
+              <Pill label={nameOf(CardStack)} variant="outline" onPress={() => setSpread(false)} />
+            </Row>
+          ) : null}
         </Section>
 
         <Section title={heading([HeroFigure])}>
