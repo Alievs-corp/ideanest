@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { AccessibilityInfo } from 'react-native';
@@ -137,7 +137,7 @@ describe('the payment return notice', () => {
     expect(screen.queryByTestId('payment-paid')).toBeNull();
   });
 
-  it('confirms a returned payment once: one success haptic and the pledges re-read', async () => {
+  it('confirms a returned payment once: the success reveal, one success haptic and the pledges re-read', async () => {
     api.readPledge.mockResolvedValue(pledge({ state: 'COLLECTED' }));
     let invalidate: jest.SpyInstance | null = null;
     await show({ payment: 'returned' }, (seed) => {
@@ -148,10 +148,35 @@ describe('the payment return notice', () => {
     });
     await settle();
 
+    expect(screen.getByRole('button', { name: `45.00 AZN. ${en.checkout.returned.paidTitle}` })).toBeTruthy();
+    // The haptic lands with the circle, after the reveal has grown.
+    await waitFor(() => expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledWith('success'), {
+      timeout: 3000,
+    });
     expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledTimes(1);
-    expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledWith('success');
     expect(invalidate).toHaveBeenCalledTimes(1);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['pledges'] });
+
+    await fireEvent.press(screen.getByTestId('success-reveal'));
+    expect(screen.queryByTestId('success-reveal')).toBeNull();
+    expect(screen.getByTestId('payment-paid')).toBeTruthy();
+  });
+
+  it.each([
+    ['DRAFT', 'returned'],
+    ['DRAFT', 'failed'],
+    ['EXPIRED', 'returned'],
+  ] as const)('shows no success reveal for a pledge read as %s after a %s return', async (state, hint) => {
+    api.readPledge.mockResolvedValue(pledge({ state }));
+    await show({ payment: hint });
+    expect(screen.queryByTestId('success-reveal')).toBeNull();
+    expect(jest.mocked(Haptics.notificationAsync)).not.toHaveBeenCalled();
+  });
+
+  it('shows no success reveal for a collected pledge opened without a payment return', async () => {
+    api.readPledge.mockResolvedValue(pledge({ state: 'COLLECTED' }));
+    await show();
+    expect(screen.queryByTestId('success-reveal')).toBeNull();
   });
 
   it('keeps the notice after the hint is cleared from the route', async () => {
@@ -180,6 +205,7 @@ describe('the payment return notice', () => {
       };
       await flush(0);
       expect(screen.getByTestId('payment-waiting')).toBeTruthy();
+      expect(screen.queryByTestId('success-reveal')).toBeNull();
       expect(api.readPledge).toHaveBeenCalledTimes(1);
 
       await flush(3000);
@@ -189,12 +215,14 @@ describe('the payment return notice', () => {
       await flush(0);
       expect(api.readPledge).toHaveBeenCalledTimes(4);
       expect(screen.getByTestId('payment-paid')).toBeTruthy();
-      expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledTimes(1);
+      // Revealed only now that the server reads it collected, not while it was a draft.
+      expect(screen.getByTestId('success-reveal')).toBeTruthy();
 
       await flush(0);
       const afterPaid = api.readPledge.mock.calls.length;
       for (let i = 0; i < 10; i += 1) await flush(3000);
       expect(api.readPledge).toHaveBeenCalledTimes(afterPaid);
+      expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledTimes(1);
     } finally {
       jest.useRealTimers();
     }

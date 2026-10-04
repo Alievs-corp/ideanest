@@ -127,6 +127,20 @@ async function reserve() {
   await settle();
 }
 
+/** Keys on the contribution keypad: digits, `.` for the point, `<` for backspace. */
+async function keys(typed: string) {
+  for (const key of typed) {
+    const id = key === '.' ? 'point' : key === '<' ? 'backspace' : key;
+    await fireEvent.press(screen.getByTestId(`contribution-key-${id}`));
+  }
+}
+
+/** Confirms without the gesture: the `activate` action a screen reader or Switch Control sends. */
+async function activateConfirm() {
+  await fireEvent(screen.getByTestId('confirm'), 'accessibilityAction', { nativeEvent: { actionName: 'activate' } });
+  await settle();
+}
+
 beforeEach(async () => {
   await act(async () => setLocale('en'));
   jest.clearAllMocks();
@@ -160,7 +174,10 @@ describe('checkout step 1', () => {
   it('pre-selects ?reward= and forwards every token', async () => {
     await show({ initialRewardId: 'r1', tokens: ['t1', 't2'] });
     expect(screen.getByTestId('reward-option-r1')).toBeChecked();
-    expect(screen.getByTestId('contribution').props.value).toBe('45.00');
+    // The price seeds the keypad in its plain form, so digits can be typed on after it.
+    expect(screen.getByTestId('contribution-amount')).toHaveAccessibleName(
+      `${en.checkout.contribution.legend}, 45 AZN`,
+    );
     expect(api.getCheckoutRewards).toHaveBeenCalledWith('p1', ['t1', 't2'], expect.anything());
   });
 
@@ -171,13 +188,63 @@ describe('checkout step 1', () => {
     expect(api.createPledgeDraft).not.toHaveBeenCalled();
   });
 
-  it('reads a decimal-pad comma as the point, and refuses an amount below the tier price', async () => {
+  it('types the contribution on the keypad, and refuses an amount below the tier price', async () => {
     await show({ initialRewardId: 'r1' });
-    await fireEvent.changeText(screen.getByTestId('contribution'), '45,50');
-    expect(screen.getByTestId('contribution').props.value).toBe('45.50');
+    await keys('<<<<<45.5');
+    expect(screen.getByTestId('contribution-amount')).toHaveAccessibleName(
+      `${en.checkout.contribution.legend}, 45.5 AZN`,
+    );
     expect(screen.getByTestId('summary-total')).toHaveTextContent('45.50 AZN');
-    await fireEvent.changeText(screen.getByTestId('contribution'), '40');
+    await keys('<<<<40');
     expect(screen.getByText('This reward costs 45.00 AZN. Give that or more, or choose a cheaper reward.')).toBeTruthy();
+  });
+
+  it('works out a contribution on the keypad and takes the result, in decimals', async () => {
+    await show({ initialRewardId: 'r1' });
+    await keys('<<<<<22.5');
+    await fireEvent.press(screen.getByRole('button', { name: en.mobile.kitMoney.multiply }));
+    await keys('3');
+    await fireEvent.press(screen.getByRole('button', { name: 'Use the result: 67.5 AZN' }));
+    expect(screen.getByTestId('summary-total')).toHaveTextContent('67.50 AZN');
+    await reserve();
+    expect(api.createPledgeDraft).toHaveBeenCalledTimes(1);
+    expect(api.createPledgeDraft.mock.calls[0]?.[0].contribution).toEqual({ amount: '67.50', currency: 'AZN' });
+  });
+
+  it('types on after the seeded price instead of refusing every digit', async () => {
+    await show({ initialRewardId: 'r1' });
+    await keys('0');
+    expect(screen.getByTestId('summary-total')).toHaveTextContent('450.00 AZN');
+  });
+
+  it('reserves the result shown on the chip, not the amount before the operator', async () => {
+    await show({ initialRewardId: 'r1' });
+    await keys('<<<<<200');
+    await fireEvent.press(screen.getByRole('button', { name: en.mobile.kitMoney.divide }));
+    await keys('4');
+    expect(screen.getByRole('button', { name: 'Use the result: 50 AZN' })).toBeTruthy();
+    await reserve();
+    expect(api.createPledgeDraft).toHaveBeenCalledTimes(1);
+    expect(api.createPledgeDraft.mock.calls[0]?.[0].contribution).toEqual({ amount: '50.00', currency: 'AZN' });
+  });
+
+  it('reserves nothing while the operation on the keypad is refused, and keeps its message', async () => {
+    await show({ initialRewardId: 'r1' });
+    await keys('<<<<<100');
+    await fireEvent.press(screen.getByRole('button', { name: en.mobile.kitMoney.divide }));
+    await keys('0.00');
+    await reserve();
+    expect(api.createPledgeDraft).not.toHaveBeenCalled();
+    expect(screen.getByTestId('contribution-message')).toHaveAccessibleName(en.mobile.kitMoney.divideByZero);
+  });
+
+  it('reserves nothing while an operation is unfinished, and says to finish it', async () => {
+    await show({ initialRewardId: 'r1' });
+    await keys('<<<<<100');
+    await fireEvent.press(screen.getByRole('button', { name: en.mobile.kitMoney.multiply }));
+    await reserve();
+    expect(api.createPledgeDraft).not.toHaveBeenCalled();
+    expect(screen.getByTestId('contribution-message')).toHaveAccessibleName(en.mobile.kitMoney.unfinished);
   });
 
   it('asks where to post a posted reward, from the countries it is priced for', async () => {
@@ -268,6 +335,51 @@ describe('checkout step 2', () => {
     await reserve();
     expect(screen.getByTestId('reservation-expired')).toBeTruthy();
     expect(screen.getByTestId('confirm')).toBeDisabled();
+  });
+
+  it('confirms with a swipe track named as the action, showing the total it pays', async () => {
+    api.payForPledge.mockResolvedValue({ redirectUrl: 'https://pay.example/1' } as never);
+    api.getPledge.mockResolvedValue(draft());
+    await show({ initialRewardId: 'r1' });
+    await reserve();
+    const track = screen.getByTestId('confirm');
+    expect(track.props.accessibilityActions).toEqual([{ name: 'activate' }]);
+    expect(screen.getByText(en.mobile.checkout.swipeToPay, { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('confirm-amount')).toHaveAccessibleName('45.00 AZN');
+
+    await activateConfirm();
+    expect(api.payForPledge).toHaveBeenCalledTimes(1);
+    expect(api.payForPledge.mock.calls[0]?.[0]).toBe('pl-1');
+  });
+
+  it('retries a failed confirmation with the same idempotency key, and shows the failure at once', async () => {
+    api.payForPledge
+      .mockRejectedValueOnce(new TypeError('Network request failed'))
+      .mockResolvedValue({ redirectUrl: 'https://pay.example/1' } as never);
+    api.getPledge.mockResolvedValue(draft());
+    await show({ initialRewardId: 'r1' });
+    await reserve();
+
+    await activateConfirm();
+    expect(api.payForPledge).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('failure-try-again')).toBeTruthy();
+    expect(screen.getByTestId('confirm')).not.toBeDisabled();
+
+    // A second swipe is the same intent: the same key, so the server answers the first request.
+    await activateConfirm();
+    expect(api.payForPledge).toHaveBeenCalledTimes(2);
+    const [first, second] = api.payForPledge.mock.calls;
+    expect(first?.[2]).toEqual(expect.any(String));
+    expect(second?.[2]).toBe(first?.[2]);
+  });
+
+  it('sends nothing from the swipe offline', async () => {
+    await show({ initialRewardId: 'r1' });
+    await reserve();
+    await act(async () => setOnline(false));
+    expect(screen.getByTestId('confirm')).toBeDisabled();
+    await activateConfirm();
+    expect(api.payForPledge).not.toHaveBeenCalled();
   });
 
   it('Change what I chose returns to step 1', async () => {
@@ -383,5 +495,28 @@ describe('checkout source rules', () => {
     for (const [name, source] of sources) {
       expect([name, /\bentering=|\bexiting=|\blayout=\{|FadeUp|react-native-reanimated/.test(source)]).toEqual([name, false]);
     }
+  });
+});
+
+describe('checkout with a screen reader on', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('confirms with an ordinary button instead of the swipe, on the same idempotent request', async () => {
+    jest.spyOn(AccessibilityInfo, 'isScreenReaderEnabled').mockResolvedValue(true);
+    api.payForPledge
+      .mockRejectedValueOnce(new TypeError('Network request failed'))
+      .mockResolvedValue({ redirectUrl: 'https://pay.example/1' } as never);
+    api.getPledge.mockResolvedValue(draft());
+    await show({ initialRewardId: 'r1' });
+    await reserve();
+
+    const button = screen.getByRole('button', { name: en.checkout.risk.confirm });
+    expect(screen.queryByTestId('confirm-thumb')).toBeNull();
+    await fireEvent.press(button);
+    await settle();
+    await fireEvent.press(screen.getByRole('button', { name: en.checkout.risk.confirm }));
+    await settle();
+    expect(api.payForPledge).toHaveBeenCalledTimes(2);
+    expect(api.payForPledge.mock.calls[1]?.[2]).toBe(api.payForPledge.mock.calls[0]?.[2]);
   });
 });

@@ -144,9 +144,18 @@ describe('the motion budget and Reduce Motion', () => {
 describe('haptics', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('exposes exactly the six events in docs/motion-system.md §7', () => {
+  it('exposes exactly the events in docs/motion-system.md §7', () => {
     expect(Object.keys(haptics).sort()).toEqual(
-      ['create', 'paymentFailed', 'pledgeConfirmed', 'refresh', 'save', 'selectReward'].sort(),
+      [
+        'create',
+        'keypadKey',
+        'paymentFailed',
+        'pledgeConfirmed',
+        'refresh',
+        'save',
+        'selectReward',
+        'swipeConfirm',
+      ].sort(),
     );
   });
 
@@ -157,15 +166,17 @@ describe('haptics', () => {
     haptics.paymentFailed();
     haptics.refresh();
     haptics.create();
+    haptics.keypadKey();
+    haptics.swipeConfirm();
 
     expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
-    expect(Haptics.selectionAsync).toHaveBeenCalledTimes(1);
+    expect(Haptics.selectionAsync).toHaveBeenCalledTimes(2);
     expect(Haptics.notificationAsync).toHaveBeenCalledWith(
       Haptics.NotificationFeedbackType.Success,
     );
     expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Error);
     expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Medium);
-    expect(Haptics.impactAsync).toHaveBeenCalledTimes(3);
+    expect(Haptics.impactAsync).toHaveBeenCalledTimes(4);
   });
 
   it('never throws when the phone has no motor', async () => {

@@ -5565,6 +5565,21 @@
         "openFailed": "Your photos could not be opened. Try again."
       }
     },
+    "kitMoney": {
+      "point": "Decimal point",
+      "backspace": "Delete the last digit",
+      "add": "Plus",
+      "subtract": "Minus",
+      "multiply": "Times",
+      "divide": "Divided by",
+      "useResult": "Use the result: {amount}",
+      "divideByZero": "An amount cannot be divided by zero.",
+      "belowZero": "The result is below zero, and an amount cannot be negative.",
+      "swipeHint": "Slide the handle to the end to confirm",
+      "tapToClose": "Tap anywhere to close",
+      "overLimit": "That amount is over the limit.",
+      "unfinished": "Finish the calculation, or delete the operator, before you continue."
+    },
     "checkout": {
       "close": "Close the checkout",
       "leaveTitle": "Leave the checkout?",
@@ -5577,7 +5592,8 @@
       "step": "Step {index} of {count}: {name}",
       "increase": "Add one: {title}",
       "decrease": "Remove one: {title}",
-      "backHint": "Choose a reward and back {title}"
+      "backHint": "Choose a reward and back {title}",
+      "swipeToPay": "Swipe to continue to payment"
     },
     "settings": {
       "securityLabel": "Security",

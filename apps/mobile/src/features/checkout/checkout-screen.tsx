@@ -19,6 +19,7 @@ import { toAmounts } from '@ideanest/checkout/quote';
 import { contributionMessage, refusalMessage } from '@ideanest/checkout/refusals';
 import {
   AccentScopeProvider,
+  AmountKeypad,
   Body,
   CardTitle,
   ContentSheet,
@@ -33,7 +34,8 @@ import {
   Select,
   SkeletonCard,
   SkeletonGroup,
-  TextInput,
+  SwipeToConfirm,
+  type AmountKeypadHandle,
 } from '../../components/ui';
 import { focusOn } from '../../components/ui/overlay';
 import { Checkbox } from '../../components/ui/checkbox';
@@ -122,6 +124,23 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
   }, [step]);
 
   const [leaving, setLeaving] = useState(false);
+
+  // A keypad operation still on screen (`100 ÷ 4 = 25`) is settled before reserving: a valid result
+  // becomes the contribution and the reservation follows on the render that has it; a refused or
+  // unfinished one keeps its message and nothing is sent.
+  const keypad = useRef<AmountKeypadHandle>(null);
+  const [reserveNext, setReserveNext] = useState(false);
+  const { reserve } = checkout;
+  useEffect(() => {
+    if (!reserveNext) return;
+    setReserveNext(false);
+    reserve();
+  }, [reserveNext, reserve]);
+  const reserveSettled = () => {
+    const settled = keypad.current?.settle() ?? 'unchanged';
+    if (settled === 'committed') setReserveNext(true);
+    else if (settled === 'unchanged') reserve();
+  };
   const busy = phase === 'reserving' || phase === 'paying';
   const locked = busy || phase === 'redirecting';
   const close = () => {
@@ -244,14 +263,15 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
                     : t('checkout.contribution.rewardHint', { amount: formatMoney(checkout.reward.price) })
                 }
                 error={contributionError}
+                grouped
               >
-                <TextInput
+                <AmountKeypad
                   value={checkout.contributionText}
-                  onChangeText={(value) => checkout.setContributionText(value.replace(',', '.'))}
-                  keyboardType="decimal-pad"
-                  inputMode="decimal"
-                  autoComplete="off"
-                  trailing={<Meta tone="secondary">{currency}</Meta>}
+                  onChange={checkout.setContributionText}
+                  currency={currency}
+                  overLimitMessage={copy.errors.amountTooLarge}
+                  ref={keypad}
+                  disabled={phase === 'reserving'}
                   testID="contribution"
                 />
               </Field>
@@ -292,7 +312,7 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
         label={phase === 'reserving' ? t('checkout.review.reserving') : t('checkout.review.reserve')}
         busy={phase === 'reserving'}
         disabled={phase === 'reserving' || !online || checkout.catalogueStatus !== 'ready'}
-        onPress={() => checkout.reserve()}
+        onPress={reserveSettled}
         testID="reserve"
       />
     );
@@ -367,20 +387,19 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
           </View>
         )}
         <Text style={styles.onWhite}>{t('checkout.review.rule')}</Text>
-        <Pill
-          variant="accent"
-          size="lg"
-          fullWidth
-          label={
+        <SwipeToConfirm
+          label={phase === 'paying' ? t('checkout.review.confirming') : t('mobile.checkout.swipeToPay')}
+          actionLabel={
             phase === 'paying'
               ? t('checkout.review.confirming')
               : agreementVersion === null
                 ? t('checkout.review.confirm')
                 : t('checkout.risk.confirm')
           }
+          amount={formatMoney(pledge.amounts.total)}
           busy={phase === 'paying'}
-          disabled={phase === 'paying' || clock.expired || !online}
-          onPress={checkout.pay}
+          disabled={clock.expired || !online}
+          onConfirm={checkout.pay}
           testID="confirm"
         />
         <Text style={styles.onWhite}>{t('checkout.review.charged')}</Text>
