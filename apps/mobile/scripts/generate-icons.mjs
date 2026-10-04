@@ -88,19 +88,30 @@ const ICONS = [
  * Glyphs Iconsax does not draw, built from ones it does. Iconsax has no bare cross and no
  * bare tick: a close button and a checkbox need both.
  */
+/*
+ * A bare mark has no second layer, so its bold and bulk drawings are the same line, heavier. Both
+ * are scaled about the centre to the span of a full-grid glyph; the stroke width is divided by the
+ * same factor so the drawn line keeps the Iconsax weight.
+ */
+function bareMark(node, transform, factor) {
+  const draw = (strokeWidth) => [
+    { el: 'g', attrs: { transform }, children: [{ ...node, attrs: { ...node.attrs, strokeWidth: Math.round((strokeWidth / factor) * 1000) / 1000 } }] },
+  ];
+  return { linear: draw(1.5), bold: draw(2.25), bulk: draw(2.25) };
+}
+
 const DERIVED = {
-  /** `Add`, turned a quarter of the way round. */
+  /** `Add`'s cross, turned an eighth of the way round and grown to span 6–18 like a full glyph. */
   Close: (get) => {
-    const add = get('Add');
-    const turn = (nodes) => [{ el: 'g', attrs: { transform: 'rotate(45 12 12)' }, children: nodes }];
-    return { linear: turn(add.linear), bold: turn(add.bold), bulk: turn(add.bulk) };
+    const cross = get('Add').linear[0];
+    if (cross === undefined) throw new Error('Add no longer has its cross path');
+    return bareMark(cross, 'translate(12 12) rotate(45) scale(1.414) translate(-12 -12)', 1.414);
   },
-  /** The mark inside `TickCircle`'s linear drawing, without the circle. */
+  /** The mark inside `TickCircle`'s linear drawing, without the circle, grown to the full grid. */
   Tick: (get) => {
     const mark = get('TickCircle').linear.find((node) => node.attrs.d?.startsWith('m7.75'));
     if (mark === undefined) throw new Error('TickCircle no longer has the expected tick path');
-    const weight = (strokeWidth) => [{ ...mark, attrs: { ...mark.attrs, strokeWidth } }];
-    return { linear: weight(1.5), bold: weight(2.25), bulk: weight(2.25) };
+    return bareMark(mark, 'translate(12 12) scale(1.6) translate(-12 -12)', 1.6);
   },
 };
 

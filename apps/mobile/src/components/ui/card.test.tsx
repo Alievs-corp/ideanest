@@ -108,9 +108,10 @@ describe('Card and SurfaceContext', () => {
       await fireEvent.press(card);
       expect(onPress).toHaveBeenCalledTimes(1);
 
-      // At rest it is the plain card, and nothing about it moves: no lift, no scale.
+      // At rest it is the plain card. It never lifts; the only transform is the press scale
+      // (`usePressScale`, mobile-design skill §6.3), resting at 1.
       expect(styleOf(card).backgroundColor).toBe(colors.surface2);
-      expect(styleOf(card).transform).toBeUndefined();
+      expect(styleOf(card).transform).toEqual([{ scale: 1 }]);
     });
 
     it('is at least a thumb tall', async () => {

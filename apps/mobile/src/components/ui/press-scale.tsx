@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -18,23 +18,32 @@ import { useMotionAllowed } from './motion-budget';
  * already been accepted. Under Reduce Motion nothing moves and the pressed colour is the whole
  * response.
  *
- * <p>The scale lives on a wrapper and the press on the `Pressable` inside it. An animated
- * `Pressable` drops a function `style`, which is how the kit draws its pressed colours.
+ * <p>An animated `Pressable` drops a function `style`, so a control that animates itself
+ * ({@link AnimatedPressable}) draws its pressed colour from `pressed` here instead. That keeps the
+ * scale on the control's own box: a wrapper would stretch across a column and the control would
+ * drift sideways as it scaled about the wrapper's centre.
  */
 export function usePressScale() {
   const allowed = useMotionAllowed('minimal');
   const scale = useSharedValue(1);
+  const [pressed, setPressed] = useState(false);
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return {
+    pressed,
     style: allowed ? animated : undefined,
     onPressIn: () => {
+      setPressed(true);
       if (allowed) scale.value = withTiming(motion.pressScale, { duration: motion.fast });
     },
     onPressOut: () => {
-      if (allowed) scale.value = withSpring(1, spring.snappy);
+      setPressed(false);
+      // Always back to rest, so a Reduce Motion switched on mid-press cannot leave it shrunk.
+      scale.value = allowed ? withSpring(1, spring.snappy) : 1;
     },
   };
 }
+
+export const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export interface PressableScaleProps extends Omit<PressableProps, 'style' | 'children'> {
   readonly children: ReactNode;

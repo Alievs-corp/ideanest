@@ -40,11 +40,23 @@ describe('generated glyphs', () => {
     for (const [name, glyph] of Object.entries(Glyphs)) expect(glyph.name).toBe(name);
   });
 
-  it('derives the two glyphs Iconsax does not draw', () => {
-    expect(Glyphs.Close.linear[0]?.attrs.transform).toBe('rotate(45 12 12)');
-    expect(Glyphs.Tick.linear).toHaveLength(1);
-    expect(Glyphs.Tick.bold[0]?.attrs.strokeWidth).toBeGreaterThan(
-      Number(Glyphs.Tick.linear[0]?.attrs.strokeWidth),
-    );
+  /**
+   * Iconsax draws no bare cross and no bare tick. Both are one line, grown about the centre to a
+   * full glyph's span — the checkbox tick must read at 14pt — with no tinted backdrop in any
+   * variant, so a close button never shows a diamond behind its X.
+   */
+  it.each([
+    ['Close', Glyphs.Close],
+    ['Tick', Glyphs.Tick],
+  ])('derives %s as one scaled line in every variant', (_name, glyph) => {
+    for (const variant of ['linear', 'bold', 'bulk'] as const) {
+      const [group] = glyph[variant];
+      expect(glyph[variant]).toHaveLength(1);
+      expect(String(group?.attrs.transform)).toMatch(/scale\(/);
+      expect(group?.children).toHaveLength(1);
+      expect(group?.children?.[0]?.attrs.opacity).toBeUndefined();
+    }
+    const weight = (variant: 'linear' | 'bold') => Number(glyph[variant][0]?.children?.[0]?.attrs.strokeWidth);
+    expect(weight('bold')).toBeGreaterThan(weight('linear'));
   });
 });
