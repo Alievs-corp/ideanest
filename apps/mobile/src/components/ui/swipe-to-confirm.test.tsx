@@ -2,6 +2,7 @@ import { useState, type ReactElement, type ReactNode } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { AccessibilityInfo, Platform } from 'react-native';
+import { State } from 'react-native-gesture-handler';
 import { fireGestureHandler, getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 import { getAnimatedStyle } from 'react-native-reanimated';
 import { IntlProvider } from 'use-intl';
@@ -200,6 +201,70 @@ describe('SwipeToConfirm, by gesture', () => {
   });
 });
 
+describe('SwipeToConfirm, guarded', () => {
+  async function dragThenEnd(to: number, end: State) {
+    await act(async () => {
+      fireGestureHandler(getByGestureTestId('swipe-to-confirm-pan'), [
+        { state: State.BEGAN, translationX: 0 },
+        { state: State.ACTIVE, translationX: to / 2 },
+        { state: State.ACTIVE, translationX: to },
+        { state: end, translationX: to },
+      ]);
+    });
+  }
+
+  it.each([
+    ['cancelled', State.CANCELLED],
+    ['failed', State.FAILED],
+  ] as const)('never commits a drag the system %s, however far it went', async (_name, end) => {
+    const onConfirm = jest.fn();
+    await renderEn(<Checkout onConfirm={onConfirm} />);
+    await measure();
+    await dragThenEnd(TRAVEL, end);
+    await waitFor(() => expect(translateX()).toBeCloseTo(0, 0), { timeout: 3000 });
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(jest.mocked(Haptics.impactAsync)).not.toHaveBeenCalled();
+  });
+
+  it('commits the same drag when it ends normally', async () => {
+    const onConfirm = jest.fn();
+    await renderEn(<Checkout onConfirm={onConfirm} />);
+    await measure();
+    await dragThenEnd(TRAVEL, State.END);
+    await waitFor(() => expect(onConfirm).toHaveBeenCalledTimes(1), { timeout: 3000 });
+  });
+
+  it('sends once for two activations before busy arrives, with one haptic', async () => {
+    const onConfirm = jest.fn();
+    await renderEn(<Checkout onConfirm={onConfirm} />);
+    const track = screen.getByTestId('swipe-to-confirm');
+    const activate = { nativeEvent: { actionName: 'activate' } };
+    await act(async () => {
+      track.props.onAccessibilityAction(activate);
+      track.props.onAccessibilityAction(activate);
+    });
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(Haptics.impactAsync)).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts again once the caller declined to send', async () => {
+    const onConfirm = jest.fn();
+    await renderEn(<SwipeToConfirm label={LABEL} actionLabel={ACTION} onConfirm={onConfirm} />);
+    const activate = { nativeEvent: { actionName: 'activate' } };
+    await fireEvent(screen.getByTestId('swipe-to-confirm'), 'accessibilityAction', activate);
+    await fireEvent(screen.getByTestId('swipe-to-confirm'), 'accessibilityAction', activate);
+    expect(onConfirm).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the busy label visible while the thumb waits at the end', async () => {
+    await renderEn(<SwipeToConfirm label={en.checkout.review.confirming} actionLabel={ACTION} onConfirm={() => undefined} busy />);
+    await measure();
+    const label = screen.getByTestId('swipe-to-confirm-label', { includeHiddenElements: true });
+    expect(label).toHaveTextContent(en.checkout.review.confirming);
+    expect((getAnimatedStyle(label as never) as { opacity?: number }).opacity).toBe(1);
+  });
+});
+
 describe('SwipeToConfirm, without the gesture', () => {
   it('confirms through the activate action a screen reader or Switch Control performs', async () => {
     const onConfirm = jest.fn();
@@ -224,6 +289,20 @@ describe('SwipeToConfirm, without the gesture', () => {
     expect(screen.getByTestId('swipe-to-confirm-amount')).toHaveAccessibleName('45.00 AZN');
     await fireEvent.press(button);
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends once for a double tap on the button before busy arrives', async () => {
+    jest.spyOn(AccessibilityInfo, 'isScreenReaderEnabled').mockResolvedValue(true);
+    const onConfirm = jest.fn();
+    await renderEn(<Checkout onConfirm={onConfirm} />);
+    await waitFor(() => expect(screen.queryByTestId('swipe-to-confirm-thumb')).toBeNull());
+    const button = screen.getByRole('button', { name: ACTION });
+    await act(async () => {
+      void fireEvent.press(button);
+      void fireEvent.press(button);
+    });
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+    expect(jest.mocked(Haptics.impactAsync)).toHaveBeenCalledTimes(1);
   });
 
   it('is a busy, disabled button while its request is in flight', async () => {

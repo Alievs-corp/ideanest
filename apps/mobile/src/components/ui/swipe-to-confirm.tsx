@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
@@ -40,10 +40,13 @@ import { BLOCK, TONES, blockSurface, useSurface } from './surface';
  *
  * <h2>Once per request</h2>
  *
- * `busy` is the request in flight: the thumb holds at the end with a spinner and nothing can commit
- * again. When `busy` ends without the screen moving on — a failure, a dismissed payment page — the
- * thumb returns to the start, and the next swipe calls `onConfirm` again. Idempotency is the
- * caller's: a retry must send the same key, which `useCheckout`'s keyring does.
+ * `busy` is the request in flight: the thumb holds at the end with a spinner, the label stays
+ * readable beside it, and nothing can commit again. A local latch covers the frames before `busy`
+ * arrives, so a double tap or two activations send once, and the haptic fires only for the commit
+ * that was accepted. A drag the system cancelled (a home swipe, a call) never commits. When `busy`
+ * ends without the screen moving on — a failure, a dismissed payment page — the thumb returns to
+ * the start, and the next swipe calls `onConfirm` again. Idempotency is the caller's: a retry must
+ * send the same key, which `useCheckout`'s keyring does.
  *
  * <p>Wrapped in its own `GestureHandlerRootView`, as the library asks of a component that may be
  * mounted inside a modal screen.
@@ -93,6 +96,23 @@ export function SwipeToConfirm({
   const assisted = useAssistiveTechnology();
   const blocked = disabled || busy;
 
+  // A double tap, or an activate and a release in the same frame, must not send twice before
+  // `busy` arrives. The latch holds from an accepted commit until nothing is in flight: the request
+  // ended, or the caller declined to send it.
+  const latch = useRef(false);
+  const [attempts, setAttempts] = useState(0);
+  useEffect(() => {
+    if (!busy) latch.current = false;
+  }, [busy, attempts]);
+  const accept = (): boolean => {
+    if (latch.current || blocked) return false;
+    latch.current = true;
+    setAttempts((count) => count + 1);
+    haptics.swipeConfirm();
+    onConfirm();
+    return true;
+  };
+
   if (assisted) {
     return (
       <View style={styles.root}>
@@ -104,10 +124,7 @@ export function SwipeToConfirm({
           label={actionLabel}
           busy={busy}
           disabled={disabled}
-          onPress={() => {
-            haptics.swipeConfirm();
-            onConfirm();
-          }}
+          onPress={() => void accept()}
           testID={testID}
         />
       </View>
@@ -118,7 +135,8 @@ export function SwipeToConfirm({
     <SwipeTrack
       label={label}
       actionLabel={actionLabel}
-      onConfirm={onConfirm}
+      accept={accept}
+      attempts={attempts}
       amount={amount}
       busy={busy}
       blocked={blocked}
@@ -130,7 +148,8 @@ export function SwipeToConfirm({
 function SwipeTrack({
   label,
   actionLabel,
-  onConfirm,
+  accept,
+  attempts,
   amount,
   busy,
   blocked,
@@ -138,7 +157,8 @@ function SwipeTrack({
 }: {
   readonly label: string;
   readonly actionLabel: string;
-  readonly onConfirm: () => void;
+  readonly accept: () => boolean;
+  readonly attempts: number;
   readonly amount: string | undefined;
   readonly busy: boolean;
   readonly blocked: boolean;
@@ -153,20 +173,23 @@ function SwipeTrack({
   const x = useSharedValue(0);
   const start = useSharedValue(0);
   const travel = useSharedValue(0);
-  const [commits, setCommits] = useState(0);
 
+  const back = () => {
+    x.value = moves ? withSpring(0, spring.snappy) : 0;
+  };
+  const toEnd = () => {
+    x.value = moves ? withSpring(travel.value, spring.snappy) : travel.value;
+  };
   const commit = () => {
-    haptics.swipeConfirm();
-    setCommits((count) => count + 1);
-    onConfirm();
+    if (!accept()) back();
   };
 
-  // Back to the start whenever nothing is in flight after a commit: the request failed, the page
+  // Back to the start whenever nothing is in flight after an attempt: the request failed, the page
   // it opened was dismissed, or the caller refused to send it.
   useEffect(() => {
     if (busy) return;
     x.value = moves ? withSpring(0, spring.snappy) : 0;
-  }, [busy, commits, moves, x]);
+  }, [busy, attempts, moves, x]);
 
   const pan = Gesture.Pan()
     .enabled(!blocked)
@@ -178,8 +201,10 @@ function SwipeTrack({
     .onUpdate((event) => {
       x.value = Math.min(travel.value, Math.max(0, start.value + event.translationX));
     })
-    .onEnd(() => {
-      if (swipeCommits(x.value, travel.value)) {
+    // `success` is false when the system took the touch — a home swipe, a call, `enabled` flipping
+    // mid-drag. A cancelled drag never commits, however far it got.
+    .onEnd((_event, success) => {
+      if (success && swipeCommits(x.value, travel.value)) {
         x.value = moves ? withSpring(travel.value, spring.snappy) : travel.value;
         runOnJS(commit)();
       } else {
@@ -194,7 +219,9 @@ function SwipeTrack({
 
   const thumbStyle = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   const progress = useDerivedValue(() => swipeProgress(x.value, travel.value));
-  const labelStyle = useAnimatedStyle(() => ({ opacity: 1 - progress.value }));
+  // While the request runs the thumb sits at the end, so the label ("Confirming…") moves left of it
+  // and stays visible instead of fading out with the progress.
+  const labelStyle = useAnimatedStyle(() => ({ opacity: busy ? 1 : 1 - progress.value }));
 
   return (
     <GestureHandlerRootView style={styles.root}>
@@ -210,7 +237,7 @@ function SwipeTrack({
         accessibilityActions={[{ name: 'activate' }]}
         onAccessibilityAction={(event) => {
           if (event.nativeEvent.actionName !== 'activate' || blocked) return;
-          x.value = moves ? withSpring(travel.value, spring.snappy) : travel.value;
+          toEnd();
           commit();
         }}
         onLayout={onLayout}
@@ -218,10 +245,11 @@ function SwipeTrack({
         testID={testID}
       >
         <Animated.Text
-          style={[styles.label, { color: tones.secondary }, labelStyle]}
+          style={[busy ? styles.labelBusy : styles.label, { color: tones.secondary }, labelStyle]}
           numberOfLines={1}
           accessibilityElementsHidden
           importantForAccessibility="no"
+          testID={`${testID}-label`}
         >
           {label}
         </Animated.Text>
@@ -315,6 +343,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingLeft: THUMB + INSET * 2,
     paddingRight: spacing[4],
+  },
+  labelBusy: {
+    ...font.medium,
+    fontSize: fontSize.sm,
+    lineHeight: lineHeight.small,
+    textAlign: 'center',
+    paddingLeft: spacing[4],
+    paddingRight: THUMB + INSET * 2,
   },
   thumb: {
     position: 'absolute',
