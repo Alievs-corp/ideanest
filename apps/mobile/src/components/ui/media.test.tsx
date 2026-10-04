@@ -1,12 +1,13 @@
-import { render } from '@testing-library/react-native';
-import { StyleSheet, type ViewStyle } from 'react-native';
-import { colors } from '../../theme';
+import { render, waitFor } from '@testing-library/react-native';
+import { AccessibilityInfo, StyleSheet, type ViewStyle } from 'react-native';
+import { colors, motion } from '../../theme';
 import { Media, MediaFrame, aspectRatioOf, isPlaceholderUri } from './media';
 import { MotionBudgetProvider } from './motion-budget';
+import { SurfaceProvider } from './surface';
 
 /**
  * The media primitive: the box is reserved before the picture arrives, a meaningful picture cannot
- * be unnamed, and a picture only fades in where the surface's budget allows it.
+ * be unnamed, and a picture crossfades in over its placeholder unless Reduce Motion is on.
  */
 
 const SRC = 'https://cdn.test.invalid/cover.jpg';
@@ -24,6 +25,15 @@ describe('MediaFrame', () => {
     expect(style.backgroundColor).toBe(colors.surface3);
     expect(style.borderRadius).toBe(20);
     expect(style.overflow).toBe('hidden');
+  });
+
+  it('reserves the box on the sheet’s muted fill inside a white sheet', async () => {
+    const { getByTestId } = await render(
+      <SurfaceProvider surface="white">
+        <MediaFrame testID="frame" ratio="1/1" />
+      </SurfaceProvider>,
+    );
+    expect(frameStyle(getByTestId('frame')).backgroundColor).toBe(colors.whiteMuted);
   });
 
   it('takes an intrinsic size, and falls back to 16:9 for one that cannot be a ratio', () => {
@@ -67,13 +77,26 @@ describe('Media', () => {
     expect(isPlaceholderUri('https://cdn.test.invalid/preview.jpg')).toBe(false);
   });
 
-  it('does not fade on a surface whose budget is below moderate, such as discovery', async () => {
+  it('crossfades the picture in over motion.overlay, in lists as well', async () => {
     const { getByTestId } = await render(
       <MotionBudgetProvider level="minimal">
         <Media testID="media" src={SRC} ratio="16/9" decorative />
       </MotionBudgetProvider>,
     );
-    expect(getByTestId('media', { includeHiddenElements: true }).props.transition).toBe(0);
+    expect(getByTestId('media', { includeHiddenElements: true }).props.transition).toBe(
+      motion.overlay,
+    );
+  });
+
+  it('swaps at once, with no fade, under Reduce Motion', async () => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValueOnce(true);
+    const { getByTestId } = await render(
+      <Media testID="media" src={SRC} ratio="16/9" decorative />,
+    );
+    await waitFor(() =>
+      expect(getByTestId('media', { includeHiddenElements: true }).props.transition).toBe(0),
+    );
+    jest.restoreAllMocks();
   });
 });
 

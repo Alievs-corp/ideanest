@@ -6,6 +6,7 @@ import en from '@ideanest/messages/en.json';
 import ru from '@ideanest/messages/ru.json';
 import { colors } from '../../theme';
 import { CharacterCount } from './character-count';
+import { SurfaceProvider, TONES } from './surface';
 
 /**
  * The count's two jobs: say the right sentence in the reader's plural, and speak it only when it
@@ -57,6 +58,36 @@ describe('CharacterCount', () => {
       fontVariant: ['tabular-nums'],
       fontSize: 13,
     });
+  });
+
+  it('switches tone on the render that crosses the limit, with nothing animated', async () => {
+    const tree = await render(<CharacterCount count={60} limit={60} />, { wrapper: English });
+    await tree.rerender(<CharacterCount count={61} limit={60} />);
+    const style = StyleSheet.flatten(tree.getByText('1 character too many').props.style);
+    expect(style.color).toBe(colors.danger);
+    expect(style.opacity).toBeUndefined();
+    expect(style.transform).toBeUndefined();
+  });
+
+  it('on a white sheet: on-white tertiary under the limit, on-white ink over it', async () => {
+    const tree = await render(
+      <SurfaceProvider surface="white">
+        <CharacterCount count={10} limit={60} />
+      </SurfaceProvider>,
+      { wrapper: English },
+    );
+    expect(StyleSheet.flatten(tree.getByText('50 characters remaining').props.style).color).toBe(
+      TONES.white.tertiary,
+    );
+    await tree.rerender(
+      <SurfaceProvider surface="white">
+        <CharacterCount count={63} limit={60} />
+      </SurfaceProvider>,
+    );
+    // Danger text measures about 3.4:1 on white: the words carry it, in legible ink.
+    expect(StyleSheet.flatten(tree.getByText('3 characters too many').props.style).color).toBe(
+      colors.textOnWhite,
+    );
   });
 
   describe('announcing', () => {

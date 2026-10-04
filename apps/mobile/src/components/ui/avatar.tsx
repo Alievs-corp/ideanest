@@ -2,19 +2,21 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { colors, font, fontSize, radius, size as measure } from '../../theme';
+import { TONES, blockSurface, useSurface, type BlockSurface } from './surface';
 
 /**
  * A person's face, or their initials — the native `Avatar` (`docs/ui-kit.md` §7.6).
  *
  * <p>The web's sizes — xs 24, sm 28, md 40, lg 56 — the last three being `size.avatarInGroup`,
- * `size.avatarInCard` and `size.avatarOnProfile`. A 2pt `surface-1` ring separates a face from
- * whatever it overlaps, drawn as an outline so it sits outside the circle and takes no layout, as
- * the web's `ring-2` does.
+ * `size.avatarInCard` and `size.avatarOnProfile`. A 2pt ring in the colour of the surface beneath
+ * (`surface-1` on the canvas, `whiteSurface` in a white sheet) separates a face from whatever it
+ * overlaps, drawn as an outline so it takes no layout — the same ring `AvatarStack`'s `+N` pill
+ * wears, so a stack reads as one row.
  *
  * <p>The picture is `expo-image`, which caches to disk and decodes off the main thread. Without a
  * picture — or when the one given fails to load — it draws the first letter of the first two
- * words on surface-3 in white/64, whatever surface it sits on: the circle is always dark, so its
- * text is always the dark tone.
+ * words: on `surface-3` in white/64 on the canvas, on `whiteMuted` in on-white/64 in a white sheet
+ * (`mobile-design` skill §2: dark text tokens are never used on white).
  *
  * <h2>Decorative beside a name, labelled alone</h2>
  *
@@ -56,6 +58,7 @@ export interface AvatarProps {
 
 export function Avatar({ name, src, size = 'md', decorative = false, testID }: AvatarProps) {
   const [failed, setFailed] = useState<string | null>(null);
+  const block = blockSurface(useSurface());
   const side = SIDE[size];
   const picture = src !== undefined && src !== null && src !== '' && failed !== src ? src : null;
 
@@ -67,11 +70,11 @@ export function Avatar({ name, src, size = 'md', decorative = false, testID }: A
       accessibilityElementsHidden={decorative}
       importantForAccessibility={decorative ? 'no-hide-descendants' : 'yes'}
       testID={testID}
-      style={[styles.circle, { width: side, height: side }]}
+      style={[styles.circle, SKIN[block], { width: side, height: side }]}
     >
       {picture === null ? (
         <Text
-          style={[styles.initials, { fontSize: INITIALS[size] }]}
+          style={[styles.initials, { fontSize: INITIALS[size], color: TONES[block].secondary }]}
           // The circle carries the name; two letters of it are not a second announcement.
           accessibilityElementsHidden
           importantForAccessibility="no"
@@ -110,17 +113,21 @@ export function initials(name: string): string {
     .toUpperCase();
 }
 
+/** The circle's fill and ring per surface — `AvatarStack`'s `+N` pill uses the same pair. */
+const SKIN: Record<BlockSurface, { backgroundColor: string; outlineColor: string }> = {
+  dark: { backgroundColor: colors.surface3, outlineColor: colors.surface1 },
+  white: { backgroundColor: colors.whiteMuted, outlineColor: colors.whiteSurface },
+};
+
 const styles = StyleSheet.create({
   circle: {
     borderRadius: radius.full,
-    backgroundColor: colors.surface3,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
     outlineWidth: 2,
     outlineStyle: 'solid',
-    outlineColor: colors.surface1,
   },
   fill: { width: '100%', height: '100%' },
-  initials: { ...font.medium, color: colors.textSecondary },
+  initials: { ...font.medium },
 });

@@ -1,10 +1,10 @@
 import { useEffect, type ReactNode } from 'react';
 import { AccessibilityInfo, Platform, StyleSheet, View } from 'react-native';
+import { Glyphs } from '../icons';
 import { currentlyOnline, subscribeToConnectivity, useOnline } from '../lib/connectivity';
 import { useT } from '../lib/i18n';
-import { colors, spacing } from '../theme';
-import { UpcomingMaintenanceBanner } from './maintenance-banner';
-import { InlineAlert } from './ui';
+import { colors } from '../theme';
+import { BannerNotice, UpcomingMaintenanceBanner } from './maintenance-banner';
 
 /**
  * The global offline banner — issue #150.
@@ -23,11 +23,12 @@ import { InlineAlert } from './ui';
  * one from the root would sit above it — and the full-screen failure states, which are not
  * something being read from a cache.
  *
- * <h2>The words are the banner; the stripe is the reminder</h2>
+ * <h2>The words are the banner; the glyph is the reminder</h2>
  *
- * It is the kit's warning `InlineAlert` — a stripe, an icon **and** a sentence, never the hue
- * alone (CLAUDE.md §2) — laid across the top of the screen. Screens with cached data keep showing it
- * underneath (`offlineFirst`, `lib/offline.ts`); screens without show their own error.
+ * It is a {@link BannerNotice}: the Bulk `WifiSquare` glyph in the warning tone **and** a sentence,
+ * never the hue alone (CLAUDE.md §2), laid across the top of the screen and shown at once, never
+ * animated in. Screens with cached data keep showing it underneath (`offlineFirst`,
+ * `lib/offline.ts`); screens without show their own error.
  *
  * <h2>Announced once, when the connection drops</h2>
  *
@@ -35,10 +36,9 @@ import { InlineAlert } from './ui';
  * so the sentence appearing inside it is a content change TalkBack reads — once, when it
  * appears, and not on a launch that is already online, where it never appears. iOS has no live
  * regions; there {@link OfflineAnnouncer} says it, from one place in the root, so the banners
- * mounted on every screen of the stack do not each announce it. That is why the alert itself is
- * `politeness="off"` although it is a warning: the outer view is the one live region, so the
- * alert must not be a second one nested in it (TalkBack could read the sentence twice), and a
- * warning `InlineAlert` would otherwise announce itself on iOS on every screen in the stack.
+ * mounted on every screen of the stack do not each announce it. That is why the notice itself is
+ * not a live region: the outer view is the one, and a second nested in it could make TalkBack
+ * read the sentence twice.
  */
 export function OfflineBanner() {
   const online = useOnline();
@@ -46,9 +46,7 @@ export function OfflineBanner() {
   return (
     <View accessibilityLiveRegion="polite" testID="offline-region">
       {online ? null : (
-        <View style={styles.banner}>
-          <InlineAlert variant="warning" politeness="off" description={t('banner')} />
-        </View>
+        <BannerNotice icon={Glyphs.WifiSquare} tone={colors.warning} message={t('banner')} />
       )}
     </View>
   );
@@ -97,10 +95,4 @@ export function OfflineAnnouncer() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surface1 },
-  banner: {
-    paddingHorizontal: spacing[4],
-    paddingTop: spacing[2],
-    paddingBottom: spacing[2],
-    backgroundColor: colors.surface1,
-  },
 });

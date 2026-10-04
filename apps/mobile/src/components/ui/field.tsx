@@ -5,7 +5,7 @@ import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
 import { announce } from './announce';
 import { Icon } from './icon';
-import { TONES, useSurface } from './surface';
+import { TONES, useSurface, type Surface } from './surface';
 
 /**
  * The wrapper every form control composes with — the native `Field` (`docs/ui-kit.md` §7.13).
@@ -40,8 +40,14 @@ import { TONES, useSurface } from './surface';
  *
  * <h2>An error is text plus an icon, never a colour</h2>
  *
- * `--danger` with `CircleAlert` and a sentence. A red border alone says nothing to a screen reader
- * and nothing to somebody who cannot see red (§9.2). Lime never marks an error: lime is urgent.
+ * `--danger` with a `Warning2` icon and a sentence. A red border alone says nothing to a screen
+ * reader and nothing to somebody who cannot see red (§9.2). Lime never marks an error: lime is
+ * urgent. On a white sheet `--danger` text measures about 3.4:1, under AA for a caption, so there
+ * the sentence is in the surface's primary ink and the icon and border carry the danger
+ * ({@link errorTextColor}).
+ *
+ * <p>The error appears on the render that sets it and leaves on the one that clears it — never
+ * faded or slid in (`mobile-design` skill §6.4): an error that animates in is read late.
  *
  * <h2>Grouped: the question is a header</h2>
  *
@@ -195,12 +201,23 @@ export function Field({
             <View style={styles.errorIcon}>
               <Icon icon={Glyphs.Warning2} size={14} color={colors.danger} />
             </View>
-            <Text style={[styles.caption, styles.errorText]}>{error}</Text>
+            <Text style={[styles.caption, styles.errorText, { color: errorTextColor(surface) }]}>
+              {error}
+            </Text>
           </View>
         ) : null}
       </View>
     </FieldContext.Provider>
   );
+}
+
+/**
+ * The colour of an error or refusal sentence on a surface: `--danger` where it is legible (the dark
+ * canvas), the surface's primary ink on white, where danger text fails AA. The icon beside it stays
+ * `--danger` everywhere — a glyph needs 3:1, which danger meets on white.
+ */
+export function errorTextColor(surface: Surface): string {
+  return surface === 'white' ? TONES.white.primary : colors.danger;
 }
 
 /**
@@ -250,5 +267,5 @@ const styles = StyleSheet.create({
   error: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   // Centres the 14pt icon on the first 21pt line, where the web's `mt-0.5` puts it.
   errorIcon: { paddingTop: (lineHeight.small - 14) / 2 },
-  errorText: { flexShrink: 1, color: colors.danger },
+  errorText: { flexShrink: 1 },
 });

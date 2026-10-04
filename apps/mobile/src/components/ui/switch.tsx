@@ -1,20 +1,22 @@
-import { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { colors, lineHeight, motion, radius } from '../../theme';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { colors, lineHeight, radius } from '../../theme';
 import { RowText, rowStyles } from './checkbox';
 import { useFocusRing } from './focus';
-import { useMotionAllowed } from './motion-budget';
-import { TONES, useSurface } from './surface';
+import { usePressScale } from './press-scale';
+import { TONES, useSurface, type Surface } from './surface';
+import { useToggleMotion } from './toggle-motion';
 
 /**
  * An on/off setting — the native `Switch` (`docs/ui-kit.md` §7.13). It replaces React Native's
  * own `Switch`, whose platform colours are neither the web's nor each other's.
  *
- * <h2>The web's switch, drawn</h2>
+ * <h2>Drawn per surface</h2>
  *
- * 44×24. Off is `--surface-4` with a white knob; on is `--lime-500` with a near-black knob. The
- * knob's colour and position both change, so on and off differ in more than hue.
+ * A 44×24 pill track and a round knob. On the dark canvas off is `surface4` with a white knob and
+ * on is `lime500` with a near-black knob, so on and off differ in more than hue. On a white sheet
+ * (`useSurface`) lime would have no edge against the white, so on is `surface1` and off a mid-grey,
+ * both with a white knob — there the knob's side is what says on or off.
  *
  * <p>The whole row — track, label, description — is one `Pressable` with
  * `accessibilityRole="switch"` and `accessibilityState.checked`, at least 44pt tall, which is the
@@ -22,11 +24,9 @@ import { TONES, useSurface } from './surface';
  *
  * <h2>Motion</h2>
  *
- * The knob travels 20pt on `translateX` — transform only — over `motion.fast` (the mobile 120ms
- * step, ~20% under the web's 150ms per `docs/motion-system.md` §7), and only when
- * `useMotionAllowed('minimal')` says so. With Reduce Motion on, or on a surface whose budget is
- * `none` (settings is one), the knob is simply where it belongs: a state change, not a fast
- * animation.
+ * The knob slides 20pt on `translateX` on `spring.snappy`, and the on colours crossfade in over the
+ * off ones as two layers — transform and opacity only. A press anywhere on the row gives the track
+ * the press scale. Under Reduce Motion the knob is simply where it belongs, on the same frame.
  */
 
 export interface SwitchProps {
@@ -47,6 +47,34 @@ export const KNOB_TRAVEL = TRACK_WIDTH - KNOB - 2 * INSET;
 
 /** The knob's test identifier, for reading its position. */
 export const SWITCH_KNOB = 'switch-knob';
+/** The track's "on" layer, for reading the crossfade. */
+export const SWITCH_ON_LAYER = 'switch-on-layer';
+
+interface SwitchSkin {
+  readonly offTrack: string;
+  readonly onTrack: string;
+  readonly offKnob: string;
+  readonly onKnob: string;
+}
+
+const SKIN: Record<'dark' | 'light', SwitchSkin> = {
+  dark: {
+    offTrack: colors.surface4,
+    onTrack: colors.lime500,
+    offKnob: colors.whiteSurface,
+    onKnob: colors.textOnLime,
+  },
+  light: {
+    offTrack: TONES.white.tertiary,
+    onTrack: colors.surface1,
+    offKnob: colors.whiteSurface,
+    onKnob: colors.whiteSurface,
+  },
+};
+
+export function switchSkin(surface: Surface): SwitchSkin {
+  return surface === 'dark' ? SKIN.dark : SKIN.light;
+}
 
 export function Switch({
   label,
@@ -58,17 +86,17 @@ export function Switch({
 }: SwitchProps) {
   const surface = useSurface();
   const tones = TONES[surface];
+  const skin = switchSkin(surface);
   const { ring, onFocus, onBlur } = useFocusRing();
-  const moves = useMotionAllowed('minimal');
+  const press = usePressScale();
+  const { progress } = useToggleMotion(value);
 
-  const target = value ? KNOB_TRAVEL : 0;
-  const offset = useSharedValue(target);
-
-  useEffect(() => {
-    offset.value = moves ? withTiming(target, { duration: motion.fast }) : target;
-  }, [moves, offset, target]);
-
-  const knobMotion = useAnimatedStyle(() => ({ transform: [{ translateX: offset.value }] }));
+  const knobSlide = useAnimatedStyle(() => ({
+    transform: [{ translateX: progress.value * KNOB_TRAVEL }],
+  }));
+  // One animated style per view, never one shared between two.
+  const trackOn = useAnimatedStyle(() => ({ opacity: progress.value }));
+  const knobOn = useAnimatedStyle(() => ({ opacity: progress.value }));
 
   return (
     <Pressable
@@ -78,6 +106,8 @@ export function Switch({
       accessibilityState={{ checked: value, disabled }}
       disabled={disabled}
       onPress={() => onValueChange(!value)}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       onFocus={onFocus}
       onBlur={onBlur}
       testID={testID}
@@ -89,24 +119,17 @@ export function Switch({
         primary={tones.primary}
         secondary={tones.secondary}
       />
-      <View style={[styles.track, value ? styles.trackOn : styles.trackOff]}>
-        {moves ? (
-          <Animated.View
-            testID={SWITCH_KNOB}
-            style={[styles.knob, value ? styles.knobOn : styles.knobOff, knobMotion]}
-          />
-        ) : (
-          // No animated style at all: the knob is drawn at its place, not moved there quickly.
-          <View
-            testID={SWITCH_KNOB}
-            style={[
-              styles.knob,
-              value ? styles.knobOn : styles.knobOff,
-              { transform: [{ translateX: target }] },
-            ]}
-          />
-        )}
-      </View>
+      <Animated.View style={[styles.track, press.style]}>
+        <View style={[styles.fill, { backgroundColor: skin.offTrack }]} />
+        <Animated.View
+          testID={SWITCH_ON_LAYER}
+          style={[styles.fill, { backgroundColor: skin.onTrack }, trackOn]}
+        />
+        <Animated.View testID={SWITCH_KNOB} style={[styles.knob, knobSlide]}>
+          <View style={[styles.fill, { backgroundColor: skin.offKnob }]} />
+          <Animated.View style={[styles.fill, { backgroundColor: skin.onKnob }, knobOn]} />
+        </Animated.View>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -121,9 +144,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     padding: INSET,
   },
-  trackOff: { backgroundColor: colors.surface4 },
-  trackOn: { backgroundColor: colors.lime500 },
+  fill: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: radius.full,
+  },
   knob: { width: KNOB, height: KNOB, borderRadius: radius.full },
-  knobOff: { backgroundColor: colors.whiteSurface },
-  knobOn: { backgroundColor: colors.textOnLime },
 });

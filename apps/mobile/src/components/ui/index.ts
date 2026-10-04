@@ -153,4 +153,4 @@ export { Textarea, type TextareaProps } from './textarea';
 
 /* Overlay: Dialog, Sheet ---------------------------------------------------------------------- */
 export { Dialog, type DialogProps } from './dialog';
-export { SHEET_PAGE_SCALE, Sheet, SheetHost, type SheetProps, type SheetSurface } from './sheet';
+export { SHEET_PAGE_SCALE, Sheet, SheetHost, type SheetProps } from './sheet';

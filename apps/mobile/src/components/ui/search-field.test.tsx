@@ -1,10 +1,13 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { AccessibilityInfo, StyleSheet } from 'react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
-import { size } from '../../theme';
+import { colors, motion, radius, size } from '../../theme';
+import { MotionBudgetProvider } from './motion-budget';
 import { SearchField, type SearchSuggestion } from './search-field';
+import { SurfaceProvider } from './surface';
 
 /**
  * The search box the Search tab consumes: a search input, suggestions in flow below it that a
@@ -118,5 +121,63 @@ describe('SearchField', () => {
   it('renders no list when there are no suggestions', async () => {
     const { queryAllByRole } = await renderEn(<Search suggestions={[]} />);
     expect(queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it('is a pill on the canvas, in the dark input skin', async () => {
+    const { getByLabelText } = await renderEn(<Search />);
+    const frame = getByLabelText(LABEL).parent as { props: { style?: unknown } };
+    expect(StyleSheet.flatten(frame.props.style as never)).toMatchObject({
+      borderRadius: radius.full,
+      backgroundColor: colors.surface3,
+    });
+  });
+
+  it('reads a white sheet: white-muted pill and list, on-white text', async () => {
+    const { getByLabelText, getByText } = await renderEn(
+      <SurfaceProvider surface="white">
+        <Search />
+      </SurfaceProvider>,
+    );
+    const input = getByLabelText(LABEL);
+    const frame = input.parent as { props: { style?: unknown } };
+    expect(StyleSheet.flatten(frame.props.style as never)).toMatchObject({
+      borderRadius: radius.full,
+      backgroundColor: colors.whiteMuted,
+    });
+    expect(StyleSheet.flatten(input.props.style).color).toBe(colors.textOnWhite);
+    expect(StyleSheet.flatten(getByText('Books').props.style).color).toBe(colors.textOnWhite);
+  });
+
+  describe('suggestion press feedback', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    const scaleOf = (node: unknown) =>
+      (getAnimatedStyle(node as never) as { transform?: { scale: number }[] }).transform?.[0]
+        ?.scale;
+
+    it('gives under the thumb, and the press still commits', async () => {
+      const onSelectSuggestion = jest.fn();
+      const { getByRole } = await renderEn(<Search onSelectSuggestion={onSelectSuggestion} />);
+      const row = getByRole('button', { name: 'Books' });
+      await fireEvent(row, 'pressIn');
+      await waitFor(() => expect(scaleOf(row)).toBe(motion.pressScale), { timeout: 3000 });
+      await fireEvent(row, 'pressOut');
+      await fireEvent.press(row);
+      expect(onSelectSuggestion).toHaveBeenCalledWith(SUGGESTIONS[1]);
+    });
+
+    it('does not move under Reduce Motion — the pressed colour is the whole response', async () => {
+      jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+      const { getByRole } = await renderEn(
+        <MotionBudgetProvider level="none">
+          <Search />
+        </MotionBudgetProvider>,
+      );
+      const row = getByRole('button', { name: 'Books' });
+      await fireEvent(row, 'pressIn');
+      const style = StyleSheet.flatten(getByRole('button', { name: 'Books' }).props.style);
+      expect(style.transform).toBeUndefined();
+      expect(style.backgroundColor).toBe(colors.surface4);
+    });
   });
 });

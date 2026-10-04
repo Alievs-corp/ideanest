@@ -1,4 +1,5 @@
 import { Stack, useRouter } from 'expo-router';
+import { Glyphs } from '../icons';
 import { useT } from '../lib/i18n';
 import { FailureState } from './failure-state';
 
@@ -10,7 +11,8 @@ import { FailureState } from './failure-state';
  * One component, so a link to `/categories/gmaes` and a link to a route this build does not have
  * say the same thing and offer the same way back. The action is the home page, which is what its
  * label promises — a white pill, as on the web's failure pages — unless the screen names a better
- * way out: the campaign page sends a reader on to other campaigns.
+ * way out: the campaign page sends a reader on to other campaigns. Its glyph is Iconsax's
+ * `SearchStatus`, in the Bulk style empty states take.
  */
 export function NotFoundState({
   action,
@@ -29,6 +31,7 @@ export function NotFoundState({
         description={t('description')}
         actionLabel={action?.label ?? t('action')}
         onAction={action?.onPress ?? (() => router.replace('/'))}
+        icon={Glyphs.SearchStatus}
         testID={testID}
       />
     </>

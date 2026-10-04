@@ -70,6 +70,51 @@ export const TONES: Record<Surface, Record<RelativeTone, string>> = {
 };
 
 /**
+ * Which raised-block skin a block takes where it sits: `white` inside a white sheet or panel, `dark`
+ * everywhere else (a block placed on a lime or accent card is still a dark block).
+ */
+export type BlockSurface = 'dark' | 'white';
+
+export function blockSurface(outer: Surface): BlockSurface {
+  return outer === 'white' ? 'white' : 'dark';
+}
+
+/**
+ * Raised blocks — `mobile-design` skill §2. On the canvas a block is `surface2` (pressed
+ * `surface3`), never a border-only box; inside a white sheet it is `whiteMuted`, pressed a black/8
+ * layer over the sheet. `placeholder` and `shimmer` are a loading block and its travelling band,
+ * `track` a bar's empty track, and `badge` the soft circle behind a feature icon, on each.
+ */
+export const BLOCK: Record<
+  BlockSurface,
+  {
+    readonly rest: string;
+    readonly pressed: string;
+    readonly placeholder: string;
+    readonly shimmer: string;
+    readonly track: string;
+    readonly badge: string;
+  }
+> = {
+  dark: {
+    rest: colors.surface2,
+    pressed: colors.surface3,
+    placeholder: colors.surface3,
+    shimmer: colors.surface4,
+    track: colors.surface3,
+    badge: colors.surface3,
+  },
+  white: {
+    rest: colors.whiteMuted,
+    pressed: tint(colors.black, 0.08),
+    placeholder: colors.whiteMuted,
+    shimmer: colors.whiteSurface,
+    track: colors.whiteMuted,
+    badge: colors.whiteSurface,
+  },
+};
+
+/**
  * The focus ring's colour on a surface: lime on the dark surfaces, and near-black on lime and on
  * white — the same switch `theme.css` makes under `[data-on-lime]` and `[data-on-white]`, because
  * `packages/ui`'s contrast test measures lime on white below 3:1.

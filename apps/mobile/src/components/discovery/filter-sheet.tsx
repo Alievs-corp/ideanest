@@ -22,9 +22,10 @@ import { fillPlaceholders } from '@ideanest/messages/placeholders';
 import { useFilterVocabulary } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
-import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
+import { colors, font, fontSize, lineHeight, spacing, tint } from '../../theme';
 import { Caption } from '../text';
-import { Checkbox, Field, Pill, Sheet, TextInput } from '../ui';
+import { Checkbox, Field, Pill, Sheet, TONES, TextInput } from '../ui';
+import { errorTextColor } from '../ui/field';
 
 /**
  * The feed's filters in a bottom sheet — the web's `FilterRail` (issue #153).
@@ -70,7 +71,7 @@ export function FilterSheet({ visible, onClose, filters, facets, onChange }: Fil
   const tags = facets?.tags ?? [];
 
   return (
-    <Sheet surface="dark" visible={visible} onClose={onClose} title={t('railLabel')} testID="filter-sheet">
+    <Sheet visible={visible} onClose={onClose} title={t('railLabel')} testID="filter-sheet">
       <Group legend={vocabulary.groups.status} first>
         {STATUSES.map((status) => (
           <FacetCheckbox
@@ -326,21 +327,21 @@ const styles = StyleSheet.create({
   group: { gap: spacing[1], paddingBottom: spacing[5] },
   ruled: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: tint(colors.black, 0.08),
     paddingTop: spacing[5],
   },
   legend: {
     ...font.medium,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textPrimary,
+    color: TONES.white.primary,
     marginBottom: spacing[2],
   },
   nested: {
     marginLeft: spacing[8],
     paddingLeft: spacing[4],
     borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: colors.border,
+    borderLeftColor: tint(colors.black, 0.08),
   },
   range: { gap: spacing[3], marginTop: spacing[4] },
   bounds: { flexDirection: 'row', gap: spacing[3] },
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
     ...font.regular,
     fontSize: fontSize.caption,
     lineHeight: lineHeight.small,
-    color: colors.danger,
+    color: errorTextColor('white'),
   },
   apply: { alignItems: 'flex-start' },
 });

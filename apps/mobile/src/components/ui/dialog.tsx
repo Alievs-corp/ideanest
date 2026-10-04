@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import {
@@ -24,19 +24,20 @@ import {
   tracking,
 } from '../../theme';
 import { IconButton } from './icon-button';
-import { useOverlayEntry, useOverlayFocus } from './overlay';
+import { useOverlayFocus, useOverlayPresence } from './overlay';
 import { SurfaceProvider, TONES } from './surface';
 
 /**
- * A short confirmation — the native `Dialog`, the web's `Modal` (`docs/ui-kit.md` §7.14).
+ * A short confirmation — the native `Dialog`, the web's `Modal` (`docs/ui-kit.md` §7.14), in the
+ * `mobile-design` skill's white-sheet language (§2, §6.3; issue #282).
  *
- * <h2>The one white thing in a dark system</h2>
+ * <h2>A white panel over the dim</h2>
  *
- * A dialog is the only surface genuinely above the plane, so, as on the web, it takes the floating
- * panel treatment: white, radius 28, `shadow.float` (the token string, through React Native's
- * `boxShadow`), near-black text. It provides `SurfaceProvider surface="white"`, so a `Body`, an
- * `IconButton` or a focus ring inside it switches to its on-white tone by itself — `white/64` on
- * white is invisible, and this is what stops it.
+ * The sheet's white: `whiteSurface`, radius 28, `shadow.float` (the token string, through React
+ * Native's `boxShadow`), near-black text, over the same black/64 scrim. It provides
+ * `SurfaceProvider surface="white"`, so a `Body`, an `IconButton` or a focus ring inside it
+ * switches to its on-white tone by itself — `white/64` on white is invisible, and this is what
+ * stops it.
  *
  * <h2>The focus trap, natively</h2>
  *
@@ -63,8 +64,12 @@ import { SurfaceProvider, TONES } from './surface';
  *
  * <h2>Motion</h2>
  *
- * 200ms of opacity and a 24pt rise on entry, none under Reduce Motion or a `none` budget, and no
- * exit animation at all.
+ * The panel arrives on `spring.soft` — opacity, a 24pt rise and a scale from 0.96, transform and
+ * opacity only — while the scrim fades in and, under a `SheetHost`, the page behind scales back as
+ * it does for a sheet. Closing runs the same way out on `spring.snappy`, short enough not to
+ * linger; from the moment it is closed nothing in it takes a touch or reaches a screen reader, and
+ * the modal goes when the fall ends (`onDismiss` still means "gone"). Under Reduce Motion it
+ * appears and goes at once, with no animated style at all.
  *
  * <p>Controlled only: whether a confirmation is open is the screen's state.
  *
@@ -94,7 +99,7 @@ export interface DialogProps {
   /** The control that opened the dialog, which gets focus back when it closes. */
   readonly returnFocusTo?: RefObject<unknown>;
   /**
-   * Called once the modal has actually gone — after it was closed, not at the moment it was.
+   * Called once the modal has actually gone — after it was closed and its exit ended.
    *
    * <p>iOS presents one modal view controller at a time. Presenting another — the system photo
    * picker, a share sheet, a second sheet — while this one is still being dismissed fails without
@@ -104,6 +109,11 @@ export interface DialogProps {
   readonly onDismiss?: () => void;
   readonly testID?: string;
 }
+
+/** How far the panel rises on entry. */
+export const DIALOG_RISE = spacing[6];
+/** The panel's scale at the start of its entry. */
+export const DIALOG_ENTRY_SCALE = 0.96;
 
 export function Dialog({
   open,
@@ -120,49 +130,29 @@ export function Dialog({
 }: DialogProps) {
   const t = useT('mobile.kitForm');
   const heading = useRef<Text>(null);
-  const entry = useOverlayEntry(open);
+  const presence = useOverlayPresence(open);
+  const { progress } = presence;
 
-  useOverlayFocus(open, heading, returnFocusTo);
+  // Focus goes back to the opener once the modal has gone: a window still presented swallows it.
+  useOverlayFocus(open || presence.mounted, heading, returnFocusTo);
+
+  const panelMotion = useAnimatedStyle(() => {
+    const away = 1 - progress.value;
+    return {
+      opacity: progress.value,
+      transform: [
+        { translateY: away * DIALOG_RISE },
+        { scale: 1 - away * (1 - DIALOG_ENTRY_SCALE) },
+      ],
+    };
+  });
+  const scrimMotion = useAnimatedStyle(() => ({ opacity: progress.value }));
 
   const tones = TONES.white;
 
-  const panel = (
-    <SurfaceProvider surface="white">
-      <View style={styles.header}>
-        <View style={styles.heading}>
-          <Text
-            ref={heading}
-            accessibilityRole="header"
-            style={[styles.title, { color: tones.primary }]}
-          >
-            {title}
-          </Text>
-          {description !== undefined && description !== '' ? (
-            <Text style={[styles.description, { color: tones.secondary }]}>{description}</Text>
-          ) : null}
-        </View>
-        {showClose ? (
-          <IconButton icon={Glyphs.Close} label={t('close')} variant="ghost" size="sm" onPress={onClose} />
-        ) : null}
-      </View>
-
-      {children !== undefined && children !== null ? (
-        <ScrollView
-          style={styles.body}
-          contentContainerStyle={styles.bodyContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          {children}
-        </ScrollView>
-      ) : null}
-
-      {footer !== undefined && footer !== null ? <View style={styles.footer}>{footer}</View> : null}
-    </SurfaceProvider>
-  );
-
   return (
     <Modal
-      visible={open}
+      visible={presence.mounted}
       transparent
       statusBarTranslucent
       animationType="none"
@@ -173,32 +163,61 @@ export function Dialog({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.root}
       >
-        <Pressable
-          style={styles.scrim}
-          onPress={dismissOnScrim ? onClose : undefined}
+        <Animated.View
+          style={[styles.scrim, presence.animated ? scrimMotion : undefined]}
+          pointerEvents={open ? 'auto' : 'none'}
           accessible={false}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
-        />
-        {entry.animated ? (
-          <Animated.View
-            testID={testID}
-            accessibilityViewIsModal
-            onAccessibilityEscape={onClose}
-            style={[styles.panel, entry.style]}
-          >
-            {panel}
-          </Animated.View>
-        ) : (
-          <View
-            testID={testID}
-            accessibilityViewIsModal
-            onAccessibilityEscape={onClose}
-            style={styles.panel}
-          >
-            {panel}
-          </View>
-        )}
+        >
+          <Pressable
+            style={styles.fill}
+            onPress={dismissOnScrim ? onClose : undefined}
+            accessible={false}
+            testID={testID === undefined ? undefined : `${testID}-scrim`}
+          />
+        </Animated.View>
+        <Animated.View
+          testID={testID}
+          accessibilityViewIsModal={open}
+          accessibilityElementsHidden={!open}
+          importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}
+          pointerEvents={open ? 'auto' : 'none'}
+          onAccessibilityEscape={onClose}
+          style={[styles.panel, presence.animated ? panelMotion : undefined]}
+        >
+          <SurfaceProvider surface="white">
+            <View style={styles.header}>
+              <View style={styles.heading}>
+                <Text
+                  ref={heading}
+                  accessibilityRole="header"
+                  style={[styles.title, { color: tones.primary }]}
+                >
+                  {title}
+                </Text>
+                {description !== undefined && description !== '' ? (
+                  <Text style={[styles.description, { color: tones.secondary }]}>{description}</Text>
+                ) : null}
+              </View>
+              {showClose ? (
+                <IconButton icon={Glyphs.Close} label={t('close')} variant="ghost" size="sm" onPress={onClose} />
+              ) : null}
+            </View>
+
+            {children !== undefined && children !== null ? (
+              <ScrollView
+                style={styles.body}
+                contentContainerStyle={styles.bodyContent}
+                keyboardShouldPersistTaps="handled"
+              >
+                {children}
+              </ScrollView>
+            ) : null}
+
+            {footer !== undefined && footer !== null ? <View style={styles.footer}>{footer}</View> : null}
+          </SurfaceProvider>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -221,6 +240,7 @@ const styles = StyleSheet.create({
     left: 0,
     backgroundColor: tint(colors.black, 0.64),
   },
+  fill: { flex: 1 },
   panel: {
     width: '100%',
     maxWidth: 520,

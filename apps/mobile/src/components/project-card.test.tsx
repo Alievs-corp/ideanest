@@ -1,19 +1,20 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
 import { formatMoney } from '@ideanest/money';
 import type { Locale } from '@ideanest/messages';
 import type { Card } from '../api/queries';
 import { AppIntlProvider } from '../lib/i18n';
 import { setLocale } from '../lib/locale';
-import { colors } from '../theme';
-import { ProjectCard, completionOf } from './project-card';
-import { PROGRESS_FILL } from './ui';
+import { accent, colors, motion } from '../theme';
+import { ProjectCard, accentFor, completionOf } from './project-card';
+import { MotionBudgetProvider, PROGRESS_FILL, TONES } from './ui';
 
 /**
  * The card is issue #153's field-by-field table against the web's `ProjectCard`. Each describe
  * below is one row or one rule of it: the badges and the two extra tags, the lime urgency chip
  * and when it may appear, the "not open" swap, the days-left rule, the backers plural in the
- * four languages, the money path, and the one accessible name.
+ * four languages, the money path, the one accessible name, and the accent card it is drawn on.
  */
 
 const LIVE: Card = {
@@ -31,13 +32,14 @@ const LIVE: Card = {
   daysLeft: 9,
 } as Card;
 
-async function renderCard(card: Card, locale: Locale = 'en') {
+async function renderCard(card: Card, locale: Locale = 'en', reduced = false) {
   await act(async () => setLocale(locale));
-  return render(
+  const ui = (
     <AppIntlProvider>
       <ProjectCard card={card} />
-    </AppIntlProvider>,
+    </AppIntlProvider>
   );
+  return render(reduced ? <MotionBudgetProvider level="none">{ui}</MotionBudgetProvider> : ui);
 }
 
 interface HostNode {
@@ -71,9 +73,12 @@ describe('the status badge', () => {
 
   it('draws successful in the success colour, never lime', async () => {
     await renderCard({ ...LIVE, badge: 'successful', state: 'FUNDED' });
-    const color = StyleSheet.flatten(screen.getByText('Successful').props.style).color;
-    expect(color).toBe(colors.success);
-    expect(color).not.toBe(colors.lime500);
+    const icon = screen.getByTestId('icon-TickCircle', { includeHiddenElements: true });
+    expect(icon.props.color).toBe(colors.success);
+    // On the accent the word takes the accent's ink: green text on sun or mint is unreadable.
+    const words = StyleSheet.flatten(screen.getByText('Successful').props.style).color;
+    expect(words).toBe(TONES.accent.primary);
+    expect([icon.props.color, words]).not.toContain(colors.lime500);
   });
 
   it('draws no badge for a value this build does not know, and none when absent', async () => {
@@ -92,10 +97,14 @@ describe('the Extended and Closing soon tags', () => {
     expect(screen.getByText('Extended')).toBeTruthy();
   });
 
-  it('adds Closing soon in the warning colour', async () => {
+  it('adds Closing soon in the warning colour, its words in the accent ink', async () => {
     await renderCard({ ...LIVE, closingSoon: true });
-    const color = StyleSheet.flatten(screen.getByText('Closing soon').props.style).color;
-    expect(color).toBe(colors.warning);
+    expect(screen.getByTestId('icon-Timer1', { includeHiddenElements: true }).props.color).toBe(
+      colors.warning,
+    );
+    expect(StyleSheet.flatten(screen.getByText('Closing soon').props.style).color).toBe(
+      TONES.accent.primary,
+    );
   });
 
   it('can carry both', async () => {
@@ -283,5 +292,67 @@ describe('the card as one link', () => {
   it('draws the byline as "by" plus the name', async () => {
     await renderCard(LIVE);
     expect(screen.getByText('by Aysel')).toBeTruthy();
+  });
+});
+
+describe('the accent card', () => {
+  it('picks one of the three accents from the id, the same one every time', () => {
+    const picks = Array.from({ length: 30 }, (_, index) => accentFor({ id: `campaign-${index}` }));
+    expect(new Set(picks).size).toBe(3);
+    expect(picks.every((pick) => pick === 'sun' || pick === 'mint' || pick === 'sky')).toBe(true);
+    expect(accentFor({ id: 'campaign-7' })).toBe(accentFor({ id: 'campaign-7' }));
+  });
+
+  it('falls back to the slug when there is no id', () => {
+    expect(accentFor({ slug: 'solar-lamp' })).toBe(accentFor({ id: 'solar-lamp' }));
+  });
+
+  it('is drawn on its accent surface with its own glow', async () => {
+    const { toJSON } = await renderCard(LIVE);
+    const tone = accent[accentFor(LIVE)];
+    const surfaces = hostNodes(toJSON()).filter(
+      (node) =>
+        (StyleSheet.flatten(node.props.style as never) as { backgroundColor?: unknown } | undefined)
+          ?.backgroundColor === tone.surface,
+    );
+    expect(surfaces).toHaveLength(1);
+    expect(JSON.stringify(StyleSheet.flatten(surfaces[0]?.props.style as never))).toContain(tone.glow);
+  });
+
+  it('writes its text in the accent ink, never the dark canvas tokens', async () => {
+    await renderCard(LIVE);
+    expect(StyleSheet.flatten(screen.getByText('Solar Lamp').props.style).color).toBe(
+      TONES.accent.primary,
+    );
+    expect(StyleSheet.flatten(screen.getByText(formatMoney(LIVE.pledged)).props.style).color).toBe(
+      TONES.accent.primary,
+    );
+  });
+
+  it('shows the creator beside an avatar that is not a second stop', async () => {
+    await renderCard({ ...LIVE, creator: { name: 'Aysel', slug: 'aysel' } });
+    expect(screen.getByText('by Aysel')).toBeTruthy();
+    expect(screen.queryByRole('image', { name: 'Aysel' })).toBeNull();
+  });
+});
+
+describe('press feedback', () => {
+  const scaleOf = () => {
+    const wrapper = screen.getByRole('link').parent;
+    const style = getAnimatedStyle(wrapper as never) as { transform?: { scale: number }[] };
+    return style.transform?.[0]?.scale;
+  };
+
+  it('gives under the thumb with full motion', async () => {
+    await renderCard(LIVE);
+    fireEvent(screen.getByRole('link'), 'pressIn');
+    await waitFor(() => expect(scaleOf()).toBeCloseTo(motion.pressScale, 2), { timeout: 3000 });
+  });
+
+  it('stays still with reduced motion', async () => {
+    await renderCard(LIVE, 'en', true);
+    fireEvent(screen.getByRole('link'), 'pressIn');
+    const wrapper = screen.getByRole('link').parent;
+    expect(StyleSheet.flatten(wrapper?.props.style)?.transform).toBeUndefined();
   });
 });

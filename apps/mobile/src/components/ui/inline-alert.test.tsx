@@ -1,10 +1,11 @@
 import type { ReactElement } from 'react';
 import { fireEvent, render as renderBare } from '@testing-library/react-native';
-import { AccessibilityInfo, Platform, StyleSheet, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, Platform, StyleSheet, type TextStyle, type ViewStyle } from 'react-native';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
-import { colors, size } from '../../theme';
+import { colors, size, tint } from '../../theme';
 import { InlineAlert } from './inline-alert';
+import { SurfaceProvider, TONES } from './surface';
 
 /**
  * The web's one way of saying things outside admin. Every variant pairs its hue with its own icon
@@ -36,14 +37,53 @@ describe('InlineAlert', () => {
       <InlineAlert testID="alert" variant={variant} title="Heads up" description="Detail" />,
     );
     const alert = StyleSheet.flatten(tree.getByTestId('alert').props.style as ViewStyle);
-    expect(alert.borderLeftColor).toBe(colour);
-    expect(alert.borderLeftWidth).toBe(2);
+    // A rounded raised block, not a border-only box (mobile-design skill §2).
+    expect(alert.backgroundColor).toBe(colors.surface2);
+    expect(alert.borderLeftWidth).toBeUndefined();
+    expect(alert.borderRadius).toBe(20);
     expect(tree.getByText('Heads up')).toBeTruthy();
     expect(tree.getByText('Detail')).toBeTruthy();
 
     const glyphs = glyphsIn(tree);
     expect(glyphs).toHaveLength(1);
     expect(glyphs[0]?.props.color).toBe(colour);
+    const badge = StyleSheet.flatten(tree.getByTestId('alert-badge').props.style as ViewStyle);
+    expect(badge.backgroundColor).toBe(tint(colour, 0.12));
+    expect(badge.borderRadius).toBe(9999);
+  });
+
+  it.each([
+    ['info', 'InfoCircle'],
+    ['success', 'TickCircle'],
+    ['warning', 'Danger'],
+    ['danger', 'Warning2'],
+  ] as const)('draws %s with the Iconsax %s glyph', async (variant, glyph) => {
+    const tree = await render(<InlineAlert variant={variant} description="Detail" />);
+    expect(glyphsIn(tree)[0]?.props.testID).toBe(`icon-${glyph}`);
+  });
+
+  it('sits on a white sheet as the sheet’s muted block, in on-white tones', async () => {
+    const tree = await render(
+      <SurfaceProvider surface="white">
+        <InlineAlert testID="alert" variant="danger" title="Payment failed" description="Detail" />
+      </SurfaceProvider>,
+    );
+    expect(
+      StyleSheet.flatten(tree.getByTestId('alert').props.style as ViewStyle).backgroundColor,
+    ).toBe(colors.whiteMuted);
+    expect(StyleSheet.flatten(tree.getByText('Payment failed').props.style as TextStyle).color).toBe(
+      TONES.white.primary,
+    );
+    expect(StyleSheet.flatten(tree.getByText('Detail').props.style as TextStyle).color).toBe(
+      TONES.white.secondary,
+    );
+  });
+
+  it('appears at once: no entry animation, even for an error', async () => {
+    const tree = await render(<InlineAlert testID="alert" variant="danger" title="Failed" />);
+    const alert = tree.getByTestId('alert');
+    expect(alert.props.entering).toBeUndefined();
+    expect(StyleSheet.flatten(alert.props.style as ViewStyle).opacity).toBeUndefined();
   });
 
   it('draws a different icon for each variant, so the shape tells them apart too', async () => {
@@ -109,9 +149,7 @@ describe('InlineAlert', () => {
     );
     expect(spy).not.toHaveBeenCalled();
     expect(tree.getByTestId('alert').props.accessibilityLiveRegion).toBe('polite');
-    expect(
-      StyleSheet.flatten(tree.getByTestId('alert').props.style as ViewStyle).borderLeftColor,
-    ).toBe(colors.warning);
+    expect(glyphsIn(tree)[0]?.props.color).toBe(colors.warning);
   });
 
   it('leaves the speaking to its container when told to be off: no live region, no announcement', async () => {
@@ -126,9 +164,7 @@ describe('InlineAlert', () => {
     expect(said).not.toHaveBeenCalled();
     // Still a warning to look at, with its words.
     expect(tree.getByText('Offline')).toBeTruthy();
-    expect(
-      StyleSheet.flatten(tree.getByTestId('alert').props.style as ViewStyle).borderLeftColor,
-    ).toBe(colors.warning);
+    expect(glyphsIn(tree)[0]?.props.color).toBe(colors.warning);
   });
 
   it('is an assertive live region for warning and danger, polite otherwise', async () => {

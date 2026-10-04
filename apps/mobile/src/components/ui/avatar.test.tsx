@@ -1,7 +1,8 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { StyleSheet, type ViewStyle } from 'react-native';
+import { StyleSheet, type TextStyle, type ViewStyle } from 'react-native';
 import { colors } from '../../theme';
 import { Avatar, initials } from './avatar';
+import { SurfaceProvider, TONES } from './surface';
 
 /**
  * An avatar is a picture of a person or their initials, named by them when it stands alone and
@@ -70,5 +71,18 @@ describe('Avatar', () => {
       expect(style.outlineColor).toBe(colors.surface1);
     }
     expect(sides).toEqual([24, 28, 40, 56]);
+  });
+
+  it('takes the white sheet’s muted fill, on-white initials and a white ring inside a sheet', async () => {
+    const { getByRole, getByText } = await render(
+      <SurfaceProvider surface="white">
+        <Avatar name="Jane Doe" />
+      </SurfaceProvider>,
+    );
+    const style = StyleSheet.flatten(getByRole('image').props.style as ViewStyle);
+    expect(style.backgroundColor).toBe(colors.whiteMuted);
+    expect(style.outlineColor).toBe(colors.whiteSurface);
+    const letters = getByText('JD', { includeHiddenElements: true });
+    expect(StyleSheet.flatten(letters.props.style as TextStyle).color).toBe(TONES.white.secondary);
   });
 });

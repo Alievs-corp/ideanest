@@ -1,13 +1,15 @@
 import { createRef, type ReactElement, type ReactNode } from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { AccessibilityInfo, KeyboardAvoidingView, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, KeyboardAvoidingView, StyleSheet, Text, View } from 'react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { colors, radius, shadow, tint } from '../../theme';
 import { Body } from '../text';
-import { Dialog } from './dialog';
+import { DIALOG_ENTRY_SCALE, DIALOG_RISE, Dialog } from './dialog';
 import { MotionBudgetProvider } from './motion-budget';
 import { Pill } from './pill';
+import { SHEET_PAGE_SCALE, SheetHost } from './sheet';
 import { TONES } from './surface';
 
 /**
@@ -183,13 +185,107 @@ describe('Dialog', () => {
     expect(style.transform).toBeUndefined();
   });
 
-  it('enters with opacity and a 24pt rise where motion is allowed — transform and opacity only', async () => {
+  it('enters on a spring — opacity, a 24pt rise and a scale from 0.96, transform and opacity only', async () => {
     const { getByTestId } = await renderEn(
       <MotionBudgetProvider level="full">{screen(true)}</MotionBudgetProvider>,
     );
-    const style = StyleSheet.flatten(getByTestId('dialog').props.style);
-    expect(style.opacity).toBe(0);
-    expect(style.transform).toEqual([{ translateY: 24 }]);
+    const panel = getByTestId('dialog');
+    // The first frame: away, small and clear.
+    const first = StyleSheet.flatten(panel.props.style);
+    expect(first.opacity).toBe(0);
+    expect(DIALOG_RISE).toBe(24);
+    expect(first.transform).toEqual([{ translateY: DIALOG_RISE }, { scale: DIALOG_ENTRY_SCALE }]);
+    // Then it settles, with nothing but transform and opacity animated.
+    await waitFor(
+      () => {
+        const now = getAnimatedStyle(panel as never) as {
+          opacity?: number;
+          transform?: [{ translateY: number }, { scale: number }];
+        };
+        expect(now.opacity).toBeCloseTo(1, 2);
+        expect(now.transform?.[0].translateY).toBeCloseTo(0, 1);
+        expect(now.transform?.[1].scale).toBeCloseTo(1, 2);
+      },
+      { timeout: 3000 },
+    );
+  });
+
+  it('fades its scrim in with it', async () => {
+    const { getByTestId } = await renderEn(screen(true));
+    const scrim = getByTestId('dialog-scrim', { includeHiddenElements: true }).parent as never;
+    await waitFor(
+      () => expect((getAnimatedStyle(scrim) as { opacity?: number }).opacity).toBeCloseTo(1, 2),
+      { timeout: 3000 },
+    );
+  });
+
+  it('goes on a spring: out of reach and unheard at once, then gone and reported', async () => {
+    const onDismiss = jest.fn();
+    const ui = (open: boolean) => (
+      <Dialog open={open} onClose={jest.fn()} onDismiss={onDismiss} title={TITLE} testID="dialog">
+        <Text>Body</Text>
+      </Dialog>
+    );
+    const view = await renderEn(ui(true));
+    await view.rerender(ui(false));
+
+    const panel = view.queryByTestId('dialog', { includeHiddenElements: true });
+    if (panel !== null) {
+      expect(panel.props.pointerEvents).toBe('none');
+      expect(panel.props.accessibilityElementsHidden).toBe(true);
+    }
+    expect(view.queryByRole('header', { name: TITLE })).toBeNull();
+    await waitFor(
+      () => expect(view.queryByText('Body', { includeHiddenElements: true })).toBeNull(),
+      { timeout: 3000 },
+    );
+  });
+
+  it('goes at once under a budget of none', async () => {
+    const ui = (open: boolean) => (
+      <MotionBudgetProvider level="none">
+        <Dialog open={open} onClose={jest.fn()} title={TITLE}>
+          <Text>Body</Text>
+        </Dialog>
+      </MotionBudgetProvider>
+    );
+    const view = await renderEn(ui(true));
+    await view.rerender(ui(false));
+    expect(view.queryByText('Body', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('appears and goes at once, with no animated style, when Reduce Motion is on', async () => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValueOnce(true);
+    const ui = (open: boolean) => (
+      <Dialog open={open} onClose={jest.fn()} title={TITLE} testID="dialog">
+        <Text>Body</Text>
+      </Dialog>
+    );
+    const view = await renderEn(ui(false));
+    await view.rerender(ui(true));
+    await waitFor(() => {
+      const style = StyleSheet.flatten(view.getByTestId('dialog').props.style);
+      expect(style.opacity).toBeUndefined();
+      expect(style.transform).toBeUndefined();
+    });
+    await view.rerender(ui(false));
+    expect(view.queryByText('Body', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('scales the page behind under a SheetHost, as a sheet does, and lets it go on close', async () => {
+    const ui = (open: boolean) => (
+      <SheetHost>
+        <View testID="page" />
+        <Dialog open={open} onClose={jest.fn()} title={TITLE} />
+      </SheetHost>
+    );
+    const view = await renderEn(ui(true));
+    const scale = () =>
+      (getAnimatedStyle(view.getByTestId('page').parent as never) as { transform?: { scale: number }[] })
+        .transform?.[0]?.scale;
+    await waitFor(() => expect(scale()).toBeCloseTo(SHEET_PAGE_SCALE, 2), { timeout: 3000 });
+    await view.rerender(ui(false));
+    await waitFor(() => expect(scale()).toBeCloseTo(1, 2), { timeout: 3000 });
   });
 });
 

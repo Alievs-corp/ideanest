@@ -1,17 +1,21 @@
-import { act, fireEvent, render } from '@testing-library/react-native';
-import { AccessibilityInfo, StyleSheet } from 'react-native';
-import { colors, size } from '../../theme';
-import { Checkbox } from './checkbox';
+import { act, fireEvent, render, waitFor, within } from '@testing-library/react-native';
+import { AccessibilityInfo, StyleSheet, type ViewStyle } from 'react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { colors, radius, size } from '../../theme';
+import { CHECKBOX_FILL, CHECKBOX_MARK, Checkbox, MARK_ENTRY_SCALE } from './checkbox';
 import { MotionBudgetProvider } from './motion-budget';
-import { Radio, RadioGroup } from './radio';
-import { SurfaceProvider } from './surface';
-import { KNOB_TRAVEL, Switch, SWITCH_KNOB } from './switch';
+import { RADIO_DOT, RADIO_FILL, Radio, RadioGroup } from './radio';
+import { SurfaceProvider, TONES } from './surface';
+import { KNOB_TRAVEL, SWITCH_KNOB, SWITCH_ON_LAYER, Switch } from './switch';
 
 /**
  * The three toggles share one shape — the whole row is the control — so they share the checks
  * that shape exists for: one accessible element with the right role and state, a row a thumb
- * can hit, and a press that does nothing while disabled. Then each one's own visual rule, and
- * the switch's motion, which has to stop for Reduce Motion and for a `none` budget.
+ * can hit, and a press that does nothing while disabled. Then each one's own visual rule on the
+ * dark canvas and on a white sheet, and their motion (#282): a press scale on the control, a
+ * selection that springs in on transform and opacity, and none of it under Reduce Motion or a
+ * `none` budget.
  */
 
 const noop = () => {};
@@ -20,6 +24,24 @@ function flat(element: { props: { style?: unknown } }) {
   const { style } = element.props;
   return StyleSheet.flatten(typeof style === 'function' ? style({ pressed: false }) : style) ?? {};
 }
+
+type Tree = Awaited<ReturnType<typeof render>>;
+
+/** A part of a control, by test identifier, as Reanimated currently draws it. */
+function drawn(tree: Tree, id: string) {
+  return getAnimatedStyle(tree.getByTestId(id, { includeHiddenElements: true }) as never) as ViewStyle & {
+    transform?: Record<string, number>[];
+  };
+}
+
+/** The press-scale transform on a control's indicator (the parent of its fill layer). */
+function pressScaleOf(tree: Tree, fill: string) {
+  const indicator = tree.getAllByTestId(fill, { includeHiddenElements: true })[0]?.parent ?? null;
+  return indicator === null ? undefined : flat(indicator).transform;
+}
+
+const reduceMotionOnce = () =>
+  jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValueOnce(true);
 
 describe('Checkbox', () => {
   it('is one checkbox named by its label, with its description as the hint', async () => {
@@ -64,13 +86,71 @@ describe('Checkbox', () => {
   });
 
   it('is lime with a near-black mark when checked — a glyph, not only a colour', async () => {
-    const { container } = await render(<Checkbox label="Agree" checked onChange={noop} />);
-    const [mark] = container.queryAll((node) => node.type === 'RNSVGSvgView');
+    const tree = await render(<Checkbox label="Agree" checked onChange={noop} />);
+    const [mark] = tree.container.queryAll((node) => node.type === 'RNSVGSvgView');
     expect(mark?.props.color).toBe(colors.textOnLime);
-    const limeBoxes = container.queryAll(
-      (node) => node.type === 'View' && flat(node).backgroundColor === colors.lime500,
+    expect(drawn(tree, CHECKBOX_FILL)).toMatchObject({ backgroundColor: colors.lime500, opacity: 1 });
+    expect(drawn(tree, CHECKBOX_MARK).opacity).toBe(1);
+  });
+
+  it('is a rounded square, not a circle', async () => {
+    const tree = await render(<Checkbox label="Agree" checked onChange={noop} />);
+    const radiusOf = Number(flat(tree.getByTestId(CHECKBOX_FILL)).borderRadius);
+    expect(radiusOf).toBeGreaterThan(0);
+    expect(radiusOf).toBeLessThan(radius.sm);
+  });
+
+  it('inverts on a white sheet: near-black box and white mark, where lime would have no edge', async () => {
+    const tree = await render(
+      <SurfaceProvider surface="white">
+        <Checkbox label="Agree" checked onChange={noop} />
+      </SurfaceProvider>,
     );
-    expect(limeBoxes).toHaveLength(1);
+    const [mark] = tree.container.queryAll((node) => node.type === 'RNSVGSvgView');
+    expect(mark?.props.color).toBe(colors.whiteSurface);
+    expect(drawn(tree, CHECKBOX_FILL).backgroundColor).toBe(colors.surface1);
+    expect(flat(tree.getByText('Agree')).color).toBe(TONES.white.primary);
+  });
+
+  it('springs the fill and the mark in, and gives the box the press scale', async () => {
+    const ui = (checked: boolean) => <Checkbox label="Agree" checked={checked} onChange={noop} />;
+    const tree = await render(ui(false));
+    expect(pressScaleOf(tree, CHECKBOX_FILL)).toEqual([{ scale: 1 }]);
+    expect(drawn(tree, CHECKBOX_MARK)).toMatchObject({
+      opacity: 0,
+      transform: [{ scale: MARK_ENTRY_SCALE }],
+    });
+    await tree.rerender(ui(true));
+    expect(drawn(tree, CHECKBOX_FILL).opacity).toBeLessThan(1);
+    await waitFor(
+      () => {
+        expect(drawn(tree, CHECKBOX_FILL).opacity).toBeCloseTo(1, 2);
+        expect(drawn(tree, CHECKBOX_MARK).transform?.[0]?.scale).toBeCloseTo(1, 2);
+      },
+      { timeout: 3000 },
+    );
+  });
+
+  it('is checked at once and does not scale under a budget of none', async () => {
+    const ui = (checked: boolean) => (
+      <MotionBudgetProvider level="none">
+        <Checkbox label="Agree" checked={checked} onChange={noop} />
+      </MotionBudgetProvider>
+    );
+    const tree = await render(ui(false));
+    expect(pressScaleOf(tree, CHECKBOX_FILL)).toBeUndefined();
+    await tree.rerender(ui(true));
+    expect(drawn(tree, CHECKBOX_FILL).opacity).toBe(1);
+    expect(drawn(tree, CHECKBOX_MARK)).toMatchObject({ opacity: 1, transform: [{ scale: 1 }] });
+  });
+
+  it('is checked at once under Reduce Motion', async () => {
+    reduceMotionOnce();
+    const ui = (checked: boolean) => <Checkbox label="Agree" checked={checked} onChange={noop} />;
+    const tree = await render(ui(false));
+    await waitFor(() => expect(pressScaleOf(tree, CHECKBOX_FILL)).toBeUndefined());
+    await tree.rerender(ui(true));
+    expect(drawn(tree, CHECKBOX_FILL).opacity).toBe(1);
   });
 
   it('announces an indeterminate box as mixed, and selects everything from there', async () => {
@@ -132,11 +212,15 @@ describe('RadioGroup and Radio', () => {
     }
   });
 
-  it('selects on press', async () => {
+  it('selects on press, with the selection haptic for a new choice only', async () => {
+    jest.mocked(Haptics.selectionAsync).mockClear();
     const onChange = jest.fn();
     const { getByRole } = await render(group(onChange));
     await fireEvent.press(getByRole('radio', { name: 'Pick up' }));
     expect(onChange).toHaveBeenCalledWith('pickup');
+    expect(Haptics.selectionAsync).toHaveBeenCalledTimes(1);
+    await fireEvent.press(getByRole('radio', { name: 'Post' }));
+    expect(Haptics.selectionAsync).toHaveBeenCalledTimes(1);
   });
 
   it('refuses a disabled option, and every option in a disabled group', async () => {
@@ -153,14 +237,76 @@ describe('RadioGroup and Radio', () => {
     });
   });
 
+  /** A radio's fill and dot, as drawn now. */
+  const parts = (tree: Tree, name: string) => {
+    const radio = within(tree.getByRole('radio', { name }));
+    const read = (id: string) =>
+      getAnimatedStyle(radio.getByTestId(id, { includeHiddenElements: true }) as never) as ViewStyle & {
+        transform?: Record<string, number>[];
+      };
+    return { fill: read(RADIO_FILL), dot: read(RADIO_DOT) };
+  };
+
   it('draws the selected option lime with a near-black 8pt dot', async () => {
-    const { getByRole } = await render(group());
-    const circle = getByRole('radio', { name: 'Post' }).children[0];
-    if (typeof circle === 'string' || circle === undefined) throw new Error('no circle');
-    expect(flat(circle).backgroundColor).toBe(colors.lime500);
-    const dot = circle.children[0];
-    if (typeof dot === 'string' || dot === undefined) throw new Error('no dot');
-    expect(flat(dot)).toMatchObject({ width: 8, height: 8, backgroundColor: colors.textOnLime });
+    const tree = await render(group());
+    const post = parts(tree, 'Post');
+    expect(post.fill).toMatchObject({ backgroundColor: colors.lime500, opacity: 1 });
+    expect(post.dot).toMatchObject({
+      width: 8,
+      height: 8,
+      backgroundColor: colors.textOnLime,
+      opacity: 1,
+    });
+    expect(parts(tree, 'Pick up').dot.opacity).toBe(0);
+  });
+
+  it('inverts on a white sheet: a near-black circle with a white dot', async () => {
+    const tree = await render(<SurfaceProvider surface="white">{group()}</SurfaceProvider>);
+    const post = parts(tree, 'Post');
+    expect(post.fill.backgroundColor).toBe(colors.surface1);
+    expect(post.dot.backgroundColor).toBe(colors.whiteSurface);
+  });
+
+  const controlled = (value: string, level?: 'none') => {
+    const ui = (
+      <RadioGroup label="Delivery" value={value} onChange={noop}>
+        <Radio value="post" label="Post" />
+        <Radio value="pickup" label="Pick up" />
+      </RadioGroup>
+    );
+    return level === undefined ? ui : <MotionBudgetProvider level={level}>{ui}</MotionBudgetProvider>;
+  };
+
+  it('grows the dot in on a spring, and gives the circle the press scale', async () => {
+    const tree = await render(controlled('post'));
+    expect(pressScaleOf(tree, RADIO_FILL)).toEqual([{ scale: 1 }]);
+    await tree.rerender(controlled('pickup'));
+    expect(parts(tree, 'Pick up').dot.opacity).toBeLessThan(1);
+    await waitFor(
+      () => {
+        const pickup = parts(tree, 'Pick up');
+        expect(pickup.dot.opacity).toBeCloseTo(1, 2);
+        expect(pickup.dot.transform?.[0]?.scale).toBeCloseTo(1, 2);
+        expect(parts(tree, 'Post').fill.opacity).toBeCloseTo(0, 2);
+      },
+      { timeout: 3000 },
+    );
+  });
+
+  it('moves the choice at once and does not scale under a budget of none', async () => {
+    const tree = await render(controlled('post', 'none'));
+    expect(pressScaleOf(tree, RADIO_FILL)).toBeUndefined();
+    await tree.rerender(controlled('pickup', 'none'));
+    expect(parts(tree, 'Pick up').dot.opacity).toBe(1);
+    expect(parts(tree, 'Post').dot.opacity).toBe(0);
+  });
+
+  it('moves the choice at once under Reduce Motion', async () => {
+    reduceMotionOnce();
+    const tree = await render(controlled('post'));
+    await waitFor(() => expect(pressScaleOf(tree, RADIO_FILL)).toBeUndefined());
+    await tree.rerender(controlled('pickup'));
+    expect(parts(tree, 'Pick up').dot.opacity).toBe(1);
   });
 
   it('passes an option’s language on, so VoiceOver pronounces it in that language', async () => {
@@ -176,11 +322,7 @@ describe('RadioGroup and Radio', () => {
 describe('Switch', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  const knobOffset = (tree: Awaited<ReturnType<typeof render>>) => {
-    const transform = flat(tree.getByTestId(SWITCH_KNOB)).transform as
-      { translateX?: number }[] | undefined;
-    return transform?.[0]?.translateX;
-  };
+  const knobOffset = (tree: Tree) => drawn(tree, SWITCH_KNOB).transform?.[0]?.translateX;
 
   it('is one switch named by its label, with its state', async () => {
     const { getByRole } = await render(
@@ -219,18 +361,55 @@ describe('Switch', () => {
     expect(getByRole('switch').props.accessibilityState).toMatchObject({ disabled: true });
   });
 
-  it('is surface-4 with a white knob off, and lime with a near-black knob on', async () => {
+  /** The colours of a layer pair (off below, on above) and how much of the "on" one shows. */
+  const layers = (tree: Tree) => {
+    const knob = tree.getByTestId(SWITCH_KNOB, { includeHiddenElements: true });
+    const track = knob.parent;
+    if (track === null) throw new Error('no track');
+    const offTrack = (track.children as { props: { style?: unknown } }[])[0];
+    const [offKnob, onKnob] = knob.children as { props: { style?: unknown } }[];
+    if (offTrack === undefined || offKnob === undefined || onKnob === undefined) {
+      throw new Error('missing layers');
+    }
+    return {
+      offTrack: flat(offTrack).backgroundColor,
+      onTrack: drawn(tree, SWITCH_ON_LAYER).backgroundColor,
+      offKnob: flat(offKnob).backgroundColor,
+      onKnob: flat(onKnob).backgroundColor,
+      on: drawn(tree, SWITCH_ON_LAYER).opacity,
+    };
+  };
+
+  it('is a pill: surface-4 with a white knob off, and lime with a near-black knob on', async () => {
     const off = await render(<Switch label="Alerts" value={false} onValueChange={noop} />);
-    const offKnob = off.getByTestId(SWITCH_KNOB);
-    expect(flat(offKnob).backgroundColor).toBe(colors.whiteSurface);
-    const offTrack = offKnob.parent;
-    expect(offTrack === null ? undefined : flat(offTrack).backgroundColor).toBe(colors.surface4);
+    expect(layers(off)).toMatchObject({
+      offTrack: colors.surface4,
+      offKnob: colors.whiteSurface,
+      onTrack: colors.lime500,
+      onKnob: colors.textOnLime,
+      on: 0,
+    });
+    const track = off.getByTestId(SWITCH_KNOB).parent;
+    expect(track === null ? undefined : flat(track).borderRadius).toBe(radius.full);
 
     const on = await render(<Switch label="Alerts" value onValueChange={noop} />);
-    const onKnob = on.getByTestId(SWITCH_KNOB);
-    expect(flat(onKnob).backgroundColor).toBe(colors.textOnLime);
-    const onTrack = onKnob.parent;
-    expect(onTrack === null ? undefined : flat(onTrack).backgroundColor).toBe(colors.lime500);
+    expect(layers(on).on).toBe(1);
+    expect(knobOffset(on)).toBe(KNOB_TRAVEL);
+  });
+
+  it('inverts on a white sheet: near-black on, grey off, a white knob — and on-white words', async () => {
+    const tree = await render(
+      <SurfaceProvider surface="white">
+        <Switch label="Alerts" value onValueChange={noop} />
+      </SurfaceProvider>,
+    );
+    expect(layers(tree)).toMatchObject({
+      offTrack: TONES.white.tertiary,
+      onTrack: colors.surface1,
+      offKnob: colors.whiteSurface,
+      onKnob: colors.whiteSurface,
+    });
+    expect(flat(tree.getByText('Alerts')).color).toBe(TONES.white.primary);
   });
 
   it('sits the knob at its place with no animation under a budget of none', async () => {
@@ -250,6 +429,39 @@ describe('Switch', () => {
     expect(knobOffset(tree)).toBe(KNOB_TRAVEL);
   });
 
+  it('slides the knob 20pt on translateX on a spring, and crossfades the track', async () => {
+    const tree = await render(
+      <MotionBudgetProvider level="full">
+        <Switch label="Alerts" value={false} onValueChange={noop} />
+      </MotionBudgetProvider>,
+    );
+    expect(pressScaleOf(tree, SWITCH_ON_LAYER)).toEqual([{ scale: 1 }]);
+    await tree.rerender(
+      <MotionBudgetProvider level="full">
+        <Switch label="Alerts" value onValueChange={noop} />
+      </MotionBudgetProvider>,
+    );
+    expect(KNOB_TRAVEL).toBe(20);
+    // Travelling, not teleported: on the frame of the change it has not arrived.
+    expect(knobOffset(tree)).toBeLessThan(KNOB_TRAVEL);
+    await waitFor(
+      () => {
+        expect(knobOffset(tree)).toBeCloseTo(KNOB_TRAVEL, 1);
+        expect(layers(tree).on).toBeCloseTo(1, 2);
+      },
+      { timeout: 3000 },
+    );
+  });
+
+  it('gives the track no press scale under a budget of none', async () => {
+    const tree = await render(
+      <MotionBudgetProvider level="none">
+        <Switch label="Alerts" value={false} onValueChange={noop} />
+      </MotionBudgetProvider>,
+    );
+    expect(pressScaleOf(tree, SWITCH_ON_LAYER)).toBeUndefined();
+  });
+
   it('sits the knob at its place with no animation when Reduce Motion is on, whatever the budget', async () => {
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValueOnce(true);
     const tree = await render(
@@ -266,26 +478,5 @@ describe('Switch', () => {
       </MotionBudgetProvider>,
     );
     expect(knobOffset(tree)).toBe(KNOB_TRAVEL);
-  });
-
-  it('moves the knob 20pt on translateX where motion is allowed', async () => {
-    const tree = await render(
-      <MotionBudgetProvider level="full">
-        <Switch label="Alerts" value={false} onValueChange={noop} />
-      </MotionBudgetProvider>,
-    );
-    await tree.rerender(
-      <MotionBudgetProvider level="full">
-        <Switch label="Alerts" value onValueChange={noop} />
-      </MotionBudgetProvider>,
-    );
-    expect(KNOB_TRAVEL).toBe(20);
-    /*
-     * Travelling, not teleported: on the frame of the change it has not arrived, which is the
-     * difference from the two cases above. Reanimated's frame loop does not run under Jest, so
-     * the arrival itself is not observable here — what is, is that this path animates and the
-     * other two do not.
-     */
-    expect(knobOffset(tree)).toBe(0);
   });
 });

@@ -308,7 +308,6 @@ function PreferencesPanel() {
       )}
 
       <Sheet
-        surface="dark"
         visible={editing !== null}
         onClose={() => setEditing(null)}
         title={editing === null ? '' : cellLabel(editing)}

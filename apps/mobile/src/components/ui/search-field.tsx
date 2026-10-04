@@ -1,12 +1,23 @@
 import { forwardRef } from 'react';
-import { Pressable, StyleSheet, Text, View, type TextInput as RNTextInput } from 'react-native';
+import { StyleSheet, Text, View, type TextInput as RNTextInput } from 'react-native';
 import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, radius, size as measure, spacing } from '../../theme';
+import {
+  colors,
+  font,
+  fontSize,
+  lineHeight,
+  radius,
+  size as measure,
+  spacing,
+  tint,
+} from '../../theme';
 import { useFocusRing } from './focus';
 import { Icon } from './icon';
 import { IconButton } from './icon-button';
-import { TextInput } from './text-input';
+import { AnimatedPressable, usePressScale } from './press-scale';
+import { TONES, useSurface, type Surface } from './surface';
+import { TextInput, inputTones } from './text-input';
 
 /**
  * A search box with suggestions — the native half of the web's `Combobox` (`docs/ui-kit.md`
@@ -22,8 +33,10 @@ import { TextInput } from './text-input';
  * the query; choosing a suggestion commits that one. A clear button appears once there is
  * something to clear, named with the web's `discovery.feed.clearSearch`.
  *
- * <p>No animation, as on the web: suggestions that slid in would move under the finger that is
- * about to press one.
+ * <p>A single-line pill (`radius.full`) in the input skin of the surface it sits on — a dark well
+ * on the canvas, `whiteMuted` in a sheet. The suggestion list arrives without an entry animation:
+ * rows that slid in would move under the finger about to press one. Each row gives the kit's
+ * press scale when touched, which is feedback on a press already accepted.
  */
 
 export interface SearchSuggestion {
@@ -67,6 +80,8 @@ export const SearchField = forwardRef<RNTextInput, SearchFieldProps>(function Se
   ref,
 ) {
   const t = useT('discovery.feed');
+  const surface = useSurface();
+  const tones = inputTones(surface);
 
   function submit(query: string): void {
     const trimmed = query.trim();
@@ -78,6 +93,7 @@ export const SearchField = forwardRef<RNTextInput, SearchFieldProps>(function Se
       <TextInput
         ref={ref}
         testID={testID}
+        shape="pill"
         accessibilityRole="search"
         accessibilityLabel={label}
         value={value}
@@ -88,7 +104,7 @@ export const SearchField = forwardRef<RNTextInput, SearchFieldProps>(function Se
         autoCorrect={false}
         autoCapitalize="none"
         onSubmitEditing={(event) => submit(event.nativeEvent.text)}
-        leading={<Icon icon={Glyphs.SearchNormal1} size={16} color={colors.textTertiary} />}
+        leading={<Icon icon={Glyphs.SearchNormal1} size={18} color={tones.icon} />}
         trailing={
           value !== '' ? (
             <IconButton
@@ -104,7 +120,7 @@ export const SearchField = forwardRef<RNTextInput, SearchFieldProps>(function Se
       />
 
       {suggestions.length > 0 ? (
-        <View style={styles.list}>
+        <View style={[styles.list, { backgroundColor: tones.fill, borderColor: tones.border }]}>
           {suggestions.map((suggestion) => (
             <SuggestionRow
               key={suggestion.key}
@@ -123,6 +139,11 @@ export const SearchField = forwardRef<RNTextInput, SearchFieldProps>(function Se
   );
 });
 
+/** A pressed row darkens whatever it sits on — the web's active row is surface-4. */
+function pressedFill(surface: Surface): string {
+  return surface === 'white' ? tint(colors.black, 0.06) : colors.surface4;
+}
+
 function SuggestionRow({
   suggestion,
   disabled,
@@ -132,9 +153,12 @@ function SuggestionRow({
   disabled: boolean;
   onPress: () => void;
 }) {
+  const surface = useSurface();
+  const tones = TONES[surface];
   const { ring, onFocus, onBlur } = useFocusRing();
+  const press = usePressScale();
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={
         suggestion.detail === undefined
@@ -145,28 +169,33 @@ function SuggestionRow({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       onFocus={onFocus}
       onBlur={onBlur}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed, ring]}
+      style={[
+        styles.row,
+        press.pressed && !disabled ? { backgroundColor: pressedFill(surface) } : undefined,
+        ring,
+        press.style,
+      ]}
     >
-      <Text numberOfLines={2} style={styles.rowLabel}>
+      <Text numberOfLines={2} style={[styles.rowLabel, { color: tones.primary }]}>
         {suggestion.label}
       </Text>
       {suggestion.detail === undefined ? null : (
-        <Text style={styles.rowDetail}>{suggestion.detail}</Text>
+        <Text style={[styles.rowDetail, { color: tones.tertiary }]}>{suggestion.detail}</Text>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: { gap: spacing[2] },
   list: {
-    backgroundColor: colors.surface3,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingVertical: spacing[1],
+    borderRadius: radius.lg,
+    padding: spacing[1],
     overflow: 'hidden',
   },
   row: {
@@ -174,21 +203,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[3],
-    paddingHorizontal: 14,
+    paddingHorizontal: spacing[3],
+    borderRadius: radius.md,
   },
-  // The web's active row: surface-4.
-  rowPressed: { backgroundColor: colors.surface4 },
   rowLabel: {
     ...font.regular,
     flex: 1,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textPrimary,
   },
   rowDetail: {
     ...font.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
-    color: colors.textTertiary,
   },
 });

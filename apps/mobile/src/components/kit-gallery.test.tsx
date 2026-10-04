@@ -110,7 +110,8 @@ describe('the kit gallery', () => {
     expect(screen.getByRole('switch', { name: en.mobile.lock.face, checked: true })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Dialog' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sheet' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Sheet · dark' })).toBeTruthy();
+    // #282 retired the dark sheet: there is one sheet, and it is white.
+    expect(screen.queryByRole('button', { name: 'Sheet · dark' })).toBeNull();
     expect(screen.getAllByRole('radio', { name: en.mobile.tabs.home, checked: true })).toHaveLength(2);
     for (const name of ['sun', 'mint', 'sky']) {
       expect(screen.getByRole('button', { name })).toBeTruthy();

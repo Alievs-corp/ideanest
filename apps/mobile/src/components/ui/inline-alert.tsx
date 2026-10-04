@@ -2,11 +2,11 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, radius, spacing } from '../../theme';
+import { colors, font, fontSize, lineHeight, radius, spacing, tint } from '../../theme';
 import { announce } from './announce';
 import { Icon, type IconComponent } from './icon';
 import { IconButton } from './icon-button';
-import { SurfaceProvider } from './surface';
+import { BLOCK, SurfaceProvider, TONES, blockSurface, useSurface } from './surface';
 
 /**
  * A message attached to the thing it is about — the native `InlineAlert` (`docs/ui-kit.md` §7.15).
@@ -17,13 +17,17 @@ import { SurfaceProvider } from './surface';
  *
  * <h2>Shape and colour</h2>
  *
- * Surface-2 with a 2pt left rule in the status colour — the shape §8.1 gives "payment failed", so a
- * failed pledge looks the same wherever it appears. **Success is `success`, never lime**: lime says
- * "act now", and a backer who reads it as "done" has been told the opposite of the truth.
+ * A rounded raised block (`mobile-design` skill §2) — `surface2` on the canvas, `whiteMuted` inside
+ * a white sheet (`useSurface()`) — led by the status icon in a soft circular badge of its own hue.
+ * **Success is `success`, never lime**: lime says "act now", and a backer who reads it as "done"
+ * has been told the opposite of the truth.
  *
- * <p>Colour is never alone. Every variant pairs its hue with its own icon — `Info`, `CircleCheck`,
- * `TriangleAlert`, `CircleAlert`, the web's — and the words carry the message itself, so it reads
- * to somebody with a colour-vision deficiency and to a screen reader, which sees no colour at all.
+ * <p>Colour is never alone. Every variant pairs its hue with its own Iconsax glyph — `InfoCircle`,
+ * `TickCircle`, `Danger`, `Warning2` — and the words carry the message itself, so it reads to
+ * somebody with a colour-vision deficiency and to a screen reader, which sees no colour at all.
+ *
+ * <p>It appears at once, never animated in: an error that eases into view is an error read late
+ * (skill §6.4).
  *
  * <h2>Only warning and danger interrupt</h2>
  *
@@ -53,8 +57,8 @@ import { SurfaceProvider } from './surface';
  * second region nested in the first could have TalkBack read the same sentence twice. The alert
  * still looks and reads like one; it just leaves saying it to its container.
  *
- * <p>The alert resets the surface to dark for its contents: it is always surface-2, so an action
- * placed in it inside a lime card must still be drawn for the dark surface it actually sits on.
+ * <p>The alert provides its own block's surface to its contents — dark, or white in a sheet — so an
+ * action placed in it inside a lime card is still drawn for the block it actually sits on.
  */
 
 export type InlineAlertVariant = 'info' | 'success' | 'warning' | 'danger';
@@ -100,25 +104,32 @@ export function InlineAlert({
     politeness ?? (variant === 'warning' || variant === 'danger' ? 'assertive' : 'polite');
   const assertive = level === 'assertive';
   const words = [title, description].filter((part) => part !== undefined && part !== '').join('. ');
+  const block = blockSurface(useSurface());
+  const tones = TONES[block];
 
   useAnnouncedOnArrival(assertive && Platform.OS === 'ios' ? words : '');
 
   return (
     <View
       accessibilityLiveRegion={level === 'off' ? 'none' : level}
-      style={[styles.alert, { borderLeftColor: colour }]}
+      style={[styles.alert, { backgroundColor: BLOCK[block].rest }]}
       testID={testID}
     >
-      <SurfaceProvider surface="dark">
-        <View style={styles.icon}>
-          <Icon icon={icon} size={16} color={colour} />
+      <SurfaceProvider surface={block}>
+        <View
+          style={[styles.badge, { backgroundColor: tint(colour, BADGE_ALPHA) }]}
+          testID={testID === undefined ? undefined : `${testID}-badge`}
+        >
+          <Icon icon={icon} variant="bulk" size={18} color={colour} />
         </View>
         <View style={styles.words}>
           {title === undefined || title === '' ? null : (
-            <Text style={[styles.text, styles.title]}>{title}</Text>
+            <Text style={[styles.text, styles.title, { color: tones.primary }]}>{title}</Text>
           )}
           {description === undefined || description === '' ? null : (
-            <Text style={[styles.text, styles.description]}>{description}</Text>
+            <Text style={[styles.text, styles.description, { color: tones.secondary }]}>
+              {description}
+            </Text>
           )}
           {action === undefined ? null : <View style={styles.action}>{action}</View>}
         </View>
@@ -153,22 +164,37 @@ function useAnnouncedOnArrival(message: string): void {
   }, [message]);
 }
 
+/** The status hue behind the badge's glyph: the same 12% the tags tint with. */
+const BADGE_ALPHA = 0.12;
+
+/** The badge: a 32pt circle, its top aligned with the first line of text. */
+const BADGE = spacing[8];
+
 const styles = StyleSheet.create({
   alert: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing[3],
     padding: spacing[4],
-    borderRadius: radius.md,
-    borderLeftWidth: 2,
-    backgroundColor: colors.surface2,
+    borderRadius: radius.lg,
   },
-  // Centres the 16pt glyph on the first line of 14pt text.
-  icon: { height: lineHeight.small, justifyContent: 'center' },
-  words: { flex: 1, minWidth: 0, gap: spacing[1] },
+  badge: {
+    width: BADGE,
+    height: BADGE,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Centres the first line of 14pt text on the 32pt badge.
+  words: {
+    flex: 1,
+    minWidth: 0,
+    gap: spacing[1],
+    paddingTop: (BADGE - lineHeight.small) / 2,
+  },
   text: { fontSize: fontSize.sm, lineHeight: lineHeight.small },
-  title: { ...font.medium, color: colors.textPrimary },
-  description: { ...font.regular, color: colors.textSecondary },
+  title: { ...font.medium },
+  description: { ...font.regular },
   action: { marginTop: spacing[2], flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   // The 32pt button sits inside the padding the way the web's `-m-1` does.
   dismiss: { marginVertical: -spacing[2], marginRight: -spacing[2] },

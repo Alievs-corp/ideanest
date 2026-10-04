@@ -7,13 +7,14 @@ import {
   type TextInputProps as RNTextInputProps,
   type ViewStyle,
 } from 'react-native';
-import { colors } from '../../theme';
+import { TONES, useSurface } from './surface';
 import { useFieldControl } from './field';
 import { useFocusRing } from './focus';
-import { inputFrame, inputText } from './text-input';
+import { inputFrame, inputText, inputTones } from './text-input';
 
 /**
- * Multi-line text in the input skin — the native `Textarea` (`docs/ui-kit.md` §7.13).
+ * Multi-line text in the input skin — the native `Textarea` (`docs/ui-kit.md` §7.13). Like
+ * `TextInput`, it reads the surface it sits on: a dark well on the canvas, `whiteMuted` in a sheet.
  *
  * <p>96pt at rest, the web's minimum, so a box asking for a paragraph looks like it wants one.
  * It grows with its content — the web's `autoGrow` — up to `maxHeight`, and from there it
@@ -53,6 +54,7 @@ export const Textarea = forwardRef<RNTextInput, TextareaProps>(function Textarea
   },
   ref,
 ) {
+  const surface = useSurface();
   const field = useFieldControl({ accessibilityLabel, accessibilityHint, invalid });
   const { ring, onFocus: ringFocus, onBlur: ringBlur } = useFocusRing();
   const ceiling = Math.max(maxHeight, TEXTAREA_MIN_HEIGHT);
@@ -69,7 +71,7 @@ export const Textarea = forwardRef<RNTextInput, TextareaProps>(function Textarea
   return (
     <View
       style={[
-        ...inputFrame({ focused: ring !== undefined, invalid: field.invalid, disabled }),
+        ...inputFrame({ focused: ring !== undefined, invalid: field.invalid, disabled, surface }),
         styles.frame,
         { height },
         ring,
@@ -86,7 +88,8 @@ export const Textarea = forwardRef<RNTextInput, TextareaProps>(function Textarea
         accessibilityLabel={field.accessibilityLabel}
         accessibilityHint={field.accessibilityHint}
         accessibilityState={{ ...accessibilityState, disabled }}
-        placeholderTextColor={colors.textTertiary}
+        placeholderTextColor={inputTones(surface).placeholder}
+        selectionColor={surface === 'white' ? TONES.white.primary : undefined}
         onContentSizeChange={(event) => {
           setContent(event.nativeEvent.contentSize.height);
           onContentSizeChange?.(event);
@@ -99,7 +102,7 @@ export const Textarea = forwardRef<RNTextInput, TextareaProps>(function Textarea
           ringBlur(event);
           onBlur?.(event);
         }}
-        style={[inputText('md'), styles.text]}
+        style={[inputText('md', surface), styles.text]}
       />
     </View>
   );

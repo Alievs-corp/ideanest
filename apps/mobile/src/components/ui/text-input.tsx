@@ -8,35 +8,36 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import { colors, font, fontSize, radius } from '../../theme';
+import { colors, font, fontSize, radius, spacing, tint } from '../../theme';
 import { useFieldControl } from './field';
 import { useFocusRing } from './focus';
+import { TONES, useSurface, type Surface } from './surface';
 
 /**
- * Single-line text input in the web's `inputSkin` — the native `TextInput` (`docs/ui-kit.md`
- * §7.13).
+ * Single-line text input — the native `TextInput` (`docs/ui-kit.md` §7.13, `mobile-design`
+ * skill §2).
  *
- * <h2>The skin</h2>
+ * <h2>Two skins, chosen by where it sits</h2>
  *
- * `--surface-3`, because §3 assigns it to "nested block, input": a field inside a surface-2 card
- * has to read as a well, not as another card. A hairline `--border` that becomes
- * `--border-strong` when focused (the phone has no hover, so focus is the only state that earns
- * it), radius-md 14, a placeholder in `--text-tertiary` — never `--text-disabled`, which measures
- * 2.6:1 and is prohibited for text. Invalid draws the border in `--danger`, always alongside the
- * `Field`'s sentence and icon. Disabled is 40% and not editable.
+ * On the dark canvas the input is a `surface3` well with `textPrimary` text. Inside a white sheet
+ * or dialog (`useSurface() === 'white'`) it is a `whiteMuted` block with `textOnWhite` text — the
+ * skill's "nested blocks inside a sheet use `whiteMuted`; dark text tokens are never used on
+ * white". Nobody passes a prop for this: a field moved into a `Sheet` simply reads on white.
+ *
+ * <p>A hairline border that strengthens when focused (the phone has no hover), `radius.lg`, a
+ * placeholder in the surface's tertiary tone — never `--text-disabled`, which measures 2.6:1.
+ * Invalid draws the border in `--danger`, always alongside the `Field`'s sentence and icon.
+ * Disabled is 40% and not editable. Nothing here animates: an invalid state appears at once.
  *
  * <h2>Focus: the border AND the ring</h2>
  *
- * The table in §7.13 says focus is `--border-strong` plus the global lime ring, and that the ring
- * is never removed. So both are drawn: the border from the focus state, and the 2pt ring outside
- * it from `useFocusRing`, which switches to near-black on a lime or white surface where a lime
- * ring would vanish. Lime as a border is legal; lime as text is not, and nothing here sets it.
+ * Focus is the stronger border plus the 2pt ring from `useFocusRing`, which is lime on the dark
+ * canvas and near-black on white, where lime would vanish.
  *
  * <h2>Sizes</h2>
  *
  * `md` (44) is the default and `lg` is 48. The web's `sm` (36) is not offered: it cannot meet the
- * 44pt touch target, and an input is not a control that can borrow `hitSlop` — the caret lands
- * where the finger does.
+ * 44pt touch target, and an input cannot borrow `hitSlop` — the caret lands where the finger does.
  *
  * <p>`forwardRef` so a form can chain `returnKeyType="next"` to the next field's `focus()`. The
  * label is visible in the surrounding `Field` and is this input's `accessibilityLabel`; outside a
@@ -44,41 +45,87 @@ import { useFocusRing } from './focus';
  */
 
 export type TextInputSize = 'md' | 'lg';
+/** `rounded` (`radius.lg`) for form fields; `pill` (`radius.full`) for a single-line search. */
+export type TextInputShape = 'rounded' | 'pill';
 
 export const INPUT_HEIGHT: Record<TextInputSize, number> = { md: 44, lg: 48 };
 const INPUT_TEXT: Record<TextInputSize, number> = { md: fontSize.sm, lg: fontSize.row };
 const INPUT_PADDING: Record<TextInputSize, number> = { md: 14, lg: 16 };
 
+/** The skin's colours on one surface. White has its own; every other surface takes the dark well. */
+export interface InputTones {
+  readonly fill: string;
+  readonly border: string;
+  readonly borderFocused: string;
+  readonly text: string;
+  readonly placeholder: string;
+  /** A muted glyph inside the input: the search lens, a chevron. */
+  readonly icon: string;
+}
+
+const DARK_TONES: InputTones = {
+  fill: colors.surface3,
+  border: colors.border,
+  borderFocused: colors.borderStrong,
+  text: TONES.dark.primary,
+  placeholder: TONES.dark.tertiary,
+  icon: TONES.dark.tertiary,
+};
+
+/** The dark row's hairlines, mirrored: the same 8% and 16% of near-black over white. */
+const WHITE_TONES: InputTones = {
+  fill: colors.whiteMuted,
+  border: tint(colors.black, 0.08),
+  borderFocused: tint(colors.black, 0.16),
+  text: TONES.white.primary,
+  placeholder: TONES.white.tertiary,
+  icon: TONES.white.tertiary,
+};
+
+export function inputTones(surface: Surface = 'dark'): InputTones {
+  return surface === 'white' ? WHITE_TONES : DARK_TONES;
+}
+
 /**
  * The skin's frame, shared by every control that looks like an input — `Textarea`, `Select`,
- * `SearchField` — so the four cannot drift apart. Not exported from the kit's barrel: screens
- * compose the controls, not the skin.
+ * `SearchField` — so they cannot drift apart. Not exported from the kit's barrel: screens compose
+ * the controls, not the skin. `surface` defaults to the dark canvas; pass `useSurface()`.
  */
 export function inputFrame({
   focused,
   invalid,
   disabled,
+  surface = 'dark',
 }: {
   focused: boolean;
   invalid: boolean;
   disabled: boolean;
+  surface?: Surface;
 }): ViewStyle[] {
+  const tones = inputTones(surface);
   return [
     skin.frame,
     {
-      borderColor: invalid ? colors.danger : focused ? colors.borderStrong : colors.border,
+      backgroundColor: tones.fill,
+      borderColor: invalid ? colors.danger : focused ? tones.borderFocused : tones.border,
     },
     disabled ? skin.disabled : {},
   ];
 }
 
-/** The skin's text, at a size. */
-export function inputText(size: TextInputSize): TextStyle {
-  return { ...skin.text, fontSize: INPUT_TEXT[size], paddingHorizontal: INPUT_PADDING[size] };
+/** The skin's text, at a size, on a surface. */
+export function inputText(size: TextInputSize, surface: Surface = 'dark'): TextStyle {
+  return {
+    ...skin.text,
+    color: inputTones(surface).text,
+    fontSize: INPUT_TEXT[size],
+    paddingHorizontal: INPUT_PADDING[size],
+  };
 }
 
 export interface TextInputProps extends Omit<RNTextInputProps, 'style' | 'editable'> {
   readonly size?: TextInputSize;
+  readonly shape?: TextInputShape;
   /** Overrides the surrounding `Field`'s invalid state. */
   readonly invalid?: boolean;
   readonly disabled?: boolean;
@@ -93,6 +140,7 @@ export interface TextInputProps extends Omit<RNTextInputProps, 'style' | 'editab
 export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextInput(
   {
     size = 'md',
+    shape = 'rounded',
     invalid,
     disabled = false,
     leading,
@@ -107,22 +155,26 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextIn
   },
   ref,
 ) {
+  const surface = useSurface();
   const field = useFieldControl({ accessibilityLabel, accessibilityHint, invalid });
   const { ring, onFocus: ringFocus, onBlur: ringBlur } = useFocusRing();
   const focused = ring !== undefined;
+  const hasLeading = leading !== undefined && leading !== null;
+  const hasTrailing = trailing !== undefined && trailing !== null;
 
   return (
     <View
       style={[
-        ...inputFrame({ focused, invalid: field.invalid, disabled }),
+        ...inputFrame({ focused, invalid: field.invalid, disabled, surface }),
+        shape === 'pill' && skin.pill,
         { minHeight: INPUT_HEIGHT[size] },
         ring,
         style,
       ]}
     >
-      {leading !== undefined && leading !== null ? (
+      {hasLeading ? (
         <View
-          style={skin.leading}
+          style={[skin.leading, shape === 'pill' && skin.pillLeading]}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         >
@@ -136,7 +188,9 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextIn
         accessibilityLabel={field.accessibilityLabel}
         accessibilityHint={field.accessibilityHint}
         accessibilityState={{ ...accessibilityState, disabled }}
-        placeholderTextColor={colors.textTertiary}
+        placeholderTextColor={inputTones(surface).placeholder}
+        // The caret and selection in the surface's ink, never lime on white.
+        selectionColor={surface === 'white' ? TONES.white.primary : undefined}
         onFocus={(event) => {
           ringFocus(event);
           onFocus?.(event);
@@ -146,15 +200,13 @@ export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextIn
           onBlur?.(event);
         }}
         style={[
-          inputText(size),
+          inputText(size, surface),
           skin.fill,
-          leading !== undefined && leading !== null && skin.afterLeading,
-          trailing !== undefined && trailing !== null && skin.beforeTrailing,
+          hasLeading && skin.afterLeading,
+          hasTrailing && skin.beforeTrailing,
         ]}
       />
-      {trailing !== undefined && trailing !== null ? (
-        <View style={skin.trailing}>{trailing}</View>
-      ) : null}
+      {hasTrailing ? <View style={skin.trailing}>{trailing}</View> : null}
     </View>
   );
 });
@@ -169,18 +221,17 @@ const skin = StyleSheet.create({
   frame: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface3,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
   },
+  pill: { borderRadius: radius.full },
   disabled: { opacity: 0.4 },
-  text: {
-    ...font.regular,
-    color: colors.textPrimary,
-  },
+  text: { ...font.regular },
   fill: { flex: 1, alignSelf: 'stretch', paddingVertical: 0 },
-  leading: { paddingLeft: 12, justifyContent: 'center' },
-  afterLeading: { paddingLeft: 8 },
+  leading: { paddingLeft: spacing[3], justifyContent: 'center' },
+  // A pill's curve starts further in, so its leading icon does too.
+  pillLeading: { paddingLeft: spacing[4] },
+  afterLeading: { paddingLeft: spacing[2] },
   trailing: { paddingRight: TRAILING_INSET, justifyContent: 'center' },
-  beforeTrailing: { paddingRight: 8 },
+  beforeTrailing: { paddingRight: spacing[2] },
 });

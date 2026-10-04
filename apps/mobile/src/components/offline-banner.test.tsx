@@ -1,9 +1,11 @@
 import type { ReactElement } from 'react';
-import { AccessibilityInfo, Text } from 'react-native';
+import { AccessibilityInfo, StyleSheet, Text } from 'react-native';
 import { act, render, screen } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { setOnline } from '../lib/connectivity';
+import { colors, spacing } from '../theme';
 import { OfflineAnnouncer, OfflineBanner, WithOfflineBanner } from './offline-banner';
 
 /**
@@ -64,6 +66,33 @@ describe('the banner', () => {
       )
       .filter((node) => node.props.testID !== 'offline-region');
     expect(nested).toEqual([]);
+  });
+
+  it('says it with the Bulk WifiSquare glyph in the warning tone, beside the words', async () => {
+    await inEnglish(<OfflineBanner />);
+    await act(async () => setOnline(false));
+    const glyph = screen.getByTestId('icon-WifiSquare', { includeHiddenElements: true });
+    expect(glyph.props.color).toBe(colors.warning);
+    expect(screen.getByText(BANNER)).toBeOnTheScreen();
+  });
+
+  it('pads by the side safe-area insets, so a landscape notch never covers it', async () => {
+    const landscape = {
+      frame: { x: 0, y: 0, width: 844, height: 390 },
+      insets: { top: 0, left: 47, right: 47, bottom: 21 },
+    };
+    await render(
+      <SafeAreaProvider initialMetrics={landscape}>
+        <IntlProvider locale="en" messages={en}>
+          <OfflineBanner />
+        </IntlProvider>
+      </SafeAreaProvider>,
+    );
+    await act(async () => setOnline(false));
+    const strip = screen.getByTestId('offline-region').children[0] as unknown as { props: { style: unknown } };
+    const style = StyleSheet.flatten(strip.props.style as never) as { paddingLeft?: number; paddingRight?: number };
+    expect(style.paddingLeft).toBe(spacing[4] + landscape.insets.left);
+    expect(style.paddingRight).toBe(spacing[4] + landscape.insets.right);
   });
 
   it('keeps the screen underneath', async () => {

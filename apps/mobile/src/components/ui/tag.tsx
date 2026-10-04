@@ -4,7 +4,9 @@ import { Icon, type IconComponent } from './icon';
 import { TONES, useSurface, type Surface } from './surface';
 
 /**
- * A small label for a state, a source or a category — the native `Tag` (`docs/ui-kit.md` §7.5).
+ * A small label for a state, a source or a category — the native `Tag` (`docs/ui-kit.md` §7.5),
+ * as the `mobile-design` skill's pill (§2, issue #282): `radius.full`, like every chip and button.
+ * It is not a control, so it neither presses nor moves.
  *
  * <h2>Always words</h2>
  *
@@ -112,7 +114,7 @@ const styles = StyleSheet.create({
     minHeight: 26,
     paddingHorizontal: 10,
     paddingVertical: 2,
-    borderRadius: radius.sm,
+    borderRadius: radius.full,
   },
   label: { ...font.medium, fontSize: fontSize.xs, letterSpacing: tracking.tag, flexShrink: 1 },
 });

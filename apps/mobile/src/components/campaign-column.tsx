@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { Card } from '../api/queries';
 import { spacing } from '../theme';
+import { FIRST_SCREENFUL, FadeUp } from './motion';
 import { ProjectCard } from './project-card';
 import { SkeletonCard, SkeletonGroup } from './ui';
 
@@ -20,7 +22,67 @@ import { SkeletonCard, SkeletonGroup } from './ui';
  * The first `priority` covers are fetched first — three on a rail that opens the screen, none on
  * one further down — so the covers a reader sees first are not queued behind the ones they will
  * scroll to.
+ *
+ * <h2>Entry</h2>
+ *
+ * The first screenful of the first cards it is given rises in (`FadeUp`, staggered), once
+ * ({@link useEntryGate}). Cards that arrive later — another page, a refetch — are simply there.
  */
+
+/** A card's identity in a list: its id, or its address when the service sent none. */
+export function cardKey(card: Card): string {
+  return card.id ?? `${card.creatorSlug}/${card.slug}`;
+}
+
+/**
+ * Which cards may rise in: the first {@link FIRST_SCREENFUL} of the first non-empty page a list
+ * is given, each at most once in the list's life (`mobile-design` skill §6.5). A recycled or
+ * remounted cell, an appended page and a refetch never animate.
+ */
+export interface EntryGate {
+  readonly rises: (key: string) => boolean;
+  readonly risen: (key: string) => void;
+}
+
+export function useEntryGate(cards: readonly Card[]): EntryGate {
+  const first = useRef<ReadonlySet<string> | null>(null);
+  if (first.current === null && cards.length > 0) {
+    first.current = new Set(cards.slice(0, FIRST_SCREENFUL).map(cardKey));
+  }
+  const [gate] = useState<EntryGate>(() => {
+    const done = new Set<string>();
+    return {
+      rises: (key) => first.current?.has(key) === true && !done.has(key),
+      risen: (key) => {
+        done.add(key);
+      },
+    };
+  });
+  return gate;
+}
+
+/**
+ * A card's entry rise, decided once when the cell mounts. The wrapper keeps one element type for
+ * the cell's life, so a recycled cell is never remounted by it and never replays the rise.
+ */
+export function CardEntry({
+  gate,
+  entryKey,
+  index,
+  children,
+}: {
+  readonly gate: EntryGate;
+  readonly entryKey: string;
+  readonly index: number;
+  readonly children: ReactNode;
+}) {
+  const [rise] = useState(() => (gate.rises(entryKey) ? index : FIRST_SCREENFUL));
+  useEffect(() => {
+    if (rise < FIRST_SCREENFUL) gate.risen(entryKey);
+    // Once, for the cell's first item: whatever it renders later does not rise.
+  }, []);
+  return <FadeUp index={rise}>{children}</FadeUp>;
+}
 
 export interface CampaignColumnProps {
   readonly cards: readonly Card[];
@@ -30,11 +92,17 @@ export interface CampaignColumnProps {
 }
 
 export function CampaignColumn({ cards, priority = 0, testID }: CampaignColumnProps) {
+  const gate = useEntryGate(cards);
   return (
     <View style={styles.column} testID={testID}>
-      {cards.map((card, index) => (
-        <ProjectCard key={card.id ?? `${card.creatorSlug}/${card.slug}`} card={card} priority={index < priority} />
-      ))}
+      {cards.map((card, index) => {
+        const key = cardKey(card);
+        return (
+          <CardEntry key={key} gate={gate} entryKey={key} index={index}>
+            <ProjectCard card={card} priority={index < priority} />
+          </CardEntry>
+        );
+      })}
     </View>
   );
 }

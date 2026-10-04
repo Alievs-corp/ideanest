@@ -1,5 +1,6 @@
 import type { ErrorBoundaryProps } from 'expo-router';
 import { traceIdOfError } from '../api/client';
+import { Glyphs } from '../icons';
 import { useT } from '../lib/i18n';
 import { FailureState } from './failure-state';
 
@@ -33,6 +34,7 @@ export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
       actionLabel={t('retry')}
       onAction={() => void retry()}
       reference={traceIdOfError(error)}
+      icon={Glyphs.Danger}
     />
   );
 }

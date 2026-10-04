@@ -1,12 +1,13 @@
 import type { ReactElement } from 'react';
-import { act, render as renderBare } from '@testing-library/react-native';
-import { StyleSheet, type ViewStyle } from 'react-native';
+import { act, render as renderBare, waitFor } from '@testing-library/react-native';
+import { AccessibilityInfo, StyleSheet, type ViewStyle } from 'react-native';
 import { getAnimatedStyle, setUpTests } from 'react-native-reanimated';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { colors } from '../../theme';
 import { MotionBudgetProvider } from './motion-budget';
 import { PROGRESS_FILL, ProgressBar, fillFraction } from './progress';
+import { SurfaceProvider } from './surface';
 
 /**
  * The kit's funding bar — issue #151's Tests section, item by item: it clamps at 100, it turns
@@ -98,6 +99,26 @@ describe('ProgressBar (kit)', () => {
     const track = getByTestId(PROGRESS_FILL).parent?.parent;
     const shadow = StyleSheet.flatten(track?.props.style as ViewStyle).boxShadow;
     expect(String(shadow)).toContain(colors.limeGlow);
+  });
+
+  it('inside a white sheet: a muted track, a dark fill while asking, success once funded', async () => {
+    const onWhite = async (percent: string) => {
+      const { getByTestId } = await render(
+        <MotionBudgetProvider level="none">
+          <SurfaceProvider surface="white">
+            <ProgressBar completionPercent={percent} label="Funding" />
+          </SurfaceProvider>
+        </MotionBudgetProvider>,
+      );
+      const fill = getByTestId(PROGRESS_FILL);
+      return {
+        fill: (StyleSheet.flatten(fill.props.style) as ViewStyle).backgroundColor,
+        track: StyleSheet.flatten(fill.parent?.parent?.props.style as ViewStyle).backgroundColor,
+      };
+    };
+    // Lime on white is 1.3:1 — an invisible fill (CLAUDE.md §2).
+    expect(await onWhite('40')).toEqual({ fill: colors.surface1, track: colors.whiteMuted });
+    expect((await onWhite('100')).fill).toBe(colors.success);
   });
 
   it('has no glow while still asking', async () => {
@@ -192,6 +213,41 @@ describe('ProgressBar (kit)', () => {
       // Never above the new figure: an 80% bar sliding down to 12% reads as money leaving.
       expect(Math.max(...frames)).toBeLessThanOrEqual(0.12 + 1e-9);
       expect(frames.at(-1)).toBeCloseTo(0.12, 5);
+    });
+  });
+
+  describe('motion', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    function drawn(tree: Awaited<ReturnType<typeof render>>): number {
+      return Number(scaleXOf(getAnimatedStyle(tree.getByTestId(PROGRESS_FILL) as never) as ViewStyle));
+    }
+
+    it('rises from zero to the figure on a spring that never passes it', async () => {
+      const tree = await render(<ProgressBar completionPercent="60" label="Funding" />);
+      const frames: number[] = [];
+      await waitFor(
+        () => {
+          frames.push(drawn(tree));
+          expect(frames.at(-1)).toBeCloseTo(0.6, 3);
+        },
+        { timeout: 3000, interval: 16 },
+      );
+      expect(Math.min(...frames)).toBeLessThan(0.6);
+      expect(Math.max(...frames)).toBeLessThanOrEqual(0.6 + 1e-6);
+    });
+
+    it('is drawn at the figure at once under Reduce Motion', async () => {
+      jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+      const tree = await render(<ProgressBar completionPercent="60" label="Funding" />);
+      await waitFor(() => expect(drawn(tree)).toBeCloseTo(0.6, 5));
+      // A different figure arrives: it is drawn there on the next frame, not sprung to.
+      await tree.rerender(
+        <IntlProvider locale="en" messages={en}>
+          <ProgressBar completionPercent="25" label="Funding" />
+        </IntlProvider>,
+      );
+      expect(drawn(tree)).toBeCloseTo(0.25, 5);
     });
   });
 
