@@ -12,8 +12,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useT } from '../../lib/i18n';
-import { colors, easing, lineHeight, motion, radius, size as measure, spacing } from '../../theme';
+import { easing, lineHeight, motion, radius, size as measure, spacing } from '../../theme';
 import { useMotionAllowed } from './motion-budget';
+import { BLOCK, blockSurface, useSurface, type BlockSurface } from './surface';
 
 /**
  * Loading placeholders — the native `Skeleton`, `SkeletonGroup` and `SkeletonCard`
@@ -23,9 +24,10 @@ import { useMotionAllowed } from './motion-budget';
  *
  * The shimmer and the skeleton-to-content crossfade (`mobile-design` skill §6.3) say "the request
  * is alive" rather than "look at this". The shimmer is an overlay that **translates** across the
- * block on `translateX`, over `motion.shimmer` — the web's `.skeleton-shimmer` — so it composites
- * and never repaints the block. Its band is a `react-native-svg` gradient from transparent through
- * `surface-4` and back, the web's colours.
+ * block on `translateX`, over `motion.shimmer` — the web's `.skeleton-shimmer` — on the UI thread,
+ * so it composites and never repaints the block. Its band is a `react-native-svg` gradient from
+ * transparent through a lighter tone and back: `surface-3` blocks with a `surface-4` band on the
+ * canvas, `whiteMuted` blocks with a `whiteSurface` band inside a white sheet (`useSurface()`).
  *
  * <p>With Reduce Motion, or under a `none` budget, the overlay is **not rendered** — not frozen
  * mid-travel, which is what a collapsed duration leaves on the web and why its stylesheet removes
@@ -67,6 +69,7 @@ export function Skeleton({
   testID,
 }: SkeletonProps) {
   const shimmers = useMotionAllowed('minimal');
+  const block = blockSurface(useSurface());
   const [measured, setMeasured] = useState(0);
 
   return (
@@ -78,13 +81,14 @@ export function Skeleton({
       style={[
         styles.block,
         {
+          backgroundColor: BLOCK[block].placeholder,
           width: circle ? height : width,
           ...(aspectRatio === undefined ? { height } : { aspectRatio }),
           borderRadius: circle ? radius.full : RADIUS[corner],
         },
       ]}
     >
-      {shimmers && measured > 0 ? <Shimmer width={measured} /> : null}
+      {shimmers && measured > 0 ? <Shimmer width={measured} block={block} /> : null}
     </View>
   );
 }
@@ -93,8 +97,9 @@ export function Skeleton({
  * The band, travelling from one block-width left of the block to one block-width right of it, and
  * again. Only mounted when motion is allowed, so there is nothing to stop when it is not.
  */
-function Shimmer({ width }: { readonly width: number }) {
+function Shimmer({ width, block }: { readonly width: number; readonly block: BlockSurface }) {
   const progress = useSharedValue(0);
+  const band = BLOCK[block].shimmer;
 
   useEffect(() => {
     progress.value = withRepeat(
@@ -112,13 +117,13 @@ function Shimmer({ width }: { readonly width: number }) {
     <Animated.View pointerEvents="none" testID={SKELETON_SHIMMER} style={[styles.shimmer, travel]}>
       <Svg width="100%" height="100%">
         <Defs>
-          <LinearGradient id="skeleton-band" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor={colors.surface4} stopOpacity={0} />
-            <Stop offset="0.5" stopColor={colors.surface4} stopOpacity={1} />
-            <Stop offset="1" stopColor={colors.surface4} stopOpacity={0} />
+          <LinearGradient id={`skeleton-band-${block}`} x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0" stopColor={band} stopOpacity={0} />
+            <Stop offset="0.5" stopColor={band} stopOpacity={1} />
+            <Stop offset="1" stopColor={band} stopOpacity={0} />
           </LinearGradient>
         </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#skeleton-band)" />
+        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#skeleton-band-${block})`} />
       </Svg>
     </Animated.View>
   );
@@ -156,15 +161,16 @@ export function SkeletonGroup({ label, children, testID }: SkeletonGroupProps) {
 
 /**
  * A placeholder shaped like `components/project-card.tsx`, line for line, so the feed does not
- * jump when the cards arrive: the 16:9 cover, then a body padded 20 with 12 between rows — the
+ * jump when the cards arrive. A raised block (no hairline, skill §2): the 16:9 cover, then a body padded 20 with 12 between rows — the
  * status tag, the title, the byline, the progress bar with its figures, the 80% rule and the goal,
  * and the footer (issue #153's card). Each text line is a row of that role's line height with a
  * thinner bar centred in it, which is the height the text will take.
  */
 export function SkeletonCard({ testID }: { readonly testID?: string }) {
+  const block = blockSurface(useSurface());
   return (
     <View
-      style={styles.card}
+      style={[styles.card, { backgroundColor: BLOCK[block].rest }]}
       testID={testID}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
@@ -217,9 +223,9 @@ export interface SkeletonCrossfadeProps {
 }
 
 /**
- * The skeleton-to-content swap, as a 200ms crossfade (`motion.overlay`, §5.1's one animation on
- * discovery): the content fades in over the placeholder as the placeholder fades out, both on
- * `opacity` alone.
+ * The skeleton-to-content swap — `mobile-design` skill §6.3 — as a 200ms crossfade
+ * (`motion.overlay`): the content fades in over the placeholder as the placeholder fades out, both
+ * on `opacity` alone, as Reanimated layout animations on the UI thread.
  *
  * <p>Only a swap fades. Content that is ready on the first render — a cache hit — appears at once,
  * because there was no placeholder to cross from, and a fade over nothing is just a delay. With
@@ -256,15 +262,9 @@ export function SkeletonCrossfade({ loading, placeholder, children }: SkeletonCr
 }
 
 const styles = StyleSheet.create({
-  block: { backgroundColor: colors.surface3, overflow: 'hidden' },
+  block: { overflow: 'hidden' },
   shimmer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
-  card: {
-    backgroundColor: colors.surface2,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
+  card: { borderRadius: radius.xl, overflow: 'hidden' },
   cardBody: { padding: measure.cardPaddingSmall, gap: spacing[3] },
   // The card's `funding` block: 8 between rows and 8 above, so nothing moves when it arrives.
   progress: { gap: spacing[2], paddingTop: spacing[2] },

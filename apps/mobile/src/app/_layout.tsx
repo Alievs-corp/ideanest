@@ -94,13 +94,21 @@ function urlFromNotification(
   return typeof url === 'string' ? url : null;
 }
 
-/** The root stack; inside the intl provider so the screens it presents are translated. */
+/**
+ * The root stack; inside the intl provider so the screens it presents are translated.
+ *
+ * <p>Pushes slide in with depth — `mobile-design` skill §6.3: the incoming page from the right,
+ * the outgoing one shifting back and dimming. `ios_from_right` is the platform push on iOS, edge
+ * swipe included, and the same motion on Android. The modal and full-screen routes below name
+ * their own animation, so this one never reaches them.
+ */
 function AppStack() {
   // Pushes `maintenance` when the service is away (`lib/maintenance-gate.ts`).
   useMaintenanceGate(useRouter());
   return (
     <Stack
       screenOptions={{
+        animation: 'ios_from_right',
         headerStyle: { backgroundColor: colors.surface1 },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
@@ -137,7 +145,10 @@ function AppStack() {
         offer. Nothing on this platform requires an account to be useful.
         The group draws its own header: `app/(auth)/_layout.tsx`.
       */}
-      <Stack.Screen name="(auth)" options={{ presentation: 'modal', headerShown: false }} />
+      <Stack.Screen
+        name="(auth)"
+        options={{ presentation: 'modal', headerShown: false, animation: 'default' }}
+      />
       <Stack.Screen
         name="campaigns/[id]/back"
         options={{ presentation: 'fullScreenModal', headerShown: false, animation: 'none' }}

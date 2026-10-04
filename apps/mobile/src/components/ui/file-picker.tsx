@@ -1,30 +1,44 @@
 import { useRef, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Glyphs } from '../../icons';
 import { useLocale } from 'use-intl';
 import { formatCount, useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, radius, size as measure, spacing } from '../../theme';
-import { useFieldControl } from './field';
+import {
+  colors,
+  font,
+  fontSize,
+  lineHeight,
+  radius,
+  size as measure,
+  spacing,
+  tint,
+} from '../../theme';
+import { errorTextColor, useFieldControl } from './field';
 import { useFocusRing } from './focus';
-import { Icon } from './icon';
+import { Icon, type IconComponent } from './icon';
+import { AnimatedPressable, usePressScale } from './press-scale';
 import { Sheet } from './sheet';
+import { BLOCK, TONES, blockSurface, useSurface, type Surface } from './surface';
 
 /**
  * Choose a picture from the phone — the native `FileDropZone` (`docs/ui-kit.md` §7.13).
  *
  * <h2>The web's zone, without the drag</h2>
  *
- * A dashed `--border-strong` outline, radius 20, `--surface-2`, an Upload icon, a prompt, a
- * "choose" pill and the constraint line. There is nothing to drag a file from on a phone, so the
- * drag state is gone and the whole zone is the button — one stop for a screen reader, named by
- * the surrounding `Field` (or `label`), with the constraint line as its hint.
+ * A dashed outline, `radius.lg`, a Bulk upload icon, a prompt, a "choose" pill and the constraint
+ * line. There is nothing to drag a file from on a phone, so the drag state is gone and the whole
+ * zone is the button — one stop for a screen reader, named by the surrounding `Field` (or
+ * `label`), with the constraint line as its hint. It gives the kit's press scale. On the dark
+ * canvas it is `surface2` with a `borderStrong` dash; inside a white sheet it is a `whiteMuted`
+ * block with a near-black dash and on-white text.
  *
  * <h2>Two sources</h2>
  *
- * Pressing opens a `Sheet` with the photo library and the camera (§4.12 MB-06), through
- * `expo-image-picker`. The result is a LOCAL asset — `{ uri, mimeType, fileSize }` — handed to
- * `onPick`. Uploading it belongs to the screen that owns it, as it does on the web.
+ * Pressing opens the white `Sheet` with the photo library and the camera (§4.12 MB-06) as two
+ * press-scale rows with Bulk icons, through `expo-image-picker`. The result is a LOCAL asset —
+ * `{ uri, mimeType, fileSize }` — handed to `onPick`. Uploading it belongs to the screen that
+ * owns it, as it does on the web.
  *
  * <h2>Refused before it is returned</h2>
  *
@@ -33,12 +47,12 @@ import { Sheet } from './sheet';
  * The sentences are the caller's when it passes them (the web's owning screens have their own:
  * `campaignEditor.cover.failures.TOO_LARGE`), and the catalogue's otherwise.
  *
- * <p>A refusal is drawn under the zone in danger with an icon, and it becomes the zone's
- * `accessibilityValue` while it stands. It is NOT announced: every refusal happens in the sheet,
- * and closing the sheet moves screen-reader focus back to the zone a moment later, which would
- * cut an announcement off mid-sentence. Landing on the zone reads "Cover image, That picture is
- * too large…, button" instead — the refusal arrives with the focus rather than racing it, and is
- * still there the next time somebody swipes past.
+ * <p>A refusal is drawn under the zone at once (never animated in) with a danger icon, in the
+ * `Field`'s error tone, and it becomes the zone's `accessibilityValue` while it stands. It is NOT
+ * announced: every refusal happens in the sheet, and closing the sheet moves screen-reader focus
+ * back to the zone a moment later, which would cut an announcement off mid-sentence. Landing on
+ * the zone reads "Cover image, That picture is too large…, button" instead — the refusal arrives
+ * with the focus rather than racing it, and is still there the next time somebody swipes past.
  *
  * <h2>Types, and the iPhone's HEIC</h2>
  *
@@ -124,7 +138,11 @@ export function FilePicker({
   const t = useT('mobile.kitForm.filePicker');
   const locale = useLocale();
   const field = useFieldControl({ accessibilityLabel: label, accessibilityHint: hint });
+  const surface = useSurface();
+  const tones = TONES[surface];
+  const skin = zoneSkin(surface);
   const { ring, onFocus, onBlur } = useFocusRing();
+  const press = usePressScale();
   const zone = useRef<View>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -202,7 +220,7 @@ export function FilePicker({
 
   return (
     <View style={styles.wrapper}>
-      <Pressable
+      <AnimatedPressable
         ref={zone}
         accessibilityRole="button"
         accessibilityLabel={name}
@@ -215,27 +233,32 @@ export function FilePicker({
           Keyboard.dismiss();
           setOpen(true);
         }}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
         onFocus={onFocus}
         onBlur={onBlur}
         testID={testID}
-        style={({ pressed }) => [
+        style={[
           styles.zone,
+          press.pressed && !disabled ? skin.zonePressed : skin.zone,
           (field.invalid || refusal !== null) && styles.invalid,
-          pressed && !disabled && styles.pressed,
           disabled && styles.disabled,
           ring,
+          press.style,
         ]}
       >
-        <Icon icon={Glyphs.Export} size={20} color={colors.textTertiary} />
-        <Text style={styles.prompt}>{prompt ?? t('prompt')}</Text>
-        <View style={styles.pill}>
-          <Text style={styles.pillLabel}>{choose}</Text>
+        <Icon icon={Glyphs.Export} variant="bulk" size={24} color={tones.secondary} />
+        <Text style={[styles.prompt, { color: tones.primary }]}>{prompt ?? t('prompt')}</Text>
+        <View style={[styles.pill, skin.pill]}>
+          <Text style={[styles.pillLabel, { color: skin.pillText }]}>{choose}</Text>
         </View>
-        {hint !== undefined && hint !== '' ? <Text style={styles.hint}>{hint}</Text> : null}
-      </Pressable>
+        {hint !== undefined && hint !== '' ? (
+          <Text style={[styles.hint, { color: tones.tertiary }]}>{hint}</Text>
+        ) : null}
+      </AnimatedPressable>
 
       {refusal !== null ? (
-        // Hidden: the zone's value already says it, and focus returns to the zone.
+        // Hidden: the zone's value already says it, and focus returns to the zone. Drawn at once.
         <View
           style={styles.refusal}
           accessibilityElementsHidden
@@ -244,33 +267,47 @@ export function FilePicker({
           <View style={styles.refusalIcon}>
             <Icon icon={Glyphs.Warning2} size={14} color={colors.danger} />
           </View>
-          <Text style={styles.refusalText}>{refusal}</Text>
+          <Text style={[styles.refusalText, { color: errorTextColor(surface) }]}>{refusal}</Text>
         </View>
       ) : null}
 
       <Sheet
-        surface="dark"
         visible={open}
         onClose={() => setOpen(false)}
         // The plain label: a visible title, never "Cover image, required".
         title={field.label ?? choose}
         returnFocusTo={zone}
       >
-        <SourceRow
-          icon={Glyphs.Gallery}
-          label={t('library')}
-          onPress={() => void pick('library')}
-          disabled={busy}
-        />
-        <SourceRow
-          icon={Glyphs.Camera}
-          label={t('camera')}
-          onPress={() => void pick('camera')}
-          disabled={busy}
-        />
+        <View style={styles.sources}>
+          <SourceRow
+            icon={Glyphs.Gallery}
+            label={t('library')}
+            onPress={() => void pick('library')}
+            disabled={busy}
+          />
+          <SourceRow
+            icon={Glyphs.Camera}
+            label={t('camera')}
+            onPress={() => void pick('camera')}
+            disabled={busy}
+          />
+        </View>
       </Sheet>
     </View>
   );
+}
+
+/** The zone's colours: a raised block on its surface, with a dash and a "choose" pill to match. */
+function zoneSkin(surface: Surface) {
+  const block = BLOCK[blockSurface(surface)];
+  const white = surface === 'white';
+  const dash = white ? tint(colors.black, 0.16) : colors.borderStrong;
+  return {
+    zone: { backgroundColor: block.rest, borderColor: dash },
+    zonePressed: { backgroundColor: block.pressed, borderColor: dash },
+    pill: { backgroundColor: white ? colors.whiteSurface : colors.surface3 },
+    pillText: white ? colors.textOnWhite : colors.textPrimary,
+  };
 }
 
 /** Whether a MIME type is on the list, where `image/*` stands for every image. */
@@ -293,26 +330,37 @@ function SourceRow({
   onPress,
   disabled,
 }: {
-  icon: typeof Glyphs.Gallery;
+  icon: IconComponent;
   label: string;
   onPress: () => void;
   disabled: boolean;
 }) {
+  const surface = useSurface();
+  const block = BLOCK[blockSurface(surface)];
   const { ring, onFocus, onBlur } = useFocusRing();
+  const press = usePressScale();
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       onFocus={onFocus}
       onBlur={onBlur}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed, ring]}
+      style={[
+        styles.row,
+        { backgroundColor: press.pressed && !disabled ? block.pressed : block.rest },
+        disabled && styles.disabled,
+        ring,
+        press.style,
+      ]}
     >
-      <Icon icon={icon} size={20} color={colors.textSecondary} />
-      <Text style={styles.rowLabel}>{label}</Text>
-    </Pressable>
+      <Icon icon={icon} variant="bulk" size={24} color={TONES[surface].primary} />
+      <Text style={[styles.rowLabel, { color: TONES[surface].primary }]}>{label}</Text>
+    </AnimatedPressable>
   );
 }
 
@@ -325,18 +373,14 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[8],
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: colors.borderStrong,
     borderRadius: radius.lg,
-    backgroundColor: colors.surface2,
   },
   invalid: { borderColor: colors.danger },
-  pressed: { backgroundColor: colors.surface3 },
   disabled: { opacity: 0.4 },
   prompt: {
     ...font.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textPrimary,
     textAlign: 'center',
   },
   // The web's "choose" button, drawn: the zone is the control, so this is its label, not a second button.
@@ -345,15 +389,13 @@ const styles = StyleSheet.create({
     height: 36,
     paddingHorizontal: spacing[4],
     borderRadius: radius.full,
-    backgroundColor: colors.surface3,
     justifyContent: 'center',
   },
-  pillLabel: { ...font.medium, fontSize: fontSize.caption, color: colors.textPrimary },
+  pillLabel: { ...font.medium, fontSize: fontSize.caption },
   hint: {
     ...font.regular,
     fontSize: fontSize.caption,
     lineHeight: lineHeight.small,
-    color: colors.textTertiary,
     textAlign: 'center',
   },
   refusal: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
@@ -363,16 +405,15 @@ const styles = StyleSheet.create({
     ...font.regular,
     fontSize: fontSize.caption,
     lineHeight: lineHeight.small,
-    color: colors.danger,
   },
+  sources: { gap: spacing[2] },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[3],
-    minHeight: measure.touchTarget + spacing[2],
-    paddingHorizontal: spacing[3],
-    borderRadius: radius.md,
+    minHeight: measure.touchTarget + spacing[3],
+    paddingHorizontal: spacing[4],
+    borderRadius: radius.lg,
   },
-  rowPressed: { backgroundColor: colors.surface3 },
-  rowLabel: { ...font.regular, fontSize: fontSize.base, color: colors.textPrimary },
+  rowLabel: { ...font.medium, fontSize: fontSize.base },
 });

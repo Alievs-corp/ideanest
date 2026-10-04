@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Glyphs } from '../../icons';
 import type { ReportTarget } from '@ideanest/campaign/report';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, radius, size, spacing } from '../../theme';
-import { Icon, useFocusRing } from '../ui';
+import { colors, font, fontSize, lineHeight, radius, size, spacing, tint } from '../../theme';
+import { Icon, TONES, useFocusRing, usePressScale, useSurface } from '../ui';
 import { ReportSheet } from './report-sheet';
 
 /**
@@ -13,9 +14,10 @@ import { ReportSheet } from './report-sheet';
  *
  * <p>Under the rewards on every tab, after a thin rule that is the link's own (so the page does
  * not end on a rule over nothing). The link is the web's: a Flag and the whole phrase
- * `moderation.report.triggerOn.campaign`, quiet at white/40 because it is not an action the page
- * is asking for. Pressing it opens the report sheet (`./report-sheet.tsx`) about this campaign,
- * titled with its name.
+ * `moderation.report.triggerOn.campaign`, quiet in the surface's secondary tone because it is not
+ * an action the page is asking for — on the dark canvas or inside the white content sheet, which
+ * the page draws it in. It gives under the thumb (`usePressScale`). Pressing it opens the report
+ * sheet (`./report-sheet.tsx`) about this campaign, titled with its name.
  *
  * <p>Offline the link is disabled and says why — under it, and as its hint — as Save and Remind
  * do: a report needs the service, and a sheet that could only fail at the last step is worse than
@@ -28,8 +30,12 @@ export interface ReportLinkProps {
 }
 
 export function ReportLink({ projectId, title, offline }: ReportLinkProps) {
+  const onWhite = useSurface() === 'white';
   return (
-    <View style={styles.foot} testID="report-link">
+    <View
+      style={[styles.foot, { borderTopColor: onWhite ? tint(colors.black, 0.08) : colors.divider }]}
+      testID="report-link"
+    >
       <ReportTrigger target={{ kind: 'campaign', id: projectId }} name={title} offline={offline} />
     </View>
   );
@@ -62,29 +68,38 @@ export function ReportTrigger({
   const [open, setOpen] = useState(false);
   const trigger = useRef<View>(null);
   const { ring, onFocus, onBlur } = useFocusRing();
+  const press = usePressScale();
+  const tone = TONES[useSurface()];
   const offlineReason = tAll('mobile.campaign.report.offline');
   const label = t(`triggerOn.${target.kind}`);
 
   return (
     <View style={styles.column}>
-      <Pressable
-        ref={trigger}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        accessibilityHint={offline ? offlineReason : undefined}
-        accessibilityState={{ disabled: offline }}
-        disabled={offline}
-        onPress={() => setOpen(true)}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        hitSlop={{ top: REACH, bottom: REACH }}
-        style={[styles.link, offline && styles.disabled, ring]}
-        testID={`report-trigger-${target.kind}`}
-      >
-        <Icon icon={Glyphs.Flag} size={16} color={colors.textTertiary} />
-        <Text style={styles.label}>{label}</Text>
-      </Pressable>
-      {offline && showsOfflineReason ? <Text style={styles.offline}>{offlineReason}</Text> : null}
+      {/* The scale is on a wrapper so the ref stays on the Pressable that `returnFocusTo` needs. */}
+      <Animated.View style={press.style}>
+        <Pressable
+          ref={trigger}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          accessibilityHint={offline ? offlineReason : undefined}
+          accessibilityState={{ disabled: offline }}
+          disabled={offline}
+          onPress={() => setOpen(true)}
+          onPressIn={press.onPressIn}
+          onPressOut={press.onPressOut}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          hitSlop={{ top: REACH, bottom: REACH }}
+          style={[styles.link, offline && styles.disabled, ring]}
+          testID={`report-trigger-${target.kind}`}
+        >
+          <Icon icon={Glyphs.Flag} size={16} color={tone.secondary} />
+          <Text style={[styles.label, { color: tone.secondary }]}>{label}</Text>
+        </Pressable>
+      </Animated.View>
+      {offline && showsOfflineReason ? (
+        <Text style={[styles.offline, { color: tone.secondary }]}>{offlineReason}</Text>
+      ) : null}
       <ReportSheet
         visible={open}
         onClose={() => setOpen(false)}
@@ -104,7 +119,6 @@ const styles = StyleSheet.create({
   foot: {
     paddingTop: spacing[6],
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.divider,
   },
   column: { gap: spacing[1], alignItems: 'flex-start' },
   link: {
@@ -119,12 +133,10 @@ const styles = StyleSheet.create({
     ...font.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textTertiary,
   },
   offline: {
     ...font.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
-    color: colors.textSecondary,
   },
 });

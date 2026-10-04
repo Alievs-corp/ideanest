@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { AccessibilityInfo, Linking, TextInput } from 'react-native';
+import { AccessibilityInfo, Linking, StyleSheet, TextInput } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -7,6 +7,7 @@ import en from '@ideanest/messages/en.json';
 import ru from '@ideanest/messages/ru.json';
 import tr from '@ideanest/messages/tr.json';
 import { MESSAGE_MAX_LENGTH, whatsappHref, type Locale } from '@ideanest/messages';
+import { colors, tint } from '../theme';
 import { FailureState } from './failure-state';
 import { WhatsAppSheet } from './whatsapp-sheet';
 
@@ -159,6 +160,14 @@ describe('WhatsAppSheet', () => {
       'x'.repeat(MESSAGE_MAX_LENGTH - 2),
     );
     expect(screen.getByText('2 karakter kaldı')).toBeTruthy();
+  });
+
+  it('reads on the white sheet: the primary pill inverts, Cancel is a near-black outline', async () => {
+    await inEnglish(<WhatsAppSheet visible onClose={jest.fn()} />);
+    const submit = StyleSheet.flatten(screen.getByRole('button', { name: copy.submit }).props.style);
+    expect(submit.backgroundColor).toBe(colors.surface1);
+    const cancel = StyleSheet.flatten(screen.getByRole('button', { name: copy.cancel }).props.style);
+    expect(cancel.borderColor).toBe(tint(colors.black, 0.16));
   });
 
   it("closes on Android's back button and keeps what was typed", async () => {

@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { CampaignCommentThread } from '@ideanest/campaign/comments';
 import { useT } from '../../../../lib/i18n';
-import { colors, font, fontSize, lineHeight, radius, size, spacing } from '../../../../theme';
-import { useFocusRing } from '../../../ui';
+import { colors, font, fontSize, lineHeight, radius, size, spacing, tint } from '../../../../theme';
+import { PressableScale, TONES, useFocusRing, useSurface } from '../../../ui';
 import { CommentCard } from './comment-card';
 
 /**
@@ -29,6 +29,7 @@ export function CommentThreadBlock({
   readonly onShowMore: () => void;
 }) {
   const t = useT('campaign.comments');
+  const rule = useReplyRule();
   const hasMore = thread.nextReplyCursor !== null;
 
   return (
@@ -40,7 +41,7 @@ export function CommentThreadBlock({
         onChanged={onChanged}
       />
       {thread.replies.length > 0 || hasMore ? (
-        <View style={styles.replies}>
+        <View style={[styles.replies, rule]}>
           {thread.replies.map((reply) => (
             <CommentCard
               key={reply.id}
@@ -65,13 +66,23 @@ export function CommentThreadBlock({
 
 /** A reply in the single-thread view: the same card, under the same rule as in the tab. */
 export function ReplyRow({ children }: { readonly children: ReactNode }) {
-  return <View style={[styles.replies, styles.replyRow]}>{children}</View>;
+  return <View style={[styles.replies, useReplyRule(), styles.replyRow]}>{children}</View>;
+}
+
+/** The rule down the left of the replies, a hairline in the surface's own ink. */
+function useReplyRule() {
+  return {
+    borderLeftColor: useSurface() === 'white' ? tint(colors.black, 0.08) : colors.border,
+  };
 }
 
 /** Hit slop above and below a line of small text, so its target is 44pt and its row is not. */
 const REACH = Math.max(0, (size.touchTarget - lineHeight.small) / 2);
 
-/** A line of white text that moves the reader within the tab — "Show more replies", "All comments". */
+/**
+ * A line of text in the surface's primary ink that moves the reader within the tab — "Show more
+ * replies", "All comments" — with the press scale.
+ */
 export function QuietLink({
   label,
   onPress,
@@ -85,20 +96,22 @@ export function QuietLink({
   readonly testID?: string;
 }) {
   const { ring, onFocus, onBlur } = useFocusRing();
+  const tone = TONES[useSurface()];
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
       onFocus={onFocus}
       onBlur={onBlur}
       hitSlop={{ top: REACH, bottom: REACH }}
-      style={[styles.link, ring]}
+      style={styles.reach}
+      contentStyle={[styles.link, ring]}
       testID={testID}
     >
       {leading}
-      <Text style={styles.linkText}>{label}</Text>
-    </Pressable>
+      <Text style={[styles.linkText, { color: tone.primary }]}>{label}</Text>
+    </PressableScale>
   );
 }
 
@@ -108,11 +121,11 @@ const styles = StyleSheet.create({
     gap: spacing[3],
     paddingLeft: spacing[4],
     borderLeftWidth: 1,
-    borderLeftColor: colors.border,
   },
   replyRow: { marginTop: 0, paddingTop: spacing[3] },
+  // The scaled box is the link's own, so it gives about its centre rather than the column's.
+  reach: { alignSelf: 'flex-start' },
   link: {
-    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[1],
@@ -122,6 +135,5 @@ const styles = StyleSheet.create({
     ...font.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textPrimary,
   },
 });

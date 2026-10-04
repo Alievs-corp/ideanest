@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { AccessibilityInfo, StyleSheet, type ViewStyle } from 'react-native';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { FadeInDown } from 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -17,6 +18,7 @@ import {
 } from '../../lib/session';
 import { memoryStore } from '../../lib/storage';
 import { colors } from '../../theme';
+import { MotionBudgetProvider, TONES } from '../ui';
 import { PrelaunchScreen } from './prelaunch-screen';
 
 /**
@@ -128,14 +130,14 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-async function show({ cached }: { cached?: PrelaunchPage } = {}) {
+async function show({ cached, still = false }: { cached?: PrelaunchPage; still?: boolean } = {}) {
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   if (cached !== undefined) client.setQueryData(queryKeys.prelaunch(ID), cached);
   const wrapper = ({ children }: { children: ReactNode }) => (
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={client}>
         <IntlProvider locale="en" messages={en}>
-          {children}
+          {still ? <MotionBudgetProvider level="none">{children}</MotionBudgetProvider> : children}
         </IntlProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
@@ -410,6 +412,37 @@ describe('asking to be reminded', () => {
     await press(submit());
     expect(screen.getByText(P.errors.unreachable)).toBeTruthy();
     expect(screen.queryByText(P.errors.notSaved)).toBeNull();
+  });
+});
+
+describe('the design language (#281)', () => {
+  it('puts the form in the white content sheet under the campaign', async () => {
+    await show();
+    const sheet = screen.getByTestId('prelaunch-sheet');
+    expect(background(sheet)).toBe(colors.whiteSurface);
+    expect(within(sheet).getByTestId('prelaunch-form')).toBeTruthy();
+    // The summary stays on the canvas, above it.
+    expect(within(sheet).queryByRole('header', { name: 'Solar Lamp' })).toBeNull();
+  });
+
+  it('says a failure in the sheet’s ink, never in red words on white', async () => {
+    routes.page = unreachable;
+    await show({ cached: PAGE });
+    const line = screen.getByText(P.errors.unreachable);
+    expect(StyleSheet.flatten(line.props.style).color).toBe(TONES.white.primary);
+  });
+
+  it('raises the campaign in with full motion', async () => {
+    const built = jest.spyOn(FadeInDown, 'duration');
+    await show();
+    expect(built).toHaveBeenCalled();
+  });
+
+  it('raises nothing in when motion is off', async () => {
+    const built = jest.spyOn(FadeInDown, 'duration');
+    await show({ still: true });
+    expect(built).not.toHaveBeenCalled();
+    expect(screen.getByTestId('prelaunch-form')).toBeTruthy();
   });
 });
 

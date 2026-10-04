@@ -19,6 +19,7 @@ import {
   ChipRow,
   Dialog,
   Display,
+  ContentSheet,
   EdgeFade,
   EmptyState,
   ErrorState,
@@ -71,7 +72,6 @@ import {
   type MediaRatioToken,
   type PillSize,
   type PillVariant,
-  type SheetSurface,
   type StatTrend,
   type TagVariant,
 } from '../../components/ui';
@@ -161,7 +161,6 @@ const ACCENT_SECTION = Object.keys({ accent })[0] ?? '';
 const AMOUNT_MODES: readonly AnimatedAmountMode[] = ['roll', 'enter', 'count'];
 const AMOUNTS = ['1280.00', '1314.50', '99.00', '100.00'] as const;
 const ACCENTS = Object.keys(accent) as Accent[];
-const DARK_SHEET: SheetSurface = 'dark';
 const BADGES: Record<StatTrend, string> = { up: '+12', down: '-3', neutral: '0' };
 const TRACE = '4bf92f3577b34da6a3ce929d0e0e4736';
 
@@ -184,7 +183,6 @@ function KitGallery() {
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState(false);
   const [sheet, setSheet] = useState(false);
-  const [darkSheet, setDarkSheet] = useState(false);
   const [amount, setAmount] = useState(0);
   const [segment, setSegment] = useState<'home' | 'search'>('home');
   const money = { amount: AMOUNTS[amount % AMOUNTS.length] ?? AMOUNTS[0], currency: 'AZN' };
@@ -365,6 +363,14 @@ function KitGallery() {
             ))}
             <Tag label={nameOf(Icon)} icon={Glyphs.Heart} />
           </Row>
+          {/* The same tags on a white surface: they read it, with no prop. */}
+          <FloatingPanel>
+            <Row>
+              {DARK_TAGS.map((variant) => (
+                <Tag key={variant} label={variant} variant={variant} />
+              ))}
+            </Row>
+          </FloatingPanel>
         </Section>
 
         <Section title={heading([Chip, ChipRow, RemovableChip])}>
@@ -380,6 +386,19 @@ function KitGallery() {
             ))}
             <Chip label={t('common.trail.home')} icon={Glyphs.Heart} disabled onPress={noop} />
           </ChipRow>
+          {/* On a white sheet a selected chip inverts to near-black. */}
+          <FloatingPanel>
+            <ChipRow>
+              {trail.map((chip) => (
+                <Chip
+                  key={chip.key}
+                  label={chip.label}
+                  selected={chosen === chip.key}
+                  onPress={() => setChosen(chosen === chip.key ? null : chip.key)}
+                />
+              ))}
+            </ChipRow>
+          </FloatingPanel>
           {removed ? (
             <Pill
               label={t('common.tryAgain')}
@@ -432,6 +451,14 @@ function KitGallery() {
               <Meta>{nameOf(Card)}</Meta>
             </Card>
           </Row>
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <Card onPress={noop} accessibilityLabel={`${nameOf(Card)} ${nameOf(SurfaceProvider)}`}>
+                <CardTitle>{nameOf(Card)}</CardTitle>
+                <Body>{t('common.card.rule')}</Body>
+              </Card>
+            </SurfaceProvider>
+          </View>
         </Section>
 
         <Section title={heading([AccentCard])}>
@@ -481,6 +508,15 @@ function KitGallery() {
             ))}
             <Avatar name={nameOf(Avatar)} src={`${siteUrl()}/icon`} size="lg" />
           </Row>
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <Row>
+                {AVATAR_SIZES.map((avatarSize) => (
+                  <Avatar key={avatarSize} name={`${avatarSize} ${nameOf(Avatar)}`} size={avatarSize} />
+                ))}
+              </Row>
+            </SurfaceProvider>
+          </View>
         </Section>
 
         <Section title={heading([ProgressBar])}>
@@ -492,6 +528,19 @@ function KitGallery() {
               size={value === 42 ? 'md' : 'sm'}
             />
           ))}
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <View style={styles.stack}>
+                {PROGRESS_VALUES.slice(1, 3).map((value) => (
+                  <ProgressBar
+                    key={value}
+                    completionPercent={String(value)}
+                    label={`${nameOf(ProgressBar)} ${value} ${nameOf(SurfaceProvider)}`}
+                  />
+                ))}
+              </View>
+            </SurfaceProvider>
+          </View>
         </Section>
 
         <Section title={heading([StatBlock, StatRow])}>
@@ -507,6 +556,12 @@ function KitGallery() {
               />
             ))}
           </StatRow>
+          <StatBlock money={money} motion="count" label={t('campaign.funding.backers.other')} />
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <StatBlock money={money} size="md" label={t('campaign.funding.backers.other')} />
+            </SurfaceProvider>
+          </View>
         </Section>
 
         <Section title={heading([FloatingPanel])}>
@@ -517,6 +572,13 @@ function KitGallery() {
             <Body>{t('common.card.rule')}</Body>
             <Pill label={t('common.save')} onPress={noop} />
           </FloatingPanel>
+        </Section>
+
+        <Section title={heading([ContentSheet])}>
+          <ContentSheet title={nameOf(ContentSheet)} style={styles.galleryContentSheet}>
+            <Body>{t('common.card.rule')}</Body>
+            <Pill label={t('common.save')} onPress={noop} />
+          </ContentSheet>
         </Section>
 
         {/* Data and media --------------------------------------------------------------- */}
@@ -536,6 +598,16 @@ function KitGallery() {
               onDismiss={variant === 'info' ? noop : undefined}
             />
           ))}
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <InlineAlert
+                variant="danger"
+                title={nameOf(InlineAlert)}
+                description={t('mobile.offline.banner')}
+                politeness="off"
+              />
+            </SurfaceProvider>
+          </View>
         </Section>
 
         <Section title={heading([EmptyState, ErrorState])}>
@@ -551,6 +623,15 @@ function KitGallery() {
             onRetry={noop}
             traceId={TRACE}
           />
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <EmptyState
+                title={t('account.signals.saved.emptyTitle')}
+                description={t('account.signals.saved.emptyBody')}
+                action={<Pill label={t('common.save')} onPress={noop} />}
+              />
+            </SurfaceProvider>
+          </View>
         </Section>
 
         <Section title={heading([Skeleton, SkeletonGroup, SkeletonCard])}>
@@ -564,6 +645,17 @@ function KitGallery() {
                 </View>
               </Row>
               <SkeletonCard />
+              <View style={styles.whiteBlock}>
+                <SurfaceProvider surface="white">
+                  <Row>
+                    <Skeleton circle height={size.avatarInCard} />
+                    <View style={styles.grow}>
+                      <Skeleton width="60%" />
+                      <Skeleton width="40%" height={12} />
+                    </View>
+                  </Row>
+                </SurfaceProvider>
+              </View>
             </View>
           </SkeletonGroup>
         </Section>
@@ -623,6 +715,22 @@ function KitGallery() {
             <Textarea value={text} onChangeText={setText} maxLength={120} />
             <CharacterCount count={text.length} limit={20} />
           </Field>
+          {/* The same controls on a white surface: they read it, with no prop. */}
+          <FloatingPanel>
+            <Field label={t('auth.fields.email')} required>
+              <TextInput value={text} onChangeText={setText} />
+            </Field>
+            <Field label={t('auth.fields.email')} error={t('shell.whatsapp.errors.firstName')}>
+              <TextInput value="" />
+            </Field>
+            <Field label={t('auth.fields.password')}>
+              <PasswordInput />
+            </Field>
+            <Field label={t('shell.whatsapp.fields.message')}>
+              <Textarea value={text} onChangeText={setText} maxLength={120} />
+              <CharacterCount count={text.length} limit={20} />
+            </Field>
+          </FloatingPanel>
         </Section>
 
         <Section title={heading([Select, Checkbox, Radio, Switch])}>
@@ -662,6 +770,32 @@ function KitGallery() {
             onValueChange={setSwitched}
           />
           <Switch label={t('mobile.lock.face')} value={false} disabled onValueChange={noop} />
+          {/* The same controls on a white surface: near-black where the canvas has lime. */}
+          <FloatingPanel>
+            <Select
+              label={t('mobile.language.title')}
+              options={languages}
+              value={select}
+              onChange={setSelect}
+              placeholder={t('mobile.language.title')}
+            />
+            <Checkbox label={t('common.cancel')} checked={checked} onChange={setChecked} />
+            <RadioGroup label={t('mobile.language.title')} value={radio} onChange={setRadio}>
+              {languages.slice(0, 2).map((language) => (
+                <Radio
+                  key={language.value}
+                  value={language.value}
+                  label={language.label}
+                  accessibilityLanguage={language.accessibilityLanguage}
+                />
+              ))}
+            </RadioGroup>
+            <Switch
+              label={t('mobile.lock.keychain')}
+              value={switched}
+              onValueChange={setSwitched}
+            />
+          </FloatingPanel>
         </Section>
 
         <Section title={heading([FilePicker, SearchField])}>
@@ -674,6 +808,17 @@ function KitGallery() {
             onSubmit={setSearch}
             suggestions={search === '' ? [] : trail}
           />
+          <FloatingPanel>
+            <FilePicker onPick={noop} label={nameOf(FilePicker)} maxBytes={5 * 1024 * 1024} />
+            <SearchField
+              label={t('discovery.suggest.inputLabel')}
+              placeholder={t('discovery.suggest.inputLabel')}
+              value={search}
+              onChangeText={setSearch}
+              onSubmit={setSearch}
+              suggestions={search === '' ? [] : trail}
+            />
+          </FloatingPanel>
         </Section>
 
         {/* Overlay ---------------------------------------------------------------------- */}
@@ -681,7 +826,6 @@ function KitGallery() {
           <Row>
             <Pill label={nameOf(Dialog)} variant="outline" onPress={() => setDialog(true)} />
             <Pill label={nameOf(Sheet)} variant="outline" onPress={() => setSheet(true)} />
-            <Pill label={`${nameOf(Sheet)} · ${DARK_SHEET}`} variant="ghost" onPress={() => setDarkSheet(true)} />
           </Row>
         </Section>
       </ScrollView>
@@ -717,15 +861,8 @@ function KitGallery() {
       >
         <Body>{t('shell.whatsapp.intro')}</Body>
         <HeroFigure money={money} size="md" />
-      </Sheet>
-
-      <Sheet
-        visible={darkSheet}
-        surface="dark"
-        onClose={() => setDarkSheet(false)}
-        title={t('shell.whatsapp.title')}
-      >
-        <Body>{t('shell.whatsapp.intro')}</Body>
+        <Checkbox label={t('common.save')} checked={checked} onChange={setChecked} />
+        <Switch label={t('mobile.lock.face')} value={switched} onValueChange={setSwitched} />
       </Sheet>
     </MotionBudgetProvider>
   );
@@ -747,6 +884,7 @@ function Row({ children }: { readonly children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
+  galleryContentSheet: { flexGrow: 0, marginBottom: 0 },
   page: {
     padding: size.cardPaddingSmall,
     gap: spacing[10],

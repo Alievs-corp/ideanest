@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Glyphs } from '../../../../icons';
 import type { CampaignComment } from '@ideanest/campaign/comments';
 import { useMe } from '../../../../lib/account';
@@ -18,8 +19,22 @@ import {
   spacing,
   tint,
 } from '../../../../theme';
-import { Icon, Pill, Tag, announce, useFocusRing, type IconComponent } from '../../../ui';
+import { toneColor } from '../../../text';
+import {
+  Icon,
+  Pill,
+  SurfaceProvider,
+  TONES,
+  Tag,
+  announce,
+  useFocusRing,
+  usePressScale,
+  useSurface,
+  type IconComponent,
+} from '../../../ui';
+import { errorTextColor } from '../../../ui/field';
 import { FOCUS_DELAY_MS, focusOn } from '../../../ui/overlay';
+import { BLOCK, blockSurface, type BlockSurface } from '../../../ui/surface';
 import { ReportTrigger } from '../../report-link';
 import { CommentComposer } from './comment-composer';
 
@@ -29,8 +44,14 @@ import { CommentComposer } from './comment-composer';
  * <h2>The creator's answer is a word, a rule and a surface — never a colour alone</h2>
  *
  * `byCreator` is settled by the server at write time. It is drawn three ways at once: the tag
- * "From the campaign", a 2pt white/40 rule down the left, and the lighter `surface-3`. Not lime:
- * a creator's reply is authoritative, not urgent.
+ * "From the campaign", a 2pt rule down the left in the surface's ink at 40%, and a deeper block
+ * (`surface-3` on the canvas, a black/8 layer inside the white content sheet). Not lime: a
+ * creator's reply is authoritative, not urgent.
+ *
+ * <p>The card is a raised block of the surface it is drawn on (`mobile-design` skill §2) —
+ * `whiteMuted` inside the campaign page's white sheet — and gives its own surface to what is in
+ * it. It is not a control (nothing opens a comment), so it does not press; the controls under it
+ * do.
  *
  * <h2>A withdrawn comment is a tombstone, and the row stays</h2>
  *
@@ -71,12 +92,17 @@ export interface CommentCardProps {
 export function CommentCard({ comment, campaignTitle, offline, onChanged }: CommentCardProps) {
   const t = useT('campaign.comments');
   const locale = useLocale();
+  const block = blockSurface(useSurface());
+  const tone = TONES[block];
 
   if (comment.deleted) {
     return (
-      <View style={styles.tombstone} testID={`comment-${comment.id}`}>
-        <Icon icon={Glyphs.MessageRemove} size={16} color={colors.textTertiary} />
-        <Text style={styles.tombstoneText}>{t('withdrawn')}</Text>
+      <View
+        style={[styles.tombstone, { backgroundColor: BLOCK[block].rest }]}
+        testID={`comment-${comment.id}`}
+      >
+        <Icon icon={Glyphs.MessageRemove} size={16} color={tone.secondary} />
+        <Text style={[styles.tombstoneText, { color: tone.secondary }]}>{t('withdrawn')}</Text>
       </View>
     );
   }
@@ -85,26 +111,48 @@ export function CommentCard({ comment, campaignTitle, offline, onChanged }: Comm
 
   return (
     <View
-      style={[styles.card, comment.byCreator && styles.byCreator]}
+      style={[
+        styles.card,
+        comment.byCreator ? creatorSkin(block) : { backgroundColor: BLOCK[block].rest },
+      ]}
       testID={`comment-${comment.id}`}
     >
-      {comment.byCreator || posted !== null ? (
-        <View style={styles.meta}>
-          {comment.byCreator ? <Tag label={t('fromCreator')} /> : null}
-          {posted === null ? null : <Text style={styles.date}>{posted}</Text>}
-        </View>
-      ) : null}
+      <SurfaceProvider surface={block}>
+        {comment.byCreator || posted !== null ? (
+          <View style={styles.meta}>
+            {comment.byCreator ? <Tag label={t('fromCreator')} /> : null}
+            {posted === null ? null : (
+              <Text style={[styles.date, { color: tone.secondary }]}>{posted}</Text>
+            )}
+          </View>
+        ) : null}
 
-      <Text style={styles.body}>{comment.body}</Text>
+        <Text style={[styles.body, { color: toneColor('reading', block) }]}>{comment.body}</Text>
 
-      <CommentControls
-        comment={comment}
-        campaignTitle={campaignTitle}
-        offline={offline}
-        onChanged={onChanged}
-      />
+        <CommentControls
+          comment={comment}
+          campaignTitle={campaignTitle}
+          offline={offline}
+          onChanged={onChanged}
+        />
+      </SurfaceProvider>
     </View>
   );
+}
+
+/** The campaign's own answer: a deeper block and a rule in the surface's ink, beside its tag. */
+function creatorSkin(block: BlockSurface) {
+  return block === 'white'
+    ? {
+        backgroundColor: BLOCK.white.pressed,
+        borderLeftWidth: 2,
+        borderLeftColor: tint(colors.textOnWhite, 0.4),
+      }
+    : {
+        backgroundColor: colors.surface3,
+        borderLeftWidth: 2,
+        borderLeftColor: tint(colors.textPrimary, 0.4),
+      };
 }
 
 function CommentControls({ comment, campaignTitle, offline, onChanged }: CommentCardProps) {
@@ -140,6 +188,7 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
     setFocusNext('reply');
   };
 
+  const surface = useSurface();
   const viewerId = signedIn ? (me.data?.id ?? null) : null;
   const isAuthor = viewerId !== null && comment.authorId !== null && viewerId === comment.authorId;
   const offlineReason = tAll('mobile.campaign.comments.offline');
@@ -204,8 +253,18 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
       </View>
 
       {confirming ? (
-        <View style={styles.confirm} testID={`withdraw-confirm-${comment.id}`}>
-          <Text ref={warning} style={styles.warning} testID={`withdraw-warning-${comment.id}`}>
+        <View
+          style={[
+            styles.confirm,
+            { backgroundColor: surface === 'white' ? colors.whiteSurface : colors.surface3 },
+          ]}
+          testID={`withdraw-confirm-${comment.id}`}
+        >
+          <Text
+            ref={warning}
+            style={[styles.warning, { color: toneColor('reading', surface) }]}
+            testID={`withdraw-warning-${comment.id}`}
+          >
             {t('withdrawWarning')}
           </Text>
           <View style={styles.confirmActions}>
@@ -221,7 +280,7 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
             />
             <Pill
               label={t('keep')}
-              variant="ghost"
+              variant="outline"
               size="sm"
               onPress={() => {
                 setConfirming(false);
@@ -234,14 +293,18 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
       ) : null}
 
       {error === null ? null : (
-        <Text
-          accessibilityRole="alert"
-          accessibilityLiveRegion="assertive"
-          style={styles.error}
-          testID={`withdraw-error-${comment.id}`}
-        >
-          {error}
-        </Text>
+        // An icon and words, never the colour alone; on white the words take the surface's ink.
+        <View style={styles.errorRow}>
+          <Icon icon={Glyphs.Warning2} size={14} color={colors.danger} />
+          <Text
+            accessibilityRole="alert"
+            accessibilityLiveRegion="assertive"
+            style={[styles.error, { color: errorTextColor(surface) }]}
+            testID={`withdraw-error-${comment.id}`}
+          >
+            {error}
+          </Text>
+        </View>
       )}
 
       {replying ? (
@@ -262,7 +325,10 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
 /** Hit slop above and below a line of small text, so its target is 44pt and its row is not. */
 const REACH = Math.max(0, (size.touchTarget - lineHeight.small) / 2);
 
-/** A small, quiet control under a comment: an icon and a word, a 44pt target. */
+/**
+ * A small, quiet control under a comment: an icon and a word, a 44pt target, the press scale. The
+ * scale is on a wrapper so the ref stays on the `Pressable` the focus moves back to.
+ */
 const TextButton = forwardRef<
   View,
   {
@@ -276,24 +342,30 @@ const TextButton = forwardRef<
   }
 >(function TextButton({ icon, label, onPress, disabled = false, hint, expanded, testID }, ref) {
   const { ring, onFocus, onBlur } = useFocusRing();
+  const press = usePressScale();
+  const tone = TONES[useSurface()];
   return (
-    <Pressable
-      ref={ref}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityHint={hint}
-      accessibilityState={{ disabled, ...(expanded === undefined ? {} : { expanded }) }}
-      disabled={disabled}
-      onPress={onPress}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      hitSlop={{ top: REACH, bottom: REACH }}
-      style={[styles.textButton, disabled && styles.disabled, ring]}
-      testID={testID}
-    >
-      <Icon icon={icon} size={14} color={colors.textSecondary} />
-      <Text style={styles.textButtonLabel}>{label}</Text>
-    </Pressable>
+    <Animated.View style={press.style}>
+      <Pressable
+        ref={ref}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityHint={hint}
+        accessibilityState={{ disabled, ...(expanded === undefined ? {} : { expanded }) }}
+        disabled={disabled}
+        onPress={onPress}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        hitSlop={{ top: REACH, bottom: REACH }}
+        style={[styles.textButton, disabled && styles.disabled, ring]}
+        testID={testID}
+      >
+        <Icon icon={icon} size={14} color={tone.secondary} />
+        <Text style={[styles.textButtonLabel, { color: tone.secondary }]}>{label}</Text>
+      </Pressable>
+    </Animated.View>
   );
 });
 
@@ -302,29 +374,18 @@ const styles = StyleSheet.create({
     gap: spacing[2],
     padding: spacing[4],
     borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
-  },
-  // The campaign's own answer: a lighter surface and a 2pt white/40 rule, beside its tag.
-  byCreator: {
-    backgroundColor: colors.surface3,
-    borderLeftWidth: 2,
-    borderLeftColor: tint(colors.textPrimary, 0.4),
   },
   meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing[2] },
   date: {
     ...font.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
-    color: colors.textTertiary,
   },
   body: {
     ...font.regular,
     maxWidth: readingMeasure,
     fontSize: fontSize.row,
     lineHeight: lineHeight.body,
-    color: colors.textReading,
   },
   tombstone: {
     flexDirection: 'row',
@@ -333,16 +394,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
     borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
   },
   tombstoneText: {
     ...font.regular,
     flexShrink: 1,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textTertiary,
   },
   controls: { gap: spacing[3] },
   controlRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', gap: spacing[4] },
@@ -357,27 +414,24 @@ const styles = StyleSheet.create({
     ...font.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
-    color: colors.textSecondary,
   },
+  // A block nested in the card: one step off the card's own fill, never a border-only box.
   confirm: {
     gap: spacing[2],
     padding: spacing[3],
     borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface3,
   },
   warning: {
     ...font.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
-    color: colors.textReading,
   },
   confirmActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing[3] },
+  errorRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
   error: {
     ...font.regular,
+    flex: 1,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
-    color: colors.danger,
   },
 });

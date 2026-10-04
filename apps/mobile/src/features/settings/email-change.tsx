@@ -10,6 +10,8 @@ import {
   PasswordInput,
   Pill,
   TextInput,
+  TONES,
+  useSurface,
 } from '../../components/ui';
 import { useMe } from '../../lib/account';
 import {
@@ -21,7 +23,7 @@ import {
 } from '../../lib/auth-failures';
 import { useOnline } from '../../lib/connectivity';
 import { useT } from '../../lib/i18n';
-import { colors, spacing } from '../../theme';
+import { spacing } from '../../theme';
 import { FormErrorSummary } from '../auth/form-error-summary';
 import { requestEmailChange } from './api';
 import { InlineLink, SettingsCard, SettingsPage, Strong } from './settings-page';
@@ -48,6 +50,7 @@ export function EmailSettingsScreen() {
 function EmailChange() {
   const t = useT('settings.panels.emailChange');
   const tAll = useT();
+  const surface = useSurface();
   const online = useOnline();
   const me = useMe().data ?? null;
   const emailField = useRef<RNTextInput>(null);
@@ -104,7 +107,7 @@ function EmailChange() {
       {requestedFor !== null ? (
         <View style={styles.sent} testID="email-change-sent">
           <View style={styles.sentCard}>
-            <Icon icon={Glyphs.SmsTracking} size={20} color={colors.textTertiary} />
+            <Icon icon={Glyphs.SmsTracking} size={20} color={TONES[surface].tertiary} />
             <View style={styles.sentWords} accessible>
               <Body>{fillNodes(String(t.raw('sentIntro')), { address: <Strong>{requestedFor}</Strong> })}</Body>
               <Body>

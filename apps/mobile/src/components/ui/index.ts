@@ -103,6 +103,7 @@ export {
 export { Tag, type TagProps, type TagVariant } from './tag';
 
 /* Data and media: InlineAlert, EmptyState, ErrorState, Skeleton, Media, Screen ----------------- */
+export { ContentSheet, type ContentSheetProps } from './content-sheet';
 export { EdgeFade, type EdgeFadeProps } from './edge-fade';
 export { EmptyState, ErrorState, type EmptyStateProps, type ErrorStateProps } from './empty-state';
 export { InlineAlert, type InlineAlertProps, type InlineAlertVariant } from './inline-alert';
@@ -153,4 +154,4 @@ export { Textarea, type TextareaProps } from './textarea';
 
 /* Overlay: Dialog, Sheet ---------------------------------------------------------------------- */
 export { Dialog, type DialogProps } from './dialog';
-export { SHEET_PAGE_SCALE, Sheet, SheetHost, type SheetProps, type SheetSurface } from './sheet';
+export { SHEET_PAGE_SCALE, Sheet, SheetHost, type SheetProps } from './sheet';

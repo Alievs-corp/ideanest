@@ -11,8 +11,8 @@ import {
 import { useT } from '../../lib/i18n';
 import { reportFailureOf, submitReport } from '../../lib/report';
 import { useSession } from '../../lib/use-session';
-import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
-import { Field, InlineAlert, Pill, Radio, RadioGroup, Sheet, Textarea } from '../ui';
+import { font, fontSize, lineHeight, spacing } from '../../theme';
+import { Field, InlineAlert, Pill, Radio, RadioGroup, Sheet, TONES, Textarea } from '../ui';
 
 /**
  * The report sheet — the web's `ReportControl` dialog (`components/moderation/ReportControl.tsx`)
@@ -158,7 +158,6 @@ export function ReportSheet({
 
   return (
     <Sheet
-      surface="dark"
       visible={visible}
       onClose={close}
       title={t('dialogLabel', { name })}
@@ -242,12 +241,13 @@ const styles = StyleSheet.create({
     ...font.regular,
     fontSize: fontSize.row,
     lineHeight: lineHeight.body,
-    color: colors.textSecondary,
+    // The sheet is white: its words take the on-white tones.
+    color: TONES.white.secondary,
   },
   offline: {
     ...font.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
-    color: colors.textSecondary,
+    color: TONES.white.secondary,
   },
 });

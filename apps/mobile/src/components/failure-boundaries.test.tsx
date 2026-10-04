@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
-import { Text } from 'react-native';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet, Text } from 'react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import { ApiError } from '@ideanest/api-client';
@@ -10,7 +11,10 @@ import ru from '@ideanest/messages/ru.json';
 import tr from '@ideanest/messages/tr.json';
 import NotFoundScreen from '../app/+not-found';
 import * as locale from '../lib/locale';
-import { colors } from '../theme';
+import { colors, motion, spacing } from '../theme';
+import { FailureState } from './failure-state';
+import { TabBarInsetProvider, tabBarFootprint } from './tab-bar';
+import { MotionBudgetProvider } from './ui';
 import { RootFailure, fatalCopy } from './root-failure';
 import { RouteErrorBoundary } from './route-error-boundary';
 import { api, traceIdOfError } from '../api/client';
@@ -105,6 +109,68 @@ describe('not found', () => {
   });
 });
 
+describe('the failure screen', () => {
+  const notFound = en.shell.failure.pages.notFound;
+  const whatsapp = en.shell.whatsapp;
+
+  function failure(props: Partial<Parameters<typeof FailureState>[0]> = {}) {
+    return (
+      <FailureState
+        title={notFound.title}
+        description={notFound.description}
+        actionLabel={notFound.action}
+        onAction={() => {}}
+        testID="failure"
+        {...props}
+      />
+    );
+  }
+
+  const padding = () => StyleSheet.flatten(screen.getByTestId('failure').props.contentContainerStyle);
+
+  it('draws a Bulk glyph over the heading: SearchStatus for not found, Danger for an error', async () => {
+    await inApp(<NotFoundScreen />);
+    expect(screen.getByTestId('icon-SearchStatus', { includeHiddenElements: true })).toBeTruthy();
+
+    await inApp(<RouteErrorBoundary error={new Error('x')} retry={async () => {}} />);
+    expect(screen.getByTestId('icon-Danger', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('keeps its column clear of the home indicator, and of the tab bar under a tab', async () => {
+    await inApp(failure());
+    expect(padding().paddingBottom).toBe(METRICS.insets.bottom + spacing[6]);
+    expect(padding().paddingTop).toBe(spacing[6]);
+
+    await inApp(<TabBarInsetProvider>{failure()}</TabBarInsetProvider>);
+    expect(padding().paddingBottom).toBe(tabBarFootprint(METRICS.insets.bottom) + spacing[6]);
+  });
+
+  it('takes the status bar inset only on a screen with no header', async () => {
+    await inApp(failure({ safeTop: true }));
+    expect(padding().paddingTop).toBe(METRICS.insets.top + spacing[6]);
+  });
+
+  it('gives the WhatsApp link under the thumb with full motion', async () => {
+    await inApp(failure());
+    const link = screen.getByRole('button', { name: whatsapp.open });
+    fireEvent(link, 'pressIn');
+    await waitFor(
+      () => {
+        const style = getAnimatedStyle(link.parent as never) as { transform?: { scale: number }[] };
+        expect(style.transform?.[0]?.scale).toBeCloseTo(motion.pressScale, 2);
+      },
+      { timeout: 3000 },
+    );
+  });
+
+  it('keeps the WhatsApp link still with reduced motion', async () => {
+    await inApp(<MotionBudgetProvider level="none">{failure()}</MotionBudgetProvider>);
+    const link = screen.getByRole('button', { name: whatsapp.open });
+    fireEvent(link, 'pressIn');
+    expect(StyleSheet.flatten(link.parent?.props.style)?.transform).toBeUndefined();
+  });
+});
+
 describe('a render error inside a route', () => {
   it('says so in the catalogue’s words and never prints the message', async () => {
     const retry = jest.fn(async () => {});
@@ -177,6 +243,12 @@ describe('the root failure', () => {
     const action = screen.getByRole('button', { name: words.action });
     await fireEvent.press(action);
     expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws the Bulk Danger glyph, outside every provider', async () => {
+    locale.setLocale('en');
+    await render(<RootFailure error={new Error('x')} retry={async () => {}} />);
+    expect(screen.getByTestId('icon-Danger', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('is a white pill, never lime', async () => {

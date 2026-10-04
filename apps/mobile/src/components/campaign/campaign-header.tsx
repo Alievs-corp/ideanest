@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Glyphs } from '../../icons';
 import type { ProjectState } from '@ideanest/campaign/states';
@@ -8,7 +8,7 @@ import type { CampaignPage } from '../../lib/campaign-page';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, size, spacing, tracking } from '../../theme';
 import { Body } from '../text';
-import { Tag, useFocusRing, type IconComponent, type TagVariant } from '../ui';
+import { PressableScale, Tag, useFocusRing, type IconComponent, type TagVariant } from '../ui';
 
 /**
  * Blocks 2–4 — the web's `CampaignSummary` above the figures: the tag row, the title and blurb,
@@ -162,7 +162,8 @@ const LINK_REACH = Math.max(0, (size.touchTarget - lineHeight.small) / 2);
 
 /**
  * A line of small text that navigates: a 44pt target however small the words (the reach is hit
- * slop, so the tag row keeps its height), the kit's focus ring, and one accessible name.
+ * slop, so the tag row keeps its height), the kit's focus ring, the press scale, and one accessible
+ * name.
  */
 function TextLink({
   label,
@@ -177,20 +178,21 @@ function TextLink({
 }) {
   const { ring, onFocus, onBlur } = useFocusRing();
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="link"
       accessibilityLabel={label}
       onPress={onPress}
       onFocus={onFocus}
       onBlur={onBlur}
       hitSlop={{ top: LINK_REACH, bottom: LINK_REACH }}
-      style={({ pressed }) => [styles.link, pressed && styles.pressed, ring]}
+      style={styles.reach}
+      contentStyle={({ pressed }) => [styles.link, pressed && styles.pressed, ring]}
       testID={testID}
     >
       <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         {children}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -218,6 +220,8 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   creator: { color: colors.textPrimary, textDecorationLine: 'underline' },
-  link: { alignSelf: 'flex-start', borderRadius: radius.sm },
+  // The scaled box is the link's own, so it gives about its centre rather than the row's.
+  reach: { alignSelf: 'flex-start' },
+  link: { borderRadius: radius.sm },
   pressed: { opacity: 0.64 },
 });

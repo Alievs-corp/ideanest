@@ -12,7 +12,10 @@ import {
   initials,
   Pill,
   TextInput,
+  TONES,
+  useSurface,
 } from '../../../components/ui';
+import { BLOCK, blockSurface } from '../../../components/ui/surface';
 import { useT, type Translate } from '../../../lib/i18n';
 import {
   isAbortError,
@@ -21,7 +24,7 @@ import {
   UploadFailed,
   type UploadStage,
 } from '../../../lib/media/upload';
-import { colors, font, fontSize, radius, spacing } from '../../../theme';
+import { font, fontSize, radius, spacing } from '../../../theme';
 
 /**
  * The profile picture, native — the web's `ProfileAvatarField` with an uploader instead of a
@@ -196,6 +199,10 @@ export function AvatarField({
     if (asset !== undefined) await upload(asset.uri);
   }
 
+  // The preview circle is the surface's soft badge; the initials its secondary ink.
+  const surface = useSurface();
+  const circle = [styles.circle, { backgroundColor: BLOCK[blockSurface(surface)].badge }];
+
   const status =
     address !== '' && broken === address ? t('broken') : previewable ? t('cropped') : t('initials');
 
@@ -205,7 +212,7 @@ export function AvatarField({
         <View style={styles.preview}>
           {previewable ? (
             <View
-              style={styles.circle}
+              style={circle}
               // The sentence beside it says what it is.
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
@@ -221,13 +228,15 @@ export function AvatarField({
             </View>
           ) : (
             <View
-              style={styles.circle}
+              style={circle}
               accessible
               accessibilityRole="image"
               accessibilityLabel={t('noPicture', { name })}
               testID="avatar-preview-initials"
             >
-              <Text style={styles.initials} maxFontSizeMultiplier={1} importantForAccessibility="no">
+              <Text
+                style={[styles.initials, { color: TONES[surface].secondary }]}
+                maxFontSizeMultiplier={1} importantForAccessibility="no">
                 {initials(name)}
               </Text>
             </View>
@@ -333,12 +342,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface3,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   fill: { width: '100%', height: '100%' },
-  initials: { ...font.medium, fontSize: fontSize.h3, color: colors.textSecondary },
+  initials: { ...font.medium, fontSize: fontSize.h3 },
   words: { flex: 1, minWidth: 0 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   secondary: { alignItems: 'flex-start' },

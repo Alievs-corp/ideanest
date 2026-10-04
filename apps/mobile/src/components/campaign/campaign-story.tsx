@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Glyphs } from '../../icons';
 import type { StoryBlock, StoryDocument, StorySpans } from '@ideanest/campaign/story';
@@ -13,9 +13,11 @@ import {
   readingMeasure,
   size,
   spacing,
+  tint,
   tracking,
 } from '../../theme';
-import { Icon, MediaFrame, useFocusRing } from '../ui';
+import { toneColor } from '../text';
+import { Icon, MediaFrame, PressableScale, TONES, useFocusRing, useSurface } from '../ui';
 
 /**
  * The story — the web's `CampaignStory` (#155, #140), as native text.
@@ -36,8 +38,10 @@ import { Icon, MediaFrame, useFocusRing } from '../ui';
  * dividers, images at their own aspect ratio with the creator's `alt` as their name, and embeds.
  * Never HTML and never a WebView: the creator's words are data.
  *
- * <p>Reading text is 17 on 1.75 with a 68-character measure, on a surface-2 card. No height is
- * fixed and nothing is truncated, so Dynamic Type grows the story rather than clipping it.
+ * <p>Reading text is 17 on 1.75 with a 68-character measure. On the dark canvas it sits on a
+ * surface-2 card; inside the page's white content sheet the sheet is the card, and every tone is
+ * the sheet's on-white one (`Ink`). No height is fixed and nothing is truncated, so Dynamic Type
+ * grows the story rather than clipping it.
  *
  * <h2>Embeds are links out</h2>
  *
@@ -54,8 +58,10 @@ export interface CampaignStoryProps {
 
 export function CampaignStory({ story, title }: CampaignStoryProps) {
   const t = useT('campaign.story');
+  const surface = useSurface();
+  const ink = inkOf(surface === 'white' ? 'white' : 'dark');
   return (
-    <View style={styles.card} testID="campaign-story">
+    <View style={surface === 'white' ? styles.sheet : styles.card} testID="campaign-story">
       {/*
         A heading the outline needs and the design does not show: without it the story's own
         headings hang off nothing for somebody moving by heading.
@@ -68,6 +74,7 @@ export function CampaignStory({ story, title }: CampaignStoryProps) {
           <Block
             key={index}
             block={block}
+            ink={ink}
             first={index === 0}
             last={index === story.blocks.length - 1}
           />
@@ -77,12 +84,42 @@ export function CampaignStory({ story, title }: CampaignStoryProps) {
   );
 }
 
+/** The story's colours on the surface it is drawn on. */
+interface Ink {
+  readonly reading: string;
+  readonly strong: string;
+  readonly secondary: string;
+  /** The quote's rule: the web's lime-700 on the canvas, a neutral rule on white. */
+  readonly quote: string;
+  readonly rule: string;
+}
+
+function inkOf(surface: 'dark' | 'white'): Ink {
+  return surface === 'white'
+    ? {
+        reading: toneColor('reading', 'white'),
+        strong: TONES.white.primary,
+        secondary: TONES.white.secondary,
+        quote: TONES.white.tertiary,
+        rule: tint(colors.black, 0.16),
+      }
+    : {
+        reading: colors.textReading,
+        strong: colors.textPrimary,
+        secondary: colors.textSecondary,
+        quote: colors.lime700,
+        rule: colors.border,
+      };
+}
+
 function Block({
   block,
+  ink,
   first,
   last,
 }: {
   readonly block: StoryBlock;
+  readonly ink: Ink;
   readonly first: boolean;
   /** The last block keeps no space under it; the card's padding is the space. */
   readonly last: boolean;
@@ -93,7 +130,11 @@ function Block({
       return (
         <Text
           accessibilityRole="header"
-          style={[block.level === 2 ? styles.h2 : styles.h3, first && styles.first]}
+          style={[
+            block.level === 2 ? styles.h2 : styles.h3,
+            { color: ink.strong },
+            first && styles.first,
+          ]}
           testID={`story-heading-${block.level}`}
         >
           {block.text}
@@ -102,8 +143,8 @@ function Block({
 
     case 'paragraph':
       return (
-        <Text style={[styles.paragraph, end]}>
-          <Spans spans={block.spans} />
+        <Text style={[styles.paragraph, { color: ink.reading }, end]}>
+          <Spans spans={block.spans} ink={ink} />
         </Text>
       );
 
@@ -115,11 +156,14 @@ function Block({
         >
           {block.items.map((item, index) => (
             <View key={index} style={styles.item}>
-              <Text style={[styles.reading, styles.marker]} accessibilityElementsHidden>
+              <Text
+                style={[styles.reading, styles.marker, { color: ink.reading }]}
+                accessibilityElementsHidden
+              >
                 {block.ordered ? `${index + 1}.` : '•'}
               </Text>
-              <Text style={[styles.reading, styles.itemText]}>
-                <Spans spans={item} />
+              <Text style={[styles.reading, styles.itemText, { color: ink.reading }]}>
+                <Spans spans={item} ink={ink} />
               </Text>
             </View>
           ))}
@@ -128,15 +172,15 @@ function Block({
 
     case 'quote':
       return (
-        <View style={[styles.quote, end]} testID="story-quote">
-          <Text style={[styles.reading, styles.italic]}>
-            <Spans spans={block.spans} />
+        <View style={[styles.quote, { borderLeftColor: ink.quote }, end]} testID="story-quote">
+          <Text style={[styles.reading, styles.italic, { color: ink.reading }]}>
+            <Spans spans={block.spans} ink={ink} />
           </Text>
         </View>
       );
 
     case 'rule':
-      return <View style={[styles.rule, end]} testID="story-rule" />;
+      return <View style={[styles.rule, { backgroundColor: ink.rule }, end]} testID="story-rule" />;
 
     case 'image':
       return (
@@ -164,7 +208,7 @@ function Block({
     case 'embed':
       return (
         <View style={[styles.embedBlock, end]}>
-          <EmbedLink title={block.title} url={block.url} provider={block.provider} />
+          <EmbedLink title={block.title} url={block.url} provider={block.provider} ink={ink} />
         </View>
       );
   }
@@ -177,7 +221,9 @@ function EmbedLink({
   title,
   url,
   provider,
+  ink,
 }: {
+  readonly ink: Ink;
   readonly title: string;
   readonly url: string;
   readonly provider: keyof typeof PROVIDER_NAMES;
@@ -187,26 +233,26 @@ function EmbedLink({
   const suffix = t('watchOn', { provider: PROVIDER_NAMES[provider] });
   const openable = /^https?:\/\//i.test(url);
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="link"
       accessibilityLabel={`${title} ${suffix}`}
       disabled={!openable}
       onPress={() => void Linking.openURL(url).catch(() => undefined)}
       onFocus={onFocus}
       onBlur={onBlur}
-      style={({ pressed }) => [styles.embed, pressed && styles.pressed, ring]}
+      contentStyle={({ pressed }) => [styles.embed, pressed && styles.pressed, ring]}
       testID="story-embed"
     >
-      <Text style={[styles.reading, styles.embedText]}>
-        <Text style={styles.embedTitle}>{title}</Text> {suffix}
+      <Text style={[styles.reading, styles.embedText, { color: ink.reading }]}>
+        <Text style={[styles.embedTitle, { color: ink.strong }]}>{title}</Text> {suffix}
       </Text>
-      <Icon icon={Glyphs.ExportSquare} size={16} color={colors.textSecondary} />
-    </Pressable>
+      <Icon icon={Glyphs.ExportSquare} size={16} color={ink.secondary} />
+    </PressableScale>
   );
 }
 
 /** A run of text with its marks: `em` italic, `strong` semibold white — the web's `Spans`. */
-function Spans({ spans }: { readonly spans: StorySpans }) {
+function Spans({ spans, ink }: { readonly spans: StorySpans; readonly ink: Ink }) {
   return (
     <>
       {spans.map((span, index) => {
@@ -214,7 +260,10 @@ function Spans({ spans }: { readonly spans: StorySpans }) {
         const strong = span.marks.includes('strong');
         if (!em && !strong) return <Fragment key={index}>{span.text}</Fragment>;
         return (
-          <Text key={index} style={[em && styles.italic, strong && styles.strong]}>
+          <Text
+            key={index}
+            style={[em && styles.italic, strong && styles.strong, strong && { color: ink.strong }]}
+          >
             {span.text}
           </Text>
         );
@@ -228,11 +277,12 @@ const reading = {
   fontSize: fontSize.reading,
   lineHeight: lineHeight.story,
   letterSpacing: tracking.reading,
-  color: colors.textReading,
 } as const;
 
 const styles = StyleSheet.create({
   card: { padding: spacing[6], borderRadius: radius.xl, backgroundColor: colors.surface2 },
+  // Inside the white content sheet the sheet is the card: no second fill, no second inset.
+  sheet: {},
   measure: { maxWidth: readingMeasure },
   hidden: {
     position: 'absolute',
@@ -248,7 +298,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.h2,
     lineHeight: lineHeight.h2,
     letterSpacing: tracking.h2,
-    color: colors.textPrimary,
     marginTop: spacing[10],
     marginBottom: spacing[4],
   },
@@ -257,7 +306,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.h3,
     lineHeight: lineHeight.h3,
     letterSpacing: tracking.h3,
-    color: colors.textPrimary,
     marginTop: spacing[8],
     marginBottom: spacing[3],
   },
@@ -268,15 +316,13 @@ const styles = StyleSheet.create({
   itemText: { flex: 1 },
   quote: {
     borderLeftWidth: 2,
-    borderLeftColor: colors.lime700,
     paddingLeft: spacing[5],
     marginBottom: spacing[6],
   },
   italic: { fontStyle: 'italic' },
-  strong: { ...font.semibold, color: colors.textPrimary },
+  strong: { ...font.semibold },
   rule: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
     marginVertical: spacing[10],
   },
   figure: { marginBottom: spacing[6] },
@@ -291,6 +337,6 @@ const styles = StyleSheet.create({
   embedBlock: { marginBottom: spacing[6] },
   last: { marginBottom: 0 },
   embedText: { flex: 1 },
-  embedTitle: { color: colors.textPrimary, textDecorationLine: 'underline' },
+  embedTitle: { textDecorationLine: 'underline' },
   pressed: { opacity: 0.64 },
 });

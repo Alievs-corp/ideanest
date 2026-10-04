@@ -43,8 +43,10 @@ import {
  * the message is being typed. Cancel stays as well as the sheet's own X: it is the way out
  * every reader can see beside the button that sends.
  *
- * <p>The actions are the kit's pills: the hand-over is the white primary — it is this sheet's
- * action but not an urgent one, so not lime — and Cancel is a ghost.
+ * <p>It is the kit's white sheet (`mobile-design` skill §2): the form reads on white, and the kit's
+ * fields and pills follow the surface (`useSurface()`). The hand-over is the primary pill, which
+ * on white inverts to the dark fill — it is this sheet's action but not an urgent one, so not
+ * lime — and Cancel is the outline pill, a near-black hairline on white.
  *
  * <h2>Errors, for somebody who cannot see them</h2>
  *
@@ -135,7 +137,6 @@ export function WhatsAppSheet({
 
   return (
     <Sheet
-      surface="dark"
       visible={visible}
       onClose={close}
       title={t('title')}
@@ -151,7 +152,7 @@ export function WhatsAppSheet({
               fullWidth
             />
           )}
-          <Pill label={t('cancel')} variant="ghost" size="lg" fullWidth onPress={close} />
+          <Pill label={t('cancel')} variant="outline" size="lg" fullWidth onPress={close} />
         </>
       }
     >

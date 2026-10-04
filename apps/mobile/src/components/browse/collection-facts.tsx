@@ -2,7 +2,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { windowFacts, type Collection } from '@ideanest/discovery/collections';
 import { formatWindowDate, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
-import { colors, font, fontSize, lineHeight, spacing, tint } from '../../theme';
+import { font, fontSize, lineHeight, spacing } from '../../theme';
+import { TONES, useSurface } from '../ui';
 
 /**
  * A collection's facts row — the web's `<dl>` on `CollectionCard` and `CollectionHeader` (#154):
@@ -13,6 +14,9 @@ import { colors, font, fontSize, lineHeight, spacing, tint } from '../../theme';
  *
  * Each fact is one accessible element that reads term and value together — "Closes, 15 October
  * 2026" — rather than two stops a screen reader user has to pair up.
+ *
+ * <p>The tones follow the surface (`useSurface`): tertiary terms and primary values on the dark
+ * header, and the accent's near-black tones on a collection card.
  */
 export function CollectionFacts({
   collection,
@@ -28,6 +32,7 @@ export function CollectionFacts({
 }) {
   const t = useT('discovery.collections');
   const locale = useLocale();
+  const tones = TONES[useSurface()];
   const facts = [
     { key: 'first', term: first.term, date: first.value },
     ...windowFacts(
@@ -47,8 +52,8 @@ export function CollectionFacts({
           accessibilityLabel={`${fact.term}, ${fact.date}`}
           testID="collection-fact"
         >
-          <Text style={styles.term}>{fact.term}</Text>
-          <Text style={styles.value}>{fact.date}</Text>
+          <Text style={[styles.term, { color: tones.tertiary }]}>{fact.term}</Text>
+          <Text style={[styles.value, { color: tones.primary }]}>{fact.date}</Text>
         </View>
       ))}
     </View>
@@ -67,7 +72,6 @@ const styles = StyleSheet.create({
   },
   wide: { columnGap: spacing[6], rowGap: spacing[2] },
   fact: { flexDirection: 'row', alignItems: 'baseline', gap: spacing[1] + spacing[1] / 2 },
-  term: { ...text, color: colors.textTertiary },
-  // The web's `text-white/80`.
-  value: { ...text, color: tint(colors.textPrimary, 0.8), fontVariant: ['tabular-nums'] },
+  term: text,
+  value: { ...text, fontVariant: ['tabular-nums'] },
 });

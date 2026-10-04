@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { formatApproximate, formatMoney, type Money } from '@ideanest/money';
 import type { PledgeAmounts } from '@ideanest/checkout/types';
-import { FloatingPanel } from '../../components/ui';
+import { CardTitle, FloatingPanel, useSurface } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, spacing, tint } from '../../theme';
 
@@ -28,6 +28,10 @@ function Line({ label, money }: { readonly label: string; readonly money: Money 
 
 const shown = (money: Money) => !new Decimal(money.amount).isZero();
 
+/**
+ * The pledge's lines and total, on white. On the dark canvas it is its own `FloatingPanel`; already
+ * inside a white sheet it is drawn flat in it, since a white panel on white has no edge.
+ */
 export function PledgeSummary({
   amounts,
   source,
@@ -38,8 +42,9 @@ export function PledgeSummary({
   children,
 }: PledgeSummaryProps) {
   const t = useT('checkout.summary');
-  return (
-    <FloatingPanel title={t('pledge')} testID="pledge-summary">
+  const inSheet = useSurface() === 'white';
+  const content = (
+    <>
       <Text style={styles.muted}>
         {rewardTitle ?? t('noReward')}
         {destination === null ? '' : ` · ${t('to', { country: destination })}`}
@@ -73,6 +78,21 @@ export function PledgeSummary({
         </View>
       )}
       {children === undefined ? null : <View style={styles.actions}>{children}</View>}
+    </>
+  );
+  if (inSheet) {
+    return (
+      <View testID="pledge-summary">
+        <CardTitle accessibilityRole="header" style={styles.title}>
+          {t('pledge')}
+        </CardTitle>
+        {content}
+      </View>
+    );
+  }
+  return (
+    <FloatingPanel title={t('pledge')} testID="pledge-summary">
+      {content}
     </FloatingPanel>
   );
 }
@@ -81,6 +101,7 @@ const muted = tint(colors.textOnWhite, 0.64);
 
 const styles = StyleSheet.create({
   top: { marginTop: spacing[4] },
+  title: { marginBottom: spacing[3] },
   lines: { gap: spacing[2] },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: spacing[4], flexWrap: 'wrap' },
   label: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textOnWhite, flexShrink: 1 },

@@ -8,15 +8,18 @@ import {
   platformOf,
   type SessionSummary,
 } from '@ideanest/account/sessions';
-import { Body, CardTitle, Icon, Pill, Tag } from '../../../components/ui';
+import { Body, CardTitle, Icon, Pill, Tag, TONES, useSurface } from '../../../components/ui';
+import { BLOCK, blockSurface } from '../../../components/ui/surface';
 import { useT } from '../../../lib/i18n';
 import { useLocale } from '../../../lib/locale';
-import { colors, radius, spacing } from '../../../theme';
+import { radius, spacing } from '../../../theme';
 import { relativeTime } from './relative-time';
 
 /**
  * One device — the web's `SessionRow` (#161). The current device is marked with a word, not a
- * colour and not lime: "this device" is where you are, not something to hurry about.
+ * colour and not lime: "this device" is where you are, not something to hurry about. The device
+ * kind is a Bulk `Mobile` or `Monitor` in the surface's round badge, and signing it out is a
+ * small danger pill.
  */
 export function SessionRow({
   session,
@@ -34,6 +37,7 @@ export function SessionRow({
 }) {
   const t = useT('settings.panels.sessions.row');
   const locale = useLocale();
+  const surface = useSurface();
   const copy = { onPlatform: String(t.raw('onPlatform')), unknownDevice: t('unknownDevice') };
 
   const name = deviceNameOf(session, copy);
@@ -59,11 +63,16 @@ export function SessionRow({
   return (
     <View style={styles.row} testID={`session-${session.id}`}>
       <View
-        style={styles.icon}
+        style={[styles.icon, { backgroundColor: BLOCK[blockSurface(surface)].badge }]}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
-        <Icon icon={isPhone ? Glyphs.Mobile : Glyphs.Monitor} size={18} color={colors.textSecondary} />
+        <Icon
+          icon={isPhone ? Glyphs.Mobile : Glyphs.Monitor}
+          variant="bulk"
+          size={20}
+          color={TONES[surface].primary}
+        />
       </View>
       <View style={styles.words}>
         <View style={styles.nameLine}>
@@ -81,7 +90,7 @@ export function SessionRow({
           <Pill
             label={busy ? t('signingOut') : t('signOut')}
             accessibilityLabel={label}
-            variant="ghost"
+            variant="danger"
             size="sm"
             busy={busy}
             disabled={disabled}
@@ -94,15 +103,15 @@ export function SessionRow({
   );
 }
 
-const ICON_SIZE = 36;
+/** An `IconButton`'s 40pt circle. */
+const ICON_SIZE = spacing[10];
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[4], paddingVertical: spacing[4] },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[4] },
   icon: {
     width: ICON_SIZE,
     height: ICON_SIZE,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface3,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -3,15 +3,15 @@ import { Glyphs } from '../../../../icons';
 import type { CampaignUpdate } from '@ideanest/campaign/updates';
 import { formatDay, useT } from '../../../../lib/i18n';
 import { useLocale } from '../../../../lib/locale';
-import { colors, font, fontSize, lineHeight, spacing, tracking } from '../../../../theme';
+import { font, fontSize, lineHeight, spacing, tracking } from '../../../../theme';
 import { Tag } from '../../../ui';
-import { EntryCard, entryText } from '../shared/tab-section';
+import { EntryCard, entryText, useEntryTones } from '../shared/tab-section';
 import { upperCaseIn } from './upper-case';
 
 /**
- * One update — the web's `UpdateEntry` (#155): a surface-2 card with the eyebrow "UPDATE 7", the
- * day it was published, a "Backers only" tag where it applies, the title as an H3 and the body
- * with its line breaks kept.
+ * One update — the web's `UpdateEntry` (#155): a raised block (`EntryCard`) with the eyebrow
+ * "UPDATE 7", the day it was published, a "Backers only" tag where it applies, the title as an H3
+ * and the body with its line breaks kept.
  *
  * <p><strong>The number is the service's</strong> (`update.number`), allocated once at insert and
  * never recomputed — "update 7 said the moulds were late" is a thing a backer says six months on.
@@ -36,15 +36,16 @@ export function UpdateEntry({ update }: { readonly update: CampaignUpdate }) {
   const locale = useLocale();
   const day = formatDay(update.publishedAt, locale);
   const eyebrow = t('number', { number: String(update.number) });
+  const tones = useEntryTones();
 
   return (
     <View style={styles.entry}>
       <EntryCard gap={spacing[3]} testID={`update-${update.number}`}>
         <View style={styles.meta}>
-          <Text style={styles.eyebrow} accessibilityLabel={eyebrow}>
+          <Text style={[styles.eyebrow, { color: tones.meta }]} accessibilityLabel={eyebrow}>
             {upperCaseIn(eyebrow, locale)}
           </Text>
-          {day === null ? null : <Text style={styles.day}>{day}</Text>}
+          {day === null ? null : <Text style={[styles.day, { color: tones.meta }]}>{day}</Text>}
           {update.visibility === 'BACKERS_ONLY' ? (
             <Tag
               variant="warning"
@@ -54,10 +55,12 @@ export function UpdateEntry({ update }: { readonly update: CampaignUpdate }) {
             />
           ) : null}
         </View>
-        <Text accessibilityRole="header" style={entryText.title}>
+        <Text accessibilityRole="header" style={[entryText.title, { color: tones.title }]}>
           {update.title}
         </Text>
-        {update.body === '' ? null : <Text style={entryText.body}>{update.body}</Text>}
+        {update.body === '' ? null : (
+          <Text style={[entryText.body, { color: tones.body }]}>{update.body}</Text>
+        )}
       </EntryCard>
     </View>
   );
@@ -67,18 +70,19 @@ const styles = StyleSheet.create({
   // The web's `gap-6`, under the heading and between the cards alike.
   entry: { paddingTop: spacing[6] },
   meta: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing[3] },
-  /** The web's `text-xs font-medium tracking-[0.04em] text-white/40 uppercase` (cased in code). */
+  /**
+   * The web's `text-xs font-medium tracking-[0.04em] uppercase` (cased in code), in the surface's
+   * secondary tone: the web's white/40 is under AA for 12pt on either surface.
+   */
   eyebrow: {
     ...font.medium,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
     letterSpacing: tracking.eyebrow,
-    color: colors.textTertiary,
   },
   day: {
     ...font.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
-    color: colors.textTertiary,
   },
 });

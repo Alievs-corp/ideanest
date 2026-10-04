@@ -19,10 +19,16 @@ import { toAmounts } from '@ideanest/checkout/quote';
 import { contributionMessage, refusalMessage } from '@ideanest/checkout/refusals';
 import {
   AccentScopeProvider,
+  Body,
+  CardTitle,
+  ContentSheet,
   Dialog,
+  Eyebrow,
   Field,
+  HeroFigure,
   IconButton,
   InlineAlert,
+  Meta,
   Pill,
   Select,
   SkeletonCard,
@@ -224,7 +230,7 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
           />
         ) : (
           <>
-            <Text style={styles.muted}>{t('checkout.intro')}</Text>
+            <Body>{t('checkout.intro')}</Body>
             <RewardChoice rewards={list?.rewards ?? []} value={checkout.choice} onChange={checkout.chooseReward} />
             {checkout.attempted && checkout.choice === null ? (
               <InlineAlert variant="warning" description={t('checkout.reward.chooseOne')} testID="choose-one" />
@@ -245,7 +251,7 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
                   keyboardType="decimal-pad"
                   inputMode="decimal"
                   autoComplete="off"
-                  trailing={<Text style={styles.currency}>{currency}</Text>}
+                  trailing={<Meta tone="secondary">{currency}</Meta>}
                   testID="contribution"
                 />
               </Field>
@@ -326,25 +332,23 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
             }
           />
         ) : (
-          <Text style={[styles.muted, styles.tabular]} testID="reservation-clock">
+          <Body style={styles.tabular} testID="reservation-clock">
             {t('checkout.heldFor', { time: clock.label })}
-          </Text>
+          </Body>
         )}
         <View style={styles.section}>
-          <Text accessibilityRole="header" style={styles.subheading}>
-            {t('checkout.review.heading')}
-          </Text>
+          <CardTitle accessibilityRole="header">{t('checkout.review.heading')}</CardTitle>
           {rows.map(([term, detail], index) => (
             <View key={`${term}-${index}`} style={styles.row} accessible>
-              <Text style={styles.term}>{term}</Text>
-              <Text style={styles.detail}>{detail}</Text>
+              <Meta tone="secondary">{term}</Meta>
+              <Meta tone="primary" style={styles.detail}>
+                {detail}
+              </Meta>
             </View>
           ))}
         </View>
         <View style={styles.section}>
-          <Text accessibilityRole="header" style={styles.subheading}>
-            {t('checkout.payment.heading')}
-          </Text>
+          <CardTitle accessibilityRole="header">{t('checkout.payment.heading')}</CardTitle>
           <InlineAlert
             variant="info"
             title={t('checkout.payment.none')}
@@ -391,14 +395,15 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
       </>
     );
   } else {
-    form = <Text style={styles.muted}>{t('checkout.review.confirming')}</Text>;
+    form = <Body>{t('checkout.review.confirming')}</Body>;
     actions = undefined;
   }
 
+  const amounts = pledge !== null ? pledge.amounts : quote !== null && quote.ok ? toAmounts(quote.quote) : null;
   const summary =
     step === 'confirmed' ? null : (
       <PledgeSummary
-        amounts={pledge !== null ? pledge.amounts : quote !== null && quote.ok ? toAmounts(quote.quote) : null}
+        amounts={amounts}
         source={pledge !== null ? 'quoted' : 'preview'}
         rewardTitle={
           pledge !== null
@@ -424,7 +429,7 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
       <Stack.Screen options={{ headerShown: false, gestureEnabled: !locked && held.remainingMs === 0 }} />
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
-          contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing[4], paddingBottom: insets.bottom + spacing[8] }]}
+          contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing[4], paddingBottom: insets.bottom }]}
           keyboardShouldPersistTaps="handled"
           testID="checkout"
         >
@@ -444,17 +449,27 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
               </Text>
             ))}
           </View>
-          <View style={wide ? styles.wide : styles.narrow}>
-            <View style={[styles.form, wide && styles.formWide]}>
-              {offlineNotice}
-              {failureNotice}
-              {form}
+          {amounts === null || step === 'confirmed' ? null : (
+            <View style={styles.hero}>
+              <Meta tone="secondary" accessibilityElementsHidden importantForAccessibility="no">
+                {t('checkout.summary.total')}
+              </Meta>
+              <HeroFigure money={amounts.total} label={t('checkout.summary.total')} testID="checkout-hero" />
             </View>
-            {summary === null ? null : <View style={wide ? styles.summaryWide : undefined}>{summary}</View>}
-          </View>
-          {fees.isPending ? null : (
-            <FeeDisclosure disclosure={fees.data ?? null} onPricing={() => router.push('/pricing')} />
           )}
+          <ContentSheet>
+            <View style={wide ? styles.wide : styles.narrow}>
+              <View style={[styles.form, wide && styles.formWide]}>
+                {offlineNotice}
+                {failureNotice}
+                {form}
+              </View>
+              {summary === null ? null : <View style={wide ? styles.summaryWide : undefined}>{summary}</View>}
+            </View>
+            {fees.isPending ? null : (
+              <FeeDisclosure disclosure={fees.data ?? null} onPricing={() => router.push('/pricing')} />
+            )}
+          </ContentSheet>
         </ScrollView>
       </KeyboardAvoidingView>
       <Dialog
@@ -486,7 +501,7 @@ function Header({ onClose, disabled = false }: { readonly onClose: () => void; r
   return (
     <View style={styles.header}>
       <IconButton icon={Glyphs.Close} size="lg" variant="ghost" label={t('mobile.checkout.close')} onPress={onClose} disabled={disabled} testID="checkout-close" />
-      <Text style={styles.eyebrow}>{t('checkout.title')}</Text>
+      <Eyebrow>{t('checkout.title')}</Eyebrow>
     </View>
   );
 }
@@ -494,26 +509,23 @@ function Header({ onClose, disabled = false }: { readonly onClose: () => void; r
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.surface1 },
   pad: { padding: spacing[5] },
-  content: { paddingHorizontal: spacing[5], gap: spacing[5] },
+  // `flexGrow` so the white sheet, last in the column, runs to the bottom edge.
+  content: { flexGrow: 1, paddingHorizontal: spacing[5], gap: spacing[5] },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
-  eyebrow: { ...font.medium, fontSize: fontSize.xs, lineHeight: lineHeight.small, color: colors.textTertiary, textTransform: 'uppercase' },
   h1: { ...font.semibold, fontSize: fontSize.h2, lineHeight: lineHeight.h2, color: colors.textPrimary },
   steps: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] },
   stepOn: { ...font.medium, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textPrimary },
   stepOff: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textTertiary },
+  hero: { gap: spacing[1] },
   narrow: { gap: spacing[6] },
   wide: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[6] },
   form: { gap: spacing[5] },
   formWide: { flex: 1 },
   summaryWide: { width: SUMMARY_WIDTH },
-  muted: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textSecondary },
   tabular: { fontVariant: ['tabular-nums'] },
-  currency: { ...font.medium, fontSize: fontSize.sm, color: colors.textSecondary },
   section: { gap: spacing[2] },
-  subheading: { ...font.medium, fontSize: fontSize.base, lineHeight: lineHeight.body, color: colors.textPrimary },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[4], flexWrap: 'wrap' },
-  term: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textSecondary },
-  detail: { ...font.medium, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textPrimary, flexShrink: 1 },
+  detail: { flexShrink: 1 },
   risk: { gap: spacing[1] },
   onWhiteHeading: { ...font.medium, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textOnWhite },
   onWhite: { ...font.regular, fontSize: fontSize.caption, lineHeight: lineHeight.small, color: colors.textOnWhite },

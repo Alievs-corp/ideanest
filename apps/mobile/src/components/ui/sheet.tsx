@@ -1,5 +1,4 @@
 import {
-  createContext,
   useContext,
   useEffect,
   useMemo,
@@ -22,11 +21,10 @@ import {
 } from 'react-native';
 import Animated, {
   runOnJS,
-  useAnimatedReaction,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withSpring,
-  type SharedValue,
 } from 'react-native-reanimated';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { Glyphs } from '../../icons';
@@ -46,12 +44,12 @@ import {
 import { useFocusRing } from './focus';
 import { IconButton } from './icon-button';
 import { useMotionAllowed } from './motion-budget';
-import { useOverlayFocus } from './overlay';
+import { OverlayHostContext, useHostLift, useOverlayFocus } from './overlay';
 import { SurfaceProvider, TONES } from './surface';
 
 /**
  * A bottom sheet for a TRANSIENT picker or form — `Select`'s options, `FilePicker`'s two sources,
- * the WhatsApp form. Issues #151 and #277, `mobile-design` skill §2 and §6.3.
+ * the WhatsApp form. Issues #151, #277 and #282, `mobile-design` skill §2 and §6.3.
  *
  * <h2>A sheet is not a place</h2>
  *
@@ -64,8 +62,8 @@ import { SurfaceProvider, TONES } from './surface';
  *
  * The skill's white sheet: `whiteSurface`, a top radius of `radius.xl`, a grabber, at most 85% of
  * the screen, a title and a close `IconButton`, a scrolling body and an optional footer, over a
- * black/64 scrim. Its content reads in the white surface's tones. `surface="dark"` keeps the
- * earlier dark panel for the overlays #282 has not moved yet.
+ * black/64 scrim. It is always white (#282 retired the earlier dark panel): what it holds reads in
+ * the white surface's tones, through `SurfaceProvider`.
  *
  * <h2>Motion</h2>
  *
@@ -98,8 +96,6 @@ import { SurfaceProvider, TONES } from './surface';
  * controls sit above the bottom safe area.
  */
 
-export type SheetSurface = 'white' | 'dark';
-
 export interface SheetProps {
   readonly visible: boolean;
   readonly onClose: () => void;
@@ -107,8 +103,6 @@ export interface SheetProps {
   readonly title: string;
   readonly children: ReactNode;
   readonly footer?: ReactNode;
-  /** `white`, the skill's sheet (the default), or the earlier dark panel. */
-  readonly surface?: SheetSurface;
   /** The control that opened the sheet, which gets focus back when it closes. */
   readonly returnFocusTo?: RefObject<unknown>;
   /**
@@ -148,11 +142,9 @@ export function pageScale(rise: number): number {
   return 1 - (1 - SHEET_PAGE_SCALE) * rise;
 }
 
-const SheetHostContext = createContext<SharedValue<number> | null>(null);
-
 /**
- * The page a sheet rises over. Wrap the app's content once; a sheet open anywhere under it scales
- * the page to {@link SHEET_PAGE_SCALE} in step with its rise. Transform only.
+ * The page a sheet (or a dialog) rises over. Wrap the app's content once; an overlay open anywhere
+ * under it scales the page to {@link SHEET_PAGE_SCALE} in step with its rise. Transform only.
  */
 export function SheetHost({ children }: { readonly children: ReactNode }) {
   const lift = useSharedValue(0);
@@ -160,9 +152,9 @@ export function SheetHost({ children }: { readonly children: ReactNode }) {
     transform: [{ scale: pageScale(lift.value) }],
   }));
   return (
-    <SheetHostContext.Provider value={lift}>
+    <OverlayHostContext.Provider value={lift}>
       <Animated.View style={[styles.host, style]}>{children}</Animated.View>
-    </SheetHostContext.Provider>
+    </OverlayHostContext.Provider>
   );
 }
 
@@ -172,7 +164,6 @@ export function Sheet({
   title,
   children,
   footer,
-  surface = 'white',
   returnFocusTo,
   onDismiss,
   testID,
@@ -184,9 +175,7 @@ export function Sheet({
   // The context rather than the hook: a sheet rendered outside a provider (a test, a story) gets
   // no insets instead of throwing.
   const insets = useContext(SafeAreaInsetsContext);
-  const host = useContext(SheetHostContext);
   const handleRing = useFocusRing();
-  const white = surface === 'white';
 
   const [mounted, setMounted] = useState(visible);
   // Focus goes back to the opener once the modal has gone: a window still presented swallows it.
@@ -195,6 +184,8 @@ export function Sheet({
   const active = useSharedValue(visible);
   const travel = useSharedValue(window.height);
   const offset = useSharedValue(moves ? window.height : 0);
+  const rise = useDerivedValue(() => sheetRise(offset.value, travel.value));
+  const host = useHostLift(rise, active);
 
   useEffect(() => {
     if (visible) {
@@ -230,26 +221,8 @@ export function Sheet({
     });
   }, [visible, moves, offset, travel, active, host]);
 
-  useAnimatedReaction(
-    () => sheetRise(offset.value, travel.value),
-    (risen) => {
-      // Only a sheet that is up drives the page: a closed one mounting elsewhere leaves it alone.
-      if (host !== null && active.value) host.value = risen;
-    },
-    [host],
-  );
-
-  useEffect(
-    () => () => {
-      if (host !== null && active.value) host.value = 0;
-    },
-    [host, active],
-  );
-
   const panelStyle = useAnimatedStyle(() => ({ transform: [{ translateY: offset.value }] }));
-  const scrimStyle = useAnimatedStyle(() => ({
-    opacity: sheetRise(offset.value, travel.value),
-  }));
+  const scrimStyle = useAnimatedStyle(() => ({ opacity: rise.value }));
 
   const pan = useMemo(
     () =>
@@ -276,7 +249,7 @@ export function Sheet({
     [offset, onClose, moves],
   );
 
-  const tones = white ? TONES.white : TONES.dark;
+  const tones = TONES.white;
 
   return (
     <Modal
@@ -313,12 +286,11 @@ export function Sheet({
           }}
           style={[
             styles.panel,
-            white ? styles.panelWhite : styles.panelDark,
             { paddingBottom: Math.max(insets?.bottom ?? 0, spacing[4]) },
             panelStyle,
           ]}
         >
-          <SurfaceProvider surface={white ? 'white' : 'dark'}>
+          <SurfaceProvider surface="white">
             <View {...pan.panHandlers} style={styles.header}>
               <Pressable
                 accessibilityRole="button"
@@ -330,7 +302,7 @@ export function Sheet({
                 hitSlop={{ top: HANDLE_SLOP, bottom: HANDLE_SLOP }}
                 style={[styles.handleTarget, handleRing.ring]}
               >
-                <View style={[styles.handle, white ? styles.handleWhite : styles.handleDark]} />
+                <View style={styles.handle} />
               </Pressable>
               <View style={styles.titleRow}>
                 <Text ref={heading} accessibilityRole="header" style={[styles.title, { color: tones.primary }]}>
@@ -349,7 +321,7 @@ export function Sheet({
             </ScrollView>
 
             {footer !== undefined && footer !== null ? (
-              <View style={[styles.footer, white ? styles.footerWhite : styles.footerDark]}>{footer}</View>
+              <View style={styles.footer}>{footer}</View>
             ) : null}
           </SurfaceProvider>
         </Animated.View>
@@ -378,13 +350,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     overflow: 'hidden',
-  },
-  panelWhite: { backgroundColor: colors.whiteSurface },
-  panelDark: {
-    backgroundColor: colors.surface2,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: colors.border,
+    backgroundColor: colors.whiteSurface,
   },
   header: { paddingHorizontal: spacing[5] },
   handleTarget: {
@@ -395,9 +361,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.sm,
   },
-  handle: { width: 36, height: 4, borderRadius: radius.full },
-  handleWhite: { backgroundColor: TONES.white.tertiary },
-  handleDark: { backgroundColor: colors.borderStrong },
+  handle: { width: 36, height: 4, borderRadius: radius.full, backgroundColor: TONES.white.tertiary },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -418,7 +382,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[5],
     paddingTop: spacing[3],
     borderTopWidth: 1,
+    borderTopColor: tint(colors.black, 0.08),
   },
-  footerWhite: { borderTopColor: tint(colors.black, 0.08) },
-  footerDark: { borderTopColor: colors.divider },
 });

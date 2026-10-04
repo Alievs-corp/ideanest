@@ -2,8 +2,9 @@ import { useEffect, useRef } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import { useLocale } from 'use-intl';
 import { pluralCategory, useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight } from '../../theme';
+import { font, fontSize, lineHeight } from '../../theme';
 import { announce } from './announce';
+import { errorTextColor } from './field';
 import { TONES, useSurface } from './surface';
 
 /**
@@ -12,7 +13,9 @@ import { TONES, useSurface } from './surface';
  * <h2>Colour is not the message</h2>
  *
  * Passing the limit changes the WORDS — "3 characters too many" — and only then the colour. A
- * counter that merely turns red has told a colour-blind creator nothing.
+ * counter that merely turns red has told a colour-blind creator nothing. The switch is instant,
+ * never animated, and on a white sheet the tone is the surface's primary ink rather than danger,
+ * which fails AA as text there (`errorTextColor`).
  *
  * <h2>The sentence is the catalogue's, in the reader's plural</h2>
  *
@@ -83,7 +86,7 @@ export function CharacterCount({
   return (
     <Text
       testID={testID}
-      style={[styles.count, { color: over ? colors.danger : TONES[surface].tertiary }]}
+      style={[styles.count, { color: over ? errorTextColor(surface) : TONES[surface].tertiary }]}
     >
       {sentence}
     </Text>

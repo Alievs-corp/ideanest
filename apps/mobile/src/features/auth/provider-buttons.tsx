@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { Meta } from '../../components/ui';
+import { Meta, useSurface } from '../../components/ui';
 import type { ProviderId, SignInOutcome } from '../../lib/auth';
 import { describeAuthFailure, type AuthFailure } from '../../lib/auth-failures';
 import { useT } from '../../lib/i18n';
@@ -11,7 +11,7 @@ import {
   signInWithApple,
   signInWithGoogle,
 } from '../../lib/providers';
-import { colors, radius, spacing } from '../../theme';
+import { colors, radius, spacing, tint } from '../../theme';
 import { FormErrorSummary } from './form-error-summary';
 import { GoogleButton, PROVIDER_BUTTON_HEIGHT } from './provider-brand';
 
@@ -47,6 +47,8 @@ export function ProviderButtons({
   const [busy, setBusy] = useState<ProviderId | null>(null);
   const [failure, setFailure] = useState<AuthFailure | null>(null);
   const inFlight = useRef(false);
+  // In the auth screens' white sheet: a dark hairline, and Apple's black button instead of white.
+  const onWhite = useSurface() === 'white';
 
   const wantsApple = offered.includes('apple');
   useEffect(() => {
@@ -97,9 +99,9 @@ export function ProviderButtons({
         accessibilityRole="text"
         accessibilityLabel={t('auth.providers.separatorLabel')}
       >
-        <View style={styles.rule} />
+        <View style={[styles.rule, onWhite && styles.ruleOnWhite]} />
         <Meta>{t('auth.providers.or')}</Meta>
-        <View style={styles.rule} />
+        <View style={[styles.rule, onWhite && styles.ruleOnWhite]} />
       </View>
 
       <FormErrorSummary failure={failure} testID="provider-failure" />
@@ -138,7 +140,11 @@ export function ProviderButtons({
                   ? AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
                   : AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
               }
-              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+              buttonStyle={
+                onWhite
+                  ? AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  : AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+              }
               cornerRadius={PROVIDER_BUTTON_HEIGHT / 2}
               style={styles.apple}
               onPress={() => void run('apple')}
@@ -154,6 +160,7 @@ const styles = StyleSheet.create({
   block: { gap: spacing[4] },
   separator: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
   rule: { flex: 1, height: 1, backgroundColor: colors.divider, borderRadius: radius.full },
+  ruleOnWhite: { backgroundColor: tint(colors.black, 0.1) },
   apple: { width: '100%', height: PROVIDER_BUTTON_HEIGHT },
   dimmed: { opacity: 0.6 },
 });

@@ -1,12 +1,16 @@
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { Glyphs } from '../../icons';
 import {
   Body,
   Card,
+  ContentSheet,
   Heading,
   Icon,
   Meta,
+  TONES,
+  useSurface,
   type IconComponent,
 } from '../../components/ui';
 import { useT } from '../../lib/i18n';
@@ -22,6 +26,11 @@ import { colors, formMeasure, spacing } from '../../theme';
  * instantly (§6.4). No auth screen has an entry animation yet — `FadeUp` is not imported under
  * `features/auth` — and Reduce Motion stops what there is.
  *
+ * <h2>A white sheet on the dark canvas</h2>
+ *
+ * The form lives in the white content sheet (`mobile-design` skill §2), under the modal's header;
+ * the kit's fields, pills and alerts draw themselves for white inside it.
+ *
  * <h2>One column, capped</h2>
  *
  * Full width with the standard gutter on a phone; on a tablet the column stops at
@@ -30,6 +39,8 @@ import { colors, formMeasure, spacing } from '../../theme';
  */
 export function AuthScreen({ children }: { readonly children: ReactNode }) {
   const t = useT('auth.layout');
+  // The sheet runs under the home indicator; the scroll content leaves it that much to take back.
+  const bottom = useContext(SafeAreaInsetsContext)?.bottom ?? 0;
   return (
     <KeyboardAvoidingView
       style={styles.fill}
@@ -38,12 +49,16 @@ export function AuthScreen({ children }: { readonly children: ReactNode }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: bottom }]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        <View style={styles.column}>{children}</View>
-        <Meta style={styles.footer}>{t('footer')}</Meta>
+        <ContentSheet>
+          <View style={styles.sheetBody}>
+            <View style={styles.column}>{children}</View>
+            <Meta style={styles.footer}>{t('footer')}</Meta>
+          </View>
+        </ContentSheet>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -68,7 +83,7 @@ export function AuthHeader({ title, intro }: { readonly title: string; readonly 
 export function SuccessHeader({ title, intro }: { readonly title: string; readonly intro: string }) {
   return (
     <View style={styles.success}>
-      <Icon icon={Glyphs.TickCircle} size={32} color={colors.success} />
+      <Icon icon={Glyphs.TickCircle} variant="bulk" size={32} color={colors.success} />
       <AuthHeader title={title} intro={intro} />
     </View>
   );
@@ -87,10 +102,11 @@ export function ExplainCard({
   readonly children: ReactNode;
   readonly testID?: string;
 }) {
+  const ink = TONES[useSurface() === 'white' ? 'white' : 'dark'];
   return (
     <Card size="sm" testID={testID}>
       <View style={styles.explain}>
-        {icon === undefined ? null : <Icon icon={icon} size={20} color={colors.textTertiary} />}
+        {icon === undefined ? null : <Icon icon={icon} variant="bulk" size={20} color={ink.tertiary} />}
         <View style={styles.explainWords}>{children}</View>
       </View>
     </Card>
@@ -105,9 +121,9 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: spacing[5],
-    paddingVertical: spacing[6],
-    gap: spacing[8],
+    paddingTop: spacing[2],
   },
+  sheetBody: { flexGrow: 1, gap: spacing[8], paddingTop: spacing[2] },
   column: {
     width: '100%',
     maxWidth: formMeasure,

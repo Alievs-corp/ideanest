@@ -34,7 +34,7 @@ export function qrPath(matrix: readonly (readonly boolean[])[]): string {
  * device. Never sent to a QR service, since the URI carries the secret.
  *
  * <p>Near-black modules on a white quiet zone (`textOnWhite` on `whiteSurface`, 19.3:1), whatever
- * the dark surface around it, because a camera needs the contrast the specification assumes.
+ * the surface around it, because a camera needs the contrast the specification assumes.
  */
 export function AuthenticatorQr({
   uri,

@@ -21,6 +21,10 @@ import { useCreatorTab } from './creator-tab';
 import { useFaqTab } from './faq-tab';
 import { useUpdatesTab } from './updates-tab';
 import { projectUpdatesKey } from './updates/use-project-updates';
+import { UpdateEntry } from './updates/update-entry';
+import { colors } from '../../../theme';
+import { SurfaceProvider, TONES } from '../../ui';
+import type { CampaignUpdate } from '@ideanest/campaign/updates';
 
 /**
  * The Creator, FAQ and Updates tabs — issue #155. Each hook is drawn the way the screen draws it
@@ -693,5 +697,42 @@ describe('the Updates tab', () => {
     expect(cards()).toHaveLength(20);
 
     focusManager.setFocused(undefined);
+  });
+});
+
+describe('an entry follows the surface it is drawn on (#281)', () => {
+  const entry = {
+    number: 7,
+    title: 'The moulds are late',
+    body: 'Two weeks.',
+    visibility: 'PUBLIC',
+    publishedAt: '2026-09-30T21:30:00Z',
+  } as CampaignUpdate;
+
+  const fill = (testID: string) =>
+    StyleSheet.flatten(screen.getByTestId(testID).props.style as ViewStyle).backgroundColor;
+  const ink = (text: string) => StyleSheet.flatten(screen.getByText(text).props.style).color;
+
+  async function draw(surface: 'dark' | 'white') {
+    await act(async () => setLocale('en'));
+    await render(
+      <IntlProvider locale="en" messages={en}>
+        <SurfaceProvider surface={surface}>
+          <UpdateEntry update={entry} />
+        </SurfaceProvider>
+      </IntlProvider>,
+    );
+  }
+
+  it('is a whiteMuted block with on-white words inside the white content sheet', async () => {
+    await draw('white');
+    expect(fill('update-7')).toBe(colors.whiteMuted);
+    expect(ink('The moulds are late')).toBe(TONES.white.primary);
+  });
+
+  it('is a surface-2 block with the dark tones on the canvas', async () => {
+    await draw('dark');
+    expect(fill('update-7')).toBe(colors.surface2);
+    expect(ink('The moulds are late')).toBe(colors.textPrimary);
   });
 });

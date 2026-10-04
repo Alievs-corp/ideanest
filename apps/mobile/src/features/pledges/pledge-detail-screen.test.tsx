@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
+import { AccessibilityInfo } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import { ApiError } from '@ideanest/api-client';
@@ -271,6 +272,28 @@ describe('which controls a state offers', () => {
 });
 
 describe('the pledge', () => {
+  it('leads with the pledge total as the hero figure, and its state as an icon and a word', async () => {
+    api.readPledge.mockResolvedValue(pledge({ state: 'COLLECTED' }));
+    await show();
+
+    expect(screen.getByTestId('pledge-hero').props.accessibilityLabel).toBe(
+      `${en.checkout.summary.pledge}, 45.00 AZN`,
+    );
+    const state = screen.getByTestId('pledge-state');
+    expect(within(state).getByText(en.account.pledges.states.COLLECTED)).toBeTruthy();
+    expect(within(state).getByTestId('icon-TickCircle', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('under Reduce Motion shows the same hero amount, at once', async () => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValueOnce(true);
+    api.readPledge.mockResolvedValue(pledge());
+    await show();
+
+    expect(screen.getByTestId('pledge-hero').props.accessibilityLabel).toBe(
+      `${en.checkout.summary.pledge}, 45.00 AZN`,
+    );
+  });
+
   it('names its campaign from the list and links to it', async () => {
     api.readPledge.mockResolvedValue(pledge());
     await show();

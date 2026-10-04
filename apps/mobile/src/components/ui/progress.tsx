@@ -1,16 +1,12 @@
 import Decimal from 'decimal.js';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useT } from '../../lib/i18n';
-import { colors, easing, motion, radius, spacing } from '../../theme';
+import { colors, radius, spacing, spring } from '../../theme';
 import { Meta } from '../text';
 import { useMotionAllowed } from './motion-budget';
+import { BLOCK, blockSurface, useSurface } from './surface';
 
 /**
  * A campaign's funding progress — the native `ProgressBar` (`docs/ui-kit.md` §7.11), moved into
@@ -22,6 +18,10 @@ import { useMotionAllowed } from './motion-budget';
  * opposite of the truth: a campaign still asking for money is lime, and one that reached its goal
  * is `success`, with the `limeGlow` halo §6 gives a funded bar. A single token swapped here turns
  * "hurry" into "done" on every card in the feed.
+ *
+ * <p>Inside a white sheet the track is `whiteMuted` and a bar still asking is `surface1`, the dark
+ * fill the skill's primary pill inverts to on white: lime on white measures 1.3:1 and would leave
+ * the fill invisible (CLAUDE.md §2). Funded stays `success` on both.
  *
  * <h2>Colour is never the only signal</h2>
  *
@@ -35,9 +35,9 @@ import { useMotionAllowed } from './motion-budget';
  * The fill is always the track's full width, and its `transform: scaleX` is the funded fraction,
  * scaled from the left edge (`transformOrigin`). `docs/motion-system.md` §8: only `transform` and
  * `opacity` animate, because `width` runs layout on every frame — and this is the most frequently
- * animated element on the platform. It rises from zero to the figure over `motion.progress` (§6's
- * 800ms, `ease-out`) on every surface (`mobile-design` skill §6). With Reduce Motion, or under an
- * explicit `none` budget, it is drawn at the figure and does not move.
+ * animated element on the platform. It rises from zero to the figure on `spring.soft` — settled,
+ * never overshooting past the figure (`mobile-design` skill §6) — on the UI thread. With Reduce
+ * Motion, or under an explicit `none` budget, it is drawn at the figure and does not move.
  *
  * <p>The web bar translates rather than scales (issue #146), because a scaled fill squashes its
  * rounded leading edge at small percentages. Issue #151 asked the native bar for `scaleX`; at 6 and
@@ -119,6 +119,7 @@ export function ProgressBar({
   const fraction = fillFraction(completionPercent);
   const reached = goalReached(completionPercent);
   const readable = readablePercent(completionPercent);
+  const block = blockSurface(useSurface());
 
   return (
     <View
@@ -144,7 +145,13 @@ export function ProgressBar({
         clip a shadow drawn by the fill as well. The web draws it on the fill inside an
         `overflow-hidden` track, where it is clipped away.
       */}
-      <View style={[styles.track, { height: HEIGHT[size] }, reached && { boxShadow: FUNDED_GLOW }]}>
+      <View
+        style={[
+          styles.track,
+          { height: HEIGHT[size], backgroundColor: BLOCK[block].track },
+          reached && { boxShadow: FUNDED_GLOW },
+        ]}
+      >
         <View style={styles.clip}>
           {/*
             Keyed by the figure, so a new figure is a new fill that rises from zero. A card in a
@@ -155,7 +162,7 @@ export function ProgressBar({
           <Fill
             key={String(fraction)}
             fraction={fraction}
-            colour={reached ? colors.success : colors.lime500}
+            colour={reached ? colors.success : block === 'white' ? colors.surface1 : colors.lime500}
           />
         </View>
       </View>
@@ -181,9 +188,7 @@ function Fill({ fraction, colour }: { readonly fraction: number; readonly colour
   const scale = useSharedValue(moves ? 0 : fraction);
 
   useEffect(() => {
-    scale.value = moves
-      ? withTiming(fraction, { duration: motion.progress, easing: Easing.bezier(...easing.out) })
-      : fraction;
+    scale.value = moves ? withSpring(fraction, spring.soft) : fraction;
   }, [fraction, moves, scale]);
 
   const rising = useAnimatedStyle(() => ({ transform: [{ scaleX: scale.value }] }));
@@ -198,7 +203,7 @@ function Fill({ fraction, colour }: { readonly fraction: number; readonly colour
 
 const styles = StyleSheet.create({
   column: { gap: spacing[2] },
-  track: { borderRadius: radius.full, backgroundColor: colors.surface3 },
+  track: { borderRadius: radius.full },
   clip: { flex: 1, borderRadius: radius.full, overflow: 'hidden' },
   fill: {
     width: '100%',

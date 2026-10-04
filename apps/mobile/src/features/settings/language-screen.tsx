@@ -23,7 +23,7 @@ import { useT } from '../../lib/i18n';
 import { currentLocale, useLocale } from '../../lib/locale';
 import { chooseLocale, pushPendingLocale } from '../../lib/locale-sync';
 import { useSession } from '../../lib/use-session';
-import { colors, radius, size, spacing } from '../../theme';
+import { size, spacing } from '../../theme';
 import { saveDisplayCurrency } from './api';
 import { SettingsCard, SettingsPage } from './settings-page';
 
@@ -79,7 +79,7 @@ function LanguageChoice() {
 
   return (
     <>
-      <View style={styles.radios}>
+      <Card size="sm">
         <RadioGroup
           label={t('settings.language.fieldLabel')}
           value={active}
@@ -91,7 +91,7 @@ function LanguageChoice() {
             <Radio key={locale} value={locale} label={LOCALE_NAMES[locale]} accessibilityLanguage={locale} />
           ))}
         </RadioGroup>
-      </View>
+      </Card>
       {unsaved === null ? null : (
         <InlineAlert
           variant="warning"
@@ -225,12 +225,4 @@ function CurrencySection() {
 const styles = StyleSheet.create({
   section: { gap: spacing[3] },
   form: { gap: spacing[3] },
-  radios: {
-    backgroundColor: colors.surface2,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: size.cardPaddingSmall,
-    paddingVertical: spacing[1],
-  },
 });

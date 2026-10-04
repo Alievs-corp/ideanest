@@ -1,7 +1,8 @@
 import { render } from '@testing-library/react-native';
 import { StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { Glyphs } from '../../icons';
-import { colors, tint } from '../../theme';
+import { colors, radius, tint } from '../../theme';
+import { MotionBudgetProvider } from './motion-budget';
 import { SurfaceProvider, TONES } from './surface';
 import { Tag } from './tag';
 
@@ -93,6 +94,29 @@ describe('Tag', () => {
       ).toBeLessThan(3);
     });
   });
+
+  it('is a pill (#282)', async () => {
+    const { getByTestId } = await render(<Tag testID="tag" label="Games" />);
+    expect(StyleSheet.flatten(getByTestId('tag').props.style as StyleProp<ViewStyle>).borderRadius).toBe(
+      radius.full,
+    );
+  });
+
+  it.each(['full', 'none'] as const)(
+    'is not a control and never moves, with motion %s',
+    async (level) => {
+      const { getByTestId } = await render(
+        <MotionBudgetProvider level={level}>
+          <Tag testID="tag" label="Games" />
+        </MotionBudgetProvider>,
+      );
+      const tag = getByTestId('tag');
+      const style = StyleSheet.flatten(tag.props.style as StyleProp<ViewStyle>);
+      expect(style.transform).toBeUndefined();
+      expect(style.opacity).toBeUndefined();
+      expect(tag.props.accessibilityRole).toBeUndefined();
+    },
+  );
 
   it('hugs its word without overriding its parent’s alignment', async () => {
     const { getByTestId } = await render(<Tag testID="tag" label="Games" />);

@@ -1,6 +1,7 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { useFocusRing } from '../../components/ui';
+import { usePressScale, useFocusRing } from '../../components/ui';
+import { AnimatedPressable } from '../../components/ui/press-scale';
 import { font, fontSize, radius, size, spacing } from '../../theme';
 import { GOOGLE, GOOGLE_G } from './google-brand';
 
@@ -36,18 +37,22 @@ export function GoogleButton({
   readonly onPress: () => void;
 }) {
   const { ring, onFocus, onBlur } = useFocusRing();
+  // A pill like the kit's: it gives under the thumb (`mobile-design` skill §6.3).
+  const press = usePressScale();
   const blocked = busy || disabled;
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: blocked, busy }}
       disabled={blocked}
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       onFocus={onFocus}
       onBlur={onBlur}
       testID="provider-google"
-      style={[styles.google, ring, blocked && !busy && styles.dimmed]}
+      style={[styles.google, ring, blocked && !busy && styles.dimmed, press.style]}
     >
       <View style={styles.mark}>
         {busy ? <ActivityIndicator size="small" color={GOOGLE.ink} /> : <GoogleMark />}
@@ -55,7 +60,7 @@ export function GoogleButton({
       <Text style={styles.googleLabel} numberOfLines={1}>
         {label}
       </Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

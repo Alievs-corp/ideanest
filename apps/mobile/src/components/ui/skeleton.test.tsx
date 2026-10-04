@@ -1,9 +1,10 @@
 import type { ReactElement } from 'react';
 import { fireEvent, render as renderBare, waitFor } from '@testing-library/react-native';
-import { AccessibilityInfo, Text } from 'react-native';
+import { AccessibilityInfo, StyleSheet, Text, type ViewStyle } from 'react-native';
 import { FadeIn } from 'react-native-reanimated';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
+import { colors } from '../../theme';
 import { MotionBudgetProvider } from './motion-budget';
 import {
   SKELETON_SHIMMER,
@@ -12,6 +13,7 @@ import {
   SkeletonCrossfade,
   SkeletonGroup,
 } from './skeleton';
+import { SurfaceProvider } from './surface';
 
 /**
  * Placeholders: the shimmer only runs where motion is allowed, a screen reader hears one sentence
@@ -76,6 +78,23 @@ describe('Skeleton', () => {
     ).toBe(true);
   });
 
+  it('is surface-3 on the canvas and the sheet’s muted tone inside a white sheet', async () => {
+    const fill = (tree: Awaited<ReturnType<typeof render>>) =>
+      StyleSheet.flatten(
+        tree.getByTestId('block', { includeHiddenElements: true }).props.style as ViewStyle,
+      ).backgroundColor;
+    expect(fill(await render(<Skeleton testID="block" />))).toBe(colors.surface3);
+    expect(
+      fill(
+        await render(
+          <SurfaceProvider surface="white">
+            <Skeleton testID="block" />
+          </SurfaceProvider>,
+        ),
+      ),
+    ).toBe(colors.whiteMuted);
+  });
+
   it('is round when it stands in for an avatar', async () => {
     const { getByTestId } = await render(<Skeleton testID="block" circle height={40} />);
     const style = getByTestId('block', { includeHiddenElements: true }).props.style;
@@ -133,6 +152,21 @@ describe('SkeletonCrossfade', () => {
     );
     expect(tree.getByText('content')).toBeTruthy();
     expect(fade).toHaveBeenCalledWith(200);
+  });
+
+  it('swaps instantly under Reduce Motion', async () => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+    const tree = await render(
+      <MotionBudgetProvider level="full">{swap(true)}</MotionBudgetProvider>,
+    );
+    await waitFor(() => expect(AccessibilityInfo.isReduceMotionEnabled).toHaveBeenCalled());
+    await tree.rerender(
+      <IntlProvider locale="en" messages={en}>
+        <MotionBudgetProvider level="full">{swap(false)}</MotionBudgetProvider>
+      </IntlProvider>,
+    );
+    expect(tree.getByText('content')).toBeTruthy();
+    expect(fade).not.toHaveBeenCalled();
   });
 
   it('swaps instantly under a budget of none', async () => {

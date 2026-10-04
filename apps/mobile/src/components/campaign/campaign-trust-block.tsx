@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import { Glyphs } from '../../icons';
 import { formatMoney } from '@ideanest/money';
 import type { ProjectState } from '@ideanest/campaign/states';
@@ -7,8 +6,7 @@ import { successThresholdOf } from '@ideanest/campaign/threshold';
 import type { CampaignPage } from '../../lib/campaign-page';
 import { formatInstant, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
-import { colors, font, fontSize, lineHeight, radius, readingMeasure, spacing } from '../../theme';
-import { Icon } from '../ui';
+import { NoticeCard, NoticeStrong, NoticeText } from './notice-card';
 
 /**
  * Block 9 — the web's `CampaignTrustBlock` (#155): the platform's rule in fixed copy, then what
@@ -23,8 +21,9 @@ import { Icon } from '../ui';
  * ones in the past; a campaign with no deadline gets the fixed paragraph alone rather than an
  * invented date.
  *
- * <p>A neutral surface-2 card: not lime (it is the opposite of urgency) and not success (that
- * would read as the platform vouching for this campaign).
+ * <p>A neutral raised block (`NoticeCard`, the first block of the page's white sheet): not lime
+ * (it is the opposite of urgency) and not success (that would read as the platform vouching for
+ * this campaign).
  */
 
 /** The states whose outcome is still ahead — decided by the state, never by the clock. */
@@ -36,8 +35,8 @@ export function CampaignTrustBlock({ campaign }: { readonly campaign: CampaignPa
   const open = OPEN_STATES.includes(campaign.state);
   const deadline = formatInstant(campaign.deadline, locale);
 
-  const strong = (chunks: ReactNode) => <Text style={styles.strong}>{chunks}</Text>;
-  const when = () => <Text style={styles.strong}>{deadline}</Text>;
+  const strong = (chunks: ReactNode) => <NoticeStrong>{chunks}</NoticeStrong>;
+  const when = () => <NoticeStrong>{deadline}</NoticeStrong>;
 
   let sentence: ReactNode = null;
   if (deadline !== null) {
@@ -54,53 +53,13 @@ export function CampaignTrustBlock({ campaign }: { readonly campaign: CampaignPa
   }
 
   return (
-    <View style={styles.card} testID="trust-block">
-      <View style={styles.heading}>
-        <Icon icon={Glyphs.ShieldTick} size={20} color={colors.textSecondary} />
-        <Text accessibilityRole="header" style={styles.title}>
-          {t('heading')}
-        </Text>
-      </View>
-      <Text style={styles.body}>{t('body')}</Text>
+    <NoticeCard icon={Glyphs.ShieldTick} title={t('heading')} testID="trust-block">
+      <NoticeText kind="reading">{t('body')}</NoticeText>
       {sentence === null ? null : (
-        <Text style={styles.rule} testID="trust-sentence">
+        <NoticeText kind="aside" testID="trust-sentence">
           {sentence}
-        </Text>
+        </NoticeText>
       )}
-    </View>
+    </NoticeCard>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    gap: spacing[3],
-    padding: spacing[5],
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
-  },
-  heading: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
-  title: {
-    ...font.medium,
-    flexShrink: 1,
-    fontSize: fontSize.base,
-    lineHeight: lineHeight.body,
-    color: colors.textPrimary,
-  },
-  body: {
-    ...font.regular,
-    maxWidth: readingMeasure,
-    fontSize: fontSize.sm,
-    lineHeight: lineHeight.small,
-    color: colors.textReading,
-  },
-  rule: {
-    ...font.regular,
-    maxWidth: readingMeasure,
-    fontSize: fontSize.sm,
-    lineHeight: lineHeight.small,
-    color: colors.textSecondary,
-  },
-  strong: { ...font.medium, color: colors.textPrimary },
-});

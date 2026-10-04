@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Link, Stack, useRouter } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 import { Glyphs } from '../../icons';
 import { NO_FILTERS, type DiscoveryFilters } from '@ideanest/discovery/filters';
 import { findCategory, findSubcategory } from '@ideanest/discovery/taxonomy';
@@ -14,7 +14,7 @@ import {
 } from '../../api/queries';
 import { definedRouteParams, useFeedProblem } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, radius, size, spacing } from '../../theme';
+import { font, fontSize, lineHeight, spacing } from '../../theme';
 import { CampaignColumn, CampaignColumnSkeleton } from '../campaign-column';
 import { NotFoundState } from '../not-found-state';
 import { Body, Heading, Meta } from '../text';
@@ -23,12 +23,11 @@ import {
   ErrorState,
   InlineAlert,
   Pill,
+  Screen,
   Skeleton,
   SkeletonGroup,
-  haptics,
-  useFocusRing,
 } from '../ui';
-import { Breadcrumb, type Crumb } from './breadcrumb';
+import { Breadcrumb, LinkPill, PILL_HEIGHT, type Crumb } from './breadcrumb';
 
 /**
  * A category's or a subcategory's landing page — the web's `CategoryLanding`
@@ -59,11 +58,12 @@ import { Breadcrumb, type Crumb } from './breadcrumb';
  * `resolveCategoryLanding` does, and the taxonomy shares its key with Home and the index, so a
  * category opened from either costs one read, not two.
  *
- * <h2>Motion: none of its own</h2>
+ * <h2>Shape and motion</h2>
  *
- * The web's landing takes no fade, and neither does this: the heading, the chips and the cards
- * never move (the cards are an unbounded list, `mobile-design` skill §6.5). The kit's own motion —
- * the cards' progress bars, press feedback — still runs, under the skill's §6 rules.
+ * The page is the kit's `Screen` on a stack route, so its foot clears the home indicator. The
+ * trail and the subcategory chips are raised pills (`LinkPill`) with the press give. The heading
+ * never moves; the cards rise as `CampaignColumn` decides (first screenful only, `mobile-design`
+ * skill §6.5), and the kit's own motion still runs under the skill's §6 rules.
  */
 
 export interface CategoryLandingProps {
@@ -111,15 +111,17 @@ export function CategoryLanding({ categorySlug, subcategorySlug }: CategoryLandi
     return (
       <>
         <Stack.Screen options={{ title: tAll('shell.nav.categories') }} />
-        <View style={styles.centre}>
-          <ErrorState
-            title={tFeed('errorTitle')}
-            description={tFeed('unreachable')}
-            onRetry={() => void categories.refetch()}
-            retrying={categories.isFetching}
-            testID="taxonomy-error"
-          />
-        </View>
+        <Screen hasContent edges={EDGES}>
+          <View style={styles.centre}>
+            <ErrorState
+              title={tFeed('errorTitle')}
+              description={tFeed('unreachable')}
+              onRetry={() => void categories.refetch()}
+              retrying={categories.isFetching}
+              testID="taxonomy-error"
+            />
+          </View>
+        </Screen>
       </>
     );
   }
@@ -131,28 +133,20 @@ export function CategoryLanding({ categorySlug, subcategorySlug }: CategoryLandi
   return (
     <>
     <Stack.Screen options={{ title: subcategory?.name ?? category.name }} />
-    <ScrollView
-      style={styles.fill}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={pulling}
-          onRefresh={() => {
-            haptics.refresh();
-            setPulling(true);
-            void Promise.allSettled([categories.refetch(), feed.refetch()]).then(() =>
-              setPulling(false),
-            );
-          }}
-          tintColor={colors.textSecondary}
-          colors={[colors.textPrimary]}
-          progressBackgroundColor={colors.surface3}
-        />
-      }
+    <Screen
+      hasContent
+      edges={EDGES}
+      onRefresh={() => {
+        setPulling(true);
+        void Promise.allSettled([categories.refetch(), feed.refetch()]).then(() =>
+          setPulling(false),
+        );
+      }}
+      refreshing={pulling}
       testID="category-landing"
     >
       <LandingBody category={category} subcategory={subcategory} feed={feed} />
-    </ScrollView>
+    </Screen>
   </>
   );
 }
@@ -222,7 +216,14 @@ function LandingBody({
           testID="subcategory-chips"
         >
           {category.subcategories.map((child) => (
-            <SubcategoryChip key={child.id || child.slug} category={category} subcategory={child} />
+            <LinkPill
+              key={child.id || child.slug}
+              label={child.name}
+              href={{
+                pathname: '/categories/[category]/[subcategory]',
+                params: { category: category.slug, subcategory: child.slug },
+              }}
+            />
           ))}
         </View>
       ) : null}
@@ -287,44 +288,10 @@ function LandingBody({
   );
 }
 
-/** A 36pt pill, padded to a 44pt target, going to the subcategory's own landing page. */
-function SubcategoryChip({
-  category,
-  subcategory,
-}: {
-  readonly category: Category;
-  readonly subcategory: Subcategory;
-}) {
-  const { ring, onFocus, onBlur } = useFocusRing();
-  return (
-    <Link
-      href={{
-        pathname: '/categories/[category]/[subcategory]',
-        params: { category: category.slug, subcategory: subcategory.slug },
-      }}
-      asChild
-    >
-      <Pressable
-        accessibilityRole="link"
-        accessibilityLabel={subcategory.name}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        style={styles.chipTarget}
-      >
-        {({ pressed }) => (
-          <View style={[styles.chip, pressed && styles.chipPressed, ring]}>
-            <Text style={styles.chipLabel}>{subcategory.name}</Text>
-          </View>
-        )}
-      </Pressable>
-    </Link>
-  );
-}
-
 /** The trail, the heading, the chips when a category has them, then six cards. */
 function LandingSkeleton({ label, chips }: { readonly label: string; readonly chips: boolean }) {
   return (
-    <ScrollView style={styles.fill} contentContainerStyle={styles.content}>
+    <Screen hasContent edges={EDGES}>
       <SkeletonGroup label={label}>
         <View style={styles.page}>
           <View style={styles.head}>
@@ -335,48 +302,25 @@ function LandingSkeleton({ label, chips }: { readonly label: string; readonly ch
           {chips ? (
             <View style={styles.chips}>
               {[0, 1, 2].map((chip) => (
-                <Skeleton key={chip} height={CHIP_HEIGHT} width={spacing[24]} radius="lg" />
+                <Skeleton key={chip} height={PILL_HEIGHT} width={spacing[24]} radius="lg" />
               ))}
             </View>
           ) : null}
           <CampaignColumnSkeleton label={label} />
         </View>
       </SkeletonGroup>
-    </ScrollView>
+    </Screen>
   );
 }
 
-/** The web's `h-9`. */
-const CHIP_HEIGHT = 36;
+/** A stack route: no tab bar under it, so the page owns the bottom inset. */
+const EDGES = ['left', 'right', 'bottom'] as const;
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: colors.surface1 },
-  content: { padding: size.cardGap, paddingBottom: spacing[12] },
-  centre: { flex: 1, justifyContent: 'center', padding: size.cardGap, backgroundColor: colors.surface1 },
-  page: { gap: spacing[6] },
+  centre: { flexGrow: 1, justifyContent: 'center' },
+  page: { gap: spacing[6], paddingTop: spacing[4] },
   head: { gap: spacing[2] },
   chips: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing[2] },
-  chipTarget: {
-    minHeight: size.touchTarget,
-    justifyContent: 'center',
-  },
-  chip: {
-    // A floor rather than a height, so a larger text size grows the pill instead of clipping it.
-    minHeight: CHIP_HEIGHT,
-    justifyContent: 'center',
-    paddingHorizontal: spacing[4],
-    borderRadius: radius.full,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
-  },
-  chipPressed: { backgroundColor: colors.surface3 },
-  chipLabel: {
-    ...font.regular,
-    fontSize: fontSize.sm,
-    lineHeight: lineHeight.small,
-    color: colors.textSecondary,
-  },
   count: { ...font.regular, fontSize: fontSize.sm, fontVariant: ['tabular-nums'] },
   row: { flexDirection: 'row' },
   more: { alignItems: 'center', paddingTop: spacing[4] },

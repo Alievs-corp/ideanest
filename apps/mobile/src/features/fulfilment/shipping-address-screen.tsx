@@ -1,21 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View, type TextInputProps as RNTextInputProps } from 'react-native';
+import { StyleSheet, View, type TextInputProps as RNTextInputProps } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 import {
   Body,
+  ContentSheet,
   Field,
   Heading,
+  Icon,
   InlineAlert,
   Pill,
+  PressableScale,
   Screen,
   Select,
   Skeleton,
   SkeletonGroup,
+  TONES,
   TextInput,
   useFocusRing,
 } from '../../components/ui';
+import { Glyphs } from '../../icons';
 import { queryKeys } from '../../api/queries';
 import { useOnline } from '../../lib/connectivity';
 import { signInHrefFor } from '../../lib/guard';
@@ -141,7 +146,6 @@ function ShippingAddress({ id }: { readonly id: string }) {
   const tAll = useT();
   const locale = useLocale();
   const online = useOnline();
-  const link = useFocusRing();
 
   const query = useQuery({
     queryKey: queryKeys.shippingAddress(id),
@@ -190,18 +194,10 @@ function ShippingAddress({ id }: { readonly id: string }) {
   );
 
   const back = (
-    <Pressable
-      accessibilityRole="link"
+    <BackLink
+      label={t('address.back')}
       onPress={() => router.push({ pathname: '/account/[section]', params: { section: 'deliveries' } })}
-      onFocus={link.onFocus}
-      onBlur={link.onBlur}
-      style={[styles.back, link.ring]}
-      testID="address-back"
-    >
-      <Body tone="secondary" style={styles.underlined}>
-        {t('address.back')}
-      </Body>
-    </Pressable>
+    />
   );
 
   if (stored === undefined) {
@@ -211,8 +207,8 @@ function ShippingAddress({ id }: { readonly id: string }) {
     const unreachable = !answered && (!online || query.fetchStatus === 'paused');
     return (
       <Screen hasContent offlineNotice={online ? null : tAll('mobile.offline.banner')}>
-        <View style={styles.stack}>
-          {header}
+        {header}
+        <ContentSheet>
           {unreachable ? (
             <InlineAlert
               variant="warning"
@@ -256,7 +252,7 @@ function ShippingAddress({ id }: { readonly id: string }) {
             </SkeletonGroup>
           )}
           {back}
-        </View>
+        </ContentSheet>
       </Screen>
     );
   }
@@ -310,9 +306,9 @@ function ShippingAddress({ id }: { readonly id: string }) {
 
   return (
     <Screen hasContent offlineNotice={online ? null : tAll('mobile.offline.banner')}>
-      <View style={styles.stack}>
-        {header}
+      {header}
 
+      <ContentSheet>
         <View style={styles.form}>
           {locked ? (
             <InlineAlert
@@ -418,17 +414,37 @@ function ShippingAddress({ id }: { readonly id: string }) {
         </View>
 
         {back}
-      </View>
+      </ContentSheet>
     </Screen>
   );
 }
 
+/** Inside the white sheet, so its focus ring is drawn for white. */
+function BackLink({ label, onPress }: { readonly label: string; readonly onPress: () => void }) {
+  const link = useFocusRing();
+  return (
+    <PressableScale
+      accessibilityRole="link"
+      onPress={onPress}
+      onFocus={link.onFocus}
+      onBlur={link.onBlur}
+      style={styles.start}
+      contentStyle={[styles.back, link.ring]}
+      testID="address-back"
+    >
+      <Icon icon={Glyphs.ArrowLeft} color={TONES.white.secondary} />
+      <Body tone="secondary" style={styles.underlined}>
+        {label}
+      </Body>
+    </PressableScale>
+  );
+}
+
 const styles = StyleSheet.create({
-  stack: { gap: spacing[6], paddingVertical: spacing[4] },
-  header: { gap: spacing[2] },
+  header: { gap: spacing[2], paddingTop: spacing[4], paddingBottom: spacing[2] },
   form: { gap: spacing[5], maxWidth: formMeasure },
   skeletonField: { gap: spacing[2] },
-  start: { alignItems: 'flex-start' },
-  back: { minHeight: size.touchTarget, justifyContent: 'center', alignSelf: 'flex-start' },
+  start: { alignSelf: 'flex-start' },
+  back: { minHeight: size.touchTarget, flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   underlined: { textDecorationLine: 'underline' },
 });

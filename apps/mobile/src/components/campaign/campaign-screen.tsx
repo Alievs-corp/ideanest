@@ -11,6 +11,7 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError } from '@ideanest/api-client';
 import { formatMoney } from '@ideanest/money';
 import { acceptsPledges } from '@ideanest/campaign/pledgeable';
@@ -30,7 +31,8 @@ import { readCampaignPage, tiersOf, type CampaignPage } from '../../lib/campaign
 import { useOnline } from '../../lib/connectivity';
 import { useT } from '../../lib/i18n';
 import { shareUrlFor } from '../../lib/links';
-import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
+import { colors, font, fontSize, lineHeight, radius, spacing } from '../../theme';
+import { FadeUp } from '../motion';
 import { NotFoundState } from '../not-found-state';
 import {
   AccentScopeProvider,
@@ -38,9 +40,11 @@ import {
   Screen,
   Skeleton,
   SkeletonGroup,
+  SurfaceProvider,
+  TONES,
   haptics,
 } from '../ui';
-import { BackCampaignCta, PersistentBackBar } from './back-campaign-cta';
+import { BackCampaignCta, PersistentBackBar, persistentBarClearance } from './back-campaign-cta';
 import { CampaignActions } from './campaign-actions';
 import { CampaignCountdown } from './campaign-countdown';
 import { CampaignHeader, showsDaysLeft } from './campaign-header';
@@ -68,8 +72,8 @@ import { useUpdatesTab } from './tabs/updates-tab';
  * The page is one virtualised `FlatList`, in the web's phone order:
  *
  * 1–10. **The list header**: the cover, the tags, the title and blurb, the byline, the funding,
- *    the countdown, Back this campaign, Save / Share / Remind, the trust block and the update
- *    obligation.
+ *    the countdown, Back this campaign, Save / Share / Remind on the dark canvas; then the top of
+ *    the white content sheet, with the trust block and the update obligation.
  * 11. **The tab bar**, the list's first row and its sticky header, so it holds at the top once it
  *    reaches it. Native stickiness (`stickyHeaderIndices`) rather than FlashList's, because
  *    FlashList draws a sticky row as a second copy over the first, and a screen reader could meet
@@ -82,6 +86,16 @@ import { useUpdatesTab } from './tabs/updates-tab';
  *
  * Switching tabs does not remount the header, so the live counter keeps its socket.
  *
+ * <h2>Canvas and sheet</h2>
+ *
+ * `mobile-design` skill §2: the campaign's face — the cover, the title, the hero figure (what has
+ * been pledged, `LiveFunding`) and Back — sits on the dark canvas; everything that is read or
+ * chosen from — the notices, the tabs, their rows, the rewards and the report link — sits in one
+ * white content sheet (`radius.xl` top corners, a grabber) that starts at the end of the header
+ * and runs to the bottom edge. The kit's `ContentSheet` cannot hold a list's rows, so the sheet is
+ * drawn here in pieces — the header's last block, the sticky tab row, each row, the footer — all
+ * under `SurfaceProvider surface="white"`, which is how the rows' tones follow it.
+ *
  * <h2>States</h2>
  *
  * A 404, a response the page cannot draw, or a state outside `RENDERABLE_STATES` is the not-found
@@ -91,10 +105,12 @@ import { useUpdatesTab } from './tabs/updates-tab';
  *
  * <h2>Motion</h2>
  *
- * None that arrives yet: no `FadeUp` on any block, no fade on the cover, the persistent Back bar
- * appears and goes without a transition. The `mobile-design` skill §6 now allows this page motion
- * (the card → page shared transition, #279); until then only the kit's own motion runs — press
- * feedback and the progress bar's fill.
+ * The first screenful rises (`FadeUp`, staggered): the cover, the header, the funding, the
+ * countdown, Back and the actions. The sheet does not — it is the list's own body, and a sheet
+ * whose top rose while its rows stood still would come apart. The hero figure counts up on first
+ * view and rolls on each live frame; the kit's press feedback and the progress bar's fill do the
+ * rest. The persistent Back pill appears and goes without a transition. The card → page shared
+ * transition is #279's.
  */
 export interface CampaignScreenProps {
   readonly creatorSlug: string;
@@ -197,6 +213,9 @@ interface CampaignViewProps {
 /** The space between the screen's edges and its content — the kit's `Screen` gutter. */
 const GUTTER = spacing[5];
 
+/** How far the sheet runs on past the list's end: more than any overscroll or bottom inset. */
+const SHEET_RUNOUT = 1000;
+
 /** A row of the list: the tab bar, or one of the active tab's rows. */
 interface ListRow {
   readonly key: string;
@@ -206,6 +225,7 @@ interface ListRow {
 function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignViewProps) {
   const t = useT();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const rawParams = useLocalSearchParams<Record<string, string | string[]>>();
   const focused = useIsFocused();
   const appActive = useAppActive();
@@ -315,7 +335,7 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
     if (ask === null || viewport.current === 0 || contentHeight.current === 0) return;
     const bodyEnd = contentHeight.current - footerHeight.current;
     if (offset.current + viewport.current < bodyEnd - viewport.current / 2) return;
-    const at = `${tab}:${contentHeight.current}`;
+    const at = `${tab}:${bodyEnd}`;
     if (askedAt.current === at) return;
     askedAt.current = at;
     ask();
@@ -346,10 +366,17 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
   const socketUrl = offline ? null : realtimeUrl(realtimeOrigin(), counterChannel(campaign.id));
 
   const rows: ListRow[] = [
-    { key: 'tabs', render: () => <CampaignTabs active={tab} onSelect={selectTab} /> },
+    {
+      key: 'tabs',
+      render: () => (
+        <SurfaceProvider surface="white">
+          <CampaignTabs active={tab} onSelect={selectTab} />
+        </SurfaceProvider>
+      ),
+    },
     ...body.rows.map((row: CampaignTabRow) => ({
       key: `${tab}:${row.key}`,
-      render: () => <View style={styles.gutter}>{row.render()}</View>,
+      render: () => <SheetRow>{row.render()}</SheetRow>,
     })),
   ];
   if (body.loading && body.rows.length === 0) {
@@ -358,88 +385,121 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
 
   const header = (
     <View
-      style={styles.header}
       onLayout={(event: LayoutChangeEvent) => {
         headerHeight.current = event.nativeEvent.layout.height;
       }}
     >
-      {stale ? (
-        <InlineAlert
-          variant="warning"
-          politeness="polite"
-          description={t('mobile.campaign.stale')}
-          testID="campaign-stale"
-        />
-      ) : null}
-
-      <CampaignMedia cover={campaign.coverImage} />
-      <CampaignHeader campaign={campaign} now={now} />
-
-      {campaign.goal === null ? null : (
-        <View style={styles.funding}>
-          <LiveFunding
-            goal={campaign.goal}
-            pledged={campaign.pledged}
-            backersCount={campaign.backersCount}
-            socketUrl={socketUrl}
-            active={active}
+      {/* The canvas: the campaign's face, its first screenful rising in (`FadeUp`, index < 8). */}
+      <View style={styles.canvas}>
+        {stale ? (
+          <InlineAlert
+            variant="warning"
+            politeness="polite"
+            description={t('mobile.campaign.stale')}
+            testID="campaign-stale"
           />
-          <Text style={styles.meta} testID="funding-of-goal">
-            {t('common.card.ofGoal', { amount: formatMoney(campaign.goal) })}
-            {showsDaysLeft(campaign, now) && campaign.daysLeft !== null
-              ? ` · ${t('campaign.daysLeft', { days: campaign.daysLeft })}`
-              : ''}
-          </Text>
-          <Text style={styles.meta}>{t('campaign.rule')}</Text>
-        </View>
-      )}
+        ) : null}
 
-      {campaign.deadline !== null && showsDaysLeft(campaign, now) ? (
-        <CampaignCountdown deadline={campaign.deadline} active={active} />
-      ) : null}
+        <FadeUp index={0}>
+          <CampaignMedia cover={campaign.coverImage} />
+        </FadeUp>
+        <FadeUp index={1}>
+          <CampaignHeader campaign={campaign} now={now} />
+        </FadeUp>
 
-      {pledgeable ? (
-        <BackCampaignCta
-          projectId={campaign.id}
-          title={campaign.title}
-          onLayout={(event) => {
-            const { y, height } = event.nativeEvent.layout;
-            pill.current = { y, height };
-            placeBar();
-          }}
-        />
-      ) : null}
+        {campaign.goal === null ? null : (
+          <FadeUp index={2}>
+            <View style={styles.funding}>
+              <LiveFunding
+                goal={campaign.goal}
+                pledged={campaign.pledged}
+                backersCount={campaign.backersCount}
+                socketUrl={socketUrl}
+                active={active}
+              />
+              <Text style={styles.meta} testID="funding-of-goal">
+                {t('common.card.ofGoal', { amount: formatMoney(campaign.goal) })}
+                {showsDaysLeft(campaign, now) && campaign.daysLeft !== null
+                  ? ` · ${t('campaign.daysLeft', { days: campaign.daysLeft })}`
+                  : ''}
+              </Text>
+              <Text style={styles.meta}>{t('campaign.rule')}</Text>
+            </View>
+          </FadeUp>
+        )}
 
-      <CampaignActions
-        projectId={campaign.id}
-        state={campaign.state}
-        title={campaign.title}
-        shareUrl={shareUrlFor(siteUrl(), campaign.creatorSlug, campaign.slug)}
-        offline={offline}
-      />
+        {campaign.deadline !== null && showsDaysLeft(campaign, now) ? (
+          <FadeUp index={3}>
+            <CampaignCountdown deadline={campaign.deadline} active={active} />
+          </FadeUp>
+        ) : null}
 
-      <View style={styles.notices}>
-        <CampaignTrustBlock campaign={campaign} />
-        {obligation.data == null ? null : <UpdateObligationNotice obligation={obligation.data} />}
+        {pledgeable ? (
+          <BackCampaignCta
+            projectId={campaign.id}
+            title={campaign.title}
+            entryIndex={4}
+            onLayout={(event) => {
+              // Measured outside its rise, so this is where the pill rests in the header.
+              const { y, height } = event.nativeEvent.layout;
+              pill.current = { y, height };
+              placeBar();
+            }}
+          />
+        ) : null}
+
+        <FadeUp index={5}>
+          <CampaignActions
+            projectId={campaign.id}
+            state={campaign.state}
+            title={campaign.title}
+            shareUrl={shareUrlFor(siteUrl(), campaign.creatorSlug, campaign.slug)}
+            offline={offline}
+          />
+        </FadeUp>
       </View>
+
+      {/* The top of the white sheet: its corners, its grabber, and the page's two notices. */}
+      <SurfaceProvider surface="white">
+        <View style={styles.sheetTop}>
+          <View style={styles.grabber} accessible={false} importantForAccessibility="no" />
+          <CampaignTrustBlock campaign={campaign} />
+          {obligation.data == null ? null : (
+            <UpdateObligationNotice obligation={obligation.data} />
+          )}
+        </View>
+      </SurfaceProvider>
     </View>
   );
 
+  /*
+   * The foot of the sheet. It clears the home indicator — a stack route, so the inset is this
+   * screen's to read — and, where pledges are taken, the floating Back pill, so neither ever covers
+   * the report link.
+   */
+  const tail = pledgeable ? persistentBarClearance(insets.bottom) : insets.bottom;
   const footer = (
-    <View
-      style={styles.footer}
-      onLayout={(event: LayoutChangeEvent) => {
-        footerHeight.current = event.nativeEvent.layout.height;
-        askForMore();
-      }}
-      testID="campaign-footer"
-    >
-      {body.footer === null ? null : <View style={styles.gutter}>{body.footer}</View>}
-      <View style={[styles.gutter, styles.rewards]}>
-        <CampaignRewards projectId={campaign.id} tiers={tiers} pledgeable={pledgeable} />
-        <ReportLink projectId={campaign.id} title={campaign.title} offline={offline} />
+    <SurfaceProvider surface="white">
+      <View
+        style={[styles.footer, { paddingBottom: spacing[10] + tail }]}
+        onLayout={(event: LayoutChangeEvent) => {
+          footerHeight.current = event.nativeEvent.layout.height;
+          askForMore();
+        }}
+        testID="campaign-footer"
+      >
+        {body.footer === null ? null : <View style={styles.gutter}>{body.footer}</View>}
+        <View style={[styles.gutter, styles.rewards]}>
+          <CampaignRewards projectId={campaign.id} tiers={tiers} pledgeable={pledgeable} />
+          <ReportLink projectId={campaign.id} title={campaign.title} offline={offline} />
+        </View>
+        {/*
+          The sheet goes on past the end of the list, so an overscroll bounce or the bottom content
+          inset shows more sheet rather than the dark canvas under it.
+        */}
+        <View style={styles.sheetRunout} pointerEvents="none" />
       </View>
-    </View>
+    </SurfaceProvider>
   );
 
   return (
@@ -453,6 +513,9 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
           renderItem={renderRow}
           ListHeaderComponent={header}
           ListFooterComponent={footer}
+          // A short tab still ends in sheet, not canvas: the footer takes the rest of the height.
+          contentContainerStyle={styles.content}
+          ListFooterComponentStyle={styles.footerSlot}
           // The tab bar is data[0]; with a header, the list counts the header as index 0.
           stickyHeaderIndices={[1]}
           onScroll={onScroll}
@@ -470,7 +533,7 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
           // The comment composers (the Comments tab) sit in this list; iOS lifts it over the
           // keyboard rather than covering the field being typed in.
           automaticallyAdjustKeyboardInsets
-          contentInsetAdjustmentBehavior="automatic"
+          contentInsetAdjustmentBehavior="never"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -493,18 +556,29 @@ function renderRow({ item }: ListRenderItemInfo<ListRow>) {
   return item.render();
 }
 
+/** A row of the active tab: the page's gutter, on the white sheet, in the sheet's tones. */
+function SheetRow({ children }: { readonly children: ReactElement }) {
+  return (
+    <SurfaceProvider surface="white">
+      <View style={[styles.gutter, styles.sheet]}>{children}</View>
+    </SurfaceProvider>
+  );
+}
+
 /** One placeholder while the active tab's first page is on its way (`CampaignTabBody.loading`). */
 function TabPlaceholder() {
   return (
-    <View style={[styles.gutter, styles.placeholder]}>
-      <SkeletonGroup>
-        <View style={styles.placeholderLines}>
-          <Skeleton height={24} width="60%" />
-          <Skeleton height={96} radius="lg" />
-          <Skeleton height={96} radius="lg" />
-        </View>
-      </SkeletonGroup>
-    </View>
+    <SheetRow>
+      <View style={styles.placeholder}>
+        <SkeletonGroup>
+          <View style={styles.placeholderLines}>
+            <Skeleton height={24} width="60%" />
+            <Skeleton height={96} radius="lg" />
+            <Skeleton height={96} radius="lg" />
+          </View>
+        </SkeletonGroup>
+      </View>
+    </SheetRow>
   );
 }
 
@@ -521,12 +595,31 @@ function flatten(
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surface1 },
-  header: {
+  content: { flexGrow: 1 },
+  canvas: {
     gap: spacing[5],
     paddingHorizontal: GUTTER,
     paddingTop: spacing[4],
     paddingBottom: spacing[8],
   },
+  // The white content sheet's top (`mobile-design` skill §2), as `ContentSheet` draws its own.
+  sheetTop: {
+    gap: spacing[6],
+    paddingHorizontal: GUTTER,
+    paddingTop: spacing[3],
+    backgroundColor: colors.whiteSurface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: spacing[8] + spacing[1],
+    height: spacing[1],
+    borderRadius: radius.full,
+    backgroundColor: TONES.white.tertiary,
+    marginBottom: -spacing[2],
+  },
+  sheet: { backgroundColor: colors.whiteSurface },
   funding: { gap: spacing[3] },
   meta: {
     ...font.regular,
@@ -534,9 +627,17 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.small,
     color: colors.textSecondary,
   },
-  notices: { gap: spacing[6], marginTop: spacing[3] },
   gutter: { paddingHorizontal: GUTTER },
-  footer: { paddingBottom: spacing[10] },
+  footerSlot: { flexGrow: 1 },
+  footer: { flexGrow: 1, backgroundColor: colors.whiteSurface },
+  sheetRunout: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    height: SHEET_RUNOUT,
+    backgroundColor: colors.whiteSurface,
+  },
   rewards: { paddingTop: spacing[10], gap: spacing[10] },
   placeholder: { paddingTop: spacing[8] },
   placeholderLines: { gap: spacing[4] },

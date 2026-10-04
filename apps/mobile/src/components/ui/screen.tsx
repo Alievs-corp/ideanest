@@ -8,6 +8,7 @@ import { ErrorState } from './empty-state';
 import { haptics } from './haptics';
 import { InlineAlert } from './inline-alert';
 import { MotionBudgetProvider, type MotionLevel } from './motion-budget';
+import { SheetHostPaddingContext } from './content-sheet';
 import { AccentScopeProvider, Pill } from './pill';
 
 /**
@@ -172,12 +173,12 @@ export function Screen({
   }
 
   const body = (
-    <>
+    <SheetHostPaddingContext.Provider value={padding.paddingBottom}>
       {offlineNotice === undefined || offlineNotice === null || offlineNotice === '' ? null : (
         <InlineAlert variant="warning" politeness="polite" description={offlineNotice} />
       )}
       {state}
-    </>
+    </SheetHostPaddingContext.Provider>
   );
 
   const screen = scroll ? (

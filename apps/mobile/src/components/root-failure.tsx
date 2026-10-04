@@ -1,14 +1,18 @@
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { initialWindowMetrics } from 'react-native-safe-area-context';
 import { isLocale, type Locale } from '@ideanest/messages';
 import az from '@ideanest/messages/az.json';
 import en from '@ideanest/messages/en.json';
 import ru from '@ideanest/messages/ru.json';
 import tr from '@ideanest/messages/tr.json';
+import { Glyphs } from '../icons';
 import { currentLocale } from '../lib/locale';
 import { colors, radius, size, spacing } from '../theme';
-import { Body, CardTitle, Heading } from './text';
+import { Body, Heading } from './text';
+import { Icon } from './ui/icon';
+import { Pill } from './ui/pill';
 
 /**
  * The boundary of last resort — issue #150. The app's `app/global-error.tsx`.
@@ -21,8 +25,10 @@ import { Body, CardTitle, Heading } from './text';
  * (`useT`, `FailureState`'s WhatsApp sheet, a safe-area inset) would throw a second error
  * inside the handler for the first, which is how a blank screen happens.
  *
- * So it depends on React Native, the theme's constants and the text roles, which are both plain
- * values, and nothing else. The words come straight from the bundled catalogue (the four files
+ * So it depends on React Native, the theme's constants, the text roles and two kit leaves that
+ * read no provider (`Icon`, and `Pill`, whose context reads all have defaults), and nothing else.
+ * Its insets are `initialWindowMetrics`, the safe-area module's static launch reading, not the
+ * provider's live one. The words come straight from the bundled catalogue (the four files
  * the provider would have used, already in the bundle), in the language `lib/locale.ts` holds.
  * That is a synchronous read of a variable resolved when the module loaded, which cannot throw
  * here: a module that failed to load would have taken this file down with it. English is the
@@ -35,31 +41,33 @@ import { Body, CardTitle, Heading } from './text';
  * app cannot restart its own JavaScript. `retry()` is the next best thing and a real one: it
  * clears the boundary, which mounts the root layout — and every provider under it — afresh.
  * A fault that was a bad moment (a storage read that failed once) is gone; one that is not
- * lands back here, which is honest. The pill is white, as on every failure screen, never lime.
+ * lands back here, which is honest. The pill is the kit's white primary, as on every failure
+ * screen, never lime, and nothing animates in.
  *
  * Never `error.message`, never a stack: see `route-error-boundary.tsx`.
  */
 export function RootFailure({ retry }: ErrorBoundaryProps) {
   const copy = fatalCopy(currentLocale());
+  const insets = initialWindowMetrics?.insets;
+  const padding = {
+    paddingTop: (insets?.top ?? 0) + spacing[6],
+    paddingBottom: (insets?.bottom ?? 0) + spacing[6],
+    paddingLeft: size.cardPaddingLarge + (insets?.left ?? 0),
+    paddingRight: size.cardPaddingLarge + (insets?.right ?? 0),
+  };
   return (
     // Scrolls, so the words and the pill stay reachable at a large font scale.
-    <ScrollView style={styles.fill} contentContainerStyle={styles.screen}>
+    <ScrollView style={styles.fill} contentContainerStyle={[styles.screen, padding]}>
       {/* The tree that set light glyphs is gone; the surface under them is still dark. */}
       <StatusBar style="light" />
+      <View style={styles.disc}>
+        <Icon icon={Glyphs.Danger} variant="bulk" size={32} color={colors.textPrimary} />
+      </View>
       <Heading accessibilityRole="header" style={styles.centred}>
         {copy.title}
       </Heading>
       <Body style={styles.centred}>{copy.description}</Body>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={copy.action}
-        onPress={() => void retry()}
-        style={({ pressed }) => [styles.pill, pressed && styles.pillPressed]}
-      >
-        <CardTitle tone="onWhite" accessibilityElementsHidden importantForAccessibility="no">
-          {copy.action}
-        </CardTitle>
-      </Pressable>
+      <Pill label={copy.action} onPress={() => void retry()} size="lg" />
     </ScrollView>
   );
 }
@@ -85,16 +93,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing[4],
-    paddingHorizontal: size.cardPaddingLarge,
     backgroundColor: colors.surface1,
   },
-  centred: { textAlign: 'center' },
-  pill: {
-    minHeight: 48,
-    justifyContent: 'center',
-    paddingHorizontal: size.cardPaddingLarge,
+  disc: {
+    width: spacing[16],
+    height: spacing[16],
     borderRadius: radius.full,
-    backgroundColor: colors.whiteSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface2,
   },
-  pillPressed: { backgroundColor: colors.whiteMuted },
+  centred: { textAlign: 'center' },
 });

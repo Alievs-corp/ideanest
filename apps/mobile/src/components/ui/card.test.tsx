@@ -1,12 +1,19 @@
-import { fireEvent, render } from '@testing-library/react-native';
-import { StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import {
+  AccessibilityInfo,
+  StyleSheet,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
 import { Glyphs } from '../../icons';
-import { colors, shadow, size } from '../../theme';
+import { colors, motion, shadow, size } from '../../theme';
 import { Body, CardTitle } from '../text';
 import { Card } from './card';
 import { FloatingPanel } from './floating-panel';
 import { IconButton } from './icon-button';
-import { TONES } from './surface';
+import { SurfaceProvider, TONES } from './surface';
 
 /**
  * The two surfaces that change what their children look like — issue #151's "Card and
@@ -67,13 +74,26 @@ describe('Card and SurfaceContext', () => {
     const floating = await render(<Card testID="card" variant="floating" />);
 
     expect(styleOf(plain.getByTestId('card')).backgroundColor).toBe(colors.surface2);
-    expect(styleOf(plain.getByTestId('card')).borderColor).toBe(colors.border);
+    // A raised block is its fill, never a border-only box (mobile-design skill §2).
+    expect(styleOf(plain.getByTestId('card')).borderWidth).toBeUndefined();
     expect(styleOf(active.getByTestId('card')).backgroundColor).toBe(colors.lime500);
     expect(styleOf(floating.getByTestId('card')).backgroundColor).toBe(colors.whiteSurface);
     expect(styleOf(floating.getByTestId('card')).boxShadow).toBe(shadow.float);
   });
 
-  it('keeps the web’s radius and padding per size', async () => {
+  it('is the sheet’s muted block inside a white sheet, and tells its children they are on white', async () => {
+    const { getByTestId, getByText } = await render(
+      <SurfaceProvider surface="white">
+        <Card testID="card">
+          <Body>Prose</Body>
+        </Card>
+      </SurfaceProvider>,
+    );
+    expect(styleOf(getByTestId('card')).backgroundColor).toBe(colors.whiteMuted);
+    expect(colourOf(getByText('Prose'))).toBe(TONES.white.secondary);
+  });
+
+  it('rounds generously: radius lg for sm, xl from md up, with the web’s padding', async () => {
     const shapes = [];
     for (const cardSize of ['sm', 'md', 'lg'] as const) {
       const { getByTestId } = await render(<Card testID="card" size={cardSize} />);
@@ -81,8 +101,8 @@ describe('Card and SurfaceContext', () => {
       shapes.push([borderRadius, padding]);
     }
     expect(shapes).toEqual([
-      [14, 16],
-      [20, 20],
+      [20, 16],
+      [28, 20],
       [28, 24],
     ]);
   });
@@ -112,6 +132,29 @@ describe('Card and SurfaceContext', () => {
       // (`usePressScale`, mobile-design skill §6.3), resting at 1.
       expect(styleOf(card).backgroundColor).toBe(colors.surface2);
       expect(styleOf(card).transform).toEqual([{ scale: 1 }]);
+    });
+
+    it('swaps its fill and gives under the thumb on press', async () => {
+      const { getByRole } = await render(<Card onPress={noop} accessibilityLabel="Reward" />);
+      await fireEvent(getByRole('button'), 'pressIn');
+      expect(styleOf(getByRole('button')).backgroundColor).toBe(colors.surface3);
+      await waitFor(
+        () =>
+          expect(getAnimatedStyle(getByRole('button') as never)).toMatchObject({
+            transform: [{ scale: motion.pressScale }],
+          }),
+        { timeout: 3000 },
+      );
+    });
+
+    it('only swaps its fill under Reduce Motion — it does not move', async () => {
+      jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValueOnce(true);
+      const { getByRole } = await render(<Card onPress={noop} accessibilityLabel="Reward" />);
+      await waitFor(() => expect(styleOf(getByRole('button')).transform).toBeUndefined());
+      await fireEvent(getByRole('button'), 'pressIn');
+      expect(styleOf(getByRole('button')).backgroundColor).toBe(colors.surface3);
+      expect(styleOf(getByRole('button')).transform).toBeUndefined();
+      jest.restoreAllMocks();
     });
 
     it('is at least a thumb tall', async () => {

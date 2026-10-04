@@ -1,15 +1,26 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import * as Application from 'expo-application';
 import { useRouter, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useQueryClient } from '@tanstack/react-query';
 import { siteUrl } from '../../api/config';
-import { useTabBarInset } from '../../components/tab-bar';
-import { Body, CardTitle, Meta, Subheading } from '../../components/text';
-import { Avatar, InlineAlert, Pill, Skeleton } from '../../components/ui';
+import { FadeUp } from '../../components/motion';
+import { Body, Caption, Meta, Subheading } from '../../components/text';
+import {
+  Avatar,
+  ContentSheet,
+  Icon,
+  InlineAlert,
+  Pill,
+  PressableScale,
+  Screen,
+  Skeleton,
+} from '../../components/ui';
 import { WhatsAppSheet } from '../../components/whatsapp-sheet';
-import { SETTINGS_SECTIONS, sectionLabelKey, sectionPath } from '../../features/settings/sections';
+import { SETTINGS_SECTIONS, sectionGlyph, sectionLabelKey, sectionPath } from '../../features/settings/sections';
+import { NavRow, RowGroup } from '../../features/settings/settings-row';
+import { Glyphs, type IconGlyph } from '../../icons';
 import { canReadAccount, useMe, useSessionState, type Me } from '../../lib/account';
 import { signOut } from '../../lib/auth';
 import { useT, type MessageKey } from '../../lib/i18n';
@@ -45,21 +56,25 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  * All three end with the web footer's last row (`Colophon`), after Sign out where there is one,
  * and Sign out asks first.
  *
- * <h2>Kit controls, and no lime</h2>
+ * <h2>Canvas and sheet</h2>
  *
- * The actions are the kit's pills (issue #151): Register is the white primary, Sign in and Sign
- * out are outlines beside or below it, and nothing here is the lime accent — this tab has no
+ * The `mobile-design` skill §2: who you are (or the invitation to sign in) and the account's
+ * warnings sit on the dark canvas; the rows sit in a white `ContentSheet` below, grouped, each a
+ * Bulk glyph in a round badge with a trailing arrow. The actions are the kit's pills (issue #151):
+ * Register is the white primary and Sign in an outline; Sign out, which ends the session and
+ * empties the offline copy, is the danger pill. Nothing here is the lime accent — this tab has no
  * urgent action.
  *
  * <h2>Motion</h2>
  *
- * The `mobile-design` skill §6 governs it like every other surface: the skeleton shimmers and a
- * pill gives under the thumb, and Reduce Motion stops both.
+ * The `mobile-design` skill §6: the header and the groups rise in as the first screenful, rows and
+ * pills give under the thumb, the skeleton shimmers, and Reduce Motion stops all of it.
  */
 
 interface Row {
   /** A catalogue key. */
   readonly label: MessageKey;
+  readonly icon: IconGlyph;
   readonly href?: Href;
   /** A tab rather than a screen: switched to, so the tab keeps its own history. */
   readonly tab?: boolean;
@@ -68,74 +83,71 @@ interface Row {
 
 /** `ACCOUNT_GROUPS.yourAccount`, in its order. Pledges is a tab here; Saved is a screen (#276). */
 const YOUR_ACCOUNT: readonly Row[] = [
-  { label: 'account.links.pledges.label', href: '/pledges', tab: true },
-  { label: 'account.links.campaigns.label', href: '/account/campaigns' },
-  { label: 'account.links.saved.label', href: '/saved' },
-  { label: 'account.links.following.label', href: '/account/following' },
-  { label: 'account.links.surveys.label', href: '/account/surveys' },
-  { label: 'account.links.deliveries.label', href: '/account/deliveries' },
+  { label: 'account.links.pledges.label', icon: Glyphs.Heart, href: '/pledges', tab: true },
+  { label: 'account.links.campaigns.label', icon: Glyphs.Lamp, href: '/account/campaigns' },
+  { label: 'account.links.saved.label', icon: Glyphs.Bookmark, href: '/saved' },
+  { label: 'account.links.following.label', icon: Glyphs.People, href: '/account/following' },
+  { label: 'account.links.surveys.label', icon: Glyphs.DocumentText, href: '/account/surveys' },
+  { label: 'account.links.deliveries.label', icon: Glyphs.Truck, href: '/account/deliveries' },
 ];
 
 const CREATOR: readonly Row[] = [
-  { label: 'shell.actions.startCampaign', href: '/campaigns/new' },
-  { label: 'shell.nav.pricing', href: '/pricing' },
+  { label: 'shell.actions.startCampaign', icon: Glyphs.Add, href: '/campaigns/new' },
+  { label: 'shell.nav.pricing', icon: Glyphs.Receipt, href: '/pricing' },
 ];
 
 /** `ACCOUNT_GROUPS.settings`, in its order: one row per `settings/<key>`. */
 const SETTINGS: readonly Row[] = SETTINGS_SECTIONS.map((section) => ({
   label: sectionLabelKey(section),
+  icon: sectionGlyph(section),
   href: sectionPath(section),
 }));
 
-const LANGUAGE_ONLY: readonly Row[] = [{ label: 'mobile.me.language', href: '/settings/language' }];
+const LANGUAGE_ONLY: readonly Row[] = [
+  { label: 'mobile.me.language', icon: Glyphs.Translate, href: '/settings/language' },
+];
 
 /** The app lock, which is this phone's rather than the account's (#161). */
 const THIS_PHONE: readonly Row[] = [
-  { label: 'mobile.settings.security.appLockLink', href: '/settings/security' },
+  { label: 'mobile.settings.security.appLockLink', icon: Glyphs.Lock, href: '/settings/security' },
 ];
 
 /** The web footer's `FOOTER_GROUPS.about`, with the same paths. */
 const ABOUT: readonly Row[] = [
-  { label: 'shell.footer.links.about', web: '/about' },
-  { label: 'shell.footer.links.howItWorks', web: '/how-it-works' },
-  { label: 'shell.footer.links.trustSafety', web: '/trust-safety' },
-  { label: 'shell.footer.links.legal', web: '/legal' },
+  { label: 'shell.footer.links.about', icon: Glyphs.InfoCircle, web: '/about' },
+  { label: 'shell.footer.links.howItWorks', icon: Glyphs.Discover, web: '/how-it-works' },
+  { label: 'shell.footer.links.trustSafety', icon: Glyphs.Verify, web: '/trust-safety' },
+  { label: 'shell.footer.links.legal', icon: Glyphs.DocumentText, web: '/legal' },
 ];
 
+/** Not a page: opens the WhatsApp sheet. */
+const WHATSAPP: Row = { label: 'shell.whatsapp.open', icon: Glyphs.Messages2 };
+
 const styles = StyleSheet.create({
-  content: { padding: size.cardPaddingLarge, gap: spacing[6] },
-  section: { gap: spacing[3] },
-  card: {
-    backgroundColor: colors.surface2,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: size.cardPaddingSmall,
-  },
-  row: {
+  invitation: { gap: spacing[3] },
+  identity: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing[4],
-    minHeight: size.touchTarget + spacing[2],
+    minHeight: size.touchTarget,
     paddingVertical: spacing[2],
+    borderRadius: radius.lg,
   },
-  rowPressed: { opacity: 0.6 },
-  rowText: { flex: 1, gap: spacing[1] },
-  chevron: { color: colors.textTertiary },
-  identity: { paddingVertical: spacing[4] },
+  identityPressed: { backgroundColor: colors.surface2 },
+  identityText: { flex: 1, gap: spacing[1] },
   colophon: { textAlign: 'center' },
 });
 
-function NavRow({ row, onPress }: { readonly row: Row; readonly onPress?: () => void }) {
+function HubRow({ row, onPress }: { readonly row: Row; readonly onPress?: () => void }) {
   const router = useRouter();
   const t = useT();
-  const label = t(row.label);
   return (
-    <Pressable
+    <NavRow
+      label={t(row.label)}
+      icon={row.icon}
       // In-app rows are buttons; only the ones that leave for the browser are links.
       accessibilityRole={row.web === undefined ? 'button' : 'link'}
-      accessibilityLabel={label}
+      external={row.web !== undefined}
       onPress={() => {
         if (onPress !== undefined) onPress();
         else if (row.href !== undefined) {
@@ -145,45 +157,39 @@ function NavRow({ row, onPress }: { readonly row: Row; readonly onPress?: () => 
           void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}${row.web}`);
         }
       }}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-    >
-      <CardTitle style={{ flex: 1 }} accessibilityElementsHidden importantForAccessibility="no">
-        {label}
-      </CardTitle>
-      <Meta style={styles.chevron} accessibilityElementsHidden importantForAccessibility="no">
-        ›
-      </Meta>
-    </Pressable>
+    />
   );
 }
 
 function Group({
   titleKey,
   rows,
+  index,
   children,
 }: {
   readonly titleKey: MessageKey;
   readonly rows: readonly Row[];
+  /** Its place in the first screenful, for the entry stagger. */
+  readonly index: number;
   /** Rows that do something other than navigate, after the ones that do. */
   readonly children?: ReactNode;
 }) {
   const t = useT();
   return (
-    <View style={styles.section}>
-      <Subheading accessibilityRole="header">{t(titleKey)}</Subheading>
-      <View style={styles.card}>
+    <FadeUp index={index}>
+      <RowGroup title={t(titleKey)}>
         {rows.map((row) => (
-          <NavRow key={row.label} row={row} />
+          <HubRow key={row.label} row={row} />
         ))}
         {children}
-      </View>
-    </View>
+      </RowGroup>
+    </FadeUp>
   );
 }
 
 /**
- * Who is signed in: the web account menu's avatar, name and address, and the way to the
- * public profile (`shell.actions.profile`).
+ * Who is signed in, on the canvas above the sheet: the web account menu's avatar, name and
+ * address, and the way to the public profile (`shell.actions.profile`).
  *
  * The avatar is decorative here for the reason `AccountMenu` gives: the name is written beside
  * it, and a label on both is the name read twice. One stop for the whole row, which says the
@@ -196,8 +202,8 @@ function IdentityRow({ me }: { readonly me: Me }) {
   const email = me.email ?? '';
   const slug = me.slug;
   return (
-    <View style={styles.card}>
-      <Pressable
+    <FadeUp index={0}>
+      <PressableScale
         accessibilityRole="button"
         accessibilityLabel={email === '' ? name : `${name}, ${email}`}
         accessibilityHint={t('shell.actions.profile')}
@@ -205,18 +211,18 @@ function IdentityRow({ me }: { readonly me: Me }) {
         onPress={() => {
           if (slug !== undefined) router.push({ pathname: '/u/[slug]', params: { slug } });
         }}
-        style={({ pressed }) => [styles.row, styles.identity, pressed && styles.rowPressed]}
+        contentStyle={({ pressed }) => [styles.identity, pressed && styles.identityPressed]}
       >
-        <Avatar name={name} size="md" decorative />
-        <View style={styles.rowText}>
-          <CardTitle numberOfLines={1}>{name}</CardTitle>
-          <Meta numberOfLines={1}>{email}</Meta>
+        <Avatar name={name} size="lg" decorative />
+        <View style={styles.identityText}>
+          <Subheading numberOfLines={1}>{name}</Subheading>
+          <Caption numberOfLines={1}>{email}</Caption>
         </View>
-        <Meta style={styles.chevron} accessibilityElementsHidden importantForAccessibility="no">
-          ›
-        </Meta>
-      </Pressable>
-    </View>
+        {slug === undefined ? null : (
+          <Icon icon={Glyphs.ArrowRight2} size={18} color={colors.textTertiary} />
+        )}
+      </PressableScale>
+    </FadeUp>
   );
 }
 
@@ -228,16 +234,14 @@ function IdentitySkeleton() {
   return (
     <View
       testID="identity-skeleton"
-      style={styles.card}
+      style={styles.identity}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
     >
-      <View style={[styles.row, styles.identity]}>
-        <Skeleton circle height={size.avatarInCard} />
-        <View style={styles.rowText}>
-          <Skeleton width="50%" height={fontSize.lg} />
-          <Skeleton width="70%" height={fontSize.xs} />
-        </View>
+      <Skeleton circle height={size.avatarOnProfile} />
+      <View style={styles.identityText}>
+        <Skeleton width="50%" height={fontSize.h3} />
+        <Skeleton width="70%" height={fontSize.caption} />
       </View>
     </View>
   );
@@ -314,7 +318,6 @@ function Colophon() {
 
 export default function MeScreen() {
   const router = useRouter();
-  const tabInset = useTabBarInset();
   const queryClient = useQueryClient();
   const t = useT();
   const session = useSession();
@@ -389,65 +392,84 @@ export default function MeScreen() {
     }
   }
 
+  // The groups' places in the first screenful, in the order they are drawn.
+  let group = 0;
+  const next = () => (group += 1);
+
   return (
-    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabInset + spacing[6] }]}>
-      {loading ? <IdentitySkeleton /> : null}
+    <>
+      <Screen hasContent>
+        {loading ? <IdentitySkeleton /> : null}
 
-      {account !== null ? (
-        <>
-          <IdentityRow me={account} />
-          <AccountAlerts me={account} />
-          <Group titleKey="account.groups.yourAccount" rows={YOUR_ACCOUNT} />
-          <Group titleKey="shell.footer.groups.creators" rows={CREATOR} />
-          <Group titleKey="account.groups.settings" rows={SETTINGS} />
-        </>
-      ) : null}
+        {account !== null ? (
+          <>
+            <IdentityRow me={account} />
+            <AccountAlerts me={account} />
+          </>
+        ) : null}
 
-      {holdsSession ? <Group titleKey="mobile.me.thisPhone" rows={THIS_PHONE} /> : null}
+        {state === 'signed-out' ? (
+          <FadeUp index={0}>
+            <View style={styles.invitation}>
+              <Body>{t('shell.tagline')}</Body>
+              <Pill
+                label={t('shell.actions.register')}
+                size="lg"
+                fullWidth
+                onPress={() =>
+                  void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}/register`)
+                }
+              />
+              <Pill
+                label={t('shell.actions.signIn')}
+                variant="outline"
+                size="lg"
+                fullWidth
+                onPress={() => router.push('/sign-in')}
+              />
+            </View>
+          </FadeUp>
+        ) : null}
 
-      {state === 'signed-out' ? (
-        <>
-          <View style={styles.section}>
-            <Body>{t('shell.tagline')}</Body>
+        <ContentSheet>
+          {account !== null ? (
+            <>
+              <Group titleKey="account.groups.yourAccount" rows={YOUR_ACCOUNT} index={next()} />
+              <Group titleKey="shell.footer.groups.creators" rows={CREATOR} index={next()} />
+              <Group titleKey="account.groups.settings" rows={SETTINGS} index={next()} />
+            </>
+          ) : null}
+
+          {holdsSession ? (
+            <Group titleKey="mobile.me.thisPhone" rows={THIS_PHONE} index={next()} />
+          ) : null}
+
+          {state === 'signed-out' ? (
+            <Group titleKey="account.groups.settings" rows={LANGUAGE_ONLY} index={next()} />
+          ) : null}
+
+          <Group titleKey="shell.footer.groups.about" rows={ABOUT} index={next()}>
+            <HubRow row={WHATSAPP} onPress={() => setContacting(true)} />
+          </Group>
+
+          {holdsSession ? (
             <Pill
-              label={t('shell.actions.register')}
+              label={t('shell.actions.signOut')}
+              variant="danger"
               size="lg"
               fullWidth
-              onPress={() =>
-                void WebBrowser.openBrowserAsync(`${siteUrl()}/${currentLocale()}/register`)
-              }
+              iconLeft={Glyphs.Logout}
+              busy={busy}
+              onPress={confirmSignOut}
             />
-            <Pill
-              label={t('shell.actions.signIn')}
-              variant="outline"
-              size="lg"
-              fullWidth
-              onPress={() => router.push('/sign-in')}
-            />
-          </View>
-          <Group titleKey="account.groups.settings" rows={LANGUAGE_ONLY} />
-        </>
-      ) : null}
+          ) : null}
 
-      <Group titleKey="shell.footer.groups.about" rows={ABOUT}>
-        <NavRow row={{ label: 'shell.whatsapp.open' }} onPress={() => setContacting(true)} />
-      </Group>
-
-      {holdsSession ? (
-        <Pill
-          label={t('shell.actions.signOut')}
-          variant="outline"
-          size="lg"
-          fullWidth
-          busy={busy}
-          onPress={confirmSignOut}
-        />
-      ) : null}
-
-      <Colophon />
+          <Colophon />
+        </ContentSheet>
+      </Screen>
 
       <WhatsAppSheet visible={contacting} onClose={() => setContacting(false)} />
-    </ScrollView>
+    </>
   );
 }
 

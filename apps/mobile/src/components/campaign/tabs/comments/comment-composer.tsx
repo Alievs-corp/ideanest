@@ -6,8 +6,18 @@ import { postComment, postFailureOf, replyToComment, type PostFailure } from '..
 import { pluralCategory, useT } from '../../../../lib/i18n';
 import { useLocale } from '../../../../lib/locale';
 import { useSession } from '../../../../lib/use-session';
-import { colors, font, fontSize, lineHeight, radius, spacing } from '../../../../theme';
-import { Field, InlineAlert, Pill, Textarea, announce } from '../../../ui';
+import { font, fontSize, lineHeight, radius, size, spacing } from '../../../../theme';
+import {
+  Field,
+  InlineAlert,
+  Pill,
+  SurfaceProvider,
+  TONES,
+  Textarea,
+  announce,
+  useSurface,
+} from '../../../ui';
+import { BLOCK, blockSurface } from '../../../ui/surface';
 
 /**
  * Writing a comment, and answering one — the web's `CommentComposer` (§4.9's C-01 and C-03, #155).
@@ -39,6 +49,9 @@ import { Field, InlineAlert, Pill, Textarea, announce } from '../../../ui';
  * step is worse than a card that says why first and opens sign-in, which closes back to this page.
  *
  * <p>Offline, Post is disabled and the line under it says why; the field still takes a draft.
+ *
+ * <p>Drawn in the campaign page's white content sheet, the field and the pills follow the surface
+ * themselves; the signed-out card is a raised block of that surface (`whiteMuted` there).
  */
 export type CommentTarget =
   | { readonly kind: 'campaign'; readonly projectId: string }
@@ -71,6 +84,8 @@ export function CommentComposer({
   const locale = useLocale();
   const router = useRouter();
   const { signedIn } = useSession();
+  const surface = useSurface();
+  const block = blockSurface(surface);
 
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
@@ -98,22 +113,27 @@ export function CommentComposer({
 
   if (!signedIn) {
     return (
-      <View style={styles.card} testID={testID === undefined ? undefined : `${testID}-signed-out`}>
-        {/*
-          A post refused with a 401 whose refresh was refused too ends the session, and the form
-          turns into this card — so the reason it was not posted is kept above it, and what was
-          typed is still in the field once the reader has signed in again.
-        */}
-        {error === null ? null : (
-          <InlineAlert variant="danger" title={t('notPosted')} description={error} />
-        )}
-        <Text style={styles.cardText}>{t('signedOut')}</Text>
-        <View style={styles.actions}>
-          <Pill label={t('signIn')} size="sm" onPress={() => router.push('/sign-in')} />
-          {onCancel === undefined ? null : (
-            <Pill label={t('cancel')} variant="ghost" size="sm" onPress={onCancel} />
+      <View
+        style={[styles.card, { backgroundColor: BLOCK[block].rest }]}
+        testID={testID === undefined ? undefined : `${testID}-signed-out`}
+      >
+        <SurfaceProvider surface={block}>
+          {/*
+            A post refused with a 401 whose refresh was refused too ends the session, and the form
+            turns into this card — so the reason it was not posted is kept above it, and what was
+            typed is still in the field once the reader has signed in again.
+          */}
+          {error === null ? null : (
+            <InlineAlert variant="danger" title={t('notPosted')} description={error} />
           )}
-        </View>
+          <Text style={[styles.cardText, { color: TONES[block].secondary }]}>{t('signedOut')}</Text>
+          <View style={styles.actions}>
+            <Pill label={t('signIn')} size="sm" onPress={() => router.push('/sign-in')} />
+            {onCancel === undefined ? null : (
+              <Pill label={t('cancel')} variant="outline" size="sm" onPress={onCancel} />
+            )}
+          </View>
+        </SurfaceProvider>
       </View>
     );
   }
@@ -187,7 +207,7 @@ export function CommentComposer({
           testID={testID === undefined ? undefined : `${testID}-submit`}
         />
         {onCancel === undefined ? null : (
-          <Pill label={t('cancel')} variant="ghost" size="sm" onPress={onCancel} />
+          <Pill label={t('cancel')} variant="outline" size="sm" onPress={onCancel} />
         )}
       </View>
 
@@ -197,7 +217,7 @@ export function CommentComposer({
       */}
       <Text
         accessibilityLiveRegion="polite"
-        style={styles.notice}
+        style={[styles.notice, { color: TONES[surface].secondary }]}
         testID={testID === undefined ? undefined : `${testID}-notice`}
       >
         {posted ? t('posted') : offline ? offlineReason : ''}
@@ -214,20 +234,15 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
     minHeight: lineHeight.small,
-    color: colors.textSecondary,
   },
   card: {
     gap: spacing[3],
-    padding: spacing[5],
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
+    padding: size.cardPaddingSmall,
+    borderRadius: radius.xl,
   },
   cardText: {
     ...font.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textSecondary,
   },
 });

@@ -4,6 +4,7 @@ import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, radius, spacing } from '../../theme';
 import { AnimatedAmount, type AnimatedAmountMode } from './animated-amount';
+import { HeroFigure } from './hero-figure';
 import { Icon, type IconComponent } from './icon';
 import { TONES, useSurface } from './surface';
 
@@ -16,11 +17,16 @@ import { TONES, useSurface } from './surface';
  * web's `clamp(2.5rem → 4rem)` — the theme's rule for every clamp (`fontSize` in `theme/index.ts`)
  * — and `md` is the web's 30.
  *
+ * <p>A money figure is passed as `money` (the wire's `{ amount, currency }` strings) and drawn by
+ * {@link HeroFigure}: formatted by `@ideanest/money`, minor units at half size, and moving through
+ * `AnimatedAmount` (a roll by default, `motion="count"` for a first-view count-up). A plain `value`
+ * moves only when `motion` is given. Both are still under Reduce Motion.
+ *
  * <h2>The change says its direction three ways</h2>
  *
  * The web's badge is lime for up, danger for down and surface-4 for neutral, and the colour is
  * all that tells "+3" from "−3" to somebody who cannot see it. Here the badge also carries an
- * arrow and its accessible name says the direction in words from the catalogue ("Up: 12%"), so
+ * Iconsax arrow and its accessible name says the direction in words from the catalogue ("Up: 12%"), so
  * the hue is the third signal, not the only one (CLAUDE.md §2).
  *
  * <p>Up is a lime **surface** with on-lime text, never lime text. Lime means "act now", and a
@@ -52,9 +58,22 @@ const TREND: Record<
   },
 };
 
-export interface StatBlockProps {
-  /** The figure, already formatted — money through `formatMoney`, never a float. */
-  readonly value: string;
+/** The figure: a formatted `value`, or `money` that `HeroFigure` formats. Never both. */
+export type StatFigure =
+  | {
+      /** The figure, already formatted — a count, a percent. Money goes in `money` instead. */
+      readonly value: string;
+      readonly money?: undefined;
+    }
+  | {
+      /** The wire's money strings; never a float. Drawn by `HeroFigure`. */
+      readonly money: { readonly amount: string; readonly currency: string };
+      readonly value?: undefined;
+    };
+
+export type StatBlockProps = StatBlockBaseProps & StatFigure;
+
+interface StatBlockBaseProps {
   /** What the figure is ("Backers"). */
   readonly label: string;
   /** The change, as the caller formats it: "+3", "12%". */
@@ -64,18 +83,23 @@ export interface StatBlockProps {
   /**
    * The figure's colour. `success` is a goal that has been met — the campaign page's funded
    * percent (#155) — and only on the dark surface, where it reads; the label beside it says the
-   * same thing in words, so the hue is never the only signal.
+   * same thing in words, so the hue is never the only signal. A `value` only: a `money` figure
+   * keeps `HeroFigure`'s tones.
    */
   readonly tone?: 'default' | 'success';
   /** A glyph before the figure (`Users` before a backer count). Decorative: the label names it. */
   readonly icon?: IconComponent;
-  /** Moves the figure through `AnimatedAmount` (#278): `count` on first view, then rolls. */
+  /**
+   * Moves the figure through `AnimatedAmount` (#278): `count` on first view, then rolls. A `money`
+   * figure rolls when this is omitted.
+   */
   readonly motion?: AnimatedAmountMode;
   readonly testID?: string;
 }
 
 export function StatBlock({
   value,
+  money,
   label,
   badge,
   badgeTone = 'up',
@@ -104,10 +128,12 @@ export function StatBlock({
             <Icon icon={icon} size={20} color={TONES[surface].tertiary} />
           </View>
         )}
-        {motion === undefined ? (
+        {money !== undefined ? (
+          <HeroFigure money={money} size={size} mode={motion ?? 'roll'} />
+        ) : motion === undefined ? (
           <Text style={[styles.value, figure]}>{value}</Text>
         ) : (
-          <AnimatedAmount value={value} mode={motion} style={[styles.value, figure]} />
+          <AnimatedAmount value={value ?? ''} mode={motion} style={[styles.value, figure]} />
         )}
         {badge === undefined || badge === '' ? null : (
           <View

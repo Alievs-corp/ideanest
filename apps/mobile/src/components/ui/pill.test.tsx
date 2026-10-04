@@ -77,6 +77,18 @@ describe('Pill', () => {
     ).toBe(colors.textOnWhite);
   });
 
+  it('draws ghost as the white sheet muted block, not a dark pill, on a white surface', async () => {
+    const { getByRole, getByText } = await render(
+      <SurfaceProvider surface="white">
+        <Pill label="Retry" variant="ghost" onPress={noop} />
+      </SurfaceProvider>,
+    );
+    expect(styleOf(getByRole('button')).backgroundColor).toBe(colors.whiteMuted);
+    expect(
+      StyleSheet.flatten(getByText('Retry', { includeHiddenElements: true }).props.style).color,
+    ).toBe(colors.textOnWhite);
+  });
+
   it('keeps primary white on lime, where only white surfaces invert', async () => {
     const { getByRole } = await render(
       <SurfaceProvider surface="lime">

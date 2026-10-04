@@ -1,8 +1,12 @@
+import { useCallback, useContext } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { RefreshControl, StyleSheet, View } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import type { Card } from '../api/queries';
 import { colors, size, spacing } from '../theme';
+import { CardEntry, cardKey, useEntryGate } from './campaign-column';
 import { ProjectCard } from './project-card';
+import { useTabBarInset } from './tab-bar';
 import { SkeletonCard, SkeletonGroup, haptics } from './ui';
 
 /**
@@ -16,15 +20,19 @@ import { SkeletonCard, SkeletonGroup, haptics } from './ui';
  * fiftieth flick is measurably worse than the first on a mid-range Android
  * phone — which is most of this market.
  *
- * <h2>No card animates</h2>
+ * <h2>The first screenful rises, once</h2>
  *
- * The list used to fade its first six cards up on a capped stagger. It no longer
- * animates any. The `mobile-design` skill §6.5 allows an entry rise on the first
- * screenful only, never on rows a feed appends — and here that line is hard to
- * hold: FlashList RECYCLES rows, so an `entering` animation replays on a recycled
- * row halfway down a list somebody is reading. Until a first-screenful entry is
- * built that survives recycling, no card animates in. What still moves on a card
- * is its progress bar and its press feedback.
+ * The `mobile-design` skill §6.5 allows an entry rise on the first screenful only,
+ * never on rows a feed appends. FlashList RECYCLES rows, so the decision is made
+ * once per cell when it mounts (`CardEntry`) and once per card for the list's
+ * life (`useEntryGate`): a recycled row, a remounted row scrolled back to, the
+ * next page and a refetch never animate.
+ *
+ * <h2>The bottom edge</h2>
+ *
+ * The list is its own scroll container, so it pads its end itself: clear of the
+ * home indicator, and of the floating tab bar's footprint (`useTabBarInset()`)
+ * when a tab screen draws it — zero on the stack routes that do today.
  *
  * <h2>Pull to refresh</h2>
  *
@@ -53,6 +61,9 @@ const styles = StyleSheet.create({
   placeholders: { gap: spacing[4] },
 });
 
+/** How many covers at the top of a feed are fetched first: the ones on screen when it opens. */
+const PRIORITY_COVERS = 3;
+
 export function CampaignList({
   cards,
   onEndReached,
@@ -63,6 +74,23 @@ export function CampaignList({
   footer,
   testID,
 }: CampaignListProps) {
+  const gate = useEntryGate(cards);
+  const bottomInset = useContext(SafeAreaInsetsContext)?.bottom ?? 0;
+  const tabInset = useTabBarInset();
+
+  /* Stable for the list's life (the gate never changes), so FlashList keeps its recycling. */
+  const renderCard = useCallback(
+    ({ item, index }: { item: Card; index: number }) => {
+      const key = cardKey(item);
+      return (
+        <CardEntry gate={gate} entryKey={key} index={index}>
+          <ProjectCard card={item} priority={index < PRIORITY_COVERS} />
+        </CardEntry>
+      );
+    },
+    [gate],
+  );
+
   return (
     <FlashList
       testID={testID}
@@ -74,7 +102,10 @@ export function CampaignList({
        * every page append, and the list re-renders from the top.
        */
       keyExtractor={(item) => item.id ?? ''}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={{
+        ...styles.content,
+        paddingBottom: Math.max(bottomInset + size.cardGap, tabInset),
+      }}
       ItemSeparatorComponent={Separator}
       ListHeaderComponent={header}
       ListEmptyComponent={empty}
@@ -102,14 +133,6 @@ export function CampaignList({
       }
     />
   );
-}
-
-/** How many covers at the top of a feed are fetched first: the ones on screen when it opens. */
-const PRIORITY_COVERS = 3;
-
-/** Module-level, so FlashList gets the same function on every render and keeps its recycling. */
-function renderCard({ item, index }: { item: Card; index: number }) {
-  return <ProjectCard card={item} priority={index < PRIORITY_COVERS} />;
 }
 
 function Separator() {

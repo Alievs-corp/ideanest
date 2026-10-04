@@ -9,13 +9,15 @@ import {
   remindMe,
   type PrelaunchFailure,
 } from '../../lib/prelaunch';
-import { colors, font, fontSize, lineHeight, radius, spacing } from '../../theme';
+import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
 import { Body, CardTitle } from '../text';
-import { announce, Field, Icon, Pill, TextInput } from '../ui';
+import { announce, Field, Icon, Pill, TextInput, useSurface } from '../ui';
+import { errorTextColor } from '../ui/field';
 
 /**
- * The card that asks to be told when the campaign opens — the form half of the web's
- * `PrelaunchView`, issue #155.
+ * The form that asks to be told when the campaign opens — the form half of the web's
+ * `PrelaunchView`, issue #155. The screen draws it in its white `ContentSheet`; every piece here
+ * reads the surface, so the words, the field and the error take the sheet's on-white tones.
  *
  * <h2>No session is required, and that is the feature</h2>
  *
@@ -28,13 +30,14 @@ import { announce, Field, Icon, Pill, TextInput } from '../ui';
  * <h2>The one lime control on the screen</h2>
  *
  * "Remind me" is the page's urgent action and its only one (docs/ui-kit.md §7.2): an accent pill,
- * near-black words on lime. It reads "Adding you" while the request is out, a word rather than a
- * spinner standing in for one, as on the web.
+ * near-black words on a lime surface — on the white sheet too, where lime is a fill and never
+ * text. It reads "Adding you" while the request is out, a word rather than a spinner standing in
+ * for one, as on the web.
  *
- * <h2>Outside the FadeUp</h2>
+ * <h2>No entry motion</h2>
  *
- * The screen animates only the block above this card. Motion decreases as the reader gets closer
- * to acting (docs/motion-system.md §5), and the signup is the action.
+ * The screen's `FadeUp` is on the campaign above the sheet; the form is placed, so the field takes
+ * the first tap the moment it is drawn. Its error appears at once, never animated in.
  *
  * <h2>Offline</h2>
  *
@@ -67,6 +70,7 @@ export function PrelaunchForm({
   const [failure, setFailure] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [following, setFollowing] = useState(false);
+  const surface = useSurface();
 
   const describe = (reason: PrelaunchFailure): string =>
     reason.key === 'rateLimitedIn'
@@ -124,10 +128,10 @@ export function PrelaunchForm({
      * second press and the question of whether the reader is now on the list twice.
      */
     return (
-      <View style={styles.card} testID="prelaunch-following">
+      <View style={styles.form} testID="prelaunch-following">
         <View style={styles.success}>
           <View style={styles.successIcon}>
-            <Icon icon={Glyphs.TickCircle} size={20} color={colors.success} />
+            <Icon icon={Glyphs.TickCircle} variant="bulk" size={20} color={colors.success} />
           </View>
           <View style={styles.words}>
             <CardTitle accessibilityRole="header" style={styles.cardHeading}>
@@ -144,7 +148,7 @@ export function PrelaunchForm({
   const errorLine = offline ? t('errors.unreachable') : failure;
 
   return (
-    <View style={styles.card} testID="prelaunch-form">
+    <View style={styles.form} testID="prelaunch-form">
       <View style={styles.words}>
         <CardTitle accessibilityRole="header" style={styles.cardHeading}>
           {t('formTitle')}
@@ -158,7 +162,7 @@ export function PrelaunchForm({
           <View style={styles.errorIcon}>
             <Icon icon={Glyphs.Warning2} size={14} color={colors.danger} />
           </View>
-          <Text style={styles.errorText}>{errorLine}</Text>
+          <Text style={[styles.errorText, { color: errorTextColor(surface) }]}>{errorLine}</Text>
         </View>
       )}
 
@@ -199,14 +203,7 @@ export function PrelaunchForm({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface2,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    padding: spacing[6],
-    gap: spacing[4],
-  },
+  form: { gap: spacing[4] },
   words: { flex: 1, minWidth: 0, gap: spacing[1] },
   // The web's `text-base font-semibold`: a card heading, not a section one.
   cardHeading: { ...font.semibold, fontSize: fontSize.base, lineHeight: lineHeight.body },
@@ -221,6 +218,5 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.caption,
     lineHeight: lineHeight.small,
-    color: colors.danger,
   },
 });

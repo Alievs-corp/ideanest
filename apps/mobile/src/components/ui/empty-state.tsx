@@ -2,11 +2,11 @@ import { useEffect, type ReactNode } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, radius, spacing, tracking } from '../../theme';
+import { colors, font, fontSize, lineHeight, radius, spacing, tint, tracking } from '../../theme';
 import { announce } from './announce';
 import { Icon, type IconComponent } from './icon';
 import { Pill } from './pill';
-import { SurfaceProvider } from './surface';
+import { BLOCK, SurfaceProvider, TONES, blockSurface, useSurface } from './surface';
 
 /**
  * What a list shows when it has nothing to show, and when it could not find out — the native
@@ -17,7 +17,7 @@ import { SurfaceProvider } from './surface';
  * `empty` — nothing exists yet, and the way out is to make something. `filtered` — things exist
  * and this query matched none of them, and the way out is to clear the filter. One message for
  * both sends a creator to "New campaign" when all they did was mistype a search. The icon follows:
- * `Inbox` and `SearchX`, the web's.
+ * Iconsax `DirectInbox` and `SearchStatus`.
  *
  * <h2>The title is the message; the icon is decoration</h2>
  *
@@ -25,9 +25,14 @@ import { SurfaceProvider } from './surface';
  * lands on the sentence that explains the blank screen. The icon is hidden: "image, inbox" says
  * nothing about why the list is empty.
  *
- * <p>Restrained on purpose, as on the web: no illustration and no animation. An empty list is a
- * dead end, and a dead end that performs is worse than one that explains. Both states reset the
- * surface to dark for their contents, since the card is always surface-2.
+ * <h2>Shape</h2>
+ *
+ * `mobile-design` skill §2 and §5: a raised block with generous spacing, a large **Bulk** Iconsax
+ * glyph in a soft circular badge, the words, and the one action as a pill. On the dark canvas the
+ * block is `surface2`; inside a white sheet (`useSurface() === 'white'`) it is the sheet's
+ * `whiteMuted` with on-white text, and a primary `Pill` in it inverts by itself.
+ *
+ * <p>No animation: an empty list is a dead end, and an error appears at once (skill §6.4).
  *
  * <p>These replaced the app's first `EmptyState` and `ErrorState` (`components/states.tsx`, deleted
  * when the screens moved here): the old error had no retry, which is why this one requires it.
@@ -61,7 +66,6 @@ export function EmptyState({
   return (
     <StateCard
       icon={icon ?? EMPTY_ICON[variant]}
-      iconColour={colors.textTertiary}
       title={title}
       description={description}
       testID={testID}
@@ -113,7 +117,7 @@ export function ErrorState({
   return (
     <StateCard
       icon={Glyphs.Warning2}
-      iconColour={colors.danger}
+      tone="danger"
       title={title}
       description={description}
       testID={testID}
@@ -122,77 +126,104 @@ export function ErrorState({
         <Pill label={t('common.tryAgain')} onPress={onRetry} busy={retrying} />
       </View>
       {traceId === undefined || traceId === null || traceId === '' ? null : (
-        <Text selectable style={[styles.reference, styles.centred]}>
-          {t('shell.failure.pages.error.referenceLabel')}{' '}
-          <Text selectable style={styles.referenceId}>
-            {traceId}
-          </Text>
-        </Text>
+        <Reference label={t('shell.failure.pages.error.referenceLabel')} traceId={traceId} />
       )}
     </StateCard>
   );
 }
 
+/** The trace id line, in the tones of the block it sits in. */
+function Reference({ label, traceId }: { readonly label: string; readonly traceId: string }) {
+  const tones = TONES[blockSurface(useSurface())];
+  return (
+    <Text selectable style={[styles.reference, styles.centred, { color: tones.tertiary }]}>
+      {label}{' '}
+      <Text selectable style={[styles.referenceId, { color: tones.secondary }]}>
+        {traceId}
+      </Text>
+    </Text>
+  );
+}
+
 function StateCard({
   icon,
-  iconColour,
+  tone = 'neutral',
   title,
   description,
   testID,
   children,
 }: {
   readonly icon: IconComponent;
-  readonly iconColour: string;
+  readonly tone?: 'neutral' | 'danger';
   readonly title: string;
   readonly description?: string;
   readonly testID?: string;
   readonly children?: ReactNode;
 }) {
+  const block = blockSurface(useSurface());
+  const tones = TONES[block];
+  const danger = tone === 'danger';
   return (
-    <View style={styles.card} testID={testID}>
-      <SurfaceProvider surface="dark">
-        <View style={styles.iconCircle}>
-          <Icon icon={icon} variant="bulk" size={20} color={iconColour} />
+    <View style={[styles.card, { backgroundColor: BLOCK[block].rest }]} testID={testID}>
+      <SurfaceProvider surface={block}>
+        <View
+          style={[
+            styles.badge,
+            { backgroundColor: danger ? tint(colors.danger, 0.12) : BLOCK[block].badge },
+          ]}
+        >
+          <Icon
+            icon={icon}
+            variant="bulk"
+            size={ICON_SIZE}
+            color={danger ? colors.danger : tones.secondary}
+          />
         </View>
-        <Text accessibilityRole="header" style={[styles.title, styles.centred]}>
-          {title}
-        </Text>
-        {description === undefined || description === '' ? null : (
-          <Text style={[styles.description, styles.centred]}>{description}</Text>
-        )}
+        <View style={styles.words}>
+          <Text
+            accessibilityRole="header"
+            style={[styles.title, styles.centred, { color: tones.primary }]}
+          >
+            {title}
+          </Text>
+          {description === undefined || description === '' ? null : (
+            <Text style={[styles.description, styles.centred, { color: tones.secondary }]}>
+              {description}
+            </Text>
+          )}
+        </View>
         {children}
       </SurfaceProvider>
     </View>
   );
 }
 
+/** The feature glyph, and its badge at twice its size. */
+const ICON_SIZE = 32;
+
 const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing[3],
+    gap: spacing[4],
     paddingHorizontal: spacing[6],
-    paddingVertical: spacing[12],
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
+    paddingVertical: spacing[10],
+    borderRadius: radius.xl,
   },
-  iconCircle: {
-    width: 44,
-    height: 44,
+  badge: {
+    width: ICON_SIZE * 2,
+    height: ICON_SIZE * 2,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface3,
   },
+  words: { alignItems: 'center', gap: spacing[2] },
   centred: { textAlign: 'center' },
   title: {
-    ...font.medium,
-    fontSize: fontSize.base,
-    lineHeight: lineHeight.body,
-    letterSpacing: fontSize.base * -0.02,
-    color: colors.textPrimary,
+    ...font.semibold,
+    fontSize: fontSize.lg,
+    lineHeight: lineHeight.cardTitle,
+    letterSpacing: tracking.cardTitle,
   },
   description: {
     ...font.regular,
@@ -200,21 +231,18 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.small,
     // The web's `max-w-[42ch]`: about 42 characters of Inter at 14pt.
     maxWidth: 42 * fontSize.sm * 0.55,
-    color: colors.textSecondary,
   },
-  action: { marginTop: spacing[1], flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  action: { marginTop: spacing[2], flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   reference: {
     ...font.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
     letterSpacing: tracking.tag,
-    color: colors.textTertiary,
   },
   // The platform's own fixed-width face, as the failure screen uses: a reader copying the id by
   // hand can tell 0 from O.
   referenceId: {
     fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }),
     fontVariant: ['tabular-nums'],
-    color: colors.textSecondary,
   },
 });

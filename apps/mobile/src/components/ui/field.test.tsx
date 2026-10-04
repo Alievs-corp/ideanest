@@ -4,10 +4,11 @@ import { AccessibilityInfo, StyleSheet, type TextInput as RNTextInput } from 're
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import ru from '@ideanest/messages/ru.json';
-import { colors, size } from '../../theme';
+import { colors, radius, size, tint } from '../../theme';
 import { Field } from './field';
 import { PasswordInput } from './password-input';
 import { Radio, RadioGroup } from './radio';
+import { SurfaceProvider, TONES } from './surface';
 import { TextInput } from './text-input';
 import { Textarea, TEXTAREA_MIN_HEIGHT } from './textarea';
 
@@ -164,6 +165,53 @@ describe('Field', () => {
     expect(getByText('Post takes a week.')).toBeTruthy();
   });
 
+  it('shows an error on the very render that sets it — nothing fades or slides it in', async () => {
+    const tree = await renderEn(
+      <Field label="Email address">
+        <TextInput />
+      </Field>,
+    );
+    expect(tree.queryByText('Enter an email address.')).toBeNull();
+
+    await tree.rerender(
+      <Field label="Email address" error="Enter an email address.">
+        <TextInput />
+      </Field>,
+    );
+    // No waitFor: present at once, fully opaque and in place, inside no animated view.
+    const error = tree.getByLabelText('Enter an email address.');
+    expect(flat(error).opacity).toBeUndefined();
+    expect(flat(error).transform).toBeUndefined();
+    for (let node = error.parent; node !== null; node = node.parent) {
+      expect(flat(node as never).opacity ?? 1).toBe(1);
+    }
+
+    await tree.rerender(
+      <Field label="Email address">
+        <TextInput />
+      </Field>,
+    );
+    expect(tree.queryByLabelText('Enter an email address.')).toBeNull();
+  });
+
+  it('on white, writes the error in on-white ink — danger fails AA as text there — with a danger icon', async () => {
+    const tree = await renderEn(
+      <SurfaceProvider surface="white">
+        <Field label="Email address" error="Enter an email address.">
+          <TextInput />
+        </Field>
+      </SurfaceProvider>,
+    );
+    expect(flat(tree.getByText('Enter an email address.')).color).toBe(colors.textOnWhite);
+    expect(tree.container.queryAll((node) => node.type === 'RNSVGSvgView')[0]?.props.color).toBe(
+      colors.danger,
+    );
+    expect(frameOf(tree.getByLabelText('Email address')).borderColor).toBe(colors.danger);
+    expect(flat(tree.getByText('Email address', { includeHiddenElements: true })).color).toBe(
+      colors.textOnWhite,
+    );
+  });
+
   it('keeps an ordinary field’s label out of the screen reader — the control says it', async () => {
     const { queryByRole } = await renderEn(
       <Field label="Email address" required>
@@ -188,7 +236,7 @@ describe('TextInput', () => {
     expect(Math.min(...(heights as number[]))).toBeGreaterThanOrEqual(size.touchTarget);
   });
 
-  it('wears the input skin: surface-3, a hairline border, radius 14, a tertiary placeholder', async () => {
+  it('wears the dark skin on the canvas: surface-3, a hairline, radius-lg, a tertiary placeholder', async () => {
     const { getByLabelText } = await renderEn(
       <TextInput accessibilityLabel="Title" placeholder="A short title" />,
     );
@@ -196,9 +244,54 @@ describe('TextInput', () => {
     expect(frameOf(input)).toMatchObject({
       backgroundColor: colors.surface3,
       borderColor: colors.border,
-      borderRadius: 14,
+      borderRadius: radius.lg,
     });
+    expect(flat(input).color).toBe(colors.textPrimary);
     expect(input.props.placeholderTextColor).toBe(colors.textTertiary);
+  });
+
+  it('wears the white skin inside a white sheet, with no prop: white-muted, on-white ink', async () => {
+    const { getByLabelText } = await renderEn(
+      <SurfaceProvider surface="white">
+        <TextInput accessibilityLabel="Title" placeholder="A short title" />
+      </SurfaceProvider>,
+    );
+    const input = getByLabelText('Title');
+    expect(frameOf(input)).toMatchObject({
+      backgroundColor: colors.whiteMuted,
+      borderColor: tint(colors.black, 0.08),
+      borderRadius: radius.lg,
+    });
+    expect(flat(input).color).toBe(colors.textOnWhite);
+    expect(input.props.placeholderTextColor).toBe(TONES.white.tertiary);
+  });
+
+  it('shows focus on white with a stronger hairline and a near-black ring, never lime', async () => {
+    const { getByLabelText } = await renderEn(
+      <SurfaceProvider surface="white">
+        <TextInput accessibilityLabel="Title" />
+      </SurfaceProvider>,
+    );
+    await fireEvent(getByLabelText('Title'), 'focus');
+    expect(frameOf(getByLabelText('Title'))).toMatchObject({
+      borderColor: tint(colors.black, 0.16),
+      outlineColor: colors.textOnWhite,
+      outlineWidth: 2,
+    });
+  });
+
+  it('draws the danger border on white too', async () => {
+    const { getByLabelText } = await renderEn(
+      <SurfaceProvider surface="white">
+        <TextInput accessibilityLabel="Title" invalid />
+      </SurfaceProvider>,
+    );
+    expect(frameOf(getByLabelText('Title')).borderColor).toBe(colors.danger);
+  });
+
+  it('is a pill when asked, for a single-line search', async () => {
+    const { getByLabelText } = await renderEn(<TextInput accessibilityLabel="Find" shape="pill" />);
+    expect(frameOf(getByLabelText('Find')).borderRadius).toBe(radius.full);
   });
 
   it('draws the strong border AND the lime ring when focused', async () => {
@@ -297,6 +390,24 @@ describe('Textarea', () => {
   it('is multi-line and named', async () => {
     const { getByLabelText } = await renderEn(<Textarea accessibilityLabel="Story" />);
     expect(getByLabelText('Story').props.multiline).toBe(true);
+  });
+
+  it('reads its surface like the single-line input: dark well, or white-muted in a sheet', async () => {
+    const dark = await renderEn(<Textarea accessibilityLabel="Story" />);
+    expect(frameOf(dark.getByLabelText('Story'))).toMatchObject({
+      backgroundColor: colors.surface3,
+      borderRadius: radius.lg,
+    });
+
+    const white = await renderEn(
+      <SurfaceProvider surface="white">
+        <Textarea accessibilityLabel="Story" />
+      </SurfaceProvider>,
+    );
+    const input = white.getByLabelText('Story');
+    expect(frameOf(input).backgroundColor).toBe(colors.whiteMuted);
+    expect(flat(input).color).toBe(colors.textOnWhite);
+    expect(input.props.placeholderTextColor).toBe(TONES.white.tertiary);
   });
 });
 

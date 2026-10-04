@@ -1,20 +1,15 @@
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { NO_FILTERS, addSlugFilter, withQuery } from '@ideanest/discovery/filters';
 import { useSearchResults, type Card } from '../../api/queries';
 import { CampaignColumn, CampaignColumnSkeleton } from '../../components/campaign-column';
 import { SearchBox } from '../../components/discovery/search-box';
-import { useTabBarInset } from '../../components/tab-bar';
+import { FadeUp } from '../../components/motion';
 import { Body, Heading, Meta } from '../../components/text';
-import {
-  EmptyState,
-  InlineAlert,
-  Pill,
-  haptics,
-} from '../../components/ui';
+import { EmptyState, InlineAlert, Pill, Screen } from '../../components/ui';
 import { definedRouteParams, useFeedProblem } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
-import { colors, font, size, spacing } from '../../theme';
+import { colors, font, spacing } from '../../theme';
 
 /**
  * Search — the web's `/search` (`app/[locale]/(site)/search/page.tsx`), issue #153.
@@ -36,13 +31,18 @@ import { colors, font, size, spacing } from '../../theme';
  *
  * The web shows a failed search as "Nothing matched". The app says it failed, with a retry: a
  * backer told that nothing matches will not search again.
+ *
+ * <h2>Shape and motion</h2>
+ *
+ * The kit's `Screen` pads the page clear of the floating tab bar and draws the pull to refresh.
+ * The title fades up once; the field never moves, and the results rise as `CampaignColumn`
+ * decides (first screenful only).
  */
 export default function SearchScreen() {
   const t = useT('discovery.search');
   const tFeed = useT('discovery.feed');
   const tAll = useT();
   const router = useRouter();
-  const tabInset = useTabBarInset();
   const params = useLocalSearchParams<{ q?: string | string[] }>();
   const query = (Array.isArray(params.q) ? params.q[0] : params.q)?.trim() ?? '';
 
@@ -57,28 +57,19 @@ export default function SearchScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.fill}
-      contentContainerStyle={[styles.content, { paddingBottom: tabInset + spacing[8] }]}
-      keyboardShouldPersistTaps="handled"
-      refreshControl={
-        query === '' ? undefined : (
-          <RefreshControl
-            refreshing={results.isRefetching}
-            onRefresh={() => {
-              haptics.refresh();
-              void results.refetch();
-            }}
-            tintColor={colors.textSecondary}
-            colors={[colors.textPrimary]}
-            progressBackgroundColor={colors.surface3}
-          />
-        )
-      }
+    <Screen
+      hasContent
+      onRefresh={query === '' ? undefined : () => void results.refetch()}
+      refreshing={results.isRefetching}
+      testID="search"
     >
-      <Heading accessibilityRole="header">
-        {query === '' ? t('title') : t('resultsTitle', { query })}
-      </Heading>
+      <FadeUp index={0}>
+        <View style={styles.title}>
+          <Heading accessibilityRole="header">
+            {query === '' ? t('title') : t('resultsTitle', { query })}
+          </Heading>
+        </View>
+      </FadeUp>
 
       {/*
         Drawn once, above every state, so the field is the same element from typing to loading
@@ -98,7 +89,7 @@ export default function SearchScreen() {
       />
 
       {body()}
-    </ScrollView>
+    </Screen>
   );
 
   function body() {
@@ -152,9 +143,9 @@ export default function SearchScreen() {
             {t('count', { count: 0 })}
           </Meta>
           <EmptyState
-          variant="filtered"
-          title={t('emptyTitle', { query })}
-          description={t('emptyBody')}
+            variant="filtered"
+            title={t('emptyTitle', { query })}
+            description={t('emptyBody')}
             action={<Pill label={t('emptyAction')} onPress={() => openFeed(false)} />}
             testID="search-empty"
           />
@@ -182,8 +173,7 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: colors.surface1 },
-  content: { padding: size.cardGap, gap: spacing[4] },
+  title: { paddingTop: spacing[4] },
   results: { gap: spacing[4] },
   count: { ...font.regular, fontVariant: ['tabular-nums'] },
   centred: { alignItems: 'center', paddingTop: spacing[2] },

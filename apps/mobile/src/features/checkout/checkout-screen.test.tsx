@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AccessibilityInfo } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -245,6 +245,23 @@ describe('checkout step 2', () => {
     focus.mockRestore();
   });
 
+  it('leads with the quoted total as the hero figure', async () => {
+    await show({ initialRewardId: 'r1' });
+    await reserve();
+    expect(screen.getByTestId('checkout-hero').props.accessibilityLabel).toBe(
+      `${en.checkout.summary.total}, 45.00 AZN`,
+    );
+  });
+
+  it('under Reduce Motion shows the same hero total, at once', async () => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValueOnce(true);
+    await show({ initialRewardId: 'r1' });
+    await reserve();
+    expect(screen.getByTestId('checkout-hero').props.accessibilityLabel).toBe(
+      `${en.checkout.summary.total}, 45.00 AZN`,
+    );
+  });
+
   it('disables confirm and offers to reserve again once the hold has ended', async () => {
     api.createPledgeDraft.mockResolvedValue({ ...draft(), reservationExpiresAt: new Date(Date.now() - 1000).toISOString() });
     await show({ initialRewardId: 'r1' });
@@ -334,6 +351,19 @@ describe('checkout refusals', () => {
     api.getBackerAgreementVersion.mockRejectedValue(new TypeError('Network request failed'));
     await show();
     expect(screen.getByText(en.checkout.agreementUnavailable.title)).toBeTruthy();
+  });
+});
+
+describe('the reward cards', () => {
+  it('mark the chosen reward with a tick, not colour alone, and only that one', async () => {
+    await show({ initialRewardId: 'r1' });
+    const hidden = { includeHiddenElements: true };
+    expect(within(screen.getByTestId('reward-option-r1')).getByTestId('icon-TickCircle', hidden)).toBeTruthy();
+    expect(within(screen.getByTestId('reward-option-r3')).queryByTestId('icon-TickCircle', hidden)).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('reward-option-r3'));
+    expect(within(screen.getByTestId('reward-option-r3')).getByTestId('icon-TickCircle', hidden)).toBeTruthy();
+    expect(screen.getByTestId('reward-option-r3')).toBeChecked();
   });
 });
 

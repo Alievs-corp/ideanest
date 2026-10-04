@@ -102,14 +102,9 @@ describe('Sheet', () => {
     expect(flat(getByText('Azerbaijani manat')).color).toBe(TONES.white.secondary);
   });
 
-  it('keeps the earlier dark panel for overlays #282 has not moved', async () => {
-    const { getByTestId, getByRole } = await renderEn(
-      <Sheet visible onClose={jest.fn()} title="Currency" surface="dark" testID="sheet">
-        <Text>Azerbaijani manat</Text>
-      </Sheet>,
-    );
-    expect(flat(getByTestId('sheet')).backgroundColor).toBe(colors.surface2);
-    expect(flat(getByRole('header', { name: 'Currency' })).color).toBe(TONES.dark.primary);
+  it('has no dark panel any more (#282): one sheet, and it is white', () => {
+    // @ts-expect-error — `surface` was removed with the dark panel.
+    void (<Sheet visible onClose={jest.fn()} title="Currency" surface="dark" />);
   });
 
   it('stays mounted while it falls, out of reach and unheard, then goes and reports it', async () => {

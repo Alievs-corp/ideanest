@@ -3,18 +3,19 @@ import { act, render as renderBare } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { FadeInDown } from 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { CampaignList, CampaignListSkeleton } from './campaign-list';
+import { FIRST_SCREENFUL } from './motion';
+import { TabBarInsetProvider, tabBarFootprint } from './tab-bar';
 import { MotionBudgetProvider } from './ui';
 import type { Card } from '../api/queries';
-import { colors } from '../theme';
+import { colors, size, staggerDelay } from '../theme';
 
 /**
- * §4.3's actual requirement: **long lists never crawl** — and `docs/motion-system.md` §5.1's:
- * **no animation on campaign cards**, not even a capped stagger over the first screenful. The
- * list used to fade its first six cards up; issue #151 took that out, and the first describe
- * below keeps it out.
+ * §4.3's actual requirement: **long lists never crawl** — and the `mobile-design` skill's §6.5:
+ * the first screenful rises in once, and nothing a feed appends, recycles or refetches ever does.
  *
  * <p>A card's words come from the catalogue (issue #150), so the list is rendered in English
  * through the provider every screen sits in.
@@ -29,16 +30,50 @@ jest.setTimeout(20_000);
  * update outside `act` logged "not wrapped in act(...)" for every list rendered here.
  */
 async function render(ui: ReactElement) {
-  const tree = await renderBare(
+  const tree = await renderBare(inEnglish(ui));
+  await settle();
+  return tree;
+}
+
+function inEnglish(ui: ReactElement) {
+  return (
     <IntlProvider locale="en" messages={en}>
       {ui}
-    </IntlProvider>,
+    </IntlProvider>
   );
+}
+
+async function settle() {
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
-  return tree;
 }
+
+const METRICS = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
+
+/**
+ * The delay of every entry rise `FadeUp` builds — its stagger, so which list positions rose. It
+ * builds one per render of a rising cell, so a count would also count re-renders; the delays say
+ * which positions it was for.
+ */
+function spyOnRises(): number[] {
+  const delays: number[] = [];
+  const build = FadeInDown.duration.bind(FadeInDown);
+  jest.spyOn(FadeInDown, 'duration').mockImplementation((ms: number) => {
+    const builder = build(ms);
+    const delay = builder.delay.bind(builder);
+    builder.delay = ((ms: number) => {
+      delays.push(ms);
+      return delay(ms);
+    }) as typeof builder.delay;
+    return builder;
+  });
+  return delays;
+}
+
 
 function cards(count: number): Card[] {
   return Array.from({ length: count }, (_, index) => ({
@@ -57,16 +92,73 @@ function cards(count: number): Card[] {
 describe('motion on the feed', () => {
   afterEach(() => jest.restoreAllMocks());
 
-  it('builds no entry animation for any card, even where the budget would allow one', async () => {
-    // Read off Reanimated's builder, as `FadeUp`'s own test does: `FadeUp` calls
-    // `FadeInDown.duration(...)` whenever it animates, and a card list must never reach it.
+  /*
+   * Read off Reanimated's builder, as `FadeUp`'s own test does: `FadeUp` calls
+   * `FadeInDown.duration(...)` whenever it animates.
+   */
+  it('rises in only within the first screenful, with full motion', async () => {
+    const built = jest.spyOn(FadeInDown, 'duration');
+    await render(<CampaignList cards={cards(12)} />);
+    expect(built).toHaveBeenCalled();
+    expect(built.mock.calls.length).toBeLessThanOrEqual(FIRST_SCREENFUL);
+  });
+
+  it('builds no entry animation with reduced motion', async () => {
     const built = jest.spyOn(FadeInDown, 'duration');
     await render(
-      <MotionBudgetProvider level="full">
+      <MotionBudgetProvider level="none">
         <CampaignList cards={cards(10)} />
       </MotionBudgetProvider>,
     );
     expect(built).not.toHaveBeenCalled();
+  });
+
+  it('never animates an appended page or a refetch that brings new cards', async () => {
+    const delays = spyOnRises();
+    const firstPage = [0, 1, 2].map((index) => staggerDelay(index));
+    const view = await render(<CampaignList cards={cards(3)} />);
+    expect(delays.length).toBeGreaterThan(0);
+
+    // The next page: three more, at positions 3–5, inside the first eight.
+    await view.rerender(inEnglish(<CampaignList cards={cards(6)} />));
+    await settle();
+    expect(view.getByText('Campaign 5')).toBeTruthy();
+    expect(delays.every((delay) => firstPage.includes(delay))).toBe(true);
+
+    // A refetch that replaces the page with six campaigns the list has not seen.
+    const fresh = cards(6).map((card, index) => ({
+      ...card,
+      id: 'fresh-' + String(index),
+      title: 'Fresh ' + String(index),
+    }));
+    await view.rerender(inEnglish(<CampaignList cards={fresh} />));
+    await settle();
+    expect(view.getByText('Fresh 5')).toBeTruthy();
+    expect(delays.every((delay) => firstPage.includes(delay))).toBe(true);
+  });
+
+  it('pads its end clear of the home indicator', async () => {
+    const { container } = await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <CampaignList cards={cards(2)} />
+      </SafeAreaProvider>,
+    );
+    const [list] = container.queryAll((node) => node.props.contentContainerStyle !== undefined);
+    expect(list?.props.contentContainerStyle.paddingBottom).toBe(METRICS.insets.bottom + size.cardGap);
+  });
+
+  it('pads its end clear of the floating tab bar under a tab', async () => {
+    const { container } = await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <TabBarInsetProvider>
+          <CampaignList cards={cards(2)} />
+        </TabBarInsetProvider>
+      </SafeAreaProvider>,
+    );
+    const [list] = container.queryAll((node) => node.props.contentContainerStyle !== undefined);
+    expect(list?.props.contentContainerStyle.paddingBottom).toBe(
+      tabBarFootprint(METRICS.insets.bottom),
+    );
   });
 
   it('refreshes with the refresh haptic and a spinner that is not lime', async () => {

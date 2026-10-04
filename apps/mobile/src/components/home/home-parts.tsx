@@ -1,22 +1,43 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { Glyphs } from '../../icons';
 import type { Category } from '../../api/queries';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, radius, size, spacing, tracking } from '../../theme';
+import { font, fontSize, lineHeight, radius, size, spacing } from '../../theme';
 import { FadeUp } from '../motion';
-import { Body, Display, Heading } from '../text';
-import { Icon, Pill, Skeleton, SkeletonCard, SkeletonGroup, useFocusRing } from '../ui';
+import { accentFor } from '../project-card';
+import { Body, CardTitle, Display, Heading } from '../text';
+import {
+  AccentCard,
+  EmptyState,
+  Icon,
+  Pill,
+  PressableScale,
+  Skeleton,
+  SkeletonCard,
+  SkeletonGroup,
+  TONES,
+  useFocusRing,
+} from '../ui';
+import { BLOCK } from '../ui/surface';
 
 /**
- * The pieces of the Home tab — the web home's inline hero and `HomeSection` (issue #153).
+ * The pieces of the Home tab — the web home's inline hero and `HomeSection` (issue #153), in the
+ * `mobile-design` skill's language (#281).
  *
- * <h2>No lime in the hero</h2>
+ * <h2>No lime in the hero, and no hero figure</h2>
  *
  * §1.1 allows one lime element among a set, and Home spends it where it means something: the
  * urgency tag on a campaign closing within 48 hours, in the Ending soon rail. The hero's actions
- * are a white pill and an outline pill, as on the web.
+ * are a white pill and an outline pill, as on the web. Home has no key number of its own, so it
+ * draws no `HeroFigure` (skill §2: one only where there is a real figure).
+ *
+ * <h2>Category tiles are accent cards</h2>
+ *
+ * Each tile is an `AccentCard` whose accent is hashed from the category (`accentFor`), so a
+ * category keeps its colour wherever it is drawn. The accent is decoration: the name and the icon
+ * say what the tile is, never the hue.
  */
 
 export interface HomeHeroProps {
@@ -28,7 +49,7 @@ export interface HomeHeroProps {
 export function HomeHero({ onBrowse, onStart }: HomeHeroProps) {
   const t = useT('home.hero');
   return (
-    <FadeUp>
+    <FadeUp index={0}>
       <View style={styles.hero}>
         <Display accessibilityRole="header">{t('title')}</Display>
         <Body>{t('standfirst')}</Body>
@@ -47,6 +68,8 @@ export interface HomeSectionProps {
   readonly href: Href;
   readonly linkLabel: string;
   readonly children: ReactNode;
+  /** The section's place on the screen, for the entry stagger. */
+  readonly index?: number;
   readonly testID?: string;
 }
 
@@ -57,11 +80,12 @@ export function HomeSection({
   href,
   linkLabel,
   children,
+  index = 1,
   testID,
 }: HomeSectionProps) {
   return (
     <View style={styles.section} testID={testID}>
-      <FadeUp>
+      <FadeUp index={index}>
         <View style={styles.titles}>
           <Heading accessibilityRole="header">{heading}</Heading>
           <Body>{standfirst}</Body>
@@ -73,25 +97,32 @@ export function HomeSection({
   );
 }
 
+/** "See all" as a small raised pill with the press give. */
 function SectionLink({ href, label }: { readonly href: Href; readonly label: string }) {
   const { ring, onFocus, onBlur } = useFocusRing();
   return (
-    <Link href={href} asChild>
-      <Pressable
-        accessibilityRole="link"
-        accessibilityLabel={label}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        style={({ pressed }) => [styles.link, pressed && styles.linkPressed, ring]}
-      >
-        <Text style={styles.linkLabel}>{label}</Text>
-        <Icon icon={Glyphs.ArrowRight} size={16} color={colors.textSecondary} />
-      </Pressable>
-    </Link>
+    <View style={styles.linkRow}>
+      <Link href={href} asChild>
+        <PressableScale
+          accessibilityRole="link"
+          accessibilityLabel={label}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          contentStyle={({ pressed }) => [
+            styles.link,
+            { backgroundColor: pressed ? BLOCK.dark.pressed : BLOCK.dark.rest },
+            ring,
+          ]}
+        >
+          <Text style={styles.linkLabel}>{label}</Text>
+          <Icon icon={Glyphs.ArrowRight} size={16} color={TONES.dark.secondary} />
+        </PressableScale>
+      </Link>
+    </View>
   );
 }
 
-/** "Browse by category": tiles in two columns, each a link to its category. */
+/** "Browse by category": accent tiles in two columns, each a link to its category. */
 export function CategoryTiles({ categories }: { readonly categories: readonly Category[] }) {
   return (
     <View style={styles.grid}>
@@ -102,6 +133,8 @@ export function CategoryTiles({ categories }: { readonly categories: readonly Ca
   );
 }
 
+const ON_ACCENT = TONES.accent;
+
 function CategoryTile({ category }: { readonly category: Category }) {
   const { ring, onFocus, onBlur } = useFocusRing();
   const slug = category.slug ?? '';
@@ -109,16 +142,21 @@ function CategoryTile({ category }: { readonly category: Category }) {
   return (
     <View style={styles.cell}>
       <Link href={{ pathname: '/categories/[category]', params: { category: slug } }} asChild>
-        <Pressable
+        <PressableScale
           accessibilityRole="link"
           accessibilityLabel={name}
           onFocus={onFocus}
           onBlur={onBlur}
-          style={({ pressed }) => [styles.tile, pressed && styles.tilePressed, ring]}
+          contentStyle={[styles.tileTarget, ring]}
         >
-          <Text style={styles.tileName}>{name}</Text>
-          <Icon icon={Glyphs.ArrowRight} size={16} color={colors.textTertiary} />
-        </Pressable>
+          <AccentCard accent={accentFor({ id: category.id, slug, title: name })}>
+            <View style={styles.tileTop}>
+              <Icon icon={Glyphs.Category} variant="bulk" size={24} color={ON_ACCENT.primary} />
+              <Icon icon={Glyphs.ArrowRight} size={16} color={ON_ACCENT.secondary} />
+            </View>
+            <CardTitle numberOfLines={2}>{name}</CardTitle>
+          </AccentCard>
+        </PressableScale>
       </Link>
     </View>
   );
@@ -140,14 +178,14 @@ export function RailSkeleton({ label }: { readonly label: string }) {
   );
 }
 
-/** Six tiles' worth of placeholder. */
+/** Six tiles' worth of placeholder, each the height of an accent tile. */
 export function TilesSkeleton({ label }: { readonly label: string }) {
   return (
     <SkeletonGroup label={label}>
       <View style={styles.grid}>
         {Array.from({ length: 6 }, (_, index) => (
           <View key={index} style={styles.cell}>
-            <Skeleton height={size.touchTarget + spacing[4]} radius="md" />
+            <Skeleton height={TILE_HEIGHT} radius="lg" />
           </View>
         ))}
       </View>
@@ -159,76 +197,41 @@ export function TilesSkeleton({ label }: { readonly label: string }) {
 export function HomeEmpty({ onOpenFeed }: { readonly onOpenFeed: () => void }) {
   const t = useT('home.empty');
   return (
-    <View style={styles.empty} testID="home-empty">
-      <Text accessibilityRole="header" style={styles.emptyHeading}>
-        {t('heading')}
-      </Text>
-      <Body style={styles.centred}>{t('body')}</Body>
-      <Pill label={t('action')} onPress={onOpenFeed} />
-    </View>
+    <EmptyState
+      icon={Glyphs.Discover}
+      title={t('heading')}
+      description={t('body')}
+      action={<Pill label={t('action')} onPress={onOpenFeed} />}
+      testID="home-empty"
+    />
   );
 }
+
+/** An accent tile's floor: the card's own minimum, so a long name grows it rather than clips. */
+const TILE_HEIGHT = 120;
 
 const styles = StyleSheet.create({
   hero: { gap: spacing[4], paddingTop: spacing[4] },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3], paddingTop: spacing[2] },
   section: { gap: spacing[4] },
   titles: { gap: spacing[2] },
+  linkRow: { flexDirection: 'row' },
   link: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: spacing[2],
     minHeight: size.touchTarget,
-    borderRadius: radius.sm,
+    paddingHorizontal: spacing[4],
+    borderRadius: radius.full,
   },
-  linkPressed: { opacity: 0.64 },
   linkLabel: {
     ...font.medium,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textSecondary,
+    color: TONES.dark.primary,
   },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -spacing[3] / 2, rowGap: spacing[3] },
   cell: { width: '50%', paddingHorizontal: spacing[3] / 2 },
-  tile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing[2],
-    minHeight: size.touchTarget + spacing[4],
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[4],
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
-  },
-  tilePressed: { backgroundColor: colors.surface3 },
-  tileName: {
-    ...font.medium,
-    flexShrink: 1,
-    fontSize: fontSize.sm,
-    lineHeight: lineHeight.small,
-    color: colors.textPrimary,
-  },
-  empty: {
-    alignItems: 'center',
-    gap: spacing[3],
-    paddingHorizontal: spacing[6],
-    paddingVertical: spacing[12],
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
-  },
-  emptyHeading: {
-    ...font.medium,
-    fontSize: fontSize.h3,
-    lineHeight: lineHeight.h3,
-    letterSpacing: tracking.h3,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  centred: { textAlign: 'center' },
+  tileTarget: { borderRadius: radius.xl },
+  tileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexGrow: 1 },
 });

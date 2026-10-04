@@ -4,6 +4,7 @@ import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { readStoryDocument, type StoryDocument } from '@ideanest/campaign/story';
 import { colors } from '../../theme';
+import { SurfaceProvider, TONES } from '../ui';
 import { CampaignStory } from './campaign-story';
 
 /**
@@ -127,5 +128,30 @@ describe('the story', () => {
       expect(style.height).toBeUndefined();
       expect(text.props.numberOfLines).toBeUndefined();
     }
+  });
+});
+
+describe('the story inside the white content sheet (#281)', () => {
+  it('takes the sheet’s on-white tones and draws no lime rule on white', async () => {
+    const story = readStoryDocument(DOCUMENT) as StoryDocument;
+    await render(
+      <IntlProvider locale="en" messages={en}>
+        <SurfaceProvider surface="white">
+          <CampaignStory story={story} title="Solar Lamp" />
+        </SurfaceProvider>
+      </IntlProvider>,
+    );
+    expect(styleOf(screen.getByText('all night')).color).toBe(TONES.white.primary);
+    const quote = screen.getByTestId('story-quote');
+    expect(StyleSheet.flatten(quote.props.style).borderLeftColor).not.toBe(colors.lime700);
+    // The sheet is the card: no second fill under the story.
+    expect(StyleSheet.flatten(screen.getByTestId('campaign-story').props.style).backgroundColor).toBeUndefined();
+  });
+
+  it('presses an embed link with the press scale', async () => {
+    const story = readStoryDocument(DOCUMENT) as StoryDocument;
+    await show(story);
+    const [embed] = screen.getAllByTestId('story-embed');
+    expect(StyleSheet.flatten(embed?.parent?.props.style)?.transform).toEqual([{ scale: 1 }]);
   });
 });

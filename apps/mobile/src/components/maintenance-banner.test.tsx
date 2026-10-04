@@ -4,6 +4,7 @@ import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { fillPlaceholders } from '@ideanest/messages';
 import { formatDate, formatDateTime, formatTime } from '../lib/i18n';
+import { colors } from '../theme';
 import { currentLocale } from '../lib/locale';
 import { memoryStore } from '../lib/storage';
 import {
@@ -84,6 +85,14 @@ describe('the banner', () => {
     setUpcoming(NEXT);
     await renderBanner();
     expect(screen.getByText(expected(NEXT))).toBeOnTheScreen();
+  });
+
+  it('shows the Bulk calendar glyph in the info tone beside the sentence', async () => {
+    setUpcoming(WINDOW);
+    await renderBanner();
+    const glyph = screen.getByTestId('icon-Calendar', { includeHiddenElements: true });
+    expect(glyph.props.color).toBe(colors.info);
+    expect(screen.getByText(expected(WINDOW))).toBeOnTheScreen();
   });
 
   it('is information, not an alarm', async () => {

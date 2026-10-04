@@ -15,8 +15,8 @@ import { MediaFrame } from '../ui';
  * page never passes one either (#155, "Story video handling").
  *
  * <p>Decorative to a screen reader — the title right under it names the campaign — and drawn
- * without a fade: nothing on this page has an entry animation (docs/motion-system.md §5, the
- * page's own decision on the web).
+ * without a fade of its own: the frame rises with the page's first screenful (`FadeUp`, in the
+ * screen), and a second fade on the picture inside it would be the same motion twice.
  */
 export function CampaignMedia({ cover }: { readonly cover: CampaignCover | null }) {
   return (

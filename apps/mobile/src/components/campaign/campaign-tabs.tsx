@@ -1,8 +1,10 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { CAMPAIGN_TABS, type CampaignTabId } from '@ideanest/campaign/tabs';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, size, spacing } from '../../theme';
+import { colors, font, fontSize, radius, size, spacing } from '../../theme';
 import { useFocusRing } from '../ui';
+import { AnimatedPressable, usePressScale } from '../ui/press-scale';
+import { BLOCK, TONES, blockSurface, useSurface } from '../ui/surface';
 
 /**
  * Block 11 — the web's `CampaignTabs` (#155): Campaign · Creator · FAQ · Updates · Comments.
@@ -14,15 +16,16 @@ import { useFocusRing } from '../ui';
  * one list (the `?tab=` param mirrors it), so the content changes in place and `tablist` / `tab`
  * with `selected` is the honest description — VoiceOver and TalkBack both read "tab, 2 of 5".
  *
- * <h2>Words and size</h2>
+ * <h2>Pills, in the sheet's language</h2>
  *
- * The catalogue's `campaign.tabs.*` (#132: the web's English labels are a bug the app does not
- * copy). Each tab is 44pt high; the row scrolls sideways rather than wrapping, because five labels
- * do not fit a 320pt column in four of the languages. The active tab is white over a white 2pt
- * rule, the rest are `textSecondary`; the weight changes too, so colour is not the only signal.
+ * Each tab is a 44pt pill that gives under the thumb (`usePressScale`, `mobile-design` skill §6.3).
+ * The row scrolls sideways rather than wrapping, because five labels do not fit a 320pt column in
+ * four of the languages — which is why this is not a `SegmentedPill`, whose equal segments would
+ * truncate them. The chosen tab is the surface's primary pill (white on the canvas, `surface1` on
+ * the white sheet the page draws it in) and its label is heavier, so colour is not the only signal.
  * No lime — a tab is a place, not an urgency.
  *
- * <p>The row is opaque (`surface1`): it is the list's sticky header, and content scrolls under it.
+ * <p>The row is opaque: it is the list's sticky header, and content scrolls under it.
  */
 export interface CampaignTabsProps {
   readonly active: CampaignTabId;
@@ -31,8 +34,12 @@ export interface CampaignTabsProps {
 
 export function CampaignTabs({ active, onSelect }: CampaignTabsProps) {
   const t = useT('campaign.tabs');
+  const onWhite = useSurface() === 'white';
   return (
-    <View style={styles.bar} testID="campaign-tabs">
+    <View
+      style={[styles.bar, { backgroundColor: onWhite ? colors.whiteSurface : colors.surface1 }]}
+      testID="campaign-tabs"
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -65,52 +72,54 @@ function TabButton({
   readonly onPress: () => void;
   readonly testID: string;
 }) {
+  const block = blockSurface(useSurface());
   const { ring, onFocus, onBlur } = useFocusRing();
+  const press = usePressScale();
+  // The chosen pill is the surface's primary one: white on the canvas, inverted on white.
+  const chosen =
+    block === 'white'
+      ? { fill: colors.surface1, ink: colors.textPrimary }
+      : { fill: colors.whiteSurface, ink: colors.textOnWhite };
+  const fill = current ? chosen.fill : press.pressed ? BLOCK[block].pressed : BLOCK[block].rest;
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="tab"
       accessibilityLabel={label}
       accessibilityState={{ selected: current }}
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       onFocus={onFocus}
       onBlur={onBlur}
-      style={({ pressed }) => [
-        styles.tab,
-        current ? styles.current : styles.other,
-        pressed && !current && styles.pressed,
-        ring,
-      ]}
+      style={[styles.tab, { backgroundColor: fill }, ring, press.style]}
       testID={testID}
     >
       <Text
-        style={[styles.label, current ? styles.labelCurrent : styles.labelOther]}
+        style={[
+          styles.label,
+          current ? styles.labelCurrent : styles.labelOther,
+          { color: current ? chosen.ink : TONES[block].secondary },
+        ]}
         numberOfLines={1}
         accessibilityElementsHidden
         importantForAccessibility="no"
       >
         {label}
       </Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: {
-    backgroundColor: colors.surface1,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  row: { paddingHorizontal: spacing[4], gap: spacing[1] },
+  bar: { paddingVertical: spacing[3] },
+  row: { paddingHorizontal: spacing[5], gap: spacing[2] },
   tab: {
     minHeight: size.touchTarget,
     justifyContent: 'center',
     paddingHorizontal: spacing[4],
-    borderBottomWidth: 2,
+    borderRadius: radius.full,
   },
-  current: { borderBottomColor: colors.textPrimary },
-  other: { borderBottomColor: 'transparent' },
-  pressed: { borderBottomColor: colors.borderStrong },
   label: { fontSize: fontSize.sm },
-  labelCurrent: { ...font.medium, color: colors.textPrimary },
-  labelOther: { ...font.regular, color: colors.textSecondary },
+  labelCurrent: { ...font.medium },
+  labelOther: { ...font.regular },
 });

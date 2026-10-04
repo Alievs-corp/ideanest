@@ -1,12 +1,22 @@
 import type { ReactElement, ReactNode } from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
-import { AccessibilityInfo, Keyboard, StyleSheet } from 'react-native';
+import {
+  AccessibilityInfo,
+  Keyboard,
+  StyleSheet,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
-import { colors, radius } from '../../theme';
+import { colors, motion, radius, tint } from '../../theme';
 import { Field } from './field';
 import { FilePicker } from './file-picker';
+import { MotionBudgetProvider } from './motion-budget';
+import { SurfaceProvider } from './surface';
 
 /**
  * The picker returns a local asset or a sentence saying why not, and never a file the caller's
@@ -251,6 +261,100 @@ describe('FilePicker', () => {
     expect(tree.queryByRole('button', { name: en.mobile.kitForm.filePicker.library })).toBeNull();
     expect(tree.getByRole('button', { name: ZONE }).props.accessibilityState).toMatchObject({
       disabled: true,
+    });
+  });
+
+  describe('surfaces and motion', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    const styleOf = (node: { props: { style?: unknown } }): ViewStyle & TextStyle =>
+      StyleSheet.flatten(node.props.style as StyleProp<ViewStyle & TextStyle>) ?? {};
+    const scaleOf = (node: unknown) =>
+      (getAnimatedStyle(node as never) as { transform?: { scale: number }[] }).transform?.[0]
+        ?.scale;
+
+    interface HostNode {
+      type: string;
+      props: Record<string, unknown>;
+      children: readonly (HostNode | string)[];
+    }
+    /** Host descendants of a type, under one element. */
+    function inside(root: unknown, type: string): HostNode[] {
+      const found: HostNode[] = [];
+      const walk = (node: HostNode | string) => {
+        if (typeof node === 'string') return;
+        if (node.type === type) found.push(node);
+        node.children.forEach(walk);
+      };
+      (root as HostNode).children.forEach(walk);
+      return found;
+    }
+
+    it('inside a white sheet, the zone is a white-muted block with on-white words', async () => {
+      const tree = await renderEn(<SurfaceProvider surface="white">{cover()}</SurfaceProvider>);
+      expect(styleOf(tree.getByRole('button', { name: ZONE }))).toMatchObject({
+        backgroundColor: colors.whiteMuted,
+        borderColor: tint(colors.black, 0.16),
+        borderStyle: 'dashed',
+        borderRadius: radius.lg,
+      });
+      expect(styleOf(tree.getByText(en.mobile.kitForm.filePicker.prompt)).color).toBe(
+        colors.textOnWhite,
+      );
+    });
+
+    it('offers its sources in the white sheet, as white-muted rows with Bulk icons', async () => {
+      const tree = await renderEn(cover());
+      await fireEvent.press(tree.getByRole('button', { name: ZONE }));
+      for (const name of [
+        en.mobile.kitForm.filePicker.library,
+        en.mobile.kitForm.filePicker.camera,
+      ]) {
+        const row = tree.getByRole('button', { name });
+        expect(styleOf(row).backgroundColor).toBe(colors.whiteMuted);
+        expect(styleOf(tree.getByText(name)).color).toBe(colors.textOnWhite);
+        const glyph = inside(row, 'RNSVGSvgView')[0];
+        expect(glyph?.props.color).toBe(colors.textOnWhite);
+        // Bulk draws a second, translucent layer: more than one path.
+        expect(inside(row, 'RNSVGPath').length).toBeGreaterThan(1);
+      }
+    });
+
+    it('shows a refusal at once, in on-white ink on a white sheet, with a danger border', async () => {
+      picker.__setNextResult({
+        canceled: false,
+        assets: [{ uri: 'file:///clip.gif', mimeType: 'image/gif', fileSize: 1000 }],
+      });
+      const tree = await renderEn(<SurfaceProvider surface="white">{cover()}</SurfaceProvider>);
+      await chooseFromLibrary(tree);
+      const sentence = await tree.findByText(en.mobile.kitForm.filePicker.wrongType, {
+        includeHiddenElements: true,
+      });
+      expect(styleOf(sentence)).toMatchObject({ color: colors.textOnWhite });
+      expect(styleOf(sentence).opacity).toBeUndefined();
+      expect(styleOf(tree.getByRole('button', { name: ZONE })).borderColor).toBe(colors.danger);
+    });
+
+    it('the zone and the source rows give under the thumb', async () => {
+      const tree = await renderEn(cover());
+      const zone = tree.getByRole('button', { name: ZONE });
+      await fireEvent(zone, 'pressIn');
+      await waitFor(() => expect(scaleOf(zone)).toBe(motion.pressScale), { timeout: 3000 });
+      await fireEvent(zone, 'pressOut');
+
+      await fireEvent.press(zone);
+      const row = tree.getByRole('button', { name: en.mobile.kitForm.filePicker.camera });
+      await fireEvent(row, 'pressIn');
+      await waitFor(() => expect(scaleOf(row)).toBe(motion.pressScale), { timeout: 3000 });
+    });
+
+    it('stays still under Reduce Motion, with the pressed fill as the response', async () => {
+      jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+      const tree = await renderEn(<MotionBudgetProvider level="none">{cover()}</MotionBudgetProvider>);
+      await fireEvent(tree.getByRole('button', { name: ZONE }), 'pressIn');
+      const zone = styleOf(tree.getByRole('button', { name: ZONE }));
+      expect(zone.transform).toBeUndefined();
+      expect(zone.backgroundColor).toBe(colors.surface3);
     });
   });
 });

@@ -1,12 +1,16 @@
 import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { Stack, useRouter, type Href } from 'expo-router';
 import {
   Body,
   Card,
+  ContentSheet,
   Heading,
   InlineAlert,
   Subheading,
+  TONES,
+  useSurface,
 } from '../../components/ui';
 import { useOnline } from '../../lib/connectivity';
 import { signInHrefFor } from '../../lib/guard';
@@ -26,9 +30,11 @@ export function useLeavingSettings(): () => void {
 }
 
 /**
- * The frame every `settings/*` screen sits in (#161): signed-in only, motion under the
- * `mobile-design` skill §6 like every surface, the web's `AccountPageHeader`, and one offline
- * notice saying changes wait for a connection.
+ * The frame every `settings/*` screen sits in (#161): signed-in only, the web's
+ * `AccountPageHeader` and one offline notice saying changes wait for a connection on the dark
+ * canvas, and the screen's content in a white `ContentSheet` below them (`mobile-design` skill
+ * §2) — so its cards, fields and controls take their on-white skins. A stack route without the
+ * tab bar: the sheet runs under the home indicator and pads its content clear of it.
  */
 export function SettingsPage({
   section,
@@ -53,6 +59,7 @@ export function SettingsPage({
   const { signedIn } = useSession();
   const online = useOnline();
   const t = useT();
+  const insets = useContext(SafeAreaInsetsContext);
   const leaving = useRef(false);
   const markLeaving = useCallback(() => {
     leaving.current = true;
@@ -73,16 +80,16 @@ export function SettingsPage({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView
-            contentContainerStyle={styles.content}
+            style={styles.fill}
+            // The sheet's tail pulls back exactly this much, as it does under `Screen`.
+            contentContainerStyle={[styles.content, { paddingBottom: insets?.bottom ?? 0 }]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             testID={testID}
           >
-            <View style={styles.column}>
-              <View style={styles.header}>
-                <Heading accessibilityRole="header">{title}</Heading>
-                {intro === undefined ? null : <Body>{intro}</Body>}
-              </View>
+            <View style={[styles.column, styles.header]}>
+              <Heading accessibilityRole="header">{title}</Heading>
+              {intro === undefined ? null : <Body>{intro}</Body>}
               {offlineNotice && !online ? (
                 <InlineAlert
                   variant="warning"
@@ -91,8 +98,10 @@ export function SettingsPage({
                   testID="settings-offline"
                 />
               ) : null}
-              {children}
             </View>
+            <ContentSheet>
+              <View style={styles.column}>{children}</View>
+            </ContentSheet>
           </ScrollView>
         </KeyboardAvoidingView>
       ) : null}
@@ -101,7 +110,10 @@ export function SettingsPage({
   );
 }
 
-/** One titled card of a settings screen, the web's `rounded-2xl bg-surface-2` section. */
+/**
+ * One titled card of a settings screen, the web's `rounded-2xl bg-surface-2` section: inside the
+ * page's white sheet, the sheet's nested `whiteMuted` block.
+ */
 export function SettingsCard({
   title,
   intro,
@@ -135,8 +147,14 @@ export function InlineLink({
   readonly testID?: string;
 }) {
   const router = useRouter();
+  const ink = TONES[useSurface()].primary;
   return (
-    <Text accessibilityRole="link" onPress={() => router.push(href)} style={styles.link} testID={testID}>
+    <Text
+      accessibilityRole="link"
+      onPress={() => router.push(href)}
+      style={[styles.link, { color: ink }]}
+      testID={testID}
+    >
       {children}
     </Text>
   );
@@ -144,15 +162,16 @@ export function InlineLink({
 
 /** Bold words inside a sentence from `t.rich`. */
 export function Strong({ children }: { readonly children: ReactNode }) {
-  return <Text style={styles.strong}>{children}</Text>;
+  return <Text style={[styles.strong, { color: TONES[useSurface()].primary }]}>{children}</Text>;
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  content: { flexGrow: 1, paddingHorizontal: spacing[5], paddingVertical: spacing[6] },
+  fill: { flex: 1, backgroundColor: colors.surface1 },
+  // `Screen`'s 20pt gutter, which the `ContentSheet` bleeds through.
+  content: { flexGrow: 1, paddingHorizontal: spacing[5], paddingTop: spacing[6], gap: spacing[6] },
   column: { width: '100%', maxWidth: formMeasure, alignSelf: 'center', gap: spacing[6] },
   header: { gap: spacing[2] },
   card: { gap: spacing[4] },
-  link: { color: colors.textPrimary, textDecorationLine: 'underline' },
-  strong: { ...font.medium, color: colors.textPrimary },
+  link: { textDecorationLine: 'underline' },
+  strong: { ...font.medium },
 });

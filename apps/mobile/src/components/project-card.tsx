@@ -2,16 +2,28 @@ import Decimal from 'decimal.js';
 import { Link } from 'expo-router';
 import { Image } from 'expo-image';
 import { Glyphs } from '../icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { DiscoveryStatus } from '@ideanest/discovery/vocabulary';
 import { formatMoney } from '@ideanest/money';
 import { fillNodes } from '@ideanest/messages/placeholders';
 import type { Card } from '../api/queries';
 import { pluralCategory, useT } from '../lib/i18n';
 import { useLocale } from '../lib/locale';
-import { colors, font, fontSize, lineHeight, radius, size, spacing, tint } from '../theme';
+import { font, fontSize, lineHeight, radius, spacing, type Accent } from '../theme';
 import { Body, CardTitle, Meta } from './text';
-import { Icon, MediaFrame, ProgressBar, Tag, type IconComponent, type TagVariant } from './ui';
+import {
+  AccentCard,
+  Avatar,
+  Icon,
+  MediaFrame,
+  PressableScale,
+  ProgressBar,
+  TONES,
+  Tag,
+  useFocusRing,
+  type IconComponent,
+  type TagVariant,
+} from './ui';
 
 /**
  * One campaign in a list — the web's `components/discovery/ProjectCard.tsx`, field by field
@@ -20,8 +32,8 @@ import { Icon, MediaFrame, ProgressBar, Tag, type IconComponent, type TagVariant
  *
  * <h2>The whole card is one link with one name</h2>
  *
- * A thumb aims at the picture, so the `Pressable` wraps everything, takes the `link` role and is
- * named "title, by creator". A screen reader announces one link per campaign rather than the
+ * A thumb aims at the picture, so the `PressableScale` wraps everything, takes the `link` role and
+ * is named "title, by creator". A screen reader announces one link per campaign rather than the
  * cover, the title, the tags and the bar as separate stops — the web's stretched anchor, natively.
  *
  * An accessible parent swallows its children on iOS, so the facts the card prints — the status,
@@ -36,21 +48,42 @@ import { Icon, MediaFrame, ProgressBar, Tag, type IconComponent, type TagVariant
  * "79.995" reads "80% funded" on both platforms. The only `number` is the bar's fill width,
  * which is geometry, not an amount.
  *
- * <h2>Lime is the urgency chip, and only that</h2>
+ * <h2>An accent card, and lime is still only the urgency chip</h2>
  *
- * In the last two days of a live campaign a lime chip with near-black text says "hurry". It is
- * the one lime element on the card: a funded bar is `--success`, a successful badge is
- * `--success`, closing soon is `--warning`. Every tag is an icon plus a word, so no colour carries
- * a meaning alone.
+ * The card is an `AccentCard` (`mobile-design` skill §2, §4): sun, mint or sky as the whole
+ * surface with its own glow, picked from the campaign's id by {@link accentFor} so a campaign
+ * keeps its colour wherever it is drawn. The accent carries no meaning. In the last two days of a
+ * live campaign a lime chip with near-black text says "hurry" — the one lime element on the card;
+ * a funded bar and a successful badge are `--success`, closing soon is `--warning`. Every tag is an
+ * icon plus a word, so no colour carries a meaning alone, and the text reads in the accent's
+ * near-black tones (`SurfaceProvider surface="accent"`).
  *
- * <h2>No entry animation</h2>
+ * <h2>Motion</h2>
  *
- * Cards do not animate in (they live in unbounded lists, `mobile-design` skill §6.5); the progress
- * bar's rise and the press feedback are the motion on a card.
+ * The press gives (`PressableScale`). The entry rise belongs to the list that draws the card
+ * (`CampaignColumn`, `CampaignList`), which knows whether it is the first screenful.
  */
 
 /** Two days or fewer left — what §8.1 calls "closing within 48 hours". */
 const URGENT_DAYS = 2;
+
+const ACCENTS: readonly Accent[] = ['sun', 'mint', 'sky'];
+
+/**
+ * The card's accent, hashed from its id (or slug): the same campaign is the same colour on every
+ * screen. A decoration, never a meaning.
+ */
+export function accentFor(card: Pick<Card, 'id' | 'slug' | 'title'>): Accent {
+  const key = card.id ?? card.slug ?? card.title ?? '';
+  let hash = 0;
+  for (let index = 0; index < key.length; index += 1) {
+    hash = (hash * 31 + key.charCodeAt(index)) | 0;
+  }
+  return ACCENTS[Math.abs(hash) % ACCENTS.length] ?? 'sun';
+}
+
+/** The near-black tones every accent takes for its text and inline icons. */
+const INK = TONES.accent;
 
 interface BadgeSpec {
   readonly icon: IconComponent;
@@ -103,6 +136,7 @@ export interface ProjectCardProps {
 export function ProjectCard({ card, priority = false }: ProjectCardProps) {
   const t = useT();
   const locale = useLocale();
+  const ring = useFocusRing();
 
   const title = card.title ?? t('mobile.campaign.untitled');
   const creator = card.creator?.name ?? '';
@@ -158,32 +192,34 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
       }}
       asChild
     >
-      <Pressable
+      <PressableScale
         accessibilityRole="link"
         accessibilityLabel={byline === '' ? title : `${title}, ${byline}`}
         accessibilityValue={{ text: facts.join(', ') }}
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        onFocus={ring.onFocus}
+        onBlur={ring.onBlur}
+        contentStyle={[styles.target, ring.ring]}
       >
-        {/*
-          The 16:9 box is reserved whether or not there is a cover, so every card in a list is the
-          same height before anything decodes. The cover is decorative: the card's name already
-          says what it is a picture of.
-        */}
-        <MediaFrame ratio="16/9">
-          {card.image?.url === undefined ? null : (
-            <Image
-              source={{ uri: card.image.url }}
-              style={styles.cover}
-              contentFit="cover"
-              priority={priority ? 'high' : 'normal'}
-              transition={0}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            />
-          )}
-        </MediaFrame>
+        <AccentCard accent={accentFor(card)}>
+          {/*
+            The 16:9 box is reserved whether or not there is a cover, so every card in a list is the
+            same height before anything decodes. The cover is decorative: the card's name already
+            says what it is a picture of.
+          */}
+          <MediaFrame ratio="16/9" radius="lg">
+            {card.image?.url === undefined ? null : (
+              <Image
+                source={{ uri: card.image.url }}
+                style={styles.cover}
+                contentFit="cover"
+                priority={priority ? 'high' : 'normal'}
+                transition={0}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              />
+            )}
+          </MediaFrame>
 
-        <View style={styles.body}>
           {tagged ? (
             <View style={styles.tags}>
               {status === null ? null : (
@@ -205,7 +241,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
               ) : null}
               {/*
                 The last-48-hours countdown, and the one lime element on the card: a lime fill
-                with near-black words. Lime text on a dark surface is what §9.1 forbids.
+                with near-black words, never lime text.
               */}
               {urgent ? (
                 <Tag label={daysLabel} icon={Glyphs.Clock} variant="urgent" testID="urgency-chip" />
@@ -216,11 +252,15 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
           <CardTitle numberOfLines={2}>{title}</CardTitle>
 
           {creator === '' ? null : (
-            <Body style={styles.byline}>
-              {fillNodes(String(t.raw('discovery.card.by')), {
-                creator: <Text style={styles.creator}>{creator}</Text>,
-              })}
-            </Body>
+            <View style={styles.creatorRow}>
+              {/* Decorative: the name is written beside it. */}
+              <Avatar name={creator} src={card.creator?.avatarUrl} size="xs" decorative />
+              <Body style={styles.byline}>
+                {fillNodes(String(t.raw('discovery.card.by')), {
+                  creator: <Text style={styles.creator}>{creator}</Text>,
+                })}
+              </Body>
+            </View>
           )}
 
           {completion !== null ? (
@@ -256,38 +296,31 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
 
           <View style={styles.footer}>
             <View style={styles.fact}>
-              <Icon icon={Glyphs.People} size={14} color={colors.textTertiary} />
+              <Icon icon={Glyphs.People} size={14} color={INK.tertiary} />
               <Meta style={[styles.small, styles.tabular]}>{backersLabel}</Meta>
             </View>
             {/* Days left as text whenever it is not already the lime chip. */}
             {!urgent && showDays ? (
               <View style={styles.fact}>
-                <Icon icon={Glyphs.Clock} size={14} color={colors.textTertiary} />
+                <Icon icon={Glyphs.Clock} size={14} color={INK.tertiary} />
                 <Meta style={[styles.small, styles.tabular]}>{daysLabel}</Meta>
               </View>
             ) : null}
           </View>
-        </View>
-      </Pressable>
+        </AccentCard>
+      </PressableScale>
     </Link>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface2,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  pressed: { backgroundColor: colors.surface3 },
+  // The focus ring follows the accent card's corners.
+  target: { borderRadius: radius.xl },
   cover: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
-  body: { padding: size.cardPaddingSmall, gap: spacing[3] },
   tags: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing[2] },
-  byline: { fontSize: fontSize.sm, lineHeight: lineHeight.small },
-  // The web's `text-white/80` on the name: white at 80%, derived from the token.
-  creator: { color: tint(colors.textPrimary, 0.8) },
+  creatorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  byline: { flexShrink: 1, fontSize: fontSize.sm, lineHeight: lineHeight.small },
+  creator: { color: INK.primary },
   funding: { gap: spacing[2], paddingTop: spacing[2] },
   figures: {
     flexDirection: 'row',
@@ -301,14 +334,14 @@ const styles = StyleSheet.create({
     ...font.medium,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textPrimary,
+    color: INK.primary,
     fontVariant: ['tabular-nums'],
   },
   funded: {
     ...font.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textSecondary,
+    color: INK.secondary,
     fontVariant: ['tabular-nums'],
   },
   small: { ...font.regular },

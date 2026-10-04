@@ -5,8 +5,8 @@ import { CAMPAIGN_THREAD_PARAM, campaignCursorFrom } from '@ideanest/campaign/ta
 import { conversationOf, threadsOf, useCommentThreads } from '../../../lib/comments';
 import { useT } from '../../../lib/i18n';
 import { useSession } from '../../../lib/use-session';
-import { colors, font, fontSize, lineHeight, spacing, tracking } from '../../../theme';
-import { Icon, Pill } from '../../ui';
+import { font, fontSize, lineHeight, spacing, tracking } from '../../../theme';
+import { Icon, Pill, TONES, useSurface } from '../../ui';
 import { CommentCard } from './comments/comment-card';
 import { CommentComposer } from './comments/comment-composer';
 import { CommentThreadBlock, QuietLink, ReplyRow } from './comments/comment-thread';
@@ -180,8 +180,13 @@ export function useCommentsTab(context: CampaignTabContext): CampaignTabBody {
 
 function CommentsHeading() {
   const t = useT('campaign.comments');
+  const tone = TONES[useSurface()];
   return (
-    <Text accessibilityRole="header" style={styles.heading} testID="comments-heading">
+    <Text
+      accessibilityRole="header"
+      style={[styles.heading, { color: tone.primary }]}
+      testID="comments-heading"
+    >
       {t('heading')}
     </Text>
   );
@@ -211,11 +216,12 @@ function TabComposer({
 
 function AllComments({ onPress }: { readonly onPress: () => void }) {
   const t = useT('campaign.comments');
+  const tone = TONES[useSurface()];
   return (
     <QuietLink
       label={t('all')}
       onPress={onPress}
-      leading={<Icon icon={Glyphs.ArrowLeft} size={16} color={colors.textPrimary} />}
+      leading={<Icon icon={Glyphs.ArrowLeft} size={16} color={tone.primary} />}
       testID="comments-all"
     />
   );
@@ -224,8 +230,9 @@ function AllComments({ onPress }: { readonly onPress: () => void }) {
 /** Why the writes under the comments are disabled, where no composer is there to say it. */
 function OfflineNote() {
   const t = useT();
+  const tone = TONES[useSurface()];
   return (
-    <Text style={styles.note} testID="comments-offline">
+    <Text style={[styles.note, { color: tone.secondary }]} testID="comments-offline">
       {t('mobile.campaign.comments.offline')}
     </Text>
   );
@@ -233,8 +240,9 @@ function OfflineNote() {
 
 function Note({ kind }: { readonly kind: 'failed' | 'empty' }) {
   const t = useT('campaign.comments');
+  const tone = TONES[useSurface()];
   return (
-    <Text style={styles.note} testID={`comments-${kind}`}>
+    <Text style={[styles.note, { color: tone.secondary }]} testID={`comments-${kind}`}>
       {t(kind)}
     </Text>
   );
@@ -270,9 +278,12 @@ function MorePill({
 
 function OlderFailed({ onRetry }: { readonly onRetry: () => void }) {
   const t = useT();
+  const tone = TONES[useSurface()];
   return (
     <View style={[styles.footer, styles.failedFooter]} testID="comments-older-failed">
-      <Text style={styles.note}>{t('mobile.campaign.comments.olderFailed')}</Text>
+      <Text style={[styles.note, { color: tone.secondary }]}>
+        {t('mobile.campaign.comments.olderFailed')}
+      </Text>
       <Pill label={t('common.tryAgain')} variant="outline" size="sm" onPress={onRetry} />
     </View>
   );
@@ -289,13 +300,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize.h3,
     lineHeight: lineHeight.h3,
     letterSpacing: tracking.h3,
-    color: colors.textPrimary,
   },
   note: {
     ...font.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textSecondary,
   },
   footer: { paddingTop: spacing[6], alignItems: 'flex-start' },
   failedFooter: { gap: spacing[3] },

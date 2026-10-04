@@ -1,20 +1,26 @@
-import { Link, Stack, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { Stack, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSavedProjects } from '../api/queries';
+import { FIRST_SCREENFUL, FadeUp } from '../components/motion';
 import { CardTitle, Meta } from '../components/text';
 import {
+  Card,
   EmptyState,
+  Icon,
   InlineAlert,
   Pill,
   Screen,
   Skeleton,
   SkeletonGroup,
+  TONES,
 } from '../components/ui';
+import { Glyphs } from '../icons';
 import { useT } from '../lib/i18n';
 import { useSession } from '../lib/use-session';
-import { colors, radius, size, spacing } from '../theme';
+import { spacing } from '../theme';
 
 /**
  * What somebody kept — one of the two lists §4.12 MB-04 promises offline.
@@ -41,21 +47,16 @@ import { colors, radius, size, spacing } from '../theme';
  * <h2>Motion</h2>
  *
  * The `mobile-design` skill §6: the placeholders shimmer while the first answer
- * is on its way, and the rows of this unbounded list do not animate in (§6.5).
+ * is on its way, the first screenful of rows rises in once on mount (§6.5) — rows the list
+ * draws later, as it scrolls or refetches, never do — and each row, a raised `Card` on the
+ * canvas, gives under the thumb.
  */
 
 const styles = StyleSheet.create({
-  content: { padding: size.cardGap, gap: spacing[3] },
-  row: {
-    backgroundColor: colors.surface2,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: size.cardPaddingSmall,
-    gap: spacing[2],
-    minHeight: size.touchTarget,
-  },
-  pressed: { backgroundColor: colors.surface3 },
+  content: { paddingHorizontal: spacing[5], paddingTop: spacing[4] },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
+  rowText: { flex: 1, gap: spacing[1] },
+  placeholder: { gap: spacing[2] },
   separator: { height: spacing[3] },
   placeholders: { gap: spacing[3] },
   notice: { paddingBottom: spacing[3] },
@@ -81,7 +82,6 @@ export default function SavedScreen() {
 function SavedList() {
   const router = useRouter();
   const t = useT();
-  const insets = useSafeAreaInsets();
   const { signedIn } = useSession();
   const saved = useSavedProjects(signedIn);
 
@@ -135,16 +135,36 @@ function SavedList() {
         <SkeletonGroup label={t('account.signals.saved.loading')}>
           <View style={styles.placeholders}>
             {PLACEHOLDER_ROWS.map((row) => (
-              <View key={row} style={styles.row}>
-                <Skeleton height={18} width="70%" />
-                <Skeleton height={12} width="35%" />
-              </View>
+              <Card key={row} size="sm">
+                <View style={styles.placeholder}>
+                  <Skeleton height={18} width="70%" />
+                  <Skeleton height={12} width="35%" />
+                </View>
+              </Card>
             ))}
           </View>
         </SkeletonGroup>
       </Screen>
     );
   }
+
+  return <SavedRows items={items} stale={saved.isError} />;
+}
+
+type SavedItem = NonNullable<NonNullable<ReturnType<typeof useSavedProjects>['data']>['items']>[number];
+
+/**
+ * The list, mounted once there is something in it. The projects in it on that first draw are the
+ * ones that may rise in (`mobile-design` §6.5), each once: a row FlashList draws later — scrolled
+ * to, appended by a refetch, or a recycled cell coming back into view — renders still.
+ */
+function SavedRows({ items, stale }: { readonly items: readonly SavedItem[]; readonly stale: boolean }) {
+  const t = useT();
+  const insets = useSafeAreaInsets();
+  const [first] = useState<ReadonlySet<string>>(
+    () => new Set(items.map((item) => item.projectId ?? '')),
+  );
+  const played = useRef(new Set<string>());
 
   return (
     <FlashList
@@ -156,7 +176,7 @@ function SavedList() {
         // Shown only when a refetch actually failed. A cache being used while
         // the network is fine is not worth a banner.
         // A warning read in its place, not announced: the offline banner already said it once.
-        saved.isError ? (
+        stale ? (
           <View style={styles.notice}>
             <InlineAlert
               variant="warning"
@@ -166,29 +186,59 @@ function SavedList() {
           </View>
         ) : undefined
       }
-      renderItem={({ item }) => (
-        <Link
-          href={{
-            pathname: '/projects/[creatorSlug]/[projectSlug]',
-            params: {
-              creatorSlug: item.creatorSlug ?? '',
-              projectSlug: item.projectSlug ?? '',
-            },
-          }}
-          asChild
-        >
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={item.title ?? t('mobile.campaign.untitled')}
-            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-          >
-            <CardTitle numberOfLines={2}>{item.title ?? t('mobile.campaign.untitled')}</CardTitle>
-            <Meta>{item.creatorSlug ?? ''}</Meta>
-          </Pressable>
-        </Link>
+      renderItem={({ item, index }) => (
+        <SavedRow item={item} index={index} first={first} played={played.current} />
       )}
     />
   );
+}
+
+function SavedRow({
+  item,
+  index,
+  first,
+  played,
+}: {
+  readonly item: SavedItem;
+  readonly index: number;
+  readonly first: ReadonlySet<string>;
+  readonly played: Set<string>;
+}) {
+  const router = useRouter();
+  const t = useT();
+  const key = item.projectId ?? '';
+  // Frozen when this cell mounts: a recycled cell keeps its wrapper and never rises again.
+  const [entry] = useState(() => (first.has(key) && !played.has(key) ? index : FIRST_SCREENFUL));
+  useEffect(() => {
+    played.add(key);
+  }, [key, played]);
+
+  const title = item.title ?? t('mobile.campaign.untitled');
+  const row = (
+    <Card
+      size="sm"
+      accessibilityRole="link"
+      accessibilityLabel={title}
+      onPress={() =>
+        router.push({
+          pathname: '/projects/[creatorSlug]/[projectSlug]',
+          params: {
+            creatorSlug: item.creatorSlug ?? '',
+            projectSlug: item.projectSlug ?? '',
+          },
+        })
+      }
+    >
+      <View style={styles.row}>
+        <View style={styles.rowText}>
+          <CardTitle numberOfLines={2}>{title}</CardTitle>
+          <Meta>{item.creatorSlug ?? ''}</Meta>
+        </View>
+        <Icon icon={Glyphs.ArrowRight2} size={18} color={TONES.dark.tertiary} />
+      </View>
+    </Card>
+  );
+  return <FadeUp index={entry}>{row}</FadeUp>;
 }
 
 function Separator() {

@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
-import { colors, motion, radius as radii } from '../../theme';
+import { motion, radius as radii } from '../../theme';
 import { useMotionAllowed } from './motion-budget';
+import { BLOCK, blockSurface, useSurface } from './surface';
 
 /**
  * The media primitive — the native `Media` and `MediaFrame` (`docs/ui-kit.md` §7.16).
@@ -30,11 +31,11 @@ import { useMotionAllowed } from './motion-budget';
  *
  * <h2>Motion</h2>
  *
- * `expo-image` fades a picture in over its placeholder by default. That fade is kept only where the
- * surface's budget is `moderate` or more — the project page, the home screen — and is
- * `transition={0}` otherwise: §5.1 forbids animation on discovery's cards, and a grid that
- * cross-fades twenty-four covers is the long-list animation §8 rules out. With Reduce Motion it is
- * always 0.
+ * The picture arriving is the skill's skeleton → content crossfade (`mobile-design` §6.3): the
+ * reserved block (`surface3` on the canvas, `whiteMuted` in a white sheet) or the inline preview,
+ * then the picture over it on opacity alone — `expo-image`'s native `transition` of
+ * `motion.overlay`, off the JS thread. It is a load, not an entry, so it runs in lists too. With
+ * Reduce Motion the picture replaces the placeholder at once (`transition={0}`).
  */
 
 export const MEDIA_RATIOS = {
@@ -97,16 +98,21 @@ export interface MediaFrameProps {
 }
 
 /**
- * The reserved, clipped, surface-3 box, for a caller that brings its own image element. `Media` is
+ * The reserved, clipped placeholder box, for a caller that brings its own image element. `Media` is
  * the frame with an `expo-image` already in it.
  */
 export function MediaFrame({ ratio, radius = 'none', children, style, testID }: MediaFrameProps) {
+  const placeholder = BLOCK[blockSurface(useSurface())].placeholder;
   return (
     <View
       testID={testID}
       style={[
         styles.frame,
-        { aspectRatio: aspectRatioOf(ratio), borderRadius: RADIUS[radius] },
+        {
+          aspectRatio: aspectRatioOf(ratio),
+          borderRadius: RADIUS[radius],
+          backgroundColor: placeholder,
+        },
         style,
       ]}
     >
@@ -135,7 +141,7 @@ export type MediaProps = {
 
 export function Media(props: MediaProps) {
   const { src, ratio, radius = 'none', placeholder, fit = 'cover', style, testID } = props;
-  const fades = useMotionAllowed('moderate');
+  const fades = useMotionAllowed('minimal');
   const named = props.decorative !== true && props.alt !== undefined && props.alt !== '';
   const preview =
     placeholder !== undefined && placeholder !== null && isPlaceholderUri(placeholder)
@@ -163,6 +169,6 @@ export function Media(props: MediaProps) {
 }
 
 const styles = StyleSheet.create({
-  frame: { width: '100%', overflow: 'hidden', backgroundColor: colors.surface3 },
+  frame: { width: '100%', overflow: 'hidden' },
   fill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
 });
