@@ -50,9 +50,9 @@ jest.mock('react-native-mmkv', () => ({
  * system.
  *
  * <p>What is NOT mocked: `react-native-reanimated` (see the note at the end),
- * `@shopify/flash-list`, `react-native-safe-area-context` and
- * `react-native-gesture-handler`, all of which ship working JavaScript
- * implementations and are exercised for real.
+ * `@shopify/flash-list` and `react-native-safe-area-context`, which ship working
+ * JavaScript implementations and are exercised for real. Gesture handler's
+ * native half is replaced by its own test setup, at the end of this file.
  */
 
 /**
@@ -492,3 +492,22 @@ jest.mock('expo-router', () => {
  * Reanimated runs, `FadeInDown` is a real animation object, and a component that
  * misuses one fails here rather than on a device.
  */
+
+/**
+ * Gesture handler — `SwipeToConfirm` (#280) is the first `GestureDetector` in the app.
+ *
+ * <p>The library's own `jestSetup` replaces its native module and host detector with
+ * the JavaScript stand-ins its `jest-utils` drive, so a test can push a pan through
+ * `fireGestureHandler` and the real worklet callbacks run against the real Reanimated.
+ *
+ * <p>One thing it does not cover: on import it asks `react-native-worklets` for the
+ * UI runtime's holder, which the JavaScript half throws on ("not supported on web"),
+ * failing whichever test was running when the microtask fired. That one function is
+ * answered with an empty holder; the rest of worklets is the real module.
+ */
+import 'react-native-gesture-handler/jestSetup';
+
+jest.mock('react-native-worklets', () => ({
+  ...jest.requireActual('react-native-worklets'),
+  getUIRuntimeHolder: () => ({}),
+}));
