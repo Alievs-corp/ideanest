@@ -35,7 +35,6 @@ import { NotFoundState } from '../not-found-state';
 import {
   AccentScopeProvider,
   InlineAlert,
-  MotionBudgetProvider,
   Screen,
   Skeleton,
   SkeletonGroup,
@@ -92,10 +91,10 @@ import { useUpdatesTab } from './tabs/updates-tab';
  *
  * <h2>Motion</h2>
  *
- * None that arrives: no `FadeUp` on any block, no fade on the cover, the persistent Back bar
- * appears and goes without a transition (docs/motion-system.md §5: motion decreases as money gets
- * closer). The route declares §5's moderate budget for what the kit does on a press and for the
- * progress bar's fill, which §6 keeps.
+ * None that arrives yet: no `FadeUp` on any block, no fade on the cover, the persistent Back bar
+ * appears and goes without a transition. The `mobile-design` skill §6 now allows this page motion
+ * (the card → page shared transition, #279); until then only the kit's own motion runs — press
+ * feedback and the progress bar's fill.
  */
 export interface CampaignScreenProps {
   readonly creatorSlug: string;
@@ -142,7 +141,6 @@ export function CampaignScreen({ creatorSlug, projectSlug, now }: CampaignScreen
     // otherwise the failure with a retry — never the not-found screen, which is a different fact.
     return (
       <Screen
-        motion="moderate"
         hasContent={!query.isError}
         error={
           query.isError
@@ -446,48 +444,46 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
 
   return (
     <AccentScopeProvider>
-      <MotionBudgetProvider level="moderate">
-        <View style={styles.screen} testID="campaign-screen">
-          <Stack.Screen options={{ title: campaign.title, headerBackTitle: t('mobile.nav.back') }} />
-          <FlatList
-            ref={list}
-            data={rows}
-            keyExtractor={(row) => row.key}
-            renderItem={renderRow}
-            ListHeaderComponent={header}
-            ListFooterComponent={footer}
-            // The tab bar is data[0]; with a header, the list counts the header as index 0.
-            stickyHeaderIndices={[1]}
-            onScroll={onScroll}
-            scrollEventThrottle={16}
-            onContentSizeChange={(_width, height) => {
-              contentHeight.current = height;
-              askForMore();
-            }}
-            onLayout={(event) => {
-              viewport.current = event.nativeEvent.layout.height;
-              placeBar();
-              askForMore();
-            }}
-            keyboardShouldPersistTaps="handled"
-            // The comment composers (the Comments tab) sit in this list; iOS lifts it over the
-            // keyboard rather than covering the field being typed in.
-            automaticallyAdjustKeyboardInsets
-            contentInsetAdjustmentBehavior="automatic"
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={refresh}
-                tintColor={colors.textSecondary}
-                colors={[colors.textPrimary]}
-                progressBackgroundColor={colors.surface3}
-              />
-            }
-            testID="campaign-list"
-          />
-          {barShown ? <PersistentBackBar projectId={campaign.id} title={campaign.title} /> : null}
-        </View>
-      </MotionBudgetProvider>
+      <View style={styles.screen} testID="campaign-screen">
+        <Stack.Screen options={{ title: campaign.title, headerBackTitle: t('mobile.nav.back') }} />
+        <FlatList
+          ref={list}
+          data={rows}
+          keyExtractor={(row) => row.key}
+          renderItem={renderRow}
+          ListHeaderComponent={header}
+          ListFooterComponent={footer}
+          // The tab bar is data[0]; with a header, the list counts the header as index 0.
+          stickyHeaderIndices={[1]}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          onContentSizeChange={(_width, height) => {
+            contentHeight.current = height;
+            askForMore();
+          }}
+          onLayout={(event) => {
+            viewport.current = event.nativeEvent.layout.height;
+            placeBar();
+            askForMore();
+          }}
+          keyboardShouldPersistTaps="handled"
+          // The comment composers (the Comments tab) sit in this list; iOS lifts it over the
+          // keyboard rather than covering the field being typed in.
+          automaticallyAdjustKeyboardInsets
+          contentInsetAdjustmentBehavior="automatic"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={refresh}
+              tintColor={colors.textSecondary}
+              colors={[colors.textPrimary]}
+              progressBackgroundColor={colors.surface3}
+            />
+          }
+          testID="campaign-list"
+        />
+        {barShown ? <PersistentBackBar projectId={campaign.id} title={campaign.title} /> : null}
+      </View>
     </AccentScopeProvider>
   );
 }

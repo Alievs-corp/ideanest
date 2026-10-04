@@ -8,7 +8,6 @@ import { FadeUp } from '../motion';
 import { Body, Heading } from '../text';
 import {
   EmptyState,
-  MotionBudgetProvider,
   Pill,
   SkeletonCard,
   SkeletonGroup,
@@ -32,7 +31,8 @@ import { CollectionCard } from './collection-card';
  *
  * <h2>Motion</h2>
  *
- * The heading and the intro fade up once; the cards never move (§8: no animation in lists).
+ * The heading and the intro fade up once; the cards never move (`mobile-design` skill §6.5: no
+ * entry animation in an unbounded list).
  */
 export function CollectionIndex() {
   const t = useT('discovery.collections');
@@ -43,71 +43,71 @@ export function CollectionIndex() {
   const items = collections.data ?? [];
 
   return (
-    <MotionBudgetProvider level="minimal">
-      <Stack.Screen options={{ title: t('title') }} />
-      <ScrollView
-        style={styles.fill}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={pulling}
-            onRefresh={() => {
-              haptics.refresh();
-              setPulling(true);
-              void collections.refetch().finally(() => setPulling(false));
-            }}
-            tintColor={colors.textSecondary}
-            colors={[colors.textPrimary]}
-            progressBackgroundColor={colors.surface3}
-          />
-        }
-        testID="collection-index"
-      >
-        <FadeUp>
-          <View style={styles.titles}>
-            <Heading accessibilityRole="header">{t('title')}</Heading>
-            <Body>{t('intro')}</Body>
-          </View>
-        </FadeUp>
+    <>
+    <Stack.Screen options={{ title: t('title') }} />
+    <ScrollView
+      style={styles.fill}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={pulling}
+          onRefresh={() => {
+            haptics.refresh();
+            setPulling(true);
+            void collections.refetch().finally(() => setPulling(false));
+          }}
+          tintColor={colors.textSecondary}
+          colors={[colors.textPrimary]}
+          progressBackgroundColor={colors.surface3}
+        />
+      }
+      testID="collection-index"
+    >
+      <FadeUp>
+        <View style={styles.titles}>
+          <Heading accessibilityRole="header">{t('title')}</Heading>
+          <Body>{t('intro')}</Body>
+        </View>
+      </FadeUp>
 
-        {collections.isPending ? (
-          <SkeletonGroup label={tAll('mobile.browse.loadingCollections')}>
-            <View style={styles.list}>
-              {[0, 1, 2].map((index) => (
-                <SkeletonCard key={index} />
-              ))}
-            </View>
-          </SkeletonGroup>
-        ) : items.length === 0 ? (
-          <EmptyState
-            variant="empty"
-            title={t('emptyTitle')}
-            description={t('emptyBody')}
-            action={
-              <View style={styles.actions}>
-                <Pill label={t('emptyAction')} onPress={() => router.push('/discover')} />
-                {collections.isError ? (
-                  <Pill
-                    label={tAll('discovery.feed.tryAgain')}
-                    variant="ghost"
-                    busy={collections.isFetching}
-                    onPress={() => void collections.refetch()}
-                    testID="collections-retry"
-                  />
-                ) : null}
-              </View>
-            }
-            testID="collections-empty"
-          />
-        ) : (
-          <View style={styles.list} accessibilityLabel={t('listLabel')} testID="collection-list">
-            {items.map((collection, index) => (
-              <CollectionCard key={collection.id} collection={collection} priority={index < 3} />
+      {collections.isPending ? (
+        <SkeletonGroup label={tAll('mobile.browse.loadingCollections')}>
+          <View style={styles.list}>
+            {[0, 1, 2].map((index) => (
+              <SkeletonCard key={index} />
             ))}
           </View>
-        )}
-      </ScrollView>
-    </MotionBudgetProvider>
+        </SkeletonGroup>
+      ) : items.length === 0 ? (
+        <EmptyState
+          variant="empty"
+          title={t('emptyTitle')}
+          description={t('emptyBody')}
+          action={
+            <View style={styles.actions}>
+              <Pill label={t('emptyAction')} onPress={() => router.push('/discover')} />
+              {collections.isError ? (
+                <Pill
+                  label={tAll('discovery.feed.tryAgain')}
+                  variant="ghost"
+                  busy={collections.isFetching}
+                  onPress={() => void collections.refetch()}
+                  testID="collections-retry"
+                />
+              ) : null}
+            </View>
+          }
+          testID="collections-empty"
+        />
+      ) : (
+        <View style={styles.list} accessibilityLabel={t('listLabel')} testID="collection-list">
+          {items.map((collection, index) => (
+            <CollectionCard key={collection.id} collection={collection} priority={index < 3} />
+          ))}
+        </View>
+      )}
+    </ScrollView>
+  </>
   );
 }
 

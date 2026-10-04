@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Clock } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import {
   countdownIntervalMs,
   countdownLabel,
@@ -86,7 +86,7 @@ export function CampaignCountdown({ deadline, active }: CampaignCountdownProps) 
       style={styles.row}
       testID="campaign-countdown"
     >
-      <Icon icon={Clock} size={14} color={colors.textSecondary} />
+      <Icon icon={Glyphs.Clock} size={14} color={colors.textSecondary} />
       <Text style={styles.text}>{t('left', { time: label })}</Text>
     </View>
   );

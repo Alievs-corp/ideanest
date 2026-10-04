@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
-import { X } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import {
   colors,
@@ -174,7 +174,7 @@ export function Sheet({
           <Text ref={heading} accessibilityRole="header" style={styles.title}>
             {title}
           </Text>
-          <IconButton icon={X} label={t('close')} variant="ghost" size="sm" onPress={onClose} />
+          <IconButton icon={Glyphs.Close} label={t('close')} variant="ghost" size="sm" onPress={onClose} />
         </View>
       </View>
 

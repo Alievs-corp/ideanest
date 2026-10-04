@@ -8,7 +8,6 @@ import {
   Field,
   Heading,
   InlineAlert,
-  MotionBudgetProvider,
   Pill,
   Screen,
   Select,
@@ -120,9 +119,7 @@ const SKELETON_FIELDS = [0, 1, 2, 3] as const;
 
 export function ShippingAddressScreen({ id }: { readonly id: string }) {
   return (
-    <MotionBudgetProvider level="none">
-      <ShippingAddressGate id={id} />
-    </MotionBudgetProvider>
+    <ShippingAddressGate id={id} />
   );
 }
 

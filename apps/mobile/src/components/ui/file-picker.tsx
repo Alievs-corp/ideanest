@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, CircleAlert, Images, Upload } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { useLocale } from 'use-intl';
 import { formatCount, useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, size as measure, spacing } from '../../theme';
@@ -226,7 +226,7 @@ export function FilePicker({
           ring,
         ]}
       >
-        <Icon icon={Upload} size={20} color={colors.textTertiary} />
+        <Icon icon={Glyphs.Export} size={20} color={colors.textTertiary} />
         <Text style={styles.prompt}>{prompt ?? t('prompt')}</Text>
         <View style={styles.pill}>
           <Text style={styles.pillLabel}>{choose}</Text>
@@ -242,7 +242,7 @@ export function FilePicker({
           importantForAccessibility="no-hide-descendants"
         >
           <View style={styles.refusalIcon}>
-            <Icon icon={CircleAlert} size={14} color={colors.danger} />
+            <Icon icon={Glyphs.Warning2} size={14} color={colors.danger} />
           </View>
           <Text style={styles.refusalText}>{refusal}</Text>
         </View>
@@ -256,13 +256,13 @@ export function FilePicker({
         returnFocusTo={zone}
       >
         <SourceRow
-          icon={Images}
+          icon={Glyphs.Gallery}
           label={t('library')}
           onPress={() => void pick('library')}
           disabled={busy}
         />
         <SourceRow
-          icon={Camera}
+          icon={Glyphs.Camera}
           label={t('camera')}
           onPress={() => void pick('camera')}
           disabled={busy}
@@ -292,7 +292,7 @@ function SourceRow({
   onPress,
   disabled,
 }: {
-  icon: typeof Images;
+  icon: typeof Glyphs.Gallery;
   label: string;
   onPress: () => void;
   disabled: boolean;

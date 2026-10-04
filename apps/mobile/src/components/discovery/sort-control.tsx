@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ChevronDown } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { labelOf, sortsFor, type DiscoverySort } from '@ideanest/discovery/vocabulary';
 import { useFilterVocabulary } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
@@ -47,7 +47,7 @@ export function SortControl({ sort, hasQuery, onChange }: SortControlProps) {
         <Text style={styles.label} numberOfLines={1}>
           {t('sortLabel')}: <Text style={styles.value}>{current}</Text>
         </Text>
-        <Icon icon={ChevronDown} size={16} color={colors.textTertiary} />
+        <Icon icon={Glyphs.ArrowDown2} size={16} color={colors.textTertiary} />
       </Pressable>
 
       <Sheet

@@ -30,7 +30,7 @@ describe('EmptyState', () => {
     expect(getByRole('header', { name: 'Nothing saved yet' })).toBeTruthy();
     const glyph = container.queryAll((node) => (node.type as unknown) === 'RNSVGSvgView')[0];
     expect(glyph?.props.accessibilityElementsHidden).toBe(true);
-    expect(glyph?.props.stroke).toBe(colors.textTertiary);
+    expect(glyph?.props.color).toBe(colors.textTertiary);
   });
 
   it('draws a different icon when a filter emptied the list', async () => {
@@ -59,7 +59,7 @@ describe('ErrorState', () => {
     );
     expect(getByRole('header', { name: 'Your pledges did not load' })).toBeTruthy();
     const glyph = container.queryAll((node) => (node.type as unknown) === 'RNSVGSvgView')[0];
-    expect(glyph?.props.stroke).toBe(colors.danger);
+    expect(glyph?.props.color).toBe(colors.danger);
 
     await fireEvent.press(getByRole('button', { name: en.common.tryAgain }));
     expect(onRetry).toHaveBeenCalledTimes(1);

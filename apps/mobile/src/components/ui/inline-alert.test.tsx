@@ -43,7 +43,7 @@ describe('InlineAlert', () => {
 
     const glyphs = glyphsIn(tree);
     expect(glyphs).toHaveLength(1);
-    expect(glyphs[0]?.props.stroke).toBe(colour);
+    expect(glyphs[0]?.props.color).toBe(colour);
   });
 
   it('draws a different icon for each variant, so the shape tells them apart too', async () => {

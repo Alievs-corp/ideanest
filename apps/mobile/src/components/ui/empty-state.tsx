@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
-import { CircleAlert, Inbox, SearchX } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, spacing, tracking } from '../../theme';
 import { announce } from './announce';
@@ -33,7 +33,7 @@ import { SurfaceProvider } from './surface';
  * when the screens moved here): the old error had no retry, which is why this one requires it.
  */
 
-const EMPTY_ICON = { empty: Inbox, filtered: SearchX } as const;
+const EMPTY_ICON = { empty: Glyphs.DirectInbox, filtered: Glyphs.SearchStatus } as const;
 
 export interface EmptyStateProps {
   readonly variant?: 'empty' | 'filtered';
@@ -112,7 +112,7 @@ export function ErrorState({
 
   return (
     <StateCard
-      icon={CircleAlert}
+      icon={Glyphs.Warning2}
       iconColour={colors.danger}
       title={title}
       description={description}
@@ -152,7 +152,7 @@ function StateCard({
     <View style={styles.card} testID={testID}>
       <SurfaceProvider surface="dark">
         <View style={styles.iconCircle}>
-          <Icon icon={icon} size={20} color={iconColour} />
+          <Icon icon={icon} variant="bulk" size={20} color={iconColour} />
         </View>
         <Text accessibilityRole="header" style={[styles.title, styles.centred]}>
           {title}

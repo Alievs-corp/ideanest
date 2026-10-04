@@ -21,8 +21,8 @@ import { inputFrame, inputText } from './text-input';
  * answer; never growing would make somebody edit a paragraph through a four-line slot.
  *
  * <p>The height follows `onContentSizeChange` and is set, not animated: a box that eased to its
- * new height on every line break would move under the caret as it was being typed into, on
- * surfaces whose motion budget is `none` (the editor).
+ * new height on every line break would move under the caret as it was being typed into — and
+ * the `mobile-design` skill §6.1 forbids animating height at all.
  */
 
 export const TEXTAREA_MIN_HEIGHT = 96;

@@ -13,7 +13,6 @@ import {
   EmptyState,
   ErrorState,
   InlineAlert,
-  MotionBudgetProvider,
   Pill,
   SkeletonCard,
   SkeletonGroup,
@@ -182,24 +181,24 @@ export function CollectionPage({ slug }: { readonly slug: string }) {
     );
 
   return (
-    <MotionBudgetProvider level="minimal">
-      <Stack.Screen options={{ title }} />
-      <CampaignList
-        cards={cards}
-        header={header}
-        empty={empty}
-        footer={footer}
-        onEndReached={() => {
-          if (!nextPageFailed) loadMore();
-        }}
-        onRefresh={() => {
-          setPulling(true);
-          void query.refetch().finally(() => setPulling(false));
-        }}
-        refreshing={pulling}
-        testID="collection-campaigns"
-      />
-    </MotionBudgetProvider>
+    <>
+    <Stack.Screen options={{ title }} />
+    <CampaignList
+      cards={cards}
+      header={header}
+      empty={empty}
+      footer={footer}
+      onEndReached={() => {
+        if (!nextPageFailed) loadMore();
+      }}
+      onRefresh={() => {
+        setPulling(true);
+        void query.refetch().finally(() => setPulling(false));
+      }}
+      refreshing={pulling}
+      testID="collection-campaigns"
+    />
+  </>
   );
 
   /** The service's own sentence for a page it refused, else the catalogue's — the web's rule. */

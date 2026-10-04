@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Redirect, Stack } from 'expo-router';
-import { Bookmark, Heart, Share2, Trash2, X } from 'lucide-react-native';
+import { Glyphs, type IconVariant } from '../../icons';
 import { LOCALE_NAMES, SUPPORTED_LOCALES } from '@ideanest/messages';
 import { siteUrl } from '../../api/config';
 import {
@@ -30,6 +30,7 @@ import {
   MediaFrame,
   Meta,
   MotionBudgetProvider,
+  PressableScale,
   PasswordInput,
   Pill,
   ProgressBar,
@@ -66,7 +67,7 @@ import {
 } from '../../components/ui';
 import { formatCount, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
-import { colors, radius, size, spacing } from '../../theme';
+import { accent, colors, radius, size, spacing, type Accent } from '../../theme';
 
 /**
  * The kit gallery — issue #151. Every component in `components/ui`, in every variant, size and
@@ -133,6 +134,9 @@ const TRENDS: readonly StatTrend[] = ['up', 'down', 'neutral'];
 const ALERTS: readonly InlineAlertVariant[] = ['info', 'success', 'warning', 'danger'];
 const RATIOS: readonly MediaRatioToken[] = ['16/9', '3/2', '4/3', '1/1'];
 const HAPTICS = Object.keys(haptics) as HapticEvent[];
+const ICON_VARIANTS: readonly IconVariant[] = ['linear', 'bold', 'bulk'];
+/** The token group's own name, read from the code like every other heading here. */
+const ACCENT_SECTION = Object.keys({ accent })[0] ?? '';
 const BADGES: Record<StatTrend, string> = { up: '+12', down: '-3', neutral: '0' };
 const TRACE = '4bf92f3577b34da6a3ce929d0e0e4736';
 
@@ -170,14 +174,58 @@ function KitGallery() {
       <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
         {/* Foundations ------------------------------------------------------------------ */}
         <Section title={heading([Icon])}>
-          <Row>
-            {[Heart, Bookmark, Share2, Trash2].map((glyph, index) => (
-              <Icon key={index} icon={glyph} size={20} color={colors.textPrimary} />
-            ))}
-          </Row>
+          {ICON_VARIANTS.map((variant) => (
+            <Row key={variant}>
+              <Meta>{variant}</Meta>
+              {[Glyphs.Heart, Glyphs.Archive, Glyphs.Share, Glyphs.Trash, Glyphs.Notification].map(
+                (glyph) => (
+                  <Icon
+                    key={glyph.name}
+                    icon={glyph}
+                    variant={variant}
+                    size={24}
+                    color={colors.textPrimary}
+                  />
+                ),
+              )}
+            </Row>
+          ))}
           <Row>
             {HAPTICS.map((event) => (
               <Pill key={event} label={event} size="sm" variant="ghost" onPress={haptics[event]} />
+            ))}
+          </Row>
+        </Section>
+
+        <Section title={heading([PressableScale])}>
+          <PressableScale
+            accessibilityRole="button"
+            accessibilityLabel={nameOf(PressableScale)}
+            haptic="save"
+            onPress={noop}
+            contentStyle={({ pressed }) => [styles.pressable, pressed && styles.pressablePressed]}
+          >
+            <Body>{nameOf(PressableScale)}</Body>
+          </PressableScale>
+        </Section>
+
+        <Section title={ACCENT_SECTION}>
+          <Row>
+            {(Object.keys(accent) as Accent[]).map((name) => (
+              <View
+                key={name}
+                style={[
+                  styles.swatch,
+                  {
+                    backgroundColor: accent[name].surface,
+                    boxShadow: [
+                      { offsetX: 0, offsetY: 12, blurRadius: 24, spreadDistance: -8, color: accent[name].glow },
+                    ],
+                  },
+                ]}
+              >
+                <Meta style={{ color: accent[name].text }}>{name}</Meta>
+              </View>
             ))}
           </Row>
         </Section>
@@ -212,7 +260,7 @@ function KitGallery() {
               <Pill label={variant} variant={variant} disabled onPress={noop} />
             </Row>
           ))}
-          <Pill label={nameOf(Pill)} iconLeft={Heart} iconRight={Share2} fullWidth onPress={noop} />
+          <Pill label={nameOf(Pill)} iconLeft={Glyphs.Heart} iconRight={Glyphs.Share} fullWidth onPress={noop} />
         </Section>
 
         <Section title={heading([IconButton])}>
@@ -221,7 +269,7 @@ function KitGallery() {
               {ICON_BUTTON_SIZES.map((buttonSize) => (
                 <IconButton
                   key={buttonSize}
-                  icon={Heart}
+                  icon={Glyphs.Heart}
                   label={`${variant} ${buttonSize}`}
                   variant={variant}
                   size={buttonSize}
@@ -229,13 +277,13 @@ function KitGallery() {
                 />
               ))}
               <IconButton
-                icon={Bookmark}
+                icon={Glyphs.Archive}
                 label={variant}
                 variant={variant}
                 selected
                 onPress={noop}
               />
-              <IconButton icon={X} label={variant} variant={variant} disabled onPress={noop} />
+              <IconButton icon={Glyphs.Close} label={variant} variant={variant} disabled onPress={noop} />
             </Row>
           ))}
         </Section>
@@ -246,7 +294,7 @@ function KitGallery() {
             {DARK_TAGS.map((variant) => (
               <Tag key={variant} label={variant} variant={variant} />
             ))}
-            <Tag label={nameOf(Icon)} icon={Heart} />
+            <Tag label={nameOf(Icon)} icon={Glyphs.Heart} />
           </Row>
         </Section>
 
@@ -261,7 +309,7 @@ function KitGallery() {
                 onPress={() => setChosen(chosen === chip.key ? null : chip.key)}
               />
             ))}
-            <Chip label={t('common.trail.home')} icon={Heart} disabled onPress={noop} />
+            <Chip label={t('common.trail.home')} icon={Glyphs.Heart} disabled onPress={noop} />
           </ChipRow>
           {removed ? (
             <Pill
@@ -355,7 +403,7 @@ function KitGallery() {
         <Section title={heading([FloatingPanel])}>
           <FloatingPanel
             title={nameOf(FloatingPanel)}
-            actions={<IconButton icon={X} label={t('common.cancel')} onPress={noop} />}
+            actions={<IconButton icon={Glyphs.Close} label={t('common.cancel')} onPress={noop} />}
           >
             <Body>{t('common.card.rule')}</Body>
             <Pill label={t('common.save')} onPress={noop} />
@@ -582,6 +630,20 @@ const styles = StyleSheet.create({
   grow: { flex: 1, gap: spacing[2] },
   thumb: { width: 96 },
   screenBox: { height: 360, borderRadius: radius.lg, overflow: 'hidden' },
+  pressable: {
+    padding: spacing[4],
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface2,
+    minHeight: size.touchTarget,
+  },
+  pressablePressed: { backgroundColor: colors.surface3 },
+  swatch: {
+    width: 96,
+    height: 64,
+    borderRadius: radius.lg,
+    padding: spacing[3],
+    justifyContent: 'flex-end',
+  },
 });
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).

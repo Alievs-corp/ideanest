@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { CircleAlert, CircleCheck } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import {
   looksLikeAnAddress,
@@ -127,7 +127,7 @@ export function PrelaunchForm({
       <View style={styles.card} testID="prelaunch-following">
         <View style={styles.success}>
           <View style={styles.successIcon}>
-            <Icon icon={CircleCheck} size={20} color={colors.success} />
+            <Icon icon={Glyphs.TickCircle} size={20} color={colors.success} />
           </View>
           <View style={styles.words}>
             <CardTitle accessibilityRole="header" style={styles.cardHeading}>
@@ -156,7 +156,7 @@ export function PrelaunchForm({
         // An icon and words, never the colour alone (docs/ui-kit.md §9.2).
         <View style={styles.error} accessible accessibilityLabel={errorLine} testID="prelaunch-error">
           <View style={styles.errorIcon}>
-            <Icon icon={CircleAlert} size={14} color={colors.danger} />
+            <Icon icon={Glyphs.Warning2} size={14} color={colors.danger} />
           </View>
           <Text style={styles.errorText}>{errorLine}</Text>
         </View>

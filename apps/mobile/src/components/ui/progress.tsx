@@ -36,9 +36,8 @@ import { useMotionAllowed } from './motion-budget';
  * scaled from the left edge (`transformOrigin`). `docs/motion-system.md` §8: only `transform` and
  * `opacity` animate, because `width` runs layout on every frame — and this is the most frequently
  * animated element on the platform. It rises from zero to the figure over `motion.progress` (§6's
- * 800ms, `ease-out`), wherever the motion budget allows `minimal` motion, which is everywhere but
- * checkout, the editor and settings (§5.1 keeps it even on discovery). With Reduce Motion or under
- * a `none` budget it is drawn at the figure and does not move.
+ * 800ms, `ease-out`) on every surface (`mobile-design` skill §6). With Reduce Motion, or under an
+ * explicit `none` budget, it is drawn at the figure and does not move.
  *
  * <p>The web bar translates rather than scales (issue #146), because a scaled fill squashes its
  * rounded leading edge at small percentages. Issue #151 asked the native bar for `scaleX`; at 6 and

@@ -12,7 +12,7 @@ import {
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { X } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { formatMoney } from '@ideanest/money';
 import { NO_REWARD } from '@ideanest/checkout/draft';
 import { toAmounts } from '@ideanest/checkout/quote';
@@ -23,7 +23,6 @@ import {
   Field,
   IconButton,
   InlineAlert,
-  MotionBudgetProvider,
   Pill,
   Select,
   SkeletonCard,
@@ -421,66 +420,64 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
   }));
 
   return (
-    <MotionBudgetProvider level="none">
-      <AccentScopeProvider>
-        <Stack.Screen options={{ headerShown: false, gestureEnabled: !locked && held.remainingMs === 0 }} />
-        <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView
-            contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing[4], paddingBottom: insets.bottom + spacing[8] }]}
-            keyboardShouldPersistTaps="handled"
-            testID="checkout"
-          >
-            <Header onClose={close} disabled={locked} />
-            <Text ref={heading} accessibilityRole="header" style={styles.h1} testID="checkout-step">
-              {t(`checkout.steps.${step}`)}
-            </Text>
-            <View accessibilityLabel={t('checkout.progress')} style={styles.steps}>
-              {steps.map((entry) => (
-                <Text
-                  key={entry.name}
-                  accessibilityLabel={t('mobile.checkout.step', { index: entry.index, count: 3, name: entry.label })}
-                  accessibilityState={{ selected: entry.index === stepIndex }}
-                  style={entry.index === stepIndex ? styles.stepOn : styles.stepOff}
-                >
-                  {`${entry.index}. ${entry.label}`}
-                </Text>
-              ))}
+    <AccentScopeProvider>
+      <Stack.Screen options={{ headerShown: false, gestureEnabled: !locked && held.remainingMs === 0 }} />
+      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing[4], paddingBottom: insets.bottom + spacing[8] }]}
+          keyboardShouldPersistTaps="handled"
+          testID="checkout"
+        >
+          <Header onClose={close} disabled={locked} />
+          <Text ref={heading} accessibilityRole="header" style={styles.h1} testID="checkout-step">
+            {t(`checkout.steps.${step}`)}
+          </Text>
+          <View accessibilityLabel={t('checkout.progress')} style={styles.steps}>
+            {steps.map((entry) => (
+              <Text
+                key={entry.name}
+                accessibilityLabel={t('mobile.checkout.step', { index: entry.index, count: 3, name: entry.label })}
+                accessibilityState={{ selected: entry.index === stepIndex }}
+                style={entry.index === stepIndex ? styles.stepOn : styles.stepOff}
+              >
+                {`${entry.index}. ${entry.label}`}
+              </Text>
+            ))}
+          </View>
+          <View style={wide ? styles.wide : styles.narrow}>
+            <View style={[styles.form, wide && styles.formWide]}>
+              {offlineNotice}
+              {failureNotice}
+              {form}
             </View>
-            <View style={wide ? styles.wide : styles.narrow}>
-              <View style={[styles.form, wide && styles.formWide]}>
-                {offlineNotice}
-                {failureNotice}
-                {form}
-              </View>
-              {summary === null ? null : <View style={wide ? styles.summaryWide : undefined}>{summary}</View>}
-            </View>
-            {fees.isPending ? null : (
-              <FeeDisclosure disclosure={fees.data ?? null} onPricing={() => router.push('/pricing')} />
-            )}
-          </ScrollView>
-        </KeyboardAvoidingView>
-        <Dialog
-          open={leaving}
-          onClose={() => setLeaving(false)}
-          title={t('mobile.checkout.leaveTitle')}
-          description={t('mobile.checkout.leaveBody', { time: held.label })}
-          footer={
-            <View style={styles.dialogActions}>
-              <Pill variant="ghost" label={t('mobile.checkout.stay')} onPress={() => setLeaving(false)} />
-              <Pill
-                variant="primary"
-                label={t('mobile.checkout.leave')}
-                onPress={() => {
-                  setLeaving(false);
-                  router.back();
-                }}
-                testID="leave"
-              />
-            </View>
-          }
-        />
-      </AccentScopeProvider>
-    </MotionBudgetProvider>
+            {summary === null ? null : <View style={wide ? styles.summaryWide : undefined}>{summary}</View>}
+          </View>
+          {fees.isPending ? null : (
+            <FeeDisclosure disclosure={fees.data ?? null} onPricing={() => router.push('/pricing')} />
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <Dialog
+        open={leaving}
+        onClose={() => setLeaving(false)}
+        title={t('mobile.checkout.leaveTitle')}
+        description={t('mobile.checkout.leaveBody', { time: held.label })}
+        footer={
+          <View style={styles.dialogActions}>
+            <Pill variant="ghost" label={t('mobile.checkout.stay')} onPress={() => setLeaving(false)} />
+            <Pill
+              variant="primary"
+              label={t('mobile.checkout.leave')}
+              onPress={() => {
+                setLeaving(false);
+                router.back();
+              }}
+              testID="leave"
+            />
+          </View>
+        }
+      />
+    </AccentScopeProvider>
   );
 }
 
@@ -488,7 +485,7 @@ function Header({ onClose, disabled = false }: { readonly onClose: () => void; r
   const t = useT();
   return (
     <View style={styles.header}>
-      <IconButton icon={X} size="lg" variant="ghost" label={t('mobile.checkout.close')} onPress={onClose} disabled={disabled} testID="checkout-close" />
+      <IconButton icon={Glyphs.Close} size="lg" variant="ghost" label={t('mobile.checkout.close')} onPress={onClose} disabled={disabled} testID="checkout-close" />
       <Text style={styles.eyebrow}>{t('checkout.title')}</Text>
     </View>
   );

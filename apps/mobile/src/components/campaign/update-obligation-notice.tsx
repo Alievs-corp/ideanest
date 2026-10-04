@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { CalendarClock, CircleCheck } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import type { UpdateObligation } from '@ideanest/campaign/obligation';
 import { formatDay, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
@@ -35,7 +35,7 @@ export function UpdateObligationNotice({ obligation }: { readonly obligation: Up
   return (
     <View style={styles.card} testID="obligation-notice">
       <View style={styles.heading}>
-        <Icon icon={complete ? CircleCheck : CalendarClock} size={20} color={colors.textSecondary} />
+        <Icon icon={complete ? Glyphs.TickCircle : Glyphs.Calendar} size={20} color={colors.textSecondary} />
         <Text accessibilityRole="header" style={styles.title}>
           {complete ? t('completeHeading') : t('lateHeading')}
         </Text>

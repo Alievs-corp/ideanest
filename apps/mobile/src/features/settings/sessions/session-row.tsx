@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { Monitor, Smartphone } from 'lucide-react-native';
+import { Glyphs } from '../../../icons';
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
 import {
   browserOf,
@@ -63,7 +63,7 @@ export function SessionRow({
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
-        <Icon icon={isPhone ? Smartphone : Monitor} size={18} color={colors.textSecondary} />
+        <Icon icon={isPhone ? Glyphs.Mobile : Glyphs.Monitor} size={18} color={colors.textSecondary} />
       </View>
       <View style={styles.words}>
         <View style={styles.nameLine}>

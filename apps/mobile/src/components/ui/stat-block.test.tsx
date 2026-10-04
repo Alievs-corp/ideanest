@@ -54,7 +54,7 @@ describe('StatBlock', () => {
 
       const arrows = container.queryAll((node) => (node.type as unknown) === 'RNSVGSvgView');
       expect(arrows).toHaveLength(1);
-      expect(arrows[0]?.props.stroke).toBe(text);
+      expect(arrows[0]?.props.color).toBe(text);
     },
   );
 

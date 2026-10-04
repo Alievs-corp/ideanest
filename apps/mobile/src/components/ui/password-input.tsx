@@ -1,6 +1,6 @@
 import { forwardRef, useState } from 'react';
 import type { TextInput as RNTextInput } from 'react-native';
-import { Eye, EyeOff } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import { IconButton } from './icon-button';
 import { TextInput, type TextInputProps } from './text-input';
@@ -39,7 +39,7 @@ export const PasswordInput = forwardRef<RNTextInput, PasswordInputProps>(functio
       secureTextEntry={!shown}
       trailing={
         <IconButton
-          icon={shown ? EyeOff : Eye}
+          icon={shown ? Glyphs.EyeSlash : Glyphs.Eye}
           label={shown ? t('hidePassword') : t('showPassword')}
           variant="ghost"
           size="sm"

@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react-native';
 import { StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
-import { CircleCheck } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { colors, tint } from '../../theme';
 import { SurfaceProvider, TONES } from './surface';
 import { Tag } from './tag';
@@ -105,12 +105,12 @@ describe('Tag', () => {
 
   it('keeps an icon beside the word, in the word’s colour', async () => {
     const { getByText, container } = await render(
-      <Tag label="Funded" variant="success" icon={CircleCheck} />,
+      <Tag label="Funded" variant="success" icon={Glyphs.TickCircle} />,
     );
     expect(getByText('Funded')).toBeTruthy();
     const glyphs = container.queryAll((node) => (node.type as unknown) === 'RNSVGSvgView');
     expect(glyphs).toHaveLength(1);
-    expect(glyphs[0]?.props.stroke).toBe(colors.success);
+    expect(glyphs[0]?.props.color).toBe(colors.success);
   });
 });
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { SlidersHorizontal } from 'lucide-react-native';
+import { Glyphs } from '../icons';
 import { blameFor } from '@ideanest/discovery/emptiness';
 import { PAGE_SIZE, slugNames } from '@ideanest/discovery/facets';
 import {
@@ -27,7 +27,6 @@ import { Body, Heading, Meta } from '../components/text';
 import {
   EmptyState,
   InlineAlert,
-  MotionBudgetProvider,
   Pill,
   Skeleton,
   SkeletonGroup,
@@ -68,8 +67,8 @@ import { colors, font, fontSize, lineHeight, spacing } from '../theme';
  *
  * <h2>Motion</h2>
  *
- * Discovery's budget is minimal (`docs/motion-system.md` §5): the title fades up once, the cards
- * never move, and Reduce Motion turns the fade off.
+ * The `mobile-design` skill §6: the title fades up once, the cards of this unbounded feed do not
+ * animate in (§6.5), and Reduce Motion turns the fade off.
  */
 export default function DiscoverScreen() {
   const t = useT('discovery.feed');
@@ -165,7 +164,7 @@ export default function DiscoverScreen() {
 
       <Pill
         label={active.length > 0 ? `${t('railLabel')} (${active.length})` : t('railLabel')}
-        iconLeft={SlidersHorizontal}
+        iconLeft={Glyphs.Setting4}
         variant="outline"
         fullWidth
         onPress={() => setSheetOpen(true)}
@@ -192,30 +191,30 @@ export default function DiscoverScreen() {
   );
 
   return (
-    <MotionBudgetProvider level="minimal">
-      <Stack.Screen options={{ title: t('title') }} />
-      <CampaignList
-        cards={cards}
-        header={header}
-        empty={emptyBody()}
-        footer={cards.length > 0 ? footer() : undefined}
-        onEndReached={() => loadMore()}
-        onRefresh={() => {
-          setPulling(true);
-          void Promise.allSettled([feed.refetch(), facetsQuery.refetch()]).then(() =>
-            setPulling(false),
-          );
-        }}
-        refreshing={pulling}
-      />
-      <FilterSheet
-        visible={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        filters={filters}
-        facets={facets}
-        onChange={apply}
-      />
-    </MotionBudgetProvider>
+    <>
+    <Stack.Screen options={{ title: t('title') }} />
+    <CampaignList
+      cards={cards}
+      header={header}
+      empty={emptyBody()}
+      footer={cards.length > 0 ? footer() : undefined}
+      onEndReached={() => loadMore()}
+      onRefresh={() => {
+        setPulling(true);
+        void Promise.allSettled([feed.refetch(), facetsQuery.refetch()]).then(() =>
+          setPulling(false),
+        );
+      }}
+      refreshing={pulling}
+    />
+    <FilterSheet
+      visible={sheetOpen}
+      onClose={() => setSheetOpen(false)}
+      filters={filters}
+      facets={facets}
+      onChange={apply}
+    />
+  </>
   );
 
   /** What stands where the cards would be when there are none: loading, failed, or empty. */

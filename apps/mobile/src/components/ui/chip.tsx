@@ -10,7 +10,7 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { X } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { colors, font, fontSize, radius, size as measure, spacing, tint } from '../../theme';
 import { useFocusRing } from './focus';
 import { Icon, type IconComponent } from './icon';
@@ -194,7 +194,7 @@ export function RemovableChip({
         >
           {label}
         </Text>
-        <Icon icon={X} size={14} color={tint(colors.textOnWhite, 0.56)} />
+        <Icon icon={Glyphs.Close} size={14} color={tint(colors.textOnWhite, 0.56)} />
       </Pressable>
     </View>
   );

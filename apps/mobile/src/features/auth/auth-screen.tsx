@@ -1,13 +1,12 @@
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { CircleCheck } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import {
   Body,
   Card,
   Heading,
   Icon,
   Meta,
-  MotionBudgetProvider,
   type IconComponent,
 } from '../../components/ui';
 import { useT } from '../../lib/i18n';
@@ -17,11 +16,11 @@ import { colors, formMeasure, spacing } from '../../theme';
  * The frame every authentication screen sits in — the web's `(auth)/layout.tsx` and
  * `MinimalShell`, on a phone (issue #152).
  *
- * <h2>Motion: none</h2>
+ * <h2>Motion</h2>
  *
- * `docs/motion-system.md` §5 gives authentication no entry motion, only a colour change on
- * controls. The budget is declared here, once, so no auth screen can fade, slide or scale a pill
- * under the thumb — and `FadeUp` is not imported anywhere under `features/auth`.
+ * The `mobile-design` skill §6, as everywhere: pills give under the thumb, and errors still arrive
+ * instantly (§6.4). No auth screen has an entry animation yet — `FadeUp` is not imported under
+ * `features/auth` — and Reduce Motion stops what there is.
  *
  * <h2>One column, capped</h2>
  *
@@ -32,23 +31,21 @@ import { colors, formMeasure, spacing } from '../../theme';
 export function AuthScreen({ children }: { readonly children: ReactNode }) {
   const t = useT('auth.layout');
   return (
-    <MotionBudgetProvider level="none">
-      <KeyboardAvoidingView
-        style={styles.fill}
-        // iOS moves the whole view; Android resizes the window itself and a second adjustment
-        // there pushes the form off the top of the screen.
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <KeyboardAvoidingView
+      style={styles.fill}
+      // iOS moves the whole view; Android resizes the window itself and a second adjustment
+      // there pushes the form off the top of the screen.
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-        >
-          <View style={styles.column}>{children}</View>
-          <Meta style={styles.footer}>{t('footer')}</Meta>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </MotionBudgetProvider>
+        <View style={styles.column}>{children}</View>
+        <Meta style={styles.footer}>{t('footer')}</Meta>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -71,7 +68,7 @@ export function AuthHeader({ title, intro }: { readonly title: string; readonly 
 export function SuccessHeader({ title, intro }: { readonly title: string; readonly intro: string }) {
   return (
     <View style={styles.success}>
-      <Icon icon={CircleCheck} size={32} color={colors.success} />
+      <Icon icon={Glyphs.TickCircle} size={32} color={colors.success} />
       <AuthHeader title={title} intro={intro} />
     </View>
   );

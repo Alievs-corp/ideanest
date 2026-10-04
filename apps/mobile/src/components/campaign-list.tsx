@@ -19,14 +19,12 @@ import { SkeletonCard, SkeletonGroup, haptics } from './ui';
  * <h2>No card animates</h2>
  *
  * The list used to fade its first six cards up on a capped stagger. It no longer
- * animates any: `docs/motion-system.md` §5.1 forbids an entry animation on
- * campaign cards outright ("§8: no animation in long lists"), and calls the card
- * stagger "the one people reach for here and the one to refuse" — a feed that
- * grows as somebody scrolls is a page that never settles, and it costs exactly
- * where discovery's budget says speed outranks everything. It was also the part
- * that was easy to get wrong: FlashList RECYCLES rows, so an `entering`
- * animation replays on a recycled row halfway down a list somebody is reading.
- * What still moves on a card is its progress bar, §5.1's one exception.
+ * animates any. The `mobile-design` skill §6.5 allows an entry rise on the first
+ * screenful only, never on rows a feed appends — and here that line is hard to
+ * hold: FlashList RECYCLES rows, so an `entering` animation replays on a recycled
+ * row halfway down a list somebody is reading. Until a first-screenful entry is
+ * built that survives recycling, no card animates in. What still moves on a card
+ * is its progress bar and its press feedback.
  *
  * <h2>Pull to refresh</h2>
  *

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Minus, Plus } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { formatMoney } from '@ideanest/money';
 import { isSoldOut, type PublicReward } from '@ideanest/checkout/types';
 import { IconButton } from '../../components/ui';
@@ -66,7 +66,7 @@ function AddonCard({
       ) : (
         <View style={styles.stepper}>
           <IconButton
-            icon={Minus}
+            icon={Glyphs.Minus}
             size="lg"
             label={t('mobile.checkout.decrease', { title: addon.title })}
             disabled={disabled || value <= 0}
@@ -88,7 +88,7 @@ function AddonCard({
             <Text style={styles.count}>{value}</Text>
           </View>
           <IconButton
-            icon={Plus}
+            icon={Glyphs.Add}
             size="lg"
             label={t('mobile.checkout.increase', { title: addon.title })}
             disabled={disabled || value >= max}

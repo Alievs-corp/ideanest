@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { MessageSquareOff, Reply, Trash2 } from 'lucide-react-native';
+import { Glyphs } from '../../../../icons';
 import type { CampaignComment } from '@ideanest/campaign/comments';
 import { useMe } from '../../../../lib/account';
 import { withdrawComment, withdrawFailureOf } from '../../../../lib/comments';
@@ -75,7 +75,7 @@ export function CommentCard({ comment, campaignTitle, offline, onChanged }: Comm
   if (comment.deleted) {
     return (
       <View style={styles.tombstone} testID={`comment-${comment.id}`}>
-        <Icon icon={MessageSquareOff} size={16} color={colors.textTertiary} />
+        <Icon icon={Glyphs.MessageRemove} size={16} color={colors.textTertiary} />
         <Text style={styles.tombstoneText}>{t('withdrawn')}</Text>
       </View>
     );
@@ -174,7 +174,7 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
         {comment.acceptsReplies ? (
           <TextButton
             ref={replyButton}
-            icon={Reply}
+            icon={Glyphs.Back}
             label={t('reply')}
             expanded={replying}
             onPress={() => setReplying((open) => !open)}
@@ -184,7 +184,7 @@ function CommentControls({ comment, campaignTitle, offline, onChanged }: Comment
         {isAuthor && !confirming ? (
           <TextButton
             ref={withdrawButton}
-            icon={Trash2}
+            icon={Glyphs.Trash}
             label={t('withdraw')}
             disabled={offline}
             hint={offline ? offlineReason : undefined}

@@ -2,10 +2,12 @@ import {
   colors,
   duration,
   easing,
+  mobileAccent,
   radius,
   shadow,
   spacing,
   staggerDelay,
+  type MobileAccent,
 } from '@ideanest/design-tokens';
 
 /**
@@ -39,6 +41,10 @@ import {
  */
 
 export { colors, duration, easing, radius, shadow, spacing, staggerDelay };
+
+/** Card accent surfaces — `mobile-design` skill §4. A surface with its own text token, never text. */
+export const accent = mobileAccent;
+export type Accent = MobileAccent;
 
 /**
  * A token colour at a given opacity — the 12% tag tints, the black/64 dialog scrim, `white/24`.
@@ -241,6 +247,23 @@ export const motion = {
   overlay: 200,
   /** One pass of the skeleton shimmer — `.skeleton-shimmer` in `packages/ui/src/styles.css`. */
   shimmer: 1400,
-  /** How far a pressed pill gives, where the motion budget allows it (`docs/motion-system.md` §7). */
-  pressScale: 0.98,
+  /** How far a pressed surface gives (`mobile-design` skill, `PressableScale`). */
+  pressScale: 0.97,
 } as const;
+
+/**
+ * Spring presets — `mobile-design` skill §6.2. No inline physics anywhere else.
+ *
+ * Each is damped at or above critical (`damping ≥ 2·√(stiffness·mass)`), so nothing overshoots:
+ * the skill's "soft springs, no bounce". `theme.test.ts` holds them to it.
+ */
+export const spring = {
+  /** Sheets, shared elements, the card stack. Settles in about 400ms. */
+  soft: { stiffness: 170, damping: 27, mass: 1 },
+  /** Tab capsule, press release, chips. Settles in about 250ms. */
+  snappy: { stiffness: 380, damping: 40, mass: 1 },
+  /** Full-height sheets: `soft`, tuned for a longer travel. */
+  sheet: { stiffness: 220, damping: 30, mass: 1 },
+} as const;
+
+export type SpringPreset = keyof typeof spring;

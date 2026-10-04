@@ -6,7 +6,6 @@ import { CardTitle, Meta } from '../../components/text';
 import {
   EmptyState,
   InlineAlert,
-  MotionBudgetProvider,
   Pill,
   Screen,
   Skeleton,
@@ -34,11 +33,10 @@ import { colors, radius, size, spacing } from '../../theme';
  * shape for a list that can be a week old. A cached percentage would be the one
  * number a backer acts on, shown at whatever it was last Tuesday.
  *
- * <h2>Motion: minimal</h2>
+ * <h2>Motion</h2>
  *
- * A list of campaigns somebody goes back to browse, so it takes discovery's
- * budget from `docs/motion-system.md` §5 rather than checkout's: the placeholders
- * shimmer while the first answer is on its way, and nothing else moves.
+ * The `mobile-design` skill §6: the placeholders shimmer while the first answer
+ * is on its way, and the rows of this unbounded list do not animate in (§6.5).
  */
 
 const styles = StyleSheet.create({
@@ -62,14 +60,12 @@ const styles = StyleSheet.create({
 const PLACEHOLDER_ROWS = [0, 1, 2] as const;
 
 /**
- * The route: its motion budget around every state it can draw — the placeholders, the failure and
- * the empty state, and the list itself — not only the ones `Screen` draws.
+ * The route: every state it can draw — the placeholders, the failure and the empty state, and the
+ * list itself — not only the ones `Screen` draws.
  */
 export default function SavedScreen() {
   return (
-    <MotionBudgetProvider level="minimal">
-      <SavedList />
-    </MotionBudgetProvider>
+    <SavedList />
   );
 }
 

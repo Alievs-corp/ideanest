@@ -7,8 +7,10 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { colors, radius, shadow, size as measure, spacing } from '../../theme';
 import { useFocusRing } from './focus';
+import { usePressScale } from './press-scale';
 import { SurfaceProvider, type Surface } from './surface';
 
 /**
@@ -37,7 +39,9 @@ import { SurfaceProvider, type Surface } from './surface';
  *
  * With `onPress` the card is one control. The web lifts an interactive card 2px on hover; a phone
  * has no hover, and a lift under a finger is a card moving away from the thumb pressing it. So the
- * pressed state is a background swap on the frame the finger lands, and nothing moves.
+ * pressed state is a background swap on the frame the finger lands, and the card gives slightly
+ * under the thumb (`usePressScale`, `mobile-design` skill §6.3). A caller's `style` lays out the
+ * scaled wrapper.
  */
 
 export type CardVariant = 'default' | 'active' | 'floating';
@@ -112,6 +116,7 @@ export function Card(props: CardProps) {
   // The ring is drawn outside the card, on whatever the card sits on — so it asks the outer
   // surface, not the one the card provides to its children.
   const { ring, onFocus, onBlur } = useFocusRing();
+  const press = usePressScale();
 
   const content = <SurfaceProvider surface={skin.surface}>{children}</SurfaceProvider>;
 
@@ -127,31 +132,34 @@ export function Card(props: CardProps) {
   const role = props.accessibilityRole ?? 'button';
 
   return (
-    <Pressable
-      accessibilityRole={role}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityHint={accessibilityHint}
-      accessibilityState={{
-        disabled,
-        ...(selected === undefined ? {} : role === 'radio' ? { checked: selected } : { selected }),
-      }}
-      disabled={disabled}
-      onPress={onPress}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      testID={testID}
-      style={({ pressed }) => [
-        styles.card,
-        styles.interactive,
-        SHAPE[size],
-        pressed && !disabled ? skin.pressed : skin.rest,
-        disabled && styles.disabled,
-        ring,
-        style,
-      ]}
-    >
-      {content}
-    </Pressable>
+    <Animated.View style={[style, press.style]}>
+      <Pressable
+        accessibilityRole={role}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{
+          disabled,
+          ...(selected === undefined ? {} : role === 'radio' ? { checked: selected } : { selected }),
+        }}
+        disabled={disabled}
+        onPress={onPress}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        testID={testID}
+        style={({ pressed }) => [
+          styles.card,
+          styles.interactive,
+          SHAPE[size],
+          pressed && !disabled ? skin.pressed : skin.rest,
+          disabled && styles.disabled,
+          ring,
+        ]}
+      >
+        {content}
+      </Pressable>
+    </Animated.View>
   );
 }
 

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { StyleSheet, Text, View, type TextInput as RNTextInput } from 'react-native';
-import { MailCheck } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { fillNodes } from '@ideanest/messages';
 import { Body, Field, PasswordInput, Pill, TextInput } from '../../components/ui';
 import { register } from '../../lib/auth';
@@ -115,7 +115,7 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
             address: <Text style={styles.address}>{sentTo}</Text>,
           })}
         </Body>
-        <ExplainCard icon={MailCheck}>
+        <ExplainCard icon={Glyphs.SmsTracking}>
           <Body>{t('auth.register.sentLifetime')}</Body>
           <Body>{t('auth.register.sentExisting')}</Body>
         </ExplainCard>

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { StyleSheet, View, type TextInput as RNTextInput } from 'react-native';
 import { fillNodes } from '@ideanest/messages/placeholders';
-import { MailCheck } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import {
   Body,
   Field,
@@ -104,7 +104,7 @@ function EmailChange() {
       {requestedFor !== null ? (
         <View style={styles.sent} testID="email-change-sent">
           <View style={styles.sentCard}>
-            <Icon icon={MailCheck} size={20} color={colors.textTertiary} />
+            <Icon icon={Glyphs.SmsTracking} size={20} color={colors.textTertiary} />
             <View style={styles.sentWords} accessible>
               <Body>{fillNodes(String(t.raw('sentIntro')), { address: <Strong>{requestedFor}</Strong> })}</Body>
               <Body>

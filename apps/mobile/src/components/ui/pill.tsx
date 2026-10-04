@@ -1,11 +1,10 @@
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import {
   colors,
   font,
   fontSize,
-  motion,
   radius,
   size as measure,
   spacing,
@@ -14,7 +13,7 @@ import {
 } from '../../theme';
 import { useFocusRing } from './focus';
 import { Icon, type IconComponent } from './icon';
-import { useMotionAllowed } from './motion-budget';
+import { usePressScale } from './press-scale';
 import { useSurface } from './surface';
 
 /**
@@ -40,8 +39,8 @@ import { useSurface } from './surface';
  * pushing an icon out of the pill.
  *
  * <p>Hover does not exist, so the web's hover colours become the pressed state, applied on the
- * frame the finger lands. The web's `active:scale-[0.98]` survives only where the surface's
- * motion budget allows it (`moderate` and up) — on checkout a pill does not move at all.
+ * frame the finger lands. The web's `active:scale-[0.98]` becomes `usePressScale` (`mobile-design`
+ * skill §6.3) on every surface, checkout included; with Reduce Motion the pill does not move.
  *
  * <h2>Primary inverts on white</h2>
  *
@@ -193,22 +192,10 @@ export function Pill({
 
   useAccentWarning(variant === 'accent');
 
-  const scales = useMotionAllowed('moderate');
-  const scale = useSharedValue(1);
-  const pressStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-  const press = (to: number) => {
-    if (scales) scale.value = withTiming(to, { duration: motion.fast });
-  };
+  const press = usePressScale();
 
-  /*
-   * The scale lives on a wrapper and the press on the `Pressable` inside it. An animated
-   * `Pressable` drops a function `style`, which is how the pressed colour is drawn, so the pill
-   * rendered with no background at all; the wrapper keeps the two concerns in two elements.
-   */
   return (
-    <Animated.View style={[fullWidth ? styles.fill : styles.hug, scales && pressStyle]}>
+    <Animated.View style={[fullWidth ? styles.fill : styles.hug, press.style]}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? label}
@@ -216,8 +203,8 @@ export function Pill({
         accessibilityState={{ disabled: blocked, busy, ...(selected === undefined ? {} : { selected }) }}
         disabled={blocked}
         onPress={onPress}
-        onPressIn={() => press(motion.pressScale)}
-        onPressOut={() => press(1)}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
         onFocus={onFocus}
         onBlur={onBlur}
         hitSlop={{ top: reach, bottom: reach }}

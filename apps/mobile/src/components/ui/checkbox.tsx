@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Check, Minus } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { colors, font, fontSize, lineHeight, radius, size as measure, spacing } from '../../theme';
 import { useFocusRing } from './focus';
 import { Icon } from './icon';
@@ -73,7 +73,7 @@ export function Checkbox({
     >
       <View style={[styles.box, marked ? styles.marked : styles.unmarked]}>
         {marked ? (
-          <Icon icon={indeterminate ? Minus : Check} size={14} color={colors.textOnLime} />
+          <Icon icon={indeterminate ? Glyphs.Minus : Glyphs.Tick} size={14} color={colors.textOnLime} />
         ) : null}
       </View>
       <RowText

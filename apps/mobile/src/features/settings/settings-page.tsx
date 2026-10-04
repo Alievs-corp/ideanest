@@ -6,7 +6,6 @@ import {
   Card,
   Heading,
   InlineAlert,
-  MotionBudgetProvider,
   Subheading,
 } from '../../components/ui';
 import { useOnline } from '../../lib/connectivity';
@@ -27,8 +26,8 @@ export function useLeavingSettings(): () => void {
 }
 
 /**
- * The frame every `settings/*` screen sits in (#161): signed-in only, no motion (the account
- * settings budget, `docs/motion-system.md` §5), the web's `AccountPageHeader`, and one offline
+ * The frame every `settings/*` screen sits in (#161): signed-in only, motion under the
+ * `mobile-design` skill §6 like every surface, the web's `AccountPageHeader`, and one offline
  * notice saying changes wait for a connection.
  */
 export function SettingsPage({
@@ -66,38 +65,38 @@ export function SettingsPage({
 
   return (
     <LeavingContext.Provider value={markLeaving}>
-      <MotionBudgetProvider level="none">
-        <Stack.Screen options={{ title }} />
-        {signedIn || !requireSession ? (
-          <KeyboardAvoidingView
-            style={styles.fill}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <>
+      <Stack.Screen options={{ title }} />
+      {signedIn || !requireSession ? (
+        <KeyboardAvoidingView
+          style={styles.fill}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            testID={testID}
           >
-            <ScrollView
-              contentContainerStyle={styles.content}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              testID={testID}
-            >
-              <View style={styles.column}>
-                <View style={styles.header}>
-                  <Heading accessibilityRole="header">{title}</Heading>
-                  {intro === undefined ? null : <Body>{intro}</Body>}
-                </View>
-                {offlineNotice && !online ? (
-                  <InlineAlert
-                    variant="warning"
-                    politeness="polite"
-                    description={t('mobile.settings.offline')}
-                    testID="settings-offline"
-                  />
-                ) : null}
-                {children}
+            <View style={styles.column}>
+              <View style={styles.header}>
+                <Heading accessibilityRole="header">{title}</Heading>
+                {intro === undefined ? null : <Body>{intro}</Body>}
               </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        ) : null}
-      </MotionBudgetProvider>
+              {offlineNotice && !online ? (
+                <InlineAlert
+                  variant="warning"
+                  politeness="polite"
+                  description={t('mobile.settings.offline')}
+                  testID="settings-offline"
+                />
+              ) : null}
+              {children}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      ) : null}
+    </>
     </LeavingContext.Provider>
   );
 }

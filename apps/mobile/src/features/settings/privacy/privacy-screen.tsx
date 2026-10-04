@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 import { fillNodes } from '@ideanest/messages/placeholders';
-import { Download } from 'lucide-react-native';
+import { Glyphs } from '../../../icons';
 import { queryKeys } from '../../../api/queries';
 import {
   Body,
@@ -325,7 +325,7 @@ function DataExportPanel() {
       <View style={styles.start}>
         <Pill
           label={busy ? t('preparing') : t('download')}
-          iconLeft={Download}
+          iconLeft={Glyphs.Import}
           busy={busy}
           disabled={!online}
           onPress={() => void download()}

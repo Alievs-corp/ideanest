@@ -21,9 +21,8 @@ import { useMotionAllowed } from './motion-budget';
  *
  * <h2>Sanctioned motion, and only transform</h2>
  *
- * Discovery's budget is "skeleton to content crossfade only" (`docs/motion-system.md` §5), and the
- * shimmer and the crossfade are the motion that survived the cut, because they say "the request is
- * alive" rather than "look at this". The shimmer is an overlay that **translates** across the
+ * The shimmer and the skeleton-to-content crossfade (`mobile-design` skill §6.3) say "the request
+ * is alive" rather than "look at this". The shimmer is an overlay that **translates** across the
  * block on `translateX`, over `motion.shimmer` — the web's `.skeleton-shimmer` — so it composites
  * and never repaints the block. Its band is a `react-native-svg` gradient from transparent through
  * `surface-4` and back, the web's colours.

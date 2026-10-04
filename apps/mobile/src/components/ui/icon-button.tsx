@@ -1,7 +1,9 @@
 import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { colors, radius, size as measure, tint } from '../../theme';
 import { useFocusRing } from './focus';
 import { Icon, type IconComponent } from './icon';
+import { usePressScale } from './press-scale';
 import { DANGER_PRESSED_ALPHA } from './pill';
 import { TONES, useSurface } from './surface';
 
@@ -54,32 +56,37 @@ export function IconButton({
   const diameter = DIAMETER[size];
   const reach = Math.max(0, (measure.touchTarget - diameter) / 2);
   const skin = skinFor(variant, surface);
+  const press = usePressScale();
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityHint={accessibilityHint}
-      accessibilityState={{
-        disabled,
-        ...(selected === undefined ? {} : { selected }),
-      }}
-      disabled={disabled}
-      onPress={onPress}
-      onFocus={onFocus}
-      onBlur={onBlur}
-      hitSlop={reach}
-      testID={testID}
-      style={({ pressed }) => [
-        styles.button,
-        { width: diameter, height: diameter },
-        pressed && !disabled ? skin.pressed : skin.rest,
-        disabled && styles.disabled,
-        ring,
-      ]}
-    >
-      <Icon icon={icon} size={GLYPH[size]} color={skin.glyph} />
-    </Pressable>
+    <Animated.View style={press.style}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{
+          disabled,
+          ...(selected === undefined ? {} : { selected }),
+        }}
+        disabled={disabled}
+        onPress={onPress}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        hitSlop={reach}
+        testID={testID}
+        style={({ pressed }) => [
+          styles.button,
+          { width: diameter, height: diameter },
+          pressed && !disabled ? skin.pressed : skin.rest,
+          disabled && styles.disabled,
+          ring,
+        ]}
+      >
+        <Icon icon={icon} variant="bulk" size={GLYPH[size]} color={skin.glyph} />
+      </Pressable>
+    </Animated.View>
   );
 }
 

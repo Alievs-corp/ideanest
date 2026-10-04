@@ -6,7 +6,7 @@ import { toneColor, type Tone } from '../components/text';
 import { DANGER_PRESSED_ALPHA } from '../components/ui/pill';
 import { focusRingColor, TONES, type Surface } from '../components/ui/surface';
 import * as theme from './index';
-import { fontSize, lineHeight, motion, tint, tracking } from './index';
+import { accent, fontSize, lineHeight, motion, tint, tracking } from './index';
 
 /**
  * §14.3's actual requirement (and `docs/ui-kit.md` §2's), as a test: same values, same names, **no
@@ -322,6 +322,23 @@ describe('contrast of every tone on every surface it can land on', () => {
   it('refuses lime as a text colour on white', () => {
     expect(ratio(colors.lime500, colors.whiteSurface)).toBeLessThan(LARGE_OR_NON_TEXT);
   });
+
+  /** Mobile accent cards (#275): each one's own text token reads on it as body text. */
+  it.each(Object.entries(accent))('reads its text token on the %s accent', (_name, tone) => {
+    expect(ratio(tone.text, tone.surface)).toBeGreaterThanOrEqual(BODY);
+  });
+
+  /** An accent card stands off the dark canvas it sits on, as a non-text shape must. */
+  it.each(Object.entries(accent))('separates the %s accent from the canvas', (_name, tone) => {
+    for (const [, surface] of SURFACES.dark) {
+      expect(ratio(tone.surface, surface)).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+    }
+  });
+
+  /** Why each accent names near-black: white on them, measured. */
+  it.each(Object.entries(accent))('refuses white text on the %s accent', (_name, tone) => {
+    expect(ratio(colors.textPrimary, tone.surface)).toBeLessThan(BODY);
+  });
 });
 
 /** The contrast ratio of a (possibly translucent) foreground composited over an opaque background. */
@@ -378,6 +395,12 @@ function luminance({ red, green, blue }: Rgba): number {
   }) as [number, number, number];
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
+
+describe('springs', () => {
+  it.each(Object.entries(theme.spring))('never overshoots: %s is at least critically damped', (_name, preset) => {
+    expect(preset.damping).toBeGreaterThanOrEqual(2 * Math.sqrt(preset.stiffness * preset.mass));
+  });
+});
 
 describe('motion', () => {
   it('runs shorter than the web, per docs/motion-system.md §7', () => {

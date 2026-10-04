@@ -18,6 +18,7 @@ export {
   useReducedMotion,
   type MotionLevel,
 } from './motion-budget';
+export { PressableScale, usePressScale, type PressableScaleProps } from './press-scale';
 export {
   SurfaceProvider,
   TONES,

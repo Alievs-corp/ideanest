@@ -103,7 +103,7 @@ describe('Field', () => {
     expect(input.props).not.toHaveProperty('aria-invalid');
     expect(frameOf(input).borderColor).toBe(colors.danger);
     expect(flat(tree.getByText('Enter an email address.')).color).toBe(colors.danger);
-    expect(tree.container.queryAll((node) => node.type === 'RNSVGSvgView')[0]?.props.stroke).toBe(
+    expect(tree.container.queryAll((node) => node.type === 'RNSVGSvgView')[0]?.props.color).toBe(
       colors.danger,
     );
     expect(announced).toHaveBeenCalledTimes(1);

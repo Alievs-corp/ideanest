@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
-import { X } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { colors, shadow, size } from '../../theme';
 import { Body, CardTitle } from '../text';
 import { Card } from './card';
@@ -166,10 +166,10 @@ describe('FloatingPanel', () => {
     const { container } = await render(
       <FloatingPanel
         title="Your pledge"
-        actions={<IconButton icon={X} label="Close" variant="ghost" onPress={noop} />}
+        actions={<IconButton icon={Glyphs.Close} label="Close" variant="ghost" onPress={noop} />}
       />,
     );
     const glyph = container.queryAll((node) => (node.type as unknown) === 'RNSVGSvgView');
-    expect(glyph[0]?.props.stroke).toBe(TONES.white.secondary);
+    expect(glyph[0]?.props.color).toBe(TONES.white.secondary);
   });
 });

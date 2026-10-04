@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
-import { CircleAlert, CircleCheck, Info, TriangleAlert, X } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, spacing } from '../../theme';
 import { announce } from './announce';
@@ -60,10 +60,10 @@ import { SurfaceProvider } from './surface';
 export type InlineAlertVariant = 'info' | 'success' | 'warning' | 'danger';
 
 const VARIANT: Record<InlineAlertVariant, { icon: IconComponent; colour: string }> = {
-  info: { icon: Info, colour: colors.info },
-  success: { icon: CircleCheck, colour: colors.success },
-  warning: { icon: TriangleAlert, colour: colors.warning },
-  danger: { icon: CircleAlert, colour: colors.danger },
+  info: { icon: Glyphs.InfoCircle, colour: colors.info },
+  success: { icon: Glyphs.TickCircle, colour: colors.success },
+  warning: { icon: Glyphs.Danger, colour: colors.warning },
+  danger: { icon: Glyphs.Warning2, colour: colors.danger },
 };
 
 export interface InlineAlertProps {
@@ -125,7 +125,7 @@ export function InlineAlert({
         {onDismiss === undefined ? null : (
           <View style={styles.dismiss}>
             <IconButton
-              icon={X}
+              icon={Glyphs.Close}
               label={dismissLabel ?? t('dismiss')}
               onPress={onDismiss}
               variant="ghost"

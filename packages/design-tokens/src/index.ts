@@ -48,6 +48,24 @@ export const colors = {
   whiteMuted: '#F4F4F4',
 } as const;
 
+/**
+ * Mobile-only accent surfaces (issue #275, `.claude/skills/mobile-design` §4).
+ *
+ * Card and illustration surfaces in `apps/mobile`. They carry no meaning — lime keeps "act
+ * now", `success` keeps "funded" — and they are never text. Each names the text that sits on
+ * it, measured in `apps/mobile/src/theme/theme.test.ts`; `glow` is the halo under the card.
+ *
+ * Not mirrored in `theme.css` on purpose: the web draws none of them, and a CSS variable nobody
+ * reads is a second place for the value to drift.
+ */
+export const mobileAccent = {
+  sun: { surface: '#FFE03D', text: '#0A0A0A', glow: 'rgba(255,224,61,0.32)' },
+  mint: { surface: '#2EF2C4', text: '#0A0A0A', glow: 'rgba(46,242,196,0.32)' },
+  sky: { surface: '#26A6F7', text: '#0A0A0A', glow: 'rgba(38,166,247,0.32)' },
+} as const;
+
+export type MobileAccent = keyof typeof mobileAccent;
+
 export const radius = {
   sm: 10,
   md: 14,

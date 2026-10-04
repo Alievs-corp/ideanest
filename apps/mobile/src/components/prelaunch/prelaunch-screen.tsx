@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Users } from 'lucide-react-native';
+import { Glyphs } from '../../icons';
 import { ApiError } from '@ideanest/api-client';
 import { fillNodes } from '@ideanest/messages/placeholders';
 import { queryKeys, usePrelaunchPage, type PrelaunchPage } from '../../api/queries';
@@ -42,8 +42,8 @@ import { PrelaunchForm } from './prelaunch-form';
  *
  * <h2>Motion: one FadeUp, on the part that is read</h2>
  *
- * The route takes the project page's moderate budget (docs/motion-system.md §5), and spends it on
- * one `FadeUp` around the cover, title and count — the web's exact use. The form is outside it.
+ * One `FadeUp` around the cover, title and count — the web's exact use, and the first screenful
+ * the `mobile-design` skill §6.3 gives an entry rise to. The form is outside it.
  */
 export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
   const t = useT('campaign.prelaunch');
@@ -92,7 +92,7 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
 
   if (closed || noPrelaunchPage(query.error)) {
     return (
-      <Screen hasContent motion="moderate" onRefresh={refresh} refreshing={pulling}>
+      <Screen hasContent onRefresh={refresh} refreshing={pulling}>
         {header(fallbackTitle)}
         <View style={styles.page}>
           <InlineAlert
@@ -112,7 +112,7 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
     if (query.isError) {
       const reason = prelaunchReadFailure(query.error);
       return (
-        <Screen hasContent motion="moderate" onRefresh={refresh} refreshing={pulling}>
+        <Screen hasContent onRefresh={refresh} refreshing={pulling}>
           {header(fallbackTitle)}
           <View style={styles.page}>
             <InlineAlert
@@ -144,7 +144,7 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
     }
 
     return (
-      <Screen hasContent motion="moderate">
+      <Screen hasContent>
         {header(fallbackTitle)}
         <View style={styles.page}>
           <SkeletonGroup label={t('loading')} testID="prelaunch-loading">
@@ -172,7 +172,6 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
   return (
     <Screen
       hasContent
-      motion="moderate"
       offlineNotice={stale ? tAll('mobile.prelaunch.stale') : null}
       onRefresh={refresh}
       refreshing={pulling}
@@ -234,7 +233,7 @@ function PrelaunchSummary({ page }: { readonly page: PrelaunchPage }) {
       )}
 
       <View style={styles.waiting}>
-        <Icon icon={Users} size={16} color={colors.textSecondary} />
+        <Icon icon={Glyphs.People} size={16} color={colors.textSecondary} />
         {/* One text node, so a screen reader reads the sentence once with the number in it. */}
         <Body style={styles.waitingText} testID="prelaunch-waiting">
           {fillNodes(String(tAll.raw(`campaign.prelaunch.waiting.${pluralCategory(locale, count)}`)), {

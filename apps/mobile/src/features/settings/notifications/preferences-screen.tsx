@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type Ref } from 'react';
 import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { Glyphs } from '../../../icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 import {
@@ -384,7 +384,7 @@ function PreferenceRow({
           <Text style={[styles.mode, disabled ? styles.muted : null]}>{modeLabel}</Text>
           {unsaved ? <Text style={styles.muted}>{t('preferences.default')}</Text> : null}
         </View>
-        {preference.changeable ? <Icon icon={ChevronRight} size={16} color={colors.textTertiary} /> : null}
+        {preference.changeable ? <Icon icon={Glyphs.ArrowRight2} size={16} color={colors.textTertiary} /> : null}
       </Pressable>
       {reason === null ? null : <Caption>{reason}</Caption>}
     </View>
