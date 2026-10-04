@@ -140,8 +140,8 @@ design starts.
   `src/theme` (`mobileAccent` in `@ideanest/design-tokens`), each with its own
   text token and glow. Surfaces for cards only; they carry no meaning.
 - **Feedback without toasts.** `announce()` is the native `aria-live`, and
-  `haptics` is exactly the six events in §7's table (the sixth is the tab bar's
-  Create button).
+  `haptics` is exactly the events in §7's table (the tab bar's Create button, a
+  keypad key and a committed swipe among them).
 - **The floating tab bar (#276).** `src/components/tab-bar.tsx`: Home · Search ·
   [ + ] · Pledges · Me over the content, lifted above the bottom safe area. The
   centre is a button that starts a campaign (through sign-in when signed out),
@@ -579,13 +579,23 @@ consequence of a workflow finishing.
 
 ## Checkout
 
-`campaigns/[id]/back` (#157) is a full-screen modal with no motion: choose → review → pay.
+`campaigns/[id]/back` (#157) is a full-screen modal: choose → review → pay.
 The rules are `@ideanest/checkout`'s, shared with the web: the preview quote on
 `decimal.js`, the draft body, idempotency keys bound to the request body (minted by
 `expo-crypto`, kept in memory), the refusal table, and `attemptWithRetry`. Money writes go
 through `src/api/mutate.ts`, whose signature requires an `Idempotency-Key`; nothing is sent
 offline and nothing is queued. `src/features/checkout/use-checkout.ts` is the web's state
 machine; `checkout-screen.tsx` draws it.
+
+**Money motion (#280).** The contribution is typed on the kit's `AmountKeypad` (digits, the
+point, backspace and `+ − × ÷` on `decimal.js`, each result rounded half-even to the minor
+units, the amount handed to `useCheckout` as the same string the text field used to give). Step
+2 confirms with `SwipeToConfirm`: past 85% of the track it calls `pay`, which is unchanged, so
+a second swipe after a failure sends the same idempotency key. With a screen reader, or on
+Android any accessibility service (Switch Access), it is an ordinary accent button; on iOS the
+track's `activate` action is what VoiceOver and Switch Control perform. `SuccessReveal` is shown
+by `pledges/[id]` only once a payment return reads the pledge back as `COLLECTED`, and it gives
+the success haptic; nothing celebrates on the way out to the payment page.
 
 **The payment return.** The API accepts only site-origin return addresses
 (`docs/architecture.md` §9.4), so the app pays with

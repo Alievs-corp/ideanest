@@ -30,9 +30,9 @@ import {
   Skeleton,
   SkeletonGroup,
   Subheading,
+  SuccessReveal,
   TONES,
   Tag,
-  haptics,
 } from '../../components/ui';
 import { Glyphs } from '../../icons';
 import { queryKeys } from '../../api/queries';
@@ -127,14 +127,17 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
   const reread = useCallback(() => refetch({ cancelRefetch: false }), [refetch]);
   usePaymentSettling(settling, active && online, reread, hints.epoch);
 
+  // The success reveal fires only here, on the pledge read back from the server as collected after
+  // a payment return — never on the way out to the payment page. It gives the success haptic.
   const celebrated = useRef(0);
+  const [revealed, setRevealed] = useState(false);
   useEffect(() => {
     if (celebrated.current === hints.epoch || pledge === undefined) return;
     const paid = paymentHint !== null && pledge.state === 'COLLECTED';
     const raised = raiseHint !== null && pledge.latestRaise?.state === 'SUCCEEDED';
     if (!paid && !raised) return;
     celebrated.current = hints.epoch;
-    if (paid) haptics.pledgeConfirmed();
+    if (paid) setRevealed(true);
     void client.invalidateQueries({ queryKey: queryKeys.pledges() });
   }, [client, hints.epoch, paymentHint, pledge, raiseHint]);
 
@@ -357,6 +360,12 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
 
         {allPledges}
       </ContentSheet>
+      <SuccessReveal
+        visible={revealed}
+        title={formatMoney(pledge.amounts.total)}
+        caption={t('checkout.returned.paidTitle')}
+        onClose={() => setRevealed(false)}
+      />
     </Screen>
   );
 }

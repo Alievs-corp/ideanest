@@ -13,12 +13,13 @@ import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { Glyphs } from '../../icons';
-import { formatMoney } from '@ideanest/money';
+import { MONEY_MAX_INTEGER_DIGITS, MONEY_SCALE, formatMoney } from '@ideanest/money';
 import { NO_REWARD } from '@ideanest/checkout/draft';
 import { toAmounts } from '@ideanest/checkout/quote';
 import { contributionMessage, refusalMessage } from '@ideanest/checkout/refusals';
 import {
   AccentScopeProvider,
+  AmountKeypad,
   Body,
   CardTitle,
   ContentSheet,
@@ -33,7 +34,7 @@ import {
   Select,
   SkeletonCard,
   SkeletonGroup,
-  TextInput,
+  SwipeToConfirm,
 } from '../../components/ui';
 import { focusOn } from '../../components/ui/overlay';
 import { Checkbox } from '../../components/ui/checkbox';
@@ -61,6 +62,8 @@ export interface CheckoutScreenProps {
 
 const WIDE = 768;
 const SUMMARY_WIDTH = 360;
+/** The largest amount the `numeric(14,2)` column holds, the most the keypad takes. */
+const PLEDGE_MAX = `${'9'.repeat(MONEY_MAX_INTEGER_DIGITS)}.${'9'.repeat(MONEY_SCALE)}`;
 
 export function checkoutPath(projectId: string, rewardId: string | null, tokens: readonly string[]): string {
   const query = new URLSearchParams();
@@ -244,14 +247,15 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
                     : t('checkout.contribution.rewardHint', { amount: formatMoney(checkout.reward.price) })
                 }
                 error={contributionError}
+                grouped
               >
-                <TextInput
+                <AmountKeypad
                   value={checkout.contributionText}
-                  onChangeText={(value) => checkout.setContributionText(value.replace(',', '.'))}
-                  keyboardType="decimal-pad"
-                  inputMode="decimal"
-                  autoComplete="off"
-                  trailing={<Meta tone="secondary">{currency}</Meta>}
+                  onChange={checkout.setContributionText}
+                  currency={currency}
+                  max={PLEDGE_MAX}
+                  overLimitMessage={copy.errors.amountTooLarge}
+                  disabled={phase === 'reserving'}
                   testID="contribution"
                 />
               </Field>
@@ -367,20 +371,19 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
           </View>
         )}
         <Text style={styles.onWhite}>{t('checkout.review.rule')}</Text>
-        <Pill
-          variant="accent"
-          size="lg"
-          fullWidth
-          label={
+        <SwipeToConfirm
+          label={phase === 'paying' ? t('checkout.review.confirming') : t('mobile.checkout.swipeToPay')}
+          actionLabel={
             phase === 'paying'
               ? t('checkout.review.confirming')
               : agreementVersion === null
                 ? t('checkout.review.confirm')
                 : t('checkout.risk.confirm')
           }
+          amount={formatMoney(pledge.amounts.total)}
           busy={phase === 'paying'}
-          disabled={phase === 'paying' || clock.expired || !online}
-          onPress={checkout.pay}
+          disabled={clock.expired || !online}
+          onConfirm={checkout.pay}
           testID="confirm"
         />
         <Text style={styles.onWhite}>{t('checkout.review.charged')}</Text>
