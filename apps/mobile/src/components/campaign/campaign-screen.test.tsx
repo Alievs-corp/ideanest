@@ -277,8 +277,11 @@ describe('the campaign page, state by state', () => {
     const percent = screen.getByTestId('funding-percent');
     expect(textOf(percent)).toContain('124%');
     expect(textOf(percent)).toContain(C.funding.funded);
-    // The figure counts up on first view (#278); its colour is the success token throughout.
-    const figure = within(percent).getByTestId('animated-amount-count', { includeHiddenElements: true });
+    // The figure counts up on first view and then rolls (#278); whichever is drawn by now, its
+    // colour is the success token.
+    const figure =
+      within(percent).queryByTestId('animated-amount-count', { includeHiddenElements: true }) ??
+      within(percent).getByText('%', { includeHiddenElements: true });
     expect(StyleSheet.flatten(figure.props.style).color).toBe(colors.success);
     expect(textOf(screen.getByTestId('campaign-state'))).toBe(C.state.SUCCESSFUL);
   });

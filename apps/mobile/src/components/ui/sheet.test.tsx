@@ -122,9 +122,13 @@ describe('Sheet', () => {
     const view = await renderEn(ui(true));
     await view.rerender(ui(false));
 
-    const panel = view.getByTestId('sheet', { includeHiddenElements: true });
-    expect(panel.props.pointerEvents).toBe('none');
-    expect(panel.props.accessibilityElementsHidden).toBe(true);
+    // How far the fall has got by now depends on the runner's speed; whatever is still drawn
+    // takes no touch and says nothing, and nothing in it can be reached.
+    const panel = view.queryByTestId('sheet', { includeHiddenElements: true });
+    if (panel !== null) {
+      expect(panel.props.pointerEvents).toBe('none');
+      expect(panel.props.accessibilityElementsHidden).toBe(true);
+    }
     expect(view.queryByRole('header', { name: 'Currency' })).toBeNull();
 
     await waitFor(
