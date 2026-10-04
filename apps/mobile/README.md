@@ -589,11 +589,17 @@ machine; `checkout-screen.tsx` draws it.
 
 **Money motion (#280).** The contribution is typed on the kit's `AmountKeypad` (digits, the
 point, backspace and `+ − × ÷` on `decimal.js`, each result rounded half-even to the minor
-units, the amount handed to `useCheckout` as the same string the text field used to give). Step
-2 confirms with `SwipeToConfirm`: past 85% of the track it calls `pay`, which is unchanged, so
-a second swipe after a failure sends the same idempotency key. With a screen reader, or on
-Android any accessibility service (Switch Access), it is an ordinary accent button; on iOS the
-track's `activate` action is what VoiceOver and Switch Control perform. `SuccessReveal` is shown
+units, the amount handed to `useCheckout` as the same string the text field used to give; a
+reward's price seeds it in plain form, `45.00` as `45`). Reserving first settles the keypad: an
+operation still on screen commits its result if it is valid, and otherwise nothing is reserved
+and the keypad says why. Step 2 confirms with `SwipeToConfirm`: a drag released normally past
+85% of the track calls `pay`, which is unchanged, so a second swipe after a failure sends the
+same idempotency key; a drag the system cancels never commits, and a double activation sends
+once. With a screen reader, or on Android any accessibility service (Switch Access), it is an
+ordinary accent button; on iOS the track's `activate` action is what VoiceOver and Switch Control
+perform. Android's service signal is broad on purpose: a password manager's autofill or an
+automation tool is an accessibility service too, and such a person also gets the button — the
+trade accepted so that nobody who cannot swipe meets a swipe. `SuccessReveal` is shown
 by `pledges/[id]` only once a payment return reads the pledge back as `COLLECTED`, and it gives
 the success haptic; nothing celebrates on the way out to the payment page.
 
