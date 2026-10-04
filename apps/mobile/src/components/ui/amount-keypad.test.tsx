@@ -1,10 +1,10 @@
-import { useState, type ReactElement, type ReactNode } from 'react';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { createRef, useState, type ReactElement, type ReactNode } from 'react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { AccessibilityInfo } from 'react-native';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
-import { AmountKeypad } from './amount-keypad';
+import { AmountKeypad, type AmountKeypadHandle, type KeypadSettle } from './amount-keypad';
 import { Field } from './field';
 import { MotionBudgetProvider } from './motion-budget';
 
@@ -150,11 +150,28 @@ describe('AmountKeypad', () => {
     expect(screen.getByRole('button', { name: 'Use the result: 0.12 AZN' })).toBeTruthy();
   });
 
+  it('says nothing while a divisor is still being typed: 100 ÷ 0.5 passes through 0 and 0.', async () => {
+    await renderEn(<Holder />);
+    await press('1', '0', '0');
+    await fireEvent.press(screen.getByRole('button', { name: K.divide }));
+    await press('0');
+    expect(screen.queryByTestId('amount-keypad-message')).toBeNull();
+    await press('.');
+    expect(screen.queryByTestId('amount-keypad-message')).toBeNull();
+    await press('5');
+    expect(screen.getByRole('button', { name: 'Use the result: 200 AZN' })).toBeTruthy();
+    const said = [
+      ...jest.mocked(AccessibilityInfo.announceForAccessibility).mock.calls,
+      ...jest.mocked(AccessibilityInfo.announceForAccessibilityWithOptions).mock.calls,
+    ].map(([message]) => message);
+    expect(said).not.toContain(K.divideByZero);
+  });
+
   it('refuses division by zero at once, with no chip to commit', async () => {
     await renderEn(<Holder />);
     await press('5');
     await fireEvent.press(screen.getByRole('button', { name: K.divide }));
-    await press('0');
+    await press('0', '.', '0', '0');
     expect(screen.getByTestId('amount-keypad-message')).toHaveAccessibleName(K.divideByZero);
     expect(screen.queryByTestId('amount-keypad-result')).toBeNull();
     const said = [
@@ -190,8 +207,26 @@ describe('AmountKeypad', () => {
     await fireEvent.press(screen.getByRole('button', { name: K.add }));
     await press('1');
     await view.rerender(<Holder external="45.00" />);
-    expect(amount()).toHaveAccessibleName('Your contribution, 45.00 AZN');
+    expect(amount()).toHaveAccessibleName('Your contribution, 45 AZN');
     expect(screen.queryByTestId('amount-keypad-operation', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('types on after a price from outside: 45.00 then 6 is 456, not refused', async () => {
+    const values: string[] = [];
+    await renderEn(<Holder initial="45.00" onValue={(value) => values.push(value)} />);
+    expect(amount()).toHaveAccessibleName('Your contribution, 45 AZN');
+    await press('6');
+    expect(amount()).toHaveAccessibleName('Your contribution, 456 AZN');
+    await press('.', '5');
+    expect(values).toEqual(['456', '456.5']);
+  });
+
+  it('keeps itself to the numeric(14,2) ceiling with its own message when the caller names none', async () => {
+    await renderEn(<AmountKeypad value="999999999999" onChange={() => undefined} currency="AZN" />);
+    await fireEvent.press(screen.getByRole('button', { name: K.multiply }));
+    await press('2');
+    expect(screen.getByTestId('amount-keypad-message')).toHaveAccessibleName(K.overLimit);
+    expect(screen.getByTestId('amount-keypad-result')).toBeDisabled();
   });
 
   it('with motion off, still changes on the press, as plain text', async () => {
@@ -215,6 +250,75 @@ describe('AmountKeypad', () => {
     await fireEvent.press(screen.getByTestId('amount-keypad-result'));
     await waitFor(() => expect(within(amount()).getByText('6', { includeHiddenElements: true })).toBeTruthy());
     expect(amount()).toHaveAccessibleName('Your contribution, 6 AZN');
+  });
+
+  describe('settle(), before the amount is used', () => {
+    async function settle(ref: React.RefObject<AmountKeypadHandle | null>): Promise<KeypadSettle> {
+      let outcome: KeypadSettle = 'unchanged';
+      await act(async () => {
+        outcome = ref.current?.settle() ?? 'unchanged';
+      });
+      return outcome;
+    }
+
+    function Settled({ handle, onValue }: { readonly handle: React.Ref<AmountKeypadHandle>; readonly onValue: (v: string) => void }) {
+      const [value, setValue] = useState('');
+      return (
+        <AmountKeypad
+          ref={handle}
+          value={value}
+          onChange={(next) => {
+            setValue(next);
+            onValue(next);
+          }}
+          currency="AZN"
+        />
+      );
+    }
+
+    it('is unchanged with no operation pending', async () => {
+      const ref = createRef<AmountKeypadHandle>();
+      await renderEn(<Settled handle={ref} onValue={() => undefined} />);
+      await press('5');
+      expect(await settle(ref)).toBe('unchanged');
+    });
+
+    it('commits a valid result as the amount', async () => {
+      const ref = createRef<AmountKeypadHandle>();
+      const values: string[] = [];
+      await renderEn(<Settled handle={ref} onValue={(value) => values.push(value)} />);
+      await press('1', '0', '0');
+      await fireEvent.press(screen.getByRole('button', { name: K.divide }));
+      await press('4');
+      expect(await settle(ref)).toBe('committed');
+      expect(values[values.length - 1]).toBe('25');
+      expect(amount()).toHaveAccessibleName('25 AZN');
+    });
+
+    it('refuses an unfinished operation and says so', async () => {
+      const ref = createRef<AmountKeypadHandle>();
+      const values: string[] = [];
+      await renderEn(<Settled handle={ref} onValue={(value) => values.push(value)} />);
+      await press('1', '0', '0');
+      await fireEvent.press(screen.getByRole('button', { name: K.multiply }));
+      expect(await settle(ref)).toBe('refused');
+      expect(screen.getByTestId('amount-keypad-message')).toHaveAccessibleName(K.unfinished);
+      expect(values).toEqual(['1', '10', '100']);
+      // Typing on clears the nudge.
+      await press('2');
+      expect(screen.queryByTestId('amount-keypad-message')).toBeNull();
+    });
+
+    it('refuses a division by zero, keeping its message', async () => {
+      const ref = createRef<AmountKeypadHandle>();
+      await renderEn(<Settled handle={ref} onValue={() => undefined} />);
+      await press('5');
+      await fireEvent.press(screen.getByRole('button', { name: K.divide }));
+      await press('0', '.', '0', '0');
+      expect(await settle(ref)).toBe('refused');
+      expect(screen.getByTestId('amount-keypad-message')).toHaveAccessibleName(K.divideByZero);
+      expect(amount()).toHaveAccessibleName('5 AZN Divided by 0.00');
+    });
   });
 
   it('disables every key when disabled', async () => {

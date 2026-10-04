@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   withSpring,
@@ -17,6 +17,7 @@ import { Icon } from './icon';
 import {
   EMPTY_KEYPAD,
   KEYPAD_KEYS,
+  MONEY_MAX_AMOUNT,
   KEYPAD_OPERATORS,
   OPERATOR_SYMBOL,
   chooseOperator,
@@ -25,6 +26,7 @@ import {
   exceeds,
   figureOf,
   groupFigure,
+  normaliseEntry,
   plainOf,
   pressKey,
   resultOf,
@@ -65,11 +67,30 @@ import { BLOCK, TONES, blockSurface, useSurface } from './surface';
  * `value` is the amount as the field holds it (`''`, `'45'`, `'45.5'`), and `onChange` receives
  * the same shape — never a trailing point, so a half-typed `45.` is not handed on as an invalid
  * amount. The operator, the operand and the point being typed live here. A `value` from outside
- * (a reward chosen, which sets its price) replaces the amount and clears any pending operation.
+ * (a reward chosen, which sets its price) replaces the amount and clears any pending operation; it
+ * is read in the keypad's plain form, so `45.00` is typed on as `45`.
+ *
+ * <h2>A pending operation is not the amount</h2>
+ *
+ * While `143 × 2 = 286` is on screen, `value` is still 143. Before the amount is used, the screen
+ * calls `settle()` on the keypad's ref: a valid result is committed (and handed to `onChange`),
+ * anything else is refused with its message — an unfinished operation says so — and nothing is
+ * used.
  *
  * <p>Inside a `Field`, the amount takes the field's label as its accessible name and the field's
  * error as its hint; the keys are separate stops, so the field should be `grouped`.
  */
+
+export type KeypadSettle = 'unchanged' | 'committed' | 'refused';
+
+export interface AmountKeypadHandle {
+  /**
+   * Settles a pending operation before the amount is used: `unchanged` when there is none,
+   * `committed` when its result became the amount, `refused` when the result is not one to take
+   * (its message is shown and said).
+   */
+  readonly settle: () => KeypadSettle;
+}
 
 export interface AmountKeypadProps {
   /** The amount: `''` or digits with an optional point and up to `scale` decimals. */
@@ -77,13 +98,14 @@ export interface AmountKeypadProps {
   readonly onChange: (value: string) => void;
   /** The ISO code, shown after the amount and said with it. */
   readonly currency: string;
-  /** The largest amount the keypad takes, as a decimal string. */
+  /** The largest amount the keypad takes, as a decimal string. Defaults to the `numeric(14,2)` ceiling. */
   readonly max?: string | null;
-  /** What to say when the amount or a result is over `max`. */
+  /** What to say when the amount or a result is over `max`. Defaults to the kit's own sentence. */
   readonly overLimitMessage?: string;
   /** Digits after the point. Defaults to `MONEY_SCALE`, the minor units of every collected currency. */
   readonly scale?: number;
   readonly disabled?: boolean;
+  readonly ref?: Ref<AmountKeypadHandle>;
   readonly testID?: string;
 }
 
@@ -110,10 +132,11 @@ export function AmountKeypad({
   value,
   onChange,
   currency,
-  max = null,
+  max = MONEY_MAX_AMOUNT,
   overLimitMessage,
   scale,
   disabled = false,
+  ref,
   testID = 'amount-keypad',
 }: AmountKeypadProps) {
   const t = useT('mobile.kitMoney');
@@ -122,19 +145,22 @@ export function AmountKeypad({
   const field = useFieldControl({});
   const moves = useMotionAllowed('minimal');
 
-  const [state, setState] = useState<KeypadState>(() => ({ ...EMPTY_KEYPAD, entry: value }));
+  const [state, setState] = useState<KeypadState>(() => ({ ...EMPTY_KEYPAD, entry: normaliseEntry(value) }));
   const [synced, setSynced] = useState(value);
   const [mode, setMode] = useState<AnimatedAmountMode>('enter');
+  const [nudged, setNudged] = useState(false);
   if (value !== synced) {
     setSynced(value);
-    setState({ ...EMPTY_KEYPAD, entry: value });
+    setState({ ...EMPTY_KEYPAD, entry: normaliseEntry(value) });
     setMode('enter');
+    setNudged(false);
   }
 
   const options = { scale, max };
   const apply = (next: KeypadState, committing = false) => {
     if (next === state) return;
     setState(next);
+    setNudged(false);
     setMode(committing ? 'roll' : 'enter');
     const out = entryValue(next.entry);
     if (out !== entryValue(state.entry)) {
@@ -161,7 +187,22 @@ export function AmountKeypad({
   let message: string | null = null;
   if (result.kind === 'divide-by-zero') message = t('divideByZero');
   else if (result.kind === 'below-zero') message = t('belowZero');
-  else if (result.kind === 'over-limit' || exceeds(figureOf(state.entry), max)) message = overLimitMessage ?? null;
+  else if (result.kind === 'over-limit' || exceeds(figureOf(state.entry), max)) {
+    message = overLimitMessage ?? t('overLimit');
+  } else if (nudged && state.operator !== null) message = t('unfinished');
+
+  useImperativeHandle(ref, () => ({
+    settle: () => {
+      if (state.operator === null) return 'unchanged';
+      if (result.kind === 'ok') {
+        apply(commitResult(state, options), true);
+        return 'committed';
+      }
+      if (result.kind === 'none') setNudged(true);
+      else if (message !== null) announce(message, { assertive: true });
+      return 'refused';
+    },
+  }));
 
   const empty = state.entry === '';
   const shown = empty ? '0' : groupFigure(state.entry);

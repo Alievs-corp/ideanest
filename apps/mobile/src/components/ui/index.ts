@@ -59,7 +59,12 @@ export {
   type IconButtonVariant,
 } from './icon-button';
 export { AccentScopeProvider, Pill, type PillProps, type PillSize, type PillVariant } from './pill';
-export { AmountKeypad, type AmountKeypadProps } from './amount-keypad';
+export {
+  AmountKeypad,
+  type AmountKeypadHandle,
+  type AmountKeypadProps,
+  type KeypadSettle,
+} from './amount-keypad';
 export {
   SWIPE_COMMIT,
   SwipeToConfirm,

@@ -5576,7 +5576,9 @@
       "divideByZero": "Məbləğ sıfıra bölünə bilməz.",
       "belowZero": "Nəticə sıfırdan azdır, məbləğ isə mənfi ola bilməz.",
       "swipeHint": "Təsdiqləmək üçün düyməni sona qədər sürüşdürün",
-      "tapToClose": "Bağlamaq üçün istənilən yerə toxunun"
+      "tapToClose": "Bağlamaq üçün istənilən yerə toxunun",
+      "overLimit": "Bu məbləğ limitdən çoxdur.",
+      "unfinished": "Davam etməzdən əvvəl hesablamanı tamamlayın və ya əməliyyat işarəsini silin."
     },
     "checkout": {
       "close": "Dəstək pəncərəsini bağla",

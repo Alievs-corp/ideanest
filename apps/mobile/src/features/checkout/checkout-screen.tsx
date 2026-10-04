@@ -13,7 +13,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { Glyphs } from '../../icons';
-import { MONEY_MAX_INTEGER_DIGITS, MONEY_SCALE, formatMoney } from '@ideanest/money';
+import { formatMoney } from '@ideanest/money';
 import { NO_REWARD } from '@ideanest/checkout/draft';
 import { toAmounts } from '@ideanest/checkout/quote';
 import { contributionMessage, refusalMessage } from '@ideanest/checkout/refusals';
@@ -35,6 +35,7 @@ import {
   SkeletonCard,
   SkeletonGroup,
   SwipeToConfirm,
+  type AmountKeypadHandle,
 } from '../../components/ui';
 import { focusOn } from '../../components/ui/overlay';
 import { Checkbox } from '../../components/ui/checkbox';
@@ -62,8 +63,6 @@ export interface CheckoutScreenProps {
 
 const WIDE = 768;
 const SUMMARY_WIDTH = 360;
-/** The largest amount the `numeric(14,2)` column holds, the most the keypad takes. */
-const PLEDGE_MAX = `${'9'.repeat(MONEY_MAX_INTEGER_DIGITS)}.${'9'.repeat(MONEY_SCALE)}`;
 
 export function checkoutPath(projectId: string, rewardId: string | null, tokens: readonly string[]): string {
   const query = new URLSearchParams();
@@ -125,6 +124,23 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
   }, [step]);
 
   const [leaving, setLeaving] = useState(false);
+
+  // A keypad operation still on screen (`100 ÷ 4 = 25`) is settled before reserving: a valid result
+  // becomes the contribution and the reservation follows on the render that has it; a refused or
+  // unfinished one keeps its message and nothing is sent.
+  const keypad = useRef<AmountKeypadHandle>(null);
+  const [reserveNext, setReserveNext] = useState(false);
+  const { reserve } = checkout;
+  useEffect(() => {
+    if (!reserveNext) return;
+    setReserveNext(false);
+    reserve();
+  }, [reserveNext, reserve]);
+  const reserveSettled = () => {
+    const settled = keypad.current?.settle() ?? 'unchanged';
+    if (settled === 'committed') setReserveNext(true);
+    else if (settled === 'unchanged') reserve();
+  };
   const busy = phase === 'reserving' || phase === 'paying';
   const locked = busy || phase === 'redirecting';
   const close = () => {
@@ -253,8 +269,8 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
                   value={checkout.contributionText}
                   onChange={checkout.setContributionText}
                   currency={currency}
-                  max={PLEDGE_MAX}
                   overLimitMessage={copy.errors.amountTooLarge}
+                  ref={keypad}
                   disabled={phase === 'reserving'}
                   testID="contribution"
                 />
@@ -296,7 +312,7 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
         label={phase === 'reserving' ? t('checkout.review.reserving') : t('checkout.review.reserve')}
         busy={phase === 'reserving'}
         disabled={phase === 'reserving' || !online || checkout.catalogueStatus !== 'ready'}
-        onPress={() => checkout.reserve()}
+        onPress={reserveSettled}
         testID="reserve"
       />
     );

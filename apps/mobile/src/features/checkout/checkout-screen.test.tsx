@@ -174,8 +174,9 @@ describe('checkout step 1', () => {
   it('pre-selects ?reward= and forwards every token', async () => {
     await show({ initialRewardId: 'r1', tokens: ['t1', 't2'] });
     expect(screen.getByTestId('reward-option-r1')).toBeChecked();
+    // The price seeds the keypad in its plain form, so digits can be typed on after it.
     expect(screen.getByTestId('contribution-amount')).toHaveAccessibleName(
-      `${en.checkout.contribution.legend}, 45.00 AZN`,
+      `${en.checkout.contribution.legend}, 45 AZN`,
     );
     expect(api.getCheckoutRewards).toHaveBeenCalledWith('p1', ['t1', 't2'], expect.anything());
   });
@@ -208,6 +209,42 @@ describe('checkout step 1', () => {
     await reserve();
     expect(api.createPledgeDraft).toHaveBeenCalledTimes(1);
     expect(api.createPledgeDraft.mock.calls[0]?.[0].contribution).toEqual({ amount: '67.50', currency: 'AZN' });
+  });
+
+  it('types on after the seeded price instead of refusing every digit', async () => {
+    await show({ initialRewardId: 'r1' });
+    await keys('0');
+    expect(screen.getByTestId('summary-total')).toHaveTextContent('450.00 AZN');
+  });
+
+  it('reserves the result shown on the chip, not the amount before the operator', async () => {
+    await show({ initialRewardId: 'r1' });
+    await keys('<<<<<200');
+    await fireEvent.press(screen.getByRole('button', { name: en.mobile.kitMoney.divide }));
+    await keys('4');
+    expect(screen.getByRole('button', { name: 'Use the result: 50 AZN' })).toBeTruthy();
+    await reserve();
+    expect(api.createPledgeDraft).toHaveBeenCalledTimes(1);
+    expect(api.createPledgeDraft.mock.calls[0]?.[0].contribution).toEqual({ amount: '50.00', currency: 'AZN' });
+  });
+
+  it('reserves nothing while the operation on the keypad is refused, and keeps its message', async () => {
+    await show({ initialRewardId: 'r1' });
+    await keys('<<<<<100');
+    await fireEvent.press(screen.getByRole('button', { name: en.mobile.kitMoney.divide }));
+    await keys('0.00');
+    await reserve();
+    expect(api.createPledgeDraft).not.toHaveBeenCalled();
+    expect(screen.getByTestId('contribution-message')).toHaveAccessibleName(en.mobile.kitMoney.divideByZero);
+  });
+
+  it('reserves nothing while an operation is unfinished, and says to finish it', async () => {
+    await show({ initialRewardId: 'r1' });
+    await keys('<<<<<100');
+    await fireEvent.press(screen.getByRole('button', { name: en.mobile.kitMoney.multiply }));
+    await reserve();
+    expect(api.createPledgeDraft).not.toHaveBeenCalled();
+    expect(screen.getByTestId('contribution-message')).toHaveAccessibleName(en.mobile.kitMoney.unfinished);
   });
 
   it('asks where to post a posted reward, from the countries it is priced for', async () => {

@@ -21,6 +21,9 @@ import { MONEY_MAX_INTEGER_DIGITS, MONEY_SCALE } from '@ideanest/money';
  */
 const Exact = Decimal.clone({ precision: 40, rounding: Decimal.ROUND_HALF_EVEN });
 
+/** The largest amount a `numeric(14,2)` column holds: the keypad's limit when a caller names none. */
+export const MONEY_MAX_AMOUNT = `${'9'.repeat(MONEY_MAX_INTEGER_DIGITS)}.${'9'.repeat(MONEY_SCALE)}`;
+
 export type KeypadOperator = 'add' | 'subtract' | 'multiply' | 'divide';
 
 export const KEYPAD_OPERATORS: readonly KeypadOperator[] = ['add', 'subtract', 'multiply', 'divide'];
@@ -123,7 +126,11 @@ export function resultOf(
   if (state.operator === null) return { kind: 'none' };
   const left = figureOf(state.entry);
   const right = figureOf(state.operand);
-  if (left === null || right === null) return { kind: 'none' };
+  if (left === null || right === null || state.operand.endsWith('.')) return { kind: 'none' };
+  // `0`, `0.` and `0.0` are on their way to `0.5`: a divisor is only zero once it cannot grow.
+  if (state.operator === 'divide' && right.isZero() && !operandComplete(state.operand, scale)) {
+    return { kind: 'none' };
+  }
 
   let exact: Decimal;
   switch (state.operator) {
@@ -145,6 +152,12 @@ export function resultOf(
   if (value.isNegative() && !value.isZero()) return { kind: 'below-zero' };
   if (exceeds(value, max)) return { kind: 'over-limit', value };
   return { kind: 'ok', value: value.isZero() ? new Exact(0) : value };
+}
+
+/** Whether a typed figure has every digit it can take: its decimals are full. */
+function operandComplete(text: string, scale: number): boolean {
+  const point = text.indexOf('.');
+  return point !== -1 && text.length - point - 1 >= scale;
 }
 
 /** Whether an amount is over the caller's limit. No limit, or one that is not an amount, is none. */
@@ -189,6 +202,16 @@ export function chooseOperator(
     return { ...settled, operator };
   }
   return { ...state, operator, operand: '' };
+}
+
+/**
+ * An amount handed in from outside — a reward's price, `45.00` — as the keypad types it: `45`,
+ * `45.5`. Kept verbatim, its full decimals would refuse every digit key. Anything that is not an
+ * amount is kept as it is.
+ */
+export function normaliseEntry(value: string): string {
+  const figure = /^\d+(\.\d+)?$/.test(value) ? figureOf(value) : null;
+  return figure === null ? value : plainOf(figure);
 }
 
 /** The amount as the field's value: `''`, or digits with a point only when a fraction follows. */

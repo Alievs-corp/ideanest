@@ -1,9 +1,11 @@
 import {
   EMPTY_KEYPAD,
+  MONEY_MAX_AMOUNT,
   chooseOperator,
   commitResult,
   entryValue,
   groupFigure,
+  normaliseEntry,
   plainOf,
   pressKey,
   resultOf,
@@ -68,6 +70,19 @@ describe('typing an amount', () => {
     expect(pressKey(EMPTY_KEYPAD, 'backspace')).toEqual(EMPTY_KEYPAD);
   });
 
+  it('reads an amount from outside in plain form, so its digits can be typed on', () => {
+    expect(normaliseEntry('45.00')).toBe('45');
+    expect(normaliseEntry('45.50')).toBe('45.5');
+    expect(normaliseEntry('0.05')).toBe('0.05');
+    expect(normaliseEntry('')).toBe('');
+    expect(normaliseEntry('1e5')).toBe('1e5');
+    expect(typed(['6'], { ...EMPTY_KEYPAD, entry: normaliseEntry('45.00') }).entry).toBe('456');
+  });
+
+  it('defaults its limit to the numeric(14,2) ceiling', () => {
+    expect(MONEY_MAX_AMOUNT).toBe('999999999999.99');
+  });
+
   it('hands on the amount without a dangling point', () => {
     expect(entryValue('45.')).toBe('45');
     expect(entryValue('45.5')).toBe('45.5');
@@ -110,9 +125,19 @@ describe('arithmetic', () => {
     expect(valueOf(calculate('1', 'divide', '8'))).toBe('0.12');
   });
 
-  it('refuses division by zero, also by a zero typed as 0.00', () => {
-    expect(calculate('5', 'divide', '0').kind).toBe('divide-by-zero');
+  it('refuses division by zero once the divisor cannot grow, not while it is being typed', () => {
+    // `100 ÷ 0.5` passes through `0` and `0.` and `0.0`: none of them is a division by zero yet.
+    expect(calculate('100', 'divide', '0').kind).toBe('none');
+    expect(calculate('100', 'divide', '0.').kind).toBe('none');
+    expect(calculate('100', 'divide', '0.0').kind).toBe('none');
+    expect(valueOf(calculate('100', 'divide', '0.5'))).toBe('200.00');
     expect(calculate('5', 'divide', '0.00').kind).toBe('divide-by-zero');
+  });
+
+  it('treats an operand ending in a point as unfinished', () => {
+    expect(calculate('5', 'multiply', '2.').kind).toBe('none');
+    expect(calculate('5', 'add', '0.').kind).toBe('none');
+    expect(valueOf(calculate('5', 'multiply', '0'))).toBe('0.00');
   });
 
   it('refuses a result below zero, and takes exactly zero', () => {
@@ -154,9 +179,12 @@ describe('operators and commit', () => {
     expect(chooseOperator(state, 'add')).toEqual({ entry: '6', operator: 'add', operand: '' });
   });
 
-  it('will not chain through a refused result', () => {
-    const state = typed(['0'], chooseOperator(typed(['2']), 'divide'));
-    expect(chooseOperator(state, 'add')).toBe(state);
+  it('will not chain through a refused or unfinished result', () => {
+    const refused = typed(digits('0.00'), chooseOperator(typed(['2']), 'divide'));
+    expect(resultOf(refused).kind).toBe('divide-by-zero');
+    expect(chooseOperator(refused, 'add')).toBe(refused);
+    const unfinished = typed(digits('3.'), chooseOperator(typed(['2']), 'multiply'));
+    expect(chooseOperator(unfinished, 'add')).toBe(unfinished);
   });
 
   it('lets typing carry on after a committed result', () => {

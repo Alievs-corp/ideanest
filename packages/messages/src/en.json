@@ -5576,7 +5576,9 @@
       "divideByZero": "An amount cannot be divided by zero.",
       "belowZero": "The result is below zero, and an amount cannot be negative.",
       "swipeHint": "Slide the handle to the end to confirm",
-      "tapToClose": "Tap anywhere to close"
+      "tapToClose": "Tap anywhere to close",
+      "overLimit": "That amount is over the limit.",
+      "unfinished": "Finish the calculation, or delete the operator, before you continue."
     },
     "checkout": {
       "close": "Close the checkout",

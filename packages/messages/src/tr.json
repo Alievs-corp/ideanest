@@ -5576,7 +5576,9 @@
       "divideByZero": "Bir tutar sıfıra bölünemez.",
       "belowZero": "Sonuç sıfırın altında ve bir tutar negatif olamaz.",
       "swipeHint": "Onaylamak için tutamacı sonuna kadar kaydırın",
-      "tapToClose": "Kapatmak için herhangi bir yere dokunun"
+      "tapToClose": "Kapatmak için herhangi bir yere dokunun",
+      "overLimit": "Bu tutar sınırın üzerinde.",
+      "unfinished": "Devam etmeden önce hesaplamayı bitirin ya da işlem işaretini silin."
     },
     "checkout": {
       "close": "Destek ekranını kapat",
