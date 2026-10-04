@@ -5,6 +5,12 @@
 Colour, surface, and form are specified in [`ui-kit.md`](./ui-kit.md). Read the
 two together: that one answers *how it looks*, this one answers *how it moves*.
 
+> **Mobile (`apps/mobile`) follows the `mobile-design` skill**
+> (`.claude/skills/mobile-design/SKILL.md`), which takes precedence over this
+> document for the mobile app. In particular, §4.1's single entry animation and
+> §5's per-surface budget do not apply there. This document stays authoritative
+> for the web.
+
 ---
 
 ## Contents
@@ -522,6 +528,10 @@ Patterns the reference material had no need for:
 ---
 
 ## 7. Mobile equivalents
+
+> Superseded for `apps/mobile` by the `mobile-design` skill and its
+> `references/motion-recipes.md`. The table below records the original mapping;
+> the haptics table still applies.
 
 | Web | React Native |
 |---|---|

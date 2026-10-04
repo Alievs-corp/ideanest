@@ -173,6 +173,24 @@ frame.
 - Focus must be visible on every interactive element, including on lime
 - Contrast failures are build errors, not warnings
 
+### Mobile (`apps/mobile`)
+
+**Mobile design is defined by the `mobile-design` skill**
+(`.claude/skills/mobile-design/SKILL.md`). Read it before building, changing or
+reviewing any mobile screen, component, icon or animation, and follow it. It
+covers the visual language, the five-slot floating tab bar with a centre create
+button, Iconsax icons, safe areas, and the motion vocabulary.
+
+For `apps/mobile` only, the skill **replaces** two rules above: "one
+scroll-entry animation" and "motion decreases as money gets closer". The
+mobile app animates on every surface, including money surfaces, under the
+skill's performance, input and reduced-motion rules. Every other rule in this
+section — tokens only, lime and contrast, `transform` and `opacity` only,
+reduced motion, accessibility — still applies to mobile unchanged.
+
+The web is not affected. `apps/web` and `packages/ui` keep `docs/ui-kit.md` and
+`docs/motion-system.md` as written.
+
 ---
 
 ## 3. Code standards
@@ -242,7 +260,9 @@ answer. Do not implement around them — the decision changes the design.
 
 ## 6. For agents
 
-- Read `docs/ui-kit.md` and `docs/motion-system.md` before touching any UI
+- Read `docs/ui-kit.md` and `docs/motion-system.md` before touching any UI;
+  for `apps/mobile`, read the `mobile-design` skill as well, which takes
+  precedence where they differ
 - Never invent a colour, radius, or duration. Everything exists as a token
 - Never commit to `main`
 - Never claim something works without running it. "Typecheck passes" means you
