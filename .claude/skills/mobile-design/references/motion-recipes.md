@@ -51,20 +51,36 @@ on device — the same numbers feel different at 60 and 120 Hz.
 
 ## SharedTransition
 
-- Decide implementation in the spike sub-issue: Reanimated's shared element transitions
-  (verify they work on the New Architecture with our Reanimated version, behind its flag)
-  or a measured overlay: measure the source (`measure()` in a worklet), render a clone in
-  a portal at that frame, spring it to the destination frame (translate + scale only),
-  then reveal the real destination and remove the clone.
-- Must survive: back navigation (reverse), interrupted gesture, list virtualisation (the
-  source cell may be unmounted — fall back to a plain push).
+- **Decided in #279: a measured overlay.** Reanimated's own shared element transitions
+  (`ENABLE_SHARED_ELEMENT_TRANSITIONS`, Reanimated 4.5.5, React Native 0.86, New
+  Architecture) were tried in a release build on an Android 12 phone: the element slid in
+  with the page and never flew, and every push logged `synchronouslyUpdateUIProps
+  failed`. The flag stays off.
+- `useSharedSource(tag, snapshot)` on the card, `SharedTarget tag` on the page, one
+  `SharedTransitionHost` above the navigator. The press measures the source in window
+  coordinates and navigates at once; the target mounts hidden, measures itself, and the host
+  draws a clone at the target frame, transformed onto the source, then springs it to
+  identity with `spring.soft` (translate + scale only). The clone appears and the source
+  hides only once the clone's picture is drawn (≤ `CLONE_READY_MS`), so there is no empty
+  box. When it lands, the real target is shown and the clone removed.
+- The page pushed for a flight uses the stack's `fade` (`transition: 'shared'` param), so
+  the cover is what moves and the target is not measured mid-slide.
+- Back (header, hardware, `router.back()`) flies the clone from the page to the card. A
+  back during the flight in turns the same clone round from where it is. A loading page
+  draws the card's picture as its cover (`useSharedSnapshot`) so the flight has a target.
+- Plain navigation instead: Reduce Motion, no target within `ARRIVAL_WINDOW_MS`, a source
+  unmounted or recycled for another item (list virtualisation), a failed measurement, and
+  an interactive swipe back.
 
 ## CardStack
 
-- Stacked: each layer offset `translateX` a few points and scaled down slightly.
+- Stacked: each layer offset `translateX` by `PEEK` and scaled down by `LAYER_SCALE`;
+  past the third it waits invisibly behind it. Stacked, the group is one "show all" button.
 - Spread: layers spring to their list positions with `staggerDelay(i, 60)`; glows fade in
   after the layer settles.
 - Reverse on collapse. Positions are transforms on fixed-size cards — no animated height.
+  The group takes the column's height at once when it spreads and gives it back only after
+  the front card has folded in, so a card never covers what follows.
 
 ## Sheet
 

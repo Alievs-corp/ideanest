@@ -113,11 +113,24 @@ design starts.
   which says no when the device has Reduce Motion on. Springs come from
   `spring` in `src/theme`, press feedback from `PressableScale` /
   `usePressScale`, and `FadeUp` animates only the first screenful.
+- **Navigation motion (#279).** Stack pushes use the native `ios_from_right`
+  on both platforms: the incoming page slides in while the outgoing one shifts
+  back and dims. A campaign card's cover flies to the campaign page's cover and
+  back through `SharedTransition` (`useSharedSource` / `SharedTarget` under
+  the root `SharedTransitionHost`), a measured overlay rather than Reanimated's
+  shared element transitions, which did not work on this stack — the reasoning
+  is in `src/components/ui/shared-transition.tsx`. Keep Reanimated's
+  `ENABLE_SHARED_ELEMENT_TRANSITIONS` flag off. `CardStack` is the stack →
+  column fan-out.
 - **Checking an animation's cost.** On a release build (not a development
-  one), open the Perf Monitor, run the animation ten times on a low-end Android
-  device and on an iPhone, and confirm the UI thread holds the refresh rate and
-  the JS thread drops no frames because of it. Write the devices and the result
-  in the pull request.
+  one), run the animation ten times on a low-end Android device and on an
+  iPhone, and confirm the UI thread holds the refresh rate and the JS thread
+  drops no frames because of it. A release build has no Perf Monitor; on
+  Android read the frame statistics instead: `adb shell dumpsys gfxinfo
+  az.ideanest.app reset`, run the animation, then `adb shell dumpsys gfxinfo
+  az.ideanest.app` for the janky-frame share and the percentiles. On iOS use
+  Instruments' Animation Hitches. Write the devices and the result in the pull
+  request.
 - **Icons.** Iconsax, generated into `src/icons/glyphs.ts` by
   `scripts/generate-icons.mjs` from the MIT-licensed source
   (`iconsax-react-native`, a devDependency the app never imports). Use them as
