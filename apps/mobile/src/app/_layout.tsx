@@ -10,6 +10,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { siteUrl } from '../api/config';
 import { OfflineAnnouncer, WithOfflineBanner } from '../components/offline-banner';
 import { SheetHost } from '../components/ui/sheet';
+import { SharedTransitionHost } from '../components/ui/shared-transition';
 import { sweepAccountExports } from '../lib/account-export-files';
 import { startConnectivity } from '../lib/connectivity';
 import { destinationFor } from '../lib/links';
@@ -94,6 +95,11 @@ function urlFromNotification(
   return typeof url === 'string' ? url : null;
 }
 
+/** True when a push asked for the shared-element fade (`ProjectCard`'s `transition: 'shared'`). */
+function sharedPush(params: object | undefined): boolean {
+  return (params as { transition?: unknown } | undefined)?.transition === 'shared';
+}
+
 /**
  * The root stack; inside the intl provider so the screens it presents are translated.
  *
@@ -148,6 +154,15 @@ function AppStack() {
       <Stack.Screen
         name="(auth)"
         options={{ presentation: 'modal', headerShown: false, animation: 'default' }}
+      />
+      {/*
+        A campaign opened from a card fades in while the card's cover flies to the page's cover
+        (`SharedTransition`): the cover is what moves, and a page sliding under it would measure
+        the landing frame mid-slide. Opened any other way, it pushes with depth like everything else.
+      */}
+      <Stack.Screen
+        name="projects/[creatorSlug]/[projectSlug]"
+        options={({ route }) => (sharedPush(route.params) ? { animation: 'fade' } : {})}
       />
       <Stack.Screen
         name="campaigns/[id]/back"
@@ -257,9 +272,12 @@ export default function RootLayout() {
             <AccountSync />
             <OfflineAnnouncer />
             {/* The page a white sheet rises over scales back under it (`ui/sheet.tsx`, #277). */}
-            <SheetHost>
-              <AppStack />
-            </SheetHost>
+            {/* Card → page flights are drawn above everything (`ui/shared-transition.tsx`, #279). */}
+            <SharedTransitionHost>
+              <SheetHost>
+                <AppStack />
+              </SheetHost>
+            </SharedTransitionHost>
           </AppIntlProvider>
         </PersistQueryClientProvider>
       </SafeAreaProvider>

@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react';
 import { StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import type { CampaignCover } from '../../lib/campaign-page';
-import { MediaFrame } from '../ui';
+import { colors, radius } from '../../theme';
+import { MediaFrame, SharedTarget, useSharedSnapshot, type SharedSnapshot } from '../ui';
 
 /**
  * Block 1 — the web's `CampaignMedia`: the cover in a 16:9 box with the large radius.
@@ -18,12 +20,56 @@ import { MediaFrame } from '../ui';
  * without a fade of its own: the frame rises with the page's first screenful (`FadeUp`, in the
  * screen), and a second fade on the picture inside it would be the same motion twice.
  */
-export function CampaignMedia({ cover }: { readonly cover: CampaignCover | null }) {
+export function CampaignMedia({
+  cover,
+  tag,
+}: {
+  readonly cover: CampaignCover | null;
+  readonly tag: string;
+}) {
+  return (
+    <SharedTarget tag={tag}>
+      <CoverFrame uri={cover?.url ?? null} />
+    </SharedTarget>
+  );
+}
+
+/** The name the cover goes by on both ends of the card → page flight (`SharedTransition`). */
+export function coverTag(creatorSlug: string | undefined, slug: string | undefined): string {
+  return `campaign-cover:${creatorSlug ?? ''}/${slug ?? ''}`;
+}
+
+/** What the flight to a campaign page draws: the card's cover in the page cover's box. */
+export function coverSnapshot(uri: string | null): SharedSnapshot {
+  return { uri, radius: radius.lg, background: colors.surface3 };
+}
+
+/**
+ * The cover a campaign page opens with while it loads, when a flight from a card is landing on it:
+ * the card already had the picture, so the page shows it instead of a placeholder block.
+ */
+export function ArrivingCover({
+  tag,
+  fallback,
+}: {
+  readonly tag: string;
+  readonly fallback: ReactNode;
+}) {
+  const snapshot = useSharedSnapshot(tag);
+  if (snapshot === null) return fallback;
+  return (
+    <SharedTarget tag={tag}>
+      <CoverFrame uri={snapshot.uri} />
+    </SharedTarget>
+  );
+}
+
+function CoverFrame({ uri }: { readonly uri: string | null }) {
   return (
     <MediaFrame ratio="16/9" radius="lg" testID="campaign-media">
-      {cover === null ? null : (
+      {uri === null ? null : (
         <Image
-          source={{ uri: cover.url }}
+          source={{ uri }}
           contentFit="cover"
           priority="high"
           transition={0}
