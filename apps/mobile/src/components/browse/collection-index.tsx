@@ -4,7 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useCollections } from '../../api/queries';
 import { useT } from '../../lib/i18n';
 import { spacing } from '../../theme';
-import { FadeUp } from '../motion';
+import { FadeUp, useFirstScreenfulIndex } from '../motion';
 import { Body, Heading } from '../text';
 import { EmptyState, Pill, Screen, SkeletonCard, SkeletonGroup } from '../ui';
 import { CollectionCard } from './collection-card';
@@ -37,6 +37,7 @@ export function CollectionIndex() {
   const collections = useCollections();
   const [pulling, setPulling] = useState(false);
   const items = collections.data ?? [];
+  const entryIndex = useFirstScreenfulIndex(items.map((collection) => collection.id));
 
   return (
     <>
@@ -91,7 +92,7 @@ export function CollectionIndex() {
           ) : (
             <View style={styles.list} accessibilityLabel={t('listLabel')} testID="collection-list">
               {items.map((collection, index) => (
-                <FadeUp key={collection.id} index={index + 1}>
+                <FadeUp key={collection.id} index={entryIndex(collection.id) + 1}>
                   <CollectionCard collection={collection} priority={index < 3} />
                 </FadeUp>
               ))}

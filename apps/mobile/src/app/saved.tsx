@@ -4,7 +4,7 @@ import { FlashList } from '@shopify/flash-list';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSavedProjects } from '../api/queries';
-import { FadeUp } from '../components/motion';
+import { FIRST_SCREENFUL, FadeUp } from '../components/motion';
 import { CardTitle, Meta } from '../components/text';
 import {
   Card,
@@ -207,8 +207,8 @@ function SavedRow({
   const router = useRouter();
   const t = useT();
   const key = item.projectId ?? '';
-  // Decided when this cell mounts; a recycled cell keeps its first answer and does not remount.
-  const [rise] = useState(() => first.has(key) && !played.has(key));
+  // Frozen when this cell mounts: a recycled cell keeps its wrapper and never rises again.
+  const [entry] = useState(() => (first.has(key) && !played.has(key) ? index : FIRST_SCREENFUL));
   useEffect(() => {
     played.add(key);
   }, [key, played]);
@@ -238,7 +238,7 @@ function SavedRow({
       </View>
     </Card>
   );
-  return rise ? <FadeUp index={index}>{row}</FadeUp> : row;
+  return <FadeUp index={entry}>{row}</FadeUp>;
 }
 
 function Separator() {

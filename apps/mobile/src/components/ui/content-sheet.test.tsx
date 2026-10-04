@@ -5,7 +5,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '../../theme';
 import { Body } from '../text';
 import { TabBarInsetProvider, tabBarFootprint } from '../tab-bar';
+import { IntlProvider } from 'use-intl';
+import en from '@ideanest/messages/en.json';
 import { ContentSheet } from './content-sheet';
+import { Screen } from './screen';
 import { TONES } from './surface';
 
 const METRICS = {
@@ -61,6 +64,32 @@ describe('ContentSheet', () => {
     );
     expect(style.marginBottom).toBe(-tabBarFootprint(34));
     expect(style.paddingBottom).toBe(tabBarFootprint(34) + spacing[6]);
+  });
+
+  it('pulls back only what its Screen padded, and still clears the home indicator', async () => {
+    const tree = await inSafeArea(
+      <IntlProvider locale="en" messages={en}>
+        <Screen hasContent>
+          <ContentSheet testID="sheet" />
+        </Screen>
+      </IntlProvider>,
+    );
+    const style = sheetStyle(tree);
+    expect(style.marginBottom).toBe(-0);
+    expect(style.paddingBottom).toBe(34 + spacing[6]);
+  });
+
+  it('pulls back a Screen that pads the bottom edge itself', async () => {
+    const tree = await inSafeArea(
+      <IntlProvider locale="en" messages={en}>
+        <Screen hasContent edges={['left', 'right', 'bottom']}>
+          <ContentSheet testID="sheet" />
+        </Screen>
+      </IntlProvider>,
+    );
+    const style = sheetStyle(tree);
+    expect(style.marginBottom).toBe(-34);
+    expect(style.paddingBottom).toBe(34 + spacing[6]);
   });
 
   it('announces its title as a heading', async () => {

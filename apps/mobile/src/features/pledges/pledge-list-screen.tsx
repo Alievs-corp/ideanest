@@ -2,7 +2,12 @@ import { useCallback, useRef, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Glyphs } from '../../icons';
-import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, StyleSheet, View, useWindowDimensions } from 'react-native';
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 import {
   Body,
   ContentSheet,
@@ -31,6 +36,8 @@ import { PledgeCard } from './pledge-card';
 import { usePledgeList } from './use-pledge-list';
 
 const PLACEHOLDER_ROWS = [0, 1, 2] as const;
+
+const PledgeFlashList = Animated.createAnimatedComponent(FlashList<BackerPledgeSummary>);
 
 /** `Screen`'s side gutter; the list is its own scroller, so it pads its header and rows itself. */
 const GUTTER = spacing[5];
@@ -78,6 +85,15 @@ function PledgeListBody() {
   const list = usePledgeList(signedIn);
   const gate = useRowEntryGate(list.items);
   const [sheetTop, setSheetTop] = useState(0);
+  const { height: windowHeight } = useWindowDimensions();
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+  // The white run-out under short lists follows the sheet's top as the list scrolls and bounces.
+  const backdropStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: Math.max(sheetTop - scrollY.value, 0) }],
+  }));
 
   const open = useCallback(
     (id: string) => router.push({ pathname: '/pledges/[id]', params: { id } }),
@@ -171,8 +187,15 @@ function PledgeListBody() {
 
   return (
     <View style={styles.page}>
-      <View pointerEvents="none" style={[styles.backdrop, { top: sheetTop }]} />
-      <FlashList
+      {sheetTop > 0 ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.backdrop, { height: windowHeight }, backdropStyle]}
+        />
+      ) : null}
+      <PledgeFlashList
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         data={list.items}
         keyExtractor={rowKey}
         contentContainerStyle={{ paddingBottom: tabInset + spacing[6] }}
@@ -252,7 +275,7 @@ function Separator() {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.surface1 },
   // The sheet's continuation behind a short list; rows and separators cover it everywhere else.
-  backdrop: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: colors.whiteSurface },
+  backdrop: { position: 'absolute', left: 0, right: 0, top: 0, backgroundColor: colors.whiteSurface },
   header: { gap: spacing[2] },
   listHeader: { gap: spacing[4], paddingHorizontal: GUTTER, paddingTop: spacing[4], paddingBottom: spacing[6] },
   // Only the sheet's top: no bleed (the list has no gutter to bleed through) and no tail.

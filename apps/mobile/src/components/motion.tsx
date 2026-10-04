@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { motion, spacing, staggerDelay } from '../theme';
@@ -68,4 +68,17 @@ export function FadeUp({ index = 0, children }: FadeUpProps) {
     .withInitialValues({ opacity: 0, transform: [{ translateY: spacing[6] }] });
 
   return <Animated.View entering={entering}>{children}</Animated.View>;
+}
+
+/**
+ * Each item's entry index, frozen at the first non-empty render: an item present then keeps the
+ * index it had, and one that arrives later (a refresh, a reorder) is past the first screenful and
+ * renders still. For short lists that are not virtualised; `CampaignColumn` gates its own cells.
+ */
+export function useFirstScreenfulIndex(keys: readonly string[]): (key: string) => number {
+  const first = useRef<ReadonlyMap<string, number> | null>(null);
+  if (first.current === null && keys.length > 0) {
+    first.current = new Map(keys.map((key, index) => [key, index]));
+  }
+  return (key) => first.current?.get(key) ?? FIRST_SCREENFUL;
 }

@@ -5,7 +5,7 @@ import { Glyphs } from '../../icons';
 import { useCategories, type Category } from '../../api/queries';
 import { useT } from '../../lib/i18n';
 import { accent as accents, colors, lineHeight, radius, size, spacing } from '../../theme';
-import { FadeUp } from '../motion';
+import { FadeUp, useFirstScreenfulIndex } from '../motion';
 import { accentFor } from '../project-card';
 import { Body, CardTitle, Heading } from '../text';
 import {
@@ -50,6 +50,7 @@ export function CategoryIndex() {
   const categories = useCategories();
   const [pulling, setPulling] = useState(false);
   const taxonomy = categories.data ?? [];
+  const entryIndex = useFirstScreenfulIndex(taxonomy.map((category) => category.id || category.slug));
 
   return (
     <>
@@ -80,8 +81,8 @@ export function CategoryIndex() {
         ) : (
           <ContentSheet testID="category-sheet">
             <View style={styles.groups}>
-              {taxonomy.map((category, index) => (
-                <FadeUp key={category.id || category.slug} index={index + 1}>
+              {taxonomy.map((category) => (
+                <FadeUp key={category.id || category.slug} index={entryIndex(category.id || category.slug) + 1}>
                   <CategoryGroup category={category} />
                 </FadeUp>
               ))}

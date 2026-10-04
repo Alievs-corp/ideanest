@@ -335,7 +335,7 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
     if (ask === null || viewport.current === 0 || contentHeight.current === 0) return;
     const bodyEnd = contentHeight.current - footerHeight.current;
     if (offset.current + viewport.current < bodyEnd - viewport.current / 2) return;
-    const at = `${tab}:${contentHeight.current}`;
+    const at = `${tab}:${bodyEnd}`;
     if (askedAt.current === at) return;
     askedAt.current = at;
     ask();
@@ -533,7 +533,7 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
           // The comment composers (the Comments tab) sit in this list; iOS lifts it over the
           // keyboard rather than covering the field being typed in.
           automaticallyAdjustKeyboardInsets
-          contentInsetAdjustmentBehavior="automatic"
+          contentInsetAdjustmentBehavior="never"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

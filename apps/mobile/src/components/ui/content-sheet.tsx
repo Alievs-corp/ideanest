@@ -1,4 +1,4 @@
-import { useContext, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '../../theme';
@@ -23,18 +23,26 @@ export interface ContentSheetProps {
   readonly testID?: string;
 }
 
+/**
+ * The bottom padding the sheet's scroll host already gives, which the sheet pulls back to reach the
+ * edge. `Screen` publishes its own; a host without a provider is assumed to pad the safe-area inset
+ * or the tab bar, whichever is larger.
+ */
+export const SheetHostPaddingContext = createContext<number | null>(null);
+
 /** `Screen`'s side gutter, which the sheet bleeds through. */
 const GUTTER = spacing[5];
 
 export function ContentSheet({ title, actions, children, style, testID }: ContentSheetProps) {
   const insets = useContext(SafeAreaInsetsContext);
   const tail = Math.max(useTabBarInset(), insets?.bottom ?? 0);
+  const host = useContext(SheetHostPaddingContext) ?? tail;
   const header = (title !== undefined && title !== '') || actions !== undefined;
 
   return (
     <View
       testID={testID}
-      style={[styles.sheet, { marginBottom: -tail, paddingBottom: tail + spacing[6] }, style]}
+      style={[styles.sheet, { marginBottom: -host, paddingBottom: Math.max(tail, host) + spacing[6] }, style]}
     >
       <View style={styles.grabber} accessible={false} importantForAccessibility="no" />
       <SurfaceProvider surface="white">
