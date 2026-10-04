@@ -19,6 +19,7 @@ import {
   ChipRow,
   Dialog,
   Display,
+  ContentSheet,
   EdgeFade,
   EmptyState,
   ErrorState,
@@ -573,6 +574,13 @@ function KitGallery() {
           </FloatingPanel>
         </Section>
 
+        <Section title={heading([ContentSheet])}>
+          <ContentSheet title={nameOf(ContentSheet)} style={styles.galleryContentSheet}>
+            <Body>{t('common.card.rule')}</Body>
+            <Pill label={t('common.save')} onPress={noop} />
+          </ContentSheet>
+        </Section>
+
         {/* Data and media --------------------------------------------------------------- */}
         <Section title={heading([InlineAlert])}>
           {ALERTS.map((variant) => (
@@ -876,6 +884,7 @@ function Row({ children }: { readonly children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
+  galleryContentSheet: { flexGrow: 0, marginBottom: 0 },
   page: {
     padding: size.cardPaddingSmall,
     gap: spacing[10],
