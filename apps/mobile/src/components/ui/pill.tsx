@@ -113,10 +113,16 @@ const SKIN: Record<PillVariant, Skin> = {
 };
 
 /**
- * The variants that are drawn in white and would vanish on a white surface. `primary` takes the
- * dark system's own fill; `outline` takes the web's `border-black/16` and `text-on-white`.
+ * The variants that would vanish or read as the dark system on a white surface. `primary` takes the
+ * dark system's own fill; `ghost` the white sheet's muted block; `outline` the web's `border-black/16`
+ * and `text-on-white`.
  */
 const ON_WHITE: Partial<Record<PillVariant, Skin>> = {
+  ghost: {
+    rest: { backgroundColor: colors.whiteMuted },
+    pressed: { backgroundColor: tint(colors.black, 0.08) },
+    text: colors.textOnWhite,
+  },
   primary: {
     rest: { backgroundColor: colors.surface1 },
     pressed: { backgroundColor: colors.surface3 },
