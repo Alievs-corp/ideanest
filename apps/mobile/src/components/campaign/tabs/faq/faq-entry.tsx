@@ -2,11 +2,11 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { CampaignFaq } from '@ideanest/campaign/faqs';
 import { useT } from '../../../../lib/i18n';
 import { spacing } from '../../../../theme';
-import { EntryCard, entryText } from '../shared/tab-section';
+import { EntryCard, entryText, useEntryTones } from '../shared/tab-section';
 
 /**
- * One question and its answer — the web's `FaqEntry` (#155): a surface-2 card, the question as an
- * H3 and the answer below it with its line breaks kept. **Always open.** There is no accordion,
+ * One question and its answer — the web's `FaqEntry` (#155): a raised block (`EntryCard`), the
+ * question as an H3 and the answer below it with its line breaks kept. **Always open.** There is no accordion,
  * for the web's reasons (`CampaignFaqs.tsx`): collapsed text is text a reader cannot find, an
  * answer is long content that §8 keeps still, and the list is bounded at fifty.
  *
@@ -28,6 +28,7 @@ export function FaqEntry({
   readonly count: number;
 }) {
   const t = useT('mobile.campaign.faq');
+  const tones = useEntryTones();
   return (
     <View style={index === 1 ? styles.first : styles.next}>
       <EntryCard gap={spacing[2]} testID={`faq-${faq.id}`}>
@@ -38,11 +39,11 @@ export function FaqEntry({
             count: String(count),
             question: faq.question,
           })}
-          style={entryText.title}
+          style={[entryText.title, { color: tones.title }]}
         >
           {faq.question}
         </Text>
-        <Text style={entryText.body}>{faq.answer}</Text>
+        <Text style={[entryText.body, { color: tones.body }]}>{faq.answer}</Text>
       </EntryCard>
     </View>
   );

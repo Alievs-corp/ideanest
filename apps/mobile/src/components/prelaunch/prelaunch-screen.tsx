@@ -14,7 +14,16 @@ import { useSession } from '../../lib/use-session';
 import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
 import { FadeUp } from '../motion';
 import { Body, Eyebrow, Heading } from '../text';
-import { Icon, InlineAlert, Media, Pill, Screen, Skeleton, SkeletonGroup } from '../ui';
+import {
+  ContentSheet,
+  Icon,
+  InlineAlert,
+  Media,
+  Pill,
+  Screen,
+  Skeleton,
+  SkeletonGroup,
+} from '../ui';
 import { PrelaunchForm } from './prelaunch-form';
 
 /**
@@ -40,10 +49,13 @@ import { PrelaunchForm } from './prelaunch-form';
  *       sentence a failed request would have said.</li>
  * </ul>
  *
- * <h2>Motion: one FadeUp, on the part that is read</h2>
+ * <h2>Canvas and sheet</h2>
  *
- * One `FadeUp` around the cover, title and count — the web's exact use, and the first screenful
- * the `mobile-design` skill §6.3 gives an entry rise to. The form is outside it.
+ * `mobile-design` skill §2: the campaign — cover, title, blurb and how many are waiting — sits on
+ * the dark canvas and rises in with one `FadeUp`, the first screenful. The form is a form, so it
+ * lives in the white `ContentSheet` under it, last in the screen, where the field and the pills
+ * take the sheet's tones themselves. The sheet does not rise: it is placed, and the reader's first
+ * tap on the field is never waiting on an animation.
  */
 export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
   const t = useT('campaign.prelaunch');
@@ -177,11 +189,13 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
       refreshing={pulling}
     >
       {header(page.title ?? fallbackTitle)}
-      <View style={styles.page} testID="prelaunch-ready">
+      <View style={styles.summary} testID="prelaunch-ready">
         <FadeUp>
           <PrelaunchSummary page={page} />
         </FadeUp>
+      </View>
 
+      <ContentSheet testID="prelaunch-sheet">
         <PrelaunchForm
           projectId={projectId}
           signedIn={signedIn}
@@ -189,7 +203,7 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
           onFollowerCount={setFollowerCount}
           onClosed={close}
         />
-      </View>
+      </ContentSheet>
     </Screen>
   );
 }
@@ -247,9 +261,10 @@ function PrelaunchSummary({ page }: { readonly page: PrelaunchPage }) {
 
 const styles = StyleSheet.create({
   page: { paddingTop: spacing[4], paddingBottom: spacing[10], gap: spacing[10] },
+  summary: { paddingTop: spacing[4], paddingBottom: spacing[6] },
   placeholder: { gap: spacing[5] },
-  // The web's `border-white/8` around the cover, and its `mb-8` under it.
-  cover: { borderWidth: 1, borderColor: colors.border, marginBottom: spacing[8] },
+  // The web's `mb-8` under the cover. No border: on the canvas the picture is its own edge.
+  cover: { marginBottom: spacing[8] },
   title: { marginTop: spacing[2] },
   // 18pt in the reading colour — the web's `text-lg text-reading`.
   blurb: { marginTop: spacing[4], fontSize: fontSize.lg, lineHeight: lineHeight.cardTitle },

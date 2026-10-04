@@ -37,10 +37,13 @@ import type { CampaignPage } from '../../../lib/campaign-page';
  *   `sendJson` is the JSON write.
  * - **Rows are keyed within the tab**; the screen prefixes the tab's id, so two tabs may both
  *   have a row called `empty`.
- * - **Layout**: the screen gives every row the page's side gutter; the space *above* a row is
- *   the row's own (the Campaign tab puts 32 between its blocks, the web's `gap-8`; a list of
- *   cards may put less between them).
- * - **No entry animation** on any row (the page has none), and every word from the catalogue.
+ * - **Layout**: the screen gives every row the page's side gutter and draws it inside the white
+ *   content sheet (`SurfaceProvider surface="white"`), so a row reads its tones from
+ *   `useSurface()` rather than naming dark ones; the space *above* a row is the row's own (the
+ *   Campaign tab puts 32 between its blocks, the web's `gap-8`; a list of cards may put less
+ *   between them).
+ * - **No entry animation** on any row — only the page's first screenful, its header, rises; rows
+ *   arrive with a tab switch or a page and never animate in — and every word from the catalogue.
  * - **Offline**: a write is disabled and says why, as the header's Save and Remind do.
  */
 export interface CampaignTabContext {

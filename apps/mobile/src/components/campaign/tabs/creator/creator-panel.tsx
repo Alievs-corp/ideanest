@@ -1,29 +1,27 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Glyphs } from '../../../../icons';
 import type { CampaignCreator } from '../../../../lib/campaign-page';
 import { formatDay, useT } from '../../../../lib/i18n';
 import { useLocale } from '../../../../lib/locale';
-import {
-  colors,
-  font,
-  fontSize,
-  lineHeight,
-  radius,
-  size,
-  spacing,
-} from '../../../../theme';
-import { Avatar, Icon, useFocusRing } from '../../../ui';
-import { entryText } from '../shared/tab-section';
+import { font, fontSize, lineHeight, radius, size, spacing } from '../../../../theme';
+import { Avatar, Icon, PressableScale, TONES, useFocusRing, useSurface } from '../../../ui';
+import { BLOCK, blockSurface } from '../../../ui/surface';
+import { entryText, useEntryTones } from '../shared/tab-section';
 import type { CreatorProfile, CreatorProject } from './creator-profile';
 
 /**
  * The Creator tab's two blocks — the web's `CreatorPanel` (#155).
  *
- * <p>`CreatorAbout`: a 56pt round avatar (decorative — the name is beside it), the name, "Member
- * since {day}" and the biography. `CreatorCampaigns`: "Their other campaigns", up to six rows that
- * each open that campaign, then "See everything {name} has made".
+ * <p>`CreatorAbout`: a 56pt round `Avatar` (decorative — the name is beside it), the name, "Member
+ * since {day}" and the biography. `CreatorCampaigns`: "Their other campaigns", up to six raised
+ * press-scale rows that each open that campaign, then "See everything {name} has made".
+ *
+ * <p>Both are drawn inside the campaign page's white content sheet, so every tone is read from the
+ * surface (`useSurface()`) and a row is a `whiteMuted` block there (`mobile-design` skill §2).
+ * There is no `AvatarStack` here: the panel is about one person, and nothing on the page lists
+ * the people behind the campaign.
  *
  * <p>Each row is omitted when the field behind it is absent, as on the web: no biography box for
  * a creator who has not written one, and nothing at all — not "no previous campaigns" — for a
@@ -76,6 +74,8 @@ export function CreatorAbout({
   const t = useT('campaign.creator');
   const locale = useLocale();
   const router = useRouter();
+  const tone = TONES[useSurface()];
+  const tones = useEntryTones();
 
   // The campaign's own fields are the fallback: they came with the page and are true whatever
   // the profile endpoint says.
@@ -85,7 +85,7 @@ export function CreatorAbout({
 
   return (
     <View style={styles.about} testID="creator-about">
-      <Text accessibilityRole="header" style={styles.heading}>
+      <Text accessibilityRole="header" style={[styles.heading, { color: tone.primary }]}>
         {t('heading')}
       </Text>
 
@@ -93,7 +93,7 @@ export function CreatorAbout({
         <Avatar name={name} src={avatarUrl} size="lg" decorative testID="creator-avatar" />
         <View style={styles.names}>
           {profile === null ? (
-            <Text style={styles.name} testID="creator-name">
+            <Text style={[styles.name, { color: tone.primary }]} testID="creator-name">
               {name}
             </Text>
           ) : (
@@ -105,13 +105,13 @@ export function CreatorAbout({
               testID="creator-name"
             >
               <View style={styles.nameLink}>
-                <Text style={styles.name}>{name}</Text>
-                <Icon icon={Glyphs.ArrowRight} size={16} color={colors.textPrimary} />
+                <Text style={[styles.name, { color: tone.primary }]}>{name}</Text>
+                <Icon icon={Glyphs.ArrowRight} size={16} color={tone.primary} />
               </View>
             </Link>
           )}
           {joined === null ? null : (
-            <Text style={styles.since} testID="creator-member-since">
+            <Text style={[styles.since, { color: tone.secondary }]} testID="creator-member-since">
               {/* A tag rather than `{date}`: Azerbaijani and Turkish put the day first. */}
               {t.rich('memberSince', { date: () => joined })}
             </Text>
@@ -120,7 +120,7 @@ export function CreatorAbout({
       </View>
 
       {profile?.bio == null ? null : (
-        <Text style={entryText.body} testID="creator-bio">
+        <Text style={[entryText.body, { color: tones.body }]} testID="creator-bio">
           {profile.bio}
         </Text>
       )}
@@ -144,10 +144,11 @@ export function CreatorCampaigns({
   const t = useT('campaign.creator');
   const states = useT('campaign.state');
   const router = useRouter();
+  const tone = TONES[useSurface()];
 
   return (
     <View style={styles.others} testID="creator-others">
-      <Text accessibilityRole="header" style={styles.subheading}>
+      <Text accessibilityRole="header" style={[styles.subheading, { color: tone.primary }]}>
         {t('others')}
       </Text>
       <View style={styles.rows}>
@@ -171,7 +172,9 @@ export function CreatorCampaigns({
           onPress={() => router.push({ pathname: '/u/[slug]', params: { slug: profile.slug } })}
           testID="creator-see-all"
         >
-          <Text style={styles.seeAll}>{t('seeAll', { name: profile.name })}</Text>
+          <Text style={[styles.seeAll, { color: tone.primary }]}>
+            {t('seeAll', { name: profile.name })}
+          </Text>
         </Link>
       )}
     </View>
@@ -188,29 +191,39 @@ function CampaignRow({
   readonly onPress: () => void;
 }) {
   const { ring, onFocus, onBlur } = useFocusRing();
+  const surface = useSurface();
+  const block = BLOCK[blockSurface(surface)];
+  const tone = TONES[surface];
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="link"
       onPress={onPress}
       onFocus={onFocus}
       onBlur={onBlur}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed, ring]}
+      contentStyle={({ pressed }) => [
+        styles.row,
+        { backgroundColor: pressed ? block.pressed : block.rest },
+        ring,
+      ]}
       testID={`creator-project-${project.id}`}
     >
-      <Text style={styles.rowTitle}>{project.title}</Text>
+      <Text style={[styles.rowTitle, { color: tone.primary }]}>{project.title}</Text>
       {project.blurb === null ? null : (
-        <Text style={styles.rowBlurb} numberOfLines={2}>
+        <Text style={[styles.rowBlurb, { color: tone.secondary }]} numberOfLines={2}>
           {project.blurb}
         </Text>
       )}
-      {word === null ? null : <Text style={styles.rowState}>{word}</Text>}
-    </Pressable>
+      {word === null ? null : (
+        <Text style={[styles.rowState, { color: tone.secondary }]}>{word}</Text>
+      )}
+    </PressableScale>
   );
 }
 
 /**
  * Words that navigate: at least 44pt tall however small they are (a minimum, so Dynamic Type grows
- * it rather than clipping), the kit's focus ring, and one accessible name — the words themselves.
+ * it rather than clipping), the kit's focus ring and press scale, and one accessible name — the
+ * words themselves.
  */
 function Link({
   label,
@@ -225,19 +238,20 @@ function Link({
 }) {
   const { ring, onFocus, onBlur } = useFocusRing();
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="link"
       accessibilityLabel={label}
       onPress={onPress}
       onFocus={onFocus}
       onBlur={onBlur}
-      style={({ pressed }) => [styles.link, pressed && styles.linkPressed, ring]}
+      style={styles.linkReach}
+      contentStyle={({ pressed }) => [styles.link, pressed && styles.linkPressed, ring]}
       testID={testID}
     >
       <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         {children}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -248,7 +262,6 @@ const styles = StyleSheet.create({
     ...font.medium,
     fontSize: fontSize.h3,
     lineHeight: lineHeight.h3,
-    color: colors.textPrimary,
   },
   identity: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[4] },
   names: { flex: 1, gap: spacing[1] },
@@ -258,13 +271,11 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: fontSize.base,
     lineHeight: lineHeight.body,
-    color: colors.textPrimary,
   },
   since: {
     ...font.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textSecondary,
   },
   // The web's `gap-8` between the two blocks, and `gap-4` inside this one.
   others: { gap: spacing[4], paddingTop: spacing[8] },
@@ -272,7 +283,6 @@ const styles = StyleSheet.create({
     ...font.medium,
     fontSize: fontSize.base,
     lineHeight: lineHeight.body,
-    color: colors.textPrimary,
   },
   rows: { gap: spacing[2] },
   row: {
@@ -280,31 +290,25 @@ const styles = StyleSheet.create({
     minHeight: size.touchTarget,
     padding: spacing[4],
     borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
   },
-  rowPressed: { backgroundColor: colors.surface3 },
   rowTitle: {
     ...font.medium,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textPrimary,
   },
   rowBlurb: {
     ...font.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textSecondary,
   },
   rowState: {
     ...font.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.small,
-    color: colors.textTertiary,
   },
+  // The scaled box is the link's own, so it gives about its centre rather than the column's.
+  linkReach: { alignSelf: 'flex-start' },
   link: {
-    alignSelf: 'flex-start',
     justifyContent: 'center',
     minHeight: size.touchTarget,
     borderRadius: radius.sm,
@@ -314,7 +318,6 @@ const styles = StyleSheet.create({
     ...font.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textPrimary,
     textDecorationLine: 'underline',
   },
 });

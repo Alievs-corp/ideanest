@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Decimal from 'decimal.js';
 import { Glyphs } from '../../icons';
-import { formatMoney, type Money } from '@ideanest/money';
+import type { Money } from '@ideanest/money';
 import { completionOf } from '@ideanest/campaign/completion';
 import { addToTotal } from '@ideanest/campaign/realtime';
 import { formatCount, pluralCategory, useT } from '../../lib/i18n';
@@ -73,6 +73,18 @@ export function LiveFunding({ goal, pledged, backersCount, socketUrl, active }: 
   return (
     <View style={styles.column} testID="live-funding">
       {/*
+        The screen's hero figure (`mobile-design` skill §2): the wire's strings, formatted by
+        `@ideanest/money` inside `HeroFigure`, counting up on first view and rolling on each live
+        frame after it.
+      */}
+      <StatBlock
+        size="lg"
+        money={total}
+        motion="count"
+        label={t('pledged')}
+        testID="funding-pledged"
+      />
+      {/*
         The whole percent, already rounded down: the kit reads its accessible value to the nearest
         whole number, which would say "100 percent" of a bar at 99.5.
       */}
@@ -83,13 +95,6 @@ export function LiveFunding({ goal, pledged, backersCount, socketUrl, active }: 
         label={t('progressLabel', { percent })}
       />
       <View style={styles.figures}>
-        <StatBlock
-          size="md"
-          value={formatMoney(total)}
-          motion="count"
-          label={t('pledged')}
-          testID="funding-pledged"
-        />
         {completion === null ? null : (
           <StatBlock
             size="md"
@@ -114,7 +119,7 @@ export function LiveFunding({ goal, pledged, backersCount, socketUrl, active }: 
 }
 
 const styles = StyleSheet.create({
-  column: { gap: spacing[3] },
+  column: { gap: spacing[4] },
   // The web's `gap-x-6 gap-y-2`: a row that wraps, 24 between figures.
   figures: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing[6], rowGap: spacing[2] },
 });

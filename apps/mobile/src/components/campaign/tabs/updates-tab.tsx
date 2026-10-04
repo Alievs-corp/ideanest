@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useT } from '../../../lib/i18n';
-import { colors, font, fontSize, lineHeight, spacing } from '../../../theme';
-import { InlineAlert, Pill } from '../../ui';
+import { font, fontSize, lineHeight, spacing } from '../../../theme';
+import { InlineAlert, Pill, TONES, useSurface } from '../../ui';
 import { TabHeading, TabNote } from './shared/tab-section';
 import { UpdateEntry } from './updates/update-entry';
 import { useProjectUpdates, type ProjectUpdates } from './updates/use-project-updates';
@@ -95,6 +95,7 @@ export function useUpdatesTab(context: CampaignTabContext): CampaignTabBody {
 /** After the last card: the next page's failure, "Older updates", the end, or nothing. */
 function UpdatesFooter({ updates }: { readonly updates: ProjectUpdates }) {
   const t = useT();
+  const tone = TONES[useSurface()];
 
   if (updates.moreFailed) {
     return (
@@ -106,7 +107,7 @@ function UpdatesFooter({ updates }: { readonly updates: ProjectUpdates }) {
           action={
             <Pill
               label={t('common.tryAgain')}
-              variant="ghost"
+              variant="outline"
               size="sm"
               busy={updates.fetchingMore}
               onPress={() => updates.loadMore({ retry: true })}
@@ -139,7 +140,7 @@ function UpdatesFooter({ updates }: { readonly updates: ProjectUpdates }) {
   if (updates.pageCount > 1) {
     return (
       <View style={styles.footer}>
-        <Text style={styles.end} testID="updates-no-older">
+        <Text style={[styles.end, { color: tone.secondary }]} testID="updates-no-older">
           {t('campaign.updates.noOlder')}
         </Text>
       </View>
@@ -155,6 +156,5 @@ const styles = StyleSheet.create({
     ...font.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.small,
-    color: colors.textSecondary,
   },
 });

@@ -6,11 +6,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import * as WebBrowser from 'expo-web-browser';
 import type { TestInstance } from 'test-renderer';
+import { FadeInDown } from 'react-native-reanimated';
 import en from '@ideanest/messages/en.json';
+import { formatMoney } from '@ideanest/money';
 import type { ProjectPage, PublicRewards } from '../../api/queries';
 import { setOnline } from '../../lib/connectivity';
 import { setLocale } from '../../lib/locale';
-import { colors } from '../../theme';
+import { colors, spacing, staggerDelay } from '../../theme';
+import { MotionBudgetProvider, haptics } from '../ui';
 import { CampaignScreen } from './campaign-screen';
 
 /**
@@ -126,14 +129,18 @@ afterEach(() => {
   setOnline(true);
 });
 
-async function show({ cached, now = NOW }: { cached?: ProjectPage; now?: Date } = {}) {
+async function show({
+  cached,
+  now = NOW,
+  still = false,
+}: { cached?: ProjectPage; now?: Date; still?: boolean } = {}) {
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   if (cached !== undefined) client.setQueryData(['project', 'aysel', 'solar-lamp'], cached);
   const wrapper = ({ children }: { children: ReactNode }) => (
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={client}>
         <IntlProvider locale="en" messages={en}>
-          {children}
+          {still ? <MotionBudgetProvider level="none">{children}</MotionBudgetProvider> : children}
         </IntlProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
@@ -475,6 +482,123 @@ describe('the tabs', () => {
     expect(
       screen.getByRole('button', { name: en.moderation.report.triggerOn.campaign }),
     ).toBeTruthy();
+  });
+});
+
+describe('the design language (#281)', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  /** The press scale's transform on a press-scale surface's wrapper, or none when it is still. */
+  const scaleOf = (node: TestInstance) =>
+    StyleSheet.flatten(node.parent?.props.style as ViewStyle | undefined)?.transform;
+
+  it('puts the notices, the tabs, their rows and the rewards on the white content sheet', async () => {
+    await show();
+    expect(background(screen.getByTestId('campaign-tabs'))).toBe(colors.whiteSurface);
+    expect(background(screen.getByTestId('trust-block'))).toBe(colors.whiteMuted);
+    expect(background(screen.getByTestId('reward-tier-1'))).toBe(colors.whiteMuted);
+    expect(background(screen.getByTestId('campaign-footer'))).toBe(colors.whiteSurface);
+    // The chosen tab is the sheet's primary pill, inverted; the others are raised blocks.
+    expect(background(screen.getByRole('tab', { name: C.tabs.campaign }))).toBe(colors.surface1);
+    expect(background(screen.getByRole('tab', { name: C.tabs.faq }))).toBe(colors.whiteMuted);
+    // Select inverts on the sheet; Back, on the canvas, stays white.
+    expect(background(selectFor('Early lamp') as TestInstance)).toBe(colors.surface1);
+    expect(background(backPill() as TestInstance)).toBe(colors.whiteSurface);
+  });
+
+  it('leads with what has been pledged as the hero figure, formatted by @ideanest/money', async () => {
+    await show();
+    const pledged = screen.getByTestId('funding-pledged');
+    // One accessible figure, named by the formatted amount, not one stop per digit.
+    expect(within(pledged).getByLabelText(formatMoney({ amount: '420.00', currency: 'AZN' }))).toBeTruthy();
+  });
+
+  it('shows the hero figure at once, without a count, when motion is off', async () => {
+    await show({ still: true });
+    const pledged = screen.getByTestId('funding-pledged');
+    expect(
+      within(pledged).queryByTestId('animated-amount-count', { includeHiddenElements: true }),
+    ).toBeNull();
+    expect(textOf(pledged)).toContain('420.00');
+  });
+
+  it('raises the first screenful in, staggered, and never a tab row', async () => {
+    const delays: number[] = [];
+    const build = FadeInDown.duration.bind(FadeInDown);
+    jest.spyOn(FadeInDown, 'duration').mockImplementation((ms: number) => {
+      const builder = build(ms);
+      const delay = builder.delay.bind(builder);
+      builder.delay = ((wait: number) => {
+        delays.push(wait);
+        return delay(wait);
+      }) as typeof builder.delay;
+      return builder;
+    });
+    await show();
+    // Cover, header, funding, countdown, Back and the actions: six rises, nothing past them.
+    expect([...new Set(delays)].sort((a, b) => a - b)).toEqual(
+      [0, 1, 2, 3, 4, 5].map((index) => staggerDelay(index)),
+    );
+  });
+
+  it('raises nothing in when motion is off', async () => {
+    const built = jest.spyOn(FadeInDown, 'duration');
+    await show({ still: true });
+    expect(built).not.toHaveBeenCalled();
+    expect(screen.getByTestId('campaign-title')).toBeTruthy();
+  });
+
+  it('makes a selectable reward card a press-scale surface that opens the checkout on its tier', async () => {
+    const select = jest.spyOn(haptics, 'selectReward').mockImplementation(() => undefined);
+    await show();
+    const card = screen.getByTestId('reward-tier-1');
+    expect(scaleOf(card)).toEqual([{ scale: 1 }]);
+    // A bigger target for a thumb, not a second stop for a screen reader: the pill is that.
+    expect(card.props.accessible).toBe(false);
+
+    await fireEvent.press(card);
+    expect(select).toHaveBeenCalledTimes(1);
+    expect(mockRouter.push).toHaveBeenLastCalledWith({
+      pathname: '/campaigns/[id]/back',
+      params: { id: ID, reward: 'tier-1' },
+    });
+
+    // A sold-out tier is a still block that opens nothing.
+    mockRouter.push.mockClear();
+    await fireEvent.press(screen.getByTestId('reward-tier-2'));
+    expect(mockRouter.push).not.toHaveBeenCalled();
+  });
+
+  it('keeps the reward cards and the tabs still when motion is off', async () => {
+    await show({ still: true });
+    expect(scaleOf(screen.getByTestId('reward-tier-1'))).toBeUndefined();
+    const tab = screen.getByRole('tab', { name: C.tabs.faq });
+    expect(StyleSheet.flatten(tab.props.style as ViewStyle).transform).toBeUndefined();
+  });
+
+  it('gives the tabs the press scale with full motion', async () => {
+    await show();
+    const tab = screen.getByRole('tab', { name: C.tabs.faq });
+    expect(StyleSheet.flatten(tab.props.style as ViewStyle).transform).toEqual([{ scale: 1 }]);
+  });
+
+  it('floats the persistent Back pill above the home indicator, inverted on the sheet', async () => {
+    await show();
+    await fireEvent(screen.getByTestId('campaign-list'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 800 } },
+    });
+    await fireEvent(screen.getByTestId('back-cta'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 2_000, width: 350, height: 48 } },
+    });
+    const bar = screen.getByTestId('persistent-back', { includeHiddenElements: true });
+    const style = StyleSheet.flatten(bar.props.style as ViewStyle);
+    expect(style.position).toBe('absolute');
+    expect(style.bottom).toBe(METRICS.insets.bottom + spacing[2]);
+    const pill = within(bar).getByRole('button', { includeHiddenElements: true });
+    expect(background(pill)).toBe(colors.surface1);
+    // The end of the list clears it, so it never covers the report link.
+    const footer = StyleSheet.flatten(screen.getByTestId('campaign-footer').props.style as ViewStyle);
+    expect(Number(footer.paddingBottom)).toBeGreaterThan(Number(style.bottom) + 48);
   });
 });
 
