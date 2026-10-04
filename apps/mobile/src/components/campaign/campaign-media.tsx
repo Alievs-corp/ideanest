@@ -1,9 +1,15 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import type { CampaignCover } from '../../lib/campaign-page';
 import { colors, radius } from '../../theme';
-import { MediaFrame, SharedTarget, useSharedSnapshot, type SharedSnapshot } from '../ui';
+import {
+  MediaFrame,
+  SharedTarget,
+  useSharedSnapshot,
+  useSharedTargetDisplay,
+  type SharedSnapshot,
+} from '../ui';
 
 /**
  * Block 1 — the web's `CampaignMedia`: the cover in a 16:9 box with the large radius.
@@ -28,7 +34,7 @@ export function CampaignMedia({
   readonly tag: string;
 }) {
   return (
-    <SharedTarget tag={tag}>
+    <SharedTarget tag={tag} waitForDisplay>
       <CoverFrame uri={cover?.url ?? null} />
     </SharedTarget>
   );
@@ -58,13 +64,17 @@ export function ArrivingCover({
   const snapshot = useSharedSnapshot(tag);
   if (snapshot === null) return fallback;
   return (
-    <SharedTarget tag={tag}>
+    <SharedTarget tag={tag} waitForDisplay>
       <CoverFrame uri={snapshot.uri} />
     </SharedTarget>
   );
 }
 
 function CoverFrame({ uri }: { readonly uri: string | null }) {
+  const displayed = useSharedTargetDisplay();
+  useEffect(() => {
+    if (uri === null) displayed?.();
+  }, [displayed, uri]);
   return (
     <MediaFrame ratio="16/9" radius="lg" testID="campaign-media">
       {uri === null ? null : (
@@ -78,6 +88,7 @@ function CoverFrame({ uri }: { readonly uri: string | null }) {
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
           testID="campaign-cover"
+          onDisplay={displayed}
         />
       )}
     </MediaFrame>

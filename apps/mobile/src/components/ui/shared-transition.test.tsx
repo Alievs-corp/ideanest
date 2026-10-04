@@ -12,6 +12,7 @@ import {
   useSharedArrival,
   useSharedSnapshot,
   useSharedSource,
+  useSharedTargetDisplay,
   type SharedFrame,
 } from './shared-transition';
 
@@ -21,18 +22,30 @@ import {
  * the card at the top left, the page cover full width further down.
  */
 
-const mockListeners: Array<() => void> = [];
+type MockListener = { event: string; callback: (event?: unknown) => void };
+const mockListeners: MockListener[] = [];
 jest.mock('expo-router', () => ({
   useNavigation: () => ({
-    addListener: (_event: string, callback: () => void) => {
-      mockListeners.push(callback);
+    addListener: (event: string, callback: (event?: unknown) => void) => {
+      const entry = { event, callback };
+      mockListeners.push(entry);
       return () => {
-        const index = mockListeners.indexOf(callback);
+        const index = mockListeners.indexOf(entry);
         if (index >= 0) mockListeners.splice(index, 1);
       };
     },
   }),
 }));
+
+/** Emits a navigation event to every listener for it, then lets the deferred work run. */
+async function emit(event: string, payload?: unknown) {
+  await act(async () => {
+    mockListeners.filter((entry) => entry.event === event).forEach((entry) => entry.callback(payload));
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+}
 
 const CARD: SharedFrame = { x: 16, y: 300, width: 160, height: 90 };
 const PAGE: SharedFrame = { x: 0, y: 100, width: 400, height: 225 };
@@ -96,17 +109,19 @@ function App({
   level = 'full',
   showCard = true,
   cardTag = TAG,
+  pageKey = 'page',
 }: {
   readonly level?: MotionLevel;
   readonly showCard?: boolean;
   readonly cardTag?: string;
+  readonly pageKey?: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <MotionBudgetProvider level={level}>
       <SharedTransitionHost>
         {showCard ? <Card tag={cardTag} onOpen={() => setOpen(true)} /> : null}
-        {open ? <Page /> : null}
+        {open ? <Page key={pageKey} /> : null}
         <Pressable testID="close" onPress={() => setOpen(false)} />
       </SharedTransitionHost>
     </MotionBudgetProvider>
@@ -172,7 +187,7 @@ describe('SharedTransition', () => {
     await openPage();
     await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
 
-    await act(() => mockListeners.forEach((listener) => listener()));
+    await emit('beforeRemove', {});
     await act(async () => {
       await Promise.resolve();
       await Promise.resolve();
@@ -193,7 +208,7 @@ describe('SharedTransition', () => {
     await waitFor(() => expect(opacity('card')).toBe(0));
     const midway = cloneTransform().scaleX ?? 1;
 
-    await act(() => mockListeners.forEach((listener) => listener()));
+    await emit('beforeRemove', {});
 
     // No measuring and no restart from the page: the same frames, heading back to the card.
     expect(screen.getByTestId('shared-clone')).toBeTruthy();
@@ -201,7 +216,6 @@ describe('SharedTransition', () => {
     expect(Math.abs((cloneTransform().scaleX ?? 1) - midway)).toBeLessThan(0.5);
     await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
     expect(opacity('card')).toBe(1);
-    expect(opacity('page')).toBe(0);
   });
 
   it('goes back plainly when the card was recycled for another campaign', async () => {
@@ -210,7 +224,7 @@ describe('SharedTransition', () => {
     await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
 
     await rerender(<App cardTag="campaign-cover:someone/else" />);
-    await act(() => mockListeners.forEach((listener) => listener()));
+    await emit('beforeRemove', {});
     await act(async () => {
       await Promise.resolve();
     });
@@ -224,7 +238,7 @@ describe('SharedTransition', () => {
     await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
 
     frames.card = null;
-    await act(() => mockListeners.forEach((listener) => listener()));
+    await emit('beforeRemove', {});
     await act(async () => {
       await Promise.resolve();
       await Promise.resolve();
@@ -271,6 +285,125 @@ describe('SharedTransition', () => {
     expect(screen.queryByTestId('shared-clone')).toBeNull();
     await waitFor(() => expect(opacity('page')).toBe(1));
     expect(opacity('card')).toBe(1);
+  });
+
+  it('still counts as arrived for a page that remounts just after the landing', async () => {
+    const { rerender } = await render(<App />);
+    await openPage();
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
+
+    // The loading cover is swapped for the real page: it must not rise in after the flight.
+    await rerender(<App pageKey="remounted" />);
+    expect(screen.getByTestId('arriving')).toHaveTextContent('true');
+    expect(opacity('page')).toBe(1);
+  });
+
+  it('does not fly back when the page was closed natively', async () => {
+    await render(<App />);
+    await openPage();
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
+
+    // A swipe or the iOS header's back: the closing transition runs first, the removal after it.
+    await emit('transitionStart', { data: { closing: true } });
+    await emit('beforeRemove', {});
+
+    expect(screen.queryByTestId('shared-clone')).toBeNull();
+    expect(opacity('card')).toBe(1);
+  });
+
+  it('does not fly back when another listener prevents the removal', async () => {
+    await render(<App />);
+    await openPage();
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
+
+    await emit('beforeRemove', { defaultPrevented: true });
+
+    expect(screen.queryByTestId('shared-clone')).toBeNull();
+    expect(opacity('page')).toBe(1);
+  });
+
+  it('gives a replaced flight its card back', async () => {
+    frames.second = { x: 200, y: 300, width: 160, height: 90 };
+    function Two() {
+      const [open, setOpen] = useState<string | null>(null);
+      return (
+        <MotionBudgetProvider level="full">
+          <SharedTransitionHost>
+            <Card onOpen={() => setOpen(TAG)} />
+            <Second onOpen={() => setOpen('campaign-cover:other/lamp')} />
+            {open === null ? null : <Page key={open} tag={open} />}
+          </SharedTransitionHost>
+        </MotionBudgetProvider>
+      );
+    }
+    function Second({ onOpen }: { readonly onOpen: () => void }) {
+      const shared = useSharedSource('campaign-cover:other/lamp', SNAPSHOT);
+      return (
+        <Pressable
+          testID="press-second"
+          onPress={() => {
+            shared.launch();
+            onOpen();
+          }}
+        >
+          <Animated.View {...shared.props} testID="second" />
+        </Pressable>
+      );
+    }
+
+    await render(<Two />);
+    await openPage();
+    await waitFor(() => expect(opacity('card')).toBe(0));
+
+    // A second card is pressed while the first flight is still in the air.
+    await fireEvent.press(screen.getByTestId('press-second'));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await fireEvent(screen.getByTestId('page'), 'layout', { nativeEvent: { layout: PAGE } });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(opacity('card')).toBe(1));
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
+    expect(opacity('second')).toBe(1);
+    delete frames.second;
+  });
+
+  it('holds the clone until the page picture is drawn', async () => {
+    let draw: (() => void) | undefined;
+    function Picture() {
+      draw = useSharedTargetDisplay();
+      return <Text>cover</Text>;
+    }
+    function Waiting() {
+      const [open, setOpen] = useState(false);
+      return (
+        <MotionBudgetProvider level="full">
+          <SharedTransitionHost>
+            <Card onOpen={() => setOpen(true)} />
+            {open ? (
+              <SharedTarget tag={TAG} testID="page" waitForDisplay>
+                <Picture />
+              </SharedTarget>
+            ) : null}
+          </SharedTransitionHost>
+        </MotionBudgetProvider>
+      );
+    }
+
+    await render(<Waiting />);
+    await openPage();
+    await waitFor(() => expect(opacity('card')).toBe(0));
+    // Landed, but the page's picture is not drawn: the clone stays over the empty frame.
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    expect(screen.getByTestId('shared-clone')).toBeTruthy();
+
+    await act(async () => draw?.());
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull());
+    expect(opacity('page')).toBe(1);
   });
 
   it('draws nothing outside a host', async () => {

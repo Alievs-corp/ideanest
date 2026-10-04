@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { accent as accents, radius, spacing, type Accent } from '../../theme';
 import { useFocusRing } from './focus';
@@ -30,6 +30,8 @@ export interface AccentCardProps {
    * (`CardStack` fades the glows in after the cards settle).
    */
   readonly glow?: boolean;
+  /** The pressable card itself, for a parent that moves screen-reader focus onto it. */
+  readonly pressableRef?: Ref<View>;
   readonly testID?: string;
 }
 
@@ -48,6 +50,7 @@ export function AccentCard({
   action,
   style,
   glow = true,
+  pressableRef,
   testID,
 }: AccentCardProps) {
   const press = usePressScale();
@@ -73,6 +76,7 @@ export function AccentCard({
         <View style={skin}>{body}</View>
       ) : (
         <AnimatedPressable
+          ref={pressableRef}
           accessibilityRole="button"
           accessibilityLabel={accessibilityLabel}
           onPress={onPress}

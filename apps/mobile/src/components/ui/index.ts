@@ -174,6 +174,7 @@ export {
   useSharedArrival,
   useSharedSnapshot,
   useSharedSource,
+  useSharedTargetDisplay,
   type SharedFrame,
   type SharedSnapshot,
   type SharedSource,

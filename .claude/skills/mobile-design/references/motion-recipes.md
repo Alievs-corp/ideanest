@@ -69,13 +69,19 @@ on device — the same numbers feel different at 60 and 120 Hz.
   back during the flight in turns the same clone round from where it is. A loading page
   draws the card's picture as its cover (`useSharedSnapshot`) so the flight has a target.
 - Plain navigation instead: Reduce Motion, no target within `ARRIVAL_WINDOW_MS`, a source
-  unmounted or recycled for another item (list virtualisation), a failed measurement, and
-  an interactive swipe back.
+  unmounted or recycled for another item (list virtualisation), a failed measurement, a
+  removal another listener prevents, and a screen closed natively (an interactive swipe, the
+  iOS header back button, Android predictive back), detected by its closing
+  `transitionStart` arriving before `beforeRemove`.
+- The clone hands over only once the page's own picture is drawn (`waitForDisplay` +
+  `useSharedTargetDisplay`, at most `HANDOVER_MS`), and a flight replaced by another gives
+  back everything it hid.
 
 ## CardStack
 
-- Stacked: each layer offset `translateX` by `PEEK` and scaled down by `LAYER_SCALE`;
-  past the third it waits invisibly behind it. Stacked, the group is one "show all" button.
+- Stacked: each layer scaled down by `LAYER_SCALE` and offset `translateX` so it shows
+  `PEEK` beyond the layer in front; past the third it waits invisibly behind it. Stacked, the
+  group is one "show all" button, and pressing it moves focus to the first card.
 - Spread: layers spring to their list positions with `staggerDelay(i, 60)`; glows fade in
   after the layer settles.
 - Reverse on collapse. Positions are transforms on fixed-size cards — no animated height.

@@ -51,10 +51,11 @@ import { useMotionAllowed } from './motion-budget';
  *
  * Reduce Motion (the skill's §6.6), a destination that does not lay out within
  * {@link ARRIVAL_WINDOW_MS} of the press, a source that has been unmounted or recycled for another
- * item by the time the page is left (list virtualisation), a measurement that comes back empty,
- * and an interactive swipe back, which the native stack completes without asking. In each case the
- * navigation happens exactly as it would have with no shared element, because none of this ever
- * holds it up.
+ * item by the time the page is left (list virtualisation), a measurement that comes back empty, a
+ * removal another listener prevents, and a screen the native stack closed by itself — an
+ * interactive swipe, the iOS header's back button, Android's predictive back — which is already off
+ * screen when its `beforeRemove` arrives (see {@link NATIVE_CLOSE_MS}). In each case the navigation
+ * happens exactly as it would have with no shared element, because none of this ever holds it up.
  */
 
 /** A rectangle in window coordinates. */
@@ -109,6 +110,10 @@ interface TargetEntry {
   readonly tag: string;
   readonly node: { current: unknown };
   readonly shown: SharedValue<number>;
+  /** Whether the target's own picture is drawn, so the clone can leave without a gap. */
+  displayed: boolean;
+  /** Called once when it is, by a landing that is waiting for it. */
+  whenDisplayed: (() => void) | null;
 }
 
 interface Flight {
@@ -135,6 +140,19 @@ interface Flight {
 /** How long a clone waits for its picture to be drawn before it moves anyway. */
 export const CLONE_READY_MS = 120;
 
+/** How long a landed clone waits for the page's own picture before it hands over anyway. */
+export const HANDOVER_MS = 250;
+
+/**
+ * A screen whose closing transition started this recently was closed natively — an interactive
+ * swipe, the iOS header's back button, Android's predictive back — and is already off screen when
+ * its `beforeRemove` arrives, so it does not fly back.
+ */
+export const NATIVE_CLOSE_MS = 2000;
+
+/** How long after a landing a remounted page still counts as arrived (it skips its entry rise). */
+const ARRIVED_MEMORY_MS = 2000;
+
 interface Pending {
   readonly tag: string;
   readonly source: SourceEntry;
@@ -159,6 +177,7 @@ interface SharedTransitionApi {
   register(entry: SourceEntry): () => void;
   launch(entry: SourceEntry, snapshot: SharedSnapshot): void;
   isArriving(tag: string): boolean;
+  arrivedRecently(tag: string): boolean;
   snapshotFor(tag: string): SharedSnapshot | null;
   attach(entry: TargetEntry): () => void;
   arrive(entry: TargetEntry): void;
@@ -184,7 +203,22 @@ export function SharedTransitionHost({ children }: { readonly children: ReactNod
   /** The clone's position between the card (0) and the page (1), kept across a turn-round. */
   const progress = useSharedValue(0);
 
+  const landed = useRef(new Map<string, number>());
+
   const fly = useCallback((next: (Omit<Flight, 'id' | 'clone'> & { clone?: number }) | null) => {
+    const prev = live.current;
+    /*
+     * A flight that ends, or is replaced by another clone, gives back everything it hid: a card left
+     * at opacity 0 would stay invisible for as long as its cell lives — and a recycled cell would
+     * hide some other campaign's cover.
+     */
+    if (prev !== null && (next === null || next.clone !== prev.clone)) {
+      for (const cover of prev.covers) cover.value = 1;
+      if (prev.direction === 'in') {
+        const target = targets.current.get(prev.tag);
+        if (target !== undefined) target.shown.value = 1;
+      }
+    }
     ids.current += 1;
     const value = next === null ? null : { ...next, id: ids.current, clone: next.clone ?? ids.current };
     live.current = value;
@@ -280,8 +314,8 @@ export function SharedTransitionHost({ children }: { readonly children: ReactNod
         };
         pending.current = launch;
         void sharedMeasure.inWindow(entry.node.current).then(async (frame) => {
-          launch.measured = true;
           launch.from = frame === null ? null : await relative(frame);
+          launch.measured = true;
           departures.current.set(entry.tag, {
             tag: entry.tag,
             source: entry,
@@ -292,6 +326,10 @@ export function SharedTransitionHost({ children }: { readonly children: ReactNod
           if (launch.arrived === null) return;
           if (!startIn(launch.arrived.target, launch.arrived.page)) reveal(entry.tag);
         });
+      },
+      arrivedRecently(tag) {
+        const at = landed.current.get(tag);
+        return at !== undefined && Date.now() - at <= ARRIVED_MEMORY_MS;
       },
       isArriving(tag) {
         const current = live.current;
@@ -354,12 +392,21 @@ export function SharedTransitionHost({ children }: { readonly children: ReactNod
     (id: number) => {
       const current = live.current;
       if (current === null || current.id !== id) return;
-      if (current.direction === 'in') {
-        const target = targets.current.get(current.tag);
-        if (target !== undefined) target.shown.value = 1;
+      let done = false;
+      const finish = () => {
+        if (done || live.current?.id !== id) return;
+        done = true;
+        if (current.direction === 'in') landed.current.set(current.tag, Date.now());
+        fly(null);
+      };
+      const target = current.direction === 'in' ? targets.current.get(current.tag) : undefined;
+      if (target === undefined || target.displayed) {
+        finish();
+        return;
       }
-      current.source.shown.value = 1;
-      fly(null);
+      // The page's own picture is not drawn yet: the clone holds the place until it is.
+      target.whenDisplayed = finish;
+      setTimeout(finish, HANDOVER_MS);
     },
     [fly],
   );
@@ -473,6 +520,7 @@ const NO_FLIGHTS: SharedTransitionApi = {
   register: () => () => undefined,
   launch: () => undefined,
   isArriving: () => false,
+  arrivedRecently: () => false,
   snapshotFor: () => null,
   attach: () => () => undefined,
   arrive: () => undefined,
@@ -521,10 +569,14 @@ export function useSharedSource(tag: string, snapshot: SharedSnapshot): SharedSo
   };
 }
 
-/** True when a flight is on its way to `tag`: the screen should not run its own entry on it. */
+/**
+ * True when a flight is on its way to `tag` or has just landed on it: the screen should not run its
+ * own entry on it. "Just landed" covers a page that swaps its loading cover for the real one after
+ * the clone has already arrived.
+ */
 export function useSharedArrival(tag: string): boolean {
   const api = useApi();
-  const [arriving] = useState(() => api.isArriving(tag));
+  const [arriving] = useState(() => api.isArriving(tag) || api.arrivedRecently(tag));
   return arriving;
 }
 
@@ -535,9 +587,28 @@ export function useSharedSnapshot(tag: string): SharedSnapshot | null {
   return snapshot;
 }
 
+interface NavigationEvent {
+  readonly data?: { readonly closing?: boolean };
+  readonly defaultPrevented?: boolean;
+}
+
 type NavigationLike = {
-  addListener?: (event: 'beforeRemove', callback: () => void) => () => void;
+  addListener?: (
+    event: 'beforeRemove' | 'transitionStart',
+    callback: (event: NavigationEvent | undefined) => void,
+  ) => () => void;
 };
+
+/** Lets a target's picture say it is drawn (`useSharedTargetDisplay`). */
+const TargetDisplayContext = createContext<(() => void) | undefined>(undefined);
+
+/**
+ * The `onDisplay` for the picture inside a {@link SharedTarget} that waits for it, or undefined
+ * outside one. A target with no picture calls it as soon as it mounts.
+ */
+export function useSharedTargetDisplay(): (() => void) | undefined {
+  return useContext(TargetDisplayContext);
+}
 
 /*
  * `useNavigation` as Expo Router exports it, or nothing where a test's mock of `expo-router` leaves
@@ -551,6 +622,12 @@ const useNavigationIfAny: () => NavigationLike | undefined =
 export interface SharedTargetProps {
   readonly tag: string;
   readonly children: ReactNode;
+  /**
+   * True when the target holds a picture that reports itself drawn through
+   * `useSharedTargetDisplay`: a landing clone then waits for it (up to {@link HANDOVER_MS}) rather
+   * than leaving over an empty frame.
+   */
+  readonly waitForDisplay?: boolean;
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
 }
@@ -559,12 +636,31 @@ export interface SharedTargetProps {
  * The page end of a shared element. Hidden while a flight is coming to it, shown when the clone
  * lands, and the start of the flight back when its screen is removed.
  */
-export function SharedTarget({ tag, children, style, testID }: SharedTargetProps) {
+export function SharedTarget({
+  tag,
+  children,
+  style,
+  waitForDisplay = false,
+  testID,
+}: SharedTargetProps) {
   const api = useApi();
   const navigation = useNavigationIfAny();
   const node = useRef<unknown>(null);
   const shown = useSharedValue(api.isArriving(tag) ? 0 : 1);
-  const [entry] = useState<TargetEntry>(() => ({ tag, node, shown }));
+  const [entry] = useState<TargetEntry>(() => ({
+    tag,
+    node,
+    shown,
+    displayed: !waitForDisplay,
+    whenDisplayed: null,
+  }));
+  const displayed = useCallback(() => {
+    if (entry.displayed) return;
+    entry.displayed = true;
+    const waiting = entry.whenDisplayed;
+    entry.whenDisplayed = null;
+    waiting?.();
+  }, [entry]);
 
   useEffect(() => api.attach(entry), [api, entry]);
 
@@ -577,8 +673,24 @@ export function SharedTarget({ tag, children, style, testID }: SharedTargetProps
   }, [shown]);
 
   useEffect(() => {
-    if (typeof navigation?.addListener !== 'function') return undefined;
-    return navigation.addListener('beforeRemove', () => api.depart(entry));
+    const listen = navigation?.addListener;
+    if (typeof listen !== 'function') return undefined;
+    let closingAt = Number.NEGATIVE_INFINITY;
+    const offStart = listen('transitionStart', (event) => {
+      if (event?.data?.closing === true) closingAt = Date.now();
+    });
+    const offRemove = listen('beforeRemove', (event) => {
+      // Closed natively: the page has already gone, and a flight now would come from nowhere.
+      if (Date.now() - closingAt < NATIVE_CLOSE_MS) return;
+      // After every listener has had its say: a removal another one prevents is not a departure.
+      queueMicrotask(() => {
+        if (event?.defaultPrevented !== true) api.depart(entry);
+      });
+    });
+    return () => {
+      offStart();
+      offRemove();
+    };
   }, [api, entry, navigation]);
 
   const onLayout = useCallback(
@@ -598,7 +710,9 @@ export function SharedTarget({ tag, children, style, testID }: SharedTargetProps
       style={[style, animated]}
       testID={testID}
     >
-      {children}
+      <TargetDisplayContext.Provider value={waitForDisplay ? displayed : undefined}>
+        {children}
+      </TargetDisplayContext.Provider>
     </Animated.View>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -13,6 +13,7 @@ import { motion, radius, spacing, spring, staggerDelay, type Accent } from '../.
 import { AccentCard, accentGlow } from './accent-card';
 import { useFocusRing } from './focus';
 import { useMotionAllowed } from './motion-budget';
+import { FOCUS_DELAY_MS, focusOn } from './overlay';
 
 /**
  * A group of accent cards that sits as a stack and spreads into a column — `mobile-design` skill
@@ -23,9 +24,10 @@ import { useMotionAllowed } from './motion-budget';
  * Every card is the same height (`cardHeight`) and absolutely placed at the top of the group. The
  * stack and the column are two sets of transforms on those layers — `translateX`, `translateY`
  * and `scale` — so nothing animates a height. Stacked, each layer behind the front one is moved
- * right by {@link PEEK} and scaled down by {@link LAYER_SCALE}, so it peeks out at the side the
- * way the reference app's stack does; past the third it waits invisibly behind the third. Spread,
- * layer `i` is at `i × (cardHeight + gap)` down the column.
+ * right and scaled down by {@link LAYER_SCALE} so that it shows {@link PEEK} beyond the layer in
+ * front of it, the way the reference app's stack peeks in at the side; past the third it waits
+ * invisibly behind the third. Two peeks fit in the screen gutter. Spread, layer `i` is at
+ * `i × (cardHeight + gap)` down the column.
  *
  * <p>The group's own height is the column's while it is spread or spreading and the stack's once
  * it has collapsed: it grows at once when the cards start to spread, and shrinks only after they
@@ -43,7 +45,8 @@ import { useMotionAllowed } from './motion-budget';
  *
  * Stacked, the group is one button — "show all" — and the cards inside are hidden from a screen
  * reader: they cannot be reached separately while they are on top of each other. Spread, each card
- * is its own stop with its own action, and the group's state is `expanded`.
+ * is its own stop with its own action. Pressing "show all" removes the button that had focus, so
+ * focus moves onto the first card instead of being dropped.
  */
 
 export interface CardStackItem {
@@ -68,7 +71,7 @@ export interface CardStackProps {
 }
 
 /** How far each layer behind the front one peeks out at the side while stacked. */
-export const PEEK = spacing[3];
+export const PEEK = spacing[2];
 /** How much smaller each layer behind the front one is while stacked. */
 export const LAYER_SCALE = 0.05;
 /** The most layers a stack shows; the rest wait behind the last. */
@@ -76,9 +79,12 @@ export const STACK_DEPTH = 3;
 /** The spread stagger step: a little slower than a list entry, as the recipe asks. */
 export const STEP_MS = 60;
 
-/** How far right layer `index` sits while stacked: a peek per layer, never past the third. */
-export function stackedOffset(index: number): number {
-  return Math.min(index, STACK_DEPTH - 1) * PEEK;
+/**
+ * How far right layer `index` sits while stacked, in a group `width` wide: enough to undo its
+ * scale's shrink at the right edge, plus a peek per layer, never past the third.
+ */
+export function stackedOffset(index: number, width: number): number {
+  return ((1 - stackedScale(index)) * width) / 2 + Math.min(index, STACK_DEPTH - 1) * PEEK;
 }
 
 export function stackedScale(index: number): number {
@@ -115,10 +121,21 @@ export function CardStack({
   useEffect(() => {
     if (expanded) setFolded(false);
   }, [expanded]);
+  const [width, setWidth] = useState(0);
+  const first = useRef<View>(null);
+  const pressed = useRef(false);
+
+  useEffect(() => {
+    if (!expanded || !pressed.current) return undefined;
+    pressed.current = false;
+    const timer = setTimeout(() => focusOn(first.current), FOCUS_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [expanded]);
 
   return (
     <View
       style={[styles.group, { height: stackHeight(count, cardHeight, gap, tall) }]}
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       testID={testID}
     >
       {items
@@ -133,6 +150,8 @@ export function CardStack({
             onFolded={setFolded}
             cardHeight={cardHeight}
             gap={gap}
+            width={width}
+            pressableRef={index === 0 ? first : undefined}
           />
         ))
         .reverse()}
@@ -141,7 +160,10 @@ export function CardStack({
           accessibilityRole="button"
           accessibilityLabel={label}
           accessibilityState={{ expanded: false }}
-          onPress={onExpand}
+          onPress={() => {
+            pressed.current = true;
+            onExpand();
+          }}
           onFocus={ring.onFocus}
           onBlur={ring.onBlur}
           style={[styles.cover, ring.ring]}
@@ -161,6 +183,8 @@ function Layer({
   onFolded,
   cardHeight,
   gap,
+  width,
+  pressableRef,
 }: {
   readonly item: CardStackItem;
   readonly index: number;
@@ -170,6 +194,8 @@ function Layer({
   readonly onFolded: (folded: true) => void;
   readonly cardHeight: number;
   readonly gap: number;
+  readonly width: number;
+  readonly pressableRef?: Ref<View>;
 }) {
   const progress = useSharedValue(expanded ? 1 : 0);
   const glow = useSharedValue(expanded ? 1 : 0);
@@ -194,14 +220,15 @@ function Layer({
     }
     glow.value = withTiming(0, { duration: motion.fast });
     progress.value = withDelay(
-      staggerDelay(count - 1 - index, STEP_MS),
+      // The glows go first, then the back card folds in first and the front one last.
+      motion.fast + staggerDelay(count - 1 - index, STEP_MS),
       withSpring(0, spring.soft, (finished) => {
         if (finished === true && index === 0) runOnJS(onFolded)(true);
       }),
     );
   }, [count, expanded, glow, index, moves, onFolded, progress]);
 
-  const aside = stackedOffset(index);
+  const aside = stackedOffset(index, width);
   const to = spreadOffset(index, cardHeight, gap);
   const smallest = stackedScale(index);
   const buried = index >= STACK_DEPTH;
@@ -233,6 +260,7 @@ function Layer({
         glow={false}
         onPress={item.onPress}
         accessibilityLabel={item.accessibilityLabel}
+        pressableRef={pressableRef}
         style={styles.fill}
       >
         {item.children}

@@ -1,9 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { StyleSheet, Text } from 'react-native';
+import { useState } from 'react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { AccessibilityInfo, StyleSheet, Text } from 'react-native';
 import { getAnimatedStyle } from 'react-native-reanimated';
 import { spacing } from '../../theme';
 import { CardStack, LAYER_SCALE, PEEK, STACK_DEPTH, stackHeight, type CardStackItem } from './card-stack';
 import { MotionBudgetProvider, type MotionLevel } from './motion-budget';
+import { FOCUS_DELAY_MS } from './overlay';
 
 /**
  * The card stack (#279): stacked → spread on transforms of fixed-size cards, the glows last, the
@@ -113,6 +115,46 @@ describe('CardStack', () => {
     });
     expect(layer(1).translateX).toBeCloseTo(PEEK, 0);
     expect(layer(1).translateY).toBeCloseTo(0, 0);
+  });
+
+  it('keeps each stacked layer a peek beyond the one in front, inside two peeks of the edge', async () => {
+    await render(stack(false));
+    await fireEvent(screen.getByTestId('stack'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 300, height: HEIGHT } },
+    });
+    const rightEdge = (index: number) => {
+      const { translateX, scale } = layer(index);
+      return 150 + 150 * scale + translateX;
+    };
+    await waitFor(() => expect(rightEdge(1)).toBeCloseTo(300 + PEEK));
+    expect(rightEdge(0)).toBe(300);
+    expect(rightEdge(2)).toBeCloseTo(300 + 2 * PEEK);
+    expect(rightEdge(3)).toBeCloseTo(300 + 2 * PEEK);
+  });
+
+  it('moves screen-reader focus to the first card when "show all" is pressed', async () => {
+    jest.useFakeTimers();
+    const focus = jest.spyOn(AccessibilityInfo, 'sendAccessibilityEvent').mockImplementation(() => {});
+    function Controlled() {
+      const [open, setOpen] = useState(false);
+      return (
+        <CardStack
+          items={items}
+          expanded={open}
+          onExpand={() => setOpen(true)}
+          label="Show all cards"
+          cardHeight={HEIGHT}
+        />
+      );
+    }
+    await render(<Controlled />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Show all cards' }));
+    await act(async () => {
+      jest.advanceTimersByTime(FOCUS_DELAY_MS);
+    });
+    expect(focus).toHaveBeenCalledWith(expect.anything(), 'focus');
+    focus.mockRestore();
+    jest.useRealTimers();
   });
 
   it('changes state at once under Reduce Motion', async () => {
