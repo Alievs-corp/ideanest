@@ -11,6 +11,7 @@ import {
   SuccessReveal,
   TICK_PATH,
   coverScale,
+  dashLength,
   polylineLength,
 } from './success-reveal';
 
@@ -60,6 +61,12 @@ describe('geometry', () => {
     expect(() => polylineLength('M0 0 C1 1 2 2 3 3')).toThrow();
   });
 
+  it('falls back to drawing the check whole when the glyph changes shape, instead of throwing', () => {
+    expect(dashLength(TICK_PATH)).toBeCloseTo(12.01, 1);
+    expect(dashLength('M0 0 C1 1 2 2 3 3')).toBeNull();
+    expect(dashLength('')).toBeNull();
+  });
+
   it('scales the circle until it reaches the farthest corner from where it starts', () => {
     // From the centre of a 300 × 400 window the farthest corner is 250 away: a 100pt circle × 5.
     expect(coverScale({ x: 150, y: 200 }, 300, 400, 100)).toBeCloseTo(5);
@@ -92,6 +99,28 @@ describe('SuccessReveal', () => {
     const whole = screen.getByRole('button', { name: `${TITLE}. ${CAPTION}` });
     expect(whole.props.accessibilityHint).toBe(en.mobile.kitMoney.tapToClose);
     expect(screen.getByText(en.mobile.kitMoney.tapToClose, { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('still gives the success haptic, once, when closed before the circle lands', async () => {
+    const tree = (shown: boolean) => (
+      <SuccessReveal visible={shown} title={TITLE} caption={CAPTION} onClose={() => undefined} />
+    );
+    const view = await renderEn(tree(true));
+    expect(jest.mocked(Haptics.notificationAsync)).not.toHaveBeenCalled();
+    await view.rerender(tree(false));
+    expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledTimes(1);
+    await new Promise((resolve) => setTimeout(resolve, REVEAL_TOTAL_MS + 200));
+    expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives the haptic once in all when it lands and is then closed', async () => {
+    const tree = (shown: boolean) => (
+      <SuccessReveal visible={shown} title={TITLE} caption={CAPTION} onClose={() => undefined} />
+    );
+    const view = await renderEn(tree(true));
+    await waitFor(() => expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalled(), { timeout: 3000 });
+    await view.rerender(tree(false));
+    expect(jest.mocked(Haptics.notificationAsync)).toHaveBeenCalledTimes(1);
   });
 
   it('closes on a tap anywhere', async () => {

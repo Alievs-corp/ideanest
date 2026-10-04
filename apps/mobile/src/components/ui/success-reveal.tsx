@@ -87,7 +87,21 @@ export function polylineLength(d: string): number {
   return length;
 }
 
-const TICK_LENGTH = polylineLength(TICK_PATH);
+/**
+ * The tick's length, or null when the glyph's path is no longer a shape {@link polylineLength}
+ * reads. Null draws the check whole, without the stroke animation: a regenerated glyph must cost a
+ * flourish, never a throw at import that takes every screen importing the kit down with it.
+ */
+export function dashLength(d: string): number | null {
+  try {
+    const length = polylineLength(d);
+    return length > 0 ? length : null;
+  } catch {
+    return null;
+  }
+}
+
+const TICK_LENGTH = dashLength(TICK_PATH);
 
 /** The scale at which a circle of `diameter` centred on `origin` covers a `width` × `height` window. */
 export function coverScale(origin: { x: number; y: number }, width: number, height: number, diameter: number): number {
@@ -137,18 +151,21 @@ function Reveal({
       check.value = 1;
       words.value = 1;
       land();
-      return;
+      return land;
     }
     circle.value = withTiming(1, { duration: REVEAL_MS, easing: Easing.out(Easing.cubic) }, (finished) => {
       if (finished === true) runOnJS(land)();
     });
     check.value = withDelay(REVEAL_MS, withTiming(1, { duration: CHECK_MS, easing: Easing.out(Easing.cubic) }));
     words.value = withDelay(REVEAL_MS, withTiming(1, { duration: staggerDelay(2) + motion.fast }));
+    // Closed before the circle landed: the animation is cancelled, but the pledge is still confirmed
+    // and the haptic still owed — once.
+    return land;
     // Started once, on mount: a re-render, or Reduce Motion switched mid-reveal, must not replay it.
   }, []);
 
   const circleStyle = useAnimatedStyle(() => ({ transform: [{ scale: circle.value * full }] }));
-  const checkProps = useAnimatedProps(() => ({ strokeDashoffset: TICK_LENGTH * (1 - check.value) }));
+  const checkProps = useAnimatedProps(() => ({ strokeDashoffset: (TICK_LENGTH ?? 0) * (1 - check.value) }));
 
   return (
     <Modal
@@ -192,8 +209,8 @@ function Reveal({
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeDasharray={[TICK_LENGTH, TICK_LENGTH]}
-              animatedProps={checkProps}
+              strokeDasharray={TICK_LENGTH === null ? undefined : [TICK_LENGTH, TICK_LENGTH]}
+              animatedProps={TICK_LENGTH === null ? undefined : checkProps}
               testID={`${testID}-check`}
             />
           </Svg>
