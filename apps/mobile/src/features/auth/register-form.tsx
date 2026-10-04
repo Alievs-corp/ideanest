@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { StyleSheet, Text, View, type TextInput as RNTextInput } from 'react-native';
+import { StyleSheet, View, type TextInput as RNTextInput } from 'react-native';
 import { Glyphs } from '../../icons';
 import { fillNodes } from '@ideanest/messages';
 import { Body, Field, PasswordInput, Pill, TextInput } from '../../components/ui';
@@ -12,7 +12,7 @@ import {
   type AuthFailure,
 } from '../../lib/auth-failures';
 import { useT } from '../../lib/i18n';
-import { colors, font, spacing } from '../../theme';
+import { font, spacing } from '../../theme';
 import { AuthHeader, ExplainCard } from './auth-screen';
 import { AuthLink } from './auth-link';
 import { FormErrorSummary } from './form-error-summary';
@@ -112,7 +112,7 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
         */}
         <Body>
           {fillNodes(t.raw('auth.register.sentIntro') as string, {
-            address: <Text style={styles.address}>{sentTo}</Text>,
+            address: <Body tone="primary" style={styles.address}>{sentTo}</Body>,
           })}
         </Body>
         <ExplainCard icon={Glyphs.SmsTracking}>
@@ -224,5 +224,5 @@ export function RegisterForm({ returnTo }: { readonly returnTo: string | null })
 const styles = StyleSheet.create({
   column: { gap: spacing[6] },
   fields: { gap: spacing[5] },
-  address: { ...font.medium, color: colors.textPrimary },
+  address: { ...font.medium },
 });

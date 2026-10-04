@@ -1,12 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Glyphs } from '../../icons';
 import { formatMoney } from '@ideanest/money';
 import { NO_REWARD } from '@ideanest/checkout/draft';
 import { isSoldOut, type PublicReward } from '@ideanest/checkout/types';
-import { Icon, useFocusRing } from '../../components/ui';
+import { Body, Card, CardTitle, Icon, Meta, TONES, useSurface } from '../../components/ui';
 import { formatWindowDate, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
-import { colors, font, fontSize, lineHeight, radius, spacing } from '../../theme';
+import { radius, spacing } from '../../theme';
 
 export interface RewardChoiceProps {
   readonly rewards: readonly PublicReward[];
@@ -19,10 +19,8 @@ export function RewardChoice({ rewards, value, onChange, disabled = false }: Rew
   const t = useT('checkout.reward');
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={t('legend')} accessibilityHint={t('hint')} style={styles.group}>
-      <Text accessibilityRole="header" style={styles.legend}>
-        {t('legend')}
-      </Text>
-      <Text style={styles.hint}>{t('hint')}</Text>
+      <CardTitle accessibilityRole="header">{t('legend')}</CardTitle>
+      <Meta tone="secondary">{t('hint')}</Meta>
       <RewardCard
         value={NO_REWARD}
         selected={value === NO_REWARD}
@@ -90,6 +88,11 @@ function TierCard({
   );
 }
 
+/**
+ * One reward as a choice card (`mobile-design` skill §6.4): the kit's `Card`, so it takes the press
+ * scale and the surface's block, with a radio mark that changes shape when chosen — a bold tick in
+ * a ring outlined in the reading colour — so the choice is never carried by colour alone.
+ */
 function RewardCard({
   value,
   selected,
@@ -111,44 +114,45 @@ function RewardCard({
   readonly soldOut?: string | null;
   readonly locked?: boolean;
 }) {
-  const { ring, onFocus, onBlur } = useFocusRing();
+  const ink = TONES[useSurface() === 'white' ? 'white' : 'dark'];
   const disabled = soldOut !== null || locked;
   const spoken = [title, price, ...tags, soldOut].filter(Boolean).join(', ');
   return (
-    <Pressable
+    <Card
+      size="sm"
       accessibilityRole="radio"
       accessibilityLabel={spoken}
       accessibilityHint={lines.join('. ')}
-      accessibilityState={{ checked: selected, disabled }}
+      selected={selected}
       disabled={disabled}
       onPress={() => onSelect(value)}
-      onFocus={onFocus}
-      onBlur={onBlur}
       testID={`reward-option-${value}`}
-      style={[styles.card, selected && styles.selected, disabled && styles.disabled, ring]}
+      style={selected ? [styles.chosen, { outlineColor: ink.primary }] : undefined}
     >
-      <View style={[styles.circle, selected ? styles.circleOn : styles.circleOff]}>
-        {selected ? <View style={styles.dot} /> : null}
-      </View>
-      <View style={styles.body}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>{title}</Text>
-          {price === undefined ? null : <Text style={styles.price}>{price}</Text>}
-        </View>
-        {tags.length === 0 ? null : <Text style={styles.tags}>{tags.join(' · ')}</Text>}
-        {lines.map((line) => (
-          <Text key={line} style={styles.line}>
-            {line}
-          </Text>
-        ))}
-        {soldOut === null ? null : (
-          <View style={styles.soldOut}>
-            <Icon icon={Glyphs.Slash} size={16} color={colors.textSecondary} />
-            <Text style={styles.line}>{soldOut}</Text>
-          </View>
+      <View style={styles.row}>
+        {selected ? (
+          <Icon icon={Glyphs.TickCircle} variant="bold" size={CONTROL} color={ink.primary} />
+        ) : (
+          <View style={[styles.ring, { borderColor: ink.tertiary }]} />
         )}
+        <View style={styles.body}>
+          <View style={styles.titleRow}>
+            <CardTitle style={styles.title}>{title}</CardTitle>
+            {price === undefined ? null : <CardTitle style={styles.price}>{price}</CardTitle>}
+          </View>
+          {tags.length === 0 ? null : <Meta tone="secondary">{tags.join(' · ')}</Meta>}
+          {lines.map((line) => (
+            <Body key={line}>{line}</Body>
+          ))}
+          {soldOut === null ? null : (
+            <View style={styles.soldOut}>
+              <Icon icon={Glyphs.Slash} size={16} color={ink.secondary} />
+              <Body>{soldOut}</Body>
+            </View>
+          )}
+        </View>
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
@@ -156,42 +160,12 @@ const CONTROL = 20;
 
 const styles = StyleSheet.create({
   group: { gap: spacing[3] },
-  legend: { ...font.medium, fontSize: fontSize.base, lineHeight: lineHeight.body, color: colors.textPrimary },
-  hint: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textSecondary },
-  card: {
-    flexDirection: 'row',
-    gap: spacing[3],
-    minHeight: 44,
-    padding: spacing[4],
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
-  },
-  selected: { backgroundColor: colors.surface4, borderColor: colors.borderStrong },
-  disabled: { opacity: 0.56 },
-  circle: {
-    width: CONTROL,
-    height: CONTROL,
-    marginTop: 2,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circleOff: { backgroundColor: colors.surface3, borderWidth: 1, borderColor: colors.borderStrong },
-  circleOn: { backgroundColor: colors.lime500 },
-  dot: { width: 8, height: 8, borderRadius: radius.full, backgroundColor: colors.textOnLime },
+  row: { flexDirection: 'row', gap: spacing[3] },
+  chosen: { outlineWidth: 2, outlineStyle: 'solid' },
+  ring: { width: CONTROL, height: CONTROL, marginTop: 2, borderRadius: radius.full, borderWidth: 1.5 },
   body: { flex: 1, gap: spacing[1] },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[3], flexWrap: 'wrap' },
-  title: { ...font.medium, fontSize: fontSize.base, lineHeight: lineHeight.body, color: colors.textPrimary, flexShrink: 1 },
-  price: {
-    ...font.medium,
-    fontSize: fontSize.base,
-    lineHeight: lineHeight.body,
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  tags: { ...font.medium, fontSize: fontSize.xs, lineHeight: lineHeight.small, color: colors.textSecondary },
-  line: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textSecondary },
+  title: { flexShrink: 1 },
+  price: { fontVariant: ['tabular-nums'] },
   soldOut: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
 });

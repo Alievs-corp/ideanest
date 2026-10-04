@@ -12,6 +12,7 @@ import {
   Body,
   Field,
   InlineAlert,
+  Meta,
   Pill,
   Select,
   SkeletonCard,
@@ -24,7 +25,7 @@ import { useOnline } from '../../lib/connectivity';
 import { signInHrefFor } from '../../lib/guard';
 import { catalogue as messages, formatDateTime, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
-import { colors, font, fontSize, lineHeight, radius, size, spacing, tint } from '../../theme';
+import { colors, font, fontSize, lineHeight, spacing, tint } from '../../theme';
 import { AddonChoice } from '../checkout/addon-choice';
 import { countryName } from '../checkout/format';
 import { PledgeSummary } from '../checkout/pledge-summary';
@@ -132,7 +133,7 @@ export function PledgeEditor({ pledge, mode, disabled, onSaved, onReload, onRais
             inputMode="decimal"
             autoComplete="off"
             disabled={locked}
-            trailing={<Text style={styles.currency}>{catalogue.currency}</Text>}
+            trailing={<Meta tone="secondary">{catalogue.currency}</Meta>}
             testID="editor-contribution"
           />
         </Field>
@@ -244,7 +245,7 @@ export function PledgeEditor({ pledge, mode, disabled, onSaved, onReload, onRais
   }
 
   return (
-    <View style={styles.card} testID={raising ? 'pledge-raise-editor' : 'pledge-editor'}>
+    <View style={styles.section} testID={raising ? 'pledge-raise-editor' : 'pledge-editor'}>
       <Subheading accessibilityRole="header">{heading}</Subheading>
       <Body>{intro}</Body>
       {editor.inFlight && raise != null ? (
@@ -311,7 +312,7 @@ function EditorFailure({
       action={
         alternatives.length === 0 && action === null ? undefined : (
           <View style={styles.actions}>
-            {alternatives.length === 0 ? null : <Text style={styles.label}>{t('checkout.stillAvailable')}</Text>}
+            {alternatives.length === 0 ? null : <Meta tone="primary">{t('checkout.stillAvailable')}</Meta>}
             {alternatives.map((reward) => (
               <Pill
                 key={reward.id}
@@ -333,16 +334,9 @@ function EditorFailure({
 const muted = tint(colors.textOnWhite, 0.64);
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface2,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: size.cardPaddingSmall,
-    gap: spacing[4],
-  },
+  // A section of the pledge page's white sheet, not a block of its own.
+  section: { gap: spacing[4] },
   form: { gap: spacing[6] },
-  currency: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textSecondary },
   due: {
     ...font.medium,
     fontSize: fontSize.base,
@@ -352,5 +346,4 @@ const styles = StyleSheet.create({
   },
   note: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: muted },
   actions: { gap: spacing[2], alignItems: 'flex-start' },
-  label: { ...font.medium, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textPrimary },
 });

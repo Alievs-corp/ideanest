@@ -4,7 +4,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
 import { useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
-import { colors, font, fontSize, lineHeight, radius, spacing } from '../../theme';
+import { Body, CardTitle, TONES, useSurface } from '../../components/ui';
+import { spacing } from '../../theme';
 import type { FeeDisclosure as Disclosure } from './api';
 import { percentOf } from './format';
 
@@ -17,6 +18,7 @@ export function FeeDisclosure({
 }) {
   const t = useT('fees.disclosure');
   const locale = useLocale();
+  const ink = TONES[useSurface() === 'white' ? 'white' : 'dark'];
 
   let body: ReactNode;
   let fixed: string | null = null;
@@ -25,7 +27,7 @@ export function FeeDisclosure({
   } else if (disclosure === null || disclosure.platformRate === null || disclosure.processingRate === null) {
     body = t.rich('unavailable', {
       pricing: (chunks) => (
-        <Text accessibilityRole="link" onPress={onPricing} style={styles.link}>
+        <Text accessibilityRole="link" onPress={onPricing} style={[styles.link, { color: ink.primary }]}>
           {chunks}
         </Text>
       ),
@@ -45,25 +47,15 @@ export function FeeDisclosure({
 
   return (
     <View style={styles.section} testID="fee-disclosure">
-      <Text accessibilityRole="header" style={styles.heading}>
-        {t('backerHeading')}
-      </Text>
-      <Text style={styles.body}>{body}</Text>
-      {fixed === null ? null : <Text style={styles.body}>{fixed}</Text>}
+      <CardTitle accessibilityRole="header">{t('backerHeading')}</CardTitle>
+      <Body>{body}</Body>
+      {fixed === null ? null : <Body>{fixed}</Body>}
     </View>
   );
 }
 
+/** A section of the checkout's white sheet: no block of its own, the sheet's ink. */
 const styles = StyleSheet.create({
-  section: {
-    gap: spacing[2],
-    padding: spacing[5],
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
-  },
-  heading: { ...font.medium, fontSize: fontSize.base, lineHeight: lineHeight.body, color: colors.textPrimary },
-  body: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textReading },
-  link: { color: colors.textPrimary, textDecorationLine: 'underline' },
+  section: { gap: spacing[2] },
+  link: { textDecorationLine: 'underline' },
 });

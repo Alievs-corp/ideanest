@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Glyphs } from '../../icons';
 import { fillNodes } from '@ideanest/messages';
 import { Body, Field, Pill, TextInput } from '../../components/ui';
 import { requestPasswordReset } from '../../lib/auth';
 import { describeAuthFailure, fieldErrorsOf, type AuthFailure } from '../../lib/auth-failures';
 import { useT } from '../../lib/i18n';
-import { colors, font, spacing } from '../../theme';
+import { font, spacing } from '../../theme';
 import { AuthHeader, ExplainCard } from './auth-screen';
 import { AuthLink } from './auth-link';
 import { FormErrorSummary } from './form-error-summary';
@@ -56,7 +56,7 @@ export function ResetRequestForm() {
         <AuthHeader title={t('auth.reset.sentTitle')} />
         <Body>
           {fillNodes(t.raw('auth.reset.sentIntro') as string, {
-            address: <Text style={styles.address}>{askedFor}</Text>,
+            address: <Body tone="primary" style={styles.address}>{askedFor}</Body>,
           })}
         </Body>
         <ExplainCard icon={Glyphs.SmsSearch}>
@@ -118,7 +118,8 @@ export function ResetRequestForm() {
  */
 function TryAnother({ label, onPress }: { readonly label: string; readonly onPress: () => void }) {
   return (
-    <Text
+    <Body
+      tone="primary"
       accessibilityRole="link"
       onPress={onPress}
       suppressHighlighting={false}
@@ -126,12 +127,12 @@ function TryAnother({ label, onPress }: { readonly label: string; readonly onPre
       testID="reset-try-another"
     >
       {label}
-    </Text>
+    </Body>
   );
 }
 
 const styles = StyleSheet.create({
   column: { gap: spacing[6] },
-  address: { ...font.medium, color: colors.textPrimary },
-  inlineLink: { ...font.medium, color: colors.textPrimary, textDecorationLine: 'underline' },
+  address: { ...font.medium },
+  inlineLink: { ...font.medium, textDecorationLine: 'underline' },
 });

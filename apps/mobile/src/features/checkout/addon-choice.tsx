@@ -1,10 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Glyphs } from '../../icons';
 import { formatMoney } from '@ideanest/money';
 import { isSoldOut, type PublicReward } from '@ideanest/checkout/types';
-import { IconButton } from '../../components/ui';
+import { Body, Card, CardTitle, IconButton } from '../../components/ui';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, radius, spacing } from '../../theme';
+import { size, spacing } from '../../theme';
 
 export const ADDON_DISPLAY_CAP = 10;
 
@@ -24,10 +24,8 @@ export function AddonChoice({ addons, quantity, onChange, disabled = false }: Ad
   if (addons.length === 0) return null;
   return (
     <View style={styles.group}>
-      <Text accessibilityRole="header" style={styles.heading}>
-        {t('heading')}
-      </Text>
-      <Text style={styles.muted}>{t('intro')}</Text>
+      <CardTitle accessibilityRole="header">{t('heading')}</CardTitle>
+      <Body>{t('intro')}</Body>
       {addons.map((addon) => (
         <AddonCard key={addon.id} addon={addon} value={quantity(addon.id)} onChange={onChange} disabled={disabled} />
       ))}
@@ -53,16 +51,14 @@ function AddonCard({
     if (!disabled) onChange(addon.id, Math.max(0, Math.min(max, next)));
   };
   return (
-    <View style={[styles.card, soldOut && styles.disabled]} testID={`addon-${addon.id}`}>
+    <Card size="sm" style={[styles.card, soldOut && styles.disabled]} testID={`addon-${addon.id}`}>
       <View style={styles.titleRow}>
-        <Text style={styles.title}>{addon.title}</Text>
-        <Text style={styles.price}>{formatMoney(addon.price)}</Text>
+        <CardTitle style={styles.title}>{addon.title}</CardTitle>
+        <CardTitle style={styles.price}>{formatMoney(addon.price)}</CardTitle>
       </View>
-      {addon.description == null || addon.description === '' ? null : (
-        <Text style={styles.muted}>{addon.description}</Text>
-      )}
+      {addon.description == null || addon.description === '' ? null : <Body>{addon.description}</Body>}
       {soldOut ? (
-        <Text style={styles.muted}>{t('checkout.addons.soldOut')}</Text>
+        <Body>{t('checkout.addons.soldOut')}</Body>
       ) : (
         <View style={styles.stepper}>
           <IconButton
@@ -85,7 +81,7 @@ function AddonCard({
             style={styles.value}
             testID={`addon-quantity-${addon.id}`}
           >
-            <Text style={styles.count}>{value}</Text>
+            <CardTitle style={styles.price}>{value}</CardTitle>
           </View>
           <IconButton
             icon={Glyphs.Add}
@@ -97,39 +93,17 @@ function AddonCard({
           />
         </View>
       )}
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   group: { gap: spacing[3] },
-  heading: { ...font.medium, fontSize: fontSize.base, lineHeight: lineHeight.body, color: colors.textPrimary },
-  muted: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textSecondary },
-  card: {
-    gap: spacing[2],
-    padding: spacing[4],
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.surface2,
-  },
+  card: { gap: spacing[2] },
   disabled: { opacity: 0.56 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing[3], flexWrap: 'wrap' },
-  title: { ...font.medium, fontSize: fontSize.base, lineHeight: lineHeight.body, color: colors.textPrimary, flexShrink: 1 },
-  price: {
-    ...font.medium,
-    fontSize: fontSize.base,
-    lineHeight: lineHeight.body,
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
+  title: { flexShrink: 1 },
+  price: { fontVariant: ['tabular-nums'] },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
-  value: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  count: {
-    ...font.medium,
-    fontSize: fontSize.base,
-    lineHeight: lineHeight.body,
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
+  value: { minWidth: size.touchTarget, minHeight: size.touchTarget, alignItems: 'center', justifyContent: 'center' },
 });

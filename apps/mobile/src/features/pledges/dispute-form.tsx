@@ -12,7 +12,7 @@ import {
   announce,
 } from '../../components/ui';
 import { useT } from '../../lib/i18n';
-import { colors, radius, size, spacing } from '../../theme';
+import { spacing } from '../../theme';
 import { openBackerDispute } from './api';
 
 export const DISPUTE_REASON_MAX = 2000;
@@ -82,7 +82,7 @@ export function DisputeForm({ pledgeId, disabled }: DisputeFormProps) {
   }
 
   return (
-    <View style={styles.card} testID="dispute-form">
+    <View style={styles.section} testID="dispute-form">
       <Subheading accessibilityRole="header">{t('heading')}</Subheading>
       <Body>{t('intro')}</Body>
       <Field label={t('reasonLabel')} hint={t('reasonHint')} required>
@@ -118,13 +118,7 @@ export function DisputeForm({ pledgeId, disabled }: DisputeFormProps) {
 
 const styles = StyleSheet.create({
   start: { alignItems: 'flex-start' },
-  card: {
-    backgroundColor: colors.surface2,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: size.cardPaddingSmall,
-    gap: spacing[4],
-  },
+  // A section of the pledge page's white sheet; the kit's fields draw themselves for white.
+  section: { gap: spacing[4] },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
 });

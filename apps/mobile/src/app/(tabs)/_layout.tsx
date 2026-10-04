@@ -1,9 +1,10 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Link, Tabs, useRouter } from 'expo-router';
 import { WithOfflineBanner } from '../../components/offline-banner';
 import { FloatingTabBar, TabBarInsetProvider } from '../../components/tab-bar';
 import { TAB_GLYPHS, TabIcon } from '../../components/tab-icon';
 import { Meta } from '../../components/text';
+import { PressableScale } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { badgeText, useSessionState, useUnreadCount } from '../../lib/account';
 import { signInHrefFor } from '../../lib/guard';
@@ -90,13 +91,13 @@ function HeaderAction() {
   if (state === 'signed-out') {
     return (
       <Link href="/sign-in" asChild>
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={t('signIn')}
-          style={({ pressed }) => [styles.signIn, pressed && styles.signInPressed]}
+          contentStyle={({ pressed }) => [styles.signIn, pressed && styles.signInPressed]}
         >
           <Meta tone="secondary">{t('signIn')}</Meta>
-        </Pressable>
+        </PressableScale>
       </Link>
     );
   }
@@ -106,10 +107,10 @@ function HeaderAction() {
     unread === undefined ? t('notifications') : unread > 99 ? tHeader('over') : tHeader('unread', { count: unread });
   return (
     <Link href="/notifications" asChild>
-      <Pressable
+      <PressableScale
         accessibilityRole="button"
         accessibilityLabel={label}
-        style={({ pressed }) => [styles.bell, pressed && styles.signInPressed]}
+        contentStyle={({ pressed }) => [styles.bell, pressed && styles.signInPressed]}
       >
         <TabIcon name="bell" color={colors.textPrimary} size={24} />
         {badge === null ? null : (
@@ -117,7 +118,7 @@ function HeaderAction() {
             <Meta style={styles.badgeText}>{badge}</Meta>
           </View>
         )}
-      </Pressable>
+      </PressableScale>
     </Link>
   );
 }

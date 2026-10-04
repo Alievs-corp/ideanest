@@ -1,10 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
 import type { CheckoutFailure } from '@ideanest/checkout/failure';
 import type { PublicReward } from '@ideanest/checkout/types';
-import { InlineAlert, Pill } from '../../components/ui';
+import { InlineAlert, Meta, Pill } from '../../components/ui';
 import { useT } from '../../lib/i18n';
-import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
+import { spacing } from '../../theme';
 
 export interface FailureNoticeProps {
   readonly failure: CheckoutFailure;
@@ -65,7 +65,7 @@ export function FailureNotice({
         alternatives.length === 0 && action === null ? undefined : (
           <View style={styles.actions}>
             {alternatives.length === 0 ? null : (
-              <Text style={styles.label}>{t('checkout.stillAvailable')}</Text>
+              <Meta tone="primary">{t('checkout.stillAvailable')}</Meta>
             )}
             {alternatives.map((reward) => (
               <Pill
@@ -87,5 +87,4 @@ export function FailureNotice({
 
 const styles = StyleSheet.create({
   actions: { gap: spacing[2], alignItems: 'flex-start' },
-  label: { ...font.medium, fontSize: fontSize.sm, lineHeight: lineHeight.small, color: colors.textPrimary },
 });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
@@ -18,17 +18,23 @@ import {
 import type { PledgeResponse } from '@ideanest/checkout/types';
 import {
   Body,
+  ContentSheet,
   Heading,
+  HeroFigure,
+  Icon,
   InlineAlert,
   Meta,
   Pill,
+  PressableScale,
   Screen,
   Skeleton,
   SkeletonGroup,
   Subheading,
+  TONES,
   Tag,
   haptics,
 } from '../../components/ui';
+import { Glyphs } from '../../icons';
 import { queryKeys } from '../../api/queries';
 import { useAppActive } from '../../lib/app-active';
 import { useOnline } from '../../lib/connectivity';
@@ -37,12 +43,13 @@ import { catalogue, formatDateTime, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { readablePledgeState } from '../../lib/pledge-states';
 import { useSession } from '../../lib/use-session';
-import { colors, font, fontSize, lineHeight, radius, size, spacing, tint } from '../../theme';
+import { colors, size, spacing } from '../../theme';
 import { countryName } from '../checkout/format';
 import { PledgeSummary } from '../checkout/pledge-summary';
 import { readPledge } from './api';
 import { findMyPledge } from './campaign-lookup';
 import { DisputeForm } from './dispute-form';
+import { STATE_ICON } from './pledge-card';
 import { PaymentReturnNotice, RaiseReturnNotice } from './return-notice';
 import { usePaymentSettling } from './use-payment-settling';
 import { cachedPledgeSummaries, type PledgePages } from './use-pledge-list';
@@ -169,8 +176,8 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
   if (pledge === undefined) {
     return (
       <Screen hasContent>
-        <View style={styles.stack}>
-          {header}
+        <View style={styles.top}>{header}</View>
+        <ContentSheet>
           {query.isError ? (
             <>
               <InlineAlert
@@ -201,7 +208,7 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
               </View>
             </SkeletonGroup>
           )}
-        </View>
+        </ContentSheet>
       </Screen>
     );
   }
@@ -224,89 +231,115 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
       }}
       refreshing={pulling}
     >
-      <View style={styles.stack}>
+      <View style={styles.top}>
         {header}
 
+        <View style={styles.hero}>
+          <Meta tone="secondary" accessibilityElementsHidden importantForAccessibility="no">
+            {t('checkout.summary.pledge')}
+          </Meta>
+          <HeroFigure
+            money={pledge.amounts.total}
+            label={t('checkout.summary.pledge')}
+            testID="pledge-hero"
+          />
+        </View>
+
+        {project?.title != null && project.creatorSlug != null && project.slug != null ? (
+          <PressableScale
+            accessibilityRole="link"
+            onPress={() =>
+              router.push({
+                pathname: '/projects/[creatorSlug]/[projectSlug]',
+                params: { creatorSlug: project.creatorSlug ?? '', projectSlug: project.slug ?? '' },
+              })
+            }
+            style={styles.start}
+            contentStyle={styles.titleLink}
+            testID="pledge-campaign"
+          >
+            <Subheading accessibilityRole="header" style={styles.titleText}>
+              {project.title}
+            </Subheading>
+            <Icon icon={Glyphs.ArrowRight2} color={colors.textSecondary} />
+          </PressableScale>
+        ) : (
+          <Subheading accessibilityRole="header" testID="pledge-campaign-unnamed">
+            {t('account.pledges.manager.campaignUnnamed')}
+          </Subheading>
+        )}
+
+        <View style={styles.tags}>
+          <Tag
+            label={stateLabel}
+            variant={pledgeTone(pledge.state)}
+            icon={STATE_ICON[pledgeTone(pledge.state)]}
+            testID="pledge-state"
+          />
+          {pledge.isAnonymous ? <Tag label={t('account.pledges.anonymous')} icon={Glyphs.EyeSlash} /> : null}
+          {pledge.latePledge ? <Tag label={t('account.pledges.latePledge')} icon={Glyphs.Timer1} /> : null}
+        </View>
+
+        {pledge.confirmedAt == null ? null : (
+          <Meta tone="tertiary">
+            {t('account.pledges.manager.confirmedAt', { time: formatDateTime(pledge.confirmedAt, locale) })}
+          </Meta>
+        )}
+        {pledge.canceledAt == null ? null : (
+          <Meta tone="tertiary">
+            {t('account.pledges.manager.withdrawnAt', { time: formatDateTime(pledge.canceledAt, locale) })}
+          </Meta>
+        )}
+      </View>
+
+      <ContentSheet>
         {paymentHint === null ? null : <PaymentReturnNotice hint={paymentHint} state={pledge.state} />}
         {raiseHint === null ? null : <RaiseReturnNotice hint={raiseHint} raise={pledge.latestRaise} />}
 
-        <View style={styles.card}>
-          {project?.title != null && project.creatorSlug != null && project.slug != null ? (
-            <Pressable
+        <PledgeSummary
+          amounts={pledge.amounts}
+          source="quoted"
+          rewardTitle={rewardTitle}
+          destination={destination}
+          waiting="pending"
+          approximateTotal={approximate(pledge.amounts.total, quotedRate(pledge))}
+        >
+          {destination === null ? undefined : (
+            <PressableScale
               accessibilityRole="link"
-              onPress={() =>
-                router.push({
-                  pathname: '/projects/[creatorSlug]/[projectSlug]',
-                  params: { creatorSlug: project.creatorSlug ?? '', projectSlug: project.slug ?? '' },
-                })
-              }
-              style={styles.titleLink}
-              testID="pledge-campaign"
+              onPress={() => router.push({ pathname: '/pledges/[id]/address', params: { id: pledge.id } })}
+              style={styles.start}
+              contentStyle={styles.whereGoing}
+              testID="pledge-where-going"
             >
-              <Subheading accessibilityRole="header">{project.title}</Subheading>
-            </Pressable>
-          ) : (
-            <Subheading accessibilityRole="header" testID="pledge-campaign-unnamed">
-              {t('account.pledges.manager.campaignUnnamed')}
-            </Subheading>
+              <Icon icon={Glyphs.Location} color={TONES.white.secondary} />
+              <Meta tone="secondary" style={styles.underline}>
+                {t('account.pledges.manager.whereGoing')}
+              </Meta>
+            </PressableScale>
           )}
+        </PledgeSummary>
 
-          <View style={styles.tags}>
-            <Tag label={stateLabel} variant={pledgeTone(pledge.state)} testID="pledge-state" />
-            {pledge.isAnonymous ? <Tag label={t('account.pledges.anonymous')} /> : null}
-            {pledge.latePledge ? <Tag label={t('account.pledges.latePledge')} /> : null}
+        {pledge.supplements.length === 0 ? null : (
+          <View style={styles.supplements} testID="pledge-supplements">
+            <Subheading accessibilityRole="header">{t('account.pledges.manager.supplementsHeading')}</Subheading>
+            {pledge.supplements.map((supplement) => (
+              <View key={supplement.id} style={styles.supplementRow}>
+                <Body style={styles.supplementLabel}>
+                  {supplement.kind === 'UPGRADE'
+                    ? t('account.pledges.manager.upgrade')
+                    : t('account.pledges.manager.extraAddons')}
+                  {' · '}
+                  {formatDateTime(supplement.createdAt, locale)}
+                </Body>
+                <Body tone="primary" style={styles.money}>
+                  {formatMoney(supplement.amount)}
+                </Body>
+              </View>
+            ))}
+            <Meta tone="tertiary">{t('account.pledges.manager.supplementsNote')}</Meta>
           </View>
-
-          {pledge.confirmedAt == null ? null : (
-            <Meta tone="tertiary">
-              {t('account.pledges.manager.confirmedAt', { time: formatDateTime(pledge.confirmedAt, locale) })}
-            </Meta>
-          )}
-          {pledge.canceledAt == null ? null : (
-            <Meta tone="tertiary">
-              {t('account.pledges.manager.withdrawnAt', { time: formatDateTime(pledge.canceledAt, locale) })}
-            </Meta>
-          )}
-
-          <PledgeSummary
-            amounts={pledge.amounts}
-            source="quoted"
-            rewardTitle={rewardTitle}
-            destination={destination}
-            waiting="pending"
-            approximateTotal={approximate(pledge.amounts.total, quotedRate(pledge))}
-          >
-            {destination === null ? undefined : (
-              <Pressable
-                accessibilityRole="link"
-                onPress={() => router.push({ pathname: '/pledges/[id]/address', params: { id: pledge.id } })}
-                style={styles.whereGoing}
-                testID="pledge-where-going"
-              >
-                <Text style={styles.whereGoingText}>{t('account.pledges.manager.whereGoing')}</Text>
-              </Pressable>
-            )}
-          </PledgeSummary>
-
-          {pledge.supplements.length === 0 ? null : (
-            <View style={styles.supplements} testID="pledge-supplements">
-              <Subheading accessibilityRole="header">{t('account.pledges.manager.supplementsHeading')}</Subheading>
-              {pledge.supplements.map((supplement) => (
-                <View key={supplement.id} style={styles.supplementRow}>
-                  <Body style={styles.supplementLabel}>
-                    {supplement.kind === 'UPGRADE'
-                      ? t('account.pledges.manager.upgrade')
-                      : t('account.pledges.manager.extraAddons')}
-                    {' · '}
-                    {formatDateTime(supplement.createdAt, locale)}
-                  </Body>
-                  <Body style={styles.money}>{formatMoney(supplement.amount)}</Body>
-                </View>
-              ))}
-              <Meta tone="tertiary">{t('account.pledges.manager.supplementsNote')}</Meta>
-            </View>
-          )}
-        </View>
+        )}
 
         {editable || raisable ? (
           (renderEditor?.(pledge, { ...slot, disabled: !online, raising: !editable }) ?? null)
@@ -323,40 +356,29 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
         {isDisputable(pledge.state) ? <DisputeForm pledgeId={pledge.id} disabled={!online} /> : null}
 
         {allPledges}
-      </View>
+      </ContentSheet>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  stack: { gap: spacing[6], paddingVertical: spacing[4] },
+  top: { gap: spacing[4], paddingTop: spacing[4], paddingBottom: spacing[2] },
+  stack: { gap: spacing[4] },
   header: { gap: spacing[2] },
-  start: { alignItems: 'flex-start' },
-  card: {
-    backgroundColor: colors.surface2,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: size.cardPaddingSmall,
-    gap: spacing[3],
-  },
-  titleLink: { minHeight: size.touchTarget, justifyContent: 'center' },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
-  whereGoing: { minHeight: size.touchTarget, justifyContent: 'center', alignSelf: 'flex-start' },
-  whereGoingText: {
-    ...font.regular,
-    fontSize: fontSize.sm,
-    lineHeight: lineHeight.small,
-    color: tint(colors.textOnWhite, 0.64),
-    textDecorationLine: 'underline',
-  },
-  supplements: {
+  hero: { gap: spacing[1] },
+  start: { alignSelf: 'flex-start', maxWidth: '100%' },
+  titleLink: {
+    minHeight: size.touchTarget,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing[2],
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    paddingTop: spacing[4],
   },
+  titleText: { flexShrink: 1 },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
+  whereGoing: { minHeight: size.touchTarget, flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
+  underline: { textDecorationLine: 'underline' },
+  supplements: { gap: spacing[2] },
   supplementRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: spacing[3] },
   supplementLabel: { flexShrink: 1 },
-  money: { fontVariant: ['tabular-nums'], color: colors.textPrimary },
+  money: { fontVariant: ['tabular-nums'] },
 });

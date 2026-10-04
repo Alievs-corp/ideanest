@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Glyphs } from '../../icons';
-import { Body, Icon, useFocusRing } from '../../components/ui';
-import { colors, radius, size, spacing } from '../../theme';
+import { Body, Icon, PressableScale, TONES, useFocusRing, useSurface } from '../../components/ui';
+import { BLOCK, blockSurface } from '../../components/ui/surface';
+import { radius, size, spacing } from '../../theme';
 
 /**
  * The quiet links of the auth screens — "Forgot your password?", "No account yet? Create one" —
@@ -31,19 +32,19 @@ export function AuthLink({
   return (
     <View style={styles.row}>
       {prompt === undefined ? null : <Body>{prompt}</Body>}
-      <Pressable
+      <PressableScale
         accessibilityRole={role}
         accessibilityLabel={label}
         onPress={onPress}
         onFocus={onFocus}
         onBlur={onBlur}
         testID={testID}
-        style={({ pressed }) => [styles.target, ring, pressed && styles.pressed]}
+        contentStyle={({ pressed }) => [styles.target, ring, pressed && styles.pressed]}
       >
         <Body tone="primary" style={styles.underlined}>
           {label}
         </Body>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }
@@ -96,9 +97,11 @@ export function Disclosure({
     onToggle?.(!open);
   };
   const { ring, onFocus, onBlur } = useFocusRing();
+  const surface = useSurface();
+  const block = BLOCK[blockSurface(surface)];
   return (
-    <View style={styles.disclosure}>
-      <Pressable
+    <View style={[styles.disclosure, { backgroundColor: block.rest }]}>
+      <PressableScale
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityState={{ expanded: open }}
@@ -106,11 +109,11 @@ export function Disclosure({
         onFocus={onFocus}
         onBlur={onBlur}
         testID={testID}
-        style={({ pressed }) => [styles.summary, ring, pressed && styles.pressed]}
+        contentStyle={({ pressed }) => [styles.summary, ring, pressed && { backgroundColor: block.pressed }]}
       >
         <Body style={styles.summaryText}>{label}</Body>
-        <Icon icon={open ? Glyphs.ArrowUp2 : Glyphs.ArrowDown2} size={16} color={colors.textTertiary} />
-      </Pressable>
+        <Icon icon={open ? Glyphs.ArrowUp2 : Glyphs.ArrowDown2} size={16} color={TONES[surface].tertiary} />
+      </PressableScale>
       {open ? <View style={styles.details}>{children}</View> : null}
     </View>
   );
@@ -132,12 +135,8 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.8 },
   underlined: { textDecorationLine: 'underline' },
-  disclosure: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface1,
-  },
+  // A raised block in the surface's own muted tone (skill §2), not a border-only box.
+  disclosure: { borderRadius: radius.lg },
   summary: {
     minHeight: size.touchTarget,
     flexDirection: 'row',

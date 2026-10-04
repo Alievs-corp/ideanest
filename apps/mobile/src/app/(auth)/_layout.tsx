@@ -1,8 +1,8 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Glyphs } from '../../icons';
 import { WithOfflineBanner } from '../../components/offline-banner';
-import { IconButton, Subheading, useFocusRing } from '../../components/ui';
+import { IconButton, PressableScale, Subheading, useFocusRing } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { colors, radius, size } from '../../theme';
 
@@ -18,11 +18,10 @@ import { colors, radius, size } from '../../theme';
  * close control, because a modal with no visible way out is a trap for anybody who cannot make
  * the dismiss gesture.
  *
- * <h2>Nothing animates</h2>
+ * <h2>Moving between them</h2>
  *
- * Moving between these screens is still `animation: 'none'`, from the old per-surface budget; the
- * `mobile-design` skill (§6.3, stack transitions) replaces it when #281 reaches this stack. They
- * `replace` one another rather than push, which keeps
+ * The `mobile-design` skill's stack transition (§6.3): the next screen slides in from the right
+ * over the last, as everywhere else (#281). They `replace` one another rather than push, which keeps
  * this stack one screen deep: closing always closes the whole modal, and nothing of sign-in is
  * left in history behind it.
  */
@@ -33,7 +32,7 @@ export default function AuthLayout() {
   return (
     <Stack
       screenOptions={{
-        animation: 'none',
+        animation: 'ios_from_right',
         headerStyle: { backgroundColor: colors.surface1 },
         headerTintColor: colors.textPrimary,
         headerShadowVisible: false,
@@ -61,7 +60,7 @@ function Wordmark({ label, hint }: { readonly label: string; readonly hint: stri
   const router = useRouter();
   const { ring, onFocus, onBlur } = useFocusRing();
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="link"
       accessibilityLabel={label}
       accessibilityHint={hint}
@@ -69,10 +68,10 @@ function Wordmark({ label, hint }: { readonly label: string; readonly hint: stri
       onFocus={onFocus}
       onBlur={onBlur}
       testID="auth-wordmark"
-      style={[styles.wordmark, ring]}
+      contentStyle={[styles.wordmark, ring]}
     >
       <Subheading>{label}</Subheading>
-    </Pressable>
+    </PressableScale>
   );
 }
 

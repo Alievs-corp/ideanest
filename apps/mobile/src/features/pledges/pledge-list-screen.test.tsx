@@ -1,5 +1,6 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AccessibilityInfo } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
@@ -145,6 +146,28 @@ describe('PledgeListScreen', () => {
     }
     expect(screen.getAllByText(en.account.pledges.anonymous)).toHaveLength(1);
     expect(screen.getAllByText(en.account.pledges.latePledge)).toHaveLength(1);
+  });
+
+  it('pairs each state with an icon, so the tone is never colour alone', async () => {
+    api.listMyPledges.mockResolvedValueOnce({
+      items: [summary('paid'), summary('failed', { state: 'CHARGE_FAILED' }), summary('draft', { state: 'DRAFT' })],
+      nextCursor: null,
+    });
+    await show();
+
+    const hidden = { includeHiddenElements: true };
+    expect(within(screen.getByTestId('pledge-card-paid')).getByTestId('icon-TickCircle', hidden)).toBeTruthy();
+    expect(within(screen.getByTestId('pledge-card-failed')).getByTestId('icon-Warning2', hidden)).toBeTruthy();
+    expect(within(screen.getByTestId('pledge-card-draft')).getByTestId('icon-Clock', hidden)).toBeTruthy();
+  });
+
+  it('opens a pledge under Reduce Motion as well', async () => {
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValueOnce(true);
+    api.listMyPledges.mockResolvedValueOnce({ items: [summary('a')], nextCursor: null });
+    await show();
+
+    await fireEvent.press(screen.getByTestId('pledge-card-a'));
+    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/pledges/[id]', params: { id: 'a' } });
   });
 
   it('names a card by campaign, state and total, and opens the pledge', async () => {

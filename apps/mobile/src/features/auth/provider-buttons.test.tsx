@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { AccessibilityInfo, StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -81,6 +82,20 @@ it('names the separator and both buttons in the app’s language on sign-in', as
   expect(screen.getByLabelText(copy.providers.separatorLabel)).toBeTruthy();
   expect(screen.getByRole('button', { name: mobile.googleSignIn })).toBeTruthy();
   expect(screen.getByRole('button', { name: copy.providers.appleSignIn })).toBeTruthy();
+});
+
+it('gives the Google pill under the thumb, as every pill does', async () => {
+  await show(<SignInScreen />);
+  const transform = () => StyleSheet.flatten(screen.getByTestId('provider-google').props.style)?.transform;
+  expect(transform()).toEqual([{ scale: 1 }]);
+});
+
+it('keeps the Google pill still under Reduce Motion', async () => {
+  jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValueOnce(true);
+  await show(<SignInScreen />);
+  await waitFor(() =>
+    expect(StyleSheet.flatten(screen.getByTestId('provider-google').props.style)?.transform).toBeUndefined(),
+  );
 });
 
 it('uses the sign-up wording on register', async () => {

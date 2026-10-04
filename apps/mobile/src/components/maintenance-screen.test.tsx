@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { AccessibilityInfo, AppState, BackHandler, type AppStateStatus } from 'react-native';
+import { AccessibilityInfo, AppState, BackHandler, StyleSheet, type AppStateStatus } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import MaintenanceScreen from '../app/maintenance';
-import { colors } from '../theme';
+import { colors, spacing } from '../theme';
 import { setOnline } from '../lib/connectivity';
 import type { Maintenance } from '@ideanest/api-client/maintenance';
 import {
@@ -146,6 +146,15 @@ it("shows the web's maintenance copy with a white Try again, and no way back", a
   // Android's back button is swallowed while focused: the screens underneath failed.
   expect(backHandlers).toHaveLength(1);
   expect(backHandlers[0]?.()).toBe(true);
+});
+
+it('clears the status bar itself, having no header, and leads with the settings glyph', async () => {
+  enterMaintenance(windowOn(POLL_INTERVAL_MS));
+  await renderScreen();
+
+  const flat = StyleSheet.flatten(screen.getByTestId('maintenance-screen').props.contentContainerStyle);
+  expect(flat.paddingTop).toBe(METRICS.insets.top + spacing[6]);
+  expect(screen.getByTestId('icon-Setting4', { includeHiddenElements: true })).toBeTruthy();
 });
 
 it('waits for Retry-After, polls every thirty seconds, and leaves when the service answers', async () => {

@@ -3,6 +3,7 @@ import { AccessibilityInfo, AppState, BackHandler } from 'react-native';
 import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { FailureState } from '../components/failure-state';
+import { Glyphs } from '../icons';
 import { useT } from '../lib/i18n';
 import { useLocale } from '../lib/locale';
 import {
@@ -142,6 +143,10 @@ export default function MaintenanceScreen() {
 
   return (
     <FailureState
+      // No header above it (the root stack hides it), so it clears the status bar itself.
+      safeTop
+      icon={Glyphs.Setting4}
+      testID="maintenance-screen"
       title={title}
       description={description}
       note={until === null ? null : tMaintenance(until.key, until.values)}
