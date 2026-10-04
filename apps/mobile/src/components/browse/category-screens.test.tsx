@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -154,6 +155,14 @@ describe('the category landing', () => {
     expect(screen.getByRole('button', { name: 'Filter and sort Games in the feed' })).toBeTruthy();
   });
 
+  it('clears the home indicator on its stack route, with no tab bar under it', async () => {
+    await show(<CategoryLanding categorySlug="games" />);
+    const padding = StyleSheet.flatten(
+      screen.getByTestId('category-landing').props.contentContainerStyle,
+    );
+    expect(padding.paddingBottom).toBe(METRICS.insets.bottom);
+  });
+
   it('draws no chip row for a category without children', async () => {
     await show(<CategoryLanding categorySlug="art" />);
     expect(screen.getByRole('header', { name: 'Art' })).toBeTruthy();
@@ -248,6 +257,12 @@ describe('the categories index', () => {
     expect(names).toEqual(['Games', 'Tabletop', 'Video games', 'Art']);
     expect(screen.getByTestId('href:/categories/games')).toBeTruthy();
     expect(screen.getByTestId('href:/categories/games/video')).toBeTruthy();
+  });
+
+  it('lists the taxonomy inside the white content sheet', async () => {
+    await show(<CategoryIndex />);
+    const sheet = screen.getByTestId('category-sheet');
+    expect(within(sheet).getAllByRole('link')).toHaveLength(4);
   });
 
   it.each([

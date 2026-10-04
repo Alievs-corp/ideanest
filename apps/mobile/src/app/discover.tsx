@@ -162,25 +162,25 @@ export default function DiscoverScreen() {
         onChooseFilter={(kind, slug) => apply(addSlugFilter(withQuery(filters, ''), kind, slug))}
       />
 
-      <Pill
-        label={active.length > 0 ? `${t('railLabel')} (${active.length})` : t('railLabel')}
-        iconLeft={Glyphs.Setting4}
-        variant="outline"
-        fullWidth
-        onPress={() => setSheetOpen(true)}
-        testID="filters-button"
-      />
-
-      <View style={styles.results}>
-        <Meta tone="secondary" style={styles.count} accessibilityLiveRegion="none">
-          {countLine}
-        </Meta>
+      {/* The two controls over the feed, side by side as pills: what narrows it, and its order. */}
+      <View style={styles.controls}>
+        <Pill
+          label={active.length > 0 ? `${t('railLabel')} (${active.length})` : t('railLabel')}
+          iconLeft={Glyphs.Filter}
+          variant={active.length > 0 ? 'primary' : 'outline'}
+          onPress={() => setSheetOpen(true)}
+          testID="filters-button"
+        />
         <SortControl
           sort={filters.sort}
           hasQuery={filters.query !== ''}
           onChange={(sort) => apply({ ...filters, sort })}
         />
       </View>
+
+      <Meta tone="secondary" style={styles.count} accessibilityLiveRegion="none">
+        {countLine}
+      </Meta>
 
       <ActiveFilters
         filters={active}
@@ -414,7 +414,7 @@ function FeedEmpty({
 const styles = StyleSheet.create({
   header: { gap: spacing[4], paddingBottom: spacing[2] },
   titles: { gap: spacing[2] },
-  results: { gap: spacing[3] },
+  controls: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing[2] },
   count: { ...font.regular, fontVariant: ['tabular-nums'] },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   centred: { justifyContent: 'center' },

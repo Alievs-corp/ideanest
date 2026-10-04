@@ -1,10 +1,15 @@
-import type { ReactNode } from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import type { ReactElement, ReactNode } from 'react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import HomeScreen from '../app/(tabs)/index';
+import { TabBarInsetProvider, tabBarFootprint } from './tab-bar';
+import { MotionBudgetProvider } from './ui';
+import { motion } from '../theme';
 
 /**
  * The Home tab — issue #153: the hero, the two rails and the categories in the web's order and
@@ -94,13 +99,13 @@ beforeEach(() => {
 
 afterEach(() => client.clear());
 
-async function renderHome() {
+async function renderHome(wrap: (home: ReactElement) => ReactElement = (home) => home) {
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   const view = await render(
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={client}>
         <IntlProvider locale="en" messages={en}>
-          <HomeScreen />
+          {wrap(<HomeScreen />)}
         </IntlProvider>
       </QueryClientProvider>
     </SafeAreaProvider>,
@@ -186,5 +191,35 @@ describe('the Home tab', () => {
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/discover', params: {} });
     await fireEvent.press(screen.getByRole('button', { name: H.hero.start }));
     expect(mockPush).toHaveBeenCalledWith('/campaigns/new');
+  });
+});
+
+describe('the Home tab in the design language', () => {
+  const tile = () => screen.getByRole('link', { name: 'Games' });
+
+  it('clears the floating tab bar once, through the screen scaffold', async () => {
+    await renderHome((home) => <TabBarInsetProvider>{home}</TabBarInsetProvider>);
+    const padding = StyleSheet.flatten(screen.getByTestId('home').props.contentContainerStyle);
+    expect(padding.paddingBottom).toBe(tabBarFootprint(METRICS.insets.bottom));
+  });
+
+  it('gives a category tile under the thumb with full motion', async () => {
+    await renderHome();
+    fireEvent(tile(), 'pressIn');
+    await waitFor(
+      () => {
+        const style = getAnimatedStyle(tile().parent as never) as {
+          transform?: { scale: number }[];
+        };
+        expect(style.transform?.[0]?.scale).toBeCloseTo(motion.pressScale, 2);
+      },
+      { timeout: 3000 },
+    );
+  });
+
+  it('keeps a category tile still with reduced motion', async () => {
+    await renderHome((home) => <MotionBudgetProvider level="none">{home}</MotionBudgetProvider>);
+    fireEvent(tile(), 'pressIn');
+    expect(StyleSheet.flatten(tile().parent?.props.style)?.transform).toBeUndefined();
   });
 });
