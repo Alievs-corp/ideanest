@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type Ref } from 'react';
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import { Glyphs } from '../../../icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
@@ -30,14 +30,18 @@ import {
   Skeleton,
   SkeletonGroup,
   Subheading,
+  TONES,
   announce,
   useFocusRing,
+  useSurface,
 } from '../../../components/ui';
+import { AnimatedPressable, usePressScale } from '../../../components/ui/press-scale';
+import { BLOCK, blockSurface } from '../../../components/ui/surface';
 import { useOnline } from '../../../lib/connectivity';
 import { useT, type Translate } from '../../../lib/i18n';
 import { useLocale } from '../../../lib/locale';
 import { registerForPush } from '../../../lib/push';
-import { colors, font, fontSize, lineHeight, size, spacing } from '../../../theme';
+import { font, fontSize, lineHeight, radius, size, spacing } from '../../../theme';
 import { InlineLink, SettingsPage, Strong } from '../settings-page';
 import { listPreferences, updatePreference } from './api';
 import { usePushPermission } from './push-permission';
@@ -357,6 +361,10 @@ function PreferenceRow({
   const t = useT('account.notifications');
   const tAll = useT();
   const { ring, onFocus, onBlur } = useFocusRing();
+  const press = usePressScale();
+  const surface = useSurface();
+  const tones = TONES[surface];
+  const block = BLOCK[blockSurface(surface)];
   const unsaved = preference.changeable && !preference.stored;
   const reason = preference.changeable
     ? null
@@ -365,7 +373,7 @@ function PreferenceRow({
 
   return (
     <View style={styles.cell}>
-      <Pressable
+      <AnimatedPressable
         ref={ref}
         accessibilityRole="button"
         accessibilityLabel={accessibleName}
@@ -374,18 +382,32 @@ function PreferenceRow({
         accessibilityState={{ disabled, busy }}
         disabled={disabled}
         onPress={onPress}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
         onFocus={onFocus}
         onBlur={onBlur}
-        style={[styles.row, ring]}
+        // The pressed fill comes from `press`: an animated Pressable drops a function style.
+        style={[
+          styles.row,
+          press.pressed && !disabled && { backgroundColor: block.pressed },
+          ring,
+          press.style,
+        ]}
         testID={`preference-${preference.category}-${preference.channel}`}
       >
-        <Text style={styles.channel}>{channelLabel}</Text>
+        <Text style={[styles.channel, { color: tones.primary }]}>{channelLabel}</Text>
         <View style={styles.value}>
-          <Text style={[styles.mode, disabled ? styles.muted : null]}>{modeLabel}</Text>
-          {unsaved ? <Text style={styles.muted}>{t('preferences.default')}</Text> : null}
+          <Text style={[styles.mode, { color: disabled ? tones.tertiary : tones.primary }]}>
+            {modeLabel}
+          </Text>
+          {unsaved ? (
+            <Text style={[styles.muted, { color: tones.tertiary }]}>{t('preferences.default')}</Text>
+          ) : null}
         </View>
-        {preference.changeable ? <Icon icon={Glyphs.ArrowRight2} size={16} color={colors.textTertiary} /> : null}
-      </Pressable>
+        {preference.changeable ? (
+          <Icon icon={Glyphs.ArrowRight2} size={16} color={tones.tertiary} />
+        ) : null}
+      </AnimatedPressable>
       {reason === null ? null : <Caption>{reason}</Caption>}
     </View>
   );
@@ -402,11 +424,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[3],
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.divider,
+    paddingHorizontal: spacing[2],
+    marginHorizontal: -spacing[2],
+    borderRadius: radius.sm,
   },
-  channel: { ...font.medium, flex: 1, color: colors.textPrimary, fontSize: fontSize.sm, lineHeight: lineHeight.small },
+  channel: { ...font.medium, flex: 1, fontSize: fontSize.sm, lineHeight: lineHeight.small },
   value: { alignItems: 'flex-end' },
-  mode: { ...font.regular, color: colors.textPrimary, fontSize: fontSize.sm, lineHeight: lineHeight.small },
-  muted: { ...font.regular, color: colors.textTertiary, fontSize: fontSize.xs, lineHeight: lineHeight.small },
+  mode: { ...font.regular, fontSize: fontSize.sm, lineHeight: lineHeight.small },
+  muted: { ...font.regular, fontSize: fontSize.xs, lineHeight: lineHeight.small },
 });

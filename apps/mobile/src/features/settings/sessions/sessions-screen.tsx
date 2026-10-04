@@ -25,7 +25,8 @@ import { useOnline } from '../../../lib/connectivity';
 import { pluralCategory, useT, type Translate } from '../../../lib/i18n';
 import { useLocale } from '../../../lib/locale';
 import { forgetPersistedCache } from '../../../lib/offline';
-import { colors, spacing } from '../../../theme';
+import { spacing } from '../../../theme';
+import { FadeUp } from '../../../components/motion';
 import { SettingsPage, useLeavingSettings } from '../settings-page';
 import { listSessions, revokeSession } from './api';
 import { SessionRow } from './session-row';
@@ -185,6 +186,14 @@ function SessionsPanel() {
   }
 
   const ready = rows !== null;
+  /*
+   * The devices on the first list drawn: only they rise in. A device a refetch adds later renders
+   * still (`mobile-design` §6.5). Set once, from the same answer every render that sees it.
+   */
+  const firstIds = useRef<ReadonlySet<string> | null>(null);
+  if (rows !== null && firstIds.current === null) {
+    firstIds.current = new Set(rows.map((row) => row.id ?? ''));
+  }
 
   return (
     <View style={styles.panel} testID="sessions-panel">
@@ -222,19 +231,29 @@ function SessionsPanel() {
             testID="sessions-empty"
           />
         ) : (
-          <Card size="md">
-            {rows.map((session, index) => (
-              <View key={session.id} style={index === 0 ? undefined : styles.divided}>
-                <SessionRow
-                  session={session}
-                  now={now}
-                  busy={busyIds.has(session.id)}
-                  disabled={!online || busyIds.has(session.id) || endingOthers}
-                  onSignOut={(row) => void endOneDevice(row)}
-                />
-              </View>
-            ))}
-          </Card>
+          // One nested block per device, rising in as the first screenful.
+          <View style={styles.devices}>
+            {rows.map((session, index) => {
+              const card = (
+                <Card size="md">
+                  <SessionRow
+                    session={session}
+                    now={now}
+                    busy={busyIds.has(session.id)}
+                    disabled={!online || busyIds.has(session.id) || endingOthers}
+                    onSignOut={(row) => void endOneDevice(row)}
+                  />
+                </Card>
+              );
+              return firstIds.current?.has(session.id ?? '') === true ? (
+                <FadeUp key={session.id} index={index}>
+                  {card}
+                </FadeUp>
+              ) : (
+                <View key={session.id}>{card}</View>
+              );
+            })}
+          </View>
         )
       ) : sessions.isError && online ? (
         <ErrorState
@@ -248,17 +267,19 @@ function SessionsPanel() {
         <Body testID="sessions-offline-empty">{tAll('mobile.settings.sessions.offlineEmpty')}</Body>
       ) : (
         <SkeletonGroup label={t('loading')} testID="sessions-loading">
-          <Card size="md">
+          <View style={styles.devices}>
             {[0, 1, 2].map((row) => (
-              <View key={row} style={[styles.skeletonRow, row === 0 ? undefined : styles.divided]}>
-                <Skeleton width={36} height={36} radius="md" />
-                <View style={styles.skeletonWords}>
-                  <Skeleton width="40%" height={16} />
-                  <Skeleton width="65%" height={14} />
+              <Card key={row} size="md">
+                <View style={styles.skeletonRow}>
+                  <Skeleton circle height={spacing[10]} />
+                  <View style={styles.skeletonWords}>
+                    <Skeleton width="40%" height={16} />
+                    <Skeleton width="65%" height={14} />
+                  </View>
                 </View>
-              </View>
+              </Card>
             ))}
-          </Card>
+          </View>
         </SkeletonGroup>
       )}
 
@@ -314,7 +335,7 @@ const styles = StyleSheet.create({
     gap: spacing[3],
   },
   headingWords: { flexDirection: 'row', alignItems: 'baseline', gap: spacing[2] },
-  divided: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.divider },
-  skeletonRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[4], paddingVertical: spacing[4] },
+  devices: { gap: spacing[3] },
+  skeletonRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[4] },
   skeletonWords: { flex: 1, gap: spacing[2] },
 });

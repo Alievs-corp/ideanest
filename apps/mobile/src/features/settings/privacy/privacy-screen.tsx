@@ -430,7 +430,7 @@ function AccountClosurePanel({ scheduledFor }: { readonly scheduledFor: string |
   }
 
   return (
-    // `--surface-2` with a `--danger` left rule; the heading and the button say what this is.
+    // The sheet's nested block with a `--danger` left rule; the heading and the button say what this is.
     <Card size="md" style={styles.danger} testID="privacy-closure">
       <View style={styles.card}>
         <Subheading accessibilityRole="header">{t('heading')}</Subheading>

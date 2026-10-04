@@ -1,3 +1,4 @@
+import { Glyphs, type IconGlyph } from '../../icons';
 import type { MessageKey } from '../../lib/i18n';
 
 /** The web's `ACCOUNT_GROUPS.settings`, in its order (#161). */
@@ -26,4 +27,21 @@ export function sectionLabelKey(section: SettingsSection): MessageKey {
 
 export function sectionPath(section: SettingsSection): `/settings/${SettingsSection}` {
   return `/settings/${section}`;
+}
+
+/** Each section's Bulk glyph in the Me hub and the settings list. */
+const GLYPHS: Record<SettingsSection, IconGlyph> = {
+  profile: Glyphs.User,
+  notifications: Glyphs.Notification,
+  sessions: Glyphs.Monitor,
+  email: Glyphs.Sms,
+  password: Glyphs.Key,
+  security: Glyphs.ShieldTick,
+  privacy: Glyphs.Archive,
+  payout: Glyphs.Bank,
+  language: Glyphs.Translate,
+};
+
+export function sectionGlyph(section: SettingsSection): IconGlyph {
+  return GLYPHS[section];
 }

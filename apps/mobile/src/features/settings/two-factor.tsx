@@ -13,13 +13,16 @@ import {
   Pill,
   Subheading,
   TextInput,
+  TONES,
   announce,
+  useSurface,
 } from '../../components/ui';
+import { BLOCK, blockSurface } from '../../components/ui/surface';
 import { focusOn } from '../../components/ui/overlay';
 import { describeAuthFailure } from '../../lib/auth-failures';
 import { useOnline } from '../../lib/connectivity';
 import { useT } from '../../lib/i18n';
-import { colors, fontSize, lineHeight, radius, spacing } from '../../theme';
+import { fontSize, lineHeight, radius, spacing } from '../../theme';
 import { FormErrorSummary } from '../auth/form-error-summary';
 import { AuthenticatorQr } from './authenticator-qr';
 import {
@@ -50,6 +53,7 @@ import { SettingsCard, Strong } from './settings-page';
 export function TwoFactorCard() {
   const t = useT('settings.panels.twoFactor');
   const tAll = useT();
+  const inset = useInset();
   const online = useOnline();
   const [state, dispatch] = useReducer(twoFactorReducer, INITIAL_TWO_FACTOR);
   const [password, setPassword] = useState('');
@@ -275,9 +279,9 @@ export function TwoFactorCard() {
             title={t('codesWarningTitle')}
             description={t('codesWarningBody')}
           />
-          <View style={[styles.panel, styles.codes]} testID="two-factor-codes">
+          <View style={[styles.panel, inset.panel, styles.codes]} testID="two-factor-codes">
             {step.codes.map((recovery) => (
-              <Text key={recovery} selectable style={[styles.mono, styles.code]}>
+              <Text key={recovery} selectable style={[styles.mono, inset.ink, styles.code]}>
                 {recovery}
               </Text>
             ))}
@@ -376,6 +380,7 @@ export function TwoFactorCard() {
 function EnrolmentDetails({ enrolment }: { readonly enrolment: TwoFactorEnrolment }) {
   const t = useT('settings.panels.twoFactor');
   const tAll = useT();
+  const inset = useInset();
   const [canOpen, setCanOpen] = useState<boolean | null>(null);
 
   // Asked up front, so a phone with no authenticator is not offered a button that does nothing.
@@ -403,7 +408,7 @@ function EnrolmentDetails({ enrolment }: { readonly enrolment: TwoFactorEnrolmen
   }
 
   return (
-    <View style={[styles.panel, styles.details]}>
+    <View style={[styles.panel, inset.panel, styles.details]}>
       <View style={styles.group}>
         <Caption>{t('onThisDevice')}</Caption>
         {canOpen === false ? (
@@ -432,7 +437,7 @@ function EnrolmentDetails({ enrolment }: { readonly enrolment: TwoFactorEnrolmen
 
       <View style={styles.group}>
         <Caption>{t('byHand')}</Caption>
-        <Text selectable style={styles.mono} testID="two-factor-secret">
+        <Text selectable style={[styles.mono, inset.ink]} testID="two-factor-secret">
           {enrolment.secret}
         </Text>
         <Caption>
@@ -535,15 +540,24 @@ function noticeKey(notice: TwoFactorNotice) {
   }
 }
 
+/**
+ * The inset panel for the codes and the enrolment details, and the ink for the mono text: the
+ * surface's soft badge fill — white on the sheet's nested block — never a border-only box.
+ */
+function useInset() {
+  const surface = useSurface();
+  return {
+    panel: { backgroundColor: BLOCK[blockSurface(surface)].badge },
+    ink: { color: TONES[surface].primary },
+  };
+}
+
 const MONO = Platform.select({ ios: 'Menlo', default: 'monospace' });
 
 const styles = StyleSheet.create({
   step: { gap: spacing[5] },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] },
   panel: {
-    backgroundColor: colors.surface1,
-    borderColor: colors.border,
-    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: radius.md,
     padding: spacing[5],
   },
@@ -555,6 +569,5 @@ const styles = StyleSheet.create({
     fontFamily: MONO,
     fontSize: fontSize.base,
     lineHeight: lineHeight.body,
-    color: colors.textPrimary,
   },
 });

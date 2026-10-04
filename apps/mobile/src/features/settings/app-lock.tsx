@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Body, Meta, Switch } from '../../components/ui';
+import { Body, Icon, Meta, Switch, TONES, useSurface } from '../../components/ui';
+import { Glyphs } from '../../icons';
 import { biometricCapability, canLock, type BiometricCapability } from '../../lib/biometrics';
 import { useT, type MessageKey } from '../../lib/i18n';
 import { disableLock, enableLock } from '../../lib/session';
@@ -79,12 +80,28 @@ export function AppLockCard() {
           <Meta>{detail}</Meta>
         </View>
       )}
-      {refused ? (
-        <Body accessibilityRole="alert" style={styles.refused} testID="app-lock-refused">
-          {t('mobile.lock.refused')}
-        </Body>
-      ) : null}
+      {refused ? <Refused text={t('mobile.lock.refused')} /> : null}
     </SettingsCard>
+  );
+}
+
+/**
+ * The phone said no. A `Warning2` and a sentence, as a field's error is drawn: `--danger` text is
+ * under AA on the white sheet, so the words take the surface's primary ink and the icon the danger.
+ */
+function Refused({ text }: { readonly text: string }) {
+  const surface = useSurface();
+  return (
+    <View style={styles.refused}>
+      <Icon icon={Glyphs.Warning2} size={18} color={colors.danger} />
+      <Body
+        accessibilityRole="alert"
+        style={[styles.refusedText, { color: TONES[surface].primary }]}
+        testID="app-lock-refused"
+      >
+        {text}
+      </Body>
+    </View>
   );
 }
 
@@ -120,5 +137,6 @@ export function lockDetailKey(
 
 const styles = StyleSheet.create({
   row: { gap: spacing[1], minHeight: size.touchTarget, justifyContent: 'center' },
-  refused: { color: colors.danger },
+  refused: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
+  refusedText: { flex: 1 },
 });

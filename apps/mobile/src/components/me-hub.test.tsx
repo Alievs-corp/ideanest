@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AccessibilityInfo, Alert, type AlertButton } from 'react-native';
+import { AccessibilityInfo, Alert, StyleSheet, type AlertButton } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import MeScreen from '../app/(tabs)/me';
 import { useMe, useSessionState, type Me, type SessionState } from '../lib/account';
 import { signOut } from '../lib/auth';
 import { forgetPersistedCache } from '../lib/offline';
+import { colors } from '../theme';
 
 /**
  * The Me tab's three layouts — issue #150.
@@ -251,6 +252,33 @@ describe('the Me tab', () => {
 
     expect(mockRouter.navigate).toHaveBeenCalledWith('/pledges');
     expect(mockRouter.push).not.toHaveBeenCalled();
+  });
+
+  /*
+   * Issue #281, `mobile-design` skill §2: who you are on the dark canvas, every row in the white
+   * content sheet below it, and Sign out as the danger pill.
+   */
+  it('draws the identity on the canvas and the rows in the white sheet', async () => {
+    given('signed-in', AYSEL);
+    await renderMe();
+
+    const onWhite = (node: TestInstance) => {
+      for (let at: TestInstance | null = node; at !== null; at = at.parent) {
+        if (StyleSheet.flatten(at.props.style)?.backgroundColor === colors.whiteSurface) return true;
+      }
+      return false;
+    };
+    expect(onWhite(screen.getByRole('button', { name: 'Aysel Məmmədova, aysel@example.az' }))).toBe(
+      false,
+    );
+    for (const name of ['Saved projects', 'Profile', 'App lock', 'Sign out']) {
+      expect(onWhite(screen.getByRole('button', { name }))).toBe(true);
+    }
+    expect(onWhite(screen.getByRole('link', { name: 'Legal' }))).toBe(true);
+    expect(
+      StyleSheet.flatten(screen.getByRole('button', { name: 'Sign out' }).props.style)
+        .backgroundColor,
+    ).toBe(colors.danger);
   });
 
   it('opens Saved as a screen of its own: it left the tab bar for the Me hub (#276)', async () => {

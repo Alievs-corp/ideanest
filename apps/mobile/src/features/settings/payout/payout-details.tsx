@@ -15,12 +15,14 @@ import {
   Skeleton,
   SkeletonGroup,
   TextInput,
+  TONES,
+  useSurface,
 } from '../../../components/ui';
 import { useAppActive } from '../../../lib/app-active';
 import { useOnline } from '../../../lib/connectivity';
 import { useT } from '../../../lib/i18n';
 import { useLocale } from '../../../lib/locale';
-import { colors, size, spacing } from '../../../theme';
+import { size, spacing } from '../../../theme';
 import { SettingsCard, SettingsPage } from '../settings-page';
 import {
   beginCardRegistration,
@@ -228,7 +230,8 @@ function SubjectForm({ initial, onSaved }: { readonly initial: LegalSubject; rea
               <Pill
                 key={option}
                 label={option === 'INDIVIDUAL' ? t('kindIndividual') : t('kindEntity')}
-                variant={kind === option ? 'outline' : 'ghost'}
+                // The chosen kind is the filled pill; on the white sheet it inverts to near-black.
+                variant={kind === option ? 'primary' : 'outline'}
                 size="sm"
                 selected={kind === option}
                 disabled={locked}
@@ -321,6 +324,7 @@ function CardSection({
   const t = useT('settings.panels.payout');
   const online = useOnline();
   const locale = useLocale();
+  const surface = useSurface();
   const [opening, setOpening] = useState(false);
   const [failure, setFailure] = useState<CardFailure | null>(null);
   const inFlight = useRef(false);
@@ -354,7 +358,7 @@ function CardSection({
       {failed ? <InlineAlert variant="warning" description={t('cardFailed')} testID="payout-card-failed" /> : null}
 
       <View style={styles.onFile}>
-        <Icon icon={Glyphs.Card} size={20} color={colors.textTertiary} />
+        <Icon icon={Glyphs.Card} size={20} color={TONES[surface].tertiary} />
         {recorded ? (
           <View style={styles.onFileWords} accessible testID="payout-card-on-file">
             <Body tone="primary">
