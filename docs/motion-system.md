@@ -718,3 +718,4 @@ an instrumented browser:
 | Libraries | Fetched fourteen script chunks and searched for library signatures |
 | Typography | Every `font-size` rule containing `clamp()` |
 | Structure | Element dimensions, background colours, radii, plus screenshots |
+
