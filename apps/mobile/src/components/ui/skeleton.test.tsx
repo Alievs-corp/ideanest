@@ -200,9 +200,12 @@ describe('Skeleton', () => {
       };
       return (style.transform?.[0]?.translateX ?? 0) / width;
     };
-    await waitFor(() => expect(phase(1, 100)).not.toBe(-1));
     // translateX / width is 2·progress − 1: the same progress for both, though one mounted later.
-    expect(phase(1, 100)).toBeCloseTo(phase(0, 200), 2);
+    // Read once the second band has its width, in one go, so both come from the same frame.
+    await waitFor(() => {
+      expect((getAnimatedStyle(bands[1] as never) as { opacity?: number }).opacity).toBe(1);
+      expect(phase(1, 100)).toBeCloseTo(phase(0, 200), 2);
+    });
   });
 
   it('is round when it stands in for an avatar', async () => {
