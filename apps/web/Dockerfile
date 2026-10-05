@@ -40,7 +40,6 @@ COPY packages/ui/package.json packages/ui/
 # The patches named by `patchedDependencies` in pnpm-workspace.yaml. pnpm hashes every
 # one of them against the lockfile on install, even for a package this image never
 # installs (the Reanimated patch is for apps/mobile), so a missing file fails the build.
-COPY patches/ patches/
 
 # `--frozen-lockfile`, so an image can never be built from a resolution the
 # repository has not committed to.
