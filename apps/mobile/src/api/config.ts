@@ -16,6 +16,7 @@ interface Extra {
   readonly realtimeOrigin?: string;
   readonly googleIosClientId?: string;
   readonly appleSignIn?: boolean;
+  readonly inAppPlanChoice?: boolean;
 }
 
 function extra(): Extra {
@@ -88,4 +89,12 @@ export function providerSettings(): ProviderSettings {
     googleIosClientId: typeof googleIosClientId === 'string' ? googleIosClientId.trim() : '',
     appleSignIn: appleSignIn === true,
   };
+}
+
+/**
+ * Whether plans are chosen and cancelled in the app (#164), or on the web with the app showing them.
+ * Off unless the build turned it on; `app.config.ts` says why.
+ */
+export function inAppPlanChoice(): boolean {
+  return extra().inAppPlanChoice === true;
 }

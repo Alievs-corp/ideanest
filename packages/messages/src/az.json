@@ -5678,6 +5678,17 @@
       "copyHash": "SHA-256 xülasəsini kopyala",
       "hashCopied": "Xülasə kopyalandı",
       "copyFailed": "Xülasəni kopyalamaq mümkün olmadı. Yenidən cəhd edin."
+    },
+    "pricing": {
+      "loadingPlans": "Planlar yüklənir",
+      "chooseNamed": "Bu planı seç: {plan}",
+      "offline": "İnternet bağlantısı yoxdur. Plan seçmək və ya ləğv etmək üçün bağlantı lazımdır, ona görə bağlantı bərpa olunana qədər bu imkan verilmir.",
+      "subscriptionUnavailable": "Hansı planınız olduğunu yoxlaya bilmədik. Yenidən cəhd etmək üçün aşağı çəkin.",
+      "webOnly": {
+        "title": "Plan saytda seçilir",
+        "body": "Plan seçmək, dəyişmək və ya ləğv etmək üçün bu səhifəni IdeyaNest saytında açın. Orada seçdiyiniz plan aktiv olan kimi tətbiqdə də keçərli olur.",
+        "open": "Planlar səhifəsini aç"
+      }
     }
   }
 }

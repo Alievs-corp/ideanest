@@ -124,6 +124,18 @@ const googleIosClientId = process.env.IDEANEST_GOOGLE_IOS_CLIENT_ID?.trim() ?? '
 const appleSignIn = process.env.IDEANEST_APPLE_SIGN_IN?.trim() === 'true';
 
 /**
+ * Whether a plan is chosen and cancelled inside the app (#164). Off unless
+ * `IDEANEST_IN_APP_PLAN_CHOICE` is `true`.
+ *
+ * <p>A plan unlocks publishing, and both stores generally require their own billing for a
+ * subscription that unlocks app functionality (App Review 3.1.1, Google Play's payments policy).
+ * Until the owner decides between store billing and a written exemption, the app shows the plans
+ * and what the reader holds, and the choice is made on the web. Turn this on only with that
+ * decision recorded.
+ */
+const inAppPlanChoice = process.env.IDEANEST_IN_APP_PLAN_CHOICE?.trim() === 'true';
+
+/**
  * Takes the Sign in with Apple entitlement back out when this build does not offer it.
  *
  * <p>`expo-apple-authentication`'s config plugin is AUTOLINKED — it runs because the package is
@@ -374,6 +386,7 @@ const config: ExpoConfig = {
     ...(realtimeOrigin === undefined ? {} : { realtimeOrigin }),
     googleIosClientId,
     appleSignIn,
+    inAppPlanChoice,
   },
 };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFeeDisclosure } from './server';
+import { disclosureStateOf, readFeeDisclosure } from './fees';
 
 /**
  * §22.3's fee disclosure, narrowed — issue #439.
@@ -56,5 +56,43 @@ describe('reading a fee disclosure', () => {
     expect(readFeeDisclosure({ platformRate: '0.05000' })).toBeNull();
     expect(readFeeDisclosure(null)).toBeNull();
     expect(readFeeDisclosure('nothing')).toBeNull();
+  });
+});
+
+/**
+ * What a page may say from a disclosure (#145): the unconfigured sentence only for the service's
+ * own `configured: false`, and never for a failed read.
+ */
+describe('what a disclosure lets a page say', () => {
+  const rates = {
+    configured: true,
+    platformRate: '0.05000',
+    processingRate: '0.02500',
+    processingFixed: null,
+    creatorReceivesRate: '0.92500',
+    currency: 'AZN',
+    effectiveFrom: null,
+  };
+
+  it('says "unconfigured" only when the service said so', () => {
+    expect(disclosureStateOf({ ...rates, configured: false }, 'creator')).toBe('unconfigured');
+    expect(disclosureStateOf({ ...rates, configured: false }, 'backer')).toBe('unconfigured');
+  });
+
+  it('treats a failed read as unavailable, never as unconfigured', () => {
+    expect(disclosureStateOf(null, 'creator')).toBe('unavailable');
+    expect(disclosureStateOf(null, 'backer')).toBe('unavailable');
+  });
+
+  it('treats a schedule without its rates as unavailable', () => {
+    expect(disclosureStateOf({ ...rates, platformRate: null }, 'backer')).toBe('unavailable');
+    expect(disclosureStateOf({ ...rates, processingRate: null }, 'creator')).toBe('unavailable');
+    // A creator is told what they keep; a backer is not.
+    expect(disclosureStateOf({ ...rates, creatorReceivesRate: null }, 'creator')).toBe('unavailable');
+    expect(disclosureStateOf({ ...rates, creatorReceivesRate: null }, 'backer')).toBe('configured');
+  });
+
+  it('states the rates when they are all there', () => {
+    expect(disclosureStateOf(rates, 'creator')).toBe('configured');
   });
 });

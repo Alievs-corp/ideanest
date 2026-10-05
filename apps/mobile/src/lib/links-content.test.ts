@@ -18,6 +18,19 @@ describe('static and legal links (#164)', () => {
     });
   });
 
+  it("opens Pricing, keeping a refused submission's campaign only when it is an id", () => {
+    const id = '3f2b1c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d';
+    expect(destinationFor('https://ideanest.az/az/pricing', HOST)).toEqual({ pathname: '/pricing' });
+    expect(destinationFor(`https://ideanest.az/en/pricing?from=submit&project=${id}`, HOST)).toEqual({
+      pathname: '/pricing',
+      params: { from: 'submit', project: id },
+    });
+    expect(destinationFor('https://ideanest.az/pricing?from=submit&project=../settings', HOST)).toEqual({
+      pathname: '/pricing',
+    });
+    expect(destinationFor(`https://ideanest.az/pricing?project=${id}`, HOST)).toEqual({ pathname: '/pricing' });
+  });
+
   it('leaves a document outside the eight, and a version that is not one, to the browser', () => {
     expect(destinationFor('https://ideanest.az/legal/TERMS_OF_USE', HOST)).toBeNull();
     expect(destinationFor('https://ideanest.az/legal/anything-else', HOST)).toBeNull();

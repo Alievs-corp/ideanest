@@ -374,6 +374,12 @@ the button is not drawn, because the service would refuse the token:
 Google appears on iOS only when Apple does too: App Store guideline 4.8 requires
 Sign in with Apple beside any other third-party sign-in.
 
+One more decides where a plan is chosen (#164):
+
+| Variable | Meaning |
+|---|---|
+| `IDEANEST_IN_APP_PLAN_CHOICE` | `true` lets Pricing choose and cancel a plan in the app. Unset, the app shows the plans, the held plan and the fee terms, and sends the choice to the web page in the in-app browser. Leave it unset until the owner's store-billing decision is recorded (see Pricing below) |
+
 They are not in `eas.json` yet: the Google client and the Apple capability are
 created in the owners' Google Cloud and Apple Developer accounts, then set as EAS
 environment variables.
@@ -690,8 +696,33 @@ provenance is printed above it. The digest wraps every eight characters and has 
 `lib/links.ts` opens these paths from a push or `ideanest://` link. Claiming them as universal
 links in the association files is #165's, with the rest of the web paths.
 
-Pricing is not here yet: choosing a paid plan inside a store app needs the owner's decision on
-store billing (#164), so `pricing` stays a web page.
+## Pricing (#164)
+
+`pricing` is the web's `/pricing`: the plans (`GET /v1/plans`), what the reader holds
+(`GET /v1/me/subscription`, where a 401 is "sign in to choose a plan", not an error) and the
+creator's fee disclosure (`GET /v1/fees/disclosure`). The wire types, their narrowing, the four
+standings (pending, active, ending, lapsed) and the refusal map are `@ideanest/plans`, shared with
+the web. Prices and rates stay decimal strings: free is `Decimal.isZero()`, amounts go through
+`@ideanest/money`, percentages through `decimal.js`. None of the three is persisted — a stale price
+or entitlement restored after a restart would mislead somebody about to pay.
+
+`components/fees/fee-disclosure.tsx` is the one disclosure, with an `audience`: the checkout's
+backer section and Pricing's creator card. A failed read says the rate could not be loaded and is
+never the unconfigured sentence, which says nothing is deducted (#145).
+
+**Where a plan is chosen.** A plan unlocks publishing, and both stores generally require their own
+billing for a subscription that unlocks app functionality (App Review 3.1.1, Google Play's payments
+policy). Until the owner decides between store billing and a written exemption, builds leave
+`IDEANEST_IN_APP_PLAN_CHOICE` unset: the cards have no button, and one "Open the pricing page"
+action opens the web page in the in-app browser. When it closes, the subscription is read again.
+With the flag on, the cards choose (`POST`) and the held panel cancels (`DELETE`) in the app, as
+the web's `PlanChooser` does. Store billing itself is not built.
+
+`?from=submit&project=<id>` — what a refused submission adds — draws the banner with a way back to
+the campaign's review step, and an entitling plan replaces the screen with that step; a pending
+one never does. While a pending plan is held from a submission, the subscription is re-read every
+time the app returns to the foreground (the creator coming back from a banking app). The id is
+accepted only as a UUID, by the route and by `lib/links.ts`, and is never fetched.
 
 ## What is not built
 

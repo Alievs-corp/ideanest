@@ -1,5 +1,6 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
+import type { HeldSubscription, MySubscription } from '@ideanest/plans/catalogue';
 
 /**
  * What the platform charges a creator to publish, and what one account holds.
@@ -25,54 +26,15 @@ import { errorFrom } from '../api/problem';
  * `currentPeriodEnd` would get the boundary wrong once, on a page about money.
  */
 
-export type BillingPeriod = 'MONTHLY' | 'YEARLY';
-
-export type SubscriptionState = 'PENDING_PAYMENT' | 'ACTIVE' | 'CANCELED' | 'EXPIRED';
-
-export interface Plan {
-  readonly id: string;
-  /** Stable, upper case. What an operator and a support conversation agree on. */
-  readonly code: string;
-  readonly name: string;
-  readonly description?: string | null;
-  /** A decimal amount, as text. */
-  readonly price: string;
-  readonly currency: string;
-  readonly billingPeriod: BillingPeriod;
-  /** How many campaigns at once. `null` means no limit. */
-  readonly maxActiveCampaigns?: number | null;
-  /** The largest goal a campaign may be submitted with, as text. `null` means none. */
-  readonly goalCeiling?: string | null;
-  readonly listed: boolean;
-  readonly sortOrder: number;
-  readonly updatedAt: string;
-}
-
-export interface HeldSubscription {
-  readonly id: string;
-  readonly state: SubscriptionState;
-  /** The state and the clock together. Branch on this. */
-  readonly entitled: boolean;
-  /** The plan as it stands now, so the page can say what the subscription currently allows. */
-  readonly plan: Plan;
-  /** What this account was charged, which may differ from what the plan costs today. */
-  readonly price: string;
-  readonly currency: string;
-  readonly billingPeriod: BillingPeriod;
-  readonly startedAt?: string | null;
-  readonly currentPeriodEnd?: string | null;
-  readonly cancelAtPeriodEnd: boolean;
-  readonly createdAt: string;
-}
-
-export interface Catalogue {
-  readonly plans: readonly Plan[];
-}
-
-/** The answer to "what do I hold", including when the answer is nothing. */
-export interface MySubscription {
-  readonly subscription: HeldSubscription | null;
-}
+// The wire types are `@ideanest/plans`' (#164), so the app reads the same shapes.
+export type {
+  BillingPeriod,
+  Catalogue,
+  HeldSubscription,
+  MySubscription,
+  Plan,
+  SubscriptionState,
+} from '@ideanest/plans/catalogue';
 
 /**
  * What this account holds, or nothing.

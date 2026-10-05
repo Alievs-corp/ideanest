@@ -36,6 +36,7 @@ COPY packages/discovery/package.json packages/discovery/
 COPY packages/legal/package.json packages/legal/
 COPY packages/messages/package.json packages/messages/
 COPY packages/money/package.json packages/money/
+COPY packages/plans/package.json packages/plans/
 COPY packages/ui/package.json packages/ui/
 
 # The patches named by `patchedDependencies` in pnpm-workspace.yaml. pnpm hashes every

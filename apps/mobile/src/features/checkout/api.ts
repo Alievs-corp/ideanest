@@ -6,6 +6,7 @@ import type {
   PledgeResponse,
   PublicRewardList,
 } from '@ideanest/checkout/types';
+import { readFeeDisclosure, type FeeDisclosure } from '@ideanest/plans/fees';
 import { api } from '../../api/client';
 import { sendIdempotent } from '../../api/mutate';
 
@@ -36,19 +37,14 @@ export async function getBackerAgreementVersion(signal?: AbortSignal): Promise<n
   }
 }
 
-export interface FeeDisclosure {
-  readonly configured: boolean;
-  readonly platformRate: string | null;
-  readonly processingRate: string | null;
-  readonly processingFixed: string | null;
-  readonly currency: string | null;
-}
-
-export async function getFeeDisclosure(projectId: string, signal?: AbortSignal): Promise<FeeDisclosure> {
-  return (await api().get('/v1/projects/{projectId}/fee-disclosure', {
-    path: { projectId },
-    signal,
-  })) as unknown as FeeDisclosure;
+/** The campaign's fee terms, or null for a body that does not narrow — drawn as a failed read (#145). */
+export async function getFeeDisclosure(projectId: string, signal?: AbortSignal): Promise<FeeDisclosure | null> {
+  return readFeeDisclosure(
+    await api().get('/v1/projects/{projectId}/fee-disclosure', {
+      path: { projectId },
+      signal,
+    }),
+  );
 }
 
 export async function getPledge(id: string): Promise<PledgeResponse> {

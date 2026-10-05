@@ -5678,6 +5678,17 @@
       "copyHash": "SHA-256 özetini kopyala",
       "hashCopied": "Özet kopyalandı",
       "copyFailed": "Özet kopyalanamadı. Tekrar deneyin."
+    },
+    "pricing": {
+      "loadingPlans": "Planlar yükleniyor",
+      "chooseNamed": "Bu planı seç: {plan}",
+      "offline": "İnternet bağlantısı yok. Plan seçmek veya iptal etmek için bağlantı gerekir; bağlantı geri gelene kadar bu seçenek sunulmaz.",
+      "subscriptionUnavailable": "Hangi plana sahip olduğunuzu kontrol edemedik. Tekrar denemek için aşağı çekin.",
+      "webOnly": {
+        "title": "Planlar web sitesinde seçilir",
+        "body": "Bir plan seçmek, değiştirmek veya iptal etmek için bu sayfayı IdeyaNest web sitesinde açın. Orada seçtiğiniz plan etkinleştiği anda uygulamada da geçerli olur.",
+        "open": "Planlar sayfasını aç"
+      }
     }
   }
 }

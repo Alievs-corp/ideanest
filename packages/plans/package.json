@@ -1,0 +1,24 @@
+{
+  "name": "@ideanest/plans",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "description": "What a creator pays to publish, as both clients read it: the plan and subscription wire types, their narrowing, the held subscription's standing, the refusal map, and the fee disclosure, shared by apps/web and apps/mobile.",
+  "exports": {
+    "./catalogue": "./src/catalogue.ts",
+    "./fees": "./src/fees.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

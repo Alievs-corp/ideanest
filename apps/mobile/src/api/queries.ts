@@ -74,6 +74,14 @@ export const queryKeys = {
   legalText: (kind: string, locale: string) => ['legalDocs', kind, locale, 'current'] as const,
   legalArchived: (kind: string, locale: string, version: number) =>
     ['legalDocs', kind, locale, version] as const,
+  /**
+   * Pricing (#164): the plans, what this account holds, and the platform's fee terms. None is
+   * persisted: a stale price or entitlement restored after a restart would mislead somebody about
+   * to pay. `plans` and `fees` are public; `subscription` is this account's.
+   */
+  plans: () => ['plans'] as const,
+  mySubscription: () => ['subscription'] as const,
+  platformFeeDisclosure: () => ['fees', 'platform'] as const,
   pledge: (id: string) => ['pledges', id] as const,
   /** The Updates tab's pages (#155), under `project` so they survive a restart with the page. */
   projectUpdates: (projectId: string) => ['project', projectId, 'updates'] as const,
