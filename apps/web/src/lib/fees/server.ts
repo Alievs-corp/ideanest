@@ -1,6 +1,10 @@
 import type { EnvSource } from '../seo/metadata';
 import { apiOrigin } from '../seo/metadata-source';
 import { PLANS } from '../cache/tags';
+import { readFeeDisclosure, type FeeDisclosure } from '@ideanest/plans/fees';
+
+// The type and the narrowing are `@ideanest/plans`' (#164), so the app reads the same answer.
+export { readFeeDisclosure, type FeeDisclosure } from '@ideanest/plans/fees';
 
 /**
  * §22.3's sixth product requirement, read — issue #439.
@@ -39,25 +43,6 @@ import { PLANS } from '../cache/tags';
  * when a rate moves.
  */
 
-export interface FeeDisclosure {
-  /** Whether the platform has committed to any terms at all. `false` is a real answer. */
-  readonly configured: boolean;
-  /** §5.2's fee as a fraction — `"0.05000"` is five percent. Null when nothing is configured. */
-  readonly platformRate: string | null;
-  /** The payment provider's, kept separate from the platform's. See the component. */
-  readonly processingRate: string | null;
-  readonly processingFixed: string | null;
-  /**
-   * What a creator keeps of every manat pledged, before the fixed amount.
-   *
-   * Computed by the service rather than here, because it is the number a creator checks their
-   * payout against and three clients deriving it would round it three ways.
-   */
-  readonly creatorReceivesRate: string | null;
-  readonly currency: string | null;
-  readonly effectiveFrom: string | null;
-}
-
 export interface FeeReadOptions {
   readonly fetchImpl?: typeof fetch;
   readonly env?: EnvSource;
@@ -65,29 +50,6 @@ export interface FeeReadOptions {
 }
 
 const FEE_REVALIDATE_SECONDS = 3600;
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-function optionalString(value: unknown): string | null {
-  return typeof value === 'string' && value !== '' ? value : null;
-}
-
-export function readFeeDisclosure(body: unknown): FeeDisclosure | null {
-  if (!isObject(body)) return null;
-  if (typeof body.configured !== 'boolean') return null;
-
-  return {
-    configured: body.configured,
-    platformRate: optionalString(body.platformRate),
-    processingRate: optionalString(body.processingRate),
-    processingFixed: optionalString(body.processingFixed),
-    creatorReceivesRate: optionalString(body.creatorReceivesRate),
-    currency: optionalString(body.currency),
-    effectiveFrom: optionalString(body.effectiveFrom),
-  };
-}
 
 /**
  * The terms in force, platform-wide or for one campaign.

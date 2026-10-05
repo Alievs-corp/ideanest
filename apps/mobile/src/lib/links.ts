@@ -330,11 +330,23 @@ function settingsDestination(path: string, query: URLSearchParams): Destination 
  * The static and legal pages (#164): About, How it works, Trust and safety, the legal index, a
  * document in force and an archived version. A document outside §22.2's eight, or a version
  * segment that is not one, is left to the browser rather than opened as a not-found screen.
+ * Pricing keeps the two parameters a refused submission adds, `?from=submit&project=<id>`, and
+ * only with an id: anything else opens the plain page.
  */
 const STATIC_PAGE = /^\/(about|how-it-works|trust-safety|legal)\/?$/;
 const LEGAL_DOCUMENT = /^\/legal\/([a-z-]+)(?:\/v\/([^/]+))?\/?$/;
 
-function contentDestination(path: string): Destination | null {
+const PRICING_PAGE = /^\/pricing\/?$/;
+const PROJECT_ID = new RegExp(`^${UUID}$`);
+
+function contentDestination(path: string, query: URLSearchParams): Destination | null {
+  if (PRICING_PAGE.test(path)) {
+    const project = query.get('project');
+    return query.get('from') === 'submit' && project !== null && PROJECT_ID.test(project)
+      ? { pathname: '/pricing', params: { from: 'submit', project } }
+      : { pathname: '/pricing' };
+  }
+
   const page = STATIC_PAGE.exec(path);
   if (page !== null) return { pathname: `/${page[1]}` };
 
@@ -361,7 +373,7 @@ function campaignDestination(rawPath: string, search = ''): Destination | null {
   const settings = settingsDestination(path, query);
   if (settings !== null) return settings;
 
-  const content = contentDestination(path);
+  const content = contentDestination(path, query);
   if (content !== null) return content;
 
   for (const [pattern, toRoute] of ID_ROUTES) {

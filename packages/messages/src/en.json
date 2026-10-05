@@ -5678,6 +5678,17 @@
       "copyHash": "Copy the SHA-256 digest",
       "hashCopied": "Digest copied",
       "copyFailed": "The digest could not be copied. Try again."
+    },
+    "pricing": {
+      "loadingPlans": "Loading the plans",
+      "chooseNamed": "Choose this plan: {plan}",
+      "offline": "You are offline. Choosing or cancelling a plan needs a connection, so it is not offered until you are back online.",
+      "subscriptionUnavailable": "We could not check which plan you have.",
+      "webOnly": {
+        "title": "Plans are chosen on the website",
+        "body": "To choose, change or cancel a plan, open this page on the IdeyaNest website. What you choose there applies in the app as soon as it is active.",
+        "open": "Open the pricing page"
+      }
     }
   }
 }

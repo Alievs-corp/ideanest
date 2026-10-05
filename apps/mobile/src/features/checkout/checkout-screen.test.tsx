@@ -152,7 +152,9 @@ beforeEach(async () => {
     platformRate: '0.05',
     processingRate: '0.025',
     processingFixed: null,
+    creatorReceivesRate: '0.925',
     currency: 'AZN',
+    effectiveFrom: null,
   });
   api.createPledgeDraft.mockResolvedValue(draft());
 });

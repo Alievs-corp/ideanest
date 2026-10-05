@@ -48,7 +48,7 @@ import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
 import { getBackerAgreementVersion, getFeeDisclosure } from './api';
 import { AddonChoice } from './addon-choice';
 import { FailureNotice } from './failure-notice';
-import { FeeDisclosure } from './fee-disclosure';
+import { FeeDisclosure } from '../../components/fees/fee-disclosure';
 import { countryName } from './format';
 import { PledgeSummary } from './pledge-summary';
 import { RewardChoice } from './reward-choice';
@@ -492,7 +492,11 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
               {summary === null ? null : <View style={wide ? styles.summaryWide : undefined}>{summary}</View>}
             </View>
             {fees.isPending ? null : (
-              <FeeDisclosure disclosure={fees.data ?? null} onPricing={() => router.push('/pricing')} />
+              <FeeDisclosure
+                disclosure={fees.data ?? null}
+                audience="backer"
+                onPricing={() => router.push('/pricing')}
+              />
             )}
           </ContentSheet>
         </ScrollView>

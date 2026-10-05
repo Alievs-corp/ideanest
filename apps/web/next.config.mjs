@@ -194,6 +194,7 @@ const nextConfig = {
     '@ideanest/checkout',
     '@ideanest/account',
     '@ideanest/legal',
+    '@ideanest/plans',
   ],
 
   /**
