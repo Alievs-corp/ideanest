@@ -141,6 +141,14 @@ design starts.
   not mounted yet. The patch backports 4.7's check (`getViewExists` first, no
   stack trace): the props stay in the registry and reach the view with the
   next commit. Drop it when Reanimated is upgraded past 4.7.
+- **Animated props skip the shadow tree on Android.** `apps/mobile/package.json`
+  turns on Reanimated's `ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS`. Without it,
+  every animation frame committed the whole React tree and ran Yoga layout on
+  the UI thread, which is what made a push stutter while its page mounted. With
+  it, `transform` and `opacity` go straight to the native view. The flag cannot
+  be on together with `ENABLE_SHARED_ELEMENT_TRANSITIONS` (the build refuses),
+  which is one more reason that one stays off. It depends on the patch above:
+  without it, the direct writes throw for views that are not mounted yet.
 - **Icons.** Iconsax, generated into `src/icons/glyphs.ts` by
   `scripts/generate-icons.mjs` from the MIT-licensed source
   (`iconsax-react-native`, a devDependency the app never imports). Use them as

@@ -461,4 +461,67 @@ describe('SharedTransition landing', () => {
     expect(Date.now() - flying).toBeLessThan(850);
     expect(opacity('card')).toBe(1);
   });
+
+  it('gives the card its cover back the moment a finger touches the screen', async () => {
+    await render(<App />);
+    await openPage();
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
+
+    await emit('beforeRemove', {});
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(opacity('card')).toBe(0));
+
+    // The list under the clone is about to scroll: the clone cannot follow it, so it goes now.
+    await fireEvent(screen.getByTestId('enabled'), 'touchStart');
+    expect(screen.queryByTestId('shared-clone')).toBeNull();
+    expect(opacity('card')).toBe(1);
+  });
+
+  it('shows the page cover at once when a finger lands during the flight in', async () => {
+    await render(<App />);
+    await openPage();
+    await waitFor(() => expect(opacity('card')).toBe(0));
+    expect(screen.getByTestId('shared-clone')).toBeTruthy();
+
+    await fireEvent(screen.getByTestId('arriving'), 'touchStart');
+    expect(screen.queryByTestId('shared-clone')).toBeNull();
+    expect(opacity('page')).toBe(1);
+    expect(opacity('card')).toBe(1);
+  });
+
+  it('does not fly back when a finger lands while the card is being measured', async () => {
+    await render(<App />);
+    await openPage();
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
+
+    let release: (() => void) | undefined;
+    jest.spyOn(sharedMeasure, 'inWindow').mockImplementation((node) => {
+      const id = testIdOf(node) ?? '';
+      if (id !== 'card') return Promise.resolve(frames[id] ?? null);
+      return new Promise((resolve) => {
+        release = () => resolve(frames.card ?? null);
+      });
+    });
+
+    await emit('beforeRemove', {});
+    // The list starts to scroll before the card's frame comes back.
+    await fireEvent(screen.getByTestId('enabled'), 'touchStart');
+    await act(async () => {
+      release?.();
+      for (let i = 0; i < 6; i += 1) await Promise.resolve();
+    });
+
+    expect(screen.queryByTestId('shared-clone')).toBeNull();
+    expect(opacity('card')).toBe(1);
+  });
+
+  it('ignores a touch when nothing is flying', async () => {
+    await render(<App />);
+    await fireEvent(screen.getByTestId('enabled'), 'touchStart');
+    expect(screen.queryByTestId('shared-clone')).toBeNull();
+    expect(opacity('card')).toBe(1);
+  });
 });

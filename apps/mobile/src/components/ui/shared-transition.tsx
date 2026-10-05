@@ -217,6 +217,8 @@ export function SharedTransitionHost({ children }: { readonly children: ReactNod
   const progress = useSharedValue(0);
 
   const landed = useRef(new Map<string, number>());
+  /** When a finger last touched the screen: a flight measured across it would aim at a moved card. */
+  const touchedAt = useRef(Number.NEGATIVE_INFINITY);
 
   const fly = useCallback((next: (Omit<Flight, 'id' | 'clone'> & { clone?: number }) | null) => {
     const prev = live.current;
@@ -249,6 +251,7 @@ export function SharedTransitionHost({ children }: { readonly children: ReactNod
       const launch = pending.current;
       if (launch === null || launch.tag !== target.tag || launch.from === null) return false;
       pending.current = null;
+      if (touchedAt.current > launch.at) return false;
       fly({
         tag: target.tag,
         direction: 'in',
@@ -379,6 +382,7 @@ export function SharedTransitionHost({ children }: { readonly children: ReactNod
           fly({ ...current, direction: 'out', covers: [entry.shown, source.shown], reversed: true });
           return;
         }
+        const departed = Date.now();
         void Promise.all([
           sharedMeasure.inWindow(entry.node.current),
           sharedMeasure.inWindow(source.node.current),
@@ -387,6 +391,8 @@ export function SharedTransitionHost({ children }: { readonly children: ReactNod
           if (pageFrame === null || card === null) return;
           if (!sources.current.has(source) || source.tag !== entry.tag) return;
           const page = await relative(pageFrame);
+          // Touched while measuring: the list may already be scrolling, so the card is not there.
+          if (touchedAt.current >= departed) return;
           fly({
             tag: entry.tag,
             direction: 'out',
@@ -424,9 +430,22 @@ export function SharedTransitionHost({ children }: { readonly children: ReactNod
     [fly],
   );
 
+  /*
+   * A finger on the screen ends a flight where it is (`mobile-design` §6.1: gestures interrupt
+   * animations). The clone is drawn above the navigator and cannot follow a list that starts to
+   * scroll, so one left in place for the rest of its spring would hang over the wrong card.
+   */
+  const interrupt = useCallback(() => {
+    touchedAt.current = Date.now();
+    const current = live.current;
+    if (current === null) return;
+    if (current.direction === 'in') landed.current.set(current.tag, Date.now());
+    fly(null);
+  }, [fly]);
+
   return (
     <SharedTransitionContext.Provider value={api}>
-      <View style={styles.host}>
+      <View style={styles.host} onTouchStart={interrupt}>
         {children}
         <View ref={origin} style={StyleSheet.absoluteFill} pointerEvents="none" collapsable={false}>
           {flight === null ? null : <Clone
