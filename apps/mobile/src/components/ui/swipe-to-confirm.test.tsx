@@ -134,7 +134,8 @@ describe('SwipeToConfirm, by gesture', () => {
     await drag(TRAVEL * 0.6);
 
     await waitFor(() => expect(translateX()).toBeCloseTo(0, 0), { timeout: 3000 });
-    expect(successOpacity()).toBeCloseTo(0, 1);
+    // The success layer follows the thumb through a derived value, which can land a frame later.
+    await waitFor(() => expect(successOpacity()).toBeCloseTo(0, 1), { timeout: 3000 });
     expect(onConfirm).not.toHaveBeenCalled();
     expect(jest.mocked(Haptics.impactAsync)).not.toHaveBeenCalled();
   });
