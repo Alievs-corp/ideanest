@@ -15,7 +15,9 @@ import { useFocusRing } from './focus';
 import { haptics } from './haptics';
 import { Icon } from './icon';
 import {
+  CLEAR_SYMBOL,
   EMPTY_KEYPAD,
+  EQUALS_SYMBOL,
   KEYPAD_KEYS,
   MONEY_MAX_AMOUNT,
   KEYPAD_OPERATORS,
@@ -50,8 +52,9 @@ import { BLOCK, TONES, blockSurface, useSurface } from './surface';
  *
  * <h2>Arithmetic on Decimals</h2>
  *
- * The operator row (`+ − × ÷`) shows `amount op operand` with the operation muted and a result
- * chip `= value`; tapping the chip commits it, and the amount rolls to it. Every figure is a string
+ * The operator row (`C + − × ÷ =`) shows `amount op operand` with the operation muted and a result
+ * chip `= value`; tapping the chip or `=` commits it, and the amount rolls to it. `C` empties the
+ * amount and drops the operation, so a mistyped sum starts again in one press. Every figure is a string
  * and every operation a `Decimal` (`keypad-math.ts`), rounded half-even to the currency's minor
  * units once, at the result. The point stops accepting digits at the minor units, and a leading
  * zero is replaced rather than followed.
@@ -191,18 +194,27 @@ export function AmountKeypad({
     message = overLimitMessage ?? t('overLimit');
   } else if (nudged && state.operator !== null) message = t('unfinished');
 
-  useImperativeHandle(ref, () => ({
-    settle: () => {
-      if (state.operator === null) return 'unchanged';
-      if (result.kind === 'ok') {
-        apply(commitResult(state, options), true);
-        return 'committed';
-      }
-      if (result.kind === 'none') setNudged(true);
-      else if (message !== null) announce(message, { assertive: true });
-      return 'refused';
-    },
-  }));
+  /** Takes a pending result, or says why it cannot: `=` and `settle()` are the same decision. */
+  const finish = (): KeypadSettle => {
+    if (state.operator === null) return 'unchanged';
+    if (result.kind === 'ok') {
+      apply(commitResult(state, options), true);
+      return 'committed';
+    }
+    if (result.kind === 'none') setNudged(true);
+    else if (message !== null) announce(message, { assertive: true });
+    return 'refused';
+  };
+  const equals = () => {
+    haptics.keypadKey();
+    finish();
+  };
+  const clear = () => {
+    haptics.keypadKey();
+    apply(EMPTY_KEYPAD);
+  };
+
+  useImperativeHandle(ref, () => ({ settle: finish }));
 
   const empty = state.entry === '';
   const shown = empty ? '0' : groupFigure(state.entry);
@@ -264,6 +276,18 @@ export function AmountKeypad({
 
       <View style={styles.keys}>
         <View style={styles.operators}>
+          <View style={styles.operatorCell}>
+            <Key
+              role="button"
+              label={t('clear')}
+              height={OPERATOR_HEIGHT}
+              disabled={disabled || (state.entry === '' && state.operator === null)}
+              onPress={clear}
+              testID={`${testID}-clear`}
+            >
+              {CLEAR_SYMBOL}
+            </Key>
+          </View>
           {KEYPAD_OPERATORS.map((operator) => (
             <View key={operator} style={styles.operatorCell}>
               <Key
@@ -279,6 +303,18 @@ export function AmountKeypad({
               </Key>
             </View>
           ))}
+          <View style={styles.operatorCell}>
+            <Key
+              role="button"
+              label={t('equals')}
+              height={OPERATOR_HEIGHT}
+              disabled={disabled || state.operator === null}
+              onPress={equals}
+              testID={`${testID}-equals`}
+            >
+              {EQUALS_SYMBOL}
+            </Key>
+          </View>
         </View>
 
         <View style={styles.grid}>

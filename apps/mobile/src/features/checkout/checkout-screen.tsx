@@ -306,8 +306,14 @@ export function CheckoutScreen({ projectId, tokens, initialRewardId }: CheckoutS
       </>
     );
     actions = (
+      /*
+       * The step's one action, so it is filled: `primary`, which inverts to the canvas tone on the
+       * summary's white sheet. An outline there read as a choice not yet made. Not lime: checkout's
+       * one lime element is the confirmation on the next step. (The web keeps `ghost` because its
+       * `primary` is white on a white panel; here `Pill` inverts it.)
+       */
       <Pill
-        variant="outline"
+        variant="primary"
         fullWidth
         label={phase === 'reserving' ? t('checkout.review.reserving') : t('checkout.review.reserve')}
         busy={phase === 'reserving'}

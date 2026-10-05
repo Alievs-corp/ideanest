@@ -266,6 +266,14 @@ describe('checkout step 1', () => {
     expect(screen.getByTestId('summary-total')).toHaveTextContent('55.00 AZN');
   });
 
+  it('draws Reserve and review filled, as the step’s primary action, and not lime', async () => {
+    await show({ initialRewardId: 'r1' });
+    const fill = flat(screen.getByTestId('reserve').props.style).backgroundColor;
+    // The summary is a white sheet, where primary inverts to the canvas tone; lime is the next step’s.
+    expect(fill).toBe(colors.surface1);
+    expect(fill).not.toBe(colors.lime500);
+  });
+
   it('disables reserving offline and says so, sending nothing', async () => {
     await show({ initialRewardId: 'r1' });
     await act(async () => setOnline(false));
