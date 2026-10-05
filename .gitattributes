@@ -35,3 +35,4 @@ gradlew text eol=lf
 
 # Binary, never normalised and never diffed as text.
 *.jar binary
+*.patch text eol=lf
