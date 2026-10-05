@@ -1,10 +1,10 @@
-import type { ReactElement } from 'react';
-import { fireEvent, render as renderBare, waitFor } from '@testing-library/react-native';
-import { AccessibilityInfo, StyleSheet, Text, type ViewStyle } from 'react-native';
-import { FadeIn } from 'react-native-reanimated';
+import { Profiler, type ReactElement } from 'react';
+import { act, fireEvent, render as renderBare, waitFor } from '@testing-library/react-native';
+import { AccessibilityInfo, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { FadeIn, getAnimatedStyle } from 'react-native-reanimated';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
-import { colors } from '../../theme';
+import { colors, tint } from '../../theme';
 import { MotionBudgetProvider } from './motion-budget';
 import {
   SKELETON_SHIMMER,
@@ -93,6 +93,116 @@ describe('Skeleton', () => {
         ),
       ),
     ).toBe(colors.whiteMuted);
+  });
+
+  it('draws its band as a native gradient, with no SVG under it', async () => {
+    const tree = await laidOut(
+      <MotionBudgetProvider level="minimal">
+        <Skeleton testID="block" />
+      </MotionBudgetProvider>,
+    );
+    const shimmer = tree.getByTestId(SKELETON_SHIMMER, { includeHiddenElements: true });
+    const style = StyleSheet.flatten(shimmer.props.style as ViewStyle) as ViewStyle & {
+      experimental_backgroundImage?: { colorStops: { color: string }[] }[];
+    };
+    expect(style.experimental_backgroundImage?.[0]?.colorStops.map((stop) => stop.color)).toEqual([
+      tint(colors.surface4, 0),
+      colors.surface4,
+      tint(colors.surface4, 0),
+    ]);
+    expect(JSON.stringify(tree.toJSON())).not.toContain('RNSVG');
+  });
+
+  it('takes the white sheet’s band inside a white sheet', async () => {
+    const tree = await laidOut(
+      <MotionBudgetProvider level="minimal">
+        <SurfaceProvider surface="white">
+          <Skeleton testID="block" />
+        </SurfaceProvider>
+      </MotionBudgetProvider>,
+    );
+    const shimmer = tree.getByTestId(SKELETON_SHIMMER, { includeHiddenElements: true });
+    const style = StyleSheet.flatten(shimmer.props.style as ViewStyle) as ViewStyle & {
+      experimental_backgroundImage?: { colorStops: { color: string }[] }[];
+    };
+    expect(style.experimental_backgroundImage?.[0]?.colorStops[1]?.color).toBe(colors.whiteSurface);
+  });
+
+  it('keeps the band hidden until the block has a width', async () => {
+    const tree = await render(
+      <MotionBudgetProvider level="minimal">
+        <Skeleton testID="block" />
+      </MotionBudgetProvider>,
+    );
+    const band = () =>
+      getAnimatedStyle(tree.getByTestId(SKELETON_SHIMMER, { includeHiddenElements: true }) as never) as {
+        opacity?: number;
+      };
+    expect(band().opacity).toBe(0);
+    await fireEvent(tree.getByTestId('block', { includeHiddenElements: true }), 'layout', {
+      nativeEvent: { layout: { width: 200, height: 16, x: 0, y: 0 } },
+    });
+    await waitFor(() => expect(band().opacity).toBe(1));
+  });
+
+  it('does not render the page again when a block is laid out', async () => {
+    const commits = jest.fn();
+    const tree = await render(
+      <Profiler id="skeleton" onRender={commits}>
+        <MotionBudgetProvider level="minimal">
+          <Skeleton testID="block" />
+        </MotionBudgetProvider>
+      </Profiler>,
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    const before = commits.mock.calls.length;
+    await fireEvent(tree.getByTestId('block', { includeHiddenElements: true }), 'layout', {
+      nativeEvent: { layout: { width: 200, height: 16, x: 0, y: 0 } },
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(commits.mock.calls.length).toBe(before);
+  });
+
+  it('runs every band on one clock, so a block mounted later is in step', async () => {
+    function Pair({ second }: { readonly second: boolean }) {
+      return (
+        <MotionBudgetProvider level="minimal">
+          <View>
+            <Skeleton testID="first" />
+            {second ? <Skeleton testID="second" /> : null}
+          </View>
+        </MotionBudgetProvider>
+      );
+    }
+    const tree = await render(<Pair second={false} />);
+    await fireEvent(tree.getByTestId('first', { includeHiddenElements: true }), 'layout', {
+      nativeEvent: { layout: { width: 200, height: 16, x: 0, y: 0 } },
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    });
+    await tree.rerender(
+      <IntlProvider locale="en" messages={en}>
+        <Pair second />
+      </IntlProvider>,
+    );
+    await fireEvent(tree.getByTestId('second', { includeHiddenElements: true }), 'layout', {
+      nativeEvent: { layout: { width: 100, height: 16, x: 0, y: 0 } },
+    });
+    const bands = tree.getAllByTestId(SKELETON_SHIMMER, { includeHiddenElements: true });
+    const phase = (index: number, width: number) => {
+      const style = getAnimatedStyle(bands[index] as never) as {
+        transform?: { translateX?: number }[];
+      };
+      return (style.transform?.[0]?.translateX ?? 0) / width;
+    };
+    await waitFor(() => expect(phase(1, 100)).not.toBe(-1));
+    // translateX / width is 2·progress − 1: the same progress for both, though one mounted later.
+    expect(phase(1, 100)).toBeCloseTo(phase(0, 200), 2);
   });
 
   it('is round when it stands in for an avatar', async () => {
