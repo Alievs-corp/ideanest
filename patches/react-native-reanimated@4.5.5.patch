@@ -1,3 +1,4 @@
+IdeyaNest #295 filter check.
 diff --git a/android/src/main/java/com/swmansion/reanimated/NativeProxy.kt b/android/src/main/java/com/swmansion/reanimated/NativeProxy.kt
 index 48e37714232d5ccf74d99d61cb2fac56314087aa..0e3e2b17f61bd848b94a8b951dde2d0db545bb23 100644
 --- a/android/src/main/java/com/swmansion/reanimated/NativeProxy.kt
