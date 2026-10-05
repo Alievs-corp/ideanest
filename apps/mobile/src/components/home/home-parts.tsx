@@ -154,7 +154,9 @@ function CategoryTile({ category }: { readonly category: Category }) {
               <Icon icon={Glyphs.Category} variant="bulk" size={24} color={ON_ACCENT.primary} />
               <Icon icon={Glyphs.ArrowRight} size={16} color={ON_ACCENT.secondary} />
             </View>
-            <CardTitle numberOfLines={2}>{name}</CardTitle>
+            <CardTitle numberOfLines={2} style={styles.tileName}>
+              {name}
+            </CardTitle>
           </AccentCard>
         </PressableScale>
       </Link>
@@ -234,4 +236,10 @@ const styles = StyleSheet.create({
   cell: { width: '50%', paddingHorizontal: spacing[3] / 2 },
   tileTarget: { borderRadius: radius.xl },
   tileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexGrow: 1 },
+  /*
+   * One step below the card title (17 rather than 18): a category name is one or two words that
+   * must fit half a phone's width, and the line height stays the card title's so a tile keeps its
+   * height.
+   */
+  tileName: { fontSize: fontSize.reading },
 });
