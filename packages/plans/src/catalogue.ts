@@ -112,8 +112,13 @@ export function readPlan(body: unknown): Plan | null {
   if (!isDecimal(price)) return null;
   if (typeof period !== 'string' || !BILLING_PERIODS.includes(period)) return null;
 
-  const ceiling = optionalText(body.goalCeiling);
-  const campaigns = body.maxActiveCampaigns;
+  // Absent or null is "no limit"; a value that is present and unreadable is not a limit to print.
+  const ceiling = body.goalCeiling ?? null;
+  if (ceiling !== null && (typeof ceiling !== 'string' || !isDecimal(ceiling))) return null;
+  const campaigns = body.maxActiveCampaigns ?? null;
+  if (campaigns !== null && (typeof campaigns !== 'number' || !Number.isInteger(campaigns) || campaigns < 0)) {
+    return null;
+  }
   return {
     id,
     code: text(body.code) ?? '',
@@ -122,9 +127,8 @@ export function readPlan(body: unknown): Plan | null {
     price,
     currency,
     billingPeriod: period as BillingPeriod,
-    maxActiveCampaigns:
-      typeof campaigns === 'number' && Number.isInteger(campaigns) && campaigns >= 0 ? campaigns : null,
-    goalCeiling: ceiling !== null && isDecimal(ceiling) ? ceiling : null,
+    maxActiveCampaigns: campaigns,
+    goalCeiling: ceiling,
     listed: body.listed !== false,
     sortOrder: typeof body.sortOrder === 'number' ? body.sortOrder : 0,
     updatedAt: text(body.updatedAt) ?? '',

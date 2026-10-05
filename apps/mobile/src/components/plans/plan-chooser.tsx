@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { formatMoney } from '@ideanest/money';
 import type { Locale } from '@ideanest/messages/locale';
 import {
+  blocksChoice,
   isFreePrice,
   isHeldPlan,
   standingOf,
@@ -123,7 +124,7 @@ export function PlanCards({
 }) {
   const t = useT();
   if (plans.length === 0) return <Body testID="pricing-empty">{t('pricing.empty')}</Body>;
-  const blocked = held !== null && held.state !== 'CANCELED';
+  const blocked = blocksChoice(held);
   return (
     <View style={styles.cards} testID="pricing-plans">
       {plans.map((plan) => (

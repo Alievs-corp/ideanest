@@ -11,7 +11,7 @@ import {
 import { useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { spacing } from '../../theme';
-import { Body, Card, CardTitle, TONES, useSurface } from '../ui';
+import { Body, Card, CardTitle, Pill, TONES, useSurface } from '../ui';
 
 /**
  * §22.3's fee disclosure — the web's `FeeDisclosure.tsx`, for a backer at checkout and for a creator
@@ -29,6 +29,8 @@ export function FeeDisclosure({
   disclosure,
   audience,
   onPricing,
+  onRetry,
+  retrying = false,
   framed = false,
 }: {
   /** `null` for a failed read, which has its own sentence — never the unconfigured one. */
@@ -36,10 +38,17 @@ export function FeeDisclosure({
   readonly audience: FeeAudience;
   /** The failure sentence's link to Pricing. */
   readonly onPricing: () => void;
+  /**
+   * Where the page is Pricing itself, a link to Pricing would name the page the reader is on: the
+   * failure sentence is then plain text with a "Try again" pill under it.
+   */
+  readonly onRetry?: () => void;
+  readonly retrying?: boolean;
   /** A block of its own on the canvas (Pricing); a section of the sheet it sits in otherwise. */
   readonly framed?: boolean;
 }) {
   const t = useT('fees.disclosure');
+  const tCommon = useT('common');
   const locale = useLocale();
   const ink = TONES[useSurface() === 'white' ? 'white' : 'dark'];
   const state = disclosureStateOf(disclosure, audience);
@@ -50,11 +59,14 @@ export function FeeDisclosure({
     body = t('unconfigured');
   } else if (state === 'unavailable' || disclosure === null) {
     body = t.rich('unavailable', {
-      pricing: (chunks) => (
-        <Text accessibilityRole="link" onPress={onPricing} style={[styles.link, { color: ink.primary }]}>
-          {chunks}
-        </Text>
-      ),
+      pricing: (chunks) =>
+        onRetry === undefined ? (
+          <Text accessibilityRole="link" onPress={onPricing} style={[styles.link, { color: ink.primary }]}>
+            {chunks}
+          </Text>
+        ) : (
+          chunks
+        ),
     });
   } else {
     const platform = percentOf(disclosure.platformRate ?? '', locale);
@@ -78,6 +90,11 @@ export function FeeDisclosure({
       </CardTitle>
       <Body>{body}</Body>
       {fixed === null ? null : <Body>{fixed}</Body>}
+      {state === 'unavailable' && onRetry !== undefined ? (
+        <View style={styles.start}>
+          <Pill label={tCommon('tryAgain')} variant="ghost" size="sm" busy={retrying} onPress={onRetry} />
+        </View>
+      ) : null}
       {state === 'configured' ? (
         <Body testID="fee-disclosure-two-fees">
           {t('twoFees')}
@@ -104,4 +121,5 @@ export function percentOf(fraction: string, locale: Locale): string {
 const styles = StyleSheet.create({
   section: { gap: spacing[2] },
   link: { textDecorationLine: 'underline' },
+  start: { alignItems: 'flex-start' },
 });

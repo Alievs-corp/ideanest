@@ -179,6 +179,18 @@ async function settle() {
 const writes = () => requests.filter((request) => request.method !== 'GET');
 const reads = (path: string) => requests.filter((request) => request.method === 'GET' && request.path === path);
 
+async function becomeActive() {
+  await act(async () => {
+    for (const listener of [...appStateListeners]) listener('active');
+  });
+  await settle();
+}
+
+/** iOS: `openBrowserAsync` resolves when the reader dismisses the browser. */
+function browserDismissedOnReturn() {
+  jest.mocked(WebBrowser.openBrowserAsync).mockResolvedValueOnce({ type: 'cancel' } as never);
+}
+
 describe('the plan cards', () => {
   it('prints prices from their decimal strings: free, a month, a year', async () => {
     await show();
@@ -303,13 +315,6 @@ describe('from a refused submission', () => {
 });
 
 describe('re-reading a pending plan when the app comes back', () => {
-  async function becomeActive() {
-    await act(async () => {
-      for (const listener of [...appStateListeners]) listener('active');
-    });
-    await settle();
-  }
-
   it('reads the subscription once per return, while a pending plan is held from a submission', async () => {
     mine = () => json({ subscription: held({ state: 'PENDING_PAYMENT', entitled: false }) });
     await show(PROJECT);
@@ -327,12 +332,14 @@ describe('re-reading a pending plan when the app comes back', () => {
     await becomeActive();
     expect(reads('/v1/me/subscription')).toHaveLength(1);
 
-    client.clear();
-    requests = [];
-    mine = () => json({ subscription: held() });
-    await show(PROJECT);
-    await becomeActive();
-    expect(reads('/v1/me/subscription')).toHaveLength(1);
+    for (const overrides of [{}, { state: 'EXPIRED', entitled: false }]) {
+      client.clear();
+      requests = [];
+      mine = () => json({ subscription: held(overrides) });
+      await show(PROJECT);
+      await becomeActive();
+      expect(reads('/v1/me/subscription')).toHaveLength(1);
+    }
   });
 });
 
@@ -350,14 +357,34 @@ describe('choosing on the web (the default until the store-billing decision)', (
   });
 
   it('re-reads the subscription when the browser closes, and returns to the campaign once entitled', async () => {
+    browserDismissedOnReturn();
     await show(PROJECT);
     mine = () => json({ subscription: held() });
     await act(async () => fireEvent.press(screen.getByTestId('pricing-open-web')));
     await settle();
     expect(mockReplace).toHaveBeenCalledWith(`/campaigns/${PROJECT}/edit/review`);
+    expect(announce).toHaveBeenCalledWith('You are on Growth until 14 November 2026');
+  });
+
+  it('on Android, where the browser resolves as it opens, waits for the app to come back', async () => {
+    await show(PROJECT);
+    const before = reads('/v1/me/subscription').length;
+    mine = () => json({ subscription: held() });
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-open-web')));
+    await settle();
+    expect(reads('/v1/me/subscription')).toHaveLength(before);
+    expect(mockReplace).not.toHaveBeenCalled();
+
+    await becomeActive();
+    expect(reads('/v1/me/subscription')).toHaveLength(before + 1);
+    expect(mockReplace).toHaveBeenCalledWith(`/campaigns/${PROJECT}/edit/review`);
+
+    await becomeActive();
+    expect(reads('/v1/me/subscription')).toHaveLength(before + 1);
   });
 
   it('stays when the plan chosen on the web is still pending', async () => {
+    browserDismissedOnReturn();
     await show(PROJECT);
     mine = () => json({ subscription: held({ state: 'PENDING_PAYMENT', entitled: false }) });
     await act(async () => fireEvent.press(screen.getByTestId('pricing-open-web')));
@@ -421,12 +448,14 @@ describe('choosing in the app (with the flag on)', () => {
     ['PLAN_NOT_ON_SALE', problem(409, 'PLAN_NOT_ON_SALE'), P.errors.notOnSale],
     ['a 401', problem(401), P.errors.signedOut],
     ['anything else', problem(500, 'SOMETHING_ELSE'), P.errors.generic],
-  ])('maps %s to its sentence', async (_name, response, sentence) => {
+  ])('maps %s to its sentence, and catches up with the service', async (_name, response, sentence) => {
     write = () => response;
     await show();
+    const before = reads('/v1/me/subscription').length;
     await act(async () => fireEvent.press(screen.getByTestId('pricing-choose-GROWTH')));
     await settle();
     expect(screen.getByTestId('pricing-refusal')).toHaveTextContent(new RegExp(sentence.replace(/\./g, '\\.')));
+    expect(reads('/v1/me/subscription')).toHaveLength(before + 1);
   });
 
   it('cancels at the end of the period', async () => {
@@ -476,7 +505,7 @@ describe("the creator's fee disclosure", () => {
     expect(screen.getByTestId('fee-disclosure')).toHaveTextContent(/nothing is being deducted/);
   });
 
-  it('never says nothing is deducted when the read failed, and retries from its link', async () => {
+  it('never says nothing is deducted when the read failed, and retries in place', async () => {
     fees = () => problem(500);
     await show();
     const disclosure = screen.getByTestId('fee-disclosure');
@@ -485,7 +514,9 @@ describe("the creator's fee disclosure", () => {
 
     const before = reads('/v1/fees/disclosure').length;
     fees = () => json(RATES);
-    await act(async () => fireEvent.press(screen.getByText('Plans and pricing')));
+    // On Pricing itself the sentence links nowhere: a link to this page would be a retry by another name.
+    expect(screen.queryByRole('link', { name: 'Plans and pricing' })).toBeNull();
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: en.common.tryAgain })));
     await settle();
     expect(reads('/v1/fees/disclosure')).toHaveLength(before + 1);
     expect(screen.getByTestId('fee-disclosure')).toHaveTextContent(/you receive 92\.5%/);

@@ -54,6 +54,14 @@ describe('reading the plan catalogue', () => {
     expect(plan?.goalCeiling).toBeNull();
   });
 
+  it('refuses a limit that is present and unreadable, rather than printing "no limit"', () => {
+    expect(readPlan({ ...growth, maxActiveCampaigns: -1 })).toBeNull();
+    expect(readPlan({ ...growth, maxActiveCampaigns: 2.5 })).toBeNull();
+    expect(readPlan({ ...growth, maxActiveCampaigns: '3' })).toBeNull();
+    expect(readPlan({ ...growth, goalCeiling: 'lots' })).toBeNull();
+    expect(readPlan({ ...growth, goalCeiling: 50000 })).toBeNull();
+  });
+
   it('refuses a plan without a decimal price, an id, a name or a known period', () => {
     expect(readPlan({ ...growth, price: 19 })).toBeNull();
     expect(readPlan({ ...growth, price: 'nineteen' })).toBeNull();

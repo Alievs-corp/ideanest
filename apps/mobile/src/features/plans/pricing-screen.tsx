@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import { ApiError } from '@ideanest/api-client';
-import { refusalOf, type MySubscription, type SubscriptionRefusal } from '@ideanest/plans/catalogue';
+import {
+  refusalOf,
+  standingOf,
+  type MySubscription,
+  type SubscriptionRefusal,
+} from '@ideanest/plans/catalogue';
 import { inAppPlanChoice, siteUrl } from '../../api/config';
 import { queryKeys } from '../../api/queries';
 import { StaticPage } from '../../components/content/static-page';
@@ -68,6 +73,7 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
   const [cancelling, setCancelling] = useState(false);
   const [refusal, setRefusal] = useState<SubscriptionRefusal | null>(null);
   const [pulling, setPulling] = useState(false);
+  const [awaitingReturn, setAwaitingReturn] = useState(false);
 
   const held = mine.data?.state === 'read' ? mine.data.subscription : null;
   const review: Href | null = fromProjectId === undefined ? null : `/campaigns/${fromProjectId}/edit/review`;
@@ -76,8 +82,16 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
   const settle = (next: MySubscription) => {
     const answer: SubscriptionAnswer = { state: 'read', subscription: next.subscription };
     client.setQueryData([...queryKeys.mySubscription(), signedIn], answer);
-    if (next.subscription !== null) announce(describeHeld(next.subscription, t, locale));
   };
+
+  // What changed is said politely, whatever changed it: a choice, a cancel, the web or a re-read.
+  const sentence = mine.data === undefined ? undefined : held === null ? null : describeHeld(held, t, locale);
+  const spoken = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (sentence === undefined) return;
+    if (spoken.current !== undefined && sentence !== null && sentence !== spoken.current) announce(sentence);
+    spoken.current = sentence;
+  }, [sentence]);
 
   const choose = async (planId: string) => {
     if (!online) return;
@@ -89,6 +103,8 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
       if (review !== null && next.subscription?.entitled === true) router.replace(review);
     } catch (cause) {
       setRefusal(refusalFrom(cause));
+      // `ALREADY_SUBSCRIBED` means the page is behind the service: catch up rather than keep offering.
+      void mine.refetch();
     } finally {
       setBusyPlan(null);
     }
@@ -102,26 +118,49 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
       settle(await cancelSubscription());
     } catch (cause) {
       setRefusal(refusalFrom(cause));
+      void mine.refetch();
     } finally {
       setCancelling(false);
     }
   };
 
-  const openOnWeb = async () => {
-    try {
-      await WebBrowser.openBrowserAsync(`${siteUrl()}/${locale}${pricingPath}`);
-    } catch {
-      return;
-    }
-    const after = await mine.refetch();
+  const { refetch: recheck } = mine;
+  const returnFromWeb = async () => {
+    const after = await recheck();
     if (review !== null && after.data?.state === 'read' && after.data.subscription?.entitled === true) {
       router.replace(review);
     }
   };
 
+  /*
+   * iOS resolves `openBrowserAsync` when the browser is dismissed. Android resolves it at once with
+   * `opened`, so there the return is the app's next `active`, and the read waits for it.
+   */
+  const openOnWeb = async () => {
+    let result: WebBrowser.WebBrowserResult;
+    try {
+      result = await WebBrowser.openBrowserAsync(`${siteUrl()}/${locale}${pricingPath}`);
+    } catch {
+      return;
+    }
+    if (result.type === 'opened') setAwaitingReturn(true);
+    else await returnFromWeb();
+  };
+
+  const returned = useRef(returnFromWeb);
+  returned.current = returnFromWeb;
+  useEffect(() => {
+    if (!awaitingReturn) return;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      setAwaitingReturn(false);
+      void returned.current();
+    });
+    return () => subscription.remove();
+  }, [awaitingReturn]);
+
   // The transfer is recorded somewhere else, minutes or days later: re-read on coming back.
-  const waiting = review !== null && held !== null && !held.entitled;
-  const { refetch: recheck } = mine;
+  const waiting = review !== null && held !== null && standingOf(held) === 'pending';
   useEffect(() => {
     if (!waiting) return;
     const subscription = AppState.addEventListener('change', (state) => {
@@ -252,6 +291,8 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
             disclosure={fees.data ?? null}
             audience="creator"
             onPricing={() => void fees.refetch()}
+            onRetry={() => void fees.refetch()}
+            retrying={fees.isFetching}
             framed
           />
         </View>
