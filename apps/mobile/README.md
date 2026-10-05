@@ -606,11 +606,12 @@ offline and nothing is queued. `src/features/checkout/use-checkout.ts` is the we
 machine; `checkout-screen.tsx` draws it.
 
 **Money motion (#280).** The contribution is typed on the kit's `AmountKeypad` (digits, the
-point, backspace and `+ − × ÷` on `decimal.js`, each result rounded half-even to the minor
-units, the amount handed to `useCheckout` as the same string the text field used to give; a
+point, backspace, `+ − × ÷` on `decimal.js` with `=` to take the result and `C` to start the
+amount again, each result rounded half-even to the minor units, the amount handed to `useCheckout` as the same string the text field used to give; a
 reward's price seeds it in plain form, `45.00` as `45`). Reserving first settles the keypad: an
 operation still on screen commits its result if it is valid, and otherwise nothing is reserved
-and the keypad says why. Step 2 confirms with `SwipeToConfirm`: a drag released normally past
+and the keypad says why (the same decision `=` makes). "Reserve and review" is a filled
+`primary` pill, the step's one action; the lime is kept for the confirmation on step 2. Step 2 confirms with `SwipeToConfirm`: a drag released normally past
 85% of the track calls `pay`, which is unchanged, so a second swipe after a failure sends the
 same idempotency key; a drag the system cancels never commits, and a double activation sends
 once. With a screen reader, or on Android any accessibility service (Switch Access), it is an
