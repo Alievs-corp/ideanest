@@ -153,6 +153,19 @@ export const NATIVE_CLOSE_MS = 2000;
 /** How long after a landing a remounted page still counts as arrived (it skips its entry rise). */
 const ARRIVED_MEMORY_MS = 2000;
 
+/** How close to its end, in points, a clone counts as landed. */
+export const LANDED_POINTS = 0.5;
+
+/**
+ * The spring's `energyThreshold` for a flight that moves `travel` points: the clone lands once it
+ * is within {@link LANDED_POINTS} of its end. Reanimated's default (6e-9 of the start energy) is
+ * reached about a second after the clone has visibly arrived, and for that second a clone left over
+ * the card stays put while the list under it scrolls.
+ */
+export function landingEnergy(travel: number): number {
+  return (LANDED_POINTS / Math.max(travel, LANDED_POINTS)) ** 2;
+}
+
 interface Pending {
   readonly tag: string;
   readonly source: SourceEntry;
@@ -446,6 +459,12 @@ function Clone({
   const offsetY = card.y + card.height / 2 - (page.y + page.height / 2);
   const scaleX = card.width / page.width;
   const scaleY = card.height / page.height;
+  const travel = Math.max(
+    Math.abs(offsetX),
+    Math.abs(offsetY),
+    (Math.abs(scaleX - 1) * page.width) / 2,
+    (Math.abs(scaleY - 1) * page.height) / 2,
+  );
 
   /*
    * Nothing moves and nothing is hidden until the clone's picture is on screen: a clone shown a
@@ -459,10 +478,11 @@ function Clone({
     for (const cover of covers) cover.value = 0;
     // Only a fresh clone starts from its end; a retarget or a turn-round carries on from where it is.
     if (first && !reversed) progress.value = direction === 'in' ? 0 : 1;
-    progress.value = withSpring(direction === 'in' ? 1 : 0, spring.soft, (finished) => {
+    const settle = { ...spring.soft, energyThreshold: landingEnergy(travel) };
+    progress.value = withSpring(direction === 'in' ? 1 : 0, settle, (finished) => {
       if (finished === true) runOnJS(onLanded)(id);
     });
-  }, [covers, direction, id, onLanded, progress, reversed, visible]);
+  }, [covers, direction, id, onLanded, progress, reversed, travel, visible]);
 
   useEffect(() => {
     if (snapshot.uri === null || reversed) {
