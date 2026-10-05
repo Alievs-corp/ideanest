@@ -63,6 +63,7 @@ jobs:
       web: ${{ steps.filter.outputs.web }}
       api: ${{ steps.filter.outputs.api }}
       mobile: ${{ steps.filter.outputs.mobile }}
+      image: ${{ steps.filter.outputs.image }}
       docs: ${{ steps.filter.outputs.docs }}
     steps:
       # A pull request needs no working tree — the file list comes from the API.
@@ -98,9 +99,19 @@ jobs:
           # the `PledgeState` enum to check every state has a label (#180).
           # Without them here, a backend-only pull request that broke either
           # would skip the job that says so, and `main` would find out later.
+          #
+          # `patches/**` is shared because pnpm applies and hashes every patch
+          # named by `patchedDependencies` on each install, so a pull request
+          # that edits only a patch changes what both apps install (#295).
+          #
+          # `image` is narrower than `web` on purpose. It is everything the web
+          # image's `deps` stage reads before `pnpm install`, and nothing it
+          # does not: a source change cannot break that stage, and building it
+          # on every web change would spend minutes proving nothing.
           filters: |
             shared: &shared
               - 'packages/**'
+              - 'patches/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
               - 'package.json'
@@ -118,6 +129,16 @@ jobs:
             api:
               - 'apps/api/**'
               - '.github/workflows/ci.yml'
+            image:
+              - 'apps/web/Dockerfile'
+              - '.dockerignore'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'patches/**'
+              - 'apps/web/package.json'
+              - 'packages/*/package.json'
+              - '.github/workflows/ci.yml'
             docs:
               - 'docs/**'
               - '**/*.md'
@@ -130,6 +151,7 @@ jobs:
           WEB: ${{ steps.filter.outputs.web }}
           API: ${{ steps.filter.outputs.api }}
           MOBILE: ${{ steps.filter.outputs.mobile }}
+          IMAGE: ${{ steps.filter.outputs.image }}
           DOCS: ${{ steps.filter.outputs.docs }}
         run: |
           set -euo pipefail
@@ -141,6 +163,7 @@ jobs:
             echo "| Web and shared packages | ${WEB} | Frontend, Storybook preview, Performance budgets |"
             echo "| Backend (\`apps/api\`) | ${API} | Backend (Java) |"
             echo "| Mobile (\`apps/mobile\`) and shared packages | ${MOBILE} | Mobile (typecheck, test, config) |"
+            echo "| What the web image installs from | ${IMAGE} | Web image (install stage) |"
             echo "| Documentation | ${DOCS} | none of its own |"
             echo
             echo "A job listed against an unchanged component is skipped, and \`CI complete\`"
@@ -453,6 +476,40 @@ jobs:
         working-directory: apps/api
         run: ./gradlew --no-daemon build
 
+  # The web image's install stage, built the way Release builds it -- #295.
+  #
+  # #290 added a `patchedDependencies` entry, every check here passed, and the
+  # first build to notice that `apps/web/Dockerfile` did not copy `patches/` was
+  # Release on `main`, two merges later, with both staging deploys skipped
+  # (#293). Nothing else in this file builds an image, so anything that changes
+  # what the install needs -- a workspace package, a patch, a `packageManager`
+  # bump, the Dockerfile or `.dockerignore` -- reached `main` unchecked.
+  #
+  # `deps` AND NOT THE WHOLE IMAGE. The later stages are a `next build` that
+  # `performance` already runs and two copies of its output; the failures this
+  # exists for all happen before them. Reading the cache Release writes keeps
+  # the usual run to restoring layers. Nothing is written back: a pull request's
+  # layers are not something `main` should start from.
+  image:
+    name: Web image (install stage)
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build the install stage
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          target: deps
+          push: false
+          cache-from: type=gha,scope=web
+
   # ---------------------------------------------------------------------------
   # The single check branch protection should require.
   #
@@ -466,7 +523,8 @@ jobs:
   #
   # WHAT IT BLOCKS ON, AND WHY THAT LIST IS SHORTER THAN `needs`. It waits for
   # every job, and it fails on the two that branch protection required before
-  # #67, and on the mobile check (#144), which no required context had covered.
+  # #67, on the mobile check (#144), which no required context had covered, and
+  # on the web image's install stage (#295).
   # `Performance budgets` and `Storybook preview` report and do not
   # block, which is what they already did -- neither has ever been a required
   # context. Making the budget check blocking here would be a good idea and it
@@ -477,7 +535,7 @@ jobs:
   ci-complete:
     name: CI complete
     runs-on: ubuntu-latest
-    needs: [changes, frontend, storybook-preview, performance, mobile, backend]
+    needs: [changes, frontend, storybook-preview, performance, mobile, backend, image]
     if: always()
     timeout-minutes: 5
     steps:
@@ -487,6 +545,7 @@ jobs:
           FRONTEND: ${{ needs.frontend.result }}
           BACKEND: ${{ needs.backend.result }}
           MOBILE: ${{ needs.mobile.result }}
+          IMAGE: ${{ needs.image.result }}
           PERFORMANCE: ${{ needs.performance.result }}
           STORYBOOK: ${{ needs['storybook-preview'].result }}
         run: |
@@ -501,7 +560,7 @@ jobs:
           # concurrency group above and must not report green on a commit whose
           # tests were killed half way through.
           failed=0
-          for entry in "Frontend (typecheck, test, storybook):${FRONTEND}"                        "Mobile (typecheck, test, config):${MOBILE}"                        "Backend (Java):${BACKEND}"                        "Changed paths:${CHANGES}"; do
+          for entry in "Frontend (typecheck, test, storybook):${FRONTEND}"                        "Mobile (typecheck, test, config):${MOBILE}"                        "Backend (Java):${BACKEND}"                        "Web image (install stage):${IMAGE}"                        "Changed paths:${CHANGES}"; do
             job="${entry%:*}"
             result="${entry##*:}"
             case "$result" in
