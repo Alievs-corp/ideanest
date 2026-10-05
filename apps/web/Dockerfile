@@ -22,6 +22,9 @@ WORKDIR /repo
 
 # Manifests and the lockfile only. A change to any source file must not
 # invalidate the install layer, which is most of the build.
+#
+# Pull request CI builds this stage on its own (`image` in ci.yml, #295). A new
+# file the install reads goes here AND into that job's path filter.
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/web/package.json apps/web/
 COPY packages/account/package.json packages/account/
