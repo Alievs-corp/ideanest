@@ -2,6 +2,11 @@
   "name": "@ideanest/mobile",
   "version": "0.0.0",
   "private": true,
+  "reanimated": {
+    "staticFeatureFlags": {
+      "ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS": true
+    }
+  },
   "main": "index.ts",
   "scripts": {
     "start": "expo start --dev-client",
