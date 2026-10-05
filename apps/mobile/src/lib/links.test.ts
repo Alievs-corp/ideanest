@@ -50,7 +50,7 @@ describe('destinationFor', () => {
 
   it('answers null for a web page this application does not have', () => {
     // Not the home screen. See the note on why a fallback hides both cases.
-    expect(destinationFor('https://ideanest.az/about', HOST)).toBeNull();
+    expect(destinationFor('https://ideanest.az/pricing', HOST)).toBeNull();
     expect(destinationFor('https://ideanest.az/projects/only-one-segment', HOST)).toBeNull();
   });
 

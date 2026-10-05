@@ -54,8 +54,12 @@ export const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
  * Matched on the first element of the key rather than the whole of it, so that
  * `['saved', cursor]` and `['saved']` are one decision. See the class comment
  * for why the discovery feed is not in this list.
+ *
+ * `legalDocs` (#164) holds the legal catalogue and texts: public, versioned and hash-stamped, so
+ * a copy read on a plane is still exactly the version it says it is, with its provenance printed
+ * above it. Not the checkout's `legal` root, which is the agreement version a pledge is sent with.
  */
-const PERSISTED_ROOTS: readonly string[] = ['saved', 'pledges', 'project'];
+const PERSISTED_ROOTS: readonly string[] = ['saved', 'pledges', 'project', 'legalDocs'];
 
 /**
  * Roots that are refused even though they hold campaign-page data — #155. Listed rather than left

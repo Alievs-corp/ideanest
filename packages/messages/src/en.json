@@ -5669,6 +5669,15 @@
         "offlineEmpty": "Your notification settings will load once the connection is back.",
         "pushFailed": "Your choice is saved, but push could not be set up on this phone. Try again later."
       }
+    },
+    "content": {
+      "share": "Share this page",
+      "shareFailed": "That could not be shared. Try again.",
+      "loadingLegal": "Loading the legal documents",
+      "loadingDocument": "Loading the document",
+      "copyHash": "Copy the SHA-256 digest",
+      "hashCopied": "Digest copied",
+      "copyFailed": "The digest could not be copied. Try again."
     }
   }
 }

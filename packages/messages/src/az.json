@@ -5669,6 +5669,15 @@
         "offlineEmpty": "Bildiriş ayarlarınız bağlantı bərpa olunanda yüklənəcək.",
         "pushFailed": "Seçiminiz yadda saxlanılıb, lakin bu telefonda push bildirişlərini qurmaq mümkün olmadı. Bir az sonra yenidən cəhd edin."
       }
+    },
+    "content": {
+      "share": "Bu səhifəni paylaşın",
+      "shareFailed": "Paylaşmaq mümkün olmadı. Yenidən cəhd edin.",
+      "loadingLegal": "Hüquqi sənədlər yüklənir",
+      "loadingDocument": "Sənəd yüklənir",
+      "copyHash": "SHA-256 xülasəsini kopyalayın",
+      "hashCopied": "Xülasə kopyalandı",
+      "copyFailed": "Xülasəni kopyalamaq mümkün olmadı. Yenidən cəhd edin."
     }
   }
 }

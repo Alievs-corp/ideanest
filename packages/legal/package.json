@@ -1,0 +1,20 @@
+{
+  "name": "@ideanest/legal",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "description": "The eight legal documents as both clients read them: the slugs, their service kinds, the response narrowing, the addresses and the paragraph split, shared by apps/web and apps/mobile.",
+  "exports": {
+    "./documents": "./src/documents.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

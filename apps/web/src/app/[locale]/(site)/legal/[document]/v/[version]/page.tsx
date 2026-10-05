@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { LegalDocumentPage } from '../../../../../../../components/content/LegalDocumentPage';
 import { LegalUnavailable } from '../../../../../../../components/content/LegalUnavailable';
-import { isLegalDocumentSlug, legalPath } from '../../../../../../../lib/legal/api';
+import { archivedVersionOf, isLegalDocumentSlug, legalPath } from '@ideanest/legal/documents';
 import { fetchArchivedLegalDocument } from '../../../../../../../lib/legal/server';
 import { localeOrDefault } from '../../../../../../../lib/i18n/locale';
 import { privatePageMetadata } from '../../../../../../../lib/seo/metadata';
@@ -38,25 +38,13 @@ import { privatePageMetadata } from '../../../../../../../lib/seo/metadata';
  * which is who it is for.
  */
 
-/**
- * A version number, or nothing.
- *
- * Integers from one, and `Number.parseInt` is not used: it reads `3abc` as 3, so `/v/3abc` would
- * quietly serve version 3 at an address that is not one this application generates. A crawler
- * that found such a URL would index a duplicate.
- */
-function versionOf(segment: string): number | null {
-  if (!/^[1-9][0-9]{0,4}$/u.test(segment)) return null;
-  return Number(segment);
-}
-
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string; document: string; version: string }>;
 }): Promise<Metadata> {
   const { document, version } = await params;
-  if (!isLegalDocumentSlug(document) || versionOf(version) === null) notFound();
+  if (!isLegalDocumentSlug(document) || archivedVersionOf(version) === null) notFound();
 
   const t = await getTranslations('legal');
 
@@ -73,7 +61,7 @@ export default async function ArchivedLegalDocumentRoute({
   const { locale: requested, document, version } = await params;
   if (!isLegalDocumentSlug(document)) notFound();
 
-  const number = versionOf(version);
+  const number = archivedVersionOf(version);
   if (number === null) notFound();
 
   const locale = localeOrDefault(requested);

@@ -5669,6 +5669,15 @@
         "offlineEmpty": "Bildirim ayarlarınız bağlantı geri geldiğinde yüklenecek.",
         "pushFailed": "Seçiminiz kaydedildi, ancak bu telefonda anlık bildirimler kurulamadı. Daha sonra yeniden deneyin."
       }
+    },
+    "content": {
+      "share": "Bu sayfayı paylaş",
+      "shareFailed": "Paylaşılamadı. Tekrar deneyin.",
+      "loadingLegal": "Hukuki belgeler yükleniyor",
+      "loadingDocument": "Belge yükleniyor",
+      "copyHash": "SHA-256 özetini kopyala",
+      "hashCopied": "Özet kopyalandı",
+      "copyFailed": "Özet kopyalanamadı. Tekrar deneyin."
     }
   }
 }

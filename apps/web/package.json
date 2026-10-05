@@ -17,6 +17,7 @@
     "@ideanest/checkout": "workspace:*",
     "@ideanest/design-tokens": "workspace:*",
     "@ideanest/discovery": "workspace:*",
+    "@ideanest/legal": "workspace:*",
     "@ideanest/messages": "workspace:*",
     "@ideanest/money": "workspace:*",
     "@ideanest/ui": "workspace:*",

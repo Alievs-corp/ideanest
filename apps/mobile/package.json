@@ -26,6 +26,7 @@
     "@ideanest/checkout": "workspace:*",
     "@ideanest/design-tokens": "workspace:*",
     "@ideanest/discovery": "workspace:*",
+    "@ideanest/legal": "workspace:*",
     "@ideanest/messages": "workspace:*",
     "@ideanest/money": "workspace:*",
     "@shopify/flash-list": "2.3.2",

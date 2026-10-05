@@ -19,7 +19,7 @@ import {
 import type { DiscoveryFeed, ProjectCard } from '../discovery/api';
 import type { Plan } from '../plans/api';
 import { DEFAULT_LOCALE } from '../i18n/locale';
-import { LEGAL_UNAVAILABLE, LEGAL_UNPUBLISHED, type LegalRead } from '../legal/api';
+import { LEGAL_UNAVAILABLE, LEGAL_UNPUBLISHED, type LegalRead } from '@ideanest/legal/documents';
 import {
   COLLECTIONS,
   DISCOVERY,

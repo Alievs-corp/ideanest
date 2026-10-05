@@ -460,8 +460,8 @@ table's order and modes are `@ideanest/account/notifications`, shared with the w
 never know: `useQuery` answers from the cache it already answers from, and the
 only difference offline is that the background refetch fails.
 
-**Saved campaigns, pledges and campaign pages survive a restart. Feeds and search
-results do not** — a feed is a ranking computed at a moment, and restoring last
+**Saved campaigns, pledges, campaign pages and the legal texts survive a restart. Feeds
+and search results do not** — a feed is a ranking computed at a moment, and restoring last
 week's is worse than showing that the device is offline, because it looks
 current.
 
@@ -669,6 +669,29 @@ the screen), anything else took nothing. The hint is read once and dropped from 
 campaign's name comes from the cached list or at most three list pages; a pledge whose campaign
 cannot be named still renders. `pledges/[id]/address` is a web placeholder until its own pull
 request.
+
+## Static and legal pages (#164)
+
+`about`, `how-it-works` and `trust-safety` are the web's three `(site)` pages, block for block
+from the same `static.*` keys, drawn with `components/content/static-page.tsx`: title and summary,
+17pt reading text, section headings, ruled lists, and a header action that shares the page's https
+address. Inline `<b>` and link tags go through `RichParagraph`; each link pushes an app route and
+is also a custom accessibility action on its paragraph, because nested `Text` links are hard to
+reach with TalkBack. The words are bundled, so these pages work offline and on first launch.
+
+`legal`, `legal/[document]` and `legal/[document]/v/[version]` read `GET /v1/legal/documents…`
+in the app's language. The slugs, their service kinds, the response narrowing, the `/v/{n}` rule
+and the paragraph split are `@ideanest/legal/documents`, shared with the web. A 404 is "not
+published"; a failure is "could not be loaded" with a retry — never eight "Not published yet"
+rows (#147). Dates are written in UTC, as the web's server writes them (`formatServerInstant`).
+The texts are cached under `legalDocs` and persisted: each is versioned and hash-stamped, and its
+provenance is printed above it. The digest wraps every eight characters and has a copy button.
+
+`lib/links.ts` opens these paths from a push or `ideanest://` link. Claiming them as universal
+links in the association files is #165's, with the rest of the web paths.
+
+Pricing is not here yet: choosing a paid plan inside a store app needs the owner's decision on
+store billing (#164), so `pricing` stays a web page.
 
 ## What is not built
 

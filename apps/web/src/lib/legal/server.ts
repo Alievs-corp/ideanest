@@ -11,7 +11,7 @@ import {
   type LegalRead,
   type LegalDocumentSlug,
   type LegalDocumentSummary,
-} from './api';
+} from '@ideanest/legal/documents';
 
 /**
  * The legal pages' server reads — §22.2, issue #439.

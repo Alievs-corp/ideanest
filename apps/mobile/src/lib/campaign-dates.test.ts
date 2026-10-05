@@ -1,4 +1,4 @@
-import { formatDay, formatInstant } from './i18n';
+import { formatDay, formatInstant, formatServerInstant } from './i18n';
 
 /**
  * The campaign page's two dates (#155) — `formatInstant` and `formatDay` in `lib/i18n.tsx`, the
@@ -55,5 +55,34 @@ describe('formatDay', () => {
   it('answers null for a value that is not an instant', () => {
     expect(formatDay('nope', 'en')).toBeNull();
     expect(formatDay(undefined, 'en')).toBeNull();
+  });
+});
+
+describe('formatServerInstant', () => {
+  it('writes UTC whatever the device zone, as the web server does (#164)', () => {
+    const text = formatServerInstant(DEADLINE, 'en');
+    expect(text).toContain('3 October 2026');
+    expect(text).toContain('20:00');
+    expect(text).toContain('UTC');
+  });
+
+  it('writes the same Azerbaijani on Hermes, where format() has no parts', () => {
+    const withParts = formatServerInstant(DEADLINE, 'az');
+    expect(withParts).toContain('3 oktyabr 2026');
+    expect(withParts).toContain('20:00');
+    jest.isolateModules(() => {
+      jest.doMock('@ideanest/messages/hermes', () => ({
+        ...jest.requireActual('@ideanest/messages/hermes'),
+        formatToPartsWorks: () => ({ numbers: false, dates: false }),
+      }));
+      const hermes = jest.requireActual<typeof import('./i18n')>('./i18n');
+      expect(hermes.formatServerInstant(DEADLINE, 'az')).toBe(withParts);
+    });
+    jest.dontMock('@ideanest/messages/hermes');
+  });
+
+  it('answers null for a value that is not an instant', () => {
+    expect(formatServerInstant('nope', 'en')).toBeNull();
+    expect(formatServerInstant(null, 'az')).toBeNull();
   });
 });
