@@ -109,11 +109,12 @@ export function CampaignColumn({ cards, priority = 0, testID }: CampaignColumnPr
 
 /**
  * Placeholders for a column of cards, one busy accessible element named `label` — the web's
- * `DiscoverySkeleton`. Six by default, the feed's; a home rail asks for two.
+ * `DiscoverySkeleton`. Two by default: a phone shows one card and the top of the next, and every
+ * placeholder below that is views mounted, while the page is still sliding in, that nobody sees.
  */
 export function CampaignColumnSkeleton({
   label,
-  count = 6,
+  count = 2,
 }: {
   readonly label: string;
   readonly count?: number;

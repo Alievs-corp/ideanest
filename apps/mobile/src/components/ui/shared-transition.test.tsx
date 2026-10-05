@@ -6,6 +6,8 @@ import { colors } from '../../theme';
 import { MotionBudgetProvider, type MotionLevel } from './motion-budget';
 import {
   ARRIVAL_WINDOW_MS,
+  LANDED_POINTS,
+  landingEnergy,
   SharedTarget,
   SharedTransitionHost,
   sharedMeasure,
@@ -398,7 +400,7 @@ describe('SharedTransition', () => {
     await openPage();
     await waitFor(() => expect(opacity('card')).toBe(0));
     // Landed, but the page's picture is not drawn: the clone stays over the empty frame.
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    await waitFor(() => expect(cloneTransform().scaleX).toBeCloseTo(1, 2), { timeout: 3000 });
     expect(screen.getByTestId('shared-clone')).toBeTruthy();
 
     await act(async () => draw?.());
@@ -421,5 +423,105 @@ describe('SharedTransition', () => {
     );
     expect(screen.getByTestId('lone')).toHaveTextContent('false');
     expect(opacity('page')).toBe(1);
+  });
+});
+
+describe('landingEnergy', () => {
+  it('stops the spring within half a point of its end', () => {
+    // Energy goes with the square of the distance left, so the ratio is the distance ratio squared.
+    expect(landingEnergy(400)).toBeCloseTo((0.5 / 400) ** 2, 12);
+    expect(Math.sqrt(landingEnergy(400)) * 400).toBeCloseTo(LANDED_POINTS, 6);
+  });
+
+  it('lands at once when there is nowhere to go', () => {
+    expect(landingEnergy(0)).toBe(1);
+    expect(landingEnergy(0.25)).toBe(1);
+  });
+
+  it('is far looser than Reanimated’s default for any flight on a phone screen', () => {
+    expect(landingEnergy(3000)).toBeGreaterThan(6e-9);
+  });
+});
+
+describe('SharedTransition landing', () => {
+  it('removes the clone back over the card soon after it arrives, not a second later', async () => {
+    await render(<App />);
+    await openPage();
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
+
+    await emit('beforeRemove', {});
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(opacity('card')).toBe(0));
+    const flying = Date.now();
+
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
+    expect(Date.now() - flying).toBeLessThan(850);
+    expect(opacity('card')).toBe(1);
+  });
+
+  it('gives the card its cover back the moment a finger touches the screen', async () => {
+    await render(<App />);
+    await openPage();
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
+
+    await emit('beforeRemove', {});
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(opacity('card')).toBe(0));
+
+    // The list under the clone is about to scroll: the clone cannot follow it, so it goes now.
+    await fireEvent(screen.getByTestId('enabled'), 'touchStart');
+    expect(screen.queryByTestId('shared-clone')).toBeNull();
+    expect(opacity('card')).toBe(1);
+  });
+
+  it('shows the page cover at once when a finger lands during the flight in', async () => {
+    await render(<App />);
+    await openPage();
+    await waitFor(() => expect(opacity('card')).toBe(0));
+    expect(screen.getByTestId('shared-clone')).toBeTruthy();
+
+    await fireEvent(screen.getByTestId('arriving'), 'touchStart');
+    expect(screen.queryByTestId('shared-clone')).toBeNull();
+    expect(opacity('page')).toBe(1);
+    expect(opacity('card')).toBe(1);
+  });
+
+  it('does not fly back when a finger lands while the card is being measured', async () => {
+    await render(<App />);
+    await openPage();
+    await waitFor(() => expect(screen.queryByTestId('shared-clone')).toBeNull(), { timeout: 3000 });
+
+    let release: (() => void) | undefined;
+    jest.spyOn(sharedMeasure, 'inWindow').mockImplementation((node) => {
+      const id = testIdOf(node) ?? '';
+      if (id !== 'card') return Promise.resolve(frames[id] ?? null);
+      return new Promise((resolve) => {
+        release = () => resolve(frames.card ?? null);
+      });
+    });
+
+    await emit('beforeRemove', {});
+    // The list starts to scroll before the card's frame comes back.
+    await fireEvent(screen.getByTestId('enabled'), 'touchStart');
+    await act(async () => {
+      release?.();
+      for (let i = 0; i < 6; i += 1) await Promise.resolve();
+    });
+
+    expect(screen.queryByTestId('shared-clone')).toBeNull();
+    expect(opacity('card')).toBe(1);
+  });
+
+  it('ignores a touch when nothing is flying', async () => {
+    await render(<App />);
+    await fireEvent(screen.getByTestId('enabled'), 'touchStart');
+    expect(screen.queryByTestId('shared-clone')).toBeNull();
+    expect(opacity('card')).toBe(1);
   });
 });

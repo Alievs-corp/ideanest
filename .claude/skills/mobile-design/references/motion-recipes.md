@@ -63,6 +63,13 @@ on device — the same numbers feel different at 60 and 120 Hz.
   identity with `spring.soft` (translate + scale only). The clone appears and the source
   hides only once the clone's picture is drawn (≤ `CLONE_READY_MS`), so there is no empty
   box. When it lands, the real target is shown and the clone removed.
+- "Lands" means within `LANDED_POINTS` (0.5 pt) of its end: the spring's `energyThreshold`
+  comes from `landingEnergy(travel)`. Reanimated's default finishes about a second after
+  the clone has visibly arrived, and for that second a clone left over the card stayed put
+  while the list under it scrolled, with the card's own cover hidden.
+- A finger on the screen ends a live flight at once (`onTouchStart` on the host), and a flight
+  back whose measurement was crossed by a touch does not start. The clone is drawn above the
+  navigator and cannot follow a list that has started to scroll.
 - The page pushed for a flight uses the stack's `fade` (`transition: 'shared'` param), so
   the cover is what moves and the target is not measured mid-slide.
 - Back (header, hardware, `router.back()`) flies the clone from the page to the card. A

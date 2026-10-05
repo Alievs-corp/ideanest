@@ -1,18 +1,25 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { StyleSheet, View, type DimensionValue } from 'react-native';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import {
+  StyleSheet,
+  View,
+  type BackgroundImageValue,
+  type DimensionValue,
+  type LayoutChangeEvent,
+} from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
   FadeOut,
   cancelAnimation,
+  makeMutable,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useT } from '../../lib/i18n';
-import { easing, lineHeight, motion, radius, size as measure, spacing } from '../../theme';
+import { easing, lineHeight, motion, radius, size as measure, spacing, tint } from '../../theme';
 import { useMotionAllowed } from './motion-budget';
 import { BLOCK, blockSurface, useSurface, type BlockSurface } from './surface';
 
@@ -25,9 +32,17 @@ import { BLOCK, blockSurface, useSurface, type BlockSurface } from './surface';
  * The shimmer and the skeleton-to-content crossfade (`mobile-design` skill §6.3) say "the request
  * is alive" rather than "look at this". The shimmer is an overlay that **translates** across the
  * block on `translateX`, over `motion.shimmer` — the web's `.skeleton-shimmer` — on the UI thread,
- * so it composites and never repaints the block. Its band is a `react-native-svg` gradient from
+ * so it composites and never repaints the block. Its band is a native linear gradient from
  * transparent through a lighter tone and back: `surface-3` blocks with a `surface-4` band on the
  * canvas, `whiteMuted` blocks with a `whiteSurface` band inside a white sheet (`useSurface()`).
+ *
+ * <h2>Cheap, because there are many</h2>
+ *
+ * A column of placeholder cards is dozens of blocks, mounted while a page is still sliding in. So
+ * each block is two native views, the block and its band; the band is a view background, not an
+ * SVG (a `react-native-svg` gradient was seven views a block and drew on the UI thread); the
+ * block's width reaches the band through a shared value, not React state, so laying out does not
+ * render the page a second time; and every band on screen runs on one clock.
  *
  * <p>With Reduce Motion, or under a `none` budget, the overlay is **not rendered** — not frozen
  * mid-travel, which is what a collapsed duration leaves on the web and why its stylesheet removes
@@ -60,6 +75,53 @@ const RADIUS = { none: 0, sm: radius.sm, md: radius.md, lg: radius.lg } as const
 /** The shimmer's test identifier, so a test can say it is absent without motion. */
 export const SKELETON_SHIMMER = 'skeleton-shimmer';
 
+/** The band: the surface's shimmer tone in the middle, the same tone fully transparent at both ends. */
+function band(tone: string): BackgroundImageValue[] {
+  const clear = tint(tone, 0);
+  return [
+    {
+      type: 'linear-gradient',
+      direction: 'to right',
+      colorStops: [
+        { color: clear, positions: ['0%'] },
+        { color: tone, positions: ['50%'] },
+        { color: clear, positions: ['100%'] },
+      ],
+    },
+  ];
+}
+
+const BANDS: Record<BlockSurface, BackgroundImageValue[]> = {
+  dark: band(BLOCK.dark.shimmer),
+  white: band(BLOCK.white.shimmer),
+};
+
+/**
+ * One clock for every band on screen: the first shimmer to mount starts it, the last to go stops
+ * it. Seventy blocks used to mean seventy repeating animations, each a callback every frame, each
+ * started when its own block happened to lay out.
+ */
+const clock = makeMutable(0);
+let shimmering = 0;
+
+function useShimmerClock(): SharedValue<number> {
+  useEffect(() => {
+    shimmering += 1;
+    if (shimmering === 1) {
+      clock.value = 0;
+      clock.value = withRepeat(
+        withTiming(1, { duration: motion.shimmer, easing: Easing.bezier(...easing.standard) }),
+        -1,
+      );
+    }
+    return () => {
+      shimmering -= 1;
+      if (shimmering === 0) cancelAnimation(clock);
+    };
+  }, []);
+  return clock;
+}
+
 export function Skeleton({
   width = '100%',
   height = 16,
@@ -70,13 +132,19 @@ export function Skeleton({
 }: SkeletonProps) {
   const shimmers = useMotionAllowed('minimal');
   const block = blockSurface(useSurface());
-  const [measured, setMeasured] = useState(0);
+  const span = useSharedValue(0);
+  const measured = useCallback(
+    ({ nativeEvent }: LayoutChangeEvent) => {
+      span.value = nativeEvent.layout.width;
+    },
+    [span],
+  );
 
   return (
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      onLayout={({ nativeEvent }) => setMeasured(nativeEvent.layout.width)}
+      onLayout={shimmers ? measured : undefined}
       testID={testID}
       style={[
         styles.block,
@@ -88,44 +156,30 @@ export function Skeleton({
         },
       ]}
     >
-      {shimmers && measured > 0 ? <Shimmer width={measured} block={block} /> : null}
+      {shimmers ? <Shimmer span={span} block={block} /> : null}
     </View>
   );
 }
 
 /**
  * The band, travelling from one block-width left of the block to one block-width right of it, and
- * again. Only mounted when motion is allowed, so there is nothing to stop when it is not.
+ * again. Only mounted when motion is allowed, so there is nothing to stop when it is not; hidden
+ * until the block has a width, so it never flashes across a block it has not measured.
  */
-function Shimmer({ width, block }: { readonly width: number; readonly block: BlockSurface }) {
-  const progress = useSharedValue(0);
-  const band = BLOCK[block].shimmer;
-
-  useEffect(() => {
-    progress.value = withRepeat(
-      withTiming(1, { duration: motion.shimmer, easing: Easing.bezier(...easing.standard) }),
-      -1,
-    );
-    return () => cancelAnimation(progress);
-  }, [progress]);
+function Shimmer({ span, block }: { readonly span: SharedValue<number>; readonly block: BlockSurface }) {
+  const progress = useShimmerClock();
 
   const travel = useAnimatedStyle(() => ({
-    transform: [{ translateX: -width + progress.value * width * 2 }],
+    opacity: span.value > 0 ? 1 : 0,
+    transform: [{ translateX: (progress.value * 2 - 1) * span.value }],
   }));
 
   return (
-    <Animated.View pointerEvents="none" testID={SKELETON_SHIMMER} style={[styles.shimmer, travel]}>
-      <Svg width="100%" height="100%">
-        <Defs>
-          <LinearGradient id={`skeleton-band-${block}`} x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor={band} stopOpacity={0} />
-            <Stop offset="0.5" stopColor={band} stopOpacity={1} />
-            <Stop offset="1" stopColor={band} stopOpacity={0} />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#skeleton-band-${block})`} />
-      </Svg>
-    </Animated.View>
+    <Animated.View
+      pointerEvents="none"
+      testID={SKELETON_SHIMMER}
+      style={[styles.shimmer, { experimental_backgroundImage: BANDS[block] }, travel]}
+    />
   );
 }
 

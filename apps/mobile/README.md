@@ -131,6 +131,24 @@ design starts.
   az.ideanest.app` for the janky-frame share and the percentiles. On iOS use
   Instruments' Animation Hitches. Write the devices and the result in the pull
   request.
+  Also run `adb logcat -d | grep -c "synchronouslyUpdateUIProps failed"`: it must
+  be 0. Each one was an exception thrown and logged with its stack on the UI
+  thread, and hundreds per frame froze the app for seconds at launch.
+- **Reanimated is patched** (`patches/react-native-reanimated@4.5.5.patch`, in
+  `pnpm-workspace.yaml`). 4.5.5 on React Native 0.86 writes animated props
+  straight to the native view whenever an event arrives during a draw — every
+  SVG icon path sends one on its first draw — and throws for a view that is
+  not mounted yet. The patch backports 4.7's check (`getViewExists` first, no
+  stack trace): the props stay in the registry and reach the view with the
+  next commit. Drop it when Reanimated is upgraded past 4.7.
+- **Animated props skip the shadow tree on Android.** `apps/mobile/package.json`
+  turns on Reanimated's `ANDROID_SYNCHRONOUSLY_UPDATE_UI_PROPS`. Without it,
+  every animation frame committed the whole React tree and ran Yoga layout on
+  the UI thread, which is what made a push stutter while its page mounted. With
+  it, `transform` and `opacity` go straight to the native view. The flag cannot
+  be on together with `ENABLE_SHARED_ELEMENT_TRANSITIONS` (the build refuses),
+  which is one more reason that one stays off. It depends on the patch above:
+  without it, the direct writes throw for views that are not mounted yet.
 - **Icons.** Iconsax, generated into `src/icons/glyphs.ts` by
   `scripts/generate-icons.mjs` from the MIT-licensed source
   (`iconsax-react-native`, a devDependency the app never imports). Use them as
