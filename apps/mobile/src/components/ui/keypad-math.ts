@@ -36,6 +36,10 @@ export const OPERATOR_SYMBOL: Record<KeypadOperator, string> = {
   divide: '÷',
 };
 
+/** The keys either side of the operators: take the result, and start the amount again. */
+export const EQUALS_SYMBOL = '=';
+export const CLEAR_SYMBOL = 'C';
+
 export type KeypadKey =
   | '0'
   | '1'

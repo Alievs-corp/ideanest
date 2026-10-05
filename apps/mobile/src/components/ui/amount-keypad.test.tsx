@@ -321,9 +321,95 @@ describe('AmountKeypad', () => {
     });
   });
 
+  describe('= and C', () => {
+    it('takes the result with =, as the chip does', async () => {
+      const values: string[] = [];
+      await renderEn(<Holder onValue={(value) => values.push(value)} />);
+      await press('1', '4', '3');
+      await fireEvent.press(screen.getByRole('button', { name: K.multiply }));
+      await press('2');
+      await fireEvent.press(screen.getByRole('button', { name: K.equals }));
+      expect(amount()).toHaveAccessibleName('Your contribution, 286 AZN');
+      expect(screen.queryByTestId('amount-keypad-result')).toBeNull();
+      expect(values[values.length - 1]).toBe('286');
+    });
+
+    it('says an unfinished operation on =, and takes nothing', async () => {
+      const values: string[] = [];
+      await renderEn(<Holder onValue={(value) => values.push(value)} />);
+      await press('1', '0', '0');
+      await fireEvent.press(screen.getByRole('button', { name: K.multiply }));
+      await fireEvent.press(screen.getByRole('button', { name: K.equals }));
+      expect(screen.getByTestId('amount-keypad-message')).toHaveAccessibleName(K.unfinished);
+      expect(amount()).toHaveAccessibleName('Your contribution, 100 AZN Times');
+      expect(values).toEqual(['1', '10', '100']);
+    });
+
+    it('keeps a refused result on =, with its message', async () => {
+      await renderEn(<Holder />);
+      await press('5');
+      await fireEvent.press(screen.getByRole('button', { name: K.divide }));
+      await press('0', '.', '0', '0');
+      await fireEvent.press(screen.getByRole('button', { name: K.equals }));
+      expect(screen.getByTestId('amount-keypad-message')).toHaveAccessibleName(K.divideByZero);
+      expect(amount()).toHaveAccessibleName('Your contribution, 5 AZN Divided by 0.00');
+    });
+
+    it('keeps = off until there is an operation to finish', async () => {
+      await renderEn(<Holder initial="45" />);
+      expect(screen.getByRole('button', { name: K.equals })).toBeDisabled();
+      await fireEvent.press(screen.getByRole('button', { name: K.add }));
+      expect(screen.getByRole('button', { name: K.equals })).toBeEnabled();
+    });
+
+    it('clears the amount and the operation with C', async () => {
+      const values: string[] = [];
+      await renderEn(<Holder initial="143" onValue={(value) => values.push(value)} />);
+      await fireEvent.press(screen.getByRole('button', { name: K.multiply }));
+      await press('2');
+      await fireEvent.press(screen.getByRole('button', { name: K.clear }));
+      expect(amount()).toHaveAccessibleName('Your contribution, 0 AZN');
+      expect(screen.queryByTestId('amount-keypad-operation', { includeHiddenElements: true })).toBeNull();
+      expect(screen.queryByTestId('amount-keypad-result')).toBeNull();
+      expect(values).toEqual(['']);
+      // Typing starts a new amount.
+      await press('7');
+      expect(amount()).toHaveAccessibleName('Your contribution, 7 AZN');
+    });
+
+    it('clears a refusal’s message with the amount', async () => {
+      await renderEn(<Holder />);
+      await press('5');
+      await fireEvent.press(screen.getByRole('button', { name: K.divide }));
+      await press('0', '.', '0', '0');
+      expect(screen.getByTestId('amount-keypad-message')).toBeTruthy();
+      await fireEvent.press(screen.getByRole('button', { name: K.clear }));
+      expect(screen.queryByTestId('amount-keypad-message')).toBeNull();
+    });
+
+    it('keeps C off when there is nothing to clear', async () => {
+      await renderEn(<Holder />);
+      expect(screen.getByRole('button', { name: K.clear })).toBeDisabled();
+      await press('5');
+      expect(screen.getByRole('button', { name: K.clear })).toBeEnabled();
+    });
+
+    it('fires a selection haptic for each', async () => {
+      await renderEn(<Holder initial="2" />);
+      await fireEvent.press(screen.getByRole('button', { name: K.add }));
+      await press('2');
+      jest.mocked(Haptics.selectionAsync).mockClear();
+      await fireEvent.press(screen.getByRole('button', { name: K.equals }));
+      await fireEvent.press(screen.getByRole('button', { name: K.clear }));
+      expect(jest.mocked(Haptics.selectionAsync)).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('disables every key when disabled', async () => {
-    await renderEn(<AmountKeypad value="" onChange={() => undefined} currency="AZN" disabled />);
+    await renderEn(<AmountKeypad value="5" onChange={() => undefined} currency="AZN" disabled />);
     expect(screen.getByTestId('amount-keypad-key-1')).toBeDisabled();
     expect(screen.getByTestId('amount-keypad-op-add')).toBeDisabled();
+    expect(screen.getByTestId('amount-keypad-equals')).toBeDisabled();
+    expect(screen.getByTestId('amount-keypad-clear')).toBeDisabled();
   });
 });

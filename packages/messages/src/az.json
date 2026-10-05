@@ -5572,6 +5572,8 @@
       "subtract": "Çıx",
       "multiply": "Vur",
       "divide": "Böl",
+      "equals": "Bərabərdir",
+      "clear": "Məbləği sıfırla",
       "useResult": "Nəticəni götür: {amount}",
       "divideByZero": "Məbləğ sıfıra bölünə bilməz.",
       "belowZero": "Nəticə sıfırdan azdır, məbləğ isə mənfi ola bilməz.",

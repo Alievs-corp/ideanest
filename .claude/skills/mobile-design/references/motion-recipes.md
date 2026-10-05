@@ -117,12 +117,13 @@ on device — the same numbers feel different at 60 and 120 Hz.
 
 ## AmountKeypad
 
-- 4×3 pill keys plus an operator row (`+ − × ÷`). Key press = PressableScale with
-  `selectionAsync()`.
+- 4×3 pill keys plus an operator row (`C + − × ÷ =`). Key press = PressableScale with
+  `selectionAsync()`. `=` takes a pending result (or says why it cannot), `C` empties the amount
+  and drops the operation; each is dimmed while it has nothing to do.
 - The value is held as a `Decimal`; arithmetic via `@ideanest/money`/`decimal.js`; rounding
   to the currency's minor units, half-even, at commit.
 - An operator shows `amount op operand` with the operation in a muted tone and a result
-  chip `= value`; tapping the chip commits via `AnimatedAmount` roll.
+  chip `= value`; tapping the chip or `=` commits via `AnimatedAmount` roll.
 - Over-limit (above available/goal rules) shows an instant inline message, no shake.
 
 ## SwipeToConfirm

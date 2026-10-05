@@ -5572,6 +5572,8 @@
       "subtract": "Eksi",
       "multiply": "Çarpı",
       "divide": "Bölü",
+      "equals": "Eşittir",
+      "clear": "Tutarı sıfırla",
       "useResult": "Sonucu kullan: {amount}",
       "divideByZero": "Bir tutar sıfıra bölünemez.",
       "belowZero": "Sonuç sıfırın altında ve bir tutar negatif olamaz.",

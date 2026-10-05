@@ -5572,6 +5572,8 @@
       "subtract": "Minus",
       "multiply": "Times",
       "divide": "Divided by",
+      "equals": "Equals",
+      "clear": "Clear the amount",
       "useResult": "Use the result: {amount}",
       "divideByZero": "An amount cannot be divided by zero.",
       "belowZero": "The result is below zero, and an amount cannot be negative.",
