@@ -3,7 +3,12 @@ import { Link } from '../../i18n/navigation';
 import { StaticPage } from './StaticPage';
 import { formatInstant, SERVER_TIME_ZONE } from '../../lib/projects/deadline';
 import { localeOrDefault, type Locale } from '../../lib/i18n/locale';
-import { legalPath, type LegalDocument, type LegalDocumentSlug } from '../../lib/legal/api';
+import {
+  legalPath,
+  paragraphsOf,
+  type LegalDocument,
+  type LegalDocumentSlug,
+} from '@ideanest/legal/documents';
 
 /**
  * One version of one of §22.2's documents, rendered — issue #439.
@@ -60,25 +65,6 @@ export interface LegalDocumentPageProps {
    * acceptance record needs to be told that before they read a word of it.
    */
   readonly archivedVersion?: number;
-}
-
-/**
- * The body, as paragraphs.
- *
- * <strong>Split on blank lines and rendered as text, never as HTML.</strong> The body is written
- * by an administrator into `legal_documents.body`, and a legal page that interpreted markup
- * would be a stored-XSS hole on the one surface where a reader's guard is lowest. React escapes
- * everything by construction; this function only decides where the paragraphs are.
- *
- * A single-paragraph document is one paragraph, and a document written with single newlines is
- * one paragraph with its line breaks collapsed — which is what a browser would do with the same
- * text and is a rendering decision rather than a loss.
- */
-function paragraphsOf(body: string): readonly string[] {
-  return body
-    .split(/\n\s*\n/u)
-    .map((paragraph) => paragraph.trim())
-    .filter((paragraph) => paragraph !== '');
 }
 
 export async function LegalDocumentPage({

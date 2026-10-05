@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { SUPPORTED_LOCALES, type Locale } from '../../../../lib/i18n/locale';
 import { resolveServerTree } from '../../../../test-support/server-tree';
-import type { LegalDocument } from '../../../../lib/legal/api';
+import type { LegalDocument } from '@ideanest/legal/documents';
 import {
   fetchArchivedLegalDocument,
   fetchLegalCatalogue,

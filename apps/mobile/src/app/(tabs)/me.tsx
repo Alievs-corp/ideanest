@@ -112,12 +112,12 @@ const THIS_PHONE: readonly Row[] = [
   { label: 'mobile.settings.security.appLockLink', icon: Glyphs.Lock, href: '/settings/security' },
 ];
 
-/** The web footer's `FOOTER_GROUPS.about`, with the same paths. */
+/** The web footer's `FOOTER_GROUPS.about`, with the same paths, native since #164. */
 const ABOUT: readonly Row[] = [
-  { label: 'shell.footer.links.about', icon: Glyphs.InfoCircle, web: '/about' },
-  { label: 'shell.footer.links.howItWorks', icon: Glyphs.Discover, web: '/how-it-works' },
-  { label: 'shell.footer.links.trustSafety', icon: Glyphs.Verify, web: '/trust-safety' },
-  { label: 'shell.footer.links.legal', icon: Glyphs.DocumentText, web: '/legal' },
+  { label: 'shell.footer.links.about', icon: Glyphs.InfoCircle, href: '/about' },
+  { label: 'shell.footer.links.howItWorks', icon: Glyphs.Discover, href: '/how-it-works' },
+  { label: 'shell.footer.links.trustSafety', icon: Glyphs.Verify, href: '/trust-safety' },
+  { label: 'shell.footer.links.legal', icon: Glyphs.DocumentText, href: '/legal' },
 ];
 
 /** Not a page: opens the WhatsApp sheet. */

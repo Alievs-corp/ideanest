@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  archivedVersionOf,
   isLegalDocumentSlug,
   kindOf,
   legalPath,
   LEGAL_DOCUMENTS,
+  paragraphsOf,
   readLegalCatalogue,
   readLegalDocument,
-} from './api';
+} from './documents';
 
 /**
  * §22.2's eight, and the narrowing that keeps a legal page honest — issue #439.
@@ -102,3 +104,39 @@ describe('reading the catalogue', () => {
     expect(readLegalCatalogue(null)).toBeNull();
   });
 });
+
+describe('an archived version segment', () => {
+  it.each(['1', '7', '99999'])('reads %s as a version', (segment) => {
+    expect(archivedVersionOf(segment)).toBe(Number(segment));
+  });
+
+  it.each(['0', '00', '07', '100000', 'abc', '3abc', '-1', '1.5', ''])(
+    'refuses %j before any request is made',
+    (segment) => {
+      expect(archivedVersionOf(segment)).toBeNull();
+    },
+  );
+});
+
+describe('the paragraphs of a body', () => {
+  it('splits on a blank line and trims each paragraph', () => {
+    expect(paragraphsOf('  First.  \n\nSecond.\n')).toEqual(['First.', 'Second.']);
+  });
+
+  it('splits on CRLF blank lines as well', () => {
+    expect(paragraphsOf('First.\r\n\r\nSecond.')).toEqual(['First.', 'Second.']);
+  });
+
+  it('treats a line of whitespace as blank', () => {
+    expect(paragraphsOf('First.\n   \t\nSecond.')).toEqual(['First.', 'Second.']);
+  });
+
+  it('drops empty pieces, including trailing blank lines', () => {
+    expect(paragraphsOf('\n\nFirst.\n\n\n\n\nSecond.\n\n\n')).toEqual(['First.', 'Second.']);
+  });
+
+  it('keeps a single line break inside its paragraph', () => {
+    expect(paragraphsOf('One line\nand the next.')).toEqual(['One line\nand the next.']);
+  });
+});
+

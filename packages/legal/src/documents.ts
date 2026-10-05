@@ -34,7 +34,17 @@ export const LEGAL_DOCUMENTS = [
 export type LegalDocumentSlug = (typeof LEGAL_DOCUMENTS)[number];
 
 /** The service's vocabulary, which never appears in a URL or on a page. */
-const KIND_BY_SLUG: Record<LegalDocumentSlug, string> = {
+export type LegalDocumentKind =
+  | 'TERMS_OF_USE'
+  | 'PRIVACY_POLICY'
+  | 'COOKIE_POLICY'
+  | 'PLATFORM_RULES'
+  | 'CREATOR_AGREEMENT'
+  | 'BACKER_AGREEMENT'
+  | 'DELIVERY_AND_REFUND_POLICY'
+  | 'DISPUTE_RESOLUTION_POLICY';
+
+const KIND_BY_SLUG: Record<LegalDocumentSlug, LegalDocumentKind> = {
   'terms-of-use': 'TERMS_OF_USE',
   'privacy-policy': 'PRIVACY_POLICY',
   'cookie-policy': 'COOKIE_POLICY',
@@ -50,7 +60,7 @@ export function isLegalDocumentSlug(value: string): value is LegalDocumentSlug {
 }
 
 /** The kind behind an address. Total, because the argument is narrowed first. */
-export function kindOf(slug: LegalDocumentSlug): string {
+export function kindOf(slug: LegalDocumentSlug): LegalDocumentKind {
   return KIND_BY_SLUG[slug];
 }
 
@@ -170,4 +180,35 @@ export function readLegalCatalogue(body: unknown): readonly LegalDocumentSummary
 /** The address of one document, and of one archived version of it. */
 export function legalPath(slug: LegalDocumentSlug, version?: number): string {
   return version === undefined ? `/legal/${slug}` : `/legal/${slug}/v/${version}`;
+}
+
+/**
+ * An archived version's address segment as a number, or `null` for one that names no version.
+ *
+ * A positive integer of at most five digits, with no leading zero: `/v/07` and `/v/7` would
+ * otherwise be two addresses for one text, and a segment that is not a version is a not-found
+ * page before any request is made.
+ */
+export function archivedVersionOf(segment: string): number | null {
+  if (!/^[1-9][0-9]{0,4}$/u.test(segment)) return null;
+  return Number(segment);
+}
+
+/**
+ * A document's body as the paragraphs it is drawn in.
+ *
+ * <strong>Split on blank lines and rendered as text, never as markup.</strong> The body is written
+ * by an administrator into `legal_documents.body`, and a legal page that interpreted markup would
+ * be a stored-XSS hole on the web and a second renderer on the phone, on the one surface where a
+ * reader's guard is lowest. Both clients draw each piece as plain text; this only decides where
+ * the paragraphs are. A line holding only whitespace counts as blank, so CRLF text splits too.
+ *
+ * A document written with single newlines is one paragraph with its line breaks collapsed — which
+ * is what a browser does with the same text, and a rendering decision rather than a loss.
+ */
+export function paragraphsOf(body: string): readonly string[] {
+  return body
+    .split(/\n\s*\n/u)
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph !== '');
 }

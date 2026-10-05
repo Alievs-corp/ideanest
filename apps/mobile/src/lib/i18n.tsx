@@ -330,6 +330,38 @@ export function formatInstant(iso: string | null | undefined, locale: Locale): s
   }
 }
 
+/** The zone the web's server renders in (`SERVER_TIME_ZONE` in `apps/web/src/lib/projects/deadline.ts`). */
+export const SERVER_TIME_ZONE = 'UTC';
+let partlessUtcInstant: ReturnType<typeof partlessAzerbaijaniDateTimeFormat> | undefined;
+
+/**
+ * An instant written in UTC with the zone named — the web's `formatInstant(instant,
+ * SERVER_TIME_ZONE, locale)`, for dates the web prints from the server, such as the day a legal
+ * document came into force (#164). The phone prints the same string as the browser whatever the
+ * device's zone. `null` for a value that is not an instant.
+ */
+export function formatServerInstant(iso: string | null | undefined, locale: Locale): string | null {
+  if (iso == null || iso === '') return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    if (locale === 'az' && !PARTS.dates) {
+      partlessUtcInstant ??= partlessAzerbaijaniDateTimeFormat({
+        ...UNZONED_INSTANT_OPTIONS,
+        hour: '2-digit',
+        timeZone: SERVER_TIME_ZONE,
+      });
+      return `${partlessUtcInstant.format(date)} ${SERVER_TIME_ZONE}`;
+    }
+    return (
+      dateTimeFormat(locale, { ...INSTANT_OPTIONS, timeZone: SERVER_TIME_ZONE }, 'serverInstant').format(date) ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
 /**
  * A calendar day (`3 October 2026`) — the web's `formatDay`. In the device's zone by default;
  * `timeZone: 'UTC'` where the web deliberately prints the UTC day (the update obligation's dates,

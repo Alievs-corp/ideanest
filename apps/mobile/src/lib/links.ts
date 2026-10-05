@@ -25,6 +25,7 @@
 
 /** A destination inside the application, as a path Expo Router understands. */
 import { parseFilters, searchParamsFrom, toSearchParams } from '@ideanest/discovery/filters';
+import { archivedVersionOf, isLegalDocumentSlug } from '@ideanest/legal/documents';
 import { isSettingsSection } from '../features/settings/sections';
 
 /**
@@ -325,6 +326,27 @@ function settingsDestination(path: string, query: URLSearchParams): Destination 
     : { pathname: `/settings/${section}` };
 }
 
+/*
+ * The static and legal pages (#164): About, How it works, Trust and safety, the legal index, a
+ * document in force and an archived version. A document outside §22.2's eight, or a version
+ * segment that is not one, is left to the browser rather than opened as a not-found screen.
+ */
+const STATIC_PAGE = /^\/(about|how-it-works|trust-safety|legal)\/?$/;
+const LEGAL_DOCUMENT = /^\/legal\/([a-z-]+)(?:\/v\/([^/]+))?\/?$/;
+
+function contentDestination(path: string): Destination | null {
+  const page = STATIC_PAGE.exec(path);
+  if (page !== null) return { pathname: `/${page[1]}` };
+
+  const legal = LEGAL_DOCUMENT.exec(path);
+  if (legal === null) return null;
+  const [, slug, version] = legal;
+  if (slug === undefined || !isLegalDocumentSlug(slug)) return null;
+  if (version === undefined) return { pathname: `/legal/${slug}` };
+  const number = archivedVersionOf(version);
+  return number === null ? null : { pathname: `/legal/${slug}/v/${number}` };
+}
+
 function campaignDestination(rawPath: string, search = ''): Destination | null {
   const path = rawPath.replace(LOCALE_PREFIX, '') || '/';
 
@@ -338,6 +360,9 @@ function campaignDestination(rawPath: string, search = ''): Destination | null {
 
   const settings = settingsDestination(path, query);
   if (settings !== null) return settings;
+
+  const content = contentDestination(path);
+  if (content !== null) return content;
 
   for (const [pattern, toRoute] of ID_ROUTES) {
     const idMatch = pattern.exec(path);

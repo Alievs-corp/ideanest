@@ -69,7 +69,8 @@ export function NavRow({
   return (
     <PressableScale
       accessibilityRole={accessibilityRole}
-      accessibilityLabel={label}
+      // The text below is hidden from assistive technology, so the detail is part of the name.
+      accessibilityLabel={detail === undefined || detail === '' ? label : `${label}, ${detail}`}
       accessibilityHint={accessibilityHint}
       onPress={onPress}
       testID={testID}

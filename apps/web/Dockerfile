@@ -33,6 +33,7 @@ COPY packages/campaign/package.json packages/campaign/
 COPY packages/checkout/package.json packages/checkout/
 COPY packages/design-tokens/package.json packages/design-tokens/
 COPY packages/discovery/package.json packages/discovery/
+COPY packages/legal/package.json packages/legal/
 COPY packages/messages/package.json packages/messages/
 COPY packages/money/package.json packages/money/
 COPY packages/ui/package.json packages/ui/

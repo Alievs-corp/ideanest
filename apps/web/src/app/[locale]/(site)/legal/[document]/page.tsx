@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { LegalDocumentPage } from '../../../../../components/content/LegalDocumentPage';
 import { LegalUnavailable } from '../../../../../components/content/LegalUnavailable';
-import { isLegalDocumentSlug, LEGAL_DOCUMENTS, legalPath } from '../../../../../lib/legal/api';
+import { isLegalDocumentSlug, LEGAL_DOCUMENTS, legalPath } from '@ideanest/legal/documents';
 import { fetchLegalDocument } from '../../../../../lib/legal/server';
 import { localeOrDefault } from '../../../../../lib/i18n/locale';
 import { publicPageMetadata } from '../../../../../lib/seo/metadata';

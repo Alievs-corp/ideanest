@@ -274,7 +274,7 @@ describe('the Me tab', () => {
     for (const name of ['Saved projects', 'Profile', 'App lock', 'Sign out']) {
       expect(onWhite(screen.getByRole('button', { name }))).toBe(true);
     }
-    expect(onWhite(screen.getByRole('link', { name: 'Legal' }))).toBe(true);
+    expect(onWhite(screen.getByRole('button', { name: 'Legal' }))).toBe(true);
     expect(
       StyleSheet.flatten(screen.getByRole('button', { name: 'Sign out' }).props.style)
         .backgroundColor,
@@ -427,6 +427,23 @@ describe('the Me tab', () => {
 
     expect(alert).toHaveBeenCalledTimes(1);
     alert.mockRestore();
+  });
+
+  it('opens the About group’s pages in the app, not the browser (#164)', async () => {
+    given('unknown', undefined, true);
+    await renderMe();
+
+    const pages: readonly [string, string][] = [
+      [en.shell.footer.links.about, '/about'],
+      [en.shell.footer.links.howItWorks, '/how-it-works'],
+      [en.shell.footer.links.trustSafety, '/trust-safety'],
+      [en.shell.footer.links.legal, '/legal'],
+    ];
+    for (const [name, path] of pages) {
+      mockRouter.push.mockClear();
+      await fireEvent.press(screen.getByRole('button', { name }));
+      expect(mockRouter.push).toHaveBeenCalledWith(path);
+    }
   });
 
   it('opens the WhatsApp sheet from the About group', async () => {

@@ -171,6 +171,8 @@ export const lineHeight = {
   h2: Math.round(fontSize.h2 * 1.2),
   h3: Math.round(fontSize.h3 * 1.2),
   cardTitle: Math.round(fontSize.lg * 1.3),
+  /** A page's summary under its title, at 18px — the web's `text-lg leading-relaxed` (#164). */
+  lead: Math.round(fontSize.lg * 1.625),
   body: Math.round(fontSize.base * 1.5),
   /** Supporting text at 13–14px, which keeps body's 1.5. */
   small: Math.round(fontSize.sm * 1.5),

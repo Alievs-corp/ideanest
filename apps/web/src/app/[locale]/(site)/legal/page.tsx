@@ -5,7 +5,7 @@ import { StaticPage } from '../../../../components/content/StaticPage';
 import { LegalUnavailable } from '../../../../components/content/LegalUnavailable';
 import { formatInstant, SERVER_TIME_ZONE } from '../../../../lib/projects/deadline';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
-import { LEGAL_DOCUMENTS, kindOf, legalPath } from '../../../../lib/legal/api';
+import { LEGAL_DOCUMENTS, kindOf, legalPath } from '@ideanest/legal/documents';
 import { fetchLegalCatalogue } from '../../../../lib/legal/server';
 import { publicPageMetadata } from '../../../../lib/seo/metadata';
 

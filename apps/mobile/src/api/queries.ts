@@ -64,6 +64,16 @@ export const queryKeys = {
     ['project', projectId, 'rewards', 'checkout', ...tokens] as const,
   feeDisclosure: (projectId: string) => ['project', projectId, 'fee-disclosure'] as const,
   legalDocument: (kind: string) => ['legal', kind] as const,
+  /**
+   * The legal pages (#164): the catalogue, a document in force, an archived version — each in the
+   * language asked for. `legalDocs` rather than `legal`, so the checkout's agreement version above
+   * is not persisted with them: these are versioned, hash-stamped texts that stay honest on disk,
+   * and that number is what a pledge is accepted against.
+   */
+  legalCatalogue: (locale: string) => ['legalDocs', 'catalogue', locale] as const,
+  legalText: (kind: string, locale: string) => ['legalDocs', kind, locale, 'current'] as const,
+  legalArchived: (kind: string, locale: string, version: number) =>
+    ['legalDocs', kind, locale, version] as const,
   pledge: (id: string) => ['pledges', id] as const,
   /** The Updates tab's pages (#155), under `project` so they survive a restart with the page. */
   projectUpdates: (projectId: string) => ['project', projectId, 'updates'] as const,
