@@ -5,7 +5,7 @@ import { siteUrl } from '../../api/config';
 import { Glyphs } from '../../icons';
 import { useT } from '../../lib/i18n';
 import { currentLocale } from '../../lib/locale';
-import { colors, font, fontSize, spacing } from '../../theme';
+import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
 import { FadeUp } from '../motion';
 import { Body, Heading, Story, Subheading } from '../text';
 import {
@@ -248,8 +248,7 @@ const styles = StyleSheet.create({
   article: { paddingTop: spacing[6], gap: spacing[10] },
   articleEnd: { paddingBottom: spacing[12] },
   header: { gap: spacing[4] },
-  // The web's `text-lg leading-relaxed`.
-  summary: { fontSize: fontSize.lg, lineHeight: Math.round(fontSize.lg * 1.625) },
+  summary: { fontSize: fontSize.lg, lineHeight: lineHeight.lead },
   body: { gap: spacing[5] },
   heading2: { marginTop: spacing[12] - spacing[5], marginBottom: spacing[3] - spacing[5] },
   list: {

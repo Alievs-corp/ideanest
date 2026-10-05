@@ -6,6 +6,7 @@ import { IntlProvider } from 'use-intl';
 import * as Clipboard from 'expo-clipboard';
 import en from '@ideanest/messages/en.json';
 import { setLocale } from '../../lib/locale';
+import { setOnline } from '../../lib/connectivity';
 import { shouldPersistQuery } from '../../lib/offline';
 import { queryKeys } from '../../api/queries';
 import {
@@ -255,6 +256,30 @@ describe('the digest', () => {
 });
 
 describe('offline', () => {
+  afterEach(() => act(() => setOnline(true)));
+
+  it('blames the connection, not the service, when nothing is cached', async () => {
+    await act(() => setOnline(false));
+    route = () => Promise.reject(new TypeError('Network request failed'));
+    await show(<LegalDocumentScreen document="terms-of-use" />);
+    expect(screen.getByText(en.mobile.offline.nothingCached)).toBeTruthy();
+    expect(screen.queryByText(L.unavailable.body)).toBeNull();
+  });
+
+  it('shows a cached copy with the offline notice and no failure alert', async () => {
+    route = () => json(document());
+    await show(<LegalDocumentScreen document="terms-of-use" />);
+    await act(() => setOnline(false));
+    route = () => Promise.reject(new TypeError('Network request failed'));
+    await act(async () => {
+      await client.refetchQueries();
+    });
+    await settle();
+    expect(screen.getByText('First paragraph.')).toBeTruthy();
+    expect(screen.getByText(en.mobile.offline.banner)).toBeTruthy();
+    expect(screen.queryByText(L.unavailable.title)).toBeNull();
+  });
+
   it('keeps the legal texts on disk, but not the checkout’s agreement version', () => {
     expect(shouldPersistQuery(queryKeys.legalCatalogue('en'))).toBe(true);
     expect(shouldPersistQuery(queryKeys.legalText('TERMS_OF_USE', 'en'))).toBe(true);

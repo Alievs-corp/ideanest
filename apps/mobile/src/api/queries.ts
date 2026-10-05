@@ -71,7 +71,7 @@ export const queryKeys = {
    * and that number is what a pledge is accepted against.
    */
   legalCatalogue: (locale: string) => ['legalDocs', 'catalogue', locale] as const,
-  legalText: (kind: string, locale: string) => ['legalDocs', kind, locale] as const,
+  legalText: (kind: string, locale: string) => ['legalDocs', kind, locale, 'current'] as const,
   legalArchived: (kind: string, locale: string, version: number) =>
     ['legalDocs', kind, locale, version] as const,
   pledge: (id: string) => ['pledges', id] as const,

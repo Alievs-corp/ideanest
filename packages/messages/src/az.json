@@ -5671,11 +5671,11 @@
       }
     },
     "content": {
-      "share": "Bu səhifəni paylaşın",
+      "share": "Bu səhifəni paylaş",
       "shareFailed": "Paylaşmaq mümkün olmadı. Yenidən cəhd edin.",
       "loadingLegal": "Hüquqi sənədlər yüklənir",
       "loadingDocument": "Sənəd yüklənir",
-      "copyHash": "SHA-256 xülasəsini kopyalayın",
+      "copyHash": "SHA-256 xülasəsini kopyala",
       "hashCopied": "Xülasə kopyalandı",
       "copyFailed": "Xülasəni kopyalamaq mümkün olmadı. Yenidən cəhd edin."
     }

@@ -5,6 +5,7 @@ import * as Clipboard from 'expo-clipboard';
 import {
   LEGAL_DOCUMENTS,
   archivedVersionOf,
+  isLegalDocumentSlug,
   kindOf,
   legalPath,
   paragraphsOf,
@@ -19,7 +20,16 @@ import {
   RuledList,
   StaticPage,
 } from '../../components/content/static-page';
-import { Caption, ContentSheet, IconButton, Skeleton, SkeletonGroup, Story, announce } from '../../components/ui';
+import {
+  Caption,
+  ContentSheet,
+  IconButton,
+  Skeleton,
+  SkeletonGroup,
+  Story,
+  announce,
+  type ScreenError,
+} from '../../components/ui';
 import { Glyphs } from '../../icons';
 import { useOnline } from '../../lib/connectivity';
 import { formatServerInstant, useT } from '../../lib/i18n';
@@ -56,7 +66,6 @@ export function LegalIndexScreen() {
   const catalogue = useLegalCatalogue(locale);
   const [pulling, setPulling] = useState(false);
   const inForce = new Map((catalogue.data ?? []).map((summary) => [summary.kind, summary]));
-  const failed = catalogue.isError;
 
   const status = (summary: LegalDocumentSummary | undefined): string => {
     if (summary === undefined) return t('index.notPublished');
@@ -71,17 +80,8 @@ export function LegalIndexScreen() {
       title={t('index.title')}
       summary={t('index.summary')}
       sharePath="/legal"
-      hasContent={catalogue.data !== undefined || !failed}
-      error={
-        failed
-          ? {
-              title: t('unavailable.indexTitle'),
-              description: t('unavailable.body'),
-              onRetry: () => void catalogue.refetch(),
-              retrying: catalogue.isFetching,
-            }
-          : null
-      }
+      hasContent={catalogue.data !== undefined || !catalogue.isError}
+      error={useFailure(catalogue, t('unavailable.indexTitle'))}
       offlineNotice={online || catalogue.data === undefined ? null : tAll('mobile.offline.banner')}
       onRefresh={() => {
         setPulling(true);
@@ -107,7 +107,6 @@ export function LegalIndexScreen() {
                   label={t(`documents.${slug}.title`)}
                   detail={status(inForce.get(kindOf(slug)))}
                   icon={Glyphs.DocumentText}
-                  accessibilityRole="link"
                   onPress={() => router.push(legalPath(slug))}
                   testID={`legal-row-${slug}`}
                 />
@@ -124,7 +123,7 @@ export function LegalIndexScreen() {
 }
 
 export function LegalDocumentScreen({ document: segment }: { readonly document: string }) {
-  if (!isSlug(segment)) return <NotFoundState testID="legal-not-found" />;
+  if (!isLegalDocumentSlug(segment)) return <NotFoundState testID="legal-not-found" />;
   return <CurrentDocument slug={segment} />;
 }
 
@@ -136,12 +135,31 @@ export function ArchivedLegalDocumentScreen({
   readonly version: string;
 }) {
   const version = archivedVersionOf(versionSegment);
-  if (!isSlug(segment) || version === null) return <NotFoundState testID="legal-not-found" />;
+  if (!isLegalDocumentSlug(segment) || version === null) return <NotFoundState testID="legal-not-found" />;
   return <ArchivedDocument slug={segment} version={version} />;
 }
 
-function isSlug(segment: string): segment is LegalDocumentSlug {
-  return (LEGAL_DOCUMENTS as readonly string[]).includes(segment);
+/**
+ * The failure a legal screen shows, or none.
+ *
+ * Offline with a copy on the phone, the offline notice says it all: a danger alert that the text
+ * "could not be loaded" above a text that is on screen would contradict it. Offline with nothing
+ * cached, the reason is the connection, so the sentence says so rather than blaming the service.
+ */
+function useFailure(
+  query: { readonly isError: boolean; readonly isFetching: boolean; readonly data: unknown; refetch: () => unknown },
+  title: string,
+): ScreenError | null {
+  const t = useT();
+  const online = useOnline();
+  if (!query.isError) return null;
+  if (!online && query.data !== undefined) return null;
+  return {
+    title,
+    description: online ? t('legal.unavailable.body') : t('mobile.offline.nothingCached'),
+    onRetry: () => void query.refetch(),
+    retrying: query.isFetching,
+  };
 }
 
 function CurrentDocument({ slug }: { readonly slug: LegalDocumentSlug }) {
@@ -175,17 +193,11 @@ function DocumentPage({
   const [pulling, setPulling] = useState(false);
   const answer = query.data;
   const path = archivedVersion === undefined ? legalPath(slug) : legalPath(slug, archivedVersion);
+  const failure = useFailure(query, t('unavailable.title'));
 
   const shared = {
     sharePath: path,
-    error: query.isError
-      ? {
-          title: t('unavailable.title'),
-          description: t('unavailable.body'),
-          onRetry: () => void query.refetch(),
-          retrying: query.isFetching,
-        }
-      : null,
+    error: failure,
     offlineNotice: online || answer === undefined ? null : tAll('mobile.offline.banner'),
     onRefresh: () => {
       setPulling(true);
@@ -243,8 +255,9 @@ function DocumentPage({
       )}
 
       {paragraphsOf(document.body).map((paragraph, index) => (
-        // The paragraphs have no identity of their own and never reorder within a version.
-        <Paragraph key={index}>{paragraph}</Paragraph>
+        // The paragraphs have no identity of their own and never reorder within a version. A single
+        // line break collapses to a space, as a browser draws the same text.
+        <Paragraph key={index}>{paragraph.replace(/\s*\n\s*/gu, ' ')}</Paragraph>
       ))}
 
       {archivedVersion === undefined && document.version > 1 ? (
@@ -331,7 +344,7 @@ function ContentHash({ hash }: { readonly hash: string }) {
 
 /** A marker no catalogue sentence contains, to split the sentence around the digest. */
 const HASH_SLOT = '\u0000';
-const ZERO_WIDTH_SPACE = '​';
+const ZERO_WIDTH_SPACE = '\u200B';
 
 export function wrappable(hash: string): string {
   return groupsOf(hash, 8).join(ZERO_WIDTH_SPACE);
