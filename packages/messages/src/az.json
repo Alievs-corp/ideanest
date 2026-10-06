@@ -5731,6 +5731,26 @@
       "signedOutBody": "Çatdırılmalar dəstəklərinizə bağlıdır, dəstəklər isə bu telefona deyil, hesabınıza aiddir.",
       "stale": "Bu cihazda saxlanmış çatdırılmalar göstərilir. Onlar köhnəlmiş ola bilər.",
       "trackingHint": "Daşıyıcının izləmə səhifəsini tətbiqin brauzerində açır"
+    },
+    "dashboardBackers": {
+      "signedOutTitle": "Bu kampaniyanın dəstəkçilərini görmək üçün daxil olun",
+      "signedOutBody": "Dəstəkçi hesabatı bu telefona deyil, kampaniya komandasının hesablarına aiddir.",
+      "failedTitle": "Dəstəkçi hesabatı yüklənmədi",
+      "offline": "İnternet bağlantısı yoxdur. Bu, siyahının son yüklənən halıdır; ixrac etmək, seqmenti saxlamaq və silmək üçün bağlantı lazımdır.",
+      "truncatedTitle": "Bu fayl bütün dəstəkçiləri əhatə etmir",
+      "shareAnyway": "Faylı paylaş",
+      "shareFailed": "Faylı paylaşmaq mümkün olmadı. Bu telefonda heç nə saxlanılmadı.",
+      "cardField": "{label}: {value}"
+    },
+    "dashboardSurveys": {
+      "signedOutTitle": "Sorğu yazmaq üçün daxil olun",
+      "signedOutBody": "Kampaniyanın sorğuları bu telefona deyil, komandasının hesablarına aiddir.",
+      "failedTitle": "Sorğular yüklənmədi",
+      "unavailable": "Bu kampaniyanın sorğularını yükləmək mümkün olmadı. Səbəb kampaniyanız deyil, xidmətdir — bir azdan yenidən cəhd edin.",
+      "offline": "İnternet bağlantısı yoxdur. Sorğular son yüklənən haldadır; yaratmaq, saxlamaq, göndərmək və silmək üçün bağlantı lazımdır.",
+      "tiersFailed": "Mükafat səviyyələri yüklənmədi, ona görə hər sual bütün dəstəkçilərə veriləcək. Qalan hər şey işləyir.",
+      "emptyTitle": "Hələ sorğu yoxdur",
+      "emptyBody": "Göndərişdən əvvəl bilməli olduğunuz şeydən başlayın. Qaralama siz göndərənə qədər heç kimə getmir."
     }
   }
 }

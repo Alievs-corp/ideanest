@@ -88,12 +88,15 @@ const PERSISTED_ROOTS: readonly string[] = [
  *   an unencrypted store.
  * - `settings`: the account settings screens (#161) — signed-in devices with their IP addresses,
  *   a VÖEN, a payout card's holder.
+ * - `dashboardBackers`: the creator dashboard's backer report (#163) — a campaign's mailing list,
+ *   the names and email addresses of people who are not this account.
  */
 export const UNPERSISTED_ROOTS: readonly string[] = [
   'comments',
   'profile',
   'shippingAddress',
   'settings',
+  'dashboardBackers',
 ];
 
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {
