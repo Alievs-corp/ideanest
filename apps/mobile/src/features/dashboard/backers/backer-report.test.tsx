@@ -27,6 +27,7 @@ jest.mock('./api', () => ({
   deleteSegment: jest.fn(),
   exportBackers: jest.fn(),
 }));
+jest.mock('expo-sharing', () => ({ isAvailableAsync: jest.fn(), shareAsync: jest.fn() }));
 jest.mock('./share-csv', () => ({
   ...jest.requireActual('./share-csv'),
   shareBackerExport: jest.fn(),
