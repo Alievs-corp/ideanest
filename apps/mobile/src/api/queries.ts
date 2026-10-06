@@ -148,6 +148,11 @@ export const queryKeys = {
   profileVisibility: (slug: string) => ['settings', 'visibility', slug] as const,
   legalSubject: () => ['settings', 'legalSubject'] as const,
   payoutDestination: () => ['settings', 'payoutDestination'] as const,
+  /**
+   * The inbox's pages (#160). Its own root, `inbox`, never persisted: notifications are
+   * time-sensitive, and last week's unread rows restored after a restart would read as news.
+   */
+  inbox: () => ['inbox'] as const,
 } as const;
 
 /**

@@ -88,12 +88,15 @@ const PERSISTED_ROOTS: readonly string[] = [
  *   an unencrypted store.
  * - `settings`: the account settings screens (#161) — signed-in devices with their IP addresses,
  *   a VÖEN, a payout card's holder.
+ * - `inbox`: the notifications (#160) — time-sensitive like a feed; offline, the screen shows what
+ *   this process read and nothing older.
  */
 export const UNPERSISTED_ROOTS: readonly string[] = [
   'comments',
   'profile',
   'shippingAddress',
   'settings',
+  'inbox',
 ];
 
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {
