@@ -9,6 +9,7 @@ import {
   persistOptions,
   shouldPersistQuery,
   shouldRetry,
+  UNPERSISTED_ROOTS,
 } from './offline';
 import { memoryStore } from './storage';
 import { queryKeys } from '../api/queries';
@@ -65,6 +66,15 @@ describe('what survives a restart', () => {
 
   it('keeps the creator dashboard’s Overview (#163)', () => {
     expect(shouldPersistQuery(queryKeys.dashboardOverview('p1'))).toBe(true);
+  });
+
+  it('never writes a campaign’s money, its mailing list or its surveys (#163)', () => {
+    expect(shouldPersistQuery(queryKeys.dashboardAnalytics('p1'))).toBe(false);
+    expect(shouldPersistQuery(queryKeys.dashboardBreakdown('p1'))).toBe(false);
+    expect(shouldPersistQuery(queryKeys.dashboardFinance('p1'))).toBe(false);
+    expect(UNPERSISTED_ROOTS).toContain(queryKeys.dashboardFinance('p1')[0]);
+    expect(shouldPersistQuery(queryKeys.dashboardBackers('p1', 'filter:{}'))).toBe(false);
+    expect(shouldPersistQuery(queryKeys.dashboardSurveys('p1'))).toBe(false);
   });
 
   it('never writes a shipping address or a phone number to the device', () => {

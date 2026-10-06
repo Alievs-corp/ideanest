@@ -5,10 +5,10 @@ import { IntlProvider } from 'use-intl';
 import { ApiError, type components } from '@ideanest/api-client';
 import { readFinance } from '@ideanest/dashboard/finance';
 import en from '@ideanest/messages/en.json';
+import { queryKeys } from '../../../api/queries';
 import { setOnline } from '../../../lib/connectivity';
 import { formatDateTime } from '../../../lib/i18n';
 import { setLocale } from '../../../lib/locale';
-import { dashboardKey } from '../shared-charts-finance';
 import { FinancePanel } from './finance-panel';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
@@ -64,7 +64,7 @@ async function settle() {
 
 async function show(seed?: Body) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: 0 } } });
-  if (seed !== undefined) client.setQueryData(dashboardKey(PROJECT, 'finance'), readFinance(seed));
+  if (seed !== undefined) client.setQueryData(queryKeys.dashboardFinance(PROJECT), readFinance(seed));
   await act(async () => setLocale('en'));
   await render(
     <SafeAreaProvider initialMetrics={METRICS}>

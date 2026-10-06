@@ -25,7 +25,7 @@ import { useLocale } from '../../../lib/locale';
 import { useSession } from '../../../lib/use-session';
 import { spacing } from '../../../theme';
 import { relativeTime } from '../../settings/sessions/relative-time';
-import { sectionOf, usePullToRefresh, type Refusal, type SectionState } from '../shared-charts-finance';
+import { sectionOf, usePullToRefresh, type PanelFailure, type SectionState } from '../shared-charts-finance';
 import { useBreakdown, useTrend, type Breakdown } from './api';
 import { ShareBars, type ShareRow } from './share-bars';
 import { DailyFigures, TrendChart } from './trend-chart';
@@ -114,15 +114,15 @@ const EDGES = ['left', 'right', 'bottom'] as const;
 /** The words for a section that could not be read. */
 function useFailure(notGranted: string, unavailable: string) {
   const t = useT();
-  return (state: { readonly kind: 'unreachable' } | { readonly kind: 'failed'; readonly refusal: Refusal }) => {
+  return (state: { readonly kind: 'unreachable' } | { readonly kind: 'failed'; readonly failure: PanelFailure }) => {
     if (state.kind === 'unreachable') return t('mobile.offline.nothingCached');
-    const words: Record<Refusal, string> = {
+    const words: Record<PanelFailure, string> = {
       signedOut: t('dashboard.failures.signedOut'),
       notGranted,
       noCampaign: t('dashboard.failures.noCampaign'),
       unavailable,
     };
-    return words[state.refusal];
+    return words[state.failure];
   };
 }
 

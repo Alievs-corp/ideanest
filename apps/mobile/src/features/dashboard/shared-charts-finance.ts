@@ -3,24 +3,16 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 
 /**
- * What the Funding and backers panel and the Finance panel (#163) both need from a read: its
- * cache key, which of the dashboard's refusals it met, and which state a section draws.
- *
- * <p>The keys sit under `dashboard`, which `lib/offline.ts` does not persist: a campaign's money
- * is not written to the device's unencrypted store. Offline, a panel shows what it read earlier in
- * this session, and says so.
+ * What the Funding and backers panel and the Finance panel (#163) both need from a read: which of
+ * the dashboard's refusals it met, and which state a section draws. Their cache keys are in
+ * `queryKeys`, under the unpersisted `dashboard` root: offline, a panel shows what it read earlier
+ * in this session.
  */
 
-export type DashboardRead = 'analytics' | 'breakdown' | 'finance';
-
-export function dashboardKey(projectId: string, read: DashboardRead) {
-  return ['dashboard', projectId, read] as const;
-}
-
 /** The web's `messageFor`: 401, 403 and 404 have their own words; anything else is the service. */
-export type Refusal = 'signedOut' | 'notGranted' | 'noCampaign' | 'unavailable';
+export type PanelFailure = 'signedOut' | 'notGranted' | 'noCampaign' | 'unavailable';
 
-export function refusalOf(error: unknown): Refusal {
+export function panelFailureOf(error: unknown): PanelFailure {
   if (error instanceof ApiError) {
     if (error.status === 401) return 'signedOut';
     if (error.status === 403) return 'notGranted';
@@ -36,7 +28,7 @@ export function refusalOf(error: unknown): Refusal {
  */
 export type SectionState<T> =
   | { readonly kind: 'ready'; readonly data: T; readonly stale: boolean }
-  | { readonly kind: 'failed'; readonly refusal: Refusal; readonly error: unknown }
+  | { readonly kind: 'failed'; readonly failure: PanelFailure; readonly error: unknown }
   | { readonly kind: 'unreachable' }
   | { readonly kind: 'loading' };
 
@@ -45,7 +37,7 @@ export function sectionOf<T>(query: UseQueryResult<T>, online: boolean): Section
     return { kind: 'ready', data: query.data, stale: !online || query.isRefetchError };
   }
   if (query.fetchStatus === 'paused' || (!online && query.isError)) return { kind: 'unreachable' };
-  if (query.isError) return { kind: 'failed', refusal: refusalOf(query.error), error: query.error };
+  if (query.isError) return { kind: 'failed', failure: panelFailureOf(query.error), error: query.error };
   return { kind: 'loading' };
 }
 

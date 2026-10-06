@@ -6,10 +6,10 @@ import { IntlProvider } from 'use-intl';
 import { ApiError } from '@ideanest/api-client';
 import { readTrend } from '@ideanest/dashboard/analytics';
 import en from '@ideanest/messages/en.json';
+import { queryKeys } from '../../../api/queries';
 import { setOnline } from '../../../lib/connectivity';
 import { setLocale } from '../../../lib/locale';
 import { colors } from '../../../theme';
-import { dashboardKey } from '../shared-charts-finance';
 import type { Breakdown } from './api';
 import { FundingChartsPanel } from './charts-panel';
 
@@ -98,8 +98,8 @@ let client: QueryClient;
 
 async function show(seed?: { trend?: unknown; split?: Breakdown }) {
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: 0 } } });
-  if (seed?.trend !== undefined) client.setQueryData(dashboardKey(PROJECT, 'analytics'), readTrend(seed.trend as never));
-  if (seed?.split !== undefined) client.setQueryData(dashboardKey(PROJECT, 'breakdown'), seed.split);
+  if (seed?.trend !== undefined) client.setQueryData(queryKeys.dashboardAnalytics(PROJECT), readTrend(seed.trend as never));
+  if (seed?.split !== undefined) client.setQueryData(queryKeys.dashboardBreakdown(PROJECT), seed.split);
   await act(async () => setLocale('en'));
   await render(
     <SafeAreaProvider initialMetrics={METRICS}>

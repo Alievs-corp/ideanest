@@ -36,7 +36,7 @@ import { formatDateTime, useT } from '../../../lib/i18n';
 import { useLocale } from '../../../lib/locale';
 import { useSession } from '../../../lib/use-session';
 import { colors, font, fontSize, lineHeight, radius, spacing, tint } from '../../../theme';
-import { sectionOf, usePullToRefresh, type Refusal } from '../shared-charts-finance';
+import { sectionOf, usePullToRefresh, type PanelFailure } from '../shared-charts-finance';
 import { useFinance } from './api';
 
 const EDGES = ['left', 'right', 'bottom'] as const;
@@ -104,13 +104,13 @@ function Panel({ projectId }: { readonly projectId: string }) {
   const state = sectionOf(query, online);
   const pull = usePullToRefresh([query.refetch]);
 
-  const failure = (refusal: Refusal) =>
+  const failure = (kind: PanelFailure) =>
     ({
       signedOut: t('dashboard.failures.signedOut'),
       notGranted: t('dashboard.finance.notGranted'),
       noCampaign: t('dashboard.failures.noCampaign'),
       unavailable: t('dashboard.finance.unavailable'),
-    })[refusal];
+    })[kind];
 
   return (
     <Screen
@@ -124,7 +124,7 @@ function Panel({ projectId }: { readonly projectId: string }) {
           ? {
               title: t('dashboard.finance.heading'),
               description:
-                state.kind === 'unreachable' ? t('mobile.offline.nothingCached') : failure(state.refusal),
+                state.kind === 'unreachable' ? t('mobile.offline.nothingCached') : failure(state.failure),
               onRetry: () => void query.refetch(),
               retrying: query.isFetching,
               traceId: state.kind === 'failed' ? traceIdOfError(state.error) : null,

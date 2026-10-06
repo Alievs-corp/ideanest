@@ -167,6 +167,14 @@ export const queryKeys = {
    */
   dashboardOverview: (projectId: string) => ['dashboardOverview', projectId] as const,
   /**
+   * The dashboard's Funding and backers panel and its Finance panel (#163). Their own root,
+   * `dashboard`, which `lib/offline.ts` refuses: a campaign's money is not written to the device's
+   * unencrypted store.
+   */
+  dashboardAnalytics: (projectId: string) => ['dashboard', projectId, 'analytics'] as const,
+  dashboardBreakdown: (projectId: string) => ['dashboard', projectId, 'breakdown'] as const,
+  dashboardFinance: (projectId: string) => ['dashboard', projectId, 'finance'] as const,
+  /**
    * The inbox's pages (#160). Its own root, `inbox`, never persisted: notifications are
    * time-sensitive, and last week's unread rows restored after a restart would read as news.
    */

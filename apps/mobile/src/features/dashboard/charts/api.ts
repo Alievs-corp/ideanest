@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { components } from '@ideanest/api-client';
 import { readTrend, type Trend } from '@ideanest/dashboard/analytics';
 import { api } from '../../../api/client';
-import { dashboardKey } from '../shared-charts-finance';
+import { queryKeys } from '../../../api/queries';
 
 /** The service's split by reward tier and by destination, as it sends it. */
 export type Breakdown = components['schemas']['BackerBreakdownResponse'];
@@ -10,7 +10,7 @@ export type Breakdown = components['schemas']['BackerBreakdownResponse'];
 /** The daily trend — `GET /v1/projects/{id}/analytics`, the service's last thirty days. */
 export function useTrend(projectId: string) {
   return useQuery({
-    queryKey: dashboardKey(projectId, 'analytics'),
+    queryKey: queryKeys.dashboardAnalytics(projectId),
     enabled: projectId !== '',
     queryFn: async ({ signal }): Promise<Trend> =>
       readTrend(await api().get('/v1/projects/{projectId}/analytics', { path: { projectId }, signal })),
@@ -23,7 +23,7 @@ export function useTrend(projectId: string) {
  */
 export function useBreakdown(projectId: string) {
   return useQuery({
-    queryKey: dashboardKey(projectId, 'breakdown'),
+    queryKey: queryKeys.dashboardBreakdown(projectId),
     enabled: projectId !== '',
     queryFn: ({ signal }): Promise<Breakdown> =>
       api().get('/v1/projects/{projectId}/backers/breakdown', { path: { projectId }, signal }),
