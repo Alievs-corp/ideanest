@@ -145,6 +145,7 @@ function Report({ projectId }: { readonly projectId: string }) {
   const [working, setWorking] = useState<Work | null>(null);
   // Taken synchronously by the first press: a second tap in the same frame still sees `working` as null.
   const latch = useRef(false);
+  const pendingFile = useRef<BackerExport | null>(null);
   const [pending, setPending] = useState<BackerExport | null>(null);
   const [pulling, setPulling] = useState(false);
 
@@ -263,6 +264,7 @@ function Report({ projectId }: { readonly projectId: string }) {
       const file = await exportBackers(projectId, segmentId !== undefined ? { segmentId } : { filter });
       if (file.truncated) {
         // Warned before the sheet opens: a creator about to mail everyone must know the file is short.
+        pendingFile.current = file;
         setPending(file);
         return;
       }
@@ -357,7 +359,9 @@ function Report({ projectId }: { readonly projectId: string }) {
                 <Pill
                   label={t('mobile.dashboardBackers.shareAnyway')}
                   onPress={() => {
-                    const file = pending;
+                    const file = pendingFile.current;
+                    if (file === null) return;
+                    pendingFile.current = null;
                     setPending(null);
                     void share(file);
                   }}
@@ -367,6 +371,7 @@ function Report({ projectId }: { readonly projectId: string }) {
                   variant="ghost"
                   label={t('common.cancel')}
                   onPress={() => {
+                    pendingFile.current = null;
                     setPending(null);
                     finish();
                   }}

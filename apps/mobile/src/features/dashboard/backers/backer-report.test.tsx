@@ -422,6 +422,17 @@ describe('export', () => {
     expect(screen.queryByTestId('backers-truncated')).toBeNull();
   });
 
+  it('opens one share sheet for a double tap on the short-file warning', async () => {
+    api.listBackers.mockResolvedValue(page([backer('a')]));
+    api.exportBackers.mockResolvedValue({ ...FILE, truncated: true });
+    await show();
+    await fireEvent.press(screen.getByTestId('backers-export'));
+    await settle();
+    await doubleTap(screen.getByTestId('backers-share-truncated'));
+    await settle();
+    expect(shareBackerExport).toHaveBeenCalledTimes(1);
+  });
+
   it('shares nothing when the warning is cancelled', async () => {
     api.listBackers.mockResolvedValue(page([backer('a')]));
     api.exportBackers.mockResolvedValue({ ...FILE, truncated: true });
