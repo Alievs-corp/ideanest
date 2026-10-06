@@ -5,18 +5,22 @@ import { Download, Search, X } from 'lucide-react';
 import { Chip, Field, InlineAlert, Skeleton, SkeletonGroup, TextInput } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import {
-  deleteSegment,
-  exportBackers,
   isNarrowed,
-  listBackers,
-  listSegments,
   NO_FILTER,
   REPORTED_STATES,
-  saveSegment,
+  SEGMENT_NAME_MAX,
+  toggleState as toggled,
   type BackerFilter,
   type BackerPage,
   type BackerSegment,
   type ReportedState,
+} from '@ideanest/dashboard/backers';
+import {
+  deleteSegment,
+  exportBackers,
+  listBackers,
+  listSegments,
+  saveSegment,
 } from '../../lib/dashboard/backers';
 import { BackerTable } from './BackerTable';
 import type { BackerReportCopy } from '../../lib/i18n/dashboard-copy';
@@ -147,12 +151,7 @@ export function BackerReport({
     setFilter(next);
   }, []);
 
-  const toggleState = (state: ReportedState) => {
-    const states = filter.states.includes(state)
-      ? filter.states.filter((each) => each !== state)
-      : [...filter.states, state];
-    applyFilter({ ...filter, states });
-  };
+  const toggleState = (state: ReportedState) => applyFilter(toggled(filter, state));
 
   const search = (event: React.FormEvent) => {
     event.preventDefault();
@@ -295,7 +294,7 @@ export function BackerReport({
                 value={segmentName}
                 onChange={(event) => setSegmentName(event.target.value)}
                 placeholder={copy.savePlaceholder}
-                maxLength={80}
+                maxLength={SEGMENT_NAME_MAX}
               />
             </Field>
           </div>

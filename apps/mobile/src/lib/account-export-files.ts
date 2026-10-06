@@ -3,7 +3,8 @@ import { Directory, Paths } from 'expo-file-system';
 /**
  * Where `settings/privacy` puts the account export before handing it to the share sheet (#161):
  * a directory of its own in the app's cache, which is private to the app and excluded from
- * backups on both platforms.
+ * backups on both platforms. The creator dashboard's backer CSV (#163) is written to a directory
+ * inside it, so every sweep below removes that too.
  *
  * <p>On Android the file cannot be deleted when the share sheet returns — `shareAsync` resolves
  * as soon as the reader is back in the app, while Bluetooth, Quick Share or a cloud upload may

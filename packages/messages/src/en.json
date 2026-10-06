@@ -5747,6 +5747,26 @@
       "stale": "Showing these figures as they were earlier in this session. They may be out of date.",
       "chartSummary": "Running total from {from} to {to}, reaching {amount}.",
       "hideDaily": "Hide the daily figures"
+    },
+    "dashboardBackers": {
+      "signedOutTitle": "Sign in to see this campaign’s backers",
+      "signedOutBody": "The backer report belongs to the campaign team’s accounts, not to this phone.",
+      "failedTitle": "The backer report did not load",
+      "offline": "You are offline. This is the list as it was last loaded; exporting, saving a segment and deleting one need a connection.",
+      "truncatedTitle": "This file does not hold every backer",
+      "shareAnyway": "Share the file",
+      "shareFailed": "The file could not be shared. Nothing was kept on this phone.",
+      "cardField": "{label}: {value}"
+    },
+    "dashboardSurveys": {
+      "signedOutTitle": "Sign in to write surveys",
+      "signedOutBody": "A campaign’s surveys belong to its team’s accounts, not to this phone.",
+      "failedTitle": "The surveys did not load",
+      "unavailable": "This campaign’s surveys could not be loaded. It is the service rather than your campaign — try again shortly.",
+      "offline": "You are offline. These surveys are as they were last loaded; creating, saving, sending and deleting need a connection.",
+      "tiersFailed": "The reward tiers did not load, so every question goes to every backer. Everything else still works.",
+      "emptyTitle": "No surveys yet",
+      "emptyBody": "Start with what you need to know before you can ship. A draft goes to nobody until you send it."
     }
   }
 }

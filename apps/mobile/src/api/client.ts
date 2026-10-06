@@ -218,6 +218,34 @@ export async function sendJson(
 }
 
 /**
+ * A JSON write whose answer is a file rather than JSON — the backer export (#163). Like
+ * {@link sendJson} in every way but the answer: its text, and the headers the file describes
+ * itself with (`Content-Disposition`, `X-Export-Rows`, `X-Export-Truncated`).
+ */
+export async function sendJsonForFile(
+  path: string,
+  body: unknown,
+): Promise<{ readonly text: string; readonly headers: Headers }> {
+  const response = await sessionFetch(`${apiOrigin()}${path}`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      accept: 'text/csv, application/problem+json',
+      'Accept-Language': currentLocale(),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const error = await errorFrom(response);
+    const traceId = traceIdOf(response);
+    if (traceId !== null) TRACES.set(error, traceId);
+    throw error;
+  }
+  return { text: await response.text(), headers: response.headers };
+}
+
+/**
  * Tells the service which language the signed-in reader chose — `PATCH /v1/me/locale`.
  *
  * Returns whether the account now agrees. The caller keeps the local choice either way and

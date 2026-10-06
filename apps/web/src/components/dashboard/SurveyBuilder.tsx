@@ -16,16 +16,25 @@ import { ApiError } from '../../lib/api/problem';
 import { listRewards } from '../../lib/projects/api';
 import {
   QUESTION_TYPES,
-  createSurvey,
-  deleteSurvey,
+  SURVEY_LIMITS,
+  choicesFrom,
   emptyQuestion,
   hasChoices,
+  offersRequired,
+  questionsLocked,
+  withSurvey,
+  withType,
+  type QuestionType,
+  type RewardTier,
+  type Survey,
+  type SurveyQuestion,
+} from '@ideanest/dashboard/surveys';
+import {
+  createSurvey,
+  deleteSurvey,
   listSurveys,
   sendSurvey,
   updateSurvey,
-  type QuestionType,
-  type Survey,
-  type SurveyQuestion,
 } from '../../lib/dashboard/surveys';
 import type { SurveyBuilderCopy } from '../../lib/i18n/dashboard-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -100,12 +109,6 @@ export interface SurveyBuilderProps {
   readonly send?: typeof sendSurvey;
   /** Every word this builder draws, the five answer types included — #79. */
   readonly copy: SurveyBuilderCopy;
-}
-
-/** What PM-02's selector needs of a tier. */
-export interface RewardTier {
-  readonly id: string;
-  readonly title: string;
 }
 
 export function SurveyBuilder({
@@ -191,15 +194,7 @@ export function SurveyBuilder({
   };
 
   const changeType = (index: number, type: QuestionType) => {
-    // The options are cleared when the type stops having any, rather than kept and
-    // hidden: the service refuses options on a type that has none, and a hidden value
-    // that causes a refusal is one a creator cannot see to remove.
-    // `noUncheckedIndexedAccess` is on, and correctly: the index comes from a map over
-    // this very array, so it is present, and saying so once here is cheaper than a
-    // non-null assertion at each use.
-    const current = questions[index];
-    if (!current) return;
-    changeQuestion(index, { type, choices: hasChoices(type) ? current.choices : [] });
+    setQuestions(questions.map((question, at) => (at === index ? withType(question, type) : question)));
   };
 
   const onSubmit = async (event: React.FormEvent) => {
@@ -212,7 +207,7 @@ export function SurveyBuilder({
         ? await (update ?? updateSurvey)(editing.id, body)
         : await (create ?? createSurvey)(projectId, body);
 
-      setSurveys([saved, ...surveys.filter((survey) => survey.id !== saved.id)]);
+      setSurveys(withSurvey(surveys, saved));
       setEditing(saved);
       setNotice(editing ? copy.savedNotice : copy.createdNotice);
     } catch (cause) {
@@ -246,7 +241,7 @@ export function SurveyBuilder({
     setNotice('');
     try {
       const sent = await (send ?? sendSurvey)(editing.id);
-      setSurveys([sent, ...surveys.filter((survey) => survey.id !== sent.id)]);
+      setSurveys(withSurvey(surveys, sent));
       setEditing(sent);
       setConfirmingSend(false);
       setNotice(pluralise(locale, copy.sentNotice, sent.sentTo ?? 0));
@@ -271,7 +266,7 @@ export function SurveyBuilder({
     return <InlineAlert variant="danger">{failure}</InlineAlert>;
   }
 
-  const locked = editing?.sent ?? false;
+  const locked = questionsLocked(editing);
 
   return (
     <section aria-labelledby="surveys-heading">
@@ -326,11 +321,11 @@ export function SurveyBuilder({
         </h2>
 
         <Field label={copy.titleLabel} hint={copy.titleHint}>
-          <TextInput value={title} onChange={(event) => setTitle(event.target.value)} maxLength={150} required />
+          <TextInput value={title} onChange={(event) => setTitle(event.target.value)} maxLength={SURVEY_LIMITS.title} required />
         </Field>
 
         <Field label={copy.noteLabel} hint={copy.noteHint}>
-          <Textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={2000} rows={3} />
+          <Textarea value={message} onChange={(event) => setMessage(event.target.value)} maxLength={SURVEY_LIMITS.message} rows={3} />
         </Field>
 
         <fieldset disabled={locked} className="flex flex-col gap-5">
@@ -346,7 +341,7 @@ export function SurveyBuilder({
                 <TextInput
                   value={question.prompt}
                   onChange={(event) => changeQuestion(index, { prompt: event.target.value })}
-                  maxLength={300}
+                  maxLength={SURVEY_LIMITS.prompt}
                 />
               </Field>
 
@@ -369,7 +364,7 @@ export function SurveyBuilder({
                     value={question.choices.join('\n')}
                     onChange={(event) =>
                       changeQuestion(index, {
-                        choices: event.target.value.split('\n').map((choice) => choice.trim()).filter(Boolean),
+                        choices: choicesFrom(event.target.value),
                       })
                     }
                     rows={4}
@@ -377,14 +372,14 @@ export function SurveyBuilder({
                 </Field>
               ) : null}
 
-              {question.type === 'ADDRESS' ? (
-                <p className="text-xs text-white/64">{copy.addressNote}</p>
-              ) : (
+              {offersRequired(question.type) ? (
                 <Checkbox
                   checked={question.required}
                   onChange={(event) => changeQuestion(index, { required: event.currentTarget.checked })}
                   label={copy.required}
                 />
+              ) : (
+                <p className="text-xs text-white/64">{copy.addressNote}</p>
               )}
 
               {rewardTiers.length > 0 ? (

@@ -5747,6 +5747,26 @@
       "stale": "Bu rakamlar, bu oturumda daha önce göründüğü haliyle gösteriliyor. Güncel olmayabilir.",
       "chartSummary": "Birikimli toplam, {from} — {to}: {amount} tutarına ulaştı.",
       "hideDaily": "Günlük rakamları gizle"
+    },
+    "dashboardBackers": {
+      "signedOutTitle": "Bu kampanyanın destekçilerini görmek için giriş yapın",
+      "signedOutBody": "Destekçi raporu bu telefona değil, kampanya ekibinin hesaplarına aittir.",
+      "failedTitle": "Destekçi raporu yüklenmedi",
+      "offline": "İnternet bağlantısı yok. Bu, listenin en son yüklendiği hâli; dışa aktarmak, bir segmenti kaydetmek ve silmek için bağlantı gerekir.",
+      "truncatedTitle": "Bu dosya tüm destekçileri içermiyor",
+      "shareAnyway": "Dosyayı paylaş",
+      "shareFailed": "Dosya paylaşılamadı. Bu telefonda hiçbir şey tutulmadı.",
+      "cardField": "{label}: {value}"
+    },
+    "dashboardSurveys": {
+      "signedOutTitle": "Anket yazmak için giriş yapın",
+      "signedOutBody": "Bir kampanyanın anketleri bu telefona değil, ekibinin hesaplarına aittir.",
+      "failedTitle": "Anketler yüklenmedi",
+      "unavailable": "Bu kampanyanın anketleri yüklenemedi. Sorun kampanyanızda değil, serviste — birazdan yeniden deneyin.",
+      "offline": "İnternet bağlantısı yok. Anketler en son yüklendikleri hâliyle gösteriliyor; oluşturmak, kaydetmek, göndermek ve silmek için bağlantı gerekir.",
+      "tiersFailed": "Ödül seviyeleri yüklenmedi, bu yüzden her soru tüm destekçilere gidecek. Geri kalan her şey çalışıyor.",
+      "emptyTitle": "Henüz anket yok",
+      "emptyBody": "Gönderimden önce bilmeniz gerekenle başlayın. Bir taslak, siz gönderene kadar kimseye gitmez."
     }
   }
 }

@@ -94,6 +94,18 @@ export const queryKeys = {
   savedList: () => ['saved', 'list'] as const,
   /** The campaigns this account started (#159), drafts included. Persisted, private. */
   myProjects: () => ['myProjects'] as const,
+  /**
+   * The creator dashboard's backer report (#163): one list per campaign and filter (`scope` is the
+   * segment or the filter body), its saved segments, and the tiers the survey builder targets.
+   * Their own root, `dashboardBackers`, which `lib/offline.ts` refuses: the report is a campaign's
+   * mailing list — names and email addresses of people who are not this account.
+   */
+  dashboardBackers: (projectId: string, scope: string) =>
+    ['dashboardBackers', projectId, 'list', scope] as const,
+  dashboardSegments: (projectId: string) => ['dashboardBackers', projectId, 'segments'] as const,
+  /** The survey builder's list and the campaign's reward tiers (#163). Not persisted. */
+  dashboardSurveys: (projectId: string) => ['dashboardSurveys', projectId, 'list'] as const,
+  dashboardRewardTiers: (projectId: string) => ['dashboardSurveys', projectId, 'tiers'] as const,
   /** The creators this account follows (#159). Persisted, private. */
   following: () => ['following'] as const,
   /** The surveys this account is being asked (#159), answers included. Persisted, private. */
