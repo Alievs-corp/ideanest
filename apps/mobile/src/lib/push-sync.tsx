@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
@@ -29,7 +29,8 @@ function refreshInbox(client: QueryClient): void {
  *       inbox.</li>
  *   <li><strong>A tapped push</strong> opens {@link pushTapOf}'s destination through `onOpen` and,
  *       when the payload names its inbox row, marks it read in the background. The cold-start tap
- *       is handled once, whatever remounts.</li>
+ *       is handled once, whatever remounts. A tap that arrives while the biometric lock is shut is
+ *       marked read once the lock opens, and forgotten if the session ends first.</li>
  * </ul>
  */
 export function PushSync({
@@ -44,13 +45,36 @@ export function PushSync({
   const session = useSession();
 
   const signedIn = useRef(false);
+  const hasSession = useRef(false);
   const readable = useRef(false);
   const latestOpen = useRef(onOpen);
   useEffect(() => {
     signedIn.current = state === 'signed-in';
+    hasSession.current = session.signedIn;
     readable.current = canReadAccount(session);
     latestOpen.current = onOpen;
   });
+
+  const markRead = useCallback(
+    (notificationId: string) => {
+      void markNotificationRead(notificationId).then(
+        () => refreshInbox(client),
+        () => undefined,
+      );
+    },
+    [client],
+  );
+
+  // Rows tapped while the account could not be read: sent when it can, dropped with the session.
+  const unsent = useRef<string[]>([]);
+  const canRead = canReadAccount(session);
+  useEffect(() => {
+    if (!session.signedIn) unsent.current = [];
+    if (!canRead || unsent.current.length === 0) return;
+    const ids = unsent.current;
+    unsent.current = [];
+    for (const id of ids) markRead(id);
+  }, [canRead, session.signedIn, markRead]);
 
   const decided = useRef(false);
   useEffect(() => {
@@ -81,11 +105,11 @@ export function PushSync({
     const handle = (response: Notifications.NotificationResponse | null) => {
       if (!live || response === null || !claimResponse(response)) return;
       const tap = pushTapOf(dataOf(response), siteHost);
-      if (tap.notificationId !== null && readable.current) {
-        void markNotificationRead(tap.notificationId).then(
-          () => refreshInbox(client),
-          () => undefined,
-        );
+      if (tap.notificationId !== null) {
+        if (readable.current) markRead(tap.notificationId);
+        else if (hasSession.current && !unsent.current.includes(tap.notificationId)) {
+          unsent.current.push(tap.notificationId);
+        }
       }
       if (tap.destination !== null) latestOpen.current(tap.destination);
     };
@@ -96,7 +120,7 @@ export function PushSync({
       live = false;
       subscription.remove();
     };
-  }, [client, siteHost]);
+  }, [markRead, siteHost]);
 
   return null;
 }

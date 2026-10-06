@@ -22,14 +22,17 @@ var mockLast: Notifications.NotificationResponse | null;
 var mockTapped: ((response: Notifications.NotificationResponse) => void) | undefined;
 // eslint-disable-next-line no-var
 var mockReceived: (() => void) | undefined;
+// eslint-disable-next-line no-var
+var mockLock: { locked: boolean; unlocked: boolean };
 
 jest.mock('./account', () => ({
   ACCOUNT_KEYS: { me: ['me'], unread: ['unread'] },
-  canReadAccount: (session: { signedIn: boolean }) => session.signedIn,
+  canReadAccount: (session: { signedIn: boolean; locked: boolean; unlocked: boolean }) =>
+    session.signedIn && (!session.locked || session.unlocked),
   useSessionState: () => mockState,
 }));
 jest.mock('./use-session', () => ({
-  useSession: () => ({ signedIn: mockState === 'signed-in', locked: false, unlocked: false }),
+  useSession: () => ({ signedIn: mockState !== 'signed-out', ...mockLock }),
 }));
 jest.mock('./push', () => ({ syncPushRegistration: jest.fn(async () => 'registered') }));
 jest.mock('../features/notifications/api', () => ({ markNotificationRead: jest.fn(async () => ({})) }));
@@ -84,6 +87,7 @@ beforeEach(() => {
   mockTapped = undefined;
   mockReceived = undefined;
   foreground = undefined;
+  mockLock = { locked: false, unlocked: false };
 });
 
 afterEach(() => {
@@ -172,5 +176,45 @@ describe('a tapped push', () => {
 
     expect(onOpen).toHaveBeenCalledTimes(1);
     expect(markRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks a cold-start tap read once the biometric lock opens, not before, and once', async () => {
+    mockState = 'unknown';
+    mockLock = { locked: true, unlocked: false };
+    mockLast = response('cold-locked', { url: 'ideanest://projects/a/b', notificationId: 'n-7' });
+    const view = await mount();
+
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    expect(markRead).not.toHaveBeenCalled();
+
+    mockState = 'signed-in';
+    mockLock = { locked: true, unlocked: true };
+    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} />);
+    await act(async () => {});
+    expect(markRead).toHaveBeenCalledTimes(1);
+    expect(markRead).toHaveBeenCalledWith('n-7');
+    expect(client.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['unread'] });
+
+    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} />);
+    await act(async () => {});
+    expect(markRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('forgets a row tapped behind the lock when the session ends before it opens', async () => {
+    mockState = 'unknown';
+    mockLock = { locked: true, unlocked: false };
+    const view = await mount();
+    await act(async () => mockTapped?.(response('t-locked', { notificationId: 'n-8' })));
+
+    mockState = 'signed-out';
+    mockLock = { locked: false, unlocked: false };
+    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} />);
+    await act(async () => {});
+
+    // The next account to sign in is not asked to mark another account's row.
+    mockState = 'signed-in';
+    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} />);
+    await act(async () => {});
+    expect(markRead).not.toHaveBeenCalled();
   });
 });
