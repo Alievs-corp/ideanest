@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { ApiError } from '../../lib/api/problem';
 import { expectNoViolations } from '../../test-axe';
-import type { CampaignFinance } from '../../lib/dashboard/finance';
+import type { CampaignFinance } from '@ideanest/dashboard/finance';
 import { FinancialSummary } from './FinancialSummary';
 import { financeCopyFrom } from '../../lib/i18n/dashboard-copy';
 import { translatorFor } from '../../test-copy';
