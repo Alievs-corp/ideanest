@@ -5689,6 +5689,48 @@
         "body": "Bir plan seçmek, değiştirmek veya iptal etmek için bu sayfayı IdeyaNest web sitesinde açın. Orada seçtiğiniz plan etkinleştiği anda uygulamada da geçerli olur.",
         "open": "Planlar sayfasını aç"
       }
+    },
+    "account": {
+      "moreActions": "{title} için diğer işlemler",
+      "campaigns": {
+        "signedOutTitle": "Kampanyalarınızı görmek için giriş yapın",
+        "signedOutBody": "Kampanyalarınız bu telefona değil, hesabınıza aittir.",
+        "stale": "Kampanyalarınız bu cihazdan gösteriliyor. Güncel olmayabilirler."
+      },
+      "saved": {
+        "offline": "İnternet bağlantısı yok. Kaydedilen bir kampanyayı kaldırmak için bağlantı gerekir."
+      },
+      "following": {
+        "signedOutTitle": "Takip ettiğiniz yaratıcıları görmek için giriş yapın",
+        "signedOutBody": "Takip ettiğiniz yaratıcılar bu telefona değil, hesabınıza aittir.",
+        "stale": "Takip ettiğiniz yaratıcılar bu cihazdan gösteriliyor. Güncel olmayabilirler.",
+        "offline": "İnternet bağlantısı yok. Takibi bırakmak için bağlantı gerekir."
+      }
+    },
+    "profile": {
+      "loading": "Profil yükleniyor",
+      "failedTitle": "Bu profil yüklenemedi",
+      "failedBody": "Hizmete ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
+      "stale": "Bu profil, bu oturumda daha önce göründüğü haliyle gösteriliyor. Güncel olmayabilir.",
+      "listFailedBody": "Hizmet yanıt vermedi. Profilde bir sorun yok — biraz sonra yeniden deneyin.",
+      "followOffline": "Takip etmek için bağlantı gerekir."
+    },
+    "surveys": {
+      "signedOutTitle": "Anketlerinizi yanıtlamak için giriş yapın",
+      "signedOutBody": "Anket bir desteğe sorulur, bu yüzden bu telefona değil, hesabınıza aittir.",
+      "stale": "Bu cihazda kayıtlı anketler gösteriliyor. Güncel olmayabilirler.",
+      "offlineSave": "İnternet bağlantısı yok. Yanıtlarınızı bağlantı geri geldiğinde kaydedebilirsiniz; daha sonra kendiliğinden gönderilmezler.",
+      "chooseDate": "Bir tarih seçin",
+      "clearDate": "Temizle",
+      "clearDateLabel": "«{question}» sorusunun tarihini temizle",
+      "confirmDate": "Bu tarihi seç",
+      "confirmDateLabel": "«{question}» sorusunun yanıtı olarak {date} tarihini seç"
+    },
+    "deliveries": {
+      "signedOutTitle": "Teslimatlarınızı görmek için giriş yapın",
+      "signedOutBody": "Teslimatlar desteklerinize bağlıdır; destekleriniz de bu telefona değil, hesabınıza aittir.",
+      "stale": "Bu cihazda kayıtlı teslimatlar gösteriliyor. Güncel olmayabilirler.",
+      "trackingHint": "Kargo firmasının takip sayfasını uygulamanın tarayıcısında açar"
     }
   }
 }

@@ -58,8 +58,22 @@ export const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
  * `legalDocs` (#164) holds the legal catalogue and texts: public, versioned and hash-stamped, so
  * a copy read on a plane is still exactly the version it says it is, with its provenance printed
  * above it. Not the checkout's `legal` root, which is the agreement version a pledge is sent with.
+ *
+ * The account area (#159) adds four lists, each one account's like `saved` and `pledges`: the
+ * campaigns it started, the creators it follows, the surveys it owes and its deliveries. None holds
+ * a postal address or a phone number (those stay under `shippingAddress`), and sign-out erases them
+ * with the rest through {@link forgetPersistedCache}.
  */
-const PERSISTED_ROOTS: readonly string[] = ['saved', 'pledges', 'project', 'legalDocs'];
+const PERSISTED_ROOTS: readonly string[] = [
+  'saved',
+  'pledges',
+  'project',
+  'legalDocs',
+  'myProjects',
+  'following',
+  'surveys',
+  'fulfilments',
+];
 
 /**
  * Roots that are refused even though they hold campaign-page data — #155. Listed rather than left
@@ -232,8 +246,8 @@ export function shouldRetry(failureCount: number, error?: unknown): boolean {
  * <h2>Why `queryClient.clear()` is not enough on its own</h2>
  *
  * Clearing the client empties memory and lets the persister write the emptied
- * cache back — after {@link WRITE_THROTTLE_MS}. Two of the three persisted roots
- * are private: `saved` and `pledges` are one account's, and leaving them on disk
+ * cache back — after {@link WRITE_THROTTLE_MS}. Most persisted roots are private:
+ * `saved`, `pledges` and the account area's lists are one account's, and leaving them on disk
  * for a second after a sign-out means an application killed inside that second
  * leaves them there for ever. So the document is removed directly as well, which
  * is synchronous because MMKV is.

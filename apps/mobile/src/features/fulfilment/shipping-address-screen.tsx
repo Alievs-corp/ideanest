@@ -196,7 +196,7 @@ function ShippingAddress({ id }: { readonly id: string }) {
   const back = (
     <BackLink
       label={t('address.back')}
-      onPress={() => router.push({ pathname: '/account/[section]', params: { section: 'deliveries' } })}
+      onPress={() => router.push('/account/deliveries')}
     />
   );
 

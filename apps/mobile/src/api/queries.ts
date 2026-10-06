@@ -37,7 +37,6 @@ export type ProjectPage = GetResponse<'/v1/projects/{creatorSlug}/{projectSlug}'
 export type PublicRewards = GetResponse<'/v1/projects/{projectId}/rewards/public'>;
 export type ProjectUpdates = GetResponse<'/v1/projects/{projectId}/updates'>;
 export type PrelaunchPage = GetResponse<'/v1/projects/{id}/prelaunch'>;
-export type SavedList = GetResponse<'/v1/me/saved'>;
 export type PledgeList = GetResponse<'/v1/me/pledges'>;
 
 /**
@@ -91,6 +90,16 @@ export const queryKeys = {
    */
   prelaunch: (projectId: string) => ['project', projectId, 'prelaunch'] as const,
   saved: () => ['saved'] as const,
+  /** The saved list's pages (#159), under `saved`: invalidating `saved()` refreshes it. */
+  savedList: () => ['saved', 'list'] as const,
+  /** The campaigns this account started (#159), drafts included. Persisted, private. */
+  myProjects: () => ['myProjects'] as const,
+  /** The creators this account follows (#159). Persisted, private. */
+  following: () => ['following'] as const,
+  /** The surveys this account is being asked (#159), answers included. Persisted, private. */
+  surveys: () => ['surveys'] as const,
+  /** Where each reward this account is owed is (#159). Persisted, private; not paged. */
+  fulfilments: () => ['fulfilments'] as const,
   pledges: () => ['pledges'] as const,
   pledgeList: () => ['pledges', 'list'] as const,
   shippingAddress: (pledgeId: string) => ['shippingAddress', pledgeId] as const,
@@ -119,6 +128,13 @@ export const queryKeys = {
    */
   profile: (slug: string) => ['profile', slug] as const,
   profileProjects: (slug: string) => ['profile', slug, 'projects'] as const,
+  /** The profile screen's Backed list (#156), paged; no amounts on it, ever. */
+  profileBacked: (slug: string) => ['profile', slug, 'backed'] as const,
+  /** §5.5's late-update count for a creator (#156), above the profile's tabs. */
+  profileObligations: (slug: string) => ['profile', slug, 'obligations'] as const,
+  /** Whether `viewer` follows `slug` (#156), walked from `GET /v1/me/following`. */
+  profileFollowing: (slug: string, viewer: string) =>
+    ['profile', slug, 'following', viewer] as const,
   /** `GET /v1/exchange-rates`: public, and an hour old at worst. */
   exchangeRates: () => ['exchangeRates'] as const,
   /**
@@ -377,15 +393,6 @@ export function usePrelaunchPage(projectId: string) {
     enabled: projectId !== '',
     queryFn: ({ signal }) =>
       api().get('/v1/projects/{id}/prelaunch', { path: { id: projectId }, signal }),
-  });
-}
-
-/** What this account saved. One of the two lists §4.12 MB-04 promises offline. */
-export function useSavedProjects(enabled: boolean) {
-  return useQuery({
-    queryKey: queryKeys.saved(),
-    enabled,
-    queryFn: ({ signal }) => api().get('/v1/me/saved', { signal }),
   });
 }
 

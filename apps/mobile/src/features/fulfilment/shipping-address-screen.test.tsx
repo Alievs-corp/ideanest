@@ -477,6 +477,6 @@ describe('accessibility', () => {
     const back = screen.getByTestId('address-back');
     expect(back.props.accessibilityRole).toBe('link');
     await fireEvent.press(back);
-    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/account/[section]', params: { section: 'deliveries' } });
+    expect(mockRouter.push).toHaveBeenCalledWith('/account/deliveries');
   });
 });

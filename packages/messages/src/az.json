@@ -5689,6 +5689,48 @@
         "body": "Plan seçmək, dəyişmək və ya ləğv etmək üçün bu səhifəni IdeyaNest saytında açın. Orada seçdiyiniz plan aktiv olan kimi tətbiqdə də keçərli olur.",
         "open": "Planlar səhifəsini aç"
       }
+    },
+    "account": {
+      "moreActions": "{title} üçün digər əməliyyatlar",
+      "campaigns": {
+        "signedOutTitle": "Kampaniyalarınızı görmək üçün daxil olun",
+        "signedOutBody": "Kampaniyalarınız bu telefona deyil, hesabınıza aiddir.",
+        "stale": "Kampaniyalarınız bu cihazdan göstərilir. Onlar köhnəlmiş ola bilər."
+      },
+      "saved": {
+        "offline": "İnternet bağlantısı yoxdur. Saxlanmış kampaniyanı silmək üçün bağlantı lazımdır."
+      },
+      "following": {
+        "signedOutTitle": "İzlədiyiniz müəllifləri görmək üçün daxil olun",
+        "signedOutBody": "İzlədiyiniz müəlliflər bu telefona deyil, hesabınıza aiddir.",
+        "stale": "İzlədiyiniz müəlliflər bu cihazdan göstərilir. Onlar köhnəlmiş ola bilər.",
+        "offline": "İnternet bağlantısı yoxdur. İzləməni dayandırmaq üçün bağlantı lazımdır."
+      }
+    },
+    "profile": {
+      "loading": "Profil yüklənir",
+      "failedTitle": "Bu profil yüklənmədi",
+      "failedBody": "Xidmətə qoşulmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin.",
+      "stale": "Bu profil bu sessiyada əvvəl göründüyü kimi göstərilir. Köhnəlmiş ola bilər.",
+      "listFailedBody": "Xidmət cavab vermədi. Profildə problem yoxdur — bir azdan yenidən cəhd edin.",
+      "followOffline": "İzləmək üçün internet bağlantısı lazımdır."
+    },
+    "surveys": {
+      "signedOutTitle": "Sorğularınızı cavablandırmaq üçün daxil olun",
+      "signedOutBody": "Sorğu dəstəyə görə göndərilir, ona görə bu telefona deyil, hesabınıza aiddir.",
+      "stale": "Bu cihazda saxlanmış sorğular göstərilir. Onlar köhnəlmiş ola bilər.",
+      "offlineSave": "İnternet bağlantısı yoxdur. Bağlantı bərpa olunanda cavablarınızı yadda saxlaya bilərsiniz; onlar sonradan özü-özünə göndərilmir.",
+      "chooseDate": "Tarix seçin",
+      "clearDate": "Təmizlə",
+      "clearDateLabel": "«{question}» sualı üçün tarixi təmizlə",
+      "confirmDate": "Bu tarixi seç",
+      "confirmDateLabel": "«{question}» sualının cavabı olaraq {date} tarixini seç"
+    },
+    "deliveries": {
+      "signedOutTitle": "Çatdırılmalarınızı görmək üçün daxil olun",
+      "signedOutBody": "Çatdırılmalar dəstəklərinizə bağlıdır, dəstəklər isə bu telefona deyil, hesabınıza aiddir.",
+      "stale": "Bu cihazda saxlanmış çatdırılmalar göstərilir. Onlar köhnəlmiş ola bilər.",
+      "trackingHint": "Daşıyıcının izləmə səhifəsini tətbiqin brauzerində açır"
     }
   }
 }

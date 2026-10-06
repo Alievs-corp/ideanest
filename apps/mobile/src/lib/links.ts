@@ -359,6 +359,33 @@ function contentDestination(path: string, query: URLSearchParams): Destination |
   return number === null ? null : { pathname: `/legal/${slug}/v/${number}` };
 }
 
+/*
+ * The account area (#159): the web's `/account` is the Me tab here, `/account/saved` is the Me
+ * hub's Saved screen, and the other four are stack routes of the same name. Any other section is
+ * a page neither platform has, and is left to the browser.
+ */
+const ACCOUNT_PATH = /^\/account(?:\/([a-z]+))?\/?$/;
+const ACCOUNT_SECTIONS: ReadonlySet<string> = new Set(['campaigns', 'deliveries', 'following', 'surveys']);
+
+function accountDestination(path: string): Destination | null {
+  const match = ACCOUNT_PATH.exec(path);
+  if (match === null) return null;
+  const section = match[1];
+  if (section === undefined) return { pathname: '/me' };
+  if (section === 'saved') return { pathname: '/saved' };
+  return ACCOUNT_SECTIONS.has(section) ? { pathname: `/account/${section}` } : null;
+}
+
+/** A public profile (#156): `/u/<slug>`, the slug decoded once, nothing deeper. */
+const PROFILE_PAGE = /^\/u\/([^/]+)\/?$/;
+
+function profileDestination(path: string): Destination | null {
+  const match = PROFILE_PAGE.exec(path);
+  if (match === null) return null;
+  const [slug] = decodedSegments([match[1]]) ?? [];
+  return slug === undefined ? null : { pathname: '/u/[slug]', params: { slug } };
+}
+
 function campaignDestination(rawPath: string, search = ''): Destination | null {
   const path = rawPath.replace(LOCALE_PREFIX, '') || '/';
 
@@ -367,6 +394,9 @@ function campaignDestination(rawPath: string, search = ''): Destination | null {
 
   const browse = browseDestination(path);
   if (browse !== null) return browse;
+
+  const account = accountDestination(path) ?? profileDestination(path);
+  if (account !== null) return account;
 
   const query = searchParamsFrom(search);
 

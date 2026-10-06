@@ -4,6 +4,7 @@ import { persistQueryClientRestore, persistQueryClientSave } from '@tanstack/rea
 import { NoCredentialError, retryMe } from './account';
 import {
   createQueryClient,
+  forgetPersistedCache,
   holdsData,
   persistOptions,
   shouldPersistQuery,
@@ -52,6 +53,14 @@ describe('what survives a restart', () => {
     expect(shouldPersistQuery(queryKeys.comments('p1', 'c1'))).toBe(false);
     expect(shouldPersistQuery(queryKeys.profile('aysel'))).toBe(false);
     expect(shouldPersistQuery(queryKeys.profileProjects('aysel'))).toBe(false);
+  });
+
+  it('keeps the account area’s four lists (#159)', () => {
+    expect(shouldPersistQuery(queryKeys.myProjects())).toBe(true);
+    expect(shouldPersistQuery(queryKeys.following())).toBe(true);
+    expect(shouldPersistQuery(queryKeys.surveys())).toBe(true);
+    expect(shouldPersistQuery(queryKeys.fulfilments())).toBe(true);
+    expect(shouldPersistQuery(queryKeys.savedList())).toBe(true);
   });
 
   it('never writes a shipping address or a phone number to the device', () => {
@@ -199,6 +208,29 @@ describe('the persisted cache', () => {
     expect(reading.getQueryData(queryKeys.saved())).toEqual({
       items: [{ projectId: 'p1', title: 'Solar Lamp' }],
     });
+  });
+
+  it('forgets every private list on sign-out, the account area’s included', async () => {
+    const store = memoryStore();
+    const writing = client();
+    for (const key of [
+      queryKeys.savedList(),
+      queryKeys.pledgeList(),
+      queryKeys.myProjects(),
+      queryKeys.following(),
+      queryKeys.surveys(),
+      queryKeys.fulfilments(),
+    ]) {
+      writing.setQueryData(key, { pages: [{ items: [{ id: 'x' }], nextCursor: null }], pageParams: [null] });
+    }
+    await persistQueryClientSave({ queryClient: writing, ...persistOptions(store, 0) });
+    await written();
+
+    forgetPersistedCache(store);
+
+    const reading = client();
+    await persistQueryClientRestore({ queryClient: reading, ...persistOptions(store, 0) });
+    expect(reading.getQueryCache().getAll()).toEqual([]);
   });
 
   it('does not restore a discovery feed that was in the same client', async () => {
