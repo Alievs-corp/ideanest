@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Glyphs } from '../../icons';
@@ -24,8 +24,7 @@ import {
   TONES,
   haptics,
 } from '../../components/ui';
-import { CardEntry, type EntryGate } from '../../components/campaign-column';
-import { FIRST_SCREENFUL } from '../../components/motion';
+import { CardEntry, useRowEntryGate } from '../../components/campaign-column';
 import { useTabBarInset } from '../../components/tab-bar';
 import { useT } from '../../lib/i18n';
 import { signInHrefFor } from '../../lib/guard';
@@ -59,31 +58,13 @@ function rowKey(item: BackerPledgeSummary, index: number): string {
   return item.pledgeId ?? `row-${index}`;
 }
 
-/** The first screenful of the first page rises in, once per row for the list's life (§6.5). */
-function useRowEntryGate(items: readonly BackerPledgeSummary[]): EntryGate {
-  const first = useRef<ReadonlySet<string> | null>(null);
-  if (first.current === null && items.length > 0) {
-    first.current = new Set(items.slice(0, FIRST_SCREENFUL).map(rowKey));
-  }
-  const [gate] = useState<EntryGate>(() => {
-    const done = new Set<string>();
-    return {
-      rises: (key) => first.current?.has(key) === true && !done.has(key),
-      risen: (key) => {
-        done.add(key);
-      },
-    };
-  });
-  return gate;
-}
-
 function PledgeListBody() {
   const router = useRouter();
   const tabInset = useTabBarInset();
   const t = useT();
   const { signedIn } = useSession();
   const list = usePledgeList(signedIn);
-  const gate = useRowEntryGate(list.items);
+  const gate = useRowEntryGate(list.items, rowKey);
   const [sheetTop, setSheetTop] = useState(0);
   const { height: windowHeight } = useWindowDimensions();
   const scrollY = useSharedValue(0);

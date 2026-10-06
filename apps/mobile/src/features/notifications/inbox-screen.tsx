@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Stack, useRouter, type Href } from 'expo-router';
@@ -21,8 +21,7 @@ import {
   type InboxNotification,
 } from '@ideanest/account/inbox';
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
-import { CardEntry, type EntryGate } from '../../components/campaign-column';
-import { FIRST_SCREENFUL } from '../../components/motion';
+import { CardEntry, useRowEntryGate } from '../../components/campaign-column';
 import {
   Body,
   Chip,
@@ -78,24 +77,6 @@ function itemKey(item: Item): string {
   return item.kind === 'day' ? `day-${item.key}` : item.notification.id;
 }
 
-/** The first screenful of the first page rises in, once per row (`mobile-design` skill §6.5). */
-function useRowEntryGate(items: readonly InboxNotification[]): EntryGate {
-  const first = useRef<ReadonlySet<string> | null>(null);
-  if (first.current === null && items.length > 0) {
-    first.current = new Set(items.slice(0, FIRST_SCREENFUL).map((row) => row.id));
-  }
-  const [gate] = useState<EntryGate>(() => {
-    const done = new Set<string>();
-    return {
-      rises: (key) => first.current?.has(key) === true && !done.has(key),
-      risen: (key) => {
-        done.add(key);
-      },
-    };
-  });
-  return gate;
-}
-
 /**
  * `notifications` — the web's `InboxPanel` (#88) as the app's inbox (#160).
  *
@@ -124,7 +105,7 @@ export function InboxScreen() {
   const assisted = useAssistiveTechnology();
   const { signedIn } = useSession();
   const inbox = useInbox(signedIn);
-  const gate = useRowEntryGate(inbox.items);
+  const gate = useRowEntryGate(inbox.items, (row) => row.id);
   const copy = useMemo(() => notificationsCopyOf(catalogue(locale).account.notifications), [locale]);
 
   const [filter, setFilter] = useState<InboxFilter>('ALL');

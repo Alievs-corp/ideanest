@@ -1,10 +1,9 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CardEntry, type EntryGate } from '../../components/campaign-column';
-import { FIRST_SCREENFUL } from '../../components/motion';
+import { CardEntry, useRowEntryGate } from '../../components/campaign-column';
 import {
   Card,
   EmptyState,
@@ -79,24 +78,6 @@ export interface AccountListProps<T> {
 }
 
 const PLACEHOLDER_ROWS = [0, 1, 2] as const;
-
-/** The first screenful of the first page the list is given may rise, each row once. */
-function useRowEntryGate<T>(items: readonly T[], keyOf: (item: T) => string): EntryGate {
-  const first = useRef<ReadonlySet<string> | null>(null);
-  if (first.current === null && items.length > 0) {
-    first.current = new Set(items.slice(0, FIRST_SCREENFUL).map(keyOf));
-  }
-  const [gate] = useState<EntryGate>(() => {
-    const done = new Set<string>();
-    return {
-      rises: (key) => first.current?.has(key) === true && !done.has(key),
-      risen: (key) => {
-        done.add(key);
-      },
-    };
-  });
-  return gate;
-}
 
 export function AccountList<T>(props: AccountListProps<T>) {
   const { list, signedIn, keyOf, renderRow, testID } = props;

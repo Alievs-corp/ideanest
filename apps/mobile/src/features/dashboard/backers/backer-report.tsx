@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, RefreshControl, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -17,8 +17,7 @@ import {
   type BackerSegment,
 } from '@ideanest/dashboard/backers';
 import { queryKeys } from '../../../api/queries';
-import { CardEntry, type EntryGate } from '../../../components/campaign-column';
-import { FIRST_SCREENFUL } from '../../../components/motion';
+import { CardEntry, useRowEntryGate } from '../../../components/campaign-column';
 import {
   Body,
   Caption,
@@ -79,24 +78,6 @@ function scopeOf(filter: BackerFilter, segmentId: string | undefined): string {
 
 function rowKey(backer: Backer): string {
   return backer.pledgeId;
-}
-
-/** The first screenful of the first page rises in, once per row; appended pages never move (§6.5). */
-function useRowEntryGate(rows: readonly Backer[]): EntryGate {
-  const first = useRef<ReadonlySet<string> | null>(null);
-  if (first.current === null && rows.length > 0) {
-    first.current = new Set(rows.slice(0, FIRST_SCREENFUL).map(rowKey));
-  }
-  const [gate] = useState<EntryGate>(() => {
-    const done = new Set<string>();
-    return {
-      rises: (key) => first.current?.has(key) === true && !done.has(key),
-      risen: (key) => {
-        done.add(key);
-      },
-    };
-  });
-  return gate;
 }
 
 /**
@@ -192,7 +173,7 @@ function Report({ projectId }: { readonly projectId: string }) {
   const pages = list.data?.pages;
   const rows = (pages ?? []).flatMap((page) => page.backers);
   const matched = pages?.[0]?.matched;
-  const gate = useRowEntryGate(rows);
+  const gate = useRowEntryGate(rows, rowKey);
   const narrowed = isNarrowed(filter) || segmentId !== undefined;
   const busy = working !== null;
   const writable = online && !busy;

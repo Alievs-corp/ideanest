@@ -45,9 +45,14 @@ export interface EntryGate {
 }
 
 export function useEntryGate(cards: readonly Card[]): EntryGate {
+  return useRowEntryGate(cards, cardKey);
+}
+
+/** {@link useEntryGate} for the rows of any list, each named by `keyOf`. */
+export function useRowEntryGate<T>(items: readonly T[], keyOf: (item: T, index: number) => string): EntryGate {
   const first = useRef<ReadonlySet<string> | null>(null);
-  if (first.current === null && cards.length > 0) {
-    first.current = new Set(cards.slice(0, FIRST_SCREENFUL).map(cardKey));
+  if (first.current === null && items.length > 0) {
+    first.current = new Set(items.slice(0, FIRST_SCREENFUL).map(keyOf));
   }
   const [gate] = useState<EntryGate>(() => {
     const done = new Set<string>();
