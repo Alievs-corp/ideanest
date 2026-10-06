@@ -11,6 +11,7 @@ import { useT } from '../../lib/i18n';
 import { useSession } from '../../lib/use-session';
 import { colors, font, fontSize, lineHeight } from '../../theme';
 import { Pill, announce, haptics } from '../../components/ui';
+import { PushExplainer } from '../notifications/push-explainer';
 import { ProfileHeader } from './profile-header';
 import { setFollowing, useFollowing } from './api';
 import type { PublicProfile } from './wire';
@@ -83,6 +84,8 @@ function FollowingHeader({
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // Following is one of the moments a notification obviously helps (#160).
+  const [justFollowed, setJustFollowed] = useState(false);
 
   const following = lockedOut ? false : (known.data ?? null);
   const offlineReason = tAll('mobile.profile.followOffline');
@@ -102,6 +105,7 @@ function FollowingHeader({
     setNotice(null);
     try {
       const now = await setFollowing(slug, !was);
+      if (!was && now) setJustFollowed(true);
       if (viewer !== null) client.setQueryData(queryKeys.profileFollowing(slug, viewer), now);
       void client.invalidateQueries({ queryKey: queryKeys.following() });
       say(now ? t('followed', { name }) : t('unfollowed', { name }));
@@ -161,9 +165,12 @@ function FollowingHeader({
       actions={control ?? undefined}
       notice={
         control === null ? undefined : (
-          <Text accessibilityLiveRegion="polite" style={styles.notice} testID="profile-follow-notice">
-            {notice ?? (offline && !signedOut ? offlineReason : '')}
-          </Text>
+          <>
+            <Text accessibilityLiveRegion="polite" style={styles.notice} testID="profile-follow-notice">
+              {notice ?? (offline && !signedOut ? offlineReason : '')}
+            </Text>
+            {justFollowed ? <PushExplainer moment="follow" /> : null}
+          </>
         )
       }
     />

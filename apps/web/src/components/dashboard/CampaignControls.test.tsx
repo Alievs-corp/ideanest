@@ -5,7 +5,7 @@ import { ApiError } from '../../lib/api/problem';
 import { campaignControlsCopyFrom } from '../../lib/i18n/campaign-controls-copy';
 import type { ProjectEdit, ProjectState } from '../../lib/projects/api';
 import { translatorFor } from '../../test-copy';
-import { CampaignControls, extensionWindow } from './CampaignControls';
+import { CampaignControls } from './CampaignControls';
 
 const COPY = campaignControlsCopyFrom(translatorFor('dashboardControls'));
 const DEADLINE = '2026-09-19T12:00:00.000Z';
@@ -112,6 +112,22 @@ describe('extending', () => {
     expect(await screen.findByText(COPY.extendOutsideWindow)).toBeInTheDocument();
   });
 
+  it('words a refused date on `until` as the window’s bounds, with the latest day', async () => {
+    const { user } = renderControls({
+      percentFunded: 60,
+      extend: () =>
+        Promise.reject(
+          new ApiError(400, { status: 400, code: 'PROJECT_FIELD_INVALID', meta: { field: 'until' } } as never),
+        ),
+    });
+
+    await user.type(screen.getByLabelText('New deadline'), '2026-10-01');
+    await user.click(screen.getByRole('button', { name: 'Extend the deadline' }));
+    await user.click(screen.getByRole('button', { name: 'Extend to this date' }));
+
+    expect(await screen.findByText(/no later than November 18, 2026/)).toBeInTheDocument();
+  });
+
   it('is not offered to an extended campaign, or below 50%', () => {
     renderControls({ state: 'EXTENDED', percentFunded: 90 });
     expect(screen.queryByRole('button', { name: 'Extend the deadline' })).not.toBeInTheDocument();
@@ -119,17 +135,5 @@ describe('extending', () => {
 
     renderControls({ percentFunded: 49 });
     expect(screen.queryByRole('button', { name: 'Extend the deadline' })).not.toBeInTheDocument();
-  });
-});
-
-describe('extensionWindow', () => {
-  it('runs from the day after the deadline to sixty days after it, at the deadline’s time', () => {
-    expect(extensionWindow(DEADLINE)).toEqual({
-      deadlineDay: '2026-09-19',
-      firstDay: '2026-09-20',
-      latestDay: '2026-11-18',
-      timeOfDay: 'T12:00:00.000Z',
-    });
-    expect(extensionWindow(null)).toBeNull();
   });
 });

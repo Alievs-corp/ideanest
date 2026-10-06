@@ -1,8 +1,7 @@
 'use client';
 
-import Decimal from 'decimal.js';
 import { formatMoney } from '../../lib/money';
-import type { TrendDay } from '../../lib/dashboard/analytics';
+import { TREND_CHART, polylinePoints, trendPoints, type TrendDay } from '@ideanest/dashboard/analytics';
 import type { TrendChartCopy } from '../../lib/i18n/dashboard-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
@@ -39,10 +38,8 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  * `prefers-reduced-motion` branch.
  */
 
-/** The drawing box. Fixed, and scaled by the viewBox — the chart is fluid, its geometry is not. */
-const WIDTH = 720;
-const HEIGHT = 220;
-const PADDING = 8;
+/** The drawing box, shared with the app so both draw the same points (#163). */
+const { width: WIDTH, height: HEIGHT, padding: PADDING } = TREND_CHART;
 
 export interface TrendChartProps {
   readonly days: readonly TrendDay[];
@@ -57,7 +54,7 @@ export interface TrendChartProps {
 }
 
 export function TrendChart({ days, from, to, label, copy }: TrendChartProps) {
-  const points = pointsOf(days, from, to);
+  const points = trendPoints(days, from, to);
   const peak = days[days.length - 1];
   // A single point, held separately: `noUncheckedIndexedAccess` is on, and the narrowing
   // has to survive being read inside JSX.
@@ -83,7 +80,7 @@ export function TrendChart({ days, from, to, label, copy }: TrendChartProps) {
         />
         {points.length > 1 ? (
           <polyline
-            points={points.map((point) => `${point.x},${point.y}`).join(' ')}
+            points={polylinePoints(points)}
             fill="none"
             stroke="var(--text-primary)"
             strokeWidth={2}
@@ -159,66 +156,4 @@ export function TrendChart({ days, from, to, label, copy }: TrendChartProps) {
       </details>
     </figure>
   );
-}
-
-interface Point {
-  readonly x: number;
-  readonly y: number;
-}
-
-/**
- * The polyline's points.
- *
- * <p>x is the day's position inside the requested range; y is its running total against the
- * range's own peak, so the line always reaches the top of the box. Scaling to the campaign's
- * goal was the alternative and is worse here: a campaign at four percent would be a flat
- * line along the bottom for its whole first month, which is the period a creator most needs
- * to see the shape of.
- *
- * <p>The arithmetic on money is `decimal.js` and only the finished ratio becomes a number —
- * `ShareBars` makes the same note, for the same reason.
- */
-function pointsOf(days: readonly TrendDay[], from: string, to: string): readonly Point[] {
-  if (days.length === 0) return [];
-
-  const first = Date.parse(`${from}T00:00:00Z`);
-  const last = Date.parse(`${to}T00:00:00Z`);
-  const span = Number.isFinite(first) && Number.isFinite(last) && last > first ? last - first : 0;
-
-  const peak = days.reduce(
-    (highest, day) => Decimal.max(highest, amountOf(day.cumulativeAmount.amount)),
-    new Decimal(0),
-  );
-  const plotWidth = WIDTH - PADDING * 2;
-  const plotHeight = HEIGHT - PADDING * 2;
-
-  return days.map((day, index) => {
-    const at = Date.parse(`${day.day}T00:00:00Z`);
-    const across =
-      span === 0 || !Number.isFinite(at)
-        ? // A single-day range, or a day that will not parse: fall back to position, which
-          // is exact when there is one point and honest when there are two.
-          days.length === 1
-          ? 0
-          : index / (days.length - 1)
-        : Math.min(1, Math.max(0, (at - first) / span));
-
-    const height = peak.lessThanOrEqualTo(0)
-      ? 0
-      : amountOf(day.cumulativeAmount.amount).div(peak).toNumber();
-
-    return {
-      x: PADDING + across * plotWidth,
-      // SVG's y grows downward, so the tallest value is the smallest coordinate.
-      y: PADDING + (1 - height) * plotHeight,
-    };
-  });
-}
-
-function amountOf(amount: string): Decimal {
-  try {
-    return new Decimal(amount);
-  } catch {
-    return new Decimal(0);
-  }
 }

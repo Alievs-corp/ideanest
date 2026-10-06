@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
-import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -13,13 +12,14 @@ import { SheetHost } from '../components/ui/sheet';
 import { SharedTransitionHost } from '../components/ui/shared-transition';
 import { sweepAccountExports } from '../lib/account-export-files';
 import { startConnectivity } from '../lib/connectivity';
-import { destinationFor } from '../lib/links';
+import { destinationFor, type Destination } from '../lib/links';
 import { deferUntilUp } from '../lib/maintenance';
 import { useMaintenanceGate } from '../lib/maintenance-gate';
 import { watchUpcoming } from '../lib/upcoming-maintenance';
 import { createQueryClient, persistOptions } from '../lib/offline';
 import { lockNow } from '../lib/session';
 import { AccountSync } from '../lib/account-sync';
+import { PushSync } from '../lib/push-sync';
 import { AppIntlProvider } from '../lib/i18n';
 import { colors } from '../theme';
 
@@ -79,21 +79,6 @@ export const unstable_settings = { initialRouteName: '(tabs)' };
  * A throw inside a screen never gets this far: each route exports its own boundary.
  */
 export { RootFailure as ErrorBoundary } from '../components/root-failure';
-
-/**
- * The link inside a push payload, or null when there is not one.
- *
- * <p>`PushComposer` puts exactly one key in `data`, and a payload from anywhere else has
- * no business steering this application — so anything that is not a string is dropped
- * here, and anything that is still has to survive `destinationFor`.
- */
-function urlFromNotification(
-  response: Notifications.NotificationResponse | null,
-): string | null {
-  const data = response?.notification.request.content.data;
-  const url = (data as { url?: unknown } | undefined)?.url;
-  return typeof url === 'string' ? url : null;
-}
 
 /** True when a push asked for the shared-element fade (`ProjectCard`'s `transition: 'shared'`). */
 function sharedPush(params: object | undefined): boolean {
@@ -210,6 +195,20 @@ export default function RootLayout() {
     return () => subscription.remove();
   }, []);
 
+  const go = useCallback(
+    (destination: Destination) => {
+      const push = () =>
+        router.push(
+          (destination.params === undefined
+            ? destination.pathname
+            : { pathname: destination.pathname, params: destination.params }) as never,
+        );
+      // During maintenance the link waits for the service (`deferUntilUp`), then opens.
+      if (!deferUntilUp(push)) push();
+    },
+    [router],
+  );
+
   useEffect(() => {
     let live = true;
 
@@ -219,48 +218,23 @@ export default function RootLayout() {
       // `null` means "a link this application does not claim". Doing nothing is
       // the answer: Expo Router has already shown the launch route, and sending
       // somebody to the feed instead would make a bad link look like a good one.
-      if (destination === null) return;
-      const go = () =>
-        router.push(
-          (destination.params === undefined
-            ? destination.pathname
-            : { pathname: destination.pathname, params: destination.params }) as never,
-        );
-      // During maintenance the link waits for the service (`deferUntilUp`), then opens.
-      if (!deferUntilUp(go)) go();
+      if (destination !== null) go(destination);
     };
 
     void Linking.getInitialURL().then(open);
     const subscription = Linking.addEventListener('url', (event) => open(event.url));
 
     /*
-     * A tapped push notification (§4.12 MB-01), arriving at the deep-link parser (MB-02).
-     *
-     * It is a separate subscription rather than a second `url` event, because a
-     * notification tap does not go through `Linking` on either platform: the payload's
-     * `data.url` is ours, put there by `PushComposer`, and the operating system hands it
-     * over as a response object. Routing it through `destinationFor` means a campaign
-     * opened from a notification and one opened from a shared link land on the same
-     * screen by the same code — which is the whole of what MB-02 asks for, and what stops
-     * the two drifting into "works from a link, does nothing from a notification".
-     *
-     * `getLastNotificationResponseAsync` covers the cold start: a tap that launched the
-     * process has already happened by the time this effect runs, and only this call
-     * reports it.
+     * A tapped push notification arrives at the same parser, by `PushSync` (`lib/push-sync.tsx`):
+     * a notification tap does not go through `Linking` on either platform, and a push with no
+     * destination opens the inbox where a shared link would stay put.
      */
-    void Notifications.getLastNotificationResponseAsync().then((response) => {
-      open(urlFromNotification(response));
-    });
-    const tapped = Notifications.addNotificationResponseReceivedListener((response) => {
-      open(urlFromNotification(response));
-    });
 
     return () => {
       live = false;
       subscription.remove();
-      tapped.remove();
     };
-  }, [host, router]);
+  }, [go, host]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.surface1 }}>
@@ -270,6 +244,7 @@ export default function RootLayout() {
           <AppIntlProvider>
             <StatusBar style="light" />
             <AccountSync />
+            <PushSync siteHost={host} onOpen={go} />
             <OfflineAnnouncer />
             {/* The page a white sheet rises over scales back under it (`ui/sheet.tsx`, #277). */}
             {/* Card → page flights are drawn above everything (`ui/shared-transition.tsx`, #279). */}

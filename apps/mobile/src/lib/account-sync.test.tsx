@@ -3,6 +3,8 @@ import { AppState, type AppStateStatus } from 'react-native';
 import { act, render } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { saveAccountLocale } from '../api/client';
+import { queryKeys } from '../api/queries';
+import { sweepAccountExports } from './account-export-files';
 import { AccountSync } from './account-sync';
 import { currentLocale, setLocale } from './locale';
 import { chooseLocale, forgetAccountSync, pushPendingLocale } from './locale-sync';
@@ -35,11 +37,13 @@ jest.mock('./account', () => ({
 }));
 jest.mock('./use-session', () => ({ useSession: () => mockSession }));
 jest.mock('../api/client', () => ({ saveAccountLocale: jest.fn(async () => true) }));
+jest.mock('./account-export-files', () => ({ sweepAccountExports: jest.fn() }));
 jest.mock('expo-notifications', () => ({
   addNotificationReceivedListener: () => ({ remove: () => {} }),
 }));
 
 const save = jest.mocked(saveAccountLocale);
+const sweep = jest.mocked(sweepAccountExports);
 
 /* The first render loads the module graph, which took past 5 s on a CI runner elsewhere. */
 jest.setTimeout(20_000);
@@ -55,6 +59,7 @@ function held() {
 }
 
 let foreground: ((state: AppStateStatus) => void) | undefined;
+let client: QueryClient;
 
 /** `AccountSync` over a fresh cache, with the foreground listener captured. */
 async function mount() {
@@ -63,7 +68,7 @@ async function mount() {
     foreground = listener as (state: AppStateStatus) => void;
     return { remove: jest.fn() } as never;
   });
-  const client = new QueryClient();
+  client = new QueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
@@ -209,5 +214,55 @@ describe('the account language on this phone (#216)', () => {
     await accountSays(view, 'en');
 
     expect(held()).toEqual({ locale: 'en', stored: 'en', synced: 'en', pending: undefined });
+  });
+});
+
+describe('the session ending (#160, #163)', () => {
+  /** `lib/offline.ts`'s persisted document, as MMKV holds it. */
+  const PERSISTED = 'ideanest.query-cache.v1';
+  const PRIVATE = [
+    ['me', true],
+    ['unread'],
+    queryKeys.inbox(),
+    queryKeys.saved(),
+    queryKeys.pledgeList(),
+    queryKeys.myProjects(),
+    queryKeys.dashboardOverview('c1'),
+    queryKeys.dashboardAnalytics('c1'),
+    queryKeys.dashboardFinance('c1'),
+    queryKeys.dashboardBackers('c1', 'filter:{}'),
+    queryKeys.dashboardSegments('c1'),
+    queryKeys.dashboardSurveys('c1'),
+    queryKeys.dashboardRewardTiers('c1'),
+    queryKeys.ownProfile(),
+  ] as const;
+
+  afterEach(() => deviceStore.remove(PERSISTED));
+
+  it('a revoked session takes every account root with it, in memory and on disk, and sweeps the exports', async () => {
+    const view = await mount();
+    for (const key of PRIVATE) client.setQueryData(key, { owner: 'account-1' });
+    client.setQueryData(queryKeys.project('aysel', 'solar-lamp'), { title: 'Solar Lamp' });
+    deviceStore.set(PERSISTED, '{"clientState":{}}');
+
+    // A refresh answered 401: the keychain is emptied and nothing else is called.
+    mockSession = { signedIn: false, locked: false, unlocked: false };
+    await view.rerender(<AccountSync />);
+    await act(async () => {});
+
+    for (const key of PRIVATE) expect(client.getQueryData(key)).toBeUndefined();
+    expect(client.getQueryData(queryKeys.project('aysel', 'solar-lamp'))).toEqual({ title: 'Solar Lamp' });
+    expect(deviceStore.getString(PERSISTED)).toBeUndefined();
+    expect(sweep).toHaveBeenCalledTimes(1);
+  });
+
+  it('a signed-out launch keeps a guest’s persisted pages and sweeps nothing', async () => {
+    mockSession = { signedIn: false, locked: false, unlocked: false };
+    deviceStore.set(PERSISTED, '{"clientState":{}}');
+
+    await mount();
+
+    expect(deviceStore.getString(PERSISTED)).toBe('{"clientState":{}}');
+    expect(sweep).not.toHaveBeenCalled();
   });
 });

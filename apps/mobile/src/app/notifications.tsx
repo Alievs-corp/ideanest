@@ -1,8 +1,6 @@
-import { WebFallback } from '../components/web-fallback';
+import { InboxScreen } from '../features/notifications/inbox-screen';
 
-export default function Screen() {
-  return <WebFallback titleKey="shell.actions.notifications" webPath={'/notifications'} />;
-}
+export default InboxScreen;
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../components/route-error-boundary';

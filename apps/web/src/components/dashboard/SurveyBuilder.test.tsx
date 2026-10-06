@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { SurveyBuilder } from './SurveyBuilder';
 import { surveyBuilderCopyFrom } from '../../lib/i18n/dashboard-copy';
 import { translatorFor } from '../../test-copy';
-import type { Survey } from '../../lib/dashboard/surveys';
+import type { Survey } from '@ideanest/dashboard/surveys';
 import { listRewards, type Reward } from '../../lib/projects/api';
 
 /*

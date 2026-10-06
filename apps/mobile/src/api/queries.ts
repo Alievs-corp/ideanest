@@ -94,6 +94,18 @@ export const queryKeys = {
   savedList: () => ['saved', 'list'] as const,
   /** The campaigns this account started (#159), drafts included. Persisted, private. */
   myProjects: () => ['myProjects'] as const,
+  /**
+   * The creator dashboard's backer report (#163): one list per campaign and filter (`scope` is the
+   * segment or the filter body), its saved segments, and the tiers the survey builder targets.
+   * Their own root, `dashboardBackers`, which `lib/offline.ts` refuses: the report is a campaign's
+   * mailing list — names and email addresses of people who are not this account.
+   */
+  dashboardBackers: (projectId: string, scope: string) =>
+    ['dashboardBackers', projectId, 'list', scope] as const,
+  dashboardSegments: (projectId: string) => ['dashboardBackers', projectId, 'segments'] as const,
+  /** The survey builder's list and the campaign's reward tiers (#163). Not persisted. */
+  dashboardSurveys: (projectId: string) => ['dashboardSurveys', projectId, 'list'] as const,
+  dashboardRewardTiers: (projectId: string) => ['dashboardSurveys', projectId, 'tiers'] as const,
   /** The creators this account follows (#159). Persisted, private. */
   following: () => ['following'] as const,
   /** The surveys this account is being asked (#159), answers included. Persisted, private. */
@@ -148,6 +160,25 @@ export const queryKeys = {
   profileVisibility: (slug: string) => ['settings', 'visibility', slug] as const,
   legalSubject: () => ['settings', 'legalSubject'] as const,
   payoutDestination: () => ['settings', 'payoutDestination'] as const,
+  /**
+   * The creator dashboard's Overview (#163): one campaign's totals, deadline and state, with the
+   * clock skew measured when they arrived. Persisted, private: the creator's own figures, read
+   * offline with "As of" beside them; nothing in it is a backer's.
+   */
+  dashboardOverview: (projectId: string) => ['dashboardOverview', projectId] as const,
+  /**
+   * The dashboard's Funding and backers panel and its Finance panel (#163). Their own root,
+   * `dashboard`, which `lib/offline.ts` refuses: a campaign's money is not written to the device's
+   * unencrypted store.
+   */
+  dashboardAnalytics: (projectId: string) => ['dashboard', projectId, 'analytics'] as const,
+  dashboardBreakdown: (projectId: string) => ['dashboard', projectId, 'breakdown'] as const,
+  dashboardFinance: (projectId: string) => ['dashboard', projectId, 'finance'] as const,
+  /**
+   * The inbox's pages (#160). Its own root, `inbox`, never persisted: notifications are
+   * time-sensitive, and last week's unread rows restored after a restart would read as news.
+   */
+  inbox: () => ['inbox'] as const,
 } as const;
 
 /**

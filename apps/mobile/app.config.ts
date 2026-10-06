@@ -195,7 +195,7 @@ const config: ExpoConfig = {
   icon: './assets/icon.png',
 
   /**
-   * The custom scheme. `ideanest://project/<creator>/<campaign>` is what a push
+   * The custom scheme. `ideanest://projects/<creator>/<campaign>` is what a push
    * notification opens, and it works with no server involvement — which is why
    * Push (§4.12 MB-01) uses it rather than an https link that depends on a verification file
    * being reachable.

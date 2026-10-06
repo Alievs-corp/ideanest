@@ -38,6 +38,9 @@ importers:
       '@ideanest/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
+      '@ideanest/dashboard':
+        specifier: workspace:*
+        version: link:../../packages/dashboard
       '@ideanest/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
@@ -237,6 +240,9 @@ importers:
       '@ideanest/checkout':
         specifier: workspace:*
         version: link:../../packages/checkout
+      '@ideanest/dashboard':
+        specifier: workspace:*
+        version: link:../../packages/dashboard
       '@ideanest/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
@@ -325,6 +331,9 @@ importers:
       '@ideanest/messages':
         specifier: workspace:*
         version: link:../messages
+      '@ideanest/money':
+        specifier: workspace:*
+        version: link:../money
     devDependencies:
       '@types/node':
         specifier: ~22.20.2
@@ -381,6 +390,34 @@ importers:
 
   packages/checkout:
     dependencies:
+      '@ideanest/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+      '@ideanest/messages':
+        specifier: workspace:*
+        version: link:../messages
+      '@ideanest/money':
+        specifier: workspace:*
+        version: link:../money
+      decimal.js:
+        specifier: ^10.6.0
+        version: 10.6.0
+    devDependencies:
+      '@types/node':
+        specifier: ~22.20.2
+        version: 22.20.2
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: ^5.0.0
+        version: 5.0.0(@types/node@22.20.2)(jsdom@30.0.1)(vite@8.3.0(@types/node@22.20.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
+  packages/dashboard:
+    dependencies:
+      '@ideanest/account':
+        specifier: workspace:*
+        version: link:../account
       '@ideanest/api-client':
         specifier: workspace:*
         version: link:../api-client

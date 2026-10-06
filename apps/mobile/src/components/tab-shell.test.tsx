@@ -1,7 +1,9 @@
 import type { ReactElement, ReactNode } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
+import { StyleSheet } from 'react-native';
 import { IntlProvider } from 'use-intl';
+import { colors } from '../theme';
 import en from '@ideanest/messages/en.json';
 import TabsLayout from '../app/(tabs)/_layout';
 import { useSessionState, useUnreadCount, type SessionState } from '../lib/account';
@@ -176,11 +178,15 @@ describe('the header control', () => {
     expect(screen.queryByText('0', { includeHiddenElements: true })).toBeNull();
   });
 
-  it('past ninety-nine: 99+ on the badge and in words', async () => {
+  it('past nine: 9+ on the badge, the exact count in words, and no lime', async () => {
     given('signed-in', 250);
     await renderTabs();
-    expect(screen.getByRole('button', { name: en.mobile.header.over })).toBeTruthy();
-    expect(screen.getByText('99+', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Notifications, 250 unread' })).toBeTruthy();
+    const pill = screen.getByText('9+', { includeHiddenElements: true });
+    expect(StyleSheet.flatten(pill.props.style).color).toBe(colors.textOnWhite);
+    const fills = [pill.parent, pill.parent?.parent].map((node) => StyleSheet.flatten(node?.props.style));
+    expect(fills.some((style) => style?.backgroundColor === colors.whiteSurface)).toBe(true);
+    expect(fills.some((style) => style?.backgroundColor === colors.lime500)).toBe(false);
   });
 
   it('count not read yet: the bell by its plain name, no badge', async () => {

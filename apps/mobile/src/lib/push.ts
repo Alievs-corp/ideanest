@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { apiOrigin } from '../api/config';
 import { currentAccessToken } from './session';
+import { deviceStore, type KeyValueStore } from './storage';
 
 /**
  * Push notifications, the phone's half — §4.12 MB-01, §12.2.
@@ -13,8 +14,10 @@ import { currentAccessToken } from './session';
  * <p>Not on launch. A permission sheet shown before somebody has seen a campaign is a
  * sheet they decline, and on iOS a declined permission cannot be asked for again from
  * inside the application — the only way back is Settings, which almost nobody walks.
- * {@link registerForPush} is therefore called from the screens where a notification has
- * an obvious purpose, and never from the root layout.
+ * {@link registerForPush}, which can prompt, is therefore called only where a notification
+ * has an obvious purpose (#160): the explainer after a collected pledge, a follow or a save,
+ * and the notification settings. The root (`lib/push-sync.tsx`) and sign-in call the
+ * prompt-free {@link registerIfAllowed} and {@link syncPushRegistration} instead.
  *
  * <h2>A registration is worth nothing without a session</h2>
  *
@@ -90,11 +93,12 @@ export async function registerForPush(): Promise<PushRegistration> {
    * Asked for only when it has not been decided. `requestPermissionsAsync` on a phone
    * that has already declined resolves immediately with the same answer on iOS and
    * re-prompts on some Android versions, and re-prompting somebody who said no is how an
-   * application gets turned off at the system level.
+   * application gets turned off at the system level. A phone that already allows it is
+   * not asked at all.
    */
-  const granted =
-    existing.granted ||
-    existing.status === 'undetermined'
+  const granted = existing.granted
+    ? true
+    : existing.status === 'undetermined'
       ? (await Notifications.requestPermissionsAsync()).granted
       : false;
 
@@ -150,6 +154,58 @@ export async function unregisterFromPush(): Promise<void> {
   } catch {
     // Deliberately silent. See above.
   }
+}
+
+/** What the phone's permission was the last time a signed-in launch or foreground read it. */
+const PERMISSION_KEY = 'push.permission';
+
+export type PushSync = 'registered' | 'unregistered' | 'none';
+
+/**
+ * The launch and foreground half of #160, for a signed-in phone. **Never prompts.**
+ *
+ * <ul>
+ *   <li>Allowed: registers again, which refreshes the service's `last_seen_at` and picks up a
+ *       token the platform reissued.</li>
+ *   <li>Allowed last time and not now (turned off in the phone's settings): drops the
+ *       registration, so the service stops sending to a phone that shows nothing.</li>
+ *   <li>Never allowed: nothing — asking is for the moments that mean something.</li>
+ * </ul>
+ */
+export async function syncPushRegistration(store: KeyValueStore = deviceStore): Promise<PushSync> {
+  if (!Device.isDevice) return 'none';
+  let now: 'granted' | 'denied' | 'undetermined';
+  try {
+    const answer = await Notifications.getPermissionsAsync();
+    now = answer.granted ? 'granted' : answer.status === 'denied' ? 'denied' : 'undetermined';
+  } catch {
+    return 'none';
+  }
+  const before = store.getString(PERMISSION_KEY);
+  store.set(PERMISSION_KEY, now);
+
+  if (now === 'granted') {
+    return (await registerIfAllowed()).status === 'registered' ? 'registered' : 'none';
+  }
+  if (before === 'granted') {
+    await unregisterFromPush();
+    return 'unregistered';
+  }
+  return 'none';
+}
+
+/** How long "Not now" on the push explainer holds (#160). */
+export const EXPLAINER_SNOOZE_MS = 30 * 24 * 60 * 60 * 1000;
+const SNOOZE_KEY = 'push.explainerSnoozedUntil';
+
+/** Whether "Not now" was said to the push explainer within the last thirty days. */
+export function explainerSnoozed(now: number = Date.now(), store: KeyValueStore = deviceStore): boolean {
+  const until = Number(store.getString(SNOOZE_KEY));
+  return Number.isFinite(until) && until > now;
+}
+
+export function snoozeExplainer(now: number = Date.now(), store: KeyValueStore = deviceStore): void {
+  store.set(SNOOZE_KEY, String(now + EXPLAINER_SNOOZE_MS));
 }
 
 /**

@@ -15,6 +15,7 @@
     "@ideanest/api-client": "workspace:*",
     "@ideanest/campaign": "workspace:*",
     "@ideanest/checkout": "workspace:*",
+    "@ideanest/dashboard": "workspace:*",
     "@ideanest/design-tokens": "workspace:*",
     "@ideanest/discovery": "workspace:*",
     "@ideanest/legal": "workspace:*",

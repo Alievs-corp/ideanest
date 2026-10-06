@@ -4,12 +4,13 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "description": "The account rules with one right answer, shared by apps/web and apps/mobile: naming a signed-in device from its user agent, the notification preference table's order and modes, survey question order, and how a delivery's status and tracking link are read.",
+  "description": "The account rules with one right answer, shared by apps/web and apps/mobile: naming a signed-in device from its user agent, the notification preference table's order and modes, what an inbox notification says and where it goes, survey question order, and how a delivery's status and tracking link are read.",
   "exports": {
     "./sessions": "./src/sessions.ts",
     "./notifications": "./src/notifications.ts",
     "./surveys": "./src/surveys.ts",
-    "./fulfilment": "./src/fulfilment.ts"
+    "./fulfilment": "./src/fulfilment.ts",
+    "./inbox": "./src/inbox.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -20,7 +21,8 @@
   },
   "dependencies": {
     "@ideanest/api-client": "workspace:*",
-    "@ideanest/messages": "workspace:*"
+    "@ideanest/messages": "workspace:*",
+    "@ideanest/money": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "~22.20.2",

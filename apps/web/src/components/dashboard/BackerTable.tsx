@@ -3,7 +3,7 @@
 import { EyeOff } from 'lucide-react';
 import { formatExactTime } from '../../lib/time';
 import { formatMoney } from '../../lib/money';
-import type { Backer } from '../../lib/dashboard/backers';
+import type { Backer } from '@ideanest/dashboard/backers';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { BackerTableCopy } from '../../lib/i18n/dashboard-copy';
 

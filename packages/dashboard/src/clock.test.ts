@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import en from '@ideanest/messages/en.json';
+import ru from '@ideanest/messages/ru.json';
 import {
   URGENT_THRESHOLD_MS,
   clockSkewMs,
@@ -7,9 +9,8 @@ import {
   remainingMs,
   splitRemaining,
   tickIntervalMs,
+  type CampaignClockCopy,
 } from './clock';
-import { dashboardOverviewCopyFrom } from '../i18n/dashboard-copy';
-import { translatorFor } from '../../test-copy';
 
 /**
  * The arithmetic behind "time remaining", tested where it can be tested exactly.
@@ -93,12 +94,10 @@ describe('splitting a duration', () => {
 });
 
 /*
- * The words, built from `messages/en.json` with the builder the route calls — #79.
- *
- * Retyping "27 days left" here would give a test that passes whatever the catalogue says, and
- * would still be green with the message file empty. `src/test-copy.ts` carries the argument.
+ * The words, from the catalogue itself — #79. Retyping "27 days left" here would give a test
+ * that passes whatever the catalogue says, and would still be green with the message file empty.
  */
-const COPY = dashboardOverviewCopyFrom(translatorFor('dashboard')).clock;
+const COPY: CampaignClockCopy = en.dashboard.clock;
 
 describe('the sentence a countdown reads as', () => {
   it('shows days while there are days', () => {
@@ -123,6 +122,25 @@ describe('the sentence a countdown reads as', () => {
   it('says the campaign closed rather than counting past zero', () => {
     expect(describeRemaining(splitRemaining(0), COPY, 'en')).toBe('Closed');
   });
+
+  it('declines the day count by the language, not by a ternary', () => {
+    const russian: CampaignClockCopy = ru.dashboard.clock;
+    expect(describeRemaining(splitRemaining(2 * DAY), russian, 'ru')).toBe(
+      russian.days.few.replace('{count}', '2'),
+    );
+    expect(describeRemaining(splitRemaining(5 * DAY), russian, 'ru')).toBe(
+      russian.days.many.replace('{count}', '5'),
+    );
+  });
+
+  it('moves to the next band exactly at its boundary', () => {
+    expect(describeRemaining(splitRemaining(DAY), COPY, 'en')).toBe('1 day left');
+    expect(describeRemaining(splitRemaining(DAY - SECOND), COPY, 'en')).toBe('23h 59m left');
+    expect(describeRemaining(splitRemaining(HOUR), COPY, 'en')).toBe('1h 0m left');
+    expect(describeRemaining(splitRemaining(HOUR - SECOND), COPY, 'en')).toBe('59m 59s left');
+    expect(describeRemaining(splitRemaining(MINUTE), COPY, 'en')).toBe('1m 0s left');
+    expect(describeRemaining(splitRemaining(MINUTE - SECOND), COPY, 'en')).toBe('59s left');
+  });
 });
 
 describe('how often it ticks', () => {
@@ -138,6 +156,8 @@ describe('how often it ticks', () => {
 
   it('ticks once a second in the last hour, when seconds are shown', () => {
     expect(tickIntervalMs(59 * MINUTE)).toBe(SECOND);
+    expect(tickIntervalMs(HOUR - 1)).toBe(SECOND);
+    expect(tickIntervalMs(HOUR)).toBe(MINUTE);
   });
 
   it('stops working hard once the campaign has closed', () => {

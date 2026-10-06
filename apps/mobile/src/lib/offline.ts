@@ -63,6 +63,9 @@ export const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
  * campaigns it started, the creators it follows, the surveys it owes and its deliveries. None holds
  * a postal address or a phone number (those stay under `shippingAddress`), and sign-out erases them
  * with the rest through {@link forgetPersistedCache}.
+ *
+ * The creator dashboard's Overview (#163) adds `dashboardOverview`: a campaign's totals and
+ * deadline, which its creator reads offline with the time they were fetched.
  */
 const PERSISTED_ROOTS: readonly string[] = [
   'saved',
@@ -73,6 +76,7 @@ const PERSISTED_ROOTS: readonly string[] = [
   'following',
   'surveys',
   'fulfilments',
+  'dashboardOverview',
 ];
 
 /**
@@ -88,12 +92,43 @@ const PERSISTED_ROOTS: readonly string[] = [
  *   an unencrypted store.
  * - `settings`: the account settings screens (#161) — signed-in devices with their IP addresses,
  *   a VÖEN, a payout card's holder.
+ * - `dashboardBackers`: the creator dashboard's backer report (#163) — a campaign's mailing list,
+ *   the names and email addresses of people who are not this account.
+ * - `dashboard`: the creator dashboard's Funding and backers and Finance panels (#163) — a
+ *   campaign's money, its fees and its payouts.
+ * - `inbox`: the notifications (#160) — time-sensitive like a feed; offline, the screen shows what
+ *   this process read and nothing older.
  */
 export const UNPERSISTED_ROOTS: readonly string[] = [
   'comments',
   'profile',
   'shippingAddress',
   'settings',
+  'dashboardBackers',
+  'dashboard',
+  'inbox',
+];
+
+/**
+ * The roots whose data is one account's, persisted or not: what the next person to sign in on this
+ * phone must never be shown. `lib/account-sync.tsx` removes them whenever the session ends, however
+ * it ends — a revoked refresh token included, which never passes through the sign-out screens.
+ */
+export const ACCOUNT_ROOTS: readonly string[] = [
+  'saved',
+  'pledges',
+  'myProjects',
+  'following',
+  'surveys',
+  'fulfilments',
+  'shippingAddress',
+  'settings',
+  'subscription',
+  'inbox',
+  'dashboardOverview',
+  'dashboard',
+  'dashboardBackers',
+  'dashboardSurveys',
 ];
 
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {

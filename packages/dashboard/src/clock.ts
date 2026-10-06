@@ -1,7 +1,6 @@
-import type { CampaignClockCopy } from '../i18n/dashboard-copy';
-import type { Locale } from '../i18n/locale';
-import { fillPlaceholders } from '../i18n/placeholders';
-import { pluralise } from '../i18n/plurals';
+import type { Locale } from '@ideanest/messages/locale';
+import { fillPlaceholders } from '@ideanest/messages/placeholders';
+import { pluralise, type PluralForms } from '@ideanest/messages/plurals';
 
 /**
  * The countdown the dashboard draws, and the clock-skew correction it needs.
@@ -25,7 +24,25 @@ import { pluralise } from '../i18n/plurals';
  * of expiry, a reader whose clock is a day out — could only be tested by waiting or by
  * mocking the global. These are the cases most worth testing and they are the ones that
  * arithmetic gets wrong.
+ *
+ * <p>Shared since #163, so a phone and a browser count down to the same second and turn lime at
+ * the same instant.
  */
+
+/** The countdown's sentences — the catalogue's `dashboard.clock`, resolved by each client. */
+export interface CampaignClockCopy {
+  readonly none: string;
+  readonly urgent: string;
+  readonly closed: string;
+  /** Carries `{count}`. */
+  readonly days: PluralForms;
+  /** Carries `{hours}` and `{minutes}`. */
+  readonly hours: string;
+  /** Carries `{minutes}` and `{seconds}`. */
+  readonly minutes: string;
+  /** Carries `{seconds}`. */
+  readonly seconds: string;
+}
 
 /** Milliseconds, named so the arithmetic below reads as time rather than as digits. */
 const SECOND = 1000;
@@ -105,9 +122,8 @@ export function splitRemaining(ms: number): Remaining {
  * <h2>The words are an argument (#79)</h2>
  *
  * This used to spell its four sentences in English, which made a module of pure arithmetic
- * the last English literal on a translated screen. It takes them now, the way
- * `lib/moderation/describe.ts` takes its reasons: `lib/i18n/dashboard-copy.ts` holds the
- * shape, the route resolves it, and `CampaignClock` passes it down with the locale.
+ * the last English literal on a translated screen. It takes them now: each client resolves
+ * `dashboard.clock` its own way and passes it down with the locale.
  *
  * <p>The day count is a plural rather than a ternary — one day against two is the whole of
  * English and none of Russian, which picks between three forms by the last digit. The other

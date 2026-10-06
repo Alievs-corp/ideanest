@@ -376,6 +376,9 @@ function accountDestination(path: string): Destination | null {
   return ACCOUNT_SECTIONS.has(section) ? { pathname: `/account/${section}` } : null;
 }
 
+/** The inbox (#160): where a notification lives, and what a push with no destination opens. */
+const NOTIFICATIONS_PATH = /^\/notifications\/?$/;
+
 /** A public profile (#156): `/u/<slug>`, the slug decoded once, nothing deeper. */
 const PROFILE_PAGE = /^\/u\/([^/]+)\/?$/;
 
@@ -397,6 +400,8 @@ function campaignDestination(rawPath: string, search = ''): Destination | null {
 
   const account = accountDestination(path) ?? profileDestination(path);
   if (account !== null) return account;
+
+  if (NOTIFICATIONS_PATH.test(path)) return { pathname: '/notifications' };
 
   const query = searchParamsFrom(search);
 

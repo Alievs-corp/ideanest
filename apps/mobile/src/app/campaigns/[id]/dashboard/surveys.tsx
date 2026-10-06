@@ -1,9 +1,9 @@
 import { useLocalSearchParams } from 'expo-router';
-import { WebFallback } from '../../../../components/web-fallback';
+import { SurveyBuilder } from '../../../../features/dashboard/surveys/survey-builder';
 
 export default function Screen() {
-  const { id, tab } = useLocalSearchParams<{ id: string; tab: string }>();
-  return <WebFallback titleKey="dashboard.meta.title" webPath={`/projects/${encodeURIComponent(id)}/dashboard/${encodeURIComponent(tab)}`} />;
+  const { id } = useLocalSearchParams<{ id: string }>();
+  return <SurveyBuilder projectId={id} />;
 }
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).

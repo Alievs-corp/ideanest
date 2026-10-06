@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import { ACCOUNT_KEYS, canReadAccount, useMe } from './account';
+import { sweepAccountExports } from './account-export-files';
 import {
   applyAccountLocale,
   forgetAccountSync,
   pushPendingLocale,
   reconcileWithAccount,
 } from './locale-sync';
+import { ACCOUNT_ROOTS, forgetPersistedCache } from './offline';
 import { useSession } from './use-session';
 
 /**
@@ -23,9 +24,12 @@ import { useSession } from './use-session';
  * - **The pending `PATCH`.** Sent when the account becomes readable (launch, unlock) and on
  *   every foreground, so a choice made offline reaches the account once the phone is back.
  * - **Sign-out.** Whatever ends the session, the device keeps its language and forgets which
- *   account it last synced with.
- * - **Foreground and push.** Coming back to the app, and a push arriving while it is open,
- *   refresh the account and the unread count.
+ *   account it last synced with, and every cache root in `ACCOUNT_ROOTS` is removed. When a
+ *   session this launch held ends, the persisted cache is erased as well and the exports left on
+ *   the phone are swept: a revoked refresh token ends the session without the sign-out screens,
+ *   which do the same.
+ * - **Foreground.** Coming back to the app refreshes the account and the unread count. A push
+ *   arriving while it is open is `PushSync`'s (`lib/push-sync.tsx`).
  */
 export function AccountSync() {
   const queryClient = useQueryClient();
@@ -43,11 +47,23 @@ export function AccountSync() {
   // Whatever ends the session — sign-out, a revoked token, a 401 elsewhere — the next person
   // to sign in must not see this account's name or badge from the cache, and must be met by
   // their own account's language rather than kept on a choice this account made.
+  const held = useRef(signedIn);
   useEffect(() => {
-    if (signedIn) return;
+    if (signedIn) {
+      held.current = true;
+      return;
+    }
     queryClient.removeQueries({ queryKey: ACCOUNT_KEYS.me });
     queryClient.removeQueries({ queryKey: ACCOUNT_KEYS.unread });
+    for (const root of ACCOUNT_ROOTS) queryClient.removeQueries({ queryKey: [root] });
     forgetAccountSync();
+    // Not on a signed-out launch: a guest's cached campaign pages are nobody's, and the document
+    // is still being restored then. The persister writes back what is left at its next save.
+    if (held.current) {
+      held.current = false;
+      forgetPersistedCache();
+      sweepAccountExports();
+    }
   }, [signedIn, queryClient]);
 
   const push = useCallback(() => {
@@ -86,13 +102,7 @@ export function AccountSync() {
       // that would be a biometric prompt nobody asked for.
       if (readable.current) push();
     });
-    const pushed = Notifications.addNotificationReceivedListener(() => {
-      void queryClient.invalidateQueries({ queryKey: ACCOUNT_KEYS.unread });
-    });
-    return () => {
-      app.remove();
-      pushed.remove();
-    };
+    return () => app.remove();
   }, [queryClient, push]);
 
   return null;

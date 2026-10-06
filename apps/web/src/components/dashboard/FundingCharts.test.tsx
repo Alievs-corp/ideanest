@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
-import type { Trend } from '../../lib/dashboard/analytics';
+import type { Trend } from '@ideanest/dashboard/analytics';
 import type { BackerBreakdown } from '../../lib/dashboard/backers';
 import { FundingCharts } from './FundingCharts';
 import { fundingChartsCopyFrom } from '../../lib/i18n/dashboard-copy';

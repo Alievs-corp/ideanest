@@ -15,6 +15,7 @@ import {
 import { useT } from '../../lib/i18n';
 import { useSession } from '../../lib/use-session';
 import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
+import { PushExplainer } from '../../features/notifications/push-explainer';
 import { Pill, announce, haptics } from '../ui';
 
 /**
@@ -79,6 +80,8 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
    */
   const inFlight = useRef(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // Saving is one of the moments a notification obviously helps (#160).
+  const [justSaved, setJustSaved] = useState(false);
 
   const say = (message: string) => {
     setNotice(message);
@@ -115,6 +118,7 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
     try {
       const now = was ? await unsaveCampaign(projectId) : await saveCampaign(projectId);
       setSaved(now);
+      if (!was && now) setJustSaved(true);
       say(
         was && !now
           ? t('notices.removed', { title })
@@ -226,6 +230,7 @@ export function CampaignActions({ projectId, state, title, shareUrl, offline }: 
       >
         {notice ?? (offline ? offlineReason : '')}
       </Text>
+      {justSaved ? <PushExplainer moment="save" /> : null}
     </View>
   );
 }

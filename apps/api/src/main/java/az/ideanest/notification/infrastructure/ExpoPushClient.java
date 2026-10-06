@@ -67,13 +67,15 @@ public class ExpoPushClient {
      * @param to the registered token
      * @param title what the lock screen shows in bold
      * @param body the sentence under it
-     * @param url where tapping it goes, as an {@code ideanest://} link — read by
-     *     `apps/mobile`'s `lib/links.ts`, which refuses anything it does not recognise
+     * @param data what the application reads when it is tapped, sent as Expo's {@code data}
+     *     verbatim: {@code url}, an {@code ideanest://} link read by `apps/mobile`'s
+     *     `lib/links.ts`, which refuses anything it does not recognise, and {@code type} and
+     *     {@code notificationId} when there are such things — see {@code PushComposer}
      * @param idempotencyKey the notification's identifier. Expo deduplicates on this for a
      *     day, which is what makes {@code ChannelSender}'s at-least-once contract tolerable
      *     on this channel: the same message handed over twice arrives once
      */
-    public record Push(String to, String title, String body, String url, String idempotencyKey) {}
+    public record Push(String to, String title, String body, Map<String, String> data, String idempotencyKey) {}
 
     /**
      * What the service said about one message.
@@ -121,12 +123,12 @@ public class ExpoPushClient {
             payload.put("title", message.title());
             payload.put("body", message.body());
             /*
-             * `data` is what the application reads when the notification is tapped, and
-             * `url` is the only key in it. Everything else about the notification is
-             * already in the visible text; putting the campaign's identifiers in the
+             * `data` is what the application reads when the notification is tapped: the
+             * link, the type, and the inbox row a tap marks read. Nothing else -- the rest
+             * is already in the visible text, and putting the campaign's identifiers in the
              * payload as well would put them in a push service's logs for no gain.
              */
-            payload.put("data", Map.of("url", message.url()));
+            payload.put("data", message.data());
             /*
              * `default` rather than a custom sound. §4.10 has no notification whose
              * urgency justifies a distinctive one, and a platform that chose its own sound

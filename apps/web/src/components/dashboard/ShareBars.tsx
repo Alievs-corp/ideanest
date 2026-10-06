@@ -1,6 +1,6 @@
 'use client';
 
-import Decimal from 'decimal.js';
+import { shareWidths } from '@ideanest/dashboard/analytics';
 import { formatMoney } from '../../lib/money';
 import type { Money } from '../../lib/money';
 import type { Locale } from '../../lib/i18n/locale';
@@ -65,11 +65,11 @@ export interface ShareBarsProps {
 }
 
 export function ShareBars({ rows, label, backers, locale }: ShareBarsProps) {
-  const largest = widestOf(rows);
+  const widths = shareWidths(rows.map((row) => row.amount));
 
   return (
     <ul aria-label={label} className="mt-4 space-y-3">
-      {rows.map((row) => (
+      {rows.map((row, index) => (
         <li key={row.label}>
           <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
             <span className="text-white">{row.label}</span>
@@ -86,50 +86,11 @@ export function ShareBars({ rows, label, backers, locale }: ShareBarsProps) {
           <div aria-hidden className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[--surface-3]">
             <div
               className="h-full rounded-full bg-white"
-              style={{ width: `${share(row.amount, largest)}%` }}
+              style={{ width: `${widths[index] ?? 0}%` }}
             />
           </div>
         </li>
       ))}
     </ul>
   );
-}
-
-/**
- * The widest bar's amount.
- *
- * The bars are scaled against the largest row rather than against the campaign's total,
- * because the question is "which of these is bigger" and scaling to a total makes every bar
- * short on a campaign with many tiers. The share of the whole is available from the numbers,
- * which are all present.
- */
-function widestOf(rows: readonly ShareBar[]): Decimal {
-  return rows.reduce((widest, row) => Decimal.max(widest, amountOf(row.amount)), new Decimal(0));
-}
-
-/**
- * A width, as a whole percentage of the widest bar.
- *
- * <p><strong>The arithmetic is `decimal.js`, and only the finished percentage becomes a
- * number.</strong> CLAUDE.md forbids floating point for money and `lib/money.ts` keeps
- * `Number()` out of the module entirely, because a string that has been through it can
- * never be trusted again. The rule is kept here: the amounts are parsed exactly, the ratio
- * is computed exactly, and what crosses into a float is a length between 2 and 100 that is
- * about to be rounded to a pixel anyway. No figure a creator reads passes through this.
- *
- * <p>The floor of two percent is so that a tier that sold one small reward is a visible
- * mark rather than nothing — a bar of zero width and a missing row look the same.
- */
-function share(amount: Money, largest: Decimal): number {
-  if (largest.lessThanOrEqualTo(0)) return 0;
-  return Math.max(2, Math.round(amountOf(amount).div(largest).times(100).toNumber()));
-}
-
-/** The amount as an exact decimal. A malformed one is nothing rather than a broken layout. */
-function amountOf(amount: Money): Decimal {
-  try {
-    return new Decimal(amount.amount);
-  } catch {
-    return new Decimal(0);
-  }
 }
