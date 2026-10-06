@@ -6,7 +6,7 @@ import { Package } from 'lucide-react';
 import { EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import { listMyFulfilments, type BackerFulfilment } from '../../lib/fulfilment/api';
-import { describeStatus, isFollowableTrackingUrl } from '../../lib/fulfilment/describe';
+import { describeStatus, isFollowableTrackingUrl } from '@ideanest/account/fulfilment';
 import { formatExactTime } from '../../lib/time';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { DeliveryListCopy } from '../../lib/i18n/fulfilment-copy';

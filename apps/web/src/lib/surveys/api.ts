@@ -1,3 +1,4 @@
+import type { BackerSurvey, QuestionType, SurveyAnswer, SurveyQuestion } from '@ideanest/account/surveys';
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 
@@ -27,41 +28,9 @@ import { errorFrom } from '../api/problem';
  * that question.
  */
 
-export type QuestionType = 'TEXT' | 'CHOICE' | 'MULTI_CHOICE' | 'DATE' | 'ADDRESS';
-
-export interface SurveyQuestion {
-  readonly id: string;
-  readonly position: number | null;
-  readonly prompt: string;
-  readonly helpText: string | null;
-  /** Widened to `string` so an unknown type from a newer service renders rather than throws. */
-  readonly type: QuestionType | string;
-  readonly required: boolean;
-  readonly choices: readonly string[];
-  readonly rewardTierId: string | null;
-}
-
-export interface SurveyAnswer {
-  readonly questionId: string;
-  /** Always a list, even for a single-value question — that is the wire shape. */
-  readonly value: readonly string[];
-}
-
-export interface BackerSurvey {
-  readonly surveyId: string;
-  readonly projectId: string;
-  readonly pledgeId: string;
-  readonly title: string;
-  readonly message: string | null;
-  /** ISO-8601 instant, or `null` where the creator set no date. */
-  readonly respondBy: string | null;
-  /** Whether answers are still accepted. A closed survey is shown, read-only. */
-  readonly open: boolean;
-  readonly answered: boolean;
-  readonly submittedAt: string | null;
-  readonly questions: readonly SurveyQuestion[];
-  readonly answers: readonly SurveyAnswer[];
-}
+/* The survey's shape and its ordering rules are shared with the app (#159), so they live in
+ * `@ideanest/account/surveys`. */
+export type { BackerSurvey, QuestionType, SurveyAnswer, SurveyQuestion };
 
 /** Every survey this account is being asked — `GET /v1/me/surveys`. */
 export async function listMySurveys(signal?: AbortSignal): Promise<readonly BackerSurvey[]> {
@@ -95,39 +64,4 @@ export async function respondToSurvey(
 
   if (!response.ok) throw await errorFrom(response);
   return (await response.json()) as BackerSurvey;
-}
-
-/**
- * The questions in the order the creator wrote them.
- *
- * `position` is nullable on the wire and a sort that treats `null` as zero would silently
- * hoist an unpositioned question to the top. Unpositioned questions keep their arrival order
- * and sort after the positioned ones, which is the only ordering that cannot reorder somebody
- * else's survey.
- */
-export function orderedQuestions(survey: BackerSurvey): readonly SurveyQuestion[] {
-  return [...survey.questions]
-    .map((question, index) => ({ question, index }))
-    .sort((a, b) => {
-      const left = a.question.position ?? Number.MAX_SAFE_INTEGER;
-      const right = b.question.position ?? Number.MAX_SAFE_INTEGER;
-      return left === right ? a.index - b.index : left - right;
-    })
-    .map((entry) => entry.question);
-}
-
-/** The reader's current answer to one question, as a list. Empty where they have not answered. */
-export function answerFor(survey: BackerSurvey, questionId: string): readonly string[] {
-  return survey.answers.find((answer) => answer.questionId === questionId)?.value ?? [];
-}
-
-/**
- * Whether this survey still wants something from the reader.
- *
- * Open **and** unanswered. A closed survey wants nothing whatever its state, and an answered
- * one can still be changed while it is open — which is a different sentence and a different
- * badge.
- */
-export function needsAnAnswer(survey: BackerSurvey): boolean {
-  return survey.open && !survey.answered;
 }

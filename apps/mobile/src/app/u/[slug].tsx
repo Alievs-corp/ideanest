@@ -1,15 +1,13 @@
 import { useLocalSearchParams } from 'expo-router';
-import { WebFallback } from '../../components/web-fallback';
+import { ProfileScreen } from '../../features/profile/profile-screen';
 
-/** A public profile — the Me tab's identity row lands here. Web-only until the profile issue. */
+/**
+ * A public profile — web `/u/{slug}` (#156). The screen is `features/profile/profile-screen.tsx`;
+ * `?tab=` keeps the open tab for state restoration. The Creator tab and the Me tab link here.
+ */
 export default function Screen() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
-  return (
-    <WebFallback
-      titleKey="account.links.profile.label"
-      webPath={`/u/${encodeURIComponent(slug)}`}
-    />
-  );
+  const { slug, tab } = useLocalSearchParams<{ slug: string; tab?: string }>();
+  return <ProfileScreen slug={slug} tab={tab} />;
 }
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).

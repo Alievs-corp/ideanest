@@ -5689,6 +5689,48 @@
         "body": "To choose, change or cancel a plan, open this page on the IdeyaNest website. What you choose there applies in the app as soon as it is active.",
         "open": "Open the pricing page"
       }
+    },
+    "account": {
+      "moreActions": "More actions for {title}",
+      "campaigns": {
+        "signedOutTitle": "Sign in to see your campaigns",
+        "signedOutBody": "Your campaigns belong to your account, not to this phone.",
+        "stale": "Showing your campaigns from this device. They may be out of date."
+      },
+      "saved": {
+        "offline": "You are offline. Removing a saved campaign needs a connection."
+      },
+      "following": {
+        "signedOutTitle": "Sign in to see who you follow",
+        "signedOutBody": "The creators you follow belong to your account, not to this phone.",
+        "stale": "Showing the creators you follow from this device. They may be out of date.",
+        "offline": "You are offline. Unfollowing needs a connection."
+      }
+    },
+    "profile": {
+      "loading": "Loading the profile",
+      "failedTitle": "This profile could not be loaded",
+      "failedBody": "The service could not be reached. Check your connection and try again.",
+      "stale": "Showing this profile as it was earlier in this session. It may be out of date.",
+      "listFailedBody": "The service did not answer. Nothing is wrong with the profile — try again in a moment.",
+      "followOffline": "Following needs a connection."
+    },
+    "surveys": {
+      "signedOutTitle": "Sign in to answer your surveys",
+      "signedOutBody": "A survey is asked of a pledge, so it belongs to your account rather than to this phone.",
+      "stale": "Showing surveys saved on this device. They may be out of date.",
+      "offlineSave": "You are offline. Your answers can be saved once the connection is back; they are not sent later on their own.",
+      "chooseDate": "Choose a date",
+      "clearDate": "Clear",
+      "clearDateLabel": "Clear the date for {question}",
+      "confirmDate": "Use this date",
+      "confirmDateLabel": "Use {date} as the answer to {question}"
+    },
+    "deliveries": {
+      "signedOutTitle": "Sign in to see your deliveries",
+      "signedOutBody": "Deliveries follow your pledges, which belong to your account rather than to this phone.",
+      "stale": "Showing deliveries saved on this device. They may be out of date.",
+      "trackingHint": "Opens the carrier’s tracking page in the app’s browser"
     }
   }
 }

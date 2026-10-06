@@ -4,10 +4,12 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "description": "The account settings rules with one right answer, shared by apps/web and apps/mobile: naming a signed-in device from its user agent, and the notification preference table's order and modes.",
+  "description": "The account rules with one right answer, shared by apps/web and apps/mobile: naming a signed-in device from its user agent, the notification preference table's order and modes, survey question order, and how a delivery's status and tracking link are read.",
   "exports": {
     "./sessions": "./src/sessions.ts",
-    "./notifications": "./src/notifications.ts"
+    "./notifications": "./src/notifications.ts",
+    "./surveys": "./src/surveys.ts",
+    "./fulfilment": "./src/fulfilment.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

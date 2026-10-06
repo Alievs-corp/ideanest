@@ -1,44 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setAccessToken } from '../api/access-token';
-import {
-  answerFor,
-  listMySurveys,
-  needsAnAnswer,
-  orderedQuestions,
-  respondToSurvey,
-  type BackerSurvey,
-  type SurveyQuestion,
-} from './api';
+import { listMySurveys, respondToSurvey, type BackerSurvey } from './api';
 
 /**
  * §4.8's PM-05 and PM-06 — issue #289.
  *
- * WHAT THESE COVER:
+ * WHAT THESE COVER (the ordering rules moved to `@ideanest/account/surveys` with their tests, #159):
  *
- *   - **an unpositioned question does not jump to the top.** `position` is nullable on the
- *     wire, and a sort treating null as zero would silently reorder somebody else's survey —
- *     which is invisible until a creator asks why the last question is first.
- *   - "needs an answer" is open AND unanswered. A closed survey wants nothing whatever its
- *     state, and conflating the two puts a badge on a screen asking for something nobody can
- *     give.
  *   - the pledge travels in the body, because one account can hold two pledges on one
  *     campaign and the survey is asked of a pledge.
  */
 
 const originalFetch = globalThis.fetch;
-
-function question(overrides: Partial<SurveyQuestion> & Pick<SurveyQuestion, 'id'>): SurveyQuestion {
-  return {
-    position: null,
-    prompt: 'A question',
-    helpText: null,
-    type: 'TEXT',
-    required: false,
-    choices: [],
-    rewardTierId: null,
-    ...overrides,
-  };
-}
 
 function survey(overrides: Partial<BackerSurvey> = {}): BackerSurvey {
   return {
@@ -62,49 +35,6 @@ afterEach(() => {
   setAccessToken(null);
   globalThis.fetch = originalFetch;
   vi.restoreAllMocks();
-});
-
-describe('orderedQuestions', () => {
-  it('sorts by position and keeps arrival order for a tie', () => {
-    const ordered = orderedQuestions(
-      survey({
-        questions: [
-          question({ id: 'c', position: 2 }),
-          question({ id: 'a', position: 1 }),
-          question({ id: 'b', position: 1 }),
-        ],
-      }),
-    );
-
-    expect(ordered.map((q) => q.id)).toEqual(['a', 'b', 'c']);
-  });
-
-  it('puts an unpositioned question last rather than first', () => {
-    const ordered = orderedQuestions(
-      survey({
-        questions: [question({ id: 'loose' }), question({ id: 'first', position: 1 })],
-      }),
-    );
-
-    expect(ordered.map((q) => q.id)).toEqual(['first', 'loose']);
-  });
-});
-
-describe('answerFor', () => {
-  it('returns the stored value, and an empty list where there is none', () => {
-    const one = survey({ answers: [{ questionId: 'q1', value: ['Blue'] }] });
-
-    expect(answerFor(one, 'q1')).toEqual(['Blue']);
-    expect(answerFor(one, 'q2')).toEqual([]);
-  });
-});
-
-describe('needsAnAnswer', () => {
-  it('is true only while a survey is open and unanswered', () => {
-    expect(needsAnAnswer(survey({ open: true, answered: false }))).toBe(true);
-    expect(needsAnAnswer(survey({ open: true, answered: true }))).toBe(false);
-    expect(needsAnAnswer(survey({ open: false, answered: false }))).toBe(false);
-  });
 });
 
 describe('the endpoints', () => {
