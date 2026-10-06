@@ -36,9 +36,9 @@ import { CampaignControls } from './campaign-controls';
  * the outcome once the deadline has decided it.
  *
  * <p>Read through the query cache and persisted, so a creator offline sees the last figures with
- * the time they were fetched; the controls are disabled until the connection is back. Success and
- * lime are kept apart: the bar and "Goal reached" use `success`, and lime is only the clock's
- * "Closing soon" and a confirmation's button.
+ * the time they were fetched; the controls stay disabled on any copy whose refresh failed, offline
+ * or not, until a fresh read arrives. Success and lime are kept apart: the bar and "Goal reached"
+ * use `success`, and lime is only the clock's "Closing soon" and a confirmation's button.
  */
 export interface OverviewScreenProps {
   readonly projectId: string;
@@ -209,6 +209,7 @@ export function OverviewScreen({ projectId, now }: OverviewScreenProps) {
         projectId={projectId}
         dashboard={dashboard}
         online={online}
+        stale={query.isError}
         reread={reread}
         stateLabel={stateLabel}
       />

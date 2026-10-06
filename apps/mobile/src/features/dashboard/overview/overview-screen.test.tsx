@@ -238,6 +238,37 @@ describe('offline with the figures cached', () => {
   });
 });
 
+describe('online with a refresh that failed', () => {
+  it.each([403, 500])('keeps the cached figures but sends nothing on them after a %i', async (status) => {
+    api.readOverview.mockRejectedValue(new ApiError(status, null));
+    await show({ seed: read({ percentFunded: 85 }) });
+
+    expect(screen.getByTestId('overview-as-of')).toBeTruthy();
+    expect(screen.queryByText(en.mobile.dashboard.controlsOffline)).toBeNull();
+    const withdraw = screen.getByRole('button', { name: C.withdraw });
+    expect(withdraw.props.accessibilityState).toMatchObject({ disabled: true });
+    expect(screen.getByRole('button', { name: C.extend }).props.accessibilityState).toMatchObject({ disabled: true });
+    expect(screen.getByTestId('campaign-deadline').props.accessibilityState).toMatchObject({ disabled: true });
+
+    await fireEvent.press(withdraw);
+    expect(screen.queryByText(C.withdrawNow)).toBeNull();
+    expect(api.withdrawCampaign).not.toHaveBeenCalled();
+  });
+
+  it('turns the controls back on once a fresh read arrives', async () => {
+    api.readOverview.mockRejectedValueOnce(new ApiError(500, null));
+    await show({ seed: read({ percentFunded: 85 }) });
+    expect(screen.getByRole('button', { name: C.withdraw }).props.accessibilityState).toMatchObject({ disabled: true });
+
+    api.readOverview.mockResolvedValueOnce(read({ percentFunded: 85 }));
+    await fireEvent.press(screen.getByRole('button', { name: en.common.tryAgain }));
+    await settle();
+    expect(screen.getByRole('button', { name: C.withdraw }).props.accessibilityState).not.toMatchObject({
+      disabled: true,
+    });
+  });
+});
+
 describe('which controls are offered', () => {
   it.each(['LIVE', 'CLOSING_WINDOW', 'EXTENDED', 'SUCCESSFUL'])('draws the card for %s', async (state) => {
     api.readOverview.mockResolvedValueOnce(read({ state }));

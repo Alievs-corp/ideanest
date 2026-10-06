@@ -80,6 +80,8 @@ export interface CampaignControlsProps {
   readonly dashboard: CampaignDashboard;
   /** False offline: nothing can be sent, and the card says why. */
   readonly online: boolean;
+  /** True when the figures above are a copy whose refresh failed: nothing is sent on them. */
+  readonly stale?: boolean;
   /** Reads the dashboard again; the fresh read, or null when it could not be made. */
   readonly reread: () => Promise<OverviewRead | null>;
   /** The campaign's state as words ("Live"). */
@@ -92,6 +94,7 @@ export function CampaignControls({
   projectId,
   dashboard,
   online,
+  stale = false,
   reread,
   stateLabel,
   extend = extendCampaign,
@@ -134,7 +137,7 @@ export function CampaignControls({
   }
 
   async function run(action: Action) {
-    if (inFlight.current || !online) return;
+    if (inFlight.current || !online || stale) return;
     // The picker enforces the bounds; they are checked again here, before anything is sent.
     if (action === 'extend' && (window === null || !isExtensionDay(day, window))) {
       setMode('idle');
@@ -222,7 +225,7 @@ export function CampaignControls({
     };
   }
 
-  const blocked = busy || !online;
+  const blocked = busy || !online || stale;
 
   return (
     <Card size="md" testID="campaign-controls">
@@ -256,7 +259,7 @@ export function CampaignControls({
             action={checking ? tAll('mobile.dashboard.checking') : busy ? t('extending') : t('extendNow')}
             cancel={t('cancel')}
             busy={busy}
-            disabled={!online}
+            disabled={!online || stale}
             onConfirm={() => void run('extend')}
             onCancel={() => setMode('idle')}
             testID="campaign-extend-confirm"
@@ -271,7 +274,7 @@ export function CampaignControls({
             action={checking ? tAll('mobile.dashboard.checking') : busy ? t('withdrawing') : t('withdrawNow')}
             cancel={t('cancel')}
             busy={busy}
-            disabled={!online}
+            disabled={!online || stale}
             onConfirm={() => void run('withdraw')}
             onCancel={() => setMode('idle')}
             testID="campaign-withdraw-confirm"
