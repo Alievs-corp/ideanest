@@ -5743,6 +5743,8 @@
       "checking": "Checking what happened…",
       "withdrawNotTaken": "The connection dropped before the service answered. The campaign is still {state}, so nothing was withdrawn, and you can try again.",
       "extendNotTaken": "The connection dropped before the service answered. The deadline has not moved, so you can try again.",
+      "withdrawUnconfirmed": "The service has not confirmed the withdrawal yet. The campaign still reads {state}, but the request may still go through. Pull down to refresh in a minute before you try again.",
+      "extendUnconfirmed": "The service has not confirmed the new deadline yet. The deadline has not moved so far, but the request may still go through. Pull down to refresh in a minute before you try again.",
       "outcomeUnknown": "The connection dropped before the service answered, and the campaign could not be read again to check. Pull down to refresh before you try again."
     },
     "dashboardFigures": {

@@ -34,6 +34,8 @@ import { spacing } from '../../../theme';
 import {
   extendCampaign,
   isAmbiguous,
+  lateAnswer,
+  UnansweredWrite,
   withdrawCampaign,
   type CampaignDashboard,
   type OverviewRead,
@@ -55,6 +57,14 @@ import {
  * not say "failed" then: it reads the dashboard again and says what the campaign now is. The
  * buttons are blocked from the first press until that read has come back, so a double tap cannot
  * send two requests. Success is shown only once the service has said so; errors appear at once.
+ *
+ * <h2>A timeout is not an answer either</h2>
+ *
+ * Past `WRITE_TIMEOUT_MS` the request is still out, and the service can commit it seconds
+ * later. So the card says it is checking and keeps everything locked until the request itself
+ * comes back, then words what it said. Only a request that never comes back within
+ * `LATE_ANSWER_MS` more is settled by a re-read alone, and an unchanged campaign is then
+ * worded as not confirmed rather than as not done — as is a gateway that gave up waiting.
  */
 
 type Mode = 'idle' | 'confirm-extend' | 'confirm-withdraw';
@@ -137,51 +147,79 @@ export function CampaignControls({
     try {
       if (action === 'extend' && window !== null) {
         await extend(projectId, extensionUntil(day, window));
-        setMessage({ variant: 'success', text: t('extended', { date: chosen }) });
       } else {
         await withdraw(projectId);
-        setMessage({ variant: 'success', text: t('withdrawn') });
       }
-      setMode('idle');
-      await reread();
+      await succeeded(action);
     } catch (cause) {
-      if (isAmbiguous(cause)) {
+      if (cause instanceof UnansweredWrite) {
+        // Still out: nothing is said and nothing can be pressed until the request itself is back.
         setChecking(true);
-        const after = await reread();
-        setChecking(false);
-        setMode('idle');
-        setMessage(settledMessage(action, after));
+        const answer = await lateAnswer(cause);
+        if (answer === null) await settle(action, false);
+        else if (answer.ok) await succeeded(action);
+        else await failed(action, answer.cause);
       } else {
-        const key = refusalOf(cause instanceof ApiError ? cause.problem : null);
-        setMessage({
-          variant: 'danger',
-          text: key === 'extendDate' ? t('extendDate', { latest }) : t(key),
-        });
-        // A refusal for the campaign's state means the figures above are behind it.
-        if (cause instanceof ApiError && cause.status === 409) {
-          setMode('idle');
-          void reread();
-        }
+        await failed(action, cause);
       }
     } finally {
       inFlight.current = false;
+      setChecking(false);
       setBusy(false);
     }
   }
 
-  function settledMessage(action: Action, after: OverviewRead | null): Message {
+  async function succeeded(action: Action) {
+    setMessage({ variant: 'success', text: action === 'extend' ? t('extended', { date: chosen }) : t('withdrawn') });
+    setMode('idle');
+    await reread();
+  }
+
+  async function failed(action: Action, cause: unknown) {
+    if (isAmbiguous(cause)) {
+      setChecking(true);
+      // A dropped connection came back with nothing; a gateway that gave up may still be waiting.
+      await settle(action, !(cause instanceof ApiError));
+      return;
+    }
+    const key = refusalOf(cause instanceof ApiError ? cause.problem : null);
+    setMessage({
+      variant: 'danger',
+      text: key === 'extendDate' ? t('extendDate', { latest }) : t(key),
+    });
+    // A refusal for the campaign's state means the figures above are behind it.
+    if (cause instanceof ApiError && cause.status === 409) {
+      setMode('idle');
+      void reread();
+    }
+  }
+
+  /** Reads the campaign again and says what it is now. `settled`: the request can no longer land. */
+  async function settle(action: Action, settled: boolean) {
+    const after = await reread();
+    setMode('idle');
+    setMessage(settledMessage(action, after, settled));
+  }
+
+  function settledMessage(action: Action, after: OverviewRead | null, settled: boolean): Message {
     if (after === null) {
       return { variant: 'warning', text: tAll('mobile.dashboard.outcomeUnknown') };
     }
     const now = after.dashboard.state ?? '';
     if (action === 'withdraw') {
-      return now === 'WITHDRAWN'
-        ? { variant: 'success', text: t('withdrawn') }
-        : { variant: 'warning', text: tAll('mobile.dashboard.withdrawNotTaken', { state: stateLabel(now) }) };
+      if (now === 'WITHDRAWN') return { variant: 'success', text: t('withdrawn') };
+      return {
+        variant: 'warning',
+        text: tAll(settled ? 'mobile.dashboard.withdrawNotTaken' : 'mobile.dashboard.withdrawUnconfirmed', {
+          state: stateLabel(now),
+        }),
+      };
     }
-    return now === 'EXTENDED'
-      ? { variant: 'success', text: t('extended', { date: chosen }) }
-      : { variant: 'warning', text: tAll('mobile.dashboard.extendNotTaken') };
+    if (now === 'EXTENDED') return { variant: 'success', text: t('extended', { date: chosen }) };
+    return {
+      variant: 'warning',
+      text: tAll(settled ? 'mobile.dashboard.extendNotTaken' : 'mobile.dashboard.extendUnconfirmed'),
+    };
   }
 
   const blocked = busy || !online;

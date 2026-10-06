@@ -5743,6 +5743,8 @@
       "checking": "Nə baş verdiyi yoxlanılır…",
       "withdrawNotTaken": "Xidmət cavab verməmiş bağlantı kəsildi. Kampaniyanın vəziyyəti hələ də belədir: {state}. Deməli, vəsait çıxarılmayıb və yenidən cəhd edə bilərsiniz.",
       "extendNotTaken": "Xidmət cavab verməmiş bağlantı kəsildi. Son tarix dəyişməyib, ona görə yenidən cəhd edə bilərsiniz.",
+      "withdrawUnconfirmed": "Xidmət vəsaitin çıxarılmasını hələ təsdiqləməyib. Kampaniyanın vəziyyəti hələlik belədir: {state}, amma sorğu yenə də icra oluna bilər. Yenidən cəhd etməzdən əvvəl bir dəqiqə gözləyin və ekranı aşağı çəkib yeniləyin.",
+      "extendUnconfirmed": "Xidmət yeni son tarixi hələ təsdiqləməyib. Son tarix hələlik dəyişməyib, amma sorğu yenə də icra oluna bilər. Yenidən cəhd etməzdən əvvəl bir dəqiqə gözləyin və ekranı aşağı çəkib yeniləyin.",
       "outcomeUnknown": "Xidmət cavab verməmiş bağlantı kəsildi və yoxlamaq üçün kampaniyanı yenidən oxumaq mümkün olmadı. Yenidən cəhd etməzdən əvvəl ekranı aşağı çəkib yeniləyin."
     },
     "dashboardFigures": {

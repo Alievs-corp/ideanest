@@ -37,25 +37,53 @@ export async function readOverview(
 
 /**
  * How long a write waits for an answer before it is treated as one that may or may not have
- * happened. A request still in flight past this is not cancelled: the screen re-reads the
- * campaign instead of guessing.
+ * happened. A request still in flight past this is not cancelled, and its answer is still
+ * waited for ({@link UnansweredWrite#answer}).
  */
 export const WRITE_TIMEOUT_MS = 20_000;
 
-/** A write that went out and got no answer, so whether it happened is unknown. */
+/**
+ * How much longer, past {@link WRITE_TIMEOUT_MS}, a late answer is waited for. React Native's
+ * fetch has no timeout of its own on Android, so a request can hang for ever; past this the
+ * screen re-reads the campaign and says it could not confirm the outcome.
+ */
+export const LATE_ANSWER_MS = 100_000;
+
+/** How a write's request finally came back. */
+export type WriteAnswer = { readonly ok: true } | { readonly ok: false; readonly cause: unknown };
+
+/** A write that went out and got no answer in time, so whether it happened is not known yet. */
 export class UnansweredWrite extends Error {
-  constructor() {
+  /** The request itself, still running: settles when it is answered or fails. */
+  readonly answer: Promise<WriteAnswer>;
+
+  constructor(answer: Promise<WriteAnswer>) {
     super('The service did not answer in time.');
     this.name = 'UnansweredWrite';
+    this.answer = answer;
   }
 }
 
-function withinTimeout<T>(request: Promise<T>, timeoutMs: number): Promise<T> {
+/** The request, or an {@link UnansweredWrite} carrying it once `timeoutMs` has passed. */
+export function withinTimeout<T>(request: Promise<T>, timeoutMs: number): Promise<T> {
+  const answer = request.then<WriteAnswer, WriteAnswer>(
+    () => ({ ok: true }),
+    (cause: unknown) => ({ ok: false, cause }),
+  );
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new UnansweredWrite()), timeoutMs);
+    timer = setTimeout(() => reject(new UnansweredWrite(answer)), timeoutMs);
   });
   return Promise.race([request, timeout]).finally(() => clearTimeout(timer));
+}
+
+/** A timed-out write's answer once it comes, or null when it has not come within `waitMs`. */
+export function lateAnswer(write: UnansweredWrite, waitMs: number = LATE_ANSWER_MS): Promise<WriteAnswer | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const cap = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), waitMs);
+  });
+  return Promise.race([write.answer, cap]).finally(() => clearTimeout(timer));
 }
 
 /** `POST /v1/projects/{id}/extension {until}`: the deadline moves, once. */

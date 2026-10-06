@@ -15,12 +15,16 @@ import * as overviewApi from './api';
 import type { CampaignDashboard, OverviewRead } from './api';
 import { OverviewScreen } from './overview-screen';
 
-jest.mock('./api', () => ({
-  ...jest.requireActual('./api'),
-  readOverview: jest.fn(),
-  extendCampaign: jest.fn(),
-  withdrawCampaign: jest.fn(),
-}));
+jest.mock('./api', () => {
+  const actual = jest.requireActual('./api');
+  return {
+    ...actual,
+    readOverview: jest.fn(),
+    extendCampaign: jest.fn(),
+    withdrawCampaign: jest.fn(),
+    lateAnswer: jest.fn(actual.lateAnswer),
+  };
+});
 
 jest.mock('@react-native-community/datetimepicker', () => {
   const { createElement } = jest.requireActual('react');
@@ -40,6 +44,7 @@ jest.mock('@react-native-community/datetimepicker', () => {
 jest.setTimeout(30_000);
 
 const api = jest.mocked(overviewApi);
+const actualApi = jest.requireActual<typeof overviewApi>('./api');
 const NOW = Date.parse('2026-09-10T12:00:00.000Z');
 const now = () => NOW;
 const C = en.dashboardControls;
@@ -78,6 +83,25 @@ async function settle() {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
   }
+}
+
+/** Real time passing, for a write timeout of a few milliseconds. */
+async function wait(ms: number) {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  });
+  await settle();
+}
+
+/** A request that answers only when the test says so. */
+function deferred() {
+  let resolve: () => void = () => {};
+  let reject: (cause: unknown) => void = () => {};
+  const promise = new Promise<void>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
+  return { promise, resolve, reject };
 }
 
 async function show(options: { seed?: OverviewRead; motion?: 'full' | 'none' } = {}) {
@@ -370,19 +394,86 @@ describe('withdrawing', () => {
     expect(api.withdrawCampaign).toHaveBeenCalledTimes(1);
   });
 
-  it('after a timeout, reads the dashboard again and reports the withdrawal it finds — not a failure', async () => {
+  it('after a timeout, says it is checking and stays locked until the request itself answers', async () => {
     api.readOverview.mockResolvedValueOnce(read());
-    api.withdrawCampaign.mockRejectedValueOnce(new overviewApi.UnansweredWrite());
+    const request = deferred();
+    api.withdrawCampaign.mockImplementationOnce(() => actualApi.withinTimeout(request.promise, 5));
     await show();
 
-    api.readOverview.mockResolvedValueOnce(read({ state: 'WITHDRAWN' }));
     await fireEvent.press(screen.getByRole('button', { name: C.withdraw }));
     await fireEvent.press(screen.getByRole('button', { name: C.withdrawNow }));
+    await wait(20);
+
+    // Timed out, and still out: no verdict, no re-read, and nothing to press.
+    const checking = screen.getByRole('button', { name: en.mobile.dashboard.checking });
+    expect(checking.props.accessibilityState).toMatchObject({ busy: true });
+    expect(screen.getByRole('button', { name: C.cancel }).props.accessibilityState).toMatchObject({ disabled: true });
+    expect(screen.queryByTestId('campaign-controls-warning')).toBeNull();
+    expect(api.readOverview).toHaveBeenCalledTimes(1);
+    await fireEvent.press(checking);
+    expect(api.withdrawCampaign).toHaveBeenCalledTimes(1);
+
+    // The service commits seconds later; the card says so, and reads the campaign after it.
+    api.readOverview.mockResolvedValueOnce(read({ state: 'WITHDRAWN' }));
+    await act(async () => request.resolve());
     await settle();
 
-    expect(api.readOverview).toHaveBeenCalledTimes(2);
     expect(screen.getByText(C.withdrawn)).toBeTruthy();
-    expect(screen.queryByText(C.failed)).toBeNull();
+    expect(screen.queryByText(en.mobile.dashboard.withdrawNotTaken, { exact: false })).toBeNull();
+    expect(api.readOverview).toHaveBeenCalledTimes(2);
+    expect(api.withdrawCampaign).toHaveBeenCalledTimes(1);
+  });
+
+  it('a late refusal is worded as the refusal it is', async () => {
+    api.readOverview.mockResolvedValue(read());
+    const request = deferred();
+    api.extendCampaign.mockImplementationOnce(() => actualApi.withinTimeout(request.promise, 5));
+    await show();
+
+    await chooseDay(new Date(2026, 9, 1, 12));
+    await fireEvent.press(screen.getByRole('button', { name: C.extend }));
+    await fireEvent.press(screen.getByRole('button', { name: C.extendNow }));
+    await wait(20);
+    expect(screen.getByRole('button', { name: en.mobile.dashboard.checking })).toBeTruthy();
+
+    await act(async () =>
+      request.reject(new ApiError(409, { status: 409, code: 'EXTENSION_NOT_AVAILABLE', meta: { reason: 'ALREADY_EXTENDED' } })),
+    );
+    await settle();
+
+    expect(screen.getByText(C.extendAlready)).toBeTruthy();
+    expect(screen.queryByText(en.mobile.dashboard.extendNotTaken)).toBeNull();
+  });
+
+  it('a request that never answers is re-read and worded as not confirmed, not as not taken', async () => {
+    api.readOverview.mockResolvedValueOnce(read());
+    api.withdrawCampaign.mockImplementationOnce(() => actualApi.withinTimeout(new Promise<void>(() => {}), 5));
+    api.lateAnswer.mockImplementationOnce((write) => actualApi.lateAnswer(write, 5));
+    await show();
+
+    api.readOverview.mockResolvedValueOnce(read());
+    await fireEvent.press(screen.getByRole('button', { name: C.withdraw }));
+    await fireEvent.press(screen.getByRole('button', { name: C.withdrawNow }));
+    await wait(40);
+
+    const live = en.admin.screens.campaignDirectory.state.LIVE;
+    expect(screen.getByText(en.mobile.dashboard.withdrawUnconfirmed.replace('{state}', live))).toBeTruthy();
+    expect(screen.queryByText(en.mobile.dashboard.withdrawNotTaken.replace('{state}', live))).toBeNull();
+    expect(api.readOverview).toHaveBeenCalledTimes(2);
+  });
+
+  it('a gateway that gave up is worded as not confirmed', async () => {
+    api.readOverview.mockResolvedValue(read({ percentFunded: 60 }));
+    api.extendCampaign.mockRejectedValueOnce(new ApiError(504, null));
+    await show();
+
+    await chooseDay(new Date(2026, 9, 1, 12));
+    await fireEvent.press(screen.getByRole('button', { name: C.extend }));
+    await fireEvent.press(screen.getByRole('button', { name: C.extendNow }));
+    await settle();
+
+    expect(screen.getByText(en.mobile.dashboard.extendUnconfirmed)).toBeTruthy();
+    expect(screen.queryByText(en.mobile.dashboard.extendNotTaken)).toBeNull();
   });
 
   it('after a dropped connection, says the campaign is still live and nothing was withdrawn', async () => {
@@ -405,7 +496,7 @@ describe('withdrawing', () => {
 
   it('when the re-read fails too, says it could not check rather than "failed"', async () => {
     api.readOverview.mockResolvedValueOnce(read());
-    api.withdrawCampaign.mockRejectedValueOnce(new overviewApi.UnansweredWrite());
+    api.withdrawCampaign.mockRejectedValueOnce(new TypeError('Network request failed'));
     await show();
 
     api.readOverview.mockRejectedValueOnce(new TypeError('Network request failed'));

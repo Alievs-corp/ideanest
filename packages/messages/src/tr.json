@@ -5743,6 +5743,8 @@
       "checking": "Ne olduğu kontrol ediliyor…",
       "withdrawNotTaken": "Hizmet yanıt vermeden bağlantı koptu. Kampanyanın durumu hâlâ şu: {state}. Yani para çekilmedi ve yeniden deneyebilirsiniz.",
       "extendNotTaken": "Hizmet yanıt vermeden bağlantı koptu. Bitiş tarihi değişmedi, bu yüzden yeniden deneyebilirsiniz.",
+      "withdrawUnconfirmed": "Hizmet para çekme işlemini henüz onaylamadı. Kampanyanın durumu şimdilik şu: {state}, ancak istek yine de gerçekleşebilir. Yeniden denemeden önce bir dakika bekleyin ve ekranı aşağı çekerek yenileyin.",
+      "extendUnconfirmed": "Hizmet yeni bitiş tarihini henüz onaylamadı. Bitiş tarihi şimdilik değişmedi, ancak istek yine de gerçekleşebilir. Yeniden denemeden önce bir dakika bekleyin ve ekranı aşağı çekerek yenileyin.",
       "outcomeUnknown": "Hizmet yanıt vermeden bağlantı koptu ve kontrol etmek için kampanya yeniden okunamadı. Yeniden denemeden önce ekranı aşağı çekip yenileyin."
     },
     "dashboardFigures": {
