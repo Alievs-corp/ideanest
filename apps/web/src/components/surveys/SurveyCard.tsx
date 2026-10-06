@@ -3,13 +3,8 @@
 import { useState, type FormEvent } from 'react';
 import { InlineAlert, Pill, Tag } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
-import {
-  answerFor,
-  orderedQuestions,
-  respondToSurvey,
-  type BackerSurvey,
-  type SurveyAnswer,
-} from '../../lib/surveys/api';
+import { answerFor, orderedQuestions } from '@ideanest/account/surveys';
+import { respondToSurvey, type BackerSurvey, type SurveyAnswer } from '../../lib/surveys/api';
 import { formatExactTime } from '../../lib/time';
 import { SurveyQuestionField } from './SurveyQuestionField';
 import type { SurveyCardCopy } from '../../lib/i18n/surveys-copy';

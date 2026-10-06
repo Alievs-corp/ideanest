@@ -1,3 +1,4 @@
+import type { BackerFulfilment, Fulfilment, FulfilmentStatus } from '@ideanest/account/fulfilment';
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 
@@ -25,29 +26,8 @@ import { errorFrom } from '../api/problem';
  * screen renders it read-only rather than offering a form that will 409.
  */
 
-export type FulfilmentStatus = 'PREPARING' | 'SHIPPED' | 'DELIVERED' | 'RETURNED';
-
-export interface Fulfilment {
-  readonly pledgeId: string;
-  /** Widened so an unknown status from a newer service renders as itself rather than throwing. */
-  readonly status: FulfilmentStatus | string;
-  readonly carrier: string | null;
-  readonly trackingNumber: string | null;
-  readonly trackingUrl: string | null;
-  /** ISO-8601 instants, UTC. */
-  readonly shippedAt: string | null;
-  readonly deliveredAt: string | null;
-  readonly updatedAt: string | null;
-}
-
-/** One parcel and the campaign it belongs to. The campaign fields are null for a deleted one. */
-export interface BackerFulfilment {
-  readonly projectId: string;
-  readonly projectTitle: string | null;
-  readonly projectSlug: string | null;
-  readonly creatorSlug: string | null;
-  readonly fulfilment: Fulfilment;
-}
+/* The row's shape is shared with the app (#159), so it lives in `@ideanest/account/fulfilment`. */
+export type { BackerFulfilment, Fulfilment, FulfilmentStatus };
 
 /** Every parcel owed to this account — `GET /v1/me/fulfilments`. */
 export async function listMyFulfilments(signal?: AbortSignal): Promise<readonly BackerFulfilment[]> {

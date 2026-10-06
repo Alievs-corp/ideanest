@@ -3,7 +3,8 @@
  *
  * <h2>Why the status words left `lib/fulfilment/describe.ts`</h2>
  *
- * That module paired each `FulfilmentStatus` with a label, a sentence and a `Tag` variant. The
+ * That module (now `@ideanest/account/fulfilment`, #159) paired each `FulfilmentStatus` with a
+ * label, a sentence and a `Tag` variant. The
  * variant is a design decision and stays — `RETURNED` is `--danger` because it is the one
  * status that asks the reader to act — and the two pieces of prose are copy. They are
  * `account.fulfilment.status` and `.statusDetail` now, keyed by the same status.
