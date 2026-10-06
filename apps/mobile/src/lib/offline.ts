@@ -109,6 +109,28 @@ export const UNPERSISTED_ROOTS: readonly string[] = [
   'inbox',
 ];
 
+/**
+ * The roots whose data is one account's, persisted or not: what the next person to sign in on this
+ * phone must never be shown. `lib/account-sync.tsx` removes them whenever the session ends, however
+ * it ends — a revoked refresh token included, which never passes through the sign-out screens.
+ */
+export const ACCOUNT_ROOTS: readonly string[] = [
+  'saved',
+  'pledges',
+  'myProjects',
+  'following',
+  'surveys',
+  'fulfilments',
+  'shippingAddress',
+  'settings',
+  'subscription',
+  'inbox',
+  'dashboardOverview',
+  'dashboard',
+  'dashboardBackers',
+  'dashboardSurveys',
+];
+
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {
   const root = queryKey[0];
   return (

@@ -3,6 +3,7 @@ import { onlineManager, QueryClient } from '@tanstack/react-query';
 import { persistQueryClientRestore, persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import { NoCredentialError, retryMe } from './account';
 import {
+  ACCOUNT_ROOTS,
   createQueryClient,
   forgetPersistedCache,
   holdsData,
@@ -75,6 +76,28 @@ describe('what survives a restart', () => {
     expect(UNPERSISTED_ROOTS).toContain(queryKeys.dashboardFinance('p1')[0]);
     expect(shouldPersistQuery(queryKeys.dashboardBackers('p1', 'filter:{}'))).toBe(false);
     expect(shouldPersistQuery(queryKeys.dashboardSurveys('p1'))).toBe(false);
+  });
+
+  it('names every root that holds one account’s data, persisted or not, for the session’s end', () => {
+    const own = [
+      queryKeys.saved(),
+      queryKeys.pledges(),
+      queryKeys.myProjects(),
+      queryKeys.following(),
+      queryKeys.surveys(),
+      queryKeys.fulfilments(),
+      queryKeys.shippingAddress('pl-1'),
+      queryKeys.ownProfile(),
+      queryKeys.mySubscription(),
+      queryKeys.inbox(),
+      queryKeys.dashboardOverview('p1'),
+      queryKeys.dashboardFinance('p1'),
+      queryKeys.dashboardBackers('p1', 'filter:{}'),
+      queryKeys.dashboardSurveys('p1'),
+    ];
+    for (const key of own) expect(ACCOUNT_ROOTS).toContain(key[0]);
+    expect(ACCOUNT_ROOTS).not.toContain(queryKeys.project('aysel', 'solar-lamp')[0]);
+    expect(ACCOUNT_ROOTS).not.toContain(queryKeys.legalCatalogue('en')[0]);
   });
 
   it('never writes a shipping address or a phone number to the device', () => {
