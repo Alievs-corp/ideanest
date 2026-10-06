@@ -112,6 +112,22 @@ describe('extending', () => {
     expect(await screen.findByText(COPY.extendOutsideWindow)).toBeInTheDocument();
   });
 
+  it('words a refused date on `until` as the window’s bounds, with the latest day', async () => {
+    const { user } = renderControls({
+      percentFunded: 60,
+      extend: () =>
+        Promise.reject(
+          new ApiError(400, { status: 400, code: 'PROJECT_FIELD_INVALID', meta: { field: 'until' } } as never),
+        ),
+    });
+
+    await user.type(screen.getByLabelText('New deadline'), '2026-10-01');
+    await user.click(screen.getByRole('button', { name: 'Extend the deadline' }));
+    await user.click(screen.getByRole('button', { name: 'Extend to this date' }));
+
+    expect(await screen.findByText(/no later than November 18, 2026/)).toBeInTheDocument();
+  });
+
   it('is not offered to an extended campaign, or below 50%', () => {
     renderControls({ state: 'EXTENDED', percentFunded: 90 });
     expect(screen.queryByRole('button', { name: 'Extend the deadline' })).not.toBeInTheDocument();
