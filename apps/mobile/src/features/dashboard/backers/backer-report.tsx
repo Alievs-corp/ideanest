@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, RefreshControl, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -143,6 +143,8 @@ function Report({ projectId }: { readonly projectId: string }) {
   const [segmentName, setSegmentName] = useState('');
   const [notice, setNotice] = useState('');
   const [working, setWorking] = useState<Work | null>(null);
+  // Taken synchronously by the first press: a second tap in the same frame still sees `working` as null.
+  const latch = useRef(false);
   const [pending, setPending] = useState<BackerExport | null>(null);
   const [pulling, setPulling] = useState(false);
 
@@ -178,6 +180,20 @@ function Report({ projectId }: { readonly projectId: string }) {
   const busy = working !== null;
   const writable = online && !busy;
 
+  /** Starts one write, or answers false while another is out. */
+  function begin(work: Work): boolean {
+    if (latch.current || !online) return false;
+    latch.current = true;
+    setWorking(work);
+    setNotice('');
+    return true;
+  }
+
+  function finish() {
+    latch.current = false;
+    setWorking(null);
+  }
+
   const applyFilter = (next: BackerFilter) => {
     setSegmentId(undefined);
     setFilter(next);
@@ -192,9 +208,7 @@ function Report({ projectId }: { readonly projectId: string }) {
   const search = () => applyFilter({ ...filter, term });
 
   async function onSave() {
-    if (segmentName.trim() === '' || !writable) return;
-    setWorking('save');
-    setNotice('');
+    if (segmentName.trim() === '' || !begin('save')) return;
     try {
       const saved = await saveSegment(projectId, segmentName, filter);
       queryClient.setQueryData<readonly BackerSegment[]>(queryKeys.dashboardSegments(projectId), (now) => [
@@ -206,14 +220,12 @@ function Report({ projectId }: { readonly projectId: string }) {
     } catch (cause) {
       setNotice(saveFailure(cause, t));
     } finally {
-      setWorking(null);
+      finish();
     }
   }
 
   async function onDelete(segment: BackerSegment) {
-    if (!writable) return;
-    setWorking('delete');
-    setNotice('');
+    if (!begin('delete')) return;
     try {
       await deleteSegment(projectId, segment.id);
       queryClient.setQueryData<readonly BackerSegment[]>(queryKeys.dashboardSegments(projectId), (now) =>
@@ -224,7 +236,7 @@ function Report({ projectId }: { readonly projectId: string }) {
     } catch {
       setNotice(t('dashboard.backers.deleteFailed'));
     } finally {
-      setWorking(null);
+      finish();
     }
   }
 
@@ -241,14 +253,12 @@ function Report({ projectId }: { readonly projectId: string }) {
     } catch (cause) {
       setNotice(cause instanceof BackerShareError ? t('mobile.dashboardBackers.shareFailed') : backerFailure(cause, t));
     } finally {
-      setWorking(null);
+      finish();
     }
   }
 
   async function onExport() {
-    if (!writable) return;
-    setWorking('export');
-    setNotice('');
+    if (!begin('export')) return;
     try {
       const file = await exportBackers(projectId, segmentId !== undefined ? { segmentId } : { filter });
       if (file.truncated) {
@@ -259,7 +269,7 @@ function Report({ projectId }: { readonly projectId: string }) {
       await share(file);
     } catch (cause) {
       setNotice(backerFailure(cause, t));
-      setWorking(null);
+      finish();
     }
   }
 
@@ -358,7 +368,7 @@ function Report({ projectId }: { readonly projectId: string }) {
                   label={t('common.cancel')}
                   onPress={() => {
                     setPending(null);
-                    setWorking(null);
+                    finish();
                   }}
                   testID="backers-share-cancel"
                 />

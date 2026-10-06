@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -156,6 +156,8 @@ function Builder({ projectId }: { readonly projectId: string }) {
   const [rows, setRows] = useState<readonly Row[]>(() => [rowOf(emptyQuestion())]);
   const [confirmingSend, setConfirmingSend] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Taken synchronously by the first press: a second tap in the same frame still sees `busy` as false.
+  const inFlight = useRef(false);
   const [status, setStatus] = useState<Status | null>(null);
   const [pulling, setPulling] = useState(false);
 
@@ -178,6 +180,20 @@ function Builder({ projectId }: { readonly projectId: string }) {
       setConfirmingSend(false);
       handler(...args);
     };
+
+  /** Starts one write, or answers false while another is out. */
+  function begin(): boolean {
+    if (inFlight.current || !online) return false;
+    inFlight.current = true;
+    setBusy(true);
+    setStatus(null);
+    return true;
+  }
+
+  function finish() {
+    inFlight.current = false;
+    setBusy(false);
+  }
 
   function store(saved: Survey) {
     queryClient.setQueryData<readonly Survey[]>(queryKeys.dashboardSurveys(projectId), (now) =>
@@ -209,9 +225,7 @@ function Builder({ projectId }: { readonly projectId: string }) {
     changeRow(key, (row) => ({ ...row, question: { ...row.question, ...next } }));
 
   const save = press(() => {
-    if (!writable) return;
-    setBusy(true);
-    setStatus(null);
+    if (!begin()) return;
     const draft = { title, message, questions: rows.map((row) => row.question) };
     void (editing === null ? createSurvey(projectId, draft) : updateSurvey(editing.id, draft))
       .then((saved) => {
@@ -223,13 +237,11 @@ function Builder({ projectId }: { readonly projectId: string }) {
         });
       })
       .catch((cause: unknown) => setStatus({ text: surveyFailure(cause, t), failed: true }))
-      .finally(() => setBusy(false));
+      .finally(finish);
   });
 
   const remove = press((survey: Survey) => {
-    if (!writable) return;
-    setBusy(true);
-    setStatus(null);
+    if (!begin()) return;
     void deleteSurvey(survey.id)
       .then(() => {
         queryClient.setQueryData<readonly Survey[]>(queryKeys.dashboardSurveys(projectId), (now) =>
@@ -244,18 +256,17 @@ function Builder({ projectId }: { readonly projectId: string }) {
         setStatus({ text: t('dashboard.surveys.deletedNotice', { title: survey.title }), failed: false });
       })
       .catch((cause: unknown) => setStatus({ text: surveyFailure(cause, t), failed: true }))
-      .finally(() => setBusy(false));
+      .finally(finish);
   });
 
   function onSend() {
-    if (editing === null || !writable) return;
+    if (editing === null || !writable || inFlight.current) return;
     if (!confirmingSend) {
       setConfirmingSend(true);
       return;
     }
+    if (!begin()) return;
     setConfirmingSend(false);
-    setBusy(true);
-    setStatus(null);
     void sendSurvey(editing.id)
       .then((sent) => {
         store(sent);
@@ -269,7 +280,7 @@ function Builder({ projectId }: { readonly projectId: string }) {
         });
       })
       .catch((cause: unknown) => setStatus({ text: surveyFailure(cause, t), failed: true }))
-      .finally(() => setBusy(false));
+      .finally(finish);
   }
 
   function refresh() {

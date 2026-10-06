@@ -83,6 +83,30 @@ async function show() {
   await settle();
 }
 
+/** The press handler a control holds now. Called twice, it is two taps landing before React renders again. */
+function pressHandlerOf(element: { readonly unstable_fiber: unknown }): () => void {
+  interface FiberLike {
+    readonly memoizedProps: { readonly onPress?: unknown } | null;
+    readonly return: FiberLike | null;
+  }
+  let fiber = element.unstable_fiber as FiberLike | null;
+  while (fiber !== null) {
+    const onPress = fiber.memoizedProps?.onPress;
+    if (typeof onPress === 'function') return onPress as () => void;
+    fiber = fiber.return;
+  }
+  throw new Error('No press handler above this element.');
+}
+
+async function doubleTap(element: { readonly unstable_fiber: unknown }) {
+  const press = pressHandlerOf(element);
+  await act(async () => {
+    press();
+    press();
+  });
+  await settle();
+}
+
 function button(name: string) {
   return screen.getByRole('button', { name });
 }
@@ -227,6 +251,16 @@ describe('the form', () => {
     expect(screen.getByTestId('survey-status')).toHaveTextContent(copy.savedNotice);
   });
 
+  it('creates one draft for two taps in the same frame', async () => {
+    await show();
+    await fireEvent.changeText(screen.getByTestId('survey-title'), 'Sizes');
+    sendJson.mockResolvedValueOnce(draft('new', { title: 'Sizes' }));
+
+    await doubleTap(screen.getByTestId('survey-save'));
+    expect(sendJson.mock.calls.filter(([method]) => method === 'POST')).toHaveLength(1);
+    expect(screen.getByTestId('survey-status')).toHaveTextContent(copy.createdNotice);
+  });
+
   it('keeps options only for the choice types, as typed', async () => {
     await show();
     await choose('survey-question-1-type', copy.types.CHOICE);
@@ -329,6 +363,16 @@ describe('sending', () => {
     expect(sendJson).toHaveBeenCalledWith('POST', '/v1/surveys/d/send');
     expect(screen.getByTestId('survey-status')).toHaveTextContent('Sent to 40 backers.');
     expect(screen.getByTestId('surveys-form-heading')).toHaveTextContent(copy.sentHeading);
+  });
+
+  it('sends once for two taps on the confirmation in the same frame', async () => {
+    await editDraft();
+    await fireEvent.press(button(copy.send));
+    sendJson.mockResolvedValueOnce(sent('d'));
+
+    await doubleTap(button(copy.confirmSend));
+    expect(sendJson.mock.calls.filter(([, path]) => path === '/v1/surveys/d/send')).toHaveLength(1);
+    expect(screen.getByTestId('survey-status')).toHaveTextContent('Sent to 40 backers.');
   });
 
   it('stands the confirmation down when anything else is pressed', async () => {

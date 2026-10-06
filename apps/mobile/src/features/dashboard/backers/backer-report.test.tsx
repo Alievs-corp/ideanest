@@ -99,6 +99,30 @@ async function show() {
   await settle();
 }
 
+/** The press handler a control holds now. Called twice, it is two taps landing before React renders again. */
+function pressHandlerOf(element: { readonly unstable_fiber: unknown }): () => void {
+  interface FiberLike {
+    readonly memoizedProps: { readonly onPress?: unknown } | null;
+    readonly return: FiberLike | null;
+  }
+  let fiber = element.unstable_fiber as FiberLike | null;
+  while (fiber !== null) {
+    const onPress = fiber.memoizedProps?.onPress;
+    if (typeof onPress === 'function') return onPress as () => void;
+    fiber = fiber.return;
+  }
+  throw new Error('No press handler above this element.');
+}
+
+async function doubleTap(element: { readonly unstable_fiber: unknown }) {
+  const press = pressHandlerOf(element);
+  await act(async () => {
+    press();
+    press();
+  });
+  await settle();
+}
+
 function lastListCall() {
   return api.listBackers.mock.calls.at(-1)?.[1];
 }
@@ -313,6 +337,23 @@ describe('segments', () => {
     expect(screen.getByTestId('backers-notice')).toHaveTextContent(copy.saveConflict);
   });
 
+  it('saves one segment for two taps in the same frame', async () => {
+    api.listBackers.mockResolvedValue(page([backer('a')]));
+    let answer: (saved: BackerSegment) => void = () => {};
+    api.saveSegment.mockReturnValue(new Promise<BackerSegment>((resolve) => (answer = resolve)));
+    await show();
+    await fireEvent.press(screen.getByTestId('backers-state-COLLECTED'));
+    await fireEvent.changeText(screen.getByTestId('backers-segment-name'), 'Collected');
+
+    await doubleTap(screen.getByTestId('backers-segment-save'));
+    expect(api.saveSegment).toHaveBeenCalledTimes(1);
+
+    await act(async () => answer(segment('s9', 'Collected')));
+    await settle();
+    expect(api.saveSegment).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('backers-segment-save')).toBeTruthy();
+  });
+
   it('deletes a segment from its own named button', async () => {
     api.listSegments.mockResolvedValue([segment('s1', 'Germany')]);
     api.listBackers.mockResolvedValue(page([backer('a')]));
@@ -340,6 +381,18 @@ describe('export', () => {
     expect(api.exportBackers).toHaveBeenCalledWith(PROJECT, { filter: NO_FILTER });
     expect(shareBackerExport).toHaveBeenCalledWith(FILE);
     expect(screen.getByTestId('backers-notice')).toHaveTextContent('Exported 3 backers.');
+  });
+
+  it('exports once for two taps in the same frame', async () => {
+    api.listBackers.mockResolvedValue(page([backer('a')]));
+    api.exportBackers.mockResolvedValue(FILE);
+    await show();
+
+    await doubleTap(screen.getByTestId('backers-export'));
+    expect(api.exportBackers).toHaveBeenCalledTimes(1);
+    expect(shareBackerExport).toHaveBeenCalledTimes(1);
+    // Released once the share sheet is back.
+    expect(screen.getByTestId('backers-export')).not.toBeDisabled();
   });
 
   it('exports a chosen segment by its identifier', async () => {
