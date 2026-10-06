@@ -1,0 +1,31 @@
+{
+  "name": "@ideanest/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "description": "The creator dashboard's rules with one right answer, shared by apps/web and apps/mobile: the campaign clock, the extend and withdraw thresholds, the funding trend's geometry and share bars, the backer filter, the financial summary and the survey builder's question rules.",
+  "exports": {
+    "./clock": "./src/clock.ts",
+    "./controls": "./src/controls.ts",
+    "./analytics": "./src/analytics.ts",
+    "./finance": "./src/finance.ts",
+    "./backers": "./src/backers.ts",
+    "./surveys": "./src/surveys.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ideanest/api-client": "workspace:*",
+    "@ideanest/messages": "workspace:*",
+    "@ideanest/money": "workspace:*",
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}
