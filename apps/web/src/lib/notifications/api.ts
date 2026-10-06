@@ -6,6 +6,12 @@ import type {
   PreferenceChange,
   PreferenceSwitch,
 } from '@ideanest/account/notifications';
+import type {
+  InboxCursor,
+  InboxNotification,
+  InboxPage,
+  NotificationType,
+} from '@ideanest/account/inbox';
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 
@@ -31,63 +37,23 @@ import { errorFrom } from '../api/problem';
  * `subjectType`, `subjectId` and the two cursor halves can, and those stay optional.
  */
 
-type ContractNotification = components['schemas']['NotificationResponse'];
 type ContractInbox = components['schemas']['NotificationInboxResponse'];
 
-export type NotificationType = NonNullable<ContractNotification['type']>;
-
-/* The preference table is shared with the app (#161), so its types live in `@ideanest/account`. */
+/*
+ * The preference table and the inbox row are shared with the app (#161, #160), so their types
+ * live in `@ideanest/account`.
+ */
 export type {
   DeliveryMode,
+  InboxCursor,
+  InboxNotification,
+  InboxPage,
   NotificationCategory,
   NotificationChannel,
+  NotificationType,
   PreferenceChange,
   PreferenceSwitch,
 };
-
-/** One row of the inbox. */
-export interface InboxNotification {
-  readonly id: string;
-  readonly type: NotificationType;
-  readonly category: NotificationCategory;
-  /** What it is about — `project`, `pledge` — or absent. */
-  readonly subjectType?: string;
-  /** Which one. Whole or absent with `subjectType`. */
-  readonly subjectId?: string;
-  /**
-   * The rendering document.
-   *
-   * An object, not a string. `NotificationResponse` on the service emits the `jsonb` column
-   * with `@JsonRawValue` rather than through a decoder — precisely so that a money amount
-   * inside it stays the exact string it was written as (`"25.00"`), never a re-encoded
-   * `double`. That annotation splices the column's bytes straight into the response body,
-   * so what a browser's `response.json()` hands back is this object already parsed, not a
-   * nested string to run a second `JSON.parse` over. `describe.ts` is the only thing that
-   * reads it.
-   */
-  readonly params: Record<string, unknown>;
-  /** ISO-8601 instant. When the reported thing happened, not when the row was written. */
-  readonly occurredAt: string;
-  /** ISO-8601 instant, or absent while unread. */
-  readonly readAt?: string;
-}
-
-/** One page of the inbox, and the badge number. */
-export interface InboxPage {
-  readonly notifications: readonly InboxNotification[];
-  /** Send back as `?before=`. Whole or absent with `nextCursorId`. */
-  readonly nextCursor?: string;
-  /** Send back as `?beforeId=`. */
-  readonly nextCursorId?: string;
-  /** Across the whole inbox, not this page. */
-  readonly unreadCount: number;
-}
-
-/** The position to continue an inbox listing from. Both halves or neither. */
-export interface InboxCursor {
-  readonly before: string;
-  readonly beforeId: string;
-}
 
 /**
  * One page of the caller's inbox, newest first.

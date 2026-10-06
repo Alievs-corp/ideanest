@@ -21,7 +21,7 @@ import {
   channelLabel,
   mandatoryReason,
   modeLabel,
-} from '../../lib/notifications/describe';
+} from '@ideanest/account/inbox';
 
 type Status = 'loading' | 'ready' | 'failed' | 'signed-out';
 

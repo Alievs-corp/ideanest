@@ -1,3 +1,5 @@
+import type { NotificationsCopy } from '@ideanest/account/inbox';
+
 /**
  * Every word the notifications inbox and its settings draw — issue #324, §4.10.
  *
@@ -26,26 +28,8 @@ export interface NotificationsTranslator {
   raw(key: string): unknown;
 }
 
-export interface NotificationsCopy {
-  /** Keyed by `NotificationType`. Carries `{campaign}` and, where the type has one, `{amount}`. */
-  readonly headline: Readonly<Record<string, string>>;
-  /** The same types, for a row whose document carries no campaign title. */
-  readonly unnamed: Readonly<Record<string, string>>;
-  /** What stands in for a figure the document does not carry. */
-  readonly amount: Readonly<Record<string, string>>;
-  /**
-   * The `{when}` of a sentence about a deadline — #138. `on` carries `{date}`; `unknown` is
-   * what a document without the date reads as. The preposition is in here rather than in the
-   * headline because it changes with the fallback in every language.
-   */
-  readonly due: { readonly on: string; readonly unknown: string };
-  readonly category: Readonly<Record<string, string>>;
-  readonly categoryDescription: Readonly<Record<string, string>>;
-  readonly channel: Readonly<Record<string, string>>;
-  readonly mode: Readonly<Record<string, string>>;
-  readonly mandatorySecurity: string;
-  readonly mandatoryOther: string;
-}
+/* The tables a description reads are `@ideanest/account/inbox`'s, shared with the app (#160). */
+export type { NotificationsCopy };
 
 export interface InboxCopy extends NotificationsCopy {
   readonly heading: string;
