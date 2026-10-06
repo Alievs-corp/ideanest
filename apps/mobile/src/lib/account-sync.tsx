@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../api/queries';
 import { ACCOUNT_KEYS, canReadAccount, useMe } from './account';
 import {
   applyAccountLocale,
@@ -24,8 +24,8 @@ import { useSession } from './use-session';
  *   every foreground, so a choice made offline reaches the account once the phone is back.
  * - **Sign-out.** Whatever ends the session, the device keeps its language and forgets which
  *   account it last synced with.
- * - **Foreground and push.** Coming back to the app, and a push arriving while it is open,
- *   refresh the account and the unread count.
+ * - **Foreground.** Coming back to the app refreshes the account and the unread count. A push
+ *   arriving while it is open is `PushSync`'s (`lib/push-sync.tsx`).
  */
 export function AccountSync() {
   const queryClient = useQueryClient();
@@ -47,6 +47,7 @@ export function AccountSync() {
     if (signedIn) return;
     queryClient.removeQueries({ queryKey: ACCOUNT_KEYS.me });
     queryClient.removeQueries({ queryKey: ACCOUNT_KEYS.unread });
+    queryClient.removeQueries({ queryKey: queryKeys.inbox() });
     forgetAccountSync();
   }, [signedIn, queryClient]);
 
@@ -86,13 +87,7 @@ export function AccountSync() {
       // that would be a biometric prompt nobody asked for.
       if (readable.current) push();
     });
-    const pushed = Notifications.addNotificationReceivedListener(() => {
-      void queryClient.invalidateQueries({ queryKey: ACCOUNT_KEYS.unread });
-    });
-    return () => {
-      app.remove();
-      pushed.remove();
-    };
+    return () => app.remove();
   }, [queryClient, push]);
 
   return null;
