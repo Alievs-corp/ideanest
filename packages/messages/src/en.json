@@ -5731,6 +5731,11 @@
       "signedOutBody": "Deliveries follow your pledges, which belong to your account rather than to this phone.",
       "stale": "Showing deliveries saved on this device. They may be out of date.",
       "trackingHint": "Opens the carrier’s tracking page in the app’s browser"
+    },
+    "dashboardFigures": {
+      "stale": "Showing these figures as they were earlier in this session. They may be out of date.",
+      "chartSummary": "Running total from {from} to {to}, reaching {amount}.",
+      "hideDaily": "Hide the daily figures"
     }
   }
 }

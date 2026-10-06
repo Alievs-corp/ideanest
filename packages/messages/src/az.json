@@ -5731,6 +5731,11 @@
       "signedOutBody": "Çatdırılmalar dəstəklərinizə bağlıdır, dəstəklər isə bu telefona deyil, hesabınıza aiddir.",
       "stale": "Bu cihazda saxlanmış çatdırılmalar göstərilir. Onlar köhnəlmiş ola bilər.",
       "trackingHint": "Daşıyıcının izləmə səhifəsini tətbiqin brauzerində açır"
+    },
+    "dashboardFigures": {
+      "stale": "Bu rəqəmlər bu sessiyada əvvəl göründüyü kimi göstərilir. Köhnəlmiş ola bilər.",
+      "chartSummary": "Yığılan cəm, {from} — {to}: {amount} məbləğinə çatıb.",
+      "hideDaily": "Günlük rəqəmləri gizlət"
     }
   }
 }

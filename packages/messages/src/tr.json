@@ -5731,6 +5731,11 @@
       "signedOutBody": "Teslimatlar desteklerinize bağlıdır; destekleriniz de bu telefona değil, hesabınıza aittir.",
       "stale": "Bu cihazda kayıtlı teslimatlar gösteriliyor. Güncel olmayabilirler.",
       "trackingHint": "Kargo firmasının takip sayfasını uygulamanın tarayıcısında açar"
+    },
+    "dashboardFigures": {
+      "stale": "Bu rakamlar, bu oturumda daha önce göründüğü haliyle gösteriliyor. Güncel olmayabilir.",
+      "chartSummary": "Birikimli toplam, {from} — {to}: {amount} tutarına ulaştı.",
+      "hideDaily": "Günlük rakamları gizle"
     }
   }
 }
