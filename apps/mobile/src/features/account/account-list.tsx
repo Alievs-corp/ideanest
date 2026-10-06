@@ -323,7 +323,8 @@ const styles = StyleSheet.create({
   placeholderText: { flex: 1, gap: spacing[2] },
   page: { flex: 1, backgroundColor: colors.surface1 },
   listHeader: { gap: spacing[4], paddingBottom: spacing[6] },
-  emptyWrap: { gap: spacing[6] },
+  // Fills the centred slot, so the page header stays at the top as on the populated list.
+  emptyWrap: { flexGrow: 1, gap: spacing[6] },
   placeholders: { gap: spacing[3] },
   separator: { height: spacing[3] },
   footer: { paddingTop: spacing[4], alignItems: 'stretch' },
