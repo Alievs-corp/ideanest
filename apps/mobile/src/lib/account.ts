@@ -60,10 +60,10 @@ export async function fetchMe(signal?: AbortSignal): Promise<Me | null> {
   }
 }
 
-/** The badge number, or `null` when there is no inbox to count. */
+/** The badge number, or `null` when there is no inbox to count. One row: only the count is read. */
 export async function fetchUnreadCount(signal?: AbortSignal): Promise<number | null> {
   try {
-    const inbox = await api().get('/v1/me/notifications', { signal });
+    const inbox = await api().get('/v1/me/notifications', { query: { limit: 1 }, signal });
     return inbox.unreadCount ?? 0;
   } catch (cause) {
     if (cause instanceof ApiError && cause.status === 401) return null;
@@ -152,8 +152,8 @@ export function useUnreadCount(): number | undefined {
   return data ?? undefined;
 }
 
-/** `99+` past ninety-nine, as the web's badge draws it. */
+/** The bell's pill: `9+` past nine, nothing at zero (#160). The exact count is in the bell's name. */
 export function badgeText(count: number): string | null {
   if (count <= 0) return null;
-  return count > 99 ? '99+' : String(count);
+  return count > 9 ? '9+' : String(count);
 }

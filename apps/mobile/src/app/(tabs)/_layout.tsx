@@ -8,7 +8,7 @@ import { PressableScale } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import { badgeText, useSessionState, useUnreadCount } from '../../lib/account';
 import { signInHrefFor } from '../../lib/guard';
-import { colors, radius, size, spacing } from '../../theme';
+import { colors, font, fontSize, radius, size, spacing } from '../../theme';
 
 /**
  * The tab group — issues #150 and #276.
@@ -66,18 +66,19 @@ const styles = StyleSheet.create({
     height: 18,
     paddingHorizontal: 4,
     borderRadius: radius.full,
-    backgroundColor: colors.lime500,
+    backgroundColor: colors.whiteSurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { color: colors.textOnLime, fontSize: 11, lineHeight: 14, fontWeight: '700' },
+  badgeText: { ...font.semibold, color: colors.textOnWhite, fontSize: fontSize.xxs, lineHeight: 14 },
 });
 
 /**
  * The header control — the web header's right-hand side.
  *
- * Signed in: the bell with the unread count as a badge (`99+` past ninety-nine, none at
- * zero). Signed out: "Sign in". Unknown (the account has not been read, or the read failed):
+ * Signed in: the bell with the unread count as a badge (`9+` past nine, none at zero) — near-black
+ * on a neutral pill, never lime: "unread" is not "act now". The bell's name carries the exact
+ * count. Signed out: "Sign in". Unknown (the account has not been read, or the read failed):
  * a blank of the same width, so the title does not jump when the answer arrives.
  */
 function HeaderAction() {
@@ -103,8 +104,7 @@ function HeaderAction() {
   }
 
   const badge = unread === undefined ? null : badgeText(unread);
-  const label =
-    unread === undefined ? t('notifications') : unread > 99 ? tHeader('over') : tHeader('unread', { count: unread });
+  const label = unread === undefined ? t('notifications') : tHeader('unread', { count: unread });
   return (
     <Link href="/notifications" asChild>
       <PressableScale
