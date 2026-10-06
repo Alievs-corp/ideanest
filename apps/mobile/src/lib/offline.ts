@@ -63,6 +63,9 @@ export const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
  * campaigns it started, the creators it follows, the surveys it owes and its deliveries. None holds
  * a postal address or a phone number (those stay under `shippingAddress`), and sign-out erases them
  * with the rest through {@link forgetPersistedCache}.
+ *
+ * The creator dashboard's Overview (#163) adds `dashboardOverview`: a campaign's totals and
+ * deadline, which its creator reads offline with the time they were fetched.
  */
 const PERSISTED_ROOTS: readonly string[] = [
   'saved',
@@ -73,6 +76,7 @@ const PERSISTED_ROOTS: readonly string[] = [
   'following',
   'surveys',
   'fulfilments',
+  'dashboardOverview',
 ];
 
 /**

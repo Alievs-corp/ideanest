@@ -5731,6 +5731,17 @@
       "signedOutBody": "Teslimatlar desteklerinize bağlıdır; destekleriniz de bu telefona değil, hesabınıza aittir.",
       "stale": "Bu cihazda kayıtlı teslimatlar gösteriliyor. Güncel olmayabilirler.",
       "trackingHint": "Kargo firmasının takip sayfasını uygulamanın tarayıcısında açar"
+    },
+    "dashboard": {
+      "asOf": "{time} itibarıyla.",
+      "controlsOffline": "Süreyi uzatmak ve parayı çekmek için bağlantı gerekir. Çevrimiçi olur olmaz geri gelirler.",
+      "chooseDate": "Bir tarih seçin",
+      "useDate": "Bu tarihi seç",
+      "useDateLabel": "Yeni bitiş tarihi olarak {date} tarihini seç",
+      "checking": "Ne olduğu kontrol ediliyor…",
+      "withdrawNotTaken": "Hizmet yanıt vermeden bağlantı koptu. Kampanyanın durumu hâlâ şu: {state}. Yani para çekilmedi ve yeniden deneyebilirsiniz.",
+      "extendNotTaken": "Hizmet yanıt vermeden bağlantı koptu. Bitiş tarihi değişmedi, bu yüzden yeniden deneyebilirsiniz.",
+      "outcomeUnknown": "Hizmet yanıt vermeden bağlantı koptu ve kontrol etmek için kampanya yeniden okunamadı. Yeniden denemeden önce ekranı aşağı çekip yenileyin."
     }
   }
 }

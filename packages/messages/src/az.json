@@ -5731,6 +5731,17 @@
       "signedOutBody": "Çatdırılmalar dəstəklərinizə bağlıdır, dəstəklər isə bu telefona deyil, hesabınıza aiddir.",
       "stale": "Bu cihazda saxlanmış çatdırılmalar göstərilir. Onlar köhnəlmiş ola bilər.",
       "trackingHint": "Daşıyıcının izləmə səhifəsini tətbiqin brauzerində açır"
+    },
+    "dashboard": {
+      "asOf": "{time} tarixinə.",
+      "controlsOffline": "Müddəti uzatmaq və vəsaiti çıxarmaq üçün bağlantı lazımdır. İnternet qayıdan kimi bu imkanlar da qayıdacaq.",
+      "chooseDate": "Tarix seçin",
+      "useDate": "Bu tarixi seç",
+      "useDateLabel": "Yeni son tarix kimi {date} tarixini seç",
+      "checking": "Nə baş verdiyi yoxlanılır…",
+      "withdrawNotTaken": "Xidmət cavab verməmiş bağlantı kəsildi. Kampaniyanın vəziyyəti hələ də belədir: {state}. Deməli, vəsait çıxarılmayıb və yenidən cəhd edə bilərsiniz.",
+      "extendNotTaken": "Xidmət cavab verməmiş bağlantı kəsildi. Son tarix dəyişməyib, ona görə yenidən cəhd edə bilərsiniz.",
+      "outcomeUnknown": "Xidmət cavab verməmiş bağlantı kəsildi və yoxlamaq üçün kampaniyanı yenidən oxumaq mümkün olmadı. Yenidən cəhd etməzdən əvvəl ekranı aşağı çəkib yeniləyin."
     }
   }
 }

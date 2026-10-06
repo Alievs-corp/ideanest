@@ -63,6 +63,10 @@ describe('what survives a restart', () => {
     expect(shouldPersistQuery(queryKeys.savedList())).toBe(true);
   });
 
+  it('keeps the creator dashboard’s Overview (#163)', () => {
+    expect(shouldPersistQuery(queryKeys.dashboardOverview('p1'))).toBe(true);
+  });
+
   it('never writes a shipping address or a phone number to the device', () => {
     expect(shouldPersistQuery(queryKeys.shippingAddress('pl-1'))).toBe(false);
     expect(queryKeys.shippingAddress('pl-1')[0]).not.toBe(queryKeys.pledges()[0]);
@@ -220,6 +224,7 @@ describe('the persisted cache', () => {
       queryKeys.following(),
       queryKeys.surveys(),
       queryKeys.fulfilments(),
+      queryKeys.dashboardOverview('p1'),
     ]) {
       writing.setQueryData(key, { pages: [{ items: [{ id: 'x' }], nextCursor: null }], pageParams: [null] });
     }
