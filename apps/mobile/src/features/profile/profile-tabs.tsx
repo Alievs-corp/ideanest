@@ -1,8 +1,10 @@
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ScrollView, StyleSheet, Text, type LayoutChangeEvent } from 'react-native';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, radius, size, spacing, tint } from '../../theme';
 import { TONES, useFocusRing } from '../../components/ui';
 import { AnimatedPressable, usePressScale } from '../../components/ui/press-scale';
+import { GUTTER } from './sheet-list';
 
 /**
  * Created · Backed · About — the web's `ProfileTabs` (#156), as a native tab list.
@@ -38,10 +40,24 @@ export function ProfileTabs({
   readonly counts: Partial<Record<ProfileTabId, number>>;
 }) {
   const t = useT('profile');
+  const scroller = useRef<ScrollView>(null);
+  const [width, setWidth] = useState(0);
+  const [frames, setFrames] = useState<Partial<Record<ProfileTabId, { x: number; w: number }>>>({});
+
+  // The chosen pill is scrolled fully into view, so a tab picked at the edge is never left clipped.
+  const frame = frames[active];
+  useEffect(() => {
+    if (frame === undefined || width === 0) return;
+    scroller.current?.scrollTo({ x: Math.max(0, frame.x + frame.w + GUTTER - width), animated: false });
+  }, [frame, width]);
+
   return (
     <ScrollView
+      ref={scroller}
       horizontal
       showsHorizontalScrollIndicator={false}
+      onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
+      style={styles.bleed}
       accessibilityRole="tablist"
       accessibilityLabel={t('tabsLabel')}
       contentContainerStyle={styles.row}
@@ -54,6 +70,10 @@ export function ProfileTabs({
           count={counts[tab]}
           current={tab === active}
           onPress={() => onSelect(tab)}
+          onLayout={(event: LayoutChangeEvent) => {
+            const { x, width: w } = event.nativeEvent.layout;
+            setFrames((prev) => (prev[tab]?.x === x && prev[tab]?.w === w ? prev : { ...prev, [tab]: { x, w } }));
+          }}
           testID={`profile-tab-${tab}`}
         />
       ))}
@@ -66,12 +86,14 @@ function TabPill({
   count,
   current,
   onPress,
+  onLayout,
   testID,
 }: {
   readonly label: string;
   readonly count: number | undefined;
   readonly current: boolean;
   readonly onPress: () => void;
+  readonly onLayout: (event: LayoutChangeEvent) => void;
   readonly testID: string;
 }) {
   const { ring, onFocus, onBlur } = useFocusRing();
@@ -84,6 +106,7 @@ function TabPill({
       accessibilityLabel={name}
       accessibilityState={{ selected: current }}
       onPress={onPress}
+      onLayout={onLayout}
       onPressIn={press.onPressIn}
       onPressOut={press.onPressOut}
       onFocus={onFocus}
@@ -116,7 +139,9 @@ function TabPill({
 
 const styles = StyleSheet.create({
   // The vertical reach is inside the scroll view, so the 44pt target is not clipped.
-  row: { gap: spacing[2], paddingVertical: REACH },
+  row: { gap: spacing[2], paddingVertical: REACH, paddingHorizontal: GUTTER },
+  // The row runs to the screen's edges, so a pill scrolls out under the edge rather than being cut at the gutter.
+  bleed: { marginHorizontal: -GUTTER },
   pill: {
     minHeight: PILL_HEIGHT,
     justifyContent: 'center',
