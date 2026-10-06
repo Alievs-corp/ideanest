@@ -5742,6 +5742,11 @@
       "withdrawNotTaken": "Hizmet yanıt vermeden bağlantı koptu. Kampanyanın durumu hâlâ şu: {state}. Yani para çekilmedi ve yeniden deneyebilirsiniz.",
       "extendNotTaken": "Hizmet yanıt vermeden bağlantı koptu. Bitiş tarihi değişmedi, bu yüzden yeniden deneyebilirsiniz.",
       "outcomeUnknown": "Hizmet yanıt vermeden bağlantı koptu ve kontrol etmek için kampanya yeniden okunamadı. Yeniden denemeden önce ekranı aşağı çekip yenileyin."
+    },
+    "dashboardFigures": {
+      "stale": "Bu rakamlar, bu oturumda daha önce göründüğü haliyle gösteriliyor. Güncel olmayabilir.",
+      "chartSummary": "Birikimli toplam, {from} — {to}: {amount} tutarına ulaştı.",
+      "hideDaily": "Günlük rakamları gizle"
     }
   }
 }

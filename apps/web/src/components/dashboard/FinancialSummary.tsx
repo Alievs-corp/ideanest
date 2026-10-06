@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { InlineAlert, Skeleton, SkeletonGroup, StatBlock, StatRow, Tag } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
-import { getFinance, type CampaignFinance, type FinancePayout } from '../../lib/dashboard/finance';
+import { payoutInstant, type CampaignFinance, type FinancePayout } from '@ideanest/dashboard/finance';
+import { getFinance } from '../../lib/dashboard/finance';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { FinanceCopy, PayoutStatesCopy } from '../../lib/i18n/dashboard-copy';
 import { fillNodes } from '../../lib/i18n/placeholders';
@@ -279,7 +280,7 @@ function PayoutRow({
   readonly locale: Parameters<typeof formatExactTime>[1];
   readonly states: PayoutStatesCopy;
 }) {
-  const when = payout.sentAt ?? payout.calculatedAt;
+  const when = payoutInstant(payout);
 
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-white/8 bg-surface-2 px-4 py-3">

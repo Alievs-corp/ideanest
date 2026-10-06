@@ -5,7 +5,8 @@ import { InlineAlert, Skeleton, SkeletonGroup, StatBlock, StatRow } from '@idean
 import { ApiError } from '../../lib/api/problem';
 import { formatMoney } from '../../lib/money';
 import { formatRelativeTime } from '../../lib/time';
-import { getTrend, type Trend } from '../../lib/dashboard/analytics';
+import type { Trend } from '@ideanest/dashboard/analytics';
+import { getTrend } from '../../lib/dashboard/analytics';
 import { getBreakdown, type BackerBreakdown } from '../../lib/dashboard/backers';
 import { ShareBars, type ShareBar } from './ShareBars';
 import { TrendChart } from './TrendChart';

@@ -5742,6 +5742,11 @@
       "withdrawNotTaken": "The connection dropped before the service answered. The campaign is still {state}, so nothing was withdrawn, and you can try again.",
       "extendNotTaken": "The connection dropped before the service answered. The deadline has not moved, so you can try again.",
       "outcomeUnknown": "The connection dropped before the service answered, and the campaign could not be read again to check. Pull down to refresh before you try again."
+    },
+    "dashboardFigures": {
+      "stale": "Showing these figures as they were earlier in this session. They may be out of date.",
+      "chartSummary": "Running total from {from} to {to}, reaching {amount}.",
+      "hideDaily": "Hide the daily figures"
     }
   }
 }

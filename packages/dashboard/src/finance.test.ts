@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFinance } from './finance';
+import { PAYOUT_STATES, isPayoutState, payoutInstant, readFinance } from './finance';
 
 /**
  * The wire shape of §4.7's CD-16, narrowed once — issue #99.
@@ -88,5 +88,26 @@ describe('reading a financial summary', () => {
     // Negative on a creator's account is money the platform holds for them, and the sign is
     // the whole of that statement.
     expect(finance.ledger[0]?.net.amount).toBe('-10000.00');
+  });
+});
+
+describe('a payout row', () => {
+  const payout = {
+    id: 'p1',
+    state: 'PAID',
+    net: { amount: '8960.00', currency: 'AZN' },
+    calculatedAt: '2026-08-18T10:00:00.000Z',
+    sentAt: null,
+  };
+
+  it('shows when it was sent, and until then when it was calculated', () => {
+    expect(payoutInstant(payout)).toBe('2026-08-18T10:00:00.000Z');
+    expect(payoutInstant({ ...payout, sentAt: '2026-08-20T09:00:00.000Z' })).toBe('2026-08-20T09:00:00.000Z');
+    expect(payoutInstant({ ...payout, calculatedAt: null })).toBeNull();
+  });
+
+  it('knows the six payout states, and nothing else', () => {
+    expect(PAYOUT_STATES.every(isPayoutState)).toBe(true);
+    expect(isPayoutState('REVERSED')).toBe(false);
   });
 });

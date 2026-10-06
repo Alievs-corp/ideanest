@@ -5742,6 +5742,11 @@
       "withdrawNotTaken": "Xidmət cavab verməmiş bağlantı kəsildi. Kampaniyanın vəziyyəti hələ də belədir: {state}. Deməli, vəsait çıxarılmayıb və yenidən cəhd edə bilərsiniz.",
       "extendNotTaken": "Xidmət cavab verməmiş bağlantı kəsildi. Son tarix dəyişməyib, ona görə yenidən cəhd edə bilərsiniz.",
       "outcomeUnknown": "Xidmət cavab verməmiş bağlantı kəsildi və yoxlamaq üçün kampaniyanı yenidən oxumaq mümkün olmadı. Yenidən cəhd etməzdən əvvəl ekranı aşağı çəkib yeniləyin."
+    },
+    "dashboardFigures": {
+      "stale": "Bu rəqəmlər bu sessiyada əvvəl göründüyü kimi göstərilir. Köhnəlmiş ola bilər.",
+      "chartSummary": "Yığılan cəm, {from} — {to}: {amount} məbləğinə çatıb.",
+      "hideDaily": "Günlük rəqəmləri gizlət"
     }
   }
 }
