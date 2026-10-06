@@ -100,6 +100,7 @@ export function OverviewScreen({ projectId, now }: OverviewScreenProps) {
               }
             : null
         }
+        edges={EDGES}
         testID="overview-screen"
       >
         <SkeletonGroup label={t('dashboard.overview.loading')} testID="overview-loading">
@@ -136,6 +137,7 @@ export function OverviewScreen({ projectId, now }: OverviewScreenProps) {
         void refetch().finally(() => setPulling(false));
       }}
       refreshing={pulling}
+      edges={EDGES}
       testID="overview-screen"
     >
       <View style={styles.top}>
@@ -232,6 +234,9 @@ export function OverviewScreen({ projectId, now }: OverviewScreenProps) {
     </Screen>
   );
 }
+
+/** A stack route: no tab bar under it, so the panel owns the bottom inset. */
+const EDGES = ['left', 'right', 'bottom'] as const;
 
 const styles = StyleSheet.create({
   top: { gap: spacing[3], paddingTop: spacing[4] },
