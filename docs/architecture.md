@@ -1498,8 +1498,8 @@ Preferences are per category and per channel, with a digest option.
 > to features that are not built — payments, the pledge manager, and §17.1's
 > device history.
 >
-> **Two of the three columns are now real.** #86 built the email transport (§12.3)
-> and the in-app inbox was #85's; push is still #87, and still a log line. Every
+> **All three columns are real.** #86 built the email transport (§12.3), the in-app
+> inbox was #85's, and push is #87's (its payload is described under §12.2). Every
 > row in the table above marked ✅ under Email has copy written for it, including
 > the thirteen types nothing publishes an event for yet — `EmailComposer`'s switch
 > is exhaustive, so a type is a compilation error until somebody decides what its
@@ -5564,11 +5564,21 @@ do. Both endpoints and the fan-out resolve a stored preference through the same
 `DeliveryPolicy`: a settings page that disagreed with delivery would look right and
 change nothing.
 
-> **What is not built.** Push (#87) has no transport: it is registered as
-> `UndeliverableChannelSender`, which logs at `WARN` and returns, so its rows say
-> `SENT` for messages that reached a log file — and a digest on that channel
-> reaches the same log file, with its member count in the line. That is a missing
-> transport rather than a missing digest. In-app and email are real.
+> **Push is real since #87.** `PushChannelSender` sends through Expo's push service
+> (`ExpoPushClient`) to every device registered at `POST /v1/me/devices`, in the
+> account's language (#216). Each message is a title and one line (`PushComposer`:
+> `email.<TYPE>.subject` and `.line`) and a `data` object the application reads when
+> it is tapped (#160):
+>
+> | Key | Value |
+> |---|---|
+> | `url` | Always. `ideanest://settings/sessions` for `NEW_DEVICE_SIGN_IN`, otherwise `ideanest://projects/{creatorSlug}/{projectSlug}` — the two destinations the web inbox links — and the bare `ideanest://` when there is neither. The application opens the inbox for the bare scheme |
+> | `type` | The `NotificationType`. Absent on a digest |
+> | `notificationId` | The **inbox** row of the same event, which `POST /v1/me/notifications/{id}/read` accepts. Every channel writes its own row, so this is not the push row's identifier. Absent when the event wrote no inbox row (in-app switched off for the category) and on a digest |
+>
+> A tap can arrive a moment before the inbox row is stamped `SENT`, and the read
+> endpoint answers 404 for it then; the application treats the mark-read as fire and
+> forget.
 >
 > **Email is real since #86**, and §12.3 is what it does. The three things worth
 > knowing here: it is SMTP, so the strongest fact the platform records is that a

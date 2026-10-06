@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import az.ideanest.notification.application.NotificationMessage;
 import az.ideanest.notification.application.PushDevices;
 import az.ideanest.notification.domain.DevicePlatform;
+import az.ideanest.notification.domain.Notification;
 import az.ideanest.notification.domain.NotificationChannel;
 import az.ideanest.notification.domain.NotificationType;
+import az.ideanest.notification.infrastructure.NotificationRepository;
 import az.ideanest.notification.infrastructure.PushComposer;
 import az.ideanest.notification.infrastructure.PushDeviceRepository;
 import az.ideanest.shared.EmailAddress;
@@ -15,6 +17,7 @@ import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -45,10 +48,12 @@ import org.springframework.http.ResponseEntity;
  *   <li>{@link #aMalformedTokenIsRefusedRatherThanStored()} — Expo rejects an entire batch
  *       containing one bad token, so a single stored one would stop everybody in that batch
  *       being told anything.
- *   <li>{@link #aPushLinksToTheCampaignOrToNothing()} — the mobile parser refuses a path it
- *       does not recognise, so a notification built on the web's identifier fallbacks would
- *       open the application and land nowhere.
+ *   <li>{@link #aPushKnowsItsInboxRow()} — every channel writes its own row, so the push
+ *       row's identifier is not the one a tap can mark read (#160).
  * </ul>
+ *
+ * <p>What a push says and where it links is {@code PushComposerTests}, which needs no
+ * database.
  */
 @DisplayName("Push notifications")
 class PushNotificationTests extends AbstractIntegrationTest {
@@ -79,6 +84,9 @@ class PushNotificationTests extends AbstractIntegrationTest {
 
     @Autowired
     private PushComposer composer;
+
+    @Autowired
+    private NotificationRepository notifications;
 
     @BeforeEach
     void clearRegistrations() {
@@ -221,23 +229,16 @@ class PushNotificationTests extends AbstractIntegrationTest {
     }
 
     // ------------------------------------------------------------------
-    // What a push says, and where it goes
+    // What a push says, and which inbox row it is
     // ------------------------------------------------------------------
 
-    @Test
-    @DisplayName("says the type's subject and its one-line form, not the email's paragraphs")
-    void pushCopyIsATitleAndOneLine() {
-        PushComposer.PushContent content = composer.compose(
-                message(NotificationType.PLEDGE_CONFIRMED, """
-                        {"projectTitle":"Solar Lamp","total":{"amount":"25.00","currency":"AZN"},\
-                        "creatorSlug":"aysel","projectSlug":"solar-lamp"}"""),
-                "", ENGLISH);
-
-        // The `.named` variants, because the document carries a title.
-        assertThat(content.title()).isEqualTo("Your pledge to Solar Lamp is confirmed");
-        assertThat(content.body()).isEqualTo("Your pledge of 25.00 AZN to Solar Lamp was confirmed");
-    }
-
+    /**
+     * The application's own catalogue, as Spring configured it.
+     *
+     * <p>{@code PushComposerTests} covers the copy and the links against a catalogue it builds
+     * itself; this is the one assertion that the bean the sender is given resolves the same
+     * bundles — a {@code spring.messages} change that broke them would pass there.
+     */
     @Test
     @DisplayName("is written in the language it is given, which the sender reads from the account")
     void pushCopyIsInTheRecipientsLanguage() {
@@ -245,56 +246,45 @@ class PushNotificationTests extends AbstractIntegrationTest {
                 {"projectTitle":"Solar Lamp","total":{"amount":"25.00","currency":"AZN"}}""");
 
         // Issue #216: it used to be Locale.ROOT, the English base catalogue, for everybody.
-        assertThat(composer.compose(pledge, "", ReaderLocale.of("ru")).title())
+        assertThat(composer.compose(pledge, null, "", ReaderLocale.of("ru")).title())
                 .isEqualTo("Ваш взнос в кампанию Solar Lamp подтверждён");
-        assertThat(composer.compose(pledge, "", ReaderLocale.of("az")).title())
+        assertThat(composer.compose(pledge, null, "", ReaderLocale.of("az")).title())
                 .isEqualTo("Solar Lamp kampaniyasına dəstəyiniz təsdiqləndi");
+        assertThat(composer.compose(pledge, null, "", ReaderLocale.of("tr")).title())
+                .isEqualTo("Solar Lamp kampanyasına desteğiniz onaylandı");
+        assertThat(composer.compose(pledge, null, "", ENGLISH).title())
+                .isEqualTo("Your pledge to Solar Lamp is confirmed");
     }
 
     @Test
-    @DisplayName("falls back to the plain copy when the campaign has no title in the document")
-    void copySurvivesAnUntitledDocument() {
-        PushComposer.PushContent content =
-                composer.compose(message(NotificationType.PLEDGE_CONFIRMED, "{}"), "", ENGLISH);
+    @DisplayName("finds the inbox row the same event wrote, which a tap marks read")
+    void aPushKnowsItsInboxRow() {
+        Account person = account("push-inbox-");
+        UUID event = UUID.randomUUID();
+        Notification inbox = notifications.save(row(person, NotificationChannel.IN_APP, event));
+        Notification push = notifications.save(row(person, NotificationChannel.PUSH, event));
 
-        // Rows written before #249 carry no title, and a sentence built around an empty
-        // slot renders with a hole in it.
-        assertThat(content.title()).isEqualTo("Your pledge is confirmed");
-        assertThat(content.body()).doesNotContain("null").doesNotContain("{1}");
+        // Every channel writes its own row, so the push row's identifier is not the one the
+        // inbox shows and POST /v1/me/notifications/{id}/read accepts.
+        assertThat(notifications.inboxIdOf(push.getId())).contains(inbox.getId());
+
+        // Another event, and one that wrote no inbox row: in-app switched off for the
+        // category. There is nothing to mark read, and nothing borrowed from the first.
+        Notification alone = notifications.save(row(person, NotificationChannel.PUSH, UUID.randomUUID()));
+        assertThat(notifications.inboxIdOf(alone.getId())).isEmpty();
     }
 
     @Test
-    @DisplayName("links to the campaign, or to nothing at all")
-    void aPushLinksToTheCampaignOrToNothing() {
-        PushComposer.PushContent linked = composer.compose(
-                message(NotificationType.PLEDGE_CONFIRMED, """
-                        {"creatorSlug":"aysel","projectSlug":"solar-lamp"}"""),
-                "", ENGLISH);
+    @DisplayName("does not take somebody else's inbox row from the same event")
+    void theInboxRowIsTheRecipients() {
+        Account backer = account("push-inbox-a-");
+        Account creator = account("push-inbox-b-");
+        UUID event = UUID.randomUUID();
+        notifications.save(row(creator, NotificationChannel.IN_APP, event));
+        Notification push = notifications.save(row(backer, NotificationChannel.PUSH, event));
 
-        assertThat(linked.url()).isEqualTo("ideanest://projects/aysel/solar-lamp");
-
-        /*
-         * The web's fallbacks address /projects/{uuid}, which the mobile parser refuses by
-         * design -- so a push built on one would open the application and land nowhere.
-         * The bare scheme means "leave the person where they are".
-         */
-        PushComposer.PushContent unlinked = composer.compose(
-                message(NotificationType.PLEDGE_CONFIRMED, """
-                        {"projectId":"11111111-1111-1111-1111-111111111111"}"""),
-                "", ENGLISH);
-
-        assertThat(unlinked.url()).isEqualTo("ideanest://");
-    }
-
-    @Test
-    @DisplayName("has copy for every type, so no lock screen ever shows a placeholder")
-    void everyTypeHasPushCopy() {
-        for (NotificationType type : NotificationType.values()) {
-            PushComposer.PushContent content = composer.compose(message(type, "{}"), "", ENGLISH);
-
-            assertThat(content.title()).as("title for %s", type).isNotBlank();
-            assertThat(content.body()).as("line for %s", type).isNotBlank();
-        }
+        // One event addresses several people. Their rows share the event and nothing else.
+        assertThat(notifications.inboxIdOf(push.getId())).isEmpty();
     }
 
     // ------------------------------------------------------------------
@@ -357,6 +347,20 @@ class PushNotificationTests extends AbstractIntegrationTest {
                 params,
                 Instant.now(),
                 1);
+    }
+
+    private static Notification row(Account person, NotificationChannel channel, UUID event) {
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
+        return Notification.pending(
+                person.id(),
+                NotificationType.PLEDGE_CONFIRMED,
+                channel,
+                event,
+                "project",
+                UUID.randomUUID(),
+                "{}",
+                now,
+                now);
     }
 
     private ResponseEntity<Map<String, Object>> register(Account person, String token, String platform) {

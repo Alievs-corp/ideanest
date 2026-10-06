@@ -220,4 +220,25 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
      * existence of somebody else's row.
      */
     Optional<Notification> findByIdAndRecipientId(UUID id, UUID recipientId);
+
+    /**
+     * The inbox row written by the same event, for the same person, as another channel's row.
+     *
+     * <p>What a push carries as {@code notificationId} so that tapping it can mark the inbox
+     * row read (#160). Empty when the event wrote none — in-app switched off for the
+     * category, or a type with no in-app column. Any state: the two rows were written
+     * together, and the push may be sent a moment before the inbox row is stamped.
+     *
+     * <p>{@code notifications_event_recipient_channel_key} makes the answer unique and is the
+     * index it is read through.
+     */
+    @Query(
+            """
+            SELECT inbox.id FROM Notification inbox, Notification other
+             WHERE other.id = :id
+               AND inbox.eventId = other.eventId
+               AND inbox.recipientId = other.recipientId
+               AND inbox.channel = az.ideanest.notification.domain.NotificationChannel.IN_APP
+            """)
+    Optional<UUID> inboxIdOf(@Param("id") UUID id);
 }
