@@ -1,6 +1,5 @@
 package az.ideanest.project.api;
 
-import az.ideanest.payout.api.CampaignFinanceController;
 import az.ideanest.project.application.AgreementRequiredException;
 import az.ideanest.project.application.CapabilityNotGrantedException;
 import az.ideanest.project.application.ExtensionNotAvailableException;
@@ -72,9 +71,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
             // confirm which identifiers are real, and a 403 for a collaborator whose
             // grant does not include VIEW_FINANCES.
             DashboardController.class,
-            // The campaign's financial summary (#163), whose controller lives in the payout
-            // module but raises the same two refusals for the same two callers.
-            CampaignFinanceController.class,
             // The moderation submission queue, which raises two of them: a refusal
             // for a caller without MODERATE_CONTENT, and UNREVIEWABLE_STATE. Listed
             // rather than left out because this advice is scoped by type -- a
