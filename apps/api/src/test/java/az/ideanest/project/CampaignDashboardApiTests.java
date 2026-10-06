@@ -109,6 +109,18 @@ class CampaignDashboardApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("the finance summary refuses a stranger with the same 404")
+    void theFinanceSummaryRefusesAStrangerWithTheSame404() {
+        UUID projectId = liveCampaign();
+        String stranger = tokenFor(accountId("finance-stranger"));
+
+        ResponseEntity<Map<String, Object>> response = get(projectId, stranger, "/finance");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).containsEntry("code", "PROJECT_NOT_FOUND");
+    }
+
+    @Test
     @DisplayName("an unauthenticated caller is refused")
     void anUnauthenticatedCallerIsRefused() {
         assertThat(get(liveCampaign(), null).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
@@ -332,13 +344,17 @@ class CampaignDashboardApiTests extends AbstractIntegrationTest {
     }
 
     private ResponseEntity<Map<String, Object>> get(UUID projectId, String token) {
+        return get(projectId, token, "/dashboard");
+    }
+
+    private ResponseEntity<Map<String, Object>> get(UUID projectId, String token, String panel) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         if (token != null) {
             headers.setBearerAuth(token);
         }
         return rest.exchange(
-                "/v1/projects/" + projectId + "/dashboard",
+                "/v1/projects/" + projectId + panel,
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 new ParameterizedTypeReference<Map<String, Object>>() {});

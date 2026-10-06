@@ -392,12 +392,15 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: spacing[4],
   },
+  // Wider than the chip on both sides, so the centred words land where the in-flow ones do but
+  // are never measured into the chip's exact width: Android rounds that down and ellipsised the
+  // selected word ("Hamı…", "Dəstəklərini.."). The chip clips the overflow.
   overlay: {
     position: 'absolute',
     top: 0,
-    right: 0,
+    right: -spacing[4],
     bottom: 0,
-    left: 0,
+    left: -spacing[4],
   },
   removable: { paddingLeft: spacing[4], paddingRight: spacing[3] },
   disabled: { opacity: 0.4 },

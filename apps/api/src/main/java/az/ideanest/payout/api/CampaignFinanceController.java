@@ -20,10 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
  * to get the same 404 a stranger gets everywhere else on a campaign. Two audiences, two
  * controllers, and neither can accidentally answer for the other.
  *
- * <p><strong>No exception handler here</strong>, deliberately. Everything this can raise —
- * {@code ProjectNotFoundException}, {@code CapabilityNotGrantedException} — is already mapped
- * by the project module's advice, which is where the 404-for-a-stranger rule is stated once.
- * A second mapping here would be a second place for that rule to be got wrong.
+ * <p>Its two refusals, {@code ProjectNotFoundException} and {@code CapabilityNotGrantedException},
+ * are answered by {@link CampaignFinanceExceptionHandler} in the project module's bodies. The
+ * project module's own advice cannot list this controller without a cycle between the modules.
  *
  * <p><strong>{@code Cache-Control: private, no-store}</strong>, for the reason
  * {@code AnalyticsController} gives and with more force: this is a campaign's money. A shared
