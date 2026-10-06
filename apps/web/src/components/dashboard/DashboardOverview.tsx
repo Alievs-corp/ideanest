@@ -5,7 +5,7 @@ import { CircleCheck, Users } from 'lucide-react';
 import { InlineAlert, ProgressBar, Skeleton, SkeletonGroup, StatBlock, StatRow } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import { getDashboard, type CampaignDashboard } from '../../lib/dashboard/api';
-import { clockSkewMs } from '../../lib/dashboard/clock';
+import { clockSkewMs } from '@ideanest/dashboard/clock';
 import { formatMoney } from '../../lib/money';
 import { CampaignClock } from './CampaignClock';
 import { CampaignControls } from './CampaignControls';

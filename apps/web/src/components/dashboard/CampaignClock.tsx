@@ -8,8 +8,8 @@ import {
   remainingMs,
   splitRemaining,
   tickIntervalMs,
-} from '../../lib/dashboard/clock';
-import type { CampaignClockCopy } from '../../lib/i18n/dashboard-copy';
+  type CampaignClockCopy,
+} from '@ideanest/dashboard/clock';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 
 /**
