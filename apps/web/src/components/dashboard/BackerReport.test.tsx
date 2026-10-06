@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
-import type { Backer, BackerPage, BackerSegment } from '../../lib/dashboard/backers';
+import type { Backer, BackerPage, BackerSegment } from '@ideanest/dashboard/backers';
 import { BackerReport } from './BackerReport';
 import { backerReportCopyFrom } from '../../lib/i18n/dashboard-copy';
 import { translatorFor } from '../../test-copy';

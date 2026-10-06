@@ -1,4 +1,17 @@
 import type { components } from '@ideanest/api-client';
+import {
+  backerPageOf,
+  backerQuery,
+  exportBody,
+  exportOf,
+  segmentBody,
+  segmentOf,
+  type BackerExport,
+  type BackerFilter,
+  type BackerListOptions,
+  type BackerPage,
+  type BackerSegment,
+} from '@ideanest/dashboard/backers';
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { Money } from '../money';
@@ -14,94 +27,16 @@ import type { Money } from '../money';
  * There is nothing to render on the server, which is the argument `lib/dashboard/api.ts`
  * already makes for the overview.
  *
- * <h2>The types are the contract's, narrowed</h2>
+ * <h2>The report's types and rules are shared</h2>
  *
- * springdoc marks every field optional because Java cannot tell it otherwise. These bodies
- * are serialised with the service's `non_null` default, so an absent key genuinely means
- * absent — but only for the fields that can be: a tier a pledge did not take, a destination
- * it did not name, a cursor when the page is the last one. Everything else is always
- * present, and narrowing here is what keeps the screens free of `?.` on fields that cannot
- * be missing.
+ * The reported states, the filter, its request body and how an export reads its headers live
+ * in `@ideanest/dashboard/backers` (#163), because the app's report has to send the same
+ * filter and read the same file. Only the requests stay here.
  */
 
-type ContractBacker = components['schemas']['Backer'];
 type ContractList = components['schemas']['BackerListResponse'];
 type ContractBreakdown = components['schemas']['BackerBreakdownResponse'];
 type ContractSegment = components['schemas']['BackerSegmentResponse'];
-
-/**
- * The five pledge states the report covers.
- *
- * Narrowed from the contract's twelve by hand, because springdoc publishes the whole
- * `PledgeState` enum — the service refuses the other seven with a 400, and a filter control
- * offering a state that cannot be asked for would be a control that only ever fails.
- */
-export const REPORTED_STATES = [
-  'CONFIRMED',
-  'CHARGE_PENDING',
-  'CHARGE_FAILED',
-  'COLLECTED',
-  'FULFILLED',
-] as const;
-
-export type ReportedState = (typeof REPORTED_STATES)[number];
-
-/** One backer, as the campaign team sees them. */
-export interface Backer {
-  readonly pledgeId: string;
-  /** The account's display name. Present even when `anonymous` — see `BackerPage` on the service. */
-  readonly name: string;
-  readonly email: string;
-  /** Whether they asked not to be named on the public page. Never a reason to hide the name here. */
-  readonly anonymous: boolean;
-  /** Absent for support that took no reward. */
-  readonly rewardTierId?: string;
-  /** Absent for support that took no reward, and for a tier the campaign has since removed. */
-  readonly rewardTitle?: string;
-  readonly amount: Money;
-  readonly state: ReportedState;
-  /** Absent where the pledge named no destination. */
-  readonly country?: string;
-  /** ISO-8601 instant. */
-  readonly backedAt: string;
-}
-
-/** One page of the report. */
-export interface BackerPage {
-  readonly backers: readonly Backer[];
-  /** Send back as `?cursor=`. Absent on the last page. */
-  readonly nextCursor?: string;
-  /** How many the filter matches on the campaign, not on this page. */
-  readonly matched: number;
-  /** Absent when nothing matched. */
-  readonly currency?: string;
-}
-
-/** The four axes the report filters on. Empty means "any", never "none". */
-export interface BackerFilter {
-  readonly states: readonly ReportedState[];
-  readonly rewardTierIds: readonly string[];
-  readonly countries: readonly string[];
-  readonly term: string;
-}
-
-/** No filter at all: the whole campaign. */
-export const NO_FILTER: BackerFilter = {
-  states: [],
-  rewardTierIds: [],
-  countries: [],
-  term: '',
-};
-
-/** Whether a filter narrows anything, which is what decides if it is worth saving. */
-export function isNarrowed(filter: BackerFilter): boolean {
-  return (
-    filter.states.length > 0 ||
-    filter.rewardTierIds.length > 0 ||
-    filter.countries.length > 0 ||
-    filter.term.trim() !== ''
-  );
-}
 
 /** One reward tier's share of the campaign — CD-07. */
 export interface RewardSlice {
@@ -130,54 +65,27 @@ export interface BackerBreakdown {
   readonly countries: readonly CountrySlice[];
 }
 
-/** A filter with a name, saved against the campaign. */
-export interface BackerSegment {
-  readonly id: string;
-  readonly name: string;
-  readonly filter: BackerFilter;
-  readonly createdBy: string;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-}
-
-/** The file the export answered with, and what it says about itself. */
-export interface BackerExport {
-  readonly filename: string;
-  readonly csv: string;
-  readonly rows: number;
-  /** Whether the row cap was reached, so the file is short. Never inferred from the row count. */
-  readonly truncated: boolean;
-}
 
 /**
  * One page of the campaign's backers.
  *
- * @param segmentId a saved segment to apply instead of `filter`. The service resolves it,
- *   so a segment edited in another tab changes what this returns — which is the point of
+ * @param options.segmentId a saved segment to apply instead of `filter`. The service resolves
+ *   it, so a segment edited in another tab changes what this returns — which is the point of
  *   saving one
  * @throws ApiError on any refusal
  */
 export async function listBackers(
   projectId: string,
-  options: {
-    readonly filter?: BackerFilter;
-    readonly segmentId?: string;
-    readonly cursor?: string;
-    readonly size?: number;
-    readonly signal?: AbortSignal;
-  } = {},
+  options: BackerListOptions & { readonly signal?: AbortSignal } = {},
 ): Promise<BackerPage> {
   const query = new URLSearchParams();
-  if (options.segmentId !== undefined) {
-    query.set('segment', options.segmentId);
-  } else if (options.filter !== undefined) {
-    for (const state of options.filter.states) query.append('state', state);
-    for (const tier of options.filter.rewardTierIds) query.append('rewardTier', tier);
-    for (const country of options.filter.countries) query.append('country', country);
-    if (options.filter.term.trim() !== '') query.set('q', options.filter.term.trim());
+  for (const [name, value] of Object.entries(backerQuery(options))) {
+    if (Array.isArray(value)) {
+      for (const item of value) query.append(name, String(item));
+    } else if (value !== undefined) {
+      query.set(name, String(value));
+    }
   }
-  if (options.cursor !== undefined) query.set('cursor', options.cursor);
-  if (options.size !== undefined) query.set('size', String(options.size));
 
   const search = query.toString();
   const response = await authorizedFetch(
@@ -188,13 +96,7 @@ export async function listBackers(
   );
   if (!response.ok) throw await errorFrom(response);
 
-  const body = (await response.json()) as ContractList;
-  return {
-    backers: (body.backers ?? []).map(backerOf),
-    nextCursor: body.nextCursor,
-    matched: body.matched ?? 0,
-    currency: body.currency,
-  };
+  return backerPageOf((await response.json()) as ContractList);
 }
 
 /**
@@ -256,7 +158,7 @@ export async function saveSegment(
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, filter: bodyOf(filter) }),
+      body: JSON.stringify(segmentBody(name, filter)),
     },
   );
   if (!response.ok) throw await errorFrom(response);
@@ -292,74 +194,10 @@ export async function exportBackers(
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(
-        options.segmentId !== undefined
-          ? { segmentId: options.segmentId }
-          : { filter: bodyOf(options.filter ?? NO_FILTER) },
-      ),
+      body: JSON.stringify(exportBody(options)),
     },
   );
   if (!response.ok) throw await errorFrom(response);
 
-  return {
-    filename: filenameOf(response.headers.get('Content-Disposition')),
-    csv: await response.text(),
-    rows: Number(response.headers.get('X-Export-Rows') ?? '0'),
-    // Compared against the string rather than coerced: `Boolean('false')` is true, which
-    // would report every export as short.
-    truncated: response.headers.get('X-Export-Truncated') === 'true',
-  };
-}
-
-/** The filter as the request body shape. Empty axes are omitted, which the service reads as "any". */
-function bodyOf(filter: BackerFilter): Record<string, unknown> {
-  const body: Record<string, unknown> = {};
-  if (filter.states.length > 0) body.states = filter.states;
-  if (filter.rewardTierIds.length > 0) body.rewardTierIds = filter.rewardTierIds;
-  if (filter.countries.length > 0) body.countries = filter.countries;
-  if (filter.term.trim() !== '') body.term = filter.term.trim();
-  return body;
-}
-
-function backerOf(backer: ContractBacker): Backer {
-  return {
-    pledgeId: backer.pledgeId ?? '',
-    name: backer.name ?? '',
-    email: backer.email ?? '',
-    anonymous: backer.anonymous ?? false,
-    rewardTierId: backer.rewardTierId,
-    rewardTitle: backer.rewardTitle,
-    amount: backer.amount as Money,
-    state: (backer.state ?? 'CONFIRMED') as ReportedState,
-    country: backer.country,
-    backedAt: backer.backedAt ?? '',
-  };
-}
-
-function segmentOf(segment: ContractSegment): BackerSegment {
-  return {
-    id: segment.id ?? '',
-    name: segment.name ?? '',
-    filter: {
-      states: (segment.filter?.states ?? []) as readonly ReportedState[],
-      rewardTierIds: segment.filter?.rewardTierIds ?? [],
-      countries: segment.filter?.countries ?? [],
-      term: segment.filter?.term ?? '',
-    },
-    createdBy: segment.createdBy ?? '',
-    createdAt: segment.createdAt ?? '',
-    updatedAt: segment.updatedAt ?? '',
-  };
-}
-
-/**
- * The filename the service chose.
- *
- * Parsed rather than reconstructed here, so that the name in the creator's downloads folder
- * is the one the audit row describes. A header that is missing or unparseable falls back to
- * something safe rather than to `undefined`, which would save the file as the route.
- */
-function filenameOf(disposition: string | null): string {
-  const match = disposition?.match(/filename="?([^";]+)"?/i);
-  return match?.[1] ?? 'backers.csv';
+  return exportOf(response.headers, await response.text());
 }

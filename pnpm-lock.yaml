@@ -412,6 +412,9 @@ importers:
 
   packages/dashboard:
     dependencies:
+      '@ideanest/account':
+        specifier: workspace:*
+        version: link:../account
       '@ideanest/api-client':
         specifier: workspace:*
         version: link:../api-client
