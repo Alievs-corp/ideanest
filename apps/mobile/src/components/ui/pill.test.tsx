@@ -1,5 +1,6 @@
+import { createRef } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, type View } from 'react-native';
 import { Glyphs } from '../../icons';
 import { colors, size } from '../../theme';
 import { MotionBudgetProvider } from './motion-budget';
@@ -131,6 +132,12 @@ describe('Pill', () => {
     const { getByRole } = await render(<Pill label="Go" onPress={onPress} />);
     await fireEvent.press(getByRole('button'));
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands its pressable to a ref, so focus can be moved to it', async () => {
+    const ref = createRef<View>();
+    await render(<Pill label="Go" onPress={noop} ref={ref} />);
+    expect(ref.current).not.toBeNull();
   });
 
   it('refuses a press while busy, says so, and keeps its label', async () => {
