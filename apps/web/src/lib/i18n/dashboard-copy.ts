@@ -1,3 +1,4 @@
+import type { CampaignClockCopy } from '@ideanest/dashboard/clock';
 import type { PluralForms } from './plurals';
 
 /**
@@ -115,26 +116,10 @@ function failuresFrom(t: DashboardTranslator): SharedFailures {
 }
 
 /**
- * The countdown's vocabulary — `lib/dashboard/clock.ts` renders it.
- *
- * The unit shown changes with how much is left, so there are four sentences rather than one
- * template: days while there are days, hours and minutes inside a day, seconds in the last
- * hour. `days` is a plural because the count is the subject of it; the rest carry two numbers
- * each and neither is the one a language would decline for.
+ * The countdown's vocabulary — `@ideanest/dashboard/clock` renders it (#163), and declares its
+ * shape there so the phone resolves the same four sentences.
  */
-export interface CampaignClockCopy {
-  readonly none: string;
-  readonly urgent: string;
-  readonly closed: string;
-  /** Carries `{count}`. */
-  readonly days: PluralForms;
-  /** Carries `{hours}` and `{minutes}`. */
-  readonly hours: string;
-  /** Carries `{minutes}` and `{seconds}`. */
-  readonly minutes: string;
-  /** Carries `{seconds}`. */
-  readonly seconds: string;
-}
+export type { CampaignClockCopy };
 
 function clockCopyFrom(t: DashboardTranslator): CampaignClockCopy {
   return {

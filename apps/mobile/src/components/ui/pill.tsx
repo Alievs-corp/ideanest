@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
+import { createContext, useContext, useEffect, useRef, type ReactNode, type Ref } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, type View, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
   colors,
@@ -171,6 +171,8 @@ export interface PillProps {
    * the word change too, so the state is never carried by the announcement alone.
    */
   readonly selected?: boolean;
+  /** The pressable itself, for moving screen-reader focus to it (an inline confirmation's button). */
+  readonly ref?: Ref<View>;
   readonly testID?: string;
 }
 
@@ -187,6 +189,7 @@ export function Pill({
   accessibilityHint,
   accessibilityLabel,
   selected,
+  ref,
   testID,
 }: PillProps) {
   const blocked = disabled || busy;
@@ -203,6 +206,7 @@ export function Pill({
   return (
     <Animated.View style={[fullWidth ? styles.fill : styles.hug, press.style]}>
       <Pressable
+        ref={ref}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityHint={accessibilityHint}

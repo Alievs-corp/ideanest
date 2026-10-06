@@ -1,9 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
-import { WebFallback } from '../../../../components/web-fallback';
+import { OverviewScreen } from '../../../../features/dashboard/overview/overview-screen';
 
+/** The dashboard's Overview — the web's `/projects/[id]/dashboard` (#163). */
 export default function Screen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <WebFallback titleKey="dashboard.meta.title" webPath={`/projects/${encodeURIComponent(id)}/dashboard`} />;
+  return <OverviewScreen projectId={id} />;
 }
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).

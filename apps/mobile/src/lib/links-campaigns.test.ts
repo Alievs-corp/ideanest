@@ -28,6 +28,28 @@ describe('id-keyed campaign routes', () => {
   });
 });
 
+describe('the creator dashboard, one static route per tab (#163)', () => {
+  it.each(['', '/charts', '/backers', '/finance', '/surveys'])(
+    'opens the dashboard%s from a web link in any language',
+    (tab) => {
+      for (const locale of ['az', 'en', 'ru', 'tr']) {
+        expect(destinationFor(`https://ideanest.az/${locale}/projects/${ID}/dashboard${tab}`, HOST)).toEqual({
+          pathname: `/campaigns/${ID}/dashboard${tab}`,
+        });
+      }
+      expect(destinationFor(`https://ideanest.az/projects/${ID}/dashboard${tab}/?utm_source=x`, HOST)).toEqual({
+        pathname: `/campaigns/${ID}/dashboard${tab}`,
+      });
+    },
+  );
+
+  it('opens no dashboard tab the app does not have', () => {
+    expect(destinationFor(`https://ideanest.az/projects/${ID}/dashboard/referrers`, HOST)?.pathname ?? '').not.toMatch(
+      /^\/campaigns\//,
+    );
+  });
+});
+
 describe('the pre-launch page and the checkout, by id (#155)', () => {
   it('opens the pre-launch screen from a locale-prefixed web link', () => {
     // The web serves every page under a locale, so this is the URL people actually share.

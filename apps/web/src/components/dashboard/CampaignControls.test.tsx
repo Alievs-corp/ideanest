@@ -5,7 +5,7 @@ import { ApiError } from '../../lib/api/problem';
 import { campaignControlsCopyFrom } from '../../lib/i18n/campaign-controls-copy';
 import type { ProjectEdit, ProjectState } from '../../lib/projects/api';
 import { translatorFor } from '../../test-copy';
-import { CampaignControls, extensionWindow } from './CampaignControls';
+import { CampaignControls } from './CampaignControls';
 
 const COPY = campaignControlsCopyFrom(translatorFor('dashboardControls'));
 const DEADLINE = '2026-09-19T12:00:00.000Z';
@@ -119,17 +119,5 @@ describe('extending', () => {
 
     renderControls({ percentFunded: 49 });
     expect(screen.queryByRole('button', { name: 'Extend the deadline' })).not.toBeInTheDocument();
-  });
-});
-
-describe('extensionWindow', () => {
-  it('runs from the day after the deadline to sixty days after it, at the deadline’s time', () => {
-    expect(extensionWindow(DEADLINE)).toEqual({
-      deadlineDay: '2026-09-19',
-      firstDay: '2026-09-20',
-      latestDay: '2026-11-18',
-      timeOfDay: 'T12:00:00.000Z',
-    });
-    expect(extensionWindow(null)).toBeNull();
   });
 });

@@ -193,6 +193,7 @@ const nextConfig = {
     '@ideanest/campaign',
     '@ideanest/checkout',
     '@ideanest/account',
+    '@ideanest/dashboard',
     '@ideanest/legal',
     '@ideanest/plans',
   ],

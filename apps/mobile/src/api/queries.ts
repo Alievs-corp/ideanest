@@ -148,6 +148,12 @@ export const queryKeys = {
   profileVisibility: (slug: string) => ['settings', 'visibility', slug] as const,
   legalSubject: () => ['settings', 'legalSubject'] as const,
   payoutDestination: () => ['settings', 'payoutDestination'] as const,
+  /**
+   * The creator dashboard's Overview (#163): one campaign's totals, deadline and state, with the
+   * clock skew measured when they arrived. Persisted, private: the creator's own figures, read
+   * offline with "As of" beside them; nothing in it is a backer's.
+   */
+  dashboardOverview: (projectId: string) => ['dashboardOverview', projectId] as const,
 } as const;
 
 /**

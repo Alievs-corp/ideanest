@@ -5731,6 +5731,17 @@
       "signedOutBody": "Deliveries follow your pledges, which belong to your account rather than to this phone.",
       "stale": "Showing deliveries saved on this device. They may be out of date.",
       "trackingHint": "Opens the carrier’s tracking page in the app’s browser"
+    },
+    "dashboard": {
+      "asOf": "As of {time}.",
+      "controlsOffline": "Extending and withdrawing need a connection. They come back as soon as you are online.",
+      "chooseDate": "Choose a date",
+      "useDate": "Use this date",
+      "useDateLabel": "Use {date} as the new deadline",
+      "checking": "Checking what happened…",
+      "withdrawNotTaken": "The connection dropped before the service answered. The campaign is still {state}, so nothing was withdrawn, and you can try again.",
+      "extendNotTaken": "The connection dropped before the service answered. The deadline has not moved, so you can try again.",
+      "outcomeUnknown": "The connection dropped before the service answered, and the campaign could not be read again to check. Pull down to refresh before you try again."
     }
   }
 }
