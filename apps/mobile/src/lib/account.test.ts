@@ -5,6 +5,7 @@ import {
   badgeText,
   canReadAccount,
   fetchMe,
+  fetchUnreadCount,
   sessionStateOf,
   type Me,
 } from './account';
@@ -56,11 +57,12 @@ describe('canReadAccount', () => {
 });
 
 describe('badgeText', () => {
-  it('draws nothing at zero, the number below 100 and 99+ above', () => {
+  it('draws nothing at zero, the number up to nine and 9+ above', () => {
     expect(badgeText(0)).toBeNull();
     expect(badgeText(7)).toBe('7');
-    expect(badgeText(99)).toBe('99');
-    expect(badgeText(100)).toBe('99+');
+    expect(badgeText(9)).toBe('9');
+    expect(badgeText(10)).toBe('9+');
+    expect(badgeText(250)).toBe('9+');
   });
 });
 
@@ -114,5 +116,15 @@ describe('fetchMe', () => {
     answer(401);
 
     await expect(fetchMe()).resolves.toBeNull();
+  });
+
+  it('reads the unread count from a one-row page of the inbox', async () => {
+    rememberAccessToken('access-1');
+    answer(200, { notifications: [], unreadCount: 12 });
+
+    await expect(fetchUnreadCount()).resolves.toBe(12);
+    const url = new URL(String(jest.mocked(global.fetch).mock.calls[0]?.[0]));
+    expect(url.pathname).toBe('/v1/me/notifications');
+    expect(url.searchParams.get('limit')).toBe('1');
   });
 });

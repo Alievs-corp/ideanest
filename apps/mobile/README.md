@@ -453,8 +453,29 @@ deliver the second person's pledge confirmations to somebody else's lock screen.
 Tapping a notification goes through the same parser a shared link does, so the
 two cannot drift into "works from a link, does nothing from a notification".
 
-`settings/notifications` (#161) is one of those moments: turning a Push switch to
-anything but Off while the phone has not allowed IdeyaNest calls `registerForPush()`.
+When `registerForPush()` (the one call that may prompt) runs, and when the
+prompt-free calls run (#160):
+
+| Moment | Call |
+|---|---|
+| Cold start and every foreground, signed in | `syncPushRegistration()` from `src/lib/push-sync.tsx`: registers when already allowed; when the permission went from allowed to denied, `DELETE /v1/me/devices` |
+| Right after sign-in | `registerIfAllowed()` (never prompts) |
+| A pledge reaches `COLLECTED` on the payment return, a creator is followed, a campaign is saved | the explainer card (`src/features/notifications/push-explainer.tsx`), shown only while the phone has not decided; "Turn on" calls `registerForPush()`, "Not now" hides it for 30 days (MMKV) |
+| `settings/notifications` | the "allow notifications" banner, and a Push switch moved from Off |
+
+Never on launch while signed out, and never again after a refusal. The tap handler
+(`src/lib/push-sync.tsx`, rules in `src/lib/push-taps.ts`) opens `data.url` through
+`destinationFor`; a push of ours with no destination (`ideanest://`, a digest) opens
+the inbox, and a `notificationId` in the payload marks that row read. The cold-start
+tap is handled once per response. No badge is ever set.
+
+`notifications` (#160) is the inbox — `GET /v1/me/notifications` paged by
+`before`/`beforeId`, held in memory only (the `inbox` root is never persisted), with
+the sentence and destination of each row from `@ideanest/account/inbox`, shared with
+the web. The header bell's count is a one-row read of the same endpoint.
+
+`settings/notifications` (#161) is one of those moments: turning a Push switch from
+Off while the phone has not allowed IdeyaNest calls `registerForPush()`.
 A refusal keeps the account's preference, and the screen says push is off in the
 phone's settings, with a button to them, whenever the permission is denied. The
 table's order and modes are `@ideanest/account/notifications`, shared with the web;

@@ -331,6 +331,9 @@ importers:
       '@ideanest/messages':
         specifier: workspace:*
         version: link:../messages
+      '@ideanest/money':
+        specifier: workspace:*
+        version: link:../money
     devDependencies:
       '@types/node':
         specifier: ~22.20.2

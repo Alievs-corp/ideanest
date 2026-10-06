@@ -5446,8 +5446,7 @@
       }
     },
     "header": {
-      "unread": "Bildirişlər, {count, plural, =0 {oxunmamış yoxdur} one {# oxunmamış} other {# oxunmamış}}",
-      "over": "Bildirişlər, 99-dan çox oxunmamış"
+      "unread": "Bildirişlər, {count, plural, =0 {oxunmamış yoxdur} one {# oxunmamış} other {# oxunmamış}}"
     },
     "me": {
       "thisPhone": "Bu telefon",
@@ -5667,7 +5666,10 @@
         "chooseHint": "Çatdırılma seçimlərini açır",
         "conflict": "Bu ayarı eyni anda başqa yerdən də dəyişdilər. Siyahı indi yadda saxlanılanı göstərir; yenidən cəhd edin.",
         "offlineEmpty": "Bildiriş ayarlarınız bağlantı bərpa olunanda yüklənəcək.",
-        "pushFailed": "Seçiminiz yadda saxlanılıb, lakin bu telefonda push bildirişlərini qurmaq mümkün olmadı. Bir az sonra yenidən cəhd edin."
+        "pushFailed": "Seçiminiz yadda saxlanılıb, lakin bu telefonda push bildirişlərini qurmaq mümkün olmadı. Bir az sonra yenidən cəhd edin.",
+        "pushAskTitle": "Bu telefonda push bildirişləri hələ qurulmayıb",
+        "pushAskBody": "Aşağıda Push kimi seçdiklərinizi bu telefonda almaq üçün IdeyaNest bildirişlərinə icazə verin.",
+        "pushAskAction": "Bildirişlərə icazə ver"
       }
     },
     "content": {
@@ -5767,6 +5769,19 @@
       "tiersFailed": "Mükafat səviyyələri yüklənmədi, ona görə hər sual bütün dəstəkçilərə veriləcək. Qalan hər şey işləyir.",
       "emptyTitle": "Hələ sorğu yoxdur",
       "emptyBody": "Göndərişdən əvvəl bilməli olduğunuz şeydən başlayın. Qaralama siz göndərənə qədər heç kimə getmir."
+    },
+    "notifications": {
+      "signedOutBody": "Bildirişləriniz bu telefona deyil, hesabınıza aiddir. Onları oxumaq üçün daxil olun.",
+      "stale": "Əvvəl yüklənmiş bildirişlər göstərilir. Onlar köhnəlmiş ola bilər.",
+      "offline": "İnternet bağlantısı yoxdur. Bildirişi oxunmuş kimi işarələmək üçün bağlantı lazımdır.",
+      "explainer": {
+        "title": "Bu telefonda bildiriş alın",
+        "pledgeBody": "Bu kampaniya hədəfinə çatanda, yenilik paylaşanda və ya ödənişinizi alanda xəbər tutun.",
+        "followBody": "Bu müəllif kampaniya başladanda xəbər tutun.",
+        "saveBody": "Bu kampaniya bağlanmazdan əvvəl xəbər tutun.",
+        "turnOn": "Aktiv et",
+        "notNow": "İndi yox"
+      }
     }
   }
 }

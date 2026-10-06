@@ -9,18 +9,20 @@ import {
   markNotificationRead,
   type InboxCursor,
   type InboxNotification,
-  type NotificationCategory,
 } from '../../lib/notifications/api';
-import { categoryLabel, dayKeyOf, dayLabelOf } from '../../lib/notifications/describe';
+import {
+  categoryLabel,
+  dayLabelOf,
+  groupByDay,
+  visibleNotifications,
+  type InboxFilter as Filter,
+} from '@ideanest/account/inbox';
 import { NotificationRow } from './NotificationRow';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { InboxCopy } from '../../lib/i18n/notifications-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 type Status = 'loading' | 'ready' | 'failed' | 'signed-out';
-
-/** "All", or one of §4.10's seven groups. */
-type Filter = NotificationCategory | 'ALL';
 
 function messageFor(cause: unknown, copy: InboxCopy): string {
   if (cause instanceof ApiError) {
@@ -33,34 +35,6 @@ function messageFor(cause: unknown, copy: InboxCopy): string {
 
 function wasAborted(cause: unknown): boolean {
   return cause instanceof DOMException && cause.name === 'AbortError';
-}
-
-/** The rows, cut to what the two filters allow. */
-function visible(
-  notifications: readonly InboxNotification[],
-  filter: Filter,
-  unreadOnly: boolean,
-): readonly InboxNotification[] {
-  return notifications.filter(
-    (row) =>
-      (filter === 'ALL' || row.category === filter) &&
-      (!unreadOnly || row.readAt === undefined || row.readAt === null),
-  );
-}
-
-/** The visible rows split into consecutive runs that fall on one calendar day. */
-function byDay(
-  notifications: readonly InboxNotification[],
-): ReadonlyArray<readonly [key: string, rows: readonly InboxNotification[]]> {
-  const groups: Array<[string, InboxNotification[]]> = [];
-
-  for (const row of notifications) {
-    const key = dayKeyOf(row.occurredAt);
-    const last = groups.at(-1);
-    if (last !== undefined && last[0] === key) last[1].push(row);
-    else groups.push([key, [row]]);
-  }
-  return groups;
 }
 
 /**
@@ -203,8 +177,8 @@ export function InboxPanel({ copy }: InboxPanelProps) {
     );
   }
 
-  const shown = visible(notifications, filter, unreadOnly);
-  const groups = byDay(shown);
+  const shown = visibleNotifications(notifications, filter, unreadOnly);
+  const groups = groupByDay(shown);
 
   return (
     <section aria-labelledby="inbox-heading">

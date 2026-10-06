@@ -182,23 +182,33 @@ function PreferencesPanel() {
     }
 
     /*
-     * Asked at the moment it means something: a Push switch has just been turned on and the
-     * phone has not allowed IdeyaNest to notify. A refusal keeps the server's preference; the
+     * Asked at the moment it means something: a Push switch has just been turned on from Off and
+     * the phone has not allowed IdeyaNest to notify. A refusal keeps the server's preference; the
      * notice at the top then explains why nothing will arrive, with the way to the settings.
      */
-    if (preference.channel === 'PUSH' && mode !== 'OFF' && permission !== 'granted') {
-      setPushFailed(false);
-      try {
-        const outcome = await registerForPush();
-        const now = await refresh();
-        if (outcome.status === 'failed') setPushFailed(true);
-        // iOS has no live regions, so the notice appearing is said out loud here, once.
-        if (now === 'denied' && Platform.OS === 'ios') {
-          announce(tAll('mobile.settings.notifications.pushOffTitle'), { assertive: true });
-        }
-      } catch {
-        setPushFailed(true);
+    if (
+      preference.channel === 'PUSH' &&
+      preference.mode === 'OFF' &&
+      mode !== 'OFF' &&
+      permission !== 'granted'
+    ) {
+      await askForPush();
+    }
+  }
+
+  /** `registerForPush` shows the system prompt only while the phone has not decided. */
+  async function askForPush(): Promise<void> {
+    setPushFailed(false);
+    try {
+      const outcome = await registerForPush();
+      const now = await refresh();
+      if (outcome.status === 'failed') setPushFailed(true);
+      // iOS has no live regions, so the notice appearing is said out loud here, once.
+      if (now === 'denied' && Platform.OS === 'ios') {
+        announce(tAll('mobile.settings.notifications.pushOffTitle'), { assertive: true });
       }
+    } catch {
+      setPushFailed(true);
     }
   }
 
@@ -220,6 +230,24 @@ function PreferencesPanel() {
             />
           }
           testID="preferences-push-off"
+        />
+      ) : permission === 'undetermined' ? (
+        <InlineAlert
+          variant="info"
+          politeness="polite"
+          title={tAll('mobile.settings.notifications.pushAskTitle')}
+          description={tAll('mobile.settings.notifications.pushAskBody')}
+          action={
+            <Pill
+              label={tAll('mobile.settings.notifications.pushAskAction')}
+              variant="outline"
+              size="sm"
+              disabled={!online}
+              onPress={() => void askForPush()}
+              testID="preferences-allow-push"
+            />
+          }
+          testID="preferences-push-ask"
         />
       ) : null}
 

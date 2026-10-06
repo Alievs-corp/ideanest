@@ -5446,8 +5446,7 @@
       }
     },
     "header": {
-      "unread": "Bildirimler, {count, plural, =0 {okunmamış yok} one {# okunmamış} other {# okunmamış}}",
-      "over": "Bildirimler, 99’dan fazla okunmamış"
+      "unread": "Bildirimler, {count, plural, =0 {okunmamış yok} one {# okunmamış} other {# okunmamış}}"
     },
     "me": {
       "thisPhone": "Bu telefon",
@@ -5667,7 +5666,10 @@
         "chooseHint": "Teslim seçeneklerini açar",
         "conflict": "Bu ayar aynı anda başka bir yerden değiştirildi. Liste artık kaydedileni gösteriyor; yeniden deneyin.",
         "offlineEmpty": "Bildirim ayarlarınız bağlantı geri geldiğinde yüklenecek.",
-        "pushFailed": "Seçiminiz kaydedildi, ancak bu telefonda anlık bildirimler kurulamadı. Daha sonra yeniden deneyin."
+        "pushFailed": "Seçiminiz kaydedildi, ancak bu telefonda anlık bildirimler kurulamadı. Daha sonra yeniden deneyin.",
+        "pushAskTitle": "Bu telefonda anlık bildirimler henüz ayarlanmadı",
+        "pushAskBody": "Aşağıda Anlık bildirim olarak seçtiklerinizi bu telefonda almak için IdeyaNest bildirimlerine izin verin.",
+        "pushAskAction": "Bildirimlere izin ver"
       }
     },
     "content": {
@@ -5767,6 +5769,19 @@
       "tiersFailed": "Ödül seviyeleri yüklenmedi, bu yüzden her soru tüm destekçilere gidecek. Geri kalan her şey çalışıyor.",
       "emptyTitle": "Henüz anket yok",
       "emptyBody": "Gönderimden önce bilmeniz gerekenle başlayın. Bir taslak, siz gönderene kadar kimseye gitmez."
+    },
+    "notifications": {
+      "signedOutBody": "Bildirimleriniz bu telefona değil, hesabınıza aittir. Okumak için giriş yapın.",
+      "stale": "Daha önce yüklenen bildirimler gösteriliyor. Güncel olmayabilirler.",
+      "offline": "Çevrimdışısınız. Bir bildirimi okundu olarak işaretlemek için bağlantı gerekir.",
+      "explainer": {
+        "title": "Bu telefonda bildirim alın",
+        "pledgeBody": "Bu kampanya hedefine ulaştığında, güncelleme paylaştığında veya ödemenizi aldığında haberiniz olsun.",
+        "followBody": "Bu yaratıcı bir kampanya başlattığında haberiniz olsun.",
+        "saveBody": "Bu kampanya kapanmadan önce haberiniz olsun.",
+        "turnOn": "Aç",
+        "notNow": "Şimdi değil"
+      }
     }
   }
 }

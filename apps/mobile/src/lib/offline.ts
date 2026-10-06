@@ -94,6 +94,8 @@ const PERSISTED_ROOTS: readonly string[] = [
  *   a VÖEN, a payout card's holder.
  * - `dashboardBackers`: the creator dashboard's backer report (#163) — a campaign's mailing list,
  *   the names and email addresses of people who are not this account.
+ * - `inbox`: the notifications (#160) — time-sensitive like a feed; offline, the screen shows what
+ *   this process read and nothing older.
  */
 export const UNPERSISTED_ROOTS: readonly string[] = [
   'comments',
@@ -101,6 +103,7 @@ export const UNPERSISTED_ROOTS: readonly string[] = [
   'shippingAddress',
   'settings',
   'dashboardBackers',
+  'inbox',
 ];
 
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {

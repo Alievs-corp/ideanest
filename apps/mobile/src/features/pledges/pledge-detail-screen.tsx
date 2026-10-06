@@ -50,6 +50,7 @@ import { readPledge } from './api';
 import { findMyPledge } from './campaign-lookup';
 import { DisputeForm } from './dispute-form';
 import { STATE_ICON } from './pledge-card';
+import { PushExplainer } from '../notifications/push-explainer';
 import { PaymentReturnNotice, RaiseReturnNotice } from './return-notice';
 import { usePaymentSettling } from './use-payment-settling';
 import { cachedPledgeSummaries, type PledgePages } from './use-pledge-list';
@@ -297,6 +298,7 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
 
       <ContentSheet>
         {paymentHint === null ? null : <PaymentReturnNotice hint={paymentHint} state={pledge.state} />}
+        {paymentHint !== null && pledge.state === 'COLLECTED' ? <PushExplainer moment="pledge" /> : null}
         {raiseHint === null ? null : <RaiseReturnNotice hint={raiseHint} raise={pledge.latestRaise} />}
 
         <PledgeSummary

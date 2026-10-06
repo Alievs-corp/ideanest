@@ -166,6 +166,11 @@ export const queryKeys = {
    * offline with "As of" beside them; nothing in it is a backer's.
    */
   dashboardOverview: (projectId: string) => ['dashboardOverview', projectId] as const,
+  /**
+   * The inbox's pages (#160). Its own root, `inbox`, never persisted: notifications are
+   * time-sensitive, and last week's unread rows restored after a restart would read as news.
+   */
+  inbox: () => ['inbox'] as const,
 } as const;
 
 /**

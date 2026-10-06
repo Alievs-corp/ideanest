@@ -4,7 +4,7 @@ import { Link } from '../../i18n/navigation';
 import { Pill, Tag } from '@ideanest/ui';
 import type { Locale } from '../../lib/i18n/locale';
 import type { InboxNotification } from '../../lib/notifications/api';
-import { categoryLabel, describeNotification } from '../../lib/notifications/describe';
+import { categoryLabel, describeNotification } from '@ideanest/account/inbox';
 import { formatExactTime, formatRelativeTime } from '../../lib/time';
 import type { InboxCopy } from '../../lib/i18n/notifications-copy';
 
@@ -40,7 +40,7 @@ export interface NotificationRowProps {
  * link that navigates *and* reports the read, and there is a separate button for the rows
  * with nowhere to go and for a reader who wants to clear one without opening it.
  *
- * A row whose document names no campaign has no link at all — `describe.ts` argues why an
+ * A row whose document names no campaign has no link at all — `@ideanest/account/inbox` argues why an
  * inbox row that goes nowhere useful is better as plain text than as a live-looking link.
  *
  * MOTION IS NEAR ZERO, following `SessionsPanel`: this is a screen where somebody is

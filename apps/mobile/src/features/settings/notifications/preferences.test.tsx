@@ -359,6 +359,37 @@ describe('push and the phone’s permission', () => {
     expect(screen.queryByTestId('preferences-push-off')).toBeNull();
   });
 
+  it('asks only when Push moves from Off, not between two ways of sending', async () => {
+    sendJson.mockResolvedValue({ preferences: table() });
+    mockGet.mockResolvedValue({
+      preferences: table([{ category: 'PLEDGES', channel: 'PUSH', mode: 'IMMEDIATE', digestOffered: true }]),
+    });
+    await show();
+    await choose('PLEDGES', 'PUSH', 'DIGEST');
+
+    expect(sendJson).toHaveBeenCalledTimes(1);
+    expect(registerForPush).not.toHaveBeenCalled();
+  });
+
+  it('offers to allow notifications while the phone has not decided, and asks from there', async () => {
+    await show();
+
+    expect(screen.getByTestId('preferences-push-ask')).toBeTruthy();
+    expect(screen.getByText(M.pushAskTitle)).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: M.pushAskAction }));
+    await settle();
+
+    expect(registerForPush).toHaveBeenCalledTimes(1);
+  });
+
+  it('has no allow banner once the phone allows notifications', async () => {
+    permission(true, 'granted');
+    await show();
+
+    expect(screen.queryByTestId('preferences-push-ask')).toBeNull();
+    expect(screen.queryByTestId('preferences-push-off')).toBeNull();
+  });
+
   it('says so at the top whenever the phone has push turned off', async () => {
     permission(false, 'denied');
     await show();
