@@ -38,6 +38,9 @@ import tools.jackson.databind.ObjectMapper;
 @Component
 public class NotificationFacts {
 
+    /** The session list. Where {@code NEW_DEVICE_SIGN_IN} goes on every channel. */
+    private static final String SESSIONS = "/settings/sessions";
+
     private final ObjectMapper json;
 
     public NotificationFacts(ObjectMapper json) {
@@ -167,18 +170,14 @@ public class NotificationFacts {
      * shown a 404 renders a page saying so. {@code apps/mobile}'s {@code lib/links.ts}
      * refuses a path it does not recognise outright, so a push notification built on the
      * third branch opens the application and goes nowhere at all — see
-     * {@link PushComposer}, which is why it sends only the second.
+     * {@link PushComposer}, which is why it sends only the first two ({@link #appPathFor}).
      *
      * @return a path beginning with {@code /}, never empty and never a whole URL
      */
     public String pathFor(NotificationType type, JsonNode params, String subjectType, UUID subjectId) {
-        if (type == NotificationType.NEW_DEVICE_SIGN_IN) {
-            return "/settings/sessions";
-        }
-
-        String campaign = campaignPath(params);
-        if (campaign != null) {
-            return campaign;
+        String exact = appPathFor(type, params);
+        if (exact != null) {
+            return exact;
         }
 
         UUID projectId = uuid(params);
@@ -192,11 +191,18 @@ public class NotificationFacts {
     }
 
     /**
-     * The campaign's public path from the two slugs, or null when the document has neither.
+     * {@link #pathFor}'s first two sources and none of its fallbacks, or null.
      *
-     * <p>Separate from {@link #pathFor} because push needs exactly this and none of the
-     * fallbacks: the fallbacks resolve to paths the mobile application has no screen for.
+     * <p>The session list for {@code NEW_DEVICE_SIGN_IN}, otherwise the campaign. These are
+     * the two destinations the web inbox's {@code hrefOf} links, and both are screens the
+     * mobile application has — the fallbacks resolve to paths it has no screen for, which is
+     * why push sends this rather than {@link #pathFor}.
      */
+    public String appPathFor(NotificationType type, JsonNode params) {
+        return type == NotificationType.NEW_DEVICE_SIGN_IN ? SESSIONS : campaignPath(params);
+    }
+
+    /** The campaign's public path from the two slugs, or null when the document has neither. */
     public String campaignPath(JsonNode params) {
         String creatorSlug = text(params, "creatorSlug");
         String projectSlug = text(params, "projectSlug");

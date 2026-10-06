@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +16,7 @@ import az.ideanest.notification.domain.NotificationChannel;
 import az.ideanest.notification.domain.NotificationType;
 import az.ideanest.notification.domain.PushDevice;
 import az.ideanest.notification.infrastructure.ExpoPushClient;
+import az.ideanest.notification.infrastructure.NotificationRepository;
 import az.ideanest.notification.infrastructure.PushChannelSender;
 import az.ideanest.notification.infrastructure.PushComposer;
 import az.ideanest.user.application.UserAccount;
@@ -45,7 +47,8 @@ class PushLanguageTests {
     private final PushComposer composer = mock(PushComposer.class);
     private final ExpoPushClient expo = mock(ExpoPushClient.class);
     private final UserAccounts users = mock(UserAccounts.class);
-    private final PushChannelSender sender = new PushChannelSender(devices, composer, expo, users);
+    private final NotificationRepository notifications = mock(NotificationRepository.class);
+    private final PushChannelSender sender = new PushChannelSender(devices, composer, expo, users, notifications);
 
     @BeforeEach
     void aPhoneThatAcceptsEverything() {
@@ -53,8 +56,9 @@ class PushLanguageTests {
         when(phone.getToken()).thenReturn("ExponentPushToken[aaaaaaaaaaaaaaaaaaaaaa]");
         when(devices.reachable(RECIPIENT)).thenReturn(List.of(phone));
         when(expo.send(anyList())).thenReturn(List.of(new ExpoPushClient.Ticket(true, false, null)));
-        when(composer.compose(any(NotificationMessage.class), anyString(), any(Locale.class)))
-                .thenReturn(new PushComposer.PushContent("title", "line", "ideanest://"));
+        when(notifications.inboxIdOf(any())).thenReturn(Optional.empty());
+        when(composer.compose(any(NotificationMessage.class), any(), anyString(), any(Locale.class)))
+                .thenReturn(new PushComposer.PushContent("title", "line", "ideanest://", "PLEDGE_CONFIRMED", null));
     }
 
     @Test
@@ -64,12 +68,12 @@ class PushLanguageTests {
 
         speaks("ru");
         sender.send(queued);
-        verify(composer).compose(queued, "", Locale.forLanguageTag("ru"));
+        verify(composer).compose(queued, null, "", Locale.forLanguageTag("ru"));
 
         // The person chose Turkish on the web after the row was queued; the retry follows.
         speaks("tr");
         sender.send(queued);
-        verify(composer).compose(queued, "", Locale.forLanguageTag("tr"));
+        verify(composer).compose(queued, null, "", Locale.forLanguageTag("tr"));
     }
 
     @Test
@@ -79,7 +83,22 @@ class PushLanguageTests {
 
         sender.send(message());
 
-        verify(composer).compose(any(NotificationMessage.class), eq(""), eq(Locale.forLanguageTag("az")));
+        verify(composer).compose(any(NotificationMessage.class), any(), eq(""), eq(Locale.forLanguageTag("az")));
+    }
+
+    @Test
+    @DisplayName("falls back to the primary language for an account with none, or one it does not speak")
+    void anUnreadableLanguageReadsAsThePrimaryLanguage() {
+        NotificationMessage queued = message();
+
+        speaks(null);
+        sender.send(queued);
+
+        // A row written before the column's constraint, or by hand. ReaderLocale's rule.
+        speaks("de");
+        sender.send(queued);
+
+        verify(composer, times(2)).compose(queued, null, "", Locale.forLanguageTag("az"));
     }
 
     @Test

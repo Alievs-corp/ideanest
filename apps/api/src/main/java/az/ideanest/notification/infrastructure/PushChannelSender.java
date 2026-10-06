@@ -13,6 +13,7 @@ import az.ideanest.user.application.UserAccounts;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -91,13 +92,19 @@ public class PushChannelSender implements ChannelSender {
     private final PushComposer composer;
     private final ExpoPushClient expo;
     private final UserAccounts users;
+    private final NotificationRepository notifications;
 
     public PushChannelSender(
-            PushDevices devices, PushComposer composer, ExpoPushClient expo, UserAccounts users) {
+            PushDevices devices,
+            PushComposer composer,
+            ExpoPushClient expo,
+            UserAccounts users,
+            NotificationRepository notifications) {
         this.devices = devices;
         this.composer = composer;
         this.expo = expo;
         this.users = users;
+        this.notifications = notifications;
     }
 
     @Override
@@ -105,11 +112,18 @@ public class PushChannelSender implements ChannelSender {
         return NotificationChannel.PUSH;
     }
 
+    /**
+     * One message, with the inbox row of the same event in its {@code data}.
+     *
+     * <p>Looked up inside the composition, which runs only once a registered device is
+     * found — so, like the language, it costs the accounts with no phone nothing.
+     */
     @Override
     public void send(NotificationMessage message) {
         deliver(
                 message.recipientId(),
-                locale -> composer.compose(message, NO_GREETING, locale),
+                locale -> composer.compose(
+                        message, notifications.inboxIdOf(message.id()).orElse(null), NO_GREETING, locale),
                 message.id(),
                 "notification " + message.id());
     }
@@ -155,14 +169,11 @@ public class PushChannelSender implements ChannelSender {
         }
 
         PushComposer.PushContent content = compose.apply(localeOf(recipientId));
+        Map<String, String> data = content.data();
         List<ExpoPushClient.Push> batch = new ArrayList<>(registered.size());
         for (PushDevice device : registered) {
             batch.add(new ExpoPushClient.Push(
-                    device.getToken(),
-                    content.title(),
-                    content.body(),
-                    content.url(),
-                    idempotencyKey.toString()));
+                    device.getToken(), content.title(), content.body(), data, idempotencyKey.toString()));
         }
 
         /*
