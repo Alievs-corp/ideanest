@@ -10,6 +10,7 @@ import {
   reconcileWithAccount,
 } from './locale-sync';
 import { ACCOUNT_ROOTS, forgetPersistedCache } from './offline';
+import { forgetUnsentEdits } from './unsent-edits';
 import { useSession } from './use-session';
 
 /**
@@ -63,6 +64,8 @@ export function AccountSync() {
       held.current = false;
       forgetPersistedCache();
       sweepAccountExports();
+      // The editor's unsent changes (#162) are this account's words, not the next person's.
+      forgetUnsentEdits();
     }
   }, [signedIn, queryClient]);
 

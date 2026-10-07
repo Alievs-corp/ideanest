@@ -1,4 +1,5 @@
-import { StyleSheet, type ViewStyle } from 'react-native';
+import type { Ref } from 'react';
+import { StyleSheet, type View, type ViewStyle } from 'react-native';
 import { colors, radius, size as measure, tint } from '../../theme';
 import { useFocusRing } from './focus';
 import { Icon, type IconComponent } from './icon';
@@ -39,6 +40,8 @@ export interface IconButtonProps {
   /** A toggle's state — the password reveal, a saved heart. */
   readonly selected?: boolean;
   readonly accessibilityHint?: string;
+  /** The pressable itself, for moving screen-reader focus back to it (a reorder button, #162). */
+  readonly ref?: Ref<View>;
   readonly testID?: string;
 }
 
@@ -51,6 +54,7 @@ export function IconButton({
   disabled = false,
   selected,
   accessibilityHint,
+  ref,
   testID,
 }: IconButtonProps) {
   const surface = useSurface();
@@ -62,6 +66,7 @@ export function IconButton({
 
   return (
     <AnimatedPressable
+      ref={ref}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}

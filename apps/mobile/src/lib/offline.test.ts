@@ -69,6 +69,11 @@ describe('what survives a restart', () => {
     expect(shouldPersistQuery(queryKeys.dashboardOverview('p1'))).toBe(true);
   });
 
+  it('keeps the editor’s project, for reading offline, and erases it with the account (#162)', () => {
+    expect(shouldPersistQuery(queryKeys.projectEdit('p1'))).toBe(true);
+    expect(ACCOUNT_ROOTS).toContain(queryKeys.projectEdit('p1')[0]);
+  });
+
   it('never writes a campaign’s money, its mailing list or its surveys (#163)', () => {
     expect(shouldPersistQuery(queryKeys.dashboardAnalytics('p1'))).toBe(false);
     expect(shouldPersistQuery(queryKeys.dashboardBreakdown('p1'))).toBe(false);
