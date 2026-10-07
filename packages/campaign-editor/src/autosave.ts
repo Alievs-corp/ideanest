@@ -97,7 +97,7 @@ export function canStart(machine: AutosaveMachine<unknown>): boolean {
  */
 export function unsavedPatch<P>(machine: AutosaveMachine<P>): Partial<P> | null {
   if (machine.inFlight === null) return machine.queued;
-  return { ...machine.inFlight, ...(machine.queued ?? {}) };
+  return { ...machine.inFlight, ...machine.queued };
 }
 
 export function autosaveReducer<P>(
@@ -108,7 +108,8 @@ export function autosaveReducer<P>(
     case 'queue':
       return {
         ...machine,
-        queued: { ...(machine.queued ?? {}), ...event.patch },
+        // Spreading a null queue spreads nothing.
+        queued: { ...machine.queued, ...event.patch },
         /*
          * "Saving" the moment a key is pressed, before the debounce has elapsed. The
          * alternative is to leave "Saved" on screen while unsent text sits in the queue, and
@@ -144,7 +145,7 @@ export function autosaveReducer<P>(
          * the retry lossless: the creator's text is still here, and it is still here after
          * the second failure too.
          */
-        queued: { ...machine.inFlight, ...(machine.queued ?? {}) },
+        queued: { ...machine.inFlight, ...machine.queued },
         inFlight: null,
         failure: event.failure,
         status: 'failed',

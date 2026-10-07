@@ -27,8 +27,8 @@ import { ApiError } from '../../lib/api/problem';
  * The machine is held in a ref rather than in state, because every transition
  * has to see the one before it synchronously — a keystroke that lands between a
  * response and the re-render it causes must merge into the queue that response
- * left, not into a stale copy. The three values the screen reads are mirrored
- * into state after each transition.
+ * left, not into a stale copy. Each transition's result is also set as state,
+ * which is what the indicator renders from.
  *
  * Written as a hook rather than as part of the basics form because #34, #35 and
  * #39 autosave the same way through the same endpoint. A second implementation
@@ -101,11 +101,12 @@ export function useAutosave<P extends object, R>({
   onSaved,
   delayMs = 800,
 }: AutosaveOptions<P, R>): Autosave<P> {
-  const [state, setState] = useState<SaveState>('idle');
-  const [failure, setFailure] = useState<SaveFailure | null>(null);
-  const [pending, setPending] = useState(false);
-
-  const machine = useRef<AutosaveMachine<P>>(initialAutosave<P>());
+  /*
+   * One snapshot of the machine for the render, and the ref every transition reads. A
+   * transition that changes nothing returns the same object, so setting it re-renders nothing.
+   */
+  const [view, setView] = useState<AutosaveMachine<P>>(initialAutosave);
+  const machine = useRef(view);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // The callbacks are read through refs so that a caller passing an inline
@@ -121,9 +122,7 @@ export function useAutosave<P extends object, R>({
   const apply = useCallback((event: AutosaveEvent<P>): AutosaveMachine<P> => {
     const next = autosaveReducer(machine.current, event);
     machine.current = next;
-    setState(next.status);
-    setFailure(next.failure);
-    setPending(isPending(next));
+    setView(next);
     return next;
   }, []);
 
@@ -200,5 +199,5 @@ export function useAutosave<P extends object, R>({
     };
   }, []);
 
-  return { state, failure, pending, save, flush, retry };
+  return { state: view.status, failure: view.failure, pending: isPending(view), save, flush, retry };
 }
