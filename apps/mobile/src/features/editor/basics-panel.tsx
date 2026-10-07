@@ -97,8 +97,8 @@ function Loading({ label }: { readonly label: string }) {
   );
 }
 
-/** A 422's `errors`, on the fields this form has; `goal.amount` is about the goal. */
-function serverErrors(failure: SaveFailure | null): BasicsErrors {
+/** A 422's `errors`, on the basics fields; `goal.amount` is about the goal. Pre-launch edits three of them. */
+export function basicsServerErrors(failure: SaveFailure | null): BasicsErrors {
   if (failure === null) return {};
   const mapped: BasicsErrors = {};
   for (const [key, message] of Object.entries(failure.fieldErrors)) {
@@ -178,7 +178,7 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
   }
 
   const failure = autosave.failure;
-  const errors: BasicsErrors = { ...validateBasics(draft, basics.validation), ...serverErrors(failure) };
+  const errors: BasicsErrors = { ...validateBasics(draft, basics.validation), ...basicsServerErrors(failure) };
   const selected = categories?.find((category) => category.id === draft.categoryId) ?? null;
   const subcategories = selected?.subcategories ?? [];
 

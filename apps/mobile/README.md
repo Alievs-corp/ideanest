@@ -755,9 +755,7 @@ there; signed out, through sign-in and back.
 route group's `_layout.tsx`) names the project in the stack header with the save indicator on
 the right, draws the state tag and the six tab pills, and owns the states every tab shares
 (signed out, failed with the 403/404 wording, offline). Tabs replace the route after flushing
-the autosave, so Back leaves the editor. Basics, Rewards, Story and FAQ are native; Pre-launch
-and Review open the same tab on the website (`editor-web-tab.tsx`) until each lands — each is
-one line in its route file.
+the autosave, so Back leaves the editor. All six tabs are native.
 
 The rules — limits, validation, single-field patches, the autosave machine, the copy builders —
 are `@ideanest/campaign-editor`'s, shared with the web. What the app adds:
@@ -797,6 +795,23 @@ editor is re-seeded from the server.
 
 The editor has no motion but the stack's transitions and the save indicator's spinner (still
 under Reduce Motion): the frame sets the kit's motion budget to `none`.
+
+**Pre-launch** (`features/editor/prelaunch/`) edits the title, summary and cover on the same
+autosave as Basics. Opening the page asks first in the kit's white dialog, flushes the autosave
+and waits for it to settle (a refused change stops the opening), then sends
+`POST /v1/projects/{id}/prelaunch`. While the page is open it shows the follower count from the
+public page's own `usePrelaunchPage`, and the link `{siteUrl}/projects/{id}/prelaunch` with Copy
+(`expo-clipboard`, announced) and the native share sheet.
+
+**Review** (`features/editor/review/`) reads `GET /v1/projects/{id}/checklist` under the
+`projectEdit` root (persisted, erased at sign-out). Which states draw Submit or Launch is the
+package's `offersSubmit` / `offersLaunch`, shared with the web; whether the campaign may be
+submitted is the server's answer alone. A blocked "Submit for review" is the kit pill's
+`softDisabled` — announced disabled at 40%, but a press moves screen-reader focus to the
+required list. `SUBSCRIPTION_REQUIRED` opens `pricing?from=submit&project={id}`; a plan limit
+offers the plans beside the refusal. Launch is confirmed inline, with focus on "Launch now". The
+completeness bar is the one motion the editor allows: the kit `ProgressBar`'s `rise="progress"`
+(800ms, once), drawn at its figure under Reduce Motion.
 
 ## What is not built
 
