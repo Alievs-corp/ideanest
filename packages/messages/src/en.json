@@ -5874,6 +5874,52 @@
         "atLimitBody": "A campaign may publish {max} questions. Delete one to add another.",
         "deleteBody": "Nothing is owed against a question, so it goes for good — unlike a reward tier, which can only be hidden once somebody has chosen it.",
         "nothingCached": "You are offline, and the questions have not been loaded on this phone yet."
+      },
+      "story": {
+        "unreadableDetail": "It was written in a newer format than this app understands. Update the app to edit it. Nothing has been changed, and the story is still on your project page.",
+        "notSavedDetail": "Nothing you have written has been lost — it is still on this phone and will be sent again.",
+        "incomplete": {
+          "one": "{count} block is incomplete. The message beside it says what is missing, and saving resumes as soon as it is filled in.",
+          "few": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in.",
+          "many": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in.",
+          "other": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in."
+        },
+        "untitledSection": "Untitled section",
+        "imageHint": "A photo from this phone, or an image that is already published.",
+        "pixels": "{size} pixels",
+        "altHint": "Required. It is what a backer using a screen reader receives instead of the picture, so describe what it shows rather than naming the file.",
+        "embedHint": "The title is what a screen reader announces instead of “frame”. Only YouTube and Vimeo can be embedded.",
+        "providers": {
+          "youtube": "YouTube",
+          "vimeo": "Vimeo"
+        },
+        "history": {
+          "version": "Version {number}",
+          "mostRecent": "most recent",
+          "characters": {
+            "one": "{count} character",
+            "few": "{count} characters",
+            "many": "{count} characters",
+            "other": "{count} characters"
+          },
+          "hide": "Hide",
+          "hideVersion": "Hide version {number}",
+          "savedAt": "Version {number} was saved {date} and holds {characters}.",
+          "currentHolds": "The story you have now holds {characters}. It is kept as a version before being replaced, so this can be undone from this same list.",
+          "loadFailed": "The version history could not be loaded.",
+          "versionFailed": "That version could not be loaded.",
+          "restoreFailed": "That version could not be restored. Nothing has changed.",
+          "unreachable": "The service could not be reached. Check your connection and try again.",
+          "newerFormat": "This version was written in a newer format than this app understands. Update the app to read it.",
+          "waitForSave": "Restoring becomes possible once every change on this phone has been saved.",
+          "discardsHeld": "The story on this phone has an incomplete block, so its unsaved changes are not kept as a version. Restoring discards them."
+        },
+        "held": {
+          "changedTitle": "The story was changed elsewhere",
+          "changedBody": "This phone kept your unfinished version, which has an incomplete block. Completing it saves it over the story on the service; “Use the saved story” discards it instead.",
+          "keep": "Keep this phone’s version",
+          "useSaved": "Use the saved story"
+        }
       }
     }
   }
