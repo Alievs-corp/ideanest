@@ -30,6 +30,7 @@ COPY apps/web/package.json apps/web/
 COPY packages/account/package.json packages/account/
 COPY packages/api-client/package.json packages/api-client/
 COPY packages/campaign/package.json packages/campaign/
+COPY packages/campaign-editor/package.json packages/campaign-editor/
 COPY packages/checkout/package.json packages/checkout/
 COPY packages/dashboard/package.json packages/dashboard/
 COPY packages/design-tokens/package.json packages/design-tokens/
