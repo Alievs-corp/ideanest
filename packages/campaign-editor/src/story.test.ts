@@ -9,7 +9,9 @@ import {
   moveBlock,
   newBlock,
   parseSpans,
+  rejectedBlockIndex,
   removeBlock,
+  renameHeading,
   slugifyHeading,
   spansToText,
   storyCharacterCount,
@@ -422,5 +424,45 @@ describe('describeBlock', () => {
 
   it('says "empty" rather than nothing for a block with no contents', () => {
     expect(describeBlock({ type: 'paragraph', spans: [] }, 0, 1, STORY_COPY.vocabulary)).toBe('Paragraph 1 of 1: empty');
+  });
+});
+
+describe('rejectedBlockIndex', () => {
+  const invalid = (path: unknown) => ({ code: 'STORY_DOCUMENT_INVALID', meta: { path } });
+
+  it('reads the block a STORY_DOCUMENT_INVALID path names, zero-based', () => {
+    expect(rejectedBlockIndex(invalid('blocks[2]'))).toBe(2);
+    expect(rejectedBlockIndex(invalid('blocks[7].alt'))).toBe(7);
+  });
+
+  it('names no block for another refusal, a missing path, or a path about something else', () => {
+    expect(rejectedBlockIndex(null)).toBeNull();
+    expect(rejectedBlockIndex({ code: 'VALIDATION_FAILED', meta: { path: 'blocks[1]' } })).toBeNull();
+    expect(rejectedBlockIndex({ code: 'STORY_DOCUMENT_INVALID', meta: null })).toBeNull();
+    expect(rejectedBlockIndex(invalid(3))).toBeNull();
+    expect(rejectedBlockIndex(invalid('version'))).toBeNull();
+  });
+});
+
+describe('renameHeading', () => {
+  it('derives the anchor from the first words typed into a new heading', () => {
+    const heading = newBlock('heading');
+    if (heading.type !== 'heading') throw new Error('expected a heading');
+    expect(renameHeading(heading, 'How it works', [])).toMatchObject({ text: 'How it works', id: 'how-it-works' });
+  });
+
+  it('follows the text while the anchor is still the text’s own, staying unique', () => {
+    const heading = { type: 'heading', level: 2, id: 'the-plan', text: 'The plan' } as const;
+    expect(renameHeading(heading, 'The budget', ['the-budget'])).toMatchObject({ id: 'the-budget-2' });
+  });
+
+  it('keeps an anchor the creator set by hand when the heading is renamed', () => {
+    const heading = { type: 'heading', level: 3, id: 'faq', text: 'Questions' } as const;
+    expect(renameHeading(heading, 'Your questions', [])).toEqual({
+      type: 'heading',
+      level: 3,
+      id: 'faq',
+      text: 'Your questions',
+    });
   });
 });

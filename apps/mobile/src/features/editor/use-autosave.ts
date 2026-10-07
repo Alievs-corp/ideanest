@@ -98,6 +98,12 @@ export interface Autosave<P> {
   readonly sendUnsent: () => P | null;
   /** Forget the offered change. */
   readonly discardUnsent: () => void;
+  /**
+   * Take these fields out of the offered change, on the phone too — a field the service's copy can
+   * no longer take (a story stored in a format this build cannot read, #162). The rest stays
+   * offered.
+   */
+  readonly dropUnsent: (keys: readonly string[]) => void;
 }
 
 const DEFAULT_DELAY_MS = 800;
@@ -273,6 +279,18 @@ export function useAutosave<P extends object, R>({
     writeNow();
   }, [setOffer, writeNow]);
 
+  const dropUnsent = useCallback(
+    (keys: readonly string[]): void => {
+      const offer = offered.current;
+      if (offer === null) return;
+      const rest = without(offer.patch, keys);
+      if (rest !== null && Object.keys(rest).length === Object.keys(offer.patch).length) return;
+      setOffer(rest === null ? null : { ...offer, patch: rest });
+      writeNow();
+    },
+    [setOffer, writeNow],
+  );
+
   // The session ending stops everything: nothing queued is sent, stored, or answered.
   useEffect(() => {
     activeRef.current = active;
@@ -352,7 +370,8 @@ export function useAutosave<P extends object, R>({
       unsent,
       sendUnsent,
       discardUnsent,
+      dropUnsent,
     }),
-    [view, save, flush, retry, unsent, sendUnsent, discardUnsent],
+    [view, save, flush, retry, unsent, sendUnsent, discardUnsent, dropUnsent],
   );
 }

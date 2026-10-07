@@ -35,10 +35,9 @@ import {
   newBlock,
   parseSpans,
   removeBlock,
+  renameHeading,
   replaceBlock,
-  slugifyHeading,
   spansToText,
-  uniqueHeadingId,
   type StoryBlock,
   type StoryBlockType,
   type StoryDocument,
@@ -494,24 +493,11 @@ function BlockFields({
             aria-describedby={describedBy}
             placeholder={copy.headingPlaceholder}
             className="sm:flex-1"
-            onChange={(event) => {
-              const text = event.target.value;
-              /*
-                The anchor follows the text, but only while it is still the anchor
-                that text would produce. Once a creator has an anchor somebody may
-                have linked to, renaming the heading must not silently break the
-                link — so a heading that has been given an unrelated anchor keeps
-                it. Regenerating unconditionally would be the same mistake as
-                recomputing a campaign's slug when its title is corrected.
-               */
-              const generated = slugifyHeading(block.text);
-              const keepsItsAnchor = block.id !== generated && block.text !== '';
-              onChange({
-                ...block,
-                text,
-                id: keepsItsAnchor ? block.id : uniqueHeadingId(text, headingIdsInUse),
-              });
-            }}
+            onChange={(event) =>
+              // The anchor follows the text until it has become one somebody may have
+              // linked to; `renameHeading` says when, for both clients.
+              onChange(renameHeading(block, event.target.value, headingIdsInUse))
+            }
             onBlur={onFlush}
           />
         </div>

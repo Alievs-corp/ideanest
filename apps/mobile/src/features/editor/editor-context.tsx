@@ -11,6 +11,7 @@ import {
 import { useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
 import type { ProjectEdit, ProjectPatch } from '@ideanest/campaign-editor/contract';
+import { readStoryDocument } from '@ideanest/campaign-editor/story';
 import { queryKeys } from '../../api/queries';
 import { useOnline } from '../../lib/connectivity';
 import { useT } from '../../lib/i18n';
@@ -56,7 +57,9 @@ import { useAutosave, type Autosave } from './use-autosave';
  *       nothing was pending. Re-seed in place keeping text that is only local (Basics does), or key
  *       the form on it;</li>
  *   <li>`apply(project)` — take a server answer (any mutation that returns the project) as the
- *       new truth.</li>
+ *       new truth;</li>
+ *   <li>`store` — where this editor keeps what is only on the phone (the unsent patch, and a tab's
+ *       held draft such as Story's incomplete document). Erased when the session ends.</li>
  * </ul>
  */
 
@@ -78,6 +81,7 @@ export interface EditorContextValue {
   readonly revision: number;
   readonly apply: (project: ProjectEdit) => void;
   readonly reload: () => void;
+  readonly store: KeyValueStore;
 }
 
 const EditorContext = createContext<EditorContextValue | null>(null);
@@ -189,6 +193,18 @@ export function EditorProvider({
     setRevision((value) => value + 1);
   }, [query.data, query.dataUpdatedAt]);
 
+  /*
+   * A story stored in a format this build cannot read must never be overwritten from here: an
+   * offered `{story}` from an earlier launch would put a v1 document over it. The rest of the offer
+   * stands.
+   */
+  const storyUnreadable = project?.story != null && readStoryDocument(project.story) === null;
+  const offeredStory = autosave.unsent !== null && 'story' in autosave.unsent.patch;
+  const dropUnsent = autosave.dropUnsent;
+  useEffect(() => {
+    if (storyUnreadable && offeredStory) dropUnsent(['story']);
+  }, [storyUnreadable, offeredStory, dropUnsent]);
+
   const unsaved = autosave.unsaved;
   const seed = useMemo(() => (project === null ? null : withUnsaved(project, unsaved)), [project, unsaved]);
   const refetch = query.refetch;
@@ -210,8 +226,9 @@ export function EditorProvider({
       revision,
       apply,
       reload,
+      store,
     }),
-    [projectId, project, load, query, online, fresh, canSeed, seed, autosave, sendOffered, revision, apply, reload],
+    [projectId, project, load, query, online, fresh, canSeed, seed, autosave, sendOffered, revision, apply, reload, store],
   );
 
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;

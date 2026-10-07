@@ -5874,6 +5874,52 @@
         "atLimitBody": "Bir kampanya en fazla {max} soru yayımlayabilir. Yenisini eklemek için birini silin.",
         "deleteBody": "Bir soru için kimseye bir şey borçlu değilsiniz, bu yüzden kalıcı olarak silinir — biri seçtikten sonra yalnızca gizlenebilen bir ödülün aksine.",
         "nothingCached": "Çevrimdışısınız ve sorular bu telefonda henüz yüklenmedi."
+      },
+      "story": {
+        "unreadableDetail": "Bu hikâye, uygulamanın anladığından daha yeni bir biçimde yazılmış. Düzenlemek için uygulamayı güncelleyin. Hiçbir şey değiştirilmedi ve hikâye proje sayfanızda duruyor.",
+        "notSavedDetail": "Yazdığınız hiçbir şey kaybolmadı — hepsi bu telefonda ve yeniden gönderilecek.",
+        "incomplete": {
+          "one": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder.",
+          "few": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder.",
+          "many": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder.",
+          "other": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder."
+        },
+        "untitledSection": "Başlıksız bölüm",
+        "imageHint": "Bu telefondan bir fotoğraf ya da zaten yayımlanmış bir görsel.",
+        "pixels": "{size} piksel",
+        "altHint": "Zorunlu. Ekran okuyucu kullanan bir destekçi görsel yerine bunu duyar; bu yüzden dosyanın adını değil, görselde ne olduğunu anlatın.",
+        "embedHint": "Başlık, ekran okuyucunun «çerçeve» yerine okuduğu metindir. Yalnızca YouTube ve Vimeo videoları gömülebilir.",
+        "providers": {
+          "youtube": "YouTube",
+          "vimeo": "Vimeo"
+        },
+        "history": {
+          "version": "Sürüm {number}",
+          "mostRecent": "en son",
+          "characters": {
+            "one": "{count} karakter",
+            "few": "{count} karakter",
+            "many": "{count} karakter",
+            "other": "{count} karakter"
+          },
+          "hide": "Gizle",
+          "hideVersion": "Sürüm {number} önizlemesini gizle",
+          "savedAt": "Sürüm {number} kaydedilme zamanı: {date}. Uzunluğu: {characters}.",
+          "currentHolds": "Şu anki hikâyenin uzunluğu: {characters}. Değiştirilmeden önce bir sürüm olarak saklanır, bu yüzden bu işlem aynı listeden geri alınabilir.",
+          "loadFailed": "Sürüm geçmişi yüklenemedi.",
+          "versionFailed": "Bu sürüm yüklenemedi.",
+          "restoreFailed": "Bu sürüm geri yüklenemedi. Hiçbir şey değişmedi.",
+          "unreachable": "Hizmete ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
+          "newerFormat": "Bu sürüm, uygulamanın anladığından daha yeni bir biçimde yazılmış. Okumak için uygulamayı güncelleyin.",
+          "waitForSave": "Bu telefondaki tüm değişiklikler kaydedildiğinde geri yükleme yapılabilir.",
+          "discardsHeld": "Bu telefondaki hikâyede eksik bir blok var, bu yüzden kaydedilmemiş değişiklikler sürüm olarak saklanmaz. Geri yükleme onları siler."
+        },
+        "held": {
+          "changedTitle": "Hikâye başka bir yerde değiştirildi",
+          "changedBody": "Bu telefon, eksik bir blok içeren yarım kalmış sürümünüzü sakladı. Tamamlarsanız hizmetteki hikâyenin üzerine kaydedilir; «Kayıtlı hikâyeyi kullan» ise onu siler.",
+          "keep": "Bu telefondaki sürümü koru",
+          "useSaved": "Kayıtlı hikâyeyi kullan"
+        }
       }
     }
   }

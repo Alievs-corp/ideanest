@@ -14,6 +14,18 @@ import { deviceStore, type KeyValueStore } from './storage';
 
 const PREFIX = 'ideanest.editor.unsent.v1.';
 
+/**
+ * A tab's held draft: text that is deliberately NOT sent yet (Story's document while a block is
+ * incomplete), kept so a tab switch or the OS killing the app does not lose it. Never offered or
+ * sent from here; the tab that owns it decides.
+ */
+const HELD_PREFIX = 'ideanest.editor.held.v1.';
+
+/** The store key for one project's held draft of one tab. */
+export function heldKeyFor(projectId: string, tab: string): string {
+  return `${HELD_PREFIX}${tab}.${projectId}`;
+}
+
 /** The store key for one project's unsent change. */
 export function unsentKeyFor(projectId: string): string {
   return `${PREFIX}${projectId}`;
@@ -57,9 +69,9 @@ export function writeUnsent<P>(store: KeyValueStore, key: string, change: Unsent
   store.set(key, JSON.stringify(change));
 }
 
-/** Every project's unsent change, gone — the session ended. */
+/** Every project's unsent change and held draft, gone — the session ended. */
 export function forgetUnsentEdits(store: KeyValueStore = deviceStore): void {
   for (const key of store.getAllKeys()) {
-    if (key.startsWith(PREFIX)) store.remove(key);
+    if (key.startsWith(PREFIX) || key.startsWith(HELD_PREFIX)) store.remove(key);
   }
 }

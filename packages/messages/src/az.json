@@ -5874,6 +5874,52 @@
         "atLimitBody": "Kampaniya ən çox {max} sual dərc edə bilər. Yenisini əlavə etmək üçün birini silin.",
         "deleteBody": "Sual üzrə heç kimə borc yoxdur, ona görə o birdəfəlik silinir — mükafatdan fərqli olaraq, mükafatı kimsə seçəndən sonra onu yalnız gizlətmək olar.",
         "nothingCached": "Oflaynsınız, suallar isə bu telefonda hələ yüklənməyib."
+      },
+      "story": {
+        "unreadableDetail": "Bu hekayə tətbiqin anladığından daha yeni formatda yazılıb. Onu redaktə etmək üçün tətbiqi yeniləyin. Heç nə dəyişdirilməyib və hekayə layihə səhifənizdə qalır.",
+        "notSavedDetail": "Yazdıqlarınızın heç biri itməyib — hamısı bu telefondadır və yenidən göndəriləcək.",
+        "incomplete": {
+          "one": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
+          "few": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
+          "many": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
+          "other": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək."
+        },
+        "untitledSection": "Adsız bölmə",
+        "imageHint": "Bu telefondan bir foto və ya artıq dərc olunmuş şəkil.",
+        "pixels": "{size} piksel",
+        "altHint": "Məcburidir. Ekran oxuyucusundan istifadə edən dəstəkçi şəkil əvəzinə bunu eşidir, ona görə faylın adını yox, şəkildə nə göründüyünü təsvir edin.",
+        "embedHint": "Başlıq ekran oxuyucusunun «çərçivə» sözü əvəzinə oxuduğu mətndir. Yalnız YouTube və Vimeo videoları yerləşdirilə bilər.",
+        "providers": {
+          "youtube": "YouTube",
+          "vimeo": "Vimeo"
+        },
+        "history": {
+          "version": "Versiya {number}",
+          "mostRecent": "ən son",
+          "characters": {
+            "one": "{count} simvol",
+            "few": "{count} simvol",
+            "many": "{count} simvol",
+            "other": "{count} simvol"
+          },
+          "hide": "Gizlət",
+          "hideVersion": "Versiya {number} önbaxışını gizlət",
+          "savedAt": "Versiya {number} saxlanılma vaxtı: {date}. Həcmi: {characters}.",
+          "currentHolds": "Hazırkı hekayənin həcmi: {characters}. Əvəz olunmazdan əvvəl o, versiya kimi saxlanılır, ona görə bunu elə bu siyahıdan geri qaytarmaq olar.",
+          "loadFailed": "Versiya tarixçəsi yüklənə bilmədi.",
+          "versionFailed": "Bu versiya yüklənə bilmədi.",
+          "restoreFailed": "Bu versiya bərpa oluna bilmədi. Heç nə dəyişməyib.",
+          "unreachable": "Xidmətə qoşulmaq mümkün olmadı. Bağlantını yoxlayıb yenidən cəhd edin.",
+          "newerFormat": "Bu versiya tətbiqin anladığından daha yeni formatda yazılıb. Onu oxumaq üçün tətbiqi yeniləyin.",
+          "waitForSave": "Bu telefondakı bütün dəyişikliklər saxlanılandan sonra bərpa etmək mümkün olacaq.",
+          "discardsHeld": "Bu telefondakı hekayədə tamamlanmamış blok var, ona görə saxlanılmamış dəyişikliklər versiya kimi qorunmur. Bərpa onları ləğv edəcək."
+        },
+        "held": {
+          "changedTitle": "Hekayə başqa yerdə dəyişdirilib",
+          "changedBody": "Bu telefon tamamlanmamış bloku olan yarımçıq versiyanızı saxlayıb. Onu tamamlasanız, xidmətdəki hekayənin üzərinə yazılacaq; «Saxlanılmış hekayəni götür» isə onu ləğv edir.",
+          "keep": "Bu telefondakı versiyanı saxla",
+          "useSaved": "Saxlanılmış hekayəni götür"
+        }
       }
     }
   }

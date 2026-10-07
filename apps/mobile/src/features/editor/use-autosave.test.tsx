@@ -270,6 +270,22 @@ describe('useAutosave', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
+  it('drops named fields from the offered change, on the phone too, and keeps the rest', async () => {
+    const store = memoryStore();
+    store.set(KEY, JSON.stringify({ patch: { title: 'Killed', blurb: 'kept' }, at: '2026-10-06T20:00:00.000Z' }));
+    const send = jest.fn<Promise<string>, [Patch]>(() => Promise.resolve('ok'));
+    const { hook } = await mount(send, store);
+
+    await act(async () => hook.result.current.dropUnsent(['title']));
+    expect(hook.result.current.unsent?.patch).toEqual({ blurb: 'kept' });
+    expect(JSON.parse(store.getString(KEY) ?? 'null')).toMatchObject({ patch: { blurb: 'kept' } });
+
+    await act(async () => hook.result.current.dropUnsent(['blurb']));
+    expect(hook.result.current.unsent).toBeNull();
+    expect(store.getString(KEY)).toBeUndefined();
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it('forgets an entry nobody can read rather than offering it', async () => {
     const store = memoryStore();
     store.set(KEY, '{not json');
