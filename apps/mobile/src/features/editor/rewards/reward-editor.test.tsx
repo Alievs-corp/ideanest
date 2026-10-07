@@ -225,6 +225,48 @@ describe('RewardEditor', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
+  it('empties the rate table BEFORE a shipped tier stops being shipped, and never PUTs after', async () => {
+    mockSend
+      .mockImplementationOnce(async () => ({ ...STORED, shippingRules: [] }))
+      .mockImplementationOnce(async () => ({ ...STORED, shippingRules: [], shippingType: 'DIGITAL' }));
+    const { onSaved, onClose } = await show(STORED);
+
+    await fireEvent.press(screen.getByTestId('reward-delivery'));
+    await fireEvent.press(screen.getByRole('radio', { name: /Digital delivery/u }));
+    // Rates left over on a tier that is no longer shipped are refused on the phone, on screen.
+    await save();
+    expect(shown(en.campaignEditor.rewards.vocabulary.rates.notShipped)).toBeTruthy();
+    expect(mockSend).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByTestId('reward-rate-0-remove'));
+    await save();
+    expect(mockSend.mock.calls).toEqual([
+      ['PUT', '/v1/rewards/r1/shipping-rules', { rules: [] }],
+      ['PATCH', '/v1/rewards/r1', { shippingType: 'DIGITAL' }],
+    ]);
+    expect(onSaved).toHaveBeenLastCalledWith(expect.objectContaining({ shippingType: 'DIGITAL', shippingRules: [] }));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('starts the next Save from the emptied table when the type change itself is refused', async () => {
+    mockSend
+      .mockImplementationOnce(async () => ({ ...STORED, shippingRules: [] }))
+      .mockImplementationOnce(async () => {
+        throw new ApiError(400, { status: 400, detail: 'Not now.' });
+      })
+      .mockImplementationOnce(async () => ({ ...STORED, shippingRules: [], shippingType: 'NONE' }));
+    const { onClose } = await show(STORED);
+    await fireEvent.press(screen.getByTestId('reward-delivery'));
+    await fireEvent.press(screen.getByRole('radio', { name: /Nothing is delivered/u }));
+    await fireEvent.press(screen.getByTestId('reward-rate-0-remove'));
+    await save();
+    expect(within(screen.getByTestId('reward-editor-failure')).getByText(TIER.notSavedTitle)).toBeTruthy();
+
+    await save();
+    expect(mockSend.mock.calls.map((call) => call[0])).toEqual(['PUT', 'PATCH', 'PATCH']);
+    expect(onClose).toHaveBeenCalled();
+  });
+
   it('sends only what changed, and nothing at all when nothing did', async () => {
     const { onClose } = await show(STORED);
     await save();

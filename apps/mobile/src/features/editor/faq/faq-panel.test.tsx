@@ -7,6 +7,7 @@ import { ApiError } from '@ideanest/api-client';
 import type { ProjectEdit, ProjectFaq } from '@ideanest/campaign-editor/contract';
 import az from '@ideanest/messages/az.json';
 import en from '@ideanest/messages/en.json';
+import { queryKeys } from '../../../api/queries';
 import { setOnline } from '../../../lib/connectivity';
 import { setLocale } from '../../../lib/locale';
 import { memoryStore } from '../../../lib/storage';
@@ -55,8 +56,10 @@ async function settle() {
   }
 }
 
+let client: QueryClient;
+
 async function show(locale: 'en' | 'az' = 'en') {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   await act(async () => setLocale(locale));
   await render(
     <SafeAreaProvider initialMetrics={METRICS}>
@@ -169,6 +172,34 @@ describe('FaqPanel', () => {
     const explanation = screen.getByTestId('faq-order-explanation');
     expect(explanation).toHaveTextContent(/this page had not seen “Is there a warranty\?”/u);
     expect(explanation).toHaveTextContent(/“Is the battery replaceable\?” no longer exists/u);
+  });
+
+  it('adds and deletes nothing while a reorder is in the air, and rests a busy row’s moves', async () => {
+    mockSend.mockImplementation(() => new Promise(() => {}));
+    await show();
+    await fireEvent.press(screen.getByTestId('faq-f-when-move-down'));
+    expect(screen.getByTestId('faq-add').props.accessibilityState).toMatchObject({ disabled: true });
+    expect(screen.getByTestId('faq-f-ship-delete').props.accessibilityState).toMatchObject({ disabled: true });
+    const actions = screen.getByTestId('faq-f-ship-summary').props.accessibilityActions as { name: string }[];
+    expect(actions.map((action) => action.name)).toEqual(['moveDown']);
+  });
+
+  it('rests a row’s move buttons while its delete is in the air', async () => {
+    mockSend.mockImplementation(() => new Promise(() => {}));
+    await show();
+    await fireEvent.press(screen.getByTestId('faq-f-when-delete'));
+    await fireEvent.press(screen.getByTestId('faq-delete-delete'));
+    expect(screen.getByTestId('faq-f-when-move-up').props.accessibilityState).toMatchObject({ disabled: true });
+  });
+
+  it('marks the campaign page’s FAQ stale after a change', async () => {
+    mockSend.mockImplementation(async () => null);
+    await show();
+    client.setQueryData(queryKeys.projectFaqs('p1'), { faqs: [] });
+    await fireEvent.press(screen.getByTestId('faq-f-when-delete'));
+    await fireEvent.press(screen.getByTestId('faq-delete-delete'));
+    await settle();
+    expect(client.getQueryState(queryKeys.projectFaqs('p1'))?.isInvalidated).toBe(true);
   });
 
   it('runs the screen reader’s actions, delete included', async () => {

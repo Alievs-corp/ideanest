@@ -97,12 +97,33 @@ export function useReorder<T>({
   const serverIds = useMemo(() => items.map(idOf), [items, idOf]);
   const byId = useMemo(() => new Map(items.map((item) => [idOf(item), item])), [items, idOf]);
 
-  // The server caught up: its order is the one shown, so the optimistic copy can go.
   useEffect(() => {
-    if (!inFlight.current && orderRef.current !== null && sameOrder(orderRef.current, serverIds)) {
+    const optimistic = orderRef.current;
+    if (optimistic === null) return;
+    // The server caught up: its order is the one shown, so the optimistic copy can go.
+    if (!inFlight.current && sameOrder(optimistic, serverIds)) {
       orderRef.current = null;
       setOrder(null);
+      return;
     }
+    /*
+     * The list changed under an unconfirmed order — an entry added, duplicated or deleted while a
+     * move was in the air. The optimistic order takes the server's set: gone ids leave it, new
+     * ones join at the end (where the service appends them). Without this a new entry has no
+     * place in the order (its move buttons rest) and the next move sends a list the service
+     * refuses as incomplete. A queued request is brought up to date the same way.
+     */
+    const reconcile = (ids: readonly string[]): readonly string[] => {
+      const present = new Set(serverIds);
+      const kept = ids.filter((id) => present.has(id));
+      return [...kept, ...serverIds.filter((id) => !ids.includes(id))];
+    };
+    const next = reconcile(optimistic);
+    if (!sameOrder(next, optimistic)) {
+      orderRef.current = next;
+      setOrder(next);
+    }
+    if (queued.current !== null) queued.current = reconcile(queued.current);
   }, [serverIds, pending]);
 
   const display = useMemo(() => {

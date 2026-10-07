@@ -157,15 +157,28 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
   /** The id a request is running against, so that card's controls rest. */
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const setItems = useCallback(
-    (next: (current: readonly Item[] | undefined) => readonly Item[]) =>
-      queryClient.setQueryData<readonly Item[]>(queryKeys.editorItems(projectId), next),
+  /*
+   * Every list change here follows a write the service accepted, so the campaign page's own reward
+   * lists (`projectRewards`, and the checkout's under it) are stale from that moment: they are
+   * marked so, and the creator's public page reads them again the next time it is open.
+   */
+  const publicStale = useCallback(
+    () => void queryClient.invalidateQueries({ queryKey: queryKeys.projectRewards(projectId) }),
     [queryClient, projectId],
   );
+  const setItems = useCallback(
+    (next: (current: readonly Item[] | undefined) => readonly Item[]) => {
+      queryClient.setQueryData<readonly Item[]>(queryKeys.editorItems(projectId), next);
+      publicStale();
+    },
+    [queryClient, projectId, publicStale],
+  );
   const setRewards = useCallback(
-    (next: (current: readonly Reward[] | undefined) => readonly Reward[]) =>
-      queryClient.setQueryData<readonly Reward[]>(queryKeys.editorRewards(projectId), next),
-    [queryClient, projectId],
+    (next: (current: readonly Reward[] | undefined) => readonly Reward[]) => {
+      queryClient.setQueryData<readonly Reward[]>(queryKeys.editorRewards(projectId), next);
+      publicStale();
+    },
+    [queryClient, projectId, publicStale],
   );
 
   const refetchRewards = rewardsQuery.refetch;
@@ -177,7 +190,11 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
       setFailure(describe(cause));
       void refetchRewards();
     },
-    onSaved: (ids) => setRewards((current) => inOrder(current, ids)),
+    onSaved: (ids) => {
+      // A move that went through answers the refusal of an earlier one.
+      setFailure(null);
+      setRewards((current) => inOrder(current, ids));
+    },
     announcement: (reward, position, total) =>
       fillPlaceholders(words.movedAnnouncement, {
         title: reward.title,
@@ -189,6 +206,13 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
       if (!readOnly && reward.claimedQuantity === 0) setDeletingReward(reward);
     },
   });
+  /*
+   * While a reorder is in the air, nothing adds or removes a tier: the order being sent names
+   * every tier, and one appearing or vanishing under it is what the service refuses as incomplete.
+   * (`useReorder` also takes such a change in; this keeps it from happening in the first place.)
+   * The cards route their delete action themselves and rest it too.
+   */
+  const reordering = reorder.pending;
 
   async function run(id: string, action: () => Promise<void>): Promise<void> {
     setBusyId(id);
@@ -360,7 +384,7 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
                   : null
               }
               add={words.add}
-              disabled={readOnly || !ready || full}
+              disabled={readOnly || !ready || full || reordering}
               onAdd={() => openReward(null)}
               testID="tiers-add"
             />
@@ -411,6 +435,7 @@ function Rewards({ project, words }: { readonly project: ProjectEdit; readonly w
                     total={reorder.items.length}
                     reorder={reorder}
                     busy={busyId === reward.id}
+                    reordering={reordering}
                     readOnly={readOnly}
                     deliversOn={(date) => t('deliversOn', { date })}
                     onEdit={() => openReward(reward)}
@@ -577,6 +602,7 @@ function RewardCard({
   reorder,
   busy,
   readOnly,
+  reordering,
   deliversOn,
   onEdit,
   onDuplicate,
@@ -592,6 +618,8 @@ function RewardCard({
   readonly reorder: Reorder<Reward>;
   readonly busy: boolean;
   readonly readOnly: boolean;
+  /** A reorder is in the air: nothing that adds or removes a tier may run. */
+  readonly reordering: boolean;
   readonly deliversOn: (date: string) => string;
   readonly onEdit: () => void;
   readonly onDuplicate: () => void;
@@ -608,20 +636,25 @@ function RewardCard({
   const downLabel = fillPlaceholders(words.moveDownLabel, named);
   const deleteLabel = fillPlaceholders(words.deleteLabel, { title: reward.title });
 
-  // The hook's actions, named for this card; no delete once somebody has chosen it, none offline.
+  /*
+   * The hook's actions, named for this card. None offline or while this card's request is in the
+   * air (as its buttons rest); no delete once somebody has chosen it, nor while a reorder is.
+   */
   const own = reorder.accessibilityFor(reward);
-  const actions = readOnly
-    ? []
-    : own.accessibilityActions
-        .filter((action) => action.name !== 'delete' || !backed)
-        .map((action) => ({
-          ...action,
-          label: action.name === 'moveUp' ? upLabel : action.name === 'moveDown' ? downLabel : deleteLabel,
-        }));
+  const actions =
+    readOnly || busy
+      ? []
+      : own.accessibilityActions
+          .filter((action) => action.name !== 'delete' || (!backed && !reordering))
+          .map((action) => ({
+            ...action,
+            label: action.name === 'moveUp' ? upLabel : action.name === 'moveDown' ? downLabel : deleteLabel,
+          }));
   const onAction = (event: AccessibilityActionEvent) => {
     if (readOnly || busy) return;
-    if (event.nativeEvent.actionName === 'delete') onDelete();
-    else own.onAccessibilityAction(event);
+    if (event.nativeEvent.actionName === 'delete') {
+      if (!backed && !reordering) onDelete();
+    } else own.onAccessibilityAction(event);
   };
 
   return (
@@ -651,7 +684,7 @@ function RewardCard({
           id={reward.id}
           upLabel={upLabel}
           downLabel={downLabel}
-          disabled={readOnly}
+          disabled={readOnly || busy}
           testID={`reward-${reward.id}-move`}
         />
         <Pill
@@ -668,7 +701,7 @@ function RewardCard({
           accessibilityLabel={fillPlaceholders(words.duplicateLabel, { title: reward.title })}
           variant="ghost"
           size="sm"
-          disabled={busy || readOnly}
+          disabled={busy || readOnly || reordering}
           onPress={onDuplicate}
           testID={`reward-${reward.id}-duplicate`}
         />
@@ -700,7 +733,7 @@ function RewardCard({
             accessibilityLabel={deleteLabel}
             variant="ghost"
             size="sm"
-            disabled={busy || readOnly}
+            disabled={busy || readOnly || reordering}
             onPress={onDelete}
             testID={`reward-${reward.id}-delete`}
           />

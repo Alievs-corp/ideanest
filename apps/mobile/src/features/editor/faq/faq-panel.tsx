@@ -113,9 +113,15 @@ function Questions({ words }: { readonly words: FaqPanelCopy }) {
     null,
   );
 
+  /*
+   * Every list change here follows a write the service accepted, so the campaign page's own FAQ
+   * tab (`projectFaqs`) is stale from that moment and is marked so.
+   */
   const setFaqs = useCallback(
-    (next: (current: readonly ProjectFaq[] | undefined) => readonly ProjectFaq[]) =>
-      queryClient.setQueryData<readonly ProjectFaq[]>(queryKeys.editorFaqs(projectId), next),
+    (next: (current: readonly ProjectFaq[] | undefined) => readonly ProjectFaq[]) => {
+      queryClient.setQueryData<readonly ProjectFaq[]>(queryKeys.editorFaqs(projectId), next);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projectFaqs(projectId) });
+    },
     [queryClient, projectId],
   );
 
@@ -140,6 +146,8 @@ function Questions({ words }: { readonly words: FaqPanelCopy }) {
       if (!readOnly) setDeleting(faq);
     },
   });
+  // While a reorder is in the air, nothing adds or removes a question: the order names them all.
+  const reordering = reorder.pending;
 
   async function remove(faq: ProjectFaq): Promise<void> {
     setBusyId(faq.id);
@@ -188,7 +196,7 @@ function Questions({ words }: { readonly words: FaqPanelCopy }) {
                 iconLeft={Glyphs.Add}
                 variant="ghost"
                 size="sm"
-                disabled={readOnly || !ready || full}
+                disabled={readOnly || !ready || full || reordering}
                 onPress={() => open(null)}
                 testID="faq-add"
               />
@@ -267,6 +275,7 @@ function Questions({ words }: { readonly words: FaqPanelCopy }) {
                     total={reorder.items.length}
                     reorder={reorder}
                     busy={busyId === faq.id}
+                    reordering={reordering}
                     readOnly={readOnly}
                     onEdit={() => open(faq)}
                     onDelete={() => setDeleting(faq)}
@@ -318,6 +327,7 @@ function FaqRow({
   reorder,
   busy,
   readOnly,
+  reordering,
   onEdit,
   onDelete,
 }: {
@@ -328,6 +338,8 @@ function FaqRow({
   readonly reorder: Reorder<ProjectFaq>;
   readonly busy: boolean;
   readonly readOnly: boolean;
+  /** A reorder is in the air: no question may be deleted under it. */
+  readonly reordering: boolean;
   readonly onEdit: () => void;
   readonly onDelete: () => void;
 }) {
@@ -336,15 +348,20 @@ function FaqRow({
   const downLabel = fillPlaceholders(words.moveDownLabel, named);
   const deleteLabel = fillPlaceholders(words.deleteLabel, { question: faq.question });
 
+  // None offline or while this row's request is in the air; no delete while a reorder is.
   const own = reorder.accessibilityFor(faq);
-  const actions = readOnly
-    ? []
-    : own.accessibilityActions.map((action) => ({
-        ...action,
-        label: action.name === 'moveUp' ? upLabel : action.name === 'moveDown' ? downLabel : deleteLabel,
-      }));
+  const actions =
+    readOnly || busy
+      ? []
+      : own.accessibilityActions
+          .filter((action) => action.name !== 'delete' || !reordering)
+          .map((action) => ({
+            ...action,
+            label: action.name === 'moveUp' ? upLabel : action.name === 'moveDown' ? downLabel : deleteLabel,
+          }));
   const onAction = (event: AccessibilityActionEvent) => {
     if (readOnly || busy) return;
+    if (event.nativeEvent.actionName === 'delete' && reordering) return;
     own.onAccessibilityAction(event);
   };
 
@@ -363,7 +380,7 @@ function FaqRow({
           id={faq.id}
           upLabel={upLabel}
           downLabel={downLabel}
-          disabled={readOnly}
+          disabled={readOnly || busy}
           testID={`faq-${faq.id}-move`}
         />
         <Pill
@@ -380,7 +397,7 @@ function FaqRow({
           accessibilityLabel={deleteLabel}
           variant="ghost"
           size="sm"
-          disabled={busy || readOnly}
+          disabled={busy || readOnly || reordering}
           onPress={onDelete}
           testID={`faq-${faq.id}-delete`}
         />

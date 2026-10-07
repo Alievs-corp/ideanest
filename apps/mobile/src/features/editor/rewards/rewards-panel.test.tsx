@@ -283,6 +283,51 @@ describe('RewardsPanel', () => {
     expect(reads).toBe(1);
   });
 
+  it('adds, duplicates and deletes nothing while a reorder is in the air', async () => {
+    mockSend.mockImplementation(() => new Promise(() => {}));
+    await show();
+    await fireEvent.press(screen.getByTestId('reward-r-lamp-move-up'));
+    expect(screen.getByTestId('tiers-add').props.accessibilityState).toMatchObject({ disabled: true });
+    expect(screen.getByTestId('reward-r-thanks-duplicate').props.accessibilityState).toMatchObject({ disabled: true });
+    expect(screen.getByTestId('reward-r-thanks-delete').props.accessibilityState).toMatchObject({ disabled: true });
+    const actions = screen.getByTestId('reward-r-thanks-summary').props.accessibilityActions as { name: string }[];
+    expect(actions.map((action) => action.name)).not.toContain('delete');
+  });
+
+  it('rests a card’s move buttons while its own request is in the air', async () => {
+    mockSend.mockImplementation(() => new Promise(() => {}));
+    await show();
+    await fireEvent.press(screen.getByTestId('reward-r-lamp-hide'));
+    expect(screen.getByTestId('reward-r-lamp-move-up').props.accessibilityState).toMatchObject({ disabled: true });
+    expect(screen.getByTestId('reward-r-lamp-summary').props.accessibilityActions).toEqual([]);
+    expect(screen.getByTestId('reward-r-thanks-move-down').props.accessibilityState).toMatchObject({ disabled: false });
+  });
+
+  it('clears a refused reorder’s explanation once a later move goes through', async () => {
+    mockSend
+      .mockImplementationOnce(async () => {
+        throw refusal(409, 'REWARD_ORDER_INCOMPLETE', null, 'The order is out of date.');
+      })
+      .mockImplementation(async () => [LAMP, THANKS, POSTER]);
+    await show();
+    await fireEvent.press(screen.getByTestId('reward-r-lamp-move-up'));
+    await settle();
+    expect(screen.getByTestId('rewards-failure')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('reward-r-lamp-move-up'));
+    await settle();
+    expect(screen.queryByTestId('rewards-failure')).toBeNull();
+  });
+
+  it('marks the creator’s public reward lists stale after a change', async () => {
+    mockSend.mockImplementation(async () => reward('r-copy', 'Thank you (copy)'));
+    await show();
+    client.setQueryData(queryKeys.projectRewards('p1'), { items: [] });
+    expect(client.getQueryState(queryKeys.projectRewards('p1'))?.isInvalidated).toBe(false);
+    await fireEvent.press(screen.getByTestId('reward-r-thanks-duplicate'));
+    await settle();
+    expect(client.getQueryState(queryKeys.projectRewards('p1'))?.isInvalidated).toBe(true);
+  });
+
   it('hides a reward by closing it now, and clears an opening still to come', async () => {
     const scheduled = reward('r-later', 'Later', { availableFrom: '2099-01-01T10:00:00.000Z' });
     mockRewards = async () => [scheduled];

@@ -131,27 +131,45 @@ export function RewardEditor({ visible, project, reward, items, copy, readOnly, 
     setFailure(null);
     setRatesUnsaved(false);
 
+    /*
+     * A shipped tier with rates becoming one that is not shipped: the table is emptied FIRST,
+     * while the tier is still shipped, because the service refuses `PUT …/shipping-rules` on a
+     * tier that is not (`RewardService.replaceShippingRules`). Emptied after the PATCH, the
+     * creator would read "the shipping rates were not saved" on every Save, for ever.
+     */
+    const clearsRates =
+      target !== null &&
+      isShippedScope(target.shippingType) &&
+      target.shippingRules.length > 0 &&
+      !isShippedScope(draft.shippingType);
+
     let stored: Reward | null = target;
+    const keep = (latest: Reward | null) => {
+      if (latest !== null && latest !== target) {
+        setTarget(latest);
+        onSaved(latest);
+      }
+    };
     try {
-      if (target === null) {
+      if (stored === null) {
         stored = await createReward(project.id, newRewardFrom(draft));
       } else {
-        const patch = rewardPatchFrom(draft, target);
-        if (!isEmptyPatch(patch)) stored = await patchReward(target.id, patch);
+        if (clearsRates) stored = await replaceShippingRules(stored.id, []);
+        const patch = rewardPatchFrom(draft, stored);
+        if (!isEmptyPatch(patch)) stored = await patchReward(stored.id, patch);
       }
     } catch (cause) {
+      // Whatever the service did store (the emptied table) is the truth the next Save starts from.
+      keep(stored);
       setFailure(describe(cause));
       setSaving(false);
       return;
     }
+    keep(stored);
 
-    if (stored !== null && stored !== target) {
-      setTarget(stored);
-      onSaved(stored);
-    }
-
+    // Never a rate table for a tier that is not shipped: the service refuses that PUT.
     const rates = shippingRatesFrom(draft);
-    const needsRates = target === null ? rates.length > 0 : shippingRatesChanged(draft, target);
+    const needsRates = isShippedScope(draft.shippingType) && stored !== null && shippingRatesChanged(draft, stored);
     if (needsRates && stored !== null) {
       try {
         const repriced = await replaceShippingRules(stored.id, rates);
@@ -336,7 +354,7 @@ export function RewardEditor({ visible, project, reward, items, copy, readOnly, 
                   />
                 </View>
                 <View style={styles.amounts}>
-                  <View style={styles.grow}>
+                  <View style={styles.amount}>
                     <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
                       {words.ratePlaceholder}
                     </Caption>
@@ -348,7 +366,7 @@ export function RewardEditor({ visible, project, reward, items, copy, readOnly, 
                       testID={`reward-rate-${index}-amount`}
                     />
                   </View>
-                  <View style={styles.grow}>
+                  <View style={styles.amount}>
                     <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
                       {words.extraPlaceholder}
                     </Caption>
@@ -387,7 +405,7 @@ export function RewardEditor({ visible, project, reward, items, copy, readOnly, 
           const name = items.find((item) => item.id === entry.itemId)?.name ?? words.missingItem;
           return (
             <View key={entry.itemId} style={[styles.row, styles.line]} testID={`reward-line-${index}`}>
-              <Body style={styles.grow} numberOfLines={2}>
+              <Body style={styles.lineName}>
                 {name}
               </Body>
               <Text style={styles.times} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -531,10 +549,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface3,
   },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
-  amounts: { flexDirection: 'row', gap: spacing[2] },
-  line: { flexDirection: 'row', alignItems: 'center' },
+  // Two amounts side by side when they fit, one under the other at a large text size.
+  amounts: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
+  amount: { flexGrow: 1, flexBasis: 140, gap: spacing[1] },
+  line: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
+  lineName: { flexGrow: 1, flexBasis: 120 },
   times: { ...font.regular, fontSize: fontSize.sm, color: colors.textSecondary },
-  quantity: { width: 72 },
+  quantity: { minWidth: 72 },
   card: {
     gap: spacing[5],
     padding: spacing[5],

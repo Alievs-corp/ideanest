@@ -51,8 +51,8 @@ them, as it already did for `ProjectState` and the story types.
 | `./contract` | `ProjectEdit`, `ProjectPatch`, `CoverImage`, `isLocked`, `ProjectChecklist`, `ChecklistItem`, `ModerationOutcome`, `Category`, `Subcategory`, `RawTaxon`, `categoriesFrom`, `StoryVersionSummary`/`Detail`, `PrelaunchPage`, `RemindResult`, `Item`/`NewItem`/`ItemPatch`, `ShippingType`, `RewardItemLine`, `ShippingRate`, `Reward`/`NewReward`/`RewardPatch`, `ProjectFaq`/`NewProjectFaq`/`ProjectFaqPatch`; re-exports `Money`, `ProjectState` and the story types |
 | `./basics` | `TITLE_MAX_CHARACTERS` (60), `BLURB_MAX_CHARACTERS` (135), `DURATION_MIN_DAYS`/`MAX_DAYS`/`RECOMMENDED_DAYS` (1/60/30), `characterCount`, `BasicsDraft`, `BasicsField`, `BASICS_FIELDS`, `isBasicsField`, `draftFromProject`, `toDateTimeLocal`, `fromDateTimeLocal`, `validateBasics`, `patchForField` |
 | `./story` | `STORY_MIN_CHARACTERS` (500), `RISKS_MIN_CHARACTERS` (200), `emptyStory`, `slugifyHeading`, `uniqueHeadingId`, `headingAnchors`, `storyCharacterCount`, `parseSpans`, `spansToText`, `isMarkActive`, `toggleMark`, `newBlock`, `insertBlock`, `replaceBlock`, `removeBlock`, `moveBlock`, `blockProblem`, `storyProblems`, `isSaveable`, `isWebUrl`, `describeBlock`; re-exports the reader's types, `readStoryDocument` and `STORY_SCHEMA_VERSION` from `@ideanest/campaign/story` |
-| `./rewards` | `MAX_REWARD_TIERS` (100), the title, name and SKU limits, `SHIPPING_SCOPES`, `isShippingType`, `isShippedScope`, item and reward drafts with `validateItem`/`validateReward`, `newItemFrom`/`itemPatchFrom`, `newRewardFrom`/`rewardPatchFrom`, `shippingRatesFrom`/`shippingRatesChanged`, hiding (`isHiddenReward`, `hidePatch`, `showPatch`, `showBlockedReason`), `movedTo`, `describeStock`, `fieldErrorsFrom` |
-| `./faqs` | `FAQ_QUESTION_MAX_CHARACTERS` (200), `FAQ_ANSWER_MAX_CHARACTERS` (4000), `MAX_PROJECT_FAQS` (50), `FaqDraft`, `validateFaq`, `newFaqFrom`, `faqPatchFrom`, `isEmptyFaqPatch` |
+| `./rewards` | `MAX_REWARD_TIERS` (100), the title, name and SKU limits, `SHIPPING_SCOPES`, `isShippingType`, `isShippedScope`, item and reward drafts with `validateItem`/`validateReward`, `newItemFrom`/`itemPatchFrom`, `newRewardFrom`/`rewardPatchFrom`, `shippingRatesFrom`/`shippingRatesChanged`, hiding (`isHiddenReward`, `hidePatch`, `showPatch`, `showBlockedReason`), `movedTo`, `describeStock`, `describeRewardContents`, `describeItemInUse`, `fieldErrorsFrom` |
+| `./faqs` | `FAQ_QUESTION_MAX_CHARACTERS` (200), `FAQ_ANSWER_MAX_CHARACTERS` (4000), `MAX_PROJECT_FAQS` (50), `FaqDraft`, `validateFaq`, `newFaqFrom`, `faqPatchFrom`, `isEmptyFaqPatch`, `describeOrderRefusal` |
 | `./checklist` | `CHECKLIST_SECTIONS`, `isChecklistSection`, `sectionHref`, `progressOf`, `describeProgress`, `unmetOf`, `unmetFromRefusal` |
 | `./cover-image` | `COVER_MIN_WIDTH`/`HEIGHT` (1024×576, advice), `ImageSize`, `meetsCoverMinimum`, `describeSize` |
 | `./tabs` | `EditorTabKey`, `EDITOR_TABS` (Basics · Rewards · Story · FAQ · Pre-launch · Review), `editorTabHref` |
@@ -76,8 +76,11 @@ The web hands them next-intl's `t`; the app builds one over `@ideanest/messages`
 carrying a `{placeholder}` and plural forms are read through `raw`, because next-intl formats
 `t()` as ICU and would render the key's path instead.
 
-`validateFaq` is the exception: it still answers in English, as it did in the web. Moving it was
-not the moment to change what it says.
+`validateFaq(draft, copy.entry.validation)` follows the same rule since #162: its refusals are
+`campaignEditor.faq.validation.*`, with plural forms for the over-length count, so the app shows
+them in the reader's language. The sentences the reward and FAQ lists draw from a refusal or a
+composition — `describeRewardContents`, `describeItemInUse`, `describeOrderRefusal` — take the
+panel's copy the same way, and both clients import them rather than keeping their own.
 
 ## Autosave
 
