@@ -4631,6 +4631,22 @@
         "questionHint": "Bir destekçinin soracağı gibi. En fazla {max} karakter.",
         "answer": "Yanıt",
         "answerHint": "Düz metin. Boş satırlar kampanya sayfasında paragraf olur, başka biçimlendirme yoktur. En fazla {max} karakter."
+      },
+      "validation": {
+        "questionRequired": "Bir soru gerekli. Destekçi listede onu arar.",
+        "questionTooLong": {
+          "one": "Bu, sınırdan {count} karakter uzun. Bir soru en fazla {max} karakter olabilir.",
+          "few": "Bu, sınırdan {count} karakter uzun. Bir soru en fazla {max} karakter olabilir.",
+          "many": "Bu, sınırdan {count} karakter uzun. Bir soru en fazla {max} karakter olabilir.",
+          "other": "Bu, sınırdan {count} karakter uzun. Bir soru en fazla {max} karakter olabilir."
+        },
+        "answerRequired": "Bir yanıt gerekli. Yanıtsız bir soru, yanıt vermeyi reddetmek gibi okunur.",
+        "answerTooLong": {
+          "one": "Bu, sınırdan {count} karakter uzun. Bir yanıt en fazla {max} karakter olabilir.",
+          "few": "Bu, sınırdan {count} karakter uzun. Bir yanıt en fazla {max} karakter olabilir.",
+          "many": "Bu, sınırdan {count} karakter uzun. Bir yanıt en fazla {max} karakter olabilir.",
+          "other": "Bu, sınırdan {count} karakter uzun. Bir yanıt en fazla {max} karakter olabilir."
+        }
       }
     },
     "prelaunch": {
@@ -5830,6 +5846,34 @@
         "chooseDate": "Tarih seçin",
         "confirmDate": "Bu tarihi kullan",
         "confirmDateLabel": "{label} için {date} tarihini seç"
+      },
+      "rewards": {
+        "deliversOn": "Teslimat: {date}",
+        "weight": "{grams} g",
+        "atCapacityBody": "Bir kampanya en fazla {max} ödül sunabilir. Yenisini eklemeden önce birini silin ya da birleştirin.",
+        "deleteItemBody": "Bir ödülün içindeki ürün silinemez — önce onu ödülden çıkarın. Bu sayfanın bildiği kadarıyla bu ürün hiçbir ödülde yok; hizmet bunu yeniden kontrol eder.",
+        "deleteRewardBody": "Bir ödülü biri seçtikten sonra o artık silinemez, yalnızca gizlenebilir — bu yüzden silme, henüz kimse seçmemişken sunulur.",
+        "notSavedDetail": "Yazdıklarınızdan hiçbiri kaybolmadı — metin aşağıdaki alanlarda duruyor.",
+        "ratesNotSavedDetail": "Ödülle ilgili diğer her şey kaydedildi. Yalnızca ülkelere göre ücretler reddedildi; onları düzeltip yeniden kaydedin, geri kalanı ikinci kez gönderilmez.",
+        "weightHint": "İsteğe bağlı. Kargo ücreti daha sonra buna göre hesaplanır.",
+        "image": "Görsel",
+        "imageHint": "İsteğe bağlı. Bir fotoğraf seçin, çekin ya da zaten çevrimiçi olan bir görselin adresini kullanın.",
+        "imageRemove": "Görseli kaldır",
+        "earlyBirdHint": "Tükenen daha iyi bir teklif. Ya bir kapanış tarihi ya da sınırlı kontenjan gerekir — ikisi de yoksa insanları boş yere acele ettiren etiketli sıradan bir ödüldür.",
+        "secretHint": "Herkese açık listede görünmez, özel bir jetonla ulaşılır. Yeniden herkese açık yapmak bu jetonu geçersiz kılar, gönderilmiş bağlantılar çalışmaz.",
+        "destination": "{position}. varış yeri",
+        "copyToken": "Jetonu kopyala",
+        "copied": "Kopyalandı",
+        "tokenCopied": "Jeton kopyalandı",
+        "copyFailed": "Jeton kopyalanamadı. Seçip elle kopyalayın.",
+        "nothingCached": "Çevrimdışısınız ve ödüller bu telefonda henüz yüklenmedi."
+      },
+      "faq": {
+        "heading": "Sorular",
+        "explanation": "Bunlar kampanyanın SSS sekmesinde bu sırayla görünür. Listenin amacı, bir destekçinin yoksa yorumlarda soracağı soruyu yanıtlamaktır.",
+        "atLimitBody": "Bir kampanya en fazla {max} soru yayımlayabilir. Yenisini eklemek için birini silin.",
+        "deleteBody": "Bir soru için kimseye bir şey borçlu değilsiniz, bu yüzden kalıcı olarak silinir — biri seçtikten sonra yalnızca gizlenebilen bir ödülün aksine.",
+        "nothingCached": "Çevrimdışısınız ve sorular bu telefonda henüz yüklenmedi."
       }
     }
   }

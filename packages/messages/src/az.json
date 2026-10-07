@@ -4631,6 +4631,22 @@
         "questionHint": "Dəstəkçinin soruşacağı kimi. Ən çox {max} simvol.",
         "answer": "Cavab",
         "answerHint": "Adi mətn. Boş sətirlər kampaniya səhifəsində abzasa çevrilir, başqa formatlama yoxdur. Ən çox {max} simvol."
+      },
+      "validation": {
+        "questionRequired": "Sual lazımdır. Dəstəkçi siyahıda məhz onu axtarır.",
+        "questionTooLong": {
+          "one": "Bu, həddən {count} simvol uzundur. Sual ən çox {max} simvol ola bilər.",
+          "few": "Bu, həddən {count} simvol uzundur. Sual ən çox {max} simvol ola bilər.",
+          "many": "Bu, həddən {count} simvol uzundur. Sual ən çox {max} simvol ola bilər.",
+          "other": "Bu, həddən {count} simvol uzundur. Sual ən çox {max} simvol ola bilər."
+        },
+        "answerRequired": "Cavab lazımdır. Cavabsız sual cavab verməkdən imtina kimi oxunur.",
+        "answerTooLong": {
+          "one": "Bu, həddən {count} simvol uzundur. Cavab ən çox {max} simvol ola bilər.",
+          "few": "Bu, həddən {count} simvol uzundur. Cavab ən çox {max} simvol ola bilər.",
+          "many": "Bu, həddən {count} simvol uzundur. Cavab ən çox {max} simvol ola bilər.",
+          "other": "Bu, həddən {count} simvol uzundur. Cavab ən çox {max} simvol ola bilər."
+        }
       }
     },
     "prelaunch": {
@@ -5830,6 +5846,34 @@
         "chooseDate": "Tarix seçin",
         "confirmDate": "Bu tarixi seç",
         "confirmDateLabel": "{label} üçün {date} tarixini seç"
+      },
+      "rewards": {
+        "deliversOn": "Çatdırılma: {date}",
+        "weight": "{grams} q",
+        "atCapacityBody": "Kampaniya ən çox {max} mükafat təklif edə bilər. Yenisini əlavə etməzdən əvvəl birini silin və ya birləşdirin.",
+        "deleteItemBody": "Mükafatın tərkibində olan əşya silinə bilməz — əvvəlcə onu mükafatdan çıxarın. Bu səhifənin bildiyinə görə bu əşya heç bir mükafatda deyil, xidmət isə bunu yenidən yoxlayır.",
+        "deleteRewardBody": "Kimsə mükafatı seçəndən sonra onu silmək olmur, yalnız gizlətmək olar — ona görə silmək hələ heç kim seçməyəndə təklif olunur.",
+        "notSavedDetail": "Yazdığınız heç nə itmədi — mətn aşağıdakı sahələrdə qalır.",
+        "ratesNotSavedDetail": "Mükafat haqqında qalan hər şey yadda saxlanıldı. Yalnız ölkələr üzrə tariflər qəbul olunmadı — onları düzəldib yenidən yadda saxlayın, qalanı ikinci dəfə göndərilməyəcək.",
+        "weightHint": "İstəyə bağlı. Çatdırılma xərci sonra buna görə hesablanır.",
+        "image": "Şəkil",
+        "imageHint": "İstəyə bağlı. Şəkil seçin, şəkil çəkin və ya artıq internetdə olan şəklin ünvanını yazın.",
+        "imageRemove": "Şəkli sil",
+        "earlyBirdHint": "Bitən sərfəli təklif. Ona ya bağlanma tarixi, ya da məhdud yer sayı lazımdır — onsuz bu, insanları boş yerə tələsdirən etiketli adi mükafatdır.",
+        "secretHint": "İctimai siyahıda görünmür, ona gizli token ilə çatılır. Mükafatı yenidən ictimai etmək tokeni ləğv edir, ona görə artıq göndərilmiş keçidlər işləməyəcək.",
+        "destination": "sıra nömrəsi {position} olan istiqamət",
+        "copyToken": "Tokeni kopyala",
+        "copied": "Kopyalandı",
+        "tokenCopied": "Token kopyalandı",
+        "copyFailed": "Tokeni kopyalamaq alınmadı. Onu seçib əllə kopyalayın.",
+        "nothingCached": "Oflaynsınız, mükafatlar isə bu telefonda hələ yüklənməyib."
+      },
+      "faq": {
+        "heading": "Suallar",
+        "explanation": "Bunlar kampaniyanın Suallar bölməsində bu sıra ilə görünür. Siyahının mənası dəstəkçinin şərhlərdə verəcəyi suala əvvəlcədən cavab verməkdir.",
+        "atLimitBody": "Kampaniya ən çox {max} sual dərc edə bilər. Yenisini əlavə etmək üçün birini silin.",
+        "deleteBody": "Sual üzrə heç kimə borc yoxdur, ona görə o birdəfəlik silinir — mükafatdan fərqli olaraq, mükafatı kimsə seçəndən sonra onu yalnız gizlətmək olar.",
+        "nothingCached": "Oflaynsınız, suallar isə bu telefonda hələ yüklənməyib."
       }
     }
   }
