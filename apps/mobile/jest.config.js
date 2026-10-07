@@ -93,7 +93,7 @@ module.exports = {
    * a name to the preset's pattern instead of writing a replacement for it.
    */
   transformIgnorePatterns: [
-    storePattern.replace(PNPM_ALLOWLIST, `${PNPM_ALLOWLIST}@shopify|use-intl|intl-messageformat|@formatjs|`),
+    storePattern.replace(PNPM_ALLOWLIST, `${PNPM_ALLOWLIST}@shopify|use-intl|intl-messageformat|@formatjs|@noble|`),
     ...otherPatterns,
   ],
   moduleNameMapper: {
