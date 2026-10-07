@@ -5478,7 +5478,7 @@
     "lock": {
       "face": "Require Face ID or your PIN",
       "fingerprint": "Require your fingerprint or PIN",
-      "other": "Require a device unlock or your PIN",
+      "other": "Require biometric unlock or your PIN",
       "pinOnly": "Require a PIN",
       "checking": "Checking what this phone can do",
       "wait": "One moment.",
@@ -5486,7 +5486,8 @@
       "on": "On. The app asks when it opens, and again after more than five minutes away.",
       "enrol": "Add a fingerprint or a face in your phone’s settings to unlock without typing the PIN.",
       "noBiometrics": "This phone has no fingerprint or face unlock, so the app opens with your PIN.",
-      "refused": "The device did not confirm it was you, so nothing changed.",
+      "weakBiometrics": "This phone’s face or fingerprint unlock is not strong enough for the app lock, so the app opens with your PIN.",
+      "noSession": "Nobody is signed in on this phone, so there is nothing to lock. Nothing changed.",
       "prompt": "Unlock IdeyaNest",
       "usePin": "Use PIN",
       "screen": {
@@ -5494,7 +5495,7 @@
         "enterPin": "Enter your PIN",
         "useFace": "Use Face ID",
         "useFingerprint": "Use fingerprint",
-        "useOther": "Use device unlock",
+        "useOther": "Use biometric unlock",
         "wrong": "{remaining, plural, one {Wrong PIN. # attempt left before this phone signs you out.} other {Wrong PIN. # attempts left before this phone signs you out.}}",
         "checkingPin": "Checking your PIN…",
         "forgot": "Forgot your PIN? Sign out",

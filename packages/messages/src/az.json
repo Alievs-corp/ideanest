@@ -5478,7 +5478,7 @@
     "lock": {
       "face": "Face ID və ya PIN tələb et",
       "fingerprint": "Barmaq izi və ya PIN tələb et",
-      "other": "Cihaz kilidi və ya PIN tələb et",
+      "other": "Biometrik kilid və ya PIN tələb et",
       "pinOnly": "PIN tələb et",
       "checking": "Telefonun imkanları yoxlanılır",
       "wait": "Bir az gözləyin.",
@@ -5486,7 +5486,8 @@
       "on": "Aktivdir. Tətbiq açılanda və beş dəqiqədən çox kənarda qaldıqdan sonra yenidən soruşur.",
       "enrol": "PIN yazmadan açmaq üçün telefonun parametrlərində barmaq izi və ya üz əlavə edin.",
       "noBiometrics": "Bu telefonda barmaq izi və ya üzlə açma yoxdur, ona görə tətbiq PIN ilə açılır.",
-      "refused": "Cihaz sizin olduğunuzu təsdiqləmədi, ona görə heç nə dəyişmədi.",
+      "weakBiometrics": "Bu telefonun üz və ya barmaq izi ilə açması tətbiq kilidi üçün kifayət qədər güclü deyil, ona görə tətbiq PIN ilə açılır.",
+      "noSession": "Bu telefonda heç kim daxil olmayıb, ona görə kilidlənəcək bir şey yoxdur. Heç nə dəyişmədi.",
       "prompt": "IdeyaNest kilidini açın",
       "usePin": "PIN istifadə et",
       "screen": {
@@ -5494,7 +5495,7 @@
         "enterPin": "PIN-i daxil edin",
         "useFace": "Face ID ilə aç",
         "useFingerprint": "Barmaq izi ilə aç",
-        "useOther": "Cihaz kilidi ilə aç",
+        "useOther": "Biometrik kilidlə aç",
         "wrong": "{remaining, plural, other {PIN yanlışdır. Qalan cəhd sayı: #. Sonra bu telefonda hesabdan çıxarılacaqsınız.}}",
         "checkingPin": "PIN yoxlanılır…",
         "forgot": "PIN-i unutmusunuz? Çıxış edin",
