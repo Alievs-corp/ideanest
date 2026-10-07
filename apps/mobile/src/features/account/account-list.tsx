@@ -249,11 +249,15 @@ function Separator() {
  * A list row: a raised block (`surface2` on the canvas) whose main part opens the row's page and
  * gives under the thumb, and an optional trailing control beside it. The control is a sibling of
  * the link rather than inside it, so a screen reader reaches each on its own.
+ *
+ * <p>A worded control (a "Remove" pill) goes `below` the row's text instead: beside it, the pill
+ * keeps its width and squeezes a name into a column that breaks words mid-letter at large text.
  */
 export function AccountRow({
   label,
   onPress,
   trailing,
+  trailingPlacement = 'beside',
   children,
   testID,
 }: {
@@ -261,25 +265,32 @@ export function AccountRow({
   readonly label: string;
   readonly onPress: () => void;
   readonly trailing?: ReactNode;
+  readonly trailingPlacement?: 'beside' | 'below';
   readonly children: ReactNode;
   readonly testID?: string;
 }) {
   const block = blockSurface(useSurface());
   return (
-    <View style={[styles.row, { backgroundColor: BLOCK[block].rest }]} testID={testID}>
+    <View
+      style={[styles.row, trailingPlacement === 'below' && styles.rowStacked, { backgroundColor: BLOCK[block].rest }]}
+      testID={testID}
+    >
       <PressableScale
         accessibilityRole="link"
         accessibilityLabel={label}
         onPress={onPress}
-        style={styles.rowMain}
+        style={trailingPlacement === 'below' ? styles.rowMainStacked : styles.rowMain}
         contentStyle={({ pressed }) => [
           styles.rowLink,
+          trailingPlacement === 'below' && styles.rowLinkStacked,
           pressed && { backgroundColor: BLOCK[block].pressed },
         ]}
       >
         {children}
       </PressableScale>
-      {trailing === undefined ? null : <View style={styles.trailing}>{trailing}</View>}
+      {trailing === undefined ? null : (
+        <View style={trailingPlacement === 'below' ? styles.trailingBelow : styles.trailing}>{trailing}</View>
+      )}
     </View>
   );
 }
@@ -322,12 +333,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
   },
+  rowStacked: { flexDirection: 'column', alignItems: 'stretch' },
   rowMain: { flex: 1 },
+  // A column has no height to share out: `flex: 1` there would size the link to nothing.
+  rowMainStacked: { flexGrow: 0 },
   rowLink: {
     minHeight: size.touchTarget,
     justifyContent: 'center',
     gap: spacing[1],
     padding: spacing[4],
   },
+  rowLinkStacked: { paddingBottom: spacing[3] },
   trailing: { paddingRight: spacing[3] },
+  trailingBelow: { flexDirection: 'row', paddingHorizontal: spacing[4], paddingBottom: spacing[4] },
 });
