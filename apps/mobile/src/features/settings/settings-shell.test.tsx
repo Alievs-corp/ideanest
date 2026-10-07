@@ -4,7 +4,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import * as client from '../../api/client';
+import { resetAppLockForTests, unlockWithPin } from '../../lib/app-lock';
 import { setOnline } from '../../lib/connectivity';
+import { enableLock, rememberAccessToken, storeRefreshToken, useFlagStore } from '../../lib/session';
+import { memoryStore } from '../../lib/storage';
 import { setLocale } from '../../lib/locale';
 import { LanguageSettingsScreen } from './language-screen';
 import { SETTINGS_SECTIONS } from './sections';
@@ -99,6 +102,33 @@ describe('the settings list', () => {
     mockSession = { signedIn: false, locked: false, unlocked: false };
     reads({});
     await show(<SettingsListScreen />);
+    expect(mockRouter.replace).toHaveBeenCalledWith({
+      pathname: '/sign-in',
+      params: { returnTo: '/settings' },
+    });
+  });
+});
+
+describe('#319: with the app lock shut', () => {
+  afterEach(() => {
+    useFlagStore(memoryStore());
+    resetAppLockForTests();
+  });
+
+  it('waits for the lock to open before sending a signed-out reader to sign in', async () => {
+    useFlagStore(memoryStore());
+    rememberAccessToken(null);
+    await storeRefreshToken('refresh-1');
+    await enableLock('135790');
+    resetAppLockForTests(); // a locked cold start
+    mockSession = { signedIn: false, locked: true, unlocked: false };
+    reads({});
+    await show(<SettingsListScreen />);
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await unlockWithPin('135790', async () => undefined);
+    });
     expect(mockRouter.replace).toHaveBeenCalledWith({
       pathname: '/sign-in',
       params: { returnTo: '/settings' },

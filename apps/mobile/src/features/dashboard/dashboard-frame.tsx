@@ -4,6 +4,7 @@ import { Slot, Stack, useLocalSearchParams, usePathname, useRouter } from 'expo-
 import { signInHrefFor } from '../../lib/guard';
 import { useT } from '../../lib/i18n';
 import { useSession } from '../../lib/use-session';
+import { useGateShut } from '../../lib/app-lock';
 import { colors } from '../../theme';
 import { DashboardTabs, dashboardTabHref, dashboardTabOf } from './dashboard-tabs';
 
@@ -21,11 +22,13 @@ export function DashboardFrame() {
   const pathname = usePathname();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { signedIn } = useSession();
+  // Not while the app lock is shut: the sign-in modal would sit above the lock screen (#319).
+  const shut = useGateShut();
   const active = dashboardTabOf(pathname);
 
   useEffect(() => {
-    if (!signedIn) router.replace(signInHrefFor(pathname));
-  }, [pathname, router, signedIn]);
+    if (!signedIn && !shut) router.replace(signInHrefFor(pathname));
+  }, [pathname, router, signedIn, shut]);
 
   return (
     <View style={styles.frame}>

@@ -27,6 +27,7 @@ import { signInHrefFor } from '../../lib/guard';
 import { formatDateTime, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { useSession } from '../../lib/use-session';
+import { useGateShut } from '../../lib/app-lock';
 import { formMeasure, size, spacing } from '../../theme';
 import { countryName } from '../checkout/format';
 import { readPledge } from '../pledges/api';
@@ -131,10 +132,14 @@ export function ShippingAddressScreen({ id }: { readonly id: string }) {
 function ShippingAddressGate({ id }: { readonly id: string }) {
   const router = useRouter();
   const { signedIn } = useSession();
+  // Not while the app lock is shut: the sign-in modal would sit above the lock screen (#319).
+  const shut = useGateShut();
 
   useEffect(() => {
-    if (!signedIn) router.replace(signInHrefFor(`/pledges/${encodeURIComponent(id)}/address`));
-  }, [id, router, signedIn]);
+    if (!signedIn && !shut) {
+      router.replace(signInHrefFor(`/pledges/${encodeURIComponent(id)}/address`));
+    }
+  }, [id, router, signedIn, shut]);
 
   return signedIn ? <ShippingAddress id={id} /> : null;
 }

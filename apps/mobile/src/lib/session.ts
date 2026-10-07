@@ -92,6 +92,20 @@ const MIGRATED_KEY = 'app-lock.token-moved';
 let accessToken: string | null = null;
 
 /**
+ * The session's generation: bumped every time this device forgets a session (sign-out, the app
+ * lock's wipe, a token the keychain lost). A refresh notes it before asking the service and hands
+ * it back with the answer ({@link storeRefreshToken}); an answer from an earlier generation is
+ * discarded rather than written. Otherwise a refresh in flight when five wrong PINs wiped the
+ * phone would land afterwards and bring the session back — signed in, with the lock erased.
+ */
+let generation = 0;
+
+/** The current generation. See {@link generation}. */
+export function sessionGeneration(): number {
+  return generation;
+}
+
+/**
  * Where the flags are kept.
  *
  * <p>Injectable for the same reason `lib/offline.ts` takes a store: these booleans decide what
@@ -206,15 +220,34 @@ export async function storedRefreshToken(): Promise<string | null> {
  *
  * <p>Passing null ends the session on this device: both items, every flag, the PIN and its
  * counter (`endSession`).
+ *
+ * @param expected the {@link sessionGeneration} the token was asked for in. When the session has
+ *     been forgotten since — before the write or during it — nothing is kept and this answers
+ *     false. Omitted by a sign-in, which starts a session rather than continuing one.
+ * @returns whether the token was kept
  */
-export async function storeRefreshToken(token: string | null): Promise<void> {
+export async function storeRefreshToken(
+  token: string | null,
+  expected?: number,
+): Promise<boolean> {
   if (token === null) {
     await clearEverything();
-    return;
+    return true;
   }
+  if (expected !== undefined && expected !== generation) return false;
   await writeToken(token);
+  if (expected !== undefined && expected !== generation) {
+    // Forgotten while the write was in flight: take the write back, and keep no flag.
+    try {
+      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+    } catch {
+      // The flag is what says there is a session, and it stays unset.
+    }
+    return false;
+  }
   flags.set(PRESENT_KEY, 'true');
   announce();
+  return true;
 }
 
 /**
@@ -385,6 +418,7 @@ async function clearEverything(): Promise<void> {
 }
 
 function forgetFlags(): void {
+  generation += 1;
   flags.remove(PRESENT_KEY);
   flags.remove(LEGACY_LOCKED_KEY);
   flags.remove(LOCK_ON_KEY);

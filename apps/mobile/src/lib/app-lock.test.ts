@@ -14,6 +14,8 @@ import {
   resetAppLockForTests,
   runMigration,
   settleAttempts,
+  holdShutWhile,
+  setSessionEndCleanup,
   signOutFromGate,
   startAppLock,
   useHeldWhileShut,
@@ -23,8 +25,11 @@ import {
 } from './app-lock';
 import { act, renderHook } from '@testing-library/react-native';
 import { refreshAccessToken } from './auth';
+import { deferUntilUp, leaveMaintenance, observeResponse, takeDeferred } from './maintenance';
+import { MAINTENANCE_PROBLEM_TYPE } from '@ideanest/api-client/maintenance';
 import { checkPin, failedPinAttempts, hasPin } from './pin';
 import {
+  currentAccessToken,
   enableLock,
   endSession,
   hasStoredSession,
@@ -400,21 +405,38 @@ describe('#319 review: nothing gets past the shut gate', () => {
     expect(navigate).toHaveBeenCalledTimes(1);
   });
 
-  it('holds a push tap after a re-lock, keeping only the latest', async () => {
+  it('holds a link that brings the app back after more than five minutes, until the unlock', async () => {
     await lockedPhone();
     await autoPromptOnce('Unlock');
-    expect(deferUntilOpen(jest.fn())).toBe(false); // open: the caller goes now
+    expect(deferUntilOpen(jest.fn())).toBe(false); // open and here: the caller goes now
 
     appStateChanged('background', 0, 0);
-    appStateChanged('active', RELOCK_AFTER_MS + 1, 0);
+    // The link is delivered BEFORE the app is active (iOS openURL, Android onNewIntent).
     const first = jest.fn();
     const second = jest.fn();
-    deferUntilOpen(first);
-    deferUntilOpen(second);
+    expect(deferUntilOpen(first)).toBe(true);
+    expect(deferUntilOpen(second)).toBe(true);
+    appStateChanged('active', RELOCK_AFTER_MS + 1, 0);
+    expect(lockPhase()).toBe('locked');
+    expect(second).not.toHaveBeenCalled();
 
     await unlockWithBiometrics('Unlock');
-    expect(first).not.toHaveBeenCalled();
+    expect(first).not.toHaveBeenCalled(); // only the latest is kept
     expect(second).toHaveBeenCalledTimes(1);
+  });
+
+  it('a link that brings the app back within five minutes opens as soon as it is active', async () => {
+    await lockedPhone();
+    await autoPromptOnce('Unlock');
+
+    appStateChanged('background', 0, 0);
+    const navigate = jest.fn();
+    expect(deferUntilOpen(navigate)).toBe(true);
+    expect(navigate).not.toHaveBeenCalled();
+
+    appStateChanged('active', 60_000, 60_000);
+    expect(lockPhase()).toBe('open');
+    expect(navigate).toHaveBeenCalledTimes(1);
   });
 
   it('drops a held link when the session is wiped', async () => {
@@ -506,5 +528,151 @@ describe('#319 review: coming back', () => {
     expect(lockEpisode()).toBe(before + 1);
     await autoPromptOnce('Unlock');
     expect(biometrics.__prompts()).toBe(2);
+  });
+});
+
+describe('#319 verification: wipes fail closed and nothing slips through them', () => {
+  it('a wipe that throws leaves the gate locked', async () => {
+    await lockedPhone();
+    expect(lockPhase()).toBe('locked');
+    await signOutFromGate(async () => {
+      throw new Error('keystore');
+    });
+    expect(hasStoredSession()).toBe(true);
+    expect(lockPhase()).toBe('locked');
+  });
+
+  it('five wrong PINs with a failing wipe: still locked, and the next entry tries again', async () => {
+    await lockedPhone();
+    const failing = jest.fn(async () => {
+      throw new Error('keystore');
+    });
+    for (let attempt = 0; attempt < 4; attempt += 1) await unlockWithPin('111111', failing);
+    expect(await unlockWithPin('111111', failing)).toEqual({ kind: 'wrong', remaining: 0 });
+    expect(lockPhase()).toBe('locked');
+    expect(await unlockWithPin('111111', wipe)).toEqual({ kind: 'signed-out' });
+  });
+
+  it('drops a navigation that arrives during a wipe', async () => {
+    await lockedPhone();
+    expect(lockPhase()).toBe('locked');
+    const late = jest.fn();
+    await signOutFromGate(async () => {
+      await endSession();
+      expect(deferUntilOpen(late)).toBe(true); // swallowed
+    });
+    expect(lockPhase()).toBe('open');
+    expect(late).not.toHaveBeenCalled();
+  });
+
+  it('drops a link that was waiting for maintenance to end', async () => {
+    await lockedPhone();
+    await observeResponse(
+      new Response(JSON.stringify({ type: MAINTENANCE_PROBLEM_TYPE, title: 'Down', status: 503 }), {
+        status: 503,
+        headers: { 'content-type': 'application/problem+json' },
+      }),
+    );
+    expect(deferUntilUp(jest.fn())).toBe(true);
+
+    await signOutFromGate(async () => {
+      await endSession();
+    });
+
+    expect(takeDeferred()).toBeNull();
+    leaveMaintenance();
+  });
+
+  it('drops a navigation that arrives under the signed-out notice', async () => {
+    await lockedPhone();
+    for (let attempt = 0; attempt < 5; attempt += 1) await unlockWithPin('111111', wipe);
+    const late = jest.fn();
+    expect(deferUntilOpen(late)).toBe(true);
+    acknowledgeSignedOut();
+    expect(late).not.toHaveBeenCalled();
+  });
+
+  it('nested holds: only the last to finish decides, and the notice wins', async () => {
+    await lockedPhone();
+    expect(lockPhase()).toBe('locked');
+    let releaseOuter: () => void = () => undefined;
+    const outer = holdShutWhile(
+      () => new Promise<void>((resolve) => (releaseOuter = resolve)),
+      'signed-out',
+    );
+    await holdShutWhile(async () => {
+      await endSession();
+    }, 'open');
+    // The inner one finished first: still shut.
+    expect(lockPhase()).toBe('locked');
+    releaseOuter();
+    await outer;
+    expect(lockPhase()).toBe('signed-out');
+  });
+
+  it('a prompt that passes during a wipe opens nothing', async () => {
+    await lockedPhone();
+    expect(lockPhase()).toBe('locked');
+    await signOutFromGate(async () => {
+      expect(await unlockWithBiometrics('Unlock')).toBe(true);
+      expect(lockPhase()).toBe('locked');
+      await endSession();
+    });
+    expect(lockPhase()).toBe('open');
+    expect(hasStoredSession()).toBe(false);
+  });
+
+  it('a session that ends without a wipe while shut is cleaned up before the gate opens', async () => {
+    await lockedPhone();
+    const stop = startAppLock();
+    const seen: string[] = [];
+    setSessionEndCleanup(() => {
+      seen.push(lockPhase());
+    });
+
+    await endSession(); // a refresh the service refused, say
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(seen).toEqual(['locked']);
+    expect(lockPhase()).toBe('open');
+    stop();
+  });
+});
+
+describe('#319 verification: an answer that lands after the wipe', () => {
+  it('a refresh in flight when five wrong PINs wiped the phone does not bring the session back', async () => {
+    await lockedPhone();
+    let answer: (response: Response) => void = () => undefined;
+    fetchMock.mockImplementation((input) => {
+      if (String(input).endsWith('/v1/auth/refresh')) {
+        return new Promise<Response>((resolve) => (answer = resolve));
+      }
+      return Promise.resolve(new Response(null, { status: 204 }));
+    });
+
+    const refreshing = refreshAccessToken();
+    const asked = () => fetchMock.mock.calls.some(([url]) => String(url).endsWith('/v1/auth/refresh'));
+    for (let tick = 0; tick < 50 && !asked(); tick += 1) await Promise.resolve();
+    expect(asked()).toBe(true);
+    for (let attempt = 0; attempt < 5; attempt += 1) await unlockWithPin('111111', wipe);
+    expect(hasStoredSession()).toBe(false);
+
+    answer(
+      new Response(JSON.stringify({ accessToken: 'access-late', refreshToken: 'refresh-late' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    expect(await refreshing).toBeNull();
+
+    expect(hasStoredSession()).toBe(false);
+    expect(currentAccessToken()).toBeNull();
+    expect(await SecureStore.getItemAsync('ideanest.refresh-token')).toBeNull();
+    // The orphaned pair is revoked.
+    const logout = fetchMock.mock.calls.find(([url]) => String(url).endsWith('/v1/auth/logout'));
+    expect(JSON.parse(String(logout?.[1]?.body))).toEqual({ refreshToken: 'refresh-late' });
+    acknowledgeSignedOut();
+    expect(lockPhase()).toBe('open');
   });
 });

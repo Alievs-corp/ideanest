@@ -7,6 +7,7 @@ import { currentLocale } from '../lib/locale';
 import { isGuarded, signInHrefFor } from '../lib/guard';
 import { useT, type MessageKey } from '../lib/i18n';
 import { useSession } from '../lib/use-session';
+import { useGateShut } from '../lib/app-lock';
 import { colors, size, spacing } from '../theme';
 import { Body, Heading } from './text';
 import { Pill } from './ui';
@@ -45,13 +46,15 @@ export function WebFallback({
   const router = useRouter();
   const pathname = usePathname();
   const { signedIn } = useSession();
+  // Not while the app lock is shut: the sign-in modal would sit above the lock screen (#319).
+  const shut = useGateShut();
   const t = useT('mobile.fallback');
   const tAll = useT();
   const blocked = isGuarded(pathname) && !signedIn;
 
   useEffect(() => {
-    if (blocked) router.replace(signInHrefFor(pathname));
-  }, [blocked, pathname, router]);
+    if (blocked && !shut) router.replace(signInHrefFor(pathname));
+  }, [blocked, pathname, router, shut]);
 
   if (blocked) return null;
 

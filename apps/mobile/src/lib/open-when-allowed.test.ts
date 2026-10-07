@@ -38,15 +38,28 @@ it('a link at a locked cold start waits for the PIN, then opens', async () => {
   expect(navigate).toHaveBeenCalledTimes(1);
 });
 
-it('a push tap after a re-lock waits as well', async () => {
+it('a push tap that brings the app back after more than five minutes waits for the unlock', async () => {
   await unlockWithPin('135790', noWipe);
   appStateChanged('background', 0, 0);
+
+  // Delivered before 'active', as both platforms do.
+  const navigate = jest.fn();
+  openWhenAllowed(navigate);
   appStateChanged('active', RELOCK_AFTER_MS + 1, 0);
+  expect(navigate).not.toHaveBeenCalled();
+
+  await unlockWithPin('135790', noWipe);
+  expect(navigate).toHaveBeenCalledTimes(1);
+});
+
+it('a push tap that brings the app back within five minutes opens once it is active', async () => {
+  await unlockWithPin('135790', noWipe);
+  appStateChanged('background', 0, 0);
 
   const navigate = jest.fn();
   openWhenAllowed(navigate);
   expect(navigate).not.toHaveBeenCalled();
-  await unlockWithPin('135790', noWipe);
+  appStateChanged('active', 30_000, 30_000);
   expect(navigate).toHaveBeenCalledTimes(1);
 });
 

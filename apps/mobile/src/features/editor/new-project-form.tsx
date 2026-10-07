@@ -25,6 +25,7 @@ import {
 import { signInHrefFor } from '../../lib/guard';
 import { useT } from '../../lib/i18n';
 import { useSession } from '../../lib/use-session';
+import { useGateShut } from '../../lib/app-lock';
 import { colors, spacing } from '../../theme';
 import { createProject } from './api';
 import { useKeyboardOverlap } from './keyboard-overlap';
@@ -60,6 +61,8 @@ export function NewProjectScreen() {
   const insets = useSafeAreaInsets();
   const keyboard = useKeyboardOverlap();
   const { signedIn } = useSession();
+  // Not while the app lock is shut: the sign-in modal would sit above the lock screen (#319).
+  const shut = useGateShut();
   const tAll = useT();
   const { t } = useEditorTranslators();
   const copy = useMemo(() => newProjectCopyFrom(t), [t]);
@@ -69,8 +72,8 @@ export function NewProjectScreen() {
   const [failure, setFailure] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!signedIn) router.replace(signInHrefFor(PATH));
-  }, [signedIn, router]);
+    if (!signedIn && !shut) router.replace(signInHrefFor(PATH));
+  }, [signedIn, router, shut]);
 
   const trimmed = title.trim();
   const length = characterCount(trimmed);

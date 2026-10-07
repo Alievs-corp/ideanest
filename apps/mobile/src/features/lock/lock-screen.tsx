@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { Alert, AppState, Keyboard, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Body,
   Heading,
@@ -22,6 +23,7 @@ import {
   migrationStall,
   runMigration,
   settleAttempts,
+  setSessionEndCleanup,
   signOutFromGate,
   subscribeToLock,
   turnLockOffInstead,
@@ -30,9 +32,12 @@ import {
   type LockPhase,
 } from '../../lib/app-lock';
 import { biometricsUsable } from '../../lib/biometrics';
+import { sweepAccountExports } from '../../lib/account-export-files';
 import { useT } from '../../lib/i18n';
 import { useEndLocalSession } from '../../lib/local-sign-out';
+import { forgetPersistedCache } from '../../lib/offline';
 import { isPinRequired } from '../../lib/session';
+import { forgetUnsentEdits } from '../../lib/unsent-edits';
 import { colors, radius, spacing } from '../../theme';
 import { PinEntry } from './pin-entry';
 import { PinCreate, biometricAction, biometricLabelKey, useBiometricCapability } from './pin-flow';
@@ -79,6 +84,19 @@ export function LockGate({ children }: { readonly children: ReactNode }) {
   const curtained = useSyncExternalStore(subscribeToLock, isCurtained, isCurtained);
   const shut = phase !== 'open';
   const covered = shut || curtained;
+  const queryClient = useQueryClient();
+
+  // A session that ends while the gate is shut without a wipe (a refresh the service refused, a
+  // token the keychain lost) has its caches emptied before the gate opens on them.
+  useEffect(() => {
+    setSessionEndCleanup(() => {
+      queryClient.clear();
+      forgetPersistedCache();
+      sweepAccountExports();
+      forgetUnsentEdits();
+    });
+    return () => setSessionEndCleanup(null);
+  }, [queryClient]);
 
   useEffect(() => {
     // The keyboard is its own window, above any overlay; a field being typed in must let go.
@@ -340,10 +358,18 @@ function MigrationStalled() {
 function ForgotSignOutOnly() {
   const tAll = useT();
   const wipe = useWipe();
+  // A second tap before the first wipe finished would nest a second one.
+  const going = useRef(false);
   return (
     <Pill
       label={tAll('shell.actions.signOut')}
-      onPress={() => void signOutFromGate(wipe)}
+      onPress={() => {
+        if (going.current) return;
+        going.current = true;
+        void signOutFromGate(wipe).finally(() => {
+          going.current = false;
+        });
+      }}
       variant="ghost"
       fullWidth
       testID="lock-sign-out"

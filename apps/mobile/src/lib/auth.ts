@@ -9,6 +9,7 @@ import { unregisterFromPush } from './push';
 import {
   endSession,
   rememberAccessToken,
+  sessionGeneration,
   storeRefreshToken,
   storedRefreshToken,
 } from './session';
@@ -288,6 +289,9 @@ export function refreshAccessToken(): Promise<string | null> {
 }
 
 async function runRefresh(): Promise<string | null> {
+  // The generation this refresh belongs to. An answer that lands after the session was forgotten —
+  // the app lock's wipe, a sign-out — is not adopted (`session.ts`'s `generation`).
+  const generationAsked = sessionGeneration();
   const refreshToken = await storedRefreshToken();
   if (refreshToken === null) {
     /*
@@ -307,7 +311,7 @@ async function runRefresh(): Promise<string | null> {
     if (failure instanceof ApiError && failure.status === 401) {
       // The service has already revoked the family. Keeping the local half would
       // mean every subsequent request carrying a credential that can only fail.
-      await endSession();
+      if (sessionGeneration() === generationAsked) await endSession();
       return null;
     }
     // A network fault is not a revoked session, and neither is a 5xx — maintenance
@@ -316,7 +320,12 @@ async function runRefresh(): Promise<string | null> {
     throw failure;
   }
 
-  await adopt(body);
+  if (!(await adopt(body, generationAsked))) {
+    // The session was forgotten while this was in flight. The pair just issued belongs to nobody
+    // on this phone now: revoked, without waiting.
+    if (typeof body.refreshToken === 'string') void tellServiceSignedOut(body.refreshToken);
+    return null;
+  }
   return body.accessToken ?? null;
 }
 
@@ -371,10 +380,19 @@ export function tellServiceSignedOut(refreshToken: string): Promise<void> {
   );
 }
 
-/** Puts an issued pair where each half belongs. */
-async function adopt(body: TokenBody): Promise<void> {
+/**
+ * Puts an issued pair where each half belongs.
+ *
+ * @param generation for a refresh, the session generation it was asked in; the pair is discarded
+ *     when the session has been forgotten since
+ * @returns whether the pair was kept
+ */
+async function adopt(body: TokenBody, generation?: number): Promise<boolean> {
+  if (generation !== undefined && generation !== sessionGeneration()) return false;
+  const kept = await storeRefreshToken(body.refreshToken ?? null, generation);
+  if (!kept) return false;
   rememberAccessToken(body.accessToken ?? null);
-  await storeRefreshToken(body.refreshToken ?? null);
+  return true;
 }
 
 /**

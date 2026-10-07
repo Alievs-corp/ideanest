@@ -1,6 +1,7 @@
 import { useRef, useSyncExternalStore } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { unlock } from './biometrics';
+import { takeDeferred } from './maintenance';
 import { MAX_PIN_ATTEMPTS, checkPin, failedPinAttempts, recordFailedAttempt, resetPinAttempts } from './pin';
 import {
   disableLock,
@@ -41,12 +42,19 @@ import {
  *
  * - A link, a push tap or the maintenance screen that arrives while the gate is shut waits
  *   ({@link deferUntilOpen}, `maintenance-gate.ts`) and is replayed when it opens; a native modal
- *   presented after the lock screen would otherwise sit above it on iOS.
+ *   presented after the lock screen would otherwise sit above it on iOS. So does one that arrives
+ *   while the app is AWAY with the lock on: the link that brings the app back is delivered before
+ *   it becomes active (iOS `openURL`, Android `onNewIntent`), which is before this gate has
+ *   decided whether to lock. One that arrives during a wipe, or under the signed-out notice, is
+ *   dropped: it was for the session that is ending.
  * - A kit `Sheet`, `Dialog` or `SuccessReveal`, and the editor's modals, asked to open while it is
  *   shut are held until it opens ({@link useHeldWhileShut}): on Android each would be a window
  *   above the lock.
  * - A wipe holds it shut until the caches are gone too ({@link holdShutWhile}): the session's
- *   flags clear first, and opening on that alone would show the cached screens for a moment.
+ *   flags clear first, and opening on that alone would show the cached screens for a moment. A
+ *   session that ends any other way while the gate is shut — a refresh the service refused, a
+ *   keychain that lost the token — is cleaned up the same way ({@link setSessionEndCleanup})
+ *   before the gate opens. A wipe that fails leaves the gate shut.
  *
  * <h2>Five wrong PINs</h2>
  *
@@ -90,6 +98,10 @@ let leftAt: { readonly wall: number; readonly mono: number } | null = null;
 let curtained = false;
 /** A wipe or a sign-out in progress: the session flags clearing must not open the gate. */
 let holds = 0;
+/** What the last of the holds shows when it lets go: the notice wins over plain open. */
+let heldThen: 'open' | 'signed-out' = 'open';
+/** Empties this account's caches after a session ended without a wipe. Set by the gate's view. */
+let sessionEndCleanup: (() => void | Promise<void>) | null = null;
 /** A navigation that arrived while the gate was shut. Only the latest is kept. */
 let pendingNavigation: (() => void) | null = null;
 let migration: Promise<void> | null = null;
@@ -165,15 +177,31 @@ export function useHeldWhileShut(visible: boolean): boolean {
   return visible && opened.current;
 }
 
+/** The app is away (or the curtain is up) with a locked session: the gate has not decided yet. */
+function awayWithLock(): boolean {
+  return (leftAt !== null || curtained) && hasStoredSession() && isLockOn();
+}
+
 /**
- * Holds a navigation while the gate is shut, to run when it opens — a link, a push tap.
+ * Holds a navigation while the gate is shut — or while the app is away with the lock on, since
+ * the link that brings it back arrives before it is active — to run when the gate is open. Drops
+ * one that arrives during a wipe or under the signed-out notice.
  *
- * @returns true when it was held; false when the gate is open and the caller should go now
+ * @returns true when it was held or dropped; false when the caller should go now
  */
 export function deferUntilOpen(navigate: () => void): boolean {
-  if (!isGateShut()) return false;
+  if (holds > 0 || lockPhase() === 'signed-out') return true;
+  if (!isGateShut() && !awayWithLock()) return false;
   pendingNavigation = navigate;
   return true;
+}
+
+/**
+ * Registers what empties this account's caches when the session ends WITHOUT a wipe while the
+ * gate is shut (a refresh refused, a token gone). `LockGate` sets it; it has the query client.
+ */
+export function setSessionEndCleanup(cleanup: (() => void | Promise<void>) | null): void {
+  sessionEndCleanup = cleanup;
 }
 
 function replayNavigation(): void {
@@ -196,22 +224,48 @@ function sessionChanged(): void {
   if (holds > 0) return;
   const current = lockPhase();
   if (current === 'open' || current === 'signed-out') return;
-  if (!hasStoredSession() || !isLockOn()) publish('open');
+  if (!hasStoredSession()) {
+    // Ended some other way — the service refused a refresh, the keychain lost the token. The
+    // caches are this account's still: emptied with the gate held shut, then it opens.
+    void holdShutWhile(async () => {
+      await sessionEndCleanup?.();
+    }, 'open');
+    return;
+  }
+  if (!isLockOn()) publish('open');
 }
 
 /**
  * Runs a wipe or a sign-out with the gate held shut, then shows `then`. Nothing behind the gate
- * is visible or touchable until every cache is gone; a navigation that was waiting is dropped —
- * it was for the session that has just ended.
+ * is visible or touchable until every cache is gone; a navigation that was waiting — a link, or
+ * one held for maintenance — is dropped: it was for the session that has just ended.
+ *
+ * <p>Fails closed. If a session is still on the phone when the work is over (it threw half-way),
+ * the gate stays locked rather than opening on it. Holds nest: only the last to finish decides,
+ * and the signed-out notice wins over plain open. Never throws.
  */
-export async function holdShutWhile(work: () => Promise<void>, then: LockPhase): Promise<void> {
+export async function holdShutWhile(
+  work: () => Promise<void>,
+  then: 'open' | 'signed-out',
+): Promise<void> {
   holds += 1;
+  if (then === 'signed-out') heldThen = 'signed-out';
   pendingNavigation = null;
+  takeDeferred();
   try {
     await work();
+  } catch {
+    // Decided below, from what is left on the phone.
   } finally {
     holds -= 1;
-    publish(then);
+    if (holds === 0) {
+      const next = heldThen;
+      heldThen = 'open';
+      pendingNavigation = null;
+      takeDeferred();
+      if (hasStoredSession()) publish(isLockOn() ? 'locked' : 'open');
+      else publish(next);
+    }
   }
 }
 
@@ -236,8 +290,11 @@ export function awayLongEnough(wall: number, mono: number): boolean {
  *
  * <p>Two clocks, and either one locks. The wall clock (`Date.now()`) measures across a suspension,
  * which a timer inside a suspended process cannot — but it can be changed in the phone's settings,
- * so one that went backwards locks too. The monotonic one cannot be changed, and may stand still
- * while the process is suspended; it catches a wall clock wound back by less than the time away.
+ * so one that went backwards locks too. The monotonic one cannot be changed, but `performance.now()`
+ * may stand still while the phone sleeps; it catches a wall clock wound back by less than the time
+ * the app was awake-but-away. A wall clock wound back while the phone SLEPT is not caught: that
+ * needs the native boot-time clock (`elapsedRealtime`, `mach_continuous_time`), which is not
+ * exposed to JavaScript here.
  *
  * <p>With the lock on, leaving puts a curtain over the app at once, and coming back lifts it
  * (five minutes or less) or turns it into the lock screen — so the screen that was open is never
@@ -266,6 +323,7 @@ export function appStateChanged(
     // `set-pin` too: a migrated owner who walked away before choosing a PIN is asked again. And a
     // lock still shut from before is a new episode: the owner is back, and is asked again.
     if (current === 'open' || current === 'set-pin' || current === 'locked') {
+      // A link that brought the app back stays held, for after the unlock.
       lockNow();
       return;
     }
@@ -274,6 +332,8 @@ export function appStateChanged(
     curtained = false;
     notify();
   }
+  // Back within five minutes: a link that arrived while away goes now.
+  if (!isGateShut() && holds === 0) replayNavigation();
 }
 
 /**
@@ -342,7 +402,8 @@ async function countedAttempt(pin: string, wipe: () => Promise<void>): Promise<P
   const failures = await recordFailedAttempt();
   if (failures >= MAX_PIN_ATTEMPTS) {
     await signOutForAttempts(wipe);
-    return { kind: 'signed-out' };
+    // A wipe that failed left the session — and the gate shut. The next entry tries again.
+    return hasStoredSession() ? { kind: 'wrong', remaining: 0 } : { kind: 'signed-out' };
   }
   return { kind: 'wrong', remaining: MAX_PIN_ATTEMPTS - failures };
 }
@@ -391,8 +452,12 @@ export function acknowledgeSignedOut(): void {
   if (lockPhase() === 'signed-out') publish('open');
 }
 
-/** A passed prompt or a correct PIN. A migrated lock with no PIN yet goes on to choose one. */
+/**
+ * A passed prompt or a correct PIN. A migrated lock with no PIN yet goes on to choose one. Not
+ * while a wipe holds the gate: a prompt that passes during "Forgot your PIN?" opens nothing.
+ */
 function opened(): void {
+  if (holds > 0) return;
   publish(isPinRequired() ? 'set-pin' : 'open');
 }
 
@@ -467,6 +532,8 @@ export function resetAppLockForTests(): void {
   leftAt = null;
   curtained = false;
   holds = 0;
+  heldThen = 'open';
+  sessionEndCleanup = null;
   pendingNavigation = null;
   migration = null;
   attempts = Promise.resolve();
