@@ -5476,20 +5476,57 @@
       }
     },
     "lock": {
-      "face": "Face ID iste",
-      "fingerprint": "Parmak izini iste",
-      "other": "Cihaz kilidini iste",
-      "notEnrolled": "Cihaz kilidi ayarlanmamış",
-      "unavailable": "Bu telefonda biyometrik kilit yok",
+      "face": "Face ID veya PIN iste",
+      "fingerprint": "Parmak izi veya PIN iste",
+      "other": "Cihaz kilidi veya PIN iste",
+      "pinOnly": "PIN iste",
       "checking": "Telefonun yetenekleri kontrol ediliyor",
       "wait": "Bir saniye.",
-      "keychain": "Oturumunuz anahtarlıkta tutulur ve telefon açıkken okunabilir.",
-      "enrol": "Telefonunuzun ayarlarında parmak izi, yüz veya parola ekleyin, sonra geri dönün.",
-      "open": "Açık. Uygulama birkaç dakika arka planda kalana kadar oturum açık kalır.",
-      "armed": "Açık. Destekleriniz bir sonraki okunduğunda telefon sizi doğrulamak isteyecek.",
+      "offDetail": "Kapalı. Bu telefonu kilidi açıkken eline alan herkes uygulamayı açabilir.",
+      "on": "Açık. Uygulama açılırken ve beş dakikadan uzun arka planda kaldıktan sonra yeniden sorar.",
+      "enrol": "PIN yazmadan açmak için telefonunuzun ayarlarından parmak izi veya yüz ekleyin.",
+      "noBiometrics": "Bu telefonda parmak izi veya yüzle kilit açma yok, bu yüzden uygulama PIN ile açılır.",
       "refused": "Cihaz sizin olduğunuzu doğrulamadı, bu yüzden hiçbir şey değişmedi.",
       "prompt": "IdeyaNest kilidini açın",
-      "stayLocked": "Kilitli kalsın"
+      "usePin": "PIN kullan",
+      "screen": {
+        "title": "IdeyaNest kilitli",
+        "enterPin": "PIN’inizi girin",
+        "useFace": "Face ID kullan",
+        "useFingerprint": "Parmak izi kullan",
+        "useOther": "Cihaz kilidini kullan",
+        "wrong": "{remaining, plural, one {Yanlış PIN. Bu telefonda oturumunuz kapatılmadan önce kalan deneme hakkı: #.} other {Yanlış PIN. Bu telefonda oturumunuz kapatılmadan önce kalan deneme hakkı: #.}}",
+        "checkingPin": "PIN kontrol ediliyor…",
+        "forgot": "PIN’inizi mi unuttunuz? Çıkış yapın",
+        "forgotTitle": "Bu telefonda çıkış yapılsın mı?",
+        "forgotBody": "Parolanızla yeniden giriş yapıp yeni bir PIN seçebilirsiniz. Bu telefonda gönderilmemiş değişiklikler kaybolur.",
+        "signedOutTitle": "Bu telefonda oturumunuz kapatıldı",
+        "signedOutBody": "PIN beş kez yanlış girildiği için bu telefondaki oturum silindi. Devam etmek için yeniden giriş yapın.",
+        "continue": "Devam et",
+        "confirmToSetPin": "Uygulama kilidi için PIN seçmeden önce siz olduğunuzu doğrulayın.",
+        "migrating": "Uygulama kilidini açık tutmak için siz olduğunuzu doğrulayın.",
+        "migrationRefused": "Uygulama kilidi artık PIN de kullanıyor. Bu telefonun oturumunu taşımak için siz olduğunuzu doğrulayın; beklerken hiçbir şey kaybolmaz.",
+        "migrationFailed": "Bu telefonun oturumu taşınamadı. Hiçbir şey kaybolmadı — yeniden deneyin."
+      },
+      "setPin": {
+        "title": "6 haneli bir PIN seçin",
+        "intro": "Parmak iziniz veya yüzünüz kullanılamadığında bunu kullanacaksınız. Bu telefondan hiç çıkmaz.",
+        "confirmTitle": "Aynı PIN’i yeniden girin",
+        "mismatch": "İki PIN eşleşmedi. Yeniden seçin.",
+        "migrationIntro": "Uygulama kilidinde artık parmak izi veya yüz kullanılamadığında kullanılan bir PIN var. Kilidi açık tutmak için bir PIN seçin.",
+        "turnOff": "Bunun yerine kilidi kapat",
+        "saved": "PIN kaydedildi.",
+        "failed": "PIN kaydedilemedi. Yeniden deneyin."
+      },
+      "confirm": {
+        "title": "Siz olduğunuzu doğrulayın",
+        "offIntro": "Uygulama kilidini kapatmak için PIN’inizi girin.",
+        "changeIntro": "Değiştirmek için mevcut PIN’inizi girin."
+      },
+      "pad": {
+        "entered": "Girilen: {count} / {total}",
+        "delete": "Sil"
+      }
     },
     "fallback": {
       "body": "IdeyaNest’in bu bölümü uygulama için hâlâ hazırlanıyor. Web sitesinde hazır.",
@@ -5638,7 +5675,9 @@
         "copyFailed": "Kopyalanamadı. Metni seçip kendiniz kopyalayın.",
         "appLockTitle": "Bu telefonda",
         "appLockIntro": "Kilit hesabınıza değil, bu telefona aittir: diğer cihazlarınızda hiçbir şeyi değiştirmez ve bağlantı olmadan da çalışır.",
-        "appLockLink": "Uygulama kilidi"
+        "appLockLink": "Uygulama kilidi",
+        "changePin": "PIN’i değiştir",
+        "pinChanged": "PIN’iniz değiştirildi."
       },
       "privacy": {
         "loading": "Gizlilik ayarlarınız yükleniyor",
