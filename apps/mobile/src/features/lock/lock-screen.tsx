@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Alert, AppState, Keyboard, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  initialWindowMetrics,
+  useSafeAreaFrame,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Body,
@@ -129,6 +134,8 @@ export function LockGate({ children }: { readonly children: ReactNode }) {
 }
 
 function Layer({ children }: { readonly children: ReactNode }) {
+  const outerInsets = useSafeAreaInsets();
+  const outerFrame = useSafeAreaFrame();
   if (Platform.OS === 'ios') {
     return (
       <FullWindowOverlay unstable_accessibilityContainerViewIsModal>
@@ -145,14 +152,40 @@ function Layer({ children }: { readonly children: ReactNode }) {
       // Back does not open the app. It does nothing here, as on the system's own lock screen.
       onRequestClose={() => undefined}
     >
-      <View style={[styles.fill, styles.curtain]}>{children}</View>
+      {/*
+        The modal is its own window, drawn under the status and navigation bars
+        (`statusBarTranslucent`, `navigationBarTranslucent`), so the app's insets — measured for
+        a root view that may stop above a three-button navigation bar — are not its insets. A
+        provider of its own measures this window; until it has, the launch reading of the whole
+        window stands in.
+      */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics ?? { frame: outerFrame, insets: outerInsets }}>
+        <View style={[styles.fill, styles.curtain]}>{children}</View>
+      </SafeAreaProvider>
     </Modal>
   );
 }
 
+/**
+ * The lock screen covers the whole window on both platforms, so its edges are the window's: never
+ * less than the launch reading of the window's insets (`initialWindowMetrics`), whatever the
+ * nearest provider says. A device check (#319) found the last control under a three-button
+ * navigation bar when the modal was given the app root's insets.
+ */
+export function lockScreenInsets(insets: { readonly top: number; readonly bottom: number }): {
+  readonly top: number;
+  readonly bottom: number;
+} {
+  const window = initialWindowMetrics?.insets;
+  return {
+    top: Math.max(insets.top, window?.top ?? 0),
+    bottom: Math.max(insets.bottom, window?.bottom ?? 0),
+  };
+}
+
 export function LockScreen({ phase }: { readonly phase: LockPhase }) {
   const t = useT('mobile.lock');
-  const insets = useSafeAreaInsets();
+  const insets = lockScreenInsets(useSafeAreaInsets());
   return (
     <View
       style={[styles.fill, { paddingTop: insets.top + spacing[6] }]}
@@ -170,6 +203,7 @@ export function LockScreen({ phase }: { readonly phase: LockPhase }) {
           contentContainerStyle={[styles.sheetBody, { paddingBottom: insets.bottom + spacing[6] }]}
           keyboardShouldPersistTaps="handled"
           bounces={false}
+          testID="lock-sheet"
         >
           <PhaseBody phase={phase} />
         </ScrollView>
