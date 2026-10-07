@@ -5920,6 +5920,20 @@
           "keep": "Bu telefondakı versiyanı saxla",
           "useSaved": "Saxlanılmış hekayəni götür"
         }
+      },
+      "prelaunch": {
+        "confirmDetail": "Mükafatlarınız, hekayəniz və maliyyə hədəfiniz haqqında heç nə dərc olunmur. Kampaniya yoxlanılıb başladılana qədər pul qəbul etmir.",
+        "copyLabel": "Başlanğıcdan əvvəlki linki kopyala",
+        "copyFailed": "Linki kopyalamaq alınmadı. Yuxarıdakı linkə basıb saxlayın, onu seçib özünüz kopyalayın.",
+        "share": "Paylaş",
+        "shareLabel": "Başlanğıcdan əvvəlki linki paylaş",
+        "shareFailed": "Paylaşma pəncərəsini açmaq alınmadı. Yenidən cəhd edin.",
+        "fixFirst": "Əvvəlcə başlığı, qısa təsviri və ya üz qabığını düzəldin. Səhifə ekrandakını deyil, son saxlanılanı dərc edərdi."
+      },
+      "review": {
+        "done": "Hazırdır",
+        "launchExplanation": "Kampaniya başladığı andan platformanın hər yerində görünür və dəstək qəbul etməyə başlayır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı yenidən qaralamaya qaytarmaq olmaz.",
+        "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz."
       }
     }
   }

@@ -5920,6 +5920,20 @@
           "keep": "Keep this phone’s version",
           "useSaved": "Use the saved story"
         }
+      },
+      "prelaunch": {
+        "confirmDetail": "Nothing about your rewards, story, or funding goal is published, and the campaign does not take money until it is reviewed and launched.",
+        "copyLabel": "Copy the pre-launch link",
+        "copyFailed": "The link could not be copied. Press and hold the link above to select it and copy it yourself.",
+        "share": "Share",
+        "shareLabel": "Share the pre-launch link",
+        "shareFailed": "The share sheet could not be opened. Try again.",
+        "fixFirst": "Fix the title, summary or cover first. The page would publish what was last saved, not what is on screen."
+      },
+      "review": {
+        "done": "Done",
+        "launchExplanation": "The campaign appears everywhere on the platform and starts taking pledges the moment it launches. Its goal and its deadline freeze from that point, and a live campaign cannot be taken back to a draft.",
+        "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft."
       }
     }
   }

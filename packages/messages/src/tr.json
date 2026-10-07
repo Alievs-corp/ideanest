@@ -5920,6 +5920,20 @@
           "keep": "Bu telefondaki sürümü koru",
           "useSaved": "Kayıtlı hikâyeyi kullan"
         }
+      },
+      "prelaunch": {
+        "confirmDetail": "Ödülleriniz, hikâyeniz veya fonlama hedefiniz hakkında hiçbir şey yayımlanmaz ve kampanya incelenip başlatılana kadar para kabul etmez.",
+        "copyLabel": "Lansman öncesi bağlantıyı kopyala",
+        "copyFailed": "Bağlantı kopyalanamadı. Seçip kendiniz kopyalamak için yukarıdaki bağlantıya basılı tutun.",
+        "share": "Paylaş",
+        "shareLabel": "Lansman öncesi bağlantıyı paylaş",
+        "shareFailed": "Paylaşım menüsü açılamadı. Tekrar deneyin.",
+        "fixFirst": "Önce başlığı, özeti veya kapağı düzeltin. Sayfa ekrandakini değil, en son kaydedileni yayımlar."
+      },
+      "review": {
+        "done": "Tamamlandı",
+        "launchExplanation": "Kampanya başlatıldığı anda platformun her yerinde görünür ve destek almaya başlar. O andan itibaren hedefi ve bitiş tarihi değişmez, yayındaki bir kampanya taslağa geri alınamaz.",
+        "confirmLaunchBody": "Hemen herkese açık olur ve destek almaya başlar. Fonlama hedefi ve bitiş tarihi başlatıldığında sabitlenir ve sonradan düzenlenemez; yayındaki bir kampanya taslağa geri alınamaz."
       }
     }
   }
