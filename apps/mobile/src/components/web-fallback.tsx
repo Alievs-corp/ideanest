@@ -31,10 +31,16 @@ import { Pill } from './ui';
 export function WebFallback({
   titleKey,
   webPath,
+  ownHeader = true,
 }: {
   /** A catalogue key, e.g. `shell.nav.pricing`. */
   readonly titleKey: MessageKey;
   readonly webPath: string;
+  /**
+   * Whether this names the stack header. False inside a frame that names it already — the
+   * campaign editor's tabs not yet built for the app (#162), whose header is the project title.
+   */
+  readonly ownHeader?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -52,7 +58,7 @@ export function WebFallback({
   const title = tAll(titleKey);
   return (
     <ScrollView contentContainerStyle={styles.screen}>
-      <Stack.Screen options={{ title }} />
+      {ownHeader ? <Stack.Screen options={{ title }} /> : null}
       <Heading accessibilityRole="header">{title}</Heading>
       <Body>{t('body')}</Body>
       <Pill

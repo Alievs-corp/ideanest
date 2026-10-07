@@ -745,6 +745,43 @@ one never does. While a pending plan is held from a submission, the subscription
 time the app returns to the foreground (the creator coming back from a banking app). The id is
 accepted only as a UUID, by the route and by `lib/links.ts`, and is never fetched.
 
+## Starting and editing a campaign (#162)
+
+`campaigns/new` is the web's "Start a project": one title, `POST /v1/projects`, then
+`router.replace` to the draft's Basics. The tab bar's Create and Me's "Start a campaign" land
+there; signed out, through sign-in and back.
+
+`campaigns/[id]/edit/*` is the editor. The frame (`src/features/editor/editor-frame.tsx`, the
+route group's `_layout.tsx`) names the project in the stack header with the save indicator on
+the right, draws the state tag and the six tab pills, and owns the states every tab shares
+(signed out, failed with the 403/404 wording, offline). Tabs replace the route after flushing
+the autosave, so Back leaves the editor. Basics is native; Rewards, Story, FAQ, Pre-launch and
+Review open the same tab on the website (`editor-web-tab.tsx`) until each lands — each is one
+line in its route file.
+
+The rules — limits, validation, single-field patches, the autosave machine, the copy builders —
+are `@ideanest/campaign-editor`'s, shared with the web. What the app adds:
+
+- **One autosave per open project** (`editor-context.tsx`, `use-autosave.ts`) for every
+  `PATCH /v1/projects/{id}` field, whichever tab sends it: 800ms debounce, flush on blur, on a
+  tab switch and when the app goes to the background, one request in flight, a failed patch
+  kept for a lossless retry.
+- **The unsent patch survives an app kill.** It is written to MMKV per project on every change
+  (`lib/unsent-edits.ts`) and, on reopening, OFFERED ("A change from {time} was not saved",
+  Send it / Discard) — never sent on its own. The session ending erases every one.
+- **The project is persisted** under `projectEdit`, so offline the editor shows it as last
+  loaded, read-only.
+- **Money fields** (`money-field.tsx`) take the device's decimal comma as #162 specifies and
+  hand `parseAmount` the result; **dates** (`date-time-field.tsx`) use the platform picker and
+  send what the web's `fromDateTimeLocal` sends; **images** (`image-source.tsx`) come from the
+  library, the camera (uploaded through `lib/media/upload.ts`) or a measured address.
+- Building blocks for the next tabs: `editor-modal.tsx` (full-screen editor, dirty dismiss
+  asks first), `delete-dialog.tsx`, `use-reorder.tsx` (move buttons, accessibility actions,
+  one queued request).
+
+The editor has no motion but the stack's transitions and the save indicator's spinner (still
+under Reduce Motion): the frame sets the kit's motion budget to `none`.
+
 ## What is not built
 
 **Google sign-in on Android.** The iOS flow cannot be used there: Google refuses
