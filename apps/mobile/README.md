@@ -797,21 +797,25 @@ The editor has no motion but the stack's transitions and the save indicator's sp
 under Reduce Motion): the frame sets the kit's motion budget to `none`.
 
 **Pre-launch** (`features/editor/prelaunch/`) edits the title, summary and cover on the same
-autosave as Basics, seeded the same way (`canSeed`, `seed`, re-seeded in place by `reseedDraft`). Opening the page asks first in the kit's white dialog, flushes the autosave
-and waits for it to settle (a refused change stops the opening), then sends
-`POST /v1/projects/{id}/prelaunch`. While the page is open it shows the follower count from the
+autosave as Basics, seeded the same way (`canSeed`, `seed`, re-seeded in place by
+`reseedDraft`). Opening the page asks first in the kit's white dialog and is refused while a
+field the phone refused is unsent (the page would publish the older text); otherwise it flushes
+the autosave (retrying a change that failed before), waits for it to settle (a refused change
+stops the opening), then sends `POST /v1/projects/{id}/prelaunch`. Cancel stops waiting at any
+point; an answer that still arrives is applied. While the page is open it shows the follower count from the
 public page's own `usePrelaunchPage`, and the link `{siteUrl}/projects/{id}/prelaunch` with Copy
 (`expo-clipboard`, announced) and the native share sheet.
 
 **Review** (`features/editor/review/`) reads `GET /v1/projects/{id}/checklist` under the
-`projectEdit` root (persisted, erased at sign-out). Which states draw Submit or Launch is the
+`projectEdit` root (persisted, erased at sign-out), again on every visit and once more when the
+autosave settles, so a requirement fixed on another tab a moment ago is not still shown missing. Which states draw Submit or Launch is the
 package's `offersSubmit` / `offersLaunch`, shared with the web; whether the campaign may be
 submitted is the server's answer alone. A blocked "Submit for review" is the kit pill's
 `softDisabled` — announced disabled at 40%, but a press moves screen-reader focus to the
 required list. `SUBSCRIPTION_REQUIRED` opens `pricing?from=submit&project={id}`; a plan limit
 offers the plans beside the refusal. Launch is confirmed inline, with focus on "Launch now". The
 completeness bar is the one motion the editor allows: the kit `ProgressBar`'s `rise="progress"`
-(800ms, once), drawn at its figure under Reduce Motion.
+(800ms, once), drawn at its figure under Reduce Motion, and without the funded glow at 100%.
 
 ## What is not built
 
