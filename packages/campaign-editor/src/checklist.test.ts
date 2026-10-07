@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { EDITOR_TABS, editorTabHref } from '../../components/campaign-editor/tabs';
-import type { ChecklistItem, ProjectChecklist } from './api';
-import { EDITOR_COPY, REVIEW_COPY } from '../../test-editor-copy';
+import { EDITOR_TABS, editorTabHref } from './tabs';
+import type { ChecklistItem, ProjectChecklist } from './contract';
+import { EDITOR_COPY, REVIEW_COPY } from './test-copy';
 import {
   CHECKLIST_SECTIONS,
   describeProgress,

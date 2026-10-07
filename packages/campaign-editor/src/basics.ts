@@ -4,10 +4,10 @@ import {
   parseAmount,
   toMoney,
   type AmountRejection,
-} from '../money';
-import type { CoverImage, ProjectEdit, ProjectPatch } from './api';
-import type { BasicsValidationCopy } from '../i18n/campaign-editor-copy';
-import { fillPlaceholders } from '../i18n/placeholders';
+} from '@ideanest/money';
+import { fillPlaceholders } from '@ideanest/messages/placeholders';
+import type { CoverImage, ProjectEdit, ProjectPatch } from './contract';
+import type { BasicsValidationCopy } from './copy';
 
 /**
  * The basics tab, as data: what the creator has typed, what is wrong with it,

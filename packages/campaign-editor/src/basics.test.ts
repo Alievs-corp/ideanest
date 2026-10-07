@@ -12,8 +12,8 @@ import {
   validateBasics,
   type BasicsDraft,
 } from './basics';
-import type { ProjectEdit } from './api';
-import { BASICS_COPY } from '../../test-editor-copy';
+import type { ProjectEdit } from './contract';
+import { BASICS_COPY } from './test-copy';
 
 /**
  * The boundaries of docs/architecture.md §5.3, which is where this fails: 60

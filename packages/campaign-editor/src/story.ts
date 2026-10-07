@@ -16,9 +16,9 @@
  * doing what is convenient in JavaScript.
  */
 
-import type { StoryVocabularyCopy } from '../i18n/campaign-editor-copy';
-import { fillPlaceholders } from '../i18n/placeholders';
-import { pluralise } from '../i18n/plurals';
+import { fillPlaceholders } from '@ideanest/messages/placeholders';
+import { pluralise } from '@ideanest/messages/plurals';
+import type { StoryVocabularyCopy } from './copy';
 import {
   STORY_SCHEMA_VERSION,
   type HeadingBlock,
@@ -36,7 +36,8 @@ import {
  *
  * The shape and its reader are `@ideanest/campaign/story` since #155, so the app renders the
  * documents this editor writes and refuses the ones it refuses. Re-exported under the same
- * names; the editor's operations below are this file's alone.
+ * names, not copied; the editor's operations below are this module's alone, and since #162
+ * both clients' editors call them.
  * ---------------------------------------------------------------------- */
 
 export {

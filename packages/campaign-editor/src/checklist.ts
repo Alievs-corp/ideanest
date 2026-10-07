@@ -1,4 +1,5 @@
-import type { ChecklistItem, ProjectChecklist } from './api';
+import { fillPlaceholders } from '@ideanest/messages/placeholders';
+import type { ChecklistItem, ProjectChecklist } from './contract';
 
 /**
  * The review tab, as data: how far along a campaign is, where each failing
@@ -15,8 +16,6 @@ import type { ChecklistItem, ProjectChecklist } from './api';
  * between this file and `basics.ts`, where the client validates for immediate
  * feedback while somebody types.
  */
-
-import { fillPlaceholders } from '../i18n/placeholders';
 
 /**
  * The editor sections a requirement can point at.
@@ -44,8 +43,9 @@ export function isChecklistSection(value: string): value is ChecklistSectionKey 
 /** Where a failing requirement is fixed, or `null` when this build cannot tell. */
 export function sectionHref(projectId: string, section: string): string | null {
   if (!isChecklistSection(section)) return null;
-  // Mirrors `editorTabHref`. Written out rather than imported so that this module
-  // stays free of the component layer; the test holds the two together.
+  // Mirrors `editorTabHref` in `./tabs`. Written out rather than imported so that
+  // the two lists stay independent; the test holds them together. A web address:
+  // the app maps the same segment onto its own route.
   return `/projects/${encodeURIComponent(projectId)}/edit/${section}`;
 }
 
