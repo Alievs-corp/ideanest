@@ -18,10 +18,10 @@ import {
   haptics,
 } from '../../components/ui';
 import { Glyphs } from '../../icons';
+import { sweepAccountExports } from '../../lib/account-export-files';
 import {
   acknowledgeSignedOut,
   autoPromptOnce,
-  useBiometricsInUse,
   finishPinSetup,
   isCurtained,
   lockEpisode,
@@ -35,10 +35,10 @@ import {
   turnLockOffInstead,
   unlockWithBiometrics,
   unlockWithPin,
+  useBiometricsInUse,
   type LockPhase,
 } from '../../lib/app-lock';
 import { biometricsUsable } from '../../lib/biometrics';
-import { sweepAccountExports } from '../../lib/account-export-files';
 import { useT } from '../../lib/i18n';
 import { useEndLocalSession } from '../../lib/local-sign-out';
 import { forgetPersistedCache } from '../../lib/offline';

@@ -110,18 +110,12 @@ export function IdentityCheck({
   intro,
   onConfirmed,
   autoPrompt = false,
-  evenIfBiometricsOff = false,
   testID = 'identity-check',
 }: {
   readonly intro: string;
   readonly onConfirmed: () => void;
   /** Offer the biometric prompt once on its own, as soon as the phone says it can. */
   readonly autoPrompt?: boolean;
-  /**
-   * Offer the prompt although the owner turned the fingerprint/face off — for the check that turns
-   * it back on, where a passed prompt is the proof wanted.
-   */
-  readonly evenIfBiometricsOff?: boolean;
   readonly testID?: string;
 }) {
   const t = useT('mobile.lock');
@@ -130,13 +124,27 @@ export function IdentityCheck({
   const probed = useBiometricCapability();
   const inUse = useBiometricsInUse();
   // With the fingerprint/face off, the phone is PIN-only here as on the lock screen.
-  const capability = inUse || evenIfBiometricsOff ? probed : null;
+  const capability = inUse ? probed : null;
   const [error, setError] = useState<string | null>(null);
   const prompted = useRef(false);
+  /*
+   * Mounted for as long as its sheet is open. A PIN check or a prompt still running when the sheet
+   * is dismissed must not act on the answer: the owner closed it, and nothing is to change.
+   */
+  const live = useRef(true);
+  useEffect(
+    () => () => {
+      live.current = false;
+    },
+    [],
+  );
+  const confirmed = () => {
+    if (live.current) onConfirmed();
+  };
 
   const prompt = async () => {
     prompted.current = true;
-    if (await confirmWithBiometrics(t('prompt'), { evenIfOff: evenIfBiometricsOff })) onConfirmed();
+    if (await confirmWithBiometrics(t('prompt'))) confirmed();
   };
 
   useEffect(() => {
@@ -149,8 +157,8 @@ export function IdentityCheck({
   const complete = async (pin: string) => {
     const attempt = await attemptPin(pin, wipe);
     if (attempt.kind === 'correct') {
-      setError(null);
-      onConfirmed();
+      if (live.current) setError(null);
+      confirmed();
       return;
     }
     if (attempt.kind === 'wrong') {

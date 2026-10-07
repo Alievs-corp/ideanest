@@ -195,6 +195,8 @@ export function biometricsAllowed(): boolean {
  * (`features/settings/app-lock.tsx`).
  */
 export function setBiometricsAllowed(allowed: boolean): void {
+  // A choice about the lock: with no lock (or no session) there is nothing to choose for.
+  if (!hasStoredSession() || !isLockOn()) return;
   if (allowed) flags.remove(BIOMETRICS_OFF_KEY);
   else flags.set(BIOMETRICS_OFF_KEY, 'true');
   announce();
@@ -314,6 +316,8 @@ export async function enableLock(pin: string): Promise<boolean> {
   }
   flags.set(LOCK_ON_KEY, 'true');
   flags.remove(PIN_REQUIRED_KEY);
+  // A new lock starts with the fingerprint/face on, whatever an earlier one was set to.
+  flags.remove(BIOMETRICS_OFF_KEY);
   announce();
   return true;
 }

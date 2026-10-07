@@ -15,7 +15,6 @@ import {
   subscribeToSession,
 } from './session';
 
-
 /**
  * The app lock's gate — issue #319, §4.12 MB-03. Owns WHEN the app is locked; `features/lock/`
  * draws it.
@@ -29,9 +28,11 @@ import {
  * moments.
  *
  * <p>The owner may keep the lock and the PIN without the fingerprint or face (`session.ts`'s
- * `biometricsAllowed`, Security settings). Then nothing here calls `authenticateAsync` at all —
- * not at launch, not after a re-lock, not on a tap — and the lock screen is the PIN pad alone.
- * The one exception is a migrated lock that has no PIN yet, where the prompt is the only way in.
+ * `biometricsAllowed`, Security settings). Then nothing calls `authenticateAsync` — not at launch,
+ * not after a re-lock, not on a tap, and not in settings' "confirm it's you", which asks for the
+ * PIN alone; turning the fingerprint/face back on takes the PIN too. The lock screen is the PIN
+ * pad alone. The one exception is a migrated lock that has no PIN yet, where the prompt is the
+ * only way in.
  *
  * <p>Each locking is an "episode", and the biometric prompt is offered automatically once per
  * episode ({@link autoPromptOnce}). A refusal or a cancel lands on the PIN pad and is NOT asked
@@ -448,15 +449,12 @@ export async function unlockWithPin(pin: string, wipe: () => Promise<void>): Pro
  * The biometric prompt as confirmation — settings' "it is you" before the lock goes off or the PIN
  * changes. A pass resets the counter, as on the lock screen.
  *
- * <p>Refused without a prompt while the owner has the fingerprint/face off — except when the
- * confirmation is for turning it back ON (`evenIfOff`), where a passed prompt is exactly the proof
- * wanted: the owner is here and the sensor works.
+ * <p>Refused without a prompt while the owner has the fingerprint/face off — turning it back on
+ * included, which takes the PIN: a prompt passed by another finger enrolled on the phone must not
+ * be what brings the prompt back, nor reset the PIN counter while the switch says off.
  */
-export async function confirmWithBiometrics(
-  reason: string,
-  { evenIfOff = false }: { readonly evenIfOff?: boolean } = {},
-): Promise<boolean> {
-  if (!evenIfOff && !biometricsInUse()) return false;
+export async function confirmWithBiometrics(reason: string): Promise<boolean> {
+  if (!biometricsInUse()) return false;
   const passed = await unlock(reason);
   if (passed) await quietly(resetPinAttempts);
   return passed;

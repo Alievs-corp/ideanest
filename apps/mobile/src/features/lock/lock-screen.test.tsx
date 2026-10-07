@@ -356,5 +356,6 @@ describe('with the fingerprint/face turned off (#149)', () => {
     await settle();
     expect(screen.getByTestId('lock-screen')).toBeTruthy();
     expect(biometrics.__prompts()).toBe(0);
+    expect(screen.queryByRole('button', { name: L.screen.useFingerprint })).toBeNull();
   });
 });

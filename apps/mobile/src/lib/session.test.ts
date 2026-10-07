@@ -295,7 +295,13 @@ describe('subscribers', () => {
 });
 
 describe('the fingerprint/face switch (#149)', () => {
+  async function lockOn() {
+    await storeRefreshToken('refresh-1');
+    await enableLock('135790');
+  }
+
   it('is on when the flag is absent, and lives in the flag store', async () => {
+    await lockOn();
     expect(biometricsAllowed()).toBe(true);
     setBiometricsAllowed(false);
     expect(biometricsAllowed()).toBe(false);
@@ -304,25 +310,46 @@ describe('the fingerprint/face switch (#149)', () => {
     expect(flags.getString('app-lock.biometrics-off')).toBeUndefined();
   });
 
-  it('is erased by sign-out', async () => {
+  it('cannot be set without a session and a lock', async () => {
+    setBiometricsAllowed(false);
+    expect(flags.getString('app-lock.biometrics-off')).toBeUndefined();
     await storeRefreshToken('refresh-1');
-    await enableLock('135790');
+    setBiometricsAllowed(false);
+    expect(flags.getString('app-lock.biometrics-off')).toBeUndefined();
+  });
+
+  it('is on again for a new lock', async () => {
+    await lockOn();
+    setBiometricsAllowed(false);
+    await enableLock('246802');
+    expect(biometricsAllowed()).toBe(true);
+  });
+
+  it('is erased by sign-out', async () => {
+    await lockOn();
     setBiometricsAllowed(false);
     await endSession();
-    expect(biometricsAllowed()).toBe(true);
+    expect(flags.getString('app-lock.biometrics-off')).toBeUndefined();
   });
 
   it('is erased by turning the lock off', async () => {
-    await storeRefreshToken('refresh-1');
-    await enableLock('135790');
+    await lockOn();
     setBiometricsAllowed(false);
     await disableLock();
-    expect(biometricsAllowed()).toBe(true);
+    expect(flags.getString('app-lock.biometrics-off')).toBeUndefined();
+  });
+
+  it('is erased when the keychain turns out to have lost the token', async () => {
+    await lockOn();
+    setBiometricsAllowed(false);
+    keychain.__reset(); // a restored backup: MMKV came back, the keychain did not
+    expect(await storedRefreshToken()).toBeNull();
+    expect(flags.getString('app-lock.biometrics-off')).toBeUndefined();
   });
 
   it('is erased by a sign-in that starts a new session', async () => {
-    setBiometricsAllowed(false);
+    flags.set('app-lock.biometrics-off', 'true'); // left behind by a race
     await storeRefreshToken('refresh-new');
-    expect(biometricsAllowed()).toBe(true);
+    expect(flags.getString('app-lock.biometrics-off')).toBeUndefined();
   });
 });

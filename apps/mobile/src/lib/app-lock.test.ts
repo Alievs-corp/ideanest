@@ -806,11 +806,13 @@ describe('the fingerprint/face switch (#149)', () => {
     expect(biometrics.__prompts()).toBe(0);
   });
 
-  it('off: the check that turns it back on may still prompt', async () => {
+  it('off: no prompt can confirm anything, and none can reset the PIN counter', async () => {
     await lockedPhone();
     setBiometricsAllowed(false);
-    expect(await confirmWithBiometrics('Unlock', { evenIfOff: true })).toBe(true);
-    expect(biometrics.__prompts()).toBe(1);
+    await unlockWithPin('111111', wipe);
+    expect(await confirmWithBiometrics('Unlock')).toBe(false);
+    expect(biometrics.__prompts()).toBe(0);
+    expect(await failedPinAttempts()).toBe(1);
   });
 
   it('a migrated lock with no PIN yet prompts whatever the switch says: it is the only way in', async () => {
