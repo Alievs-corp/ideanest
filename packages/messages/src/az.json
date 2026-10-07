@@ -2369,7 +2369,7 @@
         "noStory": "Müəllif hələ yazmayıb. Təqdim etmək üçün tələb olunur, ona görə baxış gözləyən kampaniyada o var.",
         "risksHeading": "Risklər və çətinliklər",
         "noRisks": "Hələ heç nə yazılmayıb. Təqdim etmək üçün iki yüz simvol tələb olunur.",
-        "coverAlt": "{title} üçün üz şəkli"
+        "coverAlt": "{title} üçün örtük şəkli"
       },
       "legal": {
         "subject": "hüquqi sənədlər",
@@ -4749,8 +4749,8 @@
       "notUsedTitle": "Bu fayl istifadə olunmadı",
       "unusable": "Bu şəkli işlətmək alınmadı.",
       "softTitle": "Tam enində bulanıq görünəcək",
-      "set": "Örtük şəkli {size} piksel ölçülü fayldan götürüldü.",
-      "setSmall": "Örtük şəkli {size} piksel ölçülü fayldan götürüldü. Bu, tövsiyə olunan {minimum} ölçüdən kiçikdir, ona görə başlığı doldurmaq üçün böyüdüləcək və bulanıq görünəcək. Nisbətləri saxlanılır — çərçivə dartmır, kəsir. Kampaniyanı yenə də göndərmək olar.",
+      "set": "Örtük şəkli {size} piksel ölçüsündə götürüldü.",
+      "setSmall": "Örtük şəkli {size} piksel ölçüsündə götürüldü. Bu, tövsiyə olunan {minimum} ölçüdən kiçikdir, ona görə başlığı doldurmaq üçün böyüdüləcək və bulanıq görünəcək. Nisbətləri saxlanılır — çərçivə dartmır, kəsir. Kampaniyanı yenə də göndərmək olar.",
       "size": "Örtük şəkli {size} pikseldir",
       "sizeUploaded": "Örtük şəkli {size} pikseldir · yüklənib",
       "stage": {
@@ -5022,7 +5022,7 @@
       },
       "running": {
         "heading": "Əgər kampaniya aparırsınızsa",
-        "draft": "<b>Layihəsini hazırlayın.</b> Başlıq, xülasə, kateqoriya, hədəf, bir ilə altmış gün arasında müddət və üz şəkli. Hekayə ən azı 500, risklər bölməsi ən azı 200 simvol olmalıdır — hər ikisi vacibdir.",
+        "draft": "<b>Layihəsini hazırlayın.</b> Başlıq, xülasə, kateqoriya, hədəf, bir ilə altmış gün arasında müddət və örtük şəkli. Hekayə ən azı 500, risklər bölməsi ən azı 200 simvol olmalıdır — hər ikisi vacibdir.",
         "rewards": "<b>Mükafatlar əlavə edin.</b> Yüzədək pillə, hər birinin qiyməti, içindəkiləri və hara göndərildiyi ilə. Kampaniya aktivləşdikdən sonra pillənin qiyməti dəyişdirilə bilməz, dəstəkçisi olan pillə isə silinə bilməz — yalnız gizlədilə bilər.",
         "submit": "<b>Yoxlamaya göndərin.</b> Onu bir insan oxuyur. Təsdiqləyir, dəyişiklik istəyir və ya səbəbini bildirərək imtina edir.",
         "launch": "<b>Başla-dın.</b> Bu andan hədəf və son tarix sabitlənir. Qalan hər şey — hekayə, yeniliklər, mükafat saylarının artırılması — redaktə edilə bilən qalır.",

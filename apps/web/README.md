@@ -425,7 +425,7 @@ suffix's vowel is chosen from the number's last digit — 1-ci, 3-cü, 6-cı, 9-
 reader meets**: six are the reorder buttons' `aria-label`s and six are the live region that
 says a reward, a block or a question moved, so a creator reordering ten story blocks with the
 keyboard heard four wrong endings out of nine moves, in the only channel that told them the
-move had worked. They are rephrased rather than inflected — `{total} bloqdan {index}` is
+move had worked. They are rephrased rather than inflected — `{total} blokdan {index}` is
 cardinal and needs no suffix, and "moved to position N" is `{position} nömrəli mövqeyə`, which
 is what `profile.editor.links.platformFor` became in #105. A suffix table was the other option
 and is the wrong one: `{position}` is only known in the browser, and the rule is not only
