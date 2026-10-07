@@ -153,6 +153,19 @@ describe('Pill', () => {
     expect(getByText('Pay', { includeHiddenElements: true })).toBeTruthy();
   });
 
+  it('announces itself disabled and dims when soft-disabled, but still answers a press (#162)', async () => {
+    const onPress = jest.fn();
+    const { getByRole } = await render(
+      <Pill label="Submit for review" variant="accent" softDisabled onPress={onPress} />,
+    );
+    const button = getByRole('button');
+    expect(button.props.accessibilityState).toMatchObject({ disabled: true });
+    expect(styleOf(button).opacity).toBe(0.4);
+
+    await fireEvent.press(button);
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
   it('refuses a press while disabled, and dims to 40%', async () => {
     const onPress = jest.fn();
     const { getByRole } = await render(<Pill label="Pay" disabled onPress={onPress} />);

@@ -176,6 +176,49 @@ describe('ProgressBar (kit)', () => {
     expect(heights).toEqual([6, 10]);
   });
 
+  describe('the timed rise (#162, the editor review score)', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    it('fills over motion.progress (800ms), not on a spring, and lands on the figure', async () => {
+      const tree = await renderBare(
+        <IntlProvider locale="en" messages={en}>
+          <MotionBudgetProvider level="minimal">
+            <ProgressBar completionPercent="72" label="Completeness" rise="progress" />
+          </MotionBudgetProvider>
+        </IntlProvider>,
+      );
+      const drawn = () =>
+        Number(scaleXOf(getAnimatedStyle(tree.getByTestId(PROGRESS_FILL)) as ViewStyle));
+
+      await act(async () => {
+        jest.advanceTimersByTime(400);
+      });
+      const halfway = drawn();
+      expect(halfway).toBeGreaterThan(0);
+      expect(halfway).toBeLessThan(0.72);
+
+      await act(async () => {
+        jest.advanceTimersByTime(500);
+      });
+      expect(drawn()).toBeCloseTo(0.72, 5);
+    });
+
+    it('is drawn at the figure under a none budget', async () => {
+      const tree = await renderBare(
+        <IntlProvider locale="en" messages={en}>
+          <MotionBudgetProvider level="none">
+            <ProgressBar completionPercent="72" label="Completeness" rise="progress" />
+          </MotionBudgetProvider>
+        </IntlProvider>,
+      );
+      expect(scaleXOf(StyleSheet.flatten(tree.getByTestId(PROGRESS_FILL).props.style) as ViewStyle)).toBeCloseTo(
+        0.72,
+        5,
+      );
+    });
+  });
+
   describe('in a recycled list row', () => {
     beforeEach(() => jest.useFakeTimers());
     afterEach(() => jest.useRealTimers());

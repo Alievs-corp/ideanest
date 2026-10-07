@@ -1,9 +1,15 @@
 import Decimal from 'decimal.js';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useT } from '../../lib/i18n';
-import { colors, radius, spacing, spring } from '../../theme';
+import { colors, motion, radius, spacing, spring } from '../../theme';
 import { Meta } from '../text';
 import { useMotionAllowed } from './motion-budget';
 import { BLOCK, blockSurface, useSurface } from './surface';
@@ -52,6 +58,14 @@ export const PROGRESS_FILL = 'progress-fill';
 
 export type ProgressBarSize = 'sm' | 'md';
 
+/**
+ * How the fill rises. `spring` (the default) settles on `spring.soft`, as every funding bar does.
+ * `progress` is the token's 800ms fill (`motion.progress`), eased out: the campaign editor's review
+ * score (#162), the one fill that surface's budget sanctions. Either way it is drawn at the figure,
+ * unmoving, under Reduce Motion or a `none` budget.
+ */
+export type ProgressBarRise = 'spring' | 'progress';
+
 const HEIGHT: Record<ProgressBarSize, number> = { sm: 6, md: 10 };
 
 export interface ProgressBarProps {
@@ -71,6 +85,8 @@ export interface ProgressBarProps {
    * link — where a second focus stop, or a value swallowed by the parent on iOS, helps nobody.
    */
   readonly decorative?: boolean;
+  /** How the fill rises where motion is allowed. See {@link ProgressBarRise}. */
+  readonly rise?: ProgressBarRise;
   readonly testID?: string;
 }
 
@@ -113,6 +129,7 @@ export function ProgressBar({
   size = 'sm',
   showLabel = true,
   decorative = false,
+  rise = 'spring',
   testID,
 }: ProgressBarProps) {
   const t = useT();
@@ -162,6 +179,7 @@ export function ProgressBar({
           <Fill
             key={String(fraction)}
             fraction={fraction}
+            rise={rise}
             colour={reached ? colors.success : block === 'white' ? colors.surface1 : colors.lime500}
           />
         </View>
@@ -183,13 +201,25 @@ export function ProgressBar({
  * there. The animated style is always the one passed, so there is one source for the transform
  * whichever way the motion question is answered.
  */
-function Fill({ fraction, colour }: { readonly fraction: number; readonly colour: string }) {
+function Fill({
+  fraction,
+  colour,
+  rise,
+}: {
+  readonly fraction: number;
+  readonly colour: string;
+  readonly rise: ProgressBarRise;
+}) {
   const moves = useMotionAllowed('minimal');
   const scale = useSharedValue(moves ? 0 : fraction);
 
   useEffect(() => {
-    scale.value = moves ? withSpring(fraction, spring.soft) : fraction;
-  }, [fraction, moves, scale]);
+    scale.value = !moves
+      ? fraction
+      : rise === 'progress'
+        ? withTiming(fraction, { duration: motion.progress, easing: Easing.out(Easing.cubic) })
+        : withSpring(fraction, spring.soft);
+  }, [fraction, moves, rise, scale]);
 
   const rising = useAnimatedStyle(() => ({ transform: [{ scaleX: scale.value }] }));
 
