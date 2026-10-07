@@ -651,6 +651,53 @@ export function isSaveable(document: StoryDocument, copy: StoryVocabularyCopy): 
   return storyProblems(document, copy).size === 0;
 }
 
+/**
+ * The block a refused save names, when it names one.
+ *
+ * `STORY_DOCUMENT_INVALID` carries `meta.path` — `blocks[7].alt` — and the index is pulled out
+ * so the server's message lands on the block it is about rather than in a banner alone: a story
+ * is hundreds of blocks long, and "the story is invalid" is not something a creator can act on.
+ * Any other refusal, or a path that is not about a block, names none. Shared by both clients'
+ * story tabs (#162), so the two read the server's path the same way.
+ */
+export function rejectedBlockIndex(
+  failure: { readonly code: string | null; readonly meta?: Readonly<Record<string, unknown>> | null } | null,
+): number | null {
+  if (failure?.code !== 'STORY_DOCUMENT_INVALID') return null;
+
+  const path = failure.meta?.path;
+  if (typeof path !== 'string') return null;
+
+  const match = /^blocks\[(\d+)\]/.exec(path);
+  if (match === null) return null;
+
+  const index = Number(match[1]);
+  return Number.isSafeInteger(index) ? index : null;
+}
+
+/**
+ * A heading with new text, and the anchor that goes with it.
+ *
+ * The anchor follows the text, but only while it is still the anchor that text would produce.
+ * Once a creator has an anchor somebody may have linked to — one they wrote themselves, or one
+ * left over from an earlier wording that a link may already point at — renaming the heading must
+ * not silently break the link, so a heading whose anchor is not its text's own keeps it.
+ * Regenerating unconditionally would be the same mistake as recomputing a campaign's slug when
+ * its title is corrected. A heading that has never had text takes its anchor from the first
+ * words typed, so `newBlock`'s placeholder anchor does not outlive the placeholder.
+ *
+ * `taken` is every other heading's anchor, so the regenerated one stays unique.
+ */
+export function renameHeading(
+  block: HeadingBlock,
+  text: string,
+  taken: Iterable<string>,
+): HeadingBlock {
+  const generated = slugifyHeading(block.text);
+  const keepsItsAnchor = block.id !== generated && block.text !== '';
+  return { ...block, text, id: keepsItsAnchor ? block.id : uniqueHeadingId(text, taken) };
+}
+
 /* -------------------------------------------------------------------------
  * Naming a block
  * ---------------------------------------------------------------------- */

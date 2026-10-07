@@ -19,6 +19,7 @@ import {
   emptyStory,
   headingAnchors,
   readStoryDocument,
+  rejectedBlockIndex,
   storyCharacterCount,
   storyProblems,
   type StoryDocument,
@@ -94,20 +95,6 @@ function serverErrors(failure: SaveFailure | null): { story?: string; risks?: st
   return mapped;
 }
 
-/** The block index a `STORY_DOCUMENT_INVALID` path points at, when it points at one. */
-function blockIndexFrom(failure: SaveFailure | null): number | null {
-  if (failure?.code !== 'STORY_DOCUMENT_INVALID') return null;
-
-  const path = failure.meta?.path;
-  if (typeof path !== 'string') return null;
-
-  const match = /^blocks\[(\d+)\]/.exec(path);
-  if (match === null) return null;
-
-  const index = Number(match[1]);
-  return Number.isInteger(index) ? index : null;
-}
-
 export interface StoryPanelProps {
   projectId: string;
   /** The editor frame's words, resolved by this tab's page. */
@@ -165,7 +152,7 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
 
   const failure = autosave.failure;
   const fieldErrors = serverErrors(failure);
-  const rejectedBlock = blockIndexFrom(failure);
+  const rejectedBlock = rejectedBlockIndex(failure);
 
   /**
    * The server's per-block message, merged over the client's.
