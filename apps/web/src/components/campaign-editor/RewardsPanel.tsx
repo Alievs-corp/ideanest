@@ -26,6 +26,8 @@ import {
 } from '../../lib/projects/api';
 import {
   MAX_REWARD_TIERS,
+  describeItemInUse,
+  describeRewardContents,
   describeStock,
   hidePatch,
   isHiddenReward,
@@ -419,12 +421,7 @@ export function RewardsPanel({ projectId, copy, rewards: words }: RewardsPanelPr
           <InlineAlert variant="danger" title={words.failedTitle}>
             <p>{failure.message}</p>
             {failure.code === 'ITEM_IN_USE' && (
-              <p className="mt-2 text-white/64">
-                {fillPlaceholders(
-                  pluralise(words.locale, words.itemInUse, tierCount(failure)),
-                  { tiers: namedTiers(failure, rewards, words) },
-                )}
-              </p>
+              <p className="mt-2 text-white/64">{describeItemInUse(failure, rewards, words)}</p>
             )}
             {failure.code === 'REWARD_HAS_BACKERS' && (
               <p className="mt-2 text-white/64">{words.rewardHasBackers}</p>
@@ -718,7 +715,7 @@ function RewardCard({
             )}
           </div>
 
-          <p className="mt-2 text-[13px] text-white/40">{describeContents(reward, items, words)}</p>
+          <p className="mt-2 text-[13px] text-white/40">{describeRewardContents(reward, items, words)}</p>
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-2">
@@ -828,57 +825,4 @@ function RewardCard({
       )}
     </li>
   );
-}
-
-/* -------------------------------------------------------------------------
- * Sentences
- * ---------------------------------------------------------------------- */
-
-/**
- * What is in the tier, named rather than counted.
- *
- * "3 items" tells a creator scanning the list nothing they can check; the names
- * are what they are looking for. An item the campaign no longer has is called
- * that rather than skipped, because a silently shorter list is how a creator
- * fails to notice a composition that has lost a line.
- */
-function describeContents(
-  reward: Reward,
-  items: readonly Item[],
-  words: RewardsPanelCopy,
-): string {
-  if (reward.items.length === 0) return words.containsNothing;
-
-  const listed = reward.items
-    .map((line) => {
-      const item = items.find((one) => one.id === line.itemId);
-      const name = item?.name ?? words.missingItemInline;
-      return line.quantity === 1
-        ? name
-        : fillPlaceholders(words.itemTimes, { name, quantity: String(line.quantity) });
-    })
-    .join(', ');
-
-  return fillPlaceholders(words.contains, { items: listed });
-}
-
-/** The tiers an `ITEM_IN_USE` refusal named, as titles rather than identifiers. */
-function namedTiers(
-  failure: SaveFailure,
-  rewards: readonly Reward[],
-  words: RewardsPanelCopy,
-): string {
-  const ids = failure.meta?.rewardTierIds;
-  if (!Array.isArray(ids)) return words.aRewardInCampaign;
-
-  const titles = ids
-    .filter((id): id is string => typeof id === 'string')
-    .map((id) => rewards.find((reward) => reward.id === id)?.title ?? words.aReward);
-
-  return titles.length === 0 ? words.aRewardInCampaign : titles.join(', ');
-}
-
-function tierCount(failure: SaveFailure): number {
-  const ids = failure.meta?.rewardTierIds;
-  return Array.isArray(ids) ? ids.length : 1;
 }

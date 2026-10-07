@@ -1,5 +1,9 @@
+import { fillPlaceholders } from '@ideanest/messages/placeholders';
+import { pluralise } from '@ideanest/messages/plurals';
+import type { SaveFailure } from './autosave';
 import { characterCount } from './basics';
 import type { NewProjectFaq, ProjectFaq, ProjectFaqPatch } from './contract';
+import type { FaqOrderCopy, FaqPanelCopy, FaqValidationCopy } from './copy';
 
 /** §4.4's bounds. Refused by the service; shown to the creator before it is. */
 export const FAQ_QUESTION_MAX_CHARACTERS = 200;
@@ -64,27 +68,31 @@ export function faqDraftFrom(faq: ProjectFaq): FaqDraft {
  * are allowed. The creator can already see the limit under the field; what they
  * cannot see is how much to cut.
  */
-export function validateFaq(draft: FaqDraft): FaqErrors {
+export function validateFaq(draft: FaqDraft, copy: FaqValidationCopy): FaqErrors {
   const errors: FaqErrors = {};
 
   const question = draft.question.trim();
   const answer = draft.answer.trim();
 
   if (question === '') {
-    errors.question = 'A question is needed. It is what a backer scans the list for.';
+    errors.question = copy.questionRequired;
   } else {
     const over = characterCount(question) - FAQ_QUESTION_MAX_CHARACTERS;
     if (over > 0) {
-      errors.question = `That is ${over} character${over === 1 ? '' : 's'} too long. A question is at most ${FAQ_QUESTION_MAX_CHARACTERS}.`;
+      errors.question = fillPlaceholders(pluralise(copy.locale, copy.questionTooLong, over), {
+        max: String(FAQ_QUESTION_MAX_CHARACTERS),
+      });
     }
   }
 
   if (answer === '') {
-    errors.answer = 'An answer is needed. A question with no answer reads as a refusal to give one.';
+    errors.answer = copy.answerRequired;
   } else {
     const over = characterCount(answer) - FAQ_ANSWER_MAX_CHARACTERS;
     if (over > 0) {
-      errors.answer = `That is ${over} character${over === 1 ? '' : 's'} too long. An answer is at most ${FAQ_ANSWER_MAX_CHARACTERS}.`;
+      errors.answer = fillPlaceholders(pluralise(copy.locale, copy.answerTooLong, over), {
+        max: String(FAQ_ANSWER_MAX_CHARACTERS),
+      });
     }
   }
 
@@ -124,4 +132,73 @@ export function faqPatchFrom(draft: FaqDraft, faq: ProjectFaq): ProjectFaqPatch 
 
 export function isEmptyFaqPatch(patch: ProjectFaqPatch): boolean {
   return Object.keys(patch).length === 0;
+}
+
+/* -------------------------------------------------------------------------
+ * The reorder refusal, in words
+ * ---------------------------------------------------------------------- */
+
+/**
+ * `FAQ_ORDER_INCOMPLETE`, as a sentence about questions rather than identifiers.
+ *
+ * `meta.missing` names entries the service holds that the order left out;
+ * `meta.unexpected` names identifiers the order carried that the service does
+ * not have. A creator can act on neither as a UUID, so each is turned back into
+ * the question it belongs to wherever the caller still knows it, and counted
+ * where it does not — an identifier the page has never seen is by definition
+ * one it cannot name.
+ *
+ * Moved here from the web's `FaqPanel` (#162) so the app explains the same
+ * refusal in the same words rather than in a second implementation. `faqs` is
+ * every entry the caller knows of — the list as it was when the order was sent
+ * as well as the list read again after the refusal, because an entry deleted
+ * elsewhere is named only in the first and one added elsewhere only in the
+ * second.
+ */
+export function describeOrderRefusal(
+  failure: SaveFailure,
+  faqs: readonly ProjectFaq[],
+  copy: Pick<FaqPanelCopy, 'order' | 'locale'>,
+): string {
+  const missing = namesOf(failure.meta?.['missing'], faqs, copy);
+  const unexpected = namesOf(failure.meta?.['unexpected'], faqs, copy);
+
+  const parts: string[] = [];
+  if (missing.length > 0) {
+    parts.push(fillPlaceholders(copy.order.missing, { items: joined(missing, copy.order) }));
+  }
+  if (unexpected.length > 0) {
+    parts.push(fillPlaceholders(copy.order.unexpected, { items: joined(unexpected, copy.order) }));
+  }
+
+  const detail = parts.length === 0 ? copy.order.disagreed : parts.join(', ');
+  return fillPlaceholders(copy.order.refusal, { detail });
+}
+
+function namesOf(
+  value: unknown,
+  faqs: readonly ProjectFaq[],
+  copy: Pick<FaqPanelCopy, 'order' | 'locale'>,
+): readonly string[] {
+  if (!Array.isArray(value)) return [];
+
+  const named: string[] = [];
+  let unnamed = 0;
+  for (const id of value as readonly unknown[]) {
+    const known = typeof id === 'string' ? faqs.find((faq) => faq.id === id) : undefined;
+    if (known === undefined) unnamed += 1;
+    else named.push(fillPlaceholders(copy.order.quoted, { question: known.question }));
+  }
+
+  if (unnamed > 0) named.push(pluralise(copy.locale, copy.order.otherQuestions, unnamed));
+  return named;
+}
+
+/** "a", "a and b", "a, b and c" — the conjunction is the catalogue's, not English. */
+function joined(items: readonly string[], order: FaqOrderCopy): string {
+  if (items.length <= 1) return items[0] ?? '';
+  return fillPlaceholders(order.joinAnd, {
+    head: items.slice(0, -1).join(', '),
+    last: items[items.length - 1] ?? '',
+  });
 }

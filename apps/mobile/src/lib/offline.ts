@@ -68,7 +68,9 @@ export const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
  * deadline, which its creator reads offline with the time they were fetched.
  *
  * The campaign editor (#162) adds `projectEdit`: the creator's own projection of a project, which
- * the editor shows read-only offline. Private, so it is in {@link ACCOUNT_ROOTS} as well.
+ * the editor shows read-only offline. Private, so it is in {@link ACCOUNT_ROOTS} as well. Its
+ * Rewards and FAQ tabs add `projectEditLists` — the creator's items, reward tiers and questions —
+ * for the same reason and on the same terms.
  */
 const PERSISTED_ROOTS: readonly string[] = [
   'saved',
@@ -81,6 +83,7 @@ const PERSISTED_ROOTS: readonly string[] = [
   'fulfilments',
   'dashboardOverview',
   'projectEdit',
+  'projectEditLists',
 ];
 
 /**
@@ -134,6 +137,7 @@ export const ACCOUNT_ROOTS: readonly string[] = [
   'dashboardBackers',
   'dashboardSurveys',
   'projectEdit',
+  'projectEditLists',
 ];
 
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {

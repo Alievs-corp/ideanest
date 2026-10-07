@@ -74,6 +74,16 @@ describe('what survives a restart', () => {
     expect(ACCOUNT_ROOTS).toContain(queryKeys.projectEdit('p1')[0]);
   });
 
+  it('keeps the editor’s items, rewards and questions the same way, apart from the public lists (#162)', () => {
+    for (const key of [queryKeys.editorItems('p1'), queryKeys.editorRewards('p1'), queryKeys.editorFaqs('p1')]) {
+      expect(shouldPersistQuery(key)).toBe(true);
+      expect(ACCOUNT_ROOTS).toContain(key[0]);
+    }
+    // The public page's lists are another root, which sign-out does not erase.
+    expect(queryKeys.editorRewards('p1')[0]).not.toBe(queryKeys.projectRewards('p1')[0]);
+    expect(queryKeys.editorFaqs('p1')[0]).not.toBe(queryKeys.projectFaqs('p1')[0]);
+  });
+
   it('never writes a campaign’s money, its mailing list or its surveys (#163)', () => {
     expect(shouldPersistQuery(queryKeys.dashboardAnalytics('p1'))).toBe(false);
     expect(shouldPersistQuery(queryKeys.dashboardBreakdown('p1'))).toBe(false);

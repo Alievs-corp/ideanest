@@ -163,6 +163,29 @@ describe('useReorder', () => {
     expect(order()).toEqual(['a', 'b', 'c']);
   });
 
+  it('takes in an entry added or removed while a move is unconfirmed, so the next move sends the whole list', async () => {
+    const first = deferred();
+    const send = jest.fn<Promise<void>, [readonly string[]]>().mockReturnValueOnce(first.promise).mockResolvedValue();
+    const view = await show({ items: ROWS, send, onRefused: jest.fn() });
+    await fireEvent.press(screen.getByTestId('move-c-up'));
+    expect(order()).toEqual(['a', 'c', 'b']);
+
+    // A duplicate lands and `a` is deleted while the reorder is still in the air.
+    const changed = [ROWS[1], ROWS[2], { id: 'd', title: 'Delta' }] as Row[];
+    await view.rerender(
+      <IntlProvider locale="en" messages={en}>
+        <List items={changed} send={send} onRefused={jest.fn()} />
+      </IntlProvider>,
+    );
+    expect(order()).toEqual(['c', 'b', 'd']);
+    expect(screen.getByTestId('move-d-up').props.accessibilityState).toMatchObject({ disabled: false });
+
+    await fireEvent.press(screen.getByTestId('move-d-up'));
+    await act(async () => first.resolve());
+    await settle();
+    expect(send).toHaveBeenLastCalledWith(['c', 'd', 'b']);
+  });
+
   it('returns screen-reader focus to the same button on the moved card', async () => {
     await show({ items: ROWS, send: jest.fn(() => Promise.resolve()), onRefused: jest.fn() });
     await fireEvent.press(screen.getByTestId('move-b-down'));

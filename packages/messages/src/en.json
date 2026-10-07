@@ -4631,6 +4631,22 @@
         "questionHint": "As a backer would ask it. {max} characters or fewer.",
         "answer": "Answer",
         "answerHint": "Plain text. Blank lines become paragraph breaks on the campaign page; nothing else is formatting. {max} characters or fewer."
+      },
+      "validation": {
+        "questionRequired": "A question is needed. It is what a backer scans the list for.",
+        "questionTooLong": {
+          "one": "That is {count} character too long. A question is at most {max}.",
+          "few": "That is {count} characters too long. A question is at most {max}.",
+          "many": "That is {count} characters too long. A question is at most {max}.",
+          "other": "That is {count} characters too long. A question is at most {max}."
+        },
+        "answerRequired": "An answer is needed. A question with no answer reads as a refusal to give one.",
+        "answerTooLong": {
+          "one": "That is {count} character too long. An answer is at most {max}.",
+          "few": "That is {count} characters too long. An answer is at most {max}.",
+          "many": "That is {count} characters too long. An answer is at most {max}.",
+          "other": "That is {count} characters too long. An answer is at most {max}."
+        }
       }
     },
     "prelaunch": {
@@ -5830,6 +5846,34 @@
         "chooseDate": "Choose a date",
         "confirmDate": "Use this date",
         "confirmDateLabel": "Use {date} for {label}"
+      },
+      "rewards": {
+        "deliversOn": "Delivers {date}",
+        "weight": "{grams} g",
+        "atCapacityBody": "A campaign can offer {max} rewards. Delete or combine one before adding another.",
+        "deleteItemBody": "An item that a reward contains cannot be deleted — take it out of the reward first. This one is not in any reward as far as this page knows, and the service checks again.",
+        "deleteRewardBody": "Once somebody has backed a reward it can no longer be deleted, only hidden — so deleting is offered while nobody has.",
+        "notSavedDetail": "Nothing you typed has been lost — it is still in the fields below.",
+        "ratesNotSavedDetail": "Everything else about the reward was saved. Only the per-country rates were refused, so fix them and save again — the rest will not be sent twice.",
+        "weightHint": "Optional, and what shipping is worked out from later.",
+        "image": "Image",
+        "imageHint": "Optional. Choose a photo, take one, or use the address of an image that is already online.",
+        "imageRemove": "Remove image",
+        "earlyBirdHint": "A better deal that runs out. It needs either a closing date or a limited number of places — without one it is an ordinary reward with a label that hurries people for nothing.",
+        "secretHint": "Left out of the public list and reached by a private token instead. Making it public again destroys that token, so any link already sent stops working.",
+        "destination": "destination {position}",
+        "copyToken": "Copy token",
+        "copied": "Copied",
+        "tokenCopied": "Token copied",
+        "copyFailed": "The token could not be copied. Select it and copy it by hand.",
+        "nothingCached": "You are offline, and the rewards have not been loaded on this phone yet."
+      },
+      "faq": {
+        "heading": "Questions",
+        "explanation": "These appear on the campaign’s FAQ tab, in this order. Answering the question a backer would otherwise ask in the comments is the point of the list.",
+        "atLimitBody": "A campaign may publish {max} questions. Delete one to add another.",
+        "deleteBody": "Nothing is owed against a question, so it goes for good — unlike a reward tier, which can only be hidden once somebody has chosen it.",
+        "nothingCached": "You are offline, and the questions have not been loaded on this phone yet."
       }
     }
   }

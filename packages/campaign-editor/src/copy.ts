@@ -1103,10 +1103,29 @@ export interface StoryPanelCopy {
  * FAQ — §4.5's fourth tab
  * ---------------------------------------------------------------------- */
 
+/**
+ * What `validateFaq` refuses (#162).
+ *
+ * It used to answer in English from inside `./faqs`, which the web could live with and the app
+ * could not: a phone set to Azerbaijani would have shown an English refusal under a field whose
+ * label was Azerbaijani. Handed in, like `basicsValidationCopyFrom`'s vocabulary.
+ */
+export interface FaqValidationCopy {
+  readonly questionRequired: string;
+  /** One form per category. Each carries `{count}` (how many too many) and `{max}`. */
+  readonly questionTooLong: AppPluralForms;
+  readonly answerRequired: string;
+  /** One form per category. Each carries `{count}` (how many too many) and `{max}`. */
+  readonly answerTooLong: AppPluralForms;
+  /** The language whose plural rule picks between the forms above. */
+  readonly locale: Locale;
+}
+
 /** `FaqEntryEditor` — the drawer one question is written in. */
 export interface FaqEntryCopy {
   readonly characterCount: CharacterCountCopy;
   readonly locale: Locale;
+  readonly validation: FaqValidationCopy;
   readonly addTitle: string;
   readonly editTitle: string;
   readonly notSavedTitle: string;
@@ -1361,6 +1380,13 @@ export function faqPanelCopyFrom(
     entry: {
       characterCount: counter,
       locale,
+      validation: {
+        questionRequired: at('validation.questionRequired'),
+        questionTooLong: t.raw('faq.validation.questionTooLong') as AppPluralForms,
+        answerRequired: at('validation.answerRequired'),
+        answerTooLong: t.raw('faq.validation.answerTooLong') as AppPluralForms,
+        locale,
+      },
       addTitle: at('entry.addTitle'),
       editTitle: at('entry.editTitle'),
       notSavedTitle: at('entry.notSavedTitle'),

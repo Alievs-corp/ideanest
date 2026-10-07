@@ -12,14 +12,13 @@ import {
 } from '@ideanest/ui';
 import { Modal } from '@ideanest/ui/motion';
 import { deleteFaq, listFaqs, reorderFaqs, type ProjectFaq } from '../../lib/projects/api';
-import { MAX_PROJECT_FAQS } from '@ideanest/campaign-editor/faqs';
+import { MAX_PROJECT_FAQS, describeOrderRefusal } from '@ideanest/campaign-editor/faqs';
 import { movedTo } from '@ideanest/campaign-editor/rewards';
 import type {
   EditorChromeCopy,
   FaqPanelCopy,
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
-import { pluralise } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
 import { FaqEntryEditor } from './FaqEntryEditor';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
@@ -582,66 +581,4 @@ function FaqRow({
       </div>
     </div>
   );
-}
-
-/* -------------------------------------------------------------------------
- * The reorder refusal, in words
- * ---------------------------------------------------------------------- */
-
-/**
- * `FAQ_ORDER_INCOMPLETE`, as a sentence about questions rather than identifiers.
- *
- * `meta.missing` names entries the service holds that the order left out;
- * `meta.unexpected` names identifiers the order carried that the service does
- * not have. A creator can act on neither as a UUID, so each is turned back into
- * the question it belongs to wherever this page still knows it, and counted
- * where it does not — an identifier this page has never seen is by definition
- * one it cannot name.
- */
-export function describeOrderRefusal(
-  failure: SaveFailure,
-  faqs: readonly ProjectFaq[],
-  copy: FaqPanelCopy,
-): string {
-  const missing = namesOf(failure.meta?.['missing'], faqs, copy);
-  const unexpected = namesOf(failure.meta?.['unexpected'], faqs, copy);
-
-  const parts: string[] = [];
-  if (missing.length > 0) {
-    parts.push(fillPlaceholders(copy.order.missing, { items: list(missing, copy) }));
-  }
-  if (unexpected.length > 0) {
-    parts.push(fillPlaceholders(copy.order.unexpected, { items: list(unexpected, copy) }));
-  }
-
-  const detail = parts.length === 0 ? copy.order.disagreed : parts.join(', ');
-  return fillPlaceholders(copy.order.refusal, { detail });
-}
-
-function namesOf(
-  value: unknown,
-  faqs: readonly ProjectFaq[],
-  copy: FaqPanelCopy,
-): readonly string[] {
-  if (!Array.isArray(value)) return [];
-
-  const named: string[] = [];
-  let unnamed = 0;
-  for (const id of value as readonly unknown[]) {
-    const known = typeof id === 'string' ? faqs.find((faq) => faq.id === id) : undefined;
-    if (known === undefined) unnamed += 1;
-    else named.push(fillPlaceholders(copy.order.quoted, { question: known.question }));
-  }
-
-  if (unnamed > 0) named.push(pluralise(copy.locale, copy.order.otherQuestions, unnamed));
-  return named;
-}
-
-/** "a", "a and b", "a, b and c". */
-function list(items: readonly string[], copy: FaqPanelCopy): string {
-  if (items.length <= 1) return items[0] ?? '';
-  return fillPlaceholders(copy.order.joinAnd, {
-    head: items.slice(0, -1).join(', '),
-    last: items[items.length - 1] ?? '',
-  });
 }
