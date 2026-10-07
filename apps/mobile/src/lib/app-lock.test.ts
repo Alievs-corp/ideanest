@@ -2,6 +2,8 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import {
   RELOCK_AFTER_MS,
+  biometricsInUse,
+  confirmWithBiometrics,
   acknowledgeSignedOut,
   appStateChanged,
   attemptPin,
@@ -35,6 +37,7 @@ import {
   hasStoredSession,
   isLockOn,
   rememberAccessToken,
+  setBiometricsAllowed,
   storeRefreshToken,
   subscribeToSession,
   useFlagStore,
@@ -774,5 +777,52 @@ describe('#319 hardening', () => {
     });
 
     expect(lockPhase()).toBe('migration-stalled');
+  });
+});
+
+describe('the fingerprint/face switch (#149)', () => {
+  it('is on unless turned off: a lock from before the switch existed keeps the prompt', async () => {
+    await lockedPhone();
+    expect(biometricsInUse()).toBe(true);
+    expect(await autoPromptOnce('Unlock')).toBe(true);
+    expect(biometrics.__prompts()).toBe(1);
+  });
+
+  it('off: no prompt at launch, on a tap, after a re-lock, or in a settings check', async () => {
+    await lockedPhone();
+    setBiometricsAllowed(false);
+
+    expect(await autoPromptOnce('Unlock')).toBe(false);
+    expect(await unlockWithBiometrics('Unlock')).toBe(false);
+    expect(await confirmWithBiometrics('Unlock')).toBe(false);
+    expect(lockPhase()).toBe('locked');
+
+    await unlockWithPin('135790', wipe);
+    appStateChanged('background', 0, 0);
+    appStateChanged('active', RELOCK_AFTER_MS + 1, 0);
+    expect(lockPhase()).toBe('locked');
+    expect(await autoPromptOnce('Unlock')).toBe(false);
+
+    expect(biometrics.__prompts()).toBe(0);
+  });
+
+  it('off: the check that turns it back on may still prompt', async () => {
+    await lockedPhone();
+    setBiometricsAllowed(false);
+    expect(await confirmWithBiometrics('Unlock', { evenIfOff: true })).toBe(true);
+    expect(biometrics.__prompts()).toBe(1);
+  });
+
+  it('a migrated lock with no PIN yet prompts whatever the switch says: it is the only way in', async () => {
+    keychain.__put('ideanest.refresh-token.locked', 'refresh-old', 'az.ideanest.app.locked');
+    flags.set('session.present', 'true');
+    flags.set('session.locked', 'true');
+    resetAppLockForTests();
+    await runMigration();
+    setBiometricsAllowed(false);
+    resetAppLockForTests(); // relaunched before choosing a PIN
+
+    expect(biometricsInUse()).toBe(true);
+    expect(await autoPromptOnce('Unlock')).toBe(true);
   });
 });

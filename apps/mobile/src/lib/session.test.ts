@@ -6,11 +6,13 @@ import {
   enableLock,
   endSession,
   hasStoredSession,
+  biometricsAllowed,
   isLockOn,
   isPinRequired,
   migrateLegacyLock,
   needsLockMigration,
   rememberAccessToken,
+  setBiometricsAllowed,
   storeRefreshToken,
   storedRefreshToken,
   subscribeToSession,
@@ -289,5 +291,38 @@ describe('subscribers', () => {
     listener.mockClear();
     await endSession();
     expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+describe('the fingerprint/face switch (#149)', () => {
+  it('is on when the flag is absent, and lives in the flag store', async () => {
+    expect(biometricsAllowed()).toBe(true);
+    setBiometricsAllowed(false);
+    expect(biometricsAllowed()).toBe(false);
+    expect(flags.getString('app-lock.biometrics-off')).toBe('true');
+    setBiometricsAllowed(true);
+    expect(flags.getString('app-lock.biometrics-off')).toBeUndefined();
+  });
+
+  it('is erased by sign-out', async () => {
+    await storeRefreshToken('refresh-1');
+    await enableLock('135790');
+    setBiometricsAllowed(false);
+    await endSession();
+    expect(biometricsAllowed()).toBe(true);
+  });
+
+  it('is erased by turning the lock off', async () => {
+    await storeRefreshToken('refresh-1');
+    await enableLock('135790');
+    setBiometricsAllowed(false);
+    await disableLock();
+    expect(biometricsAllowed()).toBe(true);
+  });
+
+  it('is erased by a sign-in that starts a new session', async () => {
+    setBiometricsAllowed(false);
+    await storeRefreshToken('refresh-new');
+    expect(biometricsAllowed()).toBe(true);
   });
 });

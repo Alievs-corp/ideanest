@@ -4,6 +4,7 @@ import { unlock } from './biometrics';
 import { takeDeferred } from './maintenance';
 import { MAX_PIN_ATTEMPTS, checkPin, failedPinAttempts, recordFailedAttempt, resetPinAttempts } from './pin';
 import {
+  biometricsAllowed,
   disableLock,
   enableLock,
   hasStoredSession,
@@ -13,6 +14,7 @@ import {
   needsLockMigration,
   subscribeToSession,
 } from './session';
+
 
 /**
  * The app lock's gate — issue #319, §4.12 MB-03. Owns WHEN the app is locked; `features/lock/`
@@ -25,6 +27,11 @@ import {
  * refreshed or a request needs the session: the refresh token is readable without a prompt
  * (`lib/session.ts`), so nothing but this gate can ask, and the gate asks only in those two
  * moments.
+ *
+ * <p>The owner may keep the lock and the PIN without the fingerprint or face (`session.ts`'s
+ * `biometricsAllowed`, Security settings). Then nothing here calls `authenticateAsync` at all —
+ * not at launch, not after a re-lock, not on a tap — and the lock screen is the PIN pad alone.
+ * The one exception is a migrated lock that has no PIN yet, where the prompt is the only way in.
  *
  * <p>Each locking is an "episode", and the biometric prompt is offered automatically once per
  * episode ({@link autoPromptOnce}). A refusal or a cancel lands on the PIN pad and is NOT asked
@@ -354,6 +361,19 @@ export function startAppLock(): () => void {
 }
 
 /**
+ * Whether the gate may use the fingerprint or face: the owner allows it, or a migrated lock has no
+ * PIN yet and the prompt is the only way in. Whether the phone CAN is `biometrics.ts`'s question.
+ */
+export function biometricsInUse(): boolean {
+  return biometricsAllowed() || isPinRequired();
+}
+
+/** {@link biometricsInUse}, as a component reads it: it changes when the owner flips the switch. */
+export function useBiometricsInUse(): boolean {
+  return useSyncExternalStore(subscribeToSession, biometricsInUse, biometricsInUse);
+}
+
+/**
  * The automatic biometric prompt — at most once per episode, and only on the lock screen.
  *
  * @returns whether it was shown and passed; false when it was not this episode's to show
@@ -366,6 +386,7 @@ export async function autoPromptOnce(reason: string): Promise<boolean> {
 
 /** "Use fingerprint" on the lock screen: one prompt, because the owner asked for it. */
 export async function unlockWithBiometrics(reason: string): Promise<boolean> {
+  if (!biometricsInUse()) return false;
   promptedEpisode = episode;
   const passed = await confirmWithBiometrics(reason);
   if (passed && lockPhase() === 'locked') opened();
@@ -426,8 +447,16 @@ export async function unlockWithPin(pin: string, wipe: () => Promise<void>): Pro
 /**
  * The biometric prompt as confirmation — settings' "it is you" before the lock goes off or the PIN
  * changes. A pass resets the counter, as on the lock screen.
+ *
+ * <p>Refused without a prompt while the owner has the fingerprint/face off — except when the
+ * confirmation is for turning it back ON (`evenIfOff`), where a passed prompt is exactly the proof
+ * wanted: the owner is here and the sensor works.
  */
-export async function confirmWithBiometrics(reason: string): Promise<boolean> {
+export async function confirmWithBiometrics(
+  reason: string,
+  { evenIfOff = false }: { readonly evenIfOff?: boolean } = {},
+): Promise<boolean> {
+  if (!evenIfOff && !biometricsInUse()) return false;
   const passed = await unlock(reason);
   if (passed) await quietly(resetPinAttempts);
   return passed;

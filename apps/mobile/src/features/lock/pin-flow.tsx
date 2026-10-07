@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { announce, haptics, type PinPadAction } from '../../components/ui';
 import { Glyphs } from '../../icons';
-import { attemptPin, confirmWithBiometrics } from '../../lib/app-lock';
+import { attemptPin, confirmWithBiometrics, useBiometricsInUse } from '../../lib/app-lock';
 import { biometricCapability, biometricsUsable, type BiometricCapability } from '../../lib/biometrics';
 import { useT, type MessageKey } from '../../lib/i18n';
 import { useEndLocalSession } from '../../lib/local-sign-out';
@@ -110,24 +110,33 @@ export function IdentityCheck({
   intro,
   onConfirmed,
   autoPrompt = false,
+  evenIfBiometricsOff = false,
   testID = 'identity-check',
 }: {
   readonly intro: string;
   readonly onConfirmed: () => void;
   /** Offer the biometric prompt once on its own, as soon as the phone says it can. */
   readonly autoPrompt?: boolean;
+  /**
+   * Offer the prompt although the owner turned the fingerprint/face off — for the check that turns
+   * it back on, where a passed prompt is the proof wanted.
+   */
+  readonly evenIfBiometricsOff?: boolean;
   readonly testID?: string;
 }) {
   const t = useT('mobile.lock');
   const tAll = useT();
   const wipe = useEndLocalSession();
-  const capability = useBiometricCapability();
+  const probed = useBiometricCapability();
+  const inUse = useBiometricsInUse();
+  // With the fingerprint/face off, the phone is PIN-only here as on the lock screen.
+  const capability = inUse || evenIfBiometricsOff ? probed : null;
   const [error, setError] = useState<string | null>(null);
   const prompted = useRef(false);
 
   const prompt = async () => {
     prompted.current = true;
-    if (await confirmWithBiometrics(t('prompt'))) onConfirmed();
+    if (await confirmWithBiometrics(t('prompt'), { evenIfOff: evenIfBiometricsOff })) onConfirmed();
   };
 
   useEffect(() => {

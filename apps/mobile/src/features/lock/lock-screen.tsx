@@ -21,6 +21,7 @@ import { Glyphs } from '../../icons';
 import {
   acknowledgeSignedOut,
   autoPromptOnce,
+  useBiometricsInUse,
   finishPinSetup,
   isCurtained,
   lockEpisode,
@@ -241,7 +242,10 @@ function Locked() {
   const t = useT('mobile.lock');
   const tAll = useT();
   const wipe = useWipe();
-  const capability = useBiometricCapability();
+  const probed = useBiometricCapability();
+  // The owner turned the fingerprint/face off: the PIN pad alone — no prompt, no button.
+  const inUse = useBiometricsInUse();
+  const capability = inUse ? probed : null;
   const [error, setError] = useState<string | null>(null);
   const [settled, setSettled] = useState(false);
   const pinRequired = isPinRequired();
