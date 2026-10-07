@@ -45,7 +45,7 @@ export interface NewProjectFormProps {
    * The counter's sentences, and the language whose plural rule picks between them.
    *
    * Named `counter` rather than `characterCount`, which is already the counting function this
-   * file imports from `lib/projects/basics`.
+   * file imports from `@ideanest/campaign-editor/basics`.
    */
   counter: CharacterCountCopy;
   locale: Locale;

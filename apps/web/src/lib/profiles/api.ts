@@ -514,7 +514,7 @@ export interface ProfileFieldRefusal {
  * purpose — `ProfileExceptionHandler` says the point of it is that the editor can put the
  * message beside the input that caused it rather than in a banner over a form with six
  * controls in it. It is deliberately the same shape as `PROJECT_FIELD_INVALID`, so this is
- * `components/campaign-editor/rewardFailure.ts`'s reader with one `code` changed.
+ * `fieldErrorsFrom` (`@ideanest/campaign-editor/rewards`) with one `code` changed.
  *
  * `meta` is `Record<string, unknown>`, so the type of `field` is checked rather than asserted:
  * a service that one day sent a number there would otherwise put `[object Object]` under an

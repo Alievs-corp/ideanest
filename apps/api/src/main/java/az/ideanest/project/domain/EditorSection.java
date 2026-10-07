@@ -10,7 +10,7 @@ package az.ideanest.project.domain;
  * paragraph the creator has to translate into navigation.
  *
  * <p>The keys are the campaign editor's route segments — {@code EDITOR_TABS} in
- * {@code apps/web/src/components/campaign-editor/tabs.ts} — because that is what
+ * {@code packages/campaign-editor/src/tabs.ts} — because that is what
  * the client builds the link out of. They are therefore part of the wire
  * contract: renaming one is a change to the client's routing as well as to this
  * enum, which is the correct amount of friction.

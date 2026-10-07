@@ -767,7 +767,7 @@ export function rewardsPanelCopyFrom(
 }
 
 /* -------------------------------------------------------------------------
- * The rewards vocabulary — what `lib/projects/rewards.ts` refuses in
+ * The rewards vocabulary — what `./rewards.ts` refuses in
  * ---------------------------------------------------------------------- */
 
 /** The six ways an amount can be refused, shared by the price and the rates. */

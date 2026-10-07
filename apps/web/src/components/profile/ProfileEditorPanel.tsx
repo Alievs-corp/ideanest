@@ -415,7 +415,7 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
             />
             {/*
               Counted in code points rather than in `String.length`, because the column is
-              counted that way: `lib/projects/basics.ts` explains why an emoji that counts as
+              counted that way: `@ideanest/campaign-editor/basics` explains why an emoji that counts as
               two would tell somebody they were over a limit Postgres was happy with. Imported
               rather than copied — one counter, or two that disagree about the same string.
             */}

@@ -104,7 +104,7 @@ const ADDABLE: readonly { type: StoryBlockType; icon: typeof Text }[] = [
 export interface StoryBlockEditorProps {
   /** The editor's own words. */
   copy: StoryBlocksCopy;
-  /** How a block is named and what is wrong with it — shared with `lib/projects/story.ts`. */
+  /** How a block is named and what is wrong with it — shared with `@ideanest/campaign-editor/story`. */
   vocabulary: StoryVocabularyCopy;
   /** The two mark controls' words. */
   toolbar: StoryToolbarCopy;

@@ -187,11 +187,10 @@ export function useAutosave<P extends object, R>({
        * has nowhere to put the answer — and it is a merge patch, so arriving
        * twice is the same as arriving once.
        */
-      if (canStart(machine.current)) {
-        machine.current = autosaveReducer(machine.current, { type: 'start' });
-        const patch = machine.current.inFlight;
-        if (patch === null) return;
-        void sendRef.current(patch as P).catch(() => {
+      const { queued } = machine.current;
+      if (queued !== null && machine.current.inFlight === null) {
+        machine.current = { ...machine.current, queued: null };
+        void sendRef.current(queued as P).catch(() => {
           // Nothing is left to report it to. The next load reads the server's
           // version, which is the truth either way.
         });
