@@ -39,6 +39,12 @@ export interface MoneyFieldProps {
   readonly onBlur?: () => void;
   readonly disabled?: boolean;
   readonly decimalSeparator?: string | null;
+  /**
+   * Its own name, for an amount that is not alone in its `Field` — a shipping rate row, where the
+   * name says which destination ("Shipping rate to TR"). Inside a `Field` of its own, leave it out.
+   */
+  readonly accessibilityLabel?: string;
+  readonly placeholder?: string;
   readonly testID?: string;
 }
 
@@ -79,6 +85,8 @@ export function MoneyField({
   onBlur,
   disabled = false,
   decimalSeparator,
+  accessibilityLabel,
+  placeholder,
   testID,
 }: MoneyFieldProps) {
   const surface = useSurface();
@@ -93,6 +101,8 @@ export function MoneyField({
       disabled={disabled}
       onChangeText={(text) => onChangeText(normaliseAmountInput(text, separator))}
       onBlur={onBlur}
+      {...(accessibilityLabel === undefined ? {} : { accessibilityLabel })}
+      {...(placeholder === undefined ? {} : { placeholder })}
       testID={testID}
       trailing={
         <View style={styles.suffix} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">

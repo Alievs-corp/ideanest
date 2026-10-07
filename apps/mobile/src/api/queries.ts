@@ -102,6 +102,16 @@ export const queryKeys = {
    */
   projectEdit: (projectId: string) => ['projectEdit', projectId] as const,
   /**
+   * The editor's Rewards and FAQ tabs (#162): the creator's items, reward tiers (secret tokens
+   * included) and questions, from `GET /v1/projects/{id}/items`, `…/rewards` and `…/faqs`. Their
+   * own root, `projectEditLists`, persisted and private like `projectEdit`: offline the tabs show
+   * the lists as last loaded, read-only, and sign-out erases them. Not under `project`, whose
+   * `projectRewards` and `projectFaqs` are the public page's lists and are not erased.
+   */
+  editorItems: (projectId: string) => ['projectEditLists', projectId, 'items'] as const,
+  editorRewards: (projectId: string) => ['projectEditLists', projectId, 'rewards'] as const,
+  editorFaqs: (projectId: string) => ['projectEditLists', projectId, 'faqs'] as const,
+  /**
    * The creator dashboard's backer report (#163): one list per campaign and filter (`scope` is the
    * segment or the filter body), its saved segments, and the tiers the survey builder targets.
    * Their own root, `dashboardBackers`, which `lib/offline.ts` refuses: the report is a campaign's
