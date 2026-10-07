@@ -11,11 +11,13 @@ import {
   submitProject,
   type ChecklistItem,
   type ProjectChecklist,
-  type ProjectState,
 } from '../../lib/projects/api';
 import {
   describeProgress,
   isChecklistSection,
+  isReviewNotedState,
+  offersLaunch,
+  offersSubmit,
   progressOf,
   sectionHref,
   unmetFromRefusal,
@@ -24,7 +26,6 @@ import {
 } from '@ideanest/campaign-editor/checklist';
 import type {
   EditorChromeCopy,
-  ReviewNotedState,
   ReviewPanelCopy,
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -71,29 +72,12 @@ import { useProjectEdit } from './useProjectEdit';
 
 const LOADING_ROWS = [0, 1, 2, 3];
 
-/**
- * The states from which submitting is an action worth offering.
- *
- * A PRESENTATION DECISION, NOT A RULE. §6.1 is enforced server-side and there is
- * deliberately no client-side transition table; this only decides whether to draw
- * a button, because "Submit for review" under a live campaign is nonsense rather
- * than a refusal worth letting somebody discover. Anything this list is wrong
- * about becomes a 409 the panel renders, which is the same outcome as never having
- * had the list.
+/*
+ * Which states draw Submit, which draw Launch, and which get a sentence are
+ * `offersSubmit`, `offersLaunch` and `isReviewNotedState` in
+ * `@ideanest/campaign-editor/checklist` — presentation decisions, not rules, shared
+ * with the app's review tab (#162) so the two draw the same buttons in the same states.
  */
-const SUBMITTABLE_FROM: readonly ProjectState[] = ['DRAFT', 'PRELAUNCH', 'CHANGES_REQUESTED'];
-
-/**
- * The states from which launching is an action worth offering.
- *
- * The same presentation decision {@link SUBMITTABLE_FROM} is, and §6.1's own pair:
- * a moderator clears a campaign into `APPROVED`, and `SCHEDULED` is that campaign
- * waiting for a time it may still be taken past. Everything else the server
- * refuses, and the refusal is rendered.
- */
-const LAUNCHABLE_FROM: readonly ProjectState[] = ['APPROVED', 'SCHEDULED'];
-
-/** What a campaign in this state is waiting for, said plainly. */
 
 interface Refusal {
   message: string;
@@ -267,8 +251,8 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
   const blockers = unmetOf(checklist.blocking);
   const suggestions = unmetOf(checklist.advisory);
   const moderation = checklist.moderation;
-  const canOfferSubmit = SUBMITTABLE_FROM.includes(checklist.state);
-  const canOfferLaunch = LAUNCHABLE_FROM.includes(checklist.state);
+  const canOfferSubmit = offersSubmit(checklist.state);
+  const canOfferLaunch = offersLaunch(checklist.state);
   const held = blockers.length > 0;
 
   return (
@@ -310,7 +294,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
           not look like something went wrong: `info`, not `warning`, and a sentence
           that says there is nothing to do.
         */}
-        {isNotedState(checklist.state) && (
+        {isReviewNotedState(checklist.state) && (
           <InlineAlert variant="info" title={copy.states[checklist.state]}>
             {words.stateNote[checklist.state]}
           </InlineAlert>
@@ -744,15 +728,4 @@ function formatDate(iso: string): string {
   const when = new Date(iso);
   if (Number.isNaN(when.getTime())) return iso;
   return when.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-/** Whether this state is one the tab has a sentence for. The other eleven get none. */
-function isNotedState(state: ProjectState): state is ReviewNotedState {
-  return (
-    state === 'SUBMITTED' ||
-    state === 'APPROVED' ||
-    state === 'SCHEDULED' ||
-    state === 'REJECTED' ||
-    state === 'LIVE'
-  );
 }
