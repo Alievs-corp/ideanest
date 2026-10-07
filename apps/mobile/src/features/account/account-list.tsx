@@ -1,4 +1,4 @@
-import { useCallback, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -270,26 +270,35 @@ export function AccountRow({
   readonly testID?: string;
 }) {
   const block = blockSurface(useSurface());
+  const stacked = trailingPlacement === 'below';
+  // Stacked, the pill strip is part of the same card, so the press tint covers the whole card.
+  const [pressed, setPressed] = useState(false);
   return (
     <View
-      style={[styles.row, trailingPlacement === 'below' && styles.rowStacked, { backgroundColor: BLOCK[block].rest }]}
+      style={[
+        styles.row,
+        stacked && styles.rowStacked,
+        { backgroundColor: stacked && pressed ? BLOCK[block].pressed : BLOCK[block].rest },
+      ]}
       testID={testID}
     >
       <PressableScale
         accessibilityRole="link"
         accessibilityLabel={label}
         onPress={onPress}
-        style={trailingPlacement === 'below' ? styles.rowMainStacked : styles.rowMain}
-        contentStyle={({ pressed }) => [
+        style={stacked ? styles.rowMainStacked : styles.rowMain}
+        onPressIn={stacked ? () => setPressed(true) : undefined}
+        onPressOut={stacked ? () => setPressed(false) : undefined}
+        contentStyle={({ pressed: down }) => [
           styles.rowLink,
-          trailingPlacement === 'below' && styles.rowLinkStacked,
-          pressed && { backgroundColor: BLOCK[block].pressed },
+          stacked && styles.rowLinkStacked,
+          !stacked && down && { backgroundColor: BLOCK[block].pressed },
         ]}
       >
         {children}
       </PressableScale>
       {trailing === undefined ? null : (
-        <View style={trailingPlacement === 'below' ? styles.trailingBelow : styles.trailing}>{trailing}</View>
+        <View style={stacked ? styles.trailingBelow : styles.trailing}>{trailing}</View>
       )}
     </View>
   );
@@ -345,5 +354,5 @@ const styles = StyleSheet.create({
   },
   rowLinkStacked: { paddingBottom: spacing[3] },
   trailing: { paddingRight: spacing[3] },
-  trailingBelow: { flexDirection: 'row', paddingHorizontal: spacing[4], paddingBottom: spacing[4] },
+  trailingBelow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing[4], paddingBottom: spacing[4] },
 });

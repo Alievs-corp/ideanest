@@ -437,6 +437,12 @@ describe('paging', () => {
 });
 
 describe('Follow and Report', () => {
+  it('puts the Follow control under the name, not beside it', async () => {
+    await show();
+    const names = screen.getAllByTestId('profile-names')[0]!;
+    expect(within(names).getByRole('button', { name: `Follow ${PROFILE.name}` })).toBeTruthy();
+  });
+
   it('sends a signed-out reader to sign in and back', async () => {
     await show();
     const button = screen.getByRole('button', { name: `Follow ${PROFILE.name}` });

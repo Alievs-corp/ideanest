@@ -36,7 +36,7 @@ export function ProfileHeader({
 
   return (
     <View style={styles.column} testID="profile-header">
-      <View style={styles.row}>
+      <View style={[styles.row, actions === undefined && styles.rowCentred]}>
         <View
           accessible
           accessibilityRole="image"
@@ -45,7 +45,7 @@ export function ProfileHeader({
         >
           <Avatar name={profile.name} src={profile.avatarUrl} size="lg" decorative />
         </View>
-        <View style={styles.names}>
+        <View style={styles.names} testID="profile-names">
           <Heading accessibilityRole="header" numberOfLines={lines} testID="profile-name">
             {profile.name}
           </Heading>
@@ -63,6 +63,8 @@ export function ProfileHeader({
 const styles = StyleSheet.create({
   column: { gap: spacing[2] },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[4] },
+  // Without a Follow control the names are shorter than the avatar, so they centre against it.
+  rowCentred: { alignItems: 'center' },
   names: { flex: 1, minWidth: 0, gap: spacing[1] },
   handle: { fontSize: fontSize.sm, lineHeight: lineHeight.small },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], paddingTop: spacing[2] },
