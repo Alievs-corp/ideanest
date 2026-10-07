@@ -36,6 +36,11 @@ import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js';
  * Also in secure storage, for the same reason as the record: a counter in MMKV is a file that can
  * be reset between guesses. It is written before the answer is shown, so killing the app after a
  * wrong entry does not undo the attempt.
+ *
+ * <p>It fails CLOSED. A read or a write that still fails after one retry counts as the limit: a
+ * counter that could be made to read as zero — or to lose a write — would be a counter that can
+ * be reset between guesses by whatever makes the keystore stumble. The cost is a local sign-out
+ * on a keystore that is genuinely broken, where the session token beside it is unreadable anyway.
  */
 
 /** Digits in a PIN. */
@@ -193,21 +198,41 @@ export async function checkPin(pin: string): Promise<boolean> {
   return matches;
 }
 
-/** Wrong entries since the last correct one. Persisted; a read failure counts as none recorded. */
-export async function failedPinAttempts(): Promise<number> {
+/** A secure-store step, tried twice. */
+async function twice<T>(step: () => Promise<T>): Promise<T> {
   try {
-    const raw = await SecureStore.getItemAsync(ATTEMPTS_KEY);
-    const count = raw === null ? 0 : Number.parseInt(raw, 10);
-    return Number.isFinite(count) && count > 0 ? count : 0;
+    return await step();
   } catch {
-    return 0;
+    return await step();
   }
 }
 
-/** Counts a wrong entry and answers the new total. Written before anything is shown. */
+/**
+ * Wrong entries since the last correct one. Persisted; a counter that cannot be read (twice) is
+ * at the limit — fail closed, see the note above.
+ */
+export async function failedPinAttempts(): Promise<number> {
+  let raw: string | null;
+  try {
+    raw = await twice(() => SecureStore.getItemAsync(ATTEMPTS_KEY));
+  } catch {
+    return MAX_PIN_ATTEMPTS;
+  }
+  const count = raw === null ? 0 : Number.parseInt(raw, 10);
+  return Number.isFinite(count) && count > 0 ? count : 0;
+}
+
+/**
+ * Counts a wrong entry and answers the new total. Written before anything is shown; a write that
+ * fails twice answers the limit, because an attempt that was not recorded is one given back.
+ */
 export async function recordFailedAttempt(): Promise<number> {
   const count = (await failedPinAttempts()) + 1;
-  await SecureStore.setItemAsync(ATTEMPTS_KEY, String(count), STORE_OPTIONS);
+  try {
+    await twice(() => SecureStore.setItemAsync(ATTEMPTS_KEY, String(count), STORE_OPTIONS));
+  } catch {
+    return MAX_PIN_ATTEMPTS;
+  }
   return count;
 }
 

@@ -44,6 +44,8 @@ export function PinEntry({
 }: PinEntryProps) {
   const [value, setValue] = useState('');
   const [working, setWorking] = useState(false);
+  // State lags a render behind; two completions in one batch must still submit once.
+  const submitting = useRef(false);
   const mounted = useRef(true);
   useEffect(
     () => () => {
@@ -53,10 +55,13 @@ export function PinEntry({
   );
 
   const complete = (pin: string) => {
+    if (submitting.current) return;
+    submitting.current = true;
     setWorking(true);
     void Promise.resolve()
       .then(() => onComplete(pin))
       .finally(() => {
+        submitting.current = false;
         if (!mounted.current) return;
         setValue('');
         setWorking(false);

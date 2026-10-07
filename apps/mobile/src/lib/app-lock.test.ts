@@ -6,16 +6,22 @@ import {
   appStateChanged,
   attemptPin,
   autoPromptOnce,
+  deferUntilOpen,
   finishPinSetup,
+  isCurtained,
+  lockEpisode,
   lockPhase,
   resetAppLockForTests,
   runMigration,
   settleAttempts,
+  signOutFromGate,
   startAppLock,
+  useHeldWhileShut,
   turnLockOffInstead,
   unlockWithBiometrics,
   unlockWithPin,
 } from './app-lock';
+import { act, renderHook } from '@testing-library/react-native';
 import { refreshAccessToken } from './auth';
 import { checkPin, failedPinAttempts, hasPin } from './pin';
 import {
@@ -46,6 +52,7 @@ const keychain = SecureStore as unknown as {
   __put: (key: string, value: string, service?: string) => void;
   __setBiometryAllowed: (allowed: boolean) => void;
   __setWritesFail: (fail: boolean) => void;
+  __setReadsFail: (fail: boolean) => void;
   __reads: () => { key: string; options?: Record<string, unknown> }[];
   __reset: () => void;
 };
@@ -310,5 +317,194 @@ describe('signing out', () => {
     expect(lockPhase()).toBe('open');
     expect(await hasPin()).toBe(false);
     stop();
+  });
+});
+
+describe('#319 review: the gate stays shut through a wipe', () => {
+  it('five wrong PINs: shut while the session and the caches go, the notice after', async () => {
+    await lockedPhone();
+    const stop = startAppLock();
+    const during: string[] = [];
+    const slowWipe = jest.fn(async () => {
+      await endSession(); // the session's flags clear here, and the session listener hears it
+      during.push(lockPhase());
+      await Promise.resolve(); // the caches, still to go
+      during.push(lockPhase());
+    });
+
+    for (let attempt = 0; attempt < 5; attempt += 1) await unlockWithPin('111111', slowWipe);
+
+    expect(during).toEqual(['locked', 'locked']);
+    expect(lockPhase()).toBe('signed-out');
+    stop();
+  });
+
+  it('"Forgot your PIN?": shut until the wipe has finished, then open', async () => {
+    await lockedPhone();
+    const stop = startAppLock();
+    const during: string[] = [];
+
+    await signOutFromGate(async () => {
+      await endSession();
+      during.push(lockPhase());
+    });
+
+    expect(during).toEqual(['locked']);
+    expect(lockPhase()).toBe('open');
+    expect(hasStoredSession()).toBe(false);
+    stop();
+  });
+});
+
+describe('#319 review: attempts are serialised', () => {
+  it('counts two entries that land together as two', async () => {
+    await lockedPhone();
+    const [one, two] = await Promise.all([
+      attemptPin('000000', wipe),
+      attemptPin('000001', wipe),
+    ]);
+    expect([one, two]).toEqual([
+      { kind: 'wrong', remaining: 4 },
+      { kind: 'wrong', remaining: 3 },
+    ]);
+    expect(await failedPinAttempts()).toBe(2);
+  });
+
+  it('answers "signed out" to an entry queued behind the wipe', async () => {
+    await lockedPhone();
+    for (let attempt = 0; attempt < 4; attempt += 1) await attemptPin('111111', wipe);
+    const results = await Promise.all([attemptPin('111111', wipe), attemptPin('135790', wipe)]);
+    expect(results).toEqual([{ kind: 'signed-out' }, { kind: 'signed-out' }]);
+    expect(wipe).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails closed: a counter that cannot be read counts as the limit', async () => {
+    await lockedPhone();
+    await unlockWithPin('111111', wipe);
+    keychain.__setReadsFail(true);
+    // checkPin cannot read the record either: the entry is wrong, and the count is the limit.
+    expect(await attemptPin('135790', wipe)).toEqual({ kind: 'signed-out' });
+    expect(wipe).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('#319 review: nothing gets past the shut gate', () => {
+  it('holds a link at a cold start and opens it with the gate', async () => {
+    await lockedPhone();
+    const navigate = jest.fn();
+
+    expect(deferUntilOpen(navigate)).toBe(true);
+    expect(navigate).not.toHaveBeenCalled();
+
+    await unlockWithPin('135790', wipe);
+    expect(navigate).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds a push tap after a re-lock, keeping only the latest', async () => {
+    await lockedPhone();
+    await autoPromptOnce('Unlock');
+    expect(deferUntilOpen(jest.fn())).toBe(false); // open: the caller goes now
+
+    appStateChanged('background', 0, 0);
+    appStateChanged('active', RELOCK_AFTER_MS + 1, 0);
+    const first = jest.fn();
+    const second = jest.fn();
+    deferUntilOpen(first);
+    deferUntilOpen(second);
+
+    await unlockWithBiometrics('Unlock');
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops a held link when the session is wiped', async () => {
+    await lockedPhone();
+    const navigate = jest.fn();
+    deferUntilOpen(navigate);
+    for (let attempt = 0; attempt < 5; attempt += 1) await unlockWithPin('111111', wipe);
+    acknowledgeSignedOut();
+    expect(lockPhase()).toBe('open');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('holds an overlay asked to open while shut; one already open stays', async () => {
+    await lockedPhone();
+    const asked = await renderHook(({ visible }: { visible: boolean }) => useHeldWhileShut(visible), {
+      initialProps: { visible: true },
+    });
+    expect(asked.result.current).toBe(false);
+    await act(async () => {
+      await unlockWithPin('135790', wipe);
+    });
+    expect(asked.result.current).toBe(true);
+
+    // Open before the gate shut: stays open under the lock screen.
+    await act(async () => {
+      appStateChanged('background', 0, 0);
+      appStateChanged('active', RELOCK_AFTER_MS + 1, 0);
+    });
+    expect(lockPhase()).toBe('locked');
+    expect(asked.result.current).toBe(true);
+  });
+});
+
+describe('#319 review: coming back', () => {
+  it('curtains the app while it is away, and lifts it after five minutes or less', async () => {
+    await lockedPhone();
+    await autoPromptOnce('Unlock');
+
+    appStateChanged('inactive', 1_000, 1_000);
+    expect(isCurtained()).toBe(true);
+    appStateChanged('active', 1_000 + RELOCK_AFTER_MS, 1_000 + RELOCK_AFTER_MS);
+    expect(isCurtained()).toBe(false);
+    expect(lockPhase()).toBe('open');
+  });
+
+  it('turns the curtain into the lock after more than five minutes', async () => {
+    await lockedPhone();
+    await autoPromptOnce('Unlock');
+    appStateChanged('background', 0, 0);
+    expect(isCurtained()).toBe(true);
+    appStateChanged('active', RELOCK_AFTER_MS + 1, 10);
+    expect(lockPhase()).toBe('locked');
+    expect(isCurtained()).toBe(false);
+  });
+
+  it('puts up no curtain without the lock', async () => {
+    await storeRefreshToken('refresh-1');
+    appStateChanged('background', 0, 0);
+    expect(isCurtained()).toBe(false);
+  });
+
+  it('locks when the wall clock went backwards', async () => {
+    await lockedPhone();
+    await autoPromptOnce('Unlock');
+    appStateChanged('background', 1_000_000, 0);
+    appStateChanged('active', 1_000, 10);
+    expect(lockPhase()).toBe('locked');
+  });
+
+  it('locks when the monotonic clock says more than five minutes, whatever the wall says', async () => {
+    await lockedPhone();
+    await autoPromptOnce('Unlock');
+    appStateChanged('background', 0, 0);
+    appStateChanged('active', 60_000, RELOCK_AFTER_MS + 1);
+    expect(lockPhase()).toBe('locked');
+  });
+
+  it('a lock still shut after more than five minutes is a new episode with its own prompt', async () => {
+    await lockedPhone();
+    biometrics.__setBiometrics({ succeeds: false });
+    await autoPromptOnce('Unlock');
+    const before = lockEpisode();
+    expect(await autoPromptOnce('Unlock')).toBe(false);
+    expect(biometrics.__prompts()).toBe(1);
+
+    appStateChanged('background', 0, 0);
+    appStateChanged('active', RELOCK_AFTER_MS + 1, 0);
+
+    expect(lockEpisode()).toBe(before + 1);
+    await autoPromptOnce('Unlock');
+    expect(biometrics.__prompts()).toBe(2);
   });
 });

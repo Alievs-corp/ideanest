@@ -89,6 +89,21 @@ describe('PinPad', () => {
     expect(screen.getByLabelText('6 of 6 entered')).toBeTruthy();
   });
 
+  it('completes once when two presses land in the same batch', async () => {
+    const onComplete = jest.fn();
+    const onChange = jest.fn();
+    await render(
+      <IntlProvider locale="en" messages={en}>
+        <PinPad value="12345" onChange={onChange} onComplete={onComplete} />
+      </IntlProvider>,
+    );
+    // The parent has not re-rendered between them: both presses see value "12345".
+    await fireEvent.press(screen.getByRole('keyboardkey', { name: '6' }));
+    await fireEvent.press(screen.getByRole('keyboardkey', { name: '7' }));
+    expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onComplete).toHaveBeenCalledWith('123456');
+  });
+
   it('runs its action key', async () => {
     const action = jest.fn();
     await render(<Harness onComplete={jest.fn()} action={action} />);

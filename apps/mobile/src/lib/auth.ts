@@ -352,17 +352,23 @@ export async function signOut({
   await endSession();
 
   if (refreshToken === null) return;
-  const told = post('/v1/auth/logout', { refreshToken }).then(
-    () => undefined,
-    () => {
-      /*
-       * Swallowed deliberately. The token is already gone from this device, and
-       * the session expires on its own; surfacing a failure would ask somebody to
-       * retry an action that has, from their side, already happened.
-       */
-    },
-  );
+  const told = tellServiceSignedOut(refreshToken);
   if (waitForService) await told;
+}
+
+/**
+ * `POST /v1/auth/logout` for a refresh token this device has already forgotten. Never rejects.
+ *
+ * <p>Swallowed deliberately. The token is already gone from this device, and the session expires
+ * on its own; surfacing a failure would ask somebody to retry an action that has, from their side,
+ * already happened. Also the app lock's wipe (`lib/local-sign-out.ts`, #319), which does not wait
+ * for it.
+ */
+export function tellServiceSignedOut(refreshToken: string): Promise<void> {
+  return post('/v1/auth/logout', { refreshToken }).then(
+    () => undefined,
+    () => undefined,
+  );
 }
 
 /** Puts an issued pair where each half belongs. */

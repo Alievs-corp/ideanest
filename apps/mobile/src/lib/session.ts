@@ -82,6 +82,12 @@ const LEGACY_LOCKED_KEY = 'session.locked';
 const LOCK_ON_KEY = 'app-lock.on';
 /** MMKV: the lock is on and the owner still owes it a PIN — a migrated install, until they set one. */
 const PIN_REQUIRED_KEY = 'app-lock.pin-required';
+/**
+ * MMKV: the migration has written the token to the ordinary item. Without it, a token found in
+ * the ordinary item during a migration is not ours to trust — it can be a stale one an earlier
+ * build left behind when the lock was turned on — and the old item is read instead.
+ */
+const MIGRATED_KEY = 'app-lock.token-moved';
 
 let accessToken: string | null = null;
 
@@ -163,6 +169,10 @@ export function isPinRequired(): boolean {
  */
 export async function storedRefreshToken(): Promise<string | null> {
   if (!hasStoredSession()) return null;
+
+  // A migration is owed and has not moved the token yet: whatever the ordinary item holds is not
+  // the session's (see MIGRATED_KEY). Nothing to send until the migration has run.
+  if (needsLockMigration() && flags.getString(MIGRATED_KEY) !== 'true') return null;
 
   try {
     const token = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
@@ -263,11 +273,12 @@ export type LockMigration =
  *
  * <h2>Every failure order keeps the session</h2>
  *
- * 1. The ordinary item is read first, without a prompt. A token there means an earlier run copied
- *    it and was interrupted, so the old item is not read at all (`recovered`).
+ * 1. If an earlier run marked the token as moved (`MIGRATED_KEY`), the ordinary item is read
+ *    without a prompt and the old item is not read at all (`recovered`). Without the mark, a token
+ *    in the ordinary item is ignored: it can be a stale one a pre-#319 build left behind.
  * 2. Otherwise the old item is read — the one prompt. Refused: nothing has changed (`refused`).
- * 3. The token is written to the ordinary item. A failure: nothing else has changed, the old item
- *    still holds it, and the next launch tries again (`failed`).
+ * 3. The token is written to the ordinary item, then marked as moved. A failure: nothing else has
+ *    changed, the old item still holds it, and the next launch tries again (`failed`).
  * 4. The lock's new flags are set — on, and owing a PIN.
  * 5. The old item is deleted. A deletion does not prompt; if it fails, the legacy flag stays and
  *    the next launch takes step 1's path and deletes it then.
@@ -281,10 +292,12 @@ export async function migrateLegacyLock(): Promise<LockMigration> {
 
   let outcome: LockMigration = 'migrated';
   let token: string | null = null;
-  try {
-    token = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
-  } catch {
-    token = null;
+  if (flags.getString(MIGRATED_KEY) === 'true') {
+    try {
+      token = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+    } catch {
+      token = null;
+    }
   }
 
   if (token !== null) {
@@ -309,6 +322,7 @@ export async function migrateLegacyLock(): Promise<LockMigration> {
     } catch {
       return 'failed';
     }
+    flags.set(MIGRATED_KEY, 'true');
   }
 
   flags.set(LOCK_ON_KEY, 'true');
@@ -320,6 +334,7 @@ export async function migrateLegacyLock(): Promise<LockMigration> {
     return outcome;
   }
   flags.remove(LEGACY_LOCKED_KEY);
+  flags.remove(MIGRATED_KEY);
   announce();
   return outcome;
 }
@@ -374,5 +389,6 @@ function forgetFlags(): void {
   flags.remove(LEGACY_LOCKED_KEY);
   flags.remove(LOCK_ON_KEY);
   flags.remove(PIN_REQUIRED_KEY);
+  flags.remove(MIGRATED_KEY);
   announce();
 }

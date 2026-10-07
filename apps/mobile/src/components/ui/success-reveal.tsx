@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { Glyphs } from '../../icons';
+import { useHeldWhileShut } from '../../lib/app-lock';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, motion, spacing, staggerDelay, tracking } from '../../theme';
 import { haptics } from './haptics';
@@ -116,7 +117,9 @@ export function coverScale(origin: { x: number; y: number }, width: number, heig
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-export function SuccessReveal({ visible, title, caption, origin, onClose, testID = 'success-reveal' }: SuccessRevealProps) {
+export function SuccessReveal({ visible: requested, title, caption, origin, onClose, testID = 'success-reveal' }: SuccessRevealProps) {
+  // Held while the app lock is shut: a window opened behind it would sit above it (#319).
+  const visible = useHeldWhileShut(requested);
   if (!visible) return null;
   return <Reveal title={title} caption={caption} origin={origin} onClose={onClose} testID={testID} />;
 }

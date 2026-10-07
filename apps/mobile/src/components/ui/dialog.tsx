@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Glyphs } from '../../icons';
+import { useHeldWhileShut } from '../../lib/app-lock';
 import { useT } from '../../lib/i18n';
 import {
   colors,
@@ -116,7 +117,7 @@ export const DIALOG_RISE = spacing[6];
 export const DIALOG_ENTRY_SCALE = 0.96;
 
 export function Dialog({
-  open,
+  open: requested,
   onClose,
   title,
   description,
@@ -128,6 +129,8 @@ export function Dialog({
   onDismiss,
   testID,
 }: DialogProps) {
+  // Held while the app lock is shut: a window opened behind it would sit above it (#319).
+  const open = useHeldWhileShut(requested);
   const t = useT('mobile.kitForm');
   const heading = useRef<Text>(null);
   const presence = useOverlayPresence(open);

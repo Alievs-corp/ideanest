@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { AccessibilityInfo, Text } from 'react-native';
+import { AccessibilityInfo, Alert, Text } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -8,7 +8,7 @@ import { notificationAsync } from 'expo-haptics';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
-import { lockPhase, resetAppLockForTests, startAppLock } from '../../lib/app-lock';
+import { appStateChanged, lockPhase, resetAppLockForTests, startAppLock } from '../../lib/app-lock';
 import { refreshAccessToken } from '../../lib/auth';
 import { checkPin, failedPinAttempts } from '../../lib/pin';
 import {
@@ -63,8 +63,8 @@ beforeEach(() => {
 
 afterEach(() => {
   stop();
-  client?.clear();
   jest.restoreAllMocks();
+  client?.clear();
 });
 
 async function settle() {
@@ -218,6 +218,76 @@ describe('a cold start with the lock on', () => {
     await fireEvent.press(screen.getByRole('button', { name: L.screen.continue }));
     await settle();
     expect(screen.queryByTestId('lock-screen')).toBeNull();
+  });
+});
+
+describe('#319 review: the lock screen stays up through a wipe', () => {
+  it('five wrong PINs: the lock screen covers the app while the caches are cleared', async () => {
+    await lockedPhone();
+    biometrics.__setBiometrics({ succeeds: false });
+    await launch();
+    let coveredDuringClear: boolean | null = null;
+    jest.spyOn(client, 'clear').mockImplementation(() => {
+      coveredDuringClear = screen.queryByTestId('lock-screen') !== null;
+    });
+
+    for (let attempt = 0; attempt < 5; attempt += 1) await typePin('999999');
+
+    expect(coveredDuringClear).toBe(true);
+    expect(screen.getByRole('header', { name: L.screen.signedOutTitle })).toBeTruthy();
+  });
+
+  it('"Forgot your PIN?": asks, then wipes behind the lock screen, then opens', async () => {
+    await lockedPhone();
+    biometrics.__setBiometrics({ succeeds: false });
+    await launch();
+    let coveredDuringClear: boolean | null = null;
+    jest.spyOn(client, 'clear').mockImplementation(() => {
+      coveredDuringClear = screen.queryByTestId('lock-screen') !== null;
+    });
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+
+    await fireEvent.press(screen.getByRole('button', { name: L.screen.forgot }));
+    const buttons = alert.mock.calls[0]?.[2] ?? [];
+    const signOutButton = buttons.find((button) => button.style === 'destructive');
+    await act(async () => {
+      signOutButton?.onPress?.();
+    });
+    await settle();
+
+    expect(coveredDuringClear).toBe(true);
+    expect(hasStoredSession()).toBe(false);
+    expect(screen.queryByTestId('lock-screen')).toBeNull();
+  });
+});
+
+describe('#319 review: away', () => {
+  it('curtains the app as it leaves, and lifts the curtain on a short return', async () => {
+    await lockedPhone();
+    await launch();
+    expect(screen.getByTestId('behind')).toBeTruthy();
+
+    await act(async () => appStateChanged('background', 0, 0));
+    expect(screen.getByTestId('lock-curtain', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByTestId('behind')).toBeNull();
+
+    await act(async () => appStateChanged('active', 1_000, 1_000));
+    expect(screen.queryByTestId('lock-curtain', { includeHiddenElements: true })).toBeNull();
+    expect(screen.getByTestId('behind')).toBeTruthy();
+  });
+
+  it('after more than five minutes, the lock screen with one new prompt', async () => {
+    await lockedPhone();
+    await launch();
+    expect(biometrics.__prompts()).toBe(1);
+
+    await act(async () => appStateChanged('background', 0, 0));
+    biometrics.__setBiometrics({ succeeds: false });
+    await act(async () => appStateChanged('active', 5 * 60 * 1000 + 1, 0));
+    await settle();
+
+    expect(screen.getByTestId('lock-screen')).toBeTruthy();
+    expect(biometrics.__prompts()).toBe(2);
   });
 });
 

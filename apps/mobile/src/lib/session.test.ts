@@ -224,9 +224,23 @@ describe('#319: migrating a pre-#319 locked session', () => {
     expect(needsLockMigration()).toBe(false);
   });
 
+  it('a stale token in the ordinary item, with no mark of a move, is not trusted', async () => {
+    legacyLockedInstall('refresh-locked');
+    // A pre-#319 build turned the lock on and left the old readable copy behind.
+    keychain.__put('ideanest.refresh-token', 'refresh-stale');
+
+    // Nothing is sent with it while the migration is owed…
+    expect(await storedRefreshToken()).toBeNull();
+    // …and the migration reads the old item, overwriting the stale copy.
+    expect(await migrateLegacyLock()).toBe('migrated');
+    expect(promptedReads()).toHaveLength(1);
+    expect(await storedRefreshToken()).toBe('refresh-locked');
+  });
+
   it('a token already copied by an interrupted run is not read again', async () => {
     legacyLockedInstall();
     keychain.__put('ideanest.refresh-token', 'refresh-old');
+    flags.set('app-lock.token-moved', 'true');
 
     expect(await migrateLegacyLock()).toBe('recovered');
 

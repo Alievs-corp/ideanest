@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Dialog, MotionBudgetProvider, Pill, useReducedMotion } from '../../components/ui';
+import { useHeldWhileShut } from '../../lib/app-lock';
 import { useT } from '../../lib/i18n';
 import { colors, font, fontSize, lineHeight, spacing } from '../../theme';
 import { useEditorChromeCopy } from './translator';
@@ -46,7 +47,7 @@ export interface EditorModalProps {
 }
 
 export function EditorModal({
-  visible,
+  visible: requested,
   title,
   description,
   dirty,
@@ -57,6 +58,8 @@ export function EditorModal({
   children,
   testID = 'editor-modal',
 }: EditorModalProps) {
+  // Held while the app lock is shut: a window opened behind it would sit above it (#319).
+  const visible = useHeldWhileShut(requested);
   const chrome = useEditorChromeCopy();
   const t = useT('mobile.editor.discard');
   const reduced = useReducedMotion();

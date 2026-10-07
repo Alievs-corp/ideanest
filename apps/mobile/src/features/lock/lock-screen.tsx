@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { Alert, AppState, Keyboard, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { FullWindowOverlay } from 'react-native-screens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQueryClient } from '@tanstack/react-query';
 import {
   Body,
   Heading,
@@ -17,21 +16,22 @@ import {
   acknowledgeSignedOut,
   autoPromptOnce,
   finishPinSetup,
+  isCurtained,
+  lockEpisode,
   lockPhase,
   migrationStall,
   runMigration,
   settleAttempts,
+  signOutFromGate,
   subscribeToLock,
   turnLockOffInstead,
   unlockWithBiometrics,
   unlockWithPin,
   type LockPhase,
 } from '../../lib/app-lock';
-import { signOut } from '../../lib/auth';
 import { biometricsUsable } from '../../lib/biometrics';
 import { useT } from '../../lib/i18n';
 import { useEndLocalSession } from '../../lib/local-sign-out';
-import { forgetPersistedCache } from '../../lib/offline';
 import { isPinRequired } from '../../lib/session';
 import { colors, radius, spacing } from '../../theme';
 import { PinEntry } from './pin-entry';
@@ -59,6 +59,15 @@ import { PinCreate, biometricAction, biometricLabelKey, useBiometricCapability }
  * - `set-pin`: the lock is on without a PIN and this launch is unlocked — choose one, or turn the
  *   lock off.
  * - `signed-out`: five wrong PINs ended the session; said once.
+ *
+ * <h2>The away-curtain</h2>
+ *
+ * With the lock on, leaving the app puts a plain curtain over it (`isCurtained`), so the screen
+ * that was open is not what greets the owner — or whoever holds the phone — before the lock has
+ * decided. On iOS it is drawn in the overlay layer as well, over any modal. On Android it is the
+ * in-tree curtain only: opening a dialog window while the activity is in the background is not
+ * something to rely on, and keeping the app switcher's snapshot clean there takes `FLAG_SECURE`,
+ * which is native work.
  */
 
 export function useLockPhase(): LockPhase {
@@ -67,7 +76,9 @@ export function useLockPhase(): LockPhase {
 
 export function LockGate({ children }: { readonly children: ReactNode }) {
   const phase = useLockPhase();
+  const curtained = useSyncExternalStore(subscribeToLock, isCurtained, isCurtained);
   const shut = phase !== 'open';
+  const covered = shut || curtained;
 
   useEffect(() => {
     // The keyboard is its own window, above any overlay; a field being typed in must let go.
@@ -78,18 +89,22 @@ export function LockGate({ children }: { readonly children: ReactNode }) {
     <View style={styles.fill}>
       <View
         style={styles.fill}
-        accessibilityElementsHidden={shut}
-        importantForAccessibility={shut ? 'no-hide-descendants' : 'auto'}
+        accessibilityElementsHidden={covered}
+        importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
       >
         {children}
       </View>
+      {covered ? (
+        <View style={[StyleSheet.absoluteFill, styles.curtain]} testID="lock-curtain" />
+      ) : null}
       {shut ? (
-        <>
-          <View style={[StyleSheet.absoluteFill, styles.curtain]} testID="lock-curtain" />
-          <Layer>
-            <LockScreen phase={phase} />
-          </Layer>
-        </>
+        <Layer>
+          <LockScreen phase={phase} />
+        </Layer>
+      ) : curtained && Platform.OS === 'ios' ? (
+        <FullWindowOverlay>
+          <View style={[StyleSheet.absoluteFill, styles.curtain]} testID="lock-away-curtain" />
+        </FullWindowOverlay>
       ) : null}
     </View>
   );
@@ -162,7 +177,10 @@ function PhaseBody({ phase }: { readonly phase: LockPhase }) {
   }
 }
 
-/** The local wipe: session, PIN, caches, unsent edits (`lib/local-sign-out.ts`). */
+/**
+ * The local wipe: session, PIN, caches, unsent edits, then the service told without waiting
+ * (`lib/local-sign-out.ts`). The gate stays shut until it has finished (`holdShutWhile`).
+ */
 function useWipe(): () => Promise<void> {
   return useEndLocalSession();
 }
@@ -176,6 +194,8 @@ function Locked() {
   const [settled, setSettled] = useState(false);
   const pinRequired = isPinRequired();
   const reason = t('prompt');
+  // A new value is a new locking — coming back after five minutes to a lock still shut.
+  const episode = useSyncExternalStore(subscribeToLock, lockEpisode, lockEpisode);
 
   // A launch that finds five wrong PINs already counted finishes the wipe before anything else.
   useEffect(() => {
@@ -202,7 +222,7 @@ function Locked() {
       if (state === 'active') offer();
     });
     return () => subscription.remove();
-  }, [settled, capability, reason]);
+  }, [settled, capability, reason, episode]);
 
   const label = tAll(biometricLabelKey(capability));
   const tryBiometrics = () => void unlockWithBiometrics(reason);
@@ -252,11 +272,14 @@ function Locked() {
   );
 }
 
-/** "Forgot your PIN? Sign out": asks first, then signs out on the service and on this phone. */
+/**
+ * "Forgot your PIN? Sign out": asks first, then wipes this phone with the gate held shut, and tells
+ * the service without waiting for it (`lib/local-sign-out.ts`).
+ */
 function ForgotPin() {
   const t = useT('mobile.lock.screen');
   const tAll = useT();
-  const queryClient = useQueryClient();
+  const wipe = useWipe();
   const asking = useRef(false);
 
   const ask = () => {
@@ -273,17 +296,7 @@ function ForgotPin() {
         {
           text: tAll('shell.actions.signOut'),
           style: 'destructive',
-          onPress: () => {
-            void (async () => {
-              try {
-                await signOut({ waitForService: false });
-              } finally {
-                queryClient.clear();
-                forgetPersistedCache();
-                release();
-              }
-            })();
-          },
+          onPress: () => void signOutFromGate(wipe).finally(release),
         },
       ],
       { cancelable: true, onDismiss: release },
@@ -326,16 +339,11 @@ function MigrationStalled() {
 /** Signing out from a stalled migration: no PIN exists yet, so it is the only other way on. */
 function ForgotSignOutOnly() {
   const tAll = useT();
-  const queryClient = useQueryClient();
+  const wipe = useWipe();
   return (
     <Pill
       label={tAll('shell.actions.signOut')}
-      onPress={() =>
-        void signOut({ waitForService: false }).finally(() => {
-          queryClient.clear();
-          forgetPersistedCache();
-        })
-      }
+      onPress={() => void signOutFromGate(wipe)}
       variant="ghost"
       fullWidth
       testID="lock-sign-out"

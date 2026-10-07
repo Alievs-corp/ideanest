@@ -1,3 +1,4 @@
+import { useRef, useSyncExternalStore } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { unlock } from './biometrics';
 import { MAX_PIN_ATTEMPTS, checkPin, failedPinAttempts, recordFailedAttempt, resetPinAttempts } from './pin';
@@ -26,7 +27,8 @@ import {
  *
  * <p>Each locking is an "episode", and the biometric prompt is offered automatically once per
  * episode ({@link autoPromptOnce}). A refusal or a cancel lands on the PIN pad and is NOT asked
- * again on its own; "Use fingerprint" on the pad is the owner asking again.
+ * again on its own; "Use fingerprint" on the pad is the owner asking again. Coming back after
+ * more than five minutes to a lock that is still shut is a new episode, with its own prompt.
  *
  * <h2>Why the previous build asked twice</h2>
  *
@@ -35,10 +37,22 @@ import {
  * back into it was a second (Android authenticates the cipher for a write too). This gate replaces
  * both with one call to `authenticateAsync`, and a test counts it.
  *
+ * <h2>Nothing gets past it while it is shut</h2>
+ *
+ * - A link, a push tap or the maintenance screen that arrives while the gate is shut waits
+ *   ({@link deferUntilOpen}, `maintenance-gate.ts`) and is replayed when it opens; a native modal
+ *   presented after the lock screen would otherwise sit above it on iOS.
+ * - A kit `Sheet`, `Dialog` or `SuccessReveal`, and the editor's modals, asked to open while it is
+ *   shut are held until it opens ({@link useHeldWhileShut}): on Android each would be a window
+ *   above the lock.
+ * - A wipe holds it shut until the caches are gone too ({@link holdShutWhile}): the session's
+ *   flags clear first, and opening on that alone would show the cached screens for a moment.
+ *
  * <h2>Five wrong PINs</h2>
  *
- * The counter is persisted before the answer is shown (`lib/pin.ts`), so killing the app after a
- * wrong entry does not give the attempt back, and a launch that finds the limit already reached
+ * The counter is persisted before the answer is shown (`lib/pin.ts`), and fails closed: a counter
+ * that cannot be read or written counts as the limit. Attempts are serialised, so two taps that
+ * land together cannot both read the same count. A launch that finds the limit already reached
  * finishes the wipe before showing anything. A correct PIN or a passed prompt resets it.
  *
  * <h2>The gate is in the interface, and that is the trade</h2>
@@ -70,16 +84,30 @@ let phase: LockPhase | null = null;
 /** Bumped at every locking; the automatic prompt is offered once per value. */
 let episode = 0;
 let promptedEpisode = -1;
-/** When the app first stopped being active, or null while it is. */
-let leftAt: number | null = null;
+/** When the app first stopped being active — wall clock and monotonic — or null while it is. */
+let leftAt: { readonly wall: number; readonly mono: number } | null = null;
+/** The app is away with the lock on: the curtain is up over whatever was on screen. */
+let curtained = false;
+/** A wipe or a sign-out in progress: the session flags clearing must not open the gate. */
+let holds = 0;
+/** A navigation that arrived while the gate was shut. Only the latest is kept. */
+let pendingNavigation: (() => void) | null = null;
 let migration: Promise<void> | null = null;
+/** The tail of the PIN attempts: each waits for the one before it. */
+let attempts: Promise<unknown> = Promise.resolve();
 
 const listeners = new Set<() => void>();
+
+function notify(): void {
+  for (const listener of listeners) listener();
+}
 
 function publish(next: LockPhase): void {
   if (phase === next) return;
   phase = next;
-  for (const listener of listeners) listener();
+  if (next !== 'open') curtained = false;
+  notify();
+  if (next === 'open') replayNavigation();
 }
 
 /** What a cold start shows, from the session's flags alone — synchronous, so the first frame knows. */
@@ -98,9 +126,20 @@ export function lockPhase(): LockPhase {
   return phase;
 }
 
+/** The current episode: a new value is a new locking, with its own automatic prompt. */
+export function lockEpisode(): number {
+  lockPhase();
+  return episode;
+}
+
 /** Whether something is in front of the app. */
 export function isGateShut(): boolean {
   return lockPhase() !== 'open';
+}
+
+/** Whether the away-curtain is up: the app is in the background with the lock on. */
+export function isCurtained(): boolean {
+  return curtained;
 }
 
 export function subscribeToLock(listener: () => void): () => void {
@@ -108,38 +147,133 @@ export function subscribeToLock(listener: () => void): () => void {
   return () => void listeners.delete(listener);
 }
 
+/** Whether the gate is shut, as a component reads it. */
+export function useGateShut(): boolean {
+  return useSyncExternalStore(subscribeToLock, isGateShut, isGateShut);
+}
+
+/**
+ * An overlay's `visible`, held while the gate is shut. One that was already open when the gate
+ * shut stays open (the lock screen is above it); one asked to open while the gate is shut waits
+ * until it opens. For the kit's `Sheet`, `Dialog` and `SuccessReveal` and the editor's modals.
+ */
+export function useHeldWhileShut(visible: boolean): boolean {
+  const shut = useGateShut();
+  const opened = useRef(false);
+  if (!visible) opened.current = false;
+  else if (!shut) opened.current = true;
+  return visible && opened.current;
+}
+
+/**
+ * Holds a navigation while the gate is shut, to run when it opens — a link, a push tap.
+ *
+ * @returns true when it was held; false when the gate is open and the caller should go now
+ */
+export function deferUntilOpen(navigate: () => void): boolean {
+  if (!isGateShut()) return false;
+  pendingNavigation = navigate;
+  return true;
+}
+
+function replayNavigation(): void {
+  const navigate = pendingNavigation;
+  pendingNavigation = null;
+  navigate?.();
+}
+
 /** Shuts the gate for a new episode. */
 function lockNow(): void {
   episode += 1;
-  publish('locked');
+  curtained = false;
+  if (phase === 'locked') notify();
+  else publish('locked');
 }
 
 /** The session moved under the gate: signed out, or the lock turned off elsewhere. */
 function sessionChanged(): void {
+  // A wipe clears the session's flags before the caches; its caller says when it is done.
+  if (holds > 0) return;
   const current = lockPhase();
   if (current === 'open' || current === 'signed-out') return;
   if (!hasStoredSession() || !isLockOn()) publish('open');
 }
 
 /**
- * `AppState`, as the gate reads it. Exported so a test can drive it with a clock of its own.
+ * Runs a wipe or a sign-out with the gate held shut, then shows `then`. Nothing behind the gate
+ * is visible or touchable until every cache is gone; a navigation that was waiting is dropped —
+ * it was for the session that has just ended.
+ */
+export async function holdShutWhile(work: () => Promise<void>, then: LockPhase): Promise<void> {
+  holds += 1;
+  pendingNavigation = null;
+  try {
+    await work();
+  } finally {
+    holds -= 1;
+    publish(then);
+  }
+}
+
+/** A monotonic reading, where the runtime has one. */
+function monotonicNow(): number {
+  return typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
+}
+
+/** Whether a time away says lock: either clock past five minutes, or a wall clock gone backwards. */
+export function awayLongEnough(wall: number, mono: number): boolean {
+  return wall < 0 || wall > RELOCK_AFTER_MS || mono > RELOCK_AFTER_MS;
+}
+
+/**
+ * `AppState`, as the gate reads it. Exported so a test can drive it with clocks of its own.
  *
  * <p>`background` on both platforms, and `inactive` on iOS for the app switcher, an incoming call
  * and the Face ID sheet itself. The first non-active moment is the one remembered: going inactive
- * then background must not reset the clock. Wall time (`Date.now()`), because a timer inside a
- * suspended process does not run.
+ * then background must not reset the clock.
+ *
+ * <p>Two clocks, and either one locks. The wall clock (`Date.now()`) measures across a suspension,
+ * which a timer inside a suspended process cannot — but it can be changed in the phone's settings,
+ * so one that went backwards locks too. The monotonic one cannot be changed, and may stand still
+ * while the process is suspended; it catches a wall clock wound back by less than the time away.
+ *
+ * <p>With the lock on, leaving puts a curtain over the app at once, and coming back lifts it
+ * (five minutes or less) or turns it into the lock screen — so the screen that was open is never
+ * shown again before the lock decides. It also covers the app switcher's snapshot as far as
+ * JavaScript can: iOS takes that snapshot when the app goes inactive, possibly before this frame
+ * is drawn, and Android needs `FLAG_SECURE` to keep it out entirely — both native work.
  */
-export function appStateChanged(state: AppStateStatus, now: number = Date.now()): void {
+export function appStateChanged(
+  state: AppStateStatus,
+  now: number = Date.now(),
+  mono: number = monotonicNow(),
+): void {
   if (state !== 'active') {
-    leftAt ??= now;
+    leftAt ??= { wall: now, mono };
+    if (!curtained && lockPhase() === 'open' && hasStoredSession() && isLockOn()) {
+      curtained = true;
+      notify();
+    }
     return;
   }
   const away = leftAt;
   leftAt = null;
-  if (away === null || now - away <= RELOCK_AFTER_MS) return;
+  const relock = away !== null && awayLongEnough(now - away.wall, mono - away.mono);
   const current = lockPhase();
-  // `set-pin` too: a migrated owner who walked away before choosing a PIN is asked again.
-  if ((current === 'open' || current === 'set-pin') && hasStoredSession() && isLockOn()) lockNow();
+  if (relock && hasStoredSession() && isLockOn()) {
+    // `set-pin` too: a migrated owner who walked away before choosing a PIN is asked again. And a
+    // lock still shut from before is a new episode: the owner is back, and is asked again.
+    if (current === 'open' || current === 'set-pin' || current === 'locked') {
+      lockNow();
+      return;
+    }
+  }
+  if (curtained) {
+    curtained = false;
+    notify();
+  }
 }
 
 /**
@@ -187,20 +321,25 @@ export type PinAttempt =
  * off or changing the PIN. The limit is the same everywhere: a phone left unlocked must not become
  * a place to guess the PIN at leisure.
  *
+ * <p>Serialised: each entry waits for the one before it, so two that land together are counted
+ * as two, never as one read twice. One that arrives after the limit wiped the session is answered
+ * "signed out" without being checked.
+ *
  * @param wipe ends the session on this phone and empties its caches (`lib/local-sign-out.ts`)
  */
-export async function attemptPin(pin: string, wipe: () => Promise<void>): Promise<PinAttempt> {
+export function attemptPin(pin: string, wipe: () => Promise<void>): Promise<PinAttempt> {
+  const run = attempts.then(() => countedAttempt(pin, wipe));
+  attempts = run.catch(() => undefined);
+  return run;
+}
+
+async function countedAttempt(pin: string, wipe: () => Promise<void>): Promise<PinAttempt> {
+  if (!hasStoredSession()) return { kind: 'signed-out' };
   if (await checkPin(pin)) {
     await quietly(resetPinAttempts);
     return { kind: 'correct' };
   }
-  let failures: number;
-  try {
-    failures = await recordFailedAttempt();
-  } catch {
-    // The counter could not be written. Refuse the entry anyway; the limit is checked again next time.
-    failures = (await failedPinAttempts()) + 1;
-  }
+  const failures = await recordFailedAttempt();
   if (failures >= MAX_PIN_ATTEMPTS) {
     await signOutForAttempts(wipe);
     return { kind: 'signed-out' };
@@ -237,13 +376,14 @@ export async function settleAttempts(wipe: () => Promise<void>): Promise<boolean
   return true;
 }
 
+/** Five wrong PINs: the wipe, with the gate held shut until it is done, then the notice. */
 async function signOutForAttempts(wipe: () => Promise<void>): Promise<void> {
-  try {
-    await wipe();
-  } finally {
-    // The PIN and the counter go with the session (`session.ts`'s `endSession`); this says so once.
-    publish('signed-out');
-  }
+  await holdShutWhile(wipe, 'signed-out');
+}
+
+/** "Forgot your PIN?" and a stalled migration's way out: the wipe, held shut, then the app. */
+export async function signOutFromGate(wipe: () => Promise<void>): Promise<void> {
+  await holdShutWhile(wipe, 'open');
 }
 
 /** The lock screen has said what five wrong PINs did; the app is open, and signed out. */
@@ -325,7 +465,11 @@ export function resetAppLockForTests(): void {
   episode = 0;
   promptedEpisode = -1;
   leftAt = null;
+  curtained = false;
+  holds = 0;
+  pendingNavigation = null;
   migration = null;
+  attempts = Promise.resolve();
   stalledBy = 'refused';
   listeners.clear();
 }

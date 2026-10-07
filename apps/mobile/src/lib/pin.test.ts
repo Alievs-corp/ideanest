@@ -24,6 +24,8 @@ import {
  */
 
 const keychain = SecureStore as unknown as {
+  __setReadsFail: (fail: boolean) => void;
+  __setWritesFail: (fail: boolean) => void;
   __reset: () => void;
   __entries: () => string[];
   __put: (key: string, value: string) => void;
@@ -140,6 +142,18 @@ describe('the attempt counter', () => {
     await recordFailedAttempt();
     await savePin('135790');
     expect(await failedPinAttempts()).toBe(0);
+  });
+
+  it('fails closed: a counter that cannot be read is at the limit, never back at zero', async () => {
+    await recordFailedAttempt();
+    keychain.__setReadsFail(true);
+    expect(await failedPinAttempts()).toBe(5);
+    expect(await recordFailedAttempt()).toBeGreaterThanOrEqual(5);
+  });
+
+  it('fails closed: an attempt that cannot be written counts as the limit', async () => {
+    keychain.__setWritesFail(true);
+    expect(await recordFailedAttempt()).toBe(5);
   });
 
   it('goes with the PIN', async () => {

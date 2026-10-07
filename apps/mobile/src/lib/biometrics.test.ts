@@ -16,6 +16,7 @@ const biometrics = LocalAuthentication as unknown as {
     enrolled?: boolean;
     kinds?: number[];
     succeeds?: boolean;
+    level?: number;
   }) => void;
   __reset: () => void;
 };
@@ -66,6 +67,25 @@ describe('what this device can do', () => {
 
     expect(capability).toBe('other');
     expect(biometricsUsable(capability)).toBe(true);
+  });
+});
+
+describe('#319 review: strong biometrics only', () => {
+  it('treats a phone whose only enrolment is weak (a 2D face unlock) as PIN-only', async () => {
+    biometrics.__setBiometrics({
+      kinds: [LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION],
+      level: LocalAuthentication.SecurityLevel.BIOMETRIC_WEAK,
+    });
+    const capability = await biometricCapability();
+    expect(capability).toBe('weak');
+    expect(biometricsUsable(capability)).toBe(false);
+  });
+
+  it('asks the prompt for class 3 only', async () => {
+    const spy = jest.spyOn(LocalAuthentication, 'authenticateAsync');
+    await unlock('Unlock IdeyaNest');
+    expect(spy.mock.calls[0]?.[0]).toMatchObject({ biometricsSecurityLevel: 'strong' });
+    spy.mockRestore();
   });
 });
 

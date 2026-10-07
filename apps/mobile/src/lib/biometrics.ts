@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { translate } from './i18n';
 
@@ -41,8 +42,13 @@ import { translate } from './i18n';
 export type BiometricCapability =
   /** There is no scanner. The lock cannot be offered at all. */
   | 'unavailable'
-  /** There is a scanner and nothing enrolled. The lock is offerable once they enrol. */
+  /** There is a scanner and nothing enrolled. The lock opens with the PIN until they enrol. */
   | 'not-enrolled'
+  /**
+   * Only a weak (Android class 2) biometric is enrolled — typically a face unlock from the front
+   * camera, which a photograph can pass. The lock does not accept it, so it opens with the PIN.
+   */
+  | 'weak'
   /** A fingerprint reader, and that is what the prompt will show. */
   | 'fingerprint'
   /** Face unlock. */
@@ -61,19 +67,30 @@ export type BiometricCapability =
 /**
  * What the device can do, in one call.
  *
- * <p>The three questions are asked in the order that makes the answers
- * meaningful: hardware first, because {@code isEnrolledAsync} on a device with
- * no scanner is a question with no useful answer; enrolment second, because
- * that is the difference between "cannot" and "not yet"; and the kind last,
+ * <p>The questions are asked in the order that makes the answers meaningful:
+ * hardware first, because {@code isEnrolledAsync} on a device with no scanner is
+ * a question with no useful answer; enrolment second, because that is the
+ * difference between "cannot" and "not yet"; strength third, because {@link unlock}
+ * accepts only `BIOMETRIC_STRONG` (Android class 3) and a phone whose only
+ * enrolment is weaker would show a prompt that can never pass; and the kind last,
  * because it only matters once there is something to name.
+ *
+ * <p>On Android a fingerprint is named before a face when both exist: Android
+ * face unlock is class 2 on most phones, so the strong-only prompt shows the
+ * fingerprint. On iOS both are strong and Face ID is what the phone leads with.
  */
 export async function biometricCapability(): Promise<BiometricCapability> {
   if (!(await LocalAuthentication.hasHardwareAsync())) return 'unavailable';
   if (!(await LocalAuthentication.isEnrolledAsync())) return 'not-enrolled';
+  const level = await LocalAuthentication.getEnrolledLevelAsync();
+  if (level < LocalAuthentication.SecurityLevel.BIOMETRIC_STRONG) return 'weak';
 
   const kinds = await LocalAuthentication.supportedAuthenticationTypesAsync();
-  if (kinds.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) return 'face';
-  if (kinds.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) return 'fingerprint';
+  const face = kinds.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION);
+  const finger = kinds.includes(LocalAuthentication.AuthenticationType.FINGERPRINT);
+  if (Platform.OS === 'android' && finger) return 'fingerprint';
+  if (face) return 'face';
+  if (finger) return 'fingerprint';
   return 'other';
 }
 
@@ -82,7 +99,12 @@ export async function biometricCapability(): Promise<BiometricCapability> {
  * lock itself does not depend on it — without biometrics it opens with the PIN alone.
  */
 export function biometricsUsable(capability: BiometricCapability | null): boolean {
-  return capability !== null && capability !== 'unavailable' && capability !== 'not-enrolled';
+  return (
+    capability !== null &&
+    capability !== 'unavailable' &&
+    capability !== 'not-enrolled' &&
+    capability !== 'weak'
+  );
 }
 
 /**
@@ -106,6 +128,8 @@ export async function unlock(reason: string): Promise<boolean> {
       cancelLabel: usePin,
       fallbackLabel: usePin,
       disableDeviceFallback: true,
+      // Class 3 only: a class 2 face unlock can be passed with a photograph of the owner.
+      biometricsSecurityLevel: 'strong',
     });
     return result.success;
   } catch {

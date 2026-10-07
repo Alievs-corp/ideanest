@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Glyphs } from '../../icons';
@@ -71,19 +71,31 @@ export function PinPad({
 
   const say = (count: number) => announce(t('entered', { count, total: length }));
 
+  /*
+   * The value as the last press left it. Two presses that land in one batch both see the same
+   * `value` prop; reading it would let both "complete" the PIN, so the presses read this instead,
+   * and each render puts it back in step with the prop.
+   */
+  const latest = useRef(value);
+  latest.current = value;
+
   const press = (digit: string) => {
-    if (disabled || value.length >= length) return;
+    const current = latest.current;
+    if (disabled || current.length >= length) return;
     haptics.pinKey();
-    const next = value + digit;
+    const next = current + digit;
+    latest.current = next;
     onChange(next);
     say(next.length);
     if (next.length === length) onComplete?.(next);
   };
 
   const erase = () => {
-    if (disabled || value === '') return;
+    const current = latest.current;
+    if (disabled || current === '') return;
     haptics.pinKey();
-    const next = value.slice(0, -1);
+    const next = current.slice(0, -1);
+    latest.current = next;
     onChange(next);
     say(next.length);
   };

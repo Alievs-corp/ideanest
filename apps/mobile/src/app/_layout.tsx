@@ -12,7 +12,7 @@ import { SharedTransitionHost } from '../components/ui/shared-transition';
 import { sweepAccountExports } from '../lib/account-export-files';
 import { startConnectivity } from '../lib/connectivity';
 import { destinationFor, type Destination } from '../lib/links';
-import { deferUntilUp } from '../lib/maintenance';
+import { openWhenAllowed } from '../lib/open-when-allowed';
 import { useMaintenanceGate } from '../lib/maintenance-gate';
 import { watchUpcoming } from '../lib/upcoming-maintenance';
 import { createQueryClient, persistOptions } from '../lib/offline';
@@ -170,8 +170,8 @@ export default function RootLayout() {
             ? destination.pathname
             : { pathname: destination.pathname, params: destination.params }) as never,
         );
-      // During maintenance the link waits for the service (`deferUntilUp`), then opens.
-      if (!deferUntilUp(push)) push();
+      // While the app lock is shut, and during maintenance, the link waits (`open-when-allowed.ts`).
+      openWhenAllowed(push);
     },
     [router],
   );

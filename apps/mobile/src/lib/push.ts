@@ -143,14 +143,18 @@ export async function registerForPush(): Promise<PushRegistration> {
  * registration that outlives it is caught on the service's side the next time a send is
  * refused, or by its retention sweep. Blocking somebody's sign-out on a push cleanup
  * would be the wrong trade.
+ *
+ * @param bearer the access token to make the call with, taken when this is called — so a caller
+ *     that erases the session first and lets this finish on its own (`lib/local-sign-out.ts`)
+ *     still sends the one it had
  */
-export async function unregisterFromPush(): Promise<void> {
+export async function unregisterFromPush(bearer: string | null = currentAccessToken()): Promise<void> {
   const projectId = easProjectId();
   if (projectId === null) return;
 
   try {
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-    await tellTheService('DELETE', token);
+    await tellTheService('DELETE', token, bearer);
   } catch {
     // Deliberately silent. See above.
   }
@@ -216,8 +220,11 @@ export function snoozeExplainer(now: number = Date.now(), store: KeyValueStore =
  * `Idempotency-Key` would be the wrong shape. Registration needs no such key: the same
  * token twice is the same upsert.
  */
-async function tellTheService(method: 'POST' | 'DELETE', token: string): Promise<PushRegistration> {
-  const accessToken = currentAccessToken();
+async function tellTheService(
+  method: 'POST' | 'DELETE',
+  token: string,
+  accessToken: string | null = currentAccessToken(),
+): Promise<PushRegistration> {
   if (accessToken === null) {
     return { status: 'signed-out' };
   }

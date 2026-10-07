@@ -90,7 +90,7 @@ export function AppLockCard() {
           testID="app-lock-change-pin"
         />
       ) : null}
-      {refused ? <Refused text={t('mobile.lock.refused')} /> : null}
+      {refused ? <Refused text={t('mobile.lock.noSession')} /> : null}
 
       <Sheet
         visible={flow !== null}
@@ -143,7 +143,7 @@ export function AppLockCard() {
 }
 
 /**
- * Nothing changed. A `Warning2` and a sentence, as a field's error is drawn: `--danger` text is
+ * Nothing changed — there was no session on this phone to lock. A `Warning2` and a sentence, as a field's error is drawn: `--danger` text is
  * under AA on the white sheet, so the words take the surface's primary ink and the icon the danger.
  */
 function Refused({ text }: { readonly text: string }) {
@@ -173,6 +173,7 @@ export function lockLabelKey(capability: BiometricCapability | null): MessageKey
       return 'mobile.lock.other';
     case 'not-enrolled':
     case 'unavailable':
+    case 'weak':
       return 'mobile.lock.pinOnly';
     case null:
       return 'mobile.lock.checking';
@@ -184,6 +185,7 @@ export function lockDetailKey(capability: BiometricCapability | null, locked: bo
   if (locked) return 'mobile.lock.on';
   if (capability === 'unavailable') return 'mobile.lock.noBiometrics';
   if (capability === 'not-enrolled') return 'mobile.lock.enrol';
+  if (capability === 'weak') return 'mobile.lock.weakBiometrics';
   return biometricsUsable(capability) ? 'mobile.lock.offDetail' : 'mobile.lock.enrol';
 }
 

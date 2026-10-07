@@ -178,6 +178,8 @@ jest.mock('expo-local-authentication', () => {
   let enrolled = true;
   let kinds: number[] = [AuthenticationType.FINGERPRINT];
   let succeeds = true;
+  /** `SecurityLevel` of what is enrolled: 3 is BIOMETRIC_STRONG, 2 a weak face unlock. */
+  let level = 3;
   /** How many prompts were shown: the app lock's whole promise is a number here (#319). */
   let prompts = 0;
 
@@ -187,7 +189,7 @@ jest.mock('expo-local-authentication', () => {
     hasHardwareAsync: async () => hardware,
     isEnrolledAsync: async () => enrolled,
     supportedAuthenticationTypesAsync: async () => kinds,
-    getEnrolledLevelAsync: async () => (enrolled ? 3 : 0),
+    getEnrolledLevelAsync: async () => (enrolled ? level : 0),
     authenticateAsync: async () => {
       prompts += 1;
       return succeeds ? { success: true } : { success: false, error: 'user_cancel' };
@@ -199,17 +201,20 @@ jest.mock('expo-local-authentication', () => {
       enrolled?: boolean;
       kinds?: number[];
       succeeds?: boolean;
+      level?: number;
     }) => {
       hardware = state.hardware ?? hardware;
       enrolled = state.enrolled ?? enrolled;
       kinds = state.kinds ?? kinds;
       succeeds = state.succeeds ?? succeeds;
+      level = state.level ?? level;
     },
     __reset: () => {
       hardware = true;
       enrolled = true;
       kinds = [AuthenticationType.FINGERPRINT];
       succeeds = true;
+      level = 3;
       prompts = 0;
     },
   };

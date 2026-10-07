@@ -7,7 +7,7 @@ import * as SecureStore from 'expo-secure-store';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
-import { resetAppLockForTests } from '../../lib/app-lock';
+import { lockPhase, resetAppLockForTests } from '../../lib/app-lock';
 import { setOnline } from '../../lib/connectivity';
 import { checkPin, failedPinAttempts, hasPin } from '../../lib/pin';
 import {
@@ -36,6 +36,7 @@ const biometrics = LocalAuthentication as unknown as {
     enrolled?: boolean;
     kinds?: number[];
     succeeds?: boolean;
+    level?: number;
   }) => void;
   __prompts: () => number;
   __reset: () => void;
@@ -91,6 +92,8 @@ beforeEach(async () => {
   setOnline(true);
   jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions').mockImplementation(() => {});
   await storeRefreshToken('refresh-1');
+  // The app's gate: open, as it is by the time somebody reaches settings.
+  expect(lockPhase()).toBe('open');
 });
 
 afterEach(() => {
@@ -118,6 +121,13 @@ describe('the card', () => {
     await show();
     expect(lockSwitch(L.pinOnly)).toBeTruthy();
     expect(screen.getByText(L.noBiometrics)).toBeTruthy();
+  });
+
+  it('offers a PIN-only lock when only a weak face unlock is enrolled, and says why', async () => {
+    biometrics.__setBiometrics({ level: 2 });
+    await show();
+    expect(lockSwitch(L.pinOnly)).toBeTruthy();
+    expect(screen.getByText(L.weakBiometrics)).toBeTruthy();
   });
 
   it('offers a PIN-only lock with nothing enrolled, and says where to enrol', async () => {
@@ -168,6 +178,18 @@ describe('turning the lock on', () => {
     expect(screen.getByRole('header', { name: L.setPin.title })).toBeTruthy();
     expect(isLockOn()).toBe(false);
     expect(await hasPin()).toBe(false);
+  });
+
+  it('says so when there is no session to lock, rather than blaming the device', async () => {
+    await storeRefreshToken(null);
+    await show();
+    await fireEvent.press(lockSwitch());
+    await settle();
+    await typePin('482913');
+    await typePin('482913');
+
+    expect(screen.getByRole('alert')).toHaveTextContent(L.noSession);
+    expect(isLockOn()).toBe(false);
   });
 
   it('works offline: the lock is this phone’s, not the account’s', async () => {
