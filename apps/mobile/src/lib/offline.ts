@@ -66,6 +66,9 @@ export const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
  *
  * The creator dashboard's Overview (#163) adds `dashboardOverview`: a campaign's totals and
  * deadline, which its creator reads offline with the time they were fetched.
+ *
+ * The campaign editor (#162) adds `projectEdit`: the creator's own projection of a project, which
+ * the editor shows read-only offline. Private, so it is in {@link ACCOUNT_ROOTS} as well.
  */
 const PERSISTED_ROOTS: readonly string[] = [
   'saved',
@@ -77,6 +80,7 @@ const PERSISTED_ROOTS: readonly string[] = [
   'surveys',
   'fulfilments',
   'dashboardOverview',
+  'projectEdit',
 ];
 
 /**
@@ -129,6 +133,7 @@ export const ACCOUNT_ROOTS: readonly string[] = [
   'dashboard',
   'dashboardBackers',
   'dashboardSurveys',
+  'projectEdit',
 ];
 
 export function shouldPersistQuery(queryKey: readonly unknown[]): boolean {

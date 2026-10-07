@@ -20,6 +20,14 @@ import { colors, font, fontSize, radius, size, spacing } from '../../theme';
  * sign-in and back — not a tab. Saved moved into the Me hub (`/saved` is a stack route now), by
  * the skill's overflow rule: no sixth slot, no "More".
  *
+ * <h2>Creating and editing are the app's own</h2>
+ *
+ * Creating and editing a campaign used to be web-only here, on the argument that a phone was the
+ * wrong place for it. The owner reversed that (#162): Create, and Me's "Start a campaign", open
+ * the native "Start a project" form (`campaigns/new`), which opens the native editor
+ * (`campaigns/[id]/edit/*`) on the new draft. The editor's tabs move from the website to the app
+ * one pull request at a time; until a tab lands it opens that tab on the website.
+ *
  * <h2>Icons only, on purpose</h2>
  *
  * The bar draws a glyph and no label, so it stays the same height at every font scale and in all

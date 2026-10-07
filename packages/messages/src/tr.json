@@ -5784,6 +5784,53 @@
         "turnOn": "Aç",
         "notNow": "Şimdi değil"
       }
+    },
+    "editor": {
+      "signedOutDetail": "Bu telefonda artık bir oturum yok. Bu kampanyayı düzenlemeye devam etmek için yeniden giriş yapın.",
+      "load": {
+        "forbidden": "Bu projeye erişiminiz yok.",
+        "notFound": "Bu proje bulunamadı.",
+        "refused": "Hizmet isteği reddetti. Yeniden deneyin.",
+        "unreachable": "Hizmete ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin."
+      },
+      "offlineReadOnly": "Çevrimdışısınız. Bu, projenin bu telefonda en son yüklendiği hâlidir ve bağlantı geri gelene kadar değiştirilemez.",
+      "scheduledLaunchLocked": "Kampanya başladıktan sonra başlangıç zamanı değiştirilemez.",
+      "unsent": {
+        "title": "{time} tarihli bir değişiklik kaydedilmedi",
+        "body": "Uygulama kapandığında bu telefonda saklandı. Proje o zamandan beri değişmiş olabilir; bu yüzden yalnızca siz göndermeyi seçerseniz gönderilir.",
+        "send": "Gönder",
+        "discard": "Vazgeç"
+      },
+      "failures": {
+        "signedOut": "Oturumunuz kapandı. Yeniden giriş yapın — yazdıklarınızın hiçbiri kaybolmadı.",
+        "forbidden": "Bu projeyi düzenleme izniniz yok.",
+        "notFound": "Bu proje artık mevcut değil.",
+        "conflict": "Bu ekran açıldığından beri proje değişti. Güncel sürümü görmek için yeniden yükleyin.",
+        "rejected": "Hizmet değişikliği kabul etmedi. Aşağıda işaretlenen alanları kontrol edin.",
+        "generic": "Değişiklik kaydedilemedi. Yeniden deneyin.",
+        "unreachable": "Hizmete ulaşılamadı, bu yüzden hiçbir şey kaydedilmedi. Yeniden deneyin."
+      },
+      "discard": {
+        "title": "Değişiklikler silinsin mi?",
+        "body": "Burada yaptığınız değişiklikler kaydedilmedi. Silerseniz geri alınamaz.",
+        "keep": "Düzenlemeye devam et",
+        "confirm": "Değişiklikleri sil"
+      },
+      "image": {
+        "library": "Galeriden seç",
+        "camera": "Fotoğraf çek",
+        "address": "Görsel adresi kullan"
+      },
+      "dateTime": {
+        "choose": "Tarih ve saat seçin",
+        "clear": "Temizle",
+        "clearLabel": "{label} alanını temizle",
+        "confirm": "Bu saati kullan",
+        "confirmLabel": "{label} için {date} seç",
+        "chooseDate": "Tarih seçin",
+        "confirmDate": "Bu tarihi kullan",
+        "confirmDateLabel": "{label} için {date} tarihini seç"
+      }
     }
   }
 }

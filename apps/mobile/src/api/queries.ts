@@ -95,6 +95,13 @@ export const queryKeys = {
   /** The campaigns this account started (#159), drafts included. Persisted, private. */
   myProjects: () => ['myProjects'] as const,
   /**
+   * The creator's projection of one project, for the editor (#162): `GET /v1/projects/{id}/edit`.
+   * Its own root, `projectEdit`, persisted and private: offline, the editor shows the project as it
+   * was last loaded, read-only, and sign-out erases it with the rest of the account's roots. Not
+   * under `project`, which is the public campaign page and is not erased at sign-out.
+   */
+  projectEdit: (projectId: string) => ['projectEdit', projectId] as const,
+  /**
    * The creator dashboard's backer report (#163): one list per campaign and filter (`scope` is the
    * segment or the filter body), its saved segments, and the tiers the survey builder targets.
    * Their own root, `dashboardBackers`, which `lib/offline.ts` refuses: the report is a campaign's

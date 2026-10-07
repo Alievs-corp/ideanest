@@ -52,11 +52,11 @@ export type CampaignHref =
       readonly pathname: '/projects/[creatorSlug]/[projectSlug]';
       readonly params: { readonly creatorSlug: string; readonly projectSlug: string };
     }
-  | { readonly pathname: '/campaigns/[id]/edit/[step]'; readonly params: { readonly id: string; readonly step: 'basics' } }
+  | { readonly pathname: '/campaigns/[id]/edit/basics'; readonly params: { readonly id: string } }
   | { readonly pathname: '/campaigns/[id]/dashboard'; readonly params: { readonly id: string } };
 
 export function editorHref(id: string): CampaignHref {
-  return { pathname: '/campaigns/[id]/edit/[step]', params: { id, step: 'basics' } };
+  return { pathname: '/campaigns/[id]/edit/basics', params: { id } };
 }
 
 export function dashboardHref(id: string): CampaignHref {

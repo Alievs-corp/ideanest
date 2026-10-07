@@ -23,14 +23,14 @@ describe('myCampaignHref', () => {
     'sends a %s campaign to the editor',
     (state) => {
       expect(myCampaignHref({ id: 'p1', state, creatorSlug: 'aysel', slug: 'lamp' })).toEqual({
-        pathname: '/campaigns/[id]/edit/[step]',
-        params: { id: 'p1', step: 'basics' },
+        pathname: '/campaigns/[id]/edit/basics',
+        params: { id: 'p1' },
       });
     },
   );
 
   it('sends a public campaign without its slugs to the editor rather than to a 404', () => {
-    expect(myCampaignHref({ id: 'p1', state: 'LIVE' }).pathname).toBe('/campaigns/[id]/edit/[step]');
+    expect(myCampaignHref({ id: 'p1', state: 'LIVE' }).pathname).toBe('/campaigns/[id]/edit/basics');
   });
 
   it('agrees with the web on which states are public and which have launched', () => {

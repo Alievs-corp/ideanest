@@ -5784,6 +5784,53 @@
         "turnOn": "Aktiv et",
         "notNow": "İndi yox"
       }
+    },
+    "editor": {
+      "signedOutDetail": "Bu telefonda artıq sessiya yoxdur. Bu kampaniyanı redaktə etməyə davam etmək üçün yenidən daxil olun.",
+      "load": {
+        "forbidden": "Bu layihəyə girişiniz yoxdur.",
+        "notFound": "Belə layihə tapılmadı.",
+        "refused": "Xidmət sorğunu rədd etdi. Yenidən cəhd edin.",
+        "unreachable": "Xidmətlə əlaqə qurulmadı. Bağlantını yoxlayıb yenidən cəhd edin."
+      },
+      "offlineReadOnly": "İnternet bağlantısı yoxdur. Bu, layihənin bu telefonda son yüklənmiş halıdır və bağlantı bərpa olunana qədər dəyişdirilə bilməz.",
+      "scheduledLaunchLocked": "Kampaniya başladıqdan sonra başlama vaxtını dəyişmək olmaz.",
+      "unsent": {
+        "title": "{time} tarixində edilmiş dəyişiklik saxlanmadı",
+        "body": "Tətbiq bağlananda bu dəyişiklik telefonda saxlanıldı. Layihə o vaxtdan dəyişmiş ola bilər, ona görə də yalnız siz göndərməyi seçsəniz göndəriləcək.",
+        "send": "Göndər",
+        "discard": "İmtina et"
+      },
+      "failures": {
+        "signedOut": "Hesabdan çıxmısınız. Yenidən daxil olun — yazdıqlarınızın heç biri itməyib.",
+        "forbidden": "Bu layihəni redaktə etməyə icazəniz yoxdur.",
+        "notFound": "Bu layihə artıq mövcud deyil.",
+        "conflict": "Bu ekran açılandan bəri layihə dəyişib. Cari versiyanı görmək üçün onu yenidən yükləyin.",
+        "rejected": "Xidmət dəyişikliyi qəbul etmədi. Aşağıda qeyd olunan sahələri yoxlayın.",
+        "generic": "Dəyişiklik saxlanıla bilmədi. Yenidən cəhd edin.",
+        "unreachable": "Xidmətlə əlaqə qurulmadı, ona görə də heç nə saxlanmadı. Yenidən cəhd edin."
+      },
+      "discard": {
+        "title": "Dəyişikliklərdən imtina edilsin?",
+        "body": "Burada etdiyiniz dəyişikliklər saxlanmayıb. İmtina etsəniz, onları geri qaytarmaq olmayacaq.",
+        "keep": "Redaktəyə davam et",
+        "confirm": "İmtina et"
+      },
+      "image": {
+        "library": "Qalereyadan seç",
+        "camera": "Şəkil çək",
+        "address": "Şəkil ünvanından istifadə et"
+      },
+      "dateTime": {
+        "choose": "Tarix və vaxt seçin",
+        "clear": "Təmizlə",
+        "clearLabel": "{label} sahəsini təmizlə",
+        "confirm": "Bu vaxtı seç",
+        "confirmLabel": "{label} üçün {date} seç",
+        "chooseDate": "Tarix seçin",
+        "confirmDate": "Bu tarixi seç",
+        "confirmDateLabel": "{label} üçün {date} tarixini seç"
+      }
     }
   }
 }
