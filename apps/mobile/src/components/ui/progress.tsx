@@ -85,6 +85,11 @@ export interface ProgressBarProps {
    * link — where a second focus stop, or a value swallowed by the parent on iOS, helps nobody.
    */
   readonly decorative?: boolean;
+  /**
+   * The funded halo at 100%. On by default, as every funding bar has it; off where 100% is not
+   * money raised (the editor's review completeness, #162), which keeps `success` but not the glow.
+   */
+  readonly glow?: boolean;
   /** How the fill rises where motion is allowed. See {@link ProgressBarRise}. */
   readonly rise?: ProgressBarRise;
   readonly testID?: string;
@@ -130,6 +135,7 @@ export function ProgressBar({
   showLabel = true,
   decorative = false,
   rise = 'spring',
+  glow = true,
   testID,
 }: ProgressBarProps) {
   const t = useT();
@@ -166,7 +172,7 @@ export function ProgressBar({
         style={[
           styles.track,
           { height: HEIGHT[size], backgroundColor: BLOCK[block].track },
-          reached && { boxShadow: FUNDED_GLOW },
+          reached && glow && { boxShadow: FUNDED_GLOW },
         ]}
       >
         <View style={styles.clip}>
