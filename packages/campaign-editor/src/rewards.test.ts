@@ -10,6 +10,8 @@ import {
   EMPTY_ITEM,
   ITEM_NAME_MAX_CHARACTERS,
   REWARD_TITLE_MAX_CHARACTERS,
+  describeItemInUse,
+  describeRewardContents,
   describeStock,
   emptyReward,
   fieldErrorsFrom,
@@ -595,5 +597,40 @@ describe('fieldErrorsFrom', () => {
     expect(
       fieldErrorsFrom(failure({ code: 'REWARD_FIELD_INVALID', meta: { field: 'colour' } }), isItemField),
     ).toEqual({});
+  });
+});
+
+describe('the sentences the list draws (#162)', () => {
+  it('names what a tier contains, with quantities and a missing item called that', () => {
+    const reward: Reward = {
+      ...REWARD,
+      items: [
+        { itemId: 'item-mug', quantity: 2 },
+        { itemId: 'item-gone', quantity: 1 },
+      ],
+    };
+    expect(describeRewardContents(reward, [ITEM], REWARDS_COPY)).toBe(
+      'Contains Enamel mug ×2, an item no longer in this campaign',
+    );
+    expect(describeRewardContents({ ...REWARD, items: [] }, [ITEM], REWARDS_COPY)).toBe('Contains no items');
+  });
+
+  it('names the tiers an item is still part of, by title', () => {
+    const inUse = (meta: Record<string, unknown> | null): SaveFailure => ({
+      message: 'In use',
+      fieldErrors: {},
+      status: 409,
+      code: 'ITEM_IN_USE',
+      meta,
+    });
+    expect(describeItemInUse(inUse({ rewardTierIds: ['reward-early'] }), [REWARD], REWARDS_COPY)).toBe(
+      'It is part of Early bird. Take it out of that reward first, then delete it.',
+    );
+    expect(describeItemInUse(inUse({ rewardTierIds: ['reward-early', 'other'] }), [REWARD], REWARDS_COPY)).toBe(
+      'It is part of Early bird, a reward. Take it out of those rewards first, then delete it.',
+    );
+    expect(describeItemInUse(inUse(null), [REWARD], REWARDS_COPY)).toBe(
+      'It is part of a reward in this campaign. Take it out of that reward first, then delete it.',
+    );
   });
 });

@@ -105,7 +105,7 @@ export function FaqEntryEditor({
     setAttempted(false);
   }, [open, faq]);
 
-  const errors = validateFaq(draft);
+  const errors = validateFaq(draft, copy.validation);
   const serverErrors = fieldErrorsFrom(failure, isFaqField);
 
   /*

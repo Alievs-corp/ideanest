@@ -2,12 +2,14 @@ import MESSAGES from '@ideanest/messages/en.json';
 import {
   basicsPanelCopyFrom,
   editorChromeCopyFrom,
+  faqPanelCopyFrom,
   reviewPanelCopyFrom,
   rewardsPanelCopyFrom,
   storyPanelCopyFrom,
   type BasicsPanelCopy,
   type CampaignEditorTranslator,
   type EditorChromeCopy,
+  type FaqPanelCopy,
   type ReviewPanelCopy,
   type RewardsPanelCopy,
   type StoryPanelCopy,
@@ -69,3 +71,5 @@ export const REWARDS_COPY: RewardsPanelCopy = rewardsPanelCopyFrom(read, 'en', E
 export const STORY_COPY: StoryPanelCopy = storyPanelCopyFrom(read, 'en', EDITOR_COPY.characterCount);
 
 export const REVIEW_COPY: ReviewPanelCopy = reviewPanelCopyFrom(read, 'en');
+
+export const FAQ_COPY: FaqPanelCopy = faqPanelCopyFrom(read, 'en', EDITOR_COPY.characterCount);

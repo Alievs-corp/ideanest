@@ -10,6 +10,7 @@ import type {
   AmountMessagesCopy,
   ItemValidationCopy,
   RewardValidationCopy,
+  RewardsPanelCopy,
   RewardsVocabularyCopy,
 } from './copy';
 import type { SaveFailure } from './autosave';
@@ -883,6 +884,64 @@ export function describeStock(reward: Reward, copy: RewardsVocabularyCopy): stri
     remaining: String(remaining),
     limit: String(reward.limitQuantity),
   });
+}
+
+/**
+ * What is in the tier, named rather than counted.
+ *
+ * "3 items" tells a creator scanning the list nothing they can check; the names
+ * are what they are looking for. An item the campaign no longer has is called
+ * that rather than skipped, because a silently shorter list is how a creator
+ * fails to notice a composition that has lost a line.
+ *
+ * Moved here from the web's `RewardsPanel` (#162), so the app's card says the
+ * same thing in the same words.
+ */
+export function describeRewardContents(
+  reward: Reward,
+  items: readonly Item[],
+  copy: Pick<RewardsPanelCopy, 'containsNothing' | 'contains' | 'itemTimes' | 'missingItemInline'>,
+): string {
+  if (reward.items.length === 0) return copy.containsNothing;
+
+  const listed = reward.items
+    .map((line) => {
+      const item = items.find((one) => one.id === line.itemId);
+      const name = item?.name ?? copy.missingItemInline;
+      return line.quantity === 1
+        ? name
+        : fillPlaceholders(copy.itemTimes, { name, quantity: String(line.quantity) });
+    })
+    .join(', ');
+
+  return fillPlaceholders(copy.contains, { items: listed });
+}
+
+/**
+ * `ITEM_IN_USE`, as a sentence naming the tiers by title rather than identifier.
+ *
+ * `meta.rewardTierIds` lists the tiers that still contain the item. A tier this
+ * page does not know is "a reward", and a refusal that names none is "a reward
+ * in this campaign" — either way the creator learns where to look. Moved here
+ * from the web's `RewardsPanel` (#162).
+ */
+export function describeItemInUse(
+  failure: SaveFailure,
+  rewards: readonly Reward[],
+  copy: Pick<RewardsPanelCopy, 'itemInUse' | 'aRewardInCampaign' | 'aReward' | 'locale'>,
+): string {
+  const ids = failure.meta?.['rewardTierIds'];
+  const count = Array.isArray(ids) ? ids.length : 1;
+
+  let tiers = copy.aRewardInCampaign;
+  if (Array.isArray(ids)) {
+    const titles = (ids as readonly unknown[])
+      .filter((id): id is string => typeof id === 'string')
+      .map((id) => rewards.find((reward) => reward.id === id)?.title ?? copy.aReward);
+    if (titles.length > 0) tiers = titles.join(', ');
+  }
+
+  return fillPlaceholders(pluralise(copy.locale, copy.itemInUse, count), { tiers });
 }
 
 /* -------------------------------------------------------------------------

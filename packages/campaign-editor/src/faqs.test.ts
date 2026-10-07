@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import AZ_MESSAGES from '@ideanest/messages/az.json';
+import type { SaveFailure } from './autosave';
 import type { ProjectFaq } from './contract';
 import {
   FAQ_ANSWER_MAX_CHARACTERS,
   FAQ_QUESTION_MAX_CHARACTERS,
+  describeOrderRefusal,
   faqPatchFrom,
   isEmptyFaqPatch,
   newFaqFrom,
   validateFaq,
 } from './faqs';
+import { FAQ_COPY } from './test-copy';
+
+const RULES = FAQ_COPY.entry.validation;
 
 /**
  * The FAQ form's rules — the editor half of #283.
@@ -34,7 +40,7 @@ const FAQ: ProjectFaq = {
 
 describe('validating an entry', () => {
   it('refuses a blank question and a blank answer, separately', () => {
-    const errors = validateFaq({ question: '   ', answer: '' });
+    const errors = validateFaq({ question: '   ', answer: '' }, RULES);
 
     expect(errors.question).toMatch(/A question is needed/u);
     expect(errors.answer).toMatch(/An answer is needed/u);
@@ -42,20 +48,59 @@ describe('validating an entry', () => {
 
   it('accepts an entry at exactly the limit and refuses one past it', () => {
     expect(
-      validateFaq({ question: 'q'.repeat(FAQ_QUESTION_MAX_CHARACTERS), answer: 'a' }).question,
+      validateFaq({ question: 'q'.repeat(FAQ_QUESTION_MAX_CHARACTERS), answer: 'a' }, RULES).question,
     ).toBeUndefined();
 
     expect(
-      validateFaq({ question: 'q'.repeat(FAQ_QUESTION_MAX_CHARACTERS + 3), answer: 'a' }).question,
+      validateFaq({ question: 'q'.repeat(FAQ_QUESTION_MAX_CHARACTERS + 3), answer: 'a' }, RULES).question,
     ).toMatch(/3 characters too long/u);
 
     expect(
-      validateFaq({ question: 'q', answer: 'a'.repeat(FAQ_ANSWER_MAX_CHARACTERS + 1) }).answer,
+      validateFaq({ question: 'q', answer: 'a'.repeat(FAQ_ANSWER_MAX_CHARACTERS + 1) }, RULES).answer,
     ).toMatch(/1 character too long/u);
   });
 
   it('says nothing about an entry that is within both bounds', () => {
-    expect(validateFaq({ question: 'Do you ship to Germany?', answer: 'Yes.' })).toEqual({});
+    expect(validateFaq({ question: 'Do you ship to Germany?', answer: 'Yes.' }, RULES)).toEqual({});
+  });
+
+  it('answers in the language it is handed, with the limit filled in (#162)', () => {
+    const az = AZ_MESSAGES.campaignEditor.faq.validation;
+    const errors = validateFaq(
+      { question: 'q'.repeat(FAQ_QUESTION_MAX_CHARACTERS + 2), answer: '' },
+      { ...az, locale: 'az' },
+    );
+
+    expect(errors.answer).toBe(az.answerRequired);
+    expect(errors.question).toBe(
+      az.questionTooLong.other.replace('{count}', '2').replace('{max}', String(FAQ_QUESTION_MAX_CHARACTERS)),
+    );
+  });
+});
+
+describe('explaining a refused order', () => {
+  const ENTRIES: readonly ProjectFaq[] = [
+    FAQ,
+    { id: 'faq-b', question: 'When does it ship?', answer: 'In March.' },
+  ];
+
+  function refusal(meta: Record<string, unknown> | null): SaveFailure {
+    return { message: 'Refused', fieldErrors: {}, status: 409, code: 'FAQ_ORDER_INCOMPLETE', meta };
+  }
+
+  it('names the questions it knows and counts the ones it does not', () => {
+    const text = describeOrderRefusal(
+      refusal({ missing: ['faq-a', 'faq-b'], unexpected: ['gone-1', 'gone-2'] }),
+      ENTRIES,
+      FAQ_COPY,
+    );
+
+    expect(text).toContain('this page had not seen “Do you ship to Germany?” and “When does it ship?”');
+    expect(text).toContain('2 other questions no longer exists');
+  });
+
+  it('says the lists disagreed when the refusal names nothing', () => {
+    expect(describeOrderRefusal(refusal(null), ENTRIES, FAQ_COPY)).toContain('the two lists disagreed');
   });
 });
 
