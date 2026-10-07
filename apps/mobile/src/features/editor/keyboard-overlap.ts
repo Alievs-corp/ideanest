@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { Keyboard, Platform, type KeyboardEvent, type View } from 'react-native';
+import { Keyboard, Platform, type KeyboardEvent, type KeyboardEventName, type View } from 'react-native';
 
 /**
  * How much of a view the software keyboard covers — the editor's keyboard handling (#162).
@@ -21,8 +21,13 @@ import { Keyboard, Platform, type KeyboardEvent, type View } from 'react-native'
  * <p>The padding goes on a wrapper whose own frame does not change with it, so applying it does
  * not trigger another measurement. It is not animated: the editor's motion budget is none.
  *
- * <p>iOS reports the keyboard before it moves (`keyboardWillChangeFrame`, which also covers a
- * height change such as the QuickType bar); Android only after (`keyboardDidShow`).
+ * <p>The frame is measured again on every keyboard event, not only on the wrapper's own layout: an
+ * ancestor that moved (a header that grew) moves the wrapper without laying it out again. iOS
+ * reports the keyboard before it moves (`keyboardWillChangeFrame`, which also covers a height
+ * change such as the QuickType bar) and again once it has (`keyboardDidChangeFrame`,
+ * `keyboardDidShow`); Android only after (`keyboardDidShow`). A screen opened with the keyboard
+ * already up (`Keyboard.isVisible()`) starts from `Keyboard.metrics()` rather than waiting for the
+ * next event.
  */
 
 /** The covered height of a frame whose window position is `y` and height `height`. */
@@ -30,8 +35,15 @@ export function keyboardOverlap(frame: { readonly y: number; readonly height: nu
   return Math.max(0, Math.round(frame.y + frame.height - keyboardTop));
 }
 
-const SHOW = Platform.OS === 'ios' ? 'keyboardWillChangeFrame' : 'keyboardDidShow';
+const SHOW: readonly KeyboardEventName[] =
+  Platform.OS === 'ios' ? ['keyboardWillChangeFrame', 'keyboardDidChangeFrame', 'keyboardDidShow'] : ['keyboardDidShow'];
 const HIDE = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+/** The keyboard's top edge, or null for a keyboard that covers nothing. */
+function topOf({ screenY, height }: { readonly screenY: number; readonly height: number }): number | null {
+  // A keyboard with no height, or an iPad's floating one reported at the top, covers nothing.
+  return height > 0 && screenY > 0 ? screenY : null;
+}
 
 export interface KeyboardOverlap {
   /** The view to measure — the one that pads its bottom by `overlap`. */
@@ -66,21 +78,25 @@ export function useKeyboardOverlap(): KeyboardOverlap {
   }, []);
 
   useEffect(() => {
-    const shown = Keyboard.addListener(SHOW, (event: KeyboardEvent) => {
-      const { screenY, height } = event.endCoordinates;
-      // A keyboard with no height, or an iPad's floating one reported at the top, covers nothing.
-      const up = height > 0 && screenY > 0;
-      keyboardTop.current = up ? screenY : null;
-      setKeyboardShown(up);
+    const take = (top: number | null): void => {
+      keyboardTop.current = top;
+      setKeyboardShown(top !== null);
       measure();
-    });
+    };
+    // Opened under a keyboard that is already up: no event will say so.
+    const metrics = Keyboard.isVisible() ? Keyboard.metrics() : undefined;
+    if (metrics !== undefined) take(topOf(metrics));
+
+    const shown = SHOW.map((name) =>
+      Keyboard.addListener(name, (event: KeyboardEvent) => take(topOf(event.endCoordinates))),
+    );
     const hidden = Keyboard.addListener(HIDE, () => {
       keyboardTop.current = null;
       setKeyboardShown(false);
       setOverlap(0);
     });
     return () => {
-      shown.remove();
+      for (const subscription of shown) subscription.remove();
       hidden.remove();
     };
   }, [measure]);

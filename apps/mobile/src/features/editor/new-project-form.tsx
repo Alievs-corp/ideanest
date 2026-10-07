@@ -103,6 +103,7 @@ export function NewProjectScreen() {
             onLayout={keyboard.onLayout}
             collapsable={false}
             style={[styles.screen, { paddingBottom: keyboard.overlap }]}
+            testID="new-project-frame"
           >
             <ScrollView
               style={styles.screen}

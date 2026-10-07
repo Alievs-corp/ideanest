@@ -80,10 +80,40 @@ describe('useKeyboardOverlap', () => {
     expect(hook.result.current.keyboardShown).toBe(false);
   });
 
+  it('measures again on every keyboard event, so a frame moved by an ancestor is not left stale', async () => {
+    const { emit } = keyboardEvents();
+    const hook = await renderHook(() => useKeyboardOverlap());
+    hook.result.current.ref.current = frame(91, 753);
+    await act(async () => emit('keyboardWillChangeFrame', 508, 336));
+    expect(hook.result.current.overlap).toBe(336);
+
+    // A header above grew by 40pt: the frame moved down without being laid out again.
+    hook.result.current.ref.current = frame(131, 753);
+    await act(async () => emit('keyboardDidShow', 508, 336));
+    expect(hook.result.current.overlap).toBe(131 + 753 - 508);
+    hook.result.current.ref.current = frame(91, 753);
+    await act(async () => emit('keyboardDidChangeFrame', 508, 336));
+    expect(hook.result.current.overlap).toBe(336);
+  });
+
+  it('starts from the keyboard that is already up when the screen opens', async () => {
+    keyboardEvents();
+    jest.spyOn(Keyboard, 'isVisible').mockReturnValue(true);
+    jest.spyOn(Keyboard, 'metrics').mockReturnValue({ screenX: 0, screenY: 508, width: 390, height: 336 });
+    const hook = await renderHook(() => useKeyboardOverlap());
+    expect(hook.result.current.keyboardShown).toBe(true);
+
+    // The frame is measured once it is laid out.
+    hook.result.current.ref.current = frame(91, 753);
+    await act(async () => hook.result.current.onLayout());
+    expect(hook.result.current.overlap).toBe(91 + 753 - 508);
+  });
+
   it('stops listening when it unmounts', async () => {
     const { handlers } = keyboardEvents();
     const hook = await renderHook(() => useKeyboardOverlap());
-    expect(handlers.size).toBe(2);
+    // iOS: will-change, did-change and did-show for the keyboard's place, will-hide for its going.
+    expect(handlers.size).toBe(4);
     await hook.unmount();
     expect(handlers.size).toBe(0);
   });

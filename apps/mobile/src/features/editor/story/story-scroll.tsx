@@ -14,14 +14,19 @@ import { spacing } from '../../../theme';
  * first and covered after, one added while it is up is focused into an already smaller view. Not
  * animated: the editor's motion budget is none.
  *
- * <p>A field calls `reveal(node)` from its `onFocus` (blocks, image alt text, Risks); the panel
- * wires `onScroll` and `onLayout`.
+ * <p>A field calls `reveal(node)` from its `onFocus` and `release(node)` from its `onBlur` (blocks,
+ * image address and alt text, Risks); the panel wires `onScroll` and `onLayout`. Releasing matters:
+ * a field that kept the keyboard's attention after it lost focus would be scrolled back to when
+ * the keyboard next arrives for another one — a paragraph typed in earlier pulling the view away
+ * from the image address now being typed. `release` forgets only the node it is given, so a blur
+ * that lands after the next field's focus does not forget that field.
  */
 interface StoryScroll {
   readonly reveal: (node: View | null) => void;
+  readonly release: (node: View | null) => void;
 }
 
-const Context = createContext<StoryScroll>({ reveal: () => {} });
+const Context = createContext<StoryScroll>({ reveal: () => {}, release: () => {} });
 
 export function useStoryScroll(): StoryScroll {
   return useContext(Context);
@@ -75,6 +80,10 @@ export function useStoryScrollController({
     [place],
   );
 
+  const release = useCallback((node: View | null): void => {
+    if (focused.current === node) focused.current = null;
+  }, []);
+
   // The keyboard arriving is what usually hides the field, so it is placed again then.
   useEffect(() => {
     const shown = Keyboard.addListener('keyboardDidShow', () => {
@@ -102,7 +111,7 @@ export function useStoryScrollController({
     contentTop.current = event.nativeEvent.layout.y;
   }, []);
 
-  const value = useMemo(() => ({ reveal }), [reveal]);
+  const value = useMemo(() => ({ reveal, release }), [reveal, release]);
   return { value, onScroll, onLayout, onContentLayout };
 }
 

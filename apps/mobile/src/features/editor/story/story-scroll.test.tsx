@@ -80,6 +80,50 @@ describe('useStoryScrollController', () => {
     expect(scrollTo).toHaveBeenCalledWith({ y: 16 + 500 + 120 + spacing[4] - 364, animated: false });
   });
 
+  it('forgets a field once it loses focus, so the next keyboard does not scroll back to it', async () => {
+    // Paragraph 2 typed in, then the keyboard closed and the reader scrolled down to an image.
+    const { hook, scrollTo } = await controller();
+    const paragraph = field(300, 120);
+    await act(async () => {
+      hook.result.current.onContentLayout(layout(16, 3000));
+      hook.result.current.onLayout(layout(0, 700));
+      hook.result.current.onScroll(scrolled(0));
+    });
+    await act(async () => hook.result.current.value.reveal(paragraph));
+    await act(async () => hook.result.current.value.release(paragraph));
+    await act(async () => hook.result.current.onScroll(scrolled(1400)));
+    scrollTo.mockClear();
+
+    // A keyboard arriving now, for nothing in the story, does not pull the view back up.
+    await act(async () => hook.result.current.onLayout(layout(0, 364)));
+    expect(scrollTo).not.toHaveBeenCalled();
+    await act(async () => hook.result.current.onLayout(layout(0, 700)));
+
+    // The image address takes focus, in sight; then the keyboard's padding shrinks the view.
+    const address = field(1900, 90);
+    await act(async () => hook.result.current.value.reveal(address));
+    expect(scrollTo).not.toHaveBeenCalled();
+    await act(async () => hook.result.current.onLayout(layout(0, 364)));
+    // The address is brought above the keyboard; nothing goes back up to paragraph 2.
+    expect(scrollTo.mock.calls).toEqual([[{ y: 16 + 1900 + 90 + spacing[4] - 364, animated: false }]]);
+  });
+
+  it('does not forget the field now focused when the previous one’s blur arrives after it', async () => {
+    const { hook, scrollTo } = await controller();
+    const first = field(100, 50);
+    const second = field(600, 100);
+    await act(async () => {
+      hook.result.current.onContentLayout(layout(16, 2000));
+      hook.result.current.onLayout(layout(0, 700));
+      hook.result.current.onScroll(scrolled(0));
+    });
+    await act(async () => hook.result.current.value.reveal(first));
+    await act(async () => hook.result.current.value.reveal(second));
+    await act(async () => hook.result.current.value.release(first));
+    await act(async () => hook.result.current.onLayout(layout(0, 364)));
+    expect(scrollTo).toHaveBeenLastCalledWith({ y: 16 + 600 + 100 + spacing[4] - 364, animated: false });
+  });
+
   it('does not move when the view shrinks with nothing focused', async () => {
     const { hook, scrollTo } = await controller();
     await act(async () => {

@@ -270,11 +270,11 @@ function BlockFields(props: FieldsProps) {
   }
 }
 
-/** A text input that brings itself into view when it takes focus. */
+/** A text input that brings itself into view when it takes focus, and lets go when it loses it. */
 function RevealingInput(props: ComponentProps<typeof TextInput>) {
   const holder = useRef<View>(null);
-  const { reveal } = useStoryScroll();
-  const { onFocus } = props;
+  const { reveal, release } = useStoryScroll();
+  const { onFocus, onBlur } = props;
   return (
     <View ref={holder}>
       <TextInput
@@ -282,6 +282,10 @@ function RevealingInput(props: ComponentProps<typeof TextInput>) {
         onFocus={(event) => {
           reveal(holder.current);
           onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          release(holder.current);
+          onBlur?.(event);
         }}
       />
     </View>

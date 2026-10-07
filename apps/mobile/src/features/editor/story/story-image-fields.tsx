@@ -71,12 +71,19 @@ export function StoryImageFields({
     },
   });
   const altField = useRef<View>(null);
-  const { reveal } = useStoryScroll();
+  const { reveal, release } = useStoryScroll();
   const measured = block.url !== '' && block.width > 0 && block.height > 0;
 
   return (
     <View style={styles.fields}>
-      <ImageSourceControls source={source} copy={sourceCopy} disabled={disabled} testID={`${testID}-source`} />
+      <ImageSourceControls
+        source={source}
+        copy={sourceCopy}
+        disabled={disabled}
+        onAddressFocus={reveal}
+        onAddressBlur={release}
+        testID={`${testID}-source`}
+      />
 
       {added === null ? null : (
         <InlineAlert variant="success" politeness="polite" description={added} testID={`${testID}-added`} />
@@ -108,7 +115,10 @@ export function StoryImageFields({
           placeholder={blocks.imageAltPlaceholder}
           onChangeText={(alt) => onChange({ ...block, alt })}
           onFocus={() => reveal(altField.current)}
-          onBlur={onFlush}
+          onBlur={() => {
+            release(altField.current);
+            onFlush();
+          }}
           testID={`${testID}-alt`}
         />
         <Caption accessibilityElementsHidden importantForAccessibility="no-hide-descendants">

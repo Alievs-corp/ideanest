@@ -787,7 +787,7 @@ function StoryForm({
                 </View>
               </View>
 
-              <View ref={risksBox} collapsable={false}>
+              <View ref={risksBox} collapsable={false} testID="story-risks-box">
                 <Field
                   label={story.risks}
                   required
@@ -801,7 +801,10 @@ function StoryForm({
                     style={styles.risks}
                     onChangeText={changeRisks}
                     onFocus={() => scrolling.value.reveal(risksBox.current)}
-                    onBlur={autosave.flush}
+                    onBlur={() => {
+                      scrolling.value.release(risksBox.current);
+                      autosave.flush();
+                    }}
                     testID="story-risks"
                   />
                   <CharacterCount
