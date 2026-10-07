@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
-import { AccessibilityInfo, Image } from 'react-native';
+import { AccessibilityInfo, Image, StyleSheet } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -37,6 +37,13 @@ jest.mock('../../../lib/media/upload', () => {
   const actual = jest.requireActual('../../../lib/media/upload');
   return { ...actual, uploadImage: jest.fn() };
 });
+
+// The system font scale: the owner's phone runs at 1.4.
+let mockFontScale = 1;
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => ({ width: 390, height: 844, scale: 3, fontScale: mockFontScale }),
+}));
 
 jest.setTimeout(30_000);
 
@@ -141,6 +148,7 @@ const announced = () =>
   (AccessibilityInfo.announceForAccessibilityWithOptions as jest.Mock).mock.calls.map((call) => call[0] as string);
 
 beforeEach(() => {
+  mockFontScale = 1;
   jest.clearAllMocks();
   mockSend.mockReset();
   mockSend.mockImplementation(async () => project());
@@ -787,5 +795,23 @@ describe('StoryPanel — focus, pickers, uploads and the refusal mark', () => {
     mockProject = async () => project({ story: { version: 99, blocks: [] } as unknown as StoryDocument });
     await show({ store });
     expect(readUnsent(store, unsentKeyFor('p1'))?.patch).toEqual({ title: 'Kept title' });
+  });
+});
+
+describe('StoryPanel — a large font', () => {
+  const flat = (testID: string) => StyleSheet.flatten(screen.getByTestId(testID).props.style);
+
+  it('keeps the counter beside "Earlier versions" at the normal size', async () => {
+    await show();
+    expect(flat('story-counter').flexDirection).toBe('row');
+  });
+
+  it('stacks the counter over "Earlier versions" at 1.4×, instead of squeezing the sentence', async () => {
+    mockFontScale = 1.4;
+    await show();
+    const counter = flat('story-counter');
+    expect(counter.flexDirection).toBeUndefined();
+    expect(counter.alignItems).toBe('flex-start');
+    expect(within(screen.getByTestId('story-counter')).getByTestId('story-history-open')).toBeTruthy();
   });
 });

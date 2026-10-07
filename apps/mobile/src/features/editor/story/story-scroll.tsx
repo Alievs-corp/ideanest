@@ -5,12 +5,17 @@ import { spacing } from '../../../theme';
 /**
  * Keeping the caret visible in a long story (#162, "Block story editor on a phone").
  *
- * <p>The blocks are cards in ONE `ScrollView` inside a `KeyboardAvoidingView`. When a field takes
- * focus — or the keyboard arrives and shrinks the scroll view under it — the field (with its
- * formatting toolbar) is measured against the scroll content and, if any of it is out of sight,
- * scrolled into view with a margin. Not animated: the editor's motion budget is none.
+ * <p>The blocks are cards in ONE `ScrollView` in a frame that pads its bottom by what the keyboard
+ * covers (`useKeyboardOverlap` — an edge-to-edge Android window is not resized for the keyboard,
+ * so the panel cannot wait for the window to shrink). When a field takes focus — or the keyboard
+ * arrives and that padding shrinks the scroll view under it — the field (with its formatting
+ * toolbar) is measured against the scroll content and, if any of it is out of sight, scrolled into
+ * view with a margin. Both orders happen: a block added while the keyboard is down is focused
+ * first and covered after, one added while it is up is focused into an already smaller view. Not
+ * animated: the editor's motion budget is none.
  *
- * <p>A field calls `reveal(node)` from its `onFocus`; the panel wires `onScroll` and `onLayout`.
+ * <p>A field calls `reveal(node)` from its `onFocus` (blocks, image alt text, Risks); the panel
+ * wires `onScroll` and `onLayout`.
  */
 interface StoryScroll {
   readonly reveal: (node: View | null) => void;

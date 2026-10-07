@@ -61,6 +61,7 @@ export function DeleteDialog({
             label={deleteLabel}
             variant="danger"
             fullWidth
+            wrap
             busy={deleting}
             disabled={deleting}
             onPress={onDelete}
@@ -70,6 +71,7 @@ export function DeleteDialog({
             label={keepLabel}
             variant="ghost"
             fullWidth
+            wrap
             disabled={deleting}
             onPress={onKeep}
             testID={`${testID}-keep`}

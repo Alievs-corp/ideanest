@@ -54,6 +54,14 @@ describe('EditorModal', () => {
     expect(onSave).toHaveBeenCalled();
   });
 
+  it('keeps its title on one line between Cancel and Save, named in full', async () => {
+    await showModal();
+    const title = screen.getByTestId('editor-modal-title');
+    expect(title.props.numberOfLines).toBe(1);
+    expect(title.props.adjustsFontSizeToFit).toBe(true);
+    expect(title.props.accessibilityLabel).toBe('Edit item');
+  });
+
   it('closes at once when nothing would be lost, by Cancel or by a swipe', async () => {
     const { onClose } = await showModal();
     expect(sheet()?.props.allowSwipeDismissal).toBe(true);

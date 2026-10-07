@@ -9,7 +9,8 @@ import { useEditorChromeCopy } from './translator';
 /**
  * The web's `EditorDrawer`, as a phone's full-screen editor (#162): an item, a reward, a
  * question. A page sheet on iOS, full screen on Android, with Cancel on the left and Save on the
- * right of its own header.
+ * right of its own header, and the title on one line between them — at a large font it shrinks a
+ * little and then truncates, and the full title stays its accessible name.
  *
  * <h2>Contract</h2>
  *
@@ -92,7 +93,18 @@ export function EditorModal({
               onPress={requestClose}
               testID={`${testID}-cancel`}
             />
-            <Text style={styles.title} accessibilityRole="header" numberOfLines={2}>
+            {/* One line between the two pills: shrunk a little at a large font, then ellipsised. The
+                full title is still its accessible name. */}
+            <Text
+              style={styles.title}
+              accessibilityRole="header"
+              accessibilityLabel={title}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              adjustsFontSizeToFit
+              minimumFontScale={TITLE_MIN_SCALE}
+              testID={`${testID}-title`}
+            >
               {title}
             </Text>
             <Pill
@@ -129,6 +141,7 @@ export function EditorModal({
                   label={t('confirm')}
                   variant="danger"
                   fullWidth
+                  wrap
                   onPress={() => {
                     setConfirming(false);
                     onClose();
@@ -139,6 +152,7 @@ export function EditorModal({
                   label={t('keep')}
                   variant="ghost"
                   fullWidth
+                  wrap
                   onPress={() => setConfirming(false)}
                   testID={`${testID}-discard-keep`}
                 />
@@ -151,12 +165,16 @@ export function EditorModal({
   );
 }
 
+/** How far the header title may shrink to stay on one line before it is ellipsised. */
+const TITLE_MIN_SCALE = 0.8;
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[3],
+    // Tight beside the pills, so the title has the room for one line at a large font.
+    gap: spacing[2],
     paddingHorizontal: spacing[4],
     paddingBottom: spacing[3],
     borderBottomWidth: StyleSheet.hairlineWidth,

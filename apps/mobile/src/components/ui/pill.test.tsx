@@ -35,6 +35,18 @@ describe('Pill', () => {
     ).toBe(true);
   });
 
+  it('keeps its label on one line unless it is asked to wrap', async () => {
+    const label = 'Open the pre-launch page';
+    const one = await render(<Pill label={label} fullWidth onPress={noop} />);
+    expect(one.getByText(label, { includeHiddenElements: true }).props.numberOfLines).toBe(1);
+    await one.unmount();
+
+    const wrapped = await render(<Pill label={label} fullWidth wrap onPress={noop} />);
+    const text = wrapped.getByText(label, { includeHiddenElements: true });
+    expect(text.props.numberOfLines).toBeUndefined();
+    expect(StyleSheet.flatten(text.props.style).textAlign).toBe('center');
+  });
+
   it('is white with near-black text when primary — the default, and not lime', async () => {
     const { getByRole, getByText } = await render(<Pill label="Continue" onPress={noop} />);
     expect(styleOf(getByRole('button')).backgroundColor).toBe(colors.whiteSurface);

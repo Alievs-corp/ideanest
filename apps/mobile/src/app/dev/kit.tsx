@@ -324,6 +324,13 @@ function KitGallery() {
             </Row>
           ))}
           <Pill label={nameOf(Pill)} iconLeft={Glyphs.Heart} iconRight={Glyphs.Share} fullWidth onPress={noop} />
+          <Pill
+            label={`${nameOf(Pill)} wrap: a long full-width action label that takes a second line instead of an ellipsis`}
+            size="lg"
+            fullWidth
+            wrap
+            onPress={noop}
+          />
         </Section>
 
         <Section title={heading([SegmentedPill])}>

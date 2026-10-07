@@ -287,6 +287,7 @@ export function StoryVersionHistory({
                   label={restoring ? history.restoring : history.restoreThis}
                   variant="accent"
                   fullWidth
+                  wrap
                   busy={restoring}
                   disabled={restoring || readOnly || waiting}
                   onPress={() => {
@@ -298,6 +299,7 @@ export function StoryVersionHistory({
                   label={history.keepMine}
                   variant="ghost"
                   fullWidth
+                  wrap
                   disabled={restoring}
                   onPress={() => setConfirming(null)}
                   testID="story-restore-keep"

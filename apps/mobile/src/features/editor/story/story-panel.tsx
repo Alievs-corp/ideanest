@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AppState,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions,
   type LayoutChangeEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,6 +50,7 @@ import { formatCount, pluralCategory } from '../../../lib/i18n';
 import { PERSIST_DELAY_MS } from '../use-autosave';
 import { colors, fontSize, lineHeight, radius, spacing } from '../../../theme';
 import { useEditor } from '../editor-context';
+import { useKeyboardOverlap } from '../keyboard-overlap';
 import { useEditorChromeCopy } from '../translator';
 import { readHeldStory, storyFingerprint, writeHeldStory, type HeldStory } from './held-story';
 import { StoryBlockCard, type MoveDirection, type StoryBlockHandlers } from './story-block-card';
@@ -124,6 +124,9 @@ export function StoryPanel() {
 }
 
 const LOADING_ROWS = [0, 1, 2];
+
+/** Past this font scale the character counter and "Earlier versions" stack (the profile header's threshold). */
+const STACK_FONT_SCALE = 1.3;
 
 function Loading({ label }: { readonly label: string }) {
   return (
@@ -549,8 +552,11 @@ function StoryForm({
   const scroll = useRef<ScrollView>(null);
   const content = useRef<View>(null);
   const scrolling = useStoryScrollController({ scroll, content });
-  const [offset, setOffset] = useState(0);
-  const root = useRef<View>(null);
+  // The keyboard shrinks the scroll view by what it covers; the shrink re-places the focused field.
+  const keyboard = useKeyboardOverlap();
+  const risksBox = useRef<View>(null);
+  // A large font stacks the counter over "Earlier versions" instead of squeezing it beside the pill.
+  const stackCounter = useWindowDimensions().fontScale > STACK_FONT_SCALE;
 
   if (draft === null || document === null) {
     return (
@@ -570,10 +576,6 @@ function StoryForm({
   }
 
   const total = document.blocks.length;
-
-  function measureOffset(): void {
-    root.current?.measureInWindow((_x, y) => setOffset(y));
-  }
 
   function takeSavedStory(): void {
     const server = serverDocument.current;
@@ -596,13 +598,14 @@ function StoryForm({
   }
 
   return (
-    <View ref={root} style={styles.fill} onLayout={measureOffset} collapsable={false}>
-      <KeyboardAvoidingView
-        style={styles.fill}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        // The view starts under the header and the tab row; the keyboard's top is in window terms.
-        keyboardVerticalOffset={offset}
-      >
+    <View
+      ref={keyboard.ref}
+      style={[styles.fill, { paddingBottom: keyboard.overlap }]}
+      onLayout={keyboard.onLayout}
+      collapsable={false}
+      testID="story-keyboard-frame"
+    >
+      <View style={styles.fill}>
         <StoryScrollProvider value={scrolling.value}>
           <ScrollView
             ref={scroll}
@@ -683,8 +686,8 @@ function StoryForm({
                 />
               )}
 
-              <View style={styles.counter}>
-                <View style={styles.counterText}>
+              <View style={stackCounter ? styles.counterStacked : styles.counter} testID="story-counter">
+                <View style={[styles.counterText, stackCounter ? styles.counterTextStacked : styles.counterTextRow]}>
                   <Caption testID="story-characters">
                     {fillPlaceholders(story.charactersNeeded, {
                       count: formatCount(storyCharacters, locale),
@@ -784,27 +787,30 @@ function StoryForm({
                 </View>
               </View>
 
-              <Field
-                label={story.risks}
-                required
-                hint={fillPlaceholders(story.risksHint, { min: String(RISKS_MIN_CHARACTERS) })}
-                error={fieldErrors.risks}
-              >
-                <Textarea
-                  value={risks}
-                  placeholder={story.risksPlaceholder}
-                  disabled={readOnly}
-                  style={styles.risks}
-                  onChangeText={changeRisks}
-                  onBlur={autosave.flush}
-                  testID="story-risks"
-                />
-                <CharacterCount
-                  count={Math.min(characterCount(risks), RISKS_MIN_CHARACTERS)}
-                  limit={RISKS_MIN_CHARACTERS}
-                  announceWithin={RISKS_MIN_CHARACTERS}
-                />
-              </Field>
+              <View ref={risksBox} collapsable={false}>
+                <Field
+                  label={story.risks}
+                  required
+                  hint={fillPlaceholders(story.risksHint, { min: String(RISKS_MIN_CHARACTERS) })}
+                  error={fieldErrors.risks}
+                >
+                  <Textarea
+                    value={risks}
+                    placeholder={story.risksPlaceholder}
+                    disabled={readOnly}
+                    style={styles.risks}
+                    onChangeText={changeRisks}
+                    onFocus={() => scrolling.value.reveal(risksBox.current)}
+                    onBlur={autosave.flush}
+                    testID="story-risks"
+                  />
+                  <CharacterCount
+                    count={Math.min(characterCount(risks), RISKS_MIN_CHARACTERS)}
+                    limit={RISKS_MIN_CHARACTERS}
+                    announceWithin={RISKS_MIN_CHARACTERS}
+                  />
+                </Field>
+              </View>
             </View>
           </ScrollView>
         </StoryScrollProvider>
@@ -825,7 +831,7 @@ function StoryForm({
             onRestored(project);
           }}
         />
-      </KeyboardAvoidingView>
+      </View>
     </View>
   );
 }
@@ -842,7 +848,12 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   start: { alignSelf: 'flex-start' },
   counter: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing[3] },
-  counterText: { flexGrow: 1, flexShrink: 1, gap: spacing[1] },
+  // A large font: the sentence takes the full width and the pill goes under it.
+  counterStacked: { alignItems: 'flex-start', gap: spacing[3] },
+  counterText: { gap: spacing[1] },
+  // Never narrower than half the row: a pill that does not fit beside it wraps below instead.
+  counterTextRow: { flexGrow: 1, flexShrink: 1, minWidth: '50%' },
+  counterTextStacked: { alignSelf: 'stretch' },
   card: {
     gap: spacing[3],
     padding: spacing[4],

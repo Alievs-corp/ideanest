@@ -51,4 +51,42 @@ describe('useStoryScrollController', () => {
     await act(async () => hook.result.current.value.reveal(field(400, 50)));
     expect(scrollTo).not.toHaveBeenCalled();
   });
+
+  it('reveals a field focused before the keyboard once the keyboard’s padding shrinks the view', async () => {
+    // "Paragraph" with the keyboard down: the new block is focused while it is still in sight…
+    const { hook, scrollTo } = await controller();
+    await act(async () => {
+      hook.result.current.onContentLayout(layout(16, 2000));
+      hook.result.current.onLayout(layout(0, 700));
+      hook.result.current.onScroll(scrolled(0));
+    });
+    await act(async () => hook.result.current.value.reveal(field(500, 120)));
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    // …then the keyboard covers 336pt of the frame, which pads by it and the scroll view shrinks.
+    await act(async () => hook.result.current.onLayout(layout(0, 700 - 336)));
+    expect(scrollTo).toHaveBeenCalledWith({ y: 16 + 500 + 120 + spacing[4] - 364, animated: false });
+  });
+
+  it('reveals a field focused while the keyboard is already up, in the smaller view', async () => {
+    const { hook, scrollTo } = await controller();
+    await act(async () => {
+      hook.result.current.onContentLayout(layout(16, 2000));
+      hook.result.current.onLayout(layout(0, 700));
+      hook.result.current.onLayout(layout(0, 364));
+      hook.result.current.onScroll(scrolled(0));
+    });
+    await act(async () => hook.result.current.value.reveal(field(500, 120)));
+    expect(scrollTo).toHaveBeenCalledWith({ y: 16 + 500 + 120 + spacing[4] - 364, animated: false });
+  });
+
+  it('does not move when the view shrinks with nothing focused', async () => {
+    const { hook, scrollTo } = await controller();
+    await act(async () => {
+      hook.result.current.onContentLayout(layout(16, 2000));
+      hook.result.current.onLayout(layout(0, 700));
+      hook.result.current.onLayout(layout(0, 364));
+    });
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
 });

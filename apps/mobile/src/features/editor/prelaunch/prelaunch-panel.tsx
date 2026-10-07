@@ -324,15 +324,16 @@ function PrelaunchForm({
                 testID="prelaunch-open-failed"
               />
             )}
-            <View style={styles.start}>
-              <Pill
-                ref={openButton}
-                label={words.open}
-                disabled={readOnly}
-                onPress={() => setConfirming(true)}
-                testID="prelaunch-open"
-              />
-            </View>
+            {/* Full width and wrapping: "Başlanğıcdan əvvəlki səhifəni aç" does not fit one line at a large font. */}
+            <Pill
+              ref={openButton}
+              label={words.open}
+              fullWidth
+              wrap
+              disabled={readOnly}
+              onPress={() => setConfirming(true)}
+              testID="prelaunch-open"
+            />
           </View>
         ) : collecting ? (
           <OpenCard projectId={projectId} words={words} headingRef={openHeading} />
@@ -410,6 +411,7 @@ function PrelaunchForm({
             <Pill
               label={busy ? words.opening : words.confirmOpen}
               fullWidth
+              wrap
               busy={busy}
               disabled={busy || readOnly || refusedHere}
               onPress={confirmOpen}
@@ -419,6 +421,7 @@ function PrelaunchForm({
               label={words.cancel}
               variant="ghost"
               fullWidth
+              wrap
               onPress={abandon}
               testID="prelaunch-confirm-cancel"
             />

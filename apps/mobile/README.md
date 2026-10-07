@@ -771,8 +771,9 @@ are `@ideanest/campaign-editor`'s, shared with the web. What the app adds:
   loaded, read-only. Online, a tab builds its form only once this session has read the project from the
   service (`useEditor().fresh`), never from the cached copy alone, and seeds it with the autosave's
   unacknowledged patch laid over it (`withUnsaved`), so a tab mounted again shows what was typed.
-- **Money fields** (`money-field.tsx`) take the device's decimal comma as #162 specifies and
-  hand `parseAmount` the result; **dates** (`date-time-field.tsx`) use the platform picker and
+- **Money fields** (`money-field.tsx`) turn a lone decimal comma into a point as it is typed —
+  on every device, since Gboard and other keyboards offer `,` whatever the phone's separator — and
+  hand `parseAmount` the result (`1,500` becomes `1.500` and is refused, never read as thousands); **dates** (`date-time-field.tsx`) use the platform picker and
   send what the web's `fromDateTimeLocal` sends; **images** (`image-source.tsx`) come from the
   library, the camera (uploaded through `lib/media/upload.ts`) or a measured address.
 - Building blocks for the next tabs: `editor-modal.tsx` (full-screen editor, dirty dismiss
@@ -781,7 +782,9 @@ are `@ideanest/campaign-editor`'s, shared with the web. What the app adds:
 
 **Story** (`src/features/editor/story/`) is the web's block editor as cards in one scroll view
 (not a virtualised list, which loses a focused input on recycle), with the keyboard avoided and
-the focused field scrolled into view. The story is saved as ONE document through the shared
+the focused field scrolled into view. The app draws edge to edge, so Android does not resize the
+window for the keyboard: the Story tab and the new-project screen measure what the keyboard
+covers (`keyboard-overlap.ts`) and pad by it on both platforms. The story is saved as ONE document through the shared
 autosave, and only while every block passes `storyProblems`; an incomplete block pauses saving
 and says so. The held document is kept in the editor's store (`held-story.ts`, erased at
 sign-out with the unsent changes), so leaving the tab or the OS killing the app does not lose it;
