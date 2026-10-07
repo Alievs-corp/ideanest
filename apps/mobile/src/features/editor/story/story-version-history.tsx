@@ -27,6 +27,7 @@ import {
   useReducedMotion,
 } from '../../../components/ui';
 import { Glyphs } from '../../../icons';
+import { useHeldWhileShut } from '../../../lib/app-lock';
 import { formatCount, formatDateTime, useT } from '../../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, spacing } from '../../../theme';
 import { charactersPhrase, type StoryCopy } from './story-copy';
@@ -86,7 +87,7 @@ function failureMessage(cause: unknown, fallback: string, unreachable: string): 
 }
 
 export function StoryVersionHistory({
-  visible,
+  visible: requested,
   onClose,
   projectId,
   copy,
@@ -96,6 +97,8 @@ export function StoryVersionHistory({
   discardsHeld,
   onRestored,
 }: StoryVersionHistoryProps) {
+  // Held while the app lock is shut: a window opened behind it would sit above it (#319).
+  const visible = useHeldWhileShut(requested);
   const history = copy.story.history;
   const t = copy.mobile;
   const tKit = useT('mobile.kitForm');

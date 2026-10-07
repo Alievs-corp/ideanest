@@ -3,6 +3,9 @@ import { MAINTENANCE_PROBLEM_TYPE } from '@ideanest/api-client/maintenance';
 import { setOnline } from './connectivity';
 import { deferUntilUp, leaveMaintenance, observeResponse, takeDeferred } from './maintenance';
 import { useMaintenanceGate } from './maintenance-gate';
+import { resetAppLockForTests, unlockWithPin } from './app-lock';
+import { enableLock, rememberAccessToken, storeRefreshToken, useFlagStore } from './session';
+import { memoryStore } from './storage';
 
 /**
  * The root's maintenance gate — issues #150 and #214: one push per window however many requests
@@ -90,4 +93,31 @@ it('opens a link held during the outage once the service is back, and not before
   await act(async () => leaveMaintenance());
   expect(open).toHaveBeenCalledTimes(1);
   expect(router.push).toHaveBeenCalledTimes(1);
+});
+
+describe('#319: while the app lock is shut', () => {
+  beforeEach(async () => {
+    useFlagStore(memoryStore());
+    rememberAccessToken(null);
+    await storeRefreshToken('refresh-1');
+    await enableLock('135790');
+    resetAppLockForTests();
+  });
+
+  afterEach(() => {
+    useFlagStore(memoryStore());
+    resetAppLockForTests();
+  });
+
+  it('pushes nothing over the lock screen, and pushes once when it opens', async () => {
+    const { router } = await mountGate();
+    await act(async () => observeResponse(down()));
+    expect(router.push).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await unlockWithPin('135790', async () => undefined);
+    });
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/maintenance');
+  });
 });

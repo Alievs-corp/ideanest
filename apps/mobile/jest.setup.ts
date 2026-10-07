@@ -88,14 +88,18 @@ jest.mock('expo-secure-store', () => {
   const items = new Map<string, string>();
 
   /**
-   * Whether the simulated device owner passes the prompt.
+   * Whether the simulated device owner passes the prompt of a `requireAuthentication` item.
    *
-   * <p>The default is `true` — a test that says nothing gets a phone whose owner
-   * is present, which is the ordinary case. `__setBiometryAllowed(false)` is how
-   * a test produces a dismissed prompt, and the lock's (MB-03) whole point is that the
-   * keychain, not this application, is what refuses.
+   * <p>Since #319 only the migration of a pre-#319 locked item reads one. The default is
+   * `true`; `__setBiometryAllowed(false)` is how a test produces a refused prompt.
    */
   let biometryAllowed = true;
+  /** A keychain that throws on every read, or every write: a keystore that is unavailable. */
+  let readsFail = false;
+  let writesFail = false;
+  let deletesFail = false;
+  /** Every read, with its options, so a test can assert that no read asked for a prompt. */
+  const reads: { key: string; options?: Record<string, unknown> }[] = [];
 
   /**
    * The map is keyed by service AND key, because that is what the platform does.
@@ -117,25 +121,43 @@ jest.mock('expo-secure-store', () => {
     WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'whenUnlockedThisDeviceOnly',
     WHEN_PASSCODE_SET_THIS_DEVICE_ONLY: 'whenPasscodeSetThisDeviceOnly',
     getItemAsync: async (key: string, options?: Record<string, unknown>) => {
+      reads.push({ key, options });
+      if (readsFail) throw new Error('Keystore unavailable');
       guard(options);
       return items.get(at(key, options)) ?? null;
     },
     setItemAsync: async (key: string, value: string, options?: Record<string, unknown>) => {
-      // Deliberately NOT guarded. iOS prompts on a read or an update of an
-      // existing value and not on creation, and a mock that asked on every write
-      // would make `enableLock` untestable in the state it is meant for.
+      if (writesFail) throw new Error('Keystore unavailable');
       void items.set(at(key, options), value);
     },
     deleteItemAsync: async (key: string, options?: Record<string, unknown>) => {
+      if (deletesFail) throw new Error('Keystore unavailable');
       void items.delete(at(key, options));
     },
     /** Test controls. Not part of the module's API; see the note above. */
     __setBiometryAllowed: (allowed: boolean) => {
       biometryAllowed = allowed;
     },
+    __setReadsFail: (fail: boolean) => {
+      readsFail = fail;
+    },
+    __setWritesFail: (fail: boolean) => {
+      writesFail = fail;
+    },
+    __setDeletesFail: (fail: boolean) => {
+      deletesFail = fail;
+    },
+    /** Seeds an entry as an earlier build left it (the pre-#319 locked item). */
+    __put: (key: string, value: string, keychainService?: string) =>
+      void items.set(at(key, { keychainService }), value),
+    __reads: () => [...reads],
     __reset: () => {
       items.clear();
+      reads.length = 0;
       biometryAllowed = true;
+      readsFail = false;
+      writesFail = false;
+      deletesFail = false;
     },
     __entries: () => [...items.keys()],
   };
@@ -156,6 +178,10 @@ jest.mock('expo-local-authentication', () => {
   let enrolled = true;
   let kinds: number[] = [AuthenticationType.FINGERPRINT];
   let succeeds = true;
+  /** `SecurityLevel` of what is enrolled: 3 is BIOMETRIC_STRONG, 2 a weak face unlock. */
+  let level = 3;
+  /** How many prompts were shown: the app lock's whole promise is a number here (#319). */
+  let prompts = 0;
 
   return {
     AuthenticationType,
@@ -163,26 +189,33 @@ jest.mock('expo-local-authentication', () => {
     hasHardwareAsync: async () => hardware,
     isEnrolledAsync: async () => enrolled,
     supportedAuthenticationTypesAsync: async () => kinds,
-    getEnrolledLevelAsync: async () => (enrolled ? 3 : 0),
-    authenticateAsync: async () =>
-      succeeds ? { success: true } : { success: false, error: 'user_cancel' },
+    getEnrolledLevelAsync: async () => (enrolled ? level : 0),
+    authenticateAsync: async () => {
+      prompts += 1;
+      return succeeds ? { success: true } : { success: false, error: 'user_cancel' };
+    },
+    __prompts: () => prompts,
     cancelAuthenticate: async () => {},
     __setBiometrics: (state: {
       hardware?: boolean;
       enrolled?: boolean;
       kinds?: number[];
       succeeds?: boolean;
+      level?: number;
     }) => {
       hardware = state.hardware ?? hardware;
       enrolled = state.enrolled ?? enrolled;
       kinds = state.kinds ?? kinds;
       succeeds = state.succeeds ?? succeeds;
+      level = state.level ?? level;
     },
     __reset: () => {
       hardware = true;
       enrolled = true;
       kinds = [AuthenticationType.FINGERPRINT];
       succeeds = true;
+      level = 3;
+      prompts = 0;
     },
   };
 });
@@ -482,6 +515,16 @@ jest.mock('expo-router', () => {
     useLocalSearchParams: () => ({}),
   };
 });
+
+/**
+ * `FullWindowOverlay` — the layer the app lock's screen is drawn in on iOS (#319). A native view
+ * over the whole window; under Jest its children are drawn in place, so a test can read the lock
+ * screen like any other tree.
+ */
+jest.mock('react-native-screens', () => ({
+  ...jest.requireActual('react-native-screens'),
+  FullWindowOverlay: ({ children }: { children: unknown }) => children,
+}));
 
 /**
  * Reanimated is NOT mocked here, and that is deliberate.

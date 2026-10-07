@@ -5476,20 +5476,58 @@
       }
     },
     "lock": {
-      "face": "Face ID tələb et",
-      "fingerprint": "Barmaq izini tələb et",
-      "other": "Cihaz kilidinin açılmasını tələb et",
-      "notEnrolled": "Cihaz kilidi qurulmayıb",
-      "unavailable": "Bu telefonda biometrik kilid yoxdur",
+      "face": "Face ID və ya PIN tələb et",
+      "fingerprint": "Barmaq izi və ya PIN tələb et",
+      "other": "Biometrik kilid və ya PIN tələb et",
+      "pinOnly": "PIN tələb et",
       "checking": "Telefonun imkanları yoxlanılır",
       "wait": "Bir az gözləyin.",
-      "keychain": "Sessiyanız açarlıqda saxlanılır və telefon açıq olduqda oxuna bilir.",
-      "enrol": "Telefonun parametrlərində barmaq izi, üz və ya parol əlavə edin, sonra geri qayıdın.",
-      "open": "Aktivdir. Tətbiq bir neçə dəqiqə kənarda qalana qədər sessiya açıq qalır.",
-      "armed": "Aktivdir. Növbəti dəfə dəstəkləriniz oxunanda telefon sizi təsdiqləməyi xahiş edəcək.",
-      "refused": "Cihaz sizin olduğunuzu təsdiqləmədi, ona görə heç nə dəyişmədi.",
+      "offDetail": "Söndürülüb. Telefonu kilidi açıq halda tutan hər kəs tətbiqi aça bilər.",
+      "on": "Aktivdir. Tətbiq açılanda və beş dəqiqədən çox kənarda qaldıqdan sonra yenidən soruşur.",
+      "enrol": "PIN yazmadan açmaq üçün telefonun parametrlərində barmaq izi və ya üz əlavə edin.",
+      "noBiometrics": "Bu telefonda barmaq izi və ya üzlə açma yoxdur, ona görə tətbiq PIN ilə açılır.",
+      "weakBiometrics": "Bu telefonun üz və ya barmaq izi ilə açması tətbiq kilidi üçün kifayət qədər güclü deyil, ona görə tətbiq PIN ilə açılır.",
+      "noSession": "Bu telefonda heç kim daxil olmayıb, ona görə kilidlənəcək bir şey yoxdur. Heç nə dəyişmədi.",
       "prompt": "IdeyaNest kilidini açın",
-      "stayLocked": "Kilidli qalsın"
+      "usePin": "PIN istifadə et",
+      "screen": {
+        "title": "IdeyaNest kilidlidir",
+        "enterPin": "PIN-i daxil edin",
+        "useFace": "Face ID ilə aç",
+        "useFingerprint": "Barmaq izi ilə aç",
+        "useOther": "Biometrik kilidlə aç",
+        "wrong": "{remaining, plural, other {PIN yanlışdır. Qalan cəhd sayı: #. Sonra bu telefonda hesabdan çıxarılacaqsınız.}}",
+        "checkingPin": "PIN yoxlanılır…",
+        "forgot": "PIN-i unutmusunuz? Çıxış edin",
+        "forgotTitle": "Bu telefonda çıxış edilsin?",
+        "forgotBody": "Parolunuzla yenidən daxil olub yeni PIN seçə bilərsiniz. Bu telefonda göndərilməmiş dəyişikliklər itəcək.",
+        "signedOutTitle": "Bu telefonda hesabdan çıxdınız",
+        "signedOutBody": "PIN beş dəfə yanlış daxil edildi, ona görə bu telefondakı sessiya silindi. Davam etmək üçün yenidən daxil olun.",
+        "continue": "Davam et",
+        "confirmToSetPin": "Tətbiq kilidinə PIN seçməzdən əvvəl sizin olduğunuzu təsdiqləyin.",
+        "migrating": "Tətbiq kilidini saxlamaq üçün sizin olduğunuzu təsdiqləyin.",
+        "migrationRefused": "Tətbiq kilidi indi PIN ilə də işləyir. Bu telefonun sessiyasını köçürmək üçün sizin olduğunuzu təsdiqləyin; gözləsəniz də heç nə itmir.",
+        "migrationFailed": "Bu telefonun sessiyası köçürülə bilmədi. Heç nə itmədi — yenidən cəhd edin."
+      },
+      "setPin": {
+        "title": "Altı rəqəmli PIN seçin",
+        "intro": "Barmaq izi və ya üz işləməyəndə ondan istifadə edəcəksiniz. PIN bu telefondan heç vaxt çıxmır.",
+        "confirmTitle": "Eyni PIN-i yenidən daxil edin",
+        "mismatch": "İki PIN uyğun gəlmədi. Yenidən seçin.",
+        "migrationIntro": "Tətbiq kilidində indi barmaq izi və ya üz işləməyəndə istifadə olunan PIN var. Kilidi saxlamaq üçün PIN seçin.",
+        "turnOff": "Bunun əvəzinə kilidi söndür",
+        "saved": "PIN saxlanıldı.",
+        "failed": "PIN saxlanıla bilmədi. Yenidən cəhd edin."
+      },
+      "confirm": {
+        "title": "Sizin olduğunuzu təsdiqləyin",
+        "offIntro": "Tətbiq kilidini söndürmək üçün PIN-i daxil edin.",
+        "changeIntro": "Dəyişmək üçün indiki PIN-i daxil edin."
+      },
+      "pad": {
+        "entered": "{total} rəqəmdən daxil edilən: {count}",
+        "delete": "Sil"
+      }
     },
     "fallback": {
       "body": "IdeyaNest-in bu hissəsi tətbiq üçün hələ hazırlanır. Saytda hazırdır.",
@@ -5638,7 +5676,9 @@
         "copyFailed": "Kopyalamaq alınmadı. Mətni seçib özünüz kopyalayın.",
         "appLockTitle": "Bu telefonda",
         "appLockIntro": "Kilid hesabınıza deyil, bu telefona aiddir: digər cihazlarınızda heç nəyi dəyişmir və bağlantı olmadan da işləyir.",
-        "appLockLink": "Tətbiq kilidi"
+        "appLockLink": "Tətbiq kilidi",
+        "changePin": "PIN-i dəyiş",
+        "pinChanged": "PIN dəyişdirildi."
       },
       "privacy": {
         "loading": "Məxfilik ayarlarınız yüklənir",

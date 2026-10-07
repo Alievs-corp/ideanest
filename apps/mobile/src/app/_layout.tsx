@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
+import { useCallback, useEffect, useMemo } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { StatusBar } from 'expo-status-bar';
@@ -13,11 +12,12 @@ import { SharedTransitionHost } from '../components/ui/shared-transition';
 import { sweepAccountExports } from '../lib/account-export-files';
 import { startConnectivity } from '../lib/connectivity';
 import { destinationFor, type Destination } from '../lib/links';
-import { deferUntilUp } from '../lib/maintenance';
+import { openWhenAllowed } from '../lib/open-when-allowed';
 import { useMaintenanceGate } from '../lib/maintenance-gate';
 import { watchUpcoming } from '../lib/upcoming-maintenance';
 import { createQueryClient, persistOptions } from '../lib/offline';
-import { lockNow } from '../lib/session';
+import { startAppLock } from '../lib/app-lock';
+import { LockGate } from '../features/lock/lock-screen';
 import { AccountSync } from '../lib/account-sync';
 import { PushSync } from '../lib/push-sync';
 import { AppIntlProvider } from '../lib/i18n';
@@ -49,24 +49,13 @@ import { colors } from '../theme';
  * because a link that works only when the app is already running is the bug
  * deep links (§4.12 MB-02) most often meet.
  *
- * <h2>The re-lock is here for the same reason — nothing else sees the process</h2>
+ * <h2>The app lock is here for the same reason — nothing else sees the process</h2>
  *
- * The biometric gate (§4.12 MB-03) fires when the refresh token is read, and the access token it
- * produces then lives in memory for fifteen minutes. A phone handed to somebody
- * else inside that window reaches the pledge list without a prompt. `AppState`
- * is the only signal that the application was put away, and the root is the only
- * place with one listener rather than one per screen.
+ * The lock (§4.12 MB-03, #319) is a gate in front of everything: `startAppLock` listens to
+ * `AppState` once, for the whole application, and `LockGate` draws the lock screen over the
+ * stack — over its modals too (`features/lock/lock-screen.tsx`). It asks at a cold start and after
+ * more than five minutes away, and nowhere else; no token read can ask.
  */
-
-/**
- * How long the application may be away before the gate re-arms.
- *
- * <p>Long enough that answering a message or checking a boarding pass does not
- * cost a prompt, short enough that a phone left on a table is closed. Below
- * `AppState` fires on notification shades and control centres on both platforms
- * as well, so a threshold of zero would prompt for pulling down a notification.
- */
-const RELOCK_AFTER_MS = 2 * 60 * 1000;
 
 const queryClient = createQueryClient();
 
@@ -160,7 +149,6 @@ function AppStack() {
 export default function RootLayout() {
   const router = useRouter();
   const host = useMemo(() => new URL(siteUrl()).host, []);
-  const leftAt = useRef<number | null>(null);
 
   // The offline banner's source, and TanStack Query's (`lib/connectivity.ts`).
   useEffect(() => startConnectivity(), []);
@@ -171,29 +159,8 @@ export default function RootLayout() {
   // The planned-maintenance banner's source: `/v1/status` on launch and on return (#214).
   useEffect(() => watchUpcoming(), []);
 
-  useEffect(() => {
-    const changed = (state: AppStateStatus) => {
-      if (state === 'active') {
-        const away = leftAt.current;
-        leftAt.current = null;
-        /*
-         * `lockNow` is a no-op when the lock is off, so this costs nothing on a
-         * phone that never turned it on. Date.now() rather than a clock from
-         * anywhere: this measures wall time across a suspension, which is the
-         * one thing a monotonic timer inside a suspended process cannot.
-         */
-        if (away !== null && Date.now() - away >= RELOCK_AFTER_MS) lockNow();
-        return;
-      }
-      // `background` on both platforms, and `inactive` on iOS for the app
-      // switcher and an incoming call. The first of the two is what to
-      // remember: going inactive then background must not reset the clock.
-      leftAt.current ??= Date.now();
-    };
-
-    const subscription = AppState.addEventListener('change', changed);
-    return () => subscription.remove();
-  }, []);
+  // The app lock's clock and its migration (`lib/app-lock.ts`, #319).
+  useEffect(() => startAppLock(), []);
 
   const go = useCallback(
     (destination: Destination) => {
@@ -203,8 +170,8 @@ export default function RootLayout() {
             ? destination.pathname
             : { pathname: destination.pathname, params: destination.params }) as never,
         );
-      // During maintenance the link waits for the service (`deferUntilUp`), then opens.
-      if (!deferUntilUp(push)) push();
+      // While the app lock is shut, and during maintenance, the link waits (`open-when-allowed.ts`).
+      openWhenAllowed(push);
     },
     [router],
   );
@@ -248,11 +215,13 @@ export default function RootLayout() {
             <OfflineAnnouncer />
             {/* The page a white sheet rises over scales back under it (`ui/sheet.tsx`, #277). */}
             {/* Card → page flights are drawn above everything (`ui/shared-transition.tsx`, #279). */}
-            <SharedTransitionHost>
-              <SheetHost>
-                <AppStack />
-              </SheetHost>
-            </SharedTransitionHost>
+            <LockGate>
+              <SharedTransitionHost>
+                <SheetHost>
+                  <AppStack />
+                </SheetHost>
+              </SharedTransitionHost>
+            </LockGate>
           </AppIntlProvider>
         </PersistQueryClientProvider>
       </SafeAreaProvider>

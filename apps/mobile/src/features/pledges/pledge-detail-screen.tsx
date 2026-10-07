@@ -43,6 +43,7 @@ import { catalogue, formatDateTime, useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { readablePledgeState } from '../../lib/pledge-states';
 import { useSession } from '../../lib/use-session';
+import { useGateShut } from '../../lib/app-lock';
 import { colors, size, spacing } from '../../theme';
 import { countryName } from '../checkout/format';
 import { PledgeSummary } from '../checkout/pledge-summary';
@@ -79,9 +80,11 @@ interface Hints {
 export function PledgeDetailScreen(props: PledgeDetailScreenProps) {
   const router = useRouter();
   const { signedIn } = useSession();
+  // Not while the app lock is shut: the sign-in modal would sit above the lock screen (#319).
+  const shut = useGateShut();
   useEffect(() => {
-    if (!signedIn) router.replace(signInHrefFor(`/pledges/${encodeURIComponent(props.id)}`));
-  }, [props.id, router, signedIn]);
+    if (!signedIn && !shut) router.replace(signInHrefFor(`/pledges/${encodeURIComponent(props.id)}`));
+  }, [props.id, router, signedIn, shut]);
 
   return signedIn ? <PledgeDetail {...props} /> : null;
 }

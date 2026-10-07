@@ -1,140 +1,274 @@
+import { type ReactNode } from 'react';
+import { AccessibilityInfo } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
+import { lockPhase, resetAppLockForTests } from '../../lib/app-lock';
 import { setOnline } from '../../lib/connectivity';
-import { disableLock, enableLock } from '../../lib/session';
+import { checkPin, failedPinAttempts, hasPin } from '../../lib/pin';
+import {
+  enableLock,
+  isLockOn,
+  rememberAccessToken,
+  storeRefreshToken,
+  useFlagStore,
+} from '../../lib/session';
+import { memoryStore } from '../../lib/storage';
 import { AppLockCard } from './app-lock';
 
 /**
- * The app lock, moved from the Me tab into `settings/security` (#161) with its behaviour
- * unchanged: the capability decides what is offered, both directions go through the prompt, and
- * a refusal says nothing changed. `lib/session.test.ts` and `lib/biometrics.test.ts` own the
- * keychain and the probe; this is the card.
+ * The app lock in `settings/security` (#161, #319): on needs a PIN set and confirmed first; off
+ * and "Change PIN" need the owner — the prompt or the current PIN. `lib/app-lock.test.ts` owns the
+ * gate; this is the card and its sheet.
  */
 
-let mockSession = { signedIn: true, locked: false, unlocked: true };
-jest.mock('../../lib/use-session', () => ({ useSession: () => mockSession }));
-jest.mock('../../lib/session', () => ({
-  ...jest.requireActual('../../lib/session'),
-  enableLock: jest.fn(async () => true),
-  disableLock: jest.fn(async () => true),
-}));
+jest.mock('../../lib/push', () => ({ unregisterFromPush: jest.fn(async () => {}) }));
 
 const L = en.mobile.lock;
+const S = en.mobile.settings.security;
 const biometrics = LocalAuthentication as unknown as {
-  __setBiometrics: (state: { hardware?: boolean; enrolled?: boolean; kinds?: number[] }) => void;
+  __setBiometrics: (state: {
+    hardware?: boolean;
+    enrolled?: boolean;
+    kinds?: number[];
+    succeeds?: boolean;
+    level?: number;
+  }) => void;
+  __prompts: () => number;
   __reset: () => void;
   AuthenticationType: { FINGERPRINT: number; FACIAL_RECOGNITION: number };
 };
+const keychain = SecureStore as unknown as { __reset: () => void };
 
-async function show() {
-  await render(
-    <IntlProvider locale="en" messages={en}>
-      <AppLockCard />
-    </IntlProvider>,
-  );
-  // The capability probe answers asynchronously, as it does on a device.
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  });
+const METRICS = {
+  frame: { x: 0, y: 0, width: 390, height: 844 },
+  insets: { top: 47, left: 0, right: 0, bottom: 34 },
+};
+
+let client: QueryClient;
+
+async function settle() {
+  for (let i = 0; i < 6; i += 1) {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  }
 }
 
-beforeEach(() => {
-  jest.clearAllMocks();
+async function show() {
+  client = new QueryClient();
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <SafeAreaProvider initialMetrics={METRICS}>
+      <QueryClientProvider client={client}>
+        <IntlProvider locale="en" messages={en}>
+          {children}
+        </IntlProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
+  );
+  await render(<AppLockCard />, { wrapper });
+  await settle();
+}
+
+async function typePin(pin: string) {
+  for (const digit of pin) {
+    await fireEvent.press(screen.getByRole('keyboardkey', { name: digit }));
+  }
+  await settle();
+}
+
+const lockSwitch = (name: string = L.fingerprint) => screen.getByRole('switch', { name });
+
+beforeEach(async () => {
+  keychain.__reset();
   biometrics.__reset();
-  mockSession = { signedIn: true, locked: false, unlocked: true };
+  useFlagStore(memoryStore());
+  rememberAccessToken(null);
+  resetAppLockForTests();
   setOnline(true);
+  jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions').mockImplementation(() => {});
+  await storeRefreshToken('refresh-1');
+  // The app's gate: open, as it is by the time somebody reaches settings.
+  expect(lockPhase()).toBe('open');
 });
 
-describe('the app lock card', () => {
-  it('sits under "On this phone"', async () => {
-    await show();
-    expect(screen.getByRole('header', { name: en.mobile.settings.security.appLockTitle })).toBeTruthy();
-  });
+afterEach(() => {
+  client?.clear();
+  jest.restoreAllMocks();
+});
 
-  it('names the switch for the scanner the phone has, off while the lock is off', async () => {
+describe('the card', () => {
+  it('sits under "On this phone", off, named for the scanner the phone has', async () => {
     await show();
-    const lock = screen.getByRole('switch', { name: L.fingerprint });
-    expect(lock.props.accessibilityState).toMatchObject({ checked: false });
-    expect(screen.getByText(L.keychain)).toBeTruthy();
+    expect(screen.getByRole('header', { name: S.appLockTitle })).toBeTruthy();
+    expect(lockSwitch().props.accessibilityState).toMatchObject({ checked: false });
+    expect(screen.getByText(L.offDetail)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: S.changePin })).toBeNull();
   });
 
   it('says Face ID on a phone with a face scanner', async () => {
     biometrics.__setBiometrics({ kinds: [biometrics.AuthenticationType.FACIAL_RECOGNITION] });
     await show();
-    expect(screen.getByRole('switch', { name: L.face })).toBeTruthy();
+    expect(lockSwitch(L.face)).toBeTruthy();
   });
 
-  it('locked and not yet unlocked: on, and says the phone will ask', async () => {
-    // Moved from the Me tab's "locked, prompt dismissed" case: the lock can still be turned off.
-    mockSession = { signedIn: true, locked: true, unlocked: false };
+  it('offers a PIN-only lock on a phone with no scanner, and says why', async () => {
+    biometrics.__setBiometrics({ hardware: false });
     await show();
-
-    // The kit's switch (issue #151): the whole row is one control, named by the lock's label and
-    // saying it is on — not React Native's platform switch beside a separate line of text.
-    const lock = screen.getByRole('switch', { name: L.fingerprint });
-    expect(lock.props.accessibilityState).toMatchObject({ checked: true });
-    expect(lock).toContainElement(screen.getByText(L.fingerprint));
-    expect(screen.getByText(L.armed)).toBeTruthy();
+    expect(lockSwitch(L.pinOnly)).toBeTruthy();
+    expect(screen.getByText(L.noBiometrics)).toBeTruthy();
   });
 
-  it('locked and unlocked in this session: says the session is open', async () => {
-    mockSession = { signedIn: true, locked: true, unlocked: true };
+  it('offers a PIN-only lock when only a weak face unlock is enrolled, and says why', async () => {
+    biometrics.__setBiometrics({ level: 2 });
     await show();
-    expect(screen.getByText(L.open)).toBeTruthy();
+    expect(lockSwitch(L.pinOnly)).toBeTruthy();
+    expect(screen.getByText(L.weakBiometrics)).toBeTruthy();
   });
 
-  it('offers no switch on a phone with nothing enrolled, and says where to enrol', async () => {
+  it('offers a PIN-only lock with nothing enrolled, and says where to enrol', async () => {
     biometrics.__setBiometrics({ enrolled: false });
     await show();
-    expect(screen.queryByRole('switch')).toBeNull();
-    expect(screen.getByText(L.notEnrolled)).toBeTruthy();
+    expect(lockSwitch(L.pinOnly)).toBeTruthy();
     expect(screen.getByText(L.enrol)).toBeTruthy();
   });
 
-  it('offers no switch on a phone with no scanner', async () => {
-    biometrics.__setBiometrics({ hardware: false });
+  it('on: says when it asks, and offers Change PIN', async () => {
+    await enableLock('135790');
     await show();
-    expect(screen.queryByRole('switch')).toBeNull();
-    expect(screen.getByText(L.unavailable)).toBeTruthy();
+    expect(lockSwitch().props.accessibilityState).toMatchObject({ checked: true });
+    expect(screen.getByText(L.on)).toBeTruthy();
+    expect(screen.getByRole('button', { name: S.changePin })).toBeTruthy();
+  });
+});
+
+describe('turning the lock on', () => {
+  it('needs a PIN chosen and confirmed first', async () => {
+    await show();
+    await fireEvent.press(lockSwitch());
+    await settle();
+
+    expect(screen.getByRole('header', { name: L.setPin.title })).toBeTruthy();
+    expect(isLockOn()).toBe(false);
+
+    await typePin('482913');
+    expect(screen.getByRole('header', { name: L.setPin.confirmTitle })).toBeTruthy();
+    expect(isLockOn()).toBe(false);
+
+    await typePin('482913');
+
+    expect(isLockOn()).toBe(true);
+    expect(await checkPin('482913')).toBe(true);
+    expect(biometrics.__prompts()).toBe(0);
   });
 
-  it('turns the lock on through the keychain', async () => {
+  it('starts over when the two PINs differ, and stays off', async () => {
     await show();
-    await fireEvent.press(screen.getByRole('switch', { name: L.fingerprint }));
-    await act(async () => {});
-    expect(enableLock).toHaveBeenCalledTimes(1);
-    expect(disableLock).not.toHaveBeenCalled();
-    expect(screen.queryByText(L.refused)).toBeNull();
+    await fireEvent.press(lockSwitch());
+    await settle();
+
+    await typePin('482913');
+    await typePin('482914');
+
+    expect(screen.getByText(L.setPin.mismatch)).toBeTruthy();
+    expect(screen.getByRole('header', { name: L.setPin.title })).toBeTruthy();
+    expect(isLockOn()).toBe(false);
+    expect(await hasPin()).toBe(false);
   });
 
-  it('says nothing changed when the device does not confirm it was you, turning it on', async () => {
-    jest.mocked(enableLock).mockResolvedValueOnce(false);
+  it('says so when there is no session to lock, rather than blaming the device', async () => {
+    await storeRefreshToken(null);
     await show();
-    await fireEvent.press(screen.getByRole('switch', { name: L.fingerprint }));
-    await act(async () => {});
-    expect(screen.getByRole('alert')).toHaveTextContent(L.refused);
-  });
+    await fireEvent.press(lockSwitch());
+    await settle();
+    await typePin('482913');
+    await typePin('482913');
 
-  it('turning it off still needs the prompt, and a refusal says nothing changed', async () => {
-    mockSession = { signedIn: true, locked: true, unlocked: false };
-    jest.mocked(disableLock).mockResolvedValueOnce(false);
-    await show();
-    await fireEvent.press(screen.getByRole('switch', { name: L.fingerprint }));
-    await act(async () => {});
-    expect(disableLock).toHaveBeenCalledTimes(1);
-    expect(enableLock).not.toHaveBeenCalled();
-    expect(screen.getByRole('alert')).toHaveTextContent(L.refused);
+    expect(screen.getByRole('alert')).toHaveTextContent(L.noSession);
+    expect(isLockOn()).toBe(false);
   });
 
   it('works offline: the lock is this phone’s, not the account’s', async () => {
     setOnline(false);
     await show();
-    const lock = screen.getByRole('switch', { name: L.fingerprint });
-    expect(lock.props.accessibilityState).toMatchObject({ disabled: false });
-    await fireEvent.press(lock);
-    await act(async () => {});
-    expect(enableLock).toHaveBeenCalledTimes(1);
+    expect(lockSwitch().props.accessibilityState).toMatchObject({ disabled: false });
+    await fireEvent.press(lockSwitch());
+    await settle();
+    expect(screen.getByRole('header', { name: L.setPin.title })).toBeTruthy();
+  });
+});
+
+describe('turning the lock off', () => {
+  it('asks the phone once, and goes off when it confirms', async () => {
+    await enableLock('135790');
+    await show();
+
+    await fireEvent.press(lockSwitch());
+    await settle();
+
+    expect(biometrics.__prompts()).toBe(1);
+    expect(isLockOn()).toBe(false);
+    expect(await hasPin()).toBe(false);
+  });
+
+  it('a refused prompt leaves it on until the right PIN, and a wrong one is counted', async () => {
+    await enableLock('135790');
+    biometrics.__setBiometrics({ succeeds: false });
+    await show();
+
+    await fireEvent.press(lockSwitch());
+    await settle();
+    expect(biometrics.__prompts()).toBe(1);
+    expect(screen.getByText(L.confirm.offIntro)).toBeTruthy();
+    expect(isLockOn()).toBe(true);
+
+    await typePin('000000');
+    expect(isLockOn()).toBe(true);
+    expect(await failedPinAttempts()).toBe(1);
+    expect(screen.getByText('Wrong PIN. 4 attempts left before this phone signs you out.')).toBeTruthy();
+
+    await typePin('135790');
+    expect(isLockOn()).toBe(false);
+    // One prompt, never repeated on its own.
+    expect(biometrics.__prompts()).toBe(1);
+  });
+});
+
+describe('changing the PIN', () => {
+  it('needs the current PIN (or the prompt), then the new one twice', async () => {
+    await enableLock('135790');
+    biometrics.__setBiometrics({ succeeds: false });
+    await show();
+
+    await fireEvent.press(screen.getByRole('button', { name: S.changePin }));
+    await settle();
+    expect(screen.getByText(L.confirm.changeIntro)).toBeTruthy();
+
+    await typePin('135790');
+    expect(screen.getByRole('header', { name: L.setPin.title })).toBeTruthy();
+
+    await typePin('246802');
+    await typePin('246802');
+
+    expect(await checkPin('246802')).toBe(true);
+    expect(await checkPin('135790')).toBe(false);
+    expect(isLockOn()).toBe(true);
+  });
+
+  it('a wrong current PIN changes nothing', async () => {
+    await enableLock('135790');
+    biometrics.__setBiometrics({ succeeds: false });
+    await show();
+
+    await fireEvent.press(screen.getByRole('button', { name: S.changePin }));
+    await settle();
+    await typePin('999999');
+
+    expect(screen.queryByRole('header', { name: L.setPin.title })).toBeNull();
+    expect(await checkPin('135790')).toBe(true);
   });
 });

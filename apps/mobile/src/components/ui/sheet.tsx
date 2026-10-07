@@ -41,6 +41,7 @@ import {
   tint,
   tracking,
 } from '../../theme';
+import { useHeldWhileShut } from '../../lib/app-lock';
 import { useFocusRing } from './focus';
 import { IconButton } from './icon-button';
 import { useMotionAllowed } from './motion-budget';
@@ -159,7 +160,7 @@ export function SheetHost({ children }: { readonly children: ReactNode }) {
 }
 
 export function Sheet({
-  visible,
+  visible: requested,
   onClose,
   title,
   children,
@@ -168,6 +169,8 @@ export function Sheet({
   onDismiss,
   testID,
 }: SheetProps) {
+  // Held while the app lock is shut: a window opened behind it would sit above it (#319).
+  const visible = useHeldWhileShut(requested);
   const t = useT('mobile.kitForm');
   const heading = useRef<Text>(null);
   const moves = useMotionAllowed('minimal');

@@ -406,14 +406,10 @@ describe('states', () => {
     expect(screen.getByTestId('privacy-closure')).toBeTruthy();
   });
 
-  it('waits for the app lock to be opened, and Try again asks for it', async () => {
+  it('reads the account with the app lock on: the lock is in front of the app, not the token (#319)', async () => {
     mockSession = { signedIn: true, locked: true, unlocked: false };
     await show();
-    expect(mockGet).not.toHaveBeenCalledWith('/v1/me', expect.anything());
-    expect(screen.getByTestId('privacy-load-failed')).toBeTruthy();
-
-    await fireEvent.press(screen.getByRole('button', { name: en.common.tryAgain }));
-    await settle();
+    expect(mockGet).toHaveBeenCalledWith('/v1/me', expect.anything());
     expect(screen.getByTestId('privacy-visibility')).toBeTruthy();
   });
 

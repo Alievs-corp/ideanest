@@ -5476,20 +5476,58 @@
       }
     },
     "lock": {
-      "face": "Require Face ID",
-      "fingerprint": "Require your fingerprint",
-      "other": "Require a device unlock",
-      "notEnrolled": "Device unlock is not set up",
-      "unavailable": "This phone has no biometric unlock",
+      "face": "Require Face ID or your PIN",
+      "fingerprint": "Require your fingerprint or PIN",
+      "other": "Require biometric unlock or your PIN",
+      "pinOnly": "Require a PIN",
       "checking": "Checking what this phone can do",
       "wait": "One moment.",
-      "keychain": "Your session stays in the keychain, readable while the phone is unlocked.",
-      "enrol": "Add a fingerprint, a face or a passcode in your phone’s settings, then come back.",
-      "open": "On. This session is open until the app has been away for a few minutes.",
-      "armed": "On. The next time your pledges are read, the phone will ask for you.",
-      "refused": "The device did not confirm it was you, so nothing changed.",
+      "offDetail": "Off. Anybody holding this phone unlocked can open the app.",
+      "on": "On. The app asks when it opens, and again after more than five minutes away.",
+      "enrol": "Add a fingerprint or a face in your phone’s settings to unlock without typing the PIN.",
+      "noBiometrics": "This phone has no fingerprint or face unlock, so the app opens with your PIN.",
+      "weakBiometrics": "This phone’s face or fingerprint unlock is not strong enough for the app lock, so the app opens with your PIN.",
+      "noSession": "Nobody is signed in on this phone, so there is nothing to lock. Nothing changed.",
       "prompt": "Unlock IdeyaNest",
-      "stayLocked": "Stay locked"
+      "usePin": "Use PIN",
+      "screen": {
+        "title": "IdeyaNest is locked",
+        "enterPin": "Enter your PIN",
+        "useFace": "Use Face ID",
+        "useFingerprint": "Use fingerprint",
+        "useOther": "Use biometric unlock",
+        "wrong": "{remaining, plural, one {Wrong PIN. # attempt left before this phone signs you out.} other {Wrong PIN. # attempts left before this phone signs you out.}}",
+        "checkingPin": "Checking your PIN…",
+        "forgot": "Forgot your PIN? Sign out",
+        "forgotTitle": "Sign out on this phone?",
+        "forgotBody": "You can sign in again with your password and choose a new PIN. Changes on this phone that were not sent will be lost.",
+        "signedOutTitle": "Signed out on this phone",
+        "signedOutBody": "The PIN was entered wrongly five times, so the session on this phone was erased. Sign in again to continue.",
+        "continue": "Continue",
+        "confirmToSetPin": "Confirm it’s you to choose a PIN for the app lock.",
+        "migrating": "Confirm it’s you to keep the app lock on.",
+        "migrationRefused": "The app lock now uses a PIN too. Confirm it’s you to move this phone’s session over; nothing is lost while you wait.",
+        "migrationFailed": "This phone’s session could not be moved. Nothing was lost — try again."
+      },
+      "setPin": {
+        "title": "Choose a 6-digit PIN",
+        "intro": "You’ll use it when your fingerprint or face can’t be used. It never leaves this phone.",
+        "confirmTitle": "Enter the same PIN again",
+        "mismatch": "The two PINs did not match. Choose one again.",
+        "migrationIntro": "The app lock now has a PIN for when your fingerprint or face can’t be used. Choose one to keep the lock on.",
+        "turnOff": "Turn the lock off instead",
+        "saved": "PIN saved.",
+        "failed": "The PIN could not be saved. Try again."
+      },
+      "confirm": {
+        "title": "Confirm it’s you",
+        "offIntro": "Enter your PIN to turn the app lock off.",
+        "changeIntro": "Enter your current PIN to change it."
+      },
+      "pad": {
+        "entered": "{count} of {total} entered",
+        "delete": "Delete"
+      }
     },
     "fallback": {
       "body": "This part of IdeyaNest is still being built for the app. It is ready on the website.",
@@ -5638,7 +5676,9 @@
         "copyFailed": "That could not be copied. Select the text and copy it instead.",
         "appLockTitle": "On this phone",
         "appLockIntro": "The lock belongs to this phone rather than to your account: it changes nothing on your other devices, and it works without a connection.",
-        "appLockLink": "App lock"
+        "appLockLink": "App lock",
+        "changePin": "Change PIN",
+        "pinChanged": "Your PIN has been changed."
       },
       "privacy": {
         "loading": "Loading your privacy settings",

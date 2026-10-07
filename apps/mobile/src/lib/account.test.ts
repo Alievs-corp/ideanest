@@ -10,7 +10,6 @@ import {
   type Me,
 } from './account';
 import {
-  enableLock,
   hasStoredSession,
   rememberAccessToken,
   storeRefreshToken,
@@ -45,13 +44,13 @@ describe('sessionStateOf', () => {
 });
 
 describe('canReadAccount', () => {
-  it('reads without a lock, or once the lock has been opened in this process', () => {
+  it('reads whenever a session is on the phone, the app lock included (#319)', () => {
     expect(canReadAccount({ signedIn: true, locked: false, unlocked: false })).toBe(true);
+    expect(canReadAccount({ signedIn: true, locked: true, unlocked: false })).toBe(true);
     expect(canReadAccount({ signedIn: true, locked: true, unlocked: true })).toBe(true);
   });
 
-  it('waits behind a lock nobody has opened, and reads nothing for nobody', () => {
-    expect(canReadAccount({ signedIn: true, locked: true, unlocked: false })).toBe(false);
+  it('reads nothing for nobody', () => {
     expect(canReadAccount({ signedIn: false, locked: false, unlocked: false })).toBe(false);
   });
 });
@@ -79,7 +78,7 @@ describe('fetchMe', () => {
   }
 
   const keychain = SecureStore as unknown as {
-    __setBiometryAllowed: (allowed: boolean) => void;
+    __setReadsFail: (fail: boolean) => void;
     __reset: () => void;
   };
 
@@ -98,15 +97,14 @@ describe('fetchMe', () => {
     await expect(fetchMe()).rejects.toBeInstanceOf(ApiError);
   });
 
-  it('does NOT read a 401 as "nobody" when the prompt was dismissed and no bearer went out', async () => {
+  it('does NOT read a 401 as "nobody" when the keychain could not be read and no bearer went out', async () => {
     await storeRefreshToken('refresh-1');
-    expect(await enableLock()).toBe(true);
-    rememberAccessToken(null); // the lock re-armed
-    keychain.__setBiometryAllowed(false); // …and the reader said "not now"
+    rememberAccessToken(null);
+    keychain.__setReadsFail(true);
     answer(401);
 
     await expect(fetchMe()).rejects.toBeInstanceOf(NoCredentialError);
-    // "Not now" must not mean "sign in again": the session is still on the phone.
+    // A keychain that failed once must not mean "sign in again": the session is still here.
     expect(hasStoredSession()).toBe(true);
   });
 

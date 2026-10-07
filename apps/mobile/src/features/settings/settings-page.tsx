@@ -16,6 +16,7 @@ import { useOnline } from '../../lib/connectivity';
 import { signInHrefFor } from '../../lib/guard';
 import { useT } from '../../lib/i18n';
 import { useSession } from '../../lib/use-session';
+import { useGateShut } from '../../lib/app-lock';
 import { colors, font, formMeasure, spacing } from '../../theme';
 import { sectionPath, type SettingsSection } from './sections';
 
@@ -57,6 +58,8 @@ export function SettingsPage({
 }) {
   const router = useRouter();
   const { signedIn } = useSession();
+  // Not while the app lock is shut: the sign-in modal would sit above the lock screen (#319).
+  const shut = useGateShut();
   const online = useOnline();
   const t = useT();
   const insets = useContext(SafeAreaInsetsContext);
@@ -66,9 +69,9 @@ export function SettingsPage({
   }, []);
 
   useEffect(() => {
-    if (!requireSession || signedIn || leaving.current) return;
+    if (!requireSession || signedIn || leaving.current || shut) return;
     router.replace(signInHrefFor(section === null ? '/settings' : sectionPath(section)));
-  }, [requireSession, router, section, signedIn]);
+  }, [requireSession, router, section, signedIn, shut]);
 
   return (
     <LeavingContext.Provider value={markLeaving}>

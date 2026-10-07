@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useGateShut } from './app-lock';
 import { takeDeferred, useMaintenance } from './maintenance';
 
 /**
@@ -17,19 +18,23 @@ import { takeDeferred, useMaintenance } from './maintenance';
  * <p>When the service is back, a link held by `deferUntilUp` opens — after the screen's own
  * exit, which it dispatches before this effect runs, so the link lands on the stack the reader
  * returns to rather than under the maintenance screen being removed.
+ *
+ * <p>Neither happens while the app lock is shut (#319): `maintenance` is a full-screen modal, and
+ * one presented after the lock screen would sit above it on iOS. Both wait for the gate to open.
  */
 export function useMaintenanceGate(router: { readonly push: (href: '/maintenance') => void }) {
   const down = useMaintenance();
+  const shut = useGateShut();
   const shown = useRef(false);
 
   useEffect(() => {
     if (down) {
-      if (shown.current) return;
+      if (shown.current || shut) return;
       shown.current = true;
       router.push('/maintenance');
       return;
     }
     shown.current = false;
-    takeDeferred()?.();
-  }, [down, router]);
+    if (!shut) takeDeferred()?.();
+  }, [down, shut, router]);
 }

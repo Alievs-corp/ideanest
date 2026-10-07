@@ -197,8 +197,9 @@ describe('the Me tab', () => {
     ).toBeNull();
   });
 
-  it('locked, prompt dismissed: still no "Sign in", and the lock is still within reach', async () => {
-    // The lock armed, nothing unlocked: the account is not read, so the state is unknown.
+  it('with the app lock on: no "Sign in", the account on its way, and the lock within reach', async () => {
+    // Since #319 the lock is a gate in front of the app, not in front of the token: the account is
+    // read behind it as usual, so the state is unknown only while the answer is on its way.
     mockSession = { signedIn: true, locked: true, unlocked: false };
     given('unknown', undefined);
     await renderMe();
@@ -206,10 +207,9 @@ describe('the Me tab', () => {
     expect(readingOrder()).toEqual(HELD);
     expect(screen.queryByRole('button', { name: 'Register' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
-    // Nothing is on its way, so no skeleton waiting for it.
     expect(
-      screen.queryByTestId('identity-skeleton', { includeHiddenElements: true }),
-    ).toBeNull();
+      screen.getByTestId('identity-skeleton', { includeHiddenElements: true }),
+    ).toBeTruthy();
 
     // The lock itself is `settings/security`'s now (#161; `features/settings/app-lock.test.tsx`).
     // What the Me tab owes this reader is the way to it, with no account answer needed.

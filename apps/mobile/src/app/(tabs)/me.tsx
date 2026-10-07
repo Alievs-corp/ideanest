@@ -32,7 +32,7 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
 /**
  * The Me tab — issue #150. The web's account menu, settings list and footer, in one place.
  *
- * It replaces `app/account.tsx`. "This phone" is the way to the biometric lock, which lives in
+ * It replaces `app/account.tsx`. "This phone" is the way to the app lock, which lives in
  * `settings/security` (#161) because it belongs to this phone rather than to the account; signing
  * out clears the offline cache because §4.12 MB-04 keeps the saved and pledge lists on disk.
  *
@@ -45,8 +45,8 @@ import { colors, fontSize, radius, size, spacing } from '../../theme';
  * - **signed-in**: who you are, what needs your attention, then the web's `ACCOUNT_GROUPS`,
  *   the creator rows, this phone, About and sign-out;
  * - **signed-out**: the invitation to register or sign in, the language, About;
- * - **unknown** (a token on the phone and the service unreachable, a 5xx, or the biometric
- *   lock not unlocked): This phone, About with the WhatsApp row, and Sign out. Nothing
+ * - **unknown** (a token on the phone and the service unreachable, a 5xx, or a keychain that
+ *   could not be read): This phone, About with the WhatsApp row, and Sign out. Nothing
  *   account-shaped, and above all no "Sign in" — offering one to somebody who is signed in,
  *   during an outage, is the mistake `lib/account.ts` exists to avoid. This phone and Sign out
  *   stay because they need no answer from the service, and they are the only way out of a
@@ -333,7 +333,7 @@ export default function MeScreen() {
     state === 'unknown' && canReadAccount(session) && !me.isError && me.fetchStatus === 'fetching';
   /*
    * A session on this phone that the service has not denied. Signed in, or unknown with a token
-   * — an outage, or the lock not unlocked. Either way This phone and Sign out stay: they are the
+   * — an outage, or a keychain that could not be read. Either way This phone and Sign out stay: they are the
    * way out of a lock the reader no longer wants, and neither needs the account to answer.
    */
   const holdsSession = session.signedIn && state !== 'signed-out';

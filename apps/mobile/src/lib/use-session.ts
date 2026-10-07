@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import {
   currentAccessToken,
   hasStoredSession,
-  isLocked,
+  isLockOn,
   subscribeToSession,
 } from './session';
 
@@ -20,7 +20,7 @@ import {
  *
  * <h2>`useSyncExternalStore` and not `useState` + `useEffect`</h2>
  *
- * Before the lock (MB-03) this hook read the keychain in an effect and held the answer in
+ * This hook once read the keychain in an effect and held the answer in
  * state, which was two problems. The read is asynchronous, so every screen
  * flashed "sign in" for a frame; and the state was per-component, so signing in
  * on one screen left the others showing the old answer until something else
@@ -41,15 +41,9 @@ import {
 export interface Session {
   /** Whether a refresh token is kept on this device. */
   readonly signedIn: boolean;
-  /** Whether reading that token needs the biometric prompt (§4.12 MB-03). */
+  /** Whether the app lock is on (§4.12 MB-03, #319). Not whether it is shut: `lib/app-lock.ts`. */
   readonly locked: boolean;
-  /**
-   * Whether this process is already holding an access token.
-   *
-   * <p>The difference between "locked" and "locked *and* nothing has been
-   * unlocked yet", which is what an account screen needs in order to say whether
-   * the next tap will show a prompt.
-   */
+  /** Whether this process is already holding an access token. */
   readonly unlocked: boolean;
 }
 
@@ -66,7 +60,7 @@ let snapshot: Session = { signedIn: false, locked: false, unlocked: false };
 
 function currentSnapshot(): Session {
   const signedIn = hasStoredSession();
-  const locked = isLocked();
+  const locked = isLockOn();
   const unlocked = currentAccessToken() !== null;
 
   if (

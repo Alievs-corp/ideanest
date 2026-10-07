@@ -7,6 +7,8 @@ import { siteUrl } from '../../api/config';
 import {
   AccentCard,
   AmountKeypad,
+  PinDots,
+  PinPad,
   CardStack,
   AnimatedAmount,
   Avatar,
@@ -196,6 +198,7 @@ function KitGallery() {
   const [amount, setAmount] = useState(0);
   const [segment, setSegment] = useState<'home' | 'search'>('home');
   const [keyed, setKeyed] = useState('');
+  const [pin, setPin] = useState('');
   const [sending, setSending] = useState(false);
   const [revealed, setRevealed] = useState(false);
   // The swipe's request "finishes" by itself, so the thumb can be seen coming back for a retry.
@@ -369,6 +372,20 @@ function KitGallery() {
                   overLimitMessage={t('checkout.errors.amountTooLarge')}
                 />
               </Field>
+            </SurfaceProvider>
+          </View>
+        </Section>
+
+        <Section title={heading([PinPad, PinDots])}>
+          <View style={styles.whiteBlock}>
+            <SurfaceProvider surface="white">
+              <PinDots count={pin.length} />
+              <PinPad
+                value={pin}
+                onChange={setPin}
+                onComplete={() => setPin('')}
+                action={{ label: t('mobile.lock.screen.useFingerprint'), icon: Glyphs.FingerScan, onPress: noop }}
+              />
             </SurfaceProvider>
           </View>
         </Section>
@@ -856,7 +873,7 @@ function KitGallery() {
           </Field>
           <Switch
             label={t('mobile.lock.face')}
-            description={t('mobile.lock.keychain')}
+            description={t('mobile.lock.offDetail')}
             value={switched}
             onValueChange={setSwitched}
           />
@@ -882,7 +899,7 @@ function KitGallery() {
               ))}
             </RadioGroup>
             <Switch
-              label={t('mobile.lock.keychain')}
+              label={t('mobile.lock.offDetail')}
               value={switched}
               onValueChange={setSwitched}
             />

@@ -166,7 +166,7 @@ describe('the app-only strings and formats', () => {
       setLocale('en');
       expect(translate()('mobile.lock.prompt')).toBe('Unlock IdeyaNest');
       setLocale('ru');
-      expect(translate()('mobile.lock.stayLocked')).toBe('Оставить заблокированным');
+      expect(translate()('mobile.lock.usePin')).toBe('Ввести PIN-код');
     } finally {
       setLocale(before);
     }
