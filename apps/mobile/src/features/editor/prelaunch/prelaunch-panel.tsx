@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type Ref } from 'react';
 import { Platform, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -154,8 +154,24 @@ function PrelaunchForm({
   }, [editor.revision]);
   const [confirming, setConfirming] = useState(false);
   const [opening, setOpening] = useState<Opening>('idle');
-  const [openFailure, setOpenFailure] = useState<string | null>(null);
+  /** Why the page did not open; `fromSave` when an autosave refusal stopped it. */
+  const [openFailure, setOpenFailure] = useState<{ message: string; fromSave: boolean } | null>(null);
   const openButton = useRef<View>(null);
+  const openHeading = useRef<View>(null);
+  /** Set once the page has opened: the dialog then hands focus to the open card's heading. */
+  const opened = useRef(false);
+  /** Bumped by Cancel, so an answer that arrives after it is not acted on as if still awaited. */
+  const attempt = useRef(0);
+  /** The failure on screen when the opening began, which a retry clears and must not stop it. */
+  const failureAtStart = useRef<unknown>(null);
+  const returnFocus = useMemo(
+    () => ({
+      get current(): unknown {
+        return opened.current ? openHeading.current : openButton.current;
+      },
+    }),
+    [],
+  );
 
   const { autosave, readOnly, projectId, apply } = editor;
   const project = editor.project ?? seed;
@@ -176,11 +192,21 @@ function PrelaunchForm({
   }
 
   function confirmOpen(): void {
-    if (readOnly || opening !== 'idle') return;
+    if (readOnly || opening !== 'idle' || refusedHere) return;
     setOpenFailure(null);
     setOpening('settling');
-    // Anything still queued goes first; the effect below waits for its answer.
-    autosave.flush();
+    failureAtStart.current = autosave.failure;
+    // Anything still queued goes first; the effect below waits for its answer. A change that
+    // failed earlier is sent again rather than taken as this opening's answer.
+    if (autosave.failure !== null) autosave.retry();
+    else autosave.flush();
+  }
+
+  /** Cancel, even mid-request: stop waiting. An answer that still arrives is the truth and is applied. */
+  function abandon(): void {
+    attempt.current += 1;
+    setOpening('idle');
+    setConfirming(false);
   }
 
   /*
@@ -190,24 +216,34 @@ function PrelaunchForm({
   const { pending, failure } = autosave;
   useEffect(() => {
     if (opening !== 'settling') return;
-    if (failure !== null) {
+    if (failure !== null && failure !== failureAtStart.current) {
       setOpening('idle');
       setConfirming(false);
-      setOpenFailure(failure.message);
+      setOpenFailure({ message: failure.message, fromSave: true });
       return;
     }
     if (pending) return;
     setOpening('sending');
+    const mine = attempt.current;
     void (async () => {
       try {
-        apply(await openPrelaunch(projectId));
-        setConfirming(false);
+        const answer = await openPrelaunch(projectId);
+        // Applied even after Cancel: the server opened the page, and the screen must say so.
+        apply(answer);
         // The public page exists now; a read made before it did must not be kept.
         void queryClient.invalidateQueries({ queryKey: queryKeys.prelaunch(projectId) });
-      } catch (cause) {
+        if (mine !== attempt.current) return;
+        opened.current = true;
+        announce(words.openHeading);
         setConfirming(false);
-        setOpenFailure(
-          describeSaveFailure(cause, {
+        setOpening('idle');
+      } catch (cause) {
+        if (mine !== attempt.current) return;
+        setConfirming(false);
+        setOpening('idle');
+        setOpenFailure({
+          fromSave: false,
+          message: describeSaveFailure(cause, {
             signedOut: failures('signedOut'),
             forbidden: failures('forbidden'),
             notFound: failures('notFound'),
@@ -216,17 +252,30 @@ function PrelaunchForm({
             generic: failures('generic'),
             unreachable: failures('unreachable'),
           }).message,
-        );
-      } finally {
-        setOpening('idle');
+        });
       }
     })();
-  }, [opening, pending, failure, apply, projectId, queryClient, failures]);
+  }, [opening, pending, failure, apply, projectId, queryClient, failures, words.openHeading]);
+
+  // An opening stopped by a refused change stops being the news once that change is saved.
+  useEffect(() => {
+    if (openFailure?.fromSave === true && failure === null && !pending) setOpenFailure(null);
+  }, [openFailure, failure, pending]);
 
   const errors: BasicsErrors = {
     ...validateBasics(draft, basics.validation),
     ...basicsServerErrors(failure),
   };
+  /*
+   * A field the phone refused (an empty or too-long title, a summary over 135, a cover it would
+   * not take) was never sent, so the server still holds the older text, and opening publishes
+   * what the server holds. The page waits until what is on screen is what would be published.
+   */
+  const refusedHere =
+    errors.title !== undefined ||
+    errors.blurb !== undefined ||
+    errors.coverImage !== undefined ||
+    localOnly.current.size > 0;
   const busy = opening !== 'idle';
 
   return (
@@ -271,7 +320,7 @@ function PrelaunchForm({
               <InlineAlert
                 variant="danger"
                 title={words.openFailedTitle}
-                description={openFailure}
+                description={openFailure.message}
                 testID="prelaunch-open-failed"
               />
             )}
@@ -286,7 +335,7 @@ function PrelaunchForm({
             </View>
           </View>
         ) : collecting ? (
-          <OpenCard projectId={projectId} words={words} />
+          <OpenCard projectId={projectId} words={words} headingRef={openHeading} />
         ) : (
           <InlineAlert
             variant="info"
@@ -348,14 +397,13 @@ function PrelaunchForm({
 
       <Dialog
         open={confirming}
-        onClose={() => {
-          if (!busy) setConfirming(false);
-        }}
+        // Android back and the iOS escape gesture are a Cancel, and a Cancel stops waiting.
+        onClose={abandon}
         title={words.confirmTitle}
         description={words.confirmBody}
         showClose={false}
         dismissOnScrim={!busy}
-        returnFocusTo={openButton}
+        returnFocusTo={returnFocus}
         testID="prelaunch-confirm"
         footer={
           <>
@@ -363,7 +411,7 @@ function PrelaunchForm({
               label={busy ? words.opening : words.confirmOpen}
               fullWidth
               busy={busy}
-              disabled={busy || readOnly}
+              disabled={busy || readOnly || refusedHere}
               onPress={confirmOpen}
               testID="prelaunch-confirm-open"
             />
@@ -371,21 +419,31 @@ function PrelaunchForm({
               label={words.cancel}
               variant="ghost"
               fullWidth
-              disabled={busy}
-              onPress={() => setConfirming(false)}
+              onPress={abandon}
               testID="prelaunch-confirm-cancel"
             />
           </>
         }
       >
         <Body>{tPrelaunch('confirmDetail')}</Body>
+        {refusedHere ? (
+          <InlineAlert variant="warning" description={tPrelaunch('fixFirst')} testID="prelaunch-fix-first" />
+        ) : null}
       </Dialog>
     </ScrollView>
   );
 }
 
 /** The open page: how many are waiting, the link, Copy and Share. */
-function OpenCard({ projectId, words }: { readonly projectId: string; readonly words: PrelaunchPanelCopy }) {
+function OpenCard({
+  projectId,
+  words,
+  headingRef,
+}: {
+  readonly projectId: string;
+  readonly words: PrelaunchPanelCopy;
+  readonly headingRef: Ref<View>;
+}) {
   const t = useT('mobile.editor.prelaunch');
   const page = usePrelaunchPage(projectId);
   const link = prelaunchLink(projectId);
@@ -437,11 +495,14 @@ function OpenCard({ projectId, words }: { readonly projectId: string; readonly w
 
   return (
     <View style={styles.card} testID="prelaunch-open-card">
-      <Subheading accessibilityRole="header">{words.openHeading}</Subheading>
+      <View ref={headingRef} accessible accessibilityRole="header" testID="prelaunch-open-heading">
+        <Subheading>{words.openHeading}</Subheading>
+      </View>
 
       <View style={styles.waiting}>
         <Icon icon={Glyphs.People} size={18} color={colors.textSecondary} />
-        {page.isPending && page.fetchStatus !== 'idle' ? (
+        {/* Only while a read is actually running: offline it pauses, and a skeleton would never end. */}
+        {page.data === undefined && page.fetchStatus === 'fetching' ? (
           <View style={styles.grow}>
             <Skeleton height={14} width="70%" />
           </View>

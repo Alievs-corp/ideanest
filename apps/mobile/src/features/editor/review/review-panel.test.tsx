@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AccessibilityInfo, StyleSheet, type ViewStyle } from 'react-native';
+import { AccessibilityInfo, Pressable, StyleSheet, type ViewStyle } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import { ApiError } from '@ideanest/api-client';
@@ -8,11 +8,14 @@ import type { ChecklistItem, ProjectChecklist, ProjectEdit } from '@ideanest/cam
 import en from '@ideanest/messages/en.json';
 import { PROGRESS_FILL } from '../../../components/ui';
 import { FOCUS_DELAY_MS } from '../../../components/ui/overlay';
+import { queryKeys } from '../../../api/queries';
 import { setOnline } from '../../../lib/connectivity';
+import { createQueryClient } from '../../../lib/offline';
 import { setLocale } from '../../../lib/locale';
 import { memoryStore } from '../../../lib/storage';
 import { colors } from '../../../theme';
-import { EditorProvider } from '../editor-context';
+import { EditorProvider, useEditor } from '../editor-context';
+import { checklistKey } from './api';
 import { ReviewPanel } from './review-panel';
 
 /**
@@ -102,8 +105,23 @@ async function settle() {
   }
 }
 
-async function show() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+/** Saves a title through the editor's shared autosave, as another tab would on the way out. */
+function SaveElsewhere() {
+  const { autosave } = useEditor();
+  return (
+    <Pressable
+      testID="save-elsewhere"
+      onPress={() => {
+        autosave.save({ title: 'Renamed' });
+        autosave.flush();
+      }}
+    />
+  );
+}
+
+async function show({
+  client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } }),
+}: { client?: QueryClient } = {}) {
   await act(async () => setLocale('en'));
   await render(
     <SafeAreaProvider initialMetrics={METRICS}>
@@ -111,6 +129,7 @@ async function show() {
         <IntlProvider locale="en" messages={en}>
           <EditorProvider projectId="p1" store={memoryStore()}>
             <ReviewPanel />
+            <SaveElsewhere />
           </EditorProvider>
         </IntlProvider>
       </QueryClientProvider>
@@ -358,5 +377,78 @@ describe('ReviewPanel', () => {
     expect(screen.getByTestId('review-submit').props.accessibilityState).toMatchObject({ disabled: true });
     await fireEvent.press(screen.getByTestId('review-submit'));
     expect(calls()).toEqual([]);
+  });
+
+  it('asks for the checklist again on every visit, inside the app-wide minute of freshness', async () => {
+    // The app's own client: `staleTime` 60s. Back from "Fix in Story" within the minute.
+    const client = createQueryClient();
+    // No week-long collection timer left behind to hold the test process open.
+    client.setDefaultOptions({ queries: { ...client.getDefaultOptions().queries, gcTime: Infinity } });
+    client.setQueryData(queryKeys.projectEdit('p1'), project());
+    client.setQueryData(checklistKey('p1'), BLOCKED);
+    mockChecklist = async () => READY;
+    await show({ client });
+    expect(screen.getByTestId('review-submit').props.accessibilityState).toMatchObject({ disabled: false });
+    expect(screen.getByTestId('review-progress')).toHaveTextContent('100% complete.', { exact: false });
+  });
+
+  it('reads the checklist again once a change saved on the way here has landed', async () => {
+    let release: (value: ProjectEdit) => void = () => {};
+    mockSend.mockImplementation(() => new Promise((resolve) => (release = resolve)));
+    await show();
+    const reads = jest.fn(async () => READY);
+    mockChecklist = reads;
+
+    await fireEvent.press(screen.getByTestId('save-elsewhere'));
+    await settle();
+    expect(reads).not.toHaveBeenCalled();
+
+    await act(async () => release(project({ title: 'Renamed' })));
+    await settle();
+    expect(reads).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('review-submit').props.accessibilityState).toMatchObject({ disabled: false });
+  });
+
+  it('gives focus back to "Launch this campaign" when the confirmation is cancelled', async () => {
+    mockProject = async () => project({ state: 'APPROVED' });
+    mockChecklist = async () => ({ ...READY, state: 'APPROVED' });
+    await show();
+    await fireEvent.press(screen.getByTestId('review-launch'));
+    await settle();
+    jest.mocked(AccessibilityInfo.sendAccessibilityEvent).mockClear();
+    await fireEvent.press(screen.getByTestId('review-launch-cancel'));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, FOCUS_DELAY_MS + 20));
+    });
+    expect(focused()).toEqual(['review-launch']);
+  });
+
+  it('says and focuses the new state after a launch', async () => {
+    mockProject = async () => project({ state: 'APPROVED' });
+    mockChecklist = async () => ({ ...READY, state: 'APPROVED' });
+    mockSend.mockImplementation(async () => project({ state: 'LIVE' }));
+    await show();
+    await fireEvent.press(screen.getByTestId('review-launch'));
+    await settle();
+    await fireEvent.press(screen.getByTestId('review-launch-now'));
+    await settle();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, FOCUS_DELAY_MS + 20));
+    });
+    expect(focused()).toContain('review-state');
+    const said = [
+      ...jest.mocked(AccessibilityInfo.announceForAccessibilityWithOptions).mock.calls.map((call) => call[0]),
+      ...jest.mocked(AccessibilityInfo.announceForAccessibility).mock.calls.map((call) => call[0]),
+    ];
+    expect(said).toContain(`${en.campaignEditor.state.LIVE}. ${words.stateNote.LIVE}`);
+  });
+
+  it('draws 100% complete in success without the funded halo', async () => {
+    mockChecklist = async () => READY;
+    await show();
+    const track = screen.getByTestId(PROGRESS_FILL, { includeHiddenElements: true }).parent?.parent;
+    expect(track).toBeTruthy();
+    const style = StyleSheet.flatten((track?.props as { style?: unknown } | undefined)?.style) as ViewStyle;
+    expect(style.boxShadow).toBeUndefined();
   });
 });

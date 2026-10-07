@@ -36,6 +36,9 @@ export function useProjectChecklist(projectId: string) {
     queryKey: checklistKey(projectId),
     enabled: projectId !== '',
     retry: false,
+    // Asked again every time the tab opens: a requirement fixed on another tab a moment ago must
+    // not leave Submit blocked behind the default minute of freshness.
+    refetchOnMount: 'always',
     queryFn: ({ signal }) => fetchChecklist(projectId, signal),
   });
 }

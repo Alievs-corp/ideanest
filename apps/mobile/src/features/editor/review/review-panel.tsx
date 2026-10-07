@@ -20,6 +20,7 @@ import {
   Eyebrow,
   Icon,
   InlineAlert,
+  announce,
   MotionBudgetProvider,
   Pill,
   ProgressBar,
@@ -73,6 +74,19 @@ export function ReviewPanel() {
     editor.reload();
     void checklist.refetch();
   };
+
+  /*
+   * Read again once the autosave has settled. Arriving from another tab, the checklist GET can
+   * race the PATCH that tab flushed on the way out, and a read that beat it would still show the
+   * requirement just fixed as missing.
+   */
+  const pending = editor.autosave.pending;
+  const wasPending = useRef(pending);
+  const refetch = checklist.refetch;
+  useEffect(() => {
+    if (wasPending.current && !pending) void refetch();
+    wasPending.current = pending;
+  }, [pending, refetch]);
 
   if (editor.project === null) {
     return editor.load === 'loading' ? <Loading label={words.loadingLabel} /> : null;
@@ -162,6 +176,9 @@ function Review({
   const launchButton = useRef<View>(null);
   const launchNow = useRef<View>(null);
   const returnToLaunch = useRef(false);
+  const stateNote = useRef<View>(null);
+  /** Set by a submit or launch that succeeded: the state it produced is announced and focused. */
+  const sayState = useRef(false);
 
   const { projectId, online, apply } = editor;
   // The project's state is the freshest: a submit or a launch applies its answer at once.
@@ -181,6 +198,16 @@ function Review({
     return () => clearTimeout(timer);
   }, [confirmingLaunch]);
 
+  // After a submit or a launch, the new state is the news: focus it and say it.
+  useEffect(() => {
+    if (!sayState.current) return undefined;
+    sayState.current = false;
+    if (!isReviewNotedState(state)) return undefined;
+    announce(`${chrome.states[state]}. ${words.stateNote[state]}`);
+    const timer = setTimeout(() => focusOn(stateNote.current), FOCUS_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [state, chrome.states, words.stateNote]);
+
   function checkAgain(): void {
     setRefusal(null);
     setLaunchError(null);
@@ -191,7 +218,9 @@ function Review({
     setSubmitting(true);
     setRefusal(null);
     try {
-      apply(await submitProject(projectId));
+      const answer = await submitProject(projectId);
+      sayState.current = true;
+      apply(answer);
       // The state changed, and with it the moderation outcome's `current` flag.
       refetchChecklist();
     } catch (cause) {
@@ -209,7 +238,9 @@ function Review({
     setLaunching(true);
     setLaunchError(null);
     try {
-      apply(await launchProject(projectId));
+      const answer = await launchProject(projectId);
+      sayState.current = true;
+      apply(answer);
       setConfirmingLaunch(false);
       refetchChecklist();
     } catch (cause) {
@@ -262,12 +293,21 @@ function Review({
         ) : null}
 
         {isReviewNotedState(state) ? (
-          <InlineAlert
-            variant="info"
-            title={chrome.states[state]}
-            description={words.stateNote[state]}
-            testID="review-state-note"
-          />
+          // One element for a screen reader, so focus can be moved to it after a submit or launch.
+          <View
+            ref={stateNote}
+            accessible
+            accessibilityLabel={`${chrome.states[state]}. ${words.stateNote[state]}`}
+            testID="review-state"
+          >
+            <InlineAlert
+              variant="info"
+              politeness="off"
+              title={chrome.states[state]}
+              description={words.stateNote[state]}
+              testID="review-state-note"
+            />
+          </View>
         ) : null}
 
         {refusal === null ? null : (
@@ -321,6 +361,8 @@ function Review({
               showLabel={false}
               decorative
               rise="progress"
+              // 100% complete is not money raised: `success`, without the funded halo.
+              glow={false}
               testID="review-progress-bar"
             />
           </MotionBudgetProvider>
