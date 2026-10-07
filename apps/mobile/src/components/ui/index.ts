@@ -65,6 +65,7 @@ export {
   type AmountKeypadProps,
   type KeypadSettle,
 } from './amount-keypad';
+export { PinDots, PinPad, type PinPadAction, type PinPadProps } from './pin-pad';
 export {
   SWIPE_COMMIT,
   SwipeToConfirm,

@@ -150,6 +150,8 @@ describe('haptics', () => {
         'create',
         'keypadKey',
         'paymentFailed',
+        'pinKey',
+        'pinRefused',
         'pledgeConfirmed',
         'refresh',
         'save',
@@ -168,9 +170,11 @@ describe('haptics', () => {
     haptics.create();
     haptics.keypadKey();
     haptics.swipeConfirm();
+    haptics.pinKey();
+    haptics.pinRefused();
 
     expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
-    expect(Haptics.selectionAsync).toHaveBeenCalledTimes(2);
+    expect(Haptics.selectionAsync).toHaveBeenCalledTimes(3);
     expect(Haptics.notificationAsync).toHaveBeenCalledWith(
       Haptics.NotificationFeedbackType.Success,
     );

@@ -44,6 +44,10 @@ export const haptics = {
   keypadKey: quietly(() => selectionAsync()),
   /** `SwipeToConfirm` crossed its line: the confirmation is being sent. */
   swipeConfirm: quietly(() => impactAsync(ImpactFeedbackStyle.Medium)),
+  /** A key of the app lock's `PinPad`: a digit or delete (issue #319). */
+  pinKey: quietly(() => selectionAsync()),
+  /** The app lock refused a PIN. Felt as well as read, as a failed payment is. */
+  pinRefused: quietly(() => notificationAsync(NotificationFeedbackType.Error)),
 } as const;
 
 export type HapticEvent = keyof typeof haptics;
