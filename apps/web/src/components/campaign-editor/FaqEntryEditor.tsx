@@ -2,16 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { CharacterCount, Field, InlineAlert, Textarea, TextInput } from '@ideanest/ui';
-import {
-  createFaq,
-  patchFaq,
-  FAQ_ANSWER_MAX_CHARACTERS,
-  FAQ_QUESTION_MAX_CHARACTERS,
-  type ProjectFaq,
-} from '../../lib/projects/api';
-import { characterCount } from '../../lib/projects/basics';
+import { createFaq, patchFaq, type ProjectFaq } from '../../lib/projects/api';
+import { characterCount } from '@ideanest/campaign-editor/basics';
 import {
   EMPTY_FAQ,
+  FAQ_ANSWER_MAX_CHARACTERS,
+  FAQ_QUESTION_MAX_CHARACTERS,
   faqDraftFrom,
   faqPatchFrom,
   isEmptyFaqPatch,
@@ -20,10 +16,11 @@ import {
   validateFaq,
   type FaqDraft,
   type FaqErrors,
-} from '../../lib/projects/faqs';
+} from '@ideanest/campaign-editor/faqs';
 import { EditorDrawer } from './EditorDrawer';
-import { fieldErrorsFrom } from './rewardFailure';
-import { describeFailure, type SaveFailure } from './useAutosave';
+import { fieldErrorsFrom } from '@ideanest/campaign-editor/rewards';
+import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
+import { describeFailure } from './useAutosave';
 
 /**
  * One question and the creator's answer to it.
@@ -57,7 +54,7 @@ import { describeFailure, type SaveFailure } from './useAutosave';
 import type {
   EditorDrawerCopy,
   FaqEntryCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 export interface FaqEntryEditorProps {

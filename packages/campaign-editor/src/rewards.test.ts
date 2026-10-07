@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Item, Reward } from './api';
-import { REWARDS_COPY } from '../../test-editor-copy';
+import type { Item, Reward } from './contract';
+import { REWARDS_COPY } from './test-copy';
 import RU_MESSAGES from '@ideanest/messages/ru.json';
 
 /** The Russian forms, read from the catalogue rather than retyped into the assertion. */
@@ -12,9 +12,12 @@ import {
   REWARD_TITLE_MAX_CHARACTERS,
   describeStock,
   emptyReward,
+  fieldErrorsFrom,
   hidePatch,
   isEmptyPatch,
   isHiddenReward,
+  isItemField,
+  isRewardField,
   isScheduledReward,
   isShippingType,
   itemDraftFrom,
@@ -32,6 +35,7 @@ import {
   validateReward,
   type RewardDraft,
 } from './rewards';
+import type { SaveFailure } from './autosave';
 
 /**
  * The rules of docs/architecture.md §5.3 and of `RewardService`, at their
@@ -542,5 +546,54 @@ describe('the shipping scope', () => {
     expect(isShippingType('INTERNATIONAL')).toBe(true);
     expect(isShippingType('EVERYWHERE')).toBe(false);
     expect(isShippingType('')).toBe(false);
+  });
+});
+
+/*
+ * The two shapes a field refusal arrives in. Moved here from the web's `rewardFailure.ts`
+ * (#162), where it had no test of its own; the item, reward and FAQ editors of both clients
+ * place refusals with it.
+ */
+describe('fieldErrorsFrom', () => {
+  const failure = (overrides: Partial<SaveFailure>): SaveFailure => ({
+    message: 'The service rejected the change.',
+    fieldErrors: {},
+    status: 400,
+    code: null,
+    meta: null,
+    ...overrides,
+  });
+
+  it('places nothing when there is no failure', () => {
+    expect(fieldErrorsFrom(null, isRewardField)).toEqual({});
+  });
+
+  it('places a validation map by the first segment of each path, and drops unknown fields', () => {
+    expect(
+      fieldErrorsFrom(
+        failure({ fieldErrors: { 'price.amount': 'Too large.', title: 'Required.', colour: 'Nope.' } }),
+        isRewardField,
+      ),
+    ).toEqual({ price: 'Too large.', title: 'Required.' });
+  });
+
+  it("puts the service's own sentence on the field a REWARD_FIELD_INVALID names", () => {
+    expect(
+      fieldErrorsFrom(
+        failure({
+          code: 'REWARD_FIELD_INVALID',
+          message: 'That is longer than 80 characters.',
+          fieldErrors: { title: 'Mapped first.' },
+          meta: { field: 'title' },
+        }),
+        isRewardField,
+      ),
+    ).toEqual({ title: 'That is longer than 80 characters.' });
+  });
+
+  it('ignores a REWARD_FIELD_INVALID about a field the form does not have', () => {
+    expect(
+      fieldErrorsFrom(failure({ code: 'REWARD_FIELD_INVALID', meta: { field: 'colour' } }), isItemField),
+    ).toEqual({});
   });
 });

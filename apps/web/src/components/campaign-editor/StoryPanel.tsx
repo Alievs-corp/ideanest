@@ -22,18 +22,19 @@ import {
   storyCharacterCount,
   storyProblems,
   type StoryDocument,
-} from '../../lib/projects/story';
+} from '@ideanest/campaign-editor/story';
 import type {
   EditorChromeCopy,
   StoryPanelCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { INTL_LOCALE } from '../../lib/i18n/formats';
 import { EditorShell } from './EditorShell';
 import { SaveStatus } from './SaveStatus';
 import { StoryBlockEditor } from './StoryBlockEditor';
 import { StoryVersionHistory } from './StoryVersionHistory';
-import { useAutosave, type SaveFailure } from './useAutosave';
+import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
+import { useAutosave } from './useAutosave';
 import { useProjectEdit } from './useProjectEdit';
 
 /**

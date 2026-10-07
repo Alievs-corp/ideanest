@@ -1,0 +1,35 @@
+{
+  "name": "@ideanest/campaign-editor",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "description": "The campaign editor's rules with one right answer, shared by apps/web and apps/mobile: the editor's contract types, the basics limits and single-field patches, the story block document's operations and problems, the reward, item and FAQ drafts, the review checklist, the cover minimum, the tab order, the autosave state machine and the editor's copy builders.",
+  "exports": {
+    "./contract": "./src/contract.ts",
+    "./basics": "./src/basics.ts",
+    "./story": "./src/story.ts",
+    "./rewards": "./src/rewards.ts",
+    "./faqs": "./src/faqs.ts",
+    "./checklist": "./src/checklist.ts",
+    "./cover-image": "./src/cover-image.ts",
+    "./tabs": "./src/tabs.ts",
+    "./autosave": "./src/autosave.ts",
+    "./copy": "./src/copy.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ideanest/campaign": "workspace:*",
+    "@ideanest/messages": "workspace:*",
+    "@ideanest/money": "workspace:*",
+    "decimal.js": "^10.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

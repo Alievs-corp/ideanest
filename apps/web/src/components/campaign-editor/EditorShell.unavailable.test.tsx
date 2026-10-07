@@ -5,7 +5,7 @@ import { EDITOR_COPY } from '../../test-editor-copy';
 /*
  * The disabled-tab half of `available`, pinned against a fabricated tab list.
  *
- * IT LIVES IN ITS OWN FILE BECAUSE IT MOCKS `./tabs`, and `vi.mock` is per
+ * IT LIVES IN ITS OWN FILE BECAUSE IT MOCKS `@ideanest/campaign-editor/tabs`, and `vi.mock` is per
  * module graph: the sibling suite asserts the navigation against the real
  * EDITOR_TABS and must keep seeing the real one.
  *
@@ -18,8 +18,10 @@ import { EDITOR_COPY } from '../../test-editor-copy';
  * mechanism has users ahead of it; this is what stops it rotting before they
  * arrive.
  */
-vi.mock('./tabs', async () => {
-  const actual = await vi.importActual<typeof import('./tabs')>('./tabs');
+vi.mock('@ideanest/campaign-editor/tabs', async () => {
+  const actual = await vi.importActual<typeof import('@ideanest/campaign-editor/tabs')>(
+    '@ideanest/campaign-editor/tabs',
+  );
   return {
     ...actual,
     EDITOR_TABS: [

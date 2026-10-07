@@ -16,7 +16,7 @@ import {
   type NewProjectCopy,
   type RewardsPanelCopy,
   type StoryPanelCopy,
-} from './lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 
 /**
  * The editor frame's copy, as the server would have resolved it — issue #324.

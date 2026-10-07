@@ -11,23 +11,19 @@ import {
   SkeletonGroup,
 } from '@ideanest/ui';
 import { Modal } from '@ideanest/ui/motion';
-import {
-  deleteFaq,
-  listFaqs,
-  reorderFaqs,
-  MAX_PROJECT_FAQS,
-  type ProjectFaq,
-} from '../../lib/projects/api';
-import { movedTo } from '../../lib/projects/rewards';
+import { deleteFaq, listFaqs, reorderFaqs, type ProjectFaq } from '../../lib/projects/api';
+import { MAX_PROJECT_FAQS } from '@ideanest/campaign-editor/faqs';
+import { movedTo } from '@ideanest/campaign-editor/rewards';
 import type {
   EditorChromeCopy,
   FaqPanelCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
 import { FaqEntryEditor } from './FaqEntryEditor';
-import { describeFailure, type SaveFailure } from './useAutosave';
+import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
+import { describeFailure } from './useAutosave';
 import { useProjectEdit } from './useProjectEdit';
 
 /**

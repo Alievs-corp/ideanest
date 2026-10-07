@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STORY_COPY } from '../../test-editor-copy';
+import { STORY_COPY } from './test-copy';
 import {
   blockProblem,
   describeBlock,

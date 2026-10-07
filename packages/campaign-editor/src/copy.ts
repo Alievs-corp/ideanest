@@ -1,12 +1,39 @@
-import type { CharacterCountCopy, PluralForms } from '@ideanest/ui';
-import type { PluralForms as AppPluralForms } from './plurals';
-import type { Locale } from './locale';
-import type { ProjectState, ShippingType } from '../projects/api';
-import type { EditorTabKey } from '../../components/campaign-editor/tabs';
-import type { StoryBlockType } from '../projects/story';
+import type { Locale } from '@ideanest/messages/locale';
+import type { PluralForms } from '@ideanest/messages/plurals';
+import type { StoryBlockType } from '@ideanest/campaign/story';
+import type { ProjectState, ShippingType } from './contract';
+import type { EditorTabKey } from './tabs';
+
+/*
+ * One spelling of the plural forms for every builder below. `@ideanest/ui`'s `PluralForms` is
+ * the same four-key record; this package names the catalogue's own so that it stays free of
+ * the web's component library (#162).
+ */
+type AppPluralForms = PluralForms;
 
 /**
- * The words the campaign editor's frame draws — issue #324, docs/architecture.md §21.1.
+ * The length counter's sentences — the shape `@ideanest/ui`'s `CharacterCount` takes.
+ *
+ * Declared here, structurally identical, rather than imported from `@ideanest/ui`: the app
+ * draws its own counter and must not depend on the web's component library to read the
+ * catalogue. An object of this type is assignable to the web component's prop as it stands.
+ */
+export interface CharacterCountCopy {
+  /** Under the limit. Carries `{count}`. */
+  remaining: PluralForms;
+  /** Over it. Carries `{count}`, which is how many too many. */
+  tooMany: PluralForms;
+}
+
+/**
+ * The words the campaign editor draws — issue #324, docs/architecture.md §21.1.
+ *
+ * <h2>Shared by both clients (#162)</h2>
+ *
+ * The builders below are pure functions of a {@link CampaignEditorTranslator}, so the web
+ * hands them next-intl's `t` on the server and the app hands them a lookup over the same
+ * catalogue (`@ideanest/messages`). One set of builders means the two clients read the same
+ * keys into the same shapes, and a key renamed in the catalogue fails both at once.
  *
  * <h2>Why the copy arrives as a prop, like the checkout's</h2>
  *
@@ -740,7 +767,7 @@ export function rewardsPanelCopyFrom(
 }
 
 /* -------------------------------------------------------------------------
- * The rewards vocabulary — what `lib/projects/rewards.ts` refuses in
+ * The rewards vocabulary — what `./rewards.ts` refuses in
  * ---------------------------------------------------------------------- */
 
 /** The six ways an amount can be refused, shared by the price and the rates. */

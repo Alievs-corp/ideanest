@@ -191,6 +191,7 @@ const nextConfig = {
     '@ideanest/messages',
     '@ideanest/discovery',
     '@ideanest/campaign',
+    '@ideanest/campaign-editor',
     '@ideanest/checkout',
     '@ideanest/account',
     '@ideanest/dashboard',

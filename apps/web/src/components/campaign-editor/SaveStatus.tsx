@@ -2,8 +2,8 @@
 
 import { CircleAlert, CircleCheck, LoaderCircle } from 'lucide-react';
 import { cn } from '@ideanest/ui';
-import type { SaveStatusCopy } from '../../lib/i18n/campaign-editor-copy';
-import type { SaveState } from './useAutosave';
+import type { SaveStatusCopy } from '@ideanest/campaign-editor/copy';
+import type { SaveState } from '@ideanest/campaign-editor/autosave';
 
 /**
  * Whether the work is safe. The only moving thing in the campaign editor.

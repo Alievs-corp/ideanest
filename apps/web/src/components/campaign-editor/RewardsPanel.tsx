@@ -34,18 +34,19 @@ import {
   shippingScopeLabel,
   showBlockedReason,
   showPatch,
-} from '../../lib/projects/rewards';
+} from '@ideanest/campaign-editor/rewards';
 import type {
   EditorChromeCopy,
   RewardsPanelCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
 import { ItemEditor } from './ItemEditor';
 import { ItemsSection } from './ItemsSection';
 import { RewardTierEditor } from './RewardTierEditor';
-import { describeFailure, type SaveFailure } from './useAutosave';
+import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
+import { describeFailure } from './useAutosave';
 import { useProjectEdit } from './useProjectEdit';
 
 /**

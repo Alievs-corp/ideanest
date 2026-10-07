@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from '../../i18n/navigation';
 import { CharacterCount, Field, InlineAlert, Pill, Select, TextInput, Textarea } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
-import { characterCount } from '../../lib/projects/basics';
+import { characterCount } from '@ideanest/campaign-editor/basics';
 import {
   PROFILE_BIO_MAX_CHARACTERS,
   PROFILE_NAME_MAX_CHARACTERS,
@@ -415,7 +415,7 @@ export function ProfileEditorPanel({ copy }: ProfileEditorPanelProps) {
             />
             {/*
               Counted in code points rather than in `String.length`, because the column is
-              counted that way: `lib/projects/basics.ts` explains why an emoji that counts as
+              counted that way: `@ideanest/campaign-editor/basics` explains why an emoji that counts as
               two would tell somebody they were over a limit Postgres was happy with. Imported
               rather than copied — one counter, or two that disagree about the same string.
             */}

@@ -4,7 +4,7 @@ import type {
   StoryBlocksCopy,
   StoryToolbarCopy,
   StoryVocabularyCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 import { useId, useState } from 'react';
@@ -23,7 +23,8 @@ import {
 } from 'lucide-react';
 import { InlineAlert, Media, Pill, Select, TextInput, cn } from '@ideanest/ui';
 import { intrinsicSize } from '../../lib/images/source';
-import { describeSize, measureImage } from '../../lib/projects/coverImage';
+import { describeSize } from '@ideanest/campaign-editor/cover-image';
+import { measureImage } from '../../lib/projects/coverImage';
 import {
   EMBED_PROVIDERS,
   blockProblem,
@@ -41,7 +42,7 @@ import {
   type StoryBlock,
   type StoryBlockType,
   type StoryDocument,
-} from '../../lib/projects/story';
+} from '@ideanest/campaign-editor/story';
 import { StoryTextField } from './StoryTextField';
 
 /**
@@ -103,7 +104,7 @@ const ADDABLE: readonly { type: StoryBlockType; icon: typeof Text }[] = [
 export interface StoryBlockEditorProps {
   /** The editor's own words. */
   copy: StoryBlocksCopy;
-  /** How a block is named and what is wrong with it — shared with `lib/projects/story.ts`. */
+  /** How a block is named and what is wrong with it — shared with `@ideanest/campaign-editor/story`. */
   vocabulary: StoryVocabularyCopy;
   /** The two mark controls' words. */
   toolbar: StoryToolbarCopy;

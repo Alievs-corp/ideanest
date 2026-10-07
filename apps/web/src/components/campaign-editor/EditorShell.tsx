@@ -4,12 +4,12 @@ import { Link } from '../../i18n/navigation';
 import type { ReactNode } from 'react';
 import { Tag, cn } from '@ideanest/ui';
 import { revealFocusedItem } from '@ideanest/ui/reveal-focused-item';
-import type { EditorChromeCopy } from '../../lib/i18n/campaign-editor-copy';
+import type { EditorChromeCopy } from '@ideanest/campaign-editor/copy';
 import type { ProjectState } from '../../lib/projects/api';
 import { campaignDashboardHref } from '../../lib/account/navigation';
 import { hasLaunched } from '../../lib/projects/mine';
 import { OWNER_LINK_CLASS } from '../project/owner-link';
-import { EDITOR_TABS, editorTabHref, type EditorTabKey } from './tabs';
+import { EDITOR_TABS, editorTabHref, type EditorTabKey } from '@ideanest/campaign-editor/tabs';
 
 /**
  * The frame every editor tab renders inside: who the project is, what state it

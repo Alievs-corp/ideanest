@@ -11,8 +11,8 @@
  * and not on a phone is the bug, whichever side is right.
  *
  * The editor's half — anchors, character counts, the inline mark syntax, block moves and the
- * problems it reports — stays in `apps/web/src/lib/projects/story.ts`, which re-exports
- * everything here. It depends on the web's editor copy, and there is no editor in the app.
+ * problems it reports — lives in `@ideanest/campaign-editor/story`, which re-exports
+ * everything here. It depends on the editor's copy, which a reader of the page never needs.
  *
  * THE SHAPE IS THE CONTRACT, VERBATIM. #37's checklist counts characters in this document and
  * both campaign pages render it, so a field invented here is a field the service will refuse.

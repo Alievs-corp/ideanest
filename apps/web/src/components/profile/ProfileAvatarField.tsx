@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Field, FileDropZone, InlineAlert, Media, Pill, TextInput } from '@ideanest/ui';
-import { describeSize, measureImage } from '../../lib/projects/coverImage';
+import { describeSize } from '@ideanest/campaign-editor/cover-image';
+import { measureImage } from '../../lib/projects/coverImage';
 import type { ProfileAvatarCopy } from '../../lib/i18n/profile-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 

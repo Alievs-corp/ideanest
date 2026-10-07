@@ -836,14 +836,14 @@ that held it re-export it under the same names, so no component changed:
 
 | Web module | Re-exports | Keeps |
 |---|---|---|
-| `lib/projects/api.ts` | `ProjectState` (`@ideanest/campaign/states`) | the editor's client |
+| `lib/projects/api.ts` | `ProjectState` (`@ideanest/campaign/states`); since #162 every editor type, from `@ideanest/campaign-editor/contract` | the editor's client |
 | `lib/projects/publicPage.ts` | `RENDERABLE_STATES`; reads `daysLeftOf` | `readCampaignPage`, `tiersOf` |
 | `lib/projects/pledgeable.ts` | `acceptsPledges`, `PLEDGEABLE_PROJECT_STATES` | — |
 | `lib/projects/threshold.ts` | `successThresholdOf`, `SUCCESS_THRESHOLD` | — |
 | `lib/projects/completion.ts` | `completionOf` | — |
 | `lib/projects/deadline.ts` | `remainingUntil`, `countdownLabel`, `countdownIntervalMs`, `daysLeftOf` | `formatInstant`, `formatDay`, `viewerTimeZone` |
 | `lib/projects/tabs.ts` | the tab ids and order, the `tab`/`from`/`thread` names, `campaignTabFrom`, `campaignCursorFrom` | `campaignTabHref` |
-| `lib/projects/story.ts` | the block types, `STORY_SCHEMA_VERSION`, `EMBED_PROVIDERS`, `readStoryDocument` | the editor's operations |
+| `lib/projects/story.ts` | removed in #162: the reader is imported from `@ideanest/campaign/story`, the editor's operations from `@ideanest/campaign-editor/story` | — |
 | `lib/realtime/updates.ts` | everything; `useCampaignUpdates` calls the shared `reconnectDelayMs` | the hook |
 | `lib/community/{comments,updates,faqs}.ts` | the shapes, page sizes and readers | the server fetches and the comment writes |
 | `lib/obligations/api.ts` | everything | — (`server.ts` fetches) |
@@ -1415,11 +1415,22 @@ answering zero.
 ## The campaign editor
 
 The editor is one shell (`src/components/campaign-editor/EditorShell.tsx`) and
-one tab per route. `src/components/campaign-editor/tabs.ts` is the only place a
-tab is declared: the shell renders that list, and a section whose route does not
-exist yet is a **disabled tab rather than a stub page**. A stub cannot be told
-apart from a broken page, and the file it would need belongs to the issue that
-builds it. Adding a section is a row in `tabs.ts` plus the route it points at.
+one tab per route. `EDITOR_TABS` in `@ideanest/campaign-editor/tabs` is the only
+place a tab is declared: the shell renders that list, and a section whose route
+does not exist yet is a **disabled tab rather than a stub page**. A stub cannot be
+told apart from a broken page, and the file it would need belongs to the issue
+that builds it. Adding a section is a row in that list plus the route it points at.
+
+**The editor's rules live in `packages/campaign-editor` (#162)**, shared with the
+app's creator path: the contract types, the basics limits and `patchForField`,
+the story document's operations and block problems, the item, reward and FAQ
+drafts, the checklist helpers, the cover guidance, the tab order, the autosave
+state machine and the copy builders (`@ideanest/campaign-editor/copy`, which the
+pages resolve on the server and hand down as before). The components import them
+by subpath; what stays here is the React, the requests (`lib/projects/api.ts`,
+which still re-exports the contract's types beside them), measuring an image in
+the browser (`lib/projects/coverImage.ts`) and `describeFailure`, which reads the
+web's own `ApiError`. `packages/campaign-editor/README.md` lists every module.
 
 Every section in `EDITOR_TABS` now has its route, so nothing is currently marked
 unavailable. The mechanism stays because `docs/architecture.md` §4.6 describes
@@ -1465,7 +1476,9 @@ There is no save button below the basics tab. `useAutosave` debounces, keeps a
 single request in flight, and only clears its pending patch on a **successful**
 response — so a retry after a failure sends the same body rather than an empty
 one, and nothing typed is lost. `SaveStatus` reports saving, saved, or not saved,
-and announces only the outcomes.
+and announces only the outcomes. Those transitions are
+`@ideanest/campaign-editor/autosave`'s `autosaveReducer`; the hook owns only the
+timer, the rendered state and the send on unmount.
 
 ### What the basics tab cannot do yet
 

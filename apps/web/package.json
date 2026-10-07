@@ -14,6 +14,7 @@
     "@ideanest/account": "workspace:*",
     "@ideanest/api-client": "workspace:*",
     "@ideanest/campaign": "workspace:*",
+    "@ideanest/campaign-editor": "workspace:*",
     "@ideanest/checkout": "workspace:*",
     "@ideanest/dashboard": "workspace:*",
     "@ideanest/design-tokens": "workspace:*",

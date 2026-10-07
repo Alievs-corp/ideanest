@@ -21,12 +21,12 @@ import {
   unmetFromRefusal,
   unmetOf,
   type UnmetRequirement,
-} from '../../lib/projects/checklist';
+} from '@ideanest/campaign-editor/checklist';
 import type {
   EditorChromeCopy,
   ReviewNotedState,
   ReviewPanelCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { StoryDocument } from '../../lib/projects/story';
+import type { StoryDocument } from '@ideanest/campaign/story';
 import { CampaignStory } from './CampaignStory';
 import { campaignStoryCopyFrom } from '../../lib/i18n/campaign-copy';
 import { translatorFor } from '../../test-copy';

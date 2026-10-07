@@ -22,11 +22,12 @@ import {
   type ProjectEdit,
   type Reward,
 } from '../../lib/projects/api';
-import { characterCount } from '../../lib/projects/basics';
+import { characterCount } from '@ideanest/campaign-editor/basics';
 import {
   REWARD_TITLE_MAX_CHARACTERS,
   SHIPPING_SCOPES,
   emptyReward,
+  fieldErrorsFrom,
   isEmptyPatch,
   isRewardField,
   isShippedScope,
@@ -41,10 +42,10 @@ import {
   type RewardErrors,
   type RewardLineDraft,
   type ShippingRateDraft,
-} from '../../lib/projects/rewards';
+} from '@ideanest/campaign-editor/rewards';
 import { EditorDrawer } from './EditorDrawer';
-import { fieldErrorsFrom } from './rewardFailure';
-import { describeFailure, type SaveFailure } from './useAutosave';
+import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
+import { describeFailure } from './useAutosave';
 
 /**
  * One reward tier: what a backer selects and pays for.
@@ -102,7 +103,7 @@ import { describeFailure, type SaveFailure } from './useAutosave';
 import type {
   RewardTierEditorCopy,
   RewardsVocabularyCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 

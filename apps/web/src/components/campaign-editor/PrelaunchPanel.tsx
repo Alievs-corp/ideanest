@@ -33,19 +33,20 @@ import {
   type BasicsDraft,
   type BasicsErrors,
   type BasicsField,
-} from '../../lib/projects/basics';
+} from '@ideanest/campaign-editor/basics';
 import { CoverImageField } from './CoverImageField';
 import type {
   BasicsValidationCopy,
   CoverImageCopy,
   EditorChromeCopy,
   PrelaunchPanelCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralForm } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
 import { SaveStatus } from './SaveStatus';
-import { useAutosave, describeFailure, type SaveFailure } from './useAutosave';
+import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
+import { useAutosave, describeFailure } from './useAutosave';
 import { useProjectEdit } from './useProjectEdit';
 
 /**

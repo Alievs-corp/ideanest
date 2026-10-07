@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditorShell } from './EditorShell';
-import { EDITOR_TABS } from './tabs';
+import { EDITOR_TABS } from '@ideanest/campaign-editor/tabs';
 import { EDITOR_COPY } from '../../test-editor-copy';
 import type { ProjectState } from '../../lib/projects/api';
 

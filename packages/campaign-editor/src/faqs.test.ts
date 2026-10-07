@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { FAQ_ANSWER_MAX_CHARACTERS, FAQ_QUESTION_MAX_CHARACTERS, type ProjectFaq } from './api';
-import { faqPatchFrom, isEmptyFaqPatch, newFaqFrom, validateFaq } from './faqs';
+import type { ProjectFaq } from './contract';
+import {
+  FAQ_ANSWER_MAX_CHARACTERS,
+  FAQ_QUESTION_MAX_CHARACTERS,
+  faqPatchFrom,
+  isEmptyFaqPatch,
+  newFaqFrom,
+  validateFaq,
+} from './faqs';
 
 /**
  * The FAQ form's rules — the editor half of #283.

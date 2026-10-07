@@ -1,16 +1,23 @@
 import { characterCount } from './basics';
-import {
-  FAQ_ANSWER_MAX_CHARACTERS,
-  FAQ_QUESTION_MAX_CHARACTERS,
-  type NewProjectFaq,
-  type ProjectFaq,
-  type ProjectFaqPatch,
-} from './api';
+import type { NewProjectFaq, ProjectFaq, ProjectFaqPatch } from './contract';
+
+/** §4.4's bounds. Refused by the service; shown to the creator before it is. */
+export const FAQ_QUESTION_MAX_CHARACTERS = 200;
+export const FAQ_ANSWER_MAX_CHARACTERS = 4000;
+
+/**
+ * §4.4's server-side cap on how many entries one campaign may publish.
+ *
+ * Restated so the editor can say "this campaign is at the limit" before a
+ * creator types an entry the service will refuse. The service is still the
+ * thing that enforces it.
+ */
+export const MAX_PROJECT_FAQS = 50;
 
 /**
  * The FAQ form's own state, and the rules §4.4 refuses an entry against.
  *
- * Separate from `api.ts` for the same reason `rewards.ts` is: that module is the
+ * Separate from `./contract` for the same reason `./rewards` is: that module is the
  * shape of the wire and this is the shape of a half-typed form. A draft holds
  * the strings the controls hold, so that "  " is a thing a creator can be part
  * way through typing rather than a value the client has already decided is

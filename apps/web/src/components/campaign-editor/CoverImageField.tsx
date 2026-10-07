@@ -7,9 +7,9 @@ import {
   COVER_MIN_HEIGHT,
   COVER_MIN_WIDTH,
   describeSize,
-  measureImage,
   meetsCoverMinimum,
-} from '../../lib/projects/coverImage';
+} from '@ideanest/campaign-editor/cover-image';
+import { measureImage } from '../../lib/projects/coverImage';
 import { UploadFailed, uploadImage, type UploadStage } from '../../lib/media/upload';
 
 /**
@@ -35,7 +35,7 @@ import {
   COVER_FAILURE_CODES,
   type CoverFailureCode,
   type CoverImageCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 export interface CoverImageFieldProps {

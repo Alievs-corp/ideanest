@@ -1,52 +1,39 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  autosaveReducer,
+  canStart,
+  initialAutosave,
+  isPending,
+  type AutosaveEvent,
+  type AutosaveMachine,
+  type SaveFailure,
+  type SaveState,
+} from '@ideanest/campaign-editor/autosave';
 import { ApiError } from '../../lib/api/problem';
 
 /**
  * Autosave, per the epic contract §6: debounced, one request in flight at a
  * time, a visible state, and a retry that never loses what was typed.
  *
- * The last clause is the hard one, and it is why the pending patch is only
- * cleared by a SUCCESSFUL response. A failed save that dropped its body would
- * leave the creator looking at a title the service has never heard of, and they
- * would only find out when the campaign went live with the old one.
+ * THE RULES ARE NOT IN THIS FILE. The pending patch, the merge of what is typed
+ * while a request is in flight, the single request and the failed patch kept for
+ * a lossless retry are `@ideanest/campaign-editor/autosave`'s state machine,
+ * shared with the app's editor (#162). What stays here is the wiring only a
+ * React client has: the debounce timer, the state the indicator renders from,
+ * and the send that fires as the component goes away.
  *
- * ONE REQUEST AT A TIME, because these are merge patches and the server applies
- * them in the order it receives them. Two overlapping saves can be answered out
- * of order, and the older body wins — which on a title field means a keystroke
- * travelling backwards in time. Anything typed while a request is in flight
- * merges into the next one instead.
+ * The machine is held in a ref rather than in state, because every transition
+ * has to see the one before it synchronously — a keystroke that lands between a
+ * response and the re-render it causes must merge into the queue that response
+ * left, not into a stale copy. Each transition's result is also set as state,
+ * which is what the indicator renders from.
  *
  * Written as a hook rather than as part of the basics form because #34, #35 and
  * #39 autosave the same way through the same endpoint. A second implementation
  * of this is a second set of these bugs.
  */
-
-export type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
-
-export interface SaveFailure {
-  /** A sentence to show the creator. The server's, when the server wrote one. */
-  message: string;
-  /** Field name to message, from a validation failure's problem details. */
-  fieldErrors: Readonly<Record<string, string>>;
-  status: number | null;
-  /** The machine-readable reason, e.g. `PROJECT_TRANSITION_NOT_ALLOWED`. */
-  code: string | null;
-  /**
-   * Reason-specific context, keyed by `code` (docs/architecture.md §10.4).
-   *
-   * Carried through rather than dropped because some refusals cannot be placed
-   * without it. `STORY_DOCUMENT_INVALID` puts `blocks[7].alt` in `meta.path`, and a
-   * story is hundreds of blocks long — a banner saying the document is invalid,
-   * without saying which block, is a message a creator cannot act on.
-   *
-   * `Record<string, unknown>` rather than a union of every shape: each caller knows
-   * which `code` it is handling and narrows what it reads, and a union here would
-   * have to be extended by every issue that adds a refusal.
-   */
-  meta: Record<string, unknown> | null;
-}
 
 export interface Autosave<P> {
   state: SaveState;
@@ -114,13 +101,12 @@ export function useAutosave<P extends object, R>({
   onSaved,
   delayMs = 800,
 }: AutosaveOptions<P, R>): Autosave<P> {
-  const [state, setState] = useState<SaveState>('idle');
-  const [failure, setFailure] = useState<SaveFailure | null>(null);
-  const [pending, setPending] = useState(false);
-
-  /** Merged, not yet sent. Cleared only by a response that succeeded. */
-  const queued = useRef<Partial<P> | null>(null);
-  const inFlight = useRef(false);
+  /*
+   * One snapshot of the machine for the render, and the ref every transition reads. A
+   * transition that changes nothing returns the same object, so setting it re-renders nothing.
+   */
+  const [view, setView] = useState<AutosaveMachine<P>>(initialAutosave);
+  const machine = useRef(view);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // The callbacks are read through refs so that a caller passing an inline
@@ -133,48 +119,33 @@ export function useAutosave<P extends object, R>({
     onSavedRef.current = onSaved;
   }, [send, onSaved]);
 
+  const apply = useCallback((event: AutosaveEvent<P>): AutosaveMachine<P> => {
+    const next = autosaveReducer(machine.current, event);
+    machine.current = next;
+    setView(next);
+    return next;
+  }, []);
+
   const run = useCallback((): void => {
-    if (inFlight.current) return;
+    if (!canStart(machine.current)) return;
 
-    const patch = queued.current;
+    const patch = apply({ type: 'start' }).inFlight;
     if (patch === null) return;
-
-    queued.current = null;
-    inFlight.current = true;
-    setState('saving');
 
     void sendRef.current(patch as P).then(
       (result) => {
-        inFlight.current = false;
-        setFailure(null);
+        apply({ type: 'succeeded' });
         onSavedRef.current?.(result);
 
         // Something arrived while this was in the air. Send it rather than
-        // claiming everything is saved.
-        if (queued.current !== null) {
-          setState('saving');
-          run();
-          return;
-        }
-
-        setPending(false);
-        setState('saved');
+        // claiming everything is saved; `run` does nothing when nothing is queued.
+        run();
       },
       (cause: unknown) => {
-        inFlight.current = false;
-
-        /*
-         * The body goes back on the queue, with anything newer winning. This is
-         * what makes the retry lossless: the creator's text is still here, and
-         * it is still here after the second failure too.
-         */
-        queued.current = { ...patch, ...(queued.current ?? {}) };
-        setFailure(describeFailure(cause));
-        setPending(true);
-        setState('failed');
+        apply({ type: 'failed', failure: describeFailure(cause) });
       },
     );
-  }, []);
+  }, [apply]);
 
   const schedule = useCallback((): void => {
     if (timer.current !== null) clearTimeout(timer.current);
@@ -186,18 +157,10 @@ export function useAutosave<P extends object, R>({
 
   const save = useCallback(
     (patch: P): void => {
-      queued.current = { ...(queued.current ?? {}), ...patch };
-      setPending(true);
-      /*
-       * "Saving" the moment a key is pressed, before the debounce has elapsed.
-       * The alternative is to leave "Saved" on screen while unsent text sits in
-       * the queue, and that is the one thing an autosave indicator must never
-       * say — a creator who reads it and closes the tab loses the difference.
-       */
-      setState('saving');
+      apply({ type: 'queue', patch });
       schedule();
     },
-    [schedule],
+    [apply, schedule],
   );
 
   const flush = useCallback((): void => {
@@ -209,10 +172,10 @@ export function useAutosave<P extends object, R>({
   }, [run]);
 
   const retry = useCallback((): void => {
-    if (queued.current === null) return;
-    setFailure(null);
+    if (machine.current.queued === null) return;
+    apply({ type: 'retry' });
     flush();
-  }, [flush]);
+  }, [apply, flush]);
 
   useEffect(() => {
     return () => {
@@ -224,10 +187,10 @@ export function useAutosave<P extends object, R>({
        * has nowhere to put the answer — and it is a merge patch, so arriving
        * twice is the same as arriving once.
        */
-      if (queued.current !== null && !inFlight.current) {
-        const patch = queued.current;
-        queued.current = null;
-        void sendRef.current(patch as P).catch(() => {
+      const { queued } = machine.current;
+      if (queued !== null && machine.current.inFlight === null) {
+        machine.current = { ...machine.current, queued: null };
+        void sendRef.current(queued as P).catch(() => {
           // Nothing is left to report it to. The next load reads the server's
           // version, which is the truth either way.
         });
@@ -235,5 +198,5 @@ export function useAutosave<P extends object, R>({
     };
   }, []);
 
-  return { state, failure, pending, save, flush, retry };
+  return { state: view.status, failure: view.failure, pending: isPending(view), save, flush, retry };
 }

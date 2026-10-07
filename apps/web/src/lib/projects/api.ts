@@ -1,8 +1,27 @@
 import { authorizedFetch, publicFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
-import type { Money } from '../money';
-import type { StoryDocument } from './story';
-import type { ProjectState } from '@ideanest/campaign/states';
+import {
+  categoriesFrom,
+  type Category,
+  type Item,
+  type ItemPatch,
+  type NewItem,
+  type NewProjectFaq,
+  type NewReward,
+  type PrelaunchPage,
+  type ProjectChecklist,
+  type ProjectEdit,
+  type ProjectFaq,
+  type ProjectFaqPatch,
+  type ProjectPatch,
+  type RawTaxon,
+  type RemindResult,
+  type Reward,
+  type RewardPatch,
+  type ShippingRate,
+  type StoryVersionDetail,
+  type StoryVersionSummary,
+} from '@ideanest/campaign-editor/contract';
 
 /**
  * The typed client for the creator's project endpoints.
@@ -23,128 +42,46 @@ import type { ProjectState } from '@ideanest/campaign/states';
  * breaks the first time that setting changes. Both readings mean "not set".
  */
 
-export type { Money } from '../money';
-
-/* -------------------------------------------------------------------------
- * Lifecycle — contract §5 (#31)
- * ---------------------------------------------------------------------- */
-
 /*
- * The nineteen states of docs/architecture.md §6.1 live in `@ideanest/campaign/states` since
- * #155, so the app's campaign screen reads the same vocabulary. Re-exported under the same name.
+ * THE SHAPES LIVE IN `@ideanest/campaign-editor/contract` since #162, so the app's editor
+ * sends and reads the same bodies. Re-exported here under the same names, as `ProjectState`
+ * and the story types already were (#155), so a caller that imports a request and its body
+ * from this module still finds both. Only the requests stay: how a call is authorised and
+ * retried is the part the two clients do differently.
  */
-export type { ProjectState };
-
-/**
- * The cover image, as three plain fields.
- *
- * INTERIM, and known to be. There is no media table and no uploader yet, so
- * the columns behind this are `cover_image_url`, `cover_image_width`, and
- * `cover_image_height` rather than a reference into a media pipeline
- * (contract §3). The width and height are here because §5.3 makes a cover of at
- * least 1024×576 a submission requirement, and the checklist (#37) cannot check
- * what nothing records. The media epic replaces the three with `main_image_id`
- * under expand-then-contract, at which point this type changes shape once, in
- * one file.
- */
-export interface CoverImage {
-  url: string;
-  width: number;
-  height: number;
-  /**
-   * The uploaded file behind the other three, when there is one.
-   *
-   * Send this alone to set a cover from an upload: the server fills in the location and the
-   * dimensions from what it measured, and ignores the other three fields. They are still
-   * populated on the way out, and `mediaId` is null for every cover that predates the
-   * uploader and for one supplied as a typed address.
-   */
-  mediaId?: string | null;
-}
-
-/**
- * The story document, as `PATCH /v1/projects/{id}` carries it.
- *
- * The block union lives in `./story` alongside the operations the editor performs
- * on it, and is re-exported here so that a client reading a `ProjectEdit` does not
- * have to know there are two modules. #35 owns it; the server validates the same
- * schema (`StoryDocuments`).
- *
- * A response is narrowed with `readStoryDocument` rather than cast. The story may
- * have been written by a newer deployment of the editor, and casting would put a
- * block this build does not recognise into the editor's state — where the next
- * autosave would send it back mangled.
- */
-export type { StoryBlock, StoryDocument, StorySpan, StorySpans } from './story';
-
-/**
- * A project as the editor sees it — the creator's projection, contract §5.
- *
- * This is the response of every mutation in this file, so one request both
- * changes the project and returns the truth about it. The editor therefore
- * never has to guess what the server did with what it sent.
- */
-export interface ProjectEdit {
-  id: string;
-  slug: string;
-  state: ProjectState;
-  title: string;
-  blurb?: string | null;
-  categoryId?: string | null;
-  subcategoryId?: string | null;
-  goal?: Money | null;
-  durationDays?: number | null;
-  /** ISO 8601, UTC. */
-  scheduledLaunchAt?: string | null;
-  launchedAt?: string | null;
-  deadline?: string | null;
-  story?: StoryDocument | null;
-  risks?: string | null;
-  coverImage?: CoverImage | null;
-  latePledgeEnabled: boolean;
-  /**
-   * Field names the server will refuse to change, by name — `"goal"`,
-   * `"durationDays"`.
-   *
-   * Empty until the campaign launches; from `LIVE` onwards it lists `goal`,
-   * `durationDays`, and `scheduledLaunchAt`, which §5.3 freezes. A client-side
-   * guess at the same rule is not the plan: immutability after launch is a
-   * business rule and it is enforced where the money is, so this list is read
-   * rather than derived and an editor that ignores it is answered
-   * `409 PROJECT_FIELD_LOCKED`.
-   */
-  lockedFields: readonly string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** True when the server has said this field may no longer be edited. */
-export function isLocked(project: ProjectEdit | null | undefined, field: string): boolean {
-  return project?.lockedFields.includes(field) ?? false;
-}
-
-/**
- * A partial update, with JSON Merge Patch semantics (contract §5).
- *
- * An absent key leaves the field alone; an explicit `null` clears it. That
- * distinction is why every optional field here is `T | null` rather than just
- * `T`, and why the autosave path builds patches by field rather than sending
- * the whole form: sending the whole form would overwrite the story with
- * whatever the basics tab happened to be holding.
- */
-export interface ProjectPatch {
-  title?: string;
-  blurb?: string | null;
-  categoryId?: string | null;
-  subcategoryId?: string | null;
-  goal?: Money | null;
-  durationDays?: number | null;
-  scheduledLaunchAt?: string | null;
-  story?: StoryDocument | null;
-  risks?: string | null;
-  coverImage?: CoverImage | null;
-  latePledgeEnabled?: boolean;
-}
+export type {
+  Category,
+  ChecklistItem,
+  ChecklistSection,
+  CoverImage,
+  Item,
+  ItemPatch,
+  ModerationOutcome,
+  Money,
+  NewItem,
+  NewProjectFaq,
+  NewReward,
+  PrelaunchPage,
+  ProjectChecklist,
+  ProjectEdit,
+  ProjectFaq,
+  ProjectFaqPatch,
+  ProjectPatch,
+  ProjectState,
+  RemindResult,
+  Reward,
+  RewardItemLine,
+  RewardPatch,
+  ShippingRate,
+  ShippingType,
+  StoryBlock,
+  StoryDocument,
+  StorySpan,
+  StorySpans,
+  StoryVersionDetail,
+  StoryVersionSummary,
+  Subcategory,
+} from '@ideanest/campaign-editor/contract';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
 
@@ -212,72 +149,6 @@ export async function patchProject(
  * therefore treats a refusal as the authority and this read as a convenience,
  * never the other way round.
  * ---------------------------------------------------------------------- */
-
-/**
- * Which editor tab fixes a requirement — the route segment, not a label.
- *
- * `string` rather than a union of the three the service sends today, on purpose.
- * A requirement pointing at a section this build does not know about is a
- * deployment ahead of the client, and a union would make that a type error at the
- * boundary and a silently wrong link at runtime. `isChecklistSection` in
- * `./checklist` narrows it, and an item that does not narrow is rendered without
- * a link rather than with one that goes nowhere.
- */
-export type ChecklistSection = string;
-
-/**
- * One requirement of docs/architecture.md §5.3, and how this campaign stands
- * against it.
- *
- * `requirement` is the stable name to branch on — `COVER_IMAGE`, `RISKS`.
- * `label` and `detail` are prose and may be reworded at any time (§10.4), so
- * nothing keys off them.
- */
-export interface ChecklistItem {
-  requirement: string;
-  label: string;
-  satisfied: boolean;
-  section: ChecklistSection;
-  /** Why it is not met, quoting the campaign's own numbers. Absent when it is met. */
-  detail?: string | null;
-}
-
-/**
- * The last decision platform staff took, as the creator reads it.
- *
- * `current` is the server's answer to "is this something to act on now, or is it
- * what happened last time" — a campaign resubmitted after a change request is in
- * `SUBMITTED` while the newest note is still the change request's. The client
- * does not work that out by comparing states; getting it wrong means shouting at
- * somebody whose campaign is fine.
- */
-export interface ModerationOutcome {
-  outcome: 'APPROVED' | 'CHANGES_REQUESTED' | 'REJECTED';
-  note?: string | null;
-  /** ISO 8601, UTC. */
-  decidedAt: string;
-  current: boolean;
-}
-
-/**
- * `GET /v1/projects/{id}/checklist`.
- *
- * Blocking and advisory arrive as two arrays rather than one with a flag,
- * because an interface that renders a suggestion in the same red as a
- * requirement teaches creators that the checklist exaggerates — and the half they
- * stop reading is the half that was true.
- */
-export interface ProjectChecklist {
-  projectId: string;
-  state: ProjectState;
-  /** Whether §5.3 is satisfied. Not whether §6.1 allows the move from here. */
-  submittable: boolean;
-  /** 0–100 over every requirement, blocking weighted twice advisory. */
-  score: number;
-  blocking: readonly ChecklistItem[];
-  advisory: readonly ChecklistItem[];
-  moderation?: ModerationOutcome | null;
-}
 
 export async function getProjectChecklist(
   id: string,
@@ -383,52 +254,11 @@ export async function withdrawProject(id: string, signal?: AbortSignal): Promise
  * name the server has already chosen would be a second answer to one question.
  * ---------------------------------------------------------------------- */
 
-export interface Subcategory {
-  id: string;
-  slug: string;
-  name: string;
-}
-
-export interface Category extends Subcategory {
-  subcategories: readonly Subcategory[];
-}
-
-/**
- * One taxon as the endpoint sends it.
- *
- * `name` is optional and the slug is the fallback only so that a malformed
- * response cannot put `undefined` into an `<option>`. The response also carries
- * `nameAz` and `nameEn`, which are the interim columns of V6 and are on their
- * way out under expand-then-contract — this client deliberately does not read
- * them, because the API cannot drop them until nothing does.
- */
-interface RawTaxon {
-  id: string;
-  slug: string;
-  name?: string;
-  subcategories?: readonly RawTaxon[];
-}
-
-function taxonName(raw: RawTaxon): string {
-  return raw.name ?? raw.slug;
-}
-
 export async function listCategories(signal?: AbortSignal): Promise<readonly Category[]> {
   const response = await authorizedFetch('/v1/categories', { signal });
   if (!response.ok) throw await errorFrom(response);
 
-  const raw = (await response.json()) as readonly RawTaxon[];
-
-  return raw.map((category) => ({
-    id: category.id,
-    slug: category.slug,
-    name: taxonName(category),
-    subcategories: (category.subcategories ?? []).map((sub) => ({
-      id: sub.id,
-      slug: sub.slug,
-      name: taxonName(sub),
-    })),
-  }));
+  return categoriesFrom((await response.json()) as readonly RawTaxon[]);
 }
 
 /* -------------------------------------------------------------------------
@@ -441,31 +271,6 @@ export async function listCategories(signal?: AbortSignal): Promise<readonly Cat
  * than five minutes — so a client that could ask for one would be a second,
  * disagreeing answer to the same question.
  * ---------------------------------------------------------------------- */
-
-/** One row of the history. Without the document; see `getStoryVersion`. */
-export interface StoryVersionSummary {
-  number: number;
-  /** ISO 8601, UTC. */
-  createdAt: string;
-  authorId: string;
-  /**
-   * Characters of prose, counted as §5.3 counts them.
-   *
-   * The one number that makes a list of timestamps usable: "3 minutes ago, 1,240
-   * characters" tells a creator which version came before they deleted a section,
-   * and a timestamp alone does not.
-   */
-  characters: number;
-}
-
-export interface StoryVersionDetail extends StoryVersionSummary {
-  /**
-   * Unnarrowed on purpose. Callers pass it through `readStoryDocument`, which
-   * refuses a document written against a schema this build does not know rather
-   * than letting it into the editor's state.
-   */
-  document: unknown;
-}
 
 /**
  * The kept versions of a story, newest first.
@@ -527,42 +332,6 @@ export async function restoreStoryVersion(
  * campaign, and there is no way back (docs/architecture.md §6.1 has no
  * PRELAUNCH -> DRAFT edge).
  * ---------------------------------------------------------------------- */
-
-/**
- * A campaign as its public pre-launch page shows it.
- *
- * DELIBERATELY NARROW, and the server draws the same line. There is no creator,
- * no goal, no story, and no category here: `GET /v1/projects/{creatorSlug}/
- * {projectSlug}` is the public project page and it belongs to another epic, so
- * nothing in this issue may decide its shape by accident. What is left is the
- * promise a pre-launch page makes — read from the same columns the campaign page
- * will use, so the page somebody followed and the campaign it becomes cannot
- * disagree.
- */
-export interface PrelaunchPage {
-  id: string;
-  slug: string;
-  /** `PRELAUNCH` or `SCHEDULED`; the endpoint 404s for every other state. */
-  state: ProjectState;
-  title: string;
-  blurb?: string | null;
-  coverImage?: CoverImage | null;
-  /** ISO 8601, UTC. */
-  scheduledLaunchAt?: string | null;
-  /**
-   * How many people have asked to be told. The one number that makes a
-   * pre-launch page work: a campaign with no pledges yet has nothing else to
-   * show that anybody else cares about it.
-   */
-  followerCount: number;
-}
-
-/** The answer to "tell me when this opens". */
-export interface RemindResult {
-  /** Always true after a successful call. */
-  following: boolean;
-  followerCount: number;
-}
 
 /**
  * Opens the pre-launch page: `DRAFT` → `PRELAUNCH`.
@@ -675,54 +444,6 @@ export async function saveCampaign(projectId: string, signal?: AbortSignal): Pro
  * there is nothing to compose until these exist.
  * ---------------------------------------------------------------------- */
 
-/**
- * An item as the creator's editor sees it — `ItemResponse`.
- *
- * `imageUrl` is an address the client declared, not an upload. There is no
- * media pipeline (docs/architecture.md §13), and the field becomes a reference
- * to a `media` row when there is one; the interface says so rather than
- * pretending to have an uploader.
- */
-export interface Item {
-  id: string;
-  projectId: string;
-  name: string;
-  description?: string | null;
-  imageUrl?: string | null;
-  /** Absent for a digital item, which the service refuses to give a weight. */
-  weightGrams?: number | null;
-  isDigital: boolean;
-  sku?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** `CreateItemRequest`. Only the name is required. */
-export interface NewItem {
-  name: string;
-  description?: string | null;
-  imageUrl?: string | null;
-  weightGrams?: number | null;
-  isDigital?: boolean;
-  sku?: string | null;
-}
-
-/**
- * `ItemPatchRequest`, with JSON Merge Patch semantics.
- *
- * Same rule as `ProjectPatch`: an absent key leaves the field alone, an
- * explicit `null` clears it. That is why every optional field is `T | null`
- * rather than `T`.
- */
-export interface ItemPatch {
-  name?: string;
-  description?: string | null;
-  imageUrl?: string | null;
-  weightGrams?: number | null;
-  isDigital?: boolean;
-  sku?: string | null;
-}
-
 async function readItem(response: Response): Promise<Item> {
   if (!response.ok) throw await errorFrom(response);
   return (await response.json()) as Item;
@@ -782,155 +503,6 @@ export async function deleteItem(id: string, signal?: AbortSignal): Promise<void
 /* -------------------------------------------------------------------------
  * Reward tiers — docs/architecture.md §10.2 (#32, #34)
  * ---------------------------------------------------------------------- */
-
-/**
- * How a tier reaches the person who backed it — `ShippingType`.
- *
- * A property of the tier, not of the campaign: one campaign routinely offers a
- * digital thank-you, a poster shipped domestically, and a boxed set shipped
- * anywhere, and each is a different question at checkout.
- */
-export type ShippingType = 'NONE' | 'DIGITAL' | 'LOCAL_PICKUP' | 'DOMESTIC' | 'INTERNATIONAL';
-
-/** One line of a tier's composition — `RewardItemBody`. */
-export interface RewardItemLine {
-  itemId: string;
-  quantity: number;
-}
-
-/**
- * One destination's shipping rate — `ShippingRuleBody`.
- *
- * BOTH AMOUNTS ARE STRINGS, for the reason every amount in this file is
- * (§10.3): they are added to a pledge total and charged to a card. There is no
- * currency on a rate — the whole table is denominated in the campaign's, which
- * the tier already carries, so repeating it on thirty destinations would be
- * thirty chances for one of them to disagree with the tier it belongs to.
- *
- * One type for the request and the response, matching the server's own single
- * record: two would drift the first time a field was added to one of them.
- */
-export interface ShippingRate {
-  /** ISO 3166-1 alpha-2, uppercase. The service normalises and re-checks it. */
-  countryCode: string;
-  amount: string;
-  /** What each unit after the first costs. `"0.00"` is a flat rate, deliberately. */
-  additionalItemAmount: string;
-}
-
-/**
- * A reward tier as the creator's editor sees it — `RewardResponse`.
- *
- * The response of every endpoint that touches a tier, so the editor applies the
- * same update whichever call it made. It is the CREATOR's projection and
- * carries what no public response may: the reservation counts and the secret
- * token.
- */
-export interface Reward {
-  id: string;
-  projectId: string;
-  title: string;
-  description?: string | null;
-  price: Money;
-  /** An ISO date. A month is what a creator can honestly promise. */
-  estimatedDelivery?: string | null;
-  /** Null is unlimited, which is the common case. */
-  limitQuantity?: number | null;
-  /** Places taken by confirmed pledges. Read-only; epic #50 writes it. */
-  claimedQuantity: number;
-  /** Places held by a checkout in progress. Read-only; #51 writes it. */
-  reservedQuantity: number;
-  /** Derived from the three above, or null when unlimited. */
-  remainingQuantity?: number | null;
-  shippingType: ShippingType;
-  isEarlyBird: boolean;
-  isFeatured: boolean;
-  isSecret: boolean;
-  /** The link that reaches a secret tier. Present only for the creator. */
-  secretToken?: string | null;
-  isAddon: boolean;
-  sortOrder: number;
-  /** ISO 8601, UTC. */
-  availableFrom?: string | null;
-  /**
-   * ISO 8601, UTC. A moment in the PAST is how the service expresses "hidden"
-   * (docs/architecture.md §5.3): it withdraws a tier from sale without deleting
-   * it, which is the only thing permitted once somebody has backed it. The
-   * editor presents that as hiding rather than as a date — see `lib/projects/rewards`.
-   */
-  availableUntil?: string | null;
-  items: readonly RewardItemLine[];
-  shippingRules: readonly ShippingRate[];
-  /**
-   * The optimistic-locking counter.
-   *
-   * No endpoint takes it yet, so nothing here sends it. It is read because a
-   * concurrent write is answered `409 REWARD_MODIFIED`, and knowing the version
-   * a refusal was about is what lets a later `If-Match` be added without a
-   * second read.
-   */
-  version: number;
-  /**
-   * True once §5.3 has frozen this tier's price, which happens at launch.
-   *
-   * ON THE REWARD, NOT IN `ProjectEdit.lockedFields`. That array is filtered
-   * server-side to the campaign's own patch keys — `goal`, `durationDays`,
-   * `scheduledLaunchAt` — so it can never name a field of this body. The editor
-   * used to look for `'price'` in it and therefore never disabled anything (#183).
-   *
-   * There is no counterpart for `limitQuantity` because §5.3 permits raising it
-   * at any time. The client validates it against what is claimed and reserved and
-   * lets the service refuse a lowering it cannot know about.
-   */
-  pricingLocked: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** `CreateRewardRequest`. A title and a price; the rest is edited afterwards. */
-export interface NewReward {
-  title: string;
-  description?: string | null;
-  price: Money;
-  estimatedDelivery?: string | null;
-  limitQuantity?: number | null;
-  shippingType?: ShippingType;
-  isEarlyBird?: boolean;
-  isFeatured?: boolean;
-  isSecret?: boolean;
-  isAddon?: boolean;
-  availableFrom?: string | null;
-  availableUntil?: string | null;
-  items?: readonly RewardItemLine[];
-}
-
-/**
- * `RewardPatchRequest`, with JSON Merge Patch semantics.
- *
- * `items` replaces the WHOLE composition when present. There is no
- * add-one-line patch, because a composition is what a backer is promised and
- * the client always holds all of it — a per-line patch would let two tabs each
- * remove a different item and leave a tier containing neither.
- *
- * The per-country rates are deliberately absent. They are replaced through
- * `replaceShippingRules`, because a rate table is read as a whole by whatever
- * quotes from it.
- */
-export interface RewardPatch {
-  title?: string;
-  description?: string | null;
-  price?: Money;
-  estimatedDelivery?: string | null;
-  limitQuantity?: number | null;
-  shippingType?: ShippingType;
-  isEarlyBird?: boolean;
-  isFeatured?: boolean;
-  isSecret?: boolean;
-  isAddon?: boolean;
-  availableFrom?: string | null;
-  availableUntil?: string | null;
-  items?: readonly RewardItemLine[];
-}
 
 async function readReward(response: Response): Promise<Reward> {
   if (!response.ok) throw await errorFrom(response);
@@ -1065,53 +637,6 @@ export async function replaceShippingRules(
  * FAQ — docs/architecture.md §4.4 and §10.2 (#283)
  * ---------------------------------------------------------------------- */
 
-/**
- * One entry of the campaign's question and answer list.
- *
- * Three fields and no timestamps, because that is the whole of what the service
- * publishes: `ProjectFaqResponse` carries an identifier, a question and an
- * answer. The order is not on the entry either — `sort_order` is a column the
- * service reads and the list is returned in it, so position is a property of
- * the list rather than of the row, exactly as it is for a reward tier.
- */
-export interface ProjectFaq {
-  id: string;
-  question: string;
-  answer: string;
-}
-
-/** What a new entry needs. Both halves are required — the service refuses a blank. */
-export interface NewProjectFaq {
-  question: string;
-  answer: string;
-}
-
-/**
- * A partial edit. Merge-patch semantics: an absent field is left alone.
- *
- * Not `Partial<NewProjectFaq>`, for the reason this module's header gives about
- * writing shapes out — a patch type derived from a creation type silently gains
- * every field the creation type gains, including ones the service will not
- * accept in a patch.
- */
-export interface ProjectFaqPatch {
-  question?: string;
-  answer?: string;
-}
-
-/** §4.4's bounds. Refused by the service; shown to the creator before it is. */
-export const FAQ_QUESTION_MAX_CHARACTERS = 200;
-export const FAQ_ANSWER_MAX_CHARACTERS = 4000;
-
-/**
- * §4.4's server-side cap on how many entries one campaign may publish.
- *
- * Restated so the editor can say "this campaign is at the limit" before a
- * creator types an entry the service will refuse. The service is still the
- * thing that enforces it.
- */
-export const MAX_PROJECT_FAQS = 50;
-
 async function readFaq(response: Response): Promise<ProjectFaq> {
   if (!response.ok) throw await errorFrom(response);
   return (await response.json()) as ProjectFaq;
@@ -1152,7 +677,7 @@ export async function listFaqs(
   return readFaqs(await authorizedFetch(path, { signal }));
 }
 
-/** Adds an entry to the end of the list. Refused past {@link MAX_PROJECT_FAQS}. */
+/** Adds an entry to the end of the list. Refused past `MAX_PROJECT_FAQS` (`@ideanest/campaign-editor/faqs`). */
 export async function createFaq(
   projectId: string,
   input: NewProjectFaq,

@@ -68,7 +68,7 @@ import {
   newProjectCopyFrom,
   rewardsPanelCopyFrom,
   storyPanelCopyFrom,
-} from './campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import {
   type CampaignActionsCopy,
   type CampaignCountdownCopy,
@@ -564,7 +564,7 @@ export async function graphContext(): Promise<{
 }
 
 /**
- * The campaign editor's frame — `lib/i18n/campaign-editor-copy.ts`.
+ * The campaign editor's frame — `@ideanest/campaign-editor/copy`.
  *
  * <p>Every one of the six tab pages resolves this and hands it to its panel, which threads it
  * into `EditorShell` and `SaveStatus`. It is the frame only: a panel's own field labels and
