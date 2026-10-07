@@ -167,4 +167,18 @@ describe('CoverImageField', () => {
     await settle();
     expect(screen.getByText(COVER.unusable)).toBeTruthy();
   });
+
+  it('accepts only a web address', async () => {
+    const getSize = jest.spyOn(Image, 'getSize');
+    const { onAccept } = await show();
+    await fireEvent.press(screen.getByLabelText(en.mobile.editor.image.address));
+    for (const address of ['file:///photo.jpg', 'data:image/png;base64,AAAA', 'ftp://example.com/c.jpg']) {
+      await fireEvent.changeText(screen.getByTestId('cover-source-address'), address);
+      await fireEvent.press(screen.getByLabelText(COVER.useAddress));
+      await settle();
+      expect(screen.getByText(COVER.unusable)).toBeTruthy();
+    }
+    expect(getSize).not.toHaveBeenCalled();
+    expect(onAccept).not.toHaveBeenCalled();
+  });
 });

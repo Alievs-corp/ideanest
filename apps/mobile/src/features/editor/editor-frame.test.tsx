@@ -19,6 +19,7 @@ import { SaveStatus } from './save-status';
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
 let mockSession = { signedIn: true, locked: false, unlocked: false };
 let mockPath = '/campaigns/p1/edit/basics';
+let mockId = 'p1';
 
 /*
  * The router, with the two pieces the frame draws: `Stack.Screen` prints the header's title and
@@ -31,7 +32,7 @@ jest.mock('expo-router', () => {
   return {
     useRouter: () => mockRouter,
     usePathname: () => mockPath,
-    useLocalSearchParams: () => ({ id: 'p1' }),
+    useLocalSearchParams: () => ({ id: mockId }),
     Slot: () => createElement(RNText, { testID: 'tab-slot' }, 'tab'),
     Stack: {
       Screen: ({ options }: { options: { title?: string; headerRight?: () => ReactNode } }) =>
@@ -86,18 +87,26 @@ async function show(seed?: ProjectEdit) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: 0 } } });
   if (seed !== undefined) client.setQueryData(queryKeys.projectEdit('p1'), seed);
   await act(async () => setLocale('en'));
-  await render(
+  const tree = () => (
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={client}>
         <IntlProvider locale="en" messages={en}>
           <EditorFrame />
         </IntlProvider>
       </QueryClientProvider>
-    </SafeAreaProvider>,
+    </SafeAreaProvider>
   );
+  view = await render(tree());
+  rerenderFrame = async () => {
+    await view.rerender(tree());
+    await settle();
+  };
   await settle();
   return client;
 }
+
+let view: Awaited<ReturnType<typeof render>>;
+let rerenderFrame: () => Promise<void> = async () => {};
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -106,6 +115,7 @@ beforeEach(() => {
   setOnline(true);
   mockSession = { signedIn: true, locked: false, unlocked: false };
   mockPath = '/campaigns/p1/edit/basics';
+  mockId = 'p1';
   for (const key of deviceStore.getAllKeys()) deviceStore.remove(key);
 });
 
@@ -247,6 +257,42 @@ describe('EditorFrame', () => {
     expect(mockSend).not.toHaveBeenCalled();
     expect(screen.queryByTestId('editor-unsent')).toBeNull();
     expect(deviceStore.getString(unsentKeyFor('p1'))).toBeUndefined();
+  });
+
+  it('names the screen "Edit campaign" rather than "Loading" once the load has failed', async () => {
+    mockGet.mockRejectedValueOnce(new ApiError(404, { status: 404 }));
+    await show();
+    expect(screen.getByTestId('header-title')).toHaveTextContent(en.mobile.fallback.editCampaign);
+  });
+
+  it('online, says so when a cached project could not be refreshed, and offers to try again', async () => {
+    mockGet.mockRejectedValueOnce(new ApiError(500, { status: 500, detail: 'Down for a moment.' }));
+    await show(project());
+
+    expect(screen.getByTestId('editor-refresh-failed')).toBeTruthy();
+    expect(screen.getByText('Down for a moment.')).toBeTruthy();
+    expect(screen.getByTestId('tab-slot')).toBeTruthy();
+  });
+
+  it('does not offer to send an unsent change before the service’s current copy is in', async () => {
+    deviceStore.set(unsentKeyFor('p1'), JSON.stringify({ patch: { title: 'Later' }, at: '2026-10-06T20:00:00.000Z' }));
+    mockGet.mockReturnValueOnce(new Promise(() => {}));
+    await show(project());
+    expect(screen.getByTestId('editor-unsent-send').props.accessibilityState).toMatchObject({ disabled: true });
+  });
+
+  it('is a new editor for another project: its offer and its autosave do not carry over', async () => {
+    deviceStore.set(unsentKeyFor('p1'), JSON.stringify({ patch: { title: 'For p1' }, at: '2026-10-06T20:00:00.000Z' }));
+    mockGet.mockResolvedValueOnce(project()).mockResolvedValueOnce(project({ id: 'p2', title: 'Other' }));
+    await show();
+    expect(screen.getByTestId('editor-unsent')).toBeTruthy();
+
+    mockId = 'p2';
+    mockPath = '/campaigns/p2/edit/basics';
+    await rerenderFrame();
+    expect(mockGet).toHaveBeenLastCalledWith('/v1/projects/{id}/edit', expect.objectContaining({ path: { id: 'p2' } }));
+    expect(screen.getByTestId('header-title')).toHaveTextContent('Other');
+    expect(screen.queryByTestId('editor-unsent')).toBeNull();
   });
 });
 

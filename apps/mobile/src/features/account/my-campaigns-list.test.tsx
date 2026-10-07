@@ -116,8 +116,8 @@ describe('MyCampaignsList', () => {
 
     await fireEvent.press(screen.getByRole('link', { name: /^Campaign d/ }));
     expect(mockRouter.push).toHaveBeenCalledWith({
-      pathname: '/campaigns/[id]/edit/[step]',
-      params: { id: 'd', step: 'basics' },
+      pathname: '/campaigns/[id]/edit/basics',
+      params: { id: 'd' },
     });
   });
 
@@ -142,8 +142,8 @@ describe('MyCampaignsList', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'More actions for Campaign c' }));
     await fireEvent.press(screen.getByTestId('campaign-action-edit'));
     expect(mockRouter.push).toHaveBeenCalledWith({
-      pathname: '/campaigns/[id]/edit/[step]',
-      params: { id: 'c', step: 'basics' },
+      pathname: '/campaigns/[id]/edit/basics',
+      params: { id: 'c' },
     });
   });
 

@@ -7,9 +7,13 @@ import type { ProjectEdit } from '@ideanest/campaign-editor/contract';
 import en from '@ideanest/messages/en.json';
 import { setOnline } from '../../lib/connectivity';
 import { setLocale } from '../../lib/locale';
-import { memoryStore } from '../../lib/storage';
+import { useState } from 'react';
+import { Pressable, Text } from 'react-native';
+import { queryKeys } from '../../api/queries';
+import { memoryStore, type KeyValueStore } from '../../lib/storage';
+import { unsentKeyFor } from '../../lib/unsent-edits';
 import { BasicsPanel } from './basics-panel';
-import { EditorProvider } from './editor-context';
+import { EditorProvider, useEditor } from './editor-context';
 
 jest.mock('../../lib/use-session', () => ({ useSession: () => ({ signedIn: true, locked: false, unlocked: false }) }));
 let mockProject: () => Promise<unknown> = async () => ({});
@@ -82,21 +86,52 @@ async function settle() {
   }
 }
 
-async function show() {
+/**
+ * The tab inside the frame's provider, with two test controls standing in for the frame: one
+ * mounts the tab again (a switch to another tab and back) and one presses "Send it".
+ */
+function Harness() {
+  const editor = useEditor();
+  const [shown, setShown] = useState(true);
+  return (
+    <>
+      <Pressable testID="toggle-tab" onPress={() => setShown((value) => !value)}>
+        <Text>tab</Text>
+      </Pressable>
+      <Pressable testID="send-offer" onPress={() => void editor.autosave.sendUnsent()}>
+        <Text>send</Text>
+      </Pressable>
+      {shown ? <BasicsPanel /> : null}
+    </>
+  );
+}
+
+async function show({ cached, store = memoryStore() }: { cached?: ProjectEdit; store?: KeyValueStore } = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  if (cached !== undefined) client.setQueryData(queryKeys.projectEdit('p1'), cached);
   await act(async () => setLocale('en'));
   await render(
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={client}>
         <IntlProvider locale="en" messages={en}>
-          <EditorProvider projectId="p1" store={memoryStore()}>
-            <BasicsPanel />
+          <EditorProvider projectId="p1" store={store}>
+            <Harness />
           </EditorProvider>
         </IntlProvider>
       </QueryClientProvider>
     </SafeAreaProvider>,
   );
   await settle();
+  return client;
+}
+
+/** A request the test answers by hand. */
+function deferred<T>() {
+  let resolve: (value: T) => void = () => {};
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
 }
 
 const patches = () => mockSend.mock.calls.filter((call) => call[0] === 'PATCH').map((call) => call[2]);
@@ -251,5 +286,81 @@ describe('BasicsPanel', () => {
     await fireEvent.changeText(screen.getByTestId('basics-title'), 'Offline');
     await blur('basics-title');
     expect(patches()).toEqual([]);
+  });
+
+  it('online, never builds the form from a cached copy: it waits for the service', async () => {
+    const reply = deferred<ProjectEdit>();
+    mockProject = () => reply.promise;
+    await show({ cached: project({ title: 'Week-old title' }) });
+
+    expect(screen.getByTestId('basics-loading')).toBeTruthy();
+    expect(screen.queryByTestId('basics-title')).toBeNull();
+
+    await act(async () => reply.resolve(project({ title: 'Renamed on the web' })));
+    await settle();
+    expect(screen.getByTestId('basics-title').props.value).toBe('Renamed on the web');
+    expect(screen.getByTestId('basics-title').props.editable).toBe(true);
+  });
+
+  it('offline, shows the cached copy read-only', async () => {
+    setOnline(false);
+    mockProject = async () => {
+      throw new Error('offline');
+    };
+    await show({ cached: project({ title: 'Cached' }) });
+    expect(screen.getByTestId('basics-title').props.value).toBe('Cached');
+    expect(screen.getByTestId('basics-title').props.editable).toBe(false);
+  });
+
+  it('online with a cached copy whose refresh failed, shows it read-only', async () => {
+    mockProject = async () => {
+      throw new ApiError(500, { status: 500 });
+    };
+    await show({ cached: project({ title: 'Cached' }) });
+    expect(screen.getByTestId('basics-title').props.value).toBe('Cached');
+    expect(screen.getByTestId('basics-title').props.editable).toBe(false);
+  });
+
+  it('mounted again (a tab switch and back), shows a refused change it still holds, not the server value', async () => {
+    mockSend.mockRejectedValue(new Error('offline'));
+    await show();
+    await fireEvent.changeText(screen.getByTestId('basics-title'), 'Not lost');
+    await blur('basics-title');
+    expect(screen.getByTestId('basics-not-saved')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('toggle-tab'));
+    await fireEvent.press(screen.getByTestId('toggle-tab'));
+    await settle();
+    expect(screen.getByTestId('basics-title').props.value).toBe('Not lost');
+    expect(screen.getByTestId('basics-not-saved')).toBeTruthy();
+  });
+
+  it('Send it re-seeds from the offered change and keeps text that was only on this phone', async () => {
+    const store = memoryStore();
+    store.set(unsentKeyFor('p1'), JSON.stringify({ patch: { title: 'Offered title' }, at: '2026-10-06T20:00:00.000Z' }));
+    mockSend.mockImplementation(async () => project({ title: 'Offered title' }));
+    await show({ store });
+
+    // Three decimals: refused on the phone, so it exists nowhere else.
+    await fireEvent.changeText(screen.getByTestId('basics-goal'), '1,500');
+    await blur('basics-goal');
+    await fireEvent.press(screen.getByTestId('send-offer'));
+    await settle();
+
+    expect(patches()).toEqual([{ title: 'Offered title' }]);
+    expect(screen.getByTestId('basics-title').props.value).toBe('Offered title');
+    expect(screen.getByTestId('basics-goal').props.value).toBe('1.500');
+  });
+
+  it('takes a newer copy read from the service while nothing is pending', async () => {
+    const client = await show();
+    expect(screen.getByTestId('basics-title').props.value).toBe('Solar Lamp');
+    mockProject = async () => project({ title: 'Renamed elsewhere', blurb: 'Changed elsewhere' });
+    await act(async () => {
+      await client.refetchQueries({ queryKey: queryKeys.projectEdit('p1') });
+    });
+    await settle();
+    expect(screen.getByTestId('basics-title').props.value).toBe('Renamed elsewhere');
+    expect(screen.getByTestId('basics-summary').props.value).toBe('Changed elsewhere');
   });
 });

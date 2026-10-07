@@ -770,7 +770,9 @@ are `@ideanest/campaign-editor`'s, shared with the web. What the app adds:
   (`lib/unsent-edits.ts`) and, on reopening, OFFERED ("A change from {time} was not saved",
   Send it / Discard) — never sent on its own. The session ending erases every one.
 - **The project is persisted** under `projectEdit`, so offline the editor shows it as last
-  loaded, read-only.
+  loaded, read-only. Online, a tab builds its form only once this session has read the project from the
+  service (`useEditor().fresh`), never from the cached copy alone, and seeds it with the autosave's
+  unacknowledged patch laid over it (`withUnsaved`), so a tab mounted again shows what was typed.
 - **Money fields** (`money-field.tsx`) take the device's decimal comma as #162 specifies and
   hand `parseAmount` the result; **dates** (`date-time-field.tsx`) use the platform picker and
   send what the web's `fromDateTimeLocal` sends; **images** (`image-source.tsx`) come from the

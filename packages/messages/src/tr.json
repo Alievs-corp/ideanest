@@ -5826,7 +5826,10 @@
         "clear": "Temizle",
         "clearLabel": "{label} alanını temizle",
         "confirm": "Bu saati kullan",
-        "confirmLabel": "{label} için {date} seç"
+        "confirmLabel": "{label} için {date} seç",
+        "chooseDate": "Tarih seçin",
+        "confirmDate": "Bu tarihi kullan",
+        "confirmDateLabel": "{label} için {date} tarihini seç"
       }
     }
   }

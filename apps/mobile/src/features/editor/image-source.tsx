@@ -33,7 +33,8 @@ import { spacing } from '../../theme';
  * is a refusal in the copy's words. `<ImageSourceControls source={…} copy={…} />` draws the two
  * buttons, the "Use an image address" toggle, the address field, and the stage and failure
  * alerts. `imageSourceCopyFrom(coverCopy)` builds the copy from the cover's words, whose failure
- * codes are the media service's for every upload.
+ * codes are the media service's for every upload. An address must be `http:` or `https:`
+ * (`isWebAddress`); anything else is refused before it is measured.
  */
 
 export interface ChosenImage {
@@ -91,6 +92,11 @@ export function measureImageAddress(url: string): Promise<{ width: number; heigh
       (error) => reject(error instanceof Error ? error : new Error('unmeasurable')),
     );
   });
+}
+
+/** Whether `url` is an absolute `http:` or `https:` address with a host. */
+export function isWebAddress(url: string): boolean {
+  return /^https?:\/\/[^\s/?#]+/iu.test(url.trim());
 }
 
 function isKnownCode(code: string): code is CoverFailureCode {
@@ -199,6 +205,12 @@ export function useImageSource({
       setFailure(null);
       if (url === '') {
         setFailure({ text: copy.needUrlFirst });
+        return;
+      }
+      // A web address only: `file:`, `data:` or `content:` would measure here and mean nothing to
+      // anybody else who opens the campaign.
+      if (!isWebAddress(url)) {
+        setFailure({ text: copy.unusable });
         return;
       }
       setBusy(true);

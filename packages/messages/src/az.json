@@ -5826,7 +5826,10 @@
         "clear": "Təmizlə",
         "clearLabel": "{label} sahəsini təmizlə",
         "confirm": "Bu vaxtı seç",
-        "confirmLabel": "{label} üçün {date} seç"
+        "confirmLabel": "{label} üçün {date} seç",
+        "chooseDate": "Tarix seçin",
+        "confirmDate": "Bu tarixi seç",
+        "confirmDateLabel": "{label} üçün {date} tarixini seç"
       }
     }
   }

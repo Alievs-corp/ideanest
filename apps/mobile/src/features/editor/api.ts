@@ -36,6 +36,9 @@ export function useProjectEdit(projectId: string) {
   return useQuery({
     queryKey: queryKeys.projectEdit(projectId),
     enabled: projectId !== '',
+    // Always asked again when the editor opens: a form seeded from a cached copy could PATCH
+    // stale values over edits made since on the web or another phone (`useEditor().fresh`).
+    refetchOnMount: 'always',
     queryFn: ({ signal }) => fetchProjectEdit(projectId, signal),
   });
 }

@@ -5,7 +5,7 @@ import { IntlProvider } from 'use-intl';
 import { fromDateTimeLocal } from '@ideanest/campaign-editor/basics';
 import en from '@ideanest/messages/en.json';
 import { Field } from '../../components/ui';
-import { DateTimeField, dayOf, instantOf } from './date-time-field';
+import { DateTimeField, dayOf, instantOf, notBefore } from './date-time-field';
 
 jest.mock('@react-native-community/datetimepicker', () => {
   const { createElement } = jest.requireActual('react');
@@ -16,11 +16,23 @@ jest.mock('@react-native-community/datetimepicker', () => {
   return { __esModule: true, default: Picker, DateTimePickerAndroid: { open: jest.fn(), dismiss: jest.fn() } };
 });
 
-async function show(value: string | null, onChange = jest.fn(), mode: 'datetime' | 'date' = 'datetime') {
+async function show(
+  value: string | null,
+  onChange = jest.fn(),
+  mode: 'datetime' | 'date' = 'datetime',
+  minimumDate?: Date,
+) {
   await render(
     <IntlProvider locale="en" messages={en}>
       <Field label="Scheduled launch">
-        <DateTimeField value={value} onChange={onChange} label="Scheduled launch" mode={mode} testID="when" />
+        <DateTimeField
+          value={value}
+          onChange={onChange}
+          label="Scheduled launch"
+          mode={mode}
+          testID="when"
+          {...(minimumDate === undefined ? {} : { minimumDate })}
+        />
       </Field>
     </IntlProvider>,
   );
@@ -36,6 +48,13 @@ describe('instantOf and dayOf', () => {
 
   it('writes a calendar day in the phone’s calendar', () => {
     expect(dayOf(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05');
+  });
+
+  it('moves a moment before the minimum to the first whole minute after it', () => {
+    const minimum = new Date(2026, 9, 7, 10, 0, 30);
+    expect(notBefore(new Date(2026, 9, 7, 8, 0), minimum)).toEqual(new Date(2026, 9, 7, 10, 1));
+    expect(notBefore(new Date(2026, 9, 7, 12, 0), minimum)).toEqual(new Date(2026, 9, 7, 12, 0));
+    expect(notBefore(new Date(2026, 9, 7, 8, 0), undefined)).toEqual(new Date(2026, 9, 7, 8, 0));
   });
 });
 
@@ -90,5 +109,25 @@ describe('DateTimeField', () => {
     jest.mocked(DateTimePickerAndroid.open).mock.calls[0]?.[0].onValueChange?.({} as never, new Date(2026, 11, 24));
     expect(onChange).toHaveBeenCalledWith('2026-12-24');
     expect(DateTimePickerAndroid.open).toHaveBeenCalledTimes(1);
+  });
+
+  it('on Android never sends a time before the minimum the time dialog cannot enforce', async () => {
+    Platform.OS = 'android';
+    const minimum = new Date(2026, 9, 7, 10, 0);
+    const onChange = await show(null, jest.fn(), 'datetime', minimum);
+    await fireEvent.press(screen.getByTestId('when'));
+    const open = jest.mocked(DateTimePickerAndroid.open);
+    expect(open.mock.calls[0]?.[0].minimumDate).toBe(minimum);
+    open.mock.calls[0]?.[0].onValueChange?.({} as never, new Date(2026, 9, 7));
+    open.mock.calls[1]?.[0].onValueChange?.({} as never, new Date(2026, 9, 7, 8, 0));
+    expect(onChange).toHaveBeenCalledWith(fromDateTimeLocal('2026-10-07T10:01'));
+  });
+
+  it('in date mode speaks of a date, not a time', async () => {
+    Platform.OS = 'ios';
+    await show(null, jest.fn(), 'date');
+    expect(screen.getByTestId('when').props.accessibilityValue).toEqual({ text: en.mobile.editor.dateTime.chooseDate });
+    await fireEvent.press(screen.getByTestId('when'));
+    expect(screen.getByLabelText(/^Use .* for Scheduled launch$/)).toHaveTextContent(en.mobile.editor.dateTime.confirmDate);
   });
 });

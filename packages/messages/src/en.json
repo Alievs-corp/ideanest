@@ -5826,7 +5826,10 @@
         "clear": "Clear",
         "clearLabel": "Clear {label}",
         "confirm": "Use this time",
-        "confirmLabel": "Use {date} for {label}"
+        "confirmLabel": "Use {date} for {label}",
+        "chooseDate": "Choose a date",
+        "confirmDate": "Use this date",
+        "confirmDateLabel": "Use {date} for {label}"
       }
     }
   }

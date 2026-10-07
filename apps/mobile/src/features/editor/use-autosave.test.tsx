@@ -3,7 +3,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
 import { memoryStore, type KeyValueStore } from '../../lib/storage';
 import { readUnsent, unsentKeyFor } from '../../lib/unsent-edits';
-import { useAutosave, type AutosaveOptions } from './use-autosave';
+import { PERSIST_DELAY_MS, useAutosave, type AutosaveOptions } from './use-autosave';
 
 type Patch = { title?: string; blurb?: string | null };
 
@@ -44,14 +44,17 @@ async function mount(
   extra: Partial<AutosaveOptions<Patch, string>> = {},
 ) {
   const onSaved = jest.fn();
-  const hook = await renderHook(() =>
-    useAutosave<Patch, string>({
-      send,
-      onSaved,
-      describe: () => FAILED,
-      persist: { store, key: KEY, now: () => NOW },
-      ...extra,
-    }),
+  const hook = await renderHook(
+    ({ active }: { active: boolean }) =>
+      useAutosave<Patch, string>({
+        send,
+        onSaved,
+        describe: () => FAILED,
+        persist: { store, key: KEY, now: () => NOW },
+        active,
+        ...extra,
+      }),
+    { initialProps: { active: true } },
   );
   return { hook, onSaved, store };
 }
@@ -154,12 +157,15 @@ describe('useAutosave', () => {
     expect(send).toHaveBeenLastCalledWith({ title: 'B' });
   });
 
-  it('keeps what is unsent on the phone, and forgets it once the service has it', async () => {
+  it('keeps what is unsent on the phone once the typing pauses, and forgets it once the service has it', async () => {
     const answer = deferred();
     const send = jest.fn<Promise<string>, [Patch]>(() => answer.promise);
     const { hook, store } = await mount(send);
 
     await act(async () => hook.result.current.save({ title: 'A' }));
+    // Not per keystroke: a whole story document would be serialised on every one.
+    expect(store.getString(KEY)).toBeUndefined();
+    await act(async () => jest.advanceTimersByTime(PERSIST_DELAY_MS));
     expect(readUnsent(store, KEY)).toEqual({ patch: { title: 'A' }, at: NOW.toISOString() });
 
     await act(async () => hook.result.current.flush());
@@ -169,6 +175,27 @@ describe('useAutosave', () => {
     await act(async () => answer.resolve('ok'));
     await flushPromises();
     expect(store.getString(KEY)).toBeUndefined();
+  });
+
+  it('writes what is unsent at once when the app goes to the background', async () => {
+    const send = jest.fn<Promise<string>, [Patch]>(() => new Promise(() => {}));
+    const { hook, store } = await mount(send);
+
+    await act(async () => hook.result.current.save({ title: 'Typed' }));
+    expect(store.getString(KEY)).toBeUndefined();
+    await act(async () => appState.forEach((listener) => listener('background')));
+    expect(readUnsent<Patch>(store, KEY)?.patch).toEqual({ title: 'Typed' });
+  });
+
+  it('exposes what is unacknowledged, for seeding a form mounted again', async () => {
+    const send = jest.fn<Promise<string>, [Patch]>(() => Promise.reject(new Error('offline')));
+    const { hook } = await mount(send);
+
+    await act(async () => hook.result.current.save({ title: 'Kept' }));
+    await act(async () => hook.result.current.flush());
+    await flushPromises();
+    expect(hook.result.current.state).toBe('failed');
+    expect(hook.result.current.unsaved).toEqual({ title: 'Kept' });
   });
 
   it('offers a change an earlier launch left unsent, and never sends it on its own', async () => {
@@ -184,13 +211,41 @@ describe('useAutosave', () => {
     expect(hook.result.current.state).toBe('idle');
   });
 
-  it('sends the offered change on request, under anything typed since', async () => {
+  it('drops a field from the offer once it is typed again, so Send it never puts an older value back', async () => {
     const store = memoryStore();
     store.set(KEY, JSON.stringify({ patch: { title: 'Killed', blurb: 'old' }, at: '2026-10-06T20:00:00.000Z' }));
     const send = jest.fn<Promise<string>, [Patch]>(() => Promise.resolve('ok'));
     const { hook } = await mount(send, store);
 
+    await act(async () => hook.result.current.save({ title: 'Newer' }));
+    await act(async () => hook.result.current.flush());
+    await flushPromises();
+    expect(hook.result.current.unsent?.patch).toEqual({ blurb: 'old' });
+
+    await act(async () => {
+      hook.result.current.sendUnsent();
+    });
+    expect(send).toHaveBeenLastCalledWith({ blurb: 'old' });
+    expect(send.mock.calls.some(([patch]) => patch.title === 'Killed')).toBe(false);
+  });
+
+  it('withdraws the offer entirely once every field in it is typed again', async () => {
+    const store = memoryStore();
+    store.set(KEY, JSON.stringify({ patch: { title: 'Killed' }, at: '2026-10-06T20:00:00.000Z' }));
+    const { hook } = await mount(jest.fn<Promise<string>, [Patch]>(() => Promise.resolve('ok')), store);
+
+    await act(async () => hook.result.current.save({ title: 'Newer' }));
+    expect(hook.result.current.unsent).toBeNull();
+  });
+
+  it('sends the offered change on request, under anything typed since', async () => {
+    const store = memoryStore();
+    store.set(KEY, JSON.stringify({ patch: { title: 'Killed', blurb: 'old' }, at: '2026-10-06T20:00:00.000Z' }));
+    const send = jest.fn<Promise<string>, [Patch]>(() => new Promise(() => {}));
+    const { hook } = await mount(send, store);
+
     await act(async () => hook.result.current.save({ blurb: 'new' }));
+    await act(async () => jest.advanceTimersByTime(PERSIST_DELAY_MS));
     // While the offer stands, a second kill must lose neither.
     expect(readUnsent<Patch>(store, KEY)?.patch).toEqual({ title: 'Killed', blurb: 'new' });
 
@@ -201,8 +256,6 @@ describe('useAutosave', () => {
     expect(queued).toEqual({ title: 'Killed', blurb: 'new' });
     expect(send).toHaveBeenCalledWith({ title: 'Killed', blurb: 'new' });
     expect(hook.result.current.unsent).toBeNull();
-    await flushPromises();
-    expect(store.getString(KEY)).toBeUndefined();
   });
 
   it('discards the offered change without sending it', async () => {
@@ -225,14 +278,15 @@ describe('useAutosave', () => {
     expect(store.getString(KEY)).toBeUndefined();
   });
 
-  it('sends what is queued on unmount without leaving the machine in flight', async () => {
-    const send = jest.fn<Promise<string>, [Patch]>(() => Promise.resolve('ok'));
-    const { hook, store } = await mount(send);
+  it('sends what is queued on unmount, without start, and gives the answer to onSaved', async () => {
+    const send = jest.fn<Promise<string>, [Patch]>(() => Promise.resolve('answer'));
+    const { hook, store, onSaved } = await mount(send);
 
     await act(async () => hook.result.current.save({ title: 'Leaving' }));
     await act(async () => hook.unmount());
     expect(send).toHaveBeenCalledWith({ title: 'Leaving' });
     await flushPromises();
+    expect(onSaved).toHaveBeenCalledWith('answer');
     expect(store.getString(KEY)).toBeUndefined();
   });
 
@@ -244,5 +298,43 @@ describe('useAutosave', () => {
     await act(async () => hook.unmount());
     await flushPromises();
     expect(readUnsent<Patch>(store, KEY)?.patch).toEqual({ title: 'Leaving' });
+  });
+
+  it('once the session ends, forgets the machine and never sends or stores it again', async () => {
+    const send = jest.fn<Promise<string>, [Patch]>(() => Promise.resolve('ok'));
+    const { hook, store } = await mount(send);
+
+    await act(async () => hook.result.current.save({ title: 'Account A' }));
+    await act(async () => hook.rerender({ active: false }));
+    // Sign-out erased the store (lib/account-sync.tsx); nothing may write it back.
+    store.remove(KEY);
+    await act(async () => jest.advanceTimersByTime(5_000));
+    await act(async () => appState.forEach((listener) => listener('background')));
+    expect(send).not.toHaveBeenCalled();
+    expect(store.getString(KEY)).toBeUndefined();
+    expect(hook.result.current.pending).toBe(false);
+    expect(hook.result.current.state).toBe('idle');
+
+    await act(async () => hook.result.current.save({ title: 'Ignored' }));
+    await act(async () => jest.advanceTimersByTime(5_000));
+    await act(async () => hook.unmount());
+    expect(send).not.toHaveBeenCalled();
+    expect(store.getString(KEY)).toBeUndefined();
+  });
+
+  it('ignores an answer that lands after the session ended', async () => {
+    const answer = deferred();
+    const send = jest.fn<Promise<string>, [Patch]>(() => answer.promise);
+    const { hook, store, onSaved } = await mount(send);
+
+    await act(async () => hook.result.current.save({ title: 'In the air' }));
+    await act(async () => hook.result.current.flush());
+    await act(async () => hook.rerender({ active: false }));
+    store.remove(KEY);
+    await act(async () => answer.reject(new Error('401')));
+    await flushPromises();
+    expect(store.getString(KEY)).toBeUndefined();
+    expect(hook.result.current.state).toBe('idle');
+    expect(onSaved).not.toHaveBeenCalled();
   });
 });

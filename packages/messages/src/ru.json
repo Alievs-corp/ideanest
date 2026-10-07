@@ -5826,7 +5826,10 @@
         "clear": "Очистить",
         "clearLabel": "Очистить поле «{label}»",
         "confirm": "Выбрать это время",
-        "confirmLabel": "Выбрать {date} для поля «{label}»"
+        "confirmLabel": "Выбрать {date} для поля «{label}»",
+        "chooseDate": "Выберите дату",
+        "confirmDate": "Выбрать эту дату",
+        "confirmDateLabel": "Выбрать {date} для поля «{label}»"
       }
     }
   }

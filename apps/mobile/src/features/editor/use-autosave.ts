@@ -30,20 +30,29 @@ import { readUnsent, writeUnsent, type UnsentChange } from '../../lib/unsent-edi
  * <ul>
  *   <li><strong>Background.</strong> `AppState` going `background` or `inactive` flushes: the OS
  *       may not bring the app back.</li>
- *   <li><strong>The unsent patch is kept on the phone</strong> (`persist`): after every transition,
- *       whatever the service has not acknowledged is written to MMKV, synchronously. On the next
- *       mount it comes back as {@link Autosave.unsent} — an OFFER. It is never sent on its own,
- *       because the service's copy may have moved on; `sendUnsent()` queues it (under anything
- *       typed since) and `discardUnsent()` forgets it. While an offer stands, it is kept merged
- *       under whatever is being typed now, so a second kill loses neither.</li>
+ *   <li><strong>The unsent patch is kept on the phone</strong> (`persist`): whatever the service has
+ *       not acknowledged is written to MMKV. A keystroke's write waits {@link PERSIST_DELAY_MS}
+ *       (Story pushes whole documents through here, and serialising one per keystroke is work the
+ *       typing pays for); every other transition writes at once, and so do the app going to the
+ *       background and the hook unmounting, which is when the OS kills an app. On the next mount
+ *       it comes back as {@link Autosave.unsent} — an OFFER, never sent on its own, because the
+ *       service's copy may have moved on. A field typed again this session drops out of the offer,
+ *       so "Send it" can never put an older value over a newer one.</li>
  *   <li><strong>Unmount.</strong> What is queued is sent, unawaited, as on the web — and WITHOUT
  *       dispatching `start`: a `start` in a cleanup leaves the machine in flight for ever if the
- *       effect re-runs. When that send is answered, the stored copy is cleared unless something
- *       wrote it since.</li>
+ *       effect re-runs. Its answer still reaches `onSaved`, so the cache is current the next time
+ *       the editor opens.</li>
+ *   <li><strong>`active`.</strong> False once the session has ended: the machine is reset, nothing
+ *       queued is sent or written, and an answer still in the air is ignored — one account's words
+ *       are never stored again after its sign-out erased them, nor sent with somebody else's
+ *       token.</li>
  * </ul>
  *
  * <p>The caller flushes on blur and on a tab switch; the hook cannot see either.
  */
+
+/** How long a keystroke's unsent patch waits before it is written to MMKV. */
+export const PERSIST_DELAY_MS = 400;
 
 export interface AutosavePersistence {
   readonly store: KeyValueStore;
@@ -63,6 +72,8 @@ export interface AutosaveOptions<P extends object, R> {
   readonly delayMs?: number;
   /** Where the unsent patch survives the app being killed. Omit to keep nothing. */
   readonly persist?: AutosavePersistence;
+  /** False once the session has ended: reset, and never send or store again. True by default. */
+  readonly active?: boolean;
 }
 
 export interface Autosave<P> {
@@ -70,6 +81,11 @@ export interface Autosave<P> {
   readonly failure: SaveFailure | null;
   /** True while something typed has not yet been acknowledged by the server. */
   readonly pending: boolean;
+  /**
+   * Everything typed and not yet acknowledged, as one patch (in flight under queued), or null.
+   * Overlay it on the server's project to seed a form that is mounted again (`withUnsaved`).
+   */
+  readonly unsaved: P | null;
   /** Queue a partial change. Debounced, and merged with anything still waiting. */
   readonly save: (patch: P) => void;
   /** Send now — on blur, on a tab switch, before leaving. */
@@ -86,22 +102,31 @@ export interface Autosave<P> {
 
 const DEFAULT_DELAY_MS = 800;
 
+/** `patch` without the keys in `drop`, or null when nothing is left. */
+function without<P extends object>(patch: P, drop: readonly string[]): P | null {
+  const rest = Object.fromEntries(Object.entries(patch).filter(([key]) => !drop.includes(key)));
+  return Object.keys(rest).length === 0 ? null : (rest as P);
+}
+
 export function useAutosave<P extends object, R>({
   send,
   onSaved,
   describe,
   delayMs = DEFAULT_DELAY_MS,
   persist,
+  active = true,
 }: AutosaveOptions<P, R>): Autosave<P> {
   const [view, setView] = useState<AutosaveMachine<P>>(initialAutosave);
   const machine = useRef(view);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Read through refs, so a caller passing inline functions does not reset the debounce.
   const sendRef = useRef(send);
   const onSavedRef = useRef(onSaved);
   const describeRef = useRef(describe);
   const persistRef = useRef(persist);
+  const activeRef = useRef(active);
   useEffect(() => {
     sendRef.current = send;
     onSavedRef.current = onSaved;
@@ -109,17 +134,30 @@ export function useAutosave<P extends object, R>({
     persistRef.current = persist;
   }, [send, onSaved, describe, persist]);
 
+  /** Bumped when the session ends: an answer from an earlier epoch is ignored. */
+  const epoch = useRef(0);
+
   const [unsent, setUnsent] = useState<UnsentChange<P> | null>(() =>
-    persist === undefined ? null : readUnsent<P>(persist.store, persist.key),
+    persist === undefined || !active ? null : readUnsent<P>(persist.store, persist.key),
   );
   const offered = useRef(unsent);
   /** When the newest change still unsent was typed. */
   const changedAt = useRef<string | null>(null);
 
-  const keep = useCallback((next: AutosaveMachine<P>): void => {
+  const setOffer = useCallback((next: UnsentChange<P> | null): void => {
+    offered.current = next;
+    setUnsent(next);
+  }, []);
+
+  /** Write what is unsent to the phone now. */
+  const writeNow = useCallback((): void => {
+    if (writeTimer.current !== null) {
+      clearTimeout(writeTimer.current);
+      writeTimer.current = null;
+    }
     const target = persistRef.current;
-    if (target === undefined) return;
-    const current = unsavedPatch(next) as P | null;
+    if (target === undefined || !activeRef.current) return;
+    const current = unsavedPatch(machine.current) as P | null;
     const offer = offered.current;
     let change: UnsentChange<P> | null = null;
     if (current !== null) {
@@ -133,6 +171,16 @@ export function useAutosave<P extends object, R>({
     writeUnsent(target.store, target.key, change);
   }, []);
 
+  /** Write soon: a keystroke's write waits for the typing to pause. */
+  const writeSoon = useCallback((): void => {
+    if (persistRef.current === undefined || !activeRef.current) return;
+    if (writeTimer.current !== null) clearTimeout(writeTimer.current);
+    writeTimer.current = setTimeout(() => {
+      writeTimer.current = null;
+      writeNow();
+    }, PERSIST_DELAY_MS);
+  }, [writeNow]);
+
   const apply = useCallback(
     (event: AutosaveEvent<P>): AutosaveMachine<P> => {
       const next = autosaveReducer(machine.current, event);
@@ -140,25 +188,29 @@ export function useAutosave<P extends object, R>({
       machine.current = next;
       setView(next);
       if (unsavedPatch(next) === null) changedAt.current = null;
-      keep(next);
+      if (event.type === 'queue') writeSoon();
+      else writeNow();
       return next;
     },
-    [keep],
+    [writeNow, writeSoon],
   );
 
   const run = useCallback((): void => {
-    if (!canStart(machine.current)) return;
+    if (!activeRef.current || !canStart(machine.current)) return;
     const patch = apply({ type: 'start' }).inFlight;
     if (patch === null) return;
+    const sentIn = epoch.current;
 
     void sendRef.current(patch as P).then(
       (result) => {
+        if (epoch.current !== sentIn) return;
         apply({ type: 'succeeded' });
         onSavedRef.current?.(result);
         // Anything typed while that was in the air goes now; nothing happens when nothing is queued.
         run();
       },
       (cause: unknown) => {
+        if (epoch.current !== sentIn) return;
         apply({ type: 'failed', failure: describeRef.current(cause) });
       },
     );
@@ -174,12 +226,19 @@ export function useAutosave<P extends object, R>({
 
   const save = useCallback(
     (patch: P): void => {
+      if (!activeRef.current) return;
       const now = persistRef.current?.now ?? (() => new Date());
       changedAt.current = now().toISOString();
+      // A field typed again this session is newer than anything an earlier launch left unsent.
+      const offer = offered.current;
+      if (offer !== null) {
+        const rest = without(offer.patch, Object.keys(patch));
+        setOffer(rest === null ? null : { ...offer, patch: rest });
+      }
       apply({ type: 'queue', patch });
       schedule();
     },
-    [apply, schedule],
+    [apply, schedule, setOffer],
   );
 
   const flush = useCallback((): void => {
@@ -198,32 +257,51 @@ export function useAutosave<P extends object, R>({
 
   const sendUnsent = useCallback((): P | null => {
     const offer = offered.current;
-    if (offer === null) return null;
-    offered.current = null;
-    setUnsent(null);
+    if (offer === null || !activeRef.current) return null;
+    setOffer(null);
     changedAt.current = changedAt.current ?? offer.at;
     // Under what is typed now: the newer value of a field wins, as it does everywhere else.
     const patch = { ...offer.patch, ...(unsavedPatch(machine.current) ?? {}) } as P;
     apply({ type: 'queue', patch });
     flush();
     return patch;
-  }, [apply, flush]);
+  }, [apply, flush, setOffer]);
 
   const discardUnsent = useCallback((): void => {
     if (offered.current === null) return;
-    offered.current = null;
-    setUnsent(null);
-    keep(machine.current);
-  }, [keep]);
+    setOffer(null);
+    writeNow();
+  }, [setOffer, writeNow]);
+
+  // The session ending stops everything: nothing queued is sent, stored, or answered.
+  useEffect(() => {
+    activeRef.current = active;
+    if (active) return;
+    epoch.current += 1;
+    if (timer.current !== null) clearTimeout(timer.current);
+    if (writeTimer.current !== null) clearTimeout(writeTimer.current);
+    timer.current = null;
+    writeTimer.current = null;
+    changedAt.current = null;
+    const reset = initialAutosave<P>();
+    machine.current = reset;
+    setView(reset);
+    setOffer(null);
+  }, [active, setOffer]);
 
   // The phone going to the background is the last moment the app is sure to be running.
   const flushRef = useRef(flush);
+  const writeNowRef = useRef(writeNow);
   useEffect(() => {
     flushRef.current = flush;
-  }, [flush]);
+    writeNowRef.current = writeNow;
+  }, [flush, writeNow]);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (next) => {
-      if (next === 'background' || next === 'inactive') flushRef.current();
+      if (next === 'background' || next === 'inactive') {
+        writeNowRef.current();
+        flushRef.current();
+      }
     });
     return () => subscription.remove();
   }, []);
@@ -231,6 +309,9 @@ export function useAutosave<P extends object, R>({
   useEffect(() => {
     return () => {
       if (timer.current !== null) clearTimeout(timer.current);
+      if (!activeRef.current) return;
+      // A kill after leaving the editor must still find what was not acknowledged.
+      writeNowRef.current();
       /*
        * Leaving must not discard the last second of typing. Sent unawaited, and NOT through
        * `start`: the queue is taken by hand, so an effect that runs again finds a machine that is
@@ -241,8 +322,12 @@ export function useAutosave<P extends object, R>({
       machine.current = { ...machine.current, queued: null };
       const target = persistRef.current;
       const written = target?.store.getString(target.key);
+      const sentIn = epoch.current;
       void sendRef.current(queued as P).then(
-        () => {
+        (result) => {
+          if (epoch.current !== sentIn || !activeRef.current) return;
+          // The cache takes the answer, so reopening the editor shows what was just saved.
+          onSavedRef.current?.(result);
           // Accepted. Unless a later screen has written since, only an offer is left to keep.
           if (target !== undefined && target.store.getString(target.key) === written) {
             writeUnsent(target.store, target.key, offered.current);
@@ -260,6 +345,7 @@ export function useAutosave<P extends object, R>({
       state: view.status,
       failure: view.failure,
       pending: isPending(view),
+      unsaved: unsavedPatch(view) as P | null,
       save,
       flush,
       retry,

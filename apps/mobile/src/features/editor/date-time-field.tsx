@@ -25,7 +25,8 @@ import { spacing } from '../../theme';
  * </ul>
  * `null` is "not set". `label` names the clear and confirm controls ("Clear Scheduled launch").
  * `clearable` (default true) shows a Clear pill while a value is set. `minimumDate` limits the
- * picker; validation (a past date) stays the caller's.
+ * picker, and a moment picked before it (Android's time dialog has no bound) is moved to the first
+ * minute after it; other validation stays the caller's. Date mode speaks of a date, not a time.
  *
  * <p>Android opens the system dialogs — the date, then the time. iOS opens an inline picker under
  * the field and commits with "Use this time": choosing a day does not close it.
@@ -53,6 +54,19 @@ function twoDigits(value: number): string {
 /** A picked day as `YYYY-MM-DD`, in the phone's calendar. */
 export function dayOf(picked: Date): string {
   return `${picked.getFullYear()}-${twoDigits(picked.getMonth() + 1)}-${twoDigits(picked.getDate())}`;
+}
+
+/**
+ * `picked`, or — when it is before `minimumDate` — the first whole minute after it. Android's time
+ * dialog has no lower bound, so a launch "today at 08:00" picked at 10:00 would otherwise be sent
+ * as a time already past.
+ */
+export function notBefore(picked: Date, minimumDate: Date | undefined): Date {
+  if (minimumDate === undefined || picked.getTime() >= minimumDate.getTime()) return picked;
+  const floor = new Date(minimumDate);
+  floor.setSeconds(0, 0);
+  floor.setMinutes(floor.getMinutes() + 1);
+  return floor;
 }
 
 /** The field's value as the `Date` the picker opens on, or null. */
@@ -84,11 +98,12 @@ export function DateTimeField({
   const current = dateOfValue(value, mode);
   const display =
     current === null
-      ? t('choose')
+      ? t(mode === 'date' ? 'chooseDate' : 'choose')
       : mode === 'date'
         ? formatDate(current.toISOString(), locale)
         : formatDateTime(current.toISOString(), locale);
-  const commit = (picked: Date) => onChange(mode === 'date' ? dayOf(picked) : instantOf(picked));
+  const commit = (picked: Date) =>
+    onChange(mode === 'date' ? dayOf(picked) : instantOf(notBefore(picked, minimumDate)));
 
   function openPicker() {
     Keyboard.dismiss();
@@ -176,8 +191,8 @@ export function DateTimeField({
           <View style={styles.start}>
             <Pill
               size="sm"
-              label={t('confirm')}
-              accessibilityLabel={t('confirmLabel', {
+              label={t(mode === 'date' ? 'confirmDate' : 'confirm')}
+              accessibilityLabel={t(mode === 'date' ? 'confirmDateLabel' : 'confirmLabel', {
                 date: mode === 'date' ? formatDate(shown.toISOString(), locale) : formatDateTime(shown.toISOString(), locale),
                 label,
               })}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
@@ -70,10 +70,12 @@ export function BasicsPanel() {
   const { t } = useEditorTranslators();
   const basics = useMemo(() => basicsPanelCopyFrom(t), [t]);
 
-  if (editor.project === null) {
-    return editor.load === 'loading' ? <Loading label={basics.loadingLabel} /> : null;
+  // Online, never from the cache alone: a form seeded from a week-old copy would PATCH its
+  // stale values over edits made since. The skeleton stays until the service has answered.
+  if (!editor.canSeed || editor.seed === null) {
+    return editor.load === 'loading' || editor.load === 'ready' ? <Loading label={basics.loadingLabel} /> : null;
   }
-  return <BasicsForm key={`${editor.projectId}:${editor.revision}`} seed={editor.project} basics={basics} />;
+  return <BasicsForm key={editor.projectId} seed={editor.seed} basics={basics} />;
 }
 
 const LOADING_ROWS = [0, 1, 2, 3];
@@ -106,6 +108,36 @@ function serverErrors(failure: SaveFailure | null): BasicsErrors {
   return mapped;
 }
 
+/** The draft's keys each field owns, for keeping text that is only on this phone across a re-seed. */
+const DRAFT_KEYS: Readonly<Record<BasicsField, readonly (keyof BasicsDraft)[]>> = {
+  title: ['title'],
+  blurb: ['blurb'],
+  categoryId: ['categoryId', 'subcategoryId'],
+  subcategoryId: ['subcategoryId'],
+  goal: ['goalAmount', 'currency'],
+  durationDays: ['durationDays'],
+  scheduledLaunchAt: ['scheduledLaunchAt'],
+  latePledgeEnabled: ['latePledgeEnabled'],
+  coverImage: ['coverImage', 'coverImageUrl'],
+};
+
+/**
+ * A new draft from `seed`, keeping the fields in `localOnly` as they are in `current`: text typed
+ * here that was not sent (an amount with three decimals, an empty title) has no copy anywhere else.
+ */
+export function reseedDraft(
+  seed: ProjectEdit,
+  current: BasicsDraft,
+  localOnly: ReadonlySet<BasicsField>,
+): BasicsDraft {
+  const next: BasicsDraft = draftFromProject(seed);
+  const kept: Partial<BasicsDraft> = {};
+  for (const field of localOnly) {
+    for (const key of DRAFT_KEYS[field]) Object.assign(kept, { [key]: current[key] });
+  }
+  return { ...next, ...kept };
+}
+
 function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly basics: BasicsPanelCopy }) {
   const editor = useEditor();
   const chrome = useEditorChromeCopy();
@@ -113,6 +145,18 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
   const insets = useSafeAreaInsets();
   const categoriesQuery = useEditorCategories();
   const [draft, setDraft] = useState<BasicsDraft>(() => draftFromProject(seed));
+  /** Fields whose text is only on this phone: changed, and refused before it was sent. */
+  const localOnly = useRef(new Set<BasicsField>());
+
+  // Seeded once; again only when the frame says so (`revision`), keeping what is only local.
+  const seen = useRef(editor.revision);
+  const latestSeed = useRef(seed);
+  latestSeed.current = seed;
+  useEffect(() => {
+    if (seen.current === editor.revision) return;
+    seen.current = editor.revision;
+    setDraft((current) => reseedDraft(latestSeed.current, current, localOnly.current));
+  }, [editor.revision]);
 
   const { autosave, readOnly } = editor;
   // The server is the authority on the state and the locks; the fields belong to the draft.
@@ -124,7 +168,11 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
     if (readOnly) return;
     setDraft(next);
     const patch = patchForField(field, next);
-    if (patch === null) return;
+    if (patch === null) {
+      localOnly.current.add(field);
+      return;
+    }
+    localOnly.current.delete(field);
     autosave.save(patch);
     if (sendNow) autosave.flush();
   }

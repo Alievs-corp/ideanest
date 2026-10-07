@@ -32,7 +32,8 @@ export function EditorFrame() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const projectId = typeof id === 'string' ? id : '';
   return (
-    <EditorProvider projectId={projectId}>
+    // Keyed: another project is another editor — its own autosave, offer and freshness.
+    <EditorProvider key={projectId} projectId={projectId}>
       {/* The editor's budget is the save indicator only (#162): no press scale, no shimmer. */}
       <MotionBudgetProvider level="none">
         <Frame />
@@ -53,13 +54,16 @@ function Frame() {
   const locale = useLocale();
   const active = editorTabOf(pathname);
   const { project, load, autosave, online } = editor;
+  // Online with a cached copy whose refresh failed: the form is shown from the cache, read-only.
+  const refreshFailed = online && project !== null && !editor.fresh && editor.canSeed;
   const state = autosave.state;
 
   return (
     <View style={styles.frame}>
       <Stack.Screen
         options={{
-          title: project?.title ?? copy.loadingTitle,
+          title:
+            project?.title ?? (load === 'loading' ? copy.loadingTitle : tAll('mobile.fallback.editCampaign')),
           headerBackTitle: tAll('mobile.nav.back'),
           headerRight: () => <SaveStatus state={state} copy={copy.save} />,
         }}
@@ -109,7 +113,7 @@ function Frame() {
         />
       ) : (
         <>
-          {load === 'ready' && (!online || autosave.unsent !== null) ? (
+          {load === 'ready' && (!online || autosave.unsent !== null || refreshFailed) ? (
             <View style={styles.notices}>
               {online ? null : (
                 <InlineAlert
@@ -119,6 +123,23 @@ function Frame() {
                   testID="editor-offline"
                 />
               )}
+              {refreshFailed ? (
+                <InlineAlert
+                  variant="danger"
+                  title={copy.loadFailedTitle}
+                  description={loadFailure(editor.error, t)}
+                  testID="editor-refresh-failed"
+                  action={
+                    <Pill
+                      label={copy.tryAgain}
+                      size="sm"
+                      variant="ghost"
+                      busy={editor.query.isFetching}
+                      onPress={editor.reload}
+                    />
+                  }
+                />
+              ) : null}
               {autosave.unsent === null ? null : (
                 <InlineAlert
                   variant="info"
@@ -130,7 +151,8 @@ function Frame() {
                       <Pill
                         label={t('unsent.send')}
                         size="sm"
-                        disabled={!online}
+                        // Not before the service's current copy is in: the offer goes over it.
+                        disabled={editor.readOnly}
                         onPress={() => void autosave.sendUnsent()}
                         testID="editor-unsent-send"
                       />
