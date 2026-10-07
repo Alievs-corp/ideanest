@@ -26,8 +26,7 @@ import type { PublicProfile } from './wire';
  *   <li><strong>The account the page is about</strong> — nothing: following yourself is a 400.
  *   <li><strong>Anybody else</strong> — the toggle, starting from what `GET /v1/me/following`
  *       says. While that (or who is signed in) is still being read it is drawn disabled, reading
- *       "Follow". With the app lock armed and nothing unlocked, it is offered as Follow: pressing it
- *       is what unlocks, and the write is idempotent.
+ *       "Follow".
  * </ul>
  *
  * <p>The word on the pill is inside its name ("Follow Aysel", `profile.follow.accessibleName`), the

@@ -11,7 +11,6 @@ import { queryKeys, type PrelaunchPage } from '../../api/queries';
 import { setOnline } from '../../lib/connectivity';
 import { setLocale } from '../../lib/locale';
 import {
-  enableLock,
   rememberAccessToken,
   storeRefreshToken,
   useFlagStore,
@@ -34,7 +33,7 @@ import { PrelaunchScreen } from './prelaunch-screen';
  * the flag store are doubles (`jest.setup.ts`, `memoryStore`).
  */
 const keychain = SecureStore as unknown as {
-  __setBiometryAllowed: (allowed: boolean) => void;
+  __setReadsFail: (fail: boolean) => void;
   __reset: () => void;
 };
 
@@ -45,13 +44,12 @@ async function signIn() {
 }
 
 /**
- * A session on the device whose token cannot be read: the lock is on and the biometric prompt was
- * dismissed. `useSession` says signed in, and every request goes without a bearer.
+ * A session on the device whose token cannot be read: the keychain refuses (a keystore that is
+ * unavailable). `useSession` says signed in, and every request goes without a bearer.
  */
-async function signInLockedAndDismissed() {
+async function signInUnreadable() {
   await storeRefreshToken('refresh-1');
-  await enableLock();
-  keychain.__setBiometryAllowed(false);
+  keychain.__setReadsFail(true);
   rememberAccessToken(null);
 }
 
@@ -315,8 +313,8 @@ describe('asking to be reminded', () => {
   });
 
   it('asks the reader to sign in again when the account request went without a bearer', async () => {
-    // The device has a session, so the form sends `{}`; the dismissed prompt means no token.
-    await signInLockedAndDismissed();
+    // The device has a session, so the form sends `{}`; the unreadable keychain means no token.
+    await signInUnreadable();
     await show();
     expect(screen.queryByTestId('prelaunch-email')).toBeNull();
 

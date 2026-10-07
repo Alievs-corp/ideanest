@@ -22,7 +22,7 @@ import { useSession } from './use-session';
  *   the account has not accepted yet is sent instead. Every read, not once per launch: the
  *   pending mark is what stops a refetch landing between a language tap and its `PATCH` from
  *   switching the app back.
- * - **The pending `PATCH`.** Sent when the account becomes readable (launch, unlock) and on
+ * - **The pending `PATCH`.** Sent when the account becomes readable (launch, sign-in) and on
  *   every foreground, so a choice made offline reaches the account once the phone is back.
  * - **Sign-out.** Whatever ends the session, the device keeps its language and forgets which
  *   account it last synced with, and every cache root in `ACCOUNT_ROOTS` is removed. When a
@@ -88,7 +88,7 @@ export function AccountSync() {
     }
   }, [data, queryClient, push]);
 
-  // Launch, sign-in and unlock: a choice made while the account could not be told.
+  // Launch and sign-in: a choice made while the account could not be told.
   useEffect(() => {
     if (canRead) push();
   }, [canRead, push]);
@@ -101,8 +101,7 @@ export function AccountSync() {
     const app = AppState.addEventListener('change', (state) => {
       if (state !== 'active') return;
       refresh();
-      // The retry for a `PATCH` that failed offline. Not while the lock is armed and shut:
-      // that would be a biometric prompt nobody asked for.
+      // The retry for a `PATCH` that failed offline. Only with a session to send it with.
       if (readable.current) push();
     });
     return () => app.remove();

@@ -65,8 +65,8 @@ const sessionFetch: Fetch = async (url, init) => {
   /*
    * A cold start has a keychain and no access token. Refreshing here rather than
    * after the inevitable 401 saves a round trip on the first screen somebody
-   * sees, and — with the lock (MB-03) on — means the biometric prompt appears once, at
-   * the moment the first private read is made, rather than after a failure.
+   * sees. It never shows a prompt: the token is an ordinary keychain item, and the app
+   * lock is a gate in front of the interface (`lib/app-lock.ts`, #319).
    */
   if (token === null && hasStoredSession()) {
     token = await refreshAccessToken();

@@ -1,5 +1,5 @@
 import * as LocalAuthentication from 'expo-local-authentication';
-import { biometricCapability, canLock, unlock } from './biometrics';
+import { biometricCapability, biometricsUsable, unlock } from './biometrics';
 
 /**
  * What the device can do, and what the account screen is therefore allowed to
@@ -7,8 +7,7 @@ import { biometricCapability, canLock, unlock } from './biometrics';
  *
  * <p>The distinction worth testing is between "cannot" and "not yet". A phone
  * with a scanner and nothing enrolled is the case where the honest answer sends
- * somebody to their own settings, and where offering the switch would create a
- * keychain entry nobody can ever read.
+ * somebody to their own settings; until then the lock opens with the PIN alone.
  */
 
 const biometrics = LocalAuthentication as unknown as {
@@ -32,7 +31,7 @@ describe('what this device can do', () => {
     const capability = await biometricCapability();
 
     expect(capability).toBe('unavailable');
-    expect(canLock(capability)).toBe(false);
+    expect(biometricsUsable(capability)).toBe(false);
   });
 
   it('is not-enrolled with a scanner and nothing enrolled', async () => {
@@ -43,7 +42,7 @@ describe('what this device can do', () => {
     // Actionable, unlike "unavailable": there is something the reader can do,
     // and it is not in this application.
     expect(capability).toBe('not-enrolled');
-    expect(canLock(capability)).toBe(false);
+    expect(biometricsUsable(capability)).toBe(false);
   });
 
   it('prefers the face when the device has both', async () => {
@@ -66,7 +65,7 @@ describe('what this device can do', () => {
     const capability = await biometricCapability();
 
     expect(capability).toBe('other');
-    expect(canLock(capability)).toBe(true);
+    expect(biometricsUsable(capability)).toBe(true);
   });
 });
 
@@ -76,5 +75,20 @@ describe('the prompt', () => {
 
     biometrics.__setBiometrics({ succeeds: false });
     expect(await unlock('Unlock IdeyaNest')).toBe(false);
+  });
+
+  it('offers the app PIN, not the device passcode, as its other button (#319)', async () => {
+    const spy = jest.spyOn(LocalAuthentication, 'authenticateAsync');
+    await unlock('Unlock IdeyaNest');
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0]?.[0]).toMatchObject({
+      promptMessage: 'Unlock IdeyaNest',
+      disableDeviceFallback: true,
+    });
+    spy.mockRestore();
+  });
+
+  it('says nothing is usable before the probe answers', () => {
+    expect(biometricsUsable(null)).toBe(false);
   });
 });

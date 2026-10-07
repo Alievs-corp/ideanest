@@ -40,18 +40,18 @@ import {
  * every caller until it settles, which `auth.test.ts` asserts by driving twenty
  * simultaneous callers and counting one network call.
  *
- * <p>The lock adds a second reason. With the lock (MB-03) on, a refresh reads a keychain item
- * that presents a biometric prompt; two of those would be two prompts stacked on
- * top of each other, and on Android the second is refused outright.
+ * <p>No refresh shows a prompt. Until #319 one did twice — the locked keychain item asked on the
+ * read and again on writing the rotated token back — and that is why the app lock is now a gate
+ * in front of the interface (`lib/app-lock.ts`) and the token an ordinary item.
  *
  * <h2>What a failed refresh means</h2>
  *
  * The service has already revoked the session by the time it answers, so there
  * is nothing on this device worth keeping — {@link refreshAccessToken} clears
  * both halves before returning null. The one case that is deliberately NOT a
- * sign-out is a prompt the reader dismissed: {@code storedRefreshToken} returns
- * null without having asked the service anything, and the session stays where it
- * is so that "not now" does not mean "sign in again".
+ * sign-out is a keychain that could not be read just then (or a pre-#319 token not
+ * yet migrated): {@code storedRefreshToken} returns null without having asked the
+ * service anything, and the session stays where it is.
  */
 
 /** How the service tells a native client apart from a browser. */
@@ -277,8 +277,8 @@ let refreshInFlight: Promise<string | null> | null = null;
  *
  * <p>Single-flight — see the class note, which is where the reason lives.
  *
- * @returns the new access token, or null when there is no session, the prompt
- *     was refused, or the service refused the token
+ * @returns the new access token, or null when there is no session, the keychain
+ *     could not be read, or the service refused the token
  */
 export function refreshAccessToken(): Promise<string | null> {
   refreshInFlight ??= runRefresh().finally(() => {
@@ -291,10 +291,10 @@ async function runRefresh(): Promise<string | null> {
   const refreshToken = await storedRefreshToken();
   if (refreshToken === null) {
     /*
-     * Either nobody is signed in or the biometric prompt was dismissed. Neither
-     * is a reason to destroy the session: the first has nothing to destroy, and
-     * the second is somebody deciding to stay locked. The access token is
-     * dropped so that nothing carries on with a stale bearer.
+     * Either nobody is signed in or the keychain could not be read just now.
+     * Neither is a reason to destroy the session: the first has nothing to
+     * destroy, and the second may be over at the next attempt. The access token
+     * is dropped so that nothing carries on with a stale bearer.
      */
     rememberAccessToken(null);
     return null;

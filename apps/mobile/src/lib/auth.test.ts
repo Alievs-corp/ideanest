@@ -15,7 +15,6 @@ import {
 import { currentLocale } from './locale';
 import {
   currentAccessToken,
-  enableLock,
   hasStoredSession,
   rememberAccessToken,
   storeRefreshToken,
@@ -51,7 +50,7 @@ jest.mock('expo-device', () => ({
 jest.mock('./account-export-files', () => ({ sweepAccountExports: jest.fn() }));
 
 const keychain = SecureStore as unknown as {
-  __setBiometryAllowed: (allowed: boolean) => void;
+  __setReadsFail: (fail: boolean) => void;
   __reset: () => void;
 };
 
@@ -341,10 +340,9 @@ describe('refreshing', () => {
     expect(currentAccessToken()).toBeNull();
   });
 
-  it('keeps the session when the biometric prompt is dismissed', async () => {
+  it('keeps the session when the keychain cannot be read just now', async () => {
     await storeRefreshToken('refresh-1');
-    await enableLock();
-    keychain.__setBiometryAllowed(false);
+    keychain.__setReadsFail(true);
 
     expect(await refreshAccessToken()).toBeNull();
 

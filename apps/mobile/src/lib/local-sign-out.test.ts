@@ -4,6 +4,7 @@ import { endLocalSession } from './local-sign-out';
 import { forgetPersistedCache } from './offline';
 import { unregisterFromPush } from './push';
 import { endSession } from './session';
+import { forgetUnsentEdits } from './unsent-edits';
 
 const order: string[] = [];
 
@@ -13,6 +14,7 @@ jest.mock('./offline', () => ({ forgetPersistedCache: jest.fn(() => void order.p
 jest.mock('./account-export-files', () => ({
   sweepAccountExports: jest.fn(() => void order.push('exports')),
 }));
+jest.mock('./unsent-edits', () => ({ forgetUnsentEdits: jest.fn(() => void order.push('edits')) }));
 
 beforeEach(() => {
   order.length = 0;
@@ -20,7 +22,7 @@ beforeEach(() => {
 });
 
 describe('endLocalSession', () => {
-  it('drops push while the token still works, then the keychain, both caches and any account export', async () => {
+  it('drops push while the token still works, then the keychain, both caches, exports and unsent edits', async () => {
     const client = new QueryClient();
     client.setQueryData(['saved'], ['a campaign']);
     const clear = jest.spyOn(client, 'clear').mockImplementation(() => {
@@ -29,7 +31,7 @@ describe('endLocalSession', () => {
 
     await endLocalSession(client);
 
-    expect(order).toEqual(['push', 'keychain', 'cache', 'persisted', 'exports']);
+    expect(order).toEqual(['push', 'keychain', 'cache', 'persisted', 'exports', 'edits']);
     expect(unregisterFromPush).toHaveBeenCalledTimes(1);
     expect(endSession).toHaveBeenCalledTimes(1);
     expect(clear).toHaveBeenCalledTimes(1);
@@ -47,5 +49,7 @@ describe('endLocalSession', () => {
     expect(forgetPersistedCache).toHaveBeenCalledTimes(1);
     // An export waiting in the cache for its receiving app (Android) is this account's too.
     expect(sweepAccountExports).toHaveBeenCalledTimes(1);
+    // So are the editor's unsent changes (#162) — the five-wrong-PINs wipe relies on it (#319).
+    expect(forgetUnsentEdits).toHaveBeenCalledTimes(1);
   });
 });
