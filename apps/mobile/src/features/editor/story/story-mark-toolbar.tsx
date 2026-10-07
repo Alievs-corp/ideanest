@@ -26,10 +26,24 @@ const MARKS: readonly { mark: StoryMark; glyph: typeof Glyphs.TextBold }[] = [
   { mark: 'em', glyph: Glyphs.TextItalic },
 ];
 
+type Selection = { readonly start: number; readonly end: number };
+
+/** Which marks the selection already has: worked out once per selection, for every toolbar drawn. */
+export type ActiveMarks = Readonly<Record<StoryMark, boolean>>;
+
+export function activeMarks(value: string, selection: Selection): ActiveMarks {
+  return {
+    strong: isMarkActive(value, selection.start, selection.end, 'strong'),
+    em: isMarkActive(value, selection.start, selection.end, 'em'),
+  };
+}
+
 export interface StoryMarkToolbarProps {
   readonly copy: StoryToolbarCopy;
   readonly value: string;
-  readonly selection: { readonly start: number; readonly end: number };
+  readonly selection: Selection;
+  /** `activeMarks(value, selection)`, computed once by the field. */
+  readonly active: ActiveMarks;
   /** Names what this toolbar formats, e.g. "Paragraph 2 of 7: …". */
   readonly label: string;
   readonly disabled?: boolean;
@@ -41,6 +55,7 @@ export function StoryMarkToolbar({
   copy,
   value,
   selection,
+  active,
   label,
   disabled = false,
   onApply,
@@ -58,7 +73,7 @@ export function StoryMarkToolbar({
           key={mark}
           glyph={glyph}
           label={mark === 'strong' ? copy.bold : copy.italic}
-          active={isMarkActive(value, selection.start, selection.end, mark)}
+          active={active[mark]}
           disabled={disabled}
           onPress={() => onApply(toggleMark(value, selection.start, selection.end, mark))}
           testID={`${testID}-${mark === 'strong' ? 'bold' : 'italic'}`}

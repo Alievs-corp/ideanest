@@ -1,4 +1,4 @@
-import { useRef, useState, type ComponentProps, type Ref } from 'react';
+import { memo, useCallback, useRef, useState, type ComponentProps } from 'react';
 import {
   StyleSheet,
   View,
@@ -43,44 +43,65 @@ import { StoryTextField } from './story-text-field';
 
 export type MoveDirection = 'up' | 'down';
 
+/**
+ * What the panel hands every card. Each takes the card's `blockKey` rather than its index, so one
+ * set of functions serves every card and stays the same object from render to render — which is
+ * what lets `StoryBlockCard` skip re-rendering when another block is typed into.
+ */
+export interface StoryBlockHandlers {
+  readonly change: (key: string, block: StoryBlock, sendNow?: boolean) => void;
+  readonly move: (key: string, direction: MoveDirection) => void;
+  readonly remove: (key: string) => void;
+  readonly flush: () => void;
+  /** Every OTHER heading's anchor, read when a heading is renamed rather than on every render. */
+  readonly takenAnchors: (key: string) => readonly string[];
+  readonly registerHead: (key: string, node: View | null) => void;
+  readonly registerButton: (key: string, direction: MoveDirection, node: View | null) => void;
+}
+
 export interface StoryBlockCardProps {
   readonly copy: StoryCopy;
+  /** The card's identity, which the document's blocks have none of. */
+  readonly blockKey: string;
   readonly block: StoryBlock;
   readonly index: number;
   readonly total: number;
   readonly disabled: boolean;
   /** The client's or the server's sentence about this block, or null. */
   readonly problem: string | null;
-  /** Every other heading's anchor, so a renamed heading's stays unique. */
-  readonly headingIdsInUse: readonly string[];
   /** The block was just added: its first field takes focus. */
   readonly autoFocus: boolean;
-  readonly onChange: (block: StoryBlock, sendNow?: boolean) => void;
-  readonly onMove: (direction: MoveDirection) => void;
-  readonly onRemove: () => void;
-  readonly onFlush: () => void;
-  readonly headRef: Ref<View>;
-  readonly buttonRef: (direction: MoveDirection) => Ref<View>;
+  readonly handlers: StoryBlockHandlers;
   readonly testID: string;
 }
 
-export function StoryBlockCard({
+/** A card re-renders only when its own block, place, state or words change. */
+export const StoryBlockCard = memo(function StoryBlockCard({
   copy,
+  blockKey,
   block,
   index,
   total,
   disabled,
   problem,
-  headingIdsInUse,
   autoFocus,
-  onChange,
-  onMove,
-  onRemove,
-  onFlush,
-  headRef,
-  buttonRef,
+  handlers,
   testID,
 }: StoryBlockCardProps) {
+  const onChange = useCallback(
+    (next: StoryBlock, sendNow?: boolean) => handlers.change(blockKey, next, sendNow),
+    [handlers, blockKey],
+  );
+  const onMove = useCallback((direction: MoveDirection) => handlers.move(blockKey, direction), [handlers, blockKey]);
+  const onRemove = useCallback(() => handlers.remove(blockKey), [handlers, blockKey]);
+  const takenAnchors = useCallback(() => handlers.takenAnchors(blockKey), [handlers, blockKey]);
+  const headRef = useCallback((node: View | null) => handlers.registerHead(blockKey, node), [handlers, blockKey]);
+  const upRef = useCallback((node: View | null) => handlers.registerButton(blockKey, 'up', node), [handlers, blockKey]);
+  const downRef = useCallback(
+    (node: View | null) => handlers.registerButton(blockKey, 'down', node),
+    [handlers, blockKey],
+  );
+  const onFlush = handlers.flush;
   const { blocks, vocabulary } = copy.story;
   const name = describeBlock(block, index, total, vocabulary);
   const position = fillPlaceholders(vocabulary.describe.position, {
@@ -125,7 +146,7 @@ export function StoryBlockCard({
         </View>
         <View style={styles.buttons}>
           <IconButton
-            ref={buttonRef('up')}
+            ref={upRef}
             icon={Glyphs.ArrowUp}
             label={moveUp}
             variant="ghost"
@@ -135,7 +156,7 @@ export function StoryBlockCard({
             testID={`${testID}-up`}
           />
           <IconButton
-            ref={buttonRef('down')}
+            ref={downRef}
             icon={Glyphs.ArrowDown}
             label={moveDown}
             variant="ghost"
@@ -163,7 +184,7 @@ export function StoryBlockCard({
         disabled={disabled}
         invalid={problem !== null}
         problem={problem}
-        headingIdsInUse={headingIdsInUse}
+        takenAnchors={takenAnchors}
         autoFocus={autoFocus}
         onChange={onChange}
         onFlush={onFlush}
@@ -178,7 +199,7 @@ export function StoryBlockCard({
       )}
     </View>
   );
-}
+});
 
 /* -------------------------------------------------------------------------
  * The fields of each kind of block
@@ -191,7 +212,7 @@ interface FieldsProps {
   readonly disabled: boolean;
   readonly invalid: boolean;
   readonly problem: string | null;
-  readonly headingIdsInUse: readonly string[];
+  readonly takenAnchors: () => readonly string[];
   readonly autoFocus: boolean;
   readonly onChange: (block: StoryBlock, sendNow?: boolean) => void;
   readonly onFlush: () => void;
@@ -274,7 +295,7 @@ function HeadingFields({
   disabled,
   invalid,
   problem,
-  headingIdsInUse,
+  takenAnchors,
   autoFocus,
   onChange,
   onFlush,
@@ -302,7 +323,7 @@ function HeadingFields({
         accessibilityHint={problem ?? undefined}
         placeholder={blocks.headingPlaceholder}
         autoFocus={autoFocus}
-        onChangeText={(text) => onChange(renameHeading(block, text, headingIdsInUse))}
+        onChangeText={(text) => onChange(renameHeading(block, text, takenAnchors()))}
         onBlur={onFlush}
         testID={`${testID}-heading`}
       />
@@ -473,7 +494,9 @@ const styles = StyleSheet.create({
   wrong: { borderWidth: 1, borderColor: colors.danger },
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   title: { flex: 1, minHeight: 44, justifyContent: 'center' },
-  buttons: { flexDirection: 'row', gap: spacing[1] },
+  // 32pt buttons with 44pt targets: 12pt between them keeps the targets from overlapping, so a
+  // finger meant for "move down" cannot land on "delete".
+  buttons: { flexDirection: 'row', gap: spacing[3] },
   fields: { gap: spacing[3] },
   rule: { gap: spacing[2] },
   line: { height: StyleSheet.hairlineWidth, backgroundColor: colors.borderStrong },

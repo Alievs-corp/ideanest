@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AppState,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -27,7 +28,6 @@ import {
   replaceBlock,
   storyCharacterCount,
   storyProblems,
-  type StoryBlock,
   type StoryBlockType,
   type StoryDocument,
 } from '@ideanest/campaign-editor/story';
@@ -48,10 +48,12 @@ import {
 import { FOCUS_DELAY_MS, focusOn } from '../../../components/ui/overlay';
 import { Glyphs } from '../../../icons';
 import { formatCount, pluralCategory } from '../../../lib/i18n';
+import { PERSIST_DELAY_MS } from '../use-autosave';
 import { colors, fontSize, lineHeight, radius, spacing } from '../../../theme';
 import { useEditor } from '../editor-context';
 import { useEditorChromeCopy } from '../translator';
-import { StoryBlockCard, type MoveDirection } from './story-block-card';
+import { readHeldStory, storyFingerprint, writeHeldStory, type HeldStory } from './held-story';
+import { StoryBlockCard, type MoveDirection, type StoryBlockHandlers } from './story-block-card';
 import { useStoryCopy, type StoryCopy } from './story-copy';
 import { StoryScrollProvider, useStoryScrollController } from './story-scroll';
 import { StoryVersionHistory } from './story-version-history';
@@ -68,22 +70,34 @@ import { StoryVersionHistory } from './story-version-history';
  *
  * There is no save button. The story is saved as ONE document: every change re-checks the blocks
  * with the shared `storyProblems`, and only when there are none is `{story}` queued on the
- * editor's shared autosave (800ms debounce, sent at once on blur). An incomplete block holds the
- * save rather than sending a document the server refuses — the draft is here and the server still
- * has the last story it accepted. Moving, adding and removing a block, and the pickers, send at
- * once, having no blur. Risks go as `{risks}`, empty as `null`. A `STORY_DOCUMENT_INVALID` refusal
- * marks the block its `meta.path` names (`rejectedBlockIndex`).
+ * editor's shared autosave (800ms debounce, sent at once on blur). Moving, adding and removing a
+ * block, and the pickers, send at once, having no blur. Risks go as `{risks}`, empty as `null`. A
+ * `STORY_DOCUMENT_INVALID` refusal marks the block its `meta.path` names (`rejectedBlockIndex`),
+ * and the mark follows that block when it is moved.
+ *
+ * <h2>A held story</h2>
+ *
+ * An incomplete block holds the save rather than sending a document the server refuses. The held
+ * document exists on this phone and nowhere else, so it is kept OUTSIDE the form, in the editor's
+ * store (`held-story.ts`): written after a pause in typing and at once when the app goes to the
+ * background or the tab is left, read back when the tab opens again — after a tab switch or after
+ * the OS killed the app with the camera open. Once complete it is saved like any change and the
+ * held copy is erased. If the service's story changed meanwhile (another device), the tab says so
+ * and the creator chooses: keep this phone's version (saved over the other once complete) or use
+ * the saved story. Nothing is dropped or overwritten without that choice.
  *
  * <p>Reordering is local: the order is part of the document, so a move is a document change like
  * any other, not a reorder request. It is announced ("Paragraph moved to 3 of 5.") and focus
- * returns to the same button on the moved card.
+ * returns, once, to the same button on the moved card.
  *
  * <p>A story written in a newer format than this build reads (`readStoryDocument` refuses it) is
- * shown as a warning with "Reload", read-only, and NEVER autosaved: editing it would send back a
- * document with the unknown blocks silently dropped.
+ * shown as a warning with "Reload", read-only, and NEVER autosaved — also when a newer read turns
+ * up mid-session: editing it would send back a document with the unknown blocks silently dropped.
  *
  * <p>The draft is seeded once from the project (re-seeding from a save's answer would delete what
- * was typed meanwhile), again when the frame bumps `revision`, and after a version is restored.
+ * was typed meanwhile), again in place when the frame bumps `revision`, and after a version is
+ * restored. Restoring waits until nothing is on its way to the service, so no older story can land
+ * over the restored one.
  */
 export function StoryPanel() {
   const editor = useEditor();
@@ -161,6 +175,18 @@ interface Draft {
   readonly keys: readonly string[];
 }
 
+/** What the form starts from: the service's story, or the story this phone was holding back. */
+interface Seeded {
+  readonly draft: Draft | null;
+  /** Fingerprint of the complete story the draft grew from. */
+  readonly base: string;
+  readonly holding: boolean;
+  /** The held story grew from a story the service no longer has. */
+  readonly changedElsewhere: boolean;
+  /** The service's story, which "Use the saved story" goes back to. */
+  readonly server: StoryDocument | null;
+}
+
 function StoryForm({
   seed,
   copy,
@@ -174,21 +200,142 @@ function StoryForm({
   const chrome = useEditorChromeCopy();
   const insets = useSafeAreaInsets();
   const { story, mobile: t, locale } = copy;
-  const { autosave, online } = editor;
+  const { autosave, online, store, projectId } = editor;
+  const vocabulary = story.vocabulary;
+
+  /** `storyProblems`, once per document however many times it is asked. */
+  const problemCache = useRef(new WeakMap<StoryDocument, ReadonlyMap<number, string>>());
+  const problemsOf = useCallback(
+    (document: StoryDocument): ReadonlyMap<number, string> => {
+      let found = problemCache.current.get(document);
+      if (found === undefined) {
+        found = storyProblems(document, vocabulary);
+        problemCache.current.set(document, found);
+      }
+      return found;
+    },
+    [vocabulary],
+  );
 
   const nextKey = useRef(0);
   const keyFor = useCallback(() => `block-${(nextKey.current += 1)}`, []);
-  const [draft, setDraft] = useState<Draft | null>(() => {
-    const document = documentOf(seed);
-    return document === null ? null : { document, keys: document.blocks.map(() => keyFor()) };
-  });
-  const [risks, setRisks] = useState(seed.risks ?? '');
+  const withKeys = useCallback((document: StoryDocument): Draft => ({ document, keys: document.blocks.map(() => keyFor()) }), [keyFor]);
 
-  /*
-   * Seeded once; again in place when the frame says so (`revision`: an offered change was sent, or
-   * a newer copy was read while nothing was waiting). A document held because a block is
-   * incomplete is kept: it exists on this phone and nowhere else.
-   */
+  /** The project as the form should start from it: what is held on the phone wins, and says so. */
+  const seedFrom = useCallback(
+    (project: ProjectEdit): Seeded => {
+      const server = documentOf(project);
+      if (server === null) return { draft: null, base: '', holding: false, changedElsewhere: false, server };
+      const serverPrint = storyFingerprint(server);
+      const held: HeldStory | null = readHeldStory(store, projectId);
+      if (held !== null) {
+        return {
+          draft: withKeys(held.document),
+          base: held.base,
+          holding: true,
+          changedElsewhere: held.base !== serverPrint,
+          server,
+        };
+      }
+      return { draft: withKeys(server), base: serverPrint, holding: false, changedElsewhere: false, server };
+    },
+    [store, projectId, withKeys],
+  );
+
+  const [initial] = useState(() => seedFrom(seed));
+  const [draft, setDraftState] = useState<Draft | null>(initial.draft);
+  const [risks, setRisks] = useState(seed.risks ?? '');
+  const [changedElsewhere, setChangedElsewhere] = useState(initial.changedElsewhere);
+  const serverDocument = useRef(initial.server);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  /** The block just added, whose first field takes focus as it mounts. */
+  const [focusKey, setFocusKey] = useState<string | null>(null);
+  const readOnly = editor.readOnly;
+
+  // Read by the stable handlers the cards hold, so a keystroke in one card re-renders only that card.
+  const draftRef = useRef(draft);
+  const readOnlyRef = useRef(readOnly);
+  const autosaveRef = useRef(autosave);
+  const signedOutRef = useRef(editor.load === 'signed-out');
+  useEffect(() => {
+    readOnlyRef.current = readOnly;
+    autosaveRef.current = autosave;
+    signedOutRef.current = editor.load === 'signed-out';
+  });
+  const setDraft = useCallback((next: Draft | null) => {
+    draftRef.current = next;
+    setDraftState(next);
+  }, []);
+
+  /* -------------------------------------------------------------------------------------------
+   * The held story, kept outside the form
+   * ---------------------------------------------------------------------------------------- */
+
+  /** The complete story the draft last was — what a new hold grows from. */
+  const lastComplete = useRef<StoryDocument | null>(initial.holding ? initial.server : initial.draft?.document ?? null);
+  const base = useRef(initial.base);
+  const holding = useRef(initial.holding);
+  /** What is still to be written: a held story, `null` to erase it, `undefined` for nothing. */
+  const unwritten = useRef<HeldStory | null | undefined>(undefined);
+  const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const writeHeldNow = useCallback((): void => {
+    if (writeTimer.current !== null) {
+      clearTimeout(writeTimer.current);
+      writeTimer.current = null;
+    }
+    const pending = unwritten.current;
+    unwritten.current = undefined;
+    // After a sign-out the store was erased; one account's words are never written back.
+    if (pending === undefined || signedOutRef.current) return;
+    writeHeldStory(store, projectId, pending);
+  }, [store, projectId]);
+
+  useEffect(() => {
+    if (draft === null) return; // An unreadable story: what is stored stays as it is.
+    if (problemsOf(draft.document).size > 0) {
+      if (!holding.current) {
+        holding.current = true;
+        base.current = storyFingerprint(lastComplete.current ?? emptyStory());
+      }
+      unwritten.current = { document: draft.document, base: base.current, at: new Date().toISOString() };
+      if (writeTimer.current !== null) clearTimeout(writeTimer.current);
+      writeTimer.current = setTimeout(writeHeldNow, PERSIST_DELAY_MS);
+      return;
+    }
+    lastComplete.current = draft.document;
+    if (holding.current) {
+      // Complete again: it goes through the autosave like any change, and the held copy goes.
+      holding.current = false;
+      unwritten.current = null;
+      writeHeldNow();
+      // Completing it was the choice the warning described: it is saved now, over the other copy.
+      setChangedElsewhere(false);
+    }
+  }, [draft, problemsOf, writeHeldNow]);
+
+  // The background and leaving the tab are when the OS may end the app: write what is held now.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next === 'background' || next === 'inactive') writeHeldNow();
+    });
+    return () => {
+      subscription.remove();
+      writeHeldNow();
+    };
+  }, [writeHeldNow]);
+
+  /** Forget the held story for good: a restore replaced it, or the creator chose the saved one. */
+  const eraseHeld = useCallback((): void => {
+    holding.current = false;
+    unwritten.current = null;
+    writeHeldNow();
+  }, [writeHeldNow]);
+
+  /* -------------------------------------------------------------------------------------------
+   * Re-seeding when the frame says so
+   * ---------------------------------------------------------------------------------------- */
+
   const seen = useRef(editor.revision);
   const latestSeed = useRef(editor.seed);
   useEffect(() => {
@@ -199,61 +346,211 @@ function StoryForm({
     seen.current = editor.revision;
     const next = latestSeed.current;
     if (next === null) return;
-    setDraft((current) => {
-      if (current !== null && storyProblems(current.document, story.vocabulary).size > 0) return current;
-      const document = documentOf(next);
-      return document === null ? null : { document, keys: document.blocks.map(() => keyFor()) };
-    });
     setRisks(next.risks ?? '');
-  }, [editor.revision, keyFor, story.vocabulary]);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  /** The block just added, whose first field takes focus as it mounts. */
-  const [focusKey, setFocusKey] = useState<string | null>(null);
-  const readOnly = editor.readOnly;
+    const document = documentOf(next);
+    serverDocument.current = document;
+    if (document === null) {
+      // A newer format turned up: read-only from here, and nothing held is ever sent over it.
+      setDraft(null);
+      return;
+    }
+    const current = draftRef.current;
+    if (current === null) {
+      // Readable again (Reload): start as the tab does, with anything this phone was holding.
+      const seeded = seedFrom(next);
+      base.current = seeded.base;
+      holding.current = seeded.holding;
+      lastComplete.current = seeded.holding ? seeded.server : seeded.draft?.document ?? null;
+      setChangedElsewhere(seeded.changedElsewhere);
+      setDraft(seeded.draft);
+      return;
+    }
+    if (problemsOf(current.document).size > 0) {
+      // Held: it exists only here. Kept, and if the service's story moved meanwhile, said so.
+      if (storyFingerprint(document) !== base.current) setChangedElsewhere(true);
+      return;
+    }
+    lastComplete.current = document;
+    // The same story read again keeps its cards, so a foreground refetch does not close the keyboard.
+    if (storyFingerprint(current.document) === storyFingerprint(document)) return;
+    setDraft(withKeys(document));
+  }, [editor.revision, problemsOf, seedFrom, setDraft, withKeys]);
 
-  const scroll = useRef<ScrollView>(null);
-  const content = useRef<View>(null);
-  const scrolling = useStoryScrollController({ scroll, content });
+  /* -------------------------------------------------------------------------------------------
+   * Changing the document
+   * ---------------------------------------------------------------------------------------- */
+
+  const commit = useCallback(
+    (next: Draft, sendNow = false): void => {
+      if (readOnlyRef.current) return;
+      setDraft(next);
+      // Held while any block is incomplete: the server would refuse it, and the autosave retries
+      // the same body — one unfinished description would stop every later save.
+      if (problemsOf(next.document).size > 0) return;
+      autosaveRef.current.save({ story: next.document });
+      if (sendNow) autosaveRef.current.flush();
+    },
+    [problemsOf, setDraft],
+  );
+
+  /** Focus, after the move has rendered, on the same button of the moved card — or its twin at an end. Once. */
+  const [focusAfterMove, setFocusAfterMove] = useState<{ key: string; direction: MoveDirection } | null>(null);
   const heads = useRef(new Map<string, View>());
   const buttons = useRef(new Map<string, View>());
   const addHeading = useRef<View>(null);
-  const [offset, setOffset] = useState(0);
-  const root = useRef<View>(null);
-
-  const failure = autosave.failure;
-  const fieldErrors = serverErrors(failure);
-  const rejected = rejectedBlockIndex(failure);
-  const document = draft?.document ?? null;
-
-  const problems = useMemo(() => {
-    const merged = new Map(document === null ? [] : storyProblems(document, story.vocabulary));
-    // The client's rules are for speed; where the server named a block, its words win.
-    if (rejected !== null && fieldErrors.story !== undefined) merged.set(rejected, fieldErrors.story);
-    return merged;
-  }, [document, story.vocabulary, rejected, fieldErrors.story]);
-
-  /** Focus, after the move has rendered, on the same button of the moved card — or its twin at an end. */
-  const [focusAfterMove, setFocusAfterMove] = useState<{ key: string; direction: MoveDirection; at: number } | null>(null);
   useEffect(() => {
-    if (focusAfterMove === null || draft === null) return undefined;
+    if (focusAfterMove === null) return undefined;
     const timer = setTimeout(() => {
-      const index = draft.keys.indexOf(focusAfterMove.key);
-      const atEdge = focusAfterMove.direction === 'up' ? index === 0 : index === draft.keys.length - 1;
+      const keys = draftRef.current?.keys ?? [];
+      const index = keys.indexOf(focusAfterMove.key);
+      const atEdge = focusAfterMove.direction === 'up' ? index === 0 : index === keys.length - 1;
       const direction = atEdge ? (focusAfterMove.direction === 'up' ? 'down' : 'up') : focusAfterMove.direction;
       focusOn(buttons.current.get(`${focusAfterMove.key}:${direction}`));
+      setFocusAfterMove(null);
     }, FOCUS_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [focusAfterMove, draft]);
+  }, [focusAfterMove]);
 
-  /** After a block is removed, the screen reader lands on its neighbour rather than nowhere. */
-  const [focusHead, setFocusHead] = useState<{ key: string | null; at: number } | null>(null);
+  /** After a block is added without text or removed, the screen reader lands on a card's name. */
+  const [focusHead, setFocusHead] = useState<{ key: string | null } | null>(null);
   useEffect(() => {
     if (focusHead === null) return undefined;
     const timer = setTimeout(() => {
       focusOn(focusHead.key === null ? addHeading.current : heads.current.get(focusHead.key));
+      setFocusHead(null);
     }, FOCUS_DELAY_MS);
     return () => clearTimeout(timer);
   }, [focusHead]);
+
+  const add = useCallback(
+    (type: StoryBlockType): void => {
+      const current = draftRef.current;
+      if (current === null || readOnlyRef.current) return;
+      const blocks = current.document.blocks;
+      const total = blocks.length;
+      const headingIds = blocks.flatMap((block) => (block.type === 'heading' ? [block.id] : []));
+      const key = keyFor();
+      setFocusKey(key);
+      commit(
+        {
+          document: { ...current.document, blocks: insertBlock(blocks, total, newBlock(type, headingIds)) },
+          keys: [...current.keys, key],
+        },
+        true,
+      );
+      announce(
+        fillPlaceholders(story.blocks.addedAnnouncement, {
+          label: vocabulary.blockLabel[type],
+          position: String(total + 1),
+          total: String(total + 1),
+        }),
+      );
+      // A block with no text to type into is focused by its name instead.
+      if (type === 'rule' || type === 'image') setFocusHead({ key });
+    },
+    [commit, keyFor, story.blocks.addedAnnouncement, vocabulary],
+  );
+
+  const handlers = useMemo<StoryBlockHandlers>(
+    () => ({
+      change: (key, block, sendNow) => {
+        const current = draftRef.current;
+        const index = current?.keys.indexOf(key) ?? -1;
+        if (current === null || index < 0) return;
+        commit({ document: { ...current.document, blocks: replaceBlock(current.document.blocks, index, block) }, keys: current.keys }, sendNow);
+      },
+      move: (key, direction) => {
+        const current = draftRef.current;
+        if (current === null || readOnlyRef.current) return;
+        const index = current.keys.indexOf(key);
+        const block = current.document.blocks[index];
+        const target = direction === 'up' ? index - 1 : index + 1;
+        if (block === undefined || target < 0 || target >= current.keys.length) return;
+        const keys = [...current.keys];
+        keys.splice(index, 1);
+        keys.splice(target, 0, key);
+        commit({ document: { ...current.document, blocks: moveBlock(current.document.blocks, index, target) }, keys }, true);
+        announce(
+          fillPlaceholders(story.blocks.movedAnnouncement, {
+            label: vocabulary.blockLabel[block.type],
+            position: String(target + 1),
+            total: String(keys.length),
+          }),
+        );
+        setFocusAfterMove({ key, direction });
+      },
+      remove: (key) => {
+        const current = draftRef.current;
+        if (current === null || readOnlyRef.current) return;
+        const index = current.keys.indexOf(key);
+        const block = current.document.blocks[index];
+        if (block === undefined) return;
+        const keys = current.keys.filter((other) => other !== key);
+        commit({ document: { ...current.document, blocks: removeBlock(current.document.blocks, index) }, keys }, true);
+        announce(
+          fillPlaceholders(pluralise(locale, story.blocks.removedAnnouncement, keys.length), {
+            label: vocabulary.blockLabel[block.type],
+            count: String(keys.length),
+          }),
+        );
+        setFocusHead({ key: keys[Math.min(index, keys.length - 1)] ?? null });
+      },
+      flush: () => autosaveRef.current.flush(),
+      takenAnchors: (key) => {
+        const current = draftRef.current;
+        if (current === null) return [];
+        const index = current.keys.indexOf(key);
+        return current.document.blocks.flatMap((block, at) => (block.type === 'heading' && at !== index ? [block.id] : []));
+      },
+      registerHead: (key, node) => {
+        if (node === null) heads.current.delete(key);
+        else heads.current.set(key, node);
+      },
+      registerButton: (key, direction, node) => {
+        if (node === null) buttons.current.delete(`${key}:${direction}`);
+        else buttons.current.set(`${key}:${direction}`, node);
+      },
+    }),
+    [commit, locale, story.blocks.movedAnnouncement, story.blocks.removedAnnouncement, vocabulary],
+  );
+
+  const changeRisks = useCallback((next: string): void => {
+    if (readOnlyRef.current) return;
+    setRisks(next);
+    // Cleared is a legitimate edit; the 200 minimum is a submission rule, not a reason to refuse.
+    autosaveRef.current.save({ risks: next.trim() === '' ? null : next });
+  }, []);
+
+  /* -------------------------------------------------------------------------------------------
+   * What the page shows, worked out once per change
+   * ---------------------------------------------------------------------------------------- */
+
+  const failure = autosave.failure;
+  const fieldErrors = serverErrors(failure);
+  const document = draft?.document ?? null;
+  /** The block a refusal named, as the card it was — so the mark moves with it, and goes with it. */
+  const rejectedKey = useMemo(() => {
+    const index = rejectedBlockIndex(failure);
+    return index === null ? null : (draftRef.current?.keys[index] ?? null);
+  }, [failure]);
+
+  const problems = useMemo(() => {
+    const merged = new Map(document === null ? [] : problemsOf(document));
+    // The client's rules are for speed; where the server named a block, its words win.
+    const index = rejectedKey === null || draft === null ? -1 : draft.keys.indexOf(rejectedKey);
+    if (index >= 0 && fieldErrors.story !== undefined) merged.set(index, fieldErrors.story);
+    return merged;
+  }, [document, draft, problemsOf, rejectedKey, fieldErrors.story]);
+
+  const storyCharacters = useMemo(() => (document === null ? 0 : storyCharacterCount(document)), [document]);
+  const anchors = useMemo(() => (document === null ? [] : headingAnchors(document)), [document]);
+  const held = document !== null && problemsOf(document).size > 0;
+
+  const scroll = useRef<ScrollView>(null);
+  const content = useRef<View>(null);
+  const scrolling = useStoryScrollController({ scroll, content });
+  const [offset, setOffset] = useState(0);
+  const root = useRef<View>(null);
 
   if (draft === null || document === null) {
     return (
@@ -272,90 +569,30 @@ function StoryForm({
     );
   }
 
-  function changeDocument(next: Draft, sendNow = false): void {
-    if (readOnly) return;
-    setDraft(next);
-    // Held while any block is incomplete: the server would refuse it, and the autosave retries
-    // the same body — one unfinished description would stop every later save.
-    if (storyProblems(next.document, story.vocabulary).size > 0) return;
-    autosave.save({ story: next.document });
-    if (sendNow) autosave.flush();
-  }
-
-  function withBlocks(blocks: readonly StoryBlock[], keys: readonly string[]): Draft {
-    return { document: { version: document?.version ?? 1, blocks }, keys };
-  }
-
-  function add(type: StoryBlockType): void {
-    if (draft === null || document === null) return;
-    const total = document.blocks.length;
-    const headingIds = document.blocks.flatMap((block) => (block.type === 'heading' ? [block.id] : []));
-    const key = keyFor();
-    setFocusKey(key);
-    changeDocument(
-      withBlocks(insertBlock(document.blocks, total, newBlock(type, headingIds)), [...draft.keys, key]),
-      true,
-    );
-    announce(
-      fillPlaceholders(story.blocks.addedAnnouncement, {
-        label: story.vocabulary.blockLabel[type],
-        position: String(total + 1),
-        total: String(total + 1),
-      }),
-    );
-    // A block with no text to type into is focused by its name instead.
-    if (type === 'rule' || type === 'image') setFocusHead({ key, at: Date.now() });
-  }
-
-  function move(index: number, direction: MoveDirection): void {
-    if (draft === null || document === null) return;
-    const block = document.blocks[index];
-    const key = draft.keys[index];
-    const target = direction === 'up' ? index - 1 : index + 1;
-    if (block === undefined || key === undefined || target < 0 || target >= document.blocks.length) return;
-    const keys = [...draft.keys];
-    keys.splice(index, 1);
-    keys.splice(target, 0, key);
-    changeDocument(withBlocks(moveBlock(document.blocks, index, target), keys), true);
-    announce(
-      fillPlaceholders(story.blocks.movedAnnouncement, {
-        label: story.vocabulary.blockLabel[block.type],
-        position: String(target + 1),
-        total: String(document.blocks.length),
-      }),
-    );
-    setFocusAfterMove({ key, direction, at: Date.now() });
-  }
-
-  function remove(index: number): void {
-    if (draft === null || document === null) return;
-    const block = document.blocks[index];
-    if (block === undefined) return;
-    const keys = draft.keys.filter((_, at) => at !== index);
-    const left = document.blocks.length - 1;
-    changeDocument(withBlocks(removeBlock(document.blocks, index), keys), true);
-    announce(
-      fillPlaceholders(pluralise(locale, story.blocks.removedAnnouncement, left), {
-        label: story.vocabulary.blockLabel[block.type],
-        count: String(left),
-      }),
-    );
-    setFocusHead({ key: keys[Math.min(index, keys.length - 1)] ?? null, at: Date.now() });
-  }
-
-  function changeRisks(next: string): void {
-    if (readOnly) return;
-    setRisks(next);
-    // Cleared is a legitimate edit; the 200 minimum is a submission rule, not a reason to refuse.
-    autosave.save({ risks: next.trim() === '' ? null : next });
-  }
-
-  const storyCharacters = storyCharacterCount(document);
-  const anchors = headingAnchors(document);
   const total = document.blocks.length;
 
   function measureOffset(): void {
     root.current?.measureInWindow((_x, y) => setOffset(y));
+  }
+
+  function takeSavedStory(): void {
+    const server = serverDocument.current;
+    if (server === null) return;
+    eraseHeld();
+    lastComplete.current = server;
+    setChangedElsewhere(false);
+    setDraft(withKeys(server));
+  }
+
+  function keepThisVersion(): void {
+    // The creator chose this phone's version; it now grows from the story the service has.
+    const server = serverDocument.current;
+    if (server !== null) base.current = storyFingerprint(server);
+    if (draftRef.current !== null && holding.current) {
+      unwritten.current = { document: draftRef.current.document, base: base.current, at: new Date().toISOString() };
+      writeHeldNow();
+    }
+    setChangedElsewhere(false);
   }
 
   return (
@@ -377,7 +614,7 @@ function StoryForm({
             scrollEventThrottle={32}
             testID="story-panel"
           >
-            <View ref={content} style={styles.column} collapsable={false}>
+            <View ref={content} style={styles.column} collapsable={false} onLayout={scrolling.onContentLayout}>
               {failure === null ? null : (
                 <InlineAlert
                   variant="danger"
@@ -401,6 +638,34 @@ function StoryForm({
                   }
                 />
               )}
+
+              {changedElsewhere ? (
+                <InlineAlert
+                  variant="warning"
+                  title={t('held.changedTitle')}
+                  description={t('held.changedBody')}
+                  testID="story-changed-elsewhere"
+                  action={
+                    <View style={styles.actions}>
+                      <Pill
+                        label={t('held.keep')}
+                        variant="ghost"
+                        size="sm"
+                        onPress={keepThisVersion}
+                        testID="story-held-keep"
+                      />
+                      <Pill
+                        label={t('held.useSaved')}
+                        variant="ghost"
+                        size="sm"
+                        disabled={readOnly}
+                        onPress={takeSavedStory}
+                        testID="story-held-discard"
+                      />
+                    </View>
+                  }
+                />
+              ) : null}
 
               {problems.size === 0 ? null : (
                 <InlineAlert
@@ -438,7 +703,7 @@ function StoryForm({
                   variant="ghost"
                   size="sm"
                   onPress={() => {
-                    // What is typed goes first, so a restore cannot be overtaken by an older queue.
+                    // What is typed goes first; Restore waits until it has landed.
                     autosave.flush();
                     setHistoryOpen(true);
                   }}
@@ -450,8 +715,12 @@ function StoryForm({
                 <View style={styles.card} testID="story-anchors">
                   <Eyebrow accessibilityRole="header">{story.anchorMenu}</Eyebrow>
                   <View style={styles.anchors}>
-                    {anchors.map((anchor) => (
-                      <View key={anchor.id} style={[styles.anchor, anchor.level === 3 && styles.indented]}>
+                    {anchors.map((anchor, index) => (
+                      // Two headings may share an anchor (the duplicate is the problem shown on it).
+                      <View
+                        key={`${index}:${anchor.id}`}
+                        style={[styles.anchor, anchor.level === 3 && styles.indented]}
+                      >
                         <Body tone="primary" style={anchor.level === 3 ? styles.small : undefined}>
                           {anchor.text.trim() === '' ? t('untitledSection') : anchor.text}
                         </Body>
@@ -474,30 +743,15 @@ function StoryForm({
                     return (
                       <StoryBlockCard
                         key={key}
+                        blockKey={key}
                         copy={copy}
                         block={block}
                         index={index}
                         total={total}
                         disabled={readOnly}
                         problem={problems.get(index) ?? null}
-                        headingIdsInUse={document.blocks.flatMap((other, at) =>
-                          other.type === 'heading' && at !== index ? [other.id] : [],
-                        )}
                         autoFocus={focusKey === key}
-                        onChange={(next, sendNow) =>
-                          changeDocument(withBlocks(replaceBlock(document.blocks, index, next), draft.keys), sendNow)
-                        }
-                        onMove={(direction) => move(index, direction)}
-                        onRemove={() => remove(index)}
-                        onFlush={autosave.flush}
-                        headRef={(node) => {
-                          if (node === null) heads.current.delete(key);
-                          else heads.current.set(key, node);
-                        }}
-                        buttonRef={(direction) => (node) => {
-                          if (node === null) buttons.current.delete(`${key}:${direction}`);
-                          else buttons.current.set(`${key}:${direction}`, node);
-                        }}
+                        handlers={handlers}
                         testID={`story-block-${index}`}
                       />
                     );
@@ -513,10 +767,10 @@ function StoryForm({
                   {ADDABLE.map(({ type, glyph }) => (
                     <Pill
                       key={type}
-                      label={story.vocabulary.blockLabel[type]}
+                      label={vocabulary.blockLabel[type]}
                       // The action, not the noun: "Paragraph" alone sounds like a heading.
                       accessibilityLabel={fillPlaceholders(story.blocks.addOne, {
-                        kind: story.vocabulary.blockLabel[type].toLocaleLowerCase(locale),
+                        kind: vocabulary.blockLabel[type].toLocaleLowerCase(locale),
                         hint: type === 'image' ? t('imageHint') : story.blocks.hints[type],
                       })}
                       iconLeft={glyph}
@@ -558,11 +812,15 @@ function StoryForm({
         <StoryVersionHistory
           visible={historyOpen}
           onClose={() => setHistoryOpen(false)}
-          projectId={editor.projectId}
+          projectId={projectId}
           copy={copy}
           currentCharacters={storyCharacters}
           readOnly={readOnly}
+          waiting={autosave.pending}
+          discardsHeld={held}
           onRestored={(project) => {
+            // The restored story replaces what was held here: nothing of it may come back.
+            eraseHeld();
             setHistoryOpen(false);
             onRestored(project);
           }}
@@ -581,6 +839,7 @@ const styles = StyleSheet.create({
   column: { gap: spacing[6] },
   pair: { gap: spacing[2] },
   failure: { gap: spacing[2] },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] },
   start: { alignSelf: 'flex-start' },
   counter: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing[3] },
   counterText: { flexGrow: 1, flexShrink: 1, gap: spacing[1] },

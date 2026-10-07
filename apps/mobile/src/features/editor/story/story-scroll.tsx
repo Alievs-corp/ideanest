@@ -34,6 +34,8 @@ export function useStoryScrollController({
 }) {
   const viewport = useRef({ offset: 0, height: 0 });
   const focused = useRef<View | null>(null);
+  /** Where the measured column starts inside the scrolled content: the page's top padding. */
+  const contentTop = useRef(0);
 
   const place = useCallback(
     (node: View): void => {
@@ -41,7 +43,9 @@ export function useStoryScrollController({
       if (relativeTo === null || typeof node.measureLayout !== 'function') return;
       node.measureLayout(
         relativeTo,
-        (_x, y, _width, height) => {
+        (_x, inColumn, _width, height) => {
+          // In the scroll view's terms, which is what `scrollTo` and the offset are in.
+          const y = inColumn + contentTop.current;
           const { offset, height: visible } = viewport.current;
           if (visible <= 0) return;
           let target: number | null = null;
@@ -88,8 +92,13 @@ export function useStoryScrollController({
     [place],
   );
 
+  /** The measured column's own layout, for its offset inside the scroll content. */
+  const onContentLayout = useCallback((event: LayoutChangeEvent) => {
+    contentTop.current = event.nativeEvent.layout.y;
+  }, []);
+
   const value = useMemo(() => ({ reveal }), [reveal]);
-  return { value, onScroll, onLayout };
+  return { value, onScroll, onLayout, onContentLayout };
 }
 
 export function StoryScrollProvider({ value, children }: { readonly value: StoryScroll; readonly children: ReactNode }) {

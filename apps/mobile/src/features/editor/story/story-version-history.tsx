@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ApiError } from '@ideanest/api-client';
@@ -55,6 +55,17 @@ export interface StoryVersionHistoryProps {
   readonly currentCharacters: number;
   /** Offline: the history can be read from what loads, but nothing can be restored. */
   readonly readOnly: boolean;
+  /**
+   * A change is still on its way to the service (queued, in the air, or refused and kept). A
+   * restore now could be overtaken by it — the older story landing over the restored one — so
+   * Restore waits, and says why.
+   */
+  readonly waiting: boolean;
+  /**
+   * The story on screen is held back by an incomplete block, so it is NOT kept as a version: the
+   * confirmation says the unsaved changes are discarded instead of promising they are kept.
+   */
+  readonly discardsHeld: boolean;
   readonly onRestored: (project: ProjectEdit) => void;
 }
 
@@ -81,6 +92,8 @@ export function StoryVersionHistory({
   copy,
   currentCharacters,
   readOnly,
+  waiting,
+  discardsHeld,
   onRestored,
 }: StoryVersionHistoryProps) {
   const history = copy.story.history;
@@ -118,11 +131,25 @@ export function StoryVersionHistory({
     return () => controller.abort();
   }, [visible, fetchList]);
 
+  /** The preview asked for last; an answer for any other is stale and dropped. */
+  const previewRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => previewRequest.current?.abort(), []);
+
+  function hidePreview(): void {
+    previewRequest.current?.abort();
+    previewRequest.current = null;
+    setOpen(null);
+  }
+
   async function showPreview(number: number): Promise<void> {
+    previewRequest.current?.abort();
+    const request = new AbortController();
+    previewRequest.current = request;
     setOpen(number);
     setPreview({ status: 'loading' });
     try {
-      const detail = await getStoryVersion(projectId, number);
+      const detail = await getStoryVersion(projectId, number, request.signal);
+      if (previewRequest.current !== request) return;
       const document = readStoryDocument(detail.document);
       // A version a newer editor wrote: showing it as best we can would invite a restore into a
       // document this build could not then save.
@@ -132,6 +159,7 @@ export function StoryVersionHistory({
           : { status: 'ready', document },
       );
     } catch (cause) {
+      if (previewRequest.current !== request || request.signal.aborted) return;
       setPreview({
         status: 'failed',
         message: failureMessage(cause, t('history.versionFailed'), t('history.unreachable')),
@@ -185,6 +213,14 @@ export function StoryVersionHistory({
             contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing[8] }]}
           >
             <Body>{history.description}</Body>
+            {waiting ? (
+              <InlineAlert
+                variant="info"
+                politeness="polite"
+                description={t('history.waitForSave')}
+                testID="story-history-waiting"
+              />
+            ) : null}
 
             {load.status === 'loading' ? (
               <SkeletonGroup label={history.loadingLabel} testID="story-history-loading">
@@ -218,8 +254,8 @@ export function StoryVersionHistory({
                     newest={position === 0}
                     expanded={open === version.number}
                     preview={open === version.number ? preview : null}
-                    readOnly={readOnly}
-                    onToggle={() => (open === version.number ? setOpen(null) : void showPreview(version.number))}
+                    readOnly={readOnly || waiting}
+                    onToggle={() => (open === version.number ? hidePreview() : void showPreview(version.number))}
                     onRestore={() => {
                       setRestoreError(null);
                       setConfirming(version);
@@ -252,7 +288,7 @@ export function StoryVersionHistory({
                   variant="accent"
                   fullWidth
                   busy={restoring}
-                  disabled={restoring || readOnly}
+                  disabled={restoring || readOnly || waiting}
                   onPress={() => {
                     if (confirming !== null) void restore(confirming);
                   }}
@@ -278,7 +314,12 @@ export function StoryVersionHistory({
                     characters: charactersPhrase(copy, confirming.characters),
                   })}
                 </Body>
-                <Body>{t('history.currentHolds', { characters: charactersPhrase(copy, currentCharacters) })}</Body>
+                <Body testID="story-restore-current">
+                  {discardsHeld
+                    ? // Held back by an incomplete block, so never saved: nothing keeps it as a version.
+                      t('history.discardsHeld')
+                    : t('history.currentHolds', { characters: charactersPhrase(copy, currentCharacters) })}
+                </Body>
                 {restoreError === null ? null : (
                   <InlineAlert variant="danger" description={restoreError} testID="story-restore-failed" />
                 )}

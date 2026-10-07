@@ -9,8 +9,12 @@ import { parseSpans, toggleMark, type StoryBlock, type StoryDocument } from '@id
 import en from '@ideanest/messages/en.json';
 import { setOnline } from '../../../lib/connectivity';
 import { setLocale } from '../../../lib/locale';
-import { memoryStore } from '../../../lib/storage';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadImage } from '../../../lib/media/upload';
+import { memoryStore, type KeyValueStore } from '../../../lib/storage';
+import { heldKeyFor, readUnsent, unsentKeyFor, writeUnsent } from '../../../lib/unsent-edits';
 import { EditorProvider } from '../editor-context';
+import { storyFingerprint, writeHeldStory } from './held-story';
 import { StoryPanel } from './story-panel';
 
 jest.mock('../../../lib/use-session', () => ({ useSession: () => ({ signedIn: true, locked: false, unlocked: false }) }));
@@ -82,22 +86,49 @@ async function settle() {
   }
 }
 
-async function show() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-  await act(async () => setLocale('en'));
-  await render(
+function tree(client: QueryClient, store: KeyValueStore, tabShown: boolean) {
+  return (
     <SafeAreaProvider initialMetrics={METRICS}>
       <QueryClientProvider client={client}>
         <IntlProvider locale="en" messages={en}>
-          <EditorProvider projectId="p1" store={memoryStore()}>
-            <StoryPanel />
+          <EditorProvider projectId="p1" store={store}>
+            {/* The frame's Slot: leaving the tab unmounts it, the editor stays. */}
+            {tabShown ? <StoryPanel /> : null}
           </EditorProvider>
         </IntlProvider>
       </QueryClientProvider>
-    </SafeAreaProvider>,
+    </SafeAreaProvider>
   );
-  await settle();
 }
+
+async function show({ store = memoryStore() }: { store?: KeyValueStore } = {}) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  await act(async () => setLocale('en'));
+  const view = await render(tree(client, store, true));
+  await settle();
+  return {
+    store,
+    client,
+    /** Another tab opens: the Story route unmounts, the editor (and its autosave) stays. */
+    leaveTab: async () => {
+      await view.rerender(tree(client, store, false));
+      await settle();
+    },
+    returnToTab: async () => {
+      await view.rerender(tree(client, store, true));
+      await settle();
+    },
+  };
+}
+
+/** Real time, for the debounced writes and the focus delay. */
+async function wait(ms: number) {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  });
+}
+
+const heldKey = heldKeyFor('p1', 'story');
 
 const sent = (method: string) => mockSend.mock.calls.filter((call) => call[0] === method);
 const patches = () => sent('PATCH').map((call) => call[2] as Record<string, unknown>);
@@ -117,7 +148,24 @@ beforeEach(() => {
   mockVersions = async () => [];
   setOnline(true);
   jest.spyOn(AccessibilityInfo, 'announceForAccessibilityWithOptions').mockImplementation(() => {});
+  jest.spyOn(AccessibilityInfo, 'sendAccessibilityEvent').mockImplementation(() => {});
+  picker.__reset();
+  upload.mockReset();
 });
+
+const picker = ImagePicker as unknown as typeof ImagePicker & {
+  __setNextResult: (result: Record<string, unknown>) => void;
+  __reset: () => void;
+};
+const upload = jest.mocked(uploadImage);
+
+/** A story with an embed block that has an address and no title yet: held back, never sent. */
+async function holdAnEmbed() {
+  await fireEvent.press(screen.getByTestId('story-add-embed'));
+  await settle();
+  await fireEvent.changeText(screen.getByTestId('story-block-3-url'), 'https://youtu.be/held');
+  await blur('story-block-3-url');
+}
 
 describe('StoryPanel — loading and the document', () => {
   it('shows three named label-and-block placeholders while the project loads', async () => {
@@ -473,5 +521,271 @@ describe('StoryPanel — earlier versions', () => {
     await fireEvent.press(within(screen.getByTestId('story-history-failed')).getByRole('button'));
     await settle();
     expect(screen.getByTestId('story-version-7')).toBeTruthy();
+  });
+});
+
+describe('StoryPanel — a held story', () => {
+  it('survives leaving the tab and coming back, and is never sent while incomplete', async () => {
+    const editor = await show();
+    await holdAnEmbed();
+    await editor.leaveTab();
+    expect(screen.queryByTestId('story-panel')).toBeNull();
+    await editor.returnToTab();
+    expect(screen.getByTestId('story-block-3-url').props.value).toBe('https://youtu.be/held');
+    expect(screen.getByTestId('story-not-saving')).toBeTruthy();
+    expect(storyPatches()).toEqual([]);
+  });
+
+  it('survives the app being killed, then is saved and forgotten once complete', async () => {
+    const store = memoryStore();
+    await show({ store });
+    await holdAnEmbed();
+    await wait(500); // the held story is written after a pause in typing
+    expect(store.getString(heldKey)).toBeDefined();
+
+    // A new launch: nothing of the first one ran its cleanup.
+    await show({ store });
+    expect(screen.getByTestId('story-block-3-url').props.value).toBe('https://youtu.be/held');
+    expect(screen.queryByTestId('story-changed-elsewhere')).toBeNull();
+    expect(storyPatches()).toEqual([]);
+
+    await fireEvent.changeText(screen.getByTestId('story-block-3-title'), 'The lamp at night');
+    await blur('story-block-3-title');
+    expect(storyPatches().at(-1)?.blocks[3]).toEqual({
+      type: 'embed',
+      provider: 'youtube',
+      url: 'https://youtu.be/held',
+      title: 'The lamp at night',
+    });
+    expect(store.getString(heldKey)).toBeUndefined();
+  });
+
+  it('says so when the service’s story changed meanwhile, and the creator chooses', async () => {
+    const store = memoryStore();
+    const held = doc([...BLOCKS, { type: 'embed', provider: 'youtube', url: '', title: '' }]);
+    writeHeldStory(store, 'p1', { document: held, base: storyFingerprint(doc([])), at: '2026-10-07T08:00:00.000Z' });
+    await show({ store });
+    expect(screen.getByTestId('story-changed-elsewhere')).toBeTruthy();
+    expect(screen.getByTestId('story-block-3')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('story-held-discard'));
+    await settle();
+    expect(screen.queryByTestId('story-block-3')).toBeNull();
+    expect(screen.queryByTestId('story-changed-elsewhere')).toBeNull();
+    expect(store.getString(heldKey)).toBeUndefined();
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it('keeping this phone’s version stops the warning and keeps the draft', async () => {
+    const store = memoryStore();
+    const held = doc([...BLOCKS, { type: 'embed', provider: 'youtube', url: '', title: '' }]);
+    writeHeldStory(store, 'p1', { document: held, base: storyFingerprint(doc([])), at: '2026-10-07T08:00:00.000Z' });
+    await show({ store });
+    await fireEvent.press(screen.getByTestId('story-held-keep'));
+    await settle();
+    expect(screen.queryByTestId('story-changed-elsewhere')).toBeNull();
+    expect(screen.getByTestId('story-block-3')).toBeTruthy();
+    await show({ store });
+    expect(screen.queryByTestId('story-changed-elsewhere')).toBeNull();
+  });
+
+  it('a newer read in a format this build cannot read turns the tab read-only, held story or not', async () => {
+    const editor = await show();
+    await holdAnEmbed();
+    mockProject = async () => project({ story: { version: 99, blocks: [] } as unknown as StoryDocument });
+    await act(async () => {
+      await editor.client.refetchQueries();
+    });
+    await settle();
+    expect(screen.getByTestId('story-unreadable')).toBeTruthy();
+    expect(storyPatches()).toEqual([]);
+  });
+
+  it('the restore confirmation says the held changes are discarded, not kept', async () => {
+    mockVersions = async () => [{ number: 6, createdAt: '2026-10-04T09:30:00.000Z', authorId: 'u1', characters: 300 }];
+    mockSend.mockImplementation(async (method: string) =>
+      method === 'POST' ? project({ story: doc([{ type: 'paragraph', spans: parseSpans('Restored.') }]) }) : project(),
+    );
+    const editor = await show();
+    await holdAnEmbed();
+    await fireEvent.press(screen.getByTestId('story-history-open'));
+    await settle();
+    await fireEvent.press(screen.getByTestId('story-version-6-restore'));
+    await settle();
+    expect(screen.getByTestId('story-restore-current')).toHaveTextContent(MOBILE.history.discardsHeld);
+
+    await fireEvent.press(screen.getByTestId('story-restore-confirm'));
+    await settle();
+    await wait(500);
+    expect(screen.getByTestId('story-block-0-text').props.value).toBe('Restored.');
+    expect(editor.store.getString(heldKey)).toBeUndefined();
+  });
+});
+
+describe('StoryPanel — restoring while a change is on its way', () => {
+  const VERSIONS: readonly StoryVersionSummary[] = [
+    { number: 6, createdAt: '2026-10-04T09:30:00.000Z', authorId: 'u1', characters: 300 },
+  ];
+
+  it('waits for a change in the air, and allows it once the answer has landed', async () => {
+    mockVersions = async () => VERSIONS;
+    let answer: (value: unknown) => void = () => {};
+    mockSend.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)));
+    await show();
+    await fireEvent.changeText(screen.getByTestId('story-block-1-text'), 'Typed just now.');
+    await fireEvent.press(screen.getByTestId('story-history-open'));
+    await settle();
+    expect(screen.getByTestId('story-history-waiting')).toHaveTextContent(MOBILE.history.waitForSave);
+    expect(screen.getByTestId('story-version-6-restore').props.accessibilityState).toMatchObject({ disabled: true });
+
+    await act(async () => answer(project()));
+    await settle();
+    expect(screen.queryByTestId('story-history-waiting')).toBeNull();
+    expect(screen.getByTestId('story-version-6-restore').props.accessibilityState).toMatchObject({ disabled: false });
+  });
+
+  it('waits while a refused story is kept for the retry', async () => {
+    mockVersions = async () => VERSIONS;
+    mockSend.mockRejectedValueOnce(new ApiError(500, { status: 500 }));
+    await show();
+    await fireEvent.changeText(screen.getByTestId('story-block-1-text'), 'Refused.');
+    await blur('story-block-1-text');
+    expect(screen.getByTestId('story-not-saved')).toBeTruthy();
+    mockSend.mockImplementation(() => new Promise(() => {}));
+    await fireEvent.press(screen.getByTestId('story-history-open'));
+    await settle();
+    expect(screen.getByTestId('story-history-waiting')).toBeTruthy();
+    expect(screen.getByTestId('story-version-6-restore').props.accessibilityState).toMatchObject({ disabled: true });
+    expect(sent('POST')).toEqual([]);
+  });
+});
+
+describe('StoryPanel — focus, pickers, uploads and the refusal mark', () => {
+  it('returns focus to the moved card’s button once, and not on later keystrokes', async () => {
+    await show();
+    await fireEvent.press(screen.getByTestId('story-block-0-down'));
+    await wait(200);
+    const focused = jest.mocked(AccessibilityInfo.sendAccessibilityEvent).mock.calls;
+    expect(focused).toHaveLength(1);
+    expect(focused[0]?.[1]).toBe('focus');
+
+    await fireEvent.changeText(screen.getByTestId('story-block-0-text'), 'Typing after the move.');
+    await wait(200);
+    await fireEvent.changeText(screen.getByTestId('story-block-0-text'), 'Typing again.');
+    await wait(200);
+    expect(jest.mocked(AccessibilityInfo.sendAccessibilityEvent).mock.calls).toHaveLength(1);
+  });
+
+  it('a heading’s level is chosen from the picker and saved at once', async () => {
+    await show();
+    await fireEvent.press(screen.getByTestId('story-block-0-level'));
+    await fireEvent.press(screen.getByRole('radio', { name: STORY.blocks.subsection }));
+    await settle();
+    expect(storyPatches().at(-1)?.blocks[0]).toEqual({ type: 'heading', level: 3, id: 'the-plan', text: 'The plan' });
+  });
+
+  it('an embed’s provider is chosen from the picker', async () => {
+    mockProject = async () => project({ story: doc([]) });
+    await show();
+    await fireEvent.press(screen.getByTestId('story-add-embed'));
+    await settle();
+    await fireEvent.press(screen.getByTestId('story-block-0-provider'));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Vimeo' }));
+    await fireEvent.changeText(screen.getByTestId('story-block-0-url'), 'https://vimeo.com/1');
+    await fireEvent.changeText(screen.getByTestId('story-block-0-title'), 'A film');
+    await blur('story-block-0-title');
+    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+      type: 'embed',
+      provider: 'vimeo',
+      url: 'https://vimeo.com/1',
+      title: 'A film',
+    });
+  });
+
+  it.each([
+    ['library', 'launchImageLibraryAsync'],
+    ['camera', 'launchCameraAsync'],
+  ] as const)('an image block takes an upload from the %s', async (source, launcher) => {
+    mockProject = async () => project({ story: doc([]) });
+    picker.__setNextResult({ canceled: false, assets: [{ uri: 'file:///photo.heic', mimeType: 'image/jpeg' }] });
+    upload.mockResolvedValue({ mediaId: 'm1', url: 'https://cdn.example.com/m1.jpg', width: 1200, height: 800, blurDataUrl: '' });
+    await show();
+    await fireEvent.press(screen.getByTestId('story-add-image'));
+    await settle();
+    await fireEvent.press(screen.getByTestId(`story-block-0-source-${source}`));
+    await settle();
+    expect(ImagePicker[launcher]).toHaveBeenCalled();
+    expect(upload).toHaveBeenCalledWith('file:///photo.heic', expect.anything());
+    expect(screen.getByTestId('story-block-0-size')).toHaveTextContent('1200×800 pixels');
+
+    await fireEvent.changeText(screen.getByTestId('story-block-0-alt'), 'The lamp');
+    await blur('story-block-0-alt');
+    expect(storyPatches().at(-1)?.blocks[0]).toEqual({
+      type: 'image',
+      url: 'https://cdn.example.com/m1.jpg',
+      width: 1200,
+      height: 800,
+      alt: 'The lamp',
+    });
+  });
+
+  it('the refusal mark follows its block when the block moves, and goes with it', async () => {
+    mockSend.mockRejectedValueOnce(
+      new ApiError(422, {
+        status: 422,
+        code: 'STORY_DOCUMENT_INVALID',
+        errors: { story: 'That anchor is reserved.' },
+        meta: { path: 'blocks[2].id' },
+      }),
+    );
+    await show();
+    await fireEvent.changeText(screen.getByTestId('story-block-1-text'), 'Edited.');
+    await blur('story-block-1-text');
+    expect(within(screen.getByTestId('story-block-2')).getByText('That anchor is reserved.')).toBeTruthy();
+
+    mockSend.mockImplementation(() => new Promise(() => {})); // the next answer never comes
+    await fireEvent.press(screen.getByTestId('story-block-2-up'));
+    await settle();
+    expect(within(screen.getByTestId('story-block-1')).getByText('That anchor is reserved.')).toBeTruthy();
+    expect(screen.queryByTestId('story-block-2-problem')).toBeNull();
+
+    await fireEvent.press(screen.getByTestId('story-block-1-remove'));
+    await settle();
+    expect(screen.queryByText('That anchor is reserved.')).toBeNull();
+  });
+
+  it('a preview answer for a version no longer asked for is dropped', async () => {
+    mockVersions = async () => [
+      { number: 7, createdAt: '2026-10-05T09:30:00.000Z', authorId: 'u1', characters: 10 },
+      { number: 6, createdAt: '2026-10-04T09:30:00.000Z', authorId: 'u1', characters: 10 },
+    ];
+    const answers = new Map<number, (value: unknown) => void>();
+    mockVersion = (number) => new Promise((resolve) => answers.set(number, resolve));
+    await show();
+    await fireEvent.press(screen.getByTestId('story-history-open'));
+    await settle();
+    await fireEvent.press(screen.getByTestId('story-version-7-preview'));
+    await fireEvent.press(screen.getByTestId('story-version-6-preview'));
+    await act(async () =>
+      answers.get(6)?.({ number: 6, document: doc([{ type: 'paragraph', spans: parseSpans('Six.') }]) }),
+    );
+    await act(async () =>
+      answers.get(7)?.({ number: 7, document: doc([{ type: 'paragraph', spans: parseSpans('Seven.') }]) }),
+    );
+    await settle();
+    expect(within(screen.getByTestId('story-version-6-content')).getByText('Paragraph: Six.')).toBeTruthy();
+    expect(screen.queryByTestId('story-version-7-content')).toBeNull();
+    expect(screen.queryByText('Paragraph: Seven.')).toBeNull();
+  });
+
+  it('an offered change never sends a story over one this build cannot read', async () => {
+    const store = memoryStore();
+    writeUnsent(store, unsentKeyFor('p1'), {
+      patch: { story: doc(BLOCKS), title: 'Kept title' },
+      at: '2026-10-07T08:00:00.000Z',
+    });
+    mockProject = async () => project({ story: { version: 99, blocks: [] } as unknown as StoryDocument });
+    await show({ store });
+    expect(readUnsent(store, unsentKeyFor('p1'))?.patch).toEqual({ title: 'Kept title' });
   });
 });

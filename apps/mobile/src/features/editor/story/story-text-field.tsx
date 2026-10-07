@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type Ref } from 'react';
+import { useId, useMemo, useRef, useState, type Ref } from 'react';
 import {
   InputAccessoryView,
   Platform,
@@ -10,7 +10,7 @@ import type { StoryToolbarCopy } from '@ideanest/campaign-editor/copy';
 import type { MarkToggle } from '@ideanest/campaign-editor/story';
 import { Textarea } from '../../../components/ui';
 import { colors, spacing } from '../../../theme';
-import { StoryMarkToolbar } from './story-mark-toolbar';
+import { StoryMarkToolbar, activeMarks } from './story-mark-toolbar';
 import { useStoryScroll } from './story-scroll';
 
 /**
@@ -83,11 +83,15 @@ export function StoryTextField({
     else if (inputRef !== null && inputRef !== undefined) (inputRef as { current: RNTextInput | null }).current = node;
   }
 
+  // Once per selection, however many toolbars draw it (two on iOS).
+  const active = useMemo(() => activeMarks(value, selection), [value, selection]);
+
   const marks = (suffix: string) => (
     <StoryMarkToolbar
       copy={toolbar}
       value={value}
       selection={selection}
+      active={active}
       label={label}
       disabled={disabled}
       onApply={apply}
