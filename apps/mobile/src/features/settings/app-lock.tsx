@@ -13,10 +13,11 @@ import {
 } from '../../components/ui';
 import { Glyphs } from '../../icons';
 import { IdentityCheck, PinCreate, useBiometricCapability } from '../lock/pin-flow';
+import { useBiometricsInUse } from '../../lib/app-lock';
 import { biometricsUsable, type BiometricCapability } from '../../lib/biometrics';
 import { useT, type MessageKey } from '../../lib/i18n';
 import { savePin } from '../../lib/pin';
-import { disableLock, enableLock } from '../../lib/session';
+import { disableLock, enableLock, setBiometricsAllowed } from '../../lib/session';
 import { useSession } from '../../lib/use-session';
 import { colors, size, spacing } from '../../theme';
 import { SettingsCard } from './settings-page';
@@ -30,6 +31,12 @@ import { SettingsCard } from './settings-page';
  *   <li><strong>Off</strong> needs the owner: the biometric prompt (offered once on its own) or
  *       the current PIN, counted against the lock's five attempts.</li>
  *   <li><strong>Change PIN</strong>, while on: the same check, then a new PIN twice.</li>
+ *   <li><strong>Unlock with fingerprint</strong> (or face), while on and only where the phone
+ *       has strong biometrics: on by default. Off keeps the lock and the PIN and never shows the
+ *       prompt — the owner's choice, without deleting fingerprints from the phone. Turning it
+ *       back on takes the current PIN, and only the PIN: a prompt could be passed by another
+ *       finger enrolled on the phone, which is what switching it off may have been about.
+ *       Turning it off needs nothing, because it only takes a way in away.</li>
  * </ul>
  *
  * <p>Every phone can have the lock. Biometrics are the quick way through it where the phone has
@@ -37,12 +44,15 @@ import { SettingsCard } from './settings-page';
  * the switch says which. A property of this phone rather than of the account, so it needs no
  * connection and is never disabled offline.
  */
-type Flow = 'enable' | 'disable' | 'change-verify' | 'change-new' | null;
+type Flow = 'enable' | 'disable' | 'change-verify' | 'change-new' | 'biometrics-on' | null;
 
 export function AppLockCard() {
   const t = useT();
   const { locked } = useSession();
   const capability = useBiometricCapability();
+  const biometricsOn = useBiometricsInUse();
+  // The second switch: only with the lock on and a phone that can do strong biometrics.
+  const offersBiometrics = locked && biometricsUsable(capability);
   const [flow, setFlow] = useState<Flow>(null);
   const [refused, setRefused] = useState(false);
 
@@ -53,7 +63,9 @@ export function AppLockCard() {
     setFlow(next ? 'enable' : 'disable');
   };
 
-  const label = t(lockLabelKey(capability));
+  // With the fingerprint/face turned off, the lock is a PIN lock, and says so.
+  const pinLock = offersBiometrics && !biometricsOn;
+  const label = t(pinLock ? 'mobile.lock.pinOnly' : lockLabelKey(capability));
   const detail = t(lockDetailKey(capability, locked));
 
   return (
@@ -81,6 +93,21 @@ export function AppLockCard() {
           testID="app-lock-switch"
         />
       )}
+      {offersBiometrics ? (
+        <Switch
+          label={t(biometricsSwitchKey(capability))}
+          description={t(
+            biometricsOn ? biometricsOnDetailKey(capability) : 'mobile.lock.biometrics.offDetail',
+          )}
+          value={biometricsOn}
+          onValueChange={(next) => {
+            if (next) setFlow('biometrics-on');
+            else setBiometricsAllowed(false);
+          }}
+          disabled={flow !== null}
+          testID="app-lock-biometrics-switch"
+        />
+      ) : null}
       {locked ? (
         <Pill
           label={t('mobile.settings.security.changePin')}
@@ -125,6 +152,17 @@ export function AppLockCard() {
             autoPrompt
             onConfirmed={() => setFlow('change-new')}
             testID="app-lock-confirm-change"
+          />
+        ) : null}
+        {flow === 'biometrics-on' ? (
+          // PIN only: the prompt stays off until the PIN has turned it on.
+          <IdentityCheck
+            intro={t(biometricsIntroKey(capability))}
+            onConfirmed={() => {
+              setBiometricsAllowed(true);
+              close();
+            }}
+            testID="app-lock-confirm-biometrics"
           />
         ) : null}
         {flow === 'change-new' ? (
@@ -178,6 +216,27 @@ export function lockLabelKey(capability: BiometricCapability | null): MessageKey
     case null:
       return 'mobile.lock.checking';
   }
+}
+
+/** The fingerprint/face switch's name, in the words of what the phone has. */
+export function biometricsSwitchKey(capability: BiometricCapability | null): MessageKey {
+  if (capability === 'face') return 'mobile.lock.biometrics.face';
+  if (capability === 'fingerprint') return 'mobile.lock.biometrics.fingerprint';
+  return 'mobile.lock.biometrics.other';
+}
+
+/** The line under the switch while it is on, naming what the app asks for first. */
+export function biometricsOnDetailKey(capability: BiometricCapability | null): MessageKey {
+  if (capability === 'face') return 'mobile.lock.biometrics.onDetail.face';
+  if (capability === 'fingerprint') return 'mobile.lock.biometrics.onDetail.fingerprint';
+  return 'mobile.lock.biometrics.onDetail.other';
+}
+
+/** "Enter your PIN to turn on unlocking with …", in the words of what the phone has. */
+export function biometricsIntroKey(capability: BiometricCapability | null): MessageKey {
+  if (capability === 'face') return 'mobile.lock.confirm.biometricsOn.face';
+  if (capability === 'fingerprint') return 'mobile.lock.confirm.biometricsOn.fingerprint';
+  return 'mobile.lock.confirm.biometricsOn.other';
 }
 
 export function lockDetailKey(capability: BiometricCapability | null, locked: boolean): MessageKey {

@@ -9,15 +9,21 @@ import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
 import { lockPhase, resetAppLockForTests } from '../../lib/app-lock';
 import { setOnline } from '../../lib/connectivity';
+import * as pinModule from '../../lib/pin';
 import { checkPin, failedPinAttempts, hasPin } from '../../lib/pin';
 import {
+  biometricsAllowed,
   enableLock,
+  hasStoredSession,
   isLockOn,
   rememberAccessToken,
+  setBiometricsAllowed,
   storeRefreshToken,
   useFlagStore,
 } from '../../lib/session';
-import { memoryStore } from '../../lib/storage';
+import { memoryStore, type KeyValueStore } from '../../lib/storage';
+
+let flagStore: KeyValueStore;
 import { AppLockCard } from './app-lock';
 
 /**
@@ -86,7 +92,8 @@ const lockSwitch = (name: string = L.fingerprint) => screen.getByRole('switch', 
 beforeEach(async () => {
   keychain.__reset();
   biometrics.__reset();
-  useFlagStore(memoryStore());
+  flagStore = memoryStore();
+  useFlagStore(flagStore);
   rememberAccessToken(null);
   resetAppLockForTests();
   setOnline(true);
@@ -270,5 +277,144 @@ describe('changing the PIN', () => {
 
     expect(screen.queryByRole('header', { name: L.setPin.title })).toBeNull();
     expect(await checkPin('135790')).toBe(true);
+  });
+});
+
+describe('the fingerprint/face switch (#149)', () => {
+  const B = L.biometrics;
+  const biometricsSwitch = (name: string = B.fingerprint) => screen.getByRole('switch', { name });
+
+  it('appears with the lock on, on, in the words of the phone’s scanner', async () => {
+    await enableLock('135790');
+    await show();
+    expect(biometricsSwitch().props.accessibilityState).toMatchObject({ checked: true });
+    expect(screen.getByText(B.onDetail.fingerprint)).toBeTruthy();
+  });
+
+  it('is not offered with the lock off', async () => {
+    await show();
+    expect(screen.queryByRole('switch', { name: B.fingerprint })).toBeNull();
+  });
+
+  it('is not offered on a phone with only weak biometrics', async () => {
+    await enableLock('135790');
+    biometrics.__setBiometrics({ level: 2 });
+    await show();
+    expect(screen.queryByRole('switch', { name: B.fingerprint })).toBeNull();
+    expect(screen.queryByRole('switch', { name: B.other })).toBeNull();
+  });
+
+  it('is not offered with nothing enrolled, and the lock is a PIN lock', async () => {
+    await enableLock('135790');
+    biometrics.__setBiometrics({ enrolled: false });
+    await show();
+    expect(screen.queryByRole('switch', { name: B.fingerprint })).toBeNull();
+    expect(screen.queryByRole('switch', { name: B.other })).toBeNull();
+    expect(lockSwitch(L.pinOnly)).toBeTruthy();
+  });
+
+  it('says Face ID on a phone with a face scanner', async () => {
+    await enableLock('135790');
+    biometrics.__setBiometrics({ kinds: [biometrics.AuthenticationType.FACIAL_RECOGNITION] });
+    await show();
+    expect(biometricsSwitch(B.face)).toBeTruthy();
+    expect(screen.getByText(B.onDetail.face)).toBeTruthy();
+  });
+
+  it('goes off without asking, and the lock reads as a PIN lock', async () => {
+    await enableLock('135790');
+    await show();
+    await fireEvent.press(biometricsSwitch());
+    await settle();
+
+    expect(biometricsAllowed()).toBe(false);
+    expect(biometrics.__prompts()).toBe(0);
+    expect(biometricsSwitch().props.accessibilityState).toMatchObject({ checked: false });
+    expect(screen.getByText(B.offDetail)).toBeTruthy();
+    expect(lockSwitch(L.pinOnly).props.accessibilityState).toMatchObject({ checked: true });
+  });
+
+  it('comes back on with the PIN only: no prompt, and the sheet closes on the switch, checked', async () => {
+    await enableLock('135790');
+    setBiometricsAllowed(false);
+    await show();
+
+    await fireEvent.press(biometricsSwitch());
+    await settle();
+    expect(screen.getByText(L.confirm.biometricsOn.fingerprint)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: L.screen.useFingerprint })).toBeNull();
+    expect(biometrics.__prompts()).toBe(0);
+
+    await typePin('135790');
+    expect(biometricsAllowed()).toBe(true);
+    expect(screen.queryByText(L.confirm.biometricsOn.fingerprint)).toBeNull();
+    expect(biometricsSwitch().props.accessibilityState).toMatchObject({ checked: true });
+    expect(biometrics.__prompts()).toBe(0);
+  });
+
+  it('a wrong PIN in the turn-on check is counted', async () => {
+    await enableLock('135790');
+    setBiometricsAllowed(false);
+    await show();
+
+    await fireEvent.press(biometricsSwitch());
+    await settle();
+    await typePin('000000');
+
+    expect(biometricsAllowed()).toBe(false);
+    expect(await failedPinAttempts()).toBe(1);
+    expect(screen.getByText('Wrong PIN. 4 attempts left before this phone signs you out.')).toBeTruthy();
+  });
+
+  it('five wrong PINs in the turn-on check wipe the phone, the flag with it', async () => {
+    await enableLock('135790');
+    setBiometricsAllowed(false);
+    await show();
+
+    await fireEvent.press(biometricsSwitch());
+    await settle();
+    for (let attempt = 0; attempt < 5; attempt += 1) await typePin('000000');
+
+    expect(hasStoredSession()).toBe(false);
+    expect(isLockOn()).toBe(false);
+    expect(await hasPin()).toBe(false);
+    expect(flagStore.getString('app-lock.biometrics-off')).toBeUndefined();
+  });
+
+  it('nothing changes when the sheet is closed while the PIN is being checked', async () => {
+    await enableLock('135790');
+    setBiometricsAllowed(false);
+    await show();
+
+    await fireEvent.press(biometricsSwitch());
+    await settle();
+    // The PIN check is slow on a phone (`lib/pin.ts`): hold its answer until the sheet is closed.
+    let answer: (correct: boolean) => void = () => undefined;
+    jest.spyOn(pinModule, 'checkPin').mockImplementation(
+      () => new Promise<boolean>((resolve) => (answer = resolve)),
+    );
+    await typePin('135790');
+    await fireEvent.press(screen.getByRole('button', { name: en.mobile.kitForm.close }));
+    await settle();
+
+    answer(true);
+    await settle();
+
+    expect(biometricsAllowed()).toBe(false);
+  });
+
+  it('off: turning the lock off asks for the PIN only, never the prompt', async () => {
+    await enableLock('135790');
+    setBiometricsAllowed(false);
+    await show();
+
+    await fireEvent.press(lockSwitch(L.pinOnly));
+    await settle();
+    expect(biometrics.__prompts()).toBe(0);
+    expect(screen.queryByRole('button', { name: L.screen.useFingerprint })).toBeNull();
+
+    await typePin('135790');
+    expect(isLockOn()).toBe(false);
+    expect(flagStore.getString('app-lock.biometrics-off')).toBeUndefined();
   });
 });

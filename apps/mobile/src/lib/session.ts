@@ -88,6 +88,12 @@ const PIN_REQUIRED_KEY = 'app-lock.pin-required';
  * build left behind when the lock was turned on — and the old item is read instead.
  */
 const MIGRATED_KEY = 'app-lock.token-moved';
+/**
+ * MMKV: the owner turned the fingerprint/face off for the app lock — the lock and the PIN stay,
+ * the prompt is never shown. ABSENT means on, so every lock from before the switch existed, and
+ * every new one, keeps the biometric (#149, after #319). Erased with the rest of the lock.
+ */
+const BIOMETRICS_OFF_KEY = 'app-lock.biometrics-off';
 
 let accessToken: string | null = null;
 
@@ -176,6 +182,27 @@ export function isPinRequired(): boolean {
 }
 
 /**
+ * Whether the owner lets the app lock use the fingerprint or face. On unless turned off; whether
+ * the phone can actually do it is `lib/biometrics.ts`'s question, and both must say yes.
+ */
+export function biometricsAllowed(): boolean {
+  return flags.getString(BIOMETRICS_OFF_KEY) !== 'true';
+}
+
+/**
+ * Turns the fingerprint/face on or off for the app lock. Off needs nothing — it only takes a way
+ * in away. On is asked for in settings only after the owner has proved who they are
+ * (`features/settings/app-lock.tsx`).
+ */
+export function setBiometricsAllowed(allowed: boolean): void {
+  // A choice about the lock: with no lock (or no session) there is nothing to choose for.
+  if (!hasStoredSession() || !isLockOn()) return;
+  if (allowed) flags.remove(BIOMETRICS_OFF_KEY);
+  else flags.set(BIOMETRICS_OFF_KEY, 'true');
+  announce();
+}
+
+/**
  * The refresh token. Never presents a prompt.
  *
  * @returns the token, or null when nobody is signed in, when a pre-#319 token has not been moved
@@ -242,6 +269,7 @@ export async function storeRefreshToken(
     flags.remove(PIN_REQUIRED_KEY);
     flags.remove(LEGACY_LOCKED_KEY);
     flags.remove(MIGRATED_KEY);
+    flags.remove(BIOMETRICS_OFF_KEY);
     try {
       await forgetPin();
     } catch {
@@ -288,6 +316,8 @@ export async function enableLock(pin: string): Promise<boolean> {
   }
   flags.set(LOCK_ON_KEY, 'true');
   flags.remove(PIN_REQUIRED_KEY);
+  // A new lock starts with the fingerprint/face on, whatever an earlier one was set to.
+  flags.remove(BIOMETRICS_OFF_KEY);
   announce();
   return true;
 }
@@ -302,6 +332,7 @@ export async function enableLock(pin: string): Promise<boolean> {
 export async function disableLock(): Promise<void> {
   flags.remove(LOCK_ON_KEY);
   flags.remove(PIN_REQUIRED_KEY);
+  flags.remove(BIOMETRICS_OFF_KEY);
   announce();
   await forgetPin();
 }
@@ -447,5 +478,6 @@ function forgetFlags(): void {
   flags.remove(LOCK_ON_KEY);
   flags.remove(PIN_REQUIRED_KEY);
   flags.remove(MIGRATED_KEY);
+  flags.remove(BIOMETRICS_OFF_KEY);
   announce();
 }

@@ -18,6 +18,7 @@ import {
   haptics,
 } from '../../components/ui';
 import { Glyphs } from '../../icons';
+import { sweepAccountExports } from '../../lib/account-export-files';
 import {
   acknowledgeSignedOut,
   autoPromptOnce,
@@ -34,10 +35,10 @@ import {
   turnLockOffInstead,
   unlockWithBiometrics,
   unlockWithPin,
+  useBiometricsInUse,
   type LockPhase,
 } from '../../lib/app-lock';
 import { biometricsUsable } from '../../lib/biometrics';
-import { sweepAccountExports } from '../../lib/account-export-files';
 import { useT } from '../../lib/i18n';
 import { useEndLocalSession } from '../../lib/local-sign-out';
 import { forgetPersistedCache } from '../../lib/offline';
@@ -241,7 +242,10 @@ function Locked() {
   const t = useT('mobile.lock');
   const tAll = useT();
   const wipe = useWipe();
-  const capability = useBiometricCapability();
+  const probed = useBiometricCapability();
+  // The owner turned the fingerprint/face off: the PIN pad alone — no prompt, no button.
+  const inUse = useBiometricsInUse();
+  const capability = inUse ? probed : null;
   const [error, setError] = useState<string | null>(null);
   const [settled, setSettled] = useState(false);
   const pinRequired = isPinRequired();

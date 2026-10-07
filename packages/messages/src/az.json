@@ -5490,6 +5490,17 @@
       "noSession": "Bu telefonda heç kim daxil olmayıb, ona görə kilidlənəcək bir şey yoxdur. Heç nə dəyişmədi.",
       "prompt": "IdeyaNest kilidini açın",
       "usePin": "PIN istifadə et",
+      "biometrics": {
+        "fingerprint": "Barmaq izi ilə açılış",
+        "face": "Face ID ilə açılış",
+        "other": "Biometrik açılış",
+        "onDetail": {
+          "fingerprint": "Tətbiq əvvəlcə barmaq izini soruşur. PIN həmişə işləyir.",
+          "face": "Tətbiq əvvəlcə Face ID soruşur. PIN həmişə işləyir.",
+          "other": "Tətbiq əvvəlcə biometrik açılışı soruşur. PIN həmişə işləyir."
+        },
+        "offDetail": "Tətbiqi yalnız PIN açır. Telefonun parametrlərindən heç nə silinmir."
+      },
       "screen": {
         "title": "IdeyaNest kilidlidir",
         "enterPin": "PIN-i daxil edin",
@@ -5522,7 +5533,12 @@
       "confirm": {
         "title": "Sizin olduğunuzu təsdiqləyin",
         "offIntro": "Tətbiq kilidini söndürmək üçün PIN-i daxil edin.",
-        "changeIntro": "Dəyişmək üçün indiki PIN-i daxil edin."
+        "changeIntro": "Dəyişmək üçün indiki PIN-i daxil edin.",
+        "biometricsOn": {
+          "fingerprint": "Barmaq izi ilə açılışı yandırmaq üçün PIN-i daxil edin.",
+          "face": "Face ID ilə açılışı yandırmaq üçün PIN-i daxil edin.",
+          "other": "Biometrik açılışı yandırmaq üçün PIN-i daxil edin."
+        }
       },
       "pad": {
         "entered": "{total} rəqəmdən daxil edilən: {count}",

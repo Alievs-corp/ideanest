@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { announce, haptics, type PinPadAction } from '../../components/ui';
 import { Glyphs } from '../../icons';
-import { attemptPin, confirmWithBiometrics } from '../../lib/app-lock';
+import { attemptPin, confirmWithBiometrics, useBiometricsInUse } from '../../lib/app-lock';
 import { biometricCapability, biometricsUsable, type BiometricCapability } from '../../lib/biometrics';
 import { useT, type MessageKey } from '../../lib/i18n';
 import { useEndLocalSession } from '../../lib/local-sign-out';
@@ -121,13 +121,30 @@ export function IdentityCheck({
   const t = useT('mobile.lock');
   const tAll = useT();
   const wipe = useEndLocalSession();
-  const capability = useBiometricCapability();
+  const probed = useBiometricCapability();
+  const inUse = useBiometricsInUse();
+  // With the fingerprint/face off, the phone is PIN-only here as on the lock screen.
+  const capability = inUse ? probed : null;
   const [error, setError] = useState<string | null>(null);
   const prompted = useRef(false);
+  /*
+   * Mounted for as long as its sheet is open. A PIN check or a prompt still running when the sheet
+   * is dismissed must not act on the answer: the owner closed it, and nothing is to change.
+   */
+  const live = useRef(true);
+  useEffect(
+    () => () => {
+      live.current = false;
+    },
+    [],
+  );
+  const confirmed = () => {
+    if (live.current) onConfirmed();
+  };
 
   const prompt = async () => {
     prompted.current = true;
-    if (await confirmWithBiometrics(t('prompt'))) onConfirmed();
+    if (await confirmWithBiometrics(t('prompt'))) confirmed();
   };
 
   useEffect(() => {
@@ -140,8 +157,8 @@ export function IdentityCheck({
   const complete = async (pin: string) => {
     const attempt = await attemptPin(pin, wipe);
     if (attempt.kind === 'correct') {
-      setError(null);
-      onConfirmed();
+      if (live.current) setError(null);
+      confirmed();
       return;
     }
     if (attempt.kind === 'wrong') {

@@ -16,6 +16,7 @@ import {
   hasStoredSession,
   isLockOn,
   rememberAccessToken,
+  setBiometricsAllowed,
   storeRefreshToken,
   useFlagStore,
 } from '../../lib/session';
@@ -333,5 +334,28 @@ describe('a pre-#319 locked install', () => {
     expect(screen.queryByTestId('lock-screen')).toBeNull();
     expect(isLockOn()).toBe(false);
     expect(hasStoredSession()).toBe(true);
+  });
+});
+
+describe('with the fingerprint/face turned off (#149)', () => {
+  it('shows the PIN pad alone: no prompt at launch, no button, none after a re-lock', async () => {
+    await lockedPhone();
+    setBiometricsAllowed(false);
+    await launch();
+
+    expect(screen.getByTestId('lock-screen')).toBeTruthy();
+    expect(biometrics.__prompts()).toBe(0);
+    expect(screen.queryByRole('button', { name: L.screen.useFingerprint })).toBeNull();
+    expect(screen.getByRole('header', { name: L.screen.enterPin })).toBeTruthy();
+
+    await typePin('135790');
+    expect(screen.queryByTestId('lock-screen')).toBeNull();
+
+    await act(async () => appStateChanged('background', 0, 0));
+    await act(async () => appStateChanged('active', 5 * 60 * 1000 + 1, 0));
+    await settle();
+    expect(screen.getByTestId('lock-screen')).toBeTruthy();
+    expect(biometrics.__prompts()).toBe(0);
+    expect(screen.queryByRole('button', { name: L.screen.useFingerprint })).toBeNull();
   });
 });
