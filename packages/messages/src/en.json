@@ -5494,7 +5494,11 @@
         "fingerprint": "Unlock with fingerprint",
         "face": "Unlock with Face ID",
         "other": "Unlock with biometrics",
-        "onDetail": "The lock asks for it first. Your PIN always works too.",
+        "onDetail": {
+          "fingerprint": "The app asks for your fingerprint first. Your PIN always works too.",
+          "face": "The app asks for Face ID first. Your PIN always works too.",
+          "other": "The app asks for biometric unlock first. Your PIN always works too."
+        },
         "offDetail": "Only your PIN opens the app. Nothing is removed from the phone’s settings."
       },
       "screen": {
@@ -5530,7 +5534,11 @@
         "title": "Confirm it’s you",
         "offIntro": "Enter your PIN to turn the app lock off.",
         "changeIntro": "Enter your current PIN to change it.",
-        "biometricsIntro": "Enter your PIN, or confirm it’s you, to unlock with your fingerprint or face again."
+        "biometricsOn": {
+          "fingerprint": "Enter your PIN to turn on unlocking with your fingerprint.",
+          "face": "Enter your PIN to turn on unlocking with Face ID.",
+          "other": "Enter your PIN to turn on biometric unlock."
+        }
       },
       "pad": {
         "entered": "{count} of {total} entered",

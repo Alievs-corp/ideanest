@@ -5493,8 +5493,12 @@
       "biometrics": {
         "fingerprint": "Parmak iziyle aç",
         "face": "Face ID ile aç",
-        "other": "Biyometrik kilit açmayla aç",
-        "onDetail": "Kilit önce bunu sorar. PIN’iniz her zaman çalışır.",
+        "other": "Biyometriyle aç",
+        "onDetail": {
+          "fingerprint": "Uygulama önce parmak izinizi ister. PIN’iniz her zaman çalışır.",
+          "face": "Uygulama önce Face ID ister. PIN’iniz her zaman çalışır.",
+          "other": "Uygulama önce biyometrik doğrulama ister. PIN’iniz her zaman çalışır."
+        },
         "offDetail": "Uygulamayı yalnızca PIN’iniz açar. Telefonun ayarlarından hiçbir şey silinmez."
       },
       "screen": {
@@ -5530,7 +5534,11 @@
         "title": "Siz olduğunuzu doğrulayın",
         "offIntro": "Uygulama kilidini kapatmak için PIN’inizi girin.",
         "changeIntro": "Değiştirmek için mevcut PIN’inizi girin.",
-        "biometricsIntro": "Parmak izi veya yüzle açmayı yeniden açmak için PIN’inizi girin ya da siz olduğunuzu doğrulayın."
+        "biometricsOn": {
+          "fingerprint": "Parmak iziyle açmayı yeniden etkinleştirmek için PIN’inizi girin.",
+          "face": "Face ID ile açmayı yeniden etkinleştirmek için PIN’inizi girin.",
+          "other": "Biyometriyle açmayı yeniden etkinleştirmek için PIN’inizi girin."
+        }
       },
       "pad": {
         "entered": "Girilen: {count} / {total}",
