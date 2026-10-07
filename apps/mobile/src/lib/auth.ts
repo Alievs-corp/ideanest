@@ -315,8 +315,9 @@ async function runRefresh(): Promise<string | null> {
       return null;
     }
     // A network fault is not a revoked session, and neither is a 5xx — maintenance
-    // included (issue #214). Nothing is cleared and the next attempt can succeed.
-    rememberAccessToken(null);
+    // included (issue #214). Nothing is cleared and the next attempt can succeed. The access
+    // token is dropped only if it is still this session's: a newer one may have arrived since.
+    if (sessionGeneration() === generationAsked) rememberAccessToken(null);
     throw failure;
   }
 
@@ -391,6 +392,8 @@ async function adopt(body: TokenBody, generation?: number): Promise<boolean> {
   if (generation !== undefined && generation !== sessionGeneration()) return false;
   const kept = await storeRefreshToken(body.refreshToken ?? null, generation);
   if (!kept) return false;
+  // Once more after the write: a wipe can land between it and this line.
+  if (generation !== undefined && generation !== sessionGeneration()) return false;
   rememberAccessToken(body.accessToken ?? null);
   return true;
 }

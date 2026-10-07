@@ -263,8 +263,10 @@ export async function holdShutWhile(
       heldThen = 'open';
       pendingNavigation = null;
       takeDeferred();
-      if (hasStoredSession()) publish(isLockOn() ? 'locked' : 'open');
-      else publish(next);
+      if (!hasStoredSession()) publish(next);
+      // Failed: back to where the session still is — a migration still owed shows its own screen.
+      else if (needsLockMigration()) publish('migration-stalled');
+      else publish(isLockOn() ? 'locked' : 'open');
     }
   }
 }
@@ -395,6 +397,12 @@ export function attemptPin(pin: string, wipe: () => Promise<void>): Promise<PinA
 
 async function countedAttempt(pin: string, wipe: () => Promise<void>): Promise<PinAttempt> {
   if (!hasStoredSession()) return { kind: 'signed-out' };
+  // Already at the limit — a wipe that failed, or a counter that cannot be read: the wipe again,
+  // and the PIN is not even checked. A correct PIN must not open a phone that is owed a wipe.
+  if ((await failedPinAttempts()) >= MAX_PIN_ATTEMPTS) {
+    await signOutForAttempts(wipe);
+    return hasStoredSession() ? { kind: 'wrong', remaining: 0 } : { kind: 'signed-out' };
+  }
   if (await checkPin(pin)) {
     await quietly(resetPinAttempts);
     return { kind: 'correct' };

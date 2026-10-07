@@ -235,6 +235,19 @@ export async function storeRefreshToken(
     return true;
   }
   if (expected !== undefined && expected !== generation) return false;
+  if (expected === undefined && !hasStoredSession()) {
+    // A new session (a sign-in) starts with no lock: whatever a race or an interrupted sign-out
+    // left behind — a flag, a PIN, a counter — belonged to the previous one.
+    flags.remove(LOCK_ON_KEY);
+    flags.remove(PIN_REQUIRED_KEY);
+    flags.remove(LEGACY_LOCKED_KEY);
+    flags.remove(MIGRATED_KEY);
+    try {
+      await forgetPin();
+    } catch {
+      // The lock flag is off, so a PIN left behind opens nothing.
+    }
+  }
   await writeToken(token);
   if (expected !== undefined && expected !== generation) {
     // Forgotten while the write was in flight: take the write back, and keep no flag.
@@ -262,7 +275,17 @@ export async function storeRefreshToken(
  */
 export async function enableLock(pin: string): Promise<boolean> {
   if (!hasStoredSession()) return false;
+  const asked = generation;
   await savePin(pin);
+  if (asked !== generation || !hasStoredSession()) {
+    // The session ended while the PIN was being derived: it must not bind the next account.
+    try {
+      await forgetPin();
+    } catch {
+      // Erased again by the next sign-in (storeRefreshToken).
+    }
+    return false;
+  }
   flags.set(LOCK_ON_KEY, 'true');
   flags.remove(PIN_REQUIRED_KEY);
   announce();

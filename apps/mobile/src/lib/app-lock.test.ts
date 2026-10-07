@@ -27,7 +27,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import { refreshAccessToken } from './auth';
 import { deferUntilUp, leaveMaintenance, observeResponse, takeDeferred } from './maintenance';
 import { MAINTENANCE_PROBLEM_TYPE } from '@ideanest/api-client/maintenance';
-import { checkPin, failedPinAttempts, hasPin } from './pin';
+import { checkPin, failedPinAttempts, hasPin, savePin } from './pin';
 import {
   currentAccessToken,
   enableLock,
@@ -36,6 +36,7 @@ import {
   isLockOn,
   rememberAccessToken,
   storeRefreshToken,
+  subscribeToSession,
   useFlagStore,
 } from './session';
 import { memoryStore, type KeyValueStore } from './storage';
@@ -674,5 +675,104 @@ describe('#319 verification: an answer that lands after the wipe', () => {
     expect(JSON.parse(String(logout?.[1]?.body))).toEqual({ refreshToken: 'refresh-late' });
     acknowledgeSignedOut();
     expect(lockPhase()).toBe('open');
+  });
+});
+
+describe('#319 hardening', () => {
+  it('a correct PIN does not open a phone that is owed a wipe', async () => {
+    await lockedPhone();
+    const failing = jest.fn(async () => {
+      throw new Error('keystore');
+    });
+    for (let attempt = 0; attempt < 5; attempt += 1) await unlockWithPin('111111', failing);
+    expect(lockPhase()).toBe('locked');
+
+    // The right PIN, with the wipe still failing: refused, and the wipe tried again.
+    expect(await unlockWithPin('135790', failing)).toEqual({ kind: 'wrong', remaining: 0 });
+    expect(lockPhase()).toBe('locked');
+    expect(failing).toHaveBeenCalledTimes(2);
+
+    // The wipe works this time: signed out, never opened.
+    expect(await unlockWithPin('135790', wipe)).toEqual({ kind: 'signed-out' });
+    expect(hasStoredSession()).toBe(false);
+  });
+
+  it('a refreshed access token is not kept when a wipe lands right after the write', async () => {
+    await lockedPhone();
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ accessToken: 'access-2', refreshToken: 'refresh-2' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    let wiped = false;
+    // The first announcement is the new token being stored: the gap between that write and the
+    // access token being kept. A wipe lands exactly there.
+    const stop = subscribeToSession(() => {
+      if (!wiped && hasStoredSession()) {
+        wiped = true;
+        void endSession();
+      }
+    });
+
+    expect(await refreshAccessToken()).toBeNull();
+    stop();
+
+    expect(wiped).toBe(true);
+    expect(currentAccessToken()).toBeNull();
+  });
+
+  it('a network failure from an old refresh leaves a newer session’s access token alone', async () => {
+    await lockedPhone();
+    let fail: (error: Error) => void = () => undefined;
+    fetchMock.mockImplementation(() => new Promise<Response>((_, reject) => (fail = reject)));
+
+    const refreshing = refreshAccessToken();
+    for (let tick = 0; tick < 50 && fetchMock.mock.calls.length === 0; tick += 1) await Promise.resolve();
+    await endSession(); // signed out…
+    await storeRefreshToken('refresh-new'); // …and somebody signed in again
+    rememberAccessToken('access-new');
+
+    fail(new TypeError('Network request failed'));
+    await expect(refreshing).rejects.toBeInstanceOf(TypeError);
+    expect(currentAccessToken()).toBe('access-new');
+  });
+
+  it('turning the lock on does not survive the session ending during the PIN derivation', async () => {
+    await storeRefreshToken('refresh-1');
+    const enabling = enableLock('135790');
+    await endSession();
+    expect(await enabling).toBe(false);
+    expect(isLockOn()).toBe(false);
+    expect(await hasPin()).toBe(false);
+  });
+
+  it('a sign-in starts with no lock: stale flags and a stale PIN are erased', async () => {
+    await savePin('135790');
+    flags.set('app-lock.on', 'true');
+    flags.set('app-lock.pin-required', 'true');
+
+    await storeRefreshToken('refresh-new');
+
+    expect(isLockOn()).toBe(false);
+    expect(await hasPin()).toBe(false);
+    resetAppLockForTests();
+    expect(lockPhase()).toBe('open');
+  });
+
+  it('a failed sign-out from a stalled migration goes back to the migration screen', async () => {
+    keychain.__put('ideanest.refresh-token.locked', 'refresh-old', 'az.ideanest.app.locked');
+    flags.set('session.present', 'true');
+    flags.set('session.locked', 'true');
+    resetAppLockForTests();
+    keychain.__setBiometryAllowed(false);
+    await runMigration();
+    expect(lockPhase()).toBe('migration-stalled');
+
+    await signOutFromGate(async () => {
+      throw new Error('keystore');
+    });
+
+    expect(lockPhase()).toBe('migration-stalled');
   });
 });
