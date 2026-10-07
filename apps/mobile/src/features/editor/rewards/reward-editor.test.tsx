@@ -17,7 +17,7 @@ jest.mock('../../../api/client', () => ({
   sendJson: (...args: unknown[]) => mockSend(...args),
   traceIdOfError: () => null,
 }));
-// A comma-decimal phone (az): the price and the rates normalise "12,5" to "12.5" as typed.
+// An az phone. The price and the rates normalise "12,5" to "12.5" as typed, on any device.
 jest.mock('expo-localization', () => ({
   getLocales: () => [{ languageCode: 'az', languageTag: 'az-AZ', decimalSeparator: ',' }],
 }));
