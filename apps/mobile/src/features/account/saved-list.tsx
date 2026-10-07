@@ -91,6 +91,7 @@ export function SavedList() {
               params: { creatorSlug: campaign.creatorSlug, projectSlug: campaign.projectSlug },
             })
           }
+          trailingPlacement="below"
           trailing={
             <Pill
               variant="ghost"

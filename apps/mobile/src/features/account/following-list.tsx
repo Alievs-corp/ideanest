@@ -83,6 +83,7 @@ export function FollowingList() {
           label={`${creator.name}, ${meta}`}
           testID={`following-row-${creator.creatorId}`}
           onPress={() => router.push({ pathname: '/u/[slug]', params: { slug: creator.slug } })}
+          trailingPlacement="below"
           trailing={
             <Pill
               variant="ghost"

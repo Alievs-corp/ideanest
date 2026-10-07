@@ -7,7 +7,8 @@ import type { PublicProfile } from './wire';
 
 /**
  * Who the profile belongs to — the web's `ProfileHeader` (#156): a 56pt avatar, the name and the
- * handle, with the Follow control beside them (`actions`).
+ * handle, with the Follow control under them (`actions`). Under, not beside: a pill beside the
+ * names keeps its width and squeezes the name into a column that breaks words mid-letter.
  *
  * <p>The picture is named "{name}'s profile picture" (`profile.avatarAlt`); the initials, drawn
  * when there is none, are named by the name, as the web's `aria-label` does. The name is one line
@@ -35,7 +36,7 @@ export function ProfileHeader({
 
   return (
     <View style={styles.column} testID="profile-header">
-      <View style={styles.row}>
+      <View style={[styles.row, actions === undefined && styles.rowCentred]}>
         <View
           accessible
           accessibilityRole="image"
@@ -44,15 +45,15 @@ export function ProfileHeader({
         >
           <Avatar name={profile.name} src={profile.avatarUrl} size="lg" decorative />
         </View>
-        <View style={styles.names}>
+        <View style={styles.names} testID="profile-names">
           <Heading accessibilityRole="header" numberOfLines={lines} testID="profile-name">
             {profile.name}
           </Heading>
           <Body tone="tertiary" numberOfLines={lines} style={styles.handle}>
             {`@${profile.slug}`}
           </Body>
+          {actions === undefined ? null : <View style={styles.actions}>{actions}</View>}
         </View>
-        {actions === undefined ? null : <View style={styles.actions}>{actions}</View>}
       </View>
       {notice}
     </View>
@@ -61,8 +62,10 @@ export function ProfileHeader({
 
 const styles = StyleSheet.create({
   column: { gap: spacing[2] },
-  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: spacing[4], rowGap: spacing[3] },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[4] },
+  // Without a Follow control the names are shorter than the avatar, so they centre against it.
+  rowCentred: { alignItems: 'center' },
   names: { flex: 1, minWidth: 0, gap: spacing[1] },
   handle: { fontSize: fontSize.sm, lineHeight: lineHeight.small },
-  actions: { flexShrink: 0 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2], paddingTop: spacing[2] },
 });

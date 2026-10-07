@@ -97,6 +97,8 @@ describe('MyCampaignsList', () => {
     // Only the draft is "not published yet".
     expect(screen.getAllByText(en.account.pages.campaigns.draftHint)).toHaveLength(1);
     expect(api.listMyProjects).toHaveBeenCalledWith(null, expect.anything());
+    // The More button is an icon, a target wide: it stays beside the row.
+    expect(screen.getByTestId('campaign-row-d')).toHaveStyle({ flexDirection: 'row' });
   });
 
   it.each([...PUBLIC_STATES])('a %s campaign opens its public page', async (state) => {

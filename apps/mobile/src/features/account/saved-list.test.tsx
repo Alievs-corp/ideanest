@@ -127,6 +127,13 @@ describe('SavedList', () => {
     expect(api.listSaved).toHaveBeenCalledWith(null, expect.anything());
   });
 
+  it('stacks the Remove pill under the text, so a long title keeps the row’s width', async () => {
+    api.listSaved.mockResolvedValueOnce({ items: [campaign('a')], nextCursor: null });
+    await show();
+
+    expect(screen.getByTestId('saved-row-a')).toHaveStyle({ flexDirection: 'column' });
+  });
+
   it('opens the campaign from its row', async () => {
     api.listSaved.mockResolvedValueOnce({ items: [campaign('a')], nextCursor: null });
     await show();

@@ -102,6 +102,14 @@ describe('FollowingList', () => {
     expect(screen.getByRole('button', { name: 'Stop following Maker b' })).toBeTruthy();
   });
 
+  it('stacks the Unfollow pill under the name, so a long name keeps the row’s width', async () => {
+    api.listFollowing.mockResolvedValueOnce({ items: [creator('a')], nextCursor: null });
+    await show();
+
+    const row = screen.getByTestId('following-row-a');
+    expect(row).toHaveStyle({ flexDirection: 'column' });
+  });
+
   it('unfollows at once, by slug', async () => {
     api.listFollowing.mockResolvedValueOnce({ items: [creator('a'), creator('b')], nextCursor: null });
     api.unfollowCreator.mockResolvedValueOnce(false);

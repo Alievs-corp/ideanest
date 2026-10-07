@@ -1,4 +1,4 @@
-import { useCallback, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -249,11 +249,15 @@ function Separator() {
  * A list row: a raised block (`surface2` on the canvas) whose main part opens the row's page and
  * gives under the thumb, and an optional trailing control beside it. The control is a sibling of
  * the link rather than inside it, so a screen reader reaches each on its own.
+ *
+ * <p>A worded control (a "Remove" pill) goes `below` the row's text instead: beside it, the pill
+ * keeps its width and squeezes a name into a column that breaks words mid-letter at large text.
  */
 export function AccountRow({
   label,
   onPress,
   trailing,
+  trailingPlacement = 'beside',
   children,
   testID,
 }: {
@@ -261,25 +265,41 @@ export function AccountRow({
   readonly label: string;
   readonly onPress: () => void;
   readonly trailing?: ReactNode;
+  readonly trailingPlacement?: 'beside' | 'below';
   readonly children: ReactNode;
   readonly testID?: string;
 }) {
   const block = blockSurface(useSurface());
+  const stacked = trailingPlacement === 'below';
+  // Stacked, the pill strip is part of the same card, so the press tint covers the whole card.
+  const [pressed, setPressed] = useState(false);
   return (
-    <View style={[styles.row, { backgroundColor: BLOCK[block].rest }]} testID={testID}>
+    <View
+      style={[
+        styles.row,
+        stacked && styles.rowStacked,
+        { backgroundColor: stacked && pressed ? BLOCK[block].pressed : BLOCK[block].rest },
+      ]}
+      testID={testID}
+    >
       <PressableScale
         accessibilityRole="link"
         accessibilityLabel={label}
         onPress={onPress}
-        style={styles.rowMain}
-        contentStyle={({ pressed }) => [
+        style={stacked ? styles.rowMainStacked : styles.rowMain}
+        onPressIn={stacked ? () => setPressed(true) : undefined}
+        onPressOut={stacked ? () => setPressed(false) : undefined}
+        contentStyle={({ pressed: down }) => [
           styles.rowLink,
-          pressed && { backgroundColor: BLOCK[block].pressed },
+          stacked && styles.rowLinkStacked,
+          !stacked && down && { backgroundColor: BLOCK[block].pressed },
         ]}
       >
         {children}
       </PressableScale>
-      {trailing === undefined ? null : <View style={styles.trailing}>{trailing}</View>}
+      {trailing === undefined ? null : (
+        <View style={stacked ? styles.trailingBelow : styles.trailing}>{trailing}</View>
+      )}
     </View>
   );
 }
@@ -322,12 +342,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
   },
+  rowStacked: { flexDirection: 'column', alignItems: 'stretch' },
   rowMain: { flex: 1 },
+  // A column has no height to share out: `flex: 1` there would size the link to nothing.
+  rowMainStacked: { flexGrow: 0 },
   rowLink: {
     minHeight: size.touchTarget,
     justifyContent: 'center',
     gap: spacing[1],
     padding: spacing[4],
   },
+  rowLinkStacked: { paddingBottom: spacing[3] },
   trailing: { paddingRight: spacing[3] },
+  trailingBelow: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing[4], paddingBottom: spacing[4] },
 });
