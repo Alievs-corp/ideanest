@@ -348,7 +348,7 @@ describe('the message catalogues', () => {
      *
      * It would have to live in a client component, and the ordinal rule is not only about the
      * last digit — 100 is `100-cü` while 1000 is `1000-ci`. The fourteen were rephrased
-     * instead: `{total} bloqdan {index}` is cardinal and needs no suffix, "moved to position
+     * instead: `{total} blokdan {index}` is cardinal and needs no suffix, "moved to position
      * N" is `{position} nömrəli mövqeyə` — #105's phrasing — and a count reads
      * `{min} simvoldan {count} yazılıb`, where the suffix sits on the noun it has always sat
      * on. Rephrasing removes the problem instead of encoding it.

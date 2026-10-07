@@ -241,16 +241,26 @@ export function ImageSourceControls({
   source,
   copy,
   disabled = false,
+  onAddressFocus,
+  onAddressBlur,
   testID = 'image-source',
 }: {
   readonly source: ImageSource;
   readonly copy: ImageSourceCopy;
   readonly disabled?: boolean;
+  /**
+   * The address field took focus — with the field's frame, for a screen that scrolls a focused
+   * field into view above the keyboard (the Story tab's `reveal`).
+   */
+  readonly onAddressFocus?: (field: View | null) => void;
+  /** The address field lost focus — with the same frame (the Story tab's `release`). */
+  readonly onAddressBlur?: (field: View | null) => void;
   readonly testID?: string;
 }) {
   const t = useT('mobile.editor.image');
   const [addressOpen, setAddressOpen] = useState(false);
   const [address, setAddress] = useState('');
+  const addressField = useRef<View>(null);
   const off = disabled || source.busy;
 
   return (
@@ -289,7 +299,7 @@ export function ImageSourceControls({
 
       {addressOpen ? (
         <Field label={copy.urlLabel}>
-          <View style={styles.address}>
+          <View ref={addressField} style={styles.address} collapsable={false}>
             <TextInput
               value={address}
               onChangeText={setAddress}
@@ -302,6 +312,8 @@ export function ImageSourceControls({
               disabled={disabled}
               returnKeyType="done"
               onSubmitEditing={() => void source.useAddress(address)}
+              onFocus={() => onAddressFocus?.(addressField.current)}
+              onBlur={() => onAddressBlur?.(addressField.current)}
               testID={`${testID}-address`}
             />
             <View style={styles.start}>

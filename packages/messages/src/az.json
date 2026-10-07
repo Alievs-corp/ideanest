@@ -2369,7 +2369,7 @@
         "noStory": "Müəllif hələ yazmayıb. Təqdim etmək üçün tələb olunur, ona görə baxış gözləyən kampaniyada o var.",
         "risksHeading": "Risklər və çətinliklər",
         "noRisks": "Hələ heç nə yazılmayıb. Təqdim etmək üçün iki yüz simvol tələb olunur.",
-        "coverAlt": "{title} üçün üz şəkli"
+        "coverAlt": "{title} üçün örtük şəkli"
       },
       "legal": {
         "subject": "hüquqi sənədlər",
@@ -4448,7 +4448,7 @@
           "embed": "Yerləşdirmə"
         },
         "describe": {
-          "position": "{total} bloqdan {index}",
+          "position": "{total} blokdan {index}",
           "heading": "Başlıq {position}: {text}",
           "headingEmpty": "boş",
           "withPreview": "{label} {position}: {preview}",
@@ -4482,7 +4482,7 @@
         "readOnlyTitle": "Bu hekayəni bu səhifədən redaktə etmək olmur",
         "notSavedTitle": "Dəyişiklik yadda saxlanılmadı",
         "notSavingTitle": "Hekayə hələ yadda saxlanılmır",
-        "notSavingDetail": "Bir bloq natamamdır. Yanındakı mesaj nəyin çatışmadığını deyir; doldurulan kimi yadda saxlama davam edir.",
+        "notSavingDetail": "Bir blok natamamdır. Yanındakı mesaj nəyin çatışmadığını deyir; doldurulan kimi yadda saxlama davam edir.",
         "loadingLabel": "Kampaniyanın hekayəsi yüklənir",
         "reload": "Yenidən yüklə",
         "earlierVersions": "Əvvəlki versiyalar",
@@ -4494,7 +4494,7 @@
       },
       "blocks": {
         "heading": "Hekayə",
-        "add": "Bloq əlavə et",
+        "add": "Blok əlavə et",
         "addOne": "Əlavə et: {kind}. {hint}",
         "section": "Bölmə",
         "subsection": "Alt bölmə",
@@ -4530,13 +4530,13 @@
         "itemOf": "«{name}» içində {count} bənddən {at}",
         "removeItemOf": "«{name}» içində {count} bənddən {at} nömrəli bəndi sil",
         "addItemTo": "«{name}» içinə bənd əlavə et",
-        "addedAnnouncement": "{label} {total} bloqdan {position} nömrəli blok kimi əlavə olundu.",
-        "movedAnnouncement": "{label} {total} bloqdan {position} nömrəli mövqeyə keçdi.",
+        "addedAnnouncement": "{label} {total} blokdan {position} nömrəli blok kimi əlavə olundu.",
+        "movedAnnouncement": "{label} {total} blokdan {position} nömrəli mövqeyə keçdi.",
         "removedAnnouncement": {
-          "one": "{label} silindi. {count} bloq qaldı.",
-          "few": "{label} silindi. {count} bloq qaldı.",
-          "many": "{label} silindi. {count} bloq qaldı.",
-          "other": "{label} silindi. {count} bloq qaldı."
+          "one": "{label} silindi. {count} blok qaldı.",
+          "few": "{label} silindi. {count} blok qaldı.",
+          "many": "{label} silindi. {count} blok qaldı.",
+          "other": "{label} silindi. {count} blok qaldı."
         },
         "hints": {
           "paragraph": "Qalın və kursiv daxil olmaqla mətn.",
@@ -4567,14 +4567,14 @@
         "restoreVersion": "{number} nömrəli versiyanı bərpa et",
         "confirmTitle": "{number} nömrəli versiya bərpa olunsun?",
         "keepMine": "İndikini saxla",
-        "noBlocks": "Bu versiyada bloq yoxdur.",
+        "noBlocks": "Bu versiyada blok yoxdur.",
         "divider": "Ayırıcı",
         "tryAgain": "Yenidən cəhd edin",
         "previewSummary": {
-          "one": "{count} bloq · {characters} simvol",
-          "few": "{count} bloq · {characters} simvol",
-          "many": "{count} bloq · {characters} simvol",
-          "other": "{count} bloq · {characters} simvol"
+          "one": "{count} blok · {characters} simvol",
+          "few": "{count} blok · {characters} simvol",
+          "many": "{count} blok · {characters} simvol",
+          "other": "{count} blok · {characters} simvol"
         }
       },
       "toolbar": {
@@ -4653,7 +4653,7 @@
       "loadingLabel": "Kampaniya yüklənir",
       "notSavedTitle": "Dəyişiklik yadda saxlanılmadı",
       "notOpenHeading": "Başlanğıcdan əvvəlki səhifə hələ açıq deyil",
-      "notOpenBody": "Onu açanda aşağıdakı başlıq, qısa təsvir və üz qabığı paylaşa biləcəyiniz bir linkdə ictimai olur, insanlar isə kampaniya başlayanda xəbər verilməsini istəyə bilir. Kampaniya haqqında başqa heç nə açılmır və pulla bağlı deyil.",
+      "notOpenBody": "Onu açanda aşağıdakı başlıq, qısa təsvir və örtük şəkli paylaşa biləcəyiniz bir linkdə ictimai olur, insanlar isə kampaniya başlayanda xəbər verilməsini istəyə bilir. Kampaniya haqqında başqa heç nə açılmır və pulla bağlı deyil.",
       "notOpenIrreversible": "Geri bağlamaq olmaz — kampaniya buradan yalnız irəli gedir: baxışa, sonra isə başlanğıca.",
       "openFailedTitle": "Səhifə açılmadı",
       "open": "Başlanğıcdan əvvəlki səhifəni aç",
@@ -4673,13 +4673,13 @@
       "closedTitle": "Başlanğıcdan əvvəlki səhifə bağlanıb",
       "closedBody": "Bu kampaniya başlanğıcdan əvvəlki mərhələni keçib. Xatırladılmasını istəyən hər kəsə bir dəfə — kampaniya başlayanda — xəbər verilir.",
       "saysHeading": "Səhifədə nə yazılır",
-      "saysBody": "Bunlar kampaniyanın başlığı, qısa təsviri və üz qabığıdır — «Əsas» bölməsindəkilərin eynisi. Kampaniyadan fərqli bir şey vəd edən başlanğıc səhifəsi bunu məhz fərqi görəcək adamlara vəd etmiş olardı.",
+      "saysBody": "Bunlar kampaniyanın başlığı, qısa təsviri və örtük şəklidir — «Əsas» bölməsindəkilərin eynisi. Kampaniyadan fərqli bir şey vəd edən başlanğıc səhifəsi bunu məhz fərqi görəcək adamlara vəd etmiş olardı.",
       "title": "Başlıq",
       "titleHint": "Başlanğıc səhifəsindəki və layihələr lentindəki ad. Ən çox {max} simvol.",
       "summary": "Qısa təsvir",
       "summaryHint": "Bir-iki cümlə. İzləməyə qərar verməzdən əvvəl insan məhz bunu oxuyur. Ən çox {max} simvol.",
       "confirmTitle": "Başlanğıcdan əvvəlki səhifə açılsın?",
-      "confirmBody": "Başlıq, qısa təsvir və üz qabığı hər kəsin aça biləcəyi bir linkdə ictimai olur. Bunu geri qaytarmaq olmaz.",
+      "confirmBody": "Başlıq, qısa təsvir və örtük şəkli hər kəsin aça biləcəyi bir linkdə ictimai olur. Bunu geri qaytarmaq olmaz.",
       "cancel": "Ləğv et",
       "opening": "Açılır",
       "confirmOpen": "Səhifəni aç"
@@ -4734,25 +4734,25 @@
       "moderatorNote": "Moderator kampaniyanı oxuyur və ya təsdiqləyir, ya dəyişiklik istəyir, ya da rədd edir. Baxış gedərkən redaktə etmək olar."
     },
     "cover": {
-      "label": "Üz qabığı",
+      "label": "Örtük şəkli",
       "hint": "Layihələr lentində və layihə səhifəsinin yuxarısında göstərilir. Ən yaxşısı {minimum} piksel və daha böyük.",
-      "remove": "Üz qabığını sil",
-      "prompt": "Üz qabığı olsun deyə şəkli bura atın",
+      "remove": "Örtük şəklini sil",
+      "prompt": "Şəkli bura atın — örtük şəkli kimi işlədiləcək",
       "dragPrompt": "Bu şəkli yükləmək üçün buraxın",
       "buttonLabel": "Şəkil seçin",
       "dropHint": "20 MB-a qədər. Şəkil burada çevrilir və kiçildilir, orijinal saxlanılmır. Ən yaxşısı {minimum} və daha böyük.",
       "urlPlaceholder": "Və ya ünvanı yapışdırın: https://images.example.com/cover.jpg",
-      "urlLabel": "Üz qabığı şəklinin ünvanı",
+      "urlLabel": "Örtük şəklinin ünvanı",
       "checking": "Yoxlanılır",
       "useAddress": "Bu ünvanı işlət",
       "needUrlFirst": "Əvvəlcə şəklin ünvanını yazın.",
       "notUsedTitle": "Bu fayl istifadə olunmadı",
       "unusable": "Bu şəkli işlətmək alınmadı.",
       "softTitle": "Tam enində bulanıq görünəcək",
-      "set": "Üz qabığı {size} piksel şəkildən götürüldü.",
-      "setSmall": "Üz qabığı {size} piksel şəkildən götürüldü. Bu, tövsiyə olunan {minimum} ölçüdən kiçikdir, ona görə başlığı doldurmaq üçün böyüdüləcək və bulanıq görünəcək. Nisbətləri saxlanılır — çərçivə dartmır, kəsir. Kampaniyanı yenə də göndərmək olar.",
-      "size": "Üz qabığı {size} pikseldir",
-      "sizeUploaded": "Üz qabığı {size} pikseldir · yüklənib",
+      "set": "Örtük şəkli {size} piksel ölçüsündə götürüldü.",
+      "setSmall": "Örtük şəkli {size} piksel ölçüsündə götürüldü. Bu, tövsiyə olunan {minimum} ölçüdən kiçikdir, ona görə başlığı doldurmaq üçün böyüdüləcək və bulanıq görünəcək. Nisbətləri saxlanılır — çərçivə dartmır, kəsir. Kampaniyanı yenə də göndərmək olar.",
+      "size": "Örtük şəkli {size} pikseldir",
+      "sizeUploaded": "Örtük şəkli {size} pikseldir · yüklənib",
       "stage": {
         "preparing": "Şəkil hazırlanır…",
         "uploading": "Şəkil yüklənir…",
@@ -4788,7 +4788,7 @@
       "metaDescription": "Kampaniyanıza ad verin və redaktəyə başlayın. Göndərənə qədər heç nə ictimai olmur."
     },
     "meta": {
-      "basics": "Kampaniyanızın başlığı, qısa təsviri, kateqoriyası, hədəfi, müddəti və üz qabığı.",
+      "basics": "Kampaniyanızın başlığı, qısa təsviri, kateqoriyası, hədəfi, müddəti və örtük şəkli.",
       "rewards": "Kampaniyanızın istehsal etdiyi əşyalar və dəstəkçilərin seçdiyi mükafat səviyyələri — qiymətlər, sayı, çatdırılma və sıra.",
       "story": "Kampaniyanızın geniş hekayəsi, riskləri və çətinlikləri, həmçinin əvvəlki versiyaları.",
       "faq": "Kampaniyanızın öz səhifəsində cavablandırdığı suallar və dəstəkçilərin onları oxuduğu sıra.",
@@ -5022,7 +5022,7 @@
       },
       "running": {
         "heading": "Əgər kampaniya aparırsınızsa",
-        "draft": "<b>Layihəsini hazırlayın.</b> Başlıq, xülasə, kateqoriya, hədəf, bir ilə altmış gün arasında müddət və üz şəkli. Hekayə ən azı 500, risklər bölməsi ən azı 200 simvol olmalıdır — hər ikisi vacibdir.",
+        "draft": "<b>Layihəsini hazırlayın.</b> Başlıq, xülasə, kateqoriya, hədəf, bir ilə altmış gün arasında müddət və örtük şəkli. Hekayə ən azı 500, risklər bölməsi ən azı 200 simvol olmalıdır — hər ikisi vacibdir.",
         "rewards": "<b>Mükafatlar əlavə edin.</b> Yüzədək pillə, hər birinin qiyməti, içindəkiləri və hara göndərildiyi ilə. Kampaniya aktivləşdikdən sonra pillənin qiyməti dəyişdirilə bilməz, dəstəkçisi olan pillə isə silinə bilməz — yalnız gizlədilə bilər.",
         "submit": "<b>Yoxlamaya göndərin.</b> Onu bir insan oxuyur. Təsdiqləyir, dəyişiklik istəyir və ya səbəbini bildirərək imtina edir.",
         "launch": "<b>Başla-dın.</b> Bu andan hədəf və son tarix sabitlənir. Qalan hər şey — hekayə, yeniliklər, mükafat saylarının artırılması — redaktə edilə bilən qalır.",
@@ -5928,7 +5928,7 @@
         "share": "Paylaş",
         "shareLabel": "Başlanğıcdan əvvəlki linki paylaş",
         "shareFailed": "Paylaşma pəncərəsini açmaq alınmadı. Yenidən cəhd edin.",
-        "fixFirst": "Əvvəlcə başlığı, qısa təsviri və ya üz qabığını düzəldin. Səhifə ekrandakını deyil, son saxlanılanı dərc edərdi."
+        "fixFirst": "Əvvəlcə başlığı, qısa təsviri və ya örtük şəklini düzəldin. Səhifə ekrandakını deyil, son saxlanılanı dərc edərdi."
       },
       "review": {
         "done": "Hazırdır",

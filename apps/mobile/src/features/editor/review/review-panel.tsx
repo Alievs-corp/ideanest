@@ -406,6 +406,7 @@ function Review({
               variant="accent"
               size="lg"
               fullWidth
+              wrap
               busy={submitting}
               disabled={!online}
               softDisabled={held}
@@ -473,6 +474,7 @@ function Review({
                   variant="accent"
                   size="lg"
                   fullWidth
+                  wrap
                   disabled={!online}
                   accessibilityHint={tReview('launchExplanation')}
                   onPress={() => {

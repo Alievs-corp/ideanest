@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { Keyboard, StyleSheet, View, type EmitterSubscription, type KeyboardEvent } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -6,6 +7,7 @@ import { ApiError } from '@ideanest/api-client';
 import en from '@ideanest/messages/en.json';
 import { queryKeys } from '../../api/queries';
 import { setLocale } from '../../lib/locale';
+import { spacing } from '../../theme';
 import { NewProjectScreen } from './new-project-form';
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn() };
@@ -132,5 +134,54 @@ describe('NewProjectScreen', () => {
     await show();
     expect(mockRouter.replace).toHaveBeenCalledWith({ pathname: '/sign-in', params: { returnTo: '/campaigns/new' } });
     expect(screen.queryByTestId('new-project-title')).toBeNull();
+  });
+
+  it('keeps Start editing in a bar under the form, out of the scroll, above the keyboard', async () => {
+    const handlers = new Map<string, (event: KeyboardEvent) => void>();
+    const listen = jest.spyOn(Keyboard, 'addListener').mockImplementation(((name: string, handler: (event: KeyboardEvent) => void) => {
+      handlers.set(name, handler);
+      return { remove: () => handlers.delete(name) } as unknown as EmitterSubscription;
+    }) as unknown as typeof Keyboard.addListener);
+    // The frame runs from under the header (91) to the bottom of an 844pt window.
+    const place = jest
+      .spyOn(View.prototype as unknown as { measureInWindow: (callback: (...frame: number[]) => void) => void }, 'measureInWindow')
+      .mockImplementation(function (this: { props: { testID?: string } }, callback: (...frame: number[]) => void) {
+        if (this.props.testID === 'new-project-frame') callback(0, 91, 390, 753);
+      });
+    await show();
+
+    // Not inside the scroll view, so the keyboard cannot scroll it out of sight.
+    let node = start().parent;
+    while (node !== null) {
+      expect(node.type).not.toBe('RCTScrollView');
+      node = node.parent;
+    }
+    const footer = () => StyleSheet.flatten(screen.getByTestId('new-project-footer').props.style);
+    const frame = () => StyleSheet.flatten(screen.getByTestId('new-project-frame').props.style);
+    // Above the home indicator while the keyboard is down…
+    expect(footer().paddingBottom).toBe(34);
+    expect(frame().paddingBottom).toBe(0);
+
+    // …and straight above the keyboard while it is up (the frame pads by what it covers).
+    await act(async () =>
+      handlers.get('keyboardWillChangeFrame')?.({
+        endCoordinates: { screenX: 0, screenY: 508, width: 390, height: 336 },
+      } as KeyboardEvent),
+    );
+    expect(footer().paddingBottom).toBe(spacing[3]);
+    // The frame gives up exactly the covered part of itself, so the bar ends at the keyboard's top.
+    expect(frame().paddingBottom).toBe(91 + 753 - 508);
+
+    await act(async () => handlers.get('keyboardWillHide')?.({} as KeyboardEvent));
+    expect(footer().paddingBottom).toBe(34);
+    expect(frame().paddingBottom).toBe(0);
+    listen.mockRestore();
+    place.mockRestore();
+  });
+
+  it('wraps the button’s label rather than truncating it at a large font', async () => {
+    await show();
+    const label = screen.getByText(en.campaignEditor.newProject.start, { includeHiddenElements: true });
+    expect(label.props.numberOfLines).toBeUndefined();
   });
 });

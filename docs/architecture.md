@@ -7008,7 +7008,7 @@ it was written in.
 > accessible names and six are the live region that says a reward, a block or a question has
 > moved. The twelve were rephrased rather than inflected, because a suffix table would have to
 > live in a client component and would still be wrong — 100 is `100-cü` while 1000 is
-> `1000-ci`. `{total} bloqdan {index}` is cardinal and needs no suffix, and "to position N" is
+> `1000-ci`. `{total} blokdan {index}` is cardinal and needs no suffix, and "to position N" is
 > `{position} nömrəli mövqeyə`, #105's phrasing. The rule it left behind is that shape: no
 > ordinal suffix after a placeholder in Azerbaijani.
 >

@@ -2,38 +2,41 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { useState } from 'react';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
-import { MoneyField, deviceDecimalSeparator, normaliseAmountInput, readAmount } from './money-field';
+import { MoneyField, normaliseAmountInput, readAmount } from './money-field';
 
-let mockSeparator: string | null = ',';
+// A point-separator phone: the comma rule must not depend on it (owner decision, 2026-10-07).
 jest.mock('expo-localization', () => ({
-  getLocales: () => [{ languageCode: 'az', languageTag: 'az-AZ', decimalSeparator: mockSeparator }],
+  getLocales: () => [{ languageCode: 'en', languageTag: 'en-GB', decimalSeparator: '.' }],
 }));
 
-describe('normaliseAmountInput — #162’s comma rule', () => {
+describe('normaliseAmountInput — the comma rule', () => {
   it.each([
     ['12,5', '12.5'],
+    ['25,5', '25.5'],
     ['12,50', '12.50'],
+    ['0,5', '0.5'],
     [',5', '.5'],
     ['5000', '5000'],
     ['5000.25', '5000.25'],
-  ])('on a comma-locale device turns %s into %s', (typed, shown) => {
-    expect(normaliseAmountInput(typed, ',')).toBe(shown);
+  ])('turns %s into %s, on any device', (typed, shown) => {
+    expect(normaliseAmountInput(typed)).toBe(shown);
   });
 
   it('leaves text alone when it has a point already, or more than one comma', () => {
-    expect(normaliseAmountInput('1.000,5', ',')).toBe('1.000,5');
-    expect(normaliseAmountInput('1,000,5', ',')).toBe('1,000,5');
-  });
-
-  it('does nothing on a point-locale device, or when the platform does not say', () => {
-    expect(normaliseAmountInput('12,5', '.')).toBe('12,5');
-    expect(normaliseAmountInput('12,5', null)).toBe('12,5');
+    expect(normaliseAmountInput('1.000,5')).toBe('1.000,5');
+    expect(normaliseAmountInput('1,000,5')).toBe('1,000,5');
+    expect(normaliseAmountInput('1,5,0')).toBe('1,5,0');
+    expect(readAmount(normaliseAmountInput('1,5,0'))).toEqual({ ok: false, reason: 'comma' });
   });
 
   it('turns a pasted 1,500 into 1.500, which the parser refuses as too many decimals', () => {
-    const shown = normaliseAmountInput('1,500', ',');
+    const shown = normaliseAmountInput('1,500');
     expect(shown).toBe('1.500');
     expect(readAmount(shown)).toEqual({ ok: false, reason: 'too-many-decimals' });
+  });
+
+  it('reads 0,5 as half, on the wire as 0.50', () => {
+    expect(readAmount(normaliseAmountInput('0,5'))).toEqual({ ok: true, wire: '0.50' });
   });
 });
 
@@ -61,32 +64,16 @@ describe('readAmount', () => {
   });
 });
 
-function Harness({ separator }: { readonly separator?: string | null }) {
+function Harness() {
   const [value, setValue] = useState('');
   return (
     <IntlProvider locale="en" messages={en}>
-      <MoneyField
-        value={value}
-        onChangeText={setValue}
-        currency="AZN"
-        testID="money"
-        {...(separator === undefined ? {} : { decimalSeparator: separator })}
-      />
+      <MoneyField value={value} onChangeText={setValue} currency="AZN" testID="money" />
     </IntlProvider>
   );
 }
 
 describe('MoneyField', () => {
-  beforeEach(() => {
-    mockSeparator = ',';
-  });
-
-  it('reads the device separator from expo-localization', () => {
-    expect(deviceDecimalSeparator()).toBe(',');
-    mockSeparator = '.';
-    expect(deviceDecimalSeparator()).toBe('.');
-  });
-
   it('opens the decimal pad and shows the currency after the amount', async () => {
     await render(<Harness />);
     expect(screen.getByTestId('money').props.keyboardType).toBe('decimal-pad');
@@ -94,16 +81,15 @@ describe('MoneyField', () => {
     expect(screen.getByText('AZN', { includeHiddenElements: true })).toBeTruthy();
   });
 
-  it('shows 12,5 typed on a comma-locale phone as 12.5', async () => {
+  it('shows 25,5 typed on a point-separator phone as 25.5 — Gboard offers both keys', async () => {
     await render(<Harness />);
-    await fireEvent.changeText(screen.getByTestId('money'), '12,5');
-    expect(screen.getByTestId('money').props.value).toBe('12.5');
+    await fireEvent.changeText(screen.getByTestId('money'), '25,5');
+    expect(screen.getByTestId('money').props.value).toBe('25.5');
   });
 
-  it('changes nothing on a point-locale phone', async () => {
-    mockSeparator = '.';
+  it('leaves 1,5,0 as typed, for the parser to refuse', async () => {
     await render(<Harness />);
-    await fireEvent.changeText(screen.getByTestId('money'), '12,5');
-    expect(screen.getByTestId('money').props.value).toBe('12,5');
+    await fireEvent.changeText(screen.getByTestId('money'), '1,5,0');
+    expect(screen.getByTestId('money').props.value).toBe('1,5,0');
   });
 });

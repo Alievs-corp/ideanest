@@ -1,5 +1,15 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
-import { AccessibilityInfo, Image } from 'react-native';
+import { isValidElement, type ReactNode } from 'react';
+import {
+  AccessibilityInfo,
+  Image,
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+  View,
+  type EmitterSubscription,
+  type KeyboardEvent,
+} from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -7,6 +17,7 @@ import { ApiError } from '@ideanest/api-client';
 import type { ProjectEdit, StoryVersionSummary } from '@ideanest/campaign-editor/contract';
 import { parseSpans, toggleMark, type StoryBlock, type StoryDocument } from '@ideanest/campaign-editor/story';
 import en from '@ideanest/messages/en.json';
+import { spacing } from '../../../theme';
 import { setOnline } from '../../../lib/connectivity';
 import { setLocale } from '../../../lib/locale';
 import * as ImagePicker from 'expo-image-picker';
@@ -37,6 +48,13 @@ jest.mock('../../../lib/media/upload', () => {
   const actual = jest.requireActual('../../../lib/media/upload');
   return { ...actual, uploadImage: jest.fn() };
 });
+
+// The system font scale: the owner's phone runs at 1.4.
+let mockFontScale = 1;
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => ({ width: 390, height: 844, scale: 3, fontScale: mockFontScale }),
+}));
 
 jest.setTimeout(30_000);
 
@@ -141,6 +159,7 @@ const announced = () =>
   (AccessibilityInfo.announceForAccessibilityWithOptions as jest.Mock).mock.calls.map((call) => call[0] as string);
 
 beforeEach(() => {
+  mockFontScale = 1;
   jest.clearAllMocks();
   mockSend.mockReset();
   mockSend.mockImplementation(async () => project());
@@ -787,5 +806,151 @@ describe('StoryPanel — focus, pickers, uploads and the refusal mark', () => {
     mockProject = async () => project({ story: { version: 99, blocks: [] } as unknown as StoryDocument });
     await show({ store });
     expect(readUnsent(store, unsentKeyFor('p1'))?.patch).toEqual({ title: 'Kept title' });
+  });
+});
+
+describe('StoryPanel — a large font', () => {
+  const flat = (testID: string) => StyleSheet.flatten(screen.getByTestId(testID).props.style);
+
+  it('keeps the counter beside "Earlier versions" at the normal size', async () => {
+    await show();
+    expect(flat('story-counter').flexDirection).toBe('row');
+  });
+
+  it('stacks the counter over "Earlier versions" at 1.4×, instead of squeezing the sentence', async () => {
+    mockFontScale = 1.4;
+    await show();
+    const counter = flat('story-counter');
+    expect(counter.flexDirection).toBeUndefined();
+    expect(counter.alignItems).toBe('flex-start');
+    expect(within(screen.getByTestId('story-counter')).getByTestId('story-history-open')).toBeTruthy();
+  });
+});
+
+/*
+ * The keyboard, end to end. The test renderer has no layout engine, so the native side is played
+ * here: a view's place in the window (`measureInWindow`), a field's place in the column
+ * (`measureLayout`, by the testID of the input it wraps), and the scroll view's new height once
+ * the frame's padding has taken effect — read from the padding the hook produced, not chosen.
+ */
+describe('StoryPanel — the keyboard', () => {
+  /** The window: 844pt tall, the Story frame from 100 to the bottom. */
+  const FRAME = { y: 100, height: 744 };
+  /** Where each field sits in the column, by the testID of its input. */
+  let places: Record<string, { y: number; height: number }> = {};
+  let listeners: [string, (event: KeyboardEvent) => void][] = [];
+  let scrollTo: jest.SpyInstance;
+
+  type Host = { props: { testID?: string; children?: ReactNode } };
+
+  /** The testIDs a host view carries or wraps, outermost first. */
+  function idsOf(props: Host['props']): string[] {
+    const found: string[] = props.testID === undefined ? [] : [props.testID];
+    const walk = (node: ReactNode): void => {
+      if (Array.isArray(node)) node.forEach(walk);
+      else if (isValidElement<{ testID?: string; children?: ReactNode }>(node)) {
+        if (node.props.testID !== undefined) found.push(node.props.testID);
+        walk(node.props.children);
+      }
+    };
+    walk(props.children);
+    return found;
+  }
+
+  beforeEach(() => {
+    places = {};
+    listeners = [];
+    jest.spyOn(Keyboard, 'addListener').mockImplementation(((name: string, handler: (event: KeyboardEvent) => void) => {
+      const entry: [string, (event: KeyboardEvent) => void] = [name, handler];
+      listeners.push(entry);
+      return { remove: () => (listeners = listeners.filter((other) => other !== entry)) } as unknown as EmitterSubscription;
+    }) as unknown as typeof Keyboard.addListener);
+    jest
+      .spyOn(View.prototype as unknown as { measureInWindow: (callback: (...frame: number[]) => void) => void }, 'measureInWindow')
+      .mockImplementation(function (this: Host, callback: (...frame: number[]) => void) {
+        if (this.props.testID === 'story-keyboard-frame') callback(0, FRAME.y, 390, FRAME.height);
+      });
+    jest
+      .spyOn(
+        View.prototype as unknown as { measureLayout: (relativeTo: unknown, success: (...frame: number[]) => void) => void },
+        'measureLayout',
+      )
+      .mockImplementation(function (this: Host, _relativeTo: unknown, success: (...frame: number[]) => void) {
+        const id = idsOf(this.props).find((candidate) => places[candidate] !== undefined);
+        const place = id === undefined ? undefined : places[id];
+        if (place !== undefined) success(0, place.y, 350, place.height);
+      });
+    scrollTo = jest.spyOn(ScrollView.prototype as unknown as { scrollTo: () => void }, 'scrollTo');
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  const emit = async (name: string, screenY = 0, height = 0) => {
+    const event = { endCoordinates: { screenX: 0, screenY, width: 390, height } } as KeyboardEvent;
+    await act(async () => {
+      for (const [listening, handler] of listeners) if (listening === name) handler(event);
+    });
+  };
+  const padding = () => StyleSheet.flatten(screen.getByTestId('story-keyboard-frame').props.style).paddingBottom as number;
+  /** The scroll view laid out at the height the frame leaves it: what the native side does next. */
+  const layOut = async () =>
+    fireEvent(screen.getByTestId('story-panel'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 390, height: FRAME.height - padding() } },
+    });
+  const scrollBy = async (y: number) =>
+    fireEvent.scroll(screen.getByTestId('story-panel'), { nativeEvent: { contentOffset: { x: 0, y } } });
+
+  it('pads the frame by what the keyboard covers, and nothing once it has gone', async () => {
+    await show();
+    expect(padding()).toBe(0);
+    await emit('keyboardWillChangeFrame', 508, 336);
+    expect(padding()).toBe(FRAME.y + FRAME.height - 508);
+    await emit('keyboardWillHide');
+    expect(padding()).toBe(0);
+  });
+
+  it('brings a paragraph focused before the keyboard above it, through the shrink the padding causes', async () => {
+    await show();
+    await layOut();
+    places = { 'story-block-1-text': { y: 600, height: 120 } };
+    await fireEvent(screen.getByTestId('story-block-1-text'), 'focus');
+    // In sight in the full-height view: nothing moves yet.
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    await emit('keyboardWillChangeFrame', 508, 336);
+    await layOut();
+    expect(scrollTo).toHaveBeenLastCalledWith({ y: 600 + 120 + spacing[4] - (FRAME.height - 336), animated: false });
+  });
+
+  it('reveals Risks when it takes focus', async () => {
+    await show();
+    await layOut();
+    places = { 'story-risks-box': { y: 1500, height: 200 } };
+    await fireEvent(screen.getByTestId('story-risks'), 'focus');
+    expect(scrollTo).toHaveBeenLastCalledWith({ y: 1500 + 200 + spacing[4] - FRAME.height, animated: false });
+  });
+
+  it('reveals an image address, and does not jump back to a paragraph typed in before it', async () => {
+    await show();
+    await layOut();
+    // Type in paragraph 2, then leave it.
+    places = { 'story-block-1-text': { y: 300, height: 120 }, 'story-block-3-source-address': { y: 1900, height: 90 } };
+    await fireEvent(screen.getByTestId('story-block-1-text'), 'focus');
+    await fireEvent.changeText(screen.getByTestId('story-block-1-text'), 'We build lamps.');
+    await blur('story-block-1-text');
+
+    // Further down, an image block's address.
+    await fireEvent.press(screen.getByTestId('story-add-image'));
+    await settle();
+    await fireEvent.press(screen.getByTestId('story-block-3-source-address-open'));
+    await scrollBy(1400);
+    scrollTo.mockClear();
+    await fireEvent(screen.getByTestId('story-block-3-source-address'), 'focus');
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    await emit('keyboardWillChangeFrame', 508, 336);
+    await layOut();
+    // Only the address moves into sight above the keyboard; paragraph 2 (at 300) is not revisited.
+    expect(scrollTo.mock.calls).toEqual([[{ y: 1900 + 90 + spacing[4] - (FRAME.height - 336), animated: false }]]);
   });
 });

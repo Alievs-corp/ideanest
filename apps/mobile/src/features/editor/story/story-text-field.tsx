@@ -64,7 +64,7 @@ export function StoryTextField({
   const accessoryId = `story-marks-${useId().replace(/[^A-Za-z0-9_-]/g, '')}`;
   const wrapper = useRef<View>(null);
   const input = useRef<RNTextInput | null>(null);
-  const { reveal } = useStoryScroll();
+  const { reveal, release } = useStoryScroll();
   const [selection, setSelection] = useState<Selection>({ start: value.length, end: value.length });
   /** Set only while a mark's result is being put back; released on the next caret move. */
   const [forced, setForced] = useState<Selection | null>(null);
@@ -119,7 +119,10 @@ export function StoryTextField({
         }}
         onChangeText={onChange}
         onFocus={() => reveal(wrapper.current)}
-        onBlur={onBlur}
+        onBlur={() => {
+          release(wrapper.current);
+          onBlur?.();
+        }}
         testID={testID}
       />
       {Platform.OS === 'ios' ? (

@@ -36,7 +36,9 @@ import { useSurface } from './surface';
  * <p>Those heights are minimums, not fixed. Dynamic Type stays on, and at the largest
  * accessibility sizes a 14pt label is over 40pt tall — a fixed-height pill would spill its own
  * text out of its background. A long Azerbaijani or Russian label shrinks and truncates instead of
- * pushing an icon out of the pill.
+ * pushing an icon out of the pill — unless the pill is `wrap`: a full-width primary action whose
+ * words are the only thing saying what it does ("Open the pre-launch page", "Submit for review")
+ * wraps onto a second line, centred, rather than hiding the end of its name behind an ellipsis.
  *
  * <p>Hover does not exist, so the web's hover colours become the pressed state, applied on the
  * frame the finger lands. The web's `active:scale-[0.98]` becomes `usePressScale` (`mobile-design`
@@ -152,6 +154,11 @@ export interface PillProps {
   readonly iconLeft?: IconComponent;
   readonly iconRight?: IconComponent;
   readonly fullWidth?: boolean;
+  /**
+   * Let the label wrap instead of truncating to one line — for a full-width main action whose
+   * label is long in some languages and must be read whole at a large font (#162's device test).
+   */
+  readonly wrap?: boolean;
   readonly disabled?: boolean;
   /**
    * Drawn and announced as disabled — 40% opacity and `accessibilityState.disabled` — but still
@@ -191,6 +198,7 @@ export function Pill({
   iconLeft,
   iconRight,
   fullWidth = false,
+  wrap = false,
   disabled = false,
   softDisabled = false,
   busy = false,
@@ -248,8 +256,8 @@ export function Pill({
           <Icon icon={iconLeft} size={ICON[size]} color={skin.text} />
         ) : null}
         <Text
-          style={[styles.label, { fontSize: LABEL[size], color: skin.text }]}
-          numberOfLines={1}
+          style={[styles.label, wrap && styles.wrapped, { fontSize: LABEL[size], color: skin.text }]}
+          numberOfLines={wrap ? undefined : 1}
           // The pill owns the announcement; its text must not be a second stop.
           accessibilityElementsHidden
           importantForAccessibility="no"
@@ -283,6 +291,7 @@ const styles = StyleSheet.create({
   fill: { width: '100%' },
   blocked: { opacity: 0.4 },
   label: { ...font.medium, letterSpacing: tracking.button, flexShrink: 1 },
+  wrapped: { textAlign: 'center' },
 });
 
 /* -------------------------------------------------------------------------
