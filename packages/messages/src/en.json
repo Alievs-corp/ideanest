@@ -5784,6 +5784,50 @@
         "turnOn": "Turn on",
         "notNow": "Not now"
       }
+    },
+    "editor": {
+      "signedOutDetail": "This phone no longer has a session. Sign in again to keep editing this campaign.",
+      "load": {
+        "forbidden": "You do not have access to this project.",
+        "notFound": "That project could not be found.",
+        "refused": "The service refused the request. Try again.",
+        "unreachable": "The service could not be reached. Check your connection and try again."
+      },
+      "offlineReadOnly": "You are offline. This is the project as it was last loaded on this phone, and it cannot be changed until the connection is back.",
+      "scheduledLaunchLocked": "The launch time cannot change once the campaign has launched.",
+      "unsent": {
+        "title": "A change from {time} was not saved",
+        "body": "It was kept on this phone when the app closed. The project may have changed since then, so it is only sent if you choose to send it.",
+        "send": "Send it",
+        "discard": "Discard"
+      },
+      "failures": {
+        "signedOut": "You have been signed out. Sign in again — nothing you typed has been lost.",
+        "forbidden": "You are not allowed to edit this project.",
+        "notFound": "This project no longer exists.",
+        "conflict": "The project has changed since this screen was opened. Reload it to see the current version.",
+        "rejected": "The service rejected the change. Check the fields marked below.",
+        "generic": "The change could not be saved. Try again.",
+        "unreachable": "The service could not be reached, so nothing was saved. Try again."
+      },
+      "discard": {
+        "title": "Discard changes?",
+        "body": "What you changed here has not been saved. Discarding it cannot be undone.",
+        "keep": "Keep editing",
+        "confirm": "Discard"
+      },
+      "image": {
+        "library": "Choose from library",
+        "camera": "Take a photo",
+        "address": "Use an image address"
+      },
+      "dateTime": {
+        "choose": "Choose a date and time",
+        "clear": "Clear",
+        "clearLabel": "Clear {label}",
+        "confirm": "Use this time",
+        "confirmLabel": "Use {date} for {label}"
+      }
     }
   }
 }
