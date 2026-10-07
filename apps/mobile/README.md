@@ -755,9 +755,9 @@ there; signed out, through sign-in and back.
 route group's `_layout.tsx`) names the project in the stack header with the save indicator on
 the right, draws the state tag and the six tab pills, and owns the states every tab shares
 (signed out, failed with the 403/404 wording, offline). Tabs replace the route after flushing
-the autosave, so Back leaves the editor. Basics is native; Rewards, Story, FAQ, Pre-launch and
-Review open the same tab on the website (`editor-web-tab.tsx`) until each lands — each is one
-line in its route file.
+the autosave, so Back leaves the editor. Basics, Rewards, Story and FAQ are native; Pre-launch
+and Review open the same tab on the website (`editor-web-tab.tsx`) until each lands — each is
+one line in its route file.
 
 The rules — limits, validation, single-field patches, the autosave machine, the copy builders —
 are `@ideanest/campaign-editor`'s, shared with the web. What the app adds:
@@ -780,6 +780,20 @@ are `@ideanest/campaign-editor`'s, shared with the web. What the app adds:
 - Building blocks for the next tabs: `editor-modal.tsx` (full-screen editor, dirty dismiss
   asks first), `delete-dialog.tsx`, `use-reorder.tsx` (move buttons, accessibility actions,
   one queued request).
+
+**Story** (`src/features/editor/story/`) is the web's block editor as cards in one scroll view
+(not a virtualised list, which loses a focused input on recycle), with the keyboard avoided and
+the focused field scrolled into view. The story is saved as ONE document through the shared
+autosave, and only while every block passes `storyProblems`; an incomplete block pauses saving
+and says so. The held document is kept in the editor's store (`held-story.ts`, erased at
+sign-out with the unsent changes), so leaving the tab or the OS killing the app does not lose it;
+if the service's story changed meanwhile, the tab asks which copy to keep. Bold and Italic sit above each text field (and above the keyboard on iOS, in an
+`InputAccessoryView`) and apply the shared `toggleMark` to the selection, so the markdown is the
+web's. Blocks move by buttons and by accessibility actions, locally — the order is part of the
+document. Image blocks upload from the library or camera as well as taking an address, which
+the web does not yet offer. "Earlier versions" is a full-screen modal with preview and a
+confirmed restore — which waits until nothing is on its way to the service — after which the
+editor is re-seeded from the server.
 
 The editor has no motion but the stack's transitions and the save indicator's spinner (still
 under Reduce Motion): the frame sets the kit's motion budget to `none`.
