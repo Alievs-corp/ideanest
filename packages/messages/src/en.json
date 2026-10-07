@@ -5490,6 +5490,13 @@
       "noSession": "Nobody is signed in on this phone, so there is nothing to lock. Nothing changed.",
       "prompt": "Unlock IdeyaNest",
       "usePin": "Use PIN",
+      "biometrics": {
+        "fingerprint": "Unlock with fingerprint",
+        "face": "Unlock with Face ID",
+        "other": "Unlock with biometrics",
+        "onDetail": "The lock asks for it first. Your PIN always works too.",
+        "offDetail": "Only your PIN opens the app. Nothing is removed from the phone’s settings."
+      },
       "screen": {
         "title": "IdeyaNest is locked",
         "enterPin": "Enter your PIN",
@@ -5522,7 +5529,8 @@
       "confirm": {
         "title": "Confirm it’s you",
         "offIntro": "Enter your PIN to turn the app lock off.",
-        "changeIntro": "Enter your current PIN to change it."
+        "changeIntro": "Enter your current PIN to change it.",
+        "biometricsIntro": "Enter your PIN, or confirm it’s you, to unlock with your fingerprint or face again."
       },
       "pad": {
         "entered": "{count} of {total} entered",
