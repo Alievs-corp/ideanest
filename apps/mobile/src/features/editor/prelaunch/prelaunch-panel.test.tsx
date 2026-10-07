@@ -7,6 +7,7 @@ import { IntlProvider } from 'use-intl';
 import { ApiError } from '@ideanest/api-client';
 import type { ProjectEdit } from '@ideanest/campaign-editor/contract';
 import en from '@ideanest/messages/en.json';
+import { queryKeys } from '../../../api/queries';
 import { setOnline } from '../../../lib/connectivity';
 import { setLocale } from '../../../lib/locale';
 import { memoryStore } from '../../../lib/storage';
@@ -70,8 +71,9 @@ async function settle() {
   }
 }
 
-async function show() {
+async function show({ cached }: { cached?: ProjectEdit } = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  if (cached !== undefined) client.setQueryData(queryKeys.projectEdit('p1'), cached);
   await act(async () => setLocale('en'));
   await render(
     <SafeAreaProvider initialMetrics={METRICS}>
@@ -85,6 +87,7 @@ async function show() {
     </SafeAreaProvider>,
   );
   await settle();
+  return client;
 }
 
 const calls = () => mockSend.mock.calls.map((call) => `${String(call[0])} ${String(call[1])}`);
@@ -265,5 +268,28 @@ describe('PrelaunchPanel', () => {
     await settle();
     expect(screen.getByTestId('prelaunch-title').props.editable).toBe(false);
     expect(screen.getByTestId('prelaunch-open').props.accessibilityState).toMatchObject({ disabled: true });
+  });
+
+  it('online, never builds the form from a cached copy: it waits for the service', async () => {
+    let reply: (value: ProjectEdit) => void = () => {};
+    mockProject = () => new Promise((resolve) => (reply = resolve));
+    await show({ cached: project({ title: 'Week-old title' }) });
+    expect(screen.getByTestId('prelaunch-loading')).toBeTruthy();
+    expect(screen.queryByTestId('prelaunch-title')).toBeNull();
+
+    await act(async () => reply(project({ title: 'Renamed on the web' })));
+    await settle();
+    expect(screen.getByTestId('prelaunch-title').props.value).toBe('Renamed on the web');
+  });
+
+  it('takes a newer copy read from the service while nothing is pending', async () => {
+    const client = await show();
+    mockProject = async () => project({ title: 'Renamed elsewhere', blurb: 'Changed elsewhere' });
+    await act(async () => {
+      await client.refetchQueries({ queryKey: queryKeys.projectEdit('p1') });
+    });
+    await settle();
+    expect(screen.getByTestId('prelaunch-title').props.value).toBe('Renamed elsewhere');
+    expect(screen.getByTestId('prelaunch-summary').props.value).toBe('Changed elsewhere');
   });
 });

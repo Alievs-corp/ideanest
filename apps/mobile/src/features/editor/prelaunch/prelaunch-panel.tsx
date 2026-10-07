@@ -42,7 +42,7 @@ import {
 import { Glyphs } from '../../../icons';
 import { formatCount, pluralCategory, useT } from '../../../lib/i18n';
 import { colors, font, fontSize, lineHeight, radius, spacing } from '../../../theme';
-import { basicsServerErrors } from '../basics-panel';
+import { basicsServerErrors, reseedDraft } from '../basics-panel';
 import { CoverImageField } from '../cover-image-field';
 import { useEditor } from '../editor-context';
 import { describeSaveFailure } from '../save-failure';
@@ -80,13 +80,15 @@ export function PrelaunchPanel() {
   const words = useMemo(() => prelaunchPanelCopyFrom(t, locale, counter), [t, locale, counter]);
   const basics = useMemo(() => basicsPanelCopyFrom(t), [t]);
 
-  if (editor.project === null) {
-    return editor.load === 'loading' ? <Loading label={words.loadingLabel} /> : null;
+  // As Basics: never seeded from the cache alone online, or a stale copy would be PATCHed over
+  // edits made since. The skeleton stays until the editor says the form may be built.
+  if (!editor.canSeed || editor.seed === null) {
+    return editor.load === 'loading' || editor.load === 'ready' ? <Loading label={words.loadingLabel} /> : null;
   }
   return (
     <PrelaunchForm
-      key={`${editor.projectId}:${editor.revision}`}
-      seed={editor.project}
+      key={editor.projectId}
+      seed={editor.seed}
       words={words}
       basics={basics}
     />
@@ -138,6 +140,18 @@ function PrelaunchForm({
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<BasicsDraft>(() => draftFromProject(seed));
+  /** Fields whose text is only on this phone: changed, and refused before it was sent. */
+  const localOnly = useRef(new Set<BasicsField>());
+
+  // Seeded once; again only when the frame says so (`revision`), keeping what is only local.
+  const seen = useRef(editor.revision);
+  const latestSeed = useRef(seed);
+  latestSeed.current = seed;
+  useEffect(() => {
+    if (seen.current === editor.revision) return;
+    seen.current = editor.revision;
+    setDraft((current) => reseedDraft(latestSeed.current, current, localOnly.current));
+  }, [editor.revision]);
   const [confirming, setConfirming] = useState(false);
   const [opening, setOpening] = useState<Opening>('idle');
   const [openFailure, setOpenFailure] = useState<string | null>(null);
@@ -152,7 +166,11 @@ function PrelaunchForm({
     if (readOnly) return;
     setDraft(next);
     const patch = patchForField(field, next);
-    if (patch === null) return;
+    if (patch === null) {
+      localOnly.current.add(field);
+      return;
+    }
+    localOnly.current.delete(field);
     autosave.save(patch);
     if (sendNow) autosave.flush();
   }

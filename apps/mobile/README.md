@@ -797,7 +797,7 @@ The editor has no motion but the stack's transitions and the save indicator's sp
 under Reduce Motion): the frame sets the kit's motion budget to `none`.
 
 **Pre-launch** (`features/editor/prelaunch/`) edits the title, summary and cover on the same
-autosave as Basics. Opening the page asks first in the kit's white dialog, flushes the autosave
+autosave as Basics, seeded the same way (`canSeed`, `seed`, re-seeded in place by `reseedDraft`). Opening the page asks first in the kit's white dialog, flushes the autosave
 and waits for it to settle (a refused change stops the opening), then sends
 `POST /v1/projects/{id}/prelaunch`. While the page is open it shows the follower count from the
 public page's own `usePrelaunchPage`, and the link `{siteUrl}/projects/{id}/prelaunch` with Copy
