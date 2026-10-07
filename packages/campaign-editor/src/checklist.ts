@@ -1,5 +1,6 @@
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
-import type { ChecklistItem, ProjectChecklist } from './contract';
+import type { ChecklistItem, ProjectChecklist, ProjectState } from './contract';
+import type { ReviewNotedState } from './copy';
 
 /**
  * The review tab, as data: how far along a campaign is, where each failing
@@ -54,6 +55,52 @@ export function sectionHref(projectId: string, section: string): string | null {
  * as `copy.tabs[section]`, so "Fix in Rewards" and the Rewards tab cannot end up spelled
  * differently. `tabs.ts` gave up its labels for the same reason.
  */
+
+/* -------------------------------------------------------------------------
+ * What the review tab offers
+ * ---------------------------------------------------------------------- */
+
+/**
+ * The states from which submitting is an action worth offering.
+ *
+ * A PRESENTATION DECISION, NOT A RULE. §6.1 is enforced server-side and there is
+ * deliberately no client-side transition table; this only decides whether to draw
+ * a button, because "Submit for review" under a live campaign is nonsense rather
+ * than a refusal worth letting somebody discover. Anything this list is wrong
+ * about becomes a 409 the panel renders, which is the same outcome as never having
+ * had the list. Shared so that the web and the app (#162) draw the button in the
+ * same states.
+ */
+export const SUBMITTABLE_FROM: readonly ProjectState[] = ['DRAFT', 'PRELAUNCH', 'CHANGES_REQUESTED'];
+
+/**
+ * The states from which launching is an action worth offering.
+ *
+ * The same presentation decision {@link SUBMITTABLE_FROM} is, and §6.1's own pair:
+ * a moderator clears a campaign into `APPROVED`, and `SCHEDULED` is that campaign
+ * waiting for a time it may still be taken past. Everything else the server
+ * refuses, and the refusal is rendered.
+ */
+export const LAUNCHABLE_FROM: readonly ProjectState[] = ['APPROVED', 'SCHEDULED'];
+
+export function offersSubmit(state: ProjectState): boolean {
+  return SUBMITTABLE_FROM.includes(state);
+}
+
+export function offersLaunch(state: ProjectState): boolean {
+  return LAUNCHABLE_FROM.includes(state);
+}
+
+/** Whether this state is one the review tab has a sentence for. The other eleven get none. */
+export function isReviewNotedState(state: ProjectState): state is ReviewNotedState {
+  return (
+    state === 'SUBMITTED' ||
+    state === 'APPROVED' ||
+    state === 'SCHEDULED' ||
+    state === 'REJECTED' ||
+    state === 'LIVE'
+  );
+}
 
 /* -------------------------------------------------------------------------
  * Progress

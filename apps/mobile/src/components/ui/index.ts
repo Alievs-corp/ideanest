@@ -105,6 +105,7 @@ export {
   ProgressBar,
   fillFraction,
   type ProgressBarProps,
+  type ProgressBarRise,
   type ProgressBarSize,
 } from './progress';
 export {

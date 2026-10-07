@@ -154,6 +154,13 @@ export interface PillProps {
   readonly fullWidth?: boolean;
   readonly disabled?: boolean;
   /**
+   * Drawn and announced as disabled — 40% opacity and `accessibilityState.disabled` — but still
+   * pressable: the web's `aria-disabled` rather than `disabled`. For a control that answers a press
+   * by explaining why it will not act, such as the editor's "Submit for review" moving focus to the
+   * list of what is missing (#162). `onPress` still runs; the caller decides what it does.
+   */
+  readonly softDisabled?: boolean;
+  /**
    * Shows a spinner and blocks presses. The label stays beside it, so the action is still named
    * while it runs; the spinner takes the left icon's place when there is one.
    */
@@ -185,6 +192,7 @@ export function Pill({
   iconRight,
   fullWidth = false,
   disabled = false,
+  softDisabled = false,
   busy = false,
   accessibilityHint,
   accessibilityLabel,
@@ -210,8 +218,14 @@ export function Pill({
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityHint={accessibilityHint}
-        accessibilityState={{ disabled: blocked, busy, ...(selected === undefined ? {} : { selected }) }}
-        disabled={blocked}
+        accessibilityState={{
+          disabled: blocked || softDisabled,
+          busy,
+          ...(selected === undefined ? {} : { selected }),
+        }}
+        // Only when blocked: a set `disabled` prop overrides `accessibilityState.disabled`, which
+        // would un-announce a `softDisabled` pill.
+        disabled={blocked || undefined}
         onPress={onPress}
         onPressIn={press.onPressIn}
         onPressOut={press.onPressOut}
@@ -222,8 +236,8 @@ export function Pill({
         style={({ pressed }) => [
           styles.pill,
           { minHeight: height, paddingHorizontal: PADDING[size] },
-          pressed && !blocked ? skin.pressed : skin.rest,
-          blocked && styles.blocked,
+          pressed && !blocked && !softDisabled ? skin.pressed : skin.rest,
+          (blocked || softDisabled) && styles.blocked,
           ring,
         ]}
       >

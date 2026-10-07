@@ -121,6 +121,19 @@ describe('ProgressBar (kit)', () => {
     expect((await onWhite('100')).fill).toBe(colors.success);
   });
 
+  it('drops the funded glow at 100 when asked to, keeping success (#162 review completeness)', async () => {
+    const { getByTestId } = await render(
+      <MotionBudgetProvider level="none">
+        <ProgressBar completionPercent="100" label="Completeness" glow={false} />
+      </MotionBudgetProvider>,
+    );
+    const fill = getByTestId(PROGRESS_FILL);
+    expect((StyleSheet.flatten(fill.props.style) as ViewStyle).backgroundColor).toBe(colors.success);
+    const track = fill.parent?.parent;
+    expect(track).toBeTruthy();
+    expect(StyleSheet.flatten(track?.props.style as ViewStyle).boxShadow).toBeUndefined();
+  });
+
   it('has no glow while still asking', async () => {
     const { getByTestId } = await render(
       <MotionBudgetProvider level="none">
@@ -174,6 +187,49 @@ describe('ProgressBar (kit)', () => {
       heights.push(StyleSheet.flatten(track?.props.style as ViewStyle).height);
     }
     expect(heights).toEqual([6, 10]);
+  });
+
+  describe('the timed rise (#162, the editor review score)', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    it('fills over motion.progress (800ms), not on a spring, and lands on the figure', async () => {
+      const tree = await renderBare(
+        <IntlProvider locale="en" messages={en}>
+          <MotionBudgetProvider level="minimal">
+            <ProgressBar completionPercent="72" label="Completeness" rise="progress" />
+          </MotionBudgetProvider>
+        </IntlProvider>,
+      );
+      const drawn = () =>
+        Number(scaleXOf(getAnimatedStyle(tree.getByTestId(PROGRESS_FILL)) as ViewStyle));
+
+      await act(async () => {
+        jest.advanceTimersByTime(400);
+      });
+      const halfway = drawn();
+      expect(halfway).toBeGreaterThan(0);
+      expect(halfway).toBeLessThan(0.72);
+
+      await act(async () => {
+        jest.advanceTimersByTime(500);
+      });
+      expect(drawn()).toBeCloseTo(0.72, 5);
+    });
+
+    it('is drawn at the figure under a none budget', async () => {
+      const tree = await renderBare(
+        <IntlProvider locale="en" messages={en}>
+          <MotionBudgetProvider level="none">
+            <ProgressBar completionPercent="72" label="Completeness" rise="progress" />
+          </MotionBudgetProvider>
+        </IntlProvider>,
+      );
+      expect(scaleXOf(StyleSheet.flatten(tree.getByTestId(PROGRESS_FILL).props.style) as ViewStyle)).toBeCloseTo(
+        0.72,
+        5,
+      );
+    });
   });
 
   describe('in a recycled list row', () => {
@@ -248,6 +304,20 @@ describe('ProgressBar (kit)', () => {
         </IntlProvider>,
       );
       expect(drawn(tree)).toBeCloseTo(0.25, 5);
+    });
+
+    it('draws the timed rise at its figure at once under Reduce Motion, too', async () => {
+      jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+      const bar = (percent: string) => (
+        <MotionBudgetProvider level="minimal">
+          <ProgressBar completionPercent={percent} label="Completeness" rise="progress" />
+        </MotionBudgetProvider>
+      );
+      const tree = await render(bar('72'));
+      await waitFor(() => expect(drawn(tree)).toBeCloseTo(0.72, 5));
+      await tree.rerender(<IntlProvider locale="en" messages={en}>{bar('30')}</IntlProvider>);
+      // Drawn there on the next frame: not timed over 800ms.
+      expect(drawn(tree)).toBeCloseTo(0.3, 5);
     });
   });
 

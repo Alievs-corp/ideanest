@@ -6,6 +6,9 @@ import {
   CHECKLIST_SECTIONS,
   describeProgress,
   isChecklistSection,
+  isReviewNotedState,
+  offersLaunch,
+  offersSubmit,
   progressOf,
   sectionHref,
   unmetFromRefusal,
@@ -135,5 +138,36 @@ describe('reading a refusal', () => {
     // rather than the contents.
     expect(unmetFromRefusal({ state: 'REJECTED', allowed: [] })).toEqual([]);
     expect(unmetFromRefusal(undefined)).toEqual([]);
+  });
+});
+
+describe('what the review tab offers', () => {
+  const STATES = [
+    'DRAFT',
+    'PRELAUNCH',
+    'CHANGES_REQUESTED',
+    'SUBMITTED',
+    'APPROVED',
+    'SCHEDULED',
+    'LIVE',
+    'REJECTED',
+  ] as const;
+
+  it('offers Submit before review and after a change request, and nowhere else', () => {
+    expect(STATES.filter(offersSubmit)).toEqual(['DRAFT', 'PRELAUNCH', 'CHANGES_REQUESTED']);
+  });
+
+  it('offers Launch only to a cleared campaign', () => {
+    expect(STATES.filter(offersLaunch)).toEqual(['APPROVED', 'SCHEDULED']);
+  });
+
+  it('has a sentence for the five states a creator waits in, and none for the rest', () => {
+    expect(STATES.filter(isReviewNotedState)).toEqual([
+      'SUBMITTED',
+      'APPROVED',
+      'SCHEDULED',
+      'LIVE',
+      'REJECTED',
+    ]);
   });
 });
