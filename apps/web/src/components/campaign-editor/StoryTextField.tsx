@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Textarea } from '@ideanest/ui';
-import { toggleMark } from '../../lib/projects/story';
+import { toggleMark } from '@ideanest/campaign-editor/story';
 import { markForShortcut, StoryMarkToolbar } from './StoryMarkToolbar';
 
 /**
@@ -27,7 +27,7 @@ import { markForShortcut, StoryMarkToolbar } from './StoryMarkToolbar';
  * MOTION: none. `docs/motion-system.md` §5 gives the campaign editor "none —
  * autosave indicator only".
  */
-import type { StoryToolbarCopy } from '../../lib/i18n/campaign-editor-copy';
+import type { StoryToolbarCopy } from '@ideanest/campaign-editor/copy';
 
 export interface StoryTextFieldProps {
   /** The mark toolbar's words. */

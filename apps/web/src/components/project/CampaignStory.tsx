@@ -4,7 +4,7 @@ import { MediaFrame } from '@ideanest/ui/server';
 import { canOptimise } from '../../lib/images/source';
 import type { CampaignStoryCopy } from '../../lib/i18n/campaign-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
-import type { StoryBlock, StoryDocument, StorySpans } from '../../lib/projects/story';
+import type { StoryBlock, StoryDocument, StorySpans } from '@ideanest/campaign/story';
 
 /**
  * The creator's story, rendered — docs/ui-kit.md §8.4, the long-form exception.

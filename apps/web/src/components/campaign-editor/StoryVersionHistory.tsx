@@ -16,7 +16,7 @@ import {
   spansToText,
   storyCharacterCount,
   type StoryDocument,
-} from '../../lib/projects/story';
+} from '@ideanest/campaign-editor/story';
 
 /**
  * Earlier drafts of the story: list, preview, restore.
@@ -48,7 +48,7 @@ import {
 import type {
   StoryHistoryCopy,
   StoryVocabularyCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
 import { INTL_LOCALE } from '../../lib/i18n/formats';

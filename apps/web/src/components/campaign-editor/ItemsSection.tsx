@@ -18,7 +18,7 @@ import type { Item } from '../../lib/projects/api';
  *
  * MOTION: none. Creators spend hours here (docs/motion-system.md §5).
  */
-import type { ItemsSectionCopy } from '../../lib/i18n/campaign-editor-copy';
+import type { ItemsSectionCopy } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 export interface ItemsSectionProps {

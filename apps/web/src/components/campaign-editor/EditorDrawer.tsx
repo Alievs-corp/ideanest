@@ -36,7 +36,7 @@ import { Drawer } from '@ideanest/ui/motion';
  * under `prefers-reduced-motion`. Nothing here adds any (docs/motion-system.md
  * §5 gives the campaign editor "none").
  */
-import type { EditorDrawerCopy } from '../../lib/i18n/campaign-editor-copy';
+import type { EditorDrawerCopy } from '@ideanest/campaign-editor/copy';
 
 export interface EditorDrawerProps {
   /** The two buttons' words. */

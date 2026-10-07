@@ -15,7 +15,6 @@ import {
 } from '@ideanest/ui';
 import { SUPPORTED_CURRENCIES } from '../../lib/money';
 import {
-  isLocked,
   listCategories,
   patchProject,
   type Category,
@@ -23,6 +22,7 @@ import {
   type ProjectEdit,
   type ProjectPatch,
 } from '../../lib/projects/api';
+import { isLocked } from '@ideanest/campaign-editor/contract';
 import {
   BLURB_MAX_CHARACTERS,
   DURATION_MAX_DAYS,
@@ -37,16 +37,17 @@ import {
   type BasicsDraft,
   type BasicsErrors,
   type BasicsField,
-} from '../../lib/projects/basics';
+} from '@ideanest/campaign-editor/basics';
 import { CoverImageField } from './CoverImageField';
 import type {
   BasicsPanelCopy,
   EditorChromeCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { EditorShell } from './EditorShell';
 import { SaveStatus } from './SaveStatus';
-import { useAutosave, type SaveFailure } from './useAutosave';
+import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
+import { useAutosave } from './useAutosave';
 import { useProjectEdit } from './useProjectEdit';
 
 /**

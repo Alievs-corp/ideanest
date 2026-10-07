@@ -3,10 +3,11 @@
 import { useEffect, useId, useState } from 'react';
 import { CharacterCount, Field, InlineAlert, Switch, Textarea, TextInput } from '@ideanest/ui';
 import { createItem, patchItem, type Item } from '../../lib/projects/api';
-import { characterCount } from '../../lib/projects/basics';
+import { characterCount } from '@ideanest/campaign-editor/basics';
 import {
   EMPTY_ITEM,
   ITEM_NAME_MAX_CHARACTERS,
+  fieldErrorsFrom,
   isEmptyPatch,
   isItemField,
   itemDraftFrom,
@@ -15,10 +16,10 @@ import {
   validateItem,
   type ItemDraft,
   type ItemErrors,
-} from '../../lib/projects/rewards';
+} from '@ideanest/campaign-editor/rewards';
 import { EditorDrawer } from './EditorDrawer';
-import { fieldErrorsFrom } from './rewardFailure';
-import { describeFailure, type SaveFailure } from './useAutosave';
+import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
+import { describeFailure } from './useAutosave';
 
 /**
  * One item: the atomic thing a campaign produces, which tiers are composed
@@ -40,7 +41,7 @@ import { describeFailure, type SaveFailure } from './useAutosave';
 import type {
   ItemEditorCopy,
   ItemValidationCopy,
-} from '../../lib/i18n/campaign-editor-copy';
+} from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 export interface ItemEditorProps {

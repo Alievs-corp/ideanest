@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from '../../i18n/navigation';
 import { CharacterCount, Field, InlineAlert, Pill, Select, TextInput, Textarea } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
-import { characterCount } from '../../lib/projects/basics';
+import { characterCount } from '@ideanest/campaign-editor/basics';
 import {
   PROFILE_BIO_MAX_CHARACTERS,
   PROFILE_NAME_MAX_CHARACTERS,

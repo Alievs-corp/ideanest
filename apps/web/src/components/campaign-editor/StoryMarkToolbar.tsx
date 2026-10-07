@@ -2,8 +2,8 @@
 
 import { Bold, Italic } from 'lucide-react';
 import { cn } from '@ideanest/ui';
-import { isMarkActive, toggleMark, type StoryMark } from '../../lib/projects/story';
-import type { StoryToolbarCopy } from '../../lib/i18n/campaign-editor-copy';
+import { isMarkActive, toggleMark, type StoryMark } from '@ideanest/campaign-editor/story';
+import type { StoryToolbarCopy } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
 /**

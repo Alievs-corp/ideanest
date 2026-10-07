@@ -5,9 +5,9 @@ import { useState } from 'react';
 import { CharacterCount, Field, InlineAlert, Pill, TextInput } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import { createProject } from '../../lib/projects/api';
-import { TITLE_MAX_CHARACTERS, characterCount } from '../../lib/projects/basics';
+import { TITLE_MAX_CHARACTERS, characterCount } from '@ideanest/campaign-editor/basics';
 import type { CharacterCountCopy } from '@ideanest/ui';
-import type { NewProjectCopy } from '../../lib/i18n/campaign-editor-copy';
+import type { NewProjectCopy } from '@ideanest/campaign-editor/copy';
 import type { Locale } from '../../lib/i18n/locale';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 

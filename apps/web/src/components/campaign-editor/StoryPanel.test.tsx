@@ -11,7 +11,7 @@ import {
   type StoryVersionSummary,
 } from '../../lib/projects/api';
 import { measureImage } from '../../lib/projects/coverImage';
-import type { StoryDocument } from '../../lib/projects/story';
+import type { StoryDocument } from '@ideanest/campaign-editor/story';
 import { StoryPanel } from './StoryPanel';
 import { EDITOR_COPY, STORY_COPY } from '../../test-editor-copy';
 
