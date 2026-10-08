@@ -29,6 +29,7 @@
   --text-disabled: rgb(255 255 255 / 0.24); /*  2.6:1  non-text only */
   --text-on-lime: #0a0a0a; /* 15.8:1  AAA */
   --text-on-white: #0a0a0a; /* 19.3:1  AAA */
+  --text-on-accent: #0a0a0a; /* on every --accent-*; packages/ui/src/contrast.test.ts */
   --text-on-danger: #0a0a0a; /*  5.8:1  AA; white on --danger is 3.4:1 */
 
   /* Long-form reading. Slightly under pure white to reduce halation. */
@@ -56,6 +57,17 @@
   /* ── White used as an accent, not a base ─────────────────*/
   --white-surface: #ffffff;
   --white-muted: #f4f4f4;
+
+  /* ── Accent surfaces (#335) ──────────────────────────────
+     Campaign cards and category tiles, on the web and on the
+     phone. Decoration only: never status, never urgency, never
+     text. Text on them is --text-on-accent.                  */
+  --accent-sun: #ffe03d;
+  --accent-sun-glow: rgb(255 224 61 / 0.32);
+  --accent-mint: #2ef2c4;
+  --accent-mint-glow: rgb(46 242 196 / 0.32);
+  --accent-sky: #26a6f7;
+  --accent-sky-glow: rgb(38 166 247 / 0.32);
 
   /* ── Radius ──────────────────────────────────────────────*/
   --radius-sm: 10px;
@@ -93,6 +105,12 @@
 [data-on-lime] :focus-visible,
 [data-on-lime]:focus-visible {
   outline-color: var(--text-on-lime);
+}
+
+/* Lime on sun or mint is under 3:1 too — near-black on every accent. */
+[data-on-accent] :focus-visible,
+[data-on-accent]:focus-visible {
+  outline-color: var(--text-on-accent);
 }
 
 /* docs/motion-system.md §9.2 — required, not optional. */

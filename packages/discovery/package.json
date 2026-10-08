@@ -13,7 +13,8 @@
     "./emptiness": "./src/emptiness.ts",
     "./copy": "./src/copy.ts",
     "./taxonomy": "./src/taxonomy.ts",
-    "./collections": "./src/collections.ts"
+    "./collections": "./src/collections.ts",
+    "./category-look": "./src/category-look.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -23,6 +24,7 @@
     "react": "^19.0.0"
   },
   "dependencies": {
+    "@ideanest/design-tokens": "workspace:*",
     "@ideanest/messages": "workspace:*",
     "@ideanest/money": "workspace:*",
     "decimal.js": "^10.6.0"

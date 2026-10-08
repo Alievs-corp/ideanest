@@ -88,8 +88,8 @@ under the epic that introduced the skill. Do not copy an old pattern because it 
 
 ## 4. Colour additions
 
-Mobile accent tokens live in `@ideanest/design-tokens` as `mobileAccent` and reach the app
-as `accent` from `src/theme`: `accent.sun`, `accent.mint`, `accent.sky`, each with
+Accent tokens live in `@ideanest/design-tokens` as `accent` (the web draws them too since
+#335) and reach the app as `accent` from `src/theme`: `accent.sun`, `accent.mint`, `accent.sky`, each with
 `surface`, `text` and `glow`. Contrast is asserted in `src/theme/theme.test.ts`. Rules:
 
 - Accents are **surfaces** for cards and illustrations. They carry no meaning (not

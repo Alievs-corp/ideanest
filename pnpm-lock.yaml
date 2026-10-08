@@ -501,6 +501,9 @@ importers:
 
   packages/discovery:
     dependencies:
+      '@ideanest/design-tokens':
+        specifier: workspace:*
+        version: link:../design-tokens
       '@ideanest/messages':
         specifier: workspace:*
         version: link:../messages
