@@ -65,11 +65,11 @@ Common to every row unless it says otherwise:
     say Expo derives location from it, this changes first.
 
   Expo is a processor for both, and the privacy policy must name it.
-- **The crash-reporting destination**, if `IDEANEST_SENTRY_DSN` is set:
-  Sentry (Functional Software, Inc., EU data region) or the platform's own
-  GlitchTip on the Coolify server. This is a new processor — the privacy
-  policy (`legal/privacy-policy`) and both store forms must name it before a
-  build with a DSN is submitted.
+- **The crash-reporting destination:** Sentry (Functional Software, Inc.), EU
+  data region (Frankfurt), project `alievs-teams/ideanest-mobile`. Every EAS
+  build carries the DSN (`eas.json`), so this is a processor of every store
+  build: the privacy policy (`legal/privacy-policy`, #325) and both store forms
+  must name it before submission.
 
 ## Required-reason APIs (iOS)
 
