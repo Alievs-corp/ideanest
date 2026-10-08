@@ -3,6 +3,9 @@ import { Link } from '../../../i18n/navigation';
 import type { ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { CampaignGrid } from '../../../components/browse/CampaignGrid';
+import { ACCENT_SURFACE } from '../../../components/browse/accent-surface';
+import { CategoryIcon } from '../../../components/browse/CategoryLook';
+import { categoryLook } from '@ideanest/discovery/category-look';
 import { FadeUpSection } from '../../../components/motion/FadeUpSection';
 import { StructuredData } from '../../../components/seo/StructuredData';
 import { fetchCategories, fetchDiscoveryFeed } from '../../../lib/api/server';
@@ -193,15 +196,27 @@ export default async function HomePage() {
             href="/categories"
             linkLabel={t('categories.link')}
           >
-            <ul className="grid list-none grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {/*
+              ACCENT TILES, AS THE APP DRAWS THEM (#335). Each category wears its accent and its
+              icon from `@ideanest/discovery/category-look`; the name says what the tile is, never
+              the hue. Two, four, then five columns: the seeded taxonomy cycles three accents, so
+              a column count that is not a multiple of three is what keeps neighbours apart.
+            */}
+            <ul className="grid list-none grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
               {categories.map((category) => (
                 <li key={category.id}>
                   <Link
                     href={categoryPath(category.slug)}
-                    className="flex h-full items-center justify-between gap-2 rounded-md border border-white/8 bg-surface-2 px-4 py-4 text-sm font-medium text-white transition-colors duration-150 ease-in-out hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+                    data-on-accent=""
+                    className={`group flex h-full min-h-[120px] flex-col justify-between gap-4 rounded-xl p-5 text-on-accent ${ACCENT_SURFACE[categoryLook(category.slug).accent]}`}
                   >
-                    {category.name}
-                    <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-white/40" />
+                    <span className="flex items-start justify-between gap-2">
+                      <CategoryIcon slug={category.slug} className="size-[26px]" />
+                      <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-on-accent/72" />
+                    </span>
+                    <span className="text-base font-medium tracking-[-0.02em] group-hover:underline group-hover:underline-offset-4">
+                      {category.name}
+                    </span>
                   </Link>
                 </li>
               ))}

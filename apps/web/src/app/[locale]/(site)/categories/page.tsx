@@ -7,6 +7,7 @@ import { publicPageMetadata } from '../../../../lib/seo/metadata';
 import { categoryPageGraph } from '../../../../lib/seo/structured-data/graphs';
 import { graphContext } from '../../../../lib/i18n/shell-copy.server';
 import { StructuredData } from '../../../../components/seo/StructuredData';
+import { CategoryBadge } from '../../../../components/browse/CategoryLook';
 import { getTranslations } from 'next-intl/server';
 
 /**
@@ -89,7 +90,12 @@ export default async function CategoriesPage() {
           <div className="mt-12 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {categories.map((category) => (
               <section key={category.id}>
-                <h2 className="text-xl font-medium tracking-[-0.02em] text-white">
+                {/*
+                  The category's icon on its accent, beside the name — the mark the app draws on
+                  the same list (#335). Decorative: the name is the link and says it all.
+                */}
+                <h2 className="flex items-center gap-3 text-xl font-medium tracking-[-0.02em] text-white">
+                  <CategoryBadge slug={category.slug} />
                   <Link
                     href={categoryPath(category.slug)}
                     className="rounded-sm hover:underline hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
@@ -99,7 +105,7 @@ export default async function CategoriesPage() {
                 </h2>
 
                 {category.subcategories.length > 0 && (
-                  <ul className="mt-4 flex list-none flex-col gap-2">
+                  <ul className="mt-4 flex list-none flex-col gap-2 pl-[52px]">
                     {category.subcategories.map((subcategory) => (
                       <li key={subcategory.id}>
                         <Link

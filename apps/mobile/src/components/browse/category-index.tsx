@@ -6,7 +6,8 @@ import { useCategories, type Category } from '../../api/queries';
 import { useT } from '../../lib/i18n';
 import { accent as accents, colors, lineHeight, radius, size, spacing } from '../../theme';
 import { FadeUp, useFirstScreenfulIndex } from '../motion';
-import { accentFor } from '../project-card';
+import { categoryLook } from '@ideanest/discovery/category-look';
+import { categoryGlyph } from './category-look';
 import { Body, CardTitle, Heading } from '../text';
 import {
   ContentSheet,
@@ -28,9 +29,9 @@ import { LinkPill } from './breadcrumb';
  *
  * A heading and an intro on the dark canvas, then the taxonomy in a white content sheet
  * (`ContentSheet`), in the service's order: each category a row that links to its landing page,
- * with its subcategories as link pills beneath it. Text only, because the taxonomy carries text
- * only; the small accent badge beside each name is the colour the category's Home tile takes
- * (`accentFor`) — a decoration, never a meaning, and always beside the name.
+ * with its subcategories as link pills beneath it. The badge beside each name is the category's
+ * icon on the accent its Home tile takes, both from `@ideanest/discovery/category-look` (#335) —
+ * a decoration, never a meaning, and always beside the name.
  *
  * <h2>A failed read and an empty taxonomy say the same thing</h2>
  *
@@ -122,7 +123,7 @@ const ON_WHITE = TONES.white;
 /** The category's name, beside its accent badge, as a link to its landing page. */
 function CategoryRow({ category }: { readonly category: Category }) {
   const { ring, onFocus, onBlur } = useFocusRing();
-  const tone = accents[accentFor({ id: category.id, slug: category.slug, title: category.name })];
+  const tone = accents[categoryLook(category.slug).accent];
   return (
     <Link href={{ pathname: '/categories/[category]', params: { category: category.slug } }} asChild>
       <PressableScale
@@ -137,7 +138,7 @@ function CategoryRow({ category }: { readonly category: Category }) {
         ]}
       >
         <View style={[styles.badge, { backgroundColor: tone.surface }]}>
-          <Icon icon={Glyphs.Category} variant="bulk" size={20} color={tone.text} />
+          <Icon icon={categoryGlyph(category.slug)} variant="bulk" size={22} color={tone.text} />
         </View>
         <CardTitle accessibilityRole="header" style={styles.name}>
           {category.name}

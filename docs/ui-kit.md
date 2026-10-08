@@ -165,6 +165,34 @@ floating panel), or is the primary action.
 The two should not appear on the same card. One says "this matters"; the other
 says "this is happening now". Together they say neither.
 
+### 2.6 Accent surfaces — category colour (#335)
+
+| Token | Value | Use |
+|---|---|---|
+| `--accent-sun` | `#FFE03D` | Campaign card, category tile |
+| `--accent-mint` | `#2EF2C4` | Campaign card, category tile |
+| `--accent-sky` | `#26A6F7` | Campaign card, category tile |
+| `--accent-*-glow` | the accent at 32% | The soft halo under an accent card |
+| `--text-on-accent` | `#0A0A0A` | Every word on an accent, at full or 72% |
+
+The mobile app's accents, on the web since #335, so the two clients look like
+one product. **They carry no meaning** — not status, not urgency: lime keeps
+"act now", `--success` keeps "funded". They are decoration that says which
+category a thing belongs to, and the category's name or its campaign's title is
+always written on it.
+
+Each category has one accent and one icon, from
+`@ideanest/discovery/category-look` — the table both clients read, so Games is
+the same colour and the same pictogram in a browser and on a phone. The fifteen
+seeded categories cycle sky, sun, mint in their sort order; a category an
+administrator adds takes an accent hashed from its slug and the generic grid
+icon. A campaign card takes its category's accent (`categorySlug` on the card),
+or a hash of its id when it has no category.
+
+Rules: never accent text; text on an accent is `--text-on-accent`, at full or
+72% and nothing lighter; an accent surface carries `data-on-accent`, which turns
+the focus ring near-black (lime on sun or mint is under 3:1).
+
 ---
 
 ## 3. Surface and elevation
@@ -496,10 +524,16 @@ Hover-only would make it unreachable without a pointer.
   background: rgb(10 10 10 / 0.10);
   color: rgb(10 10 10 / 0.72);
 }
+.tag--on-accent {
+  background: rgb(10 10 10 / 0.10);
+  color: var(--text-on-accent);
+}
 ```
 
 > Inside a lime card the default tag is invisible — dark on dark. Use the
-> black-tint variant.
+> black-tint variant. On a sun, mint or sky card use `onAccent`: a status
+> colour is illegible there too (`--success` on mint is 1.1:1), so the icon and
+> the word carry the status.
 
 ### 7.6 Avatar and avatar group
 
@@ -1044,18 +1078,25 @@ decoration §1.1 forbids — a signal that everything carries is a signal that
 means nothing, and the reader loses the ability to see *which* campaign is about
 to close.
 
-**So the card surface stays `--surface-2` and the urgency is a lime pill on
-it**, with `Clock` and the words "2 days left". That is still lime as a
+**So the urgency is a lime pill on the card, never a lime card**, with `Clock`
+and the words "2 days left". That is still lime as a
 *surface* with `--text-on-lime` on it (§2.3), it still carries `data-on-lime` so
 the focus ring flips (§9.3), and it is still scarce inside the one card it
 belongs to. Every other rule is unchanged:
 
 | On a discovery card | Token | Why |
 |---|---|---|
-| Progress, below goal | `--lime-500` fill | In progress |
+| Card surface | its category's `--accent-*` (§2.6) | The app's look; decoration, not meaning |
+| Words on it | `--text-on-accent`, full or 72% | Legible on every accent (§9.1) |
+| Progress, below goal | `--lime-500` fill on a `--surface-3` track | In progress |
 | Progress, at or above goal | `--success` fill | Achieved, never lime (§2.4) |
 | Closing within 48 hours | `--lime-500` **badge** | Urgent — the one lime element on the card |
-| Status word | `--success` / `--warning` / neutral + icon | Colour never alone (§9.2) |
+| Status word | `onAccent` tag + icon | Colour never alone (§9.2) |
+
+The cover is inset in the accent card with its own rounded corners, as the app
+draws it. Category tiles on the home page are accent cards with the category's
+icon; the categories index and the landing pages put the icon on a disc of the
+accent beside the name.
 
 The lime **card** remains correct where §8.1 put it — a dashboard rail, a
 selected reward tier, one current item among a handful. It is the feed, where
@@ -1248,6 +1289,10 @@ holding fails the build rather than quietly ageing in this table.
 | `#34D058` on `#0D0D0D` | 9.5:1 | AAA |
 | `#34D058` on `#C6F432` | 1.6:1 | **Prohibited** |
 | **`rgb(255 255 255 / .92)` on `#C6F432`** | **1.2:1** | **Prohibited** |
+| `#0A0A0A` on `#26A6F7` (sky, the darkest accent) | 7.4:1 | AAA |
+| `rgb(10 10 10 / .72)` on `#26A6F7` | 4.8:1 | AA |
+| `#1F1F1F` (progress track) on `#26A6F7` | 6.2:1 | Non-text, passes |
+| **`#C6F432` on `#FFE03D`** | **1.0:1** | **Prohibited** — why `data-on-accent` exists |
 
 > **`--text-tertiary` is not a body-text colour.** This table used to record it
 > at 4.9:1 and call it "AA at 16px+", and both halves were wrong: it measures

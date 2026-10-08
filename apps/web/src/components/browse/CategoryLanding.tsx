@@ -9,6 +9,7 @@ import { NO_FILTERS, toHref } from '@ideanest/discovery/filters';
 import type { Category, Subcategory } from '../../lib/categories/api';
 import { subcategoryPath } from '../../lib/categories/api';
 import { CampaignGrid } from './CampaignGrid';
+import { CategoryBadge } from './CategoryLook';
 
 /**
  * The body of a category or subcategory landing page — §4.13 WS-05, issue #265.
@@ -115,9 +116,13 @@ export async function CategoryLanding({
         </ol>
       </nav>
 
-      <h1 className="mt-4 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
-        {title}
-      </h1>
+      {/* The parent category's icon on its accent, on a subcategory page too (#335). */}
+      <div className="mt-4 flex items-center gap-4">
+        <CategoryBadge slug={category.slug} size="lg" />
+        <h1 className="text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
+          {title}
+        </h1>
+      </div>
       <p className="mt-2 max-w-[60ch] text-white/64">
         {subcategory === undefined
           ? t('standfirst', { category: category.name })
