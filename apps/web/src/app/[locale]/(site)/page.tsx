@@ -7,6 +7,7 @@ import { ACCENT_SURFACE } from '../../../components/browse/accent-surface';
 import { CategoryIcon } from '../../../components/browse/CategoryLook';
 import { categoryLook } from '@ideanest/discovery/category-look';
 import { FadeUpSection } from '../../../components/motion/FadeUpSection';
+import { HeroScene } from '../../../components/home/HeroScene';
 import { StructuredData } from '../../../components/seo/StructuredData';
 import { fetchCategories, fetchDiscoveryFeed } from '../../../lib/api/server';
 import { categoryPath } from '../../../lib/categories/api';
@@ -124,8 +125,8 @@ export default async function HomePage() {
           within 48 hours, inside the Ending soon rail below. A lime hero button would be the
           second, and two things saying "now" is neither of them saying it.
         */}
-        <FadeUpSection>
-          <section className="pt-10 pb-14 sm:pt-16 sm:pb-20">
+        <section className="grid items-center gap-8 pt-10 pb-14 sm:pt-16 sm:pb-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,600px)] lg:gap-6">
+          <FadeUpSection>
             <h1 className="max-w-[16ch] text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-white sm:text-6xl">
               {t('hero.title')}
             </h1>
@@ -148,8 +149,18 @@ export default async function HomePage() {
                 {t('hero.start')}
               </Link>
             </div>
-          </section>
-        </FadeUpSection>
+          </FadeUpSection>
+
+          {/*
+            THE RIGHT HALF IS THE IDEA THE PAGE IS ABOUT (#337): people walking in from every
+            side, an orb that grows with each of them. Server-rendered CSS, no script, outside
+            the `FadeUp` because it carries its own motion — `HeroScene` says how it stays on
+            the compositor and what it does under reduced motion. Below the text on a tablet,
+            and absent on a phone, where the text alone already fills the first screen and
+            §5's "content immediately" outranks the picture.
+          */}
+          <HeroScene caption={t('hero.sceneCaption')} />
+        </section>
 
         {closing.length > 0 && (
           <HomeSection

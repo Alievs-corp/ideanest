@@ -475,6 +475,19 @@ decisions.
 > decoration wearing a data label. No marquee and no page transition, for the same
 > reason — motion added because the budget allows it rather than because it says
 > anything.
+>
+> **The hero's scene is the one ambient loop (#337).** People walk in from every
+> side of a floor drawn in perspective, become sparks that rise into an orb, and
+> the orb grows with each of them until it releases a wave and starts again. It
+> says what the platform is, so it passes the test above, and it is paid for as
+> follows: CSS keyframes rendered on the server with no script; `transform` and
+> `opacity` only, every keyframe a literal, because a `var()` inside a keyframe
+> keeps the animation on the main thread; about sixty animations, cut from a
+> hundred after measuring that the cost scaled with their number; `content-visibility:
+> auto`, so it costs nothing once scrolled away; not drawn on a phone, where the
+> text fills the first screen; and a still composition under reduced motion.
+> Measured on the development laptop it holds frame rate at normal speed and
+> drops frames under a 2× CPU slowdown — the reason it is not on phones.
 
 > **The site shell's one animation is §4.7's, and the mobile drawer is not a
 > second one.** WS-03's off-canvas panel is an overlay and takes §4.11.1's

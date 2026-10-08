@@ -136,3 +136,227 @@
     transform: rotate(9deg);
   }
 }
+
+/**
+ * The home page hero scene — `components/home/HeroScene.tsx`, issue #337.
+ *
+ * WRITTEN HERE for the WhatsApp launcher's reason: the scene renders on the server with no
+ * script, and a library would cost the home page the first-load budget it has 6 KiB left of.
+ *
+ * EVERY KEYFRAME IS A LITERAL. A `var()` or `calc()` inside a keyframe cannot be handed to the
+ * compositor, so the browser recalculates style on the main thread every frame; the prototype
+ * spent half its main-thread time doing exactly that. Per-campaigner values — the lane's angle,
+ * its colour, its delay — sit on the elements as static inline styles instead, outside the
+ * animation. `transform` and `opacity` only (`docs/motion-system.md` §2).
+ *
+ * One cycle is 6.4 seconds: eight people, one arriving every 0.8. The orb's growth steps on
+ * each spark's arrival, which with the lanes' negative delays falls at 7%, 19.5% … 94.5% of it,
+ * and the one ring pulses on a 0.8 s loop delayed to land on the same instants.
+ */
+
+@keyframes hero-walk {
+  0% {
+    transform: translateX(250px);
+  }
+  66% {
+    transform: translateX(44px);
+  }
+  71%,
+  100% {
+    transform: translateX(38px);
+  }
+}
+
+@keyframes hero-fade {
+  0% {
+    opacity: 0;
+  }
+  6%,
+  66% {
+    opacity: 1;
+  }
+  71%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes hero-path {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  3% {
+    opacity: 0.5;
+  }
+  66% {
+    opacity: 0.5;
+    transform: scaleX(1);
+  }
+  86%,
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes hero-swing {
+  from {
+    transform: rotate(-24deg);
+  }
+  to {
+    transform: rotate(24deg);
+  }
+}
+
+@keyframes hero-rise {
+  0%,
+  66% {
+    opacity: 0;
+    transform: translateY(0) scale(1);
+  }
+  69% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+    transform: translateY(-178px) scale(0.5);
+  }
+  84%,
+  100% {
+    opacity: 0;
+    transform: translateY(-178px) scale(0.5);
+  }
+}
+
+@keyframes hero-brighten {
+  0% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  92% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes hero-pulse {
+  0%,
+  81% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  82% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@keyframes hero-bloom {
+  0%,
+  91% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  92% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(6);
+  }
+}
+
+@keyframes hero-grow {
+  0% {
+    transform: scale(0.625);
+  }
+  7% {
+    transform: scale(0.625);
+  }
+  8.5% {
+    transform: scale(0.73);
+  }
+  10% {
+    transform: scale(0.7);
+  }
+  19.5% {
+    transform: scale(0.7);
+  }
+  21% {
+    transform: scale(0.805);
+  }
+  22.5% {
+    transform: scale(0.775);
+  }
+  32% {
+    transform: scale(0.775);
+  }
+  33.5% {
+    transform: scale(0.88);
+  }
+  35% {
+    transform: scale(0.85);
+  }
+  44.5% {
+    transform: scale(0.85);
+  }
+  46% {
+    transform: scale(0.955);
+  }
+  47.5% {
+    transform: scale(0.925);
+  }
+  57% {
+    transform: scale(0.925);
+  }
+  58.5% {
+    transform: scale(1.03);
+  }
+  60% {
+    transform: scale(1.0);
+  }
+  69.5% {
+    transform: scale(1.0);
+  }
+  71% {
+    transform: scale(1.105);
+  }
+  72.5% {
+    transform: scale(1.075);
+  }
+  82% {
+    transform: scale(1.075);
+  }
+  83.5% {
+    transform: scale(1.18);
+  }
+  85% {
+    transform: scale(1.15);
+  }
+  92% {
+    transform: scale(1.15);
+  }
+  94% {
+    transform: scale(0.55);
+  }
+  94.5% {
+    transform: scale(0.55);
+  }
+  96% {
+    transform: scale(0.655);
+  }
+  97.5% {
+    transform: scale(0.625);
+  }
+  100% {
+    transform: scale(0.625);
+  }
+}

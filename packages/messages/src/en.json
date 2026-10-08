@@ -3278,6 +3278,7 @@
     "hero": {
       "title": "Fund what does not exist yet",
       "standfirst": "Creators publish a campaign with a goal and a deadline. Backers pledge. A campaign succeeds at 80% of its goal — and if it does not get there, every backer is refunded in full.",
+      "sceneCaption": "When small pledges come together, big ideas become real.",
       "browse": "Browse campaigns",
       "start": "Start a campaign"
     },
