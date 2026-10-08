@@ -887,13 +887,18 @@ not mounted, so it cannot pre-empt them), and release health.
 - **Bundle cost:** the SDK adds about 1.2 MB of Hermes bytecode (8.55 MB →
   9.77 MB on the Android export). The bundle budget below is measured with it.
 
-**Destination: the owner's decision** (`status: needs-decision`). The SDK and
-this code are the same for both:
+**Destination: sentry.io, EU data region** (decided 2026-10-08). Organization
+`alievs-teams`, project `ideanest-mobile`, events stored in Frankfurt (DSN on
+`ingest.de.sentry.io`). The DSN, `SENTRY_ORG` and `SENTRY_PROJECT` are committed
+in `eas.json` `build.base.env`; only `SENTRY_AUTH_TOKEN` is a secret (an EAS
+secret variable for builds, a GitHub secret for OTA updates). The project has
+the Data Scrubber with its defaults, *Prevent storing IP addresses*, and the
+app's own sensitive field names (tokens, idempotency key, two-factor and
+recovery codes, email, phone, IBAN, card and address fields) switched on.
 
-- **Recommended: sentry.io, EU data region** (Frankfurt; DSNs on `ingest.de.sentry.io`). Nothing to run.
-- **GlitchTip on Coolify** speaks the same protocol, but adds PostgreSQL, Redis
-  and worker processes to the existing server, which is small and shared with
-  the platform itself; a crash storm would compete with the API for it.
+GlitchTip on Coolify was the alternative: the same protocol, but PostgreSQL,
+Redis and worker processes on the small shared server, where a crash storm
+would compete with the API.
 
 Either way it is a **new data processor**: the privacy policy and both store
 forms must name it before a build with a DSN is submitted

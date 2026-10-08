@@ -9,7 +9,10 @@
       "node": "22.20.0",
       "env": {
         "IDEANEST_SITE_URL": "https://ideyanest.com",
-        "IDEANEST_EAS_PROJECT_ID": "cc3554af-968c-4575-acfc-30efdbb0fb49"
+        "IDEANEST_EAS_PROJECT_ID": "cc3554af-968c-4575-acfc-30efdbb0fb49",
+        "IDEANEST_SENTRY_DSN": "https://795eac303137b2c2161f2a06f7300939@o4512220552888320.ingest.de.sentry.io/4512220560490576",
+        "SENTRY_ORG": "alievs-teams",
+        "SENTRY_PROJECT": "ideanest-mobile"
       }
     },
     "development": {
