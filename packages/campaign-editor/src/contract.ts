@@ -163,6 +163,8 @@ export type ChecklistSection = string;
  *
  * `requirement` is the stable name to branch on — `COVER_IMAGE`, `RISKS`. `label` and
  * `detail` are prose and may be reworded at any time (§10.4), so nothing keys off them.
+ * The service writes both in the language of the request's `Accept-Language`, so a client
+ * renders them as they arrive and asks in the language its screen is drawn in.
  */
 export interface ChecklistItem {
   requirement: string;

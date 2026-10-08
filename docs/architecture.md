@@ -2210,6 +2210,18 @@ individual agreement can differ without a deployment.
 > weighing twice an advisory one: built from blockers alone it would be a boolean
 > wearing a percent sign, and every legal-but-bare campaign would read 100.
 >
+> **The words are in the reader's language.** Each row carries `requirement` (the
+> enum name a client branches on, never translated), `section`, `satisfied`, and two
+> strings: `label` and, when unmet, `detail`. Both are resolved from
+> `messages*.properties` (`checklist.<REQUIREMENT>.label`,
+> `checklist.<REQUIREMENT>.<reason>`) against the request's `Accept-Language`, with
+> the same negotiation and `az` fallback as the taxonomy, and the response carries
+> `Vary: Accept-Language`. The domain produces a reason and the campaign's own
+> numbers, never prose; amounts are quoted exactly as stored ("250 AZN"), never
+> through a locale's number format. The `PROJECT_NOT_SUBMITTABLE` refusal's
+> `meta.unmet` uses the same resolution, so a row and the refusal naming it are in
+> one language.
+>
 > **What the goal bounds and the reward floor are.** §5.3 calls them configurable and
 > they are: `ideanest.project.submission.{goal-minimum, goal-maximum,
 > reward-price-minimum}`. The goal bounds are a commercial position and the reward

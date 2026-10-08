@@ -12882,7 +12882,9 @@ export interface operations {
     projectChecklist: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
             path: {
                 id: string;
             };

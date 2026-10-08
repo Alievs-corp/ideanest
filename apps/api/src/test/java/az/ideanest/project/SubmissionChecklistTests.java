@@ -132,8 +132,9 @@ class SubmissionChecklistTests {
     void everyRequirementRoutesSomewhere(ChecklistRequirement requirement) {
         // A checklist that says what is wrong and not where to fix it is a list of
         // complaints. The section is what turns each failing row into a link.
+        // Its label is copy, in four languages, and ChecklistCopyTests holds that every
+        // requirement has one in each.
         assertThat(requirement.section()).isNotNull();
-        assertThat(requirement.label()).isNotBlank();
         assertThat(requirement.severity()).isNotNull();
     }
 
@@ -163,7 +164,8 @@ class SubmissionChecklistTests {
                 // fine, so there is none.
                 assertThat(item.detail()).isNull();
             } else {
-                assertThat(item.detail()).isNotBlank();
+                assertThat(item.detail()).isNotNull();
+                assertThat(item.detail().reason()).isNotBlank();
             }
         });
     }
@@ -176,11 +178,11 @@ class SubmissionChecklistTests {
                 LIMITS);
 
         // "The story is too short" is a restatement of the rule. What a creator can
-        // act on is how far off they are.
-        assertThat(detailOf(result, ChecklistRequirement.STORY)).contains("140").contains("500");
-        assertThat(detailOf(result, ChecklistRequirement.COVER_IMAGE_SIZE))
-                .contains("800×450")
-                .contains("1024×576");
+        // act on is how far off they are -- so the detail carries both numbers, and
+        // ChecklistCopyTests holds that every language quotes them.
+        assertThat(argumentsOf(result, ChecklistRequirement.STORY)).containsExactly(140, 500);
+        assertThat(argumentsOf(result, ChecklistRequirement.COVER_IMAGE_SIZE))
+                .containsExactly("800×450", "1024×576");
     }
 
     // ------------------------------------------------------------------
@@ -292,7 +294,7 @@ class SubmissionChecklistTests {
         // "A goal is at least 250" is a number whose units a creator has to guess,
         // and guessing wrong by a factor of a hundred is plausible on a funding
         // platform.
-        assertThat(detailOf(result, ChecklistRequirement.GOAL)).contains("250").contains("AZN");
+        assertThat(argumentsOf(result, ChecklistRequirement.GOAL)).containsExactly("10 AZN", "250 AZN");
     }
 
     @Test
@@ -481,8 +483,9 @@ class SubmissionChecklistTests {
                 .orElseThrow(() -> new AssertionError(requirement + " is not on the checklist"));
     }
 
-    private static String detailOf(ChecklistResult result, ChecklistRequirement requirement) {
-        return itemOf(result, requirement).detail();
+    /** What the unmet requirement quotes, in the order its message numbers them. */
+    private static List<Object> argumentsOf(ChecklistResult result, ChecklistRequirement requirement) {
+        return itemOf(result, requirement).detail().arguments();
     }
 
     private static List<BigDecimal> prices(int count, String each) {

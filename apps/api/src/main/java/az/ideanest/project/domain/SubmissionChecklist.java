@@ -1,5 +1,14 @@
 package az.ideanest.project.domain;
 
+import static az.ideanest.project.domain.ChecklistDetail.ABOVE_MAXIMUM;
+import static az.ideanest.project.domain.ChecklistDetail.BELOW_MINIMUM;
+import static az.ideanest.project.domain.ChecklistDetail.MISSING;
+import static az.ideanest.project.domain.ChecklistDetail.OUT_OF_RANGE;
+import static az.ideanest.project.domain.ChecklistDetail.TOO_LONG;
+import static az.ideanest.project.domain.ChecklistDetail.TOO_MANY;
+import static az.ideanest.project.domain.ChecklistDetail.TOO_SHORT;
+import static az.ideanest.project.domain.ChecklistDetail.TOO_SMALL;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +30,12 @@ import java.util.List;
  * {@link #evaluate}, in the order {@link ChecklistRequirement} declares, so the
  * whole of §5.3 can be read at once and asserted against the specification in a
  * plain unit test.
+ *
+ * <p><strong>No prose either.</strong> Each unmet requirement carries a reason and
+ * the campaign's own numbers as a {@link ChecklistDetail}; the sentence a creator
+ * reads is resolved from {@code messages*.properties} at the API boundary, in the
+ * language they asked for. The rules are the same in every language, so they are
+ * written once, here, and the copy is written four times, there.
  *
  * <p><strong>No Spring and no database.</strong> Nothing here is injected or
  * loaded; the facts arrive as a {@link CampaignCompleteness} and the configurable
@@ -74,6 +89,9 @@ public final class SubmissionChecklist {
 
     public static final int DURATION_MAX_DAYS = 60;
 
+    /** §5.3's recommendation, quoted to a creator who has not chosen a duration yet. */
+    public static final int DURATION_RECOMMENDED_DAYS = 30;
+
     /** §5.3, counted as {@link StoryDocuments#characterCount} counts it. */
     public static final int STORY_MIN_CHARACTERS = 500;
 
@@ -98,28 +116,11 @@ public final class SubmissionChecklist {
         List<ChecklistItem> items = new ArrayList<>();
 
         // --- What the campaign is -------------------------------------------
-        items.add(text(
-                ChecklistRequirement.TITLE,
-                campaign.title(),
-                TITLE_MAX_CHARACTERS,
-                "A campaign needs a title.",
-                "title"));
-        items.add(text(
-                ChecklistRequirement.SUMMARY,
-                campaign.summary(),
-                SUMMARY_MAX_CHARACTERS,
-                "A one-line summary is what appears under the campaign everywhere it is listed.",
-                "summary"));
+        items.add(text(ChecklistRequirement.TITLE, campaign.title(), TITLE_MAX_CHARACTERS));
+        items.add(text(ChecklistRequirement.SUMMARY, campaign.summary(), SUMMARY_MAX_CHARACTERS));
 
-        items.add(ChecklistItem.of(
-                ChecklistRequirement.CATEGORY,
-                campaign.categoryId() != null,
-                "Choose the category this campaign belongs to. It is how backers find it."));
-        items.add(ChecklistItem.of(
-                ChecklistRequirement.SUBCATEGORY,
-                campaign.subcategoryId() != null,
-                "Filed only at the top level. A subcategory puts the campaign in front of the "
-                        + "people browsing for exactly this."));
+        items.add(ChecklistItem.of(ChecklistRequirement.CATEGORY, campaign.categoryId() != null, MISSING));
+        items.add(ChecklistItem.of(ChecklistRequirement.SUBCATEGORY, campaign.subcategoryId() != null, MISSING));
 
         items.add(coverPresent(campaign.coverImage()));
         items.add(coverSize(campaign.coverImage()));
@@ -128,35 +129,27 @@ public final class SubmissionChecklist {
         items.add(goal(campaign, limits));
         items.add(duration(campaign.durationDays()));
         items.add(ChecklistItem.of(
-                ChecklistRequirement.SCHEDULED_LAUNCH,
-                campaign.scheduledLaunchAt() != null,
-                "No launch time is set, so the campaign opens whenever the button is pressed. "
-                        + "Choosing the moment is worth more than most of this list."));
+                ChecklistRequirement.SCHEDULED_LAUNCH, campaign.scheduledLaunchAt() != null, MISSING));
 
         // --- What it says ----------------------------------------------------
         items.add(ChecklistItem.of(
                 ChecklistRequirement.STORY,
                 campaign.storyCharacters() >= STORY_MIN_CHARACTERS,
-                "The story is " + campaign.storyCharacters() + " characters. At least "
-                        + STORY_MIN_CHARACTERS + " are needed."));
-        items.add(ChecklistItem.of(
-                ChecklistRequirement.STORY_MEDIA,
-                campaign.storyMediaCount() > 0,
-                "The story is all text. One picture or video of the thing being made does more "
-                        + "than another paragraph about it."));
+                TOO_SHORT,
+                campaign.storyCharacters(),
+                STORY_MIN_CHARACTERS));
+        items.add(ChecklistItem.of(ChecklistRequirement.STORY_MEDIA, campaign.storyMediaCount() > 0, MISSING));
         items.add(risks(campaign.risks()));
 
         // --- What it offers --------------------------------------------------
         items.add(ChecklistItem.of(
-                ChecklistRequirement.REWARDS_OFFERED,
-                campaign.rewardTierCount() > 0,
-                "There is nothing for a backer to choose. A campaign with no rewards is asking "
-                        + "for a donation."));
+                ChecklistRequirement.REWARDS_OFFERED, campaign.rewardTierCount() > 0, MISSING));
         items.add(ChecklistItem.of(
                 ChecklistRequirement.REWARD_TIER_COUNT,
                 campaign.rewardTierCount() <= REWARD_TIER_MAX,
-                "There are " + campaign.rewardTierCount() + " rewards. A campaign offers at most "
-                        + REWARD_TIER_MAX + "."));
+                TOO_MANY,
+                campaign.rewardTierCount(),
+                REWARD_TIER_MAX));
         items.add(rewardPrices(campaign, limits));
 
         return new ChecklistResult(items);
@@ -178,18 +171,13 @@ public final class SubmissionChecklist {
      * the editor's own counter counts. Counting UTF-16 units here would refuse a
      * sixty-character title containing an emoji that the database was happy with.
      */
-    private static ChecklistItem text(
-            ChecklistRequirement requirement, String value, int max, String whenMissing, String noun) {
-
+    private static ChecklistItem text(ChecklistRequirement requirement, String value, int max) {
         String trimmed = value == null ? "" : value.trim();
         if (trimmed.isEmpty()) {
-            return ChecklistItem.unmet(requirement, whenMissing);
+            return ChecklistItem.unmet(requirement, MISSING);
         }
         int characters = trimmed.codePointCount(0, trimmed.length());
-        return ChecklistItem.of(
-                requirement,
-                characters <= max,
-                "The " + noun + " is " + characters + " characters. The limit is " + max + ".");
+        return ChecklistItem.of(requirement, characters <= max, TOO_LONG, characters, max);
     }
 
     /**
@@ -202,10 +190,7 @@ public final class SubmissionChecklist {
      * sentence, and until this split they were the same row.
      */
     private static ChecklistItem coverPresent(CoverImage cover) {
-        return ChecklistItem.of(
-                ChecklistRequirement.COVER_IMAGE,
-                cover != null,
-                "A cover image is required. It is the campaign everywhere it is listed.");
+        return ChecklistItem.of(ChecklistRequirement.COVER_IMAGE, cover != null, MISSING);
     }
 
     /**
@@ -219,6 +204,10 @@ public final class SubmissionChecklist {
      * <p>Met when there is no cover at all, deliberately. The missing-cover case is
      * {@link #coverPresent}'s, and reporting both would put two red rows on the screen for
      * one thing to fix.
+     *
+     * <p>The two sizes are quoted as {@code 800×450} strings rather than as four numbers: a
+     * dimension is not a quantity, and a locale's number format would print it as
+     * {@code 1,024×576} in English and {@code 1 024×576} in Russian.
      */
     private static ChecklistItem coverSize(CoverImage cover) {
         if (cover == null) {
@@ -227,9 +216,13 @@ public final class SubmissionChecklist {
         return ChecklistItem.of(
                 ChecklistRequirement.COVER_IMAGE_SIZE,
                 cover.width() >= COVER_MIN_WIDTH && cover.height() >= COVER_MIN_HEIGHT,
-                "The cover image is " + cover.width() + "×" + cover.height() + ". Anything below "
-                        + COVER_MIN_WIDTH + "×" + COVER_MIN_HEIGHT + " is scaled up to fill the "
-                        + "header on a campaign page and looks soft.");
+                TOO_SMALL,
+                dimensions(cover.width(), cover.height()),
+                dimensions(COVER_MIN_WIDTH, COVER_MIN_HEIGHT));
+    }
+
+    private static String dimensions(int width, int height) {
+        return width + "×" + height;
     }
 
     /**
@@ -242,34 +235,35 @@ public final class SubmissionChecklist {
     private static ChecklistItem goal(CampaignCompleteness campaign, SubmissionLimits limits) {
         BigDecimal goal = campaign.goalAmount();
         if (goal == null || goal.signum() <= 0) {
-            return ChecklistItem.unmet(
-                    ChecklistRequirement.GOAL, "Set how much this campaign needs to raise.");
+            return ChecklistItem.unmet(ChecklistRequirement.GOAL, MISSING);
         }
         if (goal.compareTo(limits.goalMinimum()) < 0) {
             return ChecklistItem.unmet(
                     ChecklistRequirement.GOAL,
-                    "The goal is " + money(goal, campaign) + ". The smallest goal a campaign can "
-                            + "run with is " + money(limits.goalMinimum(), campaign) + ".");
+                    BELOW_MINIMUM,
+                    money(goal, campaign),
+                    money(limits.goalMinimum(), campaign));
         }
         return ChecklistItem.of(
                 ChecklistRequirement.GOAL,
                 goal.compareTo(limits.goalMaximum()) <= 0,
-                "The goal is " + money(goal, campaign) + ". The largest goal a campaign can run "
-                        + "with is " + money(limits.goalMaximum(), campaign) + ".");
+                ABOVE_MAXIMUM,
+                money(goal, campaign),
+                money(limits.goalMaximum(), campaign));
     }
 
     private static ChecklistItem duration(Integer days) {
         if (days == null) {
             return ChecklistItem.unmet(
-                    ChecklistRequirement.DURATION,
-                    "Set how many days the campaign runs for. " + DURATION_MAX_DAYS
-                            + " is the maximum; 30 is the usual choice.");
+                    ChecklistRequirement.DURATION, MISSING, DURATION_MAX_DAYS, DURATION_RECOMMENDED_DAYS);
         }
         return ChecklistItem.of(
                 ChecklistRequirement.DURATION,
                 days >= DURATION_MIN_DAYS && days <= DURATION_MAX_DAYS,
-                "The campaign runs for " + days + " days. A campaign runs for between "
-                        + DURATION_MIN_DAYS + " and " + DURATION_MAX_DAYS + ".");
+                OUT_OF_RANGE,
+                days,
+                DURATION_MIN_DAYS,
+                DURATION_MAX_DAYS);
     }
 
     /**
@@ -283,17 +277,15 @@ public final class SubmissionChecklist {
     private static ChecklistItem risks(String risks) {
         String trimmed = risks == null ? "" : risks.trim();
         if (trimmed.isEmpty()) {
-            return ChecklistItem.unmet(
-                    ChecklistRequirement.RISKS,
-                    "Required. Say what could go wrong with making and delivering this, and what "
-                            + "you would do about it.");
+            return ChecklistItem.unmet(ChecklistRequirement.RISKS, MISSING);
         }
         int characters = trimmed.codePointCount(0, trimmed.length());
         return ChecklistItem.of(
                 ChecklistRequirement.RISKS,
                 characters >= RISKS_MIN_CHARACTERS,
-                "The risks section is " + characters + " characters. At least " + RISKS_MIN_CHARACTERS
-                        + " are needed.");
+                TOO_SHORT,
+                characters,
+                RISKS_MIN_CHARACTERS);
     }
 
     /**
@@ -316,16 +308,23 @@ public final class SubmissionChecklist {
         return ChecklistItem.of(
                 ChecklistRequirement.REWARD_PRICES,
                 underpriced == 0,
-                underpriced + (underpriced == 1 ? " reward is" : " rewards are") + " priced below "
-                        + money(floor, campaign) + ", which is the smallest amount that can be charged.");
+                BELOW_MINIMUM,
+                underpriced,
+                money(floor, campaign));
     }
 
     /**
      * An amount with the currency it is in.
      *
-     * <p>Prose rather than a {@code Money} — this is a sentence in a checklist row,
+     * <p>Prose rather than a {@code Money} — this is quoted in a checklist row,
      * not a field a client parses. The wire format §10.3 requires is used where
      * money is a value, which is everywhere except here.
+     *
+     * <p>Formatted here, as a string, rather than handed to the message as a number:
+     * a {@code MessageFormat} number argument goes through the locale's
+     * {@code NumberFormat}, which rounds to three fraction digits and groups
+     * thousands with a separator that differs per language. An amount is quoted
+     * exactly as it is stored, whatever language the sentence around it is in.
      */
     private static String money(BigDecimal amount, CampaignCompleteness campaign) {
         String currency = campaign.currency() == null ? "" : " " + campaign.currency();

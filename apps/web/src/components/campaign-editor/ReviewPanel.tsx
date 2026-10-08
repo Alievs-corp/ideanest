@@ -30,6 +30,7 @@ import type {
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
+import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { EditorShell } from './EditorShell';
 import { useProjectEdit } from './useProjectEdit';
 
@@ -108,6 +109,9 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
    */
   const { project, status, error, reload, apply } = useProjectEdit(projectId);
   const router = useRouter();
+  // The checklist's rows and a refusal's reasons are written by the service, in the
+  // language asked for -- so it is asked in the language this page is drawn in.
+  const locale = useRouteLocale();
 
   const [checklist, setChecklist] = useState<ProjectChecklist | null>(null);
   const [checklistError, setChecklistError] = useState<string | null>(null);
@@ -125,7 +129,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
 
     void (async () => {
       try {
-        const loaded = await getProjectChecklist(projectId, controller.signal);
+        const loaded = await getProjectChecklist(projectId, controller.signal, locale);
         if (controller.signal.aborted) return;
         setChecklist(loaded);
         setChecklistError(null);
@@ -136,7 +140,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
     })();
 
     return () => controller.abort();
-  }, [projectId, attempt]);
+  }, [projectId, attempt, locale]);
 
   const reloadAll = useCallback(() => {
     setRefusal(null);
@@ -149,7 +153,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
     setSubmitting(true);
     setRefusal(null);
     try {
-      apply(await submitProject(projectId));
+      apply(await submitProject(projectId, undefined, locale));
       // The checklist is re-read rather than assumed: the state has changed, and
       // with it the moderation outcome's `current` flag.
       setAttempt((n) => n + 1);

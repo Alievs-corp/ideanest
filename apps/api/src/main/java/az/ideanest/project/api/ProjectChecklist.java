@@ -3,6 +3,7 @@ package az.ideanest.project.api;
 import az.ideanest.project.application.CampaignReview;
 import az.ideanest.project.domain.ChecklistResult;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -41,15 +42,19 @@ public record ProjectChecklist(
         List<ChecklistItemBody> advisory,
         ModerationOutcomeBody moderation) {
 
-    static ProjectChecklist of(CampaignReview review) {
+    /**
+     * @param copy resolves each row's {@code label} and {@code detail}
+     * @param locale the language negotiated from the request's {@code Accept-Language}
+     */
+    static ProjectChecklist of(CampaignReview review, ChecklistCopy copy, Locale locale) {
         ChecklistResult checklist = review.checklist();
         return new ProjectChecklist(
                 review.project().getId(),
                 review.project().getState().name(),
                 checklist.isSubmittable(),
                 checklist.score(),
-                ChecklistItemBody.of(checklist.blocking()),
-                ChecklistItemBody.of(checklist.advisory()),
+                ChecklistItemBody.of(checklist.blocking(), copy, locale),
+                ChecklistItemBody.of(checklist.advisory(), copy, locale),
                 ModerationOutcomeBody.of(review.moderation()));
     }
 }
