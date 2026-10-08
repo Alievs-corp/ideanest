@@ -58,7 +58,7 @@ export function CampaignGrid({
   return (
     <ul
       aria-label={label}
-      className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+      className="grid list-none grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3"
     >
       {campaigns.map((card, index) => (
         <li key={card.id}>

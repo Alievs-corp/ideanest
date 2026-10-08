@@ -37,8 +37,8 @@ import { pluralise } from '../../lib/i18n/plurals';
  * `@ideanest/discovery/category-look`, the table the app reads too — so a games
  * campaign is the same colour in a browser and on a phone. The accent is
  * decoration and never a meaning: the text on it is `--text-on-accent`, every
- * tag is the near-black `onAccent` skin with an icon and a word, and the focus
- * ring turns near-black under `data-on-accent`. docs/ui-kit.md §8.2.
+ * tag is an icon and a word on the cover, and the focus ring turns near-black
+ * under `data-on-accent`. docs/ui-kit.md §8.2.
  *
  * LIME IS THE URGENCY BADGE, NOT THE CARD. docs/ui-kit.md §8.1 maps "closing
  * within 48 hours" to a lime card, and §1.1 says exactly one card in a row is
@@ -81,8 +81,8 @@ const URGENT_DAYS = 2;
 /**
  * The status words' icons. The words themselves are `discovery.card.badges`.
  *
- * On an accent card every tag is the near-black `onAccent` skin: `--success` green on mint and
- * `--warning` amber on sun are both under 2:1, illegible as text. The icon and the word carry the
+ * Every tag sits on the cover in one neutral skin: `--success` green and `--warning` amber over an
+ * arbitrary photograph have no contrast anybody can promise. The icon and the word carry the
  * status, which is what §9.2 asks of them anyway — a tick for successful, never lime (§2.4).
  * `extended` is a filter word the service never sends as a badge (an extended campaign badges as
  * `live`); it is here because the record is keyed by every status, and it matches the tag below.
@@ -101,6 +101,9 @@ const BADGES: Record<DiscoveryStatus, ReactNode> = {
  * last-48-hours countdown. Each is an icon plus a word, so colour never carries the meaning alone.
  */
 const CLOSING_SOON: ReactNode = <Hourglass className="size-3" />;
+
+/** A tag over the cover: the neutral solid skin, a size smaller on a phone. */
+const TAG = 'h-5 gap-1 bg-surface-1/85 px-1.5 text-[10px] text-white sm:h-6 sm:gap-1.5 sm:px-2 sm:text-xs';
 const EXTENDED: ReactNode = <CalendarPlus className="size-3" />;
 
 /**
@@ -178,52 +181,58 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
   return (
     <article
       data-on-accent=""
-      className={`group relative flex flex-col rounded-xl p-3 text-on-accent ${ACCENT_SURFACE[accent]}`}
+      className={`group relative flex flex-col rounded-lg p-2 text-on-accent sm:rounded-xl sm:p-2.5 ${ACCENT_SURFACE[accent]}`}
     >
       {/*
         Inset in the accent card with its own rounded corners, as the app
         draws it (docs/ui-kit.md §8.2).
 
         THE BOX IS RESERVED WHETHER OR NOT THERE IS A COVER. `MediaFrame` sets
-        the 16:9 crop before anything loads, so a card with a cover and a card
+        the crop before anything loads, so a card with a cover and a card
         without one are the same height and the grid below never moves. A
         campaign with no cover gets that reserved surface rather than a broken
         image or a stock graphic that says nothing.
 
-        THE CROP TOKEN, NOT THE INTRINSIC SIZE. Every cover is cut to 16:9 here
-        whatever shape it was uploaded in, so the reservation is the crop. The
-        recorded width and height belong to the picture, not to this box.
+        2:1, NOT 16:9 (#339). The owner asked for a card 30% shorter, and the
+        cover is most of its height. A 16:9 upload loses a sixteenth of its
+        height top and bottom, which a cover centred on its subject survives;
+        the campaign page still shows it whole.
 
         ALT IS EMPTY BY DECISION. The title is the next element and it is the
         link; a description of the cover would be a second announcement of the
         same campaign, and there is nothing this component could invent that
         the creator did not write.
       */}
-      <MediaFrame ratio="16/9" radius="lg">
-        {card.image != null && (
-          <Image
-            src={card.image.url}
-            alt=""
-            fill
-            sizes={DISCOVERY_CARD_SIZES}
-            /*
-             * An address on a host the optimiser will not fetch is served as
-             * it is rather than thrown over. `next/image` raises on a URL no
-             * remote pattern matches, and a raised render in a server
-             * component blanks the whole feed — one creator's typo must not be
-             * able to do that. See `lib/images/source.ts`.
-             */
-            unoptimized={!canOptimise(card.image.url)}
-            priority={priority}
-            className="object-cover"
-          />
-        )}
-      </MediaFrame>
+      <div className="relative">
+        <MediaFrame ratio="2/1" radius="lg" className="max-sm:rounded-md">
+          {card.image != null && (
+            <Image
+              src={card.image.url}
+              alt=""
+              fill
+              sizes={DISCOVERY_CARD_SIZES}
+              /*
+               * An address on a host the optimiser will not fetch is served as
+               * it is rather than thrown over. `next/image` raises on a URL no
+               * remote pattern matches, and a raised render in a server
+               * component blanks the whole feed — one creator's typo must not be
+               * able to do that. See `lib/images/source.ts`.
+               */
+              unoptimized={!canOptimise(card.image.url)}
+              priority={priority}
+              className="object-cover"
+            />
+          )}
+        </MediaFrame>
 
-      <div className="flex flex-1 flex-col gap-3 px-2 pt-4 pb-2">
-        <div className="flex flex-wrap items-center gap-2">
+        {/*
+          THE TAGS SIT ON THE COVER, which gives a row of the card's height
+          back. Over a photograph they take a solid neutral skin — a tint would
+          vanish over a busy picture — and the urgency pill stays lime.
+        */}
+        <div className="absolute inset-x-1.5 top-1.5 flex flex-wrap items-center gap-1 sm:inset-x-2 sm:top-2 sm:gap-1.5">
           {badge !== null && (
-            <Tag variant="onAccent" className="gap-1.5">
+            <Tag className={TAG}>
               <span aria-hidden="true" className="flex items-center">
                 {badge}
               </span>
@@ -232,7 +241,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           )}
 
           {card.extended === true && (
-            <Tag variant="onAccent" className="gap-1.5">
+            <Tag className={TAG}>
               <span aria-hidden="true" className="flex items-center">
                 {EXTENDED}
               </span>
@@ -241,7 +250,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           )}
 
           {card.closingSoon === true && (
-            <Tag variant="onAccent" className="gap-1.5">
+            <Tag className={TAG}>
               <span aria-hidden="true" className="flex items-center">
                 {CLOSING_SOON}
               </span>
@@ -259,15 +268,24 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
             */
             <span
               data-on-lime=""
-              className="inline-flex h-[26px] items-center gap-1.5 rounded-sm bg-lime-500 px-2.5 text-xs font-medium text-on-lime"
+              className="inline-flex h-5 items-center gap-1 rounded-sm bg-lime-500 px-1.5 text-[10px] font-medium text-on-lime sm:h-6 sm:gap-1.5 sm:px-2 sm:text-xs"
             >
               <Clock aria-hidden="true" className="size-3" />
               {daysLeftLabel(days, copy, locale)}
             </span>
           )}
         </div>
+      </div>
 
-        <h3 className="text-lg font-medium tracking-[-0.02em] text-on-accent">
+      {/*
+        RESPONSIVE TYPE (#339). Two cards share a phone's width, so the card is
+        about 165px wide there and 440px at its widest: every line steps up at
+        `sm` and again at `lg`. Nothing is dropped at any width — the rule, the
+        goal and both counts are always printed — and the title clamps to two
+        lines so one long name cannot make its row taller than the rest.
+      */}
+      <div className="flex flex-1 flex-col gap-1.5 px-1 pt-2 pb-0.5 sm:gap-2 sm:px-1.5 sm:pt-2.5 sm:pb-1">
+        <h3 className="line-clamp-2 text-[13px] leading-snug font-medium tracking-[-0.01em] text-on-accent sm:text-[15px] lg:text-base">
           {/*
             The whole card is reachable through this one link rather than
             through three — a stretched anchor keeps the pointer target the size
@@ -282,14 +300,8 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           </Link>
         </h3>
 
-        <p className="text-sm text-on-accent/72">
-          {fillNodes(copy.by, {
-            creator: <span className="font-medium text-on-accent">{card.creator.name}</span>,
-          })}
-        </p>
-
         {completion !== null ? (
-          <div className="mt-auto flex flex-col gap-2 pt-2">
+          <div className="mt-auto flex flex-col gap-1 pt-0.5 sm:gap-1.5">
             <ProgressBar
               value={
                 /*
@@ -301,7 +313,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               }
               label={fillPlaceholders(copy.progressLabel, { percent: completion.toFixed(0) })}
             />
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-xs sm:text-[13px] lg:text-sm">
               <span className="font-medium text-on-accent tabular-nums">
                 {formatMoney(card.pledged)}
               </span>
@@ -314,21 +326,36 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               and the card is where a reader first reads that number. Text, not a tick on the
               track: a mark at 80% would be a second meaning the bar carries in colour and
               position alone (ui-kit §9.2), and the discovery budget allows no motion to explain it.
+              The goal shares its line, the other row the shorter card gives back.
             */}
-            <p className="text-xs text-on-accent/72">{copy.rule}</p>
-            {card.goal != null && (
-              <p className="text-xs text-on-accent/72 tabular-nums">
-                {fillPlaceholders(copy.ofGoal, { amount: formatMoney(card.goal) })}
-              </p>
-            )}
+            <p className="text-[10px] leading-tight text-on-accent/72 sm:text-[11px] lg:text-xs">
+              <span>{copy.rule}</span>
+              {card.goal != null && (
+                <>
+                  <span aria-hidden="true"> · </span>
+                  <span className="tabular-nums">
+                    {fillPlaceholders(copy.ofGoal, { amount: formatMoney(card.goal) })}
+                  </span>
+                </>
+              )}
+            </p>
           </div>
         ) : (
-          <p className="mt-auto pt-2 text-sm text-on-accent/72">{copy.notOpen}</p>
+          <p className="mt-auto text-xs text-on-accent/72 lg:text-sm">{copy.notOpen}</p>
         )}
 
-        <div className="flex items-center gap-4 text-xs text-on-accent/72">
-          <span className="inline-flex items-center gap-1.5">
-            <Users aria-hidden="true" className="size-3.5" />
+        {/*
+          The creator shares the counts' line: the third row the shorter card gives back.
+        */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-on-accent/72 sm:text-[11px] lg:gap-4 lg:text-xs">
+          <span className="max-w-full truncate">
+            {fillNodes(copy.by, {
+              creator: <span className="font-medium text-on-accent">{card.creator.name}</span>,
+            })}
+          </span>
+
+          <span className="inline-flex items-center gap-1">
+            <Users aria-hidden="true" className="size-3" />
             <span className="tabular-nums">
               {pluralise(locale, copy.backers, card.backersCount)}
             </span>
@@ -340,8 +367,8 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
             only on the urgent ones.
           */}
           {!urgent && showDays && days !== null && (
-            <span className="inline-flex items-center gap-1.5">
-              <Clock aria-hidden="true" className="size-3.5" />
+            <span className="inline-flex items-center gap-1">
+              <Clock aria-hidden="true" className="size-3" />
               <span className="tabular-nums">{daysLeftLabel(days, copy, locale)}</span>
             </span>
           )}

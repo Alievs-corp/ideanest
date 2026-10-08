@@ -455,7 +455,7 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
               <>
                 <ul
                   aria-labelledby={RESULTS_HEADING_ID}
-                  className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                  className="grid list-none grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3"
                 >
                   {feed.items.map((card, index) => (
                     <li key={card.id}>
@@ -497,7 +497,7 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
 
                       {feed.loadingMore && (
                         <SkeletonGroup label={copy.loadingMore} className="w-full">
-                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
                             <Skeleton height="6rem" />
                             <Skeleton height="6rem" />
                             <Skeleton height="6rem" />

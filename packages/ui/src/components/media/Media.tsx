@@ -43,8 +43,10 @@ import { cn } from '../../lib/cn';
  * at each call site (CLAUDE.md §6).
  */
 export const MEDIA_RATIOS = {
-  /** Project cover, everywhere it is cropped: discovery card, share image. */
+  /** Project cover, everywhere it is cropped: share image, campaign page. */
   '16/9': '16 / 9',
+  /** The compact discovery card's cover strip (issue 339). */
+  '2/1': '2 / 1',
   /** Editorial and reward imagery. */
   '3/2': '3 / 2',
   /** Denser cards where a 16:9 strip reads as a letterbox. */
