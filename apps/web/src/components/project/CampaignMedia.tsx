@@ -1,42 +1,45 @@
 import Image from 'next/image';
 import { MediaFrame } from '@ideanest/ui/server';
+import { formatVideoDuration, videoSeconds } from '@ideanest/campaign-editor/video';
 import { PRELAUNCH_COVER_SIZES } from '../../lib/images/sizes';
 import { canOptimise } from '../../lib/images/source';
 import type { CampaignPage } from '../../lib/projects/publicPage';
 import { getTranslations } from 'next-intl/server';
+import { CampaignVideoPlayer } from './CampaignVideoPlayer';
 
 /**
- * §4.4's media player — issue #281. Poster-first, no autoplay, and today no video.
+ * §4.4's media player — issues #281 and #331. Poster-first, no autoplay, video on the press.
  *
- * <h2>There is nothing to play, and this component says so rather than pretending</h2>
+ * <h2>Why the play control waited for a video to play</h2>
  *
- * §4.4 asks the header for a "media player (poster-first, no autoplay)". The poster half is
- * real: `ProjectPageResponse` carries `coverImage` and the campaign editor collects it. The
- * video half does not exist anywhere on the platform — <strong>the response has no video
- * field, and §13.2's video pipeline is not built</strong>: nothing transcodes an upload,
- * nothing stores a rendition, and no endpoint would return an address to play.
+ * #281 built this as a poster with the play branch written and unreachable, because no
+ * response carried a video and §13.2's pipeline did not exist. A play button over a campaign's
+ * cover that does nothing when pressed is worse than no button: it is a promise the page cannot
+ * keep, made at the top of the page, to somebody deciding whether the creator keeps promises.
  *
- * So this renders the poster, and the play affordance is written as a branch that is
- * currently unreachable rather than as a control that is currently a lie. A play button over
- * a campaign's cover that does nothing when pressed is worse than no button: it is a promise
- * the page cannot keep, made at the top of the page, to somebody deciding whether the
- * creator keeps promises. {@link CampaignMediaProps.video} is the shape the day a rendition
- * URL exists; the branch below it is what mounts then, and nothing else on this page changes.
+ * #331 built the pipeline: a creator uploads one clip of up to sixty seconds, the server
+ * transcodes it to a single 720p MP4 with its index at the front, and `ProjectPageResponse`
+ * carries it as `video`. The branch is reachable now, and still only for a campaign that has
+ * one — `readCampaignPage` reads a video with any of its measured fields missing as no video at
+ * all, so the button never appears over something that cannot play.
  *
- * <h2>Poster-first is a decision that survives the video arriving</h2>
+ * <h2>Poster-first is a decision that survived the video arriving</h2>
  *
  * "No autoplay" is not a preference. This is the largest element on the largest-contentful-
- * paint-sensitive route in the application (#119), it is the first thing a reader sees, and
- * an autoplaying video costs the connection of somebody on mobile data before they have
- * decided they want it. When there is a video, the poster is what is served and the video is
- * fetched on the press — `preload="none"`, and the `<video>` element is mounted by the
- * client island that owns the press rather than sitting inert in every server render.
+ * paint-sensitive route in the application (#119), it is the first thing a reader sees, and an
+ * autoplaying video costs the connection of somebody on mobile data before they have decided
+ * they want it. So the poster is what is served — the cover when the campaign has one, which is
+ * the picture the creator chose for the top of their page, and the video's own still when it
+ * does not — and the clip is fetched on the press, by `CampaignVideoPlayer`, the client island
+ * that owns the press and mounts the `<video>` element. Nothing else in this header became a
+ * client component because of it.
  *
  * <h2>The box is reserved before anything decodes</h2>
  *
  * `MediaFrame` sets the 16:9 crop up front, so the page's largest element does not change
- * height when the photograph arrives. That is the layout shift the Core Web Vitals budget in
- * CI measures, and it is why the frame is rendered even for a campaign with no cover at all.
+ * height when the photograph arrives, or when the video replaces it. That is the layout shift
+ * the Core Web Vitals budget in CI measures, and it is why the frame is rendered even for a
+ * campaign with no cover at all.
  *
  * <h2>The alt text is empty, deliberately</h2>
  *
@@ -46,38 +49,25 @@ import { getTranslations } from 'next-intl/server';
  * "A coffee table book" would read the same words twice. The service stores no alternative
  * text for a cover — there is no column for one — and inventing a description from the title
  * is exactly that duplication. An empty `alt` takes the image out of the accessibility tree,
- * which is the correct answer for an image whose content is already stated in text.
+ * which is the correct answer for an image whose content is already stated in text. The play
+ * control is not decorative, and it is named: what it plays, and for how long.
  */
-
-export interface CampaignVideo {
-  /** A playable rendition. Nothing produces one yet — see the class comment. */
-  readonly url: string;
-  /** How long it runs, in seconds, for the control's accessible name. */
-  readonly durationSeconds: number | null;
-}
 
 export interface CampaignMediaProps {
   readonly campaign: CampaignPage;
-  /**
-   * The campaign's video, when the platform has one.
-   *
-   * Always absent today, and typed rather than omitted so that the branch below is written,
-   * reviewed and tested now instead of being retrofitted onto a header that had grown around
-   * its absence.
-   */
-  readonly video?: CampaignVideo | undefined;
 }
 
-export async function CampaignMedia({ campaign, video }: CampaignMediaProps) {
+export async function CampaignMedia({ campaign }: CampaignMediaProps) {
   const t = await getTranslations('campaign.media');
 
-  const hasVideo = video !== undefined;
+  const { video } = campaign;
+  const poster = campaign.coverImage?.url ?? video?.posterUrl ?? null;
 
   return (
     <MediaFrame ratio="16/9" radius="lg">
-      {campaign.coverImage !== null && (
+      {poster !== null && (
         <Image
-          src={campaign.coverImage.url}
+          src={poster}
           alt=""
           fill
           /*
@@ -95,27 +85,21 @@ export async function CampaignMedia({ campaign, video }: CampaignMediaProps) {
            * render in a Server Component takes the whole page down. One creator's typo must
            * not be able to do that.
            */
-          unoptimized={!canOptimise(campaign.coverImage.url)}
+          unoptimized={!canOptimise(poster)}
           priority
           className="object-cover"
         />
       )}
 
-      {/*
-        THE PLAY AFFORDANCE, AND WHY IT IS NOT ON THE PAGE.
-
-        `hasVideo` is false for every campaign on the platform today, because no field on any
-        response carries a video. This is the seam and not a placeholder: when §13.2 lands, a
-        client island mounts here to own the press and the `<video>` element — `preload="none"`
-        so the poster stays the only thing fetched until somebody asks — and the rest of this
-        header is unchanged.
-      */}
-      {hasVideo && (
-        <div className="absolute inset-0 grid place-items-center">
-          <p className="rounded-sm bg-black/60 px-3 py-1.5 text-sm text-white">
-            {t('hasVideo')}
-          </p>
-        </div>
+      {video !== null && (
+        <CampaignVideoPlayer
+          src={video.url}
+          poster={video.posterUrl}
+          playLabel={t('play')}
+          playName={t('playName', { seconds: videoSeconds(video.durationMs) })}
+          duration={formatVideoDuration(video.durationMs)}
+          videoLabel={t('videoLabel')}
+        />
       )}
     </MediaFrame>
   );

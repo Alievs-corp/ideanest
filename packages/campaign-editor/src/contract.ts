@@ -74,6 +74,29 @@ export interface CoverImage {
 }
 
 /**
+ * The campaign's video — issue #331, docs/architecture.md §13.2.
+ *
+ * RESPONSE ONLY, and every field is the server's measurement. A request names a video by
+ * {@link ProjectPatch.videoMediaId} and nothing else: the duration, the frame size and the
+ * poster are facts ffprobe established about the transcoded file, and a client that sent them
+ * would be sending numbers to be disbelieved — the argument {@link CoverImage.mediaId} makes
+ * about an uploaded cover.
+ */
+export interface CampaignVideo {
+  mediaId: string;
+  /** An H.264/AAC MP4 of at most 720p with its index at the front: a plain `<video>` plays it. */
+  url: string;
+  /** The still a player shows before it is pressed. */
+  posterUrl: string;
+  /** Of the transcoded frame, in pixels. */
+  width: number;
+  height: number;
+  durationMs: number;
+  /** The poster's §13.1 placeholder, as a data URL. */
+  blurDataUrl?: string | null;
+}
+
+/**
  * A project as the editor sees it — the creator's projection, contract §5.
  *
  * This is the response of every mutation on a project, so one request both changes the
@@ -97,6 +120,8 @@ export interface ProjectEdit {
   story?: StoryDocument | null;
   risks?: string | null;
   coverImage?: CoverImage | null;
+  /** At most one, of at most sixty seconds. Absent or null for a campaign without one. */
+  video?: CampaignVideo | null;
   latePledgeEnabled: boolean;
   /**
    * Field names the server will refuse to change, by name — `"goal"`, `"durationDays"`.
@@ -136,6 +161,14 @@ export interface ProjectPatch {
   story?: StoryDocument | null;
   risks?: string | null;
   coverImage?: CoverImage | null;
+  /**
+   * The upload to show as the campaign's video, or `null` to take it down.
+   *
+   * It must be a READY video uploaded by the caller; anything else is answered `400
+   * PROJECT_FIELD_INVALID` with `meta.field` naming this key. The previous video's files are
+   * deleted once the edit commits, so a replaced clip does not go on costing storage.
+   */
+  videoMediaId?: string | null;
   latePledgeEnabled?: boolean;
 }
 

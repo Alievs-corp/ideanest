@@ -36,9 +36,19 @@ function draft(overrides: Partial<BasicsDraft> = {}): BasicsDraft {
     latePledgeEnabled: false,
     coverImageUrl: 'https://cdn.example.test/cover.jpg',
     coverImage: { url: 'https://cdn.example.test/cover.jpg', width: 1600, height: 900 },
+    video: null,
     ...overrides,
   };
 }
+
+const VIDEO = {
+  mediaId: '6f1c2a9e-1b9f-4c55-9a51-2d1f4ad0c0de',
+  url: 'https://cdn.example.test/media/6f1c2a9e.mp4',
+  posterUrl: 'https://cdn.example.test/media/6f1c2a9e.poster.webp',
+  width: 1280,
+  height: 720,
+  durationMs: 42_000,
+};
 
 const of = (length: number): string => 'a'.repeat(length);
 
@@ -251,6 +261,15 @@ describe('patchForField', () => {
     });
   });
 
+  it('names a video by its upload and nothing else, and takes it down with null', () => {
+    // The duration, the frame and the poster are the server's measurements; sending them
+    // back would be sending numbers to be disbelieved.
+    expect(patchForField('videoMediaId', draft({ video: VIDEO }))).toEqual({
+      videoMediaId: VIDEO.mediaId,
+    });
+    expect(patchForField('videoMediaId', draft({ video: null }))).toEqual({ videoMediaId: null });
+  });
+
   it('trims what it sends, so a stray space is not saved as content', () => {
     expect(patchForField('blurb', draft({ blurb: '  Quiet enough for a forest.  ' }))).toEqual({
       blurb: 'Quiet enough for a forest.',
@@ -297,7 +316,12 @@ describe('draftFromProject', () => {
       scheduledLaunchAt: '',
       coverImageUrl: '',
       coverImage: null,
+      video: null,
     });
+  });
+
+  it('carries the video the server holds into the draft', () => {
+    expect(draftFromProject({ ...project, video: VIDEO }).video).toEqual(VIDEO);
   });
 
   it('keeps the goal amount exactly as the API wrote it', () => {

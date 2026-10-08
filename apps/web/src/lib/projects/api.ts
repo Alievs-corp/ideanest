@@ -51,6 +51,7 @@ import {
  * retried is the part the two clients do differently.
  */
 export type {
+  CampaignVideo,
   Category,
   ChecklistItem,
   ChecklistSection,

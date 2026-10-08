@@ -188,10 +188,10 @@ export async function CampaignSummary({
   return (
     <header className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
       {/*
-        §4.4's media player, which is poster-first and has nothing to play — `CampaignMedia`
-        argues that at length rather than shipping a play button over a campaign that has no
-        video. It also reserves the 16:9 box before anything loads, so the page's largest
-        element does not change height when the photograph decodes.
+        §4.4's media player: poster-first, and the campaign video (#331) is fetched only when
+        somebody presses play — `CampaignMedia` argues both at length. It also reserves the
+        16:9 box before anything loads, so the page's largest element does not change height
+        when the photograph decodes or when the video replaces it.
       */}
       <CampaignMedia campaign={campaign} />
 

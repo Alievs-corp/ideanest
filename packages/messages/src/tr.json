@@ -3962,7 +3962,9 @@
       "remaining": "{count, plural, other {# yer kaldı}}"
     },
     "media": {
-      "hasVideo": "Bu kampanyanın videosu var."
+      "play": "İzle",
+      "playName": "Kampanya videosunu izle, {seconds, plural, other {# saniye}}",
+      "videoLabel": "Kampanya videosu"
     },
     "story": {
       "about": "{title} hakkında",
@@ -4768,6 +4770,48 @@
         "MEDIA_STORAGE_UNREACHABLE": "Görsel deposu yanıt vermiyor. Birazdan yeniden deneyin.",
         "UPLOAD_STILL_PROCESSING": "Bu görsel her zamankinden uzun sürüyor. Bu sekmeye dönerseniz görünebilir.",
         "UPLOAD_TRANSFER_FAILED": "Görsel depoya ulaşmadı. Bağlantınızı kontrol edip yeniden deneyin.",
+        "UPLOAD_REFUSED": "Bu dosya reddedildi.",
+        "UPLOAD_UNFINISHED": "Bu yükleme tamamlanamadı.",
+        "MEDIA_NOT_FOUND": "Bu yükleme okunamadı."
+      }
+    },
+    "video": {
+      "label": "Kampanya videosu",
+      "hint": "İsteğe bağlı. En fazla {seconds} saniyelik tek bir klip, kampanya sayfasının üstünde gösterilir. Yalnızca biri «İzle» düğmesine bastığında oynar.",
+      "prompt": "Kampanyaya eklemek için buraya bir video bırakın",
+      "dragPrompt": "Bu videoyu yüklemek için bırakın",
+      "buttonLabel": "Bir video seçin",
+      "dropHint": "MP4, MOV veya WebM, en fazla {megabytes} MB. Video burada 720p’ye dönüştürülür, orijinali saklanmaz.",
+      "replace": "Videoyu değiştir",
+      "remove": "Videoyu kaldır",
+      "cancel": "Yüklemeyi iptal et",
+      "caption": "Video: {duration}, {size} piksel",
+      "previewLabel": "Kampanya videosunun önizlemesi",
+      "progressLabel": "Yükleme ilerlemesi",
+      "progress": "%{percent}",
+      "stage": {
+        "checking": "Videonun uzunluğu kontrol ediliyor…",
+        "preparing": "Yükleme hazırlanıyor…",
+        "uploading": "Video yükleniyor…",
+        "processing": "Video dönüştürülüyor. Bir dakikalık bir klip bir dakikaya kadar sürebilir — bitene kadar bu sayfayı açık tutun."
+      },
+      "set": "Video kaydedildi. Kampanya sayfasında biri «İzle» düğmesine bastığında oynar.",
+      "notUsedTitle": "Bu video kullanılmadı",
+      "notAttached": "Bu video kampanyaya eklenemedi. Yeniden yükleyin.",
+      "unusable": "Bu video kullanılamadı.",
+      "tooLong": "Bu videonun uzunluğu: {duration}. Sınır {seconds} saniye — kısaltıp yeniden seçin.",
+      "failures": {
+        "TOO_LONG": "Bu video {seconds} saniyeden uzun. Kısaltıp yeniden seçin.",
+        "TOO_LARGE": "Bu dosya {megabytes} MB sınırını aşıyor. Klibi 1080p veya daha düşük bir çözünürlükte dışa aktarıp yeniden deneyin.",
+        "TOO_SMALL": "Bu videonun görüntüsü göstermek için fazla küçük. 320 pikselden itibaren her boyut uygundur.",
+        "UNSUPPORTED_FORMAT": "Bu dosya platformun okuyabileceği bir video değil. MP4, MOV ve WebM çalışır.",
+        "EMPTY": "Dosya boş.",
+        "UNREADABLE": "Bu video dönüştürülemedi. Başka bir dosya işe yarayacaktır.",
+        "NOT_A_VIDEO": "Bu dosya bir video değil. MP4, MOV veya WebM bir klip seçin.",
+        "UPLOADS_UNAVAILABLE": "Bu ortamda video yükleme açık değil.",
+        "MEDIA_STORAGE_UNREACHABLE": "Video deposu yanıt vermiyor. Birazdan yeniden deneyin.",
+        "UPLOAD_STILL_PROCESSING": "Bu videonun dönüştürülmesi her zamankinden uzun sürüyor. Birkaç dakika sonra yeniden yüklemeyi deneyin.",
+        "UPLOAD_TRANSFER_FAILED": "Video depoya ulaşmadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "UPLOAD_REFUSED": "Bu dosya reddedildi.",
         "UPLOAD_UNFINISHED": "Bu yükleme tamamlanamadı.",
         "MEDIA_NOT_FOUND": "Bu yükleme okunamadı."

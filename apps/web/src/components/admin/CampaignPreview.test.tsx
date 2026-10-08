@@ -40,6 +40,7 @@ const SUBMITTED: CampaignPage = {
   category: { slug: 'craft', name: 'Craft' },
   subcategory: null,
   coverImage: null,
+  video: null,
   goal: { amount: '5000.00', currency: 'AZN' },
   pledged: { amount: '0.00', currency: 'AZN' },
   backersCount: 0,

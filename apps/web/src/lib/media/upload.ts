@@ -10,6 +10,12 @@
  * a different origin; attaching this platform's bearer token to it would send a credential to
  * a host that has no business seeing one, and the store would reject the request for carrying
  * an `Authorization` header that is not part of the signature.
+ *
+ * A VIDEO IS THE SAME THREE CALLS (#331), in `./videoUpload.ts`, which borrows the exported
+ * steps below. It is a module of its own rather than a second export of this one because the
+ * cover field is on four editor routes and the video field on one: the bundler keeps a module
+ * whole, and every route that uploads a cover would otherwise download the video's transfer
+ * code too.
  */
 
 import { authorizedFetch } from '../api/client';
@@ -55,7 +61,7 @@ export class UploadFailed extends Error {
   }
 }
 
-interface UploadTicket {
+export interface UploadTicket {
   mediaId: string;
   uploadUrl: string;
   contentType: string;
@@ -63,13 +69,17 @@ interface UploadTicket {
   maxBytes: number;
 }
 
-interface MediaState {
+export interface MediaState {
   id: string;
   status: 'PENDING' | 'UPLOADED' | 'PROCESSING' | 'READY' | 'FAILED';
   url: string | null;
   width: number | null;
   height: number | null;
   blurDataUrl: string | null;
+  /** A ready video's still. Absent for an image. */
+  posterUrl?: string | null;
+  /** A ready video's length, measured on the transcoded file. Absent for an image. */
+  durationMs?: number | null;
   failureReason: string | null;
 }
 
@@ -88,7 +98,8 @@ export async function uploadImage(file: File, options: UploadOptions = {}): Prom
   const { onStage, signal } = options;
 
   onStage?.('preparing');
-  const ticket = await requestAddress(file, signal);
+  // An empty type is declared as bytes, and the service decides what they are by reading them.
+  const ticket = await requestAddress(file.type || 'application/octet-stream', file.size, signal);
 
   onStage?.('uploading');
   await putBytes(ticket, file, signal);
@@ -99,7 +110,11 @@ export async function uploadImage(file: File, options: UploadOptions = {}): Prom
   return await waitUntilReady(ticket.mediaId, signal);
 }
 
-async function requestAddress(file: File, signal?: AbortSignal): Promise<UploadTicket> {
+export async function requestAddress(
+  contentType: string,
+  byteSize: number,
+  signal?: AbortSignal,
+): Promise<UploadTicket> {
   const response = await authorizedFetch('/v1/media/uploads', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -109,7 +124,7 @@ async function requestAddress(file: File, signal?: AbortSignal): Promise<UploadT
      * checked before an address is issued so that a creator is told about a 40MB file now
      * rather than after uploading it. Neither is believed — the bytes are measured on arrival.
      */
-    body: JSON.stringify({ contentType: file.type || 'application/octet-stream', byteSize: file.size }),
+    body: JSON.stringify({ contentType, byteSize }),
     signal,
   });
 
@@ -136,7 +151,7 @@ async function putBytes(ticket: UploadTicket, file: File, signal?: AbortSignal):
   }
 }
 
-async function announceArrival(mediaId: string, signal?: AbortSignal): Promise<void> {
+export async function announceArrival(mediaId: string, signal?: AbortSignal): Promise<void> {
   // Safe to repeat: the server refuses the transition from anything but PENDING and answers
   // with the current state, so a retry after a dropped response does not queue a second pass.
   const response = await authorizedFetch(`/v1/media/${mediaId}/complete`, { method: 'POST', signal });
@@ -167,7 +182,7 @@ async function waitUntilReady(mediaId: string, signal?: AbortSignal): Promise<Up
   throw new UploadFailed('UPLOAD_STILL_PROCESSING', 'That image is taking longer than expected.');
 }
 
-async function readState(mediaId: string, signal?: AbortSignal): Promise<MediaState> {
+export async function readState(mediaId: string, signal?: AbortSignal): Promise<MediaState> {
   const response = await authorizedFetch(`/v1/media/${mediaId}`, { signal });
   if (!response.ok) throw await refusal(response, 'MEDIA_NOT_FOUND');
   return (await response.json()) as MediaState;
@@ -191,7 +206,7 @@ async function refusal(response: Response, fallbackCode: string): Promise<Upload
   return new UploadFailed(error.problem?.code ?? fallbackCode, error.message);
 }
 
-function pause(milliseconds: number, signal?: AbortSignal): Promise<void> {
+export function pause(milliseconds: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(resolve, milliseconds);
     signal?.addEventListener(

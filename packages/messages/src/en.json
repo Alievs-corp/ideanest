@@ -3962,7 +3962,9 @@
       "remaining": "{count, plural, one {# place left} other {# places left}}"
     },
     "media": {
-      "hasVideo": "This campaign has a video."
+      "play": "Watch",
+      "playName": "Watch the campaign video, {seconds, plural, one {# second} other {# seconds}}",
+      "videoLabel": "Campaign video"
     },
     "story": {
       "about": "About {title}",
@@ -4768,6 +4770,48 @@
         "MEDIA_STORAGE_UNREACHABLE": "Image storage is not answering. Please try again shortly.",
         "UPLOAD_STILL_PROCESSING": "That image is taking longer than usual. It may appear if you come back to this tab.",
         "UPLOAD_TRANSFER_FAILED": "The image did not reach storage. Check the connection and try again.",
+        "UPLOAD_REFUSED": "That file was refused.",
+        "UPLOAD_UNFINISHED": "That upload could not be finished.",
+        "MEDIA_NOT_FOUND": "That upload could not be read."
+      }
+    },
+    "video": {
+      "label": "Campaign video",
+      "hint": "Optional. One clip of up to {seconds} seconds, shown at the top of the campaign page. It plays only when somebody presses “Watch”.",
+      "prompt": "Drop a video here to add it to the campaign",
+      "dragPrompt": "Release to upload this video",
+      "buttonLabel": "Choose a video",
+      "dropHint": "MP4, MOV or WebM, up to {megabytes} MB. It is converted to 720p here, and the original is not kept.",
+      "replace": "Replace video",
+      "remove": "Remove video",
+      "cancel": "Cancel upload",
+      "caption": "Video: {duration}, {size} pixels",
+      "previewLabel": "Preview of the campaign video",
+      "progressLabel": "Upload progress",
+      "progress": "{percent}%",
+      "stage": {
+        "checking": "Checking how long the video is…",
+        "preparing": "Preparing the upload…",
+        "uploading": "Uploading the video…",
+        "processing": "Converting the video. A one-minute clip can take up to a minute — keep this page open until it finishes."
+      },
+      "set": "Video saved. On the campaign page it plays when somebody presses “Watch”.",
+      "notUsedTitle": "That video was not used",
+      "notAttached": "That video could not be added to the campaign. Upload it again.",
+      "unusable": "That video could not be used.",
+      "tooLong": "That video runs {duration}. The limit is {seconds} seconds — trim it and choose it again.",
+      "failures": {
+        "TOO_LONG": "That video is longer than {seconds} seconds. Trim it and choose it again.",
+        "TOO_LARGE": "That file is larger than {megabytes} MB. Export the clip at 1080p or lower and try again.",
+        "TOO_SMALL": "That video’s picture is too small to show. Anything from 320 pixels upwards works.",
+        "UNSUPPORTED_FORMAT": "That file is not a video this platform can read. MP4, MOV and WebM all work.",
+        "EMPTY": "That file is empty.",
+        "UNREADABLE": "That video could not be converted. A different file should work.",
+        "NOT_A_VIDEO": "That file is not a video. Choose an MP4, MOV or WebM clip.",
+        "UPLOADS_UNAVAILABLE": "Video uploads are not switched on for this environment.",
+        "MEDIA_STORAGE_UNREACHABLE": "Video storage is not answering. Please try again shortly.",
+        "UPLOAD_STILL_PROCESSING": "That video is taking longer than usual to convert. Try uploading it again in a few minutes.",
+        "UPLOAD_TRANSFER_FAILED": "The video did not reach storage. Check the connection and try again.",
         "UPLOAD_REFUSED": "That file was refused.",
         "UPLOAD_UNFINISHED": "That upload could not be finished.",
         "MEDIA_NOT_FOUND": "That upload could not be read."
