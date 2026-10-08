@@ -1,0 +1,14 @@
+# Maestro workspace for apps/mobile (#165). `subflows/` is not listed: those files are only ever
+# run from a flow.
+flows:
+  - '*'
+executionOrder:
+  continueOnFailure: true
+  # Checkout first: the seeded backer's draft pledge and the one this run makes both hold for five
+  # minutes, and one backer may hold one live pledge per campaign.
+  flowsOrder:
+    - browse-to-checkout
+    - payment-failed-return
+    - creator-autosave
+    - creator-autosave-offline
+    - links

@@ -100,6 +100,7 @@ export function AccountList<T>(props: AccountListProps<T>) {
     return (
       <Screen
         hasContent={false}
+        testID={`${testID}-signed-out`}
         empty={
           <EmptyState
             title={props.signedOutTitle}

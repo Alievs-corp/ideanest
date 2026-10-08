@@ -1,0 +1,64 @@
+# Flow 3 (#165): a creator opens their draft through its id-form link, changes the title, and the
+# editor's autosave (800 ms debounce) saves it; after the app is killed and started again the
+# title is still the new one.
+#
+# DRAFT_ID is the seeded creator's draft (`ops/seed/e2e/seed.mjs`). The link is the web's
+# unprefixed `/projects/<uuid>/edit/basics`, which also exercises the id-form claim.
+appId: az.ideanest.app
+name: Creator autosave
+tags:
+  - editor
+env:
+  SITE: ${MAESTRO_SITE || SITE}
+  DRAFT_ID: ${MAESTRO_DRAFT_ID || DRAFT_ID}
+  CREATOR_EMAIL: ${MAESTRO_CREATOR_EMAIL || CREATOR_EMAIL}
+  CREATOR_PASSWORD: ${MAESTRO_CREATOR_PASSWORD || CREATOR_PASSWORD}
+  LOCALE: ${LOCALE || ''}
+  SHOTS: ${SHOTS || 'false'}
+---
+- runFlow: subflows/launch.yaml
+- runFlow:
+    file: subflows/sign-in-and-wait.yaml
+    env:
+      EMAIL: ${CREATOR_EMAIL}
+      PASSWORD: ${CREATOR_PASSWORD}
+- runFlow:
+    file: subflows/open-draft.yaml
+    env:
+      SITE: ${SITE}
+      DRAFT_ID: ${DRAFT_ID}
+- runFlow:
+    when:
+      true: ${SHOTS == 'true'}
+    file: subflows/shot.yaml
+    env:
+      NAME: 06-editor
+
+# A title nobody has typed before, so a stale page cannot pass for a saved one.
+- evalScript: ${output.title = 'E2E draft ' + Date.now()}
+- tapOn:
+    id: basics-title
+- eraseText: 80
+- inputText: ${output.title}
+- extendedWaitUntil:
+    visible:
+      id: save-status-saved
+    timeout: 20000
+
+# Killed and started again: the service has the title.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: screen-home
+    timeout: 30000
+- runFlow:
+    file: subflows/open-draft.yaml
+    env:
+      SITE: ${SITE}
+      DRAFT_ID: ${DRAFT_ID}
+- assertVisible:
+    id: basics-title
+    text: ${output.title}
+- assertNotVisible:
+    id: editor-unsent

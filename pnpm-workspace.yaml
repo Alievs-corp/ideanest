@@ -10,6 +10,10 @@ allowBuilds:
   # postinstall script is allowing arbitrary code at install time, so the
   # default here is no and each yes needs the reason beside it.
   '@parcel/watcher': false
+  # Crash reporting's source-map uploader (#165). Its install script only
+  # downloads a binary when the platform's prebuilt one, which arrives as an
+  # optional dependency (`@sentry/cli-linux-x64` on EAS and CI), is missing.
+  '@sentry/cli': false
   '@swc/core': false
   esbuild: true
   # Next's image optimiser. Arrives as an optional dependency of `next` and

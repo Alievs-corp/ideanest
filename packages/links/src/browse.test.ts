@@ -1,4 +1,5 @@
-import { destinationFor } from './links';
+import { describe, expect, it } from 'vitest';
+import { destinationFor } from './destination';
 
 /**
  * The browse pages' deep links — issue #154. A category, a subcategory or a collection shared

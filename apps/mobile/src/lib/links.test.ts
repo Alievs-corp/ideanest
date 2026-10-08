@@ -1,164 +1,207 @@
-import { destinationFor, shareUrlFor } from './links';
+import { RETURN_GRACE_MS, claimReturnRoute } from './auth-session-links';
+import { NOT_FOUND, incomingLink, listenForLinks, shareUrlFor, type LinkSource } from './links';
+
+/*
+ * The parser and the claimed-route table are `@ideanest/links`, tested there over every row in
+ * every URL form. What is tested here is what the application does with the parser's answer.
+ */
 
 const HOST = 'ideanest.az';
+const ID = '6f1c2b3a-4d5e-4f60-8a7b-9c0d1e2f3a4b';
+const TOKEN = 'q9Xb2Zk7-Lm_04Rt5sVwYz1aBcDeFgHiJkLmNoPqRsT';
 
-describe('destinationFor', () => {
-  it('opens a campaign from a universal link', () => {
-    expect(destinationFor('https://ideanest.az/projects/aysel/solar-lamp', HOST)).toEqual({
-      pathname: '/projects/aysel/solar-lamp',
+describe('incomingLink', () => {
+  it('opens the screen the parser names', () => {
+    expect(incomingLink('https://ideanest.az/az/projects/a/b', HOST)).toEqual({
+      kind: 'route',
+      destination: { pathname: '/projects/a/b' },
     });
   });
 
-  it('opens the same campaign from the custom scheme a push notification uses', () => {
-    // The two forms differ by a slash and by an authority; MB-02 (§4.12) exists because
-    // they must not differ by a screen.
-    expect(destinationFor('ideanest://projects/aysel/solar-lamp', HOST)).toEqual({
-      pathname: '/projects/aysel/solar-lamp',
-    });
-  });
-
-  it('tolerates a trailing slash, which a pasted link often carries', () => {
-    expect(destinationFor('https://ideanest.az/projects/aysel/solar-lamp/', HOST)).toEqual({
-      pathname: '/projects/aysel/solar-lamp',
-    });
-  });
-
-  it('decodes a percent-encoded slug exactly once', () => {
-    expect(destinationFor('https://ideanest.az/projects/ay%C5%9Fe/l%C3%A2mba', HOST)).toEqual({
-      pathname: '/projects/ayşe/lâmba',
-    });
-  });
-
-  it('refuses a host that merely ends with ours', () => {
-    // The reason the check is an equality and not endsWith.
-    expect(destinationFor('https://evil-ideanest.az/projects/a/b', HOST)).toBeNull();
-  });
-
-  it('refuses a subdomain nobody claimed', () => {
-    expect(destinationFor('https://staging.ideanest.az/projects/a/b', HOST)).toBeNull();
-  });
-
-  it('refuses plain http even on the right host', () => {
-    expect(destinationFor('http://ideanest.az/projects/a/b', HOST)).toBeNull();
-  });
-
-  it('ignores case in the host, which a pasted link often changes', () => {
-    expect(destinationFor('https://IdeaNest.AZ/projects/a/b', HOST)).toEqual({
-      pathname: '/projects/a/b',
-    });
-  });
-
-  it('answers null for a web page this application does not have', () => {
-    // Not the home screen. See the note on why a fallback hides both cases.
-    expect(destinationFor('https://ideanest.az/admin', HOST)).toBeNull();
-    expect(destinationFor('https://ideanest.az/projects/only-one-segment', HOST)).toBeNull();
-  });
-
-  it('answers null for something that is not a URL at all', () => {
-    expect(destinationFor('projects/aysel/solar-lamp', HOST)).toBeNull();
-    expect(destinationFor('', HOST)).toBeNull();
-  });
-
-  it('refuses a deeper path under the campaign prefix', () => {
-    // /projects/a/b/edit is a creator screen on the web and does not exist here.
-    // Routing it to the campaign would show the wrong thing confidently.
-    expect(destinationFor('https://ideanest.az/projects/a/b/edit', HOST)).toBeNull();
-  });
-
-  it('never sends a link to the kit gallery, from any form of link (issue #151)', () => {
-    // `app/dev/kit.tsx` is a development screen, and this parser never names it as a destination,
-    // whatever the link's scheme, host, locale prefix or case. Expo Router's own linking is off
-    // (`app/+native-intent.tsx`), and the route's `__DEV__` redirect to `+not-found` is the second
-    // guard (tested in `components/kit-gallery.test.tsx`).
-    const links = [
-      'https://ideanest.az/dev/kit',
-      'https://ideanest.az/az/dev/kit',
-      'https://ideanest.az/dev/kit/',
-      'https://IDEANEST.AZ/dev/kit?x=1',
-      'ideanest://dev/kit',
-      'ideanest:///dev/kit',
-      'ideanest://dev/kit/',
-      'ideanest://az/dev/kit',
-      'https://ideanest.az/%64ev/kit',
-    ];
-    for (const link of links) {
-      // Refused outright: none of these is a campaign, so the parser has nowhere to send it.
-      expect(destinationFor(link, HOST)).toBeNull();
+  it('opens a link of ours that the app cannot show in the in-app browser', () => {
+    for (const url of [
+      'https://ideanest.az/az/projects/x/prelaunch/opengraph-image',
+      'https://ideanest.az/categories/a/b/c',
+      'https://IDEANEST.az/u/a/b',
+    ]) {
+      expect(incomingLink(url, HOST)).toEqual({ kind: 'browser', url: new URL(url).href });
     }
-    // And a campaign whose creator happens to be called "dev" still opens the campaign, under
-    // `/projects/`, never the gallery's route.
-    expect(destinationFor('https://ideanest.az/projects/dev/kit', HOST)?.pathname).toBe(
-      '/projects/dev/kit',
-    );
   });
+
+  it('refuses a foreign host, plain http and a non-URL silently', () => {
+    for (const url of [
+      'https://evil-ideanest.az/projects/a/b',
+      'https://evil-ideanest.az/opengraph-image',
+      'http://ideanest.az/projects/a/b',
+      'http://ideanest.az/opengraph-image',
+      'javascript:alert(1)',
+      'not a url',
+      '',
+    ]) {
+      expect(incomingLink(url, HOST)).toEqual({ kind: 'ignore' });
+    }
+  });
+
+  it('sends the custom scheme with an unknown path to the not-found screen', () => {
+    expect(incomingLink('ideanest://nowhere/at/all', HOST)).toEqual({ kind: 'route', destination: NOT_FOUND });
+    expect(incomingLink('ideanest://dev/kit', HOST)).toEqual({ kind: 'route', destination: NOT_FOUND });
+  });
+
+  it('lands the legacy /projects/<uuid> on not-found, as the web does', () => {
+    expect(incomingLink(`https://ideanest.az/projects/${ID}`, HOST)).toEqual({
+      kind: 'route',
+      destination: NOT_FOUND,
+    });
+  });
+
+  it.each(['verify-email', 'reset-password/confirm', 'confirm-email-change'])(
+    'hands the token of /%s to its screen, from the email’s bare link and the redirected one',
+    (page) => {
+      for (const url of [
+        `https://ideanest.az/${page}?token=${TOKEN}`,
+        `https://ideanest.az/az/${page}?token=${TOKEN}`,
+      ]) {
+        expect(incomingLink(url, HOST)).toEqual({
+          kind: 'route',
+          destination: { pathname: `/${page}`, params: { token: TOKEN } },
+        });
+      }
+    },
+  );
 });
 
-describe('destinationFor, the discovery entry points (#153)', () => {
-  it('opens Home from the site root, with or without a locale or a slash', () => {
-    for (const url of [
-      'https://ideanest.az',
-      'https://ideanest.az/',
-      'https://ideanest.az/az',
-      'https://ideanest.az/en/',
-      'ideanest://',
-    ]) {
-      expect(destinationFor(url, HOST)).toEqual({ pathname: '/' });
-    }
+/** A stand-in for `expo-linking`: a launch URL, and a way to deliver later ones. */
+function fakeLinking(initial: string | null) {
+  const listeners: ((event: { url: string }) => void)[] = [];
+  const removed = jest.fn();
+  const source: LinkSource = {
+    getInitialURL: () => Promise.resolve(initial),
+    addEventListener: (_type, listener) => {
+      listeners.push(listener);
+      return { remove: removed };
+    },
+  };
+  return { source, removed, deliver: (url: string) => listeners.forEach((listener) => listener({ url })) };
+}
+
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+describe('listenForLinks', () => {
+  const returns = [
+    [`https://ideanest.az/az/pledges/${ID}?payment=returned`, { pathname: `/pledges/${ID}`, params: { payment: 'returned' } }],
+    [`https://ideanest.az/en/pledges/${ID}?payment=failed`, { pathname: `/pledges/${ID}`, params: { payment: 'failed' } }],
+    ['https://ideanest.az/ru/settings/payout?card=returned', { pathname: '/settings/payout', params: { card: 'returned' } }],
+    ['https://ideanest.az/tr/settings/payout?card=failed', { pathname: '/settings/payout', params: { card: 'failed' } }],
+  ] as const;
+
+  it.each(returns)('opens %s from a cold start', async (url, destination) => {
+    const { source } = fakeLinking(url);
+    const handlers = { navigate: jest.fn(), openBrowser: jest.fn() };
+    listenForLinks(source, HOST, handlers);
+    await flush();
+    expect(handlers.navigate).toHaveBeenCalledTimes(1);
+    expect(handlers.navigate).toHaveBeenCalledWith(destination);
+    expect(handlers.openBrowser).not.toHaveBeenCalled();
   });
 
-  it('opens Discover with the filters the link carries, read as the web reads them', () => {
-    expect(
-      destinationFor('https://ideanest.az/discover?category=games&sort=ending_soon', HOST),
-    ).toEqual({ pathname: '/discover', params: { category: 'games', sort: 'ending_soon' } });
+  it.each(returns)('opens %s when the app is already running', async (url, destination) => {
+    const { source, deliver } = fakeLinking(null);
+    const handlers = { navigate: jest.fn(), openBrowser: jest.fn() };
+    listenForLinks(source, HOST, handlers);
+    await flush();
+    expect(handlers.navigate).not.toHaveBeenCalled();
+    deliver(url);
+    expect(handlers.navigate).toHaveBeenCalledWith(destination);
   });
 
-  it('drops what is not a feed parameter, and what the service would refuse', () => {
-    expect(
-      destinationFor(
-        'https://ideanest.az/az/discover?utm_source=x&status=finished,live&tag=Eco&sort=newest',
-        HOST,
-      ),
-    ).toEqual({ pathname: '/discover', params: { status: 'live', tag: 'eco' } });
+  it('hands a refused link of ours to the browser handler, and ignores a foreign one', async () => {
+    const { source, deliver } = fakeLinking('https://ideanest.az/az/discover/opengraph-image');
+    const handlers = { navigate: jest.fn(), openBrowser: jest.fn() };
+    listenForLinks(source, HOST, handlers);
+    await flush();
+    expect(handlers.openBrowser).toHaveBeenCalledWith('https://ideanest.az/az/discover/opengraph-image');
+    deliver('https://evil.example/projects/a/b');
+    expect(handlers.navigate).not.toHaveBeenCalled();
+    expect(handlers.openBrowser).toHaveBeenCalledTimes(1);
   });
 
-  it('opens Discover from the custom scheme, and survives a hand-written query', () => {
-    expect(destinationFor('ideanest://discover?tag&q=100%', HOST)).toEqual({
-      pathname: '/discover',
-      params: { q: '100%' },
+  describe('while a payment or payout-card session is returning', () => {
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it.each([
+      [`https://ideanest.az/az/pledges/${ID}?payment=returned&via=app`, `/pledges/${ID}`],
+      [`ideanest://pledges/${ID}?payment=returned`, `/pledges/${ID}`],
+      [`https://ideanest.az/pledges/${ID.toUpperCase()}?payment=failed`, `/pledges/${ID}`],
+      ['https://ideanest.az/ru/settings/payout?card=returned&via=app', '/settings/payout'],
+      ['ideanest://settings/payout?card=failed', '/settings/payout'],
+    ])('leaves %s to the session, then routes it again once the claim lapses', async (url, route) => {
+      const { source, deliver } = fakeLinking(null);
+      const handlers = { navigate: jest.fn(), openBrowser: jest.fn() };
+      listenForLinks(source, HOST, handlers);
+      await flush();
+      jest.useFakeTimers();
+
+      const release = claimReturnRoute(route);
+      deliver(url);
+      expect(handlers.navigate).not.toHaveBeenCalled();
+
+      // Android can wake the app before the link that woke it arrives: the claim outlasts the session.
+      release();
+      jest.advanceTimersByTime(RETURN_GRACE_MS - 1);
+      deliver(url);
+      expect(handlers.navigate).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(1);
+      deliver(url);
+      expect(handlers.navigate).toHaveBeenCalledTimes(1);
+      expect(handlers.openBrowser).not.toHaveBeenCalled();
+    });
+
+    it('still opens every other link, another pledge included', async () => {
+      const { source, deliver } = fakeLinking(null);
+      const handlers = { navigate: jest.fn(), openBrowser: jest.fn() };
+      listenForLinks(source, HOST, handlers);
+      await flush();
+      const other = '0e5d4c3b-2a19-4f08-9e7d-6c5b4a392817';
+
+      const release = claimReturnRoute(`/pledges/${ID}`);
+      deliver(`https://ideanest.az/pledges/${other}`);
+      deliver('https://ideanest.az/az/settings/payout');
+      deliver('https://ideanest.az/pledges');
+      release();
+
+      expect(handlers.navigate.mock.calls.map(([destination]) => destination.pathname)).toEqual([
+        `/pledges/${other}`,
+        '/settings/payout',
+        '/pledges',
+      ]);
     });
   });
 
-  it('opens Search with the query, and Search alone without one', () => {
-    expect(destinationFor('https://ideanest.az/search?q=solar+lamp', HOST)).toEqual({
-      pathname: '/search',
-      params: { q: 'solar lamp' },
-    });
-    expect(destinationFor('https://ideanest.az/search', HOST)).toEqual({ pathname: '/search' });
-    expect(destinationFor('https://ideanest.az/search?q=%20', HOST)).toEqual({
-      pathname: '/search',
-    });
-  });
-
-  it('still refuses a foreign host for every one of them', () => {
-    for (const path of ['/', '/discover?category=games', '/search?q=lamp']) {
-      expect(destinationFor(`https://evil-ideanest.az${path}`, HOST)).toBeNull();
-      expect(destinationFor(`http://ideanest.az${path}`, HOST)).toBeNull();
-    }
-  });
-
-  it('claims nothing deeper under them', () => {
-    expect(destinationFor('https://ideanest.az/discover/games', HOST)).toBeNull();
-    expect(destinationFor('https://ideanest.az/search/lamp', HOST)).toBeNull();
+  it('stops listening when unsubscribed, including for a launch URL still being read', async () => {
+    const { source, deliver, removed } = fakeLinking('https://ideanest.az/az/discover');
+    const handlers = { navigate: jest.fn(), openBrowser: jest.fn() };
+    const stop = listenForLinks(source, HOST, handlers);
+    stop();
+    await flush();
+    deliver('https://ideanest.az/search');
+    expect(handlers.navigate).not.toHaveBeenCalled();
+    expect(removed).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('Expo Router’s own link handling', () => {
-  it('is off, so a link moves the application only through destinationFor', () => {
+  it('is off, so a link moves the application only through the root’s listener', () => {
+    // Deliberately not `redirectSystemPath` rewriting (#165): that hook runs before the app lock
+    // exists, so a link routed there would open behind nothing. `_layout.tsx` routes instead.
     const { redirectSystemPath } = require('../app/+native-intent') as {
       redirectSystemPath: (event: { path: string; initial: boolean }) => string | null;
     };
     for (const path of [
       'https://ideanest.az/az/discover?utm_source=x',
+      `https://ideanest.az/az/verify-email?token=${TOKEN}`,
       'ideanest://dev/kit',
       'https://evil.example/projects/a/b',
     ]) {

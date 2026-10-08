@@ -1,13 +1,14 @@
 import { Stack } from 'expo-router';
 import { SavedList } from '../features/account/saved-list';
 import { useT } from '../lib/i18n';
+import { withScreenRoot } from '../components/screen-root';
 
 /**
  * Saved projects — a row of the Me hub since #276, not a tab: the floating bar has five slots and
  * Saved is the destination the `mobile-design` skill's overflow rule moves into Me. `/saved` and
  * the web's `/account/saved` both land here. See `features/account/saved-list.tsx` (#159).
  */
-export default function SavedScreen() {
+function SavedScreen() {
   const t = useT();
   return (
     <>
@@ -16,6 +17,8 @@ export default function SavedScreen() {
     </>
   );
 }
+
+export default withScreenRoot('saved', SavedScreen);
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../components/route-error-boundary';

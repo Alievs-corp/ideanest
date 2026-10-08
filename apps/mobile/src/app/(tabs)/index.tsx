@@ -16,6 +16,7 @@ import { InlineAlert, Pill, Screen } from '../../components/ui';
 import { definedRouteParams } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
 import { spacing } from '../../theme';
+import { withScreenRoot } from '../../components/screen-root';
 
 /**
  * Home — the web's `/` (`app/[locale]/(site)/page.tsx`), issue #153.
@@ -47,7 +48,7 @@ const RAIL_SIZE = 6;
 const CLOSING: DiscoveryFilters = { ...NO_FILTERS, statuses: ['live'], sort: 'ending_soon' };
 const LAUNCHED: DiscoveryFilters = { ...NO_FILTERS, statuses: ['live'] };
 
-export default function HomeScreen() {
+function HomeScreen() {
   const t = useT('home');
   const tFeed = useT('discovery.feed');
   const router = useRouter();
@@ -166,6 +167,8 @@ const styles = StyleSheet.create({
   page: { gap: spacing[12], paddingTop: spacing[4] },
   retry: { flexDirection: 'row' },
 });
+
+export default withScreenRoot('home', HomeScreen);
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

@@ -214,6 +214,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
         onBlur={ring.onBlur}
         onPress={shared.launch}
         contentStyle={[styles.target, ring.ring]}
+        testID="campaign-card"
       >
         <AccentCard accent={accentFor(card)}>
           {/*

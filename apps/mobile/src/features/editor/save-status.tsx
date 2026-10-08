@@ -32,14 +32,15 @@ export function SaveStatus({ state, copy }: { readonly state: SaveState; readonl
     if (state === 'failed') announce(copy.notSaved);
   }, [state, copy.saved, copy.notSaved]);
 
-  if (state === 'idle') return <View style={styles.row} testID="save-status" />;
+  // The state is in the id because the words are the reader's language: the end-to-end flows wait on it.
+  if (state === 'idle') return <View style={styles.row} testID="save-status-idle" />;
 
   const words = state === 'saving' ? copy.saving : state === 'saved' ? copy.saved : copy.notSaved;
   const tone =
     state === 'saving' ? colors.textTertiary : state === 'saved' ? colors.success : colors.danger;
 
   return (
-    <View style={styles.row} accessible accessibilityLabel={words} testID="save-status">
+    <View style={styles.row} accessible accessibilityLabel={words} testID={`save-status-${state}`}>
       {state === 'saving' ? (
         reduced ? (
           <View testID="save-status-still">

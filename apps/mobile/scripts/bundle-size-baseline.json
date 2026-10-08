@@ -1,0 +1,11 @@
+{
+  "bytes": 9774784,
+  "tolerance": 0.1,
+  "measured": {
+    "date": "2026-10-08",
+    "what": "_expo/static/js/android/*.hbc (Hermes bytecode)",
+    "command": "CI=true IDEANEST_API_ORIGIN=https://api.ideyanest.com IDEANEST_SITE_URL=https://ideyanest.com pnpm --filter @ideanest/mobile exec expo export --platform android",
+    "source": "main at f0595820 plus #165's crash reporting (@sentry/react-native 7.11, debug ids); 8551687 bytes before it",
+    "host": "Windows 11, Node 22, Expo SDK 57, React Native 0.86"
+  }
+}

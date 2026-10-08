@@ -1,0 +1,5 @@
+# One store screenshot, named by locale. The callers run this only when SHOTS is 'true'
+# (screenshots.yaml), so an ordinary nightly run writes none.
+appId: az.ideanest.app
+---
+- takeScreenshot: ${LOCALE}-${NAME}

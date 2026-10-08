@@ -1,0 +1,94 @@
+# Flow 3, the airplane-mode variant (#165): the connection drops as a title change is typed, the
+# change is kept rather than lost, and once the phone is back online a retry saves it.
+#
+# Android only: Maestro's `setAirplaneMode` has no iOS Simulator implementation.
+#
+# The editor turns read-only as soon as it knows it is offline, so the connection is cut after
+# the typing and inside the 800 ms debounce. Whether the patch has already left by then is a race
+# the flow cannot win every time: when it has, the save simply succeeds and the failure branch
+# below is skipped. Either way the flow ends by proving the title reached the service.
+appId: az.ideanest.app
+name: Creator autosave offline
+tags:
+  - editor
+  - android-only
+env:
+  SITE: ${MAESTRO_SITE || SITE}
+  DRAFT_ID: ${MAESTRO_DRAFT_ID || DRAFT_ID}
+  CREATOR_EMAIL: ${MAESTRO_CREATOR_EMAIL || CREATOR_EMAIL}
+  CREATOR_PASSWORD: ${MAESTRO_CREATOR_PASSWORD || CREATOR_PASSWORD}
+---
+- runFlow: subflows/launch.yaml
+- runFlow:
+    file: subflows/sign-in-and-wait.yaml
+    env:
+      EMAIL: ${CREATOR_EMAIL}
+      PASSWORD: ${CREATOR_PASSWORD}
+- runFlow:
+    file: subflows/open-draft.yaml
+    env:
+      SITE: ${SITE}
+      DRAFT_ID: ${DRAFT_ID}
+
+- evalScript: ${output.title = 'E2E offline ' + Date.now()}
+- tapOn:
+    id: basics-title
+- eraseText: 80
+- inputText: ${output.title}
+- setAirplaneMode: enabled
+
+# Offline: either the patch failed and the tab offers a retry, or the editor went read-only with
+# the change kept as unsent. Nothing is silently dropped.
+- extendedWaitUntil:
+    visible:
+      id: basics-not-saved|editor-offline|save-status-saved
+    timeout: 20000
+- runFlow:
+    when:
+      visible:
+        id: basics-not-saved
+    commands:
+      - assertVisible:
+          id: save-status-failed
+      - assertVisible:
+          id: basics-retry
+
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible:
+      id: editor-offline
+    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: basics-retry
+    commands:
+      - tapOn:
+          id: basics-retry
+- runFlow:
+    when:
+      visible:
+        id: editor-unsent-send
+    commands:
+      - tapOn:
+          id: editor-unsent-send
+- extendedWaitUntil:
+    visible:
+      id: save-status-saved
+    timeout: 30000
+
+# Killed and started again: the service has the title typed while the connection dropped.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: screen-home
+    timeout: 30000
+- runFlow:
+    file: subflows/open-draft.yaml
+    env:
+      SITE: ${SITE}
+      DRAFT_ID: ${DRAFT_ID}
+- assertVisible:
+    id: basics-title
+    text: ${output.title}

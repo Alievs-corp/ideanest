@@ -1,8 +1,9 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { ShippingAddressScreen } from '../../../features/fulfilment/shipping-address-screen';
 import { useT } from '../../../lib/i18n';
+import { withScreenRoot } from '../../../components/screen-root';
 
-export default function Screen() {
+function Screen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const t = useT();
   return (
@@ -12,5 +13,7 @@ export default function Screen() {
     </>
   );
 }
+
+export default withScreenRoot('pledge-address', Screen);
 
 export { RouteErrorBoundary as ErrorBoundary } from '../../../components/route-error-boundary';

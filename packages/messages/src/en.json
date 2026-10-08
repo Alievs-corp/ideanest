@@ -5991,6 +5991,12 @@
         "launchExplanation": "The campaign appears everywhere on the platform and starts taking pledges the moment it launches. Its goal and its deadline freeze from that point, and a live campaign cannot be taken back to a draft.",
         "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft."
       }
+    },
+    "native": {
+      "displayName": "IdeyaNest",
+      "faceIdUsage": "IdeyaNest uses Face ID to unlock the session kept on this device.",
+      "cameraUsage": "IdeyaNest uses the camera so you can take a campaign image or a profile picture.",
+      "photoLibraryUsage": "IdeyaNest opens your photos so you can choose a campaign image or a profile picture."
     }
   }
 }

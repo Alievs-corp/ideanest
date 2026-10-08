@@ -265,6 +265,20 @@ jest.mock('expo-notifications', () => ({
   AndroidImportance: { DEFAULT: 3 },
 }));
 
+/**
+ * Crash reporting (#165). The SDK's native module is reached at import, like the Expo modules
+ * above, so it is replaced by spies: `lib/crash/reporting.test.ts` asserts what is started and
+ * what is sent, and every other suite gets a reporter that does nothing — which is also what a
+ * build without `IDEANEST_SENTRY_DSN` gets.
+ */
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  setTag: jest.fn(),
+  setUser: jest.fn(),
+  captureException: jest.fn(),
+  wrap: (component: unknown) => component,
+}));
+
 /** Whether this is a real device. False, which is what a test runner is. */
 jest.mock('expo-device', () => ({ isDevice: false, deviceName: 'Test device' }));
 

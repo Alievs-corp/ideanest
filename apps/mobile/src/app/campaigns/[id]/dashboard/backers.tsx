@@ -1,10 +1,13 @@
 import { useLocalSearchParams } from 'expo-router';
 import { BackerReport } from '../../../../features/dashboard/backers/backer-report';
+import { withScreenRoot } from '../../../../components/screen-root';
 
-export default function Screen() {
+function Screen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   return <BackerReport projectId={id} />;
 }
+
+export default withScreenRoot('dashboard-backers', Screen);
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../../../../components/route-error-boundary';

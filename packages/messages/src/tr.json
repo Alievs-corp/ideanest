@@ -5991,6 +5991,12 @@
         "launchExplanation": "Kampanya başlatıldığı anda platformun her yerinde görünür ve destek almaya başlar. O andan itibaren hedefi ve bitiş tarihi değişmez, yayındaki bir kampanya taslağa geri alınamaz.",
         "confirmLaunchBody": "Hemen herkese açık olur ve destek almaya başlar. Fonlama hedefi ve bitiş tarihi başlatıldığında sabitlenir ve sonradan düzenlenemez; yayındaki bir kampanya taslağa geri alınamaz."
       }
+    },
+    "native": {
+      "displayName": "IdeyaNest",
+      "faceIdUsage": "IdeyaNest, bu cihazda tutulan oturumunuzun kilidini açmak için Face ID kullanır.",
+      "cameraUsage": "IdeyaNest, kampanya görseli veya profil fotoğrafı çekebilmeniz için kamerayı kullanır.",
+      "photoLibraryUsage": "IdeyaNest, kampanya görseli veya profil fotoğrafı seçebilmeniz için fotoğraflarınızı açar."
     }
   }
 }

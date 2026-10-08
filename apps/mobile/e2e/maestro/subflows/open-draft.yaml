@@ -1,0 +1,14 @@
+# Opens the draft's Basics tab through the web's id-form link and waits for its form.
+appId: az.ideanest.app
+---
+- openLink:
+    link: ${SITE}/projects/${DRAFT_ID}/edit/basics
+    autoVerify: true
+- extendedWaitUntil:
+    visible:
+      id: screen-editor-basics
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      id: basics-title
+    timeout: 30000

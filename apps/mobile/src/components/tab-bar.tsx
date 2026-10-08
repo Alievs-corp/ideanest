@@ -150,6 +150,7 @@ export function FloatingTabBar({
           if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
         }}
         onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
+        testID={`tab-${route.name}`}
       />
     );
   };
@@ -178,6 +179,7 @@ function TabSlot({
   onPress,
   onLongPress,
   onLayout,
+  testID,
 }: {
   readonly label: string;
   readonly glyph: IconGlyph;
@@ -187,6 +189,7 @@ function TabSlot({
   readonly onPress: () => void;
   readonly onLongPress: () => void;
   readonly onLayout: (event: LayoutChangeEvent) => void;
+  readonly testID: string;
 }) {
   const moves = useMotionAllowed('minimal');
   const ring = useFocusRing();
@@ -211,6 +214,7 @@ function TabSlot({
       onFocus={ring.onFocus}
       onBlur={ring.onBlur}
       style={[styles.slot, ring.ring]}
+      testID={testID}
     >
       <View style={styles.glyph}>
         <Animated.View style={[styles.layer, linearStyle]}>

@@ -7,6 +7,7 @@ import {
 } from '@ideanest/api-client';
 import { traceIdOf } from '@ideanest/api-client/trace';
 import { apiOrigin } from './config';
+import { rememberTrace } from './last-trace';
 import { currentLocale } from '../lib/locale';
 import { refreshAccessToken } from '../lib/auth';
 import { observeResponse } from '../lib/maintenance';
@@ -77,15 +78,15 @@ const sessionFetch: Fetch = async (url, init) => {
    * its way past, and passed on untouched: a 503 is still a 503 to the caller,
    * and only the maintenance problem opens the screen. It is here rather than
    * in each screen because this is the one place every read and every write
-   * goes through.
+   * goes through. Its trace id is kept for crash reports for the same reason (`last-trace.ts`).
    */
-  const response = await observeResponse(await fetch(url, withBearer(init, token)));
+  const response = rememberTrace(await observeResponse(await fetch(url, withBearer(init, token))));
   if (response.status !== 401 || !hasStoredSession()) return response;
 
   const refreshed = await refreshAccessToken();
   if (refreshed === null) return response;
 
-  return await observeResponse(await fetch(url, withBearer(init, refreshed)));
+  return rememberTrace(await observeResponse(await fetch(url, withBearer(init, refreshed))));
 };
 
 function withBearer(init: RequestInit | undefined, token: string | null): RequestInit {
@@ -129,7 +130,7 @@ export function api(): ApiClient {
 const anonymousFetch: Fetch = async (url, init) => {
   const headers = new Headers(init?.headers);
   headers.delete('Authorization');
-  return await observeResponse(await fetch(url, { ...init, headers }));
+  return rememberTrace(await observeResponse(await fetch(url, { ...init, headers })));
 };
 
 /**

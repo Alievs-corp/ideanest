@@ -1,0 +1,25 @@
+# Me -> Sign in -> address and password. Stops after submitting: the caller asserts what comes
+# next (the Me tab, or the two-factor step).
+appId: az.ideanest.app
+---
+- tapOn:
+    id: tab-me
+- extendedWaitUntil:
+    visible:
+      id: me-sign-in
+    timeout: 15000
+- tapOn:
+    id: me-sign-in
+- extendedWaitUntil:
+    visible:
+      id: sign-in-email
+    timeout: 15000
+- tapOn:
+    id: sign-in-email
+- inputText: ${EMAIL}
+- tapOn:
+    id: sign-in-password
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: sign-in-submit

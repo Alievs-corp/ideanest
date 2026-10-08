@@ -18,6 +18,14 @@
  * deployed: the identifiers in the Expo configuration are the ones the web half
  * is configured with, when it is configured at all.
  *
+ * <h2>The paths, too (#165)</h2>
+ *
+ * The intent filter's paths are built from `@ideanest/links`' claimed-route table, the same table
+ * the web's association file claims for iOS. A prefix added to `app.config.ts` by hand, or a row
+ * the filter lost, fails here, as does any entry that would hand `/admin` to the application.
+ * The table is imported directly: Node strips its types, which is why `claims.ts` imports
+ * nothing relative.
+ *
  * <h2>Unconfigured passes</h2>
  *
  * A checkout with no `IDEANEST_IOS_APP_ID` is a developer's machine or a pull
@@ -26,6 +34,7 @@
  * than about whether the two agree.
  */
 import { execSync } from 'node:child_process';
+import { intentDrift } from '@ideanest/links/claims';
 
 /** Read from the resolved Expo config rather than from the source, so a computed value counts. */
 function expoConfig() {
@@ -76,6 +85,20 @@ if (claimedHost && !intentHosts.includes(claimedHost)) {
   );
 }
 
+if (claimedHost) {
+  const data = (config.android?.intentFilters ?? []).flatMap((filter) => filter.data ?? []);
+  const drift = intentDrift(data, claimedHost);
+  for (const entry of drift.missing) {
+    fail(`android.intentFilters lack ${entry}, which @ideanest/links claims. Build the data from androidIntentData().`);
+  }
+  for (const entry of drift.extra) {
+    fail(`android.intentFilters claim ${entry}, which @ideanest/links does not. Add the row to CLAIMED_ROUTES instead.`);
+  }
+  for (const entry of drift.admin) {
+    fail(`android.intentFilters claim ${entry}, which reaches /admin. Android cannot exclude, so nothing may cover it.`);
+  }
+}
+
 /*
  * The web half, when this environment has been told about it. `IDEANEST_IOS_APP_ID`
  * is `<team prefix>.<bundle identifier>`, so the bundle identifier is its suffix.
@@ -96,5 +119,8 @@ if (configuredPackage && configuredPackage !== androidPackage) {
 }
 
 if (process.exitCode !== 1) {
-  console.log(`The mobile association identifiers agree: ${bundleIdentifier} / ${androidPackage} on ${claimedHost}.`);
+  console.log(
+    `The mobile association identifiers agree: ${bundleIdentifier} / ${androidPackage} on ${claimedHost}, ` +
+      'and the intent filter claims exactly the @ideanest/links table.',
+  );
 }

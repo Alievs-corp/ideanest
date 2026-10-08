@@ -1,4 +1,5 @@
-import { destinationFor } from './links';
+import { describe, expect, it } from 'vitest';
+import { destinationFor } from './destination';
 
 const HOST = 'ideanest.az';
 const PLEDGE = '01890000-0000-7000-8000-0000000000ab';

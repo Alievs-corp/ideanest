@@ -126,6 +126,9 @@ jobs:
               - '.github/workflows/mobile-check.yml'
               - 'apps/api/openapi.json'
               - 'apps/api/src/main/java/az/ideanest/pledge/domain/PledgeState.java'
+              # The brand mark every app icon is rendered from; the asset drift
+              # check in `mobile-check.yml` fails when it changes alone (#165).
+              - 'apps/web/src/app/icon.svg'
             api:
               - 'apps/api/**'
               - '.github/workflows/ci.yml'

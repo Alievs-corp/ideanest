@@ -1,0 +1,26 @@
+{
+  "name": "@ideanest/links",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "description": "The paths a link to the site may open the mobile application at, and the parser that turns one into an app route, shared by apps/web (the association files), apps/mobile (intent filters and link handling) and its config check.",
+  "exports": {
+    "./claims": "./src/claims.ts",
+    "./destination": "./src/destination.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ideanest/discovery": "workspace:*",
+    "@ideanest/legal": "workspace:*",
+    "@ideanest/messages": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

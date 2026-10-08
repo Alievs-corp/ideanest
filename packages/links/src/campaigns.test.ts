@@ -1,4 +1,5 @@
-import { destinationFor } from './links';
+import { describe, expect, it } from 'vitest';
+import { destinationFor } from './destination';
 
 const HOST = 'ideanest.az';
 const ID = '6f1c2b3a-4d5e-4f60-8a7b-9c0d1e2f3a4b';

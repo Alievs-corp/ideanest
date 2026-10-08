@@ -10,6 +10,16 @@ account shares one password, the payment records name providers that were never
 called, and the identifiers are derived from readable keys rather than
 generated. Do not point it at anything you would mind losing.
 
+**The end-to-end seed is a different thing.** `ops/seed/e2e/seed.mjs` prepares a
+**staging** environment for the mobile Maestro suite (#165): a live campaign with
+digital tiers and an add-on, a backer with a draft pledge, a creator with one draft,
+and a two-factor account whose secret the suite knows. Unlike this demo seed it works
+through the public API wherever it can, takes its passwords from the environment, is
+safe to re-run, and refuses to run against production — by host name before it makes a
+single request, and again by checking that the API and the database agree about who the
+accounts are before it writes anything. Its header lists the inputs, the `KEY=value`
+lines it prints, and the few steps it does in SQL and why.
+
 ---
 
 ## Running it

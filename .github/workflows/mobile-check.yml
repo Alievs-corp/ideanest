@@ -49,6 +49,14 @@ jobs:
       - name: Test
         run: pnpm --filter @ideanest/mobile test
 
+      # Every icon, the splash and the Play feature graphic are rendered from the
+      # brand mark and the colour tokens (#165). A committed PNG that no longer
+      # matches a fresh render — a retuned token, a new mark, a hand edit — fails
+      # here. Decoded pixels are compared with a tolerance of 2 per channel, not
+      # file bytes, because the PNG encoder's output may differ between machines.
+      - name: Check the generated images match the brand mark and tokens
+        run: node apps/mobile/scripts/generate-assets.mjs --check
+
       # `app.config.ts` reads its origins from the environment and THROWS on a value it
       # cannot use, which is deliberate (see the file). Resolving it here is what
       # turns that throw into a failed check rather than into a failed build
@@ -58,6 +66,15 @@ jobs:
           IDEANEST_API_ORIGIN: https://api.ideyanest.com
           IDEANEST_SITE_URL: https://ideyanest.com
         run: pnpm --filter @ideanest/mobile exec expo config --type public > /dev/null
+
+      # The OTA runtime version is a fingerprint of the native inputs (#165).
+      # `app.config.ts` imports the message catalogues for their values, and a
+      # catalogue hashed whole would give every copy edit a new runtime that no
+      # installed build has. This proves `.fingerprintignore` keeps the files
+      # out while the native strings they feed still change the hash. It edits
+      # and restores `packages/messages/src/en.json`, so it runs on its own.
+      - name: Check the OTA fingerprint ignores the catalogues
+        run: node apps/mobile/scripts/check-fingerprint.mjs
 
       # Jest never bundles the application: it resolves each test's imports with
       # its own resolver and Babel, so an entry point Metro cannot follow, a
@@ -78,6 +95,13 @@ jobs:
           pnpm --filter @ideanest/mobile exec expo export
           --platform android
           --output-dir "${{ runner.temp }}/mobile-export"
+
+      # The bundle the step above compiled is the Hermes bytecode a release build
+      # ships, so its size is measured here, against a committed baseline, and
+      # fails at +10% (#165's performance budget). Raising the baseline is a
+      # reviewed edit to `apps/mobile/scripts/bundle-size-baseline.json`.
+      - name: Check the JavaScript bundle size
+        run: node apps/mobile/scripts/check-bundle-size.mjs "${{ runner.temp }}/mobile-export"
 
       # The two files that let a link open the application (#114) name the same
       # bundle identifier and package that `app.config.ts` does. They are

@@ -21,7 +21,12 @@
         "IDEANEST_SITE_URL": "http://localhost:3001"
       },
       "ios": { "simulator": true },
-      "android": { "buildType": "apk" }
+      "android": {
+        "buildType": "apk",
+        "env": {
+          "IDEANEST_API_ORIGIN": "http://10.0.2.2:8080"
+        }
+      }
     },
     "preview": {
       "extends": "base",
@@ -31,7 +36,15 @@
         "IDEANEST_API_ORIGIN": "https://staging-api.ideanest.az",
         "IDEANEST_SITE_URL": "https://staging.ideanest.az"
       },
+      "ios": { "simulator": false },
       "android": { "buildType": "apk" }
+    },
+    "preview-simulator": {
+      "extends": "preview",
+      "env": {
+        "IDEANEST_SENTRY_ENVIRONMENT": "preview"
+      },
+      "ios": { "simulator": true }
     },
     "production": {
       "extends": "base",
@@ -49,7 +62,8 @@
       "android": {
         "track": "internal",
         "releaseStatus": "draft"
-      }
+      },
+      "ios": {}
     }
   }
 }

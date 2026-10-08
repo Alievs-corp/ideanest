@@ -41,6 +41,7 @@ import {
 import { pluralCategory, useT } from '../lib/i18n';
 import { useLocale } from '../lib/locale';
 import { colors, font, fontSize, lineHeight, spacing } from '../theme';
+import { withScreenRoot } from '../components/screen-root';
 
 /**
  * Discover — the web's `/discover` (`components/discovery/DiscoveryView.tsx`), issue #153.
@@ -70,7 +71,7 @@ import { colors, font, fontSize, lineHeight, spacing } from '../theme';
  * The `mobile-design` skill §6: the title fades up once, the cards of this unbounded feed do not
  * animate in (§6.5), and Reduce Motion turns the fade off.
  */
-export default function DiscoverScreen() {
+function DiscoverScreen() {
   const t = useT('discovery.feed');
   const tAll = useT();
   const locale = useLocale();
@@ -428,6 +429,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+export default withScreenRoot('discover', DiscoverScreen);
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../components/route-error-boundary';

@@ -196,6 +196,7 @@ const nextConfig = {
     '@ideanest/account',
     '@ideanest/dashboard',
     '@ideanest/legal',
+    '@ideanest/links',
     '@ideanest/plans',
   ],
 

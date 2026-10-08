@@ -20,6 +20,7 @@
     "@ideanest/design-tokens": "workspace:*",
     "@ideanest/discovery": "workspace:*",
     "@ideanest/legal": "workspace:*",
+    "@ideanest/links": "workspace:*",
     "@ideanest/messages": "workspace:*",
     "@ideanest/money": "workspace:*",
     "@ideanest/plans": "workspace:*",

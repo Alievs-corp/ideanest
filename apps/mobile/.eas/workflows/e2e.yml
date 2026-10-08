@@ -1,0 +1,171 @@
+# End-to-end tests for apps/mobile — docs/architecture.md §19.2 `test-e2e`, issue #165.
+#
+# Maestro flows (`e2e/maestro/`) on a `preview` build, on an Android emulator and an iOS
+# simulator, against STAGING with the fixtures `ops/seed/e2e/seed.mjs` creates.
+#
+# WHEN IT RUNS: nightly, and by hand (`eas workflow:run e2e.yml`, or the Expo dashboard). It is
+# also the gate before a store submission: `.github/workflows/mobile-release.yml` refuses to
+# submit unless the latest run of this workflow succeeded.
+#
+# WHY NOT ON EVERY PULL REQUEST: issue #67's budget. Two device builds and two emulator sessions
+# per push would spend in a day what the repository's Actions minutes and EAS build credits are
+# meant to cover in a month, and a mobile pull request is already held by `CI complete`
+# (typecheck, unit tests, config). The suite's job is to catch what only a device and a real
+# service can show, and once a night is often enough for that.
+#
+# Lives beside eas.json because EAS reads workflows from `.eas/workflows` in the project root,
+# which in this monorepo is apps/mobile.
+#
+# EAS environment variables, in the `preview` environment every job below declares. Maestro hands
+# a flow every shell variable whose name starts with MAESTRO_, so the flows' inputs are stored
+# under that prefix; the TOTP secret is not, so no flow ever sees it (apps/mobile/README.md,
+# "End-to-end tests", lists them all):
+#   E2E_TOTP_SECRET                                   (secret) the two-factor account's base32 secret
+#   MAESTRO_SITE                                      https origin of the staging site
+#   MAESTRO_PROVIDER_HOST                             regular expression for the payment provider's host
+#   MAESTRO_{BACKER,TWOFA,CREATOR}_EMAIL / _PASSWORD  the seeded accounts (passwords secret)
+#   MAESTRO_<KEY>                                     each fixture `ops/seed/e2e/seed.mjs` prints
+
+name: E2E (Maestro)
+
+on:
+  schedule:
+    # 01:30 GMT, 05:30 in Baku: after the day's merges have deployed to staging.
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+    inputs:
+      screenshots:
+        description: Also run screenshots.yaml (store screenshots in four languages)
+        type: boolean
+        default: false
+
+concurrency:
+  # One run at a time: the flows share the seeded accounts, and one backer holds one live pledge.
+  group: ${{ workflow.filename }}
+  cancel_in_progress: false
+
+jobs:
+  build_android:
+    name: Build (Android, preview)
+    type: build
+    params:
+      platform: android
+      profile: preview
+
+  build_ios:
+    name: Build (iOS simulator, preview)
+    type: build
+    params:
+      platform: ios
+      # A simulator build of `preview`: `extends: preview` with `ios.simulator: true` in eas.json.
+      profile: preview-simulator
+
+  android:
+    name: Maestro (Android emulator)
+    type: maestro
+    needs: [build_android]
+    environment: preview
+    runs_on: linux-large-nested-virtualization
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      flow_path: e2e/maestro
+      exclude_tags: [two-factor, screenshots]
+      retries: 1
+      record_screen: true
+
+  # Its own job so the code is computed right before this one flow (see sign-in-2fa.yaml).
+  android_two_factor:
+    name: Maestro two-factor (Android emulator)
+    type: maestro
+    needs: [build_android]
+    after: [android]
+    environment: preview
+    runs_on: linux-large-nested-virtualization
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      flow_path: e2e/maestro/sign-in-2fa.yaml
+    hooks:
+      before_maestro_tests:
+        - name: Compute the one-time codes
+          run: |
+            set -eu
+            if ! command -v oathtool >/dev/null; then
+              sudo apt-get update -qq && sudo apt-get install -y -qq oathtool >/dev/null \
+                || brew install oath-toolkit >/dev/null
+            fi
+            # Start at the top of a 30-second window, so the first code has its whole life
+            # (and, with the service's one step of skew, the next window too) ahead of it.
+            left=$(( 30 - $(date +%s) % 30 ))
+            if [ "$left" -lt 25 ]; then sleep "$left"; fi
+            now=$(date +%s)
+            set-env MAESTRO_OTP "$(oathtool --totp -b "$E2E_TOTP_SECRET")"
+            # The retry: the next window's code, for when the first has expired by the time it is typed.
+            set-env MAESTRO_OTP_NEXT "$(oathtool --totp -b --now "@$(( now + 30 ))" "$E2E_TOTP_SECRET")"
+
+  # After Android rather than beside it: the flows share the seeded accounts, and the service
+  # allows one live pledge per backer per campaign (each checkout holds one for five minutes).
+  ios:
+    name: Maestro (iOS simulator)
+    type: maestro
+    needs: [build_ios]
+    after: [android_two_factor]
+    environment: preview
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      flow_path: e2e/maestro
+      exclude_tags: [two-factor, screenshots, android-only]
+      retries: 1
+      record_screen: true
+
+  ios_two_factor:
+    name: Maestro two-factor (iOS simulator)
+    type: maestro
+    needs: [build_ios]
+    after: [ios]
+    environment: preview
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      flow_path: e2e/maestro/sign-in-2fa.yaml
+    hooks:
+      before_maestro_tests:
+        - name: Compute the one-time codes
+          run: |
+            set -eu
+            if ! command -v oathtool >/dev/null; then
+              sudo apt-get update -qq && sudo apt-get install -y -qq oathtool >/dev/null \
+                || brew install oath-toolkit >/dev/null
+            fi
+            # Start at the top of a 30-second window, so the first code has its whole life
+            # (and, with the service's one step of skew, the next window too) ahead of it.
+            left=$(( 30 - $(date +%s) % 30 ))
+            if [ "$left" -lt 25 ]; then sleep "$left"; fi
+            now=$(date +%s)
+            set-env MAESTRO_OTP "$(oathtool --totp -b "$E2E_TOTP_SECRET")"
+            # The retry: the next window's code, for when the first has expired by the time it is typed.
+            set-env MAESTRO_OTP_NEXT "$(oathtool --totp -b --now "@$(( now + 30 ))" "$E2E_TOTP_SECRET")"
+
+  # By hand only: store screenshots on the sizes the stores ask for.
+  screenshots_android:
+    name: Store screenshots (Android phone)
+    type: maestro
+    if: ${{ inputs.screenshots }}
+    needs: [build_android]
+    after: [ios_two_factor]
+    environment: preview
+    runs_on: linux-large-nested-virtualization
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      flow_path: e2e/maestro/screenshots.yaml
+      device_identifier: pixel_7
+
+  screenshots_ios:
+    name: Store screenshots (6.9-inch iPhone)
+    type: maestro
+    if: ${{ inputs.screenshots }}
+    needs: [build_ios]
+    after: [screenshots_android]
+    environment: preview
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      flow_path: e2e/maestro/screenshots.yaml
+      device_identifier: iPhone 17 Pro Max

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -11,7 +12,7 @@ import { SheetHost } from '../components/ui/sheet';
 import { SharedTransitionHost } from '../components/ui/shared-transition';
 import { sweepAccountExports } from '../lib/account-export-files';
 import { startConnectivity } from '../lib/connectivity';
-import { destinationFor, type Destination } from '../lib/links';
+import { listenForLinks, type Destination } from '../lib/links';
 import { openWhenAllowed } from '../lib/open-when-allowed';
 import { useMaintenanceGate } from '../lib/maintenance-gate';
 import { watchUpcoming } from '../lib/upcoming-maintenance';
@@ -48,6 +49,11 @@ import { colors } from '../theme';
  * `url` event for a link that arrives while the application is already open —
  * because a link that works only when the app is already running is the bug
  * deep links (§4.12 MB-02) most often meet.
+ *
+ * Routing here rather than in `+native-intent.tsx`'s `redirectSystemPath` is deliberate (#165):
+ * that hook runs before this tree exists, so a link it rewrote would be routed before the app
+ * lock could hold it. Every link — and the in-app browser a refused link of ours opens in —
+ * goes through `openWhenAllowed` instead.
  *
  * <h2>The app lock is here for the same reason — nothing else sees the process</h2>
  *
@@ -176,32 +182,24 @@ export default function RootLayout() {
     [router],
   );
 
-  useEffect(() => {
-    let live = true;
-
-    const open = (url: string | null) => {
-      if (!live || url === null) return;
-      const destination = destinationFor(url, host);
-      // `null` means "a link this application does not claim". Doing nothing is
-      // the answer: Expo Router has already shown the launch route, and sending
-      // somebody to the feed instead would make a bad link look like a good one.
-      if (destination !== null) go(destination);
-    };
-
-    void Linking.getInitialURL().then(open);
-    const subscription = Linking.addEventListener('url', (event) => open(event.url));
-
-    /*
-     * A tapped push notification arrives at the same parser, by `PushSync` (`lib/push-sync.tsx`):
-     * a notification tap does not go through `Linking` on either platform, and a push with no
-     * destination opens the inbox where a shared link would stay put.
-     */
-
-    return () => {
-      live = false;
-      subscription.remove();
-    };
-  }, [go, host]);
+  /*
+   * A tapped push notification arrives at the same parser, by `PushSync` (`lib/push-sync.tsx`):
+   * a notification tap does not go through `Linking` on either platform, and a push with no
+   * destination opens the inbox where a shared link would stay put.
+   */
+  useEffect(
+    () =>
+      listenForLinks(Linking, host, {
+        navigate: go,
+        // A link of ours the app has no screen for (`incomingLink`), behind the same gate. A browser
+        // that will not open (another session is already up) leaves the app where it is.
+        openBrowser: (url) =>
+          openWhenAllowed(() => {
+            WebBrowser.openBrowserAsync(url).catch(() => undefined);
+          }),
+      }),
+    [go, host],
+  );
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.surface1 }}>

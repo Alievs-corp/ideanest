@@ -10,6 +10,7 @@ import { EmptyState, InlineAlert, Pill, Screen } from '../../components/ui';
 import { definedRouteParams, useFeedProblem } from '../../lib/discovery';
 import { useT } from '../../lib/i18n';
 import { colors, font, spacing } from '../../theme';
+import { withScreenRoot } from '../../components/screen-root';
 
 /**
  * Search — the web's `/search` (`app/[locale]/(site)/search/page.tsx`), issue #153.
@@ -38,7 +39,7 @@ import { colors, font, spacing } from '../../theme';
  * The title fades up once; the field never moves, and the results rise as `CampaignColumn`
  * decides (first screenful only).
  */
-export default function SearchScreen() {
+function SearchScreen() {
   const t = useT('discovery.search');
   const tFeed = useT('discovery.feed');
   const tAll = useT();
@@ -180,6 +181,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row' },
   inlineLink: { color: colors.textPrimary, textDecorationLine: 'underline' },
 });
+
+export default withScreenRoot('search', SearchScreen);
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

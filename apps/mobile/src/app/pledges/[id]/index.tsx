@@ -1,8 +1,9 @@
 import { useLocalSearchParams } from 'expo-router';
 import { PledgeDetailScreen } from '../../../features/pledges/pledge-detail-screen';
 import { PledgeEditor } from '../../../features/pledges/pledge-editor';
+import { withScreenRoot } from '../../../components/screen-root';
 
-export default function Screen() {
+function Screen() {
   const { id, payment, raise } = useLocalSearchParams<{ id: string; payment?: string; raise?: string }>();
   return (
     <PledgeDetailScreen
@@ -24,5 +25,7 @@ export default function Screen() {
     />
   );
 }
+
+export default withScreenRoot('pledge', Screen);
 
 export { RouteErrorBoundary as ErrorBoundary } from '../../../components/route-error-boundary';

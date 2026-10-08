@@ -36,6 +36,7 @@ COPY packages/dashboard/package.json packages/dashboard/
 COPY packages/design-tokens/package.json packages/design-tokens/
 COPY packages/discovery/package.json packages/discovery/
 COPY packages/legal/package.json packages/legal/
+COPY packages/links/package.json packages/links/
 COPY packages/messages/package.json packages/messages/
 COPY packages/money/package.json packages/money/
 COPY packages/plans/package.json packages/plans/

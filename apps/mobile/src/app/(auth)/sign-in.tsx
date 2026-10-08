@@ -5,6 +5,7 @@ import { useAuthNavigation } from '../../features/auth/navigation';
 import { SignInForm } from '../../features/auth/sign-in-form';
 import { safeReturnTo } from '../../lib/guard';
 import { useT } from '../../lib/i18n';
+import { withScreenRoot } from '../../components/screen-root';
 
 /**
  * Sign in — the web's `/[locale]/sign-in`, in the auth modal (issue #152).
@@ -15,7 +16,7 @@ import { useT } from '../../lib/i18n';
  *
  * <p>The form, its refusals and the second factor are `features/auth/sign-in-form.tsx`'s.
  */
-export default function SignInScreen() {
+function SignInScreen() {
   const t = useT('auth.signIn');
   const navigate = useAuthNavigation();
   const { returnTo, notice } = useLocalSearchParams<{ returnTo?: string; notice?: string }>();
@@ -41,6 +42,8 @@ export default function SignInScreen() {
     </AuthScreen>
   );
 }
+
+export default withScreenRoot('sign-in', SignInScreen);
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

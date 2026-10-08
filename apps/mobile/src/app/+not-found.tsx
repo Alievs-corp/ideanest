@@ -1,4 +1,5 @@
 import { NotFoundState } from '../components/not-found-state';
+import { withScreenRoot } from '../components/screen-root';
 
 /**
  * Where an unmatched route lands.
@@ -11,9 +12,11 @@ import { NotFoundState } from '../components/not-found-state';
  * an apology. The browse routes draw the same screen for a slug that names
  * nothing (#154), so both are `NotFoundState`.
  */
-export default function NotFoundScreen() {
+function NotFoundScreen() {
   return <NotFoundState />;
 }
+
+export default withScreenRoot('not-found', NotFoundScreen);
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../components/route-error-boundary';
