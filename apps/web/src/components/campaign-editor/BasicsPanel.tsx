@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { Suspense, lazy, useEffect, useId, useState } from 'react';
 import {
   CharacterCount,
   Field,
@@ -17,6 +17,7 @@ import { SUPPORTED_CURRENCIES } from '../../lib/money';
 import {
   listCategories,
   patchProject,
+  type CampaignVideo,
   type Category,
   type CoverImage,
   type ProjectEdit,
@@ -52,7 +53,7 @@ import { useProjectEdit } from './useProjectEdit';
 
 /**
  * The basics tab: title, summary, category, goal, duration, scheduled launch,
- * late pledges, and the cover image.
+ * late pledges, the cover image, and the campaign video.
  *
  * There is no save button. Every control writes its own field through
  * `PATCH /v1/projects/{id}` on a debounce (`useAutosave`), and the indicator in
@@ -63,25 +64,54 @@ import { useProjectEdit } from './useProjectEdit';
  * spend hours in here and a field that animates while somebody is typing into it
  * reads as hesitation.
  *
- * TWO THINGS ARE DELIBERATELY ABSENT.
+ * ONE THING IS DELIBERATELY ABSENT.
  *
  * Location. `projects` has no `location_id` and there is no geocoding service;
  * docs/architecture.md §7.2 and the epic contract both hold it back for the
  * discovery epic (#42). A location field with nowhere to save to would be a
  * form that forgets what it was told, so there is not one.
  *
- * Video. §4.6 lists it beside the cover image, and it needs the same media
- * pipeline the cover is waiting for — with the additional problem that a video
- * has no equivalent of reading intrinsic dimensions from an `<img>`.
+ * Video was the second until #331. §4.6 lists it beside the cover image, and it
+ * waited for §13.2's pipeline; `CampaignVideoField` is that field now, and its
+ * dimensions and length are the server's measurements rather than this
+ * browser's.
  */
 
 const LOADING_ROWS = [0, 1, 2, 3];
 
-/** Maps a validation failure's `errors` map onto the fields this form has. */
-function serverErrors(failure: SaveFailure | null): BasicsErrors {
+/**
+ * The video field, fetched after the tab rather than with it — issue #331.
+ *
+ * It is the heaviest control on the tab — an upload with its own transfer, a duration reader
+ * and four stages of copy — and the last one on it, below the fold for everybody, and used once
+ * per campaign at most. Shipped with the tab it cost every visit 7.8 KiB of First Load JS;
+ * loaded here it costs 1.4 KiB, and the rest is a request made while the creator is reading the
+ * title.
+ *
+ * `React.lazy` rather than `next/dynamic`, measured: the same split through `next/dynamic` left
+ * the tab 3.9 KiB heavier, which is its loader. Nothing is lost by it: the form is drawn only
+ * once the project has loaded in the browser, so this is never reached in a server render and
+ * `next/dynamic`'s `ssr: false` would have had nothing to switch off.
+ */
+const CampaignVideoField = lazy(() =>
+  import('./CampaignVideoField').then((module) => ({ default: module.CampaignVideoField })),
+);
+
+/**
+ * Maps a validation failure's `errors` map onto the fields this form has.
+ *
+ * `notAttached` is the one refusal that arrives in `meta` rather than in `errors`: the
+ * service answers a video it will not attach with `400 PROJECT_FIELD_INVALID` and
+ * `meta.field: "videoMediaId"`, and its `detail` is English written for a log. The
+ * banner above the form still carries that sentence; the field gets the translated one.
+ */
+function serverErrors(failure: SaveFailure | null, notAttached: string): BasicsErrors {
   if (failure === null) return {};
 
   const mapped: BasicsErrors = {};
+  if (failure.code === 'PROJECT_FIELD_INVALID' && failure.meta?.['field'] === 'videoMediaId') {
+    mapped.videoMediaId = notAttached;
+  }
   for (const [key, message] of Object.entries(failure.fieldErrors)) {
     // `goal.amount` is about the goal field. Anything unrecognised is dropped
     // rather than rendered next to a control it is not about; the whole message
@@ -164,6 +194,20 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
     if (patch !== null) autosave.save(patch);
   }
 
+  /**
+   * Applies a value that arrives LATE — an upload that finished, an address that was measured —
+   * and queues exactly its patch.
+   *
+   * `change` takes a whole draft, which is right for a keystroke and wrong here: a draft captured
+   * when the file was chosen is minutes old by the time a video is ready, and spreading it would
+   * put back the title as it was then and send the next edit on top of that. So this updates the
+   * draft as it is NOW, and the patch is built from the value alone.
+   */
+  function changeLater(patch: ProjectPatch, update: (current: BasicsDraft) => BasicsDraft): void {
+    setDraft((current) => (current === null ? current : update(current)));
+    autosave.save(patch);
+  }
+
   const failure = autosave.failure;
 
   if (status === 'signed-out') {
@@ -206,7 +250,7 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
 
   const errors: BasicsErrors = {
     ...validateBasics(draft, basics.validation),
-    ...serverErrors(failure),
+    ...serverErrors(failure, basics.video.notAttached),
   };
   const selected = categories?.find((category) => category.id === draft.categoryId) ?? null;
   const subcategories = selected?.subcategories ?? [];
@@ -453,10 +497,33 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
           error={errors.coverImage}
           onUrlChange={(url) => setDraft({ ...draft, coverImageUrl: url })}
           onAccept={(cover: CoverImage) =>
-            change('coverImage', { ...draft, coverImage: cover, coverImageUrl: cover.url })
+            changeLater({ coverImage: cover }, (current) => ({
+              ...current,
+              coverImage: cover,
+              coverImageUrl: cover.url,
+            }))
           }
           onRemove={() => change('coverImage', { ...draft, coverImage: null, coverImageUrl: '' })}
         />
+
+        {/*
+          The placeholder holds the empty field's height, so the form does not grow under the
+          reader when the chunk arrives. It is the last control on the tab, so nothing below
+          it could move in any case except the page's own foot.
+        */}
+        <Suspense fallback={<div aria-hidden="true" className="h-[17.5rem]" />}>
+          <CampaignVideoField
+            copy={basics.video}
+            video={draft.video}
+            error={errors.videoMediaId}
+            onAccept={(video: CampaignVideo) =>
+              changeLater({ videoMediaId: video.mediaId }, (current) => ({ ...current, video }))
+            }
+            onRemove={() =>
+              changeLater({ videoMediaId: null }, (current) => ({ ...current, video: null }))
+            }
+          />
+        </Suspense>
       </form>
     </EditorShell>
   );

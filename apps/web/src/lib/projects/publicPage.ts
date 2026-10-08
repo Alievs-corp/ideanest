@@ -72,6 +72,22 @@ export interface CampaignOutcome {
   readonly finalisedAt: string;
 }
 
+/**
+ * The campaign's video, as the page plays it — issue #331.
+ *
+ * Everything a player needs to reserve its box and name its control before a byte of the clip
+ * is fetched: the address, the still, the frame size and the length. The service measured all
+ * of them (§13.2), so none is optional here — a video missing one is not a video this page can
+ * offer, and {@link readCampaignPage} reads it as no video at all.
+ */
+export interface CampaignPageVideo {
+  readonly url: string;
+  readonly posterUrl: string;
+  readonly width: number;
+  readonly height: number;
+  readonly durationMs: number;
+}
+
 export interface CampaignPage {
   readonly id: string;
   readonly slug: string;
@@ -83,6 +99,7 @@ export interface CampaignPage {
   readonly category: CampaignTaxon | null;
   readonly subcategory: CampaignTaxon | null;
   readonly coverImage: { readonly url: string; readonly width: number; readonly height: number } | null;
+  readonly video: CampaignPageVideo | null;
   /** Absent on a pre-launch page — the one public state a campaign reaches before §5.3. */
   readonly goal: Money | null;
   readonly pledged: Money;
@@ -187,6 +204,7 @@ export function readCampaignFields(
     category: readTaxon(response.category),
     subcategory: readTaxon(response.subcategory),
     coverImage: readCoverImage(response.coverImage),
+    video: readVideo(response.video),
     goal,
     pledged,
     backersCount: typeof response.backersCount === 'number' ? response.backersCount : 0,
@@ -316,6 +334,24 @@ function readCoverImage(value: unknown): CampaignPage['coverImage'] {
   if (width <= 0 || height <= 0) return null;
 
   return { url, width, height };
+}
+
+function readVideo(value: unknown): CampaignPageVideo | null {
+  if (value === null || typeof value !== 'object') return null;
+
+  const source = value as Record<string, unknown>;
+  const url = text(source['url']);
+  const posterUrl = text(source['posterUrl']);
+  const { width, height, durationMs } = source;
+  // A play button over a video that cannot be played is the promise `CampaignMedia` refuses to
+  // make, so a response missing any of the five offers no video rather than a broken one.
+  if (url === null || posterUrl === null) return null;
+  if (typeof width !== 'number' || typeof height !== 'number' || typeof durationMs !== 'number') {
+    return null;
+  }
+  if (width <= 0 || height <= 0 || durationMs <= 0) return null;
+
+  return { url, posterUrl, width, height, durationMs };
 }
 
 function readOutcome(value: unknown): CampaignOutcome | null {

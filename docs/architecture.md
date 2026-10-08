@@ -702,11 +702,17 @@ and each entry needs a translation per supported locale.
 > be false anyway because activating one of these navigates. A widget whose roles
 > promise behaviour it does not have is worse than no roles at all.
 >
-> **The media player has no video to play, and says so by not offering one.**
-> `ProjectPageResponse` carries a cover image and §13.2's pipeline is not built,
-> so the player is the poster. A play control that did nothing would be worse than
-> its absence, so the affordance exists as an unreachable branch with the seam
-> documented rather than as a button.
+> **The media player is poster-first, and plays only when somebody asks.** Until
+> #331 it had no video to play and said so by not offering one: a play control
+> that did nothing would have been worse than its absence. §13.2's pipeline now
+> gives `ProjectPageResponse` a `video`, and the header serves the cover (or the
+> video's own still) as the page's largest element exactly as before. A small
+> client island, `CampaignVideoPlayer`, draws a play button named with the clip's
+> length over it, and gives a hidden `<video preload="none">` its source only on
+> the press — starting it inside the click, which iOS Safari requires — in the
+> 16:9 box that was already reserved. Nothing is fetched until somebody asks,
+> and nothing below the header moves when it plays. A campaign without a video,
+> or whose video is missing a measured field, gets no button.
 >
 > **The Creator tab has a biography and previous campaigns, and no contact row.**
 > §4.4 asks for history and contact; `users` has `bio` and nothing else, and
@@ -5963,6 +5969,22 @@ picked clip at 1280×720 H.264 on the phone, so a 4K recording uploads as a
 fraction of its size. The server still transcodes it — the client is never
 trusted to have done so — but the transfer, which is the part a creator waits
 for, is the smaller one.
+
+**How the web editor uploads it.** `CampaignVideoField` reads the clip's length
+from the file's own header in a detached `<video preload="metadata">`, and
+refuses anything over the limit (with the half second of slack) or over 250MB
+before a byte is sent. A length the browser cannot read — an HEVC `.mov` in
+Chrome on Windows, a `MediaRecorder` WebM with no duration in its header — is
+left for `ffprobe` rather than refused, because the server may well transcode
+it. The `PUT` goes through `XMLHttpRequest`, which is the only browser API that
+reports upload progress; the poll runs every two seconds for up to five minutes,
+and a clip still converting after that is kept rather than discarded — the
+field offers to check again on the same upload, because the queue usually
+clears. Only a `READY` video is patched onto the project as `videoMediaId`.
+Leaving the page stops an upload, so from the first byte the field says so and
+the browser asks before the tab closes. The campaign page plays it as §4.4's
+media-player note describes, calling `play()` inside the press so iOS Safari
+starts it.
 
 ---
 

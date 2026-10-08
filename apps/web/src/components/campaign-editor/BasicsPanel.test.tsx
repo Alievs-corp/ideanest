@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import {
@@ -12,6 +12,14 @@ import {
 } from '../../lib/projects/api';
 import { measureImage } from '../../lib/projects/coverImage';
 import { UploadFailed, uploadImage } from '../../lib/media/upload';
+import {
+  VideoStillProcessing,
+  resumeVideo,
+  uploadVideo,
+  type UploadedVideo,
+} from '../../lib/media/videoUpload';
+import { readVideoDuration } from '../../lib/media/videoDuration';
+import { VIDEO_MAX_BYTES } from '@ideanest/campaign-editor/video';
 import { BasicsPanel } from './BasicsPanel';
 import { BASICS_COPY, EDITOR_COPY } from '../../test-editor-copy';
 
@@ -35,6 +43,12 @@ import { BASICS_COPY, EDITOR_COPY } from '../../test-editor-copy';
  * polls a fourth. What is asserted here is what the panel does with the answer -- the
  * upload itself belongs to the API, and the conversion behind it is asserted against a
  * real libvips in the backend suite.
+ *
+ * The campaign video's two network halves are mocked for the same reasons and one more:
+ * `readVideoDuration` asks a detached `<video>` element for its metadata, and jsdom has no media
+ * stack to answer. `lib/media/videoDuration.test.ts` and `lib/media/videoUpload.test.ts` pin
+ * those two down against fakes of the browser objects; what is asserted here is what the field
+ * does with a length, a refusal and a ready clip.
  */
 
 vi.mock('../../lib/projects/api', async (importOriginal) => ({
@@ -54,11 +68,22 @@ vi.mock('../../lib/media/upload', async (importOriginal) => ({
   uploadImage: vi.fn(),
 }));
 
+vi.mock('../../lib/media/videoUpload', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/media/videoUpload')>()),
+  uploadVideo: vi.fn(),
+  resumeVideo: vi.fn(),
+}));
+
+vi.mock('../../lib/media/videoDuration', () => ({ readVideoDuration: vi.fn() }));
+
 const getProjectEditMock = vi.mocked(getProjectEdit);
 const patchProjectMock = vi.mocked(patchProject);
 const listCategoriesMock = vi.mocked(listCategories);
 const measureImageMock = vi.mocked(measureImage);
 const uploadImageMock = vi.mocked(uploadImage);
+const uploadVideoMock = vi.mocked(uploadVideo);
+const resumeVideoMock = vi.mocked(resumeVideo);
+const readVideoDurationMock = vi.mocked(readVideoDuration);
 
 /** The debounce `useAutosave` defaults to. */
 const DEBOUNCE = 800;
@@ -107,6 +132,9 @@ async function openBasics(overrides: Partial<ProjectEdit> = {}): Promise<UserEve
   // The project and the category list resolve independently.
   await tick();
   await tick();
+  // The video field is its own chunk (`React.lazy`), fetched once the form has drawn.
+  await vi.dynamicImportSettled();
+  await tick();
 
   return user;
 }
@@ -123,6 +151,15 @@ function sent(): ProjectPatch[] {
 function lastPatch(): ProjectPatch | undefined {
   return patchProjectMock.mock.lastCall?.[1];
 }
+
+/*
+ * The video field is `React.lazy`. Loading its module once here means the panel's own import
+ * of it resolves from the module cache, so a test waits on React rather than on Vite
+ * transforming a file — which the first test to need it would otherwise race.
+ */
+beforeAll(async () => {
+  await import('./CampaignVideoField');
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -154,6 +191,36 @@ function chooseFile(file: File): void {
   fireEvent.change(input, { target: { files: [file] } });
 }
 
+/** The same, for the video field's picker — the one input that offers video types. */
+function chooseVideo(file: File): void {
+  const input = document.querySelector<HTMLInputElement>('input[type="file"][accept*="video"]');
+  if (input === null) throw new Error('The video field has no file input');
+  fireEvent.change(input, { target: { files: [file] } });
+}
+
+const READY_VIDEO: UploadedVideo = {
+  mediaId: '6f1c2a9e-1b9f-4c55-9a51-2d1f4ad0c0de',
+  url: 'https://cdn.example.test/media/6f1c2a9e.mp4',
+  posterUrl: 'https://cdn.example.test/media/6f1c2a9e.poster.webp',
+  width: 1280,
+  height: 720,
+  durationMs: 42_000,
+  blurDataUrl: 'data:image/webp;base64,AAAA',
+};
+
+const clip = (name = 'launch.mp4', type = 'video/mp4'): File => new File(['bytes'], name, { type });
+
+/** Whether a polite live region is saying this. The page has several; any of them will do. */
+function announced(text: string | RegExp): boolean {
+  return screen
+    .getAllByRole('status')
+    .some((region) =>
+      typeof text === 'string'
+        ? region.textContent?.includes(text) === true
+        : text.test(region.textContent ?? ''),
+    );
+}
+
 describe('BasicsPanel', () => {
   it('announces that it is loading rather than showing an empty form', () => {
     getProjectEditMock.mockReturnValue(new Promise<ProjectEdit>(() => {}));
@@ -179,6 +246,7 @@ describe('BasicsPanel', () => {
     // Every button says what it does, including the two that only differ by it.
     expect(screen.getByRole('button', { name: 'Use this address' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Choose an image' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Choose a video' })).toBeInTheDocument();
   });
 
   it('fills the form from the project the service returned', async () => {
@@ -596,6 +664,321 @@ describe('BasicsPanel', () => {
       expect(layer?.style.backgroundImage).toBe('url("data:image/webp;base64,AAAA")');
       // It is a picture, not information: it must not reach a screen reader.
       expect(layer).toHaveAttribute('aria-hidden', 'true');
+    });
+  });
+
+  describe('the campaign video', () => {
+    it('refuses a clip over sixty seconds before a byte of it is uploaded', async () => {
+      await openBasics();
+      readVideoDurationMock.mockResolvedValue(72_000);
+
+      chooseVideo(clip());
+      await tick();
+
+      // How long it runs is the half of the sentence that says how much to cut.
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'That video runs 1:12. The limit is 60 seconds — trim it and choose it again.',
+      );
+      expect(uploadVideoMock).not.toHaveBeenCalled();
+      expect(sent().filter((patch) => 'videoMediaId' in patch)).toEqual([]);
+    });
+
+    it('lets a clip through at the limit, with the container rounding the service allows', async () => {
+      await openBasics();
+      readVideoDurationMock.mockResolvedValue(60_400);
+      uploadVideoMock.mockResolvedValue(READY_VIDEO);
+
+      chooseVideo(clip());
+      await tick();
+
+      expect(uploadVideoMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('uploads a clip whose length this browser could not read, and lets the service measure it', async () => {
+      await openBasics();
+      readVideoDurationMock.mockResolvedValue(null);
+      uploadVideoMock.mockResolvedValue(READY_VIDEO);
+
+      chooseVideo(clip('IMG_0042.MOV', ''));
+      await tick();
+
+      // The `.mov` came with no type; it is declared from its extension, as a video.
+      expect(uploadVideoMock.mock.lastCall?.[1].contentType).toBe('video/quicktime');
+    });
+
+    it('refuses a file over 250 MB without reading or sending it', async () => {
+      await openBasics();
+      const large = clip();
+      Object.defineProperty(large, 'size', { value: VIDEO_MAX_BYTES + 1 });
+
+      chooseVideo(large);
+      await tick();
+
+      expect(screen.getByRole('alert')).toHaveTextContent('That file is larger than 250 MB.');
+      expect(readVideoDurationMock).not.toHaveBeenCalled();
+      expect(uploadVideoMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses a file that is not a video, whatever the picker let through', async () => {
+      await openBasics();
+
+      chooseVideo(new File(['%PDF'], 'pitch.pdf', { type: 'application/pdf' }));
+      await tick();
+
+      expect(screen.getByRole('alert')).toHaveTextContent('That file is not a video.');
+      expect(uploadVideoMock).not.toHaveBeenCalled();
+    });
+
+    it('says where the upload is, shows its progress, and saves the clip only once it is ready', async () => {
+      await openBasics();
+      readVideoDurationMock.mockResolvedValue(42_000);
+
+      let finish: (video: UploadedVideo) => void = () => {};
+      let stage: ((stage: 'preparing' | 'uploading' | 'processing') => void) | undefined;
+      let progress: ((fraction: number) => void) | undefined;
+      uploadVideoMock.mockImplementation((_file, options) => {
+        stage = options.onStage;
+        progress = options.onProgress;
+        return new Promise((resolve) => {
+          finish = resolve;
+        });
+      });
+
+      chooseVideo(clip());
+      await tick();
+
+      await act(async () => {
+        stage?.('uploading');
+        progress?.(0.42);
+      });
+      expect(announced('Uploading the video…')).toBe(true);
+      const bar = screen.getByRole('progressbar', { name: 'Upload progress' });
+      expect(bar).toHaveAttribute('aria-valuenow', '42');
+      // Nothing is saved while the clip is still on its way.
+      await tick(DEBOUNCE);
+      expect(sent().filter((patch) => 'videoMediaId' in patch)).toEqual([]);
+
+      await act(async () => stage?.('processing'));
+      expect(announced(/Converting the video/)).toBe(true);
+      // There is no honest percentage for a transcode, so there is no bar.
+      expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+
+      await act(async () => finish(READY_VIDEO));
+      await tick(DEBOUNCE);
+
+      // The identifier and nothing else: the rest is the server's measurement.
+      expect(lastPatch()).toEqual({ videoMediaId: READY_VIDEO.mediaId });
+      // Ready, not saved: the save is the header's to report, and it can still be refused.
+      expect(announced(/Video ready/)).toBe(true);
+
+      const preview = screen.getByLabelText('Preview of the campaign video');
+      expect(preview.tagName).toBe('VIDEO');
+      expect(preview).toHaveAttribute('poster', READY_VIDEO.posterUrl);
+      // The poster is what a creator checks; the clip is fetched only if they play it.
+      expect(preview).toHaveAttribute('preload', 'none');
+      expect(screen.getByText('Video: 0:42, 1280×720 pixels')).toBeInTheDocument();
+    });
+
+    it.each([
+      ['TOO_LONG', 'That video is longer than 60 seconds. Trim it and choose it again.'],
+      ['UNSUPPORTED_FORMAT', 'That file is not a video this platform can read.'],
+      ['TOO_SMALL', 'That video’s picture is too small to show.'],
+      ['UPLOADS_UNAVAILABLE', 'Video uploads are not switched on for this environment.'],
+      ['UPLOAD_STILL_PROCESSING', 'That video is taking longer than usual to convert.'],
+    ])('explains %s in words rather than passing the code through', async (code, words) => {
+      await openBasics();
+      readVideoDurationMock.mockResolvedValue(30_000);
+      uploadVideoMock.mockRejectedValue(new UploadFailed(code, ''));
+
+      chooseVideo(clip());
+      await tick();
+
+      const alert = screen.getByRole('alert');
+      expect(alert).toHaveTextContent('That video was not used');
+      expect(alert).toHaveTextContent(words);
+      expect(alert).not.toHaveTextContent(code);
+    });
+
+    it('takes the video down with an explicit null', async () => {
+      const user = await openBasics({ video: READY_VIDEO });
+
+      await user.click(screen.getByRole('button', { name: 'Remove video' }));
+      await tick(DEBOUNCE);
+
+      expect(lastPatch()).toEqual({ videoMediaId: null });
+      // The drop zone is back, and the button that was pressed did not take focus with it.
+      expect(screen.getByRole('button', { name: 'Choose a video' })).toHaveFocus();
+    });
+
+    it('stops the upload when the creator cancels it, and when the tab goes away', async () => {
+      await openBasics();
+      readVideoDurationMock.mockResolvedValue(42_000);
+      const signals: AbortSignal[] = [];
+      uploadVideoMock.mockImplementation(
+        (_file, options) =>
+          new Promise((_resolve, reject) => {
+            if (options.signal) signals.push(options.signal);
+            options.signal?.addEventListener('abort', () =>
+              reject(new DOMException('Aborted', 'AbortError')),
+            );
+          }),
+      );
+
+      chooseVideo(clip());
+      await tick();
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel upload' }));
+      await tick();
+
+      expect(signals[0]?.aborted).toBe(true);
+      // Cancelling is not a failure, so nothing is reported as one.
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Choose a video' })).toBeInTheDocument();
+
+      chooseVideo(clip());
+      await tick();
+      cleanup();
+
+      expect(signals[1]?.aborted).toBe(true);
+    });
+
+    it('puts the service refusing to attach the clip beside the field, in the reader’s words', async () => {
+      await openBasics();
+      readVideoDurationMock.mockResolvedValue(42_000);
+      uploadVideoMock.mockResolvedValue(READY_VIDEO);
+      patchProjectMock.mockRejectedValue(
+        new ApiError(400, {
+          status: 400,
+          detail: 'That video is not available. It may still be processing.',
+          code: 'PROJECT_FIELD_INVALID',
+          meta: { field: 'videoMediaId' },
+        }),
+      );
+
+      chooseVideo(clip());
+      await tick();
+      await tick(DEBOUNCE);
+
+      expect(
+        screen.getByText('That video could not be added to the campaign. Upload it again.'),
+      ).toBeInTheDocument();
+      // The field does not say "ready" beside its own refusal.
+      expect(announced(/Video ready/)).toBe(false);
+    });
+
+    /*
+     * The reviewer's data-loss case. The clip is accepted minutes after it was chosen, and a
+     * handler that spread the draft from the moment of choosing put the old title back on screen
+     * and under the next save.
+     */
+    it('keeps what was typed while the clip uploaded, and saves only the video', async () => {
+      const user = await openBasics();
+      readVideoDurationMock.mockResolvedValue(42_000);
+      let finish: (video: UploadedVideo) => void = () => {};
+      uploadVideoMock.mockImplementation((_file, options) => {
+        options.onStage?.('uploading');
+        return new Promise((resolve) => {
+          finish = resolve;
+        });
+      });
+
+      chooseVideo(clip());
+      await tick();
+      await user.clear(titleField());
+      await user.type(titleField(), 'Typed during the upload');
+      await tick(DEBOUNCE);
+      expect(lastPatch()).toEqual({ title: 'Typed during the upload' });
+
+      await act(async () => finish(READY_VIDEO));
+      await tick(DEBOUNCE);
+
+      expect(lastPatch()).toEqual({ videoMediaId: READY_VIDEO.mediaId });
+      expect(titleField()).toHaveValue('Typed during the upload');
+      // The clip arriving did not take the caret from the field being typed in.
+      expect(titleField()).toHaveFocus();
+
+      // And the next edit builds on the form as it is, sending its own field and nothing else.
+      await user.type(summaryField(), '!');
+      await tick(DEBOUNCE);
+      expect(lastPatch()).toEqual({ blurb: 'Pocket-sized and repairable.!' });
+      expect(sent().filter((patch) => 'title' in patch)).toEqual([
+        { title: 'Typed during the upload' },
+      ]);
+    });
+
+    it('says leaving stops the upload, and asks before the page closes, while there is something to lose', async () => {
+      await openBasics();
+      readVideoDurationMock.mockResolvedValue(42_000);
+      let stage: ((stage: 'preparing' | 'uploading' | 'processing') => void) | undefined;
+      let finish: (video: UploadedVideo) => void = () => {};
+      uploadVideoMock.mockImplementation((_file, options) => {
+        stage = options.onStage;
+        return new Promise((resolve) => {
+          finish = resolve;
+        });
+      });
+      const leaving = (): boolean => {
+        const event = new Event('beforeunload', { cancelable: true });
+        window.dispatchEvent(event);
+        return event.defaultPrevented;
+      };
+
+      chooseVideo(clip());
+      await tick();
+      // Nothing has been sent yet, so nothing would be lost.
+      expect(leaving()).toBe(false);
+      expect(screen.queryByText(/Keep this page open/)).not.toBeInTheDocument();
+
+      await act(async () => stage?.('uploading'));
+      expect(screen.getByText(/Keep this page open until the video is ready/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Cancel upload' })).toHaveAccessibleDescription(
+        /Keep this page open/,
+      );
+      expect(leaving()).toBe(true);
+
+      await act(async () => stage?.('processing'));
+      expect(screen.getByText(/Keep this page open/)).toBeInTheDocument();
+      expect(leaving()).toBe(true);
+
+      await act(async () => finish(READY_VIDEO));
+      await tick();
+      expect(leaving()).toBe(false);
+      expect(screen.queryByText(/Keep this page open/)).not.toBeInTheDocument();
+    });
+
+    it('keeps an upload that outlasted the wait, and waits on the same one again when asked', async () => {
+      const user = await openBasics();
+      readVideoDurationMock.mockResolvedValue(42_000);
+      uploadVideoMock.mockRejectedValue(new VideoStillProcessing(READY_VIDEO.mediaId));
+      resumeVideoMock.mockResolvedValue(READY_VIDEO);
+
+      chooseVideo(clip());
+      await tick();
+      expect(screen.getByRole('alert')).toHaveTextContent('The upload is kept');
+
+      await user.click(screen.getByRole('button', { name: 'Check again' }));
+      await tick();
+      await tick(DEBOUNCE);
+
+      // The same upload, waited on again — not the file sent a second time.
+      expect(resumeVideoMock).toHaveBeenCalledWith(
+        READY_VIDEO.mediaId,
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      );
+      expect(uploadVideoMock).toHaveBeenCalledTimes(1);
+      expect(lastPatch()).toEqual({ videoMediaId: READY_VIDEO.mediaId });
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('offers no second wait for an upload that actually failed', async () => {
+      await openBasics();
+      readVideoDurationMock.mockResolvedValue(42_000);
+      uploadVideoMock.mockRejectedValue(new UploadFailed('UNREADABLE', ''));
+
+      chooseVideo(clip());
+      await tick();
+
+      expect(screen.getByRole('alert')).toHaveTextContent('could not be converted');
+      expect(screen.queryByRole('button', { name: 'Check again' })).not.toBeInTheDocument();
     });
   });
 

@@ -89,10 +89,10 @@ const CLOCK_COPY = campaignCountdownCopyFrom(
  *     somebody's money, and the third is the platform's entire commercial model stated to the
  *     person about to rely on it. A softened rewording would be a different promise, and
  *     nobody would notice until a backer quoted it back.
- *   - **there is no dead play button.** `ProjectPageResponse` carries no video field and
- *     §13.2's pipeline is not built, so a play affordance would be a promise the page cannot
- *     keep, made at the top of the page, to somebody deciding whether the creator keeps
- *     promises.
+ *   - **there is no dead play button.** A play affordance over a campaign with no video would
+ *     be a promise the page cannot keep, made at the top of the page, to somebody deciding
+ *     whether the creator keeps promises. Since #331 a campaign can have one, and then the
+ *     button is named with the clip's length and the `<video>` is mounted only on the press.
  *   - **the countdown does not shout.** `role="timer"` and an explicit `aria-live="off"`, so
  *     a screen reader announces the value on arrival and never again — a polite region here
  *     would interrupt whatever is being read, once a minute, for as long as the page is open.
@@ -183,6 +183,14 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('the media player', () => {
+  /* jsdom implements no media playback; `play` answers the way a browser that played would. */
+  beforeEach(() => {
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('renders the poster as the media, with no alternative text to duplicate the title', async () => {
     const { container } = render(
       await resolveServerTree(
@@ -200,14 +208,121 @@ describe('the media player', () => {
   });
 
   /**
-   * The whole point of #281's honest branch. A play control over a campaign that has no video
-   * is a promise the page cannot keep; the affordance arrives with §13.2's pipeline.
+   * The whole point of #281's honest branch, and it outlived the pipeline arriving. A play
+   * control over a campaign that has no video is a promise the page cannot keep.
    */
-  it('offers no play control, because nothing on the platform has a video to play', async () => {
+  it('offers no play control to a campaign without a video', async () => {
     render(await resolveServerTree(<CampaignMedia campaign={campaign()} />));
 
-    expect(screen.queryByRole('button', { name: /play/iu })).not.toBeInTheDocument();
-    expect(screen.queryByText(/play/iu)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /watch|play/iu })).not.toBeInTheDocument();
+    expect(document.querySelector('video')).toBeNull();
+  });
+
+  const VIDEO = {
+    mediaId: '6f1c2a9e-1b9f-4c55-9a51-2d1f4ad0c0de',
+    url: 'https://cdn.test/media/clip.mp4',
+    posterUrl: 'https://cdn.test/media/clip.poster.webp',
+    width: 1280,
+    height: 720,
+    durationMs: 42_000,
+  };
+
+  /**
+   * #331. Poster-first survived the video arriving: the page's largest element is still the
+   * cover, and nothing about the clip is fetched — there is not even an element to fetch it —
+   * until somebody presses the button.
+   */
+  it('loads nothing before the press, and starts playing inside it', async () => {
+    const user = userEvent.setup();
+    /*
+     * jsdom has no media stack. The stub records WHEN play is called: the assertion that
+     * matters for iOS Safari is that it happens during the click, with the source already set,
+     * rather than from an effect or an `autoPlay` after the re-render.
+     */
+    const states: Array<{ src: string | null; hidden: boolean }> = [];
+    const play = vi
+      .spyOn(HTMLMediaElement.prototype, 'play')
+      .mockImplementation(function (this: HTMLMediaElement) {
+        states.push({ src: this.getAttribute('src'), hidden: this.hidden === true });
+        return Promise.resolve();
+      });
+    render(
+      await resolveServerTree(
+        <CampaignMedia
+          campaign={campaign({
+            coverImage: { url: 'https://cdn.test/cover.jpg', width: 1600, height: 900 },
+            video: VIDEO,
+          } as Partial<ProjectPageResponse>)}
+        />,
+      ),
+    );
+
+    // The element is there to be started inside the gesture, with nothing it could fetch.
+    const video = document.querySelector('video');
+    expect(video).not.toBeNull();
+    expect(video).not.toHaveAttribute('src');
+    expect(video).not.toHaveAttribute('poster');
+    expect(video).toHaveAttribute('preload', 'none');
+    expect(video?.hidden).toBe(true);
+    expect(document.querySelector('img')).toHaveAttribute('alt', '');
+
+    // Named with what it plays and for how long, and starting with the word printed on it.
+    const button = screen.getByRole('button', { name: 'Watch the campaign video, 42 seconds' });
+    expect(button).toHaveTextContent('Watch');
+    expect(button).toHaveTextContent('0:42');
+
+    await user.click(button);
+
+    // Called once, synchronously in the handler: the source was set, the re-render had not run.
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(states).toEqual([{ src: VIDEO.url, hidden: true }]);
+
+    expect(video).toHaveAttribute('src', VIDEO.url);
+    expect(video).toHaveAttribute('poster', VIDEO.posterUrl);
+    expect(video).toHaveAttribute('controls');
+    expect(video).toHaveAttribute('playsinline');
+    expect(video?.hidden).toBe(false);
+    expect(video).toHaveAccessibleName('Campaign video');
+    // The button pressed is gone; focus went to the player rather than to the top of the page.
+    expect(video).toHaveFocus();
+    expect(screen.queryByRole('button', { name: /watch/iu })).not.toBeInTheDocument();
+  });
+
+  it('fills the reserved box, so pressing play moves nothing below it', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      await resolveServerTree(<CampaignMedia campaign={campaign({ video: VIDEO } as Partial<ProjectPageResponse>)} />),
+    );
+
+    const frame = container.querySelector<HTMLElement>('[data-media-frame]');
+    expect(frame?.style.aspectRatio).toBe('16 / 9');
+
+    await user.click(screen.getByRole('button', { name: /watch/iu }));
+
+    // The same 16:9 frame, with the clip letterboxed inside it rather than resizing it.
+    expect(container.querySelector<HTMLElement>('[data-media-frame]')?.style.aspectRatio).toBe('16 / 9');
+    expect(container.querySelector('video')).toHaveClass('absolute', 'inset-0', 'object-contain');
+  });
+
+  it('shows the video’s own still as the poster when the campaign has no cover', async () => {
+    render(
+      await resolveServerTree(<CampaignMedia campaign={campaign({ video: VIDEO } as Partial<ProjectPageResponse>)} />),
+    );
+
+    expect(document.querySelector('img')?.getAttribute('src')).toContain(
+      encodeURIComponent(VIDEO.posterUrl),
+    );
+  });
+
+  it('leaves no automatically detectable violation with a video, before or after the press', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      await resolveServerTree(<CampaignMedia campaign={campaign({ video: VIDEO } as Partial<ProjectPageResponse>)} />),
+    );
+    await expectNoViolations(container);
+
+    await user.click(screen.getByRole('button', { name: /watch/iu }));
+    await expectNoViolations(container);
   });
 
   it('reserves the box for a campaign with no cover at all', async () => {

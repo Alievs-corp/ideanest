@@ -123,6 +123,36 @@ describe('readCampaignPage', () => {
     // reserve the box. A cover without them is a layout shift waiting to happen.
     expect(page?.coverImage).toBeNull();
   });
+
+  it('reads the campaign video the service measured', () => {
+    const video = {
+      mediaId: '6f1c2a9e-1b9f-4c55-9a51-2d1f4ad0c0de',
+      url: 'https://cdn.example.com/media/clip.mp4',
+      posterUrl: 'https://cdn.example.com/media/clip.poster.webp',
+      width: 1280,
+      height: 720,
+      durationMs: 42_000,
+      blurDataUrl: 'data:image/webp;base64,AAAA',
+    };
+
+    expect(readCampaignPage(response({ video }), 'ayan', NOW)?.video).toEqual({
+      url: 'https://cdn.example.com/media/clip.mp4',
+      posterUrl: 'https://cdn.example.com/media/clip.poster.webp',
+      width: 1280,
+      height: 720,
+      durationMs: 42_000,
+    });
+  });
+
+  it('offers no video rather than one it cannot play', () => {
+    // No video at all is the ordinary case, and the response simply leaves the field out.
+    expect(readCampaignPage(response(), 'ayan', NOW)?.video).toBeNull();
+
+    // A video without a poster or a length cannot reserve its box or name its control, and a
+    // play button that does nothing is the promise the media player refuses to make.
+    const partial = { url: 'https://cdn.example.com/media/clip.mp4', width: 1280, height: 720 };
+    expect(readCampaignPage(response({ video: partial as never }), 'ayan', NOW)?.video).toBeNull();
+  });
 });
 
 describe('the completion percentage', () => {

@@ -3962,7 +3962,9 @@
       "remaining": "{count, plural, other {# yer qalıb}}"
     },
     "media": {
-      "hasVideo": "Bu kampaniyanın videosu var."
+      "play": "İzlə",
+      "playName": "Kampaniya videosunu izlə, {seconds, plural, other {# saniyə}}",
+      "videoLabel": "Kampaniya videosu"
     },
     "story": {
       "about": "{title} haqqında",
@@ -4766,8 +4768,52 @@
         "UNREADABLE": "Bu şəkli çevirmək alınmadı. Başqa fayl işləməlidir.",
         "UPLOADS_UNAVAILABLE": "Bu mühitdə yükləmə aktiv deyil. Əvəzinə ünvan yapışdırın.",
         "MEDIA_STORAGE_UNREACHABLE": "Şəkil anbarı cavab vermir. Bir azdan yenidən cəhd edin.",
-        "UPLOAD_STILL_PROCESSING": "Bu şəkil adətkindən uzun çəkir. Bu bölməyə qayıtsanız, görünə bilər.",
+        "UPLOAD_STILL_PROCESSING": "Bu şəkil həmişəkindən uzun çəkir. Bu bölməyə qayıtsanız, görünə bilər.",
         "UPLOAD_TRANSFER_FAILED": "Şəkil anbara çatmadı. Bağlantını yoxlayıb yenidən cəhd edin.",
+        "UPLOAD_REFUSED": "Bu fayl qəbul edilmədi.",
+        "UPLOAD_UNFINISHED": "Bu yükləməni tamamlamaq alınmadı.",
+        "MEDIA_NOT_FOUND": "Bu yükləməni oxumaq alınmadı."
+      }
+    },
+    "video": {
+      "label": "Kampaniya videosu",
+      "hint": "İstəyə bağlıdır. Ən çox {seconds} saniyəlik bir klip, kampaniya səhifəsinin yuxarısında göstərilir. Yalnız kimsə «İzlə» düyməsini basanda oynadılır.",
+      "prompt": "Videonu bura atın — kampaniyaya əlavə ediləcək",
+      "dragPrompt": "Bu videonu yükləmək üçün buraxın",
+      "buttonLabel": "Video seçin",
+      "dropHint": "MP4, MOV və ya WebM, ən çox {megabytes} MB. Video burada 720p keyfiyyətinə çevrilir, orijinal saxlanılmır.",
+      "replace": "Videonu dəyiş",
+      "remove": "Videonu sil",
+      "cancel": "Yükləməni dayandır",
+      "keepOpen": "Video hazır olana qədər bu səhifəni açıq saxlayın — səhifədən çıxsanız və ya redaktorun başqa bölməsinə keçsəniz, yükləmə dayanacaq.",
+      "checkAgain": "Yenidən yoxla",
+      "caption": "Video: {duration}, {size} piksel",
+      "previewLabel": "Kampaniya videosunun önizləməsi",
+      "progressLabel": "Yükləmənin gedişi",
+      "progress": "%{percent}",
+      "stage": {
+        "checking": "Videonun uzunluğu yoxlanılır…",
+        "preparing": "Yükləmə hazırlanır…",
+        "uploading": "Video yüklənir…",
+        "processing": "Video çevrilir. Bir dəqiqəlik klip bir dəqiqəyə qədər çəkə bilər."
+      },
+      "set": "Video hazırdır. Kampaniya səhifəsində kimsə «İzlə» düyməsini basanda oynadılacaq.",
+      "notUsedTitle": "Bu video istifadə olunmadı",
+      "notAttached": "Bu videonu kampaniyaya əlavə etmək alınmadı. Onu yenidən yükləyin.",
+      "unusable": "Bu videonu işlətmək alınmadı.",
+      "tooLong": "Bu videonun uzunluğu: {duration}. Hədd {seconds} saniyədir — videonu qısaldıb yenidən seçin.",
+      "failures": {
+        "TOO_LONG": "Bu video {seconds} saniyədən uzundur. Onu qısaldıb yenidən seçin.",
+        "TOO_LARGE": "Bu faylın həcmi {megabytes} MB həddini keçir. Klipi 1080p və ya daha aşağı keyfiyyətdə ixrac edib yenidən cəhd edin.",
+        "TOO_SMALL": "Bu videonun görüntüsü göstərmək üçün çox kiçikdir. 320 pikseldən başlayan istənilən ölçü yaxşıdır.",
+        "UNSUPPORTED_FORMAT": "Bu fayl platformanın oxuya biləcəyi video deyil. MP4, MOV və WebM işləyir.",
+        "EMPTY": "Fayl boşdur.",
+        "UNREADABLE": "Bu videonu çevirmək alınmadı. Başqa fayl işləməlidir.",
+        "NOT_A_VIDEO": "Bu fayl video deyil. MP4, MOV və ya WebM klip seçin.",
+        "UPLOADS_UNAVAILABLE": "Bu mühitdə video yükləmə aktiv deyil.",
+        "MEDIA_STORAGE_UNREACHABLE": "Video anbarı cavab vermir. Bir azdan yenidən cəhd edin.",
+        "UPLOAD_STILL_PROCESSING": "Bu videonun çevrilməsi həmişəkindən uzun çəkir. Yükləmə saxlanılıb — bir-iki dəqiqədən sonra yenidən yoxlayın.",
+        "UPLOAD_TRANSFER_FAILED": "Video anbara çatmadı. Bağlantını yoxlayıb yenidən cəhd edin.",
         "UPLOAD_REFUSED": "Bu fayl qəbul edilmədi.",
         "UPLOAD_UNFINISHED": "Bu yükləməni tamamlamaq alınmadı.",
         "MEDIA_NOT_FOUND": "Bu yükləməni oxumaq alınmadı."

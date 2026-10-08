@@ -340,6 +340,7 @@ export interface BasicsPanelCopy {
   readonly latePledgesHint: string;
   readonly validation: BasicsValidationCopy;
   readonly cover: CoverImageCopy;
+  readonly video: CampaignVideoCopy;
 }
 
 export function basicsValidationCopyFrom(t: CampaignEditorTranslator): BasicsValidationCopy {
@@ -397,6 +398,7 @@ export function basicsPanelCopyFrom(t: CampaignEditorTranslator): BasicsPanelCop
     latePledgesHint: t('basics.latePledgesHint'),
     validation: basicsValidationCopyFrom(t),
     cover: coverImageCopyFrom(t),
+    video: campaignVideoCopyFrom(t),
   };
 }
 
@@ -1687,6 +1689,97 @@ export interface CoverImageCopy {
   readonly failures: CoverFailureCopy;
 }
 
+/**
+ * The codes a campaign video can be refused with — issue #331.
+ *
+ * The cover's twelve, plus two. `TOO_LONG` is the service's, measured by
+ * ffprobe; `NOT_A_VIDEO` is the field's own, for a file that is not a video before anything is
+ * sent. A separate list rather than the cover's extended, because the same code means a
+ * different sentence here: `TOO_LARGE` is 250 MB, not 20, and `UNSUPPORTED_FORMAT` names
+ * containers rather than image formats.
+ */
+export const VIDEO_FAILURE_CODES = [
+  'TOO_LONG',
+  'TOO_LARGE',
+  'TOO_SMALL',
+  'UNSUPPORTED_FORMAT',
+  'EMPTY',
+  'UNREADABLE',
+  'NOT_A_VIDEO',
+  'UPLOADS_UNAVAILABLE',
+  'MEDIA_STORAGE_UNREACHABLE',
+  'UPLOAD_STILL_PROCESSING',
+  'UPLOAD_TRANSFER_FAILED',
+  'UPLOAD_REFUSED',
+  'UPLOAD_UNFINISHED',
+  'MEDIA_NOT_FOUND',
+] as const;
+
+export type VideoFailureCode = (typeof VIDEO_FAILURE_CODES)[number];
+
+/**
+ * `CampaignVideoField` — the basics tab's second upload.
+ *
+ * Its own words rather than the cover's with "image" swapped out. The two fields fail in
+ * different places — a video is refused for its LENGTH, which an image has none of, and waits a
+ * minute in `processing` where an image waits a second — and a sentence borrowed from the other
+ * field is a sentence that is wrong about one of them.
+ */
+export interface CampaignVideoCopy {
+  readonly label: string;
+  /** Carries `{seconds}`. */
+  readonly hint: string;
+  readonly prompt: string;
+  readonly dragPrompt: string;
+  readonly buttonLabel: string;
+  /** Carries `{megabytes}`. */
+  readonly dropHint: string;
+  readonly replace: string;
+  readonly remove: string;
+  readonly cancel: string;
+  /**
+   * From the first byte until the clip is ready: leaving the page, or switching editor tab,
+   * stops the upload. Said while it can still be avoided rather than after.
+   */
+  readonly keepOpen: string;
+  /** Waits again on an upload that outlasted the poll (`UPLOAD_STILL_PROCESSING`). */
+  readonly checkAgain: string;
+  /** Under the preview. Carries `{duration}` and `{size}`. */
+  readonly caption: string;
+  /** The preview player's accessible name. */
+  readonly previewLabel: string;
+  /** The upload progress bar's accessible name. */
+  readonly progressLabel: string;
+  /**
+   * How far the upload is, as the reader's language writes a percentage. Carries `{percent}`.
+   *
+   * A template rather than `Intl.NumberFormat`: Azerbaijani and Turkish put the sign first, and
+   * the formatter that knows that costs the basics tab more script than the rest of this field.
+   */
+  readonly progress: string;
+  readonly stage: {
+    readonly checking: string;
+    readonly preparing: string;
+    readonly uploading: string;
+    readonly processing: string;
+  };
+  /** The clip is READY. Not "saved": the autosave reports that, and can still be refused. */
+  readonly set: string;
+  readonly notUsedTitle: string;
+  /** The service refused to attach a ready upload: `PROJECT_FIELD_INVALID` on `videoMediaId`. */
+  readonly notAttached: string;
+  readonly unusable: string;
+  /**
+   * A clip this browser measured as too long. Carries `{duration}` and `{seconds}`.
+   *
+   * Separate from `failures.TOO_LONG` because only this side knows how long the clip is, and
+   * "it runs 1:12" is the half of the sentence that tells a creator how much to cut.
+   */
+  readonly tooLong: string;
+  /** `TOO_LONG` carries `{seconds}` and `TOO_LARGE` carries `{megabytes}`. */
+  readonly failures: Readonly<Record<VideoFailureCode, string>>;
+}
+
 /** `NewProjectForm` — the one field that starts a campaign. */
 export interface NewProjectCopy {
   readonly notCreatedTitle: string;
@@ -1746,6 +1839,44 @@ export function coverImageCopyFrom(t: CampaignEditorTranslator): CoverImageCopy 
     },
     failures: record(COVER_FAILURE_CODES, (code) =>
       code === 'TOO_SMALL' ? tpl(`failures.${code}`) : at(`failures.${code}`),
+    ),
+  };
+}
+
+export function campaignVideoCopyFrom(t: CampaignEditorTranslator): CampaignVideoCopy {
+  const at = (key: string) => t(`video.${key}`);
+  const tpl = (key: string) => template(t, `video.${key}`);
+
+  return {
+    label: at('label'),
+    hint: tpl('hint'),
+    prompt: at('prompt'),
+    dragPrompt: at('dragPrompt'),
+    buttonLabel: at('buttonLabel'),
+    dropHint: tpl('dropHint'),
+    replace: at('replace'),
+    remove: at('remove'),
+    cancel: at('cancel'),
+    keepOpen: at('keepOpen'),
+    checkAgain: at('checkAgain'),
+    caption: tpl('caption'),
+    previewLabel: at('previewLabel'),
+    progressLabel: at('progressLabel'),
+    progress: tpl('progress'),
+    stage: {
+      checking: at('stage.checking'),
+      preparing: at('stage.preparing'),
+      uploading: at('stage.uploading'),
+      processing: at('stage.processing'),
+    },
+    set: at('set'),
+    notUsedTitle: at('notUsedTitle'),
+    notAttached: at('notAttached'),
+    unusable: at('unusable'),
+    tooLong: tpl('tooLong'),
+    // `TOO_LONG` quotes the seconds and `TOO_LARGE` the megabytes, so both are templates.
+    failures: record(VIDEO_FAILURE_CODES, (code) =>
+      code === 'TOO_LONG' || code === 'TOO_LARGE' ? tpl(`failures.${code}`) : at(`failures.${code}`),
     ),
   };
 }

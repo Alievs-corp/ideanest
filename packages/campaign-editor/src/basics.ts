@@ -6,7 +6,7 @@ import {
   type AmountRejection,
 } from '@ideanest/money';
 import { fillPlaceholders } from '@ideanest/messages/placeholders';
-import type { CoverImage, ProjectEdit, ProjectPatch } from './contract';
+import type { CampaignVideo, CoverImage, ProjectEdit, ProjectPatch } from './contract';
 import type { BasicsValidationCopy } from './copy';
 
 /**
@@ -87,6 +87,14 @@ export interface BasicsDraft {
   coverImageUrl: string;
   /** Measured and accepted, and therefore sendable. */
   coverImage: CoverImage | null;
+  /**
+   * The campaign's video, once the server has transcoded it — issue #331.
+   *
+   * Only a ready video ever reaches the draft. Choosing a file, checking its length, uploading
+   * it and waiting out the transcode all happen in the field, and none of it is worth saving
+   * until the server has said the clip plays.
+   */
+  video: CampaignVideo | null;
 }
 
 /**
@@ -103,6 +111,7 @@ export type BasicsField =
   | 'durationDays'
   | 'scheduledLaunchAt'
   | 'coverImage'
+  | 'videoMediaId'
   | 'latePledgeEnabled';
 
 export type BasicsErrors = Partial<Record<BasicsField, string>>;
@@ -124,6 +133,7 @@ export const BASICS_FIELDS: readonly BasicsField[] = [
   'durationDays',
   'scheduledLaunchAt',
   'coverImage',
+  'videoMediaId',
   'latePledgeEnabled',
 ];
 
@@ -144,6 +154,7 @@ export function draftFromProject(project: ProjectEdit): BasicsDraft {
     latePledgeEnabled: project.latePledgeEnabled,
     coverImageUrl: project.coverImage?.url ?? '',
     coverImage: project.coverImage ?? null,
+    video: project.video ?? null,
   };
 }
 
@@ -388,5 +399,10 @@ export function patchForField(field: BasicsField, draft: BasicsDraft): ProjectPa
 
     case 'coverImage':
       return { coverImage: draft.coverImage };
+
+    case 'videoMediaId':
+      // The identifier alone: everything else about the clip is the server's measurement.
+      // An explicit `null` is what takes a video down under merge-patch.
+      return { videoMediaId: draft.video?.mediaId ?? null };
   }
 }

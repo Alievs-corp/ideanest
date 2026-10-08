@@ -185,6 +185,16 @@ export function PrelaunchPanel({
     if (patch !== null) autosave.save(patch);
   }
 
+  /**
+   * A cover that arrives after an upload or a measurement, applied to the draft as it is NOW.
+   * `BasicsPanel.changeLater` says why spreading the draft captured at the start would revert
+   * whatever was typed while the image was on its way.
+   */
+  function changeLater(patch: ProjectPatch, update: (current: BasicsDraft) => BasicsDraft): void {
+    setDraft((current) => (current === null ? current : update(current)));
+    autosave.save(patch);
+  }
+
   async function open(): Promise<void> {
     setOpening(true);
     setOpenFailure(null);
@@ -435,7 +445,11 @@ export function PrelaunchPanel({
             error={errors.coverImage}
             onUrlChange={(url) => setDraft({ ...draft, coverImageUrl: url })}
             onAccept={(cover: CoverImage) =>
-              change('coverImage', { ...draft, coverImage: cover, coverImageUrl: cover.url })
+              changeLater({ coverImage: cover }, (current) => ({
+                ...current,
+                coverImage: cover,
+                coverImageUrl: cover.url,
+              }))
             }
             onRemove={() => change('coverImage', { ...draft, coverImage: null, coverImageUrl: '' })}
           />

@@ -119,6 +119,7 @@ const DRAFT_KEYS: Readonly<Record<BasicsField, readonly (keyof BasicsDraft)[]>> 
   scheduledLaunchAt: ['scheduledLaunchAt'],
   latePledgeEnabled: ['latePledgeEnabled'],
   coverImage: ['coverImage', 'coverImageUrl'],
+  videoMediaId: ['video'],
 };
 
 /**

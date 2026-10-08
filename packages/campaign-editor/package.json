@@ -4,7 +4,7 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "description": "The campaign editor's rules with one right answer, shared by apps/web and apps/mobile: the editor's contract types, the basics limits and single-field patches, the story block document's operations and problems, the reward, item and FAQ drafts, the review checklist, the cover minimum, the tab order, the autosave state machine and the editor's copy builders.",
+  "description": "The campaign editor's rules with one right answer, shared by apps/web and apps/mobile: the editor's contract types, the basics limits and single-field patches, the story block document's operations and problems, the reward, item and FAQ drafts, the review checklist, the cover minimum, the video limits, the tab order, the autosave state machine and the editor's copy builders.",
   "exports": {
     "./contract": "./src/contract.ts",
     "./basics": "./src/basics.ts",
@@ -13,6 +13,7 @@
     "./faqs": "./src/faqs.ts",
     "./checklist": "./src/checklist.ts",
     "./cover-image": "./src/cover-image.ts",
+    "./video": "./src/video.ts",
     "./tabs": "./src/tabs.ts",
     "./autosave": "./src/autosave.ts",
     "./copy": "./src/copy.ts"
