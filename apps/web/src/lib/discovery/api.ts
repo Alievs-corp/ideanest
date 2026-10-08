@@ -72,6 +72,8 @@ export interface ProjectCard {
   closingSoon?: boolean;
   /** §4.3's "Extended": extended once and still funding. A card can carry both. */
   extended?: boolean;
+  /** The campaign's category, which colours the card (#335). Absent when it has none. */
+  categorySlug?: string | null;
 }
 
 export interface DiscoveryFeed {

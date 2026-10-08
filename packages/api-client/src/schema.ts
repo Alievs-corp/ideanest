@@ -4496,6 +4496,7 @@ export interface components {
             /** Format: int32 */
             backersCount?: number;
             badge?: string;
+            categorySlug?: string;
             closingSoon?: boolean;
             completionPercent?: string;
             creator?: components["schemas"]["Creator"];

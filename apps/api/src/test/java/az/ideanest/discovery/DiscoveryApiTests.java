@@ -688,6 +688,24 @@ class DiscoveryApiTests extends DiscoveryTestSupport {
     }
 
     @Test
+    @DisplayName("#335: a card carries its category's slug, and omits it when it has none")
+    void cardsCarryTheirCategorySlug() {
+        UUID creator = Campaigns.creator(dataSource, "categorised-creator");
+        Campaigns.seed(dataSource, creator, "tuned").state("LIVE").category("music").insert();
+        Campaigns.seed(dataSource, creator, "unfiled").state("LIVE").insert();
+
+        Map<String, Map<String, Object>> cards = new java.util.HashMap<>();
+        for (Map<String, Object> item : items(feed("?limit=100"))) {
+            cards.put((String) item.get("slug"), item);
+        }
+
+        assertThat(cards.get("tuned")).containsEntry("categorySlug", "music");
+        assertThat(cards.get("unfiled")).doesNotContainKey("categorySlug");
+        assertThat(items(search("?q={q}", "tuned")))
+                .anySatisfy(card -> assertThat(card).containsEntry("categorySlug", "music"));
+    }
+
+    @Test
     @DisplayName("a campaign with no goal, no deadline, and no image still renders as a card")
     void aPrelaunchCardOmitsWhatItDoesNotHave() {
         Map<String, Object> card = items(feed("?status=upcoming")).getFirst();

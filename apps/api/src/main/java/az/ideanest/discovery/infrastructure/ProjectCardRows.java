@@ -38,7 +38,8 @@ final class ProjectCardRows {
             p.goal_amount, p.pledged_amount, p.backers_count,
             p.launched_at, p.deadline, p.extended_until,
             p.cover_image_url, p.cover_image_width, p.cover_image_height,
-            u.name AS creator_name, u.slug AS creator_slug, u.avatar_url AS creator_avatar_url
+            u.name AS creator_name, u.slug AS creator_slug, u.avatar_url AS creator_avatar_url,
+            (SELECT c.slug FROM categories c WHERE c.id = p.category_id) AS category_slug
             """;
 
     /** The {@code FROM} both feeds share, so the join condition has one spelling. */
@@ -91,7 +92,8 @@ final class ProjectCardRows {
                 launchedAt,
                 deadline,
                 ProjectCard.closingSoon(state, deadline, extendedUntil, asOf),
-                "EXTENDED".equals(state));
+                "EXTENDED".equals(state),
+                resultSet.getString("category_slug"));
     }
 
     /**

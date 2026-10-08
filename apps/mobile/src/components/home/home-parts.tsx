@@ -6,7 +6,8 @@ import type { Category } from '../../api/queries';
 import { useT } from '../../lib/i18n';
 import { font, fontSize, lineHeight, radius, size, spacing } from '../../theme';
 import { FadeUp } from '../motion';
-import { accentFor } from '../project-card';
+import { categoryLook } from '@ideanest/discovery/category-look';
+import { categoryGlyph } from '../browse/category-look';
 import { Body, CardTitle, Display, Heading } from '../text';
 import {
   AccentCard,
@@ -35,7 +36,8 @@ import { BLOCK } from '../ui/surface';
  *
  * <h2>Category tiles are accent cards</h2>
  *
- * Each tile is an `AccentCard` whose accent is hashed from the category (`accentFor`), so a
+ * Each tile is an `AccentCard` in the category's accent, with the category's icon, both from
+ * `@ideanest/discovery/category-look` (#335) — the table the web reads too — so a
  * category keeps its colour wherever it is drawn. The accent is decoration: the name and the icon
  * say what the tile is, never the hue.
  */
@@ -149,9 +151,9 @@ function CategoryTile({ category }: { readonly category: Category }) {
           onBlur={onBlur}
           contentStyle={[styles.tileTarget, ring]}
         >
-          <AccentCard accent={accentFor({ id: category.id, slug, title: name })}>
+          <AccentCard accent={categoryLook(slug).accent}>
             <View style={styles.tileTop}>
-              <Icon icon={Glyphs.Category} variant="bulk" size={24} color={ON_ACCENT.primary} />
+              <Icon icon={categoryGlyph(slug)} variant="bulk" size={26} color={ON_ACCENT.primary} />
               <Icon icon={Glyphs.ArrowRight} size={16} color={ON_ACCENT.secondary} />
             </View>
             <CardTitle numberOfLines={2} style={styles.tileName}>

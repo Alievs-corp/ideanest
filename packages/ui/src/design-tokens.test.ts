@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { colors, duration, easing, radius, shadow, STAGGER_STEP } from '@ideanest/design-tokens';
+import {
+  accent,
+  colors,
+  duration,
+  easing,
+  radius,
+  shadow,
+  STAGGER_STEP,
+} from '@ideanest/design-tokens';
 
 /**
  * Guard rail for the rule stated in docs/ui-kit.md: every colour comes from the
@@ -113,6 +121,11 @@ function counterpart(name: string): unknown {
   const lookup = (object: object, key: string) => (object as Record<string, unknown>)[key];
 
   if (name === 'stagger-step') return `${STAGGER_STEP}ms`;
+  if (name.startsWith('accent-')) {
+    const [hue, glow] = name.slice('accent-'.length).split('-');
+    const tone = lookup(accent, hue ?? '') as { surface: string; glow: string } | undefined;
+    return glow === 'glow' ? tone?.glow : tone?.surface;
+  }
   if (name.startsWith('radius-')) {
     const value = lookup(radius, name.slice('radius-'.length));
     return value === undefined ? undefined : `${String(value)}px`;

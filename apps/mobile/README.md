@@ -155,7 +155,7 @@ design starts.
   `<Icon icon={Glyphs.Heart} variant="bulk" />`; to add one, add its name to the
   script and run `node scripts/generate-icons.mjs`.
 - **Accent surfaces.** `accent.sun`, `accent.mint` and `accent.sky` from
-  `src/theme` (`mobileAccent` in `@ideanest/design-tokens`), each with its own
+  `src/theme` (`accent` in `@ideanest/design-tokens`), each with its own
   text token and glow. Surfaces for cards only; they carry no meaning.
 - **Feedback without toasts.** `announce()` is the native `aria-live`, and
   `haptics` is exactly the events in §7's table (the tab bar's Create button, a

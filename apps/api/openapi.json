@@ -11275,6 +11275,9 @@
           "badge" : {
             "type" : "string"
           },
+          "categorySlug" : {
+            "type" : "string"
+          },
           "closingSoon" : {
             "type" : "boolean"
           },

@@ -5,6 +5,7 @@ import Animated from 'react-native-reanimated';
 import { Glyphs } from '../icons';
 import { StyleSheet, Text, View } from 'react-native';
 import type { DiscoveryStatus } from '@ideanest/discovery/vocabulary';
+import { campaignAccent, hashAccent } from '@ideanest/discovery/category-look';
 import { formatMoney } from '@ideanest/money';
 import { fillNodes } from '@ideanest/messages/placeholders';
 import type { Card } from '../api/queries';
@@ -54,8 +55,9 @@ import {
  * <h2>An accent card, and lime is still only the urgency chip</h2>
  *
  * The card is an `AccentCard` (`mobile-design` skill §2, §4): sun, mint or sky as the whole
- * surface with its own glow, picked from the campaign's id by {@link accentFor} so a campaign
- * keeps its colour wherever it is drawn. The accent carries no meaning. In the last two days of a
+ * surface with its own glow, its category's accent from `@ideanest/discovery/category-look`
+ * (#335) — the table the web reads too, so a games campaign is the same colour on both. A
+ * campaign with no category hashes its id instead. The accent carries no meaning. In the last two days of a
  * live campaign a lime chip with near-black text says "hurry" — the one lime element on the card;
  * a funded bar and a successful badge are `--success`, closing soon is `--warning`. Every tag is an
  * icon plus a word, so no colour carries a meaning alone, and the text reads in the accent's
@@ -75,19 +77,12 @@ import {
 /** Two days or fewer left — what §8.1 calls "closing within 48 hours". */
 const URGENT_DAYS = 2;
 
-const ACCENTS: readonly Accent[] = ['sun', 'mint', 'sky'];
-
 /**
- * The card's accent, hashed from its id (or slug): the same campaign is the same colour on every
- * screen. A decoration, never a meaning.
+ * An accent hashed from an id (or slug): the same collection is the same colour on every screen.
+ * A decoration, never a meaning. Campaigns take their category's instead (`campaignAccent`).
  */
-export function accentFor(card: Pick<Card, 'id' | 'slug' | 'title'>): Accent {
-  const key = card.id ?? card.slug ?? card.title ?? '';
-  let hash = 0;
-  for (let index = 0; index < key.length; index += 1) {
-    hash = (hash * 31 + key.charCodeAt(index)) | 0;
-  }
-  return ACCENTS[Math.abs(hash) % ACCENTS.length] ?? 'sun';
+export function accentFor(item: { readonly id?: string; readonly slug?: string; readonly title?: string }): Accent {
+  return hashAccent(item.id ?? item.slug ?? item.title ?? '');
 }
 
 /** The near-black tones every accent takes for its text and inline icons. */
@@ -216,7 +211,7 @@ export function ProjectCard({ card, priority = false }: ProjectCardProps) {
         contentStyle={[styles.target, ring.ring]}
         testID="campaign-card"
       >
-        <AccentCard accent={accentFor(card)}>
+        <AccentCard accent={campaignAccent(card)}>
           {/*
             The 16:9 box is reserved whether or not there is a cover, so every card in a list is the
             same height before anything decodes. The cover is decorative: the card's name already

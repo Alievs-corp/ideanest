@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { colors } from '@ideanest/design-tokens';
+import { accent, colors } from '@ideanest/design-tokens';
 
 /**
  * Contrast, as arithmetic rather than as a promise — issue 129.
@@ -141,6 +141,38 @@ describe('contrast', () => {
   });
 
   /* -----------------------------------------------------------------------
+   * The accent surfaces — campaign cards and category tiles, issue 335
+   * -------------------------------------------------------------------- */
+
+  const ACCENTS = Object.entries(accent).map(([name, tone]) => [name, tone.surface] as const);
+
+  /**
+   * The web card prints its words at full near-black and at 72%, and nothing lighter: the small
+   * print under the bar is body text, so the second tone has to clear 4.5:1 on the darkest accent.
+   */
+  it.each(ACCENTS)('reads near-black text at full and 72%% on %s', (_name, surface) => {
+    expect(ratio(colors.textOnAccent, surface)).toBeGreaterThanOrEqual(BODY);
+    expect(ratio(onAccent(0.72), surface)).toBeGreaterThanOrEqual(BODY);
+  });
+
+  /** `Tag variant="onAccent"`: near-black words on a 10% black tint over the accent. */
+  it.each(ACCENTS)('reads the onAccent tag on %s', (_name, surface) => {
+    const tinted = composite(parse(onAccent(0.1)), parse(surface));
+    const background = `rgba(${tinted.red}, ${tinted.green}, ${tinted.blue}, 1)`;
+    expect(ratio(colors.textOnAccent, background)).toBeGreaterThanOrEqual(BODY);
+  });
+
+  /** `data-on-accent` turns the ring near-black; lime on sun or mint is under 3:1. */
+  it.each(ACCENTS)('draws a visible focus ring on %s once it turns near-black', (_name, surface) => {
+    expect(ratio(colors.textOnAccent, surface)).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+  });
+
+  /** The progress track stays `--surface-3` on an accent card, and has to read as a track. */
+  it.each(ACCENTS)('draws the progress track visibly on %s', (_name, surface) => {
+    expect(ratio(colors.surface3, surface)).toBeGreaterThanOrEqual(LARGE_OR_NON_TEXT);
+  });
+
+  /* -----------------------------------------------------------------------
    * Danger as a fill — issue 229
    * -------------------------------------------------------------------- */
 
@@ -217,6 +249,12 @@ interface Rgba {
   readonly green: number;
   readonly blue: number;
   readonly alpha: number;
+}
+
+/** `--text-on-accent` at an opacity, the way `text-on-accent/72` paints it. */
+function onAccent(alpha: number): string {
+  const { red, green, blue } = parse(colors.textOnAccent);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 /** `#RRGGBB` and `rgba(r,g,b,a)`, which is every shape the token file uses. */

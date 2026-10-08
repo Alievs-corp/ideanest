@@ -57,6 +57,23 @@ describe('ProjectCard', () => {
     expect(screen.getByText('Live')).toBeInTheDocument();
   });
 
+  it('wears its category accent, with the near-black focus ring that goes with it (#335)', () => {
+    const { container } = renderCard({ categorySlug: 'games' });
+    const card = container.querySelector('article');
+
+    expect(card).toHaveClass('bg-accent-mint', 'text-on-accent');
+    expect(card).toHaveAttribute('data-on-accent');
+  });
+
+  it('keeps one accent per campaign when it has no category', () => {
+    const first = renderCard({ categorySlug: null }).container.querySelector('article')?.className;
+    cleanup();
+    const second = renderCard({ categorySlug: undefined }).container.querySelector('article')?.className;
+
+    expect(first).toMatch(/bg-accent-(sun|mint|sky)/);
+    expect(second).toBe(first);
+  });
+
   it('links to the campaign at the address the API uses', () => {
     renderCard();
 

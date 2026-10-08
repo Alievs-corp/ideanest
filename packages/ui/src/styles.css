@@ -28,7 +28,12 @@
   --color-info: var(--info);
   --color-hot: var(--hot);
 
+  --color-accent-sun: var(--accent-sun);
+  --color-accent-mint: var(--accent-mint);
+  --color-accent-sky: var(--accent-sky);
+
   --color-on-lime: var(--text-on-lime);
+  --color-on-accent: var(--text-on-accent);
   --color-on-white: var(--text-on-white);
   --color-on-danger: var(--text-on-danger);
   --color-reading: var(--text-reading);

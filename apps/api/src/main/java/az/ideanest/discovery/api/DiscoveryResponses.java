@@ -50,6 +50,8 @@ public final class DiscoveryResponses {
      * @param closingSoon §4.3's "Closing soon" (IDN-EXT-01): in the seven days after the first
      *     deadline, or fourteen days or fewer from the end of funding
      * @param extended §4.3's "Extended": the campaign was extended and is still funding
+     * @param categorySlug the campaign's category, absent when it has none. The clients colour
+     *     and badge the card by it (#335)
      */
     public record Card(
             String id,
@@ -68,7 +70,8 @@ public final class DiscoveryResponses {
             Instant launchedAt,
             Instant deadline,
             boolean closingSoon,
-            boolean extended) {
+            boolean extended,
+            String categorySlug) {
     }
 
     public record Creator(String name, String slug, String avatarUrl) {
@@ -170,7 +173,8 @@ public final class DiscoveryResponses {
                 card.launchedAt(),
                 card.deadline(),
                 card.closingSoon(),
-                card.extended());
+                card.extended(),
+                card.categorySlug());
     }
 
     public static Facets facets(FacetCounts counts) {

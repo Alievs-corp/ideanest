@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
+import { campaignAccent } from '@ideanest/discovery/category-look';
+import { ACCENT_SURFACE } from '../browse/accent-surface';
 import { DISCOVERY_CARD_SIZES } from '../../lib/images/sizes';
 import { canOptimise } from '../../lib/images/source';
 import { formatMoney } from '../../lib/money';
@@ -31,14 +33,20 @@ import { pluralise } from '../../lib/i18n/plurals';
  * appears is the WIDTH of the progress track, which is a geometry in pixels and
  * not an amount anybody is owed.
  *
+ * THE CARD WEARS ITS CATEGORY'S ACCENT (#335). Sun, mint or sky, from
+ * `@ideanest/discovery/category-look`, the table the app reads too — so a games
+ * campaign is the same colour in a browser and on a phone. The accent is
+ * decoration and never a meaning: the text on it is `--text-on-accent`, every
+ * tag is the near-black `onAccent` skin with an icon and a word, and the focus
+ * ring turns near-black under `data-on-accent`. docs/ui-kit.md §8.2.
+ *
  * LIME IS THE URGENCY BADGE, NOT THE CARD. docs/ui-kit.md §8.1 maps "closing
  * within 48 hours" to a lime card, and §1.1 says exactly one card in a row is
  * lime because lime is a state rather than decoration. In a feed those two
  * collide: sorted by ending-soon, forty cards qualify, and forty lime cards is
  * the decoration §1.1 forbids — the signal means nothing when everything
- * carries it. So the surface stays `--surface-2` and the urgency is a lime PILL
- * on it, which is still "a lime surface with near-black text" (§2.3) and still
- * scarce inside a single card. The decision is recorded in docs/ui-kit.md §8.2.
+ * carries it. So the urgency is a lime PILL on the card, which is still "a lime
+ * surface with near-black text" (§2.3) and still scarce inside a single card.
  *
  * FUNDED IS `--success`, NEVER LIME. `ProgressBar` switches at 100% on its own;
  * the figure beside it is text, because a bar that only changes colour has said
@@ -70,35 +78,30 @@ import { pluralise } from '../../lib/i18n/plurals';
 /** Under two days left, which is what §8.1 calls "closing within 48 hours". */
 const URGENT_DAYS = 2;
 
-interface BadgeSpec {
-  readonly icon: ReactNode;
-  readonly variant: 'default' | 'success' | 'warning' | 'danger';
-}
-
 /**
- * The status words' icon and hue. The words themselves are `discovery.card.badges`.
+ * The status words' icons. The words themselves are `discovery.card.badges`.
  *
- * `successful` is `--success`: reaching the goal is the achievement `--success` exists for. It is
- * never lime — a backer who reads lime as "done" has been told the opposite of the truth (§2.4).
+ * On an accent card every tag is the near-black `onAccent` skin: `--success` green on mint and
+ * `--warning` amber on sun are both under 2:1, illegible as text. The icon and the word carry the
+ * status, which is what §9.2 asks of them anyway — a tick for successful, never lime (§2.4).
  * `extended` is a filter word the service never sends as a badge (an extended campaign badges as
  * `live`); it is here because the record is keyed by every status, and it matches the tag below.
  */
-const BADGES: Record<DiscoveryStatus, BadgeSpec> = {
-  upcoming: { icon: <CalendarClock className="size-3" />, variant: 'default' },
-  live: { icon: <CircleDot className="size-3" />, variant: 'default' },
-  extended: { icon: <CalendarPlus className="size-3" />, variant: 'default' },
-  successful: { icon: <CircleCheck className="size-3" />, variant: 'success' },
+const BADGES: Record<DiscoveryStatus, ReactNode> = {
+  upcoming: <CalendarClock className="size-3" />,
+  live: <CircleDot className="size-3" />,
+  extended: <CalendarPlus className="size-3" />,
+  successful: <CircleCheck className="size-3" />,
 };
 
 /**
  * IDN-EXT-01's two catalogue labels (#37), drawn beside the badge. A card can carry both.
  *
- * "Closing soon" is `--warning`: a clock running, which is what warning means here — and not
- * lime, which stays the one "hurry" element on the card, the last-48-hours countdown. Each is an
- * icon plus a word, so colour never carries the meaning alone.
+ * "Closing soon" is an hourglass, not lime, which stays the one "hurry" element on the card — the
+ * last-48-hours countdown. Each is an icon plus a word, so colour never carries the meaning alone.
  */
-const CLOSING_SOON: BadgeSpec = { icon: <Hourglass className="size-3" />, variant: 'warning' };
-const EXTENDED: BadgeSpec = { icon: <CalendarPlus className="size-3" />, variant: 'default' };
+const CLOSING_SOON: ReactNode = <Hourglass className="size-3" />;
+const EXTENDED: ReactNode = <CalendarPlus className="size-3" />;
 
 /**
  * The completion figure, read as a decimal and never as a number.
@@ -152,6 +155,7 @@ export interface ProjectCardProps {
 export function ProjectCard({ card, priority = false, copy, locale }: ProjectCardProps) {
   const completion = completionOf(card);
   const badge = card.badge == null ? null : BADGES[card.badge];
+  const accent = campaignAccent(card);
   const days = card.daysLeft ?? null;
 
   /*
@@ -172,10 +176,13 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
   const href = `/projects/${encodeURIComponent(card.creatorSlug)}/${encodeURIComponent(card.slug)}`;
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-white/8 bg-surface-2 transition-colors duration-300 ease-in-out hover:bg-surface-3">
+    <article
+      data-on-accent=""
+      className={`group relative flex flex-col rounded-xl p-3 text-on-accent ${ACCENT_SURFACE[accent]}`}
+    >
       {/*
-        Full-bleed at the top with radius on the upper corners only — the
-        article clips, so the frame itself is square (docs/ui-kit.md §8.2).
+        Inset in the accent card with its own rounded corners, as the app
+        draws it (docs/ui-kit.md §8.2).
 
         THE BOX IS RESERVED WHETHER OR NOT THERE IS A COVER. `MediaFrame` sets
         the 16:9 crop before anything loads, so a card with a cover and a card
@@ -192,7 +199,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
         same campaign, and there is nothing this component could invent that
         the creator did not write.
       */}
-      <MediaFrame ratio="16/9">
+      <MediaFrame ratio="16/9" radius="lg">
         {card.image != null && (
           <Image
             src={card.image.url}
@@ -213,30 +220,30 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
         )}
       </MediaFrame>
 
-      <div className="flex flex-1 flex-col gap-3 p-5">
+      <div className="flex flex-1 flex-col gap-3 px-2 pt-4 pb-2">
         <div className="flex flex-wrap items-center gap-2">
           {badge !== null && (
-            <Tag variant={badge.variant} className="gap-1.5">
+            <Tag variant="onAccent" className="gap-1.5">
               <span aria-hidden="true" className="flex items-center">
-                {badge.icon}
+                {badge}
               </span>
               {copy.badges[card.badge as string]}
             </Tag>
           )}
 
           {card.extended === true && (
-            <Tag variant={EXTENDED.variant} className="gap-1.5">
+            <Tag variant="onAccent" className="gap-1.5">
               <span aria-hidden="true" className="flex items-center">
-                {EXTENDED.icon}
+                {EXTENDED}
               </span>
               {copy.badges['extended']}
             </Tag>
           )}
 
           {card.closingSoon === true && (
-            <Tag variant={CLOSING_SOON.variant} className="gap-1.5">
+            <Tag variant="onAccent" className="gap-1.5">
               <span aria-hidden="true" className="flex items-center">
-                {CLOSING_SOON.icon}
+                {CLOSING_SOON}
               </span>
               {copy.badges['closing_soon']}
             </Tag>
@@ -260,21 +267,24 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           )}
         </div>
 
-        <h3 className="text-lg font-medium tracking-[-0.02em] text-white">
+        <h3 className="text-lg font-medium tracking-[-0.02em] text-on-accent">
           {/*
             The whole card is reachable through this one link rather than
             through three — a stretched anchor keeps the pointer target the size
             of the card while leaving exactly one tab stop and one announcement
             per campaign.
           */}
-          <Link href={href} className="after:absolute after:inset-0 after:content-['']">
+          <Link
+            href={href}
+            className="rounded-sm group-hover:underline group-hover:underline-offset-4 after:absolute after:inset-0 after:rounded-xl after:content-['']"
+          >
             {card.title}
           </Link>
         </h3>
 
-        <p className="text-sm text-white/64">
+        <p className="text-sm text-on-accent/72">
           {fillNodes(copy.by, {
-            creator: <span className="text-white/80">{card.creator.name}</span>,
+            creator: <span className="font-medium text-on-accent">{card.creator.name}</span>,
           })}
         </p>
 
@@ -292,10 +302,10 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               label={fillPlaceholders(copy.progressLabel, { percent: completion.toFixed(0) })}
             />
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
-              <span className="font-medium text-white tabular-nums">
+              <span className="font-medium text-on-accent tabular-nums">
                 {formatMoney(card.pledged)}
               </span>
-              <span className="text-white/64 tabular-nums">
+              <span className="text-on-accent/72 tabular-nums">
                 {fillPlaceholders(copy.funded, { percent: completion.toFixed(0) })}
               </span>
             </div>
@@ -305,18 +315,18 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               track: a mark at 80% would be a second meaning the bar carries in colour and
               position alone (ui-kit §9.2), and the discovery budget allows no motion to explain it.
             */}
-            <p className="text-xs text-white/64">{copy.rule}</p>
+            <p className="text-xs text-on-accent/72">{copy.rule}</p>
             {card.goal != null && (
-              <p className="text-xs text-white/40 tabular-nums">
+              <p className="text-xs text-on-accent/72 tabular-nums">
                 {fillPlaceholders(copy.ofGoal, { amount: formatMoney(card.goal) })}
               </p>
             )}
           </div>
         ) : (
-          <p className="mt-auto pt-2 text-sm text-white/40">{copy.notOpen}</p>
+          <p className="mt-auto pt-2 text-sm text-on-accent/72">{copy.notOpen}</p>
         )}
 
-        <div className="flex items-center gap-4 text-xs text-white/40">
+        <div className="flex items-center gap-4 text-xs text-on-accent/72">
           <span className="inline-flex items-center gap-1.5">
             <Users aria-hidden="true" className="size-3.5" />
             <span className="tabular-nums">

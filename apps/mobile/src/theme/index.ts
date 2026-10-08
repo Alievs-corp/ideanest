@@ -1,13 +1,13 @@
 import {
+  accent,
   colors,
   duration,
   easing,
-  mobileAccent,
   radius,
   shadow,
   spacing,
   staggerDelay,
-  type MobileAccent,
+  type AccentName,
 } from '@ideanest/design-tokens';
 
 /**
@@ -40,11 +40,10 @@ import {
  * screens import. `docs/architecture.md` §14.3 carries the same note.
  */
 
-export { colors, duration, easing, radius, shadow, spacing, staggerDelay };
+export { accent, colors, duration, easing, radius, shadow, spacing, staggerDelay };
 
 /** Card accent surfaces — `mobile-design` skill §4. A surface with its own text token, never text. */
-export const accent = mobileAccent;
-export type Accent = MobileAccent;
+export type Accent = AccentName;
 
 /**
  * A token colour at a given opacity — the 12% tag tints, the black/64 dialog scrim, `white/24`.

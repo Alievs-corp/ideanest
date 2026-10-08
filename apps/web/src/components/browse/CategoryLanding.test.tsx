@@ -81,6 +81,15 @@ describe('a category page', () => {
     expect(within(trail).getByRole('link', { name: 'Categories' })).toHaveAttribute('href', '/en/categories');
   });
 
+  it('marks the heading with the category icon on its accent, hidden from assistive technology (#335)', async () => {
+    await renderLanding(<CategoryLanding category={GAMES} campaigns={[CARD]} hasMore={false} />);
+
+    const heading = screen.getByRole('heading', { level: 1, name: 'Games' });
+    const badge = heading.parentElement?.querySelector('[aria-hidden="true"]');
+    expect(badge).toHaveClass('bg-accent-mint', 'text-on-accent');
+    expect(badge?.querySelector('svg')).not.toBeNull();
+  });
+
   it('links every subcategory, which is the only path a crawler has to them', async () => {
     await renderLanding(<CategoryLanding category={GAMES} campaigns={[CARD]} hasMore={false} />);
 
