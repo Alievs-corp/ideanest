@@ -49,6 +49,38 @@ describe('readCampaignPage', () => {
     expect(page?.completionPercent).toBeNull();
     expect(page?.daysLeft).toBe(0);
   });
+
+  it('reads the video a player needs, and no video from one that lacks any of it (#331)', () => {
+    const video = {
+      mediaId: '7d0c5b8e-0f6e-4c43-9a43-2a3f0c8a1b11',
+      url: 'https://media.example/v.mp4',
+      posterUrl: 'https://media.example/v.jpg',
+      width: 1280,
+      height: 720,
+      durationMs: 45_200,
+      blurDataUrl: 'data:image/webp;base64,AAAA',
+    };
+    expect(readCampaignPage({ ...RESPONSE, video }, 'aysel', NOW)?.video).toEqual({
+      url: video.url,
+      posterUrl: video.posterUrl,
+      width: 1280,
+      height: 720,
+      durationMs: 45_200,
+      blurDataUrl: video.blurDataUrl,
+    });
+    expect(readCampaignPage(RESPONSE, 'aysel', NOW)?.video).toBeNull();
+    for (const broken of [
+      { ...video, url: ' ' },
+      { ...video, posterUrl: undefined },
+      { ...video, width: 0 },
+      { ...video, durationMs: undefined },
+    ]) {
+      expect(readCampaignPage({ ...RESPONSE, video: broken }, 'aysel', NOW)?.video).toBeNull();
+    }
+    expect(
+      readCampaignPage({ ...RESPONSE, video: { ...video, blurDataUrl: undefined } }, 'aysel', NOW)?.video?.blurDataUrl,
+    ).toBeNull();
+  });
 });
 
 describe('tiersOf', () => {

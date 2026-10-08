@@ -46,10 +46,12 @@ import { DateTimeField } from './date-time-field';
 import { useEditor } from './editor-context';
 import { MoneyField } from './money-field';
 import { useEditorChromeCopy, useEditorTranslators } from './translator';
+import { VideoField } from './video-field';
 
 /**
  * The Basics tab — the web's `BasicsPanel` (#162): title, summary, category and subcategory,
- * goal, currency, duration, scheduled launch, late pledges, and the cover image, in one column.
+ * goal, currency, duration, scheduled launch, late pledges, the cover image and the campaign
+ * video (#331), in one column.
  *
  * <p>There is no save button. Every change queues exactly ONE field's patch (`patchForField`) on
  * the editor's shared autosave — sent 800ms after the last change, or at once when the field
@@ -395,6 +397,9 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
           }
           onRemove={() => change('coverImage', { ...draft, coverImage: null, coverImageUrl: '' }, true)}
         />
+
+        {/* The upload is the editor's, so it carries on while another tab is open (#331). */}
+        <VideoField upload={editor.video} disabled={readOnly} />
       </View>
     </ScrollView>
   );

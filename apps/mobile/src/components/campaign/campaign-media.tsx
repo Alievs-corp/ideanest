@@ -1,41 +1,69 @@
-import { useEffect, type ReactNode } from 'react';
-import { StyleSheet } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
-import type { CampaignCover } from '../../lib/campaign-page';
-import { colors, radius } from '../../theme';
+import { Glyphs } from '../../icons';
+import type { CampaignCover, CampaignPageVideo } from '../../lib/campaign-page';
+import { useT } from '../../lib/i18n';
+import { clockDuration, wholeSeconds } from '../../lib/media/duration';
+import { colors, radius, spacing, tint } from '../../theme';
+import { Meta } from '../text';
 import {
+  Icon,
   MediaFrame,
+  PressableScale,
   SharedTarget,
   useSharedSnapshot,
   useSharedTargetDisplay,
   type SharedSnapshot,
 } from '../ui';
+import { CampaignVideoPlayer } from './campaign-video-player';
 
 /**
- * Block 1 — the web's `CampaignMedia`: the cover in a 16:9 box with the large radius.
+ * Block 1 — the web's `CampaignMedia`: the cover in a 16:9 box with the large radius, and the
+ * campaign's video in the same box when it has one (#331).
  *
  * <p><strong>The box is reserved whether or not there is a cover</strong>, so the title below it
  * does not jump when the photograph decodes, and a campaign without one keeps the page's shape
  * instead of opening on its title. Asked for at high priority: it is the largest thing on the
  * first screen.
  *
- * <p>No play affordance and no "has a video" badge: no response carries a video, and the web's
- * page never passes one either (#155, "Story video handling").
+ * <p>Decorative to a screen reader when there is no video — the title right under it names the
+ * campaign — and drawn without a fade of its own: the frame rises with the page's first screenful
+ * (`FadeUp`, in the screen), and a second fade on the picture inside it would be the same motion
+ * twice.
  *
- * <p>Decorative to a screen reader — the title right under it names the campaign — and drawn
- * without a fade of its own: the frame rises with the page's first screenful (`FadeUp`, in the
- * screen), and a second fade on the picture inside it would be the same motion twice.
+ * <h2>The video</h2>
+ *
+ * The cover stays the picture (it is what the card's cover flies to), or the video's poster when
+ * there is no cover, with a play button over it and the clip's length in the corner. The whole box
+ * is the button, named "Play the campaign video, 45 seconds long". Nothing plays until it is
+ * pressed — never on arrival, and never on a phone that asked for less motion — and the player is
+ * not even mounted before then (`CampaignVideoPlayer`), so a page that is only scrolled past opens
+ * no stream. Pressed, the native player takes the box with its own controls and fullscreen, and
+ * screen-reader focus moves onto it.
+ *
+ * <p>`active` is the screen's own (`focused && appActive`): a push to checkout or sign-in leaves
+ * this screen mounted underneath, and a video still playing there would be heard over the next
+ * screen. It pauses the moment the page stops being the one in front; it does not resume on its
+ * own when the reader comes back.
  */
 export function CampaignMedia({
   cover,
+  video = null,
+  active = true,
   tag,
 }: {
   readonly cover: CampaignCover | null;
+  readonly video?: CampaignPageVideo | null;
+  /** Whether the page is the one in front, with the app in the foreground. */
+  readonly active?: boolean;
   readonly tag: string;
 }) {
   return (
     <SharedTarget tag={tag} waitForDisplay>
-      <CoverFrame uri={cover?.url ?? null} />
+      <CoverFrame uri={cover?.url ?? video?.posterUrl ?? null}>
+        {video === null ? null : <VideoLayer video={video} active={active} />}
+      </CoverFrame>
     </SharedTarget>
   );
 }
@@ -70,7 +98,7 @@ export function ArrivingCover({
   );
 }
 
-function CoverFrame({ uri }: { readonly uri: string | null }) {
+function CoverFrame({ uri, children }: { readonly uri: string | null; readonly children?: ReactNode }) {
   const displayed = useSharedTargetDisplay();
   useEffect(() => {
     if (uri === null) displayed?.();
@@ -91,10 +119,59 @@ function CoverFrame({ uri }: { readonly uri: string | null }) {
           onDisplay={displayed}
         />
       )}
+      {children}
     </MediaFrame>
+  );
+}
+
+/** The play button over the picture, and the player once it has been pressed. */
+function VideoLayer({ video, active }: { readonly video: CampaignPageVideo; readonly active: boolean }) {
+  const t = useT('mobile.campaign.video');
+  const [playing, setPlaying] = useState(false);
+
+  if (playing) {
+    return (
+      <CampaignVideoPlayer url={video.url} label={t('player')} active={active} focusOnMount style={styles.fill} />
+    );
+  }
+  return (
+    <PressableScale
+      style={styles.fill}
+      contentStyle={styles.press}
+      accessibilityRole="button"
+      accessibilityLabel={t('play', { seconds: wholeSeconds(video.durationMs) })}
+      onPress={() => setPlaying(true)}
+      testID="campaign-video-play"
+    >
+      <View style={styles.button}>
+        <Icon icon={Glyphs.Play} variant="bulk" size={20} color={colors.textOnWhite} />
+      </View>
+      <View style={styles.length}>
+        <Meta tone="primary" testID="campaign-video-length">
+          {clockDuration(video.durationMs)}
+        </Meta>
+      </View>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   fill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  press: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  button: {
+    width: spacing[16],
+    height: spacing[16],
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.whiteSurface,
+  },
+  length: {
+    position: 'absolute',
+    right: spacing[3],
+    bottom: spacing[3],
+    paddingHorizontal: spacing[2],
+    borderRadius: radius.full,
+    backgroundColor: tint(colors.black, 0.64),
+  },
 });

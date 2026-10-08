@@ -92,6 +92,7 @@ const ICONS = [
   'Notification',
   'NotificationBing',
   'People',
+  'Play',
   'ProfileCircle',
   'QuoteUp',
   'Receipt',

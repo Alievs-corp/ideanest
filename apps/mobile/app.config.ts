@@ -665,6 +665,15 @@ const config: ExpoConfig = {
       },
     ],
     [
+      /*
+       * The campaign video's player (#331). Both options are stated, off, so the build carries no
+       * `audio` background mode and no media-playback foreground service: a campaign video plays
+       * in the page, in the foreground, and stops when the reader leaves it.
+       */
+      'expo-video',
+      { supportsBackgroundPlayback: false, supportsPictureInPicture: false },
+    ],
+    [
       'expo-local-authentication',
       {
         /**

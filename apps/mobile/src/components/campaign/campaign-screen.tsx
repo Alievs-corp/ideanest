@@ -408,10 +408,10 @@ function CampaignView({ campaign, offline, stale, now, refetchPage }: CampaignVi
           of the flight would be the same motion twice (`SharedTransition`).
         */}
         {arriving ? (
-          <CampaignMedia cover={campaign.coverImage} tag={tag} />
+          <CampaignMedia cover={campaign.coverImage} video={campaign.video} active={active} tag={tag} />
         ) : (
           <FadeUp index={0}>
-            <CampaignMedia cover={campaign.coverImage} tag={tag} />
+            <CampaignMedia cover={campaign.coverImage} video={campaign.video} active={active} tag={tag} />
           </FadeUp>
         )}
         <FadeUp index={1}>

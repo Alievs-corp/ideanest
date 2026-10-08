@@ -22,6 +22,7 @@ import { patchProject, useProjectEdit } from './api';
 import { describeSaveFailure } from './save-failure';
 import { withUnsaved } from './seed';
 import { useAutosave, type Autosave } from './use-autosave';
+import { useVideoUpload, videoRefusalOf, type VideoUpload } from './use-video-upload';
 
 /**
  * The editor's shared state — one per open project, provided by the frame
@@ -82,6 +83,11 @@ export interface EditorContextValue {
   readonly apply: (project: ProjectEdit) => void;
   readonly reload: () => void;
   readonly store: KeyValueStore;
+  /**
+   * The campaign video's upload (#331), held here rather than by the Basics tab's field so that
+   * switching tabs does not abandon a transfer and transcode that take minutes.
+   */
+  readonly video: VideoUpload;
 }
 
 const EditorContext = createContext<EditorContextValue | null>(null);
@@ -205,6 +211,33 @@ export function EditorProvider({
     if (storyUnreadable && offeredStory) dropUnsent(['story']);
   }, [storyUnreadable, offeredStory, dropUnsent]);
 
+  /*
+   * The campaign video: attached through this autosave once the service says it plays. A
+   * `videoMediaId` the service refused is taken back out of the queue and the stored offer, or
+   * every later save would carry it and be refused with it.
+   */
+  const saveNow = autosave.save;
+  const flushNow = autosave.flush;
+  const dropQueued = autosave.dropQueued;
+  const saveVideo = useCallback(
+    (patch: { readonly videoMediaId: string | null }) => {
+      saveNow(patch);
+      flushNow();
+    },
+    [saveNow, flushNow],
+  );
+  const forgetVideo = useCallback(() => {
+    dropQueued(['videoMediaId']);
+    dropUnsent(['videoMediaId']);
+  }, [dropQueued, dropUnsent]);
+  const video = useVideoUpload({
+    saved: project?.video ?? null,
+    save: saveVideo,
+    refusal: videoRefusalOf(autosave.failure),
+    forget: forgetVideo,
+    pending: autosave.unsaved !== null && 'videoMediaId' in autosave.unsaved,
+  });
+
   const unsaved = autosave.unsaved;
   const seed = useMemo(() => (project === null ? null : withUnsaved(project, unsaved)), [project, unsaved]);
   const refetch = query.refetch;
@@ -227,8 +260,9 @@ export function EditorProvider({
       apply,
       reload,
       store,
+      video,
     }),
-    [projectId, project, load, query, online, fresh, canSeed, seed, autosave, sendOffered, revision, apply, reload, store],
+    [projectId, project, load, query, online, fresh, canSeed, seed, autosave, sendOffered, revision, apply, reload, store, video],
   );
 
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;

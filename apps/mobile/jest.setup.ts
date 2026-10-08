@@ -378,6 +378,20 @@ jest.mock('expo-image-picker', () => {
       Compatible: 'compatible',
       Current: 'current',
     },
+    // SDK 57's numeric enum, so the campaign video's picker options (#331) read as on a device.
+    VideoExportPreset: {
+      Passthrough: 0,
+      LowQuality: 1,
+      MediumQuality: 2,
+      HighestQuality: 3,
+      H264_640x480: 4,
+      H264_960x540: 5,
+      H264_1280x720: 6,
+      H264_1920x1080: 7,
+      H264_3840x2160: 8,
+      HEVC_1920x1080: 9,
+      HEVC_3840x2160: 10,
+    },
     launchImageLibraryAsync: jest.fn(async () => next),
     launchCameraAsync: jest.fn(async () => next),
     getCameraPermissionsAsync: jest.fn(async () => ({ granted: true, status: 'granted' })),
@@ -393,6 +407,38 @@ jest.mock('expo-image-picker', () => {
     __reset: () => {
       next = { canceled: true, assets: null };
     },
+  };
+});
+
+/**
+ * The campaign video's player (#331). `VideoView` is a native view and `useVideoPlayer` builds a
+ * native player, neither of which exists under Jest. The view becomes a plain `View` that keeps its
+ * props, so a test can read what the page asked of it, and every player the hook makes is kept in
+ * `__players` with its `play` and `pause` as spies — "nothing plays until pressed" is a claim about
+ * when this hook is first called.
+ */
+jest.mock('expo-video', () => {
+  const { Component, createElement, createRef, useMemo } = require('react');
+  const { View } = require('react-native');
+  const players: { source: unknown; play: jest.Mock; pause: jest.Mock; loop: boolean }[] = [];
+  return {
+    // One player per source for the component's life, as the real hook does.
+    useVideoPlayer: (source: unknown, setup?: (player: unknown) => void) =>
+      useMemo(() => {
+        const player = { source, play: jest.fn(), pause: jest.fn(), loop: false };
+        players.push(player);
+        setup?.(player);
+        return player;
+      }, [source]),
+    // A class with `nativeRef`, as the real one has: the page moves screen-reader focus through it.
+    VideoView: class extends Component<Record<string, unknown>> {
+      nativeRef = createRef();
+      render() {
+        return createElement(View, { ...this.props, ref: this.nativeRef });
+      }
+    },
+    isPictureInPictureSupported: () => false,
+    __players: players,
   };
 });
 

@@ -5629,6 +5629,10 @@
       "stale": "Saved on this device. The funding figures may have moved since.",
       "actionsOffline": "Saving and reminders need a connection.",
       "shareFailed": "That could not be shared. Try again.",
+      "video": {
+        "play": "Play the campaign video, {seconds, plural, one {# second} other {# seconds}} long",
+        "player": "Campaign video"
+      },
       "faq": {
         "failed": "The questions and answers could not be loaded just now.",
         "questionLabel": "Question {index} of {count}: {question}"
@@ -5938,6 +5942,39 @@
         "library": "Choose from library",
         "camera": "Take a photo",
         "address": "Use an image address"
+      },
+      "video": {
+        "label": "Campaign video",
+        "hint": "Optional. Up to 60 seconds and 250 MB. It plays at the top of the campaign page, and is converted to 720p for everyone who watches it.",
+        "choose": "Choose a video",
+        "replace": "Replace video",
+        "remove": "Remove video",
+        "length": "Video length: {duration}",
+        "set": "Video added. It plays at the top of the campaign page.",
+        "notUsedTitle": "That video was not used",
+        "unusable": "That video could not be used.",
+        "openFailed": "Your videos could not be opened. Try again.",
+        "checkAgain": "Check again",
+        "stage": {
+          "preparing": "Preparing the video…",
+          "uploading": "Uploading the video… {percent}%. Keep the app open until it is done.",
+          "processing": "Processing the video. A minute-long clip takes about a minute — keep the app open."
+        },
+        "failures": {
+          "TOO_LONG": "That video is longer than 60 seconds. Trim it to a minute or less, then choose it again.",
+          "TOO_LARGE": "That file is too large. The limit is 250 MB. Trim or shorten it in your phone's gallery app first, then choose it again.",
+          "UNSUPPORTED_FORMAT": "That file is not a video this platform can read. MP4 and MOV both work.",
+          "EMPTY": "That file is empty.",
+          "TOO_SMALL": "The picture in that video is too small to show. Try a larger recording.",
+          "UNREADABLE": "That video could not be read. A different file should work.",
+          "UPLOADS_UNAVAILABLE": "Video uploads are not switched on for this environment.",
+          "MEDIA_STORAGE_UNREACHABLE": "Video storage is not answering. Please try again shortly.",
+          "UPLOAD_STILL_PROCESSING": "That video is taking longer than usual to process. It has not been added yet — check again in a minute or two.",
+          "UPLOAD_TRANSFER_FAILED": "The video did not reach storage. Check the connection and try again.",
+          "UPLOAD_REFUSED": "That file was refused.",
+          "UPLOAD_UNFINISHED": "That upload could not be finished.",
+          "MEDIA_NOT_FOUND": "That upload could not be read."
+        }
       },
       "dateTime": {
         "choose": "Choose a date and time",

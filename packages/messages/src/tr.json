@@ -5629,6 +5629,10 @@
       "stale": "Bu cihazda kayıtlı. Fonlama rakamları o zamandan beri değişmiş olabilir.",
       "actionsOffline": "Kaydetmek ve hatırlatıcı kurmak için bağlantı gerekir.",
       "shareFailed": "Paylaşılamadı. Tekrar deneyin.",
+      "video": {
+        "play": "Kampanya videosunu oynat, süresi {seconds, plural, other {# saniye}}",
+        "player": "Kampanya videosu"
+      },
       "faq": {
         "failed": "Sorular ve yanıtlar şu anda yüklenemedi.",
         "questionLabel": "Soru {index}, toplam {count}: {question}"
@@ -5938,6 +5942,39 @@
         "library": "Galeriden seç",
         "camera": "Fotoğraf çek",
         "address": "Görsel adresi kullan"
+      },
+      "video": {
+        "label": "Kampanya videosu",
+        "hint": "İsteğe bağlı. En fazla 60 saniye ve 250 MB. Kampanya sayfasının en üstünde oynatılır ve izleyenler için 720p’ye dönüştürülür.",
+        "choose": "Video seç",
+        "replace": "Videoyu değiştir",
+        "remove": "Videoyu kaldır",
+        "length": "Video süresi: {duration}",
+        "set": "Video eklendi. Kampanya sayfasının en üstünde oynatılır.",
+        "notUsedTitle": "Bu video kullanılmadı",
+        "unusable": "Bu video kullanılamadı.",
+        "openFailed": "Videolarınız açılamadı. Tekrar deneyin.",
+        "checkAgain": "Yeniden kontrol et",
+        "stage": {
+          "preparing": "Video hazırlanıyor…",
+          "uploading": "Video yükleniyor… %{percent}. Bitene kadar uygulamayı açık tutun.",
+          "processing": "Video işleniyor. Bir dakikalık bir klip yaklaşık bir dakika sürer — uygulamayı açık tutun."
+        },
+        "failures": {
+          "TOO_LONG": "Bu video 60 saniyeden uzun. Bir dakikaya ya da daha kısaya kırpıp yeniden seçin.",
+          "TOO_LARGE": "Dosya çok büyük. Sınır 250 MB. Önce telefonunuzun galeri uygulamasında kırpıp kısaltın, sonra yeniden seçin.",
+          "UNSUPPORTED_FORMAT": "Bu dosya platformun okuyabildiği bir video değil. MP4 ve MOV çalışır.",
+          "EMPTY": "Dosya boş.",
+          "TOO_SMALL": "Bu videodaki görüntü gösterilemeyecek kadar küçük. Daha büyük bir kayıt deneyin.",
+          "UNREADABLE": "Bu video okunamadı. Başka bir dosya çalışacaktır.",
+          "UPLOADS_UNAVAILABLE": "Bu ortamda video yükleme açık değil.",
+          "MEDIA_STORAGE_UNREACHABLE": "Video deposu yanıt vermiyor. Biraz sonra tekrar deneyin.",
+          "UPLOAD_STILL_PROCESSING": "Bu videonun işlenmesi her zamankinden uzun sürüyor. Henüz eklenmedi — bir iki dakika sonra yeniden kontrol edin.",
+          "UPLOAD_TRANSFER_FAILED": "Video depoya ulaşmadı. Bağlantıyı kontrol edip tekrar deneyin.",
+          "UPLOAD_REFUSED": "Bu dosya reddedildi.",
+          "UPLOAD_UNFINISHED": "Bu yükleme tamamlanamadı.",
+          "MEDIA_NOT_FOUND": "Bu yükleme okunamadı."
+        }
       },
       "dateTime": {
         "choose": "Tarih ve saat seçin",
