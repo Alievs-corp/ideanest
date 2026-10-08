@@ -995,6 +995,31 @@ drops or answers 5xx is asked again on the next tick. The caller picks the words
 `campaignEditor.cover.failures`. `settings/profile` saves the result as `avatarUrl` at once and
 removes the picker's cache copy.
 
+## The campaign video (#331)
+
+`uploadVideo` in the same file takes a picked clip through the same three calls with a `video/*`
+type, which is what makes the service open a video upload (250 MB instead of 20). Nothing is
+converted on the phone: the picker already exported it, and the service transcodes every video to
+one H.264/AAC MP4 of at most 720p and 60 s. The PUT reports its progress (`onProgress`), and the
+poll is every 2 s for up to 5 minutes, because a minute of video takes about a minute to transcode.
+
+The Basics tab's `VideoField` (`src/features/editor/video-field.tsx`) opens the library for videos
+only: `allowsEditing` turns on iOS's trim UI and `videoExportPreset: H264_1280x720` makes iOS export
+720p rather than send 4K. Android's library has neither, so a clip over 60.5 s or 250 MB is refused
+on the phone, from the picker's own figures, before a byte is sent (`TOO_LONG`, `TOO_LARGE`). A READY
+upload is saved at once as `{videoMediaId}`; removing it sends `{videoMediaId: null}`. The copy is
+`mobile.editor.video`. There is no "record a video": the app declares no microphone permission.
+
+The campaign page shows a play button over the cover (or the poster, without one), named with the
+clip's length. **Nothing plays until it is pressed**, and the `expo-video` player is not mounted
+before then (`campaign-video-player.tsx`), so a page that is scrolled past opens no stream. The
+player uses the platform's own controls and fullscreen; background playback and picture in picture
+are off in the plugin's options (`app.config.ts`).
+
+**`expo-video` is a native module.** Adding it changes the runtime fingerprint, so it reaches phones
+through a new EAS build, never through an over-the-air update; an update cut from this code reaches only builds
+that already contain it. Jest replaces it in `jest.setup.ts`.
+
 ## Pledges
 
 The Pledges tab (#158) pages `GET /v1/me/pledges` 24 at a time in an infinite query keyed

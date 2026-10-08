@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
-import { File, Paths } from 'expo-file-system';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Glyphs } from '../../../icons';
@@ -18,6 +17,9 @@ import {
 import { BLOCK, blockSurface } from '../../../components/ui/surface';
 import { useT, type Translate } from '../../../lib/i18n';
 import {
+  // The system picker hands over a copy in this app's cache (the crop is always a new file),
+  // which nothing else removes.
+  forgetPicked,
   isAbortError,
   MINIMUM_EDGE,
   uploadImage,
@@ -75,19 +77,6 @@ export function describeUploadFailure(cause: unknown, t: Translate): string {
     if (cause.message !== '') return cause.message;
   }
   return t('campaignEditor.cover.unusable');
-}
-
-/**
- * The system picker hands over a copy in this app's cache (the crop is always a new file), which
- * nothing else removes. Anything outside the cache is not ours to delete.
- */
-function forgetPicked(uri: string): void {
-  try {
-    const cache = Paths.cache.uri.endsWith('/') ? Paths.cache.uri : `${Paths.cache.uri}/`;
-    if (uri.startsWith(cache)) new File(uri).delete();
-  } catch {
-    // Already gone: nothing to tidy.
-  }
 }
 
 type Note = { readonly tone: 'success' | 'danger'; readonly title?: string; readonly text: string };

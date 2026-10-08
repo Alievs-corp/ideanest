@@ -50,6 +50,17 @@ export interface CampaignCover {
   readonly height: number;
 }
 
+/** The campaign's video (#331): a 720p MP4 and the still shown before it plays. */
+export interface CampaignPageVideo {
+  readonly url: string;
+  readonly posterUrl: string;
+  readonly width: number;
+  readonly height: number;
+  readonly durationMs: number;
+  /** The poster's small sample as a data URL, or `null`. */
+  readonly blurDataUrl: string | null;
+}
+
 export interface CampaignPage {
   readonly id: string;
   readonly slug: string;
@@ -61,6 +72,8 @@ export interface CampaignPage {
   readonly creator: CampaignCreator;
   readonly category: CampaignTaxon | null;
   readonly coverImage: CampaignCover | null;
+  /** `null` when the campaign has none, or the response's is missing what a player needs. */
+  readonly video: CampaignPageVideo | null;
   readonly goal: Money | null;
   readonly pledged: Money;
   readonly backersCount: number;
@@ -117,6 +130,7 @@ export function readCampaignPage(
     creator,
     category: readTaxon(response.category),
     coverImage: readCover(response.coverImage),
+    video: readVideo(response.video),
     goal,
     pledged,
     backersCount: typeof response.backersCount === 'number' ? response.backersCount : 0,
@@ -195,6 +209,18 @@ function readCover(value: unknown): CampaignCover | null {
   if (url === null || typeof width !== 'number' || typeof height !== 'number') return null;
   if (width <= 0 || height <= 0) return null;
   return { url, width, height };
+}
+
+function readVideo(value: unknown): CampaignPageVideo | null {
+  if (value === null || typeof value !== 'object') return null;
+  const source = value as Record<string, unknown>;
+  const url = text(source['url']);
+  const posterUrl = text(source['posterUrl']);
+  const { width, height, durationMs } = source;
+  if (url === null || posterUrl === null) return null;
+  if (typeof width !== 'number' || typeof height !== 'number' || typeof durationMs !== 'number') return null;
+  if (width <= 0 || height <= 0 || durationMs <= 0) return null;
+  return { url, posterUrl, width, height, durationMs, blurDataUrl: text(source['blurDataUrl']) };
 }
 
 function readOutcome(value: unknown): CampaignOutcome | null {

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
@@ -10,6 +11,7 @@ import { setLocale } from '../../lib/locale';
 import { useState } from 'react';
 import { Pressable, Text } from 'react-native';
 import { queryKeys } from '../../api/queries';
+import { uploadVideo } from '../../lib/media/upload';
 import { memoryStore, type KeyValueStore } from '../../lib/storage';
 import { unsentKeyFor } from '../../lib/unsent-edits';
 import { BasicsPanel } from './basics-panel';
@@ -26,6 +28,11 @@ jest.mock('../../api/client', () => ({
   traceIdOfError: () => null,
 }));
 const mockSend = jest.fn();
+jest.mock('../../lib/media/upload', () => ({
+  ...jest.requireActual('../../lib/media/upload'),
+  uploadVideo: jest.fn(),
+  forgetPicked: jest.fn(),
+}));
 jest.mock('expo-localization', () => ({
   getLocales: () => [{ languageCode: 'az', languageTag: 'az-AZ', decimalSeparator: ',' }],
 }));
@@ -362,5 +369,89 @@ describe('BasicsPanel', () => {
     await settle();
     expect(screen.getByTestId('basics-title').props.value).toBe('Renamed elsewhere');
     expect(screen.getByTestId('basics-summary').props.value).toBe('Changed elsewhere');
+  });
+
+  describe('the campaign video (#331)', () => {
+    const VIDEO = {
+      mediaId: 'v1',
+      url: 'https://cdn/v1.mp4',
+      posterUrl: 'https://cdn/v1.jpg',
+      width: 1280,
+      height: 720,
+      durationMs: 45_000,
+      blurDataUrl: null,
+    };
+    const picker = ImagePicker as unknown as { __setNextResult: (result: Record<string, unknown>) => void };
+
+    it('attaches an uploaded video at once, by its media id alone', async () => {
+      picker.__setNextResult({
+        canceled: false,
+        assets: [{ uri: 'file:///cache/clip.mp4', mimeType: 'video/mp4', duration: 30_000, fileSize: 5_000_000 }],
+      });
+      jest.mocked(uploadVideo).mockResolvedValueOnce({
+        mediaId: 'v2',
+        url: 'https://cdn/v2.mp4',
+        posterUrl: 'https://cdn/v2.jpg',
+        width: 1280,
+        height: 720,
+        durationMs: 30_000,
+        blurDataUrl: '',
+      });
+      mockSend.mockImplementation(async () => project({ video: { ...VIDEO, mediaId: 'v2', durationMs: 30_000 } }));
+      await show();
+
+      await fireEvent.press(screen.getByLabelText(en.mobile.editor.video.choose));
+      await settle();
+
+      expect(patches()).toEqual([{ videoMediaId: 'v2' }]);
+      expect(screen.getByTestId('video-length')).toHaveTextContent('Video length: 0:30');
+    });
+
+    it('shows the saved video, and removing it sends null', async () => {
+      mockProject = async () => project({ video: VIDEO });
+      await show();
+      expect(screen.getByTestId('video-length')).toHaveTextContent('Video length: 0:45');
+
+      await fireEvent.press(screen.getByLabelText(en.mobile.editor.video.remove));
+      await settle();
+      expect(patches()).toEqual([{ videoMediaId: null }]);
+      expect(screen.queryByTestId('video-preview')).toBeNull();
+    });
+
+    it("puts the service's refusal of the video on the video field", async () => {
+      mockProject = async () => project({ video: VIDEO });
+      mockSend.mockRejectedValueOnce(
+        new ApiError(422, {
+          status: 422,
+          detail: 'The change was refused.',
+          errors: { videoMediaId: 'That video is not available. It may still be processing.' },
+        }),
+      );
+      await show();
+      await fireEvent.press(screen.getByLabelText(en.mobile.editor.video.remove));
+      await settle();
+      expect(screen.getByText('That video is not available. It may still be processing.')).toBeTruthy();
+    });
+
+    it('mounted again while a removal is unsaved, shows no video', async () => {
+      mockProject = async () => project({ video: VIDEO });
+      mockSend.mockRejectedValueOnce(new ApiError(500, { status: 500, detail: 'Down.' }));
+      await show();
+      await fireEvent.press(screen.getByLabelText(en.mobile.editor.video.remove));
+      await settle();
+      await fireEvent.press(screen.getByTestId('toggle-tab'));
+      await fireEvent.press(screen.getByTestId('toggle-tab'));
+      await settle();
+      expect(screen.queryByTestId('video-preview')).toBeNull();
+    });
+
+    it('offline, the video cannot be changed', async () => {
+      mockProject = async () => project({ video: VIDEO });
+      await show();
+      await act(async () => setOnline(false));
+      await fireEvent.press(screen.getByLabelText(en.mobile.editor.video.remove));
+      await settle();
+      expect(patches()).toEqual([]);
+    });
   });
 });
