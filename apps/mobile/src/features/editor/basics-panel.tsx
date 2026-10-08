@@ -20,7 +20,7 @@ import {
   type BasicsErrors,
   type BasicsField,
 } from '@ideanest/campaign-editor/basics';
-import { isLocked, type CampaignVideo, type ProjectEdit } from '@ideanest/campaign-editor/contract';
+import { isLocked, type ProjectEdit } from '@ideanest/campaign-editor/contract';
 import { basicsPanelCopyFrom, type BasicsPanelCopy } from '@ideanest/campaign-editor/copy';
 import { SUPPORTED_CURRENCIES } from '@ideanest/money';
 import {
@@ -110,15 +110,6 @@ export function basicsServerErrors(failure: SaveFailure | null): BasicsErrors {
   return mapped;
 }
 
-/**
- * The 422 sentence about the video, when the service refused the `videoMediaId` it was sent — an
- * upload that is not this creator's, not a video, or not finished (#331).
- */
-export function videoServerError(failure: SaveFailure | null): string | undefined {
-  if (failure === null) return undefined;
-  return failure.fieldErrors['videoMediaId'] ?? failure.fieldErrors['video'];
-}
-
 /** The draft's keys each field owns, for keeping text that is only on this phone across a re-seed. */
 const DRAFT_KEYS: Readonly<Record<BasicsField, readonly (keyof BasicsDraft)[]>> = {
   title: ['title'],
@@ -157,11 +148,6 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
   const insets = useSafeAreaInsets();
   const categoriesQuery = useEditorCategories();
   const [draft, setDraft] = useState<BasicsDraft>(() => draftFromProject(seed));
-  /**
-   * The video is not a basics field: it is set by an upload's id and read back as the service's
-   * `video`, so it is held beside the draft rather than in it, and saved at once.
-   */
-  const [video, setVideo] = useState<CampaignVideo | null>(() => seed.video ?? null);
   /** Fields whose text is only on this phone: changed, and refused before it was sent. */
   const localOnly = useRef(new Set<BasicsField>());
 
@@ -173,7 +159,6 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
     if (seen.current === editor.revision) return;
     seen.current = editor.revision;
     setDraft((current) => reseedDraft(latestSeed.current, current, localOnly.current));
-    setVideo(latestSeed.current.video ?? null);
   }, [editor.revision]);
 
   const { autosave, readOnly } = editor;
@@ -413,23 +398,8 @@ function BasicsForm({ seed, basics }: { readonly seed: ProjectEdit; readonly bas
           onRemove={() => change('coverImage', { ...draft, coverImage: null, coverImageUrl: '' }, true)}
         />
 
-        <VideoField
-          video={video}
-          disabled={readOnly}
-          error={videoServerError(failure)}
-          onAccept={(next) => {
-            if (readOnly) return;
-            setVideo(next);
-            autosave.save({ videoMediaId: next.mediaId });
-            autosave.flush();
-          }}
-          onRemove={() => {
-            if (readOnly) return;
-            setVideo(null);
-            autosave.save({ videoMediaId: null });
-            autosave.flush();
-          }}
-        />
+        {/* The upload is the editor's, so it carries on while another tab is open (#331). */}
+        <VideoField upload={editor.video} disabled={readOnly} />
       </View>
     </ScrollView>
   );

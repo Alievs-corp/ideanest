@@ -6,6 +6,7 @@ import {
   VIDEO_POLL_INTERVAL_MS,
   VIDEO_POLL_LIMIT,
   forgetPicked,
+  resumeVideo,
   isVideoTooLarge,
   isVideoTooLong,
   uploadVideo,
@@ -156,6 +157,38 @@ describe('uploadVideo', () => {
     expect(VIDEO_POLL_INTERVAL_MS).toBe(2_000);
     expect(VIDEO_POLL_LIMIT * VIDEO_POLL_INTERVAL_MS).toBeGreaterThanOrEqual(300_000);
     expect((VIDEO_POLL_LIMIT - 1) * VIDEO_POLL_INTERVAL_MS).toBeLessThan(300_000);
+    // The upload is not thrown away: its id comes with the error, to ask about it again.
+    expect((result as unknown as { error: UploadFailed }).error.mediaId).toBe('video-1');
+  });
+
+  it('asks about the same upload again with resumeVideo, and returns it once READY', async () => {
+    mockGet.mockResolvedValueOnce({ id: 'video-1', status: 'PROCESSING' }).mockResolvedValueOnce(READY);
+    const stages: UploadStage[] = [];
+    const outcome = resumeVideo('video-1', { onStage: (stage) => stages.push(stage) });
+    await jest.advanceTimersByTimeAsync(VIDEO_POLL_INTERVAL_MS * 2);
+    await expect(outcome).resolves.toMatchObject({ mediaId: 'video-1', url: READY.url });
+    expect(stages).toEqual(['processing']);
+    expect(mockGet).toHaveBeenCalledWith('/v1/media/{mediaId}', expect.objectContaining({ path: { mediaId: 'video-1' } }));
+    expect(sendJson).not.toHaveBeenCalled();
+    expect(mockUpload).not.toHaveBeenCalled();
+  });
+
+  it('leaves no abort listener behind for each wait between polls', async () => {
+    mockGet
+      .mockResolvedValueOnce({ id: 'video-1', status: 'PROCESSING' })
+      .mockResolvedValueOnce({ id: 'video-1', status: 'PROCESSING' })
+      .mockResolvedValueOnce({ id: 'video-1', status: 'PROCESSING' })
+      .mockResolvedValueOnce(READY);
+    const controller = new AbortController();
+    const added = jest.spyOn(controller.signal, 'addEventListener');
+    const removed = jest.spyOn(controller.signal, 'removeEventListener');
+
+    const { result } = await run({ signal: controller.signal });
+
+    expect(result.ok).toBe(true);
+    const waits = (calls: unknown[][]) => calls.filter(([type]) => type === 'abort').length;
+    expect(waits(added.mock.calls)).toBeGreaterThanOrEqual(3);
+    expect(waits(removed.mock.calls)).toBe(waits(added.mock.calls));
   });
 
   it('keeps asking while a READY answer lacks what a player needs', async () => {

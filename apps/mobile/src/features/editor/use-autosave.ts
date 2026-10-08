@@ -104,6 +104,13 @@ export interface Autosave<P> {
    * offered.
    */
   readonly dropUnsent: (keys: readonly string[]) => void;
+  /**
+   * Take these fields out of what is queued — a value the service refused for good, which a retry
+   * would only send again (a `videoMediaId` that is not a finished video, #331). The rest stays
+   * queued, with its failure; when nothing is left, the failure goes too, since nothing it was
+   * about is still waiting. The request in the air, if any, is not touched.
+   */
+  readonly dropQueued: (keys: readonly string[]) => void;
 }
 
 const DEFAULT_DELAY_MS = 800;
@@ -291,6 +298,24 @@ export function useAutosave<P extends object, R>({
     [setOffer, writeNow],
   );
 
+  const dropQueued = useCallback(
+    (keys: readonly string[]): void => {
+      const current = machine.current;
+      if (current.queued === null) return;
+      const rest = without(current.queued, keys);
+      if (rest !== null && Object.keys(rest).length === Object.keys(current.queued).length) return;
+      const next: AutosaveMachine<P> =
+        rest === null && current.inFlight === null
+          ? { ...current, queued: null, failure: null, status: 'idle' }
+          : { ...current, queued: rest };
+      machine.current = next;
+      setView(next);
+      if (unsavedPatch(next) === null) changedAt.current = null;
+      writeNow();
+    },
+    [writeNow],
+  );
+
   // The session ending stops everything: nothing queued is sent, stored, or answered.
   useEffect(() => {
     activeRef.current = active;
@@ -371,7 +396,8 @@ export function useAutosave<P extends object, R>({
       sendUnsent,
       discardUnsent,
       dropUnsent,
+      dropQueued,
     }),
-    [view, save, flush, retry, unsent, sendUnsent, discardUnsent, dropUnsent],
+    [view, save, flush, retry, unsent, sendUnsent, discardUnsent, dropUnsent, dropQueued],
   );
 }

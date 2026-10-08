@@ -39,21 +39,30 @@ import { CampaignVideoPlayer } from './campaign-video-player';
  * is the button, named "Play the campaign video, 45 seconds long". Nothing plays until it is
  * pressed — never on arrival, and never on a phone that asked for less motion — and the player is
  * not even mounted before then (`CampaignVideoPlayer`), so a page that is only scrolled past opens
- * no stream. Pressed, the native player takes the box with its own controls and fullscreen.
+ * no stream. Pressed, the native player takes the box with its own controls and fullscreen, and
+ * screen-reader focus moves onto it.
+ *
+ * <p>`active` is the screen's own (`focused && appActive`): a push to checkout or sign-in leaves
+ * this screen mounted underneath, and a video still playing there would be heard over the next
+ * screen. It pauses the moment the page stops being the one in front; it does not resume on its
+ * own when the reader comes back.
  */
 export function CampaignMedia({
   cover,
   video = null,
+  active = true,
   tag,
 }: {
   readonly cover: CampaignCover | null;
   readonly video?: CampaignPageVideo | null;
+  /** Whether the page is the one in front, with the app in the foreground. */
+  readonly active?: boolean;
   readonly tag: string;
 }) {
   return (
     <SharedTarget tag={tag} waitForDisplay>
       <CoverFrame uri={cover?.url ?? video?.posterUrl ?? null}>
-        {video === null ? null : <VideoLayer video={video} />}
+        {video === null ? null : <VideoLayer video={video} active={active} />}
       </CoverFrame>
     </SharedTarget>
   );
@@ -116,12 +125,14 @@ function CoverFrame({ uri, children }: { readonly uri: string | null; readonly c
 }
 
 /** The play button over the picture, and the player once it has been pressed. */
-function VideoLayer({ video }: { readonly video: CampaignPageVideo }) {
+function VideoLayer({ video, active }: { readonly video: CampaignPageVideo; readonly active: boolean }) {
   const t = useT('mobile.campaign.video');
   const [playing, setPlaying] = useState(false);
 
   if (playing) {
-    return <CampaignVideoPlayer url={video.url} label={t('player')} style={styles.fill} />;
+    return (
+      <CampaignVideoPlayer url={video.url} label={t('player')} active={active} focusOnMount style={styles.fill} />
+    );
   }
   return (
     <PressableScale
@@ -133,7 +144,7 @@ function VideoLayer({ video }: { readonly video: CampaignPageVideo }) {
       testID="campaign-video-play"
     >
       <View style={styles.button}>
-        <Icon icon={Glyphs.Play} variant="bold" size={24} color={colors.textOnWhite} />
+        <Icon icon={Glyphs.Play} variant="bulk" size={20} color={colors.textOnWhite} />
       </View>
       <View style={styles.length}>
         <Meta tone="primary" testID="campaign-video-length">

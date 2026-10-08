@@ -15,11 +15,5 @@ import type { ProjectEdit, ProjectPatch } from '@ideanest/campaign-editor/contra
  */
 export function withUnsaved(project: ProjectEdit, unsaved: ProjectPatch | null): ProjectEdit {
   if (unsaved === null) return project;
-  const seeded = { ...project, ...unsaved } as ProjectEdit;
-  // The one key that is not the project's own: the video is SENT as `videoMediaId` and read back
-  // as `video` (#331). A removal still in the air is a project with no video. A new id cannot be
-  // laid over here — only the service knows its address and poster — so that keeps the old video
-  // until the save answers.
-  if (unsaved.videoMediaId === null) seeded.video = null;
-  return seeded;
+  return { ...project, ...unsaved } as ProjectEdit;
 }

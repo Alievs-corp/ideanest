@@ -5954,21 +5954,22 @@
         "notUsedTitle": "Bu video istifadə olunmadı",
         "unusable": "Bu videonu işlətmək alınmadı.",
         "openFailed": "Videolar açılmadı. Yenidən cəhd edin.",
+        "checkAgain": "Yenidən yoxla",
         "stage": {
           "preparing": "Video hazırlanır…",
-          "uploading": "Video yüklənir… {percent}%",
-          "processing": "Video emal olunur. Bir dəqiqəlik klip təxminən bir dəqiqə çəkir."
+          "uploading": "Video yüklənir… {percent}%. Bitənə qədər tətbiqi açıq saxlayın.",
+          "processing": "Video emal olunur. Bir dəqiqəlik klip təxminən bir dəqiqə çəkir — tətbiqi açıq saxlayın."
         },
         "failures": {
           "TOO_LONG": "Bu video 60 saniyədən uzundur. Onu bir dəqiqəyə qədər qısaldıb yenidən seçin.",
-          "TOO_LARGE": "Fayl çox böyükdür. Hədd 250 MB-dır.",
-          "UNSUPPORTED_FORMAT": "Bu fayl platformanın oxuya biləcəyi video deyil. MP4 və MOV işləyir.",
+          "TOO_LARGE": "Fayl çox böyükdür. Hədd 250 MB-dır. Əvvəlcə telefonun qalereyasında videonu kəsib qısaldın, sonra yenidən seçin.",
+          "UNSUPPORTED_FORMAT": "Bu fayl platformanın oxuya biləcəyi video deyil. MP4 və MOV dəstəklənir.",
           "EMPTY": "Fayl boşdur.",
           "TOO_SMALL": "Bu videonun görüntüsü göstərmək üçün çox kiçikdir. Daha böyük çəkiliş yoxlayın.",
-          "UNREADABLE": "Bu videonu oxumaq alınmadı. Başqa fayl işləməlidir.",
+          "UNREADABLE": "Bu videonu oxumaq alınmadı. Başqa fayl seçin.",
           "UPLOADS_UNAVAILABLE": "Bu mühitdə video yükləmə aktiv deyil.",
           "MEDIA_STORAGE_UNREACHABLE": "Video anbarı cavab vermir. Bir azdan yenidən cəhd edin.",
-          "UPLOAD_STILL_PROCESSING": "Bu videonun emalı adətkindən uzun çəkir, ona görə əlavə olunmadı. Bir neçə dəqiqədən sonra yenidən cəhd edin.",
+          "UPLOAD_STILL_PROCESSING": "Bu videonun emalı həmişəkindən uzun çəkir. Hələ əlavə olunmayıb — bir-iki dəqiqədən sonra yenidən yoxlayın.",
           "UPLOAD_TRANSFER_FAILED": "Video anbara çatmadı. Bağlantını yoxlayıb yenidən cəhd edin.",
           "UPLOAD_REFUSED": "Bu fayl qəbul edilmədi.",
           "UPLOAD_UNFINISHED": "Bu yükləməni tamamlamaq alınmadı.",

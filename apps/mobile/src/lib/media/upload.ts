@@ -79,11 +79,18 @@ export interface VideoUploadOptions {
  */
 export class UploadFailed extends Error {
   readonly code: string;
+  /**
+   * The upload this is about, when the service has one: set on `UPLOAD_STILL_PROCESSING`, so a
+   * caller can ask about it again (`resumeVideo`) instead of throwing away a file that may be a
+   * moment from READY.
+   */
+  readonly mediaId: string | null;
 
-  constructor(code: string, message = '') {
+  constructor(code: string, message = '', mediaId: string | null = null) {
     super(message);
     this.name = 'UploadFailed';
     this.code = code;
+    this.mediaId = mediaId;
   }
 }
 
@@ -192,6 +199,19 @@ export async function uploadVideo(
   onStage?.('processing');
   await announceArrival(ticket.mediaId, signal);
   return await waitUntilReady(ticket.mediaId, readVideo, VIDEO_POLL_INTERVAL_MS, VIDEO_POLL_LIMIT, signal);
+}
+
+/**
+ * Asks about a video already uploaded again — after `uploadVideo` gave up with
+ * `UPLOAD_STILL_PROCESSING` (its `mediaId` is on the error). The same poll, from the start of its
+ * five minutes; reports `processing`.
+ */
+export async function resumeVideo(
+  mediaId: string,
+  options: Pick<VideoUploadOptions, 'onStage' | 'signal'> = {},
+): Promise<UploadedVideo> {
+  options.onStage?.('processing');
+  return await waitUntilReady(mediaId, readVideo, VIDEO_POLL_INTERVAL_MS, VIDEO_POLL_LIMIT, options.signal);
 }
 
 const VIDEO_TYPES: Readonly<Record<string, string>> = {
@@ -389,7 +409,9 @@ async function waitUntilReady<T>(
     if (state.status === 'FAILED') throw new UploadFailed(state.failureReason ?? 'UNREADABLE');
   }
   // Not the file's fault: the connection went, or it is still being worked on.
-  throw new UploadFailed(lastWasUnreachable ? 'UPLOAD_TRANSFER_FAILED' : 'UPLOAD_STILL_PROCESSING');
+  throw lastWasUnreachable
+    ? new UploadFailed('UPLOAD_TRANSFER_FAILED')
+    : new UploadFailed('UPLOAD_STILL_PROCESSING', '', mediaId);
 }
 
 /** No answer at all, or a server-side failure: worth asking again. */
@@ -423,16 +445,21 @@ function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted === true) throw abortError();
 }
 
+/**
+ * Waits, or rejects at once when `signal` aborts. The abort listener is removed when the wait ends:
+ * a 5-minute video poll is 150 of these on one signal, and each left behind would hold its closure
+ * until the signal itself is collected.
+ */
 function pause(milliseconds: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, milliseconds);
-    signal?.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timer);
-        reject(abortError());
-      },
-      { once: true },
-    );
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(abortError());
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, milliseconds);
+    signal?.addEventListener('abort', onAbort, { once: true });
   });
 }

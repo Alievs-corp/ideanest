@@ -1010,11 +1010,22 @@ on the phone, from the picker's own figures, before a byte is sent (`TOO_LONG`, 
 upload is saved at once as `{videoMediaId}`; removing it sends `{videoMediaId: null}`. The copy is
 `mobile.editor.video`. There is no "record a video": the app declares no microphone permission.
 
+The upload belongs to the editor, not the field: `useVideoUpload` is held by `EditorProvider`, so
+switching from Basics to another tab (a route change that unmounts Basics) does not abandon a
+transfer and transcode that take minutes; it attaches when READY and Basics shows where it has got
+to. Closing the editor, or the app, does stop it, and the copy says to keep the app open. A wait
+that outlives the 5 minutes keeps the upload's id and offers "Check again" (`resumeVideo`). A
+`videoMediaId` the service refuses is taken out of the autosave's queue and stored offer
+(`dropQueued`, `dropUnsent`), or every later save would carry it and be refused too.
+
 The campaign page shows a play button over the cover (or the poster, without one), named with the
 clip's length. **Nothing plays until it is pressed**, and the `expo-video` player is not mounted
 before then (`campaign-video-player.tsx`), so a page that is scrolled past opens no stream. The
 player uses the platform's own controls and fullscreen; background playback and picture in picture
-are off in the plugin's options (`app.config.ts`).
+are off in the plugin's options (`app.config.ts`). It pauses when the page stops being the one in
+front (the screen's `focused && appActive`: a push to checkout leaves the page mounted underneath),
+takes screen-reader focus when it opens, and on Android draws into a `TextureView`, which respects
+the frame's rounded clip and the sticky header where a `SurfaceView` would not.
 
 **`expo-video` is a native module.** Adding it changes the runtime fingerprint, so it reaches phones
 through a new EAS build, never through an over-the-air update; an update cut from this code reaches only builds

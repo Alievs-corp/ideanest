@@ -418,7 +418,7 @@ jest.mock('expo-image-picker', () => {
  * when this hook is first called.
  */
 jest.mock('expo-video', () => {
-  const { createElement, useMemo } = require('react');
+  const { Component, createElement, createRef, useMemo } = require('react');
   const { View } = require('react-native');
   const players: { source: unknown; play: jest.Mock; pause: jest.Mock; loop: boolean }[] = [];
   return {
@@ -430,7 +430,13 @@ jest.mock('expo-video', () => {
         setup?.(player);
         return player;
       }, [source]),
-    VideoView: (props: Record<string, unknown>) => createElement(View, props),
+    // A class with `nativeRef`, as the real one has: the page moves screen-reader focus through it.
+    VideoView: class extends Component<Record<string, unknown>> {
+      nativeRef = createRef();
+      render() {
+        return createElement(View, { ...this.props, ref: this.nativeRef });
+      }
+    },
     isPictureInPictureSupported: () => false,
     __players: players,
   };
