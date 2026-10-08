@@ -1,5 +1,6 @@
 import * as WebBrowser from 'expo-web-browser';
 import { siteUrl } from '../../api/config';
+import { withClaimedReturnRoute } from '../../lib/auth-session-links';
 
 export type PaymentReturnHint = 'returned' | 'failed';
 
@@ -52,7 +53,10 @@ export async function openPaymentPage(
   pledgeId: string,
   param: ReturnParam = 'payment',
 ): Promise<PaymentSessionOutcome> {
-  const result = await WebBrowser.openAuthSessionAsync(redirectUrl, appReturnPrefix(pledgeId));
+  // The return is this session's: the link listener must not also open the pledge.
+  const result = await withClaimedReturnRoute(`/pledges/${pledgeId}`, () =>
+    WebBrowser.openAuthSessionAsync(redirectUrl, appReturnPrefix(pledgeId)),
+  );
   if (result.type === 'success') {
     return { kind: 'returned', hint: returnHintOf(result.url, param) ?? 'returned' };
   }

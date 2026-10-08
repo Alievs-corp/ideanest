@@ -1,0 +1,70 @@
+# The rest of flow 1 from a chosen tier: reserve, the hold's countdown, the swipe to pay, the
+# provider's page in the in-app browser, and closing it without paying.
+appId: az.ideanest.app
+---
+- scrollUntilVisible:
+    element:
+      id: reserve
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: reserve
+- extendedWaitUntil:
+    visible:
+      id: reservation-clock
+    timeout: 30000
+
+# Pay: the swipe hands the reader to the provider's page in the in-app browser.
+- scrollUntilVisible:
+    element:
+      id: confirm-thumb
+    direction: DOWN
+    timeout: 20000
+- swipe:
+    from:
+      id: confirm-thumb
+    direction: RIGHT
+# iOS asks before an authentication session opens a site.
+- runFlow:
+    when:
+      platform: iOS
+      visible: Continue
+    commands:
+      - tapOn: Continue
+- extendedWaitUntil:
+    visible:
+      text: .*${PROVIDER_HOST}.*
+    timeout: 45000
+
+# Close the provider's page without paying.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: Cancel
+
+# A dismissed browser reads the pledge once: a pledge still held as a draft keeps the review step
+# with its hold running, anything else opens the pledge.
+- extendedWaitUntil:
+    visible:
+      id: screen-pledge|confirm
+    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: screen-pledge
+    commands:
+      - assertVisible:
+          id: pledge-state
+- runFlow:
+    when:
+      visible:
+        id: confirm
+    commands:
+      - assertVisible:
+          id: reservation-clock

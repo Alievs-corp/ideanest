@@ -28,6 +28,7 @@ import { currentLocale } from '../../lib/locale';
 import { forgetPersistedCache } from '../../lib/offline';
 import { useSession } from '../../lib/use-session';
 import { colors, fontSize, radius, size, spacing } from '../../theme';
+import { withScreenRoot } from '../../components/screen-root';
 
 /**
  * The Me tab — issue #150. The web's account menu, settings list and footer, in one place.
@@ -212,6 +213,7 @@ function IdentityRow({ me }: { readonly me: Me }) {
           if (slug !== undefined) router.push({ pathname: '/u/[slug]', params: { slug } });
         }}
         contentStyle={({ pressed }) => [styles.identity, pressed && styles.identityPressed]}
+        testID="me-identity"
       >
         <Avatar name={name} size="lg" decorative />
         <View style={styles.identityText}>
@@ -316,7 +318,7 @@ function Colophon() {
   return <Meta style={styles.colophon}>{lines.join('\n')}</Meta>;
 }
 
-export default function MeScreen() {
+function MeScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const t = useT();
@@ -426,6 +428,7 @@ export default function MeScreen() {
                 size="lg"
                 fullWidth
                 onPress={() => router.push('/sign-in')}
+                testID="me-sign-in"
               />
             </View>
           </FadeUp>
@@ -461,6 +464,7 @@ export default function MeScreen() {
               iconLeft={Glyphs.Logout}
               busy={busy}
               onPress={confirmSignOut}
+              testID="me-sign-out"
             />
           ) : null}
 
@@ -472,6 +476,8 @@ export default function MeScreen() {
     </>
   );
 }
+
+export default withScreenRoot('me', MeScreen);
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

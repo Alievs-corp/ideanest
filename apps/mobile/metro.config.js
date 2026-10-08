@@ -8,14 +8,20 @@
  * stays off and `nodeModulesPaths` names both stores, because pnpm's layout is
  * not the flat `node_modules` Metro assumes and a transitive dependency
  * resolves from the store rather than from beside the importer.
+ *
+ * The base is Expo's default configuration as `@sentry/react-native` hands it back (#165): the
+ * same config, plus a debug id written into every bundle and its source map, which is how a
+ * crash report finds its source map whatever release or update the bundle shipped in. Sentry's
+ * web session-replay packages are resolved to nothing — replay is off, and they are not
+ * shipped to a phone either way.
  */
 const path = require('node:path');
-const { getDefaultConfig } = require('expo/metro-config');
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '../..');
 
-const config = getDefaultConfig(projectRoot);
+const config = getSentryExpoConfig(projectRoot, { includeWebReplay: false });
 
 config.watchFolders = [workspaceRoot];
 config.resolver.nodeModulesPaths = [

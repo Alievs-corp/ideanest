@@ -110,7 +110,7 @@ export function TwoFactorStep({
         description={t('auth.twoFactor.acceptedDetail')}
       />
 
-      <FormErrorSummary failure={failure} />
+      <FormErrorSummary failure={failure} testID="two-factor-failure" />
 
       <Field label={t('auth.twoFactor.codeLabel')}>
         <TextInput

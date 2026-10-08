@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { traceIdOfError } from '../api/client';
 import { Glyphs } from '../icons';
+import { reportBoundaryError } from '../lib/crash/reporting';
 import { useT } from '../lib/i18n';
 import { FailureState } from './failure-state';
 
@@ -24,9 +26,15 @@ import { FailureState } from './failure-state';
  * the response that failed, when the failure was one (`traceIdOfError`) — the web prints the
  * digest for the same reason: a reference a reader can quote and be believed. A failure that
  * did not come from a response has no reference line at all.
+ *
+ * <h2>Reported once per error</h2>
+ *
+ * To crash reporting (#165), when the build has it, with the same trace id the screen prints —
+ * from an effect keyed on the error, so a re-render of the failure screen is not a second report.
  */
 export function RouteErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const t = useT('shell.failure.pages.error');
+  useEffect(() => reportBoundaryError(error, 'route', traceIdOfError(error)), [error]);
   return (
     <FailureState
       title={t('title')}

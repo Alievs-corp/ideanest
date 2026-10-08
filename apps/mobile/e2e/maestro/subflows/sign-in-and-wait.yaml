@@ -1,0 +1,8 @@
+# Signs in an account without two-factor and waits until the Me tab shows it.
+appId: az.ideanest.app
+---
+- runFlow: sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: me-identity
+    timeout: 30000

@@ -88,7 +88,13 @@ function LanguageChoice() {
           }}
         >
           {SUPPORTED_LOCALES.map((locale) => (
-            <Radio key={locale} value={locale} label={LOCALE_NAMES[locale]} accessibilityLanguage={locale} />
+            <Radio
+              key={locale}
+              value={locale}
+              label={LOCALE_NAMES[locale]}
+              accessibilityLanguage={locale}
+              testID={`language-${locale}`}
+            />
           ))}
         </RadioGroup>
       </Card>

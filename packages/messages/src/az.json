@@ -5991,6 +5991,12 @@
         "launchExplanation": "Kampaniya başladığı andan platformanın hər yerində görünür və dəstək qəbul etməyə başlayır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı yenidən qaralamaya qaytarmaq olmaz.",
         "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz."
       }
+    },
+    "native": {
+      "displayName": "IdeyaNest",
+      "faceIdUsage": "IdeyaNest bu cihazda saxlanan seansınızı Face ID ilə açır.",
+      "cameraUsage": "Kampaniya şəklini və ya profil şəklinizi çəkmək üçün IdeyaNest kameradan istifadə edir.",
+      "photoLibraryUsage": "Kampaniya şəklini və ya profil şəklinizi seçmək üçün IdeyaNest qalereyanızı açır."
     }
   }
 }

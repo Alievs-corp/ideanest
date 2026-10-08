@@ -29,23 +29,47 @@ on:
   # waits for them. What is left is the build, which only a person starts.
   # A store build is a deliberate act with a human behind it. It is never a
   # consequence of merging.
+  #
+  # An over-the-air update is the same: `operation: update` publishes the
+  # JavaScript of this commit to one channel (§4.12 MB-13), and nothing
+  # publishes one on merge. `runtimeVersion` is a fingerprint of the native
+  # inputs, so an update only ever reaches builds whose native code it matches;
+  # a change that needs a new binary needs `operation: build`.
   workflow_dispatch:
     inputs:
+      operation:
+        description: Build binaries with EAS Build, or publish an over-the-air update with EAS Update
+        required: true
+        type: choice
+        options: [build, update]
+        default: build
       profile:
-        description: Which eas.json build profile to run
+        description: Which eas.json build profile to build, or which channel to update (the names are the same)
         required: true
         type: choice
         options: [preview, production]
       submit:
-        description: Submit the finished build to the stores
+        description: "build only: submit the finished build to the stores"
         required: false
         type: boolean
         default: false
+      rollout:
+        description: "update only: the percentage of the channel's phones that get the update (1-100)"
+        required: false
+        type: number
+        default: 10
+      message:
+        description: "update only: what changed, as the update's message"
+        required: false
+        type: string
 
 concurrency:
-  # One mobile build at a time per ref. Two overlapping ones burn two EAS build
-  # minutes to produce one artefact anybody wants.
-  group: mobile-release-${{ github.ref }}
+  # One mobile build, or one update, at a time per ref and profile. Two
+  # overlapping builds burn two EAS build minutes to produce one artefact
+  # anybody wants. An update must not cancel a build, and a production dispatch
+  # must not cancel a preview one, so the operation and the profile are both
+  # part of the group.
+  group: mobile-release-${{ inputs.operation }}-${{ inputs.profile }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -68,6 +92,7 @@ jobs:
   # ---------------------------------------------------------------------------
   build:
     name: EAS build (${{ inputs.profile || 'preview' }})
+    if: inputs.operation == 'build'
     runs-on: ubuntu-latest
     needs: check
     timeout-minutes: 30
@@ -104,22 +129,191 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # The profile's `eas.json` environment, so `app.config.ts` evaluates here
+      # exactly as it will on the build worker (see the script). Every input
+      # reaches a script through `env:`, never spliced into it: a dispatch input
+      # is text somebody typed, and `${{ }}` inside `run:` would execute it.
+      - name: Export the profile's environment
+        env:
+          PROFILE: ${{ inputs.profile }}
+        run: node apps/mobile/scripts/eas-profile-env.mjs "$PROFILE" >> "$GITHUB_ENV"
+
       - name: Build
         if: steps.eas.outputs.configured == 'true'
+        working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          PROFILE: ${{ inputs.profile }}
         # `--non-interactive` because a prompt on a runner is a job that times
         # out an hour later with nothing to show. `--no-wait` is deliberately
         # NOT passed: a workflow that queues a build and reports success has
         # reported on the queue rather than on the build.
-        run: pnpm dlx eas-cli@latest build --platform all --profile "${{ inputs.profile }}" --non-interactive
+        run: pnpm dlx eas-cli@latest build --platform all --profile "$PROFILE" --non-interactive
+
+      # The App Store Connect app id and the Apple team id are the owner's
+      # account details, so they are repository secrets rather than literals in
+      # `eas.json`, and `eas submit` reads neither from the environment. They are
+      # written into the submit profile on the runner, never committed. Without
+      # them iOS is not submitted, and the job says so.
+      - name: Decide which stores to submit to
+        id: stores
+        if: steps.eas.outputs.configured == 'true' && inputs.submit
+        env:
+          ASC_APP_ID: ${{ secrets.IDEANEST_ASC_APP_ID }}
+          APPLE_TEAM_ID: ${{ secrets.IDEANEST_APPLE_TEAM_ID }}
+          PROFILE: ${{ inputs.profile }}
+        run: |
+          if [ "$PROFILE" != "production" ]; then
+            echo "::notice::Only production builds are submitted; a $PROFILE build is installed from EAS."
+            echo "platform=none" >> "$GITHUB_OUTPUT"
+          elif [ -z "$ASC_APP_ID" ] || [ -z "$APPLE_TEAM_ID" ]; then
+            echo "::notice::IDEANEST_ASC_APP_ID or IDEANEST_APPLE_TEAM_ID is not set; submitting Android only. See apps/mobile/README.md."
+            echo "platform=android" >> "$GITHUB_OUTPUT"
+          else
+            node -e '
+              const fs = require("node:fs");
+              const file = "apps/mobile/eas.json";
+              const eas = JSON.parse(fs.readFileSync(file, "utf8"));
+              eas.submit.production.ios = {
+                ...eas.submit.production.ios,
+                ascAppId: process.env.ASC_APP_ID,
+                appleTeamId: process.env.APPLE_TEAM_ID,
+              };
+              fs.writeFileSync(file, JSON.stringify(eas, null, 2) + "\n");
+            '
+            echo "platform=all" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Nothing reaches a store without the device suite (#165): the newest finished run of
+      # apps/mobile/.eas/workflows/e2e.yml on EAS must have succeeded, within the last two days.
+      # That workflow says why it runs nightly and not per pull request (#67).
+      - name: Require a green end-to-end run
+        if: steps.eas.outputs.configured == 'true' && inputs.submit
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          pnpm dlx eas-cli@latest workflow:runs --workflow e2e.yml --limit 20 --json > "$RUNNER_TEMP/e2e-runs.json"
+          node -e '
+            const runs = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+            const last = runs.find((run) => ["SUCCESS", "FAILURE", "CANCELED"].includes(run.status));
+            const age = last ? Date.now() - Date.parse(last.finishedAt ?? last.startedAt) : Infinity;
+            if (!last || last.status !== "SUCCESS" || age > 48 * 3600 * 1000) {
+              console.log(`::error::No submission: the latest end-to-end run is ${last ? `${last.status}, finished ${last.finishedAt}` : "missing"}; it must be SUCCESS within 48 hours. Run e2e.yml on EAS first.`);
+              process.exit(1);
+            }
+            console.log(`End-to-end run ${last.id} succeeded at ${last.finishedAt}.`);
+          ' "$RUNNER_TEMP/e2e-runs.json"
 
       # Staged rollout — §19.2's shape, as the stores express it. `eas.json`
       # submits Android to the `internal` track as a draft, which is what makes
       # the rollout a decision somebody takes in Play Console rather than a
-      # consequence of this workflow finishing.
+      # consequence of this workflow finishing. iOS goes to TestFlight, and
+      # release to the App Store stays a decision in App Store Connect.
       - name: Submit
-        if: steps.eas.outputs.configured == 'true' && inputs.submit
+        if: steps.eas.outputs.configured == 'true' && inputs.submit && steps.stores.outputs.platform != 'none'
+        working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: pnpm dlx eas-cli@latest submit --platform all --profile "${{ inputs.profile }}" --non-interactive
+          EXPO_APPLE_TEAM_ID: ${{ secrets.IDEANEST_APPLE_TEAM_ID }}
+          PLATFORM: ${{ steps.stores.outputs.platform }}
+          PROFILE: ${{ inputs.profile }}
+        run: pnpm dlx eas-cli@latest submit --platform "$PLATFORM" --profile "$PROFILE" --latest --non-interactive
+
+  # ---------------------------------------------------------------------------
+  # An over-the-air update (§4.12 MB-13), to one channel, to a percentage of it.
+  #
+  # Never on merge: an update reaches phones within a launch, with no review
+  # in between, so it is the same deliberate act a store build is. Raise the
+  # percentage afterwards with `eas update:edit`, or publish again; see
+  # apps/mobile/README.md.
+  # ---------------------------------------------------------------------------
+  update:
+    name: EAS update (${{ inputs.profile || 'preview' }}, ${{ inputs.rollout || 10 }}%)
+    if: inputs.operation == 'update'
+    runs-on: ubuntu-latest
+    needs: check
+    timeout-minutes: 20
+    environment: mobile
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Export the channel's build environment
+        env:
+          PROFILE: ${{ inputs.profile }}
+        run: node apps/mobile/scripts/eas-profile-env.mjs "$PROFILE" >> "$GITHUB_ENV"
+
+      - name: Say so and stop when EAS Update is not configured
+        id: eas
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          ROLLOUT: ${{ inputs.rollout }}
+        run: |
+          if ! [[ "$ROLLOUT" =~ ^[0-9]+$ ]] || [ "$ROLLOUT" -lt 1 ] || [ "$ROLLOUT" -gt 100 ]; then
+            echo "::error::rollout must be a whole number from 1 to 100, not '$ROLLOUT'."
+            exit 1
+          fi
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::notice::EXPO_TOKEN is not set; no update was published. See apps/mobile/README.md."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "${IDEANEST_EAS_PROJECT_ID:-}" ]; then
+            echo "::notice::eas.json sets no IDEANEST_EAS_PROJECT_ID, so builds have updates switched off and none would receive this. See apps/mobile/README.md."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # `--environment` loads the EAS environment variables the channel's
+      # builds were made with (the provider sign-ins, for one), for the reason
+      # the export step above gives: a different evaluation is a different
+      # fingerprint, and an update for a runtime no phone runs.
+      - name: Publish the update
+        if: steps.eas.outputs.configured == 'true'
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          CHANNEL: ${{ inputs.profile }}
+          ROLLOUT: ${{ inputs.rollout }}
+          MESSAGE: ${{ inputs.message || format('Update from {0}', github.sha) }}
+        run: >-
+          pnpm dlx eas-cli@latest update
+          --channel "$CHANNEL"
+          --environment "$CHANNEL"
+          --rollout-percentage "$ROLLOUT"
+          --message "$MESSAGE"
+          --non-interactive
+
+      # The update's source maps, so a crash in the JavaScript it shipped is
+      # symbolicated (#165). `eas update` exported the bundles and their maps
+      # into `dist`; Sentry's own script uploads them with the debug ids Metro
+      # wrote into both. Without SENTRY_AUTH_TOKEN there is nothing to upload
+      # with, and the update is already published, so the step says so and
+      # stops rather than failing. SENTRY_ORG and SENTRY_PROJECT (and SENTRY_URL
+      # for a GlitchTip) are environment variables, the token a secret.
+      - name: Upload the update's source maps to Sentry
+        if: steps.eas.outputs.configured == 'true'
+        working-directory: apps/mobile
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+          SENTRY_URL: ${{ vars.SENTRY_URL }}
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+            echo "::notice::SENTRY_AUTH_TOKEN is not set; the update's source maps were not uploaded. See apps/mobile/README.md."
+            exit 0
+          fi
+          if [ -z "$SENTRY_URL" ]; then unset SENTRY_URL; fi
+          pnpm exec sentry-expo-upload-sourcemaps dist

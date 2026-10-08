@@ -1,20 +1,14 @@
+import { SETTINGS_PANELS, type SettingsPanel } from '@ideanest/links/claims';
 import { Glyphs, type IconGlyph } from '../../icons';
 import type { MessageKey } from '../../lib/i18n';
 
-/** The web's `ACCOUNT_GROUPS.settings`, in its order (#161). */
-export const SETTINGS_SECTIONS = [
-  'profile',
-  'notifications',
-  'sessions',
-  'email',
-  'password',
-  'security',
-  'privacy',
-  'payout',
-  'language',
-] as const;
+/**
+ * The web's `ACCOUNT_GROUPS.settings`, in its order (#161) — the list the deep-link parser
+ * answers `/settings/<panel>` from, so a panel added here is one a link can open.
+ */
+export const SETTINGS_SECTIONS = SETTINGS_PANELS;
 
-export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
+export type SettingsSection = SettingsPanel;
 
 export function isSettingsSection(value: string): value is SettingsSection {
   return (SETTINGS_SECTIONS as readonly string[]).includes(value);

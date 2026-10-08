@@ -1,0 +1,30 @@
+# A cold start with nothing kept: no session, no cache, no language choice. With LOCALE set
+# (screenshots.yaml), the app is switched to that language first and started again in it.
+appId: az.ideanest.app
+env:
+  LOCALE: ${LOCALE || ''}
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+- extendedWaitUntil:
+    visible:
+      id: screen-home
+    timeout: 30000
+- runFlow:
+    when:
+      true: ${LOCALE != ''}
+    commands:
+      - openLink: ideanest://settings/language
+      - extendedWaitUntil:
+          visible:
+            id: language-${LOCALE}
+          timeout: 15000
+      - tapOn:
+          id: language-${LOCALE}
+      - stopApp
+      - launchApp
+      - extendedWaitUntil:
+          visible:
+            id: screen-home
+          timeout: 30000

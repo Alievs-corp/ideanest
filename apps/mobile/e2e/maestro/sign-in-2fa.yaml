@@ -1,0 +1,47 @@
+# Flow 2 (#165): Me -> Sign in -> address and password -> the two-factor step -> the code ->
+# Me shows the account -> sign out -> the saved list is signed out and its offline copy gone.
+#
+# OTP and OTP_NEXT are computed by the workflow with `oathtool --totp -b "$E2E_TOTP_SECRET"`
+# immediately before this flow runs (`.eas/workflows/e2e.yml`), for the current 30-second window
+# and the next one. The service accepts one step of skew, so when the first code has expired by
+# the time it is typed, the second is still good: that is the one retry.
+#
+# For store screenshots (SHOTS=true) the flow stops at the two-factor step: a code is spent once
+# (the service refuses a replayed step), and four locales in a row would need four windows.
+appId: az.ideanest.app
+name: Sign in with two-factor
+tags:
+  - two-factor
+env:
+  TWOFA_EMAIL: ${MAESTRO_TWOFA_EMAIL || TWOFA_EMAIL}
+  TWOFA_PASSWORD: ${MAESTRO_TWOFA_PASSWORD || TWOFA_PASSWORD}
+  TWOFA_NAME: ${MAESTRO_TWOFA_NAME || TWOFA_NAME}
+  OTP: ${MAESTRO_OTP || OTP || ''}
+  OTP_NEXT: ${MAESTRO_OTP_NEXT || OTP_NEXT || ''}
+  LOCALE: ${LOCALE || ''}
+  SHOTS: ${SHOTS || 'false'}
+---
+- runFlow: subflows/launch.yaml
+- runFlow:
+    file: subflows/sign-in.yaml
+    env:
+      EMAIL: ${TWOFA_EMAIL}
+      PASSWORD: ${TWOFA_PASSWORD}
+- extendedWaitUntil:
+    visible:
+      id: two-factor-code
+    timeout: 30000
+- runFlow:
+    when:
+      true: ${SHOTS == 'true'}
+    file: subflows/shot.yaml
+    env:
+      NAME: 05-two-factor
+- runFlow:
+    when:
+      true: ${SHOTS != 'true'}
+    file: subflows/two-factor-complete.yaml
+    env:
+      OTP: ${OTP}
+      OTP_NEXT: ${OTP_NEXT}
+      TWOFA_NAME: ${TWOFA_NAME}

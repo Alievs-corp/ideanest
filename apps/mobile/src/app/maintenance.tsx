@@ -17,6 +17,7 @@ import {
   type Poller,
 } from '../lib/maintenance';
 import { untilMessage } from '../lib/maintenance-copy';
+import { withScreenRoot } from '../components/screen-root';
 
 /**
  * The maintenance screen — issues #150 and #214. Pushed by the root layout
@@ -60,7 +61,7 @@ import { untilMessage } from '../lib/maintenance-copy';
  * a phone in a pocket has no reason to wake the radio for a screen nobody sees — and it stops
  * for good when the screen unmounts.
  */
-export default function MaintenanceScreen() {
+function MaintenanceScreen() {
   const t = useT('shell.failure.pages.maintenance');
   const tMaintenance = useT('shell.maintenance');
   const tError = useT('shell.failure.pages.error');
@@ -156,6 +157,8 @@ export default function MaintenanceScreen() {
     />
   );
 }
+
+export default withScreenRoot('maintenance', MaintenanceScreen);
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../components/route-error-boundary';

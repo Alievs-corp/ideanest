@@ -351,14 +351,16 @@ once rather than twice.
 | `IDEANEST_API_ORIGIN` | Where the Spring Boot service listens | `http://localhost:8080` |
 | `IDEANEST_SITE_URL` | The public origin whose links this application claims | `https://ideyanest.com` |
 | `IDEANEST_REALTIME_ORIGIN` | Where the campaign page opens §12.1's live-counter socket (#155): `http(s)://` becomes `ws(s)://`, a `ws(s)://` origin is used as it is | **no socket** — the figures stay as the page read them |
+| `IDEANEST_EAS_PROJECT_ID` | The EAS project: the update URL and the push-token project (see "Builds and releases") | updates off, no push token |
 
 A value that is set but unusable **throws the build** rather than falling back.
 An unset variable is somebody running locally; `IDEANEST_SITE_URL=ideanest.az`
 with no scheme is a misconfiguration that would otherwise ship a build pointing
 at localhost. The realtime origin accepts `http`, `https`, `ws` and `wss`.
 
-`eas.json` sets the first two per profile. `development` points at localhost,
-`preview` at staging, `production` at production. **No profile sets
+`eas.json` sets the first two per profile. `development` points at the
+developer's machine (see "Running against a local API" below), `preview` at
+staging, `production` at production. **No profile sets
 `IDEANEST_REALTIME_ORIGIN` yet**: whether production opens a socket, and to which
 host, is the owner's decision (the web leaves it unset by default for the same
 reason — `@ideanest/campaign/realtime` says why). There is no default host.
@@ -384,46 +386,116 @@ They are not in `eas.json` yet: the Google client and the Apple capability are
 created in the owners' Google Cloud and Apple Developer accounts, then set as EAS
 environment variables.
 
-## Deep links (§4.12 MB-02)
+Crash reporting (#165) is off unless a build is told where to send reports. See
+"Crash reporting" below.
+
+| Variable | Meaning | Unset |
+|---|---|---|
+| `IDEANEST_SENTRY_DSN` | The project DSN, `https://<public key>@<host>/<project id>`. Not a secret: it ships in the binary. Anything else throws the build. Set it as an EAS environment variable with **plain text** or **sensitive** visibility, never **secret**: `eas update` cannot read a secret variable, so the update would evaluate `app.config.ts` without the DSN, hash to a different fingerprint, and reach no build | **no crash reporting**: the SDK is never started, and the privacy manifest declares no diagnostics |
+| `IDEANEST_SENTRY_ENVIRONMENT` | Overrides the event environment. Rarely needed: EAS sets `EAS_BUILD_PROFILE` (the profile, which is the channel) on its build workers, and the release workflow exports it before `eas update` as well | `EAS_BUILD_PROFILE`, else `development` |
+| `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` (`SENTRY_URL` for GlitchTip) | The source-map and debug-symbol upload. For EAS builds: EAS environment variables, the token **secret** (only the native build steps read it, never `app.config.ts`). For OTA updates: the `mobile` GitHub environment, the token as a secret and the other three as variables | no upload, and **no failed build or update**: `app.config.ts` gates Sentry's build steps on the token, and the release workflow skips the update's upload |
+
+## Deep links (§4.12 MB-02, #165)
+
+**One table, three readers.** The paths a link may open the application at are
+`@ideanest/links`' `CLAIMED_ROUTES` (`packages/links/README.md`): the home page,
+Discover, Search, the browse pages, every `/projects/…` form, pledges, profiles,
+the inbox, the account and settings pages, sign-in, registration and the three
+emailed links, and the static, legal, pricing and maintenance pages. The web's
+association file, the Android intent filters in `app.config.ts`, and the parser
+behind `src/lib/links.ts` are all built from it, and
+`scripts/check-association.mjs` fails a build whose intent filter has drifted
+from it. A new path is a row in that table, not an edit here.
+
+Every path is claimed **bare and under each locale** (`/az/…`, `/en/…`, `/ru/…`,
+`/tr/…`): the site serves every page under its locale, which is the URL people
+copy, while the API's emails and this application's share sheet send the bare
+form. **Never claimed:** `/admin` (the console is not in the app), `/api`,
+`/v1`, `/.well-known`, `/_next`, the robots and sitemap files, the icons, and
+every `opengraph-image`. iOS reads the excludes first; Android cannot exclude, so
+its list is an allowlist of exact paths and prefixes, none of them covering
+`/admin`.
+
+**The locale in a link is stripped and does not change the app's language.** The
+language is the reader's own choice (#150); `/ru/projects/a/b` opens the campaign
+in whatever language the app is set to.
 
 A campaign is at `/projects/<creator>/<campaign>` on the web and at the same path
-here, so the link that opened the application and the route it lands on are one
-string. Its `?tab=` (one of the four non-default tabs) and, on the Comments tab,
-`?thread=` are kept; the rest of the query is dropped.
+here. Its `?tab=` (one of the four non-default tabs) and, on the Comments tab,
+`?thread=` are kept; the rest of the query is dropped. The pages the web keys by
+project id — `/projects/<uuid>/prelaunch`, `/back`, `/edit`, `/dashboard` — open
+under `campaigns/<uuid>/…`, because Expo Router cannot hold `projects/[id]` beside
+`projects/[creatorSlug]`. They are matched with a strict UUID **before** the
+creator/slug pattern, and the checkout keeps `?reward=` and every `?token=`.
+`/projects/alice/prelaunch` (not a UUID) opens the campaign slugged `prelaunch`,
+where the web would show its pre-launch page for an id of `alice` (#148). A bare
+`/projects/<uuid>` — what old notification rows still carry — lands on the
+not-found screen, because the web has no page there either.
 
-The pages the web keys by project id — `/projects/<uuid>/prelaunch`, `/back`,
-`/edit`, `/dashboard` — open under `campaigns/<uuid>/…`, because Expo Router
-cannot hold `projects/[id]` beside `projects/[creatorSlug]`. They are matched
-with a strict UUID before the creator/slug pattern, and the checkout keeps
-`?reward=` and every `?token=` (comma-joined in the route param). `/projects/alice/prelaunch` (not a UUID) opens the campaign slugged
-`prelaunch`, where the web would show its pre-launch page for an id of `alice`
-(#148).
+Every route keeps only its own query keys (`CLAIMED_ROUTES[].query`): Discover's
+filters (rebuilt through the shared `parseFilters`), `q`, `tab` and `thread`,
+`reward` and `token` on the checkout, `payment` on a pledge, `card` on the payout
+panel, `from` and `project` on Pricing, `token` on the emailed links, and `next`
+on sign-in, which is read through the same parser and handed to the screen as
+`returnTo` (refused when it names another site, an auth screen, or nothing the app
+has). Slugs are decoded exactly once. A campaign's two slugs are then encoded
+again into the route path, which Expo Router decodes once on the way to the
+screen, so a slug holding `?` or `#` stays one segment — in the navigation and in
+a `returnTo` built from it. The browse and profile routes pass their slugs as
+params for the same reason.
 
-The browse pages are claimed too (#154): `/categories` and `/collections`, and
-everything under each (exactly, on both platforms). `links.ts` decodes a slug
-once and hands it on as a route param; Expo Router then encodes it into the path
-and decodes what the screen reads, so a slug carrying a literal `%XX` would not
-survive the trip. The service's slugs are `[a-z0-9-]`, so none does today.
-`/categories/a/b/c` is refused.
+### What happens to a link
 
-Three discovery paths are claimed as well (#153): `/` opens Home, `/discover?…`
-opens Discover with the filters in the query string, and `/search?q=` opens
-Search with the query. Each is an exact path, so `/discover/anything` stays the
-browser's. Discover's params are rebuilt from the link through the shared
-`parseFilters` rather than passed through, so a `utm_source` or an unknown status
-never reaches the screen. `links.ts`, the Android intent filters in
-`app.config.ts`, and the web's `association.ts` claim the same paths.
+`_layout.tsx` hands the launch URL (a cold start) and every later one (the app in
+the background or open) to `listenForLinks`, which asks `incomingLink`:
 
-Three ways in — a push payload (`ideanest://…`), a shared https link, and a cold
-start — all go through `src/lib/links.ts`, which **refuses** anything it does not
-recognise. Expo Router can route an incoming URL by itself; what it cannot do is
-refuse one, and on Android any application can send an implicit intent carrying a
-URL.
+| The link | What happens |
+|---|---|
+| A route the parser answers | Its screen opens |
+| Our host, https, a path the parser refuses (an OG image under `/projects/`, a page this build has no screen for) | The same URL opens in the in-app browser (`expo-web-browser`) — never nothing |
+| `ideanest://` with a path the parser refuses | The not-found screen |
+| Any other host, `http:`, or not a URL | Ignored silently: any app can send an implicit intent |
 
-The grant lives on the web side: `apps/web` serves
-`/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json` from
-`src/lib/mobile/association.ts`. Both need identifiers that only exist once an
-application has been signed:
+Both the navigation and the in-app browser go through `openWhenAllowed`, so the
+app lock and a maintenance window hold a link until they open.
+
+**Deliberately not `+native-intent.tsx`.** #165 asked for the parser to run in
+`redirectSystemPath`, so Expo Router routes the rewritten path itself. That hook
+runs before the root layout exists, so a link it rewrote would be routed before
+the app lock could hold it — the navigation bypass the lock's review warned
+about (#321). It keeps answering `null` (Expo Router stays where it is), and
+`_layout.tsx` routes every link through the lock. Expo Router therefore never routes an incoming URL on its
+own, so a locale-prefixed link does not flash the not-found screen either.
+
+**Emailed links** (`/verify-email`, `/reset-password/confirm`,
+`/confirm-email-change`, each `?token=`) open their screens from both the bare
+link in the email and the locale-prefixed one the web redirects to. The token is
+a route param that the screen takes off the route as soon as it reads it
+(`features/auth/link-token.ts`). Nothing in the link path logs a URL; keep it
+that way, because the URL is the credential.
+
+**Payment and payout-card returns** — `/<locale>/pledges/<id>?payment=returned|failed`
+and `/<locale>/settings/payout?card=returned|failed` — are claimed, so a
+provider's redirect that reaches the app outside the in-app browser session (the
+process was killed while the payment page was up, or the link is opened later)
+lands on the pledge or the payout panel through the same `listenForLinks`
+(`links.test.ts`). While a session is open, its return belongs to the session:
+`openPaymentPage` and `openCardRegistration` claim the route they return to
+(`lib/auth-session-links.ts`), and the listener ignores a link to that route
+until two seconds after the session settles. Without that, Android would deliver
+the return twice — once to the session, once as an App Link or a forwarded
+`ideanest://` link — and push the pledge over the checkout.
+
+**Still to verify on a device**, with signed builds and the association files
+served: that the return from each provider page ends the session exactly once on
+both platforms, from Chrome Custom Tabs and from `ASWebAuthenticationSession`.
+The unit tests cover the listener and the claim, not the browsers.
+
+### The grant, on the web
+
+`apps/web` serves `/.well-known/apple-app-site-association` and
+`/.well-known/assetlinks.json` from `src/lib/mobile/association.ts`. Both need
+identifiers that only exist once an application has been signed:
 
 | Variable | Set on |
 |---|---|
@@ -433,11 +505,29 @@ application has been signed:
 
 Unconfigured serves **404**, deliberately: both platforms already expect that
 from a site with no application and retry, whereas iOS caches a file with the
-wrong identifier in it for up to a week.
+wrong identifier in it for up to a week. `assetlinks.json` carries no
+`dynamic_app_link_components` (Android 15's server-side excludes): the intent
+filter is already an allowlist, and a malformed extension is a verification
+failure nobody sees.
+
+**Host.** `associatedDomains` and the intent filter claim only `siteHost`, from
+`IDEANEST_SITE_URL`. If `www.<site>` is served, it must **301 to the bare host
+before any app-link check** — Apple does not follow redirects for the
+association file, and a `www` link would otherwise open the browser. The owner to
+confirm in Coolify; claiming `www` too would need its own association files.
 
 `scripts/check-association.mjs` asserts that the two halves name the same
-application. Nothing else does, and the failure they produce is silent — the file
-is fetched, disagreed with, and links quietly stop opening the application.
+application and that the intent filter is the table. Nothing else does, and the
+failure they produce is silent — the file is fetched, disagreed with, and links
+quietly stop opening the application.
+
+**Still to verify on a device:** that a refused link opened in the in-app browser
+on Android is not handed straight back to the app by the app link it matches; and
+that the bare origin `https://ideyanest.com`, with no trailing slash, opens the
+app on Android. Android matches a `path` literally against `Uri.getPath()`, which
+is empty for that URL, so the filter carries `android:path=""` beside `/` (aapt2
+keeps the empty attribute; whether every Android version's manifest parser
+registers it is what the device test answers).
 
 ## Push notifications (§4.12 MB-01, §12.2)
 
@@ -608,19 +698,239 @@ doubles that can refuse.
 them. It **builds** only on a manual dispatch, because a store build is a
 deliberate act with a human behind it.
 
-The **checks** — typecheck, tests, the Expo config resolving, and the association
-identifiers agreeing — are `.github/workflows/mobile-check.yml`. `ci.yml` runs
-them on every change to `apps/mobile` or `packages/**`, and `CI complete` fails
-when they fail, so a red mobile test blocks the merge (#144). The release
-workflow runs the same checks again before it builds.
+The **checks** — typecheck, tests, the Expo config resolving, the generated
+images matching their inputs, the Android bundle exporting within its size
+budget, and the association identifiers agreeing — are
+`.github/workflows/mobile-check.yml`. `ci.yml` runs them on every change to
+`apps/mobile`, `packages/**` or the brand mark, and `CI complete` fails when they
+fail, so a red mobile test blocks the merge (#144). The release workflow runs the
+same checks again before it builds or publishes.
 
 Building needs Xcode and the Android SDK, which this repository does not own, so
 the build runs on Expo's infrastructure and needs `EXPO_TOKEN` in the repository
 secrets. Without it the workflow says so and stops rather than failing.
 
+### What the owner sets up once
+
+| Where | Name | What |
+|---|---|---|
+| `eas.json` → `build.base.env` | `IDEANEST_EAS_PROJECT_ID` | The id `eas init` prints. Not a secret (every update manifest carries it), so it is committed. Unset, builds have updates switched off and no push token |
+| GitHub secret (`mobile` environment) | `EXPO_TOKEN` | A robot token for the Expo account |
+| GitHub secret | `IDEANEST_ASC_APP_ID` | The App Store Connect app id (digits). `eas submit` cannot read it from the environment, so the workflow writes it into the submit profile on the runner |
+| GitHub secret | `IDEANEST_APPLE_TEAM_ID` | The 10-character Apple team id, written the same way and passed as `EXPO_APPLE_TEAM_ID` |
+| EAS credentials (`eas credentials`) | — | The App Store Connect API key and the Play service-account key, held by EAS so neither is in the repository or in GitHub |
+
+Without the two Apple ids, a production submit sends Android only and says so.
+
+### Profiles
+
+| Profile | Channel | API | Who installs it |
+|---|---|---|---|
+| `development` | `development` | `http://10.0.2.2:8080` on Android, `http://localhost:8080` on iOS | a developer: Android APK, iOS **simulator** |
+| `preview` | `preview` | staging | testers: Android APK and an iOS **ad hoc** build, both `distribution: internal`. Register a tester's iPhone with `eas device:create` before building, or the build will not install on it |
+| `production` | `production` | production | the stores: AAB to Play's `internal` track as a draft, iOS to TestFlight |
+
 The Android submit goes to the `internal` track as a **draft**, which makes the
 staged rollout a decision somebody takes in Play Console rather than a
 consequence of a workflow finishing.
+
+A submit also needs the end-to-end suite: the release workflow refuses it unless
+the newest finished run of `.eas/workflows/e2e.yml` succeeded within the last 48
+hours (see End-to-end tests below).
+
+**Running against a local API.** An Android emulator's `localhost` is the
+emulator itself; `10.0.2.2` is the host, which is why the development profile's
+Android build uses it. With a development client, the JavaScript and its
+configuration come from `expo start` on your machine, so set the origin there
+too — `IDEANEST_API_ORIGIN=http://10.0.2.2:8080 pnpm start` — or, for an
+emulator **or** a phone on USB, forward the port and keep `localhost`:
+`adb reverse tcp:8080 tcp:8080`. The iOS simulator shares the host's network.
+
+Android 9 and later refuse plain HTTP and iOS's App Transport Security refuses
+it too, so `app.config.ts` grants `usesCleartextTraffic` and
+`NSAllowsLocalNetworking` **only on request**: when `EAS_BUILD_PROFILE` is
+`development` (EAS sets it on every build worker from the profile's name), or
+when `IDEANEST_ALLOW_LOCAL_NETWORK=true`. Anything else, including nothing set,
+means no exception, and it also takes out the `NSAllowsLocalNetworking` Expo's
+iOS template ships for every build. A preview or production build cannot get them
+by a forgotten variable, and neither can a release prebuilt on a laptop.
+
+**A local native build against a local API** (`expo run:android`,
+`expo run:ios`, `expo prebuild`) has no EAS profile, so opt in:
+`IDEANEST_ALLOW_LOCAL_NETWORK=true IDEANEST_API_ORIGIN=http://10.0.2.2:8080 pnpm exec expo run:android`
+(`http://localhost:8080` on the iOS simulator, or with `adb reverse`). Without
+the variable the build refuses plain HTTP and every request to the local API
+fails. `src/lib/build-config.test.ts` runs the native mods for each case.
+
+### Over-the-air updates (§4.12 MB-13)
+
+`expo-updates` with `runtimeVersion: { policy: 'fingerprint' }`. The runtime is
+a hash of the native inputs, so a change that needs a new binary produces a new
+runtime, and an update only ever reaches builds whose native code it matches.
+Updates are for JavaScript-only changes.
+
+`app.config.ts` imports the message catalogues, the colour tokens and the
+claimed-route table for their values, and the fingerprint would otherwise hash
+those files whole: fixing a typo in a web string would give the next update a
+runtime no installed build has. `.fingerprintignore` leaves them out; what they
+contribute (the native strings, the colours, the intent filters) still reaches
+the hash through the resolved config. `scripts/check-fingerprint.mjs`, in
+`mobile-check.yml`, proves it: no `packages/` file is hashed, an edit to an
+unrelated catalogue key leaves the fingerprint alone, and an edit to
+`mobile.native.displayName` changes it. A new workspace import in
+`app.config.ts` fails that check until it is added to the ignore file.
+
+Nothing publishes one on merge. Run **Mobile release** by hand with
+`operation: update`, the channel (`preview` or `production`), a rollout
+percentage (default 10) and a message. Widen or finish a rollout afterwards with
+`eas update:edit` (or publish again at 100). The job exports the channel's
+`eas.json` build environment and passes `--environment <channel>` first: `extra`
+is part of the fingerprint, so an update evaluated with different variables
+would carry the wrong API origin and match no build. With no
+`IDEANEST_EAS_PROJECT_ID`, the job says so and publishes nothing.
+
+### Icons, splash and the Play feature graphic
+
+Every image is rendered by `scripts/generate-assets.mjs` from the brand mark the
+web serves (`apps/web/src/app/icon.svg`) and the colour tokens — nothing is drawn
+by hand. The script refuses a mark painted in anything but `colors.lime500`.
+
+| File | What |
+|---|---|
+| `assets/icon.png` | 1024, lime mark on `surface1`, opaque (the App Store refuses alpha); iOS light |
+| `assets/icon-dark.png` | iOS 18 dark: the mark on transparent |
+| `assets/icon-tinted.png` | iOS 18 tinted: white mark on `surface1`, grayscale |
+| `assets/adaptive-icon.png`, `assets/adaptive-icon-monochrome.png` | Android adaptive foreground (inside the 66% safe circle) and the Android 13+ themed icon |
+| `assets/notification-icon.png` | 96 px, white on transparent, tinted lime by `expo-notifications` |
+| `assets/splash-icon.png` | the splash mark, also the `dark` splash (the UI is dark only) |
+| `store/feature-graphic.png` | Play's 1024 × 500 feature graphic, opaque |
+
+After changing the mark or a token, run `node scripts/generate-assets.mjs` and
+commit the PNGs. CI runs it with `--check`, which decodes each committed PNG and
+a fresh render and fails when any channel of any pixel differs by more than 2:
+pixels rather than bytes, because the PNG encoder's compressed output may differ
+between machines. The renderer is `sharp`, pinned to an exact version, and the
+mark is pure vector, so no font can be substituted.
+
+### Native strings
+
+The app's name and the iOS permission reasons (Face ID, camera, photo library)
+are UI, so they live in the catalogue under `mobile.native` and reach the system
+in all four languages: `app.config.ts` turns them into Expo `locales` (iOS
+`InfoPlist.strings`, Android `strings.xml`) at config time, with nothing
+generated to commit, and the base `Info.plist` gets the English copy. Both
+plugins that write `NSFaceIDUsageDescription` read the same key.
+`src/lib/native-strings.test.ts` holds the config to the catalogues.
+
+### Bundle size: the `admin` namespace
+
+Measured on 2026-10-08 with `expo export --platform android` (Hermes bytecode):
+
+| Catalogues | `.hbc` | gzip -9 |
+|---|---|---|
+| as shipped, `admin` included | 8,553,676 B | 3,489,095 B |
+| `admin` cut to the keys the app reads | 8,081,584 B | 3,340,900 B |
+| saving | 472,092 B (5.5%) | 148,195 B (4.2%) |
+
+**Decision: not stripped yet.** About 145 KB of download against a 30 MB
+budget does not pay for a build step that rewrites the catalogues, and the app
+does read `admin` keys today (`admin.moderation.reason.*` in the report sheet,
+`admin.screens.campaignDirectory.state.*` in two lists), so stripping would
+first need those moved to a shared namespace or an allowlist with a test. The
+bundle-size budget (see "Performance budgets") now measures the bundle with
+`admin` in it; revisit when that check fails, since stripping `admin` is the
+largest saving available.
+
+## Crash reporting (#165)
+
+`@sentry/react-native` through its Expo config plugin, started from `index.ts`
+before the route tree loads (`src/lib/crash/reporting.ts`). It reports native
+crashes and JavaScript errors, render errors caught by the app's own boundaries
+(`route-error-boundary.tsx`, `root-failure.tsx` — the SDK's `ErrorBoundary` is
+not mounted, so it cannot pre-empt them), and release health.
+
+- **Off without a DSN.** No `IDEANEST_SENTRY_DSN`, no SDK: not a disabled
+  client, no client.
+- **Naming.** `release` is `<version>+<build>`, `dist` the platform,
+  `environment` the EAS channel. Metro writes a debug id into every bundle and
+  its source map (`metro.config.js`), so a report finds its source map whatever
+  release or OTA update shipped it.
+- **Joining the service's log.** Every event carries `api_trace_id`, the
+  `X-Trace-Id` of the last API response (`src/api/last-trace.ts`), copied onto
+  the native scope as it changes so a native crash carries it too. A boundary
+  error carries the trace id of the response it came from.
+- **Who.** The account UUID and nothing else (`AccountSync`), cleared at
+  sign-out.
+- **Scrubbing.** `src/lib/crash/scrub.ts` ports the service's
+  `Redaction.java` list — names and shapes — plus `Authorization`,
+  `Idempotency-Key`, every `?token=` value, emails and the shipping and payout
+  fields, in `beforeSend`, `beforeSendTransaction` and `beforeBreadcrumb`.
+  `scrub.test.ts` sends a crafted event through it. A native crash is written
+  by the native SDK and never passes through `beforeSend`. The breadcrumbs it
+  carries from JavaScript passed `beforeBreadcrumb` when they were recorded, and
+  the tags and the user are set by this code (the account UUID, the trace id);
+  but anything the native SDKs record themselves is not scrubbed by the app.
+  sentry-cocoa's `NSURLSession` breadcrumbs — full URLs, `?token=` included —
+  are therefore switched off (`enableNetworkBreadcrumbs: false`); Android records
+  none, because OkHttp is only instrumented by Sentry's Gradle plugin, which is
+  not used. Native stack frames, device context and the native SDK's own
+  breadcrumbs (app lifecycle, memory warnings) are sent as they are.
+- **Server-side scrubbing is required, not optional.** Turn on the
+  destination's data scrubbing (Sentry: *Data Scrubber* and *Scrub IP
+  addresses* in the project's security settings, plus the `token`,
+  `authorization` and `idempotency-key` fields as additional sensitive fields;
+  GlitchTip: its scrubbing settings) before the first build with a DSN ships. It
+  is the only line that covers what the native SDKs record.
+- **Off on purpose:** session replay (it would film the address and payment
+  screens), screenshots and the view hierarchy. Tracing samples 10% of
+  production sessions and nothing elsewhere.
+- **Bundle cost:** the SDK adds about 1.2 MB of Hermes bytecode (8.55 MB →
+  9.77 MB on the Android export). The bundle budget below is measured with it.
+
+**Destination: the owner's decision** (`status: needs-decision`). The SDK and
+this code are the same for both:
+
+- **Recommended: sentry.io, EU data region** (Frankfurt; DSNs on `ingest.de.sentry.io`). Nothing to run.
+- **GlitchTip on Coolify** speaks the same protocol, but adds PostgreSQL, Redis
+  and worker processes to the existing server, which is small and shared with
+  the platform itself; a crash storm would compete with the API for it.
+
+Either way it is a **new data processor**: the privacy policy and both store
+forms must name it before a build with a DSN is submitted
+(`store/data-inventory.md`). OTA updates: the release workflow's `update` job
+exports the channel's profile (so the environment is the channel) and, when
+`SENTRY_AUTH_TOKEN` is set, runs `sentry-expo-upload-sourcemaps dist` on what
+`eas update` exported. A manual `eas update` needs the same two steps.
+
+## Store listing (#165)
+
+`store/`: the listing texts in four languages, the App Store metadata
+generated from them, the data inventory behind the privacy answers and the
+iOS privacy manifest, and the store-gate checklist. See `store/README.md`.
+
+## Performance budgets (#165)
+
+Measured on **release** builds (Hermes) on reference devices: a mid-range
+Android (a Samsung Galaxy A5x or a Pixel 6a) and an iPhone 12-class iPhone.
+
+| Metric | Budget | How measured | Android mid-range | iPhone 12-class |
+|---|---|---|---|---|
+| Cold start → first Home content from cache | ≤ 2.5 s Android, ≤ 1.5 s iPhone | Median of 10 launches: `adb shell am start -W` plus an app `performance.mark` at first content / Xcode Instruments App Launch | not measured yet | not measured yet |
+| Discovery feed scroll (200 cards, FlashList) | 60 fps target; ≤ 1% of frames over 32 ms; no blank cells after the first fling | Flashlight (Android) / Instruments Animation Hitches | not measured yet | not measured yet |
+| JS bundle (Hermes bytecode) | Fail at +10% over the committed baseline | `scripts/check-bundle-size.mjs` in `mobile-check.yml`, after `expo export --platform android` | 9,774,784 bytes (baseline) | same bundle |
+| Download size | iOS ≤ 50 MB; Android per device ≤ 30 MB | App Store Connect / Play Console | not measured yet | not measured yet |
+| Memory while scrolling the feed | ≤ 250 MB | Android Studio profiler / Instruments | not measured yet | not measured yet |
+
+**The bundle baseline** is `scripts/bundle-size-baseline.json`: 9,774,784 bytes,
+the `.hbc` file `expo export --platform android` wrote on 2026-10-08 (Windows,
+Node 22, SDK 57) from `main` plus crash reporting; 8,551,687 bytes before it. It
+is the CI export, not a production EAS build — the same Metro graph and the same
+`hermesc`, without the store's compression. Raising it is a reviewed edit with
+the reason in the commit; the check says so when the bundle has fallen more
+than 10% below it, so the budget can be lowered.
+
+Motion rules (`docs/motion-system.md` §8) are part of the budget: transform and
+opacity only, no animation in long lists.
 
 ## Checkout
 
@@ -714,8 +1024,8 @@ rows (#147). Dates are written in UTC, as the web's server writes them (`formatS
 The texts are cached under `legalDocs` and persisted: each is versioned and hash-stamped, and its
 provenance is printed above it. The digest wraps every eight characters and has a copy button.
 
-`lib/links.ts` opens these paths from a push or `ideanest://` link. Claiming them as universal
-links in the association files is #165's, with the rest of the web paths.
+`lib/links.ts` opens these paths from a push, an `ideanest://` link, or a universal or App Link:
+they are rows of `@ideanest/links`' claimed-route table (see "Deep links").
 
 ## Pricing (#164)
 
@@ -820,6 +1130,122 @@ offers the plans beside the refusal. Launch is confirmed inline, with focus on "
 completeness bar is the one motion the editor allows: the kit `ProgressBar`'s `rise="progress"`
 (800ms, once), drawn at its figure under Reduce Motion, and without the funded glow at 100%.
 
+## End-to-end tests (§19.2 `test-e2e`, #165)
+
+Maestro flows in `e2e/maestro/`, run on a `preview` build against **staging** with the
+fixtures `ops/seed/e2e/seed.mjs` creates. Nothing is ever paid: the checkout flow stops
+at the hand-off to the payment provider's page.
+
+**Not yet run anywhere.** The hosts the `preview` profile names (`staging.ideanest.az`,
+`staging-api.ideanest.az`) do not resolve (checked 2026-10-08); the iOS jobs build the
+`preview-simulator` profile (`extends: preview`, `ios.simulator: true`). The flows pass `maestro check-syntax`
+and the workflow passes the EAS Workflows schema; neither has met a device and a service.
+
+| Flow | What it proves | Tags |
+|---|---|---|
+| `browse-to-checkout.yaml` | Signed-in backer: Home → the seeded campaign's card → its title, funding and rewards → Back this → a tier → reserve (the hold's countdown) → swipe to pay → the provider's page in the in-app browser → closed without paying → the review step or the pledge | `checkout` |
+| `payment-failed-return.yaml` | `https://<site>/az/pledges/<id>?payment=failed` opens that pledge in its failure state | `checkout`, `links` |
+| `sign-in-2fa.yaml` | Me → Sign in → address and password → the two-factor step → the code → Me names the account → sign out → the saved list is signed out, no row left from the offline copy | `two-factor` |
+| `creator-autosave.yaml` | The draft's id-form link `/projects/<uuid>/edit/basics` → a new title → saved after the 800 ms debounce → app killed and started → the title persisted | `editor` |
+| `creator-autosave-offline.yaml` | The same with airplane mode switched on as the title is typed: the change is kept, the retry saves it once online | `editor`, `android-only` |
+| `links.yaml` | Every `CLAIMED_ROUTES` route, opened unprefixed, locale-prefixed and as `ideanest://`, each from a stopped app, lands on its screen; `https://<site>/az/admin` does not open the app | `links` |
+| `screenshots.yaml` | Flows 1–3 once per language with `takeScreenshot` (`<locale>-<nn>-<screen>.png`), for the store listings | `screenshots` |
+
+`e2e/maestro/config.yaml` runs the checkout first; `subflows/` holds the shared steps.
+
+**How a flow knows where it is.** Every route wraps its screen in `withScreenRoot('<name>', …)`
+(`src/components/screen-root.tsx`), a `View` with `testID="screen-<name>"` that every state of
+the route shares — loading, failed, signed out. `src/lib/screen-roots.test.ts` fails a route
+without one and two routes with the same name. Other ids the flows use are the components' own
+(`tab-<name>` on the tab bar, `campaign-card`, `save-status-<state>`, `me-sign-in`, …).
+
+**`links.yaml` is generated**, never edited: `node e2e/generate-links-flow.mjs` writes it from
+`@ideanest/links`' `CLAIMED_ROUTES`, reading each landing screen's name from its route file. It
+refuses to write a flow that misses a row, a route or a pattern of the table, and
+`screen-roots.test.ts` runs it with `--check`, so a row added to the table fails the mobile tests
+until the flow is regenerated (with a sample in the generator's `SAMPLES` for the new route).
+
+### When it runs
+
+`.eas/workflows/e2e.yml` (EAS Workflows; it lives beside `eas.json`, the project root EAS reads):
+
+- **nightly** at 01:30 GMT, and **by hand** (`eas workflow:run e2e.yml`, or the Expo dashboard;
+  the `screenshots` input adds the store screenshots on a Pixel and a 6.9" iPhone);
+- **before every store submission**: `mobile-release.yml` refuses `submit` without a green run in
+  the last 48 hours;
+- **not per pull request**: issue #67's minutes budget. A mobile pull request is held by
+  `CI complete` (typecheck, unit tests, config) instead.
+
+Android runs first, then iOS (the flows share the seeded accounts, and one backer holds one live
+pledge per campaign). The two-factor flow is a job of its own on each platform, because its
+code is computed with `oathtool --totp -b "$E2E_TOTP_SECRET"` immediately before it, at the top of
+a 30-second window. The next window's code is passed too: the service accepts one step of skew,
+so when the first has expired by the time it is typed, the flow retries once with the second.
+
+### Variables and secrets
+
+Maestro hands a flow every shell variable named `MAESTRO_*`, on EAS and locally alike, so the
+inputs are stored under that prefix: as EAS environment variables in the `preview` environment
+(passwords and the TOTP secret with secret visibility), or exported in your shell.
+
+| Variable | What |
+|---|---|
+| `MAESTRO_SITE` | The staging site's https origin, the host the preview build claims |
+| `MAESTRO_BACKER_EMAIL`, `MAESTRO_BACKER_PASSWORD` | The seeded backer |
+| `MAESTRO_TWOFA_EMAIL`, `MAESTRO_TWOFA_PASSWORD`, `MAESTRO_TWOFA_NAME` | The seeded two-factor account |
+| `MAESTRO_CREATOR_EMAIL`, `MAESTRO_CREATOR_PASSWORD` | The seeded creator |
+| `MAESTRO_PROVIDER_HOST` | A regular expression for the payment provider's host, as the browser's address bar shows it (default `epoint`) |
+| `MAESTRO_CAMPAIGN_ID`, `_CAMPAIGN_PATH`, `_CAMPAIGN_TITLE`, `_TIER_ID`, `_PLEDGE_ID`, `_DRAFT_ID`, `_CREATOR_SLUG`, `_CATEGORY_SLUG`, `_SUBCATEGORY_SLUG`, `_COLLECTION_SLUG`, `_LEGAL_DOCUMENT`, `_LEGAL_VERSION` | What the seed prints, each with `MAESTRO_` in front |
+| `MAESTRO_OTP`, `MAESTRO_OTP_NEXT` | The two codes; the workflow computes them, locally you do |
+| `E2E_TOTP_SECRET` | The two-factor account's base32 secret (20 bytes). Deliberately **not** `MAESTRO_`-prefixed, so no flow can read it |
+
+No password, code or secret is ever written to the repository.
+
+### The fixtures
+
+```bash
+E2E_API_ORIGIN=https://<staging-api> E2E_DATABASE_URL=postgres://… \
+E2E_TOTP_SECRET=… E2E_BACKER_PASSWORD=… E2E_TWOFA_PASSWORD=… E2E_CREATOR_PASSWORD=… \
+  node ops/seed/e2e/seed.mjs --env-file fixtures.env   # --dry-run checks the target only
+```
+
+Idempotent; it prints the fixture ids as `KEY=value`. Through the public API wherever it can; SQL
+only to verify the three addresses, set the known TOTP secret, take the campaign live (submission
+needs an agreement, a subscription and a staff approval) and keep its deadline 30 days out — the
+header of the script says why for each. **It refuses production** (the production names and
+address, and a token whose issuer is production) and refuses a database that is not the API's.
+Start the suite at least five minutes after a run: the seeded backer's draft pledge holds its
+reward for five minutes, and the same backer cannot reserve again meanwhile.
+
+Staging must also allow the suite's sign-ins: the service allows five per address and per
+account in fifteen minutes (`ideanest.auth.rate-limit`), and one platform's run signs in about
+five times. Raise `IDEANEST_AUTH_RATELIMIT_SIGNINSPERADDRESS` and
+`IDEANEST_AUTH_RATELIMIT_SIGNINSPEREMAIL` **on staging only**.
+
+### Running it locally
+
+Maestro needs Java 17 or later (`java -version`). Against a USB phone or an emulator with a
+`preview` build installed (`adb devices` lists it):
+
+```bash
+cd apps/mobile
+set -a; . <(sed 's/^/MAESTRO_/' fixtures.env); set +a     # the seed's output, prefixed
+export MAESTRO_SITE=https://<staging-site> MAESTRO_BACKER_EMAIL=… MAESTRO_BACKER_PASSWORD=…  # and the rest
+maestro test e2e/maestro --exclude-tags two-factor,screenshots
+
+export MAESTRO_OTP=$(oathtool --totp -b "$E2E_TOTP_SECRET")
+export MAESTRO_OTP_NEXT=$(oathtool --totp -b --now "@$(( $(date +%s) + 30 ))" "$E2E_TOTP_SECRET")
+maestro test e2e/maestro/sign-in-2fa.yaml
+
+maestro check-syntax e2e/maestro/links.yaml   # a syntax check without a device
+```
+
+On iOS, `creator-autosave-offline.yaml` is skipped (`--exclude-tags android-only`): Maestro
+cannot switch a simulator's airplane mode. Its failure branch is also a race on Android: the
+editor turns read-only as soon as it knows it is offline, so the connection is cut inside the
+autosave's 800 ms debounce, and when the patch has already left the flow only proves the title
+was saved. Sign-out on iOS taps the alert's English labels; store screenshots stop before it.
+
 ## What is not built
 
 **Google sign-in on Android.** The iOS flow cannot be used there: Google refuses
@@ -828,11 +1254,6 @@ ours to redirect to. The native route, Credential Manager, has to put our nonce 
 the token (the service has `require-nonce: true`), which the free Google Sign-In
 library does not do. It needs a small native module and a device to check it on.
 Apple has no Android SDK. Android offers email and password meanwhile (#241).
-
-**Opening the emailed links in the app.** The screens exist and read the link's
-`token`; claiming `/verify-email`, `/reset-password/confirm` and `/confirm-email-change`
-(unprefixed and under `/{az|en|ru|tr}/`) in the association files and `lib/links.ts` is
-#165's. Until then the links open the website, which does the same thing.
 
 **Four of the campaign page's tabs and its report sheet.** Creator, FAQ, Updates and
 Comments open the same tab on the campaign's web page, and "Report this campaign" is not

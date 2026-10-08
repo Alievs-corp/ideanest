@@ -1,10 +1,13 @@
 import { useLocalSearchParams } from 'expo-router';
 import { WebFallback } from '../../components/web-fallback';
+import { withScreenRoot } from '../../components/screen-root';
 
-export default function Screen() {
+function Screen() {
   const { section } = useLocalSearchParams<{ section: string }>();
   return <WebFallback titleKey="shell.actions.settings" webPath={`/settings/${encodeURIComponent(section)}`} />;
 }
+
+export default withScreenRoot('settings-section', Screen);
 
 // A render error stays on this screen, with "Try again" (components/route-error-boundary.tsx).
 export { RouteErrorBoundary as ErrorBoundary } from '../../components/route-error-boundary';

@@ -17,6 +17,8 @@ interface Extra {
   readonly googleIosClientId?: string;
   readonly appleSignIn?: boolean;
   readonly inAppPlanChoice?: boolean;
+  readonly sentryDsn?: string;
+  readonly sentryEnvironment?: string;
 }
 
 function extra(): Extra {
@@ -97,4 +99,28 @@ export function providerSettings(): ProviderSettings {
  */
 export function inAppPlanChoice(): boolean {
   return extra().inAppPlanChoice === true;
+}
+
+/** Where crash reports go, and under which environment, when this build sends any (#165). */
+export interface CrashReportingSettings {
+  readonly dsn: string;
+  /** The EAS channel the build was made for: `production`, `preview` or `development`. */
+  readonly environment: string;
+}
+
+/**
+ * The crash reporter's settings, or `null` when `IDEANEST_SENTRY_DSN` was unset at build time —
+ * and then the SDK is not started at all (`lib/crash/reporting.ts`). `app.config.ts` says why
+ * no destination is assumed.
+ */
+export function crashReportingSettings(): CrashReportingSettings | null {
+  const { sentryDsn, sentryEnvironment } = extra();
+  if (typeof sentryDsn !== 'string' || sentryDsn.trim() === '') return null;
+  return {
+    dsn: sentryDsn.trim(),
+    environment:
+      typeof sentryEnvironment === 'string' && sentryEnvironment.trim() !== ''
+        ? sentryEnvironment.trim()
+        : 'development',
+  };
 }

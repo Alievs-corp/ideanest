@@ -1,0 +1,70 @@
+# Store screenshots (#165, "Store readiness"): flows 1-3 once per language, each with SHOTS=true so
+# they stop at their `takeScreenshot` points. Files are named `<locale>-<nn>-<screen>.png`.
+#
+# Not part of the nightly run (tag `screenshots`). Run it on the device sizes the stores ask for:
+# the 6.9" iPhone and an Android phone (`.eas/workflows/e2e.yml`, `screenshots` input).
+appId: az.ideanest.app
+name: Store screenshots
+tags:
+  - screenshots
+---
+- runFlow:
+    file: browse-to-checkout.yaml
+    env:
+      LOCALE: az
+      SHOTS: 'true'
+- runFlow:
+    file: sign-in-2fa.yaml
+    env:
+      LOCALE: az
+      SHOTS: 'true'
+- runFlow:
+    file: creator-autosave.yaml
+    env:
+      LOCALE: az
+      SHOTS: 'true'
+- runFlow:
+    file: browse-to-checkout.yaml
+    env:
+      LOCALE: en
+      SHOTS: 'true'
+- runFlow:
+    file: sign-in-2fa.yaml
+    env:
+      LOCALE: en
+      SHOTS: 'true'
+- runFlow:
+    file: creator-autosave.yaml
+    env:
+      LOCALE: en
+      SHOTS: 'true'
+- runFlow:
+    file: browse-to-checkout.yaml
+    env:
+      LOCALE: ru
+      SHOTS: 'true'
+- runFlow:
+    file: sign-in-2fa.yaml
+    env:
+      LOCALE: ru
+      SHOTS: 'true'
+- runFlow:
+    file: creator-autosave.yaml
+    env:
+      LOCALE: ru
+      SHOTS: 'true'
+- runFlow:
+    file: browse-to-checkout.yaml
+    env:
+      LOCALE: tr
+      SHOTS: 'true'
+- runFlow:
+    file: sign-in-2fa.yaml
+    env:
+      LOCALE: tr
+      SHOTS: 'true'
+- runFlow:
+    file: creator-autosave.yaml
+    env:
+      LOCALE: tr
+      SHOTS: 'true'

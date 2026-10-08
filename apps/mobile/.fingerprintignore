@@ -1,0 +1,9 @@
+# Workspace sources `app.config.ts` imports for their values (#165). @expo/fingerprint hashes every
+# module the config loads as a config-plugin source, so without these lines any edit to a message
+# catalogue would change the runtime version, and an OTA update would match no installed build.
+# What they contribute (the native strings, the colours, the intent filters) is already in the
+# hash through the resolved Expo config. `scripts/check-fingerprint.mjs` proves both halves.
+**/packages/messages/src/*.json
+**/packages/messages/src/locale.ts
+**/packages/design-tokens/src/**/*
+**/packages/links/src/**/*

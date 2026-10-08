@@ -1,4 +1,4 @@
-import { SUPPORTED_LOCALES } from '@ideanest/messages/locale';
+import { appleComponents, type AppleComponent } from '@ideanest/links/claims';
 
 /**
  * The two files that let a link on this site open the mobile application —
@@ -53,50 +53,19 @@ export const ANDROID_PACKAGE_VARIABLE = 'IDEANEST_ANDROID_PACKAGE';
  */
 export const ANDROID_FINGERPRINTS_VARIABLE = 'IDEANEST_ANDROID_SHA256_FINGERPRINTS';
 
-/** The campaign pages, which the mobile application claims. */
-export const CLAIMED_PATH_PREFIX = '/projects/';
-
 /**
- * The discovery entry points the mobile application also claims (#153): the home page, the feed
- * and the search results. Exact paths — the filters and the query ride in the query string, which
- * `components` ignores unless told otherwise — so `/discover/anything` stays the browser's.
- * `apps/mobile/src/lib/links.ts` answers the same three, and `app.config.ts`'s intent filters
- * claim them on Android.
- */
-export const CLAIMED_DISCOVERY_PATHS = ['/', '/discover', '/search'] as const;
-
-/**
- * The browse pages the mobile application also claims (#154): the category and collection
- * indexes, and everything under them. `*` in a component matches across slashes, so
- * `/categories/a/b/c` reaches the app too — which refuses it (`apps/mobile/src/lib/links.ts`),
- * as it already refuses a deeper path under `/projects/`. `app.config.ts` claims the same two
- * prefixes on Android.
- */
-export const CLAIMED_BROWSE_PATHS = [
-  '/categories',
-  '/categories/*',
-  '/collections',
-  '/collections/*',
-] as const;
-
-/**
- * Every path claimed, bare and under each locale prefix.
+ * The paths a link may open the mobile application at, and the paths it never may — issue #165.
  *
- * The site serves every page under its locale (`i18n/routing.ts`, `localePrefix: 'always'`), so
- * the URL somebody copies from the address bar is `/az/discover?…`, never `/discover?…`. A claim
- * on the bare path alone would be a claim on links nobody shares. The bare forms stay because the
- * site redirects them, and a link typed by hand starts there.
+ * Built from `@ideanest/links`' claimed-route table, which `apps/mobile/app.config.ts` builds
+ * Android's intent filters from and the app's link parser answers, so the three halves of a
+ * link cannot drift. The excludes come first because iOS stops at the first component that
+ * matches: `/projects/*` would otherwise hand an OG image under it to the application. Every
+ * claim is listed bare and under each locale, because the site serves every page under its
+ * locale (`i18n/routing.ts`, `localePrefix: 'always'`) and that is the URL people copy, while
+ * the API's emails and the app's own share sheet send the bare form, which the site redirects.
  */
-export function claimedComponents(): { '/': string; comment: string }[] {
-  const roots = ['', ...SUPPORTED_LOCALES.map((locale) => `/${locale}`)];
-  return roots.flatMap((root) => [
-    { '/': `${root}${CLAIMED_PATH_PREFIX}*`, comment: 'Campaign pages' },
-    ...CLAIMED_BROWSE_PATHS.map((path) => ({ '/': `${root}${path}`, comment: 'Browse' })),
-    ...CLAIMED_DISCOVERY_PATHS.map((path) => ({
-      '/': root === '' ? path : path === '/' ? root : `${root}${path}`,
-      comment: 'Discovery',
-    })),
-  ]);
+export function claimedComponents(): readonly AppleComponent[] {
+  return appleComponents();
 }
 
 type Env = Record<string, string | undefined>;
@@ -114,8 +83,8 @@ function configured(env: Env, variable: string): string | null {
  *
  * The modern `components` form rather than the legacy `paths` array. Both are
  * still read, but `paths` is matched against a percent-decoded path in a way
- * Apple's own documentation calls out as ambiguous, and `components` states the
- * same rule — everything under `/projects/` — without it.
+ * Apple's own documentation calls out as ambiguous, and `components` can say
+ * "never this" (`exclude`), which the claim needs for `/admin` and the OG images.
  *
  * `apps: []` is required and not decorative: iOS reads its absence as a
  * malformed file rather than as an empty list.

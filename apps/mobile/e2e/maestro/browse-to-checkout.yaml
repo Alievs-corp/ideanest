@@ -1,0 +1,117 @@
+# Flow 1 (#165): a signed-in backer finds the seeded campaign on Home, opens it, backs it, reserves
+# a tier and swipes to pay. It stops at the hand-off to the payment provider's page — nothing is
+# ever paid — and checks where the app lands when that page is closed without paying.
+#
+# Fixtures: `ops/seed/e2e/seed.mjs` prints CAMPAIGN_TITLE and TIER_ID. See apps/mobile/README.md
+# ("End-to-end tests") for every variable and how to pass it.
+appId: az.ideanest.app
+name: Browse to checkout
+tags:
+  - checkout
+env:
+  CAMPAIGN_TITLE: ${MAESTRO_CAMPAIGN_TITLE || CAMPAIGN_TITLE}
+  TIER_ID: ${MAESTRO_TIER_ID || TIER_ID}
+  BACKER_EMAIL: ${MAESTRO_BACKER_EMAIL || BACKER_EMAIL}
+  BACKER_PASSWORD: ${MAESTRO_BACKER_PASSWORD || BACKER_PASSWORD}
+  # A regular expression for the provider's host, as the browser's address bar shows it.
+  PROVIDER_HOST: ${MAESTRO_PROVIDER_HOST || PROVIDER_HOST || 'epoint'}
+  LOCALE: ${LOCALE || ''}
+  SHOTS: ${SHOTS || 'false'}
+---
+- runFlow: subflows/launch.yaml
+- runFlow:
+    file: subflows/sign-in-and-wait.yaml
+    env:
+      EMAIL: ${BACKER_EMAIL}
+      PASSWORD: ${BACKER_PASSWORD}
+- runFlow:
+    when:
+      true: ${SHOTS == 'true'}
+    file: subflows/shot.yaml
+    env:
+      NAME: 01-me
+
+# Home, and the seeded campaign's card on it.
+- tapOn:
+    id: tab-index
+- extendedWaitUntil:
+    visible:
+      id: campaign-card
+    timeout: 30000
+- runFlow:
+    when:
+      true: ${SHOTS == 'true'}
+    file: subflows/shot.yaml
+    env:
+      NAME: 02-home
+- scrollUntilVisible:
+    element:
+      id: campaign-card
+      text: ${CAMPAIGN_TITLE}.*
+    direction: DOWN
+    timeout: 30000
+    centerElement: true
+- tapOn:
+    id: campaign-card
+    text: ${CAMPAIGN_TITLE}.*
+
+# The campaign page: its title, its funding figures and bar, its rewards.
+- extendedWaitUntil:
+    visible:
+      id: campaign-title
+      text: ${CAMPAIGN_TITLE}
+    timeout: 30000
+- assertVisible:
+    id: screen-campaign
+- assertVisible:
+    id: live-funding
+- assertVisible:
+    id: funding-percent
+- runFlow:
+    when:
+      true: ${SHOTS == 'true'}
+    file: subflows/shot.yaml
+    env:
+      NAME: 03-campaign
+- scrollUntilVisible:
+    element:
+      id: reward-${TIER_ID}
+    direction: DOWN
+    timeout: 20000
+- assertVisible:
+    id: campaign-rewards
+- scrollUntilVisible:
+    element:
+      id: back-cta
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: back-cta
+
+# Checkout: choose the tier.
+- extendedWaitUntil:
+    visible:
+      id: screen-checkout
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: reward-option-${TIER_ID}
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: reward-option-${TIER_ID}
+- runFlow:
+    when:
+      true: ${SHOTS == 'true'}
+    file: subflows/shot.yaml
+    env:
+      NAME: 04-checkout
+
+# Reserve and pay (not for store screenshots: a second reservation by the same backer within the
+# hold's five minutes is refused).
+- runFlow:
+    when:
+      true: ${SHOTS != 'true'}
+    file: subflows/checkout-pay.yaml
+    env:
+      PROVIDER_HOST: ${PROVIDER_HOST}

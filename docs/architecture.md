@@ -1902,7 +1902,7 @@ Preferences are per category and per channel, with a digest option.
 | # | Capability |
 |---|---|
 | MB-01 | Push notifications |
-| MB-02 | Deep links and universal links |
+| MB-02 | Deep links and universal links. **Built (#165):** one claimed-route table, `@ideanest/links`, read by the web's association file, the Android intent filters and the app's parser; every route bare and under each locale, never `/admin`; a refused link of the site's own host opens in the in-app browser. See `apps/mobile/README.md`, "Deep links" |
 | MB-03 | Biometric authentication. **Built (#29), reworked as an app lock with a PIN fallback (#319)** — and the name is wrong in a way worth keeping: it re-opens a session rather than proving anything to the service. See A-14 and §17.1 |
 | MB-04 | Offline cache for saved projects and pledges |
 | MB-05 | Native share sheet |
@@ -1913,7 +1913,7 @@ Preferences are per category and per channel, with a digest option.
 | MB-10 | Image gallery with pinch and swipe |
 | MB-11 | Video player with fullscreen and picture-in-picture |
 | MB-12 | Wallet payment, provider permitting |
-| MB-13 | Over-the-air updates |
+| MB-13 | Over-the-air updates. **Configured (#165):** `expo-updates` with a `fingerprint` runtime version, published by hand per channel with a rollout percentage, never on merge (`apps/mobile/README.md`, "Over-the-air updates") |
 | MB-14 | Dark mode |
 | MB-15 | Dynamic type and accessibility sizing |
 | MB-16 | Proximity search |
@@ -6583,6 +6583,16 @@ issuer prefix and Luhn, so a thirteen-digit epoch timestamp is not mistaken for 
 primary account number. `LogFields` is the other direction: a builder with a
 method per safe shape and none that takes free text.
 
+**Mobile crash reports** (#165) are the app's half of this section. `apps/mobile`
+sends native crashes and JavaScript errors through `@sentry/react-native` when the
+build has `IDEANEST_SENTRY_DSN` (sentry.io's EU region or a GlitchTip on Coolify:
+the owner's decision, the SDK is the same). Each event carries the `X-Trace-Id` of
+the app's last API response as the tag `api_trace_id`, so a crash joins this log by
+`traceId`; the user is the account UUID only. `src/lib/crash/scrub.ts` ports this
+section's redaction list — field names and shapes alike — and adds the
+`Authorization`, `Idempotency-Key`, `?token=` and mobile address fields, applied in
+`beforeSend`, `beforeSendTransaction` and `beforeBreadcrumb`. Session replay is off.
+
 ### 18.2 Metrics
 
 | Metric | Type | Why |
@@ -6638,9 +6648,16 @@ migrate       → migration dry run against staging
 deploy        → main to staging automatically; tag to production with approval
 ```
 
+**Mobile `test-e2e`** runs on EAS Workflows (`apps/mobile/.eas/workflows/e2e.yml`), nightly
+and by hand, against staging with seeded fixtures (`ops/seed/e2e/`), and gates every store
+submission; it does not run per pull request because of the Actions-minutes budget (#67).
+`apps/mobile/README.md` ("End-to-end tests") has the flows and how to run them.
+
 **Deployment:** rolling updates by default, blue-green for releases touching
 payments. Web deploys atomically with instant rollback. Mobile ships through
-staged rollout, with over-the-air updates reserved for JavaScript-only changes.
+staged rollout, with over-the-air updates reserved for JavaScript-only changes:
+the runtime version is a fingerprint of the native inputs, so an update cannot
+reach a binary it does not match (#165).
 
 ### 19.3 Migrations
 

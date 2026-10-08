@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +9,7 @@ import en from '@ideanest/messages/en.json';
 import ru from '@ideanest/messages/ru.json';
 import tr from '@ideanest/messages/tr.json';
 import { Glyphs } from '../icons';
+import { reportBoundaryError } from '../lib/crash/reporting';
 import { currentLocale } from '../lib/locale';
 import { colors, radius, size, spacing } from '../theme';
 import { Body, Heading } from './text';
@@ -44,9 +46,13 @@ import { Pill } from './ui/pill';
  * lands back here, which is honest. The pill is the kit's white primary, as on every failure
  * screen, never lime, and nothing animates in.
  *
- * Never `error.message`, never a stack: see `route-error-boundary.tsx`.
+ * Never `error.message`, never a stack: see `route-error-boundary.tsx`. The error does go to crash
+ * reporting when the build has it (#165) — a plain function call, which reads no provider. Without
+ * `traceIdOfError`: that is `api/client.ts`'s, whose imports are most of the app, and this file
+ * stays off them. The report still carries the last trace id the app saw (`api/last-trace.ts`).
  */
-export function RootFailure({ retry }: ErrorBoundaryProps) {
+export function RootFailure({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => reportBoundaryError(error, 'root', null), [error]);
   const copy = fatalCopy(currentLocale());
   const insets = initialWindowMetrics?.insets;
   const padding = {

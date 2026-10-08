@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { ACCOUNT_KEYS, canReadAccount, useMe } from './account';
 import { sweepAccountExports } from './account-export-files';
+import { identifyForCrashReports } from './crash/reporting';
 import {
   applyAccountLocale,
   forgetAccountSync,
@@ -37,6 +38,10 @@ export function AccountSync() {
   const { data } = useMe();
   const session = useSession();
   const { signedIn } = session;
+
+  // Crash reports name the account by its UUID and nothing else (#165), and nobody once it ends.
+  const accountId = signedIn ? (data?.id ?? null) : null;
+  useEffect(() => identifyForCrashReports(accountId), [accountId]);
   const canRead = canReadAccount(session);
 
   // Read by the foreground listener, which is registered once.

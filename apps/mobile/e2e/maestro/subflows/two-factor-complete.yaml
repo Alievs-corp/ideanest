@@ -1,0 +1,33 @@
+# The rest of flow 2 from the two-factor step: the code (and once more with the next window's
+# code if the first was refused), Me naming the account, then signing out.
+appId: az.ideanest.app
+---
+- tapOn:
+    id: two-factor-code
+- inputText: ${OTP}
+- hideKeyboard
+- tapOn:
+    id: two-factor-submit
+- extendedWaitUntil:
+    visible:
+      id: me-identity|two-factor-failure
+    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: two-factor-failure
+      true: ${OTP_NEXT != ''}
+    commands:
+      - tapOn:
+          id: two-factor-code
+      - eraseText: 16
+      - inputText: ${OTP_NEXT}
+      - hideKeyboard
+      - tapOn:
+          id: two-factor-submit
+- extendedWaitUntil:
+    visible:
+      id: me-identity
+      text: ${TWOFA_NAME}.*
+    timeout: 30000
+- runFlow: sign-out.yaml

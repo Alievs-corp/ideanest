@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import { siteUrl } from '../../../api/config';
+import { withClaimedReturnRoute } from '../../../lib/auth-session-links';
 import type { CardRegistrationRequest } from './api';
 
 /** The web's `PayoutDetailsPanel`: the destination is re-read every three seconds for a minute. */
@@ -42,7 +43,9 @@ export type CardSessionOutcome =
 
 /** Opens the provider's page in the in-app browser. The card number is entered there, never here. */
 export async function openCardRegistration(redirectUrl: string): Promise<CardSessionOutcome> {
-  const result = await WebBrowser.openAuthSessionAsync(redirectUrl, CARD_RETURN_PREFIX);
+  const result = await withClaimedReturnRoute('/settings/payout', () =>
+    WebBrowser.openAuthSessionAsync(redirectUrl, CARD_RETURN_PREFIX),
+  );
   if (result.type === 'success') return { kind: 'returned', hint: cardHintOf(result.url) ?? 'returned' };
   return { kind: 'dismissed' };
 }

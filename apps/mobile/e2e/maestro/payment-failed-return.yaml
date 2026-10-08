@@ -1,0 +1,35 @@
+# Flow 1, the failure variant (#165): the payment provider sends the reader back with
+# `?payment=failed`, in the web's exact shape, and the app opens that pledge in its failure state.
+#
+# PLEDGE_ID is the seeded backer's draft pledge (`ops/seed/e2e/seed.mjs`). A draft or an expired
+# pledge reads as failed (`paymentReturnOutcome` in @ideanest/checkout/pledge).
+appId: az.ideanest.app
+name: Payment failure return
+tags:
+  - checkout
+  - links
+env:
+  SITE: ${MAESTRO_SITE || SITE}
+  PLEDGE_ID: ${MAESTRO_PLEDGE_ID || PLEDGE_ID}
+  BACKER_EMAIL: ${MAESTRO_BACKER_EMAIL || BACKER_EMAIL}
+  BACKER_PASSWORD: ${MAESTRO_BACKER_PASSWORD || BACKER_PASSWORD}
+---
+- runFlow: subflows/launch.yaml
+- runFlow:
+    file: subflows/sign-in-and-wait.yaml
+    env:
+      EMAIL: ${BACKER_EMAIL}
+      PASSWORD: ${BACKER_PASSWORD}
+- openLink:
+    link: ${SITE}/az/pledges/${PLEDGE_ID}?payment=failed
+    autoVerify: true
+- extendedWaitUntil:
+    visible:
+      id: screen-pledge
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      id: payment-failed
+    timeout: 30000
+- assertNotVisible:
+    id: payment-paid

@@ -1,0 +1,49 @@
+# Signs out through the confirmation the pill asks for, and checks that nothing of the account
+# is left: Me offers sign-in again, and the saved list is signed out with no row from the
+# offline copy (signing out erases the persisted cache).
+appId: az.ideanest.app
+---
+- tapOn:
+    id: tab-me
+- scrollUntilVisible:
+    element:
+      id: me-sign-out
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: me-sign-out
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      # React Native puts the second of two alert buttons, the destructive one, in the positive slot.
+      - tapOn:
+          id: android:id/button1
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      # A two-button alert lays Cancel on the left and the destructive action on its right.
+      - tapOn:
+          text: ${SIGN_OUT_LABEL || 'Sign out'}
+          rightOf:
+            text: ${CANCEL_LABEL || 'Cancel'}
+- extendedWaitUntil:
+    visible:
+      id: screen-home
+    timeout: 30000
+- tapOn:
+    id: tab-me
+- extendedWaitUntil:
+    visible:
+      id: me-sign-in
+    timeout: 15000
+- assertNotVisible:
+    id: me-identity
+- openLink: ideanest://account/saved
+- extendedWaitUntil:
+    visible:
+      id: saved-list-signed-out
+    timeout: 20000
+- assertNotVisible:
+    id: saved-row-.*
