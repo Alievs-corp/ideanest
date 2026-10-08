@@ -3278,6 +3278,7 @@
     "hero": {
       "title": "Henüz var olmayanı fonlayın",
       "standfirst": "Yaratıcılar hedefi ve son tarihi olan bir kampanya yayımlar. Destekçiler destek verir. Bir kampanya hedefinin %80'inde başarılı sayılır — oraya ulaşamazsa her destekçiye tutarın tamamı iade edilir.",
+      "sceneCaption": "Küçük destekler bir araya geldiğinde büyük fikirler gerçeğe dönüşür.",
       "browse": "Kampanyalara göz atın",
       "start": "Kampanya başlatın"
     },
