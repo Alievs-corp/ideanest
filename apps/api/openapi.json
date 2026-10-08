@@ -11183,6 +11183,36 @@
           }
         }
       },
+      "CampaignVideoBody" : {
+        "type" : "object",
+        "properties" : {
+          "blurDataUrl" : {
+            "type" : "string"
+          },
+          "durationMs" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "mediaId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "posterUrl" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "CancelProjectRequest" : {
         "type" : "object",
         "properties" : {
@@ -13876,6 +13906,10 @@
           "blurDataUrl" : {
             "type" : "string"
           },
+          "durationMs" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "failureReason" : {
             "type" : "string"
           },
@@ -13886,6 +13920,12 @@
           "id" : {
             "type" : "string",
             "format" : "uuid"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "posterUrl" : {
+            "type" : "string"
           },
           "status" : {
             "type" : "string"
@@ -15268,6 +15308,9 @@
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "video" : {
+            "$ref" : "#/components/schemas/CampaignVideoBody"
           }
         }
       },
@@ -15361,6 +15404,9 @@
           },
           "title" : {
             "type" : "string"
+          },
+          "video" : {
+            "$ref" : "#/components/schemas/CampaignVideoBody"
           }
         }
       },
@@ -15403,6 +15449,10 @@
           },
           "title" : {
             "type" : "string"
+          },
+          "videoMediaId" : {
+            "type" : "string",
+            "format" : "uuid"
           }
         }
       },

@@ -7,6 +7,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
@@ -58,6 +59,16 @@ public class MediaAsset {
     @Column(name = "status", nullable = false)
     private MediaStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kind", nullable = false, updatable = false)
+    private MediaKind kind;
+
+    @Column(name = "duration_ms")
+    private Integer durationMs;
+
+    @Column(name = "poster_storage_key")
+    private String posterStorageKey;
+
     @Column(name = "storage_key")
     private String storageKey;
 
@@ -90,9 +101,10 @@ public class MediaAsset {
         // JPA.
     }
 
-    private MediaAsset(UUID ownerUserId, Instant now) {
+    private MediaAsset(UUID ownerUserId, MediaKind kind, Instant now) {
         this.id = Identifiers.newIdentifier();
         this.ownerUserId = Objects.requireNonNull(ownerUserId, "An upload belongs to whoever made it");
+        this.kind = Objects.requireNonNull(kind, "An upload is an image or a video");
         this.status = MediaStatus.PENDING;
         this.createdAt = now.truncatedTo(ChronoUnit.MICROS);
         this.updatedAt = this.createdAt;
@@ -100,7 +112,12 @@ public class MediaAsset {
 
     /** A row for an upload that is about to start. */
     public static MediaAsset awaitingUpload(UUID ownerUserId, Instant now) {
-        return new MediaAsset(ownerUserId, now);
+        return new MediaAsset(ownerUserId, MediaKind.IMAGE, now);
+    }
+
+    /** The same, for an upload whose kind the declared type decided. */
+    public static MediaAsset awaitingUpload(UUID ownerUserId, MediaKind kind, Instant now) {
+        return new MediaAsset(ownerUserId, kind, now);
     }
 
     /**
@@ -136,6 +153,22 @@ public class MediaAsset {
     }
 
     /**
+     * {@link #claimForProcessing(Instant)}, or a row whose previous claim has gone stale.
+     *
+     * <p>A claim older than {@code staleAfter} belongs to a pass that is no longer running —
+     * the process was restarted under it — and is taken over rather than left processing
+     * for ever. {@code staleAfter} must be longer than the work can take, or a slow pass
+     * and its successor do the same work twice.
+     */
+    public boolean claimForProcessing(Instant now, Duration staleAfter) {
+        if (status == MediaStatus.PROCESSING && updatedAt.isBefore(now.minus(staleAfter))) {
+            touch(now);
+            return true;
+        }
+        return claimForProcessing(now);
+    }
+
+    /**
      * Processing finished and the derived object is written.
      *
      * <p>Everything a renderer needs arrives in one call, because the row must never be
@@ -143,6 +176,43 @@ public class MediaAsset {
      * {@code media_ready_is_servable} would refuse anyway, three frames further down.
      */
     public void markReady(
+            String storageKey, String contentType, long byteSize, int width, int height, String blurDataUrl, Instant now) {
+
+        if (kind != MediaKind.IMAGE) {
+            throw new IllegalStateException("A video becomes ready with its duration and poster");
+        }
+        becomeReady(storageKey, contentType, byteSize, width, height, blurDataUrl, now);
+    }
+
+    /**
+     * A video finished transcoding — issue #331.
+     *
+     * <p>The image transition plus the two facts only a video has. V94's
+     * {@code media_video_ready_is_playable} refuses a ready video without either.
+     */
+    public void markVideoReady(
+            String storageKey,
+            String contentType,
+            long byteSize,
+            int width,
+            int height,
+            int durationMs,
+            String posterStorageKey,
+            String blurDataUrl,
+            Instant now) {
+
+        if (kind != MediaKind.VIDEO) {
+            throw new IllegalStateException("An image has no duration or poster");
+        }
+        if (durationMs <= 0) {
+            throw new IllegalArgumentException("A ready video lasts some time");
+        }
+        this.durationMs = durationMs;
+        this.posterStorageKey = Objects.requireNonNull(posterStorageKey, "A ready video has a poster");
+        becomeReady(storageKey, contentType, byteSize, width, height, blurDataUrl, now);
+    }
+
+    private void becomeReady(
             String storageKey, String contentType, long byteSize, int width, int height, String blurDataUrl, Instant now) {
 
         if (status != MediaStatus.PROCESSING) {
@@ -185,6 +255,18 @@ public class MediaAsset {
 
     public UUID getOwnerUserId() {
         return ownerUserId;
+    }
+
+    public MediaKind getKind() {
+        return kind;
+    }
+
+    public Optional<Integer> getDurationMs() {
+        return Optional.ofNullable(durationMs);
+    }
+
+    public Optional<String> getPosterStorageKey() {
+        return Optional.ofNullable(posterStorageKey);
     }
 
     public MediaStatus getStatus() {

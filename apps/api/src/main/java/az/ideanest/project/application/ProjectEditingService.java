@@ -17,6 +17,7 @@ import az.ideanest.shared.Slugs;
 import tools.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -164,6 +165,7 @@ public class ProjectEditingService {
         patch.story().ifPresent(story -> applyStory(project, accountId, story));
         patch.scheduledLaunchAt().ifPresent(project::setScheduledLaunchAt);
         patch.coverImage().ifPresent(selection -> project.setCoverImage(resolveCover(selection, accountId)));
+        patch.videoMediaId().ifPresent(mediaId -> replaceVideo(project, accountId, mediaId));
         patch.latePledgeEnabled()
                 .ifPresent(enabled -> project.setLatePledgeEnabled(requireBoolean(enabled)));
         patch.durationDays().ifPresent(days -> project.setDurationDays(validDuration(days)));
@@ -223,6 +225,33 @@ public class ProjectEditingService {
     }
 
     /**
+     * Attaches, replaces or removes the campaign's video — issue #331.
+     *
+     * <p>Refused unless the upload is this caller's, is a video, and has finished
+     * processing, for {@link #resolveCover}'s reasons.
+     *
+     * <p><strong>The video it replaces is deleted</strong>, once this edit commits and only
+     * if no other campaign refers to it. One campaign has one video; keeping the previous one
+     * would be storage spent on a file nobody can reach. Media rows are created before they
+     * are attached, so a reupload of the same campaign is the ordinary way an orphan appears.
+     */
+    private void replaceVideo(Project project, UUID accountId, UUID mediaId) {
+        UUID previous = project.getVideoMediaId();
+        if (Objects.equals(previous, mediaId)) {
+            return;
+        }
+        if (mediaId != null && !media.claimVideoForOwner(accountId, mediaId)) {
+            throw new ProjectFieldRejectedException(
+                    "videoMediaId", "That video is not available. It may still be processing.");
+        }
+        project.setVideoMediaId(mediaId);
+
+        if (previous != null && !projects.existsByVideoMediaIdAndIdNot(previous, project.getId())) {
+            media.discardAfterCommit(previous);
+        }
+    }
+
+    /**
      * What a patch has to be authorised for, read off the fields it mentions.
      *
      * <p>One endpoint carries the basics, the story, and the risks section, so the
@@ -253,6 +282,7 @@ public class ProjectEditingService {
                 || patch.durationDays().isPresent()
                 || patch.scheduledLaunchAt().isPresent()
                 || patch.coverImage().isPresent()
+                || patch.videoMediaId().isPresent()
                 || patch.latePledgeEnabled().isPresent()) {
             needed.add(Capability.EDIT_BASICS);
         }

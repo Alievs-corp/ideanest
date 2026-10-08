@@ -5849,8 +5849,8 @@ bitmap — 192 MB of heap for an 8000×6000 photograph, which is an
 
 - MIME type verified by magic bytes, never by file extension — **built**, and it
   is whatever libvips' loaders recognise rather than a list maintained by hand
-- Size limits: 20MB images — **built**. 4GB video is unbuilt with the rest of
-  §13.2
+- Size limits: 20MB images — **built**. Video: 250MB raw and 60 seconds —
+  **built**, see §13.2
 - **EXIF stripped** — GPS coordinates in an uploaded photo are a privacy leak.
   **Built**, and asserted on the bytes of a real conversion rather than trusted:
   `VipsImageTranscoderTests` splices a probe into a JPEG's Exif and requires it
@@ -5930,17 +5930,36 @@ product. Public read surfaces — discovery, prelaunch — go through it.
 
 ### 13.2 Video
 
+**Built (#331) as one clip per campaign, at most sixty seconds**, which is a
+narrower product than the table this section used to hold — and the narrowing is
+what made a different pipeline the right one. The owner's brief was a format that
+neither tires the server nor fills the bucket.
+
 | Step | Approach |
 |---|---|
-| Upload | Multipart, pre-signed |
-| Transcoding | A managed service initially |
-| Formats | Adaptive bitrate: 360p, 480p, 720p, 1080p |
-| Poster | Automatic, with manual frame selection |
-| Captions | Optional |
-| Analytics | Views, completion, drop-off points |
+| Upload | §13.1's three calls with a `video/*` type: a presigned `PUT` straight to the bucket, `complete`, poll. 250MB raw ceiling; the API never carries the bytes |
+| Duration | At most 60 s (plus half a second of container slack), measured by `ffprobe` **before** anything is encoded. Clients check it first so nobody uploads a file to be told no |
+| Transcoding | `ffmpeg` in the API image, in its own sweep (`media-video-processing`), **one video a pass, two threads, `nice`d** — the API shares a small host. Images keep their own sweep so a cover never waits behind a transcode |
+| Format | **One rendition**: H.264 High + AAC 96k in MP4, longest edge ≤ 1280 (never upscaled), ≤ 30 fps, CRF 26 capped at 2.5 Mbit/s, `+faststart`. A minute is roughly 8–15MB |
+| Delivery | The bucket serves the MP4 with range requests; a plain `<video>` element plays it on every browser and both mobile platforms. No player library, no manifest |
+| Privacy | `-map_metadata -1`: a phone writes the recording location into the container as it writes GPS into a photo's EXIF |
+| Poster | A frame at ~1 s, through the §13.1 libvips path — same EXIF strip, same 320px floor, same blur placeholder |
+| Storage | The raw upload is deleted when the MP4 is written and on every refusal. Replacing or removing a campaign's video deletes the previous one after the edit commits, unless another campaign still shows it |
+| Captions | Not built |
+| Analytics | Not built |
 
-> Use managed transcoding first. Operating an encoding cluster is a substantial
-> commitment that adds nothing to the product early on.
+**Why not the adaptive ladder this section first proposed** (360p–1080p via a
+managed service). For a sixty-second clip, four renditions are four times the
+storage for a benefit — switching quality mid-stream — that a ten-megabyte file
+barely needs, and a managed service is a monthly bill and a second vendor for the
+same result. The contract is one URL, so a ladder can be added behind it later
+without any client changing.
+
+**Why the iOS app compresses before uploading.** `expo-image-picker` exports a
+picked clip at 1280×720 H.264 on the phone, so a 4K recording uploads as a
+fraction of its size. The server still transcodes it — the client is never
+trusted to have done so — but the transfer, which is the part a creator waits
+for, is the smaller one.
 
 ---
 

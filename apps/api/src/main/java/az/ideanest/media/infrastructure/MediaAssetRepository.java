@@ -1,6 +1,7 @@
 package az.ideanest.media.infrastructure;
 
 import az.ideanest.media.domain.MediaAsset;
+import az.ideanest.media.domain.MediaKind;
 import az.ideanest.media.domain.MediaStatus;
 import java.time.Instant;
 import java.util.Collection;
@@ -42,15 +43,19 @@ public interface MediaAssetRepository extends JpaRepository<MediaAsset, UUID> {
      * <p>The cost of that choice is that a row being worked on right now is also returned.
      * {@code MediaAsset#claimForProcessing} is what resolves it: the claim only succeeds
      * from {@code UPLOADED}, so the second pass skips.
+     *
+     * <p>By kind, because images and videos are two sweeps (issue #331): a minute-long
+     * transcode must not make a cover image wait behind it.
      */
     @Query(
             """
             select asset from MediaAsset asset
             where asset.status in (az.ideanest.media.domain.MediaStatus.UPLOADED,
                                    az.ideanest.media.domain.MediaStatus.PROCESSING)
+              and asset.kind = :kind
             order by asset.createdAt asc
             """)
-    List<MediaAsset> findAwaitingProcessing(Limit limit);
+    List<MediaAsset> findAwaitingProcessing(@Param("kind") MediaKind kind, Limit limit);
 
     /**
      * Uploads that were begun and never arrived.

@@ -35,7 +35,7 @@ class VipsImageTranscoderTests {
 
     /** §13.1's 1440 and 82, as the tests use them. */
     private static final MediaProperties PROPERTIES =
-            new MediaProperties(null, 20L * 1024 * 1024, Duration.ofMinutes(10), 1440, 82, null);
+            new MediaProperties(null, 20L * 1024 * 1024, Duration.ofMinutes(10), 1440, 82, null, null);
 
     /**
      * A string long enough to be unmistakable and short enough to fit an ASCII EXIF tag.

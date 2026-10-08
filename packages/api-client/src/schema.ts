@@ -4465,6 +4465,19 @@ export interface components {
             subject?: string;
             truncated?: boolean;
         };
+        CampaignVideoBody: {
+            blurDataUrl?: string;
+            /** Format: int32 */
+            durationMs?: number;
+            /** Format: int32 */
+            height?: number;
+            /** Format: uuid */
+            mediaId?: string;
+            posterUrl?: string;
+            url?: string;
+            /** Format: int32 */
+            width?: number;
+        };
         CancelProjectRequest: {
             reason: string;
         };
@@ -5448,11 +5461,15 @@ export interface components {
         };
         Media: {
             blurDataUrl?: string;
+            /** Format: int32 */
+            durationMs?: number;
             failureReason?: string;
             /** Format: int32 */
             height?: number;
             /** Format: uuid */
             id?: string;
+            kind?: string;
+            posterUrl?: string;
             status?: string;
             url?: string;
             /** Format: int32 */
@@ -5991,6 +6008,7 @@ export interface components {
             title?: string;
             /** Format: date-time */
             updatedAt?: string;
+            video?: components["schemas"]["CampaignVideoBody"];
         };
         ProjectFaqListResponse: {
             faqs?: components["schemas"]["ProjectFaqResponse"][];
@@ -6026,6 +6044,7 @@ export interface components {
             story?: components["schemas"]["JsonNode"];
             subcategory?: components["schemas"]["Taxon"];
             title?: string;
+            video?: components["schemas"]["CampaignVideoBody"];
         };
         ProjectPatchRequest: {
             blurb?: string;
@@ -6043,6 +6062,8 @@ export interface components {
             /** Format: uuid */
             subcategoryId?: string;
             title?: string;
+            /** Format: uuid */
+            videoMediaId?: string;
         };
         ProjectUpdateListResponse: {
             /** Format: int32 */
@@ -7199,6 +7220,7 @@ export type SchemaCampaignDirectoryResponse = components['schemas']['CampaignDir
 export type SchemaCampaignFinanceResponse = components['schemas']['CampaignFinanceResponse'];
 export type SchemaCampaignMessageListResponse = components['schemas']['CampaignMessageListResponse'];
 export type SchemaCampaignMessageResponse = components['schemas']['CampaignMessageResponse'];
+export type SchemaCampaignVideoBody = components['schemas']['CampaignVideoBody'];
 export type SchemaCancelProjectRequest = components['schemas']['CancelProjectRequest'];
 export type SchemaCancelRequest = components['schemas']['CancelRequest'];
 export type SchemaCaptureVisitRequest = components['schemas']['CaptureVisitRequest'];

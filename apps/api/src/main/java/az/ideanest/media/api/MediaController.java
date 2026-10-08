@@ -2,6 +2,7 @@ package az.ideanest.media.api;
 
 import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.media.domain.MediaAsset;
+import az.ideanest.media.domain.MediaKind;
 import az.ideanest.media.domain.MediaStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -104,10 +105,16 @@ public class MediaController {
      * layer has no business reading.
      */
     private MediaResponses.Media present(MediaAsset asset) {
-        String url = asset.getStatus() == MediaStatus.READY
-                ? media.viewOf(asset.getId()).map(MediaLibrary.MediaView::url).orElse(null)
-                : null;
-        return MediaResponses.Media.of(asset, url);
+        if (asset.getStatus() != MediaStatus.READY) {
+            return MediaResponses.Media.of(asset, null, null);
+        }
+        if (asset.getKind() == MediaKind.VIDEO) {
+            return media.videoViewOf(asset.getId())
+                    .map(view -> MediaResponses.Media.of(asset, view.url(), view.posterUrl()))
+                    .orElseGet(() -> MediaResponses.Media.of(asset, null, null));
+        }
+        String url = media.viewOf(asset.getId()).map(MediaLibrary.MediaView::url).orElse(null);
+        return MediaResponses.Media.of(asset, url, null);
     }
 
     /** Whoever is signed in. The whole of the authorisation on all three endpoints. */
@@ -124,7 +131,8 @@ public class MediaController {
      * is believed: the bytes are measured when they arrive, because a presigned address does
      * not make a declaration binding.
      *
-     * @param contentType what the file picker reported, e.g. {@code image/jpeg}
+     * @param contentType what the file picker reported, e.g. {@code image/jpeg}. A
+     *     {@code video/*} type begins a campaign video (issue #331), with its own ceiling
      * @param byteSize how large the file is, from the browser's own {@code File}
      */
     public record BeginUploadBody(@NotBlank String contentType, @Positive long byteSize) {}

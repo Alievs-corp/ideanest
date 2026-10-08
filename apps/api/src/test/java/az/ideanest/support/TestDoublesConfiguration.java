@@ -50,6 +50,13 @@ public class TestDoublesConfiguration {
         return new ScriptedImageTranscoder();
     }
 
+    /** The video transcoder, scripted for the same reason — issue #331. */
+    @Bean
+    @Primary
+    ScriptedVideoTranscoder scriptedVideoTranscoder() {
+        return new ScriptedVideoTranscoder();
+    }
+
     /**
      * §21.2's rate source, scripted rather than fetched — issue #327.
      *

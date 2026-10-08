@@ -3,6 +3,7 @@ package az.ideanest.media.application;
 import az.ideanest.media.MediaProperties;
 import az.ideanest.media.domain.MediaAsset;
 import az.ideanest.media.domain.MediaFailureReason;
+import az.ideanest.media.domain.MediaKind;
 import az.ideanest.media.domain.MediaStatus;
 import az.ideanest.media.infrastructure.MediaAssetRepository;
 import java.net.URI;
@@ -15,8 +16,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Uploads, from the address being issued to the image being servable — the media pipeline
@@ -33,6 +39,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class MediaLibrary {
 
+    private static final Logger log = LoggerFactory.getLogger(MediaLibrary.class);
+
     /** Where an upload lands before anything has looked at it. Replaced, then deleted. */
     private static final String RAW_PREFIX = "uploads/";
 
@@ -40,13 +48,23 @@ public class MediaLibrary {
     private static final String DERIVED_PREFIX = "media/";
 
     private final MediaAssetRepository assets;
+    private final MediaProcessingWrites writes;
     private final ObjectStore store;
+    private final VideoTranscoder videoTranscoder;
     private final MediaProperties properties;
     private final Clock clock;
 
-    public MediaLibrary(MediaAssetRepository assets, ObjectStore store, MediaProperties properties, Clock clock) {
+    public MediaLibrary(
+            MediaAssetRepository assets,
+            MediaProcessingWrites writes,
+            ObjectStore store,
+            VideoTranscoder videoTranscoder,
+            MediaProperties properties,
+            Clock clock) {
         this.assets = assets;
+        this.writes = writes;
         this.store = store;
+        this.videoTranscoder = videoTranscoder;
         this.properties = properties;
         this.clock = clock;
     }
@@ -59,7 +77,12 @@ public class MediaLibrary {
      * and checked again from the bytes once they arrive, because a presigned address does not
      * make a declaration binding.
      *
-     * @throws UploadsUnavailableException when this deployment has no storage configured
+     * <p>A declared {@code video/*} type begins a video (issue #331): a larger ceiling, its
+     * own sweep, and an address signed for that type. Refused up front when this host cannot
+     * transcode one, rather than after the creator has uploaded a few hundred megabytes.
+     *
+     * @throws UploadsUnavailableException when this deployment has no storage configured, or
+     *     a video was declared and this deployment cannot transcode one
      * @throws MediaFailedException when the declared size is over the ceiling
      */
     @Transactional
@@ -67,24 +90,27 @@ public class MediaLibrary {
         if (!store.isAvailable()) {
             throw new UploadsUnavailableException("This deployment has no media storage configured.");
         }
-        if (declaredBytes > properties.maxUploadBytes()) {
+        MediaKind kind = MediaKind.ofDeclaredType(declaredContentType);
+        if (kind == MediaKind.VIDEO && !videoTranscoder.isAvailable()) {
+            throw new UploadsUnavailableException("This deployment cannot process video.");
+        }
+        long ceiling = properties.maxUploadBytesFor(kind);
+        if (declaredBytes > ceiling) {
             throw new MediaFailedException(
                     MediaFailureReason.TOO_LARGE,
-                    "That file is larger than the %d MB this platform accepts."
-                            .formatted(properties.maxUploadBytes() / (1024 * 1024)));
+                    "That file is larger than the %d MB this platform accepts.".formatted(ceiling / (1024 * 1024)));
         }
         if (declaredBytes <= 0) {
             throw new MediaFailedException(MediaFailureReason.EMPTY, "That file is empty.");
         }
 
         Instant now = clock.instant();
-        MediaAsset asset = assets.save(MediaAsset.awaitingUpload(ownerUserId, now));
+        MediaAsset asset = assets.save(MediaAsset.awaitingUpload(ownerUserId, kind, now));
 
         String signedType = normalisedType(declaredContentType);
         URI address = store.presignedPut(rawKeyOf(asset.getId()), signedType, properties.uploadWindow());
 
-        return new MediaUpload(
-                asset.getId(), address, signedType, now.plus(properties.uploadWindow()), properties.maxUploadBytes());
+        return new MediaUpload(asset.getId(), address, signedType, now.plus(properties.uploadWindow()), ceiling);
     }
 
     /**
@@ -125,8 +151,69 @@ public class MediaLibrary {
         }
         return assets.findByIdInAndOwnerUserId(mediaIds, ownerUserId).stream()
                 .filter(asset -> asset.getStatus() == MediaStatus.READY)
+                .filter(asset -> asset.getKind() == MediaKind.IMAGE)
                 .map(MediaAsset::getId)
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * {@link #claimForOwner}, for a campaign's video — issue #331.
+     *
+     * <p>A separate question rather than a parameter, because the two slots must not accept
+     * each other's uploads: an MP4 attached as a cover would render as a broken image, and
+     * an image attached as a video as a player that never plays.
+     */
+    @Transactional(readOnly = true)
+    public boolean claimVideoForOwner(UUID ownerUserId, UUID mediaId) {
+        return assets.findByIdAndOwnerUserId(mediaId, ownerUserId)
+                .filter(asset -> asset.getStatus() == MediaStatus.READY)
+                .filter(asset -> asset.getKind() == MediaKind.VIDEO)
+                .isPresent();
+    }
+
+    /**
+     * What a player needs, for a video that is ready — issue #331.
+     *
+     * <p>No owner, for the reason {@link #viewsOf} has none: a live campaign's video is
+     * public. Empty for anything that is not a ready video.
+     */
+    @Transactional(readOnly = true)
+    public Optional<VideoView> videoViewOf(UUID mediaId) {
+        return assets.findById(mediaId).flatMap(this::playableView);
+    }
+
+    /**
+     * Deletes an upload nobody uses any more, once the caller's transaction has committed —
+     * issue #331.
+     *
+     * <p>After the commit and not during it: deleting the objects inside a transaction that
+     * then rolled back would leave a campaign pointing at a video that no longer exists. The
+     * other failure — the commit succeeded and the deletion did not — leaves an orphaned
+     * object, which costs storage and nothing else, so it is logged and not retried.
+     *
+     * <p>The caller decides that nothing refers to it. This module cannot see what does.
+     */
+    public void discardAfterCommit(UUID mediaId) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    discard(mediaId);
+                }
+            });
+            return;
+        }
+        discard(mediaId);
+    }
+
+    private void discard(UUID mediaId) {
+        try {
+            for (String key : writes.remove(mediaId)) {
+                store.delete(key);
+            }
+        } catch (RuntimeException problem) {
+            log.warn("Media {} was released but could not be deleted; its objects may be orphaned", mediaId, problem);
+        }
     }
 
     /**
@@ -156,7 +243,7 @@ public class MediaLibrary {
     }
 
     private Optional<MediaView> servableView(MediaAsset asset) {
-        if (asset.getStatus() != MediaStatus.READY) {
+        if (asset.getStatus() != MediaStatus.READY || asset.getKind() != MediaKind.IMAGE) {
             return Optional.empty();
         }
         // Every one of these is present on a READY row, which V61's
@@ -168,6 +255,28 @@ public class MediaLibrary {
                         asset.getWidth().orElseThrow(),
                         asset.getHeight().orElseThrow(),
                         asset.getBlurDataUrl().orElseThrow()));
+    }
+
+    private Optional<VideoView> playableView(MediaAsset asset) {
+        if (asset.getStatus() != MediaStatus.READY || asset.getKind() != MediaKind.VIDEO) {
+            return Optional.empty();
+        }
+        // V94's media_video_ready_is_playable holds the duration and the poster on a
+        // ready video, as V61's constraint holds the rest.
+        return asset.getStorageKey()
+                .map(key -> new VideoView(
+                        asset.getId(),
+                        store.publicUrl(key),
+                        store.publicUrl(asset.getPosterStorageKey().orElseThrow()),
+                        asset.getWidth().orElseThrow(),
+                        asset.getHeight().orElseThrow(),
+                        asset.getDurationMs().orElseThrow(),
+                        asset.getBlurDataUrl().orElseThrow()));
+    }
+
+    /** Every object a row has in the store: the derived file and, for a video, its poster. */
+    static Stream<String> storedKeysOf(MediaAsset asset) {
+        return Stream.concat(asset.getStorageKey().stream(), asset.getPosterStorageKey().stream());
     }
 
     private MediaAsset ownedOrThrow(UUID ownerUserId, UUID mediaId) {
@@ -182,7 +291,15 @@ public class MediaLibrary {
 
     /** The key the derived image is served from, extension included so a CDN guesses right. */
     public static String derivedKeyOf(UUID mediaId, String contentType) {
+        if ("video/mp4".equals(contentType)) {
+            return DERIVED_PREFIX + mediaId + ".mp4";
+        }
         return DERIVED_PREFIX + mediaId + ("image/png".equals(contentType) ? ".png" : ".jpg");
+    }
+
+    /** Where a video's poster is served from, beside the video. */
+    public static String posterKeyOf(UUID mediaId, String contentType) {
+        return DERIVED_PREFIX + mediaId + "-poster" + ("image/png".equals(contentType) ? ".png" : ".jpg");
     }
 
     /**
@@ -196,10 +313,14 @@ public class MediaLibrary {
      * happens where the content is.
      */
     private static String normalisedType(String declared) {
-        if (declared == null || declared.isBlank() || !declared.startsWith("image/")) {
+        if (declared == null || declared.isBlank()) {
             return "application/octet-stream";
         }
-        return declared.trim();
+        String trimmed = declared.trim();
+        if (!trimmed.startsWith("image/") && !trimmed.startsWith("video/")) {
+            return "application/octet-stream";
+        }
+        return trimmed;
     }
 
     /**
@@ -224,4 +345,18 @@ public class MediaLibrary {
      * @param blurDataUrl §13.1's placeholder, in the same response as the image
      */
     public record MediaView(UUID id, String url, int width, int height, String blurDataUrl) {}
+
+    /**
+     * A playable video, as everything outside this module sees it — issue #331.
+     *
+     * @param url the MP4. Range requests are the store's, so a player seeks without this
+     *     process in the path
+     * @param posterUrl the still shown before it plays
+     * @param width of the transcoded frame, so a page reserves the right box
+     * @param height likewise
+     * @param durationMs measured on the transcoded file
+     * @param blurDataUrl the poster's placeholder
+     */
+    public record VideoView(
+            UUID id, String url, String posterUrl, int width, int height, int durationMs, String blurDataUrl) {}
 }

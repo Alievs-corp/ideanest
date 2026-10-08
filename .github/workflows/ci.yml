@@ -468,11 +468,14 @@ jobs:
       # in CI as well, and a test that never runs anywhere is a test that is not
       # there. The EXIF assertion in particular is a privacy claim, and it has to be
       # made against real output.
-      - name: Install libvips
+      #
+      # ffmpeg likewise, for the campaign video's transcoder (#331): the duration
+      # refusal and the metadata strip are asserted on a real encode.
+      - name: Install libvips and ffmpeg
         if: steps.detect.outputs.present == 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y libvips-tools
+          sudo apt-get install --no-install-recommends -y libvips-tools ffmpeg
 
       - name: Build and test
         if: steps.detect.outputs.present == 'true'

@@ -37,7 +37,8 @@ public record ProjectPatch(
         Patched<JsonNode> story,
         Patched<String> risks,
         Patched<CoverImageSelection> coverImage,
-        Patched<Boolean> latePledgeEnabled) {
+        Patched<Boolean> latePledgeEnabled,
+        Patched<UUID> videoMediaId) {
 
     public ProjectPatch {
         // Absence, not null, is the neutral value. Normalised here so that no
@@ -54,6 +55,7 @@ public record ProjectPatch(
         risks = Patched.orAbsent(risks);
         coverImage = Patched.orAbsent(coverImage);
         latePledgeEnabled = Patched.orAbsent(latePledgeEnabled);
+        videoMediaId = Patched.orAbsent(videoMediaId);
     }
 
     /**

@@ -56,5 +56,13 @@ public enum MediaFailureReason {
      * enumerated because the creator's next move is the same for all of them: send a
      * different file.
      */
-    UNREADABLE
+    UNREADABLE,
+
+    /**
+     * A video longer than the ceiling — issue #331.
+     *
+     * <p>Measured from the file by ffprobe. The editor checks the duration before it uploads,
+     * and this is what holds for a client that did not.
+     */
+    TOO_LONG
 }
