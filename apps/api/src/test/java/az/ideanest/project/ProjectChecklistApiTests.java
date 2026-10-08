@@ -157,6 +157,65 @@ class ProjectChecklistApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("the checklist is written in the language the request asks for")
+    void theChecklistSpeaksTheReadersLanguage() {
+        Account creator = account();
+        UUID id = idOf(draft(creator));
+
+        ResponseEntity<Map<String, Object>> response =
+                get("/v1/projects/" + id + "/checklist", creator, "az-AZ,az;q=0.9,en;q=0.8");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        // The rows differ by language, so a cache between here and the reader has to be told.
+        assertThat(response.getHeaders().getVary()).contains(HttpHeaders.ACCEPT_LANGUAGE);
+
+        Map<String, Object> cover = row(blocking(response.getBody()), "COVER_IMAGE");
+        assertThat(cover).containsEntry("label", "Örtük şəkli");
+        assertThat(cover)
+                .containsEntry(
+                        "detail",
+                        "Örtük şəkli mütləqdir. Kampaniya göstərildiyi hər yerdə bu şəkillə təmsil olunur.");
+        assertThat(row(blocking(response.getBody()), "STORY"))
+                .containsEntry("label", "Hekayə")
+                .containsEntry("detail", "Hekayə 0 simvoldan ibarətdir. Ən azı 500 simvol lazımdır.");
+        // The wire names do not move with the language: a client branches on them.
+        assertThat(unmetNames(blocking(response.getBody())))
+                .containsExactly(
+                        "SUMMARY", "CATEGORY", "COVER_IMAGE", "GOAL", "DURATION", "STORY", "RISKS");
+
+        // English is still English, and a reader who states no language gets the primary one.
+        assertThat(row(blocking(get("/v1/projects/" + id + "/checklist", creator, "en").getBody()), "COVER_IMAGE"))
+                .containsEntry("label", "Cover image");
+        assertThat(row(blocking(checklistOf(id, creator)), "COVER_IMAGE")).containsEntry("label", "Örtük şəkli");
+    }
+
+    @Test
+    @DisplayName("a refused submission names what is missing in the reader's language")
+    void theRefusalSpeaksTheReadersLanguage() {
+        Account creator = account();
+        UUID id = idOf(submittableDraft(creator));
+        patchJson(id, creator, "{\"blurb\": null}");
+
+        ResponseEntity<Map<String, Object>> refused = rest.exchange(
+                "/v1/projects/" + id + "/submit",
+                HttpMethod.POST,
+                new HttpEntity<>(null, withLanguage(bearer(creator.accessToken()), "ru")),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody()).containsEntry("code", "PROJECT_NOT_SUBMITTABLE");
+        assertThat(unmetOf(refused.getBody()))
+                .singleElement()
+                .satisfies(entry -> {
+                    assertThat(entry).containsEntry("requirement", "SUMMARY");
+                    assertThat(entry).containsEntry("label", "Краткое описание");
+                    assertThat(entry)
+                            .containsEntry(
+                                    "detail",
+                                    "Краткое описание в одну строку показывается под кампанией везде, где она встречается.");
+                });
+    }
+
+    @Test
     @DisplayName("a stranger cannot read a campaign's checklist, and is told it does not exist")
     void theChecklistIsPrivateToTheCampaign() {
         Account owner = account();
@@ -510,6 +569,13 @@ class ProjectChecklistApiTests extends AbstractIntegrationTest {
         return (Map<String, Object>) checklist.get("moderation");
     }
 
+    private static Map<String, Object> row(List<Map<String, Object>> items, String requirement) {
+        return items.stream()
+                .filter(item -> requirement.equals(item.get("requirement")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(requirement + " is not on the checklist"));
+    }
+
     private static List<String> unmetNames(List<Map<String, Object>> items) {
         return items.stream()
                 .filter(item -> Boolean.FALSE.equals(item.get("satisfied")))
@@ -584,6 +650,19 @@ class ProjectChecklistApiTests extends AbstractIntegrationTest {
                 HttpMethod.GET,
                 new HttpEntity<>(bearer(account.accessToken())),
                 new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    private ResponseEntity<Map<String, Object>> get(String path, Account account, String acceptLanguage) {
+        return rest.exchange(
+                path,
+                HttpMethod.GET,
+                new HttpEntity<>(withLanguage(bearer(account.accessToken()), acceptLanguage)),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    private static HttpHeaders withLanguage(HttpHeaders headers, String acceptLanguage) {
+        headers.set(HttpHeaders.ACCEPT_LANGUAGE, acceptLanguage);
+        return headers;
     }
 
     private static UUID idOf(Map<String, Object> project) {

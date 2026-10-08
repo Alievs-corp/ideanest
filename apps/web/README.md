@@ -1464,6 +1464,13 @@ deliberately no client-side copy of §5.3 here; unlike the basics tab, nothing o
 this screen is being typed, so there is nothing an immediate local answer would
 buy that a second disagreeing implementation would not cost.
 
+**The rows arrive translated.** Each row's `label` and `detail`, and the refusal's
+list of what is missing, are written by the service in the language of the
+request's `Accept-Language`. `ReviewPanel` asks in the route's language
+(`useRouteLocale`) rather than leaving the header to the language cookie, so a
+link to `/az/…/edit/review` opened in a browser whose cookie says `en` still reads
+as one language.
+
 **Blocking and advisory never share a presentation.** Two headed groups, two icon
 shapes, and every row states "Done", "Required, not done", or "Recommended, not
 done" in text. The score is a sentence with counts — `83% complete. 10 of 10

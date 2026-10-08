@@ -1,5 +1,6 @@
 import { authorizedFetch, publicFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
+import type { Locale } from '../i18n/locale';
 import {
   categoriesFrom,
   type Category,
@@ -148,14 +149,28 @@ export async function patchProject(
  * an older build gets the same verdict — as a 409 rather than as a list. The panel
  * therefore treats a refusal as the authority and this read as a convenience,
  * never the other way round.
+ *
+ * Both answers carry prose — each row's `label` and `detail`, and the refusal's
+ * list of what is missing — and the service writes it in the language the request's
+ * `Accept-Language` asks for. So both take the language of the page they are drawn
+ * on. Left to `authorizedFetch`, the header would come from the language cookie,
+ * which is this browser's last choice rather than the route being read: a link to
+ * `/az/projects/…/edit/review` opened in a browser whose cookie says `en` would draw
+ * an Azerbaijani screen around an English checklist.
  * ---------------------------------------------------------------------- */
+
+function inLanguage(locale: Locale | undefined): HeadersInit | undefined {
+  return locale === undefined ? undefined : { 'Accept-Language': locale };
+}
 
 export async function getProjectChecklist(
   id: string,
   signal?: AbortSignal,
+  locale?: Locale,
 ): Promise<ProjectChecklist> {
   const response = await authorizedFetch(`/v1/projects/${encodeURIComponent(id)}/checklist`, {
     signal,
+    headers: inLanguage(locale),
   });
   if (!response.ok) throw await errorFrom(response);
   return (await response.json()) as ProjectChecklist;
@@ -170,11 +185,16 @@ export async function getProjectChecklist(
  * or one that was rejected. Both are conflicts because the request is well formed
  * and it is the campaign that refuses it.
  */
-export async function submitProject(id: string, signal?: AbortSignal): Promise<ProjectEdit> {
+export async function submitProject(
+  id: string,
+  signal?: AbortSignal,
+  locale?: Locale,
+): Promise<ProjectEdit> {
   return readProject(
     await authorizedFetch(`/v1/projects/${encodeURIComponent(id)}/submit`, {
       method: 'POST',
       signal,
+      headers: inLanguage(locale),
     }),
   );
 }

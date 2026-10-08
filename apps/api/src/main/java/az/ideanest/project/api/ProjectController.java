@@ -3,9 +3,11 @@ package az.ideanest.project.api;
 import az.ideanest.project.application.ProjectChecklistService;
 import az.ideanest.project.application.ProjectEditingService;
 import az.ideanest.project.application.ProjectTransitionService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.UUID;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -48,16 +51,19 @@ public class ProjectController {
     private final ProjectTransitionService transitions;
     private final ProjectChecklistService checklist;
     private final ProjectEditResponses responses;
+    private final ChecklistCopy checklistCopy;
 
     public ProjectController(
             ProjectEditingService editing,
             ProjectTransitionService transitions,
             ProjectChecklistService checklist,
-            ProjectEditResponses responses) {
+            ProjectEditResponses responses,
+            ChecklistCopy checklistCopy) {
         this.editing = editing;
         this.transitions = transitions;
         this.checklist = checklist;
         this.responses = responses;
+        this.checklistCopy = checklistCopy;
     }
 
     /**
@@ -129,10 +135,25 @@ public class ProjectController {
      * <p><strong>Advice, not enforcement.</strong> A client may ignore this
      * entirely; the submission is checked against the same rules by the same class
      * either way.
+     *
+     * <p><strong>In the reader's language.</strong> Every row's {@code label} and
+     * {@code detail} is resolved against {@code Accept-Language}, with Azerbaijani
+     * for anything absent or unsupported -- see {@link ChecklistCopy}. So the
+     * response varies by that header, and says so: nothing here is meant to be
+     * stored by a shared cache, but a private one that kept the Azerbaijani rows and
+     * replayed them after the reader switched to Russian would be the same bug this
+     * fixed, one layer further out.
      */
     @GetMapping("/{id}/checklist")
-    public ProjectChecklist checklist(@AuthenticationPrincipal Jwt accessToken, @PathVariable UUID id) {
-        return ProjectChecklist.of(checklist.reviewOf(id, callerOf(accessToken)));
+    public ProjectChecklist checklist(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable UUID id,
+            @RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false) String acceptLanguage,
+            HttpServletResponse response) {
+
+        response.setHeader(HttpHeaders.VARY, HttpHeaders.ACCEPT_LANGUAGE);
+        return ProjectChecklist.of(
+                checklist.reviewOf(id, callerOf(accessToken)), checklistCopy, ChecklistCopy.localeOf(acceptLanguage));
     }
 
     /** Sends the campaign for review. Refused unless §5.3 is satisfied. */

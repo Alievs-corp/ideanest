@@ -17,6 +17,13 @@ package az.ideanest.project.domain;
  * branches in {@link SubmissionChecklist}, and the first branch to disagree would
  * send a creator to the wrong tab for a rule that was not really blocking.
  *
+ * <p><strong>No label, and that is deliberate too.</strong> What a requirement is
+ * called is prose, and prose is in the reader's language: it lives in
+ * {@code messages*.properties} under {@code checklist.<NAME>.label}, beside the
+ * sentences that explain a failure, and is resolved against {@code Accept-Language}
+ * at the API boundary. An English label here was rendered verbatim by every
+ * client, so the Azerbaijani editor showed an English checklist.
+ *
  * <p>The order below is the order a creator sees, and it is the order a campaign
  * is built in: what it is, what it costs, what it says, what it offers. A
  * checklist sorted by severity would put the cover image above the title.
@@ -24,13 +31,13 @@ package az.ideanest.project.domain;
 public enum ChecklistRequirement {
 
     /** §5.3: 1–60 characters. Also {@code projects_title_length}. */
-    TITLE("Title", ChecklistSeverity.BLOCKING, EditorSection.BASICS),
+    TITLE(ChecklistSeverity.BLOCKING, EditorSection.BASICS),
 
     /** §5.3: 1–135 characters. {@code blurb} on the wire and in the schema. */
-    SUMMARY("Short summary", ChecklistSeverity.BLOCKING, EditorSection.BASICS),
+    SUMMARY(ChecklistSeverity.BLOCKING, EditorSection.BASICS),
 
     /** §4.6: a campaign is filed before it can be discovered. */
-    CATEGORY("Category", ChecklistSeverity.BLOCKING, EditorSection.BASICS),
+    CATEGORY(ChecklistSeverity.BLOCKING, EditorSection.BASICS),
 
     /**
      * A subcategory as well as a category.
@@ -41,10 +48,10 @@ public enum ChecklistRequirement {
      * with every other campaign in the category rather than with the twelve it is
      * actually like.
      */
-    SUBCATEGORY("Subcategory", ChecklistSeverity.ADVISORY, EditorSection.BASICS),
+    SUBCATEGORY(ChecklistSeverity.ADVISORY, EditorSection.BASICS),
 
     /** §5.3: required. A campaign without one has nothing to show anywhere it is listed. */
-    COVER_IMAGE("Cover image", ChecklistSeverity.BLOCKING, EditorSection.BASICS),
+    COVER_IMAGE(ChecklistSeverity.BLOCKING, EditorSection.BASICS),
 
     /**
      * §5.3's 1024×576, and <strong>advisory since the media pipeline landed</strong>.
@@ -69,13 +76,13 @@ public enum ChecklistRequirement {
      * it anyway. A hard floor still exists and is not this: {@code MediaAsset.MINIMUM_EDGE}
      * refuses anything too small to display at all.
      */
-    COVER_IMAGE_SIZE("Cover image size", ChecklistSeverity.ADVISORY, EditorSection.BASICS),
+    COVER_IMAGE_SIZE(ChecklistSeverity.ADVISORY, EditorSection.BASICS),
 
     /** §5.3: present, above zero, and within the configured bounds. */
-    GOAL("Funding goal", ChecklistSeverity.BLOCKING, EditorSection.BASICS),
+    GOAL(ChecklistSeverity.BLOCKING, EditorSection.BASICS),
 
     /** §5.3: 1–60 days, 30 recommended. */
-    DURATION("Duration", ChecklistSeverity.BLOCKING, EditorSection.BASICS),
+    DURATION(ChecklistSeverity.BLOCKING, EditorSection.BASICS),
 
     /**
      * A launch date chosen in advance.
@@ -86,10 +93,10 @@ public enum ChecklistRequirement {
      * launches by pressing a button does it whenever they happen to be at a
      * keyboard.
      */
-    SCHEDULED_LAUNCH("Scheduled launch", ChecklistSeverity.ADVISORY, EditorSection.BASICS),
+    SCHEDULED_LAUNCH(ChecklistSeverity.ADVISORY, EditorSection.BASICS),
 
     /** §5.3: at least 500 characters of prose, counted as {@link StoryDocuments} counts them. */
-    STORY("Story", ChecklistSeverity.BLOCKING, EditorSection.STORY),
+    STORY(ChecklistSeverity.BLOCKING, EditorSection.STORY),
 
     /**
      * Something to look at inside the story.
@@ -99,10 +106,10 @@ public enum ChecklistRequirement {
      * whose product is a novel may legitimately have nothing to show, so this
      * never refuses anything.
      */
-    STORY_MEDIA("An image or video in the story", ChecklistSeverity.ADVISORY, EditorSection.STORY),
+    STORY_MEDIA(ChecklistSeverity.ADVISORY, EditorSection.STORY),
 
     /** §5.3: <strong>required</strong>, at least 200 characters. */
-    RISKS("Risks and challenges", ChecklistSeverity.BLOCKING, EditorSection.STORY),
+    RISKS(ChecklistSeverity.BLOCKING, EditorSection.STORY),
 
     /**
      * Something for a backer to choose.
@@ -112,27 +119,20 @@ public enum ChecklistRequirement {
      * reads after the first paragraph, and a campaign offering nothing is asking
      * for a gift rather than a pledge.
      */
-    REWARDS_OFFERED("At least one reward", ChecklistSeverity.ADVISORY, EditorSection.REWARDS),
+    REWARDS_OFFERED(ChecklistSeverity.ADVISORY, EditorSection.REWARDS),
 
     /** §5.3: 0–100 tiers. */
-    REWARD_TIER_COUNT("Number of rewards", ChecklistSeverity.BLOCKING, EditorSection.REWARDS),
+    REWARD_TIER_COUNT(ChecklistSeverity.BLOCKING, EditorSection.REWARDS),
 
     /** §5.3: every tier priced at or above the smallest chargeable amount. */
-    REWARD_PRICES("Reward prices", ChecklistSeverity.BLOCKING, EditorSection.REWARDS);
+    REWARD_PRICES(ChecklistSeverity.BLOCKING, EditorSection.REWARDS);
 
-    private final String label;
     private final ChecklistSeverity severity;
     private final EditorSection section;
 
-    ChecklistRequirement(String label, ChecklistSeverity severity, EditorSection section) {
-        this.label = label;
+    ChecklistRequirement(ChecklistSeverity severity, EditorSection section) {
         this.severity = severity;
         this.section = section;
-    }
-
-    /** What the requirement is, in a creator's words. Never says whether it is met. */
-    public String label() {
-        return label;
     }
 
     public ChecklistSeverity severity() {

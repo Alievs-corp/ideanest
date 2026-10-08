@@ -7347,6 +7347,13 @@
             "type" : "string",
             "format" : "uuid"
           }
+        }, {
+          "in" : "header",
+          "name" : "Accept-Language",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
         } ],
         "responses" : {
           "200" : {

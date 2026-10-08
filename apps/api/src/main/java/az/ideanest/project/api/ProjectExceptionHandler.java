@@ -19,10 +19,13 @@ import az.ideanest.project.application.UnreviewableStateException;
 import az.ideanest.project.application.ProjectTransitionNotAllowedException;
 import az.ideanest.project.application.RemindersClosedException;
 import az.ideanest.project.domain.ProjectState;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -84,6 +87,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
             CampaignDirectoryController.class
         })
 public class ProjectExceptionHandler {
+
+    /** The checklist's words, for the one refusal that quotes them. */
+    private final ChecklistCopy checklistCopy;
+
+    public ProjectExceptionHandler(ChecklistCopy checklistCopy) {
+        this.checklistCopy = checklistCopy;
+    }
 
     /**
      * 404 for a campaign that does not exist, and for one this caller may not see.
@@ -217,26 +227,37 @@ public class ProjectExceptionHandler {
      * prose, it would be a sentence of unbounded length on a campaign missing eight
      * things, and §10.4 is explicit that a client branches on {@code code} and
      * {@code meta} rather than on prose.
+     *
+     * <p>Each entry's {@code label} and {@code detail} are the checklist row's own,
+     * resolved by the same {@link ChecklistCopy} in the language the request's
+     * {@code Accept-Language} negotiated. Clients render them as "label: detail"
+     * beside the refused button, so an English pair here would put English in the
+     * middle of an Azerbaijani screen at exactly the moment the creator is reading
+     * most closely.
      */
     @ExceptionHandler(ProjectNotSubmittableException.class)
-    public ProblemDetail handleNotSubmittable(ProjectNotSubmittableException exception) {
+    public ProblemDetail handleNotSubmittable(
+            ProjectNotSubmittableException exception, HttpServletRequest request) {
+
+        Locale locale = ChecklistCopy.localeOf(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE));
+
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
         problem.setType(URI.create("https://ideanest.az/problems/project-not-submittable"));
         problem.setTitle("Campaign is not ready to submit");
         problem.setDetail("Some of what a campaign needs before it can be reviewed is still missing.");
         problem.setProperty("code", "PROJECT_NOT_SUBMITTABLE");
-        problem.setProperty("meta", Map.of("unmet", unmet(exception)));
+        problem.setProperty("meta", Map.of("unmet", unmet(exception, locale)));
         return problem;
     }
 
-    private static List<Map<String, Object>> unmet(ProjectNotSubmittableException exception) {
+    private List<Map<String, Object>> unmet(ProjectNotSubmittableException exception, Locale locale) {
         return exception.unmet().stream()
                 .map(item -> {
                     Map<String, Object> entry = new LinkedHashMap<>();
                     entry.put("requirement", item.requirement().name());
-                    entry.put("label", item.requirement().label());
+                    entry.put("label", checklistCopy.label(item.requirement(), locale));
                     entry.put("section", item.requirement().section().key());
-                    entry.put("detail", item.detail());
+                    entry.put("detail", checklistCopy.detail(item, locale));
                     return entry;
                 })
                 .toList();

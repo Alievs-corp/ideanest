@@ -246,7 +246,8 @@ describe('ReviewPanel', () => {
       await renderPanel();
       await user.click(screen.getByRole('button', { name: 'Submit for review' }));
 
-      expect(submitProjectMock).toHaveBeenCalledWith('project-1');
+      // In the route's language, so the refusal's reasons match the page around them.
+      expect(submitProjectMock).toHaveBeenCalledWith('project-1', undefined, 'en');
       // Awaiting review is a real state, and it must not look like an error.
       await screen.findByText(/with our moderators/);
       expect(screen.queryByRole('button', { name: 'Submit for review' })).not.toBeInTheDocument();
