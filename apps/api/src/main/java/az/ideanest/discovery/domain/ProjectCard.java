@@ -43,6 +43,9 @@ import java.util.UUID;
  * @param closingSoon §4.3's "Closing soon" (IDN-EXT-01, #37) — see {@link #closingSoon}
  * @param extended §4.3's "Extended": the campaign is in {@code EXTENDED}. A card can carry
  *     both, and both beside its badge
+ * @param categorySlug the campaign's category, or null for one that has not chosen one. The
+ *     clients colour and badge the card by it (#335), so it is the slug: the stable key, where
+ *     the name is a translation the card does not print
  */
 public record ProjectCard(
         UUID id,
@@ -61,7 +64,8 @@ public record ProjectCard(
         Instant launchedAt,
         Instant deadline,
         boolean closingSoon,
-        boolean extended) {
+        boolean extended,
+        String categorySlug) {
 
     /** How near its end a funding campaign is badged "Closing soon" — IDN-EXT-01 (#37). */
     public static final Duration CLOSING_SOON = Duration.ofDays(14);
