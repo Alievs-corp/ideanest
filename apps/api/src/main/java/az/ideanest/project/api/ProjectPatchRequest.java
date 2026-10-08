@@ -26,6 +26,9 @@ import java.util.UUID;
  *     {@code StoryDocuments} on the editing service's path rather than here, so
  *     that the rule holds for every caller of that service and not only for
  *     requests that arrive through this controller
+ * @param videoMediaId a ready video upload of the caller's, or null to remove the campaign's
+ *     video — issue #331. An identifier only: the location, the poster and the length are
+ *     facts the server measured
  */
 public record ProjectPatchRequest(
         Patched<String> title,
@@ -38,7 +41,8 @@ public record ProjectPatchRequest(
         Patched<JsonNode> story,
         Patched<String> risks,
         Patched<CoverImageBody> coverImage,
-        Patched<Boolean> latePledgeEnabled) {
+        Patched<Boolean> latePledgeEnabled,
+        Patched<UUID> videoMediaId) {
 
     public ProjectPatchRequest {
         // Absence is the neutral value, so a null component becomes absent rather
@@ -55,6 +59,7 @@ public record ProjectPatchRequest(
         risks = Patched.orAbsent(risks);
         coverImage = Patched.orAbsent(coverImage);
         latePledgeEnabled = Patched.orAbsent(latePledgeEnabled);
+        videoMediaId = Patched.orAbsent(videoMediaId);
     }
 
     /**
@@ -83,6 +88,7 @@ public record ProjectPatchRequest(
                 story,
                 risks,
                 coverImage.map(CoverImageBody::toSelection),
-                latePledgeEnabled);
+                latePledgeEnabled,
+                videoMediaId);
     }
 }

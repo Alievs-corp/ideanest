@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -409,6 +410,55 @@ class JobSchedulerTests extends AbstractIntegrationTest {
         assertThat(job.runs()).isEqualTo(1);
         assertThat(holderOf(job.name())).isNull();
         assertThat(stateOf(job.name())).isEqualTo("READY");
+    }
+
+    @Test
+    @DisplayName("a long-running job gets a thread of its own and a lease of its own length")
+    void aLongRunningJobIsKeptOffTheSharedThread() {
+        String name = "test-long-" + SEQUENCE.incrementAndGet();
+        Instant[] leaseSeenDuringTheRun = new Instant[1];
+        ScheduledJob job = new ScheduledJob() {
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public String schedule() {
+                return "0 0 * * * *";
+            }
+
+            @Override
+            public void run() {
+                leaseSeenDuringTheRun[0] = jdbc().queryForObject(
+                        "SELECT lock_expires_at FROM scheduled_jobs WHERE name = ?", Instant.class, name);
+            }
+
+            @Override
+            public boolean isLongRunning() {
+                return true;
+            }
+
+            @Override
+            public Optional<Duration> lease() {
+                return Optional.of(Duration.ofMinutes(15));
+            }
+        };
+
+        CapturingTimers timers = new CapturingTimers();
+        JobScheduler scheduler = new JobScheduler(List.of(job), lease, runner, timers, clock);
+        try {
+            scheduler.registerJobs();
+
+            // Issue #331: a transcode held the one shared scheduler thread for minutes and
+            // stopped the outbox and the charges with it. The shared timer never sees it.
+            assertThat(timers.triggers()).isEmpty();
+        } finally {
+            scheduler.destroy();
+        }
+
+        runner.run(job);
+        assertThat(leaseSeenDuringTheRun[0]).isAfter(now().plus(Duration.ofMinutes(14)));
     }
 
     @Test

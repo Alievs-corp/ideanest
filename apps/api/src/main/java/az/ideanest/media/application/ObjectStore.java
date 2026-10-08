@@ -3,6 +3,7 @@ package az.ideanest.media.application;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.OptionalLong;
 
 /**
  * Where uploaded objects live — the media pipeline design of 2026-08-30.
@@ -56,6 +57,16 @@ public interface ObjectStore {
      * fail on the second pass for having succeeded on the first.
      */
     void delete(String key);
+
+    /**
+     * How large an object is, without fetching it — issue #331.
+     *
+     * <p>A presigned {@code PUT} does not bind the size the client declared, so the sweep
+     * asks before it downloads: a video slot is a 250 MB ceiling, and a file several times
+     * that should be refused from its header rather than written to the shared host's
+     * temporary space first. Empty when there is no such object.
+     */
+    OptionalLong sizeOf(String key);
 
     /**
      * What a browser fetches this key from.

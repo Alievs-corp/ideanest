@@ -55,8 +55,13 @@ FROM eclipse-temurin:21-jre AS runtime
 # package is what provides `vips` and `vipsheader`; the library alone provides
 # neither, and VipsImageTranscoder shells out rather than binding through JNI so
 # that a missing binary is a start-up log line instead of a linker error.
+#
+# ffmpeg is the campaign video's transcoder -- issue #331. One rendition, H.264 and
+# AAC at 720p, which is what the distribution's build encodes with libx264 and its
+# native AAC encoder; `ffprobe` comes in the same package. Shelled out to for the
+# reason libvips is: a missing binary is a start-up log line, not a linker error.
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y libvips-tools \
+    && apt-get install --no-install-recommends -y libvips-tools ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # A user of its own. The base image runs as root, and a process that never needs

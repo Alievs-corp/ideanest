@@ -1,5 +1,6 @@
 package az.ideanest.shared.jobs;
 
+import java.time.Duration;
 import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +73,13 @@ public class JobLease {
      */
     @Transactional
     public boolean claim(String name, String holder, Instant now) {
-        return jobs.claim(name, holder, now, now.plus(properties.lockLease())) == 1;
+        return claim(name, holder, now, properties.lockLease());
+    }
+
+    /** The same, for a job whose pass needs a lease of its own length. */
+    @Transactional
+    public boolean claim(String name, String holder, Instant now, Duration lease) {
+        return jobs.claim(name, holder, now, now.plus(lease)) == 1;
     }
 
     /** The run finished. The lease goes back and the failure history behind it is cleared. */

@@ -5,9 +5,12 @@ import az.ideanest.media.domain.MediaAsset;
 import az.ideanest.media.domain.MediaFailureReason;
 import az.ideanest.media.infrastructure.MediaAssetRepository;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -56,6 +59,70 @@ public class MediaProcessingWrites {
                     return claimed;
                 })
                 .orElse(false);
+    }
+
+    /**
+     * {@link #claim}, for a video — issue #331.
+     *
+     * <p>Also takes a row that has sat in {@code PROCESSING} for longer than a pass can
+     * take. A deploy that restarts the API mid-transcode would otherwise leave that video
+     * "processing" for ever; for an image the window is seconds and the case is not worth a
+     * rule, for a video it is the length of a deploy.
+     */
+    @Transactional
+    public boolean claimVideo(UUID mediaId, Duration staleAfter) {
+        return assets.findById(mediaId)
+                .map(asset -> {
+                    boolean claimed = asset.claimForProcessing(clock.instant(), staleAfter);
+                    if (claimed) {
+                        assets.save(asset);
+                    }
+                    return claimed;
+                })
+                .orElse(false);
+    }
+
+    /** A video and its poster, in one transition — issue #331. */
+    @Transactional
+    public void succeedVideo(
+            UUID mediaId,
+            String storageKey,
+            TranscodedVideo video,
+            long byteSize,
+            String posterStorageKey,
+            TranscodedImage poster) {
+
+        assets.findById(mediaId).ifPresent(asset -> {
+            asset.markVideoReady(
+                    storageKey,
+                    video.contentType(),
+                    byteSize,
+                    video.width(),
+                    video.height(),
+                    video.durationMs(),
+                    posterStorageKey,
+                    poster.blurDataUrl(),
+                    clock.instant());
+            assets.save(asset);
+        });
+    }
+
+    /**
+     * Deletes one row and answers the keys of what it had in the store.
+     *
+     * <p>{@code REQUIRES_NEW} because the caller is an after-commit hook: Spring keeps the
+     * finished transaction's resources bound there, and a write that merely joined it would
+     * never be committed.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public List<String> remove(UUID mediaId) {
+        return assets.findById(mediaId)
+                .map(asset -> {
+                    List<String> keys = MediaLibrary.storedKeysOf(asset).toList();
+                    assets.delete(asset);
+                    return keys;
+                })
+                .orElse(List.of());
     }
 
     /** Everything a renderer needs, in one transition. */

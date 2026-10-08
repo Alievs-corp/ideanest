@@ -1,5 +1,7 @@
 package az.ideanest.project.infrastructure;
 
+import az.ideanest.media.application.MediaLibrary;
+import az.ideanest.project.application.CampaignVideo;
 import az.ideanest.project.application.PublicProjectPage;
 import az.ideanest.project.domain.CoverImage;
 import az.ideanest.shared.money.Money;
@@ -74,6 +76,7 @@ public class PublicProjectPages {
                    p.finalized_at, p.outcome_goal_amount, p.outcome_pledged_amount,
                    p.outcome_backers_count,
                    p.cover_image_url, p.cover_image_width, p.cover_image_height,
+                   p.video_media_id,
                    u.slug AS creator_slug, u.name AS creator_name, u.avatar_url AS creator_avatar_url,
                    c.slug AS category_slug,
                    COALESCE(ct.name, cfb.name, c.slug) AS category_name,
@@ -121,8 +124,15 @@ public class PublicProjectPages {
 
     private final NamedParameterJdbcTemplate jdbc;
 
-    public PublicProjectPages(DataSource dataSource) {
+    /**
+     * The video's location is the media module's to say — it knows where the bucket is
+     * served from — so the row carries an identifier and this asks for the rest (#331).
+     */
+    private final MediaLibrary media;
+
+    public PublicProjectPages(DataSource dataSource, MediaLibrary media) {
         this.jdbc = new NamedParameterJdbcTemplate(dataSource);
+        this.media = media;
     }
 
     /**
@@ -151,7 +161,7 @@ public class PublicProjectPages {
                 "fallback", PRIMARY_LOCALE);
 
         List<PublicProjectPage> found =
-                jdbc.query(SELECT + BY_SLUGS, parameters, (resultSet, row) -> page(resultSet));
+                jdbc.query(SELECT + BY_SLUGS, parameters, (resultSet, row) -> page(resultSet, media));
         // At most one by construction — projects_creator_slug_key and users_slug_key are
         // both unique — so this is a `findFirst` over a list that cannot have two.
         return found.stream().findFirst();
@@ -176,12 +186,12 @@ public class PublicProjectPages {
                 Map.of("projectId", projectId, "locale", locale, "fallback", PRIMARY_LOCALE);
 
         List<PublicProjectPage> found =
-                jdbc.query(SELECT + BY_ID, parameters, (resultSet, row) -> page(resultSet));
+                jdbc.query(SELECT + BY_ID, parameters, (resultSet, row) -> page(resultSet, media));
         // At most one: the predicate is the primary key.
         return found.stream().findFirst();
     }
 
-    private static PublicProjectPage page(ResultSet row) throws SQLException {
+    private static PublicProjectPage page(ResultSet row, MediaLibrary media) throws SQLException {
         String currency = row.getString("currency");
 
         String coverUrl = row.getString("cover_image_url");
@@ -204,6 +214,7 @@ public class PublicProjectPages {
                 taxon(row.getString("category_slug"), row.getString("category_name")),
                 taxon(row.getString("subcategory_slug"), row.getString("subcategory_name")),
                 cover,
+                videoOf(row.getObject("video_media_id", UUID.class), media),
                 Money.orNull(row.getBigDecimal("goal_amount"), currency),
                 Money.orNull(row.getBigDecimal("pledged_amount"), currency),
                 row.getInt("backers_count"),
@@ -217,6 +228,11 @@ public class PublicProjectPages {
     }
 
     /** A taxon, or nothing when the campaign has not been filed under one. */
+    /** Null for no video, and for one that is not ready to play — the page shows the cover. */
+    private static CampaignVideo videoOf(UUID mediaId, MediaLibrary media) {
+        return mediaId == null ? null : media.videoViewOf(mediaId).map(CampaignVideo::of).orElse(null);
+    }
+
     private static PublicProjectPage.Taxon taxon(String slug, String name) {
         return slug == null ? null : new PublicProjectPage.Taxon(slug, name);
     }

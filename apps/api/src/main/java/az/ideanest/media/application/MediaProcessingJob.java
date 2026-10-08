@@ -3,6 +3,7 @@ package az.ideanest.media.application;
 import az.ideanest.media.MediaProperties;
 import az.ideanest.media.domain.MediaAsset;
 import az.ideanest.media.domain.MediaFailureReason;
+import az.ideanest.media.domain.MediaKind;
 import az.ideanest.media.infrastructure.MediaAssetRepository;
 import az.ideanest.shared.jobs.ScheduledJob;
 import java.io.IOException;
@@ -102,7 +103,8 @@ public class MediaProcessingJob implements ScheduledJob {
             log.info("Removed {} upload(s) that were begun and never completed", removed);
         }
 
-        List<MediaAsset> waiting = assets.findAwaitingProcessing(Limit.of(properties.processing().batchSize()));
+        List<MediaAsset> waiting =
+                assets.findAwaitingProcessing(MediaKind.IMAGE, Limit.of(properties.processing().batchSize()));
         for (MediaAsset asset : waiting) {
             UUID mediaId = asset.getId();
             if (writes.claim(mediaId)) {
@@ -161,6 +163,9 @@ public class MediaProcessingJob implements ScheduledJob {
         } catch (MediaFailedException refusal) {
             log.info("Media {} refused: {}", mediaId, refusal.reason());
             writes.fail(mediaId, refusal.reason());
+            // Nothing will ever read it again, and keeping it would be storage spent on a
+            // file the creator was told we refused.
+            deleteRawQuietly(mediaId);
         } catch (IOException problem) {
             // A temporary directory that cannot be created or read is this host's problem
             // rather than the creator's, so the row is left claimed and the pass fails.
@@ -170,7 +175,15 @@ public class MediaProcessingJob implements ScheduledJob {
         }
     }
 
-    private static void deleteRecursively(Path directory) {
+    private void deleteRawQuietly(UUID mediaId) {
+        try {
+            store.delete(MediaLibrary.rawKeyOf(mediaId));
+        } catch (RuntimeException problem) {
+            log.warn("Could not delete the refused upload of media {}", mediaId, problem);
+        }
+    }
+
+    static void deleteRecursively(Path directory) {
         if (directory == null) {
             return;
         }

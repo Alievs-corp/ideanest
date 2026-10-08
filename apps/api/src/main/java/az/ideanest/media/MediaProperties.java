@@ -1,5 +1,6 @@
 package az.ideanest.media;
 
+import az.ideanest.media.domain.MediaKind;
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -34,6 +35,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *     in the product at 2× — see the design document on why nothing larger is stored
  * @param jpegQuality the quality of a re-encoded photograph, 1–100
  * @param processing the sweep that turns an uploaded object into a servable one
+ * @param video what a campaign video may be, and what it is turned into — issue #331
  */
 @ConfigurationProperties(prefix = "ideanest.media")
 public record MediaProperties(
@@ -42,7 +44,8 @@ public record MediaProperties(
         Duration uploadWindow,
         int longestEdge,
         int jpegQuality,
-        Processing processing) {
+        Processing processing,
+        Video video) {
 
     /** §13.1's "20MB images". */
     private static final long DEFAULT_MAX_UPLOAD_BYTES = 20L * 1024 * 1024;
@@ -70,6 +73,7 @@ public record MediaProperties(
         longestEdge = longestEdge == 0 ? DEFAULT_LONGEST_EDGE : longestEdge;
         jpegQuality = jpegQuality == 0 ? DEFAULT_JPEG_QUALITY : jpegQuality;
         processing = processing == null ? Processing.defaults() : processing;
+        video = video == null ? Video.defaults() : video;
 
         if (maxUploadBytes <= 0) {
             throw new IllegalArgumentException("An upload ceiling is a positive number of bytes");
@@ -83,6 +87,11 @@ public record MediaProperties(
         if (jpegQuality < 1 || jpegQuality > 100) {
             throw new IllegalArgumentException("JPEG quality is between 1 and 100");
         }
+    }
+
+    /** The ceiling on one upload of this kind. */
+    public long maxUploadBytesFor(MediaKind kind) {
+        return kind == MediaKind.VIDEO ? video.maxUploadBytes() : maxUploadBytes;
     }
 
     /** Whether this deployment can accept an upload at all. */
@@ -160,6 +169,92 @@ public record MediaProperties(
                 return null;
             }
             return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
+        }
+    }
+
+    /**
+     * A campaign video, and the one rendition it is turned into — issue #331.
+     *
+     * <p>The owner's brief was "a format that does not tire the server and does not take much
+     * storage". So there is one output and it is the cheapest one that plays everywhere
+     * without a player library: H.264 and AAC in an MP4, at most 720p and 30 frames a second,
+     * with the index at the front so a browser starts playing from a range request. A minute
+     * of it is roughly ten megabytes, served by the bucket rather than by this process.
+     *
+     * <p>§13.2's adaptive ladder is deliberately not built. For a sixty-second clip one
+     * rendition costs less to store than four, and the contract — one URL — survives adding
+     * the ladder later.
+     *
+     * @param maxUploadBytes the ceiling on the <em>raw</em> upload. A minute of 4K from a
+     *     phone is several hundred megabytes; 250 admits a minute of 1080p from any phone and
+     *     a phone that shoots larger can trim or lower its quality. The raw object is deleted
+     *     the moment the transcode is written, so this is transfer, not storage
+     * @param maxDuration the longest clip accepted, measured from the file
+     * @param longestEdge what the frame is reduced to. Never enlarged
+     * @param maxFrameRate frames a second. Sixty doubles the bits of a talking head
+     * @param crf x264's constant rate factor: lower is larger and sharper
+     * @param maxBitrateKbps the cap on a scene CRF alone would spend too much on
+     * @param audioBitrateKbps AAC, stereo
+     * @param threads how many cores one transcode may use. The API shares its host, and a
+     *     transcode that took every core would be a slow checkout for somebody else
+     * @param timeout how long one transcode may take before it is abandoned as wedged
+     * @param schedule when the video sweep fires. Its own job, so a transcode never makes a
+     *     cover image wait behind it
+     */
+    public record Video(
+            long maxUploadBytes,
+            Duration maxDuration,
+            int longestEdge,
+            int maxFrameRate,
+            int crf,
+            int maxBitrateKbps,
+            int audioBitrateKbps,
+            int threads,
+            Duration timeout,
+            String schedule) {
+
+        private static final long DEFAULT_MAX_UPLOAD_BYTES = 250L * 1024 * 1024;
+        private static final Duration DEFAULT_MAX_DURATION = Duration.ofSeconds(60);
+        private static final int DEFAULT_LONGEST_EDGE = 1280;
+        private static final int DEFAULT_MAX_FRAME_RATE = 30;
+        private static final int DEFAULT_CRF = 26;
+        private static final int DEFAULT_MAX_BITRATE_KBPS = 2500;
+        private static final int DEFAULT_AUDIO_BITRATE_KBPS = 96;
+        private static final int DEFAULT_THREADS = 2;
+        private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(5);
+        private static final String DEFAULT_SCHEDULE = "*/5 * * * * *";
+
+        static Video defaults() {
+            return new Video(0, null, 0, 0, 0, 0, 0, 0, null, null);
+        }
+
+        public Video {
+            maxUploadBytes = maxUploadBytes == 0 ? DEFAULT_MAX_UPLOAD_BYTES : maxUploadBytes;
+            maxDuration = maxDuration == null ? DEFAULT_MAX_DURATION : maxDuration;
+            longestEdge = longestEdge == 0 ? DEFAULT_LONGEST_EDGE : longestEdge;
+            maxFrameRate = maxFrameRate == 0 ? DEFAULT_MAX_FRAME_RATE : maxFrameRate;
+            crf = crf == 0 ? DEFAULT_CRF : crf;
+            maxBitrateKbps = maxBitrateKbps == 0 ? DEFAULT_MAX_BITRATE_KBPS : maxBitrateKbps;
+            audioBitrateKbps = audioBitrateKbps == 0 ? DEFAULT_AUDIO_BITRATE_KBPS : audioBitrateKbps;
+            threads = threads == 0 ? DEFAULT_THREADS : threads;
+            timeout = timeout == null ? DEFAULT_TIMEOUT : timeout;
+            schedule = schedule == null || schedule.isBlank() ? DEFAULT_SCHEDULE : schedule.trim();
+
+            if (maxUploadBytes <= 0) {
+                throw new IllegalArgumentException("A video upload ceiling is a positive number of bytes");
+            }
+            if (!maxDuration.isPositive()) {
+                throw new IllegalArgumentException("A video may last some time");
+            }
+            if (longestEdge < 16 || longestEdge % 2 != 0) {
+                throw new IllegalArgumentException("H.264 needs an even frame edge of a usable size");
+            }
+            if (maxFrameRate < 1 || crf < 0 || crf > 51 || maxBitrateKbps < 1 || audioBitrateKbps < 1) {
+                throw new IllegalArgumentException("Video encoding settings are out of range");
+            }
+            if (threads < 1 || !timeout.isPositive()) {
+                throw new IllegalArgumentException("A transcode uses at least one thread for some time");
+            }
         }
     }
 

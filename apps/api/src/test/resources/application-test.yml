@@ -42,6 +42,12 @@ spring:
           writetimeout: 5000
 
 ideanest:
+  media:
+    video:
+      # `-`, like every other job's schedule in this profile; CampaignVideoApiTests
+      # drives the video sweep directly (issue #331).
+      schedule: "-"
+
   # A scrape credential, so that the suite exercises the whole of #138: the endpoint
   # is exposed, MetricsScrapeSecurity exists, and HealthEndpointTests asserts both
   # that an anonymous caller is refused and that this credential is accepted.

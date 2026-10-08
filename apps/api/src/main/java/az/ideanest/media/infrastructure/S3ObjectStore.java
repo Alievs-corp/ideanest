@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.OptionalLong;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -20,7 +21,9 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
@@ -170,6 +173,26 @@ public class S3ObjectStore implements ObjectStore {
             // Deleting what is not there succeeded. See the interface.
         } catch (SdkException problem) {
             throw new ObjectStoreUnavailableException("Could not remove " + key, problem);
+        }
+    }
+
+    @Override
+    public OptionalLong sizeOf(String key) {
+        try {
+            Long length = client.headObject(HeadObjectRequest.builder().bucket(storage.bucket()).key(key).build())
+                    .contentLength();
+            return length == null ? OptionalLong.empty() : OptionalLong.of(length);
+        } catch (NoSuchKeyException absent) {
+            return OptionalLong.empty();
+        } catch (S3Exception problem) {
+            // A HEAD has no body to carry an error code, so a missing key can surface as a
+            // bare 404 rather than as NoSuchKeyException, depending on the store.
+            if (problem.statusCode() == 404) {
+                return OptionalLong.empty();
+            }
+            throw new ObjectStoreUnavailableException("Could not inspect " + key, problem);
+        } catch (SdkException problem) {
+            throw new ObjectStoreUnavailableException("Could not inspect " + key, problem);
         }
     }
 

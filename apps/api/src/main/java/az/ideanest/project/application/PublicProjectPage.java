@@ -54,6 +54,7 @@ import java.util.UUID;
  * @param latePledgeEndsAt when the window closes, or null when none is open. The date a
  *     backer is counting down to, which is why it is published rather than left as
  *     something the checkout refuses them with
+ * @param video the campaign's video when it has a ready one — issue #331. Null otherwise
  * @param outcome null until the deadline has been decided
  */
 public record PublicProjectPage(
@@ -66,6 +67,7 @@ public record PublicProjectPage(
         Taxon category,
         Taxon subcategory,
         CoverImage cover,
+        CampaignVideo video,
         Money goal,
         Money pledged,
         int backersCount,

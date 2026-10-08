@@ -63,7 +63,7 @@ public class JobRunner {
         }
 
         String holder = properties.holder();
-        if (!lease.claim(job.name(), holder, now())) {
+        if (!lease.claim(job.name(), holder, now(), job.lease().orElse(properties.lockLease()))) {
             log.debug("Job {} was not claimed on this tick.", job.name());
             return false;
         }

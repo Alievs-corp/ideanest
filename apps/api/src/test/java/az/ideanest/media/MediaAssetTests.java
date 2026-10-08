@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import az.ideanest.media.domain.MediaAsset;
 import az.ideanest.media.domain.MediaFailureReason;
+import az.ideanest.media.domain.MediaKind;
 import az.ideanest.media.domain.MediaStatus;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +31,69 @@ class MediaAssetTests {
     private static final Instant NOW = Instant.parse("2026-08-30T12:00:00Z");
 
     private static final Instant LATER = NOW.plusSeconds(30);
+
+    @Nested
+    @DisplayName("a video (#331)")
+    class Video {
+
+        @Test
+        @DisplayName("becomes ready with its duration and poster")
+        void becomesReadyWithItsDurationAndPoster() {
+            MediaAsset asset = processingVideo();
+
+            asset.markVideoReady(
+                    "media/v.mp4", "video/mp4", 9_000_000L, 1280, 720, 42_000, "media/v-poster.jpg",
+                    "data:image/jpeg;base64,AAAA", LATER);
+
+            assertThat(asset.getStatus()).isEqualTo(MediaStatus.READY);
+            assertThat(asset.getKind()).isEqualTo(MediaKind.VIDEO);
+            assertThat(asset.getDurationMs()).contains(42_000);
+            assertThat(asset.getPosterStorageKey()).contains("media/v-poster.jpg");
+        }
+
+        @Test
+        @DisplayName("cannot become ready as an image, nor an image as a video")
+        void kindsDoNotCross() {
+            MediaAsset video = processingVideo();
+            assertThatThrownBy(() -> video.markReady(
+                            "media/v.mp4", "video/mp4", 1L, 1280, 720, "data:image/jpeg;base64,AAAA", LATER))
+                    .isInstanceOf(IllegalStateException.class);
+
+            MediaAsset image = MediaAsset.awaitingUpload(OWNER, NOW);
+            image.markUploaded(NOW);
+            image.claimForProcessing(NOW);
+            assertThatThrownBy(() -> image.markVideoReady(
+                            "media/i.jpg", "image/jpeg", 1L, 1280, 720, 1, "media/p.jpg", "data:image/jpeg;base64,AAAA",
+                            LATER))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        @DisplayName("a claim that has gone stale is taken over, and a fresh one is not")
+        void staleClaimsAreTakenOver() {
+            MediaAsset asset = processingVideo();
+
+            assertThat(asset.claimForProcessing(NOW.plusSeconds(60), Duration.ofMinutes(10))).isFalse();
+            assertThat(asset.claimForProcessing(NOW.plus(Duration.ofMinutes(11)), Duration.ofMinutes(10))).isTrue();
+            assertThat(asset.getStatus()).isEqualTo(MediaStatus.PROCESSING);
+        }
+
+        @Test
+        @DisplayName("the declared type decides the kind")
+        void declaredTypeDecidesTheKind() {
+            assertThat(MediaKind.ofDeclaredType("video/quicktime")).isEqualTo(MediaKind.VIDEO);
+            assertThat(MediaKind.ofDeclaredType(" Video/MP4 ")).isEqualTo(MediaKind.VIDEO);
+            assertThat(MediaKind.ofDeclaredType("image/heic")).isEqualTo(MediaKind.IMAGE);
+            assertThat(MediaKind.ofDeclaredType(null)).isEqualTo(MediaKind.IMAGE);
+        }
+
+        private MediaAsset processingVideo() {
+            MediaAsset asset = MediaAsset.awaitingUpload(OWNER, MediaKind.VIDEO, NOW);
+            asset.markUploaded(NOW);
+            asset.claimForProcessing(NOW);
+            return asset;
+        }
+    }
 
     @Nested
     @DisplayName("the ordinary path")

@@ -324,6 +324,26 @@ ideanest:
       # A PENDING row is somebody who closed the tab.
       abandoned-after: PT6H
 
+    # A campaign video -- issue #331. One rendition, chosen to be cheap to store
+    # and cheap to serve: H.264 + AAC in an MP4, at most 720p and 30 fps, with the
+    # index at the front so it plays from the bucket over range requests. A
+    # minute is roughly ten megabytes. See MediaProperties.Video for every number.
+    video:
+      # The RAW upload, which is deleted as soon as the transcode is written.
+      max-upload-bytes: ${MEDIA_VIDEO_MAX_UPLOAD_BYTES:262144000}
+      max-duration: PT60S
+      longest-edge: 1280
+      max-frame-rate: 30
+      crf: 26
+      max-bitrate-kbps: 2500
+      audio-bitrate-kbps: 96
+      # The API shares its host; a transcode that took every core would be a slow
+      # checkout for somebody else.
+      threads: ${MEDIA_VIDEO_THREADS:2}
+      timeout: PT5M
+      # Its own sweep, one video a pass, so a cover never waits behind a transcode.
+      schedule: ${MEDIA_VIDEO_PROCESSING_SCHEDULE:*/5 * * * * *}
+
   # §17.3's limits on the public reads. Everything else in that table guards a
   # module's own endpoint and is configured beside it; these guard endpoints that
   # take no token at all, so they are counted per client address -- an office or a

@@ -2,6 +2,8 @@ package az.ideanest.media;
 
 import az.ideanest.media.application.ImageTranscoder;
 import az.ideanest.media.application.ObjectStore;
+import az.ideanest.media.application.VideoTranscoder;
+import az.ideanest.media.infrastructure.FfmpegVideoTranscoder;
 import az.ideanest.media.infrastructure.S3ObjectStore;
 import az.ideanest.media.infrastructure.UnconfiguredObjectStore;
 import az.ideanest.media.infrastructure.VipsImageTranscoder;
@@ -52,5 +54,11 @@ public class MediaConfiguration {
     @Bean
     public ImageTranscoder imageTranscoder(MediaProperties properties) {
         return new VipsImageTranscoder(properties);
+    }
+
+    /** The video transcoder — issue #331. Probes for ffmpeg itself, as the image one does. */
+    @Bean
+    public VideoTranscoder videoTranscoder(MediaProperties properties) {
+        return new FfmpegVideoTranscoder(properties);
     }
 }

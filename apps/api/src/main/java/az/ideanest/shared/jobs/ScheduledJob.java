@@ -1,5 +1,8 @@
 package az.ideanest.shared.jobs;
 
+import java.time.Duration;
+import java.util.Optional;
+
 /**
  * Work that happens on a schedule, on one replica at a time.
  *
@@ -76,5 +79,29 @@ public interface ScheduledJob {
      */
     default boolean pausesDuringMaintenance() {
         return false;
+    }
+
+    /**
+     * Whether a pass can take minutes rather than seconds — issue #331.
+     *
+     * <p><strong>Every other job shares one scheduler thread</strong> (Spring Boot's
+     * {@code spring.task.scheduling.pool.size} is one), so a pass that held it for minutes
+     * would stop the outbox, charges and reservation expiry for as long. A job answering
+     * true is given a thread of its own instead, and nothing else changes: its trigger still
+     * never overlaps itself, and it still takes the lease.
+     */
+    default boolean isLongRunning() {
+        return false;
+    }
+
+    /**
+     * How long a claim on this job lasts, when it should not be {@code ideanest.jobs.lock-lease}.
+     *
+     * <p>Longer than the longest pass, for a job whose pass can outlast the shared default:
+     * a lease that expired mid-pass would let another replica start the same work, and the
+     * first replica's outcome would go unrecorded.
+     */
+    default Optional<Duration> lease() {
+        return Optional.empty();
     }
 }

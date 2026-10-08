@@ -1,5 +1,7 @@
 package az.ideanest.project.api;
 
+import az.ideanest.media.application.MediaLibrary;
+import az.ideanest.project.application.CampaignVideo;
 import az.ideanest.project.domain.LockedField;
 import az.ideanest.project.domain.Project;
 import az.ideanest.project.domain.ProjectEditLocks;
@@ -27,8 +29,12 @@ public class ProjectEditResponses {
 
     private final ObjectMapper json;
 
-    public ProjectEditResponses(ObjectMapper json) {
+    /** Where the campaign's video is served from is the media module's to say (#331). */
+    private final MediaLibrary media;
+
+    public ProjectEditResponses(ObjectMapper json, MediaLibrary media) {
         this.json = json;
+        this.media = media;
     }
 
     public ProjectEdit of(Project project) {
@@ -48,6 +54,7 @@ public class ProjectEditResponses {
                 storyOf(project),
                 project.getRisks(),
                 CoverImageBody.of(project.getCoverImage()),
+                videoOf(project),
                 project.isLatePledgeEnabled(),
                 // Null until the creator opens the window (#81), and the pair is why
                 // both are on this response: the switch is the creator's standing
@@ -62,6 +69,15 @@ public class ProjectEditResponses {
                 ProjectEditLocks.lockedFieldNamesIn(project.getState(), LockedField.Resource.PROJECT),
                 project.getCreatedAt(),
                 project.getUpdatedAt());
+    }
+
+    private CampaignVideoBody videoOf(Project project) {
+        if (project.getVideoMediaId() == null) {
+            return null;
+        }
+        return media.videoViewOf(project.getVideoMediaId())
+                .map(view -> CampaignVideoBody.of(CampaignVideo.of(view)))
+                .orElse(null);
     }
 
     /**

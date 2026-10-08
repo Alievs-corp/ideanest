@@ -26,6 +26,12 @@ import org.springframework.data.repository.query.Param;
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
     /**
+     * Whether another campaign shows this video — issue #331. Asked before a replaced video
+     * is deleted, because an upload may be attached to more than one of its owner's campaigns.
+     */
+    boolean existsByVideoMediaIdAndIdNot(UUID videoMediaId, UUID id);
+
+    /**
      * Whether this creator already has a campaign under this slug.
      *
      * <p>Scoped to the creator because the unique index is: the public URL is

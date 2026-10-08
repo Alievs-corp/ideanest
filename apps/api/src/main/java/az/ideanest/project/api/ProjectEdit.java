@@ -54,6 +54,7 @@ public record ProjectEdit(
         JsonNode story,
         String risks,
         CoverImageBody coverImage,
+        CampaignVideoBody video,
         boolean latePledgeEnabled,
         Instant latePledgeEndsAt,
         List<String> lockedFields,

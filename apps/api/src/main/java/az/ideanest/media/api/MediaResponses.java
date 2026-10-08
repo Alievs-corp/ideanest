@@ -53,27 +53,38 @@ public final class MediaResponses {
      * message assembled here would be one that cannot be translated, on a form that exists
      * in four languages.
      *
+     * @param kind {@code IMAGE} or {@code VIDEO}, decided by the type declared when the upload
+     *     began — issue #331
      * @param width the measured width. This is the number the whole pipeline was built for:
      *     it used to be whatever the browser said, which {@code SubmissionChecklist} notes a
      *     client could make up
+     * @param posterUrl a ready video's still. Null for an image
+     * @param durationMs a ready video's length, measured on the transcoded file. Null for an
+     *     image
      */
     public record Media(
             UUID id,
+            String kind,
             String status,
             String url,
             Integer width,
             Integer height,
             String blurDataUrl,
+            String posterUrl,
+            Integer durationMs,
             String failureReason) {
 
-        static Media of(MediaAsset asset, String url) {
+        static Media of(MediaAsset asset, String url, String posterUrl) {
             return new Media(
                     asset.getId(),
+                    asset.getKind().name(),
                     asset.getStatus().name(),
                     url,
                     asset.getWidth().orElse(null),
                     asset.getHeight().orElse(null),
                     asset.getBlurDataUrl().orElse(null),
+                    posterUrl,
+                    asset.getDurationMs().orElse(null),
                     asset.getFailureReason().map(Enum::name).orElse(null));
         }
     }

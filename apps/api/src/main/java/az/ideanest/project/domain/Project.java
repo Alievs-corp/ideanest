@@ -137,6 +137,13 @@ public class Project {
     @Column(name = "cover_media_id")
     private UUID coverMediaId;
 
+    /**
+     * The campaign's video, when it has one — issue #331. An identifier and not an
+     * association, for {@link #coverMediaId}'s reasons.
+     */
+    @Column(name = "video_media_id")
+    private UUID videoMediaId;
+
     @Column(name = "late_pledge_enabled", nullable = false)
     private boolean latePledgeEnabled;
 
@@ -498,6 +505,14 @@ public class Project {
         this.coverImageWidth = coverImage.width();
         this.coverImageHeight = coverImage.height();
         this.coverMediaId = coverImage.mediaId();
+    }
+
+    public UUID getVideoMediaId() {
+        return videoMediaId;
+    }
+
+    public void setVideoMediaId(UUID videoMediaId) {
+        this.videoMediaId = videoMediaId;
     }
 
     public boolean isLatePledgeEnabled() {
