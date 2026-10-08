@@ -58,6 +58,25 @@ public interface MediaAssetRepository extends JpaRepository<MediaAsset, UUID> {
     List<MediaAsset> findAwaitingProcessing(@Param("kind") MediaKind kind, Limit limit);
 
     /**
+     * The video sweep's queue — issue #331.
+     *
+     * <p>Unlike {@link #findAwaitingProcessing}, a row being processed is <em>not</em>
+     * returned until its claim has gone stale. With one video a pass, returning the oldest
+     * claimed row would make every pass a no-op behind it: one clip that wedged a transcode
+     * would stop every video on the platform for as long as it stayed claimed.
+     */
+    @Query(
+            """
+            select asset from MediaAsset asset
+            where asset.kind = az.ideanest.media.domain.MediaKind.VIDEO
+              and (asset.status = az.ideanest.media.domain.MediaStatus.UPLOADED
+                   or (asset.status = az.ideanest.media.domain.MediaStatus.PROCESSING
+                       and asset.updatedAt < :staleBefore))
+            order by asset.createdAt asc
+            """)
+    List<MediaAsset> findVideosToProcess(@Param("staleBefore") Instant staleBefore, Limit limit);
+
+    /**
      * Uploads that were begun and never arrived.
      *
      * <p>A {@code PENDING} row is somebody who closed the tab. Deleting rather than flagging,

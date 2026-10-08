@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,8 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
 
@@ -44,7 +47,7 @@ import org.springframework.stereotype.Component;
  * that makes the count of replicas stop mattering.
  */
 @Component
-public class JobScheduler {
+public class JobScheduler implements DisposableBean {
 
     private static final Logger log = LoggerFactory.getLogger(JobScheduler.class);
 
@@ -53,6 +56,9 @@ public class JobScheduler {
     private final JobRunner runner;
     private final TaskScheduler timers;
     private final Clock clock;
+
+    /** The threads of {@link ScheduledJob#isLongRunning} jobs, shut down with the context. */
+    private final List<ThreadPoolTaskScheduler> ownThreads = new ArrayList<>();
 
     public JobScheduler(
             List<ScheduledJob> jobs, JobLease lease, JobRunner runner, TaskScheduler timers, Clock clock) {
@@ -101,8 +107,30 @@ public class JobScheduler {
             // UTC, as every one of these was when it was an annotation. A cron read in
             // the deployment's local zone runs at a different hour twice a year, and
             // the daily jobs are the ones where that is least likely to be noticed.
-            timers.schedule(() -> runner.run(job), new CronTrigger(schedule, ZoneOffset.UTC));
+            timersFor(job).schedule(() -> runner.run(job), new CronTrigger(schedule, ZoneOffset.UTC));
             log.info("Job {} runs on '{}'.", job.name(), schedule);
         }
+    }
+
+    /**
+     * The shared scheduler, or a thread of the job's own when a pass can take minutes —
+     * see {@link ScheduledJob#isLongRunning}.
+     */
+    private TaskScheduler timersFor(ScheduledJob job) {
+        if (!job.isLongRunning()) {
+            return timers;
+        }
+        ThreadPoolTaskScheduler own = new ThreadPoolTaskScheduler();
+        own.setPoolSize(1);
+        own.setThreadNamePrefix("job-" + job.name() + "-");
+        own.setWaitForTasksToCompleteOnShutdown(false);
+        own.initialize();
+        ownThreads.add(own);
+        return own;
+    }
+
+    @Override
+    public void destroy() {
+        ownThreads.forEach(ThreadPoolTaskScheduler::shutdown);
     }
 }

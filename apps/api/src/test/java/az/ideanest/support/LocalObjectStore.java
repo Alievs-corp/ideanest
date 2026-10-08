@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
+import java.util.OptionalLong;
 
 /**
  * The object store, as a directory — the media pipeline design of 2026-08-30.
@@ -51,6 +52,18 @@ public class LocalObjectStore implements ObjectStore {
     }
 
     /** Whether an object is there, so a test can assert that the raw upload was removed. */
+    /**
+     * An object of this size, without writing that many bytes — a sparse file, so a test of
+     * the 250 MB video ceiling costs nothing on disk (issue #331).
+     */
+    public void putSized(String key, long size) {
+        try (var file = new java.io.RandomAccessFile(pathOf(key).toFile(), "rw")) {
+            file.setLength(size);
+        } catch (IOException problem) {
+            throw new UncheckedIOException(problem);
+        }
+    }
+
     public boolean has(String key) {
         return Files.exists(pathOf(key));
     }
@@ -112,6 +125,16 @@ public class LocalObjectStore implements ObjectStore {
     @Override
     public String publicUrl(String key) {
         return "https://cdn.test/" + key;
+    }
+
+    @Override
+    public OptionalLong sizeOf(String key) {
+        try {
+            Path path = pathOf(key);
+            return Files.exists(path) ? OptionalLong.of(Files.size(path)) : OptionalLong.empty();
+        } catch (IOException problem) {
+            throw new UncheckedIOException(problem);
+        }
     }
 
     @Override

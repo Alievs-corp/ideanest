@@ -47,14 +47,14 @@ class JobRunnerMaintenanceTests {
         assertThat(runner.run(job)).isFalse();
 
         assertThat(job.runs.get()).isZero();
-        verify(lease, never()).claim(anyString(), any(), any());
+        verify(lease, never()).claim(anyString(), any(), any(), any());
     }
 
     @Test
     @DisplayName("during a window a job that does not pause runs as usual")
     void otherJobsRun() {
         gate.active = true;
-        when(lease.claim(anyString(), any(), any())).thenReturn(true);
+        when(lease.claim(anyString(), any(), any(), any())).thenReturn(true);
         CountingJob job = new CountingJob(false);
 
         assertThat(runner.run(job)).isTrue();
@@ -65,7 +65,7 @@ class JobRunnerMaintenanceTests {
     @DisplayName("outside a window a pausing job runs, so it resumes when the window ends")
     void resumesAfterTheWindow() {
         gate.active = false;
-        when(lease.claim(anyString(), any(), any())).thenReturn(true);
+        when(lease.claim(anyString(), any(), any(), any())).thenReturn(true);
         CountingJob job = new CountingJob(true);
 
         assertThat(runner.run(job)).isTrue();

@@ -3,14 +3,16 @@ package az.ideanest.media.application;
 import az.ideanest.media.MediaProperties;
 import az.ideanest.media.domain.MediaAsset;
 import az.ideanest.media.domain.MediaFailureReason;
-import az.ideanest.media.domain.MediaKind;
 import az.ideanest.media.infrastructure.MediaAssetRepository;
 import az.ideanest.shared.jobs.ScheduledJob;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
+import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,17 @@ import org.springframework.stereotype.Component;
  * worked through one after another at a bounded thread count rather than all at once, and
  * the next tick is five seconds away.
  *
+ * <p>{@link #isLongRunning}: a pass is minutes, and on the scheduler thread every other job
+ * shares it would stop the outbox and the charges for as long. {@link #lease} outlasts the
+ * longest pass, so another replica does not start the same work under it.
+ *
+ * <h2>A clip that will not finish does not hold the queue</h2>
+ *
+ * <p>An encode past the timeout is the file's failure ({@code UNREADABLE}), not the host's,
+ * and the row is closed. A row left claimed by a pass that died is ignored by the queue
+ * until its claim is stale, and then taken over once — see
+ * {@code MediaAssetRepository#findVideosToProcess}.
+ *
  * <h2>Failures</h2>
  *
  * <p>As in {@link MediaProcessingJob}: a {@link MediaFailedException} is the creator's and
@@ -48,6 +61,7 @@ public class MediaVideoProcessingJob implements ScheduledJob {
     private final VideoTranscoder videoTranscoder;
     private final ImageTranscoder imageTranscoder;
     private final MediaProperties properties;
+    private final Clock clock;
 
     public MediaVideoProcessingJob(
             MediaAssetRepository assets,
@@ -55,13 +69,15 @@ public class MediaVideoProcessingJob implements ScheduledJob {
             ObjectStore store,
             VideoTranscoder videoTranscoder,
             ImageTranscoder imageTranscoder,
-            MediaProperties properties) {
+            MediaProperties properties,
+            Clock clock) {
         this.assets = assets;
         this.writes = writes;
         this.store = store;
         this.videoTranscoder = videoTranscoder;
         this.imageTranscoder = imageTranscoder;
         this.properties = properties;
+        this.clock = clock;
     }
 
     @Override
@@ -75,15 +91,34 @@ public class MediaVideoProcessingJob implements ScheduledJob {
     }
 
     @Override
+    public boolean isLongRunning() {
+        return true;
+    }
+
+    /** Longer than any pass: the transcode's own timeout bounds the encode. */
+    @Override
+    public Optional<Duration> lease() {
+        return Optional.of(staleAfter());
+    }
+
+    /**
+     * When a claim belongs to a pass that died. Twice the encode timeout plus the transfers
+     * around it — a live pass never gets near it, because the encode is killed at the
+     * timeout.
+     */
+    private Duration staleAfter() {
+        return properties.video().timeout().multipliedBy(2).plusMinutes(5);
+    }
+
+    @Override
     public void run() {
         if (!store.isAvailable()) {
             // See MediaProcessingJob: an unconfigured deployment is a supported state.
             return;
         }
 
-        // Twice the transcode timeout: a claim older than that belongs to a pass that died.
-        Duration staleAfter = properties.video().timeout().multipliedBy(2);
-        for (MediaAsset asset : assets.findAwaitingProcessing(MediaKind.VIDEO, Limit.of(1))) {
+        Duration staleAfter = staleAfter();
+        for (MediaAsset asset : assets.findVideosToProcess(clock.instant().minus(staleAfter), Limit.of(1))) {
             UUID mediaId = asset.getId();
             if (writes.claimVideo(mediaId, staleAfter)) {
                 process(mediaId);
@@ -99,6 +134,14 @@ public class MediaVideoProcessingJob implements ScheduledJob {
         Path workspace = null;
         String rawKey = MediaLibrary.rawKeyOf(mediaId);
         try {
+            OptionalLong declared = store.sizeOf(rawKey);
+            if (declared.isPresent() && declared.getAsLong() > properties.video().maxUploadBytes()) {
+                // Refused from the header, before a byte of it reaches this host's disk.
+                store.delete(rawKey);
+                writes.fail(mediaId, MediaFailureReason.TOO_LARGE);
+                return;
+            }
+
             workspace = Files.createTempDirectory("ideanest-video-");
             Path raw = workspace.resolve("source");
 

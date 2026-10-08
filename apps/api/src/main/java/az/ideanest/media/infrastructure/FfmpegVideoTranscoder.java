@@ -5,6 +5,7 @@ import az.ideanest.media.application.MediaFailedException;
 import az.ideanest.media.application.TranscodedVideo;
 import az.ideanest.media.application.TranscoderUnavailableException;
 import az.ideanest.media.application.VideoTranscoder;
+import az.ideanest.media.domain.MediaAsset;
 import az.ideanest.media.domain.MediaFailureReason;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +15,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +67,17 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
 
     private static final Path NICE = Path.of("/usr/bin/nice");
 
+    /**
+     * PQ or HLG to BT.709: linearise, convert the primaries, compress the highlights with
+     * Hable's curve, re-encode the transfer. The canonical zscale chain; both the runtime
+     * image's ffmpeg and CI's are built with zimg.
+     */
+    private static final String TONE_MAP = "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,"
+            + "tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv";
+
+    /** The transfer characteristics ffprobe reports for HDR. */
+    private static final Set<String> HDR_TRANSFERS = Set.of("smpte2084", "arib-std-b67");
+
     private final MediaProperties.Video settings;
     private final boolean available;
 
@@ -102,6 +115,17 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
 
         Probe input = probeOf(source);
         long ceilingMs = settings.maxDuration().toMillis();
+
+        // Before the encode, from the input: what the shorter edge will be once the longer
+        // one is fitted to the box. The poster is held to the cover's floor, and finding that
+        // out after a minute of encoding would spend the CPU for a refusal.
+        double fit = Math.min(1.0, (double) settings.longestEdge() / Math.max(input.width(), input.height()));
+        if (Math.min(input.width(), input.height()) * fit < MediaAsset.MINIMUM_EDGE) {
+            throw new MediaFailedException(
+                    MediaFailureReason.TOO_SMALL,
+                    "That video is %dx%d, which is smaller than anything this platform can display."
+                            .formatted(input.width(), input.height()));
+        }
         if (input.durationMs() > ceilingMs + DURATION_TOLERANCE_MS) {
             throw new MediaFailedException(
                     MediaFailureReason.TOO_LONG,
@@ -110,7 +134,18 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
         }
 
         Path derived = workingDirectory.resolve("derived.mp4");
-        CommandResult encoded = run(niced(encodeCommand(source, derived)), workingDirectory, settings.timeout());
+        CommandResult encoded;
+        try {
+            encoded = run(niced(encodeCommand(source, derived, input.isHdr())), workingDirectory, settings.timeout());
+        } catch (EncodeTimedOut slow) {
+            /*
+             * The file's failure, not the host's. A minute of video that will not encode in
+             * the timeout will not encode on the next pass either, and leaving the row
+             * claimed would retry it for ever while every other clip waited.
+             */
+            throw new MediaFailedException(
+                    MediaFailureReason.UNREADABLE, "That video took too long to convert: " + slow.getMessage());
+        }
         if (!encoded.succeeded()) {
             throw new MediaFailedException(
                     MediaFailureReason.UNREADABLE, "That video could not be converted: " + encoded.lastLineOfError());
@@ -131,19 +166,33 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
      * and anything already smaller is left alone — upscaling only spends bits on detail that
      * was never recorded. {@code force_divisible_by=2} because H.264 in 4:2:0 refuses an odd
      * edge.
+     *
+     * <p><strong>HDR is tone-mapped to SDR.</strong> An iPhone records 10-bit HLG or Dolby
+     * Vision by default; squeezed into 8-bit with its BT.2020 tags left on, browsers render
+     * it washed out and inconsistently. Every output is tagged BT.709, which is what an
+     * 8-bit H.264 file is played as anyway.
+     *
+     * <p>{@code -threads} appears twice, and {@code -filter_threads} once, because each bounds
+     * a different stage: before {@code -i} the decoder, after it the encoder. A 4K HEVC decode
+     * left at the default would take every core the encoder was kept off.
      */
-    private List<String> encodeCommand(Path source, Path derived) {
+    private List<String> encodeCommand(Path source, Path derived, boolean hdr) {
         int edge = settings.longestEdge();
-        String scale = ("scale=w='min(%d,iw)':h='min(%d,ih)':force_original_aspect_ratio=decrease"
+        String threads = String.valueOf(settings.threads());
+        String toneMap = hdr ? TONE_MAP + "," : "";
+        String scale = ("%sscale=w='min(%d,iw)':h='min(%d,ih)':force_original_aspect_ratio=decrease"
                         + ":force_divisible_by=2,format=yuv420p")
-                .formatted(edge, edge);
+                .formatted(toneMap, edge, edge);
         long limitMs = settings.maxDuration().toMillis() + DURATION_TOLERANCE_MS;
 
         return List.of(
                 "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
+                "-threads", threads,
                 "-i", source.toString(),
                 "-map", "0:v:0", "-map", "0:a:0?",
+                "-filter_threads", threads,
                 "-vf", scale,
+                "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv",
                 "-fpsmax", String.valueOf(settings.maxFrameRate()),
                 "-c:v", "libx264", "-preset", "veryfast",
                 "-crf", String.valueOf(settings.crf()),
@@ -153,7 +202,7 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
                 "-c:a", "aac", "-b:a", settings.audioBitrateKbps() + "k", "-ac", "2",
                 "-map_metadata", "-1", "-map_chapters", "-1", "-sn", "-dn",
                 "-movflags", "+faststart",
-                "-threads", String.valueOf(settings.threads()),
+                "-threads", threads,
                 // A probe and an encoder can disagree about a broken container's length by
                 // more than the tolerance. This is the bound that does not depend on either.
                 "-t", "%.3f".formatted(limitMs / 1000.0),
@@ -190,7 +239,7 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
                 List.of(
                         "ffprobe", "-v", "error",
                         "-select_streams", "v:0",
-                        "-show_entries", "stream=codec_type,width,height:format=duration",
+                        "-show_entries", "stream=codec_type,width,height,color_transfer:format=duration",
                         "-of", "default=noprint_wrappers=1",
                         file.toString()),
                 file.getParent(),
@@ -216,13 +265,18 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
     }
 
     /** What {@code ffprobe} said about the first video stream and the container. */
-    record Probe(int width, int height, int durationMs) {
+    record Probe(int width, int height, int durationMs, String colorTransfer) {
+
+        boolean isHdr() {
+            return HDR_TRANSFERS.contains(colorTransfer);
+        }
 
         static Probe parse(String output) {
             boolean video = false;
             int width = -1;
             int height = -1;
             double seconds = -1;
+            String transfer = "";
             for (String line : output.split("\\R")) {
                 String trimmed = line.strip();
                 int equals = trimmed.indexOf('=');
@@ -236,6 +290,7 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
                     case "width" -> width = parseInt(value);
                     case "height" -> height = parseInt(value);
                     case "duration" -> seconds = parseDouble(value);
+                    case "color_transfer" -> transfer = value;
                     default -> {
                         // Anything else ffprobe chose to say is not a question this asks.
                     }
@@ -248,7 +303,7 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
             if (width <= 0 || height <= 0) {
                 throw new MediaFailedException(MediaFailureReason.UNREADABLE, "That video reports no dimensions.");
             }
-            return new Probe(width, height, (int) Math.max(1, Math.round(seconds * 1000)));
+            return new Probe(width, height, (int) Math.max(1, Math.round(seconds * 1000)), transfer);
         }
 
         private static int parseInt(String value) {
@@ -290,7 +345,7 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
 
             if (!process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
                 process.destroyForcibly();
-                throw new TranscoderUnavailableException("A video conversion did not finish within " + timeout);
+                throw new EncodeTimedOut("did not finish within " + timeout);
             }
             return new CommandResult(process.exitValue(), Files.readString(transcript, StandardCharsets.UTF_8));
 
@@ -310,6 +365,18 @@ public class FfmpegVideoTranscoder implements VideoTranscoder {
                     // The working directory is removed wholesale by the caller.
                 }
             }
+        }
+    }
+
+    /**
+     * A process that ran past its timeout. Host trouble for a probe — it is caught nowhere
+     * and fails the pass like any {@link TranscoderUnavailableException} — and the file's
+     * fault for the encode, which {@link #transcode} turns into a refusal.
+     */
+    private static final class EncodeTimedOut extends TranscoderUnavailableException {
+
+        EncodeTimedOut(String message) {
+            super(message);
         }
     }
 

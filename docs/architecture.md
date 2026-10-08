@@ -5939,10 +5939,13 @@ neither tires the server nor fills the bucket.
 |---|---|
 | Upload | §13.1's three calls with a `video/*` type: a presigned `PUT` straight to the bucket, `complete`, poll. 250MB raw ceiling; the API never carries the bytes |
 | Duration | At most 60 s (plus half a second of container slack), measured by `ffprobe` **before** anything is encoded. Clients check it first so nobody uploads a file to be told no |
-| Transcoding | `ffmpeg` in the API image, in its own sweep (`media-video-processing`), **one video a pass, two threads, `nice`d** — the API shares a small host. Images keep their own sweep so a cover never waits behind a transcode |
+| Transcoding | `ffmpeg` in the API image, in its own sweep (`media-video-processing`), **one video a pass, two threads for decode, filters and encode, `nice`d** — the API shares a small host. Images keep their own sweep so a cover never waits behind a transcode. The sweep runs on **a scheduler thread of its own** (`ScheduledJob#isLongRunning`): every other job shares Spring's single scheduler thread, and a minutes-long pass there would stop the outbox and the charges. Its lease outlasts a pass |
+| Stuck clips | An encode past its 5-minute timeout is refused as `UNREADABLE` — the file's fault, not retried. A row left claimed by a pass that died is skipped by the queue until the claim is stale, then taken over, so one bad clip never holds the clips behind it |
 | Format | **One rendition**: H.264 High + AAC 96k in MP4, longest edge ≤ 1280 (never upscaled), ≤ 30 fps, CRF 26 capped at 2.5 Mbit/s, `+faststart`. A minute is roughly 8–15MB |
 | Delivery | The bucket serves the MP4 with range requests; a plain `<video>` element plays it on every browser and both mobile platforms. No player library, no manifest |
 | Privacy | `-map_metadata -1`: a phone writes the recording location into the container as it writes GPS into a photo's EXIF |
+| HDR | iPhones record 10-bit HLG by default. PQ and HLG input is tone-mapped to BT.709 (zscale + Hable) and every output is tagged BT.709; left alone it plays washed out |
+| Small or oversized | A clip whose shorter edge would be under 320px after fitting is refused (`TOO_SMALL`) before encoding. An object over 250MB is refused from its `HEAD` before it is downloaded — the presigned `PUT` does not bind the declared size |
 | Poster | A frame at ~1 s, through the §13.1 libvips path — same EXIF strip, same 320px floor, same blur placeholder |
 | Storage | The raw upload is deleted when the MP4 is written and on every refusal. Replacing or removing a campaign's video deletes the previous one after the edit commits, unless another campaign still shows it |
 | Captions | Not built |

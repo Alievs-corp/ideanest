@@ -77,7 +77,7 @@ class FfmpegVideoTranscoderTests {
     @EnabledIf("ffmpegIsInstalled")
     @DisplayName("the place a clip was recorded does not survive the transcode")
     void locationIsStripped() throws IOException {
-        Path source = clip("located.mp4", 640, 360, 25, 2, false);
+        Path source = clip("located.mp4", 640, 480, 25, 2, false);
         assertThat(probe(source, "format_tags")).contains(LOCATION);
 
         TranscodedVideo video = transcoder().transcode(source, work());
@@ -101,20 +101,54 @@ class FfmpegVideoTranscoderTests {
     @EnabledIf("ffmpegIsInstalled")
     @DisplayName("a small clip is not enlarged, and sixty frames a second become thirty")
     void smallIsKeptAndFrameRateIsCapped() throws IOException {
-        Path source = clip("small.mp4", 640, 360, 60, 2, false);
+        Path source = clip("small.mp4", 640, 480, 60, 2, false);
 
         TranscodedVideo video = transcoder().transcode(source, work());
 
         assertThat(video.width()).isEqualTo(640);
-        assertThat(video.height()).isEqualTo(360);
+        assertThat(video.height()).isEqualTo(480);
         assertThat(probe(video.file(), "stream=avg_frame_rate")).contains("30/1");
+    }
+
+    @Test
+    @EnabledIf("ffmpegIsInstalled")
+    @DisplayName("an HDR clip, as an iPhone records it, is tone-mapped to 8-bit BT.709")
+    void hdrIsToneMapped() throws IOException {
+        Path source = directory.resolve("hlg.mp4");
+        ffmpeg(
+                "-f", "lavfi", "-i", "testsrc=size=1280x720:rate=30:duration=2",
+                // On the frames, not only as output options: a newer ffmpeg takes the tags from
+                // the frames, and the test source's are unspecified.
+                "-vf", "setparams=color_primaries=bt2020:color_trc=arib-std-b67:colorspace=bt2020nc",
+                "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p10le",
+                "-color_primaries", "bt2020", "-color_trc", "arib-std-b67", "-colorspace", "bt2020nc",
+                source.toString());
+        assertThat(probe(source, "stream=color_transfer")).contains("arib-std-b67");
+
+        TranscodedVideo video = transcoder().transcode(source, work());
+
+        String stream = probe(video.file(), "stream=pix_fmt,color_transfer,color_primaries");
+        assertThat(stream).contains("pix_fmt=yuv420p").contains("color_transfer=bt709").contains("color_primaries=bt709");
+    }
+
+    @Test
+    @EnabledIf("ffmpegIsInstalled")
+    @DisplayName("a clip too small to display is refused before it is encoded")
+    void tooSmallIsRefused() throws IOException {
+        Path source = clip("tiny.mp4", 426, 240, 25, 2, false);
+
+        assertThatThrownBy(() -> transcoder().transcode(source, work()))
+                .isInstanceOf(MediaFailedException.class)
+                .extracting(problem -> ((MediaFailedException) problem).reason())
+                .isEqualTo(MediaFailureReason.TOO_SMALL);
+        assertThat(Files.exists(directory.resolve("work").resolve("derived.mp4"))).isFalse();
     }
 
     @Test
     @EnabledIf("ffmpegIsInstalled")
     @DisplayName("a clip over a minute is refused before it is encoded")
     void overAMinuteIsRefused() throws IOException {
-        Path source = clip("long.mp4", 160, 120, 5, 62, false);
+        Path source = clip("long.mp4", 480, 360, 5, 62, false);
 
         assertThatThrownBy(() -> transcoder().transcode(source, work()))
                 .isInstanceOf(MediaFailedException.class)

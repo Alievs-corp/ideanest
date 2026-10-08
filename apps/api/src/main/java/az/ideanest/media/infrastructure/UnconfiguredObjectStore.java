@@ -5,6 +5,7 @@ import az.ideanest.media.application.UploadsUnavailableException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.OptionalLong;
 
 /**
  * The object store on a deployment that has not configured one — the media pipeline design
@@ -40,6 +41,11 @@ public class UnconfiguredObjectStore implements ObjectStore {
 
     @Override
     public void delete(String key) {
+        throw new UploadsUnavailableException(EXPLANATION);
+    }
+
+    @Override
+    public OptionalLong sizeOf(String key) {
         throw new UploadsUnavailableException(EXPLANATION);
     }
 

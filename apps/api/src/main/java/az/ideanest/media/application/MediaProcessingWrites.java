@@ -64,7 +64,7 @@ public class MediaProcessingWrites {
     /**
      * {@link #claim}, for a video — issue #331.
      *
-     * <p>Also takes a row that has sat in {@code PROCESSING} for longer than a transcode can
+     * <p>Also takes a row that has sat in {@code PROCESSING} for longer than a pass can
      * take. A deploy that restarts the API mid-transcode would otherwise leave that video
      * "processing" for ever; for an image the window is seconds and the case is not worth a
      * rule, for a video it is the length of a deploy.

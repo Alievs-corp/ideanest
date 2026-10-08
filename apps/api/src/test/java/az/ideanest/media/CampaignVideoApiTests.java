@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.media.application.MediaLibrary;
 import az.ideanest.media.application.MediaProcessingJob;
+import az.ideanest.media.application.MediaProcessingWrites;
 import az.ideanest.media.application.MediaVideoProcessingJob;
 import az.ideanest.media.domain.MediaFailureReason;
 import az.ideanest.project.application.PublicProjectPage;
@@ -14,6 +15,7 @@ import az.ideanest.support.LocalObjectStore;
 import az.ideanest.support.ScriptedImageTranscoder;
 import az.ideanest.support.ScriptedVideoTranscoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,6 +69,9 @@ class CampaignVideoApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private PublicProjectPages pages;
+
+    @Autowired
+    private MediaProcessingWrites writes;
 
     @BeforeEach
     void clean() {
@@ -238,6 +243,42 @@ class CampaignVideoApiTests extends AbstractIntegrationTest {
         assertThat(get("/v1/media/" + video, creator).getBody()).containsEntry("status", "READY");
         assertThat(get("/v1/media/" + image, creator).getBody()).containsEntry("status", "UPLOADED");
         assertThat(videos.calls()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("a clip still claimed by another pass does not hold up the clip behind it")
+    void aClaimedClipDoesNotBlockTheQueue() {
+        String creator = signIn();
+
+        UUID stuck = begin(creator, "video/mp4", BYTES.length);
+        store.put(MediaLibrary.rawKeyOf(stuck), BYTES);
+        post("/v1/media/" + stuck + "/complete", creator);
+        // As a pass that died mid-transcode leaves it: claimed, and nothing more.
+        assertThat(writes.claimVideo(stuck, Duration.ofHours(1))).isTrue();
+
+        UUID next = uploadVideo(creator);
+
+        assertThat(get("/v1/media/" + next, creator).getBody()).containsEntry("status", "READY");
+        assertThat(get("/v1/media/" + stuck, creator).getBody()).containsEntry("status", "PROCESSING");
+    }
+
+    @Test
+    @DisplayName("an object over the ceiling is refused from its size, without being transcoded")
+    void anOversizedObjectIsRefusedFromItsSize() {
+        String creator = signIn();
+
+        UUID mediaId = begin(creator, "video/mp4", BYTES.length);
+        // The address does not bind the declared size; this is what arrives instead.
+        store.put(MediaLibrary.rawKeyOf(mediaId), new byte[0]);
+        store.putSized(MediaLibrary.rawKeyOf(mediaId), 250L * 1024 * 1024 + 1);
+        post("/v1/media/" + mediaId + "/complete", creator);
+        videoProcessing.run();
+
+        assertThat(get("/v1/media/" + mediaId, creator).getBody())
+                .containsEntry("status", "FAILED")
+                .containsEntry("failureReason", "TOO_LARGE");
+        assertThat(store.has(MediaLibrary.rawKeyOf(mediaId))).isFalse();
+        assertThat(videos.calls()).isZero();
     }
 
     @Test
