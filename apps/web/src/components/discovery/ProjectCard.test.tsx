@@ -232,7 +232,7 @@ describe('ProjectCard', () => {
     it('reserves the card’s crop before the photograph arrives', () => {
       const { container } = renderCard();
 
-      expect(frame(container).style.aspectRatio).toBe('16 / 9');
+      expect(frame(container).style.aspectRatio).toBe('2 / 1');
     });
 
     it('reserves the same box for a campaign with no cover', () => {
@@ -240,18 +240,18 @@ describe('ProjectCard', () => {
       // one it painted, which is the shift the reservation exists to prevent.
       const { container } = renderCard({ image: null });
 
-      expect(frame(container).style.aspectRatio).toBe('16 / 9');
+      expect(frame(container).style.aspectRatio).toBe('2 / 1');
       expect(container.querySelector('img')).toBeNull();
     });
 
     it('ignores the recorded shape, because the card crops', () => {
-      // A portrait cover is still a 16:9 box here. Reserving 900×1600 would
+      // A portrait cover is still a 2:1 box here. Reserving 900×1600 would
       // give a column-tall card to a picture that is about to be cropped.
       const { container } = renderCard({
         image: { url: 'https://example.test/tall.jpg', width: 900, height: 1600 },
       });
 
-      expect(frame(container).style.aspectRatio).toBe('16 / 9');
+      expect(frame(container).style.aspectRatio).toBe('2 / 1');
     });
 
     it('declares how wide the card really is at every breakpoint', () => {

@@ -1091,10 +1091,14 @@ belongs to. Every other rule is unchanged:
 | Progress, below goal | `--lime-500` fill on a `--surface-3` track | In progress |
 | Progress, at or above goal | `--success` fill | Achieved, never lime (§2.4) |
 | Closing within 48 hours | `--lime-500` **badge** | Urgent — the one lime element on the card |
-| Status word | `onAccent` tag + icon | Colour never alone (§9.2) |
+| Status word | neutral solid tag + icon, on the cover | Colour never alone (§9.2); a tint vanishes over a photograph |
 
 The cover is inset in the accent card with its own rounded corners, as the app
-draws it. Category tiles on the home page are accent cards with the category's
+draws it, cropped **2:1** — the shorter card of #339, about 350px tall at its
+widest. The status tags sit on the cover, the goal shares the rule's line and
+the creator shares the counts', so nothing is dropped to save the height. Every
+campaign grid is **two columns on a phone** (`grid-cols-2 gap-3`), with the
+type stepping up at `sm` and `lg`; collections stay one column. Category tiles on the home page are accent cards with the category's
 icon; the categories index and the landing pages put the icon on a disc of the
 accent beside the name.
 
