@@ -58,15 +58,17 @@ export function CategoryIcon({ slug, className }: { readonly slug: string; reado
 export function CategoryBadge({
   slug,
   size = 'md',
+  className = '',
 }: {
   readonly slug: string;
   readonly size?: 'md' | 'lg';
+  readonly className?: string;
 }) {
   const { accent } = categoryLook(slug);
   return (
     <span
       aria-hidden="true"
-      className={`inline-flex shrink-0 items-center justify-center rounded-full text-on-accent ${ACCENT_FILL[accent]} ${size === 'lg' ? 'size-14' : 'size-10'}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full text-on-accent ${ACCENT_FILL[accent]} ${size === 'lg' ? 'size-14' : 'size-10'} ${className}`}
     >
       <CategoryIcon slug={slug} className={size === 'lg' ? 'size-[31px]' : 'size-[22px]'} />
     </span>

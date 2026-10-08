@@ -65,6 +65,18 @@ describe('ProjectCard', () => {
     expect(card).toHaveAttribute('data-on-accent');
   });
 
+  it('answers the pointer with motion only for a reader who has not asked for less (#341)', () => {
+    const { container } = renderCard();
+    const card = container.querySelector('article');
+    const cover = container.querySelector('img');
+
+    expect(card?.className).toContain('motion-safe:hover:-translate-y-1');
+    expect(cover?.className).toContain('motion-safe:group-hover:scale-105');
+    for (const element of [card, cover]) {
+      expect(element?.className).not.toMatch(/(^|\s)(group-)?hover:/);
+    }
+  });
+
   it('keeps one accent per campaign when it has no category', () => {
     const first = renderCard({ categorySlug: null }).container.querySelector('article')?.className;
     cleanup();

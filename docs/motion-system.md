@@ -497,6 +497,14 @@ decisions.
 > applied to the one component that would have paid it everywhere. `transform`
 > and `opacity` only, so nothing is given up by writing it by hand.
 
+> **Hover is an answer, not an entry (#341).** A campaign card rises 4px and
+> its cover zooms 5% under the pointer; a home category tile rises, its icon
+> tilts and grows and its arrow steps forward; the categories index's icon disc
+> grows. These are `transform` transitions behind `motion-safe:`, and Tailwind's
+> `hover:` applies only on a device that can hover — so they cost nothing while
+> the pointer rests, never play on a touch screen, and are not the list entry
+> animation §5.1 forbids. Discovery's budget is about what moves on its own.
+
 ### 5.1 What "minimal" buys Discovery, exactly
 
 `/discover` is the surface that tests the budget, because it is both the most
