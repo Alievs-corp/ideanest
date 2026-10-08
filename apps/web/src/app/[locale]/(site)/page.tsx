@@ -213,17 +213,27 @@ export default async function HomePage() {
               the hue. Two, four, then five columns: the seeded taxonomy cycles three accents, so
               a column count that is not a multiple of three is what keeps neighbours apart.
             */}
+            {/*
+              On hover a tile rises, its icon tilts and grows and its arrow steps forward (#341):
+              `transform` transitions behind `motion-safe:`, nothing that runs at rest.
+            */}
             <ul className="grid list-none grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
               {categories.map((category) => (
                 <li key={category.id}>
                   <Link
                     href={categoryPath(category.slug)}
                     data-on-accent=""
-                    className={`group flex h-full min-h-[120px] flex-col justify-between gap-4 rounded-xl p-5 text-on-accent ${ACCENT_SURFACE[categoryLook(category.slug).accent]}`}
+                    className={`group flex h-full min-h-[120px] flex-col justify-between gap-4 rounded-xl p-5 text-on-accent transition-transform duration-300 ease-in-out motion-safe:hover:-translate-y-1 motion-safe:focus-visible:-translate-y-1 ${ACCENT_SURFACE[categoryLook(category.slug).accent]}`}
                   >
                     <span className="flex items-start justify-between gap-2">
-                      <CategoryIcon slug={category.slug} className="size-[26px]" />
-                      <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-on-accent/72" />
+                      <CategoryIcon
+                        slug={category.slug}
+                        className="size-[26px] transition-transform duration-300 ease-in-out motion-safe:group-hover:-rotate-6 motion-safe:group-hover:scale-115"
+                      />
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-on-accent/72 transition-transform duration-300 ease-in-out motion-safe:group-hover:translate-x-1"
+                      />
                     </span>
                     <span className="text-base font-medium tracking-[-0.02em] group-hover:underline group-hover:underline-offset-4">
                       {category.name}

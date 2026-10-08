@@ -94,8 +94,11 @@ export default async function CategoriesPage() {
                   The category's icon on its accent, beside the name — the mark the app draws on
                   the same list (#335). Decorative: the name is the link and says it all.
                 */}
-                <h2 className="flex items-center gap-3 text-xl font-medium tracking-[-0.02em] text-white">
-                  <CategoryBadge slug={category.slug} />
+                <h2 className="group flex items-center gap-3 text-xl font-medium tracking-[-0.02em] text-white">
+                  <CategoryBadge
+                    slug={category.slug}
+                    className="transition-transform duration-300 ease-in-out motion-safe:group-hover:-rotate-6 motion-safe:group-hover:scale-110"
+                  />
                   <Link
                     href={categoryPath(category.slug)}
                     className="rounded-sm hover:underline hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"

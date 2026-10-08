@@ -181,8 +181,15 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
   return (
     <article
       data-on-accent=""
-      className={`group relative flex flex-col rounded-lg p-2 text-on-accent sm:rounded-xl sm:p-2.5 ${ACCENT_SURFACE[accent]}`}
+      className={`group relative flex flex-col rounded-lg p-2 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 sm:rounded-xl sm:p-2.5 ${ACCENT_SURFACE[accent]}`}
     >
+      {/*
+        HOVER LIFTS THE CARD AND LEANS INTO THE COVER (#341): a 4px rise and a 5%
+        zoom inside the cover's own clip, `transform` only, on transitions that
+        run once per pointer move and never while it rests. Keyboard focus gets
+        the same rise. Behind `motion-safe:`, and Tailwind's `hover:` only
+        applies on a device that can hover, so a tap never leaves a card raised.
+      */}
       {/*
         Inset in the accent card with its own rounded corners, as the app
         draws it (docs/ui-kit.md §8.2).
@@ -220,7 +227,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
                */
               unoptimized={!canOptimise(card.image.url)}
               priority={priority}
-              className="object-cover"
+              className="object-cover transition-transform duration-500 ease-in-out motion-safe:group-hover:scale-105"
             />
           )}
         </MediaFrame>
