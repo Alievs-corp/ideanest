@@ -183,6 +183,14 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('the media player', () => {
+  /* jsdom implements no media playback; `play` answers the way a browser that played would. */
+  beforeEach(() => {
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('renders the poster as the media, with no alternative text to duplicate the title', async () => {
     const { container } = render(
       await resolveServerTree(
@@ -224,8 +232,20 @@ describe('the media player', () => {
    * cover, and nothing about the clip is fetched — there is not even an element to fetch it —
    * until somebody presses the button.
    */
-  it('mounts the video only when somebody presses play, and then plays it', async () => {
+  it('loads nothing before the press, and starts playing inside it', async () => {
     const user = userEvent.setup();
+    /*
+     * jsdom has no media stack. The stub records WHEN play is called: the assertion that
+     * matters for iOS Safari is that it happens during the click, with the source already set,
+     * rather than from an effect or an `autoPlay` after the re-render.
+     */
+    const states: Array<{ src: string | null; hidden: boolean }> = [];
+    const play = vi
+      .spyOn(HTMLMediaElement.prototype, 'play')
+      .mockImplementation(function (this: HTMLMediaElement) {
+        states.push({ src: this.getAttribute('src'), hidden: this.hidden === true });
+        return Promise.resolve();
+      });
     render(
       await resolveServerTree(
         <CampaignMedia
@@ -237,24 +257,31 @@ describe('the media player', () => {
       ),
     );
 
-    expect(document.querySelector('video')).toBeNull();
+    // The element is there to be started inside the gesture, with nothing it could fetch.
+    const video = document.querySelector('video');
+    expect(video).not.toBeNull();
+    expect(video).not.toHaveAttribute('src');
+    expect(video).not.toHaveAttribute('poster');
+    expect(video).toHaveAttribute('preload', 'none');
+    expect(video?.hidden).toBe(true);
     expect(document.querySelector('img')).toHaveAttribute('alt', '');
 
     // Named with what it plays and for how long, and starting with the word printed on it.
-    const play = screen.getByRole('button', { name: 'Watch the campaign video, 42 seconds' });
-    expect(play).toHaveTextContent('Watch');
-    expect(play).toHaveTextContent('0:42');
+    const button = screen.getByRole('button', { name: 'Watch the campaign video, 42 seconds' });
+    expect(button).toHaveTextContent('Watch');
+    expect(button).toHaveTextContent('0:42');
 
-    await user.click(play);
+    await user.click(button);
 
-    const video = document.querySelector('video');
-    expect(video).not.toBeNull();
+    // Called once, synchronously in the handler: the source was set, the re-render had not run.
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(states).toEqual([{ src: VIDEO.url, hidden: true }]);
+
     expect(video).toHaveAttribute('src', VIDEO.url);
     expect(video).toHaveAttribute('poster', VIDEO.posterUrl);
-    expect(video).toHaveAttribute('preload', 'none');
     expect(video).toHaveAttribute('controls');
     expect(video).toHaveAttribute('playsinline');
-    expect(video?.autoplay).toBe(true);
+    expect(video?.hidden).toBe(false);
     expect(video).toHaveAccessibleName('Campaign video');
     // The button pressed is gone; focus went to the player rather than to the top of the page.
     expect(video).toHaveFocus();

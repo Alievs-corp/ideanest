@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { Suspense, lazy, useEffect, useId, useState } from 'react';
 import {
   CharacterCount,
   Field,
@@ -39,7 +39,6 @@ import {
   type BasicsErrors,
   type BasicsField,
 } from '@ideanest/campaign-editor/basics';
-import { CampaignVideoField } from './CampaignVideoField';
 import { CoverImageField } from './CoverImageField';
 import type {
   BasicsPanelCopy,
@@ -79,6 +78,24 @@ import { useProjectEdit } from './useProjectEdit';
  */
 
 const LOADING_ROWS = [0, 1, 2, 3];
+
+/**
+ * The video field, fetched after the tab rather than with it — issue #331.
+ *
+ * It is the heaviest control on the tab — an upload with its own transfer, a duration reader
+ * and four stages of copy — and the last one on it, below the fold for everybody, and used once
+ * per campaign at most. Shipped with the tab it cost every visit 7.8 KiB of First Load JS;
+ * loaded here it costs 1.4 KiB, and the rest is a request made while the creator is reading the
+ * title.
+ *
+ * `React.lazy` rather than `next/dynamic`, measured: the same split through `next/dynamic` left
+ * the tab 3.9 KiB heavier, which is its loader. Nothing is lost by it: the form is drawn only
+ * once the project has loaded in the browser, so this is never reached in a server render and
+ * `next/dynamic`'s `ssr: false` would have had nothing to switch off.
+ */
+const CampaignVideoField = lazy(() =>
+  import('./CampaignVideoField').then((module) => ({ default: module.CampaignVideoField })),
+);
 
 /**
  * Maps a validation failure's `errors` map onto the fields this form has.
@@ -175,6 +192,20 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
 
     const patch = patchForField(field, next);
     if (patch !== null) autosave.save(patch);
+  }
+
+  /**
+   * Applies a value that arrives LATE — an upload that finished, an address that was measured —
+   * and queues exactly its patch.
+   *
+   * `change` takes a whole draft, which is right for a keystroke and wrong here: a draft captured
+   * when the file was chosen is minutes old by the time a video is ready, and spreading it would
+   * put back the title as it was then and send the next edit on top of that. So this updates the
+   * draft as it is NOW, and the patch is built from the value alone.
+   */
+  function changeLater(patch: ProjectPatch, update: (current: BasicsDraft) => BasicsDraft): void {
+    setDraft((current) => (current === null ? current : update(current)));
+    autosave.save(patch);
   }
 
   const failure = autosave.failure;
@@ -466,18 +497,33 @@ export function BasicsPanel({ projectId, copy, basics }: BasicsPanelProps) {
           error={errors.coverImage}
           onUrlChange={(url) => setDraft({ ...draft, coverImageUrl: url })}
           onAccept={(cover: CoverImage) =>
-            change('coverImage', { ...draft, coverImage: cover, coverImageUrl: cover.url })
+            changeLater({ coverImage: cover }, (current) => ({
+              ...current,
+              coverImage: cover,
+              coverImageUrl: cover.url,
+            }))
           }
           onRemove={() => change('coverImage', { ...draft, coverImage: null, coverImageUrl: '' })}
         />
 
-        <CampaignVideoField
-          copy={basics.video}
-          video={draft.video}
-          error={errors.videoMediaId}
-          onAccept={(video: CampaignVideo) => change('videoMediaId', { ...draft, video })}
-          onRemove={() => change('videoMediaId', { ...draft, video: null })}
-        />
+        {/*
+          The placeholder holds the empty field's height, so the form does not grow under the
+          reader when the chunk arrives. It is the last control on the tab, so nothing below
+          it could move in any case except the page's own foot.
+        */}
+        <Suspense fallback={<div aria-hidden="true" className="h-[17.5rem]" />}>
+          <CampaignVideoField
+            copy={basics.video}
+            video={draft.video}
+            error={errors.videoMediaId}
+            onAccept={(video: CampaignVideo) =>
+              changeLater({ videoMediaId: video.mediaId }, (current) => ({ ...current, video }))
+            }
+            onRemove={() =>
+              changeLater({ videoMediaId: null }, (current) => ({ ...current, video: null }))
+            }
+          />
+        </Suspense>
       </form>
     </EditorShell>
   );

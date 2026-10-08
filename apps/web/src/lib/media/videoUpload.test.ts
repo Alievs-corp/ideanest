@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { authorizedFetch } from '../api/client';
 import { UploadFailed } from './upload';
-import { uploadVideo } from './videoUpload';
+import { VideoStillProcessing, resumeVideo, uploadVideo } from './videoUpload';
 
 /**
  * The campaign video's upload — issue #331.
@@ -255,6 +255,25 @@ describe('uploadVideo', () => {
 
     await vi.advanceTimersByTimeAsync(300_000);
 
-    expect(((await outcome) as UploadFailed).code).toBe('UPLOAD_STILL_PROCESSING');
+    const failure = await outcome;
+    expect((failure as UploadFailed).code).toBe('UPLOAD_STILL_PROCESSING');
+    // Not a lost upload: it carries the identifier, so the wait can be taken up again.
+    expect(failure).toBeInstanceOf(VideoStillProcessing);
+    expect((failure as VideoStillProcessing).mediaId).toBe(MEDIA_ID);
+  });
+
+  it('takes up the wait on an upload that outlasted it, without sending anything again', async () => {
+    serve({ ...READY, status: 'PROCESSING', url: null }, READY);
+    const pending = resumeVideo(MEDIA_ID);
+    await settle();
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    await expect(pending).resolves.toMatchObject({ mediaId: MEDIA_ID, url: READY.url });
+    // Polls only: no new address, no transfer, no second `complete`.
+    expect(fetchMock.mock.calls.map(([path]) => path)).toEqual([
+      `/v1/media/${MEDIA_ID}`,
+      `/v1/media/${MEDIA_ID}`,
+    ]);
+    expect(FakeRequest.last).toBeNull();
   });
 });

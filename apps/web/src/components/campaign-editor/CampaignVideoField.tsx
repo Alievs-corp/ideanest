@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Field, FileDropZone, InlineAlert, MediaFrame, Pill } from '@ideanest/ui';
 import type { CampaignVideo } from '../../lib/projects/api';
 import {
@@ -18,7 +18,12 @@ import {
 } from '@ideanest/campaign-editor/video';
 import { describeSize } from '@ideanest/campaign-editor/cover-image';
 import { UploadFailed } from '../../lib/media/upload';
-import { uploadVideo } from '../../lib/media/videoUpload';
+import {
+  VideoStillProcessing,
+  resumeVideo,
+  uploadVideo,
+  type UploadedVideo,
+} from '../../lib/media/videoUpload';
 import { readVideoDuration } from '../../lib/media/videoDuration';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 
@@ -39,21 +44,33 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  *   3. **uploading** — the bytes go straight to the bucket, with a real progress bar driven by
  *      the transfer's own byte count (`uploadVideo` uses `XMLHttpRequest` for exactly this).
  *   4. **processing** — the server transcodes. There is no honest percentage to show for an
- *      ffmpeg pass on a shared host, so there is none: the stage says what is happening, how
- *      long it can take, and that the page has to stay open.
+ *      ffmpeg pass on a shared host, so there is none: the stage says what is happening and how
+ *      long it can take.
  *
  * Only then does anything reach the draft. `onAccept` is called with a READY video and nothing
  * earlier, so autosave never sends the identifier of a clip that does not yet play — which the
- * service would refuse with `PROJECT_FIELD_INVALID` in any case.
+ * service would refuse with `PROJECT_FIELD_INVALID` in any case. What the field then says is
+ * that the video is READY, not that it is saved: the save is the autosave's to report, in the
+ * header, and it can still be refused.
  *
- * <h2>Leaving the tab abandons the wait, not the upload</h2>
+ * <h2>Leaving the page stops the upload, and the page says so before it happens</h2>
  *
  * Unmounting aborts whatever is in flight: the transfer itself if it is still running, so a
  * creator who navigates away is not still spending their data allowance in the background, and
- * the poll if it is not. A clip that finished uploading keeps transcoding on the server, but
- * nothing attaches it; the processing sentence asks the creator to keep the page open for that
- * reason, and saying so is cheaper than a background job that attaches a video to a campaign
- * somebody has stopped looking at.
+ * the poll if it is not. Nothing attaches a clip nobody is waiting for. That is a real loss after
+ * minutes of uploading, so from the first byte onwards the panel says, in a sentence that stays
+ * on screen, that leaving the page or switching editor tab stops it — and closing or reloading
+ * the browser tab asks first (`beforeunload`, registered only while there is something to lose,
+ * so the page stays eligible for the back-forward cache the rest of the time). The editor's own
+ * tab links are ordinary links and the editor has no navigation guard to hook into; the sentence
+ * is what covers them.
+ *
+ * <h2>A slow transcode is not a lost upload</h2>
+ *
+ * After five minutes of polling the field stops and says the conversion is taking longer than
+ * usual — but the upload is kept. The server works through a queue, and a clip behind two others
+ * is routinely READY a few minutes later; "Check again" resumes waiting on the same upload rather
+ * than asking the creator to send the file a second time.
  *
  * <h2>Motion: none</h2>
  *
@@ -69,6 +86,10 @@ export interface CampaignVideoFieldProps {
   disabled?: boolean;
   /** A message about the saved value — the service refusing to attach it. */
   error?: string;
+  /**
+   * A READY video. Called after an upload that may have taken minutes, so the caller must apply
+   * it to the form as it is THEN, not as it was when the file was chosen.
+   */
   onAccept: (video: CampaignVideo) => void;
   onRemove: () => void;
 }
@@ -89,15 +110,32 @@ export function CampaignVideoField({
   /** How much of the file has reached storage, 0 to 1. Meaningful only while `uploading`. */
   const [sent, setSent] = useState(0);
   const [note, setNote] = useState<Note | null>(null);
+  /** An upload that outlasted the poll and may still become ready: "Check again" waits on it. */
+  const [stillProcessing, setStillProcessing] = useState<string | null>(null);
 
   /* One upload at a time. Choosing another file abandons the first rather than racing it. */
   const inFlight = useRef<AbortController | null>(null);
   /* The picker behind "Replace video", which has no drop zone of its own to borrow. */
   const replacePicker = useRef<HTMLInputElement>(null);
+  const keepOpenId = useId();
 
   useEffect(() => () => inFlight.current?.abort(), []);
 
   const busy = stage !== null;
+  /** From the first byte on, leaving the page throws work away. */
+  const atRisk = stage === 'uploading' || stage === 'processing';
+
+  useEffect(() => {
+    if (!atRisk) return;
+    const warn = (event: BeforeUnloadEvent): void => {
+      event.preventDefault();
+      // Older engines show the prompt only when `returnValue` is set; its text is ignored.
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [atRisk]);
+
   const panel = busy ? 'busy' : video !== null ? 'preview' : 'empty';
 
   /*
@@ -132,48 +170,26 @@ export function CampaignVideoField({
     return copy.unusable;
   }
 
-  async function upload(file: File): Promise<void> {
+  /**
+   * Runs one attempt — an upload, or a resumed wait — and reports how it ended.
+   *
+   * `work` answers `null` when it refused the file itself and has already said why.
+   */
+  async function attempt(
+    first: Stage,
+    work: (signal: AbortSignal) => Promise<UploadedVideo | null>,
+  ): Promise<void> {
     inFlight.current?.abort();
-    setNote(null);
-
-    const contentType = videoContentType(file);
-    if (contentType === null) {
-      refused(copy.failures.NOT_A_VIDEO);
-      return;
-    }
-    // The size needs nothing read, so it is refused before the header is.
-    const tooBig = videoPreflightRefusal({ byteSize: file.size, durationMs: null });
-    if (tooBig !== null) {
-      refused(refusalFor(copy, tooBig) ?? copy.unusable);
-      return;
-    }
-
     const controller = new AbortController();
     inFlight.current = controller;
+    setNote(null);
+    setStillProcessing(null);
     setSent(0);
-    setStage('checking');
+    setStage(first);
 
     try {
-      const durationMs = await readVideoDuration(file, controller.signal);
-      if (
-        durationMs !== null &&
-        videoPreflightRefusal({ byteSize: file.size, durationMs }) === 'TOO_LONG'
-      ) {
-        refused(
-          fillPlaceholders(copy.tooLong, {
-            duration: formatVideoDuration(durationMs),
-            seconds: String(VIDEO_MAX_SECONDS),
-          }),
-        );
-        return;
-      }
-
-      const ready = await uploadVideo(file, {
-        contentType,
-        signal: controller.signal,
-        onStage: setStage,
-        onProgress: setSent,
-      });
+      const ready = await work(controller.signal);
+      if (ready === null) return;
 
       onAccept({
         mediaId: ready.mediaId,
@@ -188,6 +204,7 @@ export function CampaignVideoField({
     } catch (cause) {
       // Cancelled, replaced by another file, or the field went away. Nothing to report.
       if (cause instanceof DOMException && cause.name === 'AbortError') return;
+      if (cause instanceof VideoStillProcessing) setStillProcessing(cause.mediaId);
       refused(describeFailure(cause));
     } finally {
       if (inFlight.current === controller) {
@@ -195,6 +212,44 @@ export function CampaignVideoField({
         setStage(null);
       }
     }
+  }
+
+  async function upload(file: File): Promise<void> {
+    const contentType = videoContentType(file);
+    if (contentType === null) {
+      setStillProcessing(null);
+      refused(copy.failures.NOT_A_VIDEO);
+      return;
+    }
+    // The size needs nothing read, so it is refused before the header is.
+    const tooBig = videoPreflightRefusal({ byteSize: file.size, durationMs: null });
+    if (tooBig !== null) {
+      setStillProcessing(null);
+      refused(refusalFor(copy, tooBig) ?? copy.unusable);
+      return;
+    }
+
+    await attempt('checking', async (signal) => {
+      const durationMs = await readVideoDuration(file, signal);
+      if (
+        durationMs !== null &&
+        videoPreflightRefusal({ byteSize: file.size, durationMs }) === 'TOO_LONG'
+      ) {
+        refused(
+          fillPlaceholders(copy.tooLong, {
+            duration: formatVideoDuration(durationMs),
+            seconds: String(VIDEO_MAX_SECONDS),
+          }),
+        );
+        return null;
+      }
+
+      return await uploadVideo(file, { contentType, signal, onStage: setStage, onProgress: setSent });
+    });
+  }
+
+  function checkAgain(mediaId: string): void {
+    void attempt('processing', (signal) => resumeVideo(mediaId, { signal }));
   }
 
   function choose(files: readonly File[]): void {
@@ -328,10 +383,21 @@ export function CampaignVideoField({
                 </span>
               </div>
             )}
+            {/*
+              On screen for as long as leaving would lose something, and not in the live region:
+              it does not change, and the Cancel button names it as its description, so it is
+              heard where the focus lands when the upload starts.
+            */}
+            {atRisk && (
+              <p id={keepOpenId} className="text-[13px] text-white/64">
+                {copy.keepOpen}
+              </p>
+            )}
             <div>
               <Pill
                 variant="ghost"
                 size="sm"
+                aria-describedby={atRisk ? keepOpenId : undefined}
                 onClick={() => {
                   inFlight.current?.abort();
                   setNote(null);
@@ -348,17 +414,31 @@ export function CampaignVideoField({
           refusal is a separate `alert` rather than a second message in this region. The stage
           sentence changes four times in an upload, not on every progress event, so a screen
           reader hears where the upload is without hearing every percent of it.
+
+          "Ready" is withdrawn the moment the service refuses to attach the clip: a success note
+          beside the field's own error would be the field contradicting itself.
         */}
         <div role="status" aria-live="polite" className="empty:hidden">
           {stage !== null && <InlineAlert variant="info">{copy.stage[stage]}</InlineAlert>}
-          {stage === null && note !== null && note.tone === 'success' && (
+          {stage === null && error === undefined && note !== null && note.tone === 'success' && (
             <InlineAlert variant="success">{note.text}</InlineAlert>
           )}
         </div>
 
-        {note !== null && note.tone === 'danger' && (
+        {!busy && note !== null && note.tone === 'danger' && (
           <InlineAlert variant="danger" title={note.title}>
-            {note.text}
+            <p>{note.text}</p>
+            {stillProcessing !== null && (
+              <Pill
+                variant="ghost"
+                size="sm"
+                className="mt-3"
+                disabled={disabled}
+                onClick={() => checkAgain(stillProcessing)}
+              >
+                {copy.checkAgain}
+              </Pill>
+            )}
           </InlineAlert>
         )}
       </div>

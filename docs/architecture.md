@@ -708,10 +708,11 @@ and each entry needs a translation per supported locale.
 > gives `ProjectPageResponse` a `video`, and the header serves the cover (or the
 > video's own still) as the page's largest element exactly as before. A small
 > client island, `CampaignVideoPlayer`, draws a play button named with the clip's
-> length over it and mounts `<video preload="none" controls>` only on the press,
-> inside the 16:9 box that was already reserved — so nothing is fetched until
-> somebody asks, and nothing below the header moves when it plays. A campaign
-> without a video, or whose video is missing a measured field, gets no button.
+> length over it, and gives a hidden `<video preload="none">` its source only on
+> the press — starting it inside the click, which iOS Safari requires — in the
+> 16:9 box that was already reserved. Nothing is fetched until somebody asks,
+> and nothing below the header moves when it plays. A campaign without a video,
+> or whose video is missing a measured field, gets no button.
 >
 > **The Creator tab has a biography and previous campaigns, and no contact row.**
 > §4.4 asks for history and contact; `users` has `bio` and nothing else, and
@@ -5976,9 +5977,14 @@ before a byte is sent. A length the browser cannot read — an HEVC `.mov` in
 Chrome on Windows, a `MediaRecorder` WebM with no duration in its header — is
 left for `ffprobe` rather than refused, because the server may well transcode
 it. The `PUT` goes through `XMLHttpRequest`, which is the only browser API that
-reports upload progress; the poll runs every two seconds for up to five minutes;
-and only a `READY` video is patched onto the project as `videoMediaId`. The
-campaign page plays it as §4.4's media-player note describes.
+reports upload progress; the poll runs every two seconds for up to five minutes,
+and a clip still converting after that is kept rather than discarded — the
+field offers to check again on the same upload, because the queue usually
+clears. Only a `READY` video is patched onto the project as `videoMediaId`.
+Leaving the page stops an upload, so from the first byte the field says so and
+the browser asks before the tab closes. The campaign page plays it as §4.4's
+media-player note describes, calling `play()` inside the press so iOS Safari
+starts it.
 
 ---
 

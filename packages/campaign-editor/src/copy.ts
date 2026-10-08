@@ -1737,6 +1737,13 @@ export interface CampaignVideoCopy {
   readonly replace: string;
   readonly remove: string;
   readonly cancel: string;
+  /**
+   * From the first byte until the clip is ready: leaving the page, or switching editor tab,
+   * stops the upload. Said while it can still be avoided rather than after.
+   */
+  readonly keepOpen: string;
+  /** Waits again on an upload that outlasted the poll (`UPLOAD_STILL_PROCESSING`). */
+  readonly checkAgain: string;
   /** Under the preview. Carries `{duration}` and `{size}`. */
   readonly caption: string;
   /** The preview player's accessible name. */
@@ -1756,6 +1763,7 @@ export interface CampaignVideoCopy {
     readonly uploading: string;
     readonly processing: string;
   };
+  /** The clip is READY. Not "saved": the autosave reports that, and can still be refused. */
   readonly set: string;
   readonly notUsedTitle: string;
   /** The service refused to attach a ready upload: `PROJECT_FIELD_INVALID` on `videoMediaId`. */
@@ -1849,6 +1857,8 @@ export function campaignVideoCopyFrom(t: CampaignEditorTranslator): CampaignVide
     replace: at('replace'),
     remove: at('remove'),
     cancel: at('cancel'),
+    keepOpen: at('keepOpen'),
+    checkAgain: at('checkAgain'),
     caption: tpl('caption'),
     previewLabel: at('previewLabel'),
     progressLabel: at('progressLabel'),

@@ -58,6 +58,23 @@ export interface VideoUploadOptions extends UploadOptions {
 const VIDEO_POLL_INTERVAL_MS = 2_000;
 const VIDEO_POLL_LIMIT = Math.ceil(300_000 / VIDEO_POLL_INTERVAL_MS);
 
+/**
+ * The poll ran out with the clip still converting — which is not the clip failing.
+ *
+ * It carries the upload, because the bytes are on the server and the transcode is in its queue:
+ * {@link resumeVideo} waits on the same upload again, and a creator is never asked to send a
+ * 200MB file twice because the server was busy.
+ */
+export class VideoStillProcessing extends UploadFailed {
+  readonly mediaId: string;
+
+  constructor(mediaId: string) {
+    super('UPLOAD_STILL_PROCESSING', '');
+    this.name = 'VideoStillProcessing';
+    this.mediaId = mediaId;
+  }
+}
+
 export async function uploadVideo(file: File, options: VideoUploadOptions): Promise<UploadedVideo> {
   const { onStage, onProgress, signal, contentType } = options;
 
@@ -123,6 +140,14 @@ function sendWithProgress(
   });
 }
 
+/** Waits on an upload that outlasted an earlier poll, for another five minutes at most. */
+export function resumeVideo(
+  mediaId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<UploadedVideo> {
+  return waitForVideo(mediaId, options.signal);
+}
+
 async function waitForVideo(mediaId: string, signal?: AbortSignal): Promise<UploadedVideo> {
   for (let attempt = 0; attempt < VIDEO_POLL_LIMIT; attempt += 1) {
     const state = await readState(mediaId, signal);
@@ -160,5 +185,5 @@ async function waitForVideo(mediaId: string, signal?: AbortSignal): Promise<Uplo
     await pause(VIDEO_POLL_INTERVAL_MS, signal);
   }
 
-  throw new UploadFailed('UPLOAD_STILL_PROCESSING', '');
+  throw new VideoStillProcessing(mediaId);
 }
