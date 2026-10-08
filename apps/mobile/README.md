@@ -714,7 +714,7 @@ secrets. Without it the workflow says so and stops rather than failing.
 
 | Where | Name | What |
 |---|---|---|
-| `eas.json` → `build.base.env` | `IDEANEST_EAS_PROJECT_ID` | The id `eas init` prints. Not a secret (every update manifest carries it), so it is committed. Unset, builds have updates switched off and no push token |
+| `eas.json` → `build.base.env` | `IDEANEST_EAS_PROJECT_ID` | `@alievsteamss-team/ideanest` on expo.dev, owned by the organization (`owner` in `app.config.ts`), not by a person. Not a secret (every update manifest carries it), so it is committed. Unset, builds have updates switched off and no push token |
 | GitHub secret (`mobile` environment) | `EXPO_TOKEN` | A robot token for the Expo account |
 | GitHub secret | `IDEANEST_ASC_APP_ID` | The App Store Connect app id (digits). `eas submit` cannot read it from the environment, so the workflow writes it into the submit profile on the runner |
 | GitHub secret | `IDEANEST_APPLE_TEAM_ID` | The 10-character Apple team id, written the same way and passed as `EXPO_APPLE_TEAM_ID` |

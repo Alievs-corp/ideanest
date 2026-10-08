@@ -8,7 +8,8 @@
     "base": {
       "node": "22.20.0",
       "env": {
-        "IDEANEST_SITE_URL": "https://ideyanest.com"
+        "IDEANEST_SITE_URL": "https://ideyanest.com",
+        "IDEANEST_EAS_PROJECT_ID": "cc3554af-968c-4575-acfc-30efdbb0fb49"
       }
     },
     "development": {
