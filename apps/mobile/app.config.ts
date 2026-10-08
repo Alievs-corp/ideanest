@@ -500,6 +500,8 @@ const privacyManifests: NonNullable<ExpoConfig['ios']>['privacyManifests'] = {
 const config: ExpoConfig = {
   name: BASE_NATIVE.displayName,
   slug: 'ideanest',
+  // The EAS project (`IDEANEST_EAS_PROJECT_ID`) belongs to this Expo organization, not to a person.
+  owner: 'alievsteamss-team',
   version: '0.1.0',
   orientation: 'portrait',
   userInterfaceStyle: 'dark',
