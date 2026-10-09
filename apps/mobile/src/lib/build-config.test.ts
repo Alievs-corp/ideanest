@@ -229,9 +229,17 @@ describe('eas.json', () => {
   };
 
   it('names each channel after its profile, which the release workflow’s update relies on', () => {
-    for (const name of ['development', 'preview', 'production']) {
+    for (const name of ['development', 'preview', 'production', 'github']) {
       expect(eas.build[name]?.channel).toBe(name);
     }
+  });
+
+  it('builds the GitHub release as an installable APK against production', () => {
+    const github = eas.build.github as Profile & { android?: { buildType?: string } };
+    expect(github.extends).toBe('base');
+    expect(github.distribution).toBe('internal');
+    expect(github.android?.buildType).toBe('apk');
+    expect(github.env?.IDEANEST_API_ORIGIN).toBe(eas.build.production?.env?.IDEANEST_API_ORIGIN);
   });
 
   it('points an Android emulator at the host machine, where localhost is the emulator itself', () => {

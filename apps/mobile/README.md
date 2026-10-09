@@ -694,7 +694,7 @@ doubles that can refuse.
 
 ## Builds and releases (§19.2)
 
-`eas.json` has three profiles and `.github/workflows/mobile-release.yml` drives
+`eas.json` has four profiles and `.github/workflows/mobile-release.yml` drives
 them. It **builds** only on a manual dispatch, because a store build is a
 deliberate act with a human behind it.
 
@@ -729,10 +729,24 @@ Without the two Apple ids, a production submit sends Android only and says so.
 | `development` | `development` | `http://10.0.2.2:8080` on Android, `http://localhost:8080` on iOS | a developer: Android APK, iOS **simulator** |
 | `preview` | `preview` | staging | testers: Android APK and an iOS **ad hoc** build, both `distribution: internal`. Register a tester's iPhone with `eas device:create` before building, or the build will not install on it |
 | `production` | `production` | production | the stores: AAB to Play's `internal` track as a draft, iOS to TestFlight |
+| `github` | `github` | production | anybody, from the repository's Releases page: an Android APK (`operation: github-release`, below) |
 
 The Android submit goes to the `internal` track as a **draft**, which makes the
 staged rollout a decision somebody takes in Play Console rather than a
 consequence of a workflow finishing.
+
+**GitHub Releases.** Run **Mobile release** with `operation: github-release`
+(the `profile` input is ignored: it always builds `github`). EAS builds the APK,
+the job downloads it and publishes a release tagged
+`android-v<version>-<versionCode>` with the APK, its SHA-256 and the pull
+requests merged since the previous APK. The tag never starts with `v`, because
+`release.yml` deploys production on a `v*` tag. EAS generates the Android
+signing key on the first build and reuses it, so each APK installs over the
+last; download it once with `eas credentials -p android` and keep it with the
+other keystores. The profile has its own channel because its name is part of
+`extra` and so of the fingerprint: an update meant for these phones is
+`operation: update` with `profile: github`, which publishes with EAS's
+`production` environment, the one the profile builds with.
 
 A submit also needs the end-to-end suite: the release workflow refuses it unless
 the newest finished run of `.eas/workflows/e2e.yml` succeeded within the last 48
@@ -781,7 +795,7 @@ unrelated catalogue key leaves the fingerprint alone, and an edit to
 `app.config.ts` fails that check until it is added to the ignore file.
 
 Nothing publishes one on merge. Run **Mobile release** by hand with
-`operation: update`, the channel (`preview` or `production`), a rollout
+`operation: update`, the channel (`preview`, `production` or `github`), a rollout
 percentage (default 10) and a message. Widen or finish a rollout afterwards with
 `eas update:edit` (or publish again at 100). The job exports the channel's
 `eas.json` build environment and passes `--environment <channel>` first: `extra`
