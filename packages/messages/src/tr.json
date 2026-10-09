@@ -5607,6 +5607,13 @@
       "banner": "İnternet bağlantısı yok. Bağlantı geri gelene kadar gördükleriniz güncel olmayabilir.",
       "nothingCached": "Bu cihazda henüz hiçbir şey saklanmadı, bu yüzden çevrimdışı gösterilecek bir şey yok."
     },
+    "update": {
+      "title": "Yeni sürüm hazır",
+      "description": "IdeyaNest güncellendi. Yeni sürümü hemen kullanmak için uygulamayı yeniden başlatın. Başlatmazsanız yeni sürüm, uygulamayı bir sonraki açışınızda açılır.",
+      "restart": "Şimdi yeniden başlat",
+      "later": "Sonra",
+      "failed": "Uygulama yeniden başlatılamadı. Güncellemeyi tamamlamak için kapatıp yeniden açın."
+    },
     "nav": {
       "back": "Geri"
     },

@@ -5607,6 +5607,13 @@
       "banner": "No internet connection. Until it is back, what you see may be out of date.",
       "nothingCached": "Nothing was cached on this device yet, so there is nothing to show offline."
     },
+    "update": {
+      "title": "A new version is ready",
+      "description": "IdeyaNest has been updated. Restart to use the new version now, or it will open the next time you start the app.",
+      "restart": "Restart now",
+      "later": "Later",
+      "failed": "The app could not restart. Close it and open it again to finish the update."
+    },
     "nav": {
       "back": "Back"
     },

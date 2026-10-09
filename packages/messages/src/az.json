@@ -5607,6 +5607,13 @@
       "banner": "İnternet bağlantısı yoxdur. Bağlantı bərpa olunana qədər gördükləriniz köhnəlmiş ola bilər.",
       "nothingCached": "Bu cihazda hələ heç nə saxlanmayıb, ona görə internetsiz göstəriləcək bir şey yoxdur."
     },
+    "update": {
+      "title": "Yeni versiya hazırdır",
+      "description": "IdeyaNest yeniləndi. Yeni versiyadan indi istifadə etmək üçün tətbiqi yenidən başladın. Başlatmasanız, yeni versiya tətbiqi növbəti dəfə açanda işə düşəcək.",
+      "restart": "İndi yenidən başlat",
+      "later": "Sonra",
+      "failed": "Tətbiq yenidən başlaya bilmədi. Yeniləməni tamamlamaq üçün onu bağlayıb yenidən açın."
+    },
     "nav": {
       "back": "Geri"
     },
