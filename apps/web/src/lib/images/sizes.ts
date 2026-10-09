@@ -75,14 +75,13 @@ export function sizesFor(stops: readonly SizeStop[]): string {
  * The discovery grid's card cover.
  *
  * `DiscoveryView`: `mx-auto w-full max-w-[1400px] px-5 sm:px-6`, and the grid is
- * `grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3` — two columns on a phone since #339. Tailwind's
- * `sm` is 640px and `xl` is 1280px, `gap-3` is 12px and `gap-4` 16px, `px-5` is 20px a side
- * and `px-6` is 24.
+ * `grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3`. Tailwind's `sm` is 640px
+ * and `xl` is 1280px, `gap-4` is 16px, `px-5` is 20px a side and `px-6` is 24.
  *
  *   ≥1400: the container stops growing — (1400 − 48 − 32) / 3 = 440px
  *   ≥1280: three columns      — (100vw − 48 − 32) / 3
  *    ≥640: two columns        — (100vw − 48 − 16) / 2
- *    else: two columns, gap-3 — (100vw − 40 − 12) / 2
+ *    else: one column         —  100vw − 40
  *
  * The widest this ever asks for is 440 CSS pixels, so a 2× display wants 880 and
  * a 3× display 1320. Nothing on this surface has any use for the 2048 and 3840
@@ -90,17 +89,6 @@ export function sizesFor(stops: readonly SizeStop[]): string {
  * 1440.
  */
 export const DISCOVERY_CARD_SIZES = sizesFor([
-  { minWidth: 1400, size: '440px' },
-  { minWidth: 1280, size: 'calc((100vw - 80px) / 3)' },
-  { minWidth: 640, size: 'calc(50vw - 32px)' },
-  { size: 'calc(50vw - 26px)' },
-]);
-
-/**
- * A collection card in `CollectionIndex`: the discovery grid's widths from `sm` up, and one
- * column below it — collections stayed full-width on a phone when campaigns went to two (#339).
- */
-export const COLLECTION_CARD_SIZES = /*#__PURE__*/ sizesFor([
   { minWidth: 1400, size: '440px' },
   { minWidth: 1280, size: 'calc((100vw - 80px) / 3)' },
   { minWidth: 640, size: 'calc(50vw - 32px)' },
@@ -132,8 +120,10 @@ export const PRELAUNCH_COVER_SIZES = sizesFor([
  *    ≥640: one column, `px-6`    — 100vw − 48
  *    else: one column, `px-5`    — 100vw − 40
  *
- * THE INDEX'S CARDS ARE NOT HERE. `CollectionCard` takes `COLLECTION_CARD_SIZES`, the discovery
- * grid's widths except on a phone, where collections stay one column.
+ * THE INDEX'S CARDS ARE NOT HERE. `CollectionCard` sits in the same three-column grid as the
+ * discovery feed's, at the same container width and the same gap, so it takes
+ * `DISCOVERY_CARD_SIZES` rather than a second constant describing the identical layout — two
+ * strings for one grid is one string that stops matching it.
  */
 export const COLLECTION_COVER_SIZES = sizesFor([
   { minWidth: 1024, size: '560px' },
