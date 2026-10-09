@@ -38,16 +38,16 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: Build binaries with EAS Build, or publish an over-the-air update with EAS Update
+        description: Build binaries with EAS Build, publish an over-the-air update with EAS Update, or put an Android APK on GitHub Releases
         required: true
         type: choice
-        options: [build, update]
+        options: [build, update, github-release]
         default: build
       profile:
-        description: Which eas.json build profile to build, or which channel to update (the names are the same)
+        description: Which eas.json build profile to build, or which channel to update (the names are the same). github-release always builds github
         required: true
         type: choice
-        options: [preview, production]
+        options: [preview, production, github]
       submit:
         description: "build only: submit the finished build to the stores"
         required: false
@@ -98,6 +98,12 @@ jobs:
     timeout-minutes: 30
     environment: mobile
     steps:
+      - name: Refuse the GitHub profile
+        if: inputs.profile == 'github'
+        run: |
+          echo "::error::The github profile is built by operation github-release, which also publishes the APK."
+          exit 1
+
       - uses: actions/checkout@v7
         with:
           # `eas.json` sets `requireCommit`, so the build is identified by the
@@ -285,12 +291,14 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           CHANNEL: ${{ inputs.profile }}
+          # EAS has three environments; the github channel's builds use production's (eas.json).
+          ENVIRONMENT: ${{ inputs.profile == 'github' && 'production' || inputs.profile }}
           ROLLOUT: ${{ inputs.rollout }}
           MESSAGE: ${{ inputs.message || format('Update from {0}', github.sha) }}
         run: >-
           pnpm dlx eas-cli@latest update
           --channel "$CHANNEL"
-          --environment "$CHANNEL"
+          --environment "$ENVIRONMENT"
           --rollout-percentage "$ROLLOUT"
           --message "$MESSAGE"
           --non-interactive
@@ -317,3 +325,120 @@ jobs:
           fi
           if [ -z "$SENTRY_URL" ]; then unset SENTRY_URL; fi
           pnpm exec sentry-expo-upload-sourcemaps dist
+
+  # An installable Android APK on the repository's Releases page.
+  #
+  # Until the app is in Google Play, this is how somebody outside the team
+  # installs it: download the APK from the release and open it. It is the
+  # `github` profile, which is production in every way that matters (the
+  # production API, crash reporting, updates switched on) except that it is an
+  # APK rather than a store bundle and listens on its own `github` channel.
+  # It is its own channel because the profile name is part of `extra`, and so
+  # part of the fingerprint: a production update would never match it. Publish
+  # an over-the-air update to it with `operation: update`, `profile: github`.
+  #
+  # EAS holds the signing key: the first build generates it, every later one
+  # reuses it, so a newer APK installs over an older one.
+  #
+  # The tag is `android-v<version>-<versionCode>`, never `v*`: `release.yml`
+  # deploys production on a `v*` tag, and an APK must not do that.
+  github-release:
+    name: Android APK on GitHub Releases
+    if: inputs.operation == 'github-release'
+    runs-on: ubuntu-latest
+    needs: check
+    timeout-minutes: 60
+    environment: mobile
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Export the profile's environment
+        run: node apps/mobile/scripts/eas-profile-env.mjs github android >> "$GITHUB_ENV"
+
+      - name: Say so and stop when EAS is not configured
+        id: eas
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::notice::EXPO_TOKEN is not set; no APK was built. See apps/mobile/README.md."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build the APK
+        id: build
+        if: steps.eas.outputs.configured == 'true'
+        working-directory: apps/mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          pnpm dlx eas-cli@latest build --platform android --profile github \
+            --non-interactive --wait --json > "$RUNNER_TEMP/build.json"
+          node -e '
+            const [build] = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+            const url = build?.artifacts?.buildUrl;
+            if (build?.status !== "FINISHED" || !url) {
+              console.error(`::error::The EAS build did not finish with an APK (status ${build?.status}).`);
+              process.exit(1);
+            }
+            const out = [`url=${url}`, `version=${build.appVersion}`, `code=${build.appBuildVersion}`, `id=${build.id}`];
+            require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, out.join("\n") + "\n");
+          ' "$RUNNER_TEMP/build.json"
+
+      - name: Download the APK and its checksum
+        if: steps.eas.outputs.configured == 'true'
+        env:
+          URL: ${{ steps.build.outputs.url }}
+          VERSION: ${{ steps.build.outputs.version }}
+          CODE: ${{ steps.build.outputs.code }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/release"
+          cd "$RUNNER_TEMP/release"
+          curl --fail --silent --show-error --location --retry 3 "$URL" -o "ideanest-$VERSION-$CODE.apk"
+          sha256sum "ideanest-$VERSION-$CODE.apk" > "ideanest-$VERSION-$CODE.apk.sha256"
+
+      - name: Publish the release
+        if: steps.eas.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.build.outputs.version }}
+          CODE: ${{ steps.build.outputs.code }}
+          BUILD_ID: ${{ steps.build.outputs.id }}
+        run: |
+          tag="android-v$VERSION-$CODE"
+          {
+            echo "IdeyaNest for Android $VERSION (build $CODE), from $GITHUB_SHA."
+            echo
+            echo "**Install:** download \`ideanest-$VERSION-$CODE.apk\` on the phone and open it. Android asks once to allow installs from the browser or file manager. A newer APK installs over this one."
+            echo
+            echo "**Updates:** JavaScript changes arrive over the air and the app offers a restart when one is ready. A change to native code needs a new APK from this page."
+            echo
+            echo "SHA-256: \`$(cut -d' ' -f1 "$RUNNER_TEMP/release/ideanest-$VERSION-$CODE.apk.sha256")\` · EAS build \`$BUILD_ID\`"
+          } > "$RUNNER_TEMP/notes.md"
+          # What changed since the previous APK; the first one lists nothing rather than every pull request ever.
+          previous=$(git tag --list 'android-v*' --sort=-creatordate | head -n 1)
+          generated=()
+          if [ -n "$previous" ]; then generated=(--generate-notes --notes-start-tag "$previous"); fi
+          gh release create "$tag" "$RUNNER_TEMP"/release/* \
+            --target "$GITHUB_SHA" \
+            --title "IdeyaNest for Android $VERSION ($CODE)" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            "${generated[@]}"

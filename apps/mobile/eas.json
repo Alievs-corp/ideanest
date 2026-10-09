@@ -59,6 +59,17 @@
         "IDEANEST_API_ORIGIN": "https://api.ideyanest.com"
       },
       "android": { "buildType": "app-bundle" }
+    },
+    "github": {
+      "extends": "base",
+      "distribution": "internal",
+      "channel": "github",
+      "environment": "production",
+      "autoIncrement": true,
+      "env": {
+        "IDEANEST_API_ORIGIN": "https://api.ideyanest.com"
+      },
+      "android": { "buildType": "apk" }
     }
   },
   "submit": {
