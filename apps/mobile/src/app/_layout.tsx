@@ -21,6 +21,7 @@ import { startAppLock } from '../lib/app-lock';
 import { LockGate } from '../features/lock/lock-screen';
 import { AccountSync } from '../lib/account-sync';
 import { PushSync } from '../lib/push-sync';
+import { UpdatePrompt } from '../components/update-prompt';
 import { AppIntlProvider } from '../lib/i18n';
 import { colors } from '../theme';
 
@@ -211,6 +212,8 @@ export default function RootLayout() {
             <AccountSync />
             <PushSync siteHost={host} onOpen={go} />
             <OfflineAnnouncer />
+            {/* A downloaded over-the-air update, offered once it is one tap away (`lib/app-update.ts`). */}
+            <UpdatePrompt />
             {/* The page a white sheet rises over scales back under it (`ui/sheet.tsx`, #277). */}
             {/* Card → page flights are drawn above everything (`ui/shared-transition.tsx`, #279). */}
             <LockGate>

@@ -789,6 +789,17 @@ is part of the fingerprint, so an update evaluated with different variables
 would carry the wrong API origin and match no build. With no
 `IDEANEST_EAS_PROJECT_ID`, the job says so and publishes nothing.
 
+**How a phone takes one.** `checkAutomatically: 'ON_LOAD'` stays: every cold
+start checks natively, before any JavaScript runs, and downloads in the
+background, which is how a fix for a bundle that crashes on launch arrives.
+`lib/app-update.ts` adds a check each time the app returns to the foreground, at
+most once per 15 minutes, and downloads what it finds. Once an update is on the
+phone, `components/update-prompt.tsx` offers it in a `Dialog`: **Restart now**
+reloads into it at once; **Later** hides the offer for that update, and the next
+cold start launches it anyway. The offer waits while the reader is on checkout,
+in the campaign editor or on the shipping-address form, where a restart would
+lose their work, and behind the app lock.
+
 ### Icons, splash and the Play feature graphic
 
 Every image is rendered by `scripts/generate-assets.mjs` from the brand mark the
