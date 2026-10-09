@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  COLLECTION_CARD_SIZES,
-  DISCOVERY_CARD_SIZES,
-  PRELAUNCH_COVER_SIZES,
-  sizesFor,
-} from './sizes';
+import { DISCOVERY_CARD_SIZES, PRELAUNCH_COVER_SIZES, sizesFor } from './sizes';
 
 /**
  * `sizes` decides how many bytes every visitor downloads and it is checked by
@@ -69,18 +64,8 @@ describe('sizesFor', () => {
  */
 describe('the derived attributes', () => {
   it('describes the discovery grid', () => {
-    // max-w-[1400px] px-5 sm:px-6, grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3
-    expect(DISCOVERY_CARD_SIZES).toBe(
-      '(min-width: 1400px) 440px, ' +
-        '(min-width: 1280px) calc((100vw - 80px) / 3), ' +
-        '(min-width: 640px) calc(50vw - 32px), ' +
-        'calc(50vw - 26px)',
-    );
-  });
-
-  it('describes the collection index, which stays one column on a phone', () => {
     // max-w-[1400px] px-5 sm:px-6, grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3
-    expect(COLLECTION_CARD_SIZES).toBe(
+    expect(DISCOVERY_CARD_SIZES).toBe(
       '(min-width: 1400px) 440px, ' +
         '(min-width: 1280px) calc((100vw - 80px) / 3), ' +
         '(min-width: 640px) calc(50vw - 32px), ' +

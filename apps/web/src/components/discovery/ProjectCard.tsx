@@ -37,8 +37,8 @@ import { pluralise } from '../../lib/i18n/plurals';
  * `@ideanest/discovery/category-look`, the table the app reads too — so a games
  * campaign is the same colour in a browser and on a phone. The accent is
  * decoration and never a meaning: the text on it is `--text-on-accent`, every
- * tag is an icon and a word, and the focus ring turns near-black under
- * `data-on-accent`. docs/ui-kit.md §8.2.
+ * tag is the near-black `onAccent` skin with an icon and a word, and the focus
+ * ring turns near-black under `data-on-accent`. docs/ui-kit.md §8.2.
  *
  * LIME IS THE URGENCY BADGE, NOT THE CARD. docs/ui-kit.md §8.1 maps "closing
  * within 48 hours" to a lime card, and §1.1 says exactly one card in a row is
@@ -81,10 +81,9 @@ const URGENT_DAYS = 2;
 /**
  * The status words' icons. The words themselves are `discovery.card.badges`.
  *
- * Every tag is the near-black `onAccent` skin, and on a phone a solid neutral one over the cover:
- * `--success` green on mint, `--warning` amber on sun and either over a photograph are illegible
- * as text. The icon and the word carry the status, which is what §9.2 asks of them anyway — a
- * tick for successful, never lime (§2.4).
+ * On an accent card every tag is the near-black `onAccent` skin: `--success` green on mint and
+ * `--warning` amber on sun are both under 2:1, illegible as text. The icon and the word carry the
+ * status, which is what §9.2 asks of them anyway — a tick for successful, never lime (§2.4).
  * `extended` is a filter word the service never sends as a badge (an extended campaign badges as
  * `live`); it is here because the record is keyed by every status, and it matches the tag below.
  */
@@ -102,10 +101,6 @@ const BADGES: Record<DiscoveryStatus, ReactNode> = {
  * last-48-hours countdown. Each is an icon plus a word, so colour never carries the meaning alone.
  */
 const CLOSING_SOON: ReactNode = <Hourglass className="size-3" />;
-
-/** The tag's phone skin: smaller, and solid where it lies over the cover. */
-const TAG =
-  'gap-1.5 max-sm:h-5 max-sm:gap-1 max-sm:bg-surface-1/85 max-sm:px-1.5 max-sm:text-[10px] max-sm:text-white';
 const EXTENDED: ReactNode = <CalendarPlus className="size-3" />;
 
 /**
@@ -125,16 +120,6 @@ function completionOf(card: ProjectCardData): Decimal | null {
     // A malformed percentage is a card without a progress bar, not a crash.
     return null;
   }
-}
-
-/**
- * The completion as a bare percentage in the reader's language — "50%", or "%50" in Turkish —
- * for the phone card. From the decimal's own rounding; the number made here is only for display.
- */
-function percentOf(completion: Decimal, locale: Locale): string {
-  return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 }).format(
-    Number(completion.toFixed(0)) / 100,
-  );
 }
 
 /**
@@ -193,7 +178,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
   return (
     <article
       data-on-accent=""
-      className={`group relative flex flex-col rounded-lg p-1.5 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 sm:rounded-xl sm:p-3 ${ACCENT_SURFACE[accent]}`}
+      className={`group relative flex flex-col rounded-xl p-3 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
     >
       {/*
         HOVER LIFTS THE CARD AND LEANS INTO THE COVER (#341): a 4px rise and a 5%
@@ -201,59 +186,51 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
         run once per pointer move and never while it rests. Keyboard focus gets
         the same rise. Behind `motion-safe:`, and Tailwind's `hover:` only
         applies on a device that can hover, so a tap never leaves a card raised.
-
-        TWO CARDS, ONE COMPONENT (#343). From `sm` up this is the full card:
-        16:9 cover, tags above the title, every line at its reading size. Below
-        `sm` two of them share a phone's width, and every `max-sm:` class below
-        is the phone card — a 5:2 cover strip with the tags laid over it, a step
-        smaller type, and the creator and the goal left to the campaign page so
-        the card is about 30% shorter than it first was. The rule beside the bar
-        (#44), the figures and the counts are on both.
       */}
       {/*
         Inset in the accent card with its own rounded corners, as the app
         draws it (docs/ui-kit.md §8.2).
 
         THE BOX IS RESERVED WHETHER OR NOT THERE IS A COVER. `MediaFrame` sets
-        the crop before anything loads, so a card with a cover and a card
+        the 16:9 crop before anything loads, so a card with a cover and a card
         without one are the same height and the grid below never moves. A
         campaign with no cover gets that reserved surface rather than a broken
         image or a stock graphic that says nothing.
+
+        THE CROP TOKEN, NOT THE INTRINSIC SIZE. Every cover is cut to 16:9 here
+        whatever shape it was uploaded in, so the reservation is the crop. The
+        recorded width and height belong to the picture, not to this box.
 
         ALT IS EMPTY BY DECISION. The title is the next element and it is the
         link; a description of the cover would be a second announcement of the
         same campaign, and there is nothing this component could invent that
         the creator did not write.
       */}
-      <div className="relative">
-        <MediaFrame ratio="16/9" radius="lg" className="max-sm:aspect-[5/2]! max-sm:rounded-md">
-          {card.image != null && (
-            <Image
-              src={card.image.url}
-              alt=""
-              fill
-              sizes={DISCOVERY_CARD_SIZES}
-              /*
-               * An address on a host the optimiser will not fetch is served as
-               * it is rather than thrown over. `next/image` raises on a URL no
-               * remote pattern matches, and a raised render in a server
-               * component blanks the whole feed — one creator's typo must not be
-               * able to do that. See `lib/images/source.ts`.
-               */
-              unoptimized={!canOptimise(card.image.url)}
-              priority={priority}
-              className="object-cover transition-transform duration-500 ease-in-out motion-safe:group-hover:scale-105"
-            />
-          )}
-        </MediaFrame>
+      <MediaFrame ratio="16/9" radius="lg">
+        {card.image != null && (
+          <Image
+            src={card.image.url}
+            alt=""
+            fill
+            sizes={DISCOVERY_CARD_SIZES}
+            /*
+             * An address on a host the optimiser will not fetch is served as
+             * it is rather than thrown over. `next/image` raises on a URL no
+             * remote pattern matches, and a raised render in a server
+             * component blanks the whole feed — one creator's typo must not be
+             * able to do that. See `lib/images/source.ts`.
+             */
+            unoptimized={!canOptimise(card.image.url)}
+            priority={priority}
+            className="object-cover transition-transform duration-500 ease-in-out motion-safe:group-hover:scale-105"
+          />
+        )}
+      </MediaFrame>
 
-        {/*
-          Below the cover from `sm` up; laid over it on a phone, in a solid
-          neutral skin, because a tint vanishes over a busy photograph.
-        */}
-        <div className="flex flex-wrap items-center gap-2 max-sm:absolute max-sm:inset-x-1 max-sm:top-1 max-sm:gap-1 sm:mt-4 sm:px-2">
+      <div className="flex flex-1 flex-col gap-3 px-2 pt-4 pb-2">
+        <div className="flex flex-wrap items-center gap-2">
           {badge !== null && (
-            <Tag variant="onAccent" className={TAG}>
+            <Tag variant="onAccent" className="gap-1.5">
               <span aria-hidden="true" className="flex items-center">
                 {badge}
               </span>
@@ -262,7 +239,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           )}
 
           {card.extended === true && (
-            <Tag variant="onAccent" className={TAG}>
+            <Tag variant="onAccent" className="gap-1.5">
               <span aria-hidden="true" className="flex items-center">
                 {EXTENDED}
               </span>
@@ -271,7 +248,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           )}
 
           {card.closingSoon === true && (
-            <Tag variant="onAccent" className={TAG}>
+            <Tag variant="onAccent" className="gap-1.5">
               <span aria-hidden="true" className="flex items-center">
                 {CLOSING_SOON}
               </span>
@@ -289,17 +266,15 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
             */
             <span
               data-on-lime=""
-              className="inline-flex h-[26px] items-center gap-1.5 rounded-sm bg-lime-500 px-2.5 text-xs font-medium text-on-lime max-sm:h-5 max-sm:gap-1 max-sm:px-1.5 max-sm:text-[10px]"
+              className="inline-flex h-[26px] items-center gap-1.5 rounded-sm bg-lime-500 px-2.5 text-xs font-medium text-on-lime"
             >
               <Clock aria-hidden="true" className="size-3" />
               {daysLeftLabel(days, copy, locale)}
             </span>
           )}
         </div>
-      </div>
 
-      <div className="flex flex-1 flex-col gap-3 px-2 pt-3 pb-2 max-sm:gap-1 max-sm:px-1 max-sm:pt-1.5 max-sm:pb-0.5">
-        <h3 className="text-lg font-medium tracking-[-0.02em] text-on-accent max-sm:line-clamp-2 max-sm:text-[13px] max-sm:leading-snug max-sm:tracking-[-0.01em]">
+        <h3 className="text-lg font-medium tracking-[-0.02em] text-on-accent">
           {/*
             The whole card is reachable through this one link rather than
             through three — a stretched anchor keeps the pointer target the size
@@ -314,14 +289,14 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           </Link>
         </h3>
 
-        <p className="text-sm text-on-accent/72 max-sm:hidden">
+        <p className="text-sm text-on-accent/72">
           {fillNodes(copy.by, {
-            creator: <span className="text-on-accent">{card.creator.name}</span>,
+            creator: <span className="font-medium text-on-accent">{card.creator.name}</span>,
           })}
         </p>
 
         {completion !== null ? (
-          <div className="mt-auto flex flex-col gap-2 pt-2 max-sm:gap-1 max-sm:pt-0.5">
+          <div className="mt-auto flex flex-col gap-2 pt-2">
             <ProgressBar
               value={
                 /*
@@ -333,19 +308,12 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               }
               label={fillPlaceholders(copy.progressLabel, { percent: completion.toFixed(0) })}
             />
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm max-sm:flex-nowrap max-sm:gap-x-1.5 max-sm:text-xs">
-              <span className="font-medium text-on-accent tabular-nums max-sm:truncate">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
+              <span className="font-medium text-on-accent tabular-nums">
                 {formatMoney(card.pledged)}
               </span>
-              {/*
-                The sentence from `sm` up; the bare percentage on a phone, where
-                "funded" does not fit beside the amount and the bar already says it.
-              */}
-              <span className="text-on-accent/72 tabular-nums max-sm:hidden">
+              <span className="text-on-accent/72 tabular-nums">
                 {fillPlaceholders(copy.funded, { percent: completion.toFixed(0) })}
-              </span>
-              <span className="shrink-0 text-on-accent/72 tabular-nums sm:hidden">
-                {percentOf(completion, locale)}
               </span>
             </div>
             {/*
@@ -354,20 +322,20 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               track: a mark at 80% would be a second meaning the bar carries in colour and
               position alone (ui-kit §9.2), and the discovery budget allows no motion to explain it.
             */}
-            <p className="text-xs text-on-accent/72 max-sm:text-[10px] max-sm:leading-tight">{copy.rule}</p>
+            <p className="text-xs text-on-accent/72">{copy.rule}</p>
             {card.goal != null && (
-              <p className="text-xs text-on-accent/72 tabular-nums max-sm:hidden">
+              <p className="text-xs text-on-accent/72 tabular-nums">
                 {fillPlaceholders(copy.ofGoal, { amount: formatMoney(card.goal) })}
               </p>
             )}
           </div>
         ) : (
-          <p className="mt-auto pt-2 text-sm text-on-accent/72 max-sm:pt-0 max-sm:text-xs">{copy.notOpen}</p>
+          <p className="mt-auto pt-2 text-sm text-on-accent/72">{copy.notOpen}</p>
         )}
 
-        <div className="flex flex-wrap items-center gap-4 text-xs text-on-accent/72 max-sm:gap-x-2 max-sm:gap-y-0.5 max-sm:text-[10px]">
-          <span className="inline-flex items-center gap-1.5 max-sm:gap-1">
-            <Users aria-hidden="true" className="size-3.5 max-sm:hidden" />
+        <div className="flex items-center gap-4 text-xs text-on-accent/72">
+          <span className="inline-flex items-center gap-1.5">
+            <Users aria-hidden="true" className="size-3.5" />
             <span className="tabular-nums">
               {pluralise(locale, copy.backers, card.backersCount)}
             </span>
@@ -379,8 +347,8 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
             only on the urgent ones.
           */}
           {!urgent && showDays && days !== null && (
-            <span className="inline-flex items-center gap-1.5 max-sm:gap-1">
-              <Clock aria-hidden="true" className="size-3.5 max-sm:hidden" />
+            <span className="inline-flex items-center gap-1.5">
+              <Clock aria-hidden="true" className="size-3.5" />
               <span className="tabular-nums">{daysLeftLabel(days, copy, locale)}</span>
             </span>
           )}

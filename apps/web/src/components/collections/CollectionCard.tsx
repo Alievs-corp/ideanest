@@ -9,7 +9,7 @@ import {
   type Collection,
   type CollectionKind,
 } from '../../lib/collections/api';
-import { COLLECTION_CARD_SIZES } from '../../lib/images/sizes';
+import { DISCOVERY_CARD_SIZES } from '../../lib/images/sizes';
 import { canOptimise } from '../../lib/images/source';
 import type { CollectionCardCopy } from '../../lib/i18n/collection-copy';
 import type { Locale } from '../../lib/i18n/locale';
@@ -106,7 +106,7 @@ export function CollectionCard({
             src={collection.image.url}
             alt=""
             fill
-            sizes={COLLECTION_CARD_SIZES}
+            sizes={DISCOVERY_CARD_SIZES}
             /*
              * An address the optimiser will not fetch is served as it is rather than thrown
              * over. `next/image` raises on a URL no remote pattern matches, and a raised
