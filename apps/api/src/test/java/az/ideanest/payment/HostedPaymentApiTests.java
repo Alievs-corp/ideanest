@@ -12,6 +12,7 @@ import az.ideanest.support.PaymentRows;
 import az.ideanest.support.ScriptedPaymentProvider;
 import az.ideanest.support.ScriptedWebhooks;
 import az.ideanest.user.infrastructure.UserRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -74,6 +75,9 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private HostedChargeSweepJob sweep;
+
+    @Autowired
+    private MeterRegistry meters;
 
     /**
      * The deliveries this suite made. ProviderWebhookApiTests reads that table as its own, and a row
@@ -180,10 +184,13 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
         Checkout checkout = aDraft("hosted-swept");
         String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
         provider.willLookUp(transaction, PaymentLookup.State.SUCCEEDED);
+        double before = swept("collected");
 
         sweep.sweep(Instant.now().plus(Duration.ofMinutes(20)));
 
         assertThat(state(checkout.pledgeId())).isEqualTo("COLLECTED");
+        // #356: a callback that never came is counted, so a wrong callback address shows up.
+        assertThat(swept("collected") - before).isGreaterThanOrEqualTo(1d);
         assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "SUCCEEDED");
         assertThat(totals(checkout.projectId())).isEqualTo(new Totals(new BigDecimal("25.00"), 1));
 
@@ -200,9 +207,11 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
         Checkout checkout = aDraft("hosted-swept-failed");
         String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
         provider.willLookUp(transaction, PaymentLookup.State.FAILED);
+        double before = swept("failed");
 
         sweep.sweep(Instant.now().plus(Duration.ofMinutes(20)));
 
+        assertThat(swept("failed") - before).isGreaterThanOrEqualTo(1d);
         assertThat(state(checkout.pledgeId())).isEqualTo("DRAFT");
         assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "FAILED");
         assertThat(totals(checkout.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
@@ -245,6 +254,28 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
         assertThat(state(checkout.pledgeId())).isEqualTo("DRAFT");
         assertThat(charges(checkout.pledgeId())).containsExactly("PENDING");
         assertThat(lastCheck(pendingCharge(checkout.pledgeId()))).containsExactly("RETURNED");
+        // #356: and the gauge the alert reads says so.
+        assertThat(attention("returned")).isGreaterThanOrEqualTo(1d);
+    }
+
+    @Test
+    @DisplayName("#356: a page whose provider cannot be asked is published as needing attention")
+    void anUnanswerablePageIsPublished() {
+        Checkout checkout = aDraft("hosted-swept-unanswered");
+        pay(checkout, UUID.randomUUID().toString());
+        // A charge taken through a provider with no adapter here — a primary switched away from.
+        UUID charge = pendingCharge(checkout.pledgeId());
+        jdbc().execute("ALTER TABLE transactions DISABLE TRIGGER USER");
+        try {
+            jdbc().update("UPDATE transactions SET provider = 'EPOINT' WHERE id = ?", charge);
+        } finally {
+            jdbc().execute("ALTER TABLE transactions ENABLE TRIGGER USER");
+        }
+
+        sweep.sweep(Instant.now().plus(Duration.ofMinutes(20)));
+
+        assertThat(lastCheck(charge)).containsExactly("UNANSWERED");
+        assertThat(attention("unanswered")).isGreaterThanOrEqualTo(1d);
     }
 
     @Test
@@ -476,6 +507,14 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
     private List<String> lastCheck(UUID charge) {
         return jdbc().queryForList(
                 "SELECT last_state FROM hosted_charge_checks WHERE transaction_id = ?", String.class, charge);
+    }
+
+    private double swept(String outcome) {
+        return meters.get("ideanest.payment.hosted.sweep.settled").tag("outcome", outcome).counter().count();
+    }
+
+    private double attention(String reason) {
+        return meters.get("ideanest.payment.hosted.attention").tag("reason", reason).gauge().value();
     }
 
     private JdbcTemplate jdbc() {
