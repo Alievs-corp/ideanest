@@ -142,6 +142,18 @@ public class ReturnUrls {
         check("errorUrl", errorUrl);
     }
 
+    /**
+     * The site's own origin, for a person who comes back from a provider with no usable address — #359.
+     * Empty when no origin is configured.
+     */
+    public java.util.Optional<URI> home() {
+        return allowed.stream().findFirst().map(origin -> {
+            boolean defaultPort = ("https".equals(origin.scheme()) && origin.port() == 443)
+                    || ("http".equals(origin.scheme()) && origin.port() == 80);
+            return URI.create(origin.scheme() + "://" + origin.host() + (defaultPort ? "" : ":" + origin.port()) + "/");
+        });
+    }
+
     /** Whether this address may be handed to a provider. Null is: the field is optional. */
     public boolean accepts(URI url) {
         if (url == null) {

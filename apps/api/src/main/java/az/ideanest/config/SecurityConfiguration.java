@@ -555,11 +555,14 @@ public class SecurityConfiguration {
                         // read. §17.2 adds a timestamp check against replay and
                         // V43's unique index makes a redelivery do nothing twice.
                         //
-                        // POST and one path, not a prefix. A GET here would be a
-                        // way to ask which providers the platform has adapters
-                        // for, and there is no reason for the endpoint to answer
-                        // anything but a delivery.
+                        // One path, not a prefix. POST is the delivery. GET is #359's
+                        // return: Payriff sends the backer's browser to the callback
+                        // address, and the controller answers 303 to a checked site
+                        // address — the same for every provider name, so it cannot be
+                        // used to ask which providers the platform has adapters for.
                         .requestMatchers(HttpMethod.POST, "/v1/webhooks/psp/*")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/webhooks/psp/*")
                         .permitAll()
                         // #243's local sandbox card page, temporary. A browser arrives
                         // here from a redirect and carries no bearer token, exactly as it

@@ -26,6 +26,9 @@ import az.ideanest.payment.domain.WebhookVerificationException;
 import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -170,14 +173,12 @@ public class PayriffPaymentProvider implements PaymentProvider {
         body.put("language", language(request.language()));
         body.put("operation", "PURCHASE");
         putIfPresent(body, "description", request.description());
-        body.put("callbackUrl", settings.callbackUrl());
-        // One return address: the page it lands on asks what the payment came to, so success and
-        // failure need not be told apart by the address.
-        putIfPresent(body, "redirectUrl", request.successUrl());
+        body.put("callbackUrl", callbackFor(request.successUrl()));
         body.put("cardSave", false);
 
         JsonNode payload = requireSuccess(
-                exchange(post("/orders", body).header("X-REQUEST-RRN", request.idempotencyKey()), "begin a payment"),
+                exchange(post("/orders", body).header("X-REQUEST-RRN", requestRrn(request.idempotencyKey())),
+                        "begin a payment"),
                 "begin a payment");
         String orderId = text(payload, "orderId");
         String paymentUrl = text(payload, "paymentUrl");
@@ -393,6 +394,34 @@ public class PayriffPaymentProvider implements PaymentProvider {
             throw unavailable("Payriff answered a request to " + what + " with no payload.");
         }
         return payload;
+    }
+
+    /**
+     * #359: Payriff sends the backer's browser to the callback address too — a GET, after 3-D Secure —
+     * and ignores {@code redirectUrl}. It keeps the address's query on both the POST and the GET, so the
+     * return address rides along and {@code ProviderWebhookController} sends the browser on to it. One
+     * address and not two, because the page it lands on asks what the payment came to.
+     */
+    private String callbackFor(URI successUrl) {
+        if (successUrl == null) {
+            return settings.callbackUrl();
+        }
+        String separator = settings.callbackUrl().contains("?") ? "&" : "?";
+        return settings.callbackUrl() + separator + "return="
+                + URLEncoder.encode(successUrl.toString(), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * #359: Payriff answers {@code 15000 Internal Error} to an {@code X-REQUEST-RRN} that is not a UUID.
+     * A pledge's key is one; a raise's ({@code pledge-raise-…}) is not, and becomes the name-based UUID
+     * of the key — the same for every retry, so a repeated request still names the same order.
+     */
+    private static String requestRrn(String idempotencyKey) {
+        try {
+            return UUID.fromString(idempotencyKey).toString();
+        } catch (IllegalArgumentException notAUuid) {
+            return UUID.nameUUIDFromBytes(idempotencyKey.getBytes(StandardCharsets.UTF_8)).toString();
+        }
     }
 
     private String language(String requested) {

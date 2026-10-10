@@ -73,10 +73,11 @@ class PayriffPaymentProviderTests {
     @DisplayName("an order is JSON with the decimal amount, the secret key unprefixed and the idempotency key as its RRN")
     void anOrderCarriesTheDecimalAndTheKey() throws Exception {
         AtomicReference<String> sent = new AtomicReference<>();
+        String key = "6f1c2a9e-3b7d-4c8e-9a0b-1d2e3f4a5b6c";
         Wire wire = new Wire();
         wire.expect(HttpMethod.POST, "/orders")
                 .andExpect(header("Authorization", SECRET))
-                .andExpect(header("X-REQUEST-RRN", "key-1"))
+                .andExpect(header("X-REQUEST-RRN", key))
                 .andExpect(request -> sent.set(((MockClientHttpRequest) request).getBodyAsString()))
                 .andRespond(withSuccess("""
                         {"code":"00000","message":"Created","payload":{"orderId":"ord-1",
@@ -90,7 +91,7 @@ class PayriffPaymentProviderTests {
                 "en",
                 URI.create("https://ideanest.az/back?payment=returned"),
                 URI.create("https://ideanest.az/back?payment=failed"),
-                "key-1"));
+                key));
 
         assertThat(session.providerTransactionId()).isEqualTo("ord-1");
         assertThat(session.redirectUrl()).hasToString("https://pay.payriff.com/ord-1");
@@ -100,10 +101,49 @@ class PayriffPaymentProviderTests {
         assertThat(body.get("currency").asString()).isEqualTo("AZN");
         assertThat(body.get("language").asString()).isEqualTo("EN");
         assertThat(body.get("operation").asString()).isEqualTo("PURCHASE");
-        assertThat(body.get("callbackUrl").asString()).isEqualTo(CALLBACK);
-        assertThat(body.get("redirectUrl").asString()).isEqualTo("https://ideanest.az/back?payment=returned");
+        // #359: Payriff sends the browser to the callback and ignores redirectUrl, so the return rides on it.
+        assertThat(body.get("callbackUrl").asString())
+                .isEqualTo(CALLBACK + "?return=https%3A%2F%2Fideanest.az%2Fback%3Fpayment%3Dreturned");
+        assertThat(body.has("redirectUrl")).isFalse();
         assertThat(body.get("cardSave").asBoolean()).isFalse();
         wire.verify();
+    }
+
+    @Test
+    @DisplayName("#359: a key that is not a UUID goes as a UUID derived from it, the same on every retry")
+    void aNonUuidKeyBecomesAStableUuid() {
+        String raiseKey = "pledge-raise-6f1c2a9e-3b7d-4c8e-9a0b-1d2e3f4a5b6c";
+        String derived = UUID.nameUUIDFromBytes(raiseKey.getBytes(StandardCharsets.UTF_8)).toString();
+        Wire wire = new Wire();
+        for (int attempt = 0; attempt < 2; attempt++) {
+            wire.expect(HttpMethod.POST, "/orders")
+                    .andExpect(header("X-REQUEST-RRN", derived))
+                    .andRespond(withSuccess("""
+                            {"code":"00000","payload":{"orderId":"ord-2","paymentUrl":"https://pay.payriff.com/ord-2"}}
+                            """, MediaType.APPLICATION_JSON));
+        }
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            wire.adapter().beginHostedPayment(new HostedPaymentRequest(
+                    UUID.randomUUID(), Money.of(new BigDecimal("5.00"), "AZN"), null, null, null, null, raiseKey));
+        }
+        wire.verify();
+    }
+
+    @Test
+    @DisplayName("#359: with no return address the callback goes as configured")
+    void noReturnAddressLeavesTheCallbackAlone() throws Exception {
+        AtomicReference<String> sent = new AtomicReference<>();
+        Wire wire = new Wire();
+        wire.expect(HttpMethod.POST, "/orders")
+                .andExpect(request -> sent.set(((MockClientHttpRequest) request).getBodyAsString()))
+                .andRespond(withSuccess("""
+                        {"code":"00000","payload":{"orderId":"ord-3","paymentUrl":"https://pay.payriff.com/ord-3"}}
+                        """, MediaType.APPLICATION_JSON));
+
+        wire.adapter().beginHostedPayment(payment());
+
+        assertThat(JSON.readTree(sent.get()).get("callbackUrl").asString()).isEqualTo(CALLBACK);
     }
 
     @Test

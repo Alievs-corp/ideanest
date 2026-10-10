@@ -2,7 +2,9 @@ package az.ideanest.payment.api;
 
 import az.ideanest.payment.application.ProviderWebhooks;
 import az.ideanest.payment.application.WebhookReceipt;
+import az.ideanest.shared.payment.ReturnUrls;
 import jakarta.servlet.http.HttpServletRequest;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -12,9 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -70,9 +74,47 @@ public class ProviderWebhookController {
     private static final Logger log = LoggerFactory.getLogger(ProviderWebhookController.class);
 
     private final ProviderWebhooks webhooks;
+    private final ReturnUrls returnUrls;
 
-    public ProviderWebhookController(ProviderWebhooks webhooks) {
+    public ProviderWebhookController(ProviderWebhooks webhooks, ReturnUrls returnUrls) {
         this.webhooks = webhooks;
+        this.returnUrls = returnUrls;
+    }
+
+    /**
+     * Sends a person's browser back to the site — #359.
+     *
+     * <p>Payriff sends the backer to the order's callback address after 3-D Secure, with a GET, and
+     * ignores the return address it was given. The adapter puts that address on the callback as
+     * {@code return}, and this answers 303 to it — but only when {@link ReturnUrls} accepts it, so the
+     * endpoint is not an open redirect; anything else goes to the site's own origin.
+     *
+     * <p><strong>The same answer for every provider name</strong>, configured or not, and no body: a
+     * GET here must not become a way to ask which providers the platform has adapters for. It reads
+     * nothing and changes nothing; the payment is settled by the POST, or by #353's sweep.
+     */
+    @GetMapping("/v1/webhooks/psp/{provider}")
+    public ResponseEntity<Void> returnToSite(
+            @PathVariable("provider") String provider, @RequestParam(name = "return", required = false) String back) {
+        URI target = parse(back);
+        if (target == null || !returnUrls.accepts(target)) {
+            target = returnUrls.home().orElse(null);
+        }
+        if (target == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.status(HttpStatus.SEE_OTHER).location(target).build();
+    }
+
+    private static URI parse(String address) {
+        if (address == null || address.isBlank()) {
+            return null;
+        }
+        try {
+            return URI.create(address.trim());
+        } catch (IllegalArgumentException unreadable) {
+            return null;
+        }
     }
 
     /**
