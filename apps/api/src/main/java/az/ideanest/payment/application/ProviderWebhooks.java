@@ -20,8 +20,9 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * §9.3's R-07 and §17.2: verify a provider's delivery, refuse a replay, and act on it
@@ -79,17 +80,21 @@ public class ProviderWebhooks {
             new EnumMap<>(PaymentEventType.class);
     private final Duration tolerance;
     private final Clock clock;
+    private final TransactionTemplate transaction;
 
     public ProviderWebhooks(
             PaymentProviders providers,
             ProviderWebhookEventRepository deliveries,
             List<PaymentEventHandler> discovered,
             PaymentProperties properties,
-            Clock clock) {
+            Clock clock,
+            PlatformTransactionManager transactions) {
         this.providers = providers;
         this.deliveries = deliveries;
         this.tolerance = properties.webhooks().tolerance();
         this.clock = clock;
+        this.transaction = new TransactionTemplate(transactions);
+        this.transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 
         for (PaymentEventHandler handler : discovered) {
             for (PaymentEventType type : handler.handles()) {
@@ -101,9 +106,15 @@ public class ProviderWebhooks {
     /**
      * Verifies, deduplicates and processes one delivery.
      *
-     * <p>{@link Propagation#REQUIRES_NEW} rather than the default, so that the boundary
-     * is stated rather than inherited: the transaction has to be exactly the delivery and
-     * its effect, and a caller that already had one open would silently widen it.
+     * <p>A new transaction rather than the caller's, so that the boundary is stated rather
+     * than inherited: the transaction has to be exactly the delivery and its effect, and a
+     * caller that already had one open would silently widen it.
+     *
+     * <p><strong>The adapter verifies before the transaction opens</strong> (#351). Payriff
+     * signs nothing, so its adapter verifies a delivery by asking Payriff about the order; an
+     * unauthenticated request that held a database connection for the length of a call to
+     * another service could empty the pool. Verification touches no table, so nothing is
+     * lost by doing it first.
      *
      * @param providerSlug the {@code {provider}} path segment, however it was capitalised
      * @param rawBody the request body exactly as it arrived. <strong>Bytes</strong>: a
@@ -117,7 +128,6 @@ public class ProviderWebhooks {
      * @throws WebhookVerificationException when the signature does not verify, the body
      *     cannot be read, or the timestamp is outside the tolerance
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public WebhookReceipt receive(String providerSlug, byte[] rawBody, Map<String, String> headers) {
         ProviderName name = ProviderName.of(providerSlug);
 
@@ -131,6 +141,10 @@ public class ProviderWebhooks {
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         refuseReplay(event, now);
 
+        return transaction.execute(status -> record(name, event, now));
+    }
+
+    private WebhookReceipt record(ProviderName name, PaymentEvent event, Instant now) {
         // Not the deduplication -- V43's unique index is -- but the answer for the
         // ordinary redelivery, which arrives seconds later rather than concurrently. It
         // keeps that case from provoking a constraint violation and a rolled back

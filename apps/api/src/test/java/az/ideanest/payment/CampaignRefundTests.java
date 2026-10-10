@@ -265,7 +265,7 @@ class CampaignRefundTests extends AbstractIntegrationTest {
                 {"id":"evt-%s","type":"charge_succeeded","providerTransactionId":"%s"}"""
                 .formatted(UUID.randomUUID(), transaction);
         assertThat(rest.exchange(
-                                "/v1/webhooks/psp/payriff",
+                                "/v1/webhooks/psp/azericard",
                                 HttpMethod.POST,
                                 new HttpEntity<>(delivery.getBytes(), headers),
                                 String.class)

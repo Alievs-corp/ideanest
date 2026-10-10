@@ -35,7 +35,7 @@ public class ScriptedStoredCards implements StoredCards {
         // between attempts would hide a bug rather than reveal one.
         return Optional.of(new StoredCard(
                 UUID.nameUUIDFromBytes(("card:" + pledgeId).getBytes(java.nio.charset.StandardCharsets.UTF_8)),
-                ProviderName.PAYRIFF,
+                ProviderName.AZERICARD,
                 "tok_" + pledgeId,
                 "scheme_" + pledgeId));
     }

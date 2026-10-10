@@ -4116,6 +4116,34 @@ single-file change.
 > transaction, status and operation code, and deduplication rather than a replay window is
 > what refuses a repeat.
 >
+> **The second adapter: Payriff (#351, the owner's choice of 2026-10-10).**
+> `PayriffPaymentProvider` speaks Gateway API v3: JSON authenticated by the application's secret
+> key in `Authorization`, every answer an envelope whose `code` must be `00000` (Payriff reports
+> some refusals with HTTP 200). `beginHostedPayment` is `POST /orders` (`PURCHASE`, the
+> idempotency key as `X-REQUEST-RRN`, the order id is the provider transaction id),
+> `lookUpPayment` is `GET /orders/{orderId}` (`REFUND_IN_PROGRESS` is pending, never paid, so a
+> refund in flight is not settled as failed), `refund` is `POST /refund`, in part or in full and
+> without duplicate protection, like Epoint's; `00000` is recorded as approved although the money
+> may still be on its way back, as with Epoint's `/reverse`. **Payriff signs no callback**, so
+> `parseWebhook` takes only the order id from the body and builds the event from
+> `GET /orders/{orderId}` asked with the secret key. `ProviderWebhooks` therefore verifies before
+> it opens the delivery's transaction, so an unauthenticated request never holds a database
+> connection across a call to Payriff, and the adapter's client has a 5 s connect and 30 s read
+> timeout. An order Payriff answers 404 for is a verification failure (400); an order still
+> undecided, or a lookup Payriff refuses or fails, is a provider unavailable (500), so Payriff
+> sends the callback again rather than the only news of a payment being recorded and dropped.
+> AZN, USD and EUR. Payouts refuse: Payriff's `/payout` takes a card number, name and FIN, which
+> SAQ A does not allow, and #352 decides. Configured as `primary: PAYRIFF` with
+> `ideanest.payment.payriff.{base-url,secret-key,callback-url,language}`; the callback URL must be
+> https. A Payriff application in Development status is the sandbox — same base URL, test cards
+> only — listed in `apps/api/README.md`.
+>
+> **Only the primary provider has an adapter.** Each adapter is conditional on
+> `provider.primary`, so naming PAYRIFF switches Epoint's off: Epoint's callbacks are then
+> refused as an unconfigured provider, and a refund of a charge taken through Epoint cannot be
+> sent. Switch only while no Epoint charge can still need either. A secondary, refund-only
+> adapter is the change that would lift this.
+>
 > **Return addresses are the site's, not the caller's (#139).** `POST /v1/pledges/{id}/payment`
 > and `POST /v1/me/payout-destination/card-registration` take a `successUrl` and an `errorUrl`
 > from the caller, and Epoint redirects the person to them from its own page

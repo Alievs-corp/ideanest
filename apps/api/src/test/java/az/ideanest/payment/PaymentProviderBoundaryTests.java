@@ -66,10 +66,13 @@ class PaymentProviderBoundaryTests {
      * {@code SandboxPaymentProvider} until Epoint's keys are in place. It registers a payout
      * card and moves no money, refuses to start outside the {@code local} and {@code test}
      * profiles, and goes — with its name here — when Epoint is configured.
+     *
+     * <p><strong>The second real adapter, Payriff's (#351).</strong> The owner chose Payriff on
+     * 2026-10-10; it takes payments on its own page and refunds, and refuses payouts until #352.
      */
     @Test
-    @DisplayName("IDN-EXT-01: the only payment provider adapters are Epoint's and the local sandbox (#243)")
-    void onlyEpointShips() {
+    @DisplayName("IDN-EXT-01: the only payment provider adapters are Epoint's, Payriff's and the local sandbox (#243)")
+    void onlyTheRealAdaptersShip() {
         List<String> implementations = PRODUCTION_CLASSES.stream()
                 .filter(candidate -> candidate.isAssignableTo(PaymentProvider.class))
                 .filter(candidate -> !candidate.isInterface())
@@ -84,6 +87,7 @@ class PaymentProviderBoundaryTests {
                         String.join(", ", implementations))
                 .containsExactlyInAnyOrder(
                         "az.ideanest.payment.infrastructure.EpointPaymentProvider",
+                        "az.ideanest.payment.infrastructure.PayriffPaymentProvider",
                         "az.ideanest.payment.infrastructure.SandboxPaymentProvider");
     }
 

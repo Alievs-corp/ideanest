@@ -20,7 +20,8 @@ public record PaymentProperties(
         Webhooks webhooks,
         Reconciliation reconciliation,
         Epoint epoint,
-        Refunds refunds) {
+        Refunds refunds,
+        Payriff payriff) {
 
     public PaymentProperties {
         // A deployment that configures none of these still starts, for ProjectProperties'
@@ -34,6 +35,7 @@ public record PaymentProperties(
         reconciliation = reconciliation == null ? Reconciliation.defaults() : reconciliation;
         epoint = epoint == null ? Epoint.defaults() : epoint;
         refunds = refunds == null ? Refunds.defaults() : refunds;
+        payriff = payriff == null ? Payriff.defaults() : payriff;
     }
 
     /**
@@ -79,6 +81,46 @@ public record PaymentProperties(
         public String toString() {
             return "Epoint[baseUrl=" + baseUrl + ", publicKey=" + publicKey + ", privateKey=<redacted>, language="
                     + language + "]";
+        }
+    }
+
+    /**
+     * The Payriff adapter, Gateway API v3 — #351.
+     *
+     * <p>Used only when {@code provider.primary} is {@code PAYRIFF}, and then the secret key and an
+     * https callback address are required at start-up. A Payriff application in Development status
+     * is the sandbox: the same base URL, test cards only.
+     *
+     * @param baseUrl Payriff's v3 root, {@code https://api.payriff.com/api/v3}
+     * @param secretKey the application's secret key, sent as {@code Authorization}. Never printed
+     * @param callbackUrl where Payriff posts an order's news: this service's
+     *     {@code /v1/webhooks/psp/payriff}
+     * @param language the payment page's language when a request names none: az, en or ru
+     */
+    public record Payriff(String baseUrl, String secretKey, String callbackUrl, String language) {
+
+        private static final String DEFAULT_BASE_URL = "https://api.payriff.com/api/v3";
+
+        public static Payriff defaults() {
+            return new Payriff(DEFAULT_BASE_URL, "", "", "az");
+        }
+
+        public Payriff {
+            baseUrl = baseUrl == null || baseUrl.isBlank() ? DEFAULT_BASE_URL : baseUrl.trim();
+            secretKey = secretKey == null ? "" : secretKey.trim();
+            callbackUrl = callbackUrl == null ? "" : callbackUrl.trim();
+            language = language == null || language.isBlank() ? "az" : language.trim();
+        }
+
+        public boolean isComplete() {
+            return !secretKey.isBlank() && !callbackUrl.isBlank();
+        }
+
+        /** A record prints every component, and the secret key would reach a log with it. */
+        @Override
+        public String toString() {
+            return "Payriff[baseUrl=" + baseUrl + ", secretKey=<redacted>, callbackUrl=" + callbackUrl
+                    + ", language=" + language + "]";
         }
     }
 

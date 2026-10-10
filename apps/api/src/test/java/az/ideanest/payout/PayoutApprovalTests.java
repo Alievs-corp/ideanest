@@ -226,7 +226,7 @@ class PayoutApprovalTests {
                 UUID.randomUUID(),
                 UUID.randomUUID(),
                 UUID.randomUUID(),
-                ProviderName.PAYRIFF,
+                ProviderName.AZERICARD,
                 "case-1",
                 HUNDRED,
                 FIVE,

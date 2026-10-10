@@ -210,7 +210,7 @@ class CollectionTests extends AbstractIntegrationTest {
         Map<String, Object> transaction = onlyTransactionFor(pledgeId);
         assertThat(transaction.get("type")).isEqualTo("CHARGE");
         assertThat(transaction.get("status")).isEqualTo("SUCCEEDED");
-        assertThat(transaction.get("provider")).isEqualTo(ProviderName.PAYRIFF.name());
+        assertThat(transaction.get("provider")).isEqualTo(ProviderName.AZERICARD.name());
         assertThat(transaction.get("attempt_number")).isEqualTo(1);
         assertThat((BigDecimal) transaction.get("amount")).isEqualByComparingTo("120.00");
         assertThat((String) transaction.get("provider_transaction_id")).startsWith("scripted-");
@@ -549,7 +549,7 @@ class CollectionTests extends AbstractIntegrationTest {
         processor.collect(now());
 
         assertThat(provider.chargeCount()).as("all three were attempted").isEqualTo(3);
-        assertThat(breaker.isOpen(ProviderName.PAYRIFF)).isFalse();
+        assertThat(breaker.isOpen(ProviderName.AZERICARD)).isFalse();
     }
 
     @Test
@@ -565,7 +565,7 @@ class CollectionTests extends AbstractIntegrationTest {
         // two passes are what it takes, which is also what would happen in production.
         processor.collect(at);
         processor.collect(at);
-        assertThat(breaker.isOpen(ProviderName.PAYRIFF)).isTrue();
+        assertThat(breaker.isOpen(ProviderName.AZERICARD)).isTrue();
 
         int before = provider.chargeCount();
         processor.collect(at);

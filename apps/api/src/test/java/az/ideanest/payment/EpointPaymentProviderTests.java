@@ -298,7 +298,7 @@ class EpointPaymentProviderTests {
         PaymentProperties incomplete = new PaymentProperties(
                 new PaymentProperties.Provider("EPOINT"), null, null, null, null,
                 new PaymentProperties.Epoint(BASE, PUBLIC, "", "az"),
-                null);
+                null, null);
         assertThatThrownBy(() -> new EpointPaymentProvider(RestClient.builder(), incomplete, JSON))
                 .isInstanceOf(IllegalStateException.class);
 
@@ -313,7 +313,7 @@ class EpointPaymentProviderTests {
         return new PaymentProperties(
                 new PaymentProperties.Provider("EPOINT"), null, null, null, null,
                 new PaymentProperties.Epoint(BASE, PUBLIC, PRIVATE, "az"),
-                null);
+                null, null);
     }
 
     private static EpointPaymentProvider adapter() {

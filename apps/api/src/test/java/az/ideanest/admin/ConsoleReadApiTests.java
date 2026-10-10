@@ -649,7 +649,7 @@ class ConsoleReadApiTests extends AbstractIntegrationTest {
                         INSERT INTO transactions (id, pledge_id, project_id, type, status, amount, currency,
                                                   provider, provider_transaction_id, failure_code, failure_message,
                                                   attempt_number, idempotency_key)
-                        VALUES (?, ?, ?, 'CHARGE', ?, CAST(? AS numeric), 'AZN', 'PAYRIFF', ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, 'CHARGE', ?, CAST(? AS numeric), 'AZN', 'AZERICARD', ?, ?, ?, ?, ?)
                         """,
                         id,
                         fixture.pledgeId(),

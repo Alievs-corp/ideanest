@@ -47,6 +47,43 @@ configured — and it refuses to start outside the `local` and `test` profiles.
 Set `PAYMENT_PROVIDER=EPOINT` with its keys to use Epoint instead. It is removed
 once Epoint is configured.
 
+### Payments through the Payriff sandbox (#351)
+
+A Payriff application in **Development** status is the sandbox: the same API,
+`https://api.payriff.com/api/v3`, accepting only test cards and moving no
+money. Production is the same configuration with a live application's key.
+
+1. In the Payriff dashboard, create an application (it starts in Development)
+   and copy its secret key.
+2. Expose the API over https so Payriff can post callbacks — for example
+   `cloudflared tunnel --url http://localhost:8080`. Without a tunnel the
+   payment page still opens, but no payment is ever settled, because
+   settlement arrives only by callback.
+3. Start the API with:
+
+   ```bash
+   PAYMENT_PROVIDER=PAYRIFF
+   PAYRIFF_SECRET_KEY=<the application's secret key>
+   PAYRIFF_CALLBACK_URL=https://<tunnel host>/v1/webhooks/psp/payriff
+   ```
+
+4. Back a campaign and pay on Payriff's page with a test card:
+
+| Brand | Number | Expiry | CVV | 3-D Secure code |
+|---|---|---|---|---|
+| VISA | `4000 0075 4601 2078` | 04/29 | 893 | 123456 |
+| Mastercard | `5100 0073 4601 3947` | 04/29 | 783 | 123456 |
+
+Holder name: any (`Test Test`). Source: Payriff's developer documentation,
+"Using Test Cards to Test Payments", read 2026-10-10. These cards work only on
+an application in Development status.
+
+Payriff does not sign its callbacks. The adapter therefore uses a callback only
+for its order id and builds the event from `GET /orders/{orderId}`, asked with
+the secret key — a forged callback costs one lookup. Payouts through Payriff
+refuse until #352 decides how a creator is paid without the platform handling a
+card number.
+
 ---
 
 ## The creator's financial summary

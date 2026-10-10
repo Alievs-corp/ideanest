@@ -244,7 +244,7 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
                 paid.pledgeId(),
                 paid.projectId(),
                 Money.of(new BigDecimal("25.00"), "AZN"),
-                ProviderName.PAYRIFF,
+                ProviderName.AZERICARD,
                 new RefundResult(ProviderOutcome.APPROVED, "case-" + UUID.randomUUID(), null, null, null),
                 "dispute-" + dispute));
 
@@ -513,7 +513,7 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
                 {"id":"evt-%s","type":"charge_succeeded","providerTransactionId":"%s"}"""
                 .formatted(UUID.randomUUID(), transaction);
         assertThat(rest.exchange(
-                                "/v1/webhooks/psp/payriff",
+                                "/v1/webhooks/psp/azericard",
                                 HttpMethod.POST,
                                 new HttpEntity<>(delivery.getBytes(), headers),
                                 String.class)
@@ -529,7 +529,7 @@ class RefundSafetyApiTests extends AbstractIntegrationTest {
 
     private UUID chargeback(Paid paid, String amount) {
         return disputes.notified(
-                        ProviderName.PAYRIFF,
+                        ProviderName.AZERICARD,
                         "case-" + UUID.randomUUID(),
                         paid.chargeId(),
                         Money.of(new BigDecimal(amount), "AZN"),

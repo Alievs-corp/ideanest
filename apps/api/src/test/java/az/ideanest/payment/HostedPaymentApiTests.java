@@ -330,7 +330,7 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         ScriptedWebhooks.headers().forEach(headers::add);
         return rest.exchange(
-                "/v1/webhooks/psp/payriff", HttpMethod.POST, new HttpEntity<>(body.getBytes(), headers), String.class);
+                "/v1/webhooks/psp/azericard", HttpMethod.POST, new HttpEntity<>(body.getBytes(), headers), String.class);
     }
 
     private Account account(String prefix) {

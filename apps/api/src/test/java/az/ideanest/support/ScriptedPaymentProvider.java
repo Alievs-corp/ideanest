@@ -66,12 +66,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ScriptedPaymentProvider implements PaymentProvider {
 
     /**
-     * Payriff, because §9.3 lists it first and the test profile names it. The value is
+     * Azericard, because it is in §9.3 and has no real adapter that would claim the name
+     * (#351 gave Payriff one). The test profile names it. The value is
      * arbitrary and the fact that it is fixed is not: it is stored on every
      * {@code transactions} row a test writes, and a provider that varied would make those
      * rows unassertable.
      */
-    private static final ProviderName NAME = ProviderName.PAYRIFF;
+    private static final ProviderName NAME = ProviderName.AZERICARD;
 
     /**
      * Both collections are concurrent, because {@code CollectionLoadTests} drives

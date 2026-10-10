@@ -296,7 +296,7 @@ class ReturnUrlsTests {
         @DisplayName("loopback only on a developer's machine or in the test suite: quiet")
         void loopbackOnlyInDevelopmentIsQuiet() {
             MockEnvironment developer = new MockEnvironment();
-            MockEnvironment testSuite = new MockEnvironment().withProperty("ideanest.payment.provider.primary", "PAYRIFF");
+            MockEnvironment testSuite = new MockEnvironment().withProperty("ideanest.payment.provider.primary", "AZERICARD");
             testSuite.setActiveProfiles("test");
             MockEnvironment localWithSandboxKeys =
                     new MockEnvironment().withProperty("ideanest.payment.provider.primary", "EPOINT");

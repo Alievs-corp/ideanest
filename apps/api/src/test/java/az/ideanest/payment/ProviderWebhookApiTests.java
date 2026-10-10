@@ -47,7 +47,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 class ProviderWebhookApiTests extends AbstractIntegrationTest {
 
-    private static final String ENDPOINT = "/v1/webhooks/psp/payriff";
+    private static final String ENDPOINT = "/v1/webhooks/psp/azericard";
 
     @Autowired
     private TestRestTemplate http;

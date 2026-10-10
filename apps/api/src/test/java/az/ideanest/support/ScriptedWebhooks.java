@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  *
  * <p>Separate from {@link ScriptedPaymentProvider} so that a test can <em>build</em> a
  * delivery with {@link #body} and {@link #headers} without holding the provider bean,
- * which is what an end-to-end test posting to {@code /v1/webhooks/psp/payriff} needs.
+ * which is what an end-to-end test posting to {@code /v1/webhooks/psp/azericard} needs.
  *
  * <h2>The format, and why it is this simple</h2>
  *

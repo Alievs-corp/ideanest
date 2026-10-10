@@ -291,7 +291,7 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
         String delivery = """
                 {"id":"evt-%s","type":"charge_succeeded","providerTransactionId":"%s"}"""
                 .formatted(UUID.randomUUID(), transaction);
-        rest.exchange("/v1/webhooks/psp/payriff", HttpMethod.POST, new HttpEntity<>(delivery.getBytes(), headers), String.class);
+        rest.exchange("/v1/webhooks/psp/azericard", HttpMethod.POST, new HttpEntity<>(delivery.getBytes(), headers), String.class);
     }
 
     private ResponseEntity<Map<String, Object>> dispute(Backer backer) {

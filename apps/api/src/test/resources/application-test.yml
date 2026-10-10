@@ -275,7 +275,7 @@ ideanest:
       # how the whole of #61, #64, #65 and #66 is exercised while #60 remains
       # unanswered. A deployed environment leaves this empty and collects nothing --
       # see application.yml.
-      primary: PAYRIFF
+      primary: AZERICARD
     return-urls:
       # The suite's site origin is the local default (http://localhost:3000). Production's
       # origin beside it, so the tests can send the addresses the web really sends there and

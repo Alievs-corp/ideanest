@@ -723,7 +723,7 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
                 UUID.class,
                 paid.pledgeId());
         UUID dispute = disputes.notified(
-                        ProviderName.PAYRIFF,
+                        ProviderName.AZERICARD,
                         "case-" + UUID.randomUUID(),
                         raiseCharge,
                         Money.of(new BigDecimal("55.00"), "AZN"),
@@ -1310,7 +1310,7 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
                 paid.pledgeId(),
                 paid.projectId(),
                 Money.of(new BigDecimal("55.00"), "AZN"),
-                ProviderName.PAYRIFF,
+                ProviderName.AZERICARD,
                 new ChargeResult(
                         ProviderOutcome.APPROVED, (String) opened.getBody().get("providerTransactionId"), null, null, "{}"),
                 1,
@@ -1440,7 +1440,7 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         ScriptedWebhooks.headers().forEach(headers::add);
         return rest.exchange(
-                "/v1/webhooks/psp/payriff", HttpMethod.POST, new HttpEntity<>(body.getBytes(), headers), String.class);
+                "/v1/webhooks/psp/azericard", HttpMethod.POST, new HttpEntity<>(body.getBytes(), headers), String.class);
     }
 
     private Account account(String prefix) {
