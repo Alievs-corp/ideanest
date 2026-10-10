@@ -88,7 +88,7 @@ What the sandbox showed on 2026-10-10 (#359):
   one lookup.
 - After 3-D Secure, Payriff sends the backer's **browser** to the callback
   address with a GET and ignores `redirectUrl`. The adapter puts the return
-  address on the callback as `?return=…`, and `GET /v1/webhooks/psp/{provider}`
+  address on the callback as `?return=` (base64url, because Payriff decodes the query once on the way), and `GET /v1/webhooks/psp/{provider}`
   answers 303 to it when it is on the site, or to the site otherwise.
 - `X-REQUEST-RRN` must be a UUID; anything else is `15000 Internal Error`.
 - A refund reads `REFUNDED` at once, and no callback is sent for it.

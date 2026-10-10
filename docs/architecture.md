@@ -4141,7 +4141,7 @@ single-file change.
 > **What the sandbox showed (#359, 2026-10-10).** After 3-D Secure Payriff sends the backer's
 > browser to the order's *callback* address with a GET and ignores `redirectUrl`, keeping the
 > address's query on both the POST and the GET. So the adapter puts the return address on the
-> callback as `?return=…`, and `GET /v1/webhooks/psp/{provider}` answers 303 to it when
+> callback as `?return=` in base64url (Payriff decodes the query once before the GET), and `GET /v1/webhooks/psp/{provider}` answers 303 to it when
 > `ReturnUrls` accepts it and to the site's origin otherwise — the same answer for every provider
 > name, so the GET reveals no adapter. `X-REQUEST-RRN` must be a UUID (anything else is
 > `15000 Internal Error`), so a key that is not one — a raise's `pledge-raise-…` — goes as the

@@ -9,6 +9,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -36,6 +37,30 @@ class ProviderReturnApiTests extends AbstractIntegrationTest {
 
         assertThat(answer.statusCode()).isEqualTo(303);
         assertThat(answer.headers().firstValue("location")).contains(back);
+    }
+
+    @Test
+    @DisplayName("an address with several parameters arrives whole, as the native app's return needs")
+    void severalParametersSurvive() throws Exception {
+        String back = "http://localhost:3000/en/pledges/x?payment=returned&via=app";
+
+        HttpResponse<Void> answer = get("payriff", back);
+
+        assertThat(answer.headers().firstValue("location")).contains(back);
+    }
+
+    @Test
+    @DisplayName("a return that is not base64url, as an attacker would write it, goes to the site")
+    void aPlainAddressIsNotTrusted() throws Exception {
+        String query = "?return=" + URLEncoder.encode("http://localhost:3000/en/x", StandardCharsets.UTF_8);
+        HttpResponse<Void> answer = browser.send(
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/v1/webhooks/psp/payriff" + query))
+                        .GET()
+                        .build(),
+                HttpResponse.BodyHandlers.discarding());
+
+        assertThat(answer.statusCode()).isEqualTo(303);
+        assertThat(answer.headers().firstValue("location")).contains(SITE);
     }
 
     @Test
@@ -72,7 +97,9 @@ class ProviderReturnApiTests extends AbstractIntegrationTest {
     }
 
     private HttpResponse<Void> get(String provider, String back) throws Exception {
-        String query = back == null ? "" : "?return=" + URLEncoder.encode(back, StandardCharsets.UTF_8);
+        String query = back == null
+                ? ""
+                : "?return=" + Base64.getUrlEncoder().withoutPadding().encodeToString(back.getBytes(StandardCharsets.UTF_8));
         HttpRequest request = HttpRequest.newBuilder(
                         URI.create("http://localhost:" + port + "/v1/webhooks/psp/" + provider + query))
                 .GET()

@@ -5,6 +5,8 @@ import az.ideanest.payment.application.WebhookReceipt;
 import az.ideanest.shared.payment.ReturnUrls;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -86,7 +88,8 @@ public class ProviderWebhookController {
      *
      * <p>Payriff sends the backer to the order's callback address after 3-D Secure, with a GET, and
      * ignores the return address it was given. The adapter puts that address on the callback as
-     * {@code return}, and this answers 303 to it — but only when {@link ReturnUrls} accepts it, so the
+     * {@code return}, base64url-encoded because Payriff decodes the query once on the way, and this
+     * answers 303 to it — but only when {@link ReturnUrls} accepts it, so the
      * endpoint is not an open redirect; anything else goes to the site's own origin.
      *
      * <p><strong>The same answer for every provider name</strong>, configured or not, and no body: a
@@ -106,12 +109,13 @@ public class ProviderWebhookController {
         return ResponseEntity.status(HttpStatus.SEE_OTHER).location(target).build();
     }
 
-    private static URI parse(String address) {
-        if (address == null || address.isBlank()) {
+    private static URI parse(String encoded) {
+        if (encoded == null || encoded.isBlank()) {
             return null;
         }
         try {
-            return URI.create(address.trim());
+            String address = new String(Base64.getUrlDecoder().decode(encoded.trim()), StandardCharsets.UTF_8);
+            return URI.create(address);
         } catch (IllegalArgumentException unreadable) {
             return null;
         }

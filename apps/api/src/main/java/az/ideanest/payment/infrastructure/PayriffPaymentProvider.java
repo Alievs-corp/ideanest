@@ -26,7 +26,7 @@ import az.ideanest.payment.domain.WebhookVerificationException;
 import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.net.URLEncoder;
+import java.util.Base64;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.net.http.HttpClient;
@@ -401,6 +401,11 @@ public class PayriffPaymentProvider implements PaymentProvider {
      * and ignores {@code redirectUrl}. It keeps the address's query on both the POST and the GET, so the
      * return address rides along and {@code ProviderWebhookController} sends the browser on to it. One
      * address and not two, because the page it lands on asks what the payment came to.
+     *
+     * <p><strong>Base64url, not percent-encoding.</strong> Payriff decodes the query once before the
+     * browser's GET, so a percent-encoded {@code ?payment=returned&via=app} would arrive with
+     * {@code via=app} split off as a parameter of its own — the native app's return. Base64url has no
+     * character anything decodes.
      */
     private String callbackFor(URI successUrl) {
         if (successUrl == null) {
@@ -408,7 +413,7 @@ public class PayriffPaymentProvider implements PaymentProvider {
         }
         String separator = settings.callbackUrl().contains("?") ? "&" : "?";
         return settings.callbackUrl() + separator + "return="
-                + URLEncoder.encode(successUrl.toString(), StandardCharsets.UTF_8);
+                + Base64.getUrlEncoder().withoutPadding().encodeToString(successUrl.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     /**

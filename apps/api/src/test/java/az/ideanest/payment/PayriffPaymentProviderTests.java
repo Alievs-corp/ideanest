@@ -27,6 +27,7 @@ import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -102,8 +103,10 @@ class PayriffPaymentProviderTests {
         assertThat(body.get("language").asString()).isEqualTo("EN");
         assertThat(body.get("operation").asString()).isEqualTo("PURCHASE");
         // #359: Payriff sends the browser to the callback and ignores redirectUrl, so the return rides on it.
-        assertThat(body.get("callbackUrl").asString())
-                .isEqualTo(CALLBACK + "?return=https%3A%2F%2Fideanest.az%2Fback%3Fpayment%3Dreturned");
+        String carried = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString("https://ideanest.az/back?payment=returned".getBytes(StandardCharsets.UTF_8));
+        assertThat(body.get("callbackUrl").asString()).isEqualTo(CALLBACK + "?return=" + carried);
+        assertThat(carried).matches("[A-Za-z0-9_-]+");
         assertThat(body.has("redirectUrl")).isFalse();
         assertThat(body.get("cardSave").asBoolean()).isFalse();
         wire.verify();
