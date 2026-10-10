@@ -114,6 +114,14 @@ pages rather than redirecting must be added. Every refusal is logged at WARN wit
 the field and the host (never the full address), which is where a missing host
 shows up.
 
+**Payriff (#351).** `PAYMENT_PROVIDER=PAYRIFF` needs `PAYRIFF_SECRET_KEY` (a
+Coolify secret, never in the repository) and `PAYRIFF_CALLBACK_URL`, the API's
+public `https://<api host>/v1/webhooks/psp/payriff`; either missing, or a callback
+that is not https, stops the API starting. Staging uses a Payriff application in
+**Development** status — Payriff's sandbox, test cards only, listed in
+`apps/api/README.md` — and production a live application's key; nothing else
+differs. Payouts refuse under Payriff until #352.
+
 `IDEANEST_API_ORIGIN` is **not** baked in. It is read at request time by the
 proxy and by the server reads, so one API image and one web image run against
 staging and production alike.

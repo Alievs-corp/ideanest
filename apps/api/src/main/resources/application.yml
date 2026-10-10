@@ -695,6 +695,19 @@ ideanest:
       private-key: ${EPOINT_PRIVATE_KEY:}
       # The payment page's language when a request names none: az, en or ru.
       language: ${EPOINT_LANGUAGE:az}
+    # #351: the Payriff adapter, Gateway API v3, used when `provider.primary` is PAYRIFF. The
+    # owner chose Payriff (2026-10-10). Naming PAYRIFF without the secret key and an https
+    # callback URL is a start-up failure. A Payriff application in Development status IS the
+    # sandbox -- same base URL, test cards only (apps/api/README.md lists them) -- so sandbox
+    # and production differ only by which application's key is set here.
+    payriff:
+      base-url: ${PAYRIFF_BASE_URL:https://api.payriff.com/api/v3}
+      secret-key: ${PAYRIFF_SECRET_KEY:}
+      # Where Payriff posts an order's news: this service's /v1/webhooks/psp/payriff, public
+      # and https. Locally that means a tunnel, or no payment is ever settled.
+      callback-url: ${PAYRIFF_CALLBACK_URL:}
+      # The payment page's language when a request names none: az, en or ru.
+      language: ${PAYRIFF_LANGUAGE:az}
     # Issue #139: where a provider may send a person back to. `successUrl` and `errorUrl` on
     # the payment and payout-card endpoints come from the caller, and the provider redirects
     # to them from its own page -- unchecked, an open redirect running through checkout. So an

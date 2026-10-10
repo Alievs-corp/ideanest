@@ -269,7 +269,9 @@ These are tracked as issues and block real design decisions:
   pledge time, refunded with `/reverse`, and creators are paid to a registered
   business card. Still to confirm with Epoint: how long `/reverse` stays available
   after a payment (believed to be about 120 days), and the limits on payouts to a
-  card.
+  card. Payriff is integrated beside it (#351) for payments and refunds, with a
+  sandbox; how creators are paid through Payriff without the platform handling
+  card numbers is open (#352).
 - **Holding third-party funds.** Backers' money now sits on the platform's account
   from the pledge until a withdrawal or refund, up to about 120 days — which makes
   the payment services licence question sharper, not smaller.
