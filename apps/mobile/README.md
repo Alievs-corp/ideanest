@@ -748,6 +748,17 @@ other keystores. The profile has its own channel because its name is part of
 `operation: update` with `profile: github`, which publishes with EAS's
 `production` environment, the one the profile builds with.
 
+If the job times out while EAS is still building (the free queue can take most
+of the hour), the build finishes anyway: run the workflow again with its id in
+`build_id`, and the job publishes that build instead of starting another. It
+refuses an id that is not an Android build of the `github` profile.
+
+`@sentry/cli` is a direct dev dependency of this package although nothing here
+imports it. With a `SENTRY_AUTH_TOKEN` in the build, Sentry's Gradle step runs
+`node_modules/@sentry/cli/bin/sentry-cli` relative to this directory to upload
+the source maps, and pnpm only links a package there when this package depends
+on it. Keep its version equal to the one `@sentry/react-native` pins.
+
 A submit also needs the end-to-end suite: the release workflow refuses it unless
 the newest finished run of `.eas/workflows/e2e.yml` succeeded within the last 48
 hours (see End-to-end tests below).
