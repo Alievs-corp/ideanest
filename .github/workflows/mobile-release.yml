@@ -62,6 +62,10 @@ on:
         description: "update only: what changed, as the update's message"
         required: false
         type: string
+      build_id:
+        description: "github-release only: the id of a finished EAS build of the github profile, to publish instead of building again"
+        required: false
+        type: string
 
 concurrency:
   # One mobile build, or one update, at a time per ref and profile. Two
@@ -383,18 +387,36 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # A build that outlives this job still finishes on EAS: the free queue
+      # alone can take most of an hour. `build_id` publishes that build rather
+      # than paying for a second one, and is refused unless it is an Android
+      # build of the github profile, so nothing else reaches the Releases page.
       - name: Build the APK
         id: build
         if: steps.eas.outputs.configured == 'true'
         working-directory: apps/mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          BUILD_ID: ${{ inputs.build_id }}
         run: |
-          pnpm dlx eas-cli@latest build --platform android --profile github \
-            --non-interactive --wait --json > "$RUNNER_TEMP/build.json"
+          if [ -n "$BUILD_ID" ]; then
+            if ! [[ "$BUILD_ID" =~ ^[0-9a-f-]{36}$ ]]; then
+              echo "::error::build_id must be an EAS build id, not '$BUILD_ID'."
+              exit 1
+            fi
+            pnpm dlx eas-cli@latest build:view "$BUILD_ID" --json > "$RUNNER_TEMP/build.json"
+          else
+            pnpm dlx eas-cli@latest build --platform android --profile github \
+              --non-interactive --wait --json > "$RUNNER_TEMP/build.json"
+          fi
           node -e '
-            const [build] = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+            const parsed = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+            const build = Array.isArray(parsed) ? parsed[0] : parsed;
             const url = build?.artifacts?.buildUrl;
+            if (build?.platform !== "ANDROID" || build?.buildProfile !== "github") {
+              console.error(`::error::EAS build ${build?.id} is ${build?.platform} ${build?.buildProfile}, not an Android build of the github profile.`);
+              process.exit(1);
+            }
             if (build?.status !== "FINISHED" || !url) {
               console.error(`::error::The EAS build did not finish with an APK (status ${build?.status}).`);
               process.exit(1);
