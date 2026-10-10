@@ -72,17 +72,31 @@ money. Production is the same configuration with a live application's key.
 | Brand | Number | Expiry | CVV | 3-D Secure code |
 |---|---|---|---|---|
 | VISA | `4000 0075 4601 2078` | 04/29 | 893 | 123456 |
-| Mastercard | `5100 0073 4601 3947` | 04/29 | 783 | 123456 |
 
 Holder name: any (`Test Test`). Source: Payriff's developer documentation,
 "Using Test Cards to Test Payments", read 2026-10-10. These cards work only on
-an application in Development status.
+an application in Development status. The same page lists a Mastercard,
+`5100 0073 4601 3947`, which fails the Luhn check and which Payriff's own page
+refuses as "Card pan is invalid".
 
-Payriff does not sign its callbacks. The adapter therefore uses a callback only
-for its order id and builds the event from `GET /orders/{orderId}`, asked with
-the secret key — a forged callback costs one lookup. Payouts through Payriff
-refuse until #352 decides how a creator is paid without the platform handling a
-card number.
+What the sandbox showed on 2026-10-10 (#359):
+
+- Payriff does not sign its callbacks: the POST comes from `3.69.130.29`
+  (AWS eu-central-1) with no signature header. The adapter therefore uses a
+  callback only for its order id and builds the event from
+  `GET /orders/{orderId}`, asked with the secret key — a forged callback costs
+  one lookup.
+- After 3-D Secure, Payriff sends the backer's **browser** to the callback
+  address with a GET and ignores `redirectUrl`. The adapter puts the return
+  address on the callback as `?return=` (base64url, because Payriff decodes the query once on the way), and `GET /v1/webhooks/psp/{provider}`
+  answers 303 to it when it is on the site, or to the site otherwise.
+- `X-REQUEST-RRN` must be a UUID; anything else is `15000 Internal Error`.
+- A refund reads `REFUNDED` at once, and no callback is sent for it.
+- Payriff keeps its commission (3% in the sandbox: `paidAmount` 4.85 of 5.00);
+  the backer is shown none.
+
+Payouts through Payriff refuse until #352 decides how a creator is paid
+without the platform handling a card number.
 
 ---
 

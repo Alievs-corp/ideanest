@@ -4091,7 +4091,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["providerWebhookReturnToSite"];
         put?: never;
         post: operations["providerWebhookReceive"];
         delete?: never;
@@ -14826,6 +14826,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CreatorHistory"];
                 };
+            };
+        };
+    };
+    providerWebhookReturnToSite: {
+        parameters: {
+            query?: {
+                return?: string;
+            };
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

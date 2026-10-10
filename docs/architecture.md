@@ -4138,6 +4138,15 @@ single-file change.
 > https. A Payriff application in Development status is the sandbox — same base URL, test cards
 > only — listed in `apps/api/README.md`.
 >
+> **What the sandbox showed (#359, 2026-10-10).** After 3-D Secure Payriff sends the backer's
+> browser to the order's *callback* address with a GET and ignores `redirectUrl`, keeping the
+> address's query on both the POST and the GET. So the adapter puts the return address on the
+> callback as `?return=` in base64url (Payriff decodes the query once before the GET), and `GET /v1/webhooks/psp/{provider}` answers 303 to it when
+> `ReturnUrls` accepts it and to the site's origin otherwise — the same answer for every provider
+> name, so the GET reveals no adapter. `X-REQUEST-RRN` must be a UUID (anything else is
+> `15000 Internal Error`), so a key that is not one — a raise's `pledge-raise-…` — goes as the
+> name-based UUID of the key, stable across retries.
+>
 > **Only the primary provider has an adapter.** Each adapter is conditional on
 > `provider.primary`, so naming PAYRIFF switches Epoint's off: Epoint's callbacks are then
 > refused as an unconfigured provider, and a refund of a charge taken through Epoint cannot be

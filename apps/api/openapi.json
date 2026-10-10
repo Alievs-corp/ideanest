@@ -10131,6 +10131,30 @@
       }
     },
     "/v1/webhooks/psp/{provider}" : {
+      "get" : {
+        "operationId" : "providerWebhookReturnToSite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "provider",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "return",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "provider-webhook-controller" ]
+      },
       "post" : {
         "operationId" : "providerWebhookReceive",
         "parameters" : [ {
