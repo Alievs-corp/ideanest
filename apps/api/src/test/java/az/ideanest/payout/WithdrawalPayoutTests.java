@@ -204,6 +204,24 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("#352: a provider that cannot pay out is 503 NO_PAYOUT_PROVIDER, and the payout stays approved")
+    void aProviderThatCannotPayOutIsUnavailable() {
+        Funded funded = aFundedCampaign("payout-unsupported");
+        UUID payout = approvedAndSendable(funded);
+        Account admin = administrator();
+        // Unscripted, the provider refuses with UnsupportedOperationException — as Payriff's adapter does.
+
+        ResponseEntity<Map<String, Object>> sent = post("/v1/admin/payouts/" + payout + "/send", admin.accessToken(), null, null);
+
+        assertThat(sent.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(sent.getBody()).containsEntry("code", "NO_PAYOUT_PROVIDER");
+        assertThat(state(payout)).isEqualTo("APPROVED");
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM transactions WHERE project_id = ? AND type = 'PAYOUT'", Long.class, funded.projectId()))
+                .isZero();
+    }
+
+    @Test
     @DisplayName("#184's review: an unanswered send stays approved through a refused retry, until staff settle it as not sent")
     void anUnansweredSendIsSettledFromTheStatementAsNotSent() {
         Funded funded = aFundedCampaign("payout-unanswered-not-sent");

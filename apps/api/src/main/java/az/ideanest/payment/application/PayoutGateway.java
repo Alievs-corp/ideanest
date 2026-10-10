@@ -140,6 +140,12 @@ public class PayoutGateway {
             // under the same key, or settled by staff from the provider's statement.
             log.warn("Payout {} could not be sent: {}", payoutId, e.getMessage());
             return new Sent(false, null, PaymentTransaction.UNREACHABLE, e.getMessage());
+        } catch (UnsupportedOperationException e) {
+            // A provider that takes payments and cannot pay out (Payriff, #352). Nothing was sent, so
+            // this is the deployment having no payout provider rather than a defect: 503, the payout
+            // stays approved, and it is sent once one exists.
+            log.warn("Payout {} not sent: {} cannot send payouts: {}", payoutId, provider.name(), e.getMessage());
+            throw new NoPayoutProviderException(provider.name() + " cannot send payouts", e);
         }
 
         return postings.record(payoutId, projectId, creatorId, amount, provider.name(), result, idempotencyKey);
