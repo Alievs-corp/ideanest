@@ -297,7 +297,7 @@ class PaymentLogOrderingApiTests extends AbstractIntegrationTest {
                         INSERT INTO transactions (id, pledge_id, project_id, type, status, amount, currency,
                                                   provider, provider_transaction_id, failure_code,
                                                   attempt_number, idempotency_key, created_at)
-                        VALUES (?, ?, ?, 'CHARGE', ?, CAST('10.00' AS numeric), 'AZN', 'PAYRIFF', ?, ?, ?, ?, ?)
+                        VALUES (?, ?, ?, 'CHARGE', ?, CAST('10.00' AS numeric), 'AZN', 'AZERICARD', ?, ?, ?, ?, ?)
                         """,
                         id,
                         fixture.pledgeId(),

@@ -218,7 +218,7 @@ class PayoutDestinationGateTests extends AbstractIntegrationTest {
     @DisplayName("a token issued by another provider is not offered to the one that would send")
     void aTokenIsReadableOnlyByItsIssuer() {
         Held held = heldPayout();
-        Destinations.verifiedWith(dataSource, held.creatorId(), administrator(), "PAYRIFF", "Test Creator");
+        Destinations.verifiedWith(dataSource, held.creatorId(), administrator(), "AZERICARD", "Test Creator");
 
         // The standing releases — somebody did confirm this account — and the reference does
         // not, because a Payriff token means nothing to Epoint. The two questions are separate
@@ -226,7 +226,7 @@ class PayoutDestinationGateTests extends AbstractIntegrationTest {
         // along and reading back a decline nobody can account for.
         assertThat(destinations.standingOf(held.creatorId())).isEqualTo(DestinationStanding.VERIFIED);
         assertThat(destinations.referenceFor(held.creatorId(), "EPOINT")).isEmpty();
-        assertThat(destinations.referenceFor(held.creatorId(), "PAYRIFF")).isPresent();
+        assertThat(destinations.referenceFor(held.creatorId(), "AZERICARD")).isPresent();
     }
 
     @Test

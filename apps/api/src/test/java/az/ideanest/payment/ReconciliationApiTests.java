@@ -223,7 +223,7 @@ class ReconciliationApiTests extends AbstractIntegrationTest {
                         """
                         INSERT INTO transactions (id, pledge_id, project_id, type, status, amount, currency,
                                                   provider, provider_transaction_id, attempt_number, idempotency_key)
-                        VALUES (?, ?, ?, 'CHARGE', 'SUCCEEDED', CAST(? AS numeric), 'AZN', 'PAYRIFF', ?, 1, ?)
+                        VALUES (?, ?, ?, 'CHARGE', 'SUCCEEDED', CAST(? AS numeric), 'AZN', 'AZERICARD', ?, 1, ?)
                         """,
                         id,
                         pledgeId,

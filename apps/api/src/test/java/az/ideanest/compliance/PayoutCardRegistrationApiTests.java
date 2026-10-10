@@ -77,7 +77,7 @@ class PayoutCardRegistrationApiTests extends AbstractIntegrationTest {
 
         assertThat(page.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat((String) page.getBody().get("redirectUrl")).startsWith("https://pay.scripted.invalid/card/");
-        assertThat(page.getBody().get("provider")).isEqualTo("PAYRIFF");
+        assertThat(page.getBody().get("provider")).isEqualTo("AZERICARD");
         assertThat(jdbc().queryForObject(
                         "SELECT state FROM payout_card_registrations WHERE creator_id = ?", String.class, creator.id()))
                 .isEqualTo("PENDING");
@@ -98,7 +98,7 @@ class PayoutCardRegistrationApiTests extends AbstractIntegrationTest {
         Map<String, Object> mine = mine(creator);
         assertThat(mine.get("recorded")).isEqualTo(true);
         assertThat(mine.get("standing")).isEqualTo("AWAITING_VERIFICATION");
-        assertThat(mine.get("provider")).isEqualTo("PAYRIFF");
+        assertThat(mine.get("provider")).isEqualTo("AZERICARD");
         assertThat(mine.get("displayHint")).isEqualTo("**1234");
         assertThat(mine.get("holderName")).isEqualTo("Aygün Məmmədova");
         assertThat(mine.values()).doesNotContain(cardOf(creator));
@@ -247,7 +247,7 @@ class PayoutCardRegistrationApiTests extends AbstractIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         ScriptedWebhooks.headers().forEach(headers::add);
         return HttpStatus.valueOf(rest.exchange(
-                        "/v1/webhooks/psp/payriff",
+                        "/v1/webhooks/psp/azericard",
                         HttpMethod.POST,
                         new HttpEntity<>(body.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), headers),
                         String.class)

@@ -258,7 +258,7 @@ class ChargebackRecoveryTests extends AbstractIntegrationTest {
         String delivery = """
                 {"id":"evt-%s","type":"charge_succeeded","providerTransactionId":"%s"}"""
                 .formatted(UUID.randomUUID(), transaction);
-        rest.exchange("/v1/webhooks/psp/payriff", HttpMethod.POST, new HttpEntity<>(delivery.getBytes(), headers), String.class);
+        rest.exchange("/v1/webhooks/psp/azericard", HttpMethod.POST, new HttpEntity<>(delivery.getBytes(), headers), String.class);
         UUID chargeId = jdbc().queryForObject(
                 "SELECT id FROM transactions WHERE pledge_id = ? AND type = 'CHARGE' AND status = 'SUCCEEDED'", UUID.class, pledgeId);
         return new Funded(creator, projectId, pledgeId, chargeId);
@@ -269,14 +269,14 @@ class ChargebackRecoveryTests extends AbstractIntegrationTest {
         transactions.save(PaymentTransaction.payout(
                 projectId,
                 Money.of(new BigDecimal(amount), "AZN"),
-                ProviderName.PAYRIFF,
+                ProviderName.AZERICARD,
                 new PayoutResult(ProviderOutcome.APPROVED, "scripted-payout-" + UUID.randomUUID(), null, null, "{}"),
                 "payout-sent-" + UUID.randomUUID()));
     }
 
     private UUID chargeback(Funded funded, String amount, String fee) {
         return disputes.notified(
-                        ProviderName.PAYRIFF,
+                        ProviderName.AZERICARD,
                         "case-" + UUID.randomUUID(),
                         funded.chargeId(),
                         Money.of(new BigDecimal(amount), "AZN"),

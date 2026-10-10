@@ -401,7 +401,7 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
         String delivery = """
                 {"id":"evt-%s","type":"charge_succeeded","providerTransactionId":"%s"}"""
                 .formatted(UUID.randomUUID(), transaction);
-        rest.exchange("/v1/webhooks/psp/payriff", HttpMethod.POST, new HttpEntity<>(delivery.getBytes(), headers), String.class);
+        rest.exchange("/v1/webhooks/psp/azericard", HttpMethod.POST, new HttpEntity<>(delivery.getBytes(), headers), String.class);
 
         // Decided successful at 80% or more: 25.00 of a 25.00 goal.
         jdbc().update(
@@ -464,7 +464,7 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
         Account signer = administrator();
         jdbc().update("UPDATE payouts SET state = 'APPROVED', approvals_required = 1 WHERE id = ?", payout);
         jdbc().update("INSERT INTO payout_approvals (payout_id, approver_id) VALUES (?, ?)", payout, signer.id());
-        Destinations.verifiedWith(dataSource, funded.creator().id(), signer.id(), "PAYRIFF", "Test Person");
+        Destinations.verifiedWith(dataSource, funded.creator().id(), signer.id(), "AZERICARD", "Test Person");
         return payout;
     }
 

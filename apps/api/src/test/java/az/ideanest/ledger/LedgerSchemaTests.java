@@ -240,7 +240,7 @@ class LedgerSchemaTests extends AbstractIntegrationTest {
                         """
                         INSERT INTO transactions (id, pledge_id, project_id, type, status, amount, currency,
                                                   provider, attempt_number, idempotency_key)
-                        VALUES (?, ?, ?, 'CHARGE', 'FAILED', 100.00, 'AZN', 'PAYRIFF', 1, ?)
+                        VALUES (?, ?, ?, 'CHARGE', 'FAILED', 100.00, 'AZN', 'AZERICARD', 1, ?)
                         """,
                         UUID.randomUUID(),
                         pledgeId,
@@ -321,7 +321,7 @@ class LedgerSchemaTests extends AbstractIntegrationTest {
                         """
                         INSERT INTO transactions (id, pledge_id, project_id, type, status, amount, currency,
                                                   provider, provider_transaction_id, attempt_number, idempotency_key)
-                        VALUES (?, ?, ?, 'CHARGE', ?, CAST(? AS numeric), 'AZN', 'PAYRIFF', ?, 1, ?)
+                        VALUES (?, ?, ?, 'CHARGE', ?, CAST(? AS numeric), 'AZN', 'AZERICARD', ?, 1, ?)
                         """,
                         id,
                         pledgeId,
