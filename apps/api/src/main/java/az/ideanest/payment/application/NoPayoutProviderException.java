@@ -16,4 +16,9 @@ public class NoPayoutProviderException extends RuntimeException {
     public NoPayoutProviderException() {
         super("No payment provider is configured to send a payout");
     }
+
+    /** A provider is configured and cannot send payouts — Payriff until #352 is settled. */
+    public NoPayoutProviderException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

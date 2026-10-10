@@ -281,7 +281,7 @@ public class PayoutExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
         problem.setType(URI.create("https://ideanest.az/problems/no-payout-provider"));
         problem.setTitle("No provider configured");
-        problem.setDetail("This deployment has no payment provider configured to send a payout.");
+        problem.setDetail("This deployment has no payment provider that can send a payout.");
         problem.setProperty("code", "NO_PAYOUT_PROVIDER");
         return problem;
     }
