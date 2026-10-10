@@ -168,6 +168,7 @@ class RetryScheduleTests {
                 null,
                 null,
                 null,
+                null,
                 null);
     }
 }

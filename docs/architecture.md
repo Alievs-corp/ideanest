@@ -4144,6 +4144,17 @@ single-file change.
 > sent. Switch only while no Epoint charge can still need either. A secondary, refund-only
 > adapter is the change that would lift this.
 >
+> **A payment page whose callback never comes (#353).** A page is settled only by the
+> provider's callback, so a callback lost for good would leave a backer who paid with a pledge
+> that never confirms. `hosted-charge-sweep` (every five minutes, paused in a maintenance window)
+> asks `lookUpPayment` about each page still `PENDING` 15 minutes after it opened, and settles the
+> answer through `HostedChargeEvents` — the handler the callback reaches, so the two paths cannot
+> disagree. The provider is asked outside any transaction; each page settles in its own, and a
+> callback landing at the same moment is decided by V41's settled index. Pending or unanswered
+> pages go to the back of the queue (V95's `hosted_charge_checks`) and are asked again until seven
+> days after they opened, because an abandoned page stays pending at some providers for ever.
+> Paid and already returned is settled neither way: logged at ERROR for a person.
+>
 > **Return addresses are the site's, not the caller's (#139).** `POST /v1/pledges/{id}/payment`
 > and `POST /v1/me/payout-destination/card-registration` take a `successUrl` and an `errorUrl`
 > from the caller, and Epoint redirects the person to them from its own page

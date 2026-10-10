@@ -318,6 +318,9 @@ ideanest:
     refunds:
       # `-`, like every other job's schedule in this profile; CampaignRefundTests drives it.
       schedule: "-"
+    hosted-charges:
+      # `-` as well; HostedPaymentApiTests drives the sweep with the instant it wants.
+      schedule: "-"
 
   pledge:
     reservation:

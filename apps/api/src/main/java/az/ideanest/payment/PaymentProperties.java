@@ -21,7 +21,8 @@ public record PaymentProperties(
         Reconciliation reconciliation,
         Epoint epoint,
         Refunds refunds,
-        Payriff payriff) {
+        Payriff payriff,
+        HostedCharges hostedCharges) {
 
     public PaymentProperties {
         // A deployment that configures none of these still starts, for ProjectProperties'
@@ -36,6 +37,36 @@ public record PaymentProperties(
         epoint = epoint == null ? Epoint.defaults() : epoint;
         refunds = refunds == null ? Refunds.defaults() : refunds;
         payriff = payriff == null ? Payriff.defaults() : payriff;
+        hostedCharges = hostedCharges == null ? HostedCharges.defaults() : hostedCharges;
+    }
+
+    /**
+     * {@code hosted-charge-sweep} — #353: the payment pages whose callback never came.
+     *
+     * @param schedule when the sweep fires, or {@code -} to register it without scheduling
+     * @param perPass how many pages one pass asks the provider about
+     * @param answeredAfter how old a pending page is before the provider is asked. Long enough that
+     *     the callback, which normally arrives within seconds, has had every chance first
+     * @param askedFor how long after it was opened a page is still asked about. A page abandoned
+     *     unpaid stays pending at some providers for ever, and the window is what stops the sweep
+     *     asking about it for ever
+     */
+    public record HostedCharges(String schedule, int perPass, Duration answeredAfter, Duration askedFor) {
+
+        public static HostedCharges defaults() {
+            return new HostedCharges("0 */5 * * * *", 50, Duration.ofMinutes(15), Duration.ofDays(7));
+        }
+
+        public HostedCharges {
+            schedule = schedule == null || schedule.isBlank() ? "0 */5 * * * *" : schedule;
+            perPass = perPass < 1 ? 50 : perPass;
+            answeredAfter = answeredAfter == null ? Duration.ofMinutes(15) : answeredAfter;
+            askedFor = askedFor == null ? Duration.ofDays(7) : askedFor;
+            if (askedFor.compareTo(answeredAfter) <= 0) {
+                throw new IllegalArgumentException(
+                        "hosted-charges.asked-for (" + askedFor + ") must be longer than answered-after (" + answeredAfter + ")");
+            }
+        }
     }
 
     /**
