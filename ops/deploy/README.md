@@ -120,7 +120,10 @@ public `https://<api host>/v1/webhooks/psp/payriff`; either missing, or a callba
 that is not https, stops the API starting. Staging uses a Payriff application in
 **Development** status — Payriff's sandbox, test cards only, listed in
 `apps/api/README.md` — and production a live application's key; nothing else
-differs. Payouts refuse under Payriff until #352.
+differs. Payouts refuse under Payriff until #352. **Only the primary provider has
+an adapter**: switching from Epoint to Payriff turns Epoint's off, so its callbacks
+are refused and its charges can no longer be refunded. Switch only while no Epoint
+charge can still need either (`docs/architecture.md` §9.4).
 
 `IDEANEST_API_ORIGIN` is **not** baked in. It is read at request time by the
 proxy and by the server reads, so one API image and one web image run against

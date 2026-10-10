@@ -275,6 +275,51 @@ class PayriffPaymentProviderTests {
     }
 
     @Test
+    @DisplayName("a callback for an order not yet decided is unavailable, so Payriff sends it again")
+    void anUndecidedCallbackIsRetried() {
+        Wire wire = new Wire();
+        wire.expect(HttpMethod.GET, "/orders/ord-1")
+                .andRespond(withSuccess(APPROVED_ORDER.replace("\"paymentStatus\":\"APPROVED\"", "\"paymentStatus\":\"PENDING\""),
+                        MediaType.APPLICATION_JSON));
+
+        assertThatThrownBy(() -> wire.adapter().parseWebhook(bytes("{\"payload\":{\"orderId\":\"ord-1\"}}"), Map.of()))
+                .isInstanceOf(ProviderUnavailableException.class);
+    }
+
+    @Test
+    @DisplayName("a lookup Payriff refuses or fails to answer is unavailable, never a refusal of the callback")
+    void aFailedConfirmationIsRetried() {
+        Wire limited = new Wire();
+        limited.expect(HttpMethod.GET, "/orders/ord-1")
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("""
+                                {"code":"01000","message":"Too many requests"}
+                                """));
+        assertThatThrownBy(() -> limited.adapter().parseWebhook(bytes("{\"payload\":{\"orderId\":\"ord-1\"}}"), Map.of()))
+                .isInstanceOf(ProviderUnavailableException.class);
+
+        Wire failing = new Wire();
+        failing.expect(HttpMethod.GET, "/orders/ord-1").andRespond(withServerError());
+        assertThatThrownBy(() -> failing.adapter().parseWebhook(bytes("{\"payload\":{\"orderId\":\"ord-1\"}}"), Map.of()))
+                .isInstanceOf(ProviderUnavailableException.class);
+    }
+
+    @Test
+    @DisplayName("a refund or a lookup Payriff fails to answer is unavailable, not a decline")
+    void outagesOnRefundAndLookupAreUnavailable() {
+        Wire refunding = new Wire();
+        refunding.expect(HttpMethod.POST, "/refund").andRespond(withServerError());
+        assertThatThrownBy(() -> refunding.adapter().refund(refund("5.00")))
+                .isInstanceOf(ProviderUnavailableException.class);
+
+        Wire looking = new Wire();
+        looking.expect(HttpMethod.GET, "/orders/ord-1").andRespond(withServerError());
+        assertThatThrownBy(() -> looking.adapter().lookUpPayment("ord-1"))
+                .isInstanceOf(ProviderUnavailableException.class);
+    }
+
+    @Test
     @DisplayName("a callback that is not JSON, or names no order, is refused without asking Payriff")
     void anUnreadableCallbackIsRefused() {
         Wire wire = new Wire();
@@ -357,7 +402,7 @@ class PayriffPaymentProviderTests {
 
         PayriffPaymentProvider adapter() {
             if (adapter == null) {
-                adapter = new PayriffPaymentProvider(
+                adapter = PayriffPaymentProvider.over(
                         builder, properties(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az")), JSON);
             }
             return adapter;

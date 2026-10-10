@@ -26,16 +26,20 @@ import az.ideanest.payment.domain.WebhookVerificationException;
 import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -70,8 +74,13 @@ import tools.jackson.databind.node.ObjectNode;
  *
  * <p>Payriff signs nothing it posts, so the body is not evidence of anything. The adapter takes only
  * the order id from it and asks {@code GET /orders/{orderId}} with the secret key: the event is built
- * from Payriff's own answer, and an order this merchant does not own is refused as unverifiable. A
- * forged callback can therefore cause one lookup and nothing else.
+ * from Payriff's own answer, and an order Payriff does not find is refused as unverifiable. A forged
+ * callback can therefore cause one lookup and nothing else, and {@code ProviderWebhooks} makes it
+ * before opening a transaction, so the lookup holds no database connection.
+ *
+ * <p>A callback whose order is not yet decided, or a lookup Payriff could not answer, is a provider
+ * unavailable rather than a delivery to record: the response is a 500 and Payriff sends it again.
+ * Recording it would answer 200 to the only news of a payment that nothing else goes looking for.
  *
  * <h2>Not here</h2>
  *
@@ -82,8 +91,9 @@ import tools.jackson.databind.node.ObjectNode;
  *
  * <h2>Card data</h2>
  *
- * <p>Payriff returns a masked number and may return the holder's name and phone. Both are removed
- * from every {@code rawResponse} and event body before it leaves this class (§17.2).
+ * <p>Payriff returns a masked card number, which is kept — SAQ A permits it, and support needs it
+ * — and may return the holder's name, phone and FIN, which are removed from every
+ * {@code rawResponse} and event body before it leaves this class (§17.2).
  */
 @Component
 @ConditionalOnProperty(prefix = "ideanest.payment.provider", name = "primary", havingValue = "PAYRIFF")
@@ -105,11 +115,31 @@ public class PayriffPaymentProvider implements PaymentProvider {
     /** Fields that would identify a person in a stored response. */
     private static final Set<String> PERSONAL = Set.of("cardHolderName", "cardHolder", "fullName", "phoneNumber", "finCode");
 
+    /** Long, because Payriff's own client allows a minute: bank operations take tens of seconds. */
+    private static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
+
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
+
     private final RestClient http;
     private final PaymentProperties.Payriff settings;
     private final ObjectMapper json;
 
+    /** The platform's JDK transport with this adapter's timeouts: the default is none. */
+    @Autowired
     public PayriffPaymentProvider(RestClient.Builder builder, PaymentProperties properties, ObjectMapper json) {
+        this(properties, json, builder.requestFactory(timedRequests()));
+    }
+
+    /**
+     * Over a transport the caller has already set up — the tests' mock server — and so without the
+     * timeouts, which are the transport's to apply.
+     */
+    public static PayriffPaymentProvider over(
+            RestClient.Builder transport, PaymentProperties properties, ObjectMapper json) {
+        return new PayriffPaymentProvider(properties, json, transport);
+    }
+
+    private PayriffPaymentProvider(PaymentProperties properties, ObjectMapper json, RestClient.Builder builder) {
         this.settings = properties.payriff();
         if (!settings.isComplete()) {
             throw new IllegalStateException(
@@ -221,26 +251,33 @@ public class PayriffPaymentProvider implements PaymentProvider {
         }
 
         // The callback is unsigned: what Payriff answers about the order is the event, not the body.
-        JsonNode answer = exchange(http.get().uri("/orders/{orderId}", orderId), "confirm a callback");
-        if (!SUCCESS.equals(text(answer, "code"))) {
-            if (AUTHENTICATION.contains(text(answer, "code"))) {
-                throw unavailable("Payriff refused the secret key while confirming a callback: " + text(answer, "message"));
+        Answer answer = send(http.get().uri("/orders/{orderId}", orderId), "confirm a callback");
+        if (!SUCCESS.equals(text(answer.body(), "code"))) {
+            if (answer.status() == 404) {
+                throw new WebhookVerificationException(
+                        NAME, "Payriff does not know order %s: %s".formatted(orderId, text(answer.body(), "message")));
             }
-            throw new WebhookVerificationException(
-                    NAME, "Payriff does not confirm order %s: %s".formatted(orderId, text(answer, "message")));
+            // Anything else — a refused key, a rate limit, a refusal to say — is Payriff not answering,
+            // and a 400 here would stop it sending the only news of the payment.
+            throw unavailable("Payriff could not confirm order %s: %s (%s)"
+                    .formatted(orderId, text(answer.body(), "message"), text(answer.body(), "code")));
         }
-        JsonNode confirmed = answer.get("payload");
+        JsonNode confirmed = answer.body().get("payload");
         String status = upper(text(confirmed, "paymentStatus"));
         PaymentEventType type = switch (status) {
             case "APPROVED", "PAID" -> PaymentEventType.CHARGE_SUCCEEDED;
             case "DECLINED", "CANCELED", "EXPIRED", "FAILED" -> PaymentEventType.CHARGE_FAILED;
             case "REFUNDED", "REVERSE", "PARTIAL_REFUND" -> PaymentEventType.REFUND_SUCCEEDED;
+            // Not decided yet: recorded, this delivery would be answered 200 and never sent again.
+            case "CREATED", "PENDING", "ACCEPTED", "IN_REVIEW", "REFUND_IN_PROGRESS" ->
+                throw unavailable("Payriff's callback for order %s arrived while it is still %s."
+                        .formatted(orderId, status));
             default -> PaymentEventType.UNRECOGNISED;
         };
         // No event id and no signing time: the order and the status it reached identify a delivery,
         // so a redelivery of the same news is a duplicate and the order's later refund is not.
         String eventId = orderId + ":" + (status.isEmpty() ? "UNKNOWN" : status);
-        return new PaymentEvent(NAME, eventId, type, orderId, amountOf(confirmed), null, redacted(answer));
+        return new PaymentEvent(NAME, eventId, type, orderId, amountOf(confirmed), null, redacted(answer.body()));
     }
 
     @Override
@@ -289,6 +326,13 @@ public class PayriffPaymentProvider implements PaymentProvider {
      * asked. A 4xx with an envelope is Payriff's answer, and the caller decides what it means.
      */
     private JsonNode exchange(RestClient.RequestHeadersSpec<?> request, String what) {
+        return send(request, what).body();
+    }
+
+    /** Payriff's envelope and the HTTP status it came with. */
+    private record Answer(int status, JsonNode body) {}
+
+    private Answer send(RestClient.RequestHeadersSpec<?> request, String what) {
         ResponseEntity<String> response;
         try {
             response = request.accept(MediaType.APPLICATION_JSON)
@@ -317,7 +361,14 @@ public class PayriffPaymentProvider implements PaymentProvider {
         if (answer == null || !answer.isObject() || isBlank(text(answer, "code"))) {
             throw unavailable("Payriff answered a request to " + what + " with something that is not its envelope.");
         }
-        return answer;
+        return new Answer(response.getStatusCode().value(), answer);
+    }
+
+    private static JdkClientHttpRequestFactory timedRequests() {
+        JdkClientHttpRequestFactory requests = new JdkClientHttpRequestFactory(
+                HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build());
+        requests.setReadTimeout(READ_TIMEOUT);
+        return requests;
     }
 
     /** Written by this service's mapper, so an amount goes out as the decimal it is. */
