@@ -744,6 +744,19 @@ ideanest:
       retry-after: PT6H
       # A refund with no recorded outcome this old is settled from the provider's status.
       unresolved-after: PT1H
+    # #353: `hosted-charge-sweep`. A payment page is settled by the provider's callback; this
+    # asks the provider about pages still pending after `answered-after`, so a callback lost
+    # for good does not leave a backer who paid with a pledge that never confirms. Settles
+    # through the same handler the callback reaches.
+    hosted-charges:
+      schedule: ${HOSTED_CHARGE_SWEEP_SCHEDULE:0 */5 * * * *}
+      per-pass: 50
+      # The callback normally arrives within seconds and is retried for a while after; this
+      # is long enough that the sweep is the fallback and not a race with it.
+      answered-after: PT15M
+      # A page abandoned unpaid stays pending at some providers for ever; after this it is no
+      # longer asked about.
+      asked-for: P7D
     collection:
       # §8.4: charge-processor, every minute. The pass that opens the collection of
       # campaigns that closed above goal and makes §9.6's first attempt against

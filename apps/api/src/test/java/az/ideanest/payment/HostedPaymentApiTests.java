@@ -2,7 +2,9 @@ package az.ideanest.payment;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import az.ideanest.payment.application.HostedChargeSweepJob;
 import az.ideanest.payment.domain.HostedPaymentRequest;
+import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.Campaigns;
@@ -69,6 +71,9 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private ScriptedPaymentProvider provider;
+
+    @Autowired
+    private HostedChargeSweepJob sweep;
 
     /**
      * The deliveries this suite made. ProviderWebhookApiTests reads that table as its own, and a row
@@ -163,6 +168,83 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
         assertThat(state(checkout.pledgeId())).isEqualTo("DRAFT");
         assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "FAILED");
         assertThat(totals(checkout.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+    }
+
+    // ------------------------------------------------------------------
+    // #353: the callback that never came
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("#353: a paid page whose callback never came is collected by the sweep, once")
+    void theSweepCollectsAPaymentWithNoCallback() {
+        Checkout checkout = aDraft("hosted-swept");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        provider.willLookUp(transaction, PaymentLookup.State.SUCCEEDED);
+
+        sweep.sweep(Instant.now().plus(Duration.ofMinutes(20)));
+
+        assertThat(state(checkout.pledgeId())).isEqualTo("COLLECTED");
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "SUCCEEDED");
+        assertThat(totals(checkout.projectId())).isEqualTo(new Totals(new BigDecimal("25.00"), 1));
+
+        // The callback arriving late, and the next pass, move nothing twice.
+        assertThat(deliver(transaction, "charge_succeeded").getStatusCode()).isEqualTo(HttpStatus.OK);
+        sweep.sweep(Instant.now().plus(Duration.ofMinutes(25)));
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "SUCCEEDED");
+        assertThat(totals(checkout.projectId())).isEqualTo(new Totals(new BigDecimal("25.00"), 1));
+    }
+
+    @Test
+    @DisplayName("#353: a page the provider calls failed is failed by the sweep, and the draft keeps its hold")
+    void theSweepFailsAFailedPayment() {
+        Checkout checkout = aDraft("hosted-swept-failed");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        provider.willLookUp(transaction, PaymentLookup.State.FAILED);
+
+        sweep.sweep(Instant.now().plus(Duration.ofMinutes(20)));
+
+        assertThat(state(checkout.pledgeId())).isEqualTo("DRAFT");
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING", "FAILED");
+        assertThat(totals(checkout.projectId())).isEqualTo(new Totals(new BigDecimal("0.00"), 0));
+    }
+
+    @Test
+    @DisplayName("#353: a page is asked about only after the callback has had its time, and only within the window")
+    void theSweepWaitsAndThenStops() {
+        Checkout checkout = aDraft("hosted-swept-pending");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        provider.willLookUp(transaction, PaymentLookup.State.PENDING);
+        UUID charge = pendingCharge(checkout.pledgeId());
+
+        sweep.sweep(Instant.now());
+        assertThat(lastCheck(charge)).isEmpty();
+
+        Instant asked = Instant.now().plus(Duration.ofMinutes(20)).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+        sweep.sweep(asked);
+        assertThat(lastCheck(charge)).containsExactly("PENDING");
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING");
+
+        // Past the window the page is not asked about again, even though it is still pending.
+        provider.willLookUp(transaction, PaymentLookup.State.SUCCEEDED);
+        sweep.sweep(Instant.now().plus(Duration.ofDays(8)));
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING");
+        assertThat(jdbc().queryForObject(
+                        "SELECT checked_at FROM hosted_charge_checks WHERE transaction_id = ?", Instant.class, charge))
+                .isEqualTo(asked);
+    }
+
+    @Test
+    @DisplayName("#353: a page paid and already returned is left for a person, not settled either way")
+    void theSweepLeavesAReturnedPayment() {
+        Checkout checkout = aDraft("hosted-swept-returned");
+        String transaction = (String) pay(checkout, UUID.randomUUID().toString()).getBody().get("providerTransactionId");
+        provider.willLookUp(transaction, PaymentLookup.State.RETURNED);
+
+        sweep.sweep(Instant.now().plus(Duration.ofMinutes(20)));
+
+        assertThat(state(checkout.pledgeId())).isEqualTo("DRAFT");
+        assertThat(charges(checkout.pledgeId())).containsExactly("PENDING");
+        assertThat(lastCheck(pendingCharge(checkout.pledgeId()))).containsExactly("RETURNED");
     }
 
     @Test
@@ -382,6 +464,18 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
                 "SELECT pledged_amount, backers_count FROM projects WHERE id = ?",
                 (row, index) -> new Totals(row.getBigDecimal("pledged_amount"), row.getInt("backers_count")),
                 projectId);
+    }
+
+    private UUID pendingCharge(UUID pledgeId) {
+        return jdbc().queryForObject(
+                "SELECT id FROM transactions WHERE pledge_id = ? AND type = 'CHARGE' AND status = 'PENDING'",
+                UUID.class,
+                pledgeId);
+    }
+
+    private List<String> lastCheck(UUID charge) {
+        return jdbc().queryForList(
+                "SELECT last_state FROM hosted_charge_checks WHERE transaction_id = ?", String.class, charge);
     }
 
     private JdbcTemplate jdbc() {

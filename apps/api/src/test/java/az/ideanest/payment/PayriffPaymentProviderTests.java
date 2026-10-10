@@ -415,7 +415,7 @@ class PayriffPaymentProviderTests {
 
     private static PaymentProperties properties(PaymentProperties.Payriff payriff) {
         return new PaymentProperties(
-                new PaymentProperties.Provider("PAYRIFF"), null, null, null, null, null, null, payriff);
+                new PaymentProperties.Provider("PAYRIFF"), null, null, null, null, null, null, payriff, null);
     }
 
     private static PaymentLookup lookUp(String status) {

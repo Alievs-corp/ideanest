@@ -65,6 +65,39 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
     Optional<PaymentTransaction> findFirstByProviderAndProviderTransactionIdAndTypeAndStatus(
             ProviderName provider, String providerTransactionId, TransactionType type, TransactionStatus status);
 
+    /**
+     * #353: payment pages opened between {@code openedAfter} and {@code openedBefore} that nothing has
+     * settled — the callback never came, or has not yet.
+     *
+     * <p><strong>Least recently asked first, then oldest (#183's reason).</strong> A page abandoned
+     * unpaid stays pending at some providers, and ordered by age alone a batch of those would be every
+     * pass. Never asked comes first, then the longest since {@code hosted_charge_checks} says it was.
+     * Native for the {@code jsonb} test and the bookkeeping table.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT t.* FROM transactions t
+                      LEFT JOIN hosted_charge_checks c ON c.transaction_id = t.id
+                     WHERE t.type = 'CHARGE'
+                       AND t.status = 'PENDING'
+                       AND t.provider_transaction_id IS NOT NULL
+                       AND t.provider_response ->> 'hostedPayment' = 'true'
+                       AND t.created_at > :openedAfter
+                       AND t.created_at <= :openedBefore
+                       AND NOT EXISTS (SELECT 1 FROM transactions s
+                                        WHERE s.provider = t.provider
+                                          AND s.provider_transaction_id = t.provider_transaction_id
+                                          AND s.status IN ('SUCCEEDED', 'FAILED'))
+                     ORDER BY c.checked_at ASC NULLS FIRST, t.created_at ASC
+                     LIMIT :limit
+                    """,
+            nativeQuery = true)
+    List<PaymentTransaction> unsettledHostedCharges(
+            @Param("openedAfter") java.time.Instant openedAfter,
+            @Param("openedBefore") java.time.Instant openedBefore,
+            @Param("limit") int limit);
+
     /** Whether a provider transaction already has its final row — the settled index's question. */
     boolean existsByProviderAndProviderTransactionIdAndStatusIn(
             ProviderName provider, String providerTransactionId, Collection<TransactionStatus> statuses);

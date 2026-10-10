@@ -454,6 +454,7 @@ class MaintenanceApiTests extends AbstractIntegrationTest {
                         "charge-processor",
                         "charge-retry",
                         "campaign-refunds",
+                        "hosted-charge-sweep",
                         "ledger-reconciliation",
                         "notification-sender",
                         "notification-digest",
