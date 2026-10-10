@@ -34,6 +34,10 @@ The short version:
   A provider that is not configured publishes no series at all
 - **`ideanest_queue_waiting` / `ideanest_queue_dead`** — every queue on the
   platform, from the interface each owning module implements
+- **`ideanest_payment_hosted_sweep_settled_total{outcome}`** and
+  **`ideanest_payment_hosted_attention{reason}`** — payment pages settled
+  without their callback, and the ones the sweep could not settle and left for
+  somebody (#356)
 
 Everything else — HTTP, JDBC, JVM, Hikari — comes from Spring Boot's own binders
 and is not restated here.

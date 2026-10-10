@@ -57,6 +57,7 @@ public class HostedChargeSweepJob implements ScheduledJob {
     private final HostedChargeCheckRepository checks;
     private final PaymentProviders providers;
     private final HostedChargeEvents settlement;
+    private final HostedChargeMetrics metrics;
     private final PaymentProperties.HostedCharges properties;
     private final TransactionTemplate transaction;
     private final Clock clock;
@@ -66,6 +67,7 @@ public class HostedChargeSweepJob implements ScheduledJob {
             HostedChargeCheckRepository checks,
             PaymentProviders providers,
             HostedChargeEvents settlement,
+            HostedChargeMetrics metrics,
             PaymentProperties properties,
             PlatformTransactionManager transactionManager,
             Clock clock) {
@@ -73,6 +75,7 @@ public class HostedChargeSweepJob implements ScheduledJob {
         this.checks = checks;
         this.providers = providers;
         this.settlement = settlement;
+        this.metrics = metrics;
         this.properties = properties.hostedCharges();
         this.transaction = new TransactionTemplate(transactionManager);
         this.transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -124,6 +127,10 @@ public class HostedChargeSweepJob implements ScheduledJob {
                     settled,
                     unsettled.size());
         }
+        Instant windowStart = now.minus(properties.askedFor());
+        metrics.attention(
+                checks.unsettledLastAnswered(State.RETURNED, windowStart),
+                checks.unsettledLastAnswered(State.UNANSWERED, windowStart));
         return settled;
     }
 
@@ -185,6 +192,7 @@ public class HostedChargeSweepJob implements ScheduledJob {
             return false;
         }
         checks.checked(pending.getId(), now, State.valueOf(lookup.state().name()));
+        metrics.settled(type);
         log.info("hosted-charge-sweep: {}.", outcome.orElse("payment " + reference + " settled"));
         return true;
     }

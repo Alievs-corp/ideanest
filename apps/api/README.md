@@ -144,6 +144,8 @@ alerted on.
 | `ideanest_payment_collection_attempts_total{outcome}` | Collection attempts, by what came of them | `CollectionMetrics` |
 | `ideanest_provider_available{provider}` | 1 when a provider answers, 0 when the breaker is open | `ProviderStatusSource` (#316) |
 | `ideanest_queue_waiting{queue}` / `ideanest_queue_dead{queue}` | Every queue on the platform | `QueueDepthSource` (#316) |
+| `ideanest_payment_hosted_sweep_settled_total{outcome}` | Payment pages `hosted-charge-sweep` settled because their callback never came: `collected` or `failed` | `HostedChargeMetrics` (#356) |
+| `ideanest_payment_hosted_attention{reason}` | Unsettled pages in the sweep's window whose last check needs somebody: `returned` or `unanswered`. Set by each pass | the same |
 
 `PlatformMetrics` reads the same interfaces §4.11's health screen reads, on
 purpose: a dashboard that disagreed with an alert is a dashboard somebody checks

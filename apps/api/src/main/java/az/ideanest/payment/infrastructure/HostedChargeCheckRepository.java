@@ -32,6 +32,28 @@ public class HostedChargeCheckRepository {
         this.jdbc = new JdbcTemplate(dataSource);
     }
 
+    /**
+     * #356: how many unsettled pages opened after {@code openedAfter} were last answered with
+     * {@code state} — what the attention gauge publishes.
+     */
+    public long unsettledLastAnswered(State state, Instant openedAfter) {
+        Long count = jdbc.queryForObject(
+                """
+                SELECT count(*) FROM hosted_charge_checks c
+                  JOIN transactions t ON t.id = c.transaction_id
+                 WHERE c.last_state = ?
+                   AND t.created_at > ?
+                   AND NOT EXISTS (SELECT 1 FROM transactions s
+                                    WHERE s.provider = t.provider
+                                      AND s.provider_transaction_id = t.provider_transaction_id
+                                      AND s.status IN ('SUCCEEDED', 'FAILED'))
+                """,
+                Long.class,
+                state.name(),
+                Timestamp.from(openedAfter));
+        return count == null ? 0 : count;
+    }
+
     public void checked(UUID transactionId, Instant at, State state) {
         jdbc.update(
                 """

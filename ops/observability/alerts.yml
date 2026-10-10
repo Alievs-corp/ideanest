@@ -136,6 +136,59 @@ groups:
             minutes. Collections against it are being deferred rather than failed —
             §9.6 retries — but nothing is being taken while it stays open.
 
+  - name: ideanest-hosted-payments
+    interval: 1m
+    rules:
+      # #353's sweep settles a payment page whose callback never came, and #356 is here so
+      # that it does not do so unnoticed. A few in an hour are a provider's bad hour and the
+      # sweep is doing its job; more is callbacks not arriving at all — most likely a wrong
+      # callback address — and every backer then waits fifteen minutes or more for a
+      # confirmation. A ticket: the money is safe and arrives, just late.
+      - alert: HostedPaymentsWithoutCallback
+        expr: sum(increase(ideanest_payment_hosted_sweep_settled_total[1h])) > 5
+        for: 10m
+        labels:
+          severity: ticket
+        annotations:
+          summary: Payments are being settled without their callback
+          description: >-
+            The hosted-charge sweep settled {{ $value | humanize }} payment page(s) in the
+            last hour whose callback never came. Check the provider's callback address
+            (PAYRIFF_CALLBACK_URL, or Epoint's result_url) and that the provider can reach
+            /v1/webhooks/psp/{provider}.
+
+      # Paid and given back without the platform hearing of either: the sweep settles it
+      # neither way, because whether the pledge stands is a person's decision. The gauge
+      # counts such pages within the sweep's seven-day window, so the alert clears by itself
+      # after a week whether or not anybody acted — which is why it fires at the first one.
+      - alert: HostedPaymentReturnedUnsettled
+        expr: max(ideanest_payment_hosted_attention{reason="returned"}) > 0
+        for: 5m
+        labels:
+          severity: ticket
+        annotations:
+          summary: A payment was paid and returned without a callback
+          description: >-
+            {{ $value }} payment page(s) are reported paid and already returned by the
+            provider, and their pledges are still drafts. Search the log for
+            "paid and returned without a callback" for the pledge and transaction.
+
+      # Pages the provider could not be asked about: unreachable, or taken through a provider
+      # that no longer has an adapter here (switching primary turns the old one off). Such a
+      # page is asked again every pass until its window ends and is then forgotten, so a
+      # count that stays up is a backer who may have paid for a pledge nobody will confirm.
+      - alert: HostedPaymentsUnanswerable
+        expr: max(ideanest_payment_hosted_attention{reason="unanswered"}) > 0
+        for: 1h
+        labels:
+          severity: ticket
+        annotations:
+          summary: Payment pages cannot be checked with their provider
+          description: >-
+            {{ $value }} unsettled payment page(s) could not be looked up with their
+            provider for an hour. Search the log for "hosted-charge-sweep" to see which
+            provider, and whether it is unreachable or has no adapter configured.
+
   - name: ideanest-queues
     interval: 1m
     rules:
