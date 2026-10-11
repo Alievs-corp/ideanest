@@ -323,7 +323,7 @@ class LegalDocumentApiTests extends AbstractIntegrationTest {
 
         ResponseEntity<Map<String, Object>> activated = activate("TERMS_OF_USE", 1, admin().accessToken());
         assertThat(activated.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(events.stream(LegalDocumentInForceChanged.class))
+        assertThat(legalChanges.changes())
                 .contains(new LegalDocumentInForceChanged(DocumentKind.TERMS_OF_USE, 1));
 
         assertThat(current("TERMS_OF_USE", "az").get("body")).isEqualTo("Birinci mətn.");

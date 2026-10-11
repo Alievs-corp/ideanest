@@ -1453,6 +1453,41 @@
         "tags" : [ "admin-legal-document-controller" ]
       }
     },
+    "/v1/admin/legal/documents/{kind}/versions/{version}/activate" : {
+      "post" : {
+        "operationId" : "adminLegalDocumentActivate",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "kind",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "TERMS_OF_USE", "PRIVACY_POLICY", "COOKIE_POLICY", "PLATFORM_RULES", "CREATOR_AGREEMENT", "BACKER_AGREEMENT", "DELIVERY_AND_REFUND_POLICY", "DISPUTE_RESOLUTION_POLICY" ]
+          }
+        }, {
+          "in" : "path",
+          "name" : "version",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Catalogue"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-legal-document-controller" ]
+      }
+    },
     "/v1/admin/legal/documents/{kind}/{locale}/draft" : {
       "put" : {
         "operationId" : "adminLegalDocumentDraft",
@@ -13378,6 +13413,10 @@
             "items" : {
               "$ref" : "#/components/schemas/Document"
             }
+          },
+          "inForceVersion" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "kind" : {
             "type" : "string"

@@ -628,6 +628,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/legal/documents/{kind}/versions/{version}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminLegalDocumentActivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/legal/documents/{kind}/{locale}/draft": {
         parameters: {
             query?: never;
@@ -5249,6 +5265,8 @@ export interface components {
         };
         History: {
             drafts?: components["schemas"]["Document"][];
+            /** Format: int32 */
+            inForceVersion?: number;
             kind?: string;
             versions?: components["schemas"]["Summary"][];
         };
@@ -8577,6 +8595,29 @@ export interface operations {
                 "application/json": components["schemas"]["PublishRequest"];
             };
         };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Catalogue"];
+                };
+            };
+        };
+    };
+    adminLegalDocumentActivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kind: "TERMS_OF_USE" | "PRIVACY_POLICY" | "COOKIE_POLICY" | "PLATFORM_RULES" | "CREATOR_AGREEMENT" | "BACKER_AGREEMENT" | "DELIVERY_AND_REFUND_POLICY" | "DISPUTE_RESOLUTION_POLICY";
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
