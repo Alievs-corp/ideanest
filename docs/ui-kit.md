@@ -1071,7 +1071,7 @@ project photography stronger than a light theme can.
 
 The campaign grids on the web (`CAMPAIGN_GRID` and `PROFILE_CAMPAIGN_GRID` in
 `apps/web/src/components/browse/campaign-grid-layout.ts`) take 85% of the
-content column, with the same columns and the same 16px gap, so every campaign
+content column, centred in it (#374), with the same columns and the same 16px gap, so every campaign
 card is 85% of the width it would otherwise have, at every breakpoint. The card
 interior steps down one rung with it: title `16px` rather than §7.1's `18px`,
 body and figures `12px` rather than `14px`, tags and meta `11px` (`--text-2xs`,

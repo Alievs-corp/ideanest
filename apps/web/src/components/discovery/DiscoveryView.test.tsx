@@ -492,6 +492,29 @@ describe('the applied-filter chips', () => {
  * Sort
  * ---------------------------------------------------------------------- */
 
+describe('the toolbar', () => {
+  it('groups the filters button with the sort control, away from the count', async () => {
+    // #374: filters and sort both change what the grid shows, so they are one group on the
+    // right; the count only reports and keeps the left.
+    nav.reset('');
+    render(<DiscoveryView cardCopy={CARD_COPY} locale="en" copy={FEED_COPY} />);
+    await waitFor(() => expect(feedMock).toHaveBeenCalled());
+
+    const filtersButton = screen.getByRole('button', { name: /^Filters/ });
+    const sortButton = screen.getByRole('button', { name: /Sort by/ });
+    const group = filtersButton.parentElement;
+
+    expect(group).not.toBeNull();
+    expect(group).toContainElement(sortButton);
+    expect(group).toHaveClass('sm:justify-end', 'items-end');
+    // One height as the select's trigger (`h-10`), so the two share a line.
+    expect(filtersButton).toHaveClass('h-10');
+    expect(sortButton).toHaveClass('h-10');
+    expect(filtersButton).toHaveAttribute('aria-controls');
+    expect(filtersButton).toHaveAttribute('aria-expanded', 'false');
+  });
+});
+
 describe('the sort control', () => {
   it('changes the request and the URL', async () => {
     const user = await open();
