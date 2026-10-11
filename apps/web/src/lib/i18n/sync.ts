@@ -134,6 +134,7 @@ export async function pushLocale(locale: Locale): Promise<boolean> {
     // Offline, or the session ended: the mark stays, and the next session read sends it again.
   }
 
+  if (typeof document === 'undefined') return saved;
   if (saved && currentLocaleCookie() === locale) {
     writeMarker(LOCALE_SYNCED_COOKIE, locale);
     writeMarker(LOCALE_PENDING_COOKIE, null);
@@ -147,6 +148,9 @@ export async function pushLocale(locale: Locale): Promise<boolean> {
  * adopted, or the choice made here is sent, or nothing.
  */
 export function syncLocale(account: object | null): void {
+  // The module loads after the session read, so the page (or a test's environment) can be gone.
+  if (typeof document === 'undefined') return;
+
   if (account === null) {
     writeMarker(LOCALE_SYNCED_COOKIE, null);
     writeMarker(LOCALE_PENDING_COOKIE, null);

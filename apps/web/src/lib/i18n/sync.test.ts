@@ -176,3 +176,16 @@ describe('a session read', () => {
     expect(cookies()).toEqual({ chosen: 'tr', synced: null, pending: null });
   });
 });
+
+describe('a sync that lands after the page is gone', () => {
+  it('does nothing rather than touching a document that no longer exists', () => {
+    vi.stubGlobal('document', undefined);
+    try {
+      expect(() => syncLocale({ locale: 'ru' })).not.toThrow();
+      expect(() => syncLocale(null)).not.toThrow();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
