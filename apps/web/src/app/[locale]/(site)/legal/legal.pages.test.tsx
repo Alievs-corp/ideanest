@@ -116,6 +116,39 @@ describe.each(SUPPORTED_LOCALES)('a legal document in %s', (locale) => {
     expect(container.textContent).not.toContain(copy.unavailable.title);
   });
 
+  it('shows neither the version number nor the effective date', async () => {
+    documentMock.mockResolvedValue({
+      state: 'published',
+      document: { ...documentIn(locale), effectiveFrom: '2026-10-10T22:36:15Z' },
+    });
+
+    const { container } = await current(locale);
+
+    expect(container.textContent).not.toContain(copy.meta.version.replace('{version}', '3'));
+    expect(container.textContent).not.toContain('2026');
+    expect(container.querySelector('a[href*="/v/"]')).toBeNull();
+  });
+
+  it('lists published documents without a version or a date', async () => {
+    catalogueMock.mockResolvedValue([
+      {
+        kind: 'TERMS_OF_USE',
+        locale,
+        version: 3,
+        title: 'Published title',
+        effectiveFrom: '2026-10-10T22:36:15Z',
+      },
+    ]);
+    state.locale = locale;
+
+    const { container } = render(
+      await resolveServerTree(await LegalIndexRoute({ params: Promise.resolve({ locale }) })),
+    );
+
+    expect(container.textContent).not.toContain(copy.meta.version.replace('{version}', '3'));
+    expect(container.textContent).not.toContain('2026');
+  });
+
   it('says "not published" on the service’s 404', async () => {
     documentMock.mockResolvedValue({ state: 'unpublished' });
 

@@ -5156,6 +5156,7 @@
       "metaTitle": "Legal documents",
       "metaDescription": "The terms, policies and agreements IdeyaNest publishes, with the version and effective date of each.",
       "intro": "Every document below has a permanent address. Each shows its version number, the date it started to apply, and the digest of its text, so that a version somebody accepted can be identified and read years later.",
+      "lead": "Every document below has a permanent address.",
       "inForce": "Version {version}, in force since {date}",
       "notPublished": "Not published yet",
       "archiveNote": "Previous versions are never deleted. From any document you can reach the version before it, which is how somebody who accepted an earlier one can read exactly what they accepted."
