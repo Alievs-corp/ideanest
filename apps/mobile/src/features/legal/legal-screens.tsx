@@ -21,7 +21,6 @@ import {
   StaticPage,
 } from '../../components/content/static-page';
 import {
-  Caption,
   ContentSheet,
   IconButton,
   Skeleton,
@@ -32,7 +31,7 @@ import {
 } from '../../components/ui';
 import { Glyphs } from '../../icons';
 import { useOnline } from '../../lib/connectivity';
-import { formatServerInstant, useT } from '../../lib/i18n';
+import { useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { size, spacing } from '../../theme';
 import { NavRow, RowGroup } from '../settings/settings-row';
@@ -53,8 +52,8 @@ import { useArchivedLegalDocument, useLegalCatalogue, useLegalDocument } from '.
  * <h2>The text is text</h2>
  *
  * The body is plain text split on blank lines (`paragraphsOf`, shared with the web), drawn as
- * paragraphs: no markdown, no HTML, no web view. Provenance — version, date, language, digest —
- * comes first, because it is what makes the rest readable as a specific version.
+ * paragraphs: no markdown, no HTML, no web view. Version number and effective date are not shown
+ * (owner's decision, 2026-10-11, as on the web); the governing-language note and digest come first.
  */
 
 export function LegalIndexScreen() {
@@ -67,13 +66,8 @@ export function LegalIndexScreen() {
   const [pulling, setPulling] = useState(false);
   const inForce = new Map((catalogue.data ?? []).map((summary) => [summary.kind, summary]));
 
-  const status = (summary: LegalDocumentSummary | undefined): string => {
-    if (summary === undefined) return t('index.notPublished');
-    const date = formatServerInstant(summary.effectiveFrom, locale);
-    return date === null
-      ? t('meta.version', { version: summary.version })
-      : t('index.inForce', { version: summary.version, date });
-  };
+  const status = (summary: LegalDocumentSummary | undefined): string | undefined =>
+    summary === undefined ? t('index.notPublished') : undefined;
 
   return (
     <StaticPage
@@ -113,11 +107,10 @@ export function LegalIndexScreen() {
               ))}
             </RowGroup>
           )}
-          <Caption style={styles.note}>{t('index.archiveNote')}</Caption>
         </ContentSheet>
       }
     >
-      <Paragraph>{t('index.intro')}</Paragraph>
+      <Paragraph>{t('index.lead')}</Paragraph>
     </StaticPage>
   );
 }
@@ -242,7 +235,7 @@ function DocumentPage({
       title={document.title}
       summary={t(`documents.${slug}.summary`)}
     >
-      <Provenance document={document} archived={archivedVersion !== undefined} />
+      <Provenance document={document} />
 
       {archivedVersion === undefined ? null : (
         <RichParagraph tone="secondary" testID="legal-archive-notice">
@@ -260,35 +253,16 @@ function DocumentPage({
         <Paragraph key={index}>{paragraph.replace(/\s*\n\s*/gu, ' ')}</Paragraph>
       ))}
 
-      {archivedVersion === undefined && document.version > 1 ? (
-        <RichParagraph tone="secondary" testID="legal-previous">
-          {(tag) => (
-            <>
-              {t('archive.previousAvailable')}{' '}
-              {tag.link(legalPath(slug, document.version - 1))(
-                t('archive.readVersion', { version: document.version - 1 }),
-              )}
-            </>
-          )}
-        </RichParagraph>
-      ) : null}
     </StaticPage>
   );
 }
 
-/** Version, date, governing language and digest, before the text — `LegalDocumentPage`'s list. */
-function Provenance({ document, archived }: { readonly document: LegalDocument; readonly archived: boolean }) {
+/** Governing language and digest, before the text — `LegalDocumentPage`'s list. */
+function Provenance({ document }: { readonly document: LegalDocument }) {
   const t = useT('legal');
   const locale = useLocale();
-  const effective = formatServerInstant(document.effectiveFrom, locale);
   return (
     <RuledList testID="legal-provenance">
-      <Paragraph>
-        {archived
-          ? t('meta.archivedVersion', { version: document.version })
-          : t('meta.version', { version: document.version })}
-      </Paragraph>
-      {effective === null ? null : <Paragraph>{t('meta.effectiveFrom', { date: effective })}</Paragraph>}
       {document.locale === locale ? null : (
         <Paragraph testID="legal-governing-language">{t('meta.governingLanguage')}</Paragraph>
       )}
@@ -362,7 +336,6 @@ const ROW_SKELETON = size.touchTarget + spacing[3];
 const styles = StyleSheet.create({
   skeletonRows: { gap: spacing[1] },
   skeletonText: { gap: spacing[3] },
-  note: { marginTop: spacing[4] },
   hashRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
   hashText: { flex: 1 },
   mono: { fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }) },
