@@ -5156,6 +5156,7 @@
       "metaTitle": "Hukuki belgeler",
       "metaDescription": "IdeyaNest’in yayımladığı koşullar, politikalar ve sözleşmeler; her birinin sürümü ve yürürlük tarihiyle.",
       "intro": "Aşağıdaki her belgenin kalıcı bir adresi var. Her biri sürüm numarasını, uygulanmaya başladığı tarihi ve metninin özetini gösterir; böylece birinin kabul ettiği sürüm yıllar sonra da bulunup okunabilir.",
+      "lead": "Aşağıdaki her belgenin kalıcı bir adresi var.",
       "inForce": "Sürüm {version}, {date} tarihinden beri yürürlükte",
       "notPublished": "Henüz yayımlanmadı",
       "archiveNote": "Önceki sürümler asla silinmez. Herhangi bir belgeden bir önceki sürüme geçebilirsiniz; daha eski bir sürümü kabul eden biri tam olarak neyi kabul ettiğini böyle okuyabilir."
