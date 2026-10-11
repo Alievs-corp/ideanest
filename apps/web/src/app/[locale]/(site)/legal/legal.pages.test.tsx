@@ -126,6 +126,7 @@ describe.each(SUPPORTED_LOCALES)('a legal document in %s', (locale) => {
 
     expect(container.textContent).not.toContain(copy.meta.version.replace('{version}', '3'));
     expect(container.textContent).not.toContain('2026');
+    expect(container.textContent).not.toContain('c'.repeat(64));
     expect(container.querySelector('a[href*="/v/"]')).toBeNull();
   });
 

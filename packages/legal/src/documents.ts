@@ -212,3 +212,19 @@ export function paragraphsOf(body: string): readonly string[] {
     .map((paragraph) => paragraph.trim())
     .filter((paragraph) => paragraph !== '');
 }
+
+/**
+ * A leading "Version 3.0 · Published: … · Effective: …" line, in any of the four languages.
+ *
+ * Administrators wrote it into the bodies themselves. The owner decided on 2026-10-11 that readers
+ * see neither a version nor a date, so it is left out when drawing. The stored text, and the hash
+ * an acceptance names, are unchanged.
+ */
+const VERSION_LINE = /^(?:Versiya|Version|Версия|Sürüm)\s+\d+(?:\.\d+)*\s*·/u;
+
+/** {@link paragraphsOf}, without a leading version-and-date line. What both clients draw. */
+export function readableParagraphsOf(body: string): readonly string[] {
+  const paragraphs = paragraphsOf(body);
+  const first = paragraphs[0];
+  return first !== undefined && VERSION_LINE.test(first) ? paragraphs.slice(1) : paragraphs;
+}

@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Clipboard from 'expo-clipboard';
 import {
   LEGAL_DOCUMENTS,
   archivedVersionOf,
   isLegalDocumentSlug,
   kindOf,
   legalPath,
-  paragraphsOf,
+  readableParagraphsOf,
   type LegalDocument,
   type LegalDocumentSlug,
   type LegalDocumentSummary,
@@ -22,11 +21,8 @@ import {
 } from '../../components/content/static-page';
 import {
   ContentSheet,
-  IconButton,
   Skeleton,
   SkeletonGroup,
-  Story,
-  announce,
   type ScreenError,
 } from '../../components/ui';
 import { Glyphs } from '../../icons';
@@ -51,7 +47,7 @@ import { useArchivedLegalDocument, useLegalCatalogue, useLegalDocument } from '.
  *
  * <h2>The text is text</h2>
  *
- * The body is plain text split on blank lines (`paragraphsOf`, shared with the web), drawn as
+ * The body is plain text split on blank lines (`readableParagraphsOf`, shared with the web), drawn as
  * paragraphs: no markdown, no HTML, no web view. Version number and effective date are not shown
  * (owner's decision, 2026-10-11, as on the web); the governing-language note and digest come first.
  */
@@ -247,7 +243,7 @@ function DocumentPage({
         </RichParagraph>
       )}
 
-      {paragraphsOf(document.body).map((paragraph, index) => (
+      {readableParagraphsOf(document.body).map((paragraph, index) => (
         // The paragraphs have no identity of their own and never reorder within a version. A single
         // line break collapses to a space, as a browser draws the same text.
         <Paragraph key={index}>{paragraph.replace(/\s*\n\s*/gu, ' ')}</Paragraph>
@@ -257,77 +253,16 @@ function DocumentPage({
   );
 }
 
-/** Governing language and digest, before the text — `LegalDocumentPage`'s list. */
+/** The governing-language note, before the text, when the reader's language was not available. */
 function Provenance({ document }: { readonly document: LegalDocument }) {
   const t = useT('legal');
   const locale = useLocale();
+  if (document.locale === locale) return null;
   return (
     <RuledList testID="legal-provenance">
-      {document.locale === locale ? null : (
-        <Paragraph testID="legal-governing-language">{t('meta.governingLanguage')}</Paragraph>
-      )}
-      <ContentHash hash={document.contentHash} />
+      <Paragraph testID="legal-governing-language">{t('meta.governingLanguage')}</Paragraph>
     </RuledList>
   );
-}
-
-/**
- * The SHA-256 of the text, which is what an acceptance is taken over.
- *
- * A 64-character hex run has no break opportunity, so a zero-width space every eight characters
- * lets it wrap on a narrow screen instead of overflowing it (the web's `break-all`). Read aloud in
- * groups of four rather than as one 64-letter word, and copied by the button beside it.
- */
-function ContentHash({ hash }: { readonly hash: string }) {
-  const t = useT('legal');
-  const tContent = useT('mobile.content');
-  const [prefix, suffix] = t('meta.contentHash', { hash: HASH_SLOT }).split(HASH_SLOT);
-
-  const copy = async () => {
-    let copied = false;
-    try {
-      copied = await Clipboard.setStringAsync(hash);
-    } catch {
-      copied = false;
-    }
-    announce(copied ? tContent('hashCopied') : tContent('copyFailed'), { assertive: !copied });
-  };
-
-  return (
-    <View style={styles.hashRow}>
-      <Story
-        style={styles.hashText}
-        accessibilityLabel={t('meta.contentHash', { hash: groupsOf(hash, 4).join(' ') })}
-        testID="legal-hash"
-      >
-        {prefix}
-        <Text style={styles.mono}>{wrappable(hash)}</Text>
-        {suffix}
-      </Story>
-      <IconButton
-        icon={Glyphs.Copy}
-        label={tContent('copyHash')}
-        variant="ghost"
-        size="sm"
-        onPress={() => void copy()}
-        testID="legal-copy-hash"
-      />
-    </View>
-  );
-}
-
-/** A marker no catalogue sentence contains, to split the sentence around the digest. */
-const HASH_SLOT = '\u0000';
-const ZERO_WIDTH_SPACE = '\u200B';
-
-export function wrappable(hash: string): string {
-  return groupsOf(hash, 8).join(ZERO_WIDTH_SPACE);
-}
-
-function groupsOf(value: string, size: number): string[] {
-  const groups: string[] = [];
-  for (let at = 0; at < value.length; at += size) groups.push(value.slice(at, at + size));
-  return groups;
 }
 
 /** A NavRow's height (`settings-row.tsx`: the touch target and its padding). */
@@ -336,7 +271,4 @@ const ROW_SKELETON = size.touchTarget + spacing[3];
 const styles = StyleSheet.create({
   skeletonRows: { gap: spacing[1] },
   skeletonText: { gap: spacing[3] },
-  hashRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing[2] },
-  hashText: { flex: 1 },
-  mono: { fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }) },
 });
