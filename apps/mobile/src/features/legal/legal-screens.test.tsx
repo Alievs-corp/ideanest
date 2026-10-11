@@ -132,9 +132,9 @@ describe('the legal index', () => {
       'legal-row-dispute-resolution-policy',
     ]);
     const names = rows.map((row) => row.props.accessibilityLabel as string);
-    // In UTC, as the web's server writes it: 20:00 UTC is already the 2nd in Baku.
-    expect(names[0]).toBe(`${L.documents['terms-of-use'].title}, Version 2, in force since 1 March 2026 at 20:00 UTC`);
-    expect(names[1]).toBe(`${L.documents['privacy-policy'].title}, Version 1`);
+    // No version and no date: a published document is its title alone.
+    expect(names[0]).toBe(L.documents['terms-of-use'].title);
+    expect(names[1]).toBe(L.documents['privacy-policy'].title);
     expect(names.filter((name) => name.endsWith(L.index.notPublished))).toHaveLength(5);
 
     await fireEvent.press(rows[5]!);
@@ -167,8 +167,8 @@ describe('a document in force', () => {
     await show(<LegalDocumentScreen document="terms-of-use" />);
 
     expect(requests[0]?.pathname).toMatch(/\/v1\/legal\/documents\/TERMS_OF_USE$/);
-    expect(screen.getByText('Version 1')).toBeTruthy();
-    expect(screen.getByText('In force since 1 March 2026 at 20:00 UTC')).toBeTruthy();
+    expect(screen.queryByText('Version 1')).toBeNull();
+    expect(screen.queryByText(/2026/u)).toBeNull();
     expect(screen.queryByTestId('legal-governing-language')).toBeNull();
     for (const text of ['First paragraph.', 'Second paragraph.', 'Third paragraph.']) {
       expect(screen.getByText(text)).toBeTruthy();
@@ -182,11 +182,11 @@ describe('a document in force', () => {
     expect(screen.getByText(L.meta.governingLanguage)).toBeTruthy();
   });
 
-  it('links to the version before it from version 3', async () => {
+  it('does not link to an earlier version, because versions are not shown', async () => {
     route = () => json(document({ version: 3 }));
     await show(<LegalDocumentScreen document="terms-of-use" />);
-    await fireEvent.press(screen.getByRole('link', { name: 'Read version 2' }));
-    expect(mockPush).toHaveBeenCalledWith('/legal/terms-of-use/v/2');
+    expect(screen.queryByTestId('legal-previous')).toBeNull();
+    expect(screen.queryByText(/Version/u)).toBeNull();
   });
 
   it('says "not published" for a 404, with the way back to the index', async () => {
@@ -224,7 +224,8 @@ describe('an archived version', () => {
     route = () => json(document({ version: 7 }));
     await show(<ArchivedLegalDocumentScreen document="terms-of-use" version="7" />);
     expect(requests[0]?.pathname).toMatch(/\/v1\/legal\/documents\/TERMS_OF_USE\/versions\/7$/);
-    expect(screen.getByText('Version 7 — no longer in force')).toBeTruthy();
+    expect(screen.queryByText(/Version 7/u)).toBeNull();
+    expect(screen.getByTestId('legal-archive-notice')).toBeTruthy();
     expect(screen.queryByTestId('legal-previous')).toBeNull();
     await fireEvent.press(screen.getByRole('link', { name: L.archive.readCurrent }));
     expect(mockPush).toHaveBeenCalledWith('/legal/terms-of-use');
