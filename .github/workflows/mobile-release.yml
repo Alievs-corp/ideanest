@@ -299,13 +299,11 @@ jobs:
           ENVIRONMENT: ${{ inputs.profile == 'github' && 'production' || inputs.profile }}
           ROLLOUT: ${{ inputs.rollout }}
           MESSAGE: ${{ inputs.message || format('Update from {0}', github.sha) }}
-        run: >-
-          pnpm dlx eas-cli@latest update
-          --channel "$CHANNEL"
-          --environment "$ENVIRONMENT"
-          --rollout-percentage "$ROLLOUT"
-          --message "$MESSAGE"
-          --non-interactive
+        # EAS takes a rollout percentage from 0 to 99 only; everybody is the flag left out.
+        run: |
+          rollout=()
+          if [ "$ROLLOUT" -lt 100 ]; then rollout=(--rollout-percentage "$ROLLOUT"); fi
+          pnpm dlx eas-cli@latest update             --channel "$CHANNEL"             --environment "$ENVIRONMENT"             "${rollout[@]}"             --message "$MESSAGE"             --non-interactive
 
       # The update's source maps, so a crash in the JavaScript it shipped is
       # symbolicated (#165). `eas update` exported the bundles and their maps

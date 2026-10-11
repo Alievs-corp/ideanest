@@ -1,0 +1,53 @@
+name: Mobile auto update
+
+# Every merge to main that changes what the app runs is published as an
+# over-the-air update to the `github` channel, so nobody has to dispatch
+# `Mobile release` by hand for a JavaScript change.
+#
+# It dispatches `Mobile release` (operation: update, profile: github, 100%)
+# rather than repeating it, so the checks, the fingerprinted export and the
+# source-map upload stay in one place.
+#
+# The app checks for an update on launch and every 15 minutes in the
+# foreground, downloads it, and offers a restart (`src/lib/app-update.ts`).
+#
+# A change to native code produces a new fingerprint, so its update reaches no
+# installed APK: those phones need a new `github-release` build, which stays a
+# manual dispatch because it spends EAS build minutes.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'packages/**'
+      - '!packages/ui/**'
+      - 'pnpm-lock.yaml'
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: mobile-auto-update
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    name: Publish the update to the github channel
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch Mobile release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          subject="$(printf '%s' "$MESSAGE" | head -n 1)"
+          gh workflow run mobile-release.yml \
+            --ref main \
+            -f operation=update \
+            -f profile=github \
+            -f rollout=100 \
+            -f message="${subject:-Update from $GITHUB_SHA}"
