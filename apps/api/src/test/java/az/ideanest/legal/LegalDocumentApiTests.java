@@ -9,6 +9,7 @@ import az.ideanest.legal.domain.DocumentKind;
 import az.ideanest.legal.domain.LegalDocument;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
+import az.ideanest.support.RecordingLegalChanges;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -31,8 +32,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.event.ApplicationEvents;
-import org.springframework.test.context.event.RecordApplicationEvents;
 
 /**
  * V65's two tables and the console that writes them — issue #425.
@@ -48,7 +47,6 @@ import org.springframework.test.context.event.RecordApplicationEvents;
  * It is asserted against the database rather than against the service, because the service
  * is not the only thing that ever writes to a table.
  */
-@RecordApplicationEvents
 class LegalDocumentApiTests extends AbstractIntegrationTest {
 
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
@@ -70,7 +68,7 @@ class LegalDocumentApiTests extends AbstractIntegrationTest {
     private AccessTokenIssuer tokens;
 
     @Autowired
-    private ApplicationEvents events;
+    private RecordingLegalChanges legalChanges;
 
     @AfterEach
     void clear() {
@@ -305,10 +303,11 @@ class LegalDocumentApiTests extends AbstractIntegrationTest {
     @Test
     @DisplayName("publishing announces the version, so the web's cached legal pages are dropped")
     void publishingAnnouncesTheVersion() {
+        legalChanges.clear();
         draft("PRIVACY_POLICY", "az", "Məxfilik", "Mətn.");
         publish("PRIVACY_POLICY", null);
 
-        assertThat(events.stream(LegalDocumentInForceChanged.class))
+        assertThat(legalChanges.changes())
                 .containsExactly(new LegalDocumentInForceChanged(DocumentKind.PRIVACY_POLICY, 1));
     }
 

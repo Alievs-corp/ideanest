@@ -3,7 +3,6 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '../../../../i18n/navigation';
 import { StaticPage } from '../../../../components/content/StaticPage';
 import { LegalUnavailable } from '../../../../components/content/LegalUnavailable';
-import { formatInstant, SERVER_TIME_ZONE } from '../../../../lib/projects/deadline';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { LEGAL_DOCUMENTS, kindOf, legalPath } from '@ideanest/legal/documents';
 import { fetchLegalCatalogue } from '../../../../lib/legal/server';
@@ -16,7 +15,7 @@ import { publicPageMetadata } from '../../../../lib/seo/metadata';
  *
  * §22.2 requires eight documents, and a footer column with eight entries is a footer nobody
  * reads. More importantly, this is the page a regulator lands on: one address that says what the
- * platform is required to have, which of those it has published, and since when. Eight scattered
+ * platform is required to have, and which of those it has published. Eight scattered
  * links answer none of those questions in one place.
  *
  * <h2>It lists all eight, including the ones with nothing behind them</h2>
@@ -85,34 +84,22 @@ export default async function LegalIndexRoute({
 
   return (
     <StaticPage title={t('index.title')} summary={t('index.summary')}>
-      <p>{t('index.intro')}</p>
+      <p>{t('index.lead')}</p>
 
       <ul>
         {LEGAL_DOCUMENTS.map((slug) => {
-          const summary = inForce.get(kindOf(slug));
-          const effective =
-            summary?.effectiveFrom === undefined || summary.effectiveFrom === null
-              ? null
-              : formatInstant(summary.effectiveFrom, SERVER_TIME_ZONE, locale);
+          const published = inForce.has(kindOf(slug));
 
           return (
             <li key={slug}>
               <Link href={legalPath(slug)} className="text-white underline underline-offset-4">
                 {t(`documents.${slug}.title`)}
-              </Link>{' '}
-              <span className="text-white/64">
-                {summary === undefined
-                  ? t('index.notPublished')
-                  : effective === null
-                    ? t('meta.version', { version: summary.version })
-                    : t('index.inForce', { version: summary.version, date: effective })}
-              </span>
+              </Link>
+              {!published && <span className="text-white/64"> {t('index.notPublished')}</span>}
             </li>
           );
         })}
       </ul>
-
-      <p className="text-white/64">{t('index.archiveNote')}</p>
     </StaticPage>
   );
 }

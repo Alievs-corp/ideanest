@@ -1,8 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '../../i18n/navigation';
 import { StaticPage } from './StaticPage';
-import { formatInstant, SERVER_TIME_ZONE } from '../../lib/projects/deadline';
-import { localeOrDefault, type Locale } from '../../lib/i18n/locale';
+import type { Locale } from '../../lib/i18n/locale';
 import {
   legalPath,
   paragraphsOf,
@@ -13,13 +12,11 @@ import {
 /**
  * One version of one of §22.2's documents, rendered — issue #439.
  *
- * <h2>The version and the effective date are on the page, not in the metadata</h2>
+ * <h2>No version number and no effective date on the page</h2>
  *
- * #439 asks for both to be *visible*, and that is a stronger requirement than it sounds. A
- * legal document without a version is a document nobody can refer to: an acceptance record
- * names a number, and a reader who cannot see the number on the page cannot check that the two
- * agree. The effective date is the second half — "since when does this bind me" is the question
- * a person has when they arrive here already worried.
+ * #439 asked for both to be visible; the owner decided against it on 2026-10-11. The admin-authored
+ * text carries its own heading line, and the console keeps the version history. The archive routes
+ * still exist, so an acceptance record naming a version can still be followed to its text.
  *
  * <h2>The content hash is printed too</h2>
  *
@@ -88,11 +85,6 @@ export async function LegalDocumentPage({
     );
   }
 
-  const effective =
-    document.effectiveFrom === null
-      ? null
-      : formatInstant(document.effectiveFrom, SERVER_TIME_ZONE, localeOrDefault(locale));
-
   /*
    * The service answers in the language it has. It only ever falls back to Azerbaijani, so this
    * is a comparison against what was asked for rather than a general mismatch check.
@@ -101,18 +93,7 @@ export async function LegalDocumentPage({
 
   return (
     <StaticPage title={document.title} summary={t(`documents.${slug}.summary`)}>
-      {/*
-        The provenance block, before the text. It is deliberately the first thing after the
-        heading: everything below it binds the reader, and which version and from when is the
-        context that makes the rest readable rather than a wall of prose.
-      */}
       <ul>
-        <li>
-          {archivedVersion === undefined
-            ? t('meta.version', { version: document.version })
-            : t('meta.archivedVersion', { version: document.version })}
-        </li>
-        {effective !== null && <li>{t('meta.effectiveFrom', { date: effective })}</li>}
         {!translated && <li>{t('meta.governingLanguage')}</li>}
         <li>
           {/*
@@ -140,18 +121,6 @@ export async function LegalDocumentPage({
         // eslint-disable-next-line react/no-array-index-key
         <p key={index}>{paragraph}</p>
       ))}
-
-      {archivedVersion === undefined && document.version > 1 && (
-        <p className="text-white/64">
-          {t('archive.previousAvailable')}{' '}
-          <Link
-            href={legalPath(slug, document.version - 1)}
-            className="text-white underline underline-offset-4"
-          >
-            {t('archive.readVersion', { version: document.version - 1 })}
-          </Link>
-        </p>
-      )}
     </StaticPage>
   );
 }
