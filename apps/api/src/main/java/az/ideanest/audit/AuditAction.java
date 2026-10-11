@@ -606,6 +606,13 @@ public enum AuditAction {
     LEGAL_DOCUMENT_PUBLISHED("legal.document_published", "legal_document"),
 
     /**
+     * An administrator chose which published version of a legal document readers are shown.
+     *
+     * <p>The entity is the governing row of the chosen version, as for a publication.
+     */
+    LEGAL_DOCUMENT_ACTIVATED("legal.document_activated", "legal_document"),
+
+    /**
      * A member of staff read what an account has agreed to, and when.
      *
      * <p>Audited because it is a read of somebody's own record rather than of the

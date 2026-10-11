@@ -84,6 +84,10 @@ public class AdminLegalDocumentController {
         UUID caller = callerOf(accessToken);
         List<LegalDocument> versions = documents.history(caller, kind);
         List<LegalDocument> drafts = documents.drafts(caller, kind);
+        Integer inForceVersion = documents.inForce(kind).stream()
+                .map(LegalDocument::getVersion)
+                .findFirst()
+                .orElse(null);
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
@@ -93,7 +97,26 @@ public class AdminLegalDocumentController {
                                 .filter(LegalDocument::isPublished)
                                 .map(LegalResponses.Summary::of)
                                 .toList(),
-                        drafts.stream().map(LegalResponses.Document::of).toList()));
+                        drafts.stream().map(LegalResponses.Document::of).toList(),
+                        inForceVersion));
+    }
+
+    /**
+     * Shows readers this already published version instead of the latest one.
+     *
+     * <p>The website follows at once: the change drops the web's cached legal pages.
+     */
+    @PostMapping(
+            path = "/legal/documents/{kind}/versions/{version}/activate",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<LegalResponses.Catalogue> activate(
+            @AuthenticationPrincipal Jwt accessToken, @PathVariable DocumentKind kind, @PathVariable int version) {
+
+        List<LegalDocument> shown = documents.activate(callerOf(accessToken), kind, version);
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(LegalResponses.Catalogue.of(shown));
     }
 
     /**
