@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,13 +90,19 @@ public class LegalDocuments {
     private final PlatformStaff staff;
     private final AuditLog audit;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     public LegalDocuments(
-            LegalDocumentRepository documents, PlatformStaff staff, AuditLog audit, Clock clock) {
+            LegalDocumentRepository documents,
+            PlatformStaff staff,
+            AuditLog audit,
+            Clock clock,
+            ApplicationEventPublisher events) {
         this.documents = documents;
         this.staff = staff;
         this.audit = audit;
         this.clock = clock;
+        this.events = events;
     }
 
     /**
@@ -288,6 +295,8 @@ public class LegalDocuments {
                 governing.getVersion(),
                 saved.size(),
                 effective);
+
+        events.publishEvent(new LegalDocumentInForceChanged(kind, governing.getVersion()));
 
         return saved;
     }

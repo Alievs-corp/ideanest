@@ -4,9 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
+import az.ideanest.legal.application.LegalDocumentInForceChanged;
+import az.ideanest.legal.domain.DocumentKind;
 import az.ideanest.legal.domain.LegalDocument;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.support.AbstractIntegrationTest;
+import az.ideanest.support.RecordingLegalChanges;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -63,6 +66,9 @@ class LegalDocumentApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private AccessTokenIssuer tokens;
+
+    @Autowired
+    private RecordingLegalChanges legalChanges;
 
     @AfterEach
     void clear() {
@@ -292,6 +298,17 @@ class LegalDocumentApiTests extends AbstractIntegrationTest {
 
         assertThat(archived.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(archived.getBody().get("body")).isEqualTo("Birinci mətn.");
+    }
+
+    @Test
+    @DisplayName("publishing announces the version, so the web's cached legal pages are dropped")
+    void publishingAnnouncesTheVersion() {
+        legalChanges.clear();
+        draft("PRIVACY_POLICY", "az", "Məxfilik", "Mətn.");
+        publish("PRIVACY_POLICY", null);
+
+        assertThat(legalChanges.changes())
+                .containsExactly(new LegalDocumentInForceChanged(DocumentKind.PRIVACY_POLICY, 1));
     }
 
     @Test

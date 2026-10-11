@@ -113,12 +113,14 @@ export function profile(slug: string): string {
  * An empty string, a wildcard, or a tag built out of an unescaped campaign title are all
  * plausible mistakes, and the first two evict everything.
  *
- * So the vocabulary is closed: one of the three bare words, or a known prefix followed by a
+ * So the vocabulary is closed: one of the four bare words, or a known prefix followed by a
  * plausible identifier. Anything else is refused and named in the response, because a
  * caller whose tag was silently ignored would believe the cache was cleared.
  */
 export function isCacheTag(value: string): boolean {
-  if (value === DISCOVERY || value === TAXONOMY || value === COLLECTIONS) return true;
+  if (value === DISCOVERY || value === TAXONOMY || value === COLLECTIONS || value === LEGAL) {
+    return true;
+  }
 
   const separator = value.indexOf(':');
   if (separator <= 0) return false;

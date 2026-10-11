@@ -100,6 +100,11 @@ public class TestDoublesConfiguration {
         return new RecordingLaunchReminderNotifier();
     }
 
+    @Bean
+    RecordingLegalChanges recordingLegalChanges() {
+        return new RecordingLegalChanges();
+    }
+
     /**
      * The application clock, with a handle on it.
      *

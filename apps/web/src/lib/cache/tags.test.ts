@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   COLLECTIONS,
   DISCOVERY,
+  LEGAL,
   TAXONOMY,
   campaignAddress,
   collection,
@@ -31,6 +32,7 @@ describe('composing a tag', () => {
       DISCOVERY,
       TAXONOMY,
       COLLECTIONS,
+      LEGAL,
       project('0193f2a1-0000-7000-8000-000000000000'),
       campaignAddress('ayan', 'a-folding-bicycle'),
       collection('spring-2027'),
