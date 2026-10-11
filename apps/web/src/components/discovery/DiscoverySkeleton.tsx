@@ -1,6 +1,7 @@
 'use client';
 
 import { SkeletonCard, SkeletonGroup } from '@ideanest/ui';
+import { CAMPAIGN_GRID } from '../browse/campaign-grid-layout';
 
 /**
  * The placeholder grid, shown while the first page of results is in flight.
@@ -40,7 +41,8 @@ export interface DiscoverySkeletonProps {
 export function DiscoverySkeleton({ label }: DiscoverySkeletonProps) {
   return (
     <SkeletonGroup label={label}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {/* The feed's own grid, so the placeholders are the width the cards will be. */}
+      <div className={CAMPAIGN_GRID}>
         {CARDS.map((index) => (
           <SkeletonCard key={index} />
         ))}

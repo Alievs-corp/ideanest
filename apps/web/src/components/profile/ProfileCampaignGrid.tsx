@@ -10,6 +10,7 @@ import {
   listCreatedProjects,
   type ProfileProjectCard,
 } from '../../lib/profiles/api';
+import { PROFILE_CAMPAIGN_GRID } from '../browse/campaign-grid-layout';
 import { ProfileCampaignCard } from './ProfileCampaignCard';
 import type { Locale } from '../../lib/i18n/locale';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -139,7 +140,7 @@ export function ProfileCampaignGrid({
 
   return (
     <div className="flex flex-col gap-8">
-      <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className={PROFILE_CAMPAIGN_GRID}>
         {items.map((card, index) => (
           <li key={card.id} className="flex">
             <div className="flex w-full">
