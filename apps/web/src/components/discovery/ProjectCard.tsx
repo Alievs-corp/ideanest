@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
 import { MediaFrame, ProgressBar, Tag } from '@ideanest/ui/server';
 import { campaignAccent } from '@ideanest/discovery/category-look';
 import { ACCENT_SURFACE } from '../browse/accent-surface';
-import { DISCOVERY_CARD_SIZES } from '../../lib/images/sizes';
+import { CAMPAIGN_CARD_SIZES } from '../../lib/images/sizes';
 import { canOptimise } from '../../lib/images/source';
 import { formatMoney } from '../../lib/money';
 import type { ProjectCard as ProjectCardData } from '../../lib/discovery/api';
@@ -58,7 +58,7 @@ import { pluralise } from '../../lib/i18n/plurals';
  * crop, so the height of every card is decided at first paint and the grid does
  * not reflow as twenty-four photographs decode. `next/image` supplies the AVIF
  * and WebP variants and the `sizes` string says how wide the card really is at
- * each breakpoint, which is what stops a 440-pixel box downloading a
+ * each breakpoint, which is what stops a 373-pixel box downloading a
  * 3840-pixel photograph. Both are derived rather than typed here —
  * `lib/images/sizes.ts` reads them off this grid's own Tailwind classes.
  *
@@ -88,10 +88,10 @@ const URGENT_DAYS = 2;
  * `live`); it is here because the record is keyed by every status, and it matches the tag below.
  */
 const BADGES: Record<DiscoveryStatus, ReactNode> = {
-  upcoming: <CalendarClock className="size-3" />,
-  live: <CircleDot className="size-3" />,
-  extended: <CalendarPlus className="size-3" />,
-  successful: <CircleCheck className="size-3" />,
+  upcoming: <CalendarClock className="size-2.5" />,
+  live: <CircleDot className="size-2.5" />,
+  extended: <CalendarPlus className="size-2.5" />,
+  successful: <CircleCheck className="size-2.5" />,
 };
 
 /**
@@ -100,8 +100,17 @@ const BADGES: Record<DiscoveryStatus, ReactNode> = {
  * "Closing soon" is an hourglass, not lime, which stays the one "hurry" element on the card — the
  * last-48-hours countdown. Each is an icon plus a word, so colour never carries the meaning alone.
  */
-const CLOSING_SOON: ReactNode = <Hourglass className="size-3" />;
-const EXTENDED: ReactNode = <CalendarPlus className="size-3" />;
+const CLOSING_SOON: ReactNode = <Hourglass className="size-2.5" />;
+const EXTENDED: ReactNode = <CalendarPlus className="size-2.5" />;
+
+/**
+ * The card's tags, one rung down from `Tag`'s own 26px / 12px (#368).
+ *
+ * The card is drawn at 85% of its old width, and everything inside it steps down the same
+ * scale: 22px high, 11px type — docs/ui-kit.md §5.2's `--text-2xs`, the size the kit gives a
+ * badge, and the smallest it allows. The lime urgency pill below wears the same box.
+ */
+const CARD_TAG = 'h-5.5 gap-1 px-2 text-[11px]';
 
 /**
  * The completion figure, read as a decimal and never as a number.
@@ -178,7 +187,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
   return (
     <article
       data-on-accent=""
-      className={`group relative flex flex-col rounded-xl p-3 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
+      className={`group relative flex flex-col rounded-xl p-2.5 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
     >
       {/*
         HOVER LIFTS THE CARD AND LEANS INTO THE COVER (#341): a 4px rise and a 5%
@@ -212,7 +221,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
             src={card.image.url}
             alt=""
             fill
-            sizes={DISCOVERY_CARD_SIZES}
+            sizes={CAMPAIGN_CARD_SIZES}
             /*
              * An address on a host the optimiser will not fetch is served as
              * it is rather than thrown over. `next/image` raises on a URL no
@@ -227,10 +236,16 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
         )}
       </MediaFrame>
 
-      <div className="flex flex-1 flex-col gap-3 px-2 pt-4 pb-2">
-        <div className="flex flex-wrap items-center gap-2">
+      {/*
+        ONE RUNG DOWN, THROUGHOUT (#368). The card is 85% of the width it was, so its type
+        and spacing step down the scale with it rather than crowding a smaller box: title
+        18 → 16px, body 14 → 12px, meta 12 → 11px (docs/ui-kit.md §5.2's floor), padding,
+        gaps and icons one Tailwind step each. Colour, contrast and motion are unchanged.
+      */}
+      <div className="flex flex-1 flex-col gap-2.5 px-1.5 pt-3.5 pb-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {badge !== null && (
-            <Tag variant="onAccent" className="gap-1.5">
+            <Tag variant="onAccent" className={CARD_TAG}>
               <span aria-hidden="true" className="flex items-center">
                 {badge}
               </span>
@@ -239,7 +254,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           )}
 
           {card.extended === true && (
-            <Tag variant="onAccent" className="gap-1.5">
+            <Tag variant="onAccent" className={CARD_TAG}>
               <span aria-hidden="true" className="flex items-center">
                 {EXTENDED}
               </span>
@@ -248,7 +263,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           )}
 
           {card.closingSoon === true && (
-            <Tag variant="onAccent" className="gap-1.5">
+            <Tag variant="onAccent" className={CARD_TAG}>
               <span aria-hidden="true" className="flex items-center">
                 {CLOSING_SOON}
               </span>
@@ -266,15 +281,15 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
             */
             <span
               data-on-lime=""
-              className="inline-flex h-[26px] items-center gap-1.5 rounded-sm bg-lime-500 px-2.5 text-xs font-medium text-on-lime"
+              className={`inline-flex items-center rounded-sm bg-lime-500 font-medium text-on-lime ${CARD_TAG}`}
             >
-              <Clock aria-hidden="true" className="size-3" />
+              <Clock aria-hidden="true" className="size-2.5" />
               {daysLeftLabel(days, copy, locale)}
             </span>
           )}
         </div>
 
-        <h3 className="text-lg font-medium tracking-[-0.02em] text-on-accent">
+        <h3 className="text-base font-medium tracking-[-0.02em] break-words text-on-accent">
           {/*
             The whole card is reachable through this one link rather than
             through three — a stretched anchor keeps the pointer target the size
@@ -289,15 +304,16 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
           </Link>
         </h3>
 
-        <p className="text-sm text-on-accent/72">
+        <p className="text-xs text-on-accent/72">
           {fillNodes(copy.by, {
             creator: <span className="font-medium text-on-accent">{card.creator.name}</span>,
           })}
         </p>
 
         {completion !== null ? (
-          <div className="mt-auto flex flex-col gap-2 pt-2">
+          <div className="mt-auto flex flex-col gap-1.5 pt-1.5">
             <ProgressBar
+              className="h-1.25"
               value={
                 /*
                  * A width, not an amount. The figure a reader acts on is the
@@ -308,7 +324,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               }
               label={fillPlaceholders(copy.progressLabel, { percent: completion.toFixed(0) })}
             />
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-1 text-xs">
               <span className="font-medium text-on-accent tabular-nums">
                 {formatMoney(card.pledged)}
               </span>
@@ -322,20 +338,20 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
               track: a mark at 80% would be a second meaning the bar carries in colour and
               position alone (ui-kit §9.2), and the discovery budget allows no motion to explain it.
             */}
-            <p className="text-xs text-on-accent/72">{copy.rule}</p>
+            <p className="text-[11px] text-on-accent/72">{copy.rule}</p>
             {card.goal != null && (
-              <p className="text-xs text-on-accent/72 tabular-nums">
+              <p className="text-[11px] text-on-accent/72 tabular-nums">
                 {fillPlaceholders(copy.ofGoal, { amount: formatMoney(card.goal) })}
               </p>
             )}
           </div>
         ) : (
-          <p className="mt-auto pt-2 text-sm text-on-accent/72">{copy.notOpen}</p>
+          <p className="mt-auto pt-1.5 text-xs text-on-accent/72">{copy.notOpen}</p>
         )}
 
-        <div className="flex items-center gap-4 text-xs text-on-accent/72">
-          <span className="inline-flex items-center gap-1.5">
-            <Users aria-hidden="true" className="size-3.5" />
+        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[11px] text-on-accent/72">
+          <span className="inline-flex items-center gap-1">
+            <Users aria-hidden="true" className="size-3" />
             <span className="tabular-nums">
               {pluralise(locale, copy.backers, card.backersCount)}
             </span>
@@ -347,8 +363,8 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
             only on the urgent ones.
           */}
           {!urgent && showDays && days !== null && (
-            <span className="inline-flex items-center gap-1.5">
-              <Clock aria-hidden="true" className="size-3.5" />
+            <span className="inline-flex items-center gap-1">
+              <Clock aria-hidden="true" className="size-3" />
               <span className="tabular-nums">{daysLeftLabel(days, copy, locale)}</span>
             </span>
           )}

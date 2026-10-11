@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { ProjectCard as ProjectCardData } from '../../lib/discovery/api';
-import { DISCOVERY_CARD_SIZES } from '../../lib/images/sizes';
+import { CAMPAIGN_CARD_SIZES } from '../../lib/images/sizes';
 import { ProjectCard } from './ProjectCard';
 import { projectCardCopyFrom } from '../../lib/i18n/card-copy';
 import { translatorFor } from '../../test-copy';
@@ -272,7 +272,38 @@ describe('ProjectCard', () => {
       // from this grid's own Tailwind classes in `lib/images/sizes.ts`.
       const { container } = renderCard();
 
-      expect(container.querySelector('img')).toHaveAttribute('sizes', DISCOVERY_CARD_SIZES);
+      expect(container.querySelector('img')).toHaveAttribute('sizes', CAMPAIGN_CARD_SIZES);
+    });
+
+    it('steps its type down with the card, and no lower than the kit allows', () => {
+      // #368: the card is 85% of its old width, so the title is 16px rather than 18, the
+      // body 12px rather than 14, and the tags and meta 11px — docs/ui-kit.md §5.2's
+      // `--text-2xs`, the floor. Nothing on the card may go below it.
+      const { container } = renderCard({ badge: 'live', closingSoon: true, daysLeft: 1 });
+
+      expect(container.querySelector('h3')).toHaveClass('text-base');
+      expect(container.querySelector('h3')).not.toHaveClass('text-lg');
+
+      const sizes = [...container.querySelectorAll('[class]')].flatMap((element) =>
+        [...element.classList].filter((name) => /^text-\[\d+px\]$/.test(name)),
+      );
+      expect(sizes.length).toBeGreaterThan(0);
+      for (const size of sizes) {
+        expect(Number(size.slice('text-['.length, -'px]'.length))).toBeGreaterThanOrEqual(11);
+      }
+    });
+
+    it('lets its own tag size win over the shared tag', () => {
+      // `Tag` is 26px / 12px; the card's tags are one rung down. tailwind-merge has to drop
+      // the defaults rather than leave both classes fighting in the cascade.
+      const { container } = renderCard({ badge: 'live' });
+      const tag = screen.getByText(/live/i).closest('span');
+
+      expect(tag).toHaveClass('h-5.5', 'text-[11px]');
+      expect(tag).not.toHaveClass('h-[26px]');
+      expect(tag).not.toHaveClass('text-xs');
+      expect(container.querySelector('[role="progressbar"]')).toHaveClass('h-1.25');
+      expect(container.querySelector('[role="progressbar"]')).not.toHaveClass('h-1.5');
     });
 
     it('goes through the optimiser, with more than one candidate width', () => {

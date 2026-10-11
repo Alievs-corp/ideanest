@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { DISCOVERY_CARD_SIZES, PRELAUNCH_COVER_SIZES, sizesFor } from './sizes';
+import { CAMPAIGN_GRID, PROFILE_CAMPAIGN_GRID } from '../../components/browse/campaign-grid-layout';
+import {
+  CAMPAIGN_CARD_SIZES,
+  COLLECTION_CARD_SIZES,
+  PRELAUNCH_COVER_SIZES,
+  PROFILE_CARD_SIZES,
+  sizesFor,
+} from './sizes';
 
 /**
  * `sizes` decides how many bytes every visitor downloads and it is checked by
@@ -63,9 +70,35 @@ describe('sizesFor', () => {
  * this file exists to catch.
  */
 describe('the derived attributes', () => {
-  it('describes the discovery grid', () => {
+  it('describes the campaign grid', () => {
+    // max-w-[1400px] px-5 sm:px-6, then CAMPAIGN_GRID: 85% of that, gap-4, 1 → 2 → 3 columns.
+    for (const token of ['max-w-[85%]', 'grid-cols-1', 'gap-4', 'sm:grid-cols-2', 'xl:grid-cols-3']) {
+      expect(CAMPAIGN_GRID.split(' ')).toContain(token);
+    }
+    expect(CAMPAIGN_CARD_SIZES).toBe(
+      '(min-width: 1400px) 373px, ' +
+        '(min-width: 1280px) calc((85vw - 72px) / 3), ' +
+        '(min-width: 640px) calc(42.5vw - 28px), ' +
+        'calc(85vw - 34px)',
+    );
+  });
+
+  it('describes the profile campaign grid', () => {
+    // max-w-[1120px] px-5 sm:px-6, then PROFILE_CAMPAIGN_GRID: 85%, gap-4, 1 → 2 → 3 at lg.
+    for (const token of ['max-w-[85%]', 'grid-cols-1', 'gap-4', 'sm:grid-cols-2', 'lg:grid-cols-3']) {
+      expect(PROFILE_CAMPAIGN_GRID.split(' ')).toContain(token);
+    }
+    expect(PROFILE_CARD_SIZES).toBe(
+      '(min-width: 1168px) 294px, ' +
+        '(min-width: 1024px) calc((85vw - 72px) / 3), ' +
+        '(min-width: 640px) calc(42.5vw - 28px), ' +
+        'calc(85vw - 34px)',
+    );
+  });
+
+  it('describes the collection index grid', () => {
     // max-w-[1400px] px-5 sm:px-6, grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3
-    expect(DISCOVERY_CARD_SIZES).toBe(
+    expect(COLLECTION_CARD_SIZES).toBe(
       '(min-width: 1400px) 440px, ' +
         '(min-width: 1280px) calc((100vw - 80px) / 3), ' +
         '(min-width: 640px) calc(50vw - 32px), ' +

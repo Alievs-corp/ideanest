@@ -21,6 +21,7 @@ import {
 } from '@ideanest/discovery/filters';
 import { useDiscoveryFacets } from '../../lib/discovery/useDiscoveryFacets';
 import { useDiscoveryFeed, type SeededFeed } from '../../lib/discovery/useDiscoveryFeed';
+import { CAMPAIGN_GRID } from '../browse/campaign-grid-layout';
 import { ActiveFilters } from './ActiveFilters';
 import { DiscoverySkeleton } from './DiscoverySkeleton';
 import { FilterRail } from './FilterRail';
@@ -453,10 +454,7 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
 
             {feed.items.length > 0 && (
               <>
-                <ul
-                  aria-labelledby={RESULTS_HEADING_ID}
-                  className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-                >
+                <ul aria-labelledby={RESULTS_HEADING_ID} className={CAMPAIGN_GRID}>
                   {feed.items.map((card, index) => (
                     <li key={card.id}>
                       {/*
@@ -497,7 +495,7 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
 
                       {feed.loadingMore && (
                         <SkeletonGroup label={copy.loadingMore} className="w-full">
-                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                          <div className={CAMPAIGN_GRID}>
                             <Skeleton height="6rem" />
                             <Skeleton height="6rem" />
                             <Skeleton height="6rem" />

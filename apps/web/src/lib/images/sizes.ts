@@ -72,23 +72,61 @@ export function sizesFor(stops: readonly SizeStop[]): string {
 }
 
 /**
- * The discovery grid's card cover.
+ * A campaign card's cover — `ProjectCard`, on the discovery feed, the home page, the
+ * category landings, the search results and a collection's campaigns.
  *
- * `DiscoveryView`: `mx-auto w-full max-w-[1400px] px-5 sm:px-6`, and the grid is
- * `grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3`. Tailwind's `sm` is 640px
+ * Every one of those pages is `mx-auto w-full max-w-[1400px] px-5 sm:px-6`, and the grid is
+ * `CAMPAIGN_GRID` in `components/browse/campaign-grid-layout.ts`: `max-w-[85%]` of that
+ * column, `grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3` (#368). Tailwind's `sm` is 640px
  * and `xl` is 1280px, `gap-4` is 16px, `px-5` is 20px a side and `px-6` is 24.
+ *
+ *   ≥1400: the container stops growing — (0.85 × 1352 − 32) / 3 = 372.4, so 373px
+ *   ≥1280: three columns      — (0.85 × (100vw − 48) − 32) / 3 = (85vw − 72.8) / 3
+ *    ≥640: two columns        — (0.85 × (100vw − 48) − 16) / 2 = 42.5vw − 28.4
+ *    else: one column         —  0.85 × (100vw − 40)           = 85vw − 34
+ *
+ * The constants are rounded towards the larger box, so a cover is never upscaled. The widest
+ * this ever asks for is 373 CSS pixels, so a 3× display wants 1119; nothing on this surface
+ * has any use for the 2048 and 3840 candidates Next offers by default, which is why
+ * `next.config.mjs` stops at 1440.
+ */
+export const CAMPAIGN_CARD_SIZES = sizesFor([
+  { minWidth: 1400, size: '373px' },
+  { minWidth: 1280, size: 'calc((85vw - 72px) / 3)' },
+  { minWidth: 640, size: 'calc(42.5vw - 28px)' },
+  { size: 'calc(85vw - 34px)' },
+]);
+
+/**
+ * A campaign card's cover on a profile — `ProfileCampaignCard`, in `PROFILE_CAMPAIGN_GRID`.
+ *
+ * The same 85% grid inside the profile page's `mx-auto w-full max-w-[1120px] px-5 sm:px-6`,
+ * with the third column arriving at `lg` (1024px) rather than `xl`.
+ *
+ *   ≥1168: the container stops growing — (0.85 × 1072 − 32) / 3 = 293.1, so 294px
+ *   ≥1024: three columns      — (85vw − 72.8) / 3
+ *    ≥640: two columns        — 42.5vw − 28.4
+ *    else: one column         — 85vw − 34
+ */
+export const PROFILE_CARD_SIZES = sizesFor([
+  { minWidth: 1168, size: '294px' },
+  { minWidth: 1024, size: 'calc((85vw - 72px) / 3)' },
+  { minWidth: 640, size: 'calc(42.5vw - 28px)' },
+  { size: 'calc(85vw - 34px)' },
+]);
+
+/**
+ * A collection's card on the collection index — `CollectionCard`, in `CollectionIndex`.
+ *
+ * Not a campaign card, and not shrunk with them: this grid is the full width of the
+ * `max-w-[1400px] px-5 sm:px-6` column, `grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3`.
  *
  *   ≥1400: the container stops growing — (1400 − 48 − 32) / 3 = 440px
  *   ≥1280: three columns      — (100vw − 48 − 32) / 3
  *    ≥640: two columns        — (100vw − 48 − 16) / 2
  *    else: one column         —  100vw − 40
- *
- * The widest this ever asks for is 440 CSS pixels, so a 2× display wants 880 and
- * a 3× display 1320. Nothing on this surface has any use for the 2048 and 3840
- * candidates Next offers by default, which is why `next.config.mjs` stops at
- * 1440.
  */
-export const DISCOVERY_CARD_SIZES = sizesFor([
+export const COLLECTION_CARD_SIZES = sizesFor([
   { minWidth: 1400, size: '440px' },
   { minWidth: 1280, size: 'calc((100vw - 80px) / 3)' },
   { minWidth: 640, size: 'calc(50vw - 32px)' },
@@ -120,10 +158,8 @@ export const PRELAUNCH_COVER_SIZES = sizesFor([
  *    ≥640: one column, `px-6`    — 100vw − 48
  *    else: one column, `px-5`    — 100vw − 40
  *
- * THE INDEX'S CARDS ARE NOT HERE. `CollectionCard` sits in the same three-column grid as the
- * discovery feed's, at the same container width and the same gap, so it takes
- * `DISCOVERY_CARD_SIZES` rather than a second constant describing the identical layout — two
- * strings for one grid is one string that stops matching it.
+ * THE INDEX'S CARDS ARE NOT HERE. `CollectionCard` sits in a full-width three-column grid on
+ * the index page and takes `COLLECTION_CARD_SIZES`, above.
  */
 export const COLLECTION_COVER_SIZES = sizesFor([
   { minWidth: 1024, size: '560px' },

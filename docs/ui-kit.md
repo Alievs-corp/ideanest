@@ -1067,6 +1067,19 @@ Project imagery runs full-bleed at the top of the card, with radius on the upper
 corners only. The black ground is the system's largest advantage here: it makes
 project photography stronger than a light theme can.
 
+#### Campaign cards are drawn at 85% (#368)
+
+The campaign grids on the web (`CAMPAIGN_GRID` and `PROFILE_CAMPAIGN_GRID` in
+`apps/web/src/components/browse/campaign-grid-layout.ts`) take 85% of the
+content column, with the same columns and the same 16px gap, so every campaign
+card is 85% of the width it would otherwise have, at every breakpoint. The card
+interior steps down one rung with it: title `16px` rather than §7.1's `18px`,
+body and figures `12px` rather than `14px`, tags and meta `11px` (`--text-2xs`,
+the floor — nothing on a card goes below it), tags `22px` high rather than
+`26px`, and padding, gaps and icons one Tailwind step each. Colour, contrast
+and motion are unchanged. The cover `sizes` strings in `lib/images/sizes.ts`
+are derived from these grids and tested against them.
+
 #### In a filtered feed, urgency is a lime badge — not a lime card
 
 §8.1 maps "closing within 48 hours" to a `--lime-500` card, and §1.1 says

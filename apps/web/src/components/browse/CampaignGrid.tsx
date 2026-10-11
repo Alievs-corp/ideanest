@@ -1,5 +1,6 @@
 import type { ProjectCard as ProjectCardData } from '../../lib/discovery/api';
 import { ProjectCard } from '../discovery/ProjectCard';
+import { CAMPAIGN_GRID } from './campaign-grid-layout';
 import type { ProjectCardCopy } from '../../lib/i18n/card-copy';
 import type { Locale } from '../../lib/i18n/locale';
 
@@ -56,10 +57,7 @@ export function CampaignGrid({
   locale,
 }: CampaignGridProps) {
   return (
-    <ul
-      aria-label={label}
-      className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
-    >
+    <ul aria-label={label} className={CAMPAIGN_GRID}>
       {campaigns.map((card, index) => (
         <li key={card.id}>
           <ProjectCard
