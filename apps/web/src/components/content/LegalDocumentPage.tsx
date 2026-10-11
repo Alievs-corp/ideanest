@@ -4,7 +4,7 @@ import { StaticPage } from './StaticPage';
 import type { Locale } from '../../lib/i18n/locale';
 import {
   legalPath,
-  paragraphsOf,
+  readableParagraphsOf,
   type LegalDocument,
   type LegalDocumentSlug,
 } from '@ideanest/legal/documents';
@@ -93,17 +93,11 @@ export async function LegalDocumentPage({
 
   return (
     <StaticPage title={document.title} summary={t(`documents.${slug}.summary`)}>
-      <ul>
-        {!translated && <li>{t('meta.governingLanguage')}</li>}
-        <li>
-          {/*
-            `break-all` because a 64-character hex digest has no break opportunities of its own
-            and would otherwise push the measure wide on a narrow screen — CLAUDE.md's rule that
-            the page body must never scroll horizontally.
-          */}
-          <span className="break-all">{t('meta.contentHash', { hash: document.contentHash })}</span>
-        </li>
-      </ul>
+      {!translated && (
+        <ul>
+          <li>{t('meta.governingLanguage')}</li>
+        </ul>
+      )}
 
       {archivedVersion !== undefined && (
         <p className="text-white/64">
@@ -114,7 +108,7 @@ export async function LegalDocumentPage({
         </p>
       )}
 
-      {paragraphsOf(document.body).map((paragraph, index) => (
+      {readableParagraphsOf(document.body).map((paragraph, index) => (
         // The index is the key because the paragraphs have no identity of their own and the
         // list never reorders: it is rebuilt whole whenever a version is published, which is the
         // one case React's reconciliation would care about.

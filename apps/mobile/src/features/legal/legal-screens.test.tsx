@@ -3,7 +3,6 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
-import * as Clipboard from 'expo-clipboard';
 import en from '@ideanest/messages/en.json';
 import { setLocale } from '../../lib/locale';
 import { setOnline } from '../../lib/connectivity';
@@ -13,7 +12,6 @@ import {
   ArchivedLegalDocumentScreen,
   LegalDocumentScreen,
   LegalIndexScreen,
-  wrappable,
 } from './legal-screens';
 
 /**
@@ -30,7 +28,6 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, replace: mockReplace, back: jest.fn() }),
 }));
 
-jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
 
 jest.setTimeout(30_000);
 
@@ -238,21 +235,15 @@ describe('an archived version', () => {
   });
 });
 
-describe('the digest', () => {
-  it('breaks every eight characters and is read in groups of four', async () => {
-    route = () => json(document());
+describe('what is left out', () => {
+  it('shows no digest and no leading version line', async () => {
+    route = () =>
+      json(document({ body: 'Version 3.0 · Published: 11.10.2026 · Effective: 11.10.2026\n\nFirst paragraph.' }));
     await show(<LegalDocumentScreen document="terms-of-use" />);
-    expect(wrappable(HASH).split('​')).toEqual(HASH.match(/.{8}/g));
-    expect(screen.getByTestId('legal-hash').props.accessibilityLabel).toBe(
-      `SHA-256 of this text: ${HASH.match(/.{4}/g)!.join(' ')}`,
-    );
-  });
-
-  it('copies the whole digest', async () => {
-    route = () => json(document());
-    await show(<LegalDocumentScreen document="terms-of-use" />);
-    await fireEvent.press(screen.getByRole('button', { name: en.mobile.content.copyHash }));
-    expect(Clipboard.setStringAsync).toHaveBeenCalledWith(HASH);
+    expect(screen.queryByTestId('legal-hash')).toBeNull();
+    expect(screen.queryByText(/SHA-256/u)).toBeNull();
+    expect(screen.queryByText(/Version 3\.0/u)).toBeNull();
+    expect(screen.getByText('First paragraph.')).toBeTruthy();
   });
 });
 

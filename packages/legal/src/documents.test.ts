@@ -6,6 +6,7 @@ import {
   legalPath,
   LEGAL_DOCUMENTS,
   paragraphsOf,
+  readableParagraphsOf,
   readLegalCatalogue,
   readLegalDocument,
 } from './documents';
@@ -140,3 +141,24 @@ describe('the paragraphs of a body', () => {
   });
 });
 
+describe('the paragraphs a reader is shown', () => {
+  it.each([
+    'Versiya 3.0 · Dərc tarixi: 11.10.2026 · Qüvvəyə minmə tarixi: 11.10.2026',
+    'Version 3.0 · Published: 11.10.2026 · Effective: 11.10.2026',
+    'Версия 2 · Опубликовано: 11.10.2026',
+    'Sürüm 4.1 · Yayın: 11.10.2026',
+  ])('leave out a leading version line: %s', (line) => {
+    expect(readableParagraphsOf(`${line}\n\nFirst.\n\nSecond.`)).toEqual(['First.', 'Second.']);
+  });
+
+  it('keep a version mentioned anywhere else, and a first paragraph that only starts alike', () => {
+    expect(readableParagraphsOf('Intro.\n\nVersion 3.0 · Published: today')).toEqual([
+      'Intro.',
+      'Version 3.0 · Published: today',
+    ]);
+    expect(readableParagraphsOf('Version history is kept.\n\nFirst.')).toEqual([
+      'Version history is kept.',
+      'First.',
+    ]);
+  });
+});
