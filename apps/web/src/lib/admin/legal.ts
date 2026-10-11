@@ -77,6 +77,8 @@ export interface DocumentHistory {
   versions: DocumentSummary[];
   /** The open drafts, one per language at most. */
   drafts: DocumentDraft[];
+  /** The version readers are shown right now, or null when nothing is in force. */
+  inForceVersion?: number | null;
 }
 
 /** Every version of one document, and whatever is drafted against it. */
@@ -131,6 +133,26 @@ export interface PublishRequest {
    */
   readonly effectiveFrom: string | null;
   readonly signal?: AbortSignal;
+}
+
+/**
+ * Shows readers an already published version instead of the latest one, in every language.
+ *
+ * Nothing is edited: the version stays exactly as published. The next publication takes over
+ * again.
+ */
+export async function activateVersion(
+  kind: DocumentKind,
+  version: number,
+  signal?: AbortSignal,
+): Promise<{ documents: DocumentSummary[] }> {
+  const response = await authorizedFetch(
+    `/v1/admin/legal/documents/${kind}/versions/${version}/activate`,
+    { method: 'POST', signal },
+  );
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as { documents: DocumentSummary[] };
 }
 
 /** Publishes every open draft of this document, in every language, as one version. */

@@ -7,6 +7,7 @@ import az.ideanest.audit.AuditOutcome;
 import az.ideanest.legal.domain.DocumentKind;
 import az.ideanest.legal.domain.LegalDocument;
 import az.ideanest.legal.infrastructure.LegalDocumentRepository;
+import az.ideanest.legal.infrastructure.LegalDocumentSelections;
 import az.ideanest.shared.Identifiers;
 import az.ideanest.shared.ReaderLocale;
 import az.ideanest.shared.access.PlatformStaff;
@@ -87,6 +88,7 @@ public class LegalDocuments {
     private static final Logger log = LoggerFactory.getLogger(LegalDocuments.class);
 
     private final LegalDocumentRepository documents;
+    private final LegalDocumentSelections selections;
     private final PlatformStaff staff;
     private final AuditLog audit;
     private final Clock clock;
@@ -94,11 +96,13 @@ public class LegalDocuments {
 
     public LegalDocuments(
             LegalDocumentRepository documents,
+            LegalDocumentSelections selections,
             PlatformStaff staff,
             AuditLog audit,
             Clock clock,
             ApplicationEventPublisher events) {
         this.documents = documents;
+        this.selections = selections;
         this.staff = staff;
         this.audit = audit;
         this.clock = clock;
@@ -115,7 +119,17 @@ public class LegalDocuments {
      */
     @Transactional(readOnly = true)
     public List<LegalDocument> inForce(DocumentKind kind) {
-        return documents.inForce(kind, clock.instant());
+        Instant now = clock.instant();
+        Optional<Integer> selected = selections.selectedVersion(kind);
+        if (selected.isPresent()) {
+            List<LegalDocument> chosen = documents.publishedVersion(kind, selected.get()).stream()
+                    .filter(document -> !document.getEffectiveFrom().isAfter(now))
+                    .toList();
+            if (!chosen.isEmpty()) {
+                return chosen;
+            }
+        }
+        return documents.inForce(kind, now);
     }
 
     /**
@@ -168,6 +182,40 @@ public class LegalDocuments {
     @Transactional(readOnly = true)
     public Optional<LegalDocument> published(DocumentKind kind, String locale, int version) {
         return documents.published(kind, locale, version);
+    }
+
+    /**
+     * Shows readers an already published version of a document instead of the latest one.
+     *
+     * <p>Nothing is copied or edited: the chosen version's rows stay exactly as published,
+     * and the selection only decides which of them {@link #inForce} answers with. Publishing
+     * a new version clears it, so a publication always takes over.
+     *
+     * @throws DocumentNotPublishedException when no such version was published
+     */
+    @Transactional
+    public List<LegalDocument> activate(UUID staffId, DocumentKind kind, int version) {
+        staff.requireCapability(staffId, StaffCapability.PUBLISH_LEGAL_DOCUMENT);
+
+        List<LegalDocument> rows = documents.publishedVersion(kind, version);
+        LegalDocument governing = rows.stream()
+                .filter(document -> document.getLocale().equals(ReaderLocale.PRIMARY))
+                .findFirst()
+                .orElseThrow(() -> new DocumentNotPublishedException(kind));
+
+        selections.select(kind, governing.getId(), staffId, clock.instant().truncatedTo(ChronoUnit.MICROS));
+
+        audit.record(
+                AuditAction.LEGAL_DOCUMENT_ACTIVATED,
+                governing.getId(),
+                AuditActor.user(staffId),
+                AuditOutcome.SUCCEEDED,
+                "%s version %d shown to readers, governing hash %s"
+                        .formatted(kind, version, governing.getContentHash()));
+
+        events.publishEvent(new LegalDocumentInForceChanged(kind, version));
+
+        return rows;
     }
 
     /** Every version of a document, newest first. The console's history. */
@@ -272,6 +320,7 @@ public class LegalDocuments {
             draft.publish(staffId, effective, now);
         }
         List<LegalDocument> saved = documents.saveAll(drafts);
+        selections.clear(kind);
 
         // The governing row is the entity, because that is the text that governs and the row
         // an acceptance names. The hash is in the detail so that "is the document in the

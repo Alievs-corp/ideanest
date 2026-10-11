@@ -90,7 +90,7 @@ public final class LegalResponses {
      *     {@code versions} rather than mixed in with a flag, because the two are edited by
      *     different verbs and a screen that had to filter would eventually forget to
      */
-    public record History(String kind, List<Summary> versions, List<Document> drafts) {
+    public record History(String kind, List<Summary> versions, List<Document> drafts, Integer inForceVersion) {
     }
 
     /**

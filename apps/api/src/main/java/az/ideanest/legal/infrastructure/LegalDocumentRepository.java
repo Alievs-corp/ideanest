@@ -75,6 +75,15 @@ public interface LegalDocumentRepository extends JpaRepository<LegalDocument, UU
     @Query("SELECT d FROM LegalDocument d WHERE d.kind = :kind ORDER BY d.version DESC, d.locale ASC")
     List<LegalDocument> historyOf(@Param("kind") DocumentKind kind);
 
+    /** Every language of one published version, in a stable order. */
+    @Query(
+            """
+            SELECT d FROM LegalDocument d
+             WHERE d.kind = :kind AND d.version = :version AND d.publishedAt IS NOT NULL
+             ORDER BY d.locale ASC
+            """)
+    List<LegalDocument> publishedVersion(@Param("kind") DocumentKind kind, @Param("version") int version);
+
     /** One published version in one language, for #439's archive route. */
     @Query(
             """

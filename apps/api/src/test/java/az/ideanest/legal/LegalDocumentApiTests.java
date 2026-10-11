@@ -313,6 +313,57 @@ class LegalDocumentApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("an administrator can show an earlier version, in every language, until the next publication")
+    void anEarlierVersionCanBeShown() {
+        draft("TERMS_OF_USE", "az", "Şərtlər", "Birinci mətn.");
+        draft("TERMS_OF_USE", "en", "Terms", "First text.");
+        publish("TERMS_OF_USE", null);
+        draft("TERMS_OF_USE", "az", "Şərtlər", "İkinci mətn.");
+        draft("TERMS_OF_USE", "en", "Terms", "Second text.");
+        publish("TERMS_OF_USE", null);
+
+        ResponseEntity<Map<String, Object>> activated = activate("TERMS_OF_USE", 1, admin().accessToken());
+        assertThat(activated.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(events.stream(LegalDocumentInForceChanged.class))
+                .contains(new LegalDocumentInForceChanged(DocumentKind.TERMS_OF_USE, 1));
+
+        assertThat(current("TERMS_OF_USE", "az").get("body")).isEqualTo("Birinci mətn.");
+        assertThat(current("TERMS_OF_USE", "en").get("body")).isEqualTo("First text.");
+
+        ResponseEntity<Map<String, Object>> history = rest.exchange(
+                "/v1/admin/legal/documents/TERMS_OF_USE",
+                HttpMethod.GET,
+                new HttpEntity<>(authorised(admin().accessToken())),
+                mapType());
+        assertThat(history.getBody().get("inForceVersion")).isEqualTo(1);
+
+        draft("TERMS_OF_USE", "az", "Şərtlər", "Üçüncü mətn.");
+        publish("TERMS_OF_USE", null);
+
+        assertThat(current("TERMS_OF_USE", "az").get("body")).isEqualTo("Üçüncü mətn.");
+    }
+
+    @Test
+    @DisplayName("a version that was never published cannot be shown")
+    void anUnpublishedVersionCannotBeShown() {
+        draft("COOKIE_POLICY", "az", "Cookie", "Mətn.");
+        publish("COOKIE_POLICY", null);
+
+        assertThat(activate("COOKIE_POLICY", 7, admin().accessToken()).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("only somebody who may publish may choose the version readers are shown")
+    void choosingAVersionIsPrivileged() {
+        draft("PLATFORM_RULES", "az", "Qaydalar", "Mətn.");
+        publish("PLATFORM_RULES", null);
+
+        assertThat(activate("PLATFORM_RULES", 1, account().accessToken()).getStatusCode())
+                .isIn(HttpStatus.FORBIDDEN, HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     @DisplayName("only somebody who may configure the platform may publish")
     void publishingIsPrivileged() {
         Account nobody = account();
@@ -380,6 +431,21 @@ class LegalDocumentApiTests extends AbstractIntegrationTest {
 
         assertThat(response.getStatusCode()).isEqualTo(expected);
         return response;
+    }
+
+    private ResponseEntity<Map<String, Object>> activate(String kind, int version, String accessToken) {
+        return rest.exchange(
+                "/v1/admin/legal/documents/" + kind + "/versions/" + version + "/activate",
+                HttpMethod.POST,
+                new HttpEntity<>(authorised(accessToken)),
+                mapType());
+    }
+
+    private Map<String, Object> current(String kind, String locale) {
+        ResponseEntity<Map<String, Object>> read = rest.exchange(
+                "/v1/legal/documents/" + kind + "?locale=" + locale, HttpMethod.GET, null, mapType());
+        assertThat(read.getStatusCode()).isEqualTo(HttpStatus.OK);
+        return read.getBody();
     }
 
     private ResponseEntity<Map<String, Object>> accept(Account account, String kind, int version) {

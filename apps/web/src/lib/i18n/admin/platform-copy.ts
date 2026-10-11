@@ -492,6 +492,10 @@ export interface LegalDocumentEditorCopy extends ConsoleChromeCopy {
   readonly versionLabel: string;
   /** Carries `{from}`, `{hash}`. */
   readonly versionMeta: string;
+  readonly showOnSite: string;
+  readonly shownOnSite: string;
+  /** Carries `{version}`. */
+  readonly activatedNotice: string;
   readonly doneTitle: string;
   readonly failedTitle: string;
   readonly loadingList: string;
@@ -540,6 +544,9 @@ export function legalDocumentEditorCopyFrom(
     noVersionsBody: t('screens.legal.noVersionsBody'),
     versionLabel: String(t.raw('screens.legal.versionLabel')),
     versionMeta: String(t.raw('screens.legal.versionMeta')),
+    showOnSite: t('screens.legal.showOnSite'),
+    shownOnSite: t('screens.legal.shownOnSite'),
+    activatedNotice: String(t.raw('screens.legal.activatedNotice')),
     doneTitle: t('screens.legal.doneTitle'),
     failedTitle: t('screens.legal.failedTitle'),
     loadingList: t('screens.legal.loadingList'),

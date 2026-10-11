@@ -16,6 +16,7 @@ import {
 import {
   DOCUMENT_KINDS,
   DOCUMENT_LOCALES,
+  activateVersion,
   publishDocument,
   readDocumentHistory,
   writeDraft,
@@ -119,6 +120,7 @@ export function LegalDocumentEditor({ copy }: LegalDocumentEditorProps) {
   const drafted = history.data?.drafts.map((entry) => entry.locale) ?? [];
   const governingDrafted = drafted.includes(GOVERNING);
   const versions = history.data?.versions ?? [];
+  const inForceVersion = history.data?.inForceVersion ?? null;
 
   async function save(): Promise<void> {
     if (title.trim() === '' || body.trim() === '') return;
@@ -161,6 +163,21 @@ export function LegalDocumentEditor({ copy }: LegalDocumentEditorProps) {
       );
       setEffectiveFrom('');
       setLoaded(null);
+      history.reload();
+    } catch (cause) {
+      setError(consoleMessageFor(cause, copy.subject, copy.refusals));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function activate(version: number): Promise<void> {
+    setBusy(true);
+    setError(null);
+    setDone(null);
+    try {
+      await activateVersion(kind, version);
+      setDone(fillPlaceholders(copy.activatedNotice, { version: String(version) }));
       history.reload();
     } catch (cause) {
       setError(consoleMessageFor(cause, copy.subject, copy.refusals));
@@ -348,6 +365,20 @@ export function LegalDocumentEditor({ copy }: LegalDocumentEditorProps) {
                     {fillPlaceholders(copy.versionLabel, { version: String(version.version) })}
                   </span>
                   <Tag>{copy.locale[version.locale as DocumentLocale] ?? version.locale}</Tag>
+                  {version.version === inForceVersion && (
+                    <Tag variant="success">{copy.shownOnSite}</Tag>
+                  )}
+                  {version.version !== inForceVersion && version.locale === GOVERNING && (
+                    <Pill
+                      variant="ghost"
+                      size="sm"
+                      className="ml-auto"
+                      onClick={() => void activate(version.version)}
+                      disabled={busy}
+                    >
+                      {copy.showOnSite}
+                    </Pill>
+                  )}
                 </div>
                 <p className="text-sm text-white/64">{version.title}</p>
                 <p className="text-[13px] text-white/40">
