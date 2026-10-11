@@ -312,10 +312,19 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
                   : pluralise(locale, hasMore ? copy.shownMore : copy.shown, feed.items.length)}
               </p>
 
-              <div className="flex flex-wrap items-end gap-3">
+              {/*
+                FILTERS AND SORT ARE ONE GROUP, ON THE RIGHT (#374). Both change which
+                campaigns the grid shows and in what order, so they sit together and the
+                count — which only reports — keeps the left. `items-end` puts the button on
+                the select's line under the sort label, and `md` is the select's own
+                40px, so the two share a height and a baseline. On a phone the group is the
+                full width: the button keeps its size and the select takes the rest.
+              */}
+              <div className="flex items-end gap-3 sm:justify-end">
                 <Pill
-                  size="sm"
+                  size="md"
                   variant="ghost"
+                  className="shrink-0"
                   aria-expanded={railOpen}
                   aria-controls={railId}
                   onClick={toggleRail}
@@ -324,14 +333,14 @@ export function DiscoveryView({ seeded, cardCopy, locale, copy }: DiscoveryViewP
                   {copy.railLabel}
                   {active.length > 0 ? ` (${active.length})` : ''}
                 </Pill>
-              </div>
 
-              <SortControl
-                sort={filters.sort}
-                hasQuery={filters.query !== ''}
-                onChange={(sort) => apply({ ...filters, sort })}
-                copy={copy}
-              />
+                <SortControl
+                  sort={filters.sort}
+                  hasQuery={filters.query !== ''}
+                  onChange={(sort) => apply({ ...filters, sort })}
+                  copy={copy}
+                />
+              </div>
             </div>
 
             <ActiveFilters

@@ -75,6 +75,9 @@ describe('the derived attributes', () => {
     for (const token of ['max-w-[85%]', 'grid-cols-1', 'gap-4', 'sm:grid-cols-2', 'xl:grid-cols-3']) {
       expect(CAMPAIGN_GRID.split(' ')).toContain(token);
     }
+    // Centred at every width (#374). Where the grid sits does not change how wide a card is.
+    expect(CAMPAIGN_GRID.split(' ')).toContain('mx-auto');
+    expect(CAMPAIGN_GRID).not.toMatch(/(^|\s)\w+:mx-0(\s|$)/);
     expect(CAMPAIGN_CARD_SIZES).toBe(
       '(min-width: 1400px) 373px, ' +
         '(min-width: 1280px) calc((85vw - 72px) / 3), ' +
@@ -88,6 +91,8 @@ describe('the derived attributes', () => {
     for (const token of ['max-w-[85%]', 'grid-cols-1', 'gap-4', 'sm:grid-cols-2', 'lg:grid-cols-3']) {
       expect(PROFILE_CAMPAIGN_GRID.split(' ')).toContain(token);
     }
+    expect(PROFILE_CAMPAIGN_GRID.split(' ')).toContain('mx-auto');
+    expect(PROFILE_CAMPAIGN_GRID).not.toMatch(/(^|\s)\w+:mx-0(\s|$)/);
     expect(PROFILE_CARD_SIZES).toBe(
       '(min-width: 1168px) 294px, ' +
         '(min-width: 1024px) calc((85vw - 72px) / 3), ' +
