@@ -805,10 +805,16 @@ unrelated catalogue key leaves the fingerprint alone, and an edit to
 `mobile.native.displayName` changes it. A new workspace import in
 `app.config.ts` fails that check until it is added to the ignore file.
 
-Nothing publishes one on merge. Run **Mobile release** by hand with
-`operation: update`, the channel (`preview`, `production` or `github`), a rollout
-percentage (default 10) and a message. Widen or finish a rollout afterwards with
-`eas update:edit` (or publish again at 100). The job exports the channel's
+**Every merge to `main` that touches `apps/mobile`, a shared package the app
+uses, or the lockfile publishes one to the `github` channel at 100%**:
+`.github/workflows/mobile-auto-update.yml` dispatches **Mobile release** with
+`operation: update`, `profile: github`. A native change gets a new fingerprint,
+so its update reaches no installed APK; those phones need a new `github-release`,
+which stays manual. Other channels are still published by hand: run **Mobile
+release** with `operation: update`, the channel (`preview`, `production` or
+`github`), a rollout percentage (default 10, 100 means everybody) and a message.
+Widen or finish a rollout afterwards with `eas update:edit` (or publish again at
+100). The job exports the channel's
 `eas.json` build environment and passes `--environment <channel>` first: `extra`
 is part of the fingerprint, so an update evaluated with different variables
 would carry the wrong API origin and match no build. With no
