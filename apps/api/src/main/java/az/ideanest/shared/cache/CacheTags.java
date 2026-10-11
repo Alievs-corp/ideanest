@@ -35,6 +35,9 @@ public final class CacheTags {
     /** Everything the discovery feed and the search page read. */
     public static final String DISCOVERY = "discovery";
 
+    /** Every public legal page. Publishing a version changes the whole set at once. */
+    public static final String LEGAL = "legal";
+
     private CacheTags() {}
 
     /** One campaign's dependent reads, by the identifier this service knows it as. */
