@@ -21,4 +21,17 @@ public class FieldCipherConfiguration {
     public FieldCipher bankDetailsCipher(CryptoProperties properties) {
         return new AesGcmFieldCipher(CryptoProperties.BANK_DETAILS, properties.bankDetails());
     }
+
+    /**
+     * The bean that fingerprints IBANs, under keys derived from the same keyring (#394).
+     *
+     * <p>Derived rather than configured separately: one secret to provision, one rotation,
+     * and a deployment cannot have the cipher without the fingerprint or the other way round.
+     */
+    public static final String BANK_DETAILS_FINGERPRINTS = "bankDetailsFingerprints";
+
+    @Bean(BANK_DETAILS_FINGERPRINTS)
+    public FieldFingerprints bankDetailsFingerprints(CryptoProperties properties) {
+        return new FieldFingerprints(CryptoProperties.BANK_DETAILS, properties.bankDetails(), "iban");
+    }
 }

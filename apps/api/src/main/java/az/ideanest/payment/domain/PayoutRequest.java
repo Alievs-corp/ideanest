@@ -18,10 +18,13 @@ import java.util.UUID;
  * @param creatorId who is being paid
  * @param amount the net, after §5.2's fees and #78's tax. The split itself is
  *     {@code ledger_entries}' and was decided at collection; this is one number
- * @param destinationReference where to. <strong>Opaque to this service</strong>, like
- *     {@link StoredCard#token()}: bank details are the provider's to hold, and a
- *     platform that stored an IBAN would have acquired a second class of sensitive
- *     data with none of the SAQ A reasoning behind the first
+ * @param destinationReference where to: the provider's token for the creator's account.
+ *     <strong>Opaque to this service</strong>, like {@link StoredCard#token()}. This
+ *     once went on to say that the platform never stores an IBAN; since #394 it does —
+ *     the owner decided creators are paid by bank transfer from IdeyaNest's own account,
+ *     so the account is held in {@code payout_destinations}, encrypted (V97). Such a
+ *     payout is made by a person and recorded, and never reaches a provider through this
+ *     instruction, so an IBAN is never what this field carries
  * @param idempotencyKey §9.3's R-08, and here it is the difference between paying a
  *     creator once and twice
  */

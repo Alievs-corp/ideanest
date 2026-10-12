@@ -204,6 +204,11 @@ public final class Redaction {
             // A bank account, wherever it appears. §17.4 encrypts these and shows
             // four digits; a log shows none.
             new Rule(Pattern.compile("\\b[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}\\b"), MASK),
+            // The same, printed in groups of four as banks and statements print it
+            // (#394). The rule above stops at the first space and would leave the
+            // account number after it. Two whole groups at least, which every IBAN
+            // has -- the shortest is fifteen characters.
+            new Rule(Pattern.compile("\\b[A-Z]{2}[0-9]{2}(?: [A-Z0-9]{4}){2,7}(?: [A-Z0-9]{1,3})?\\b"), MASK),
             new Rule(Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}"), MASK),
             // International, and requiring the literal +. Without it the rule
             // would also match an ISO timestamp, which is on every line.

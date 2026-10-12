@@ -34,9 +34,10 @@ import java.util.Optional;
  * name without that being a new identity check, and an approval ages out without the name
  * changing.
  *
- * <p>No bank details. #432's destination is a token held by the provider, for
- * {@code PayoutRequest}'s stated reason, and a record that carried an IBAN beside a VÖEN
- * would be the second class of sensitive data that reasoning exists to avoid.
+ * <p>No bank details. Where a creator is paid is #432's payout destination, which since #394
+ * may be an IBAN — held there, sealed under its own keyring and shown as a masked hint. A
+ * record that carried the IBAN in the clear beside a VÖEN would put it everywhere this one is
+ * read, which is every screen that names the creator.
  *
  * @param subjectKind an individual or a registered entity, in V58's vocabulary
  * @param legalName the name that must agree with #429's certificate subject and #432's

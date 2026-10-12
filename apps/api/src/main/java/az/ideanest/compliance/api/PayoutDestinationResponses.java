@@ -2,6 +2,8 @@ package az.ideanest.compliance.api;
 
 import az.ideanest.compliance.domain.DestinationVerificationMethod;
 import az.ideanest.compliance.domain.PayoutDestination;
+import az.ideanest.shared.compliance.BankAccount;
+import az.ideanest.shared.compliance.DestinationKind;
 import az.ideanest.shared.compliance.DestinationStanding;
 import az.ideanest.shared.compliance.RejectionReason;
 import java.time.Instant;
@@ -29,32 +31,43 @@ public final class PayoutDestinationResponses {
      *     reads, so the screen cannot disagree with it
      * @param rejectionReason set only when a reviewer refused it, from V58's closed set so the
      *     client can translate it into each of §21.1's four languages
+     * @param kind a provider token or a bank account (#394); null when nothing is on file. For a
+     *     bank account {@code displayHint} is the masked IBAN, such as {@code AZ21…1944}, and the
+     *     number itself is never in this response either
+     * @param cardRegistrationAvailable whether the configured payment provider can register a
+     *     payout card (#394), so the screen offers that route only when it can work. The IBAN
+     *     form is always offered
      */
     public record Mine(
             boolean recorded,
             DestinationStanding standing,
+            DestinationKind kind,
             String provider,
             String holderName,
             String displayHint,
             RejectionReason rejectionReason,
             Instant verifiedAt,
-            Instant updatedAt) {
+            Instant updatedAt,
+            boolean cardRegistrationAvailable) {
 
-        public static Mine of(PayoutDestination row, DestinationStanding standing) {
+        public static Mine of(PayoutDestination row, DestinationStanding standing, boolean cardRegistrationAvailable) {
             return new Mine(
                     true,
                     standing,
+                    row.kind(),
                     row.getProvider(),
                     row.getHolderName(),
                     row.getDisplayHint(),
                     row.rejection().orElse(null),
                     row.getVerifiedAt(),
-                    row.getUpdatedAt());
+                    row.getUpdatedAt(),
+                    cardRegistrationAvailable);
         }
 
         /** Nothing on file. {@link DestinationStanding#NONE}, said explicitly. */
-        public static Mine none() {
-            return new Mine(false, DestinationStanding.NONE, null, null, null, null, null, null);
+        public static Mine none(boolean cardRegistrationAvailable) {
+            return new Mine(
+                    false, DestinationStanding.NONE, null, null, null, null, null, null, null, cardRegistrationAvailable);
         }
     }
 
@@ -73,6 +86,7 @@ public final class PayoutDestinationResponses {
             UUID creatorId,
             boolean recorded,
             DestinationStanding standing,
+            DestinationKind kind,
             String provider,
             String holderName,
             String displayHint,
@@ -87,6 +101,7 @@ public final class PayoutDestinationResponses {
                     creatorId,
                     true,
                     standing,
+                    row.kind(),
                     row.getProvider(),
                     row.getHolderName(),
                     row.getDisplayHint(),
@@ -99,7 +114,30 @@ public final class PayoutDestinationResponses {
 
         public static ForStaff none(UUID creatorId) {
             return new ForStaff(
-                    creatorId, false, DestinationStanding.NONE, null, null, null, null, null, null, null, null);
+                    creatorId, false, DestinationStanding.NONE, null, null, null, null, null, null, null, null, null);
+        }
+    }
+
+    /**
+     * A creator's IBAN in full, for a member of staff holding {@code READ_BANK_DETAILS} — #394.
+     *
+     * <p>The one response that carries an account number, which is why it is its own endpoint
+     * rather than a field on {@link ForStaff}: opening it is a separate, audited act, and a
+     * screen that loaded the number with the panel would have disclosed it to everybody who
+     * looked at the panel.
+     *
+     * <p>Named for what it is rather than {@code Account}, which the contract already has and
+     * which the generated schema would silently have merged this into.
+     */
+    public record RevealedBankAccount(UUID creatorId, String iban, String holderName, String displayHint) {
+
+        public static RevealedBankAccount of(UUID creatorId, BankAccount account) {
+            return new RevealedBankAccount(creatorId, account.iban(), account.holderName(), account.displayHint());
+        }
+
+        @Override
+        public String toString() {
+            return "RevealedBankAccount[creator=" + creatorId + ", " + displayHint + "]";
         }
     }
 

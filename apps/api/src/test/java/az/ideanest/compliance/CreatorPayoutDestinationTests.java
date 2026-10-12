@@ -11,17 +11,26 @@ import az.ideanest.compliance.application.UnknownDestinationProviderException;
 import az.ideanest.compliance.application.UnknownPayoutDestinationException;
 import az.ideanest.compliance.domain.DestinationState;
 import az.ideanest.compliance.domain.DestinationVerificationMethod;
+import az.ideanest.compliance.domain.Iban;
+import az.ideanest.compliance.domain.MalformedIbanException;
 import az.ideanest.compliance.domain.PayoutDestination;
 import az.ideanest.shared.EmailAddress;
+import az.ideanest.shared.compliance.BankAccount;
+import az.ideanest.shared.compliance.DestinationKind;
 import az.ideanest.shared.compliance.DestinationStanding;
 import az.ideanest.shared.compliance.LegalSubject;
 import az.ideanest.shared.compliance.RejectionReason;
+import az.ideanest.shared.crypto.FieldEncryptionNotConfiguredException;
+import az.ideanest.shared.crypto.Sealed;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.domain.StaffRole;
 import az.ideanest.support.AbstractIntegrationTest;
+import az.ideanest.support.BankDetailsKeys;
 import az.ideanest.support.Campaigns;
 import az.ideanest.support.Destinations;
 import az.ideanest.user.infrastructure.UserRepository;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,8 +72,15 @@ class CreatorPayoutDestinationTests extends AbstractIntegrationTest {
     @Autowired
     private DataSource dataSource;
 
+    /** A bank-details key, installed by the tests that store an IBAN. */
+    private BankDetailsKeys.Installed keys;
+
     @AfterEach
     void clear() {
+        if (keys != null) {
+            keys.close();
+            keys = null;
+        }
         Destinations.clear(dataSource);
         new JdbcTemplate(dataSource).update("DELETE FROM creator_legal_subjects");
         Campaigns.clear(dataSource);
@@ -274,6 +290,201 @@ class CreatorPayoutDestinationTests extends AbstractIntegrationTest {
         assertThatThrownBy(() ->
                         destinations.verify(reviewer, creator, DestinationVerificationMethod.STAFF_ATTESTED))
                 .isInstanceOf(UnknownPayoutDestinationException.class);
+    }
+
+    // ------------------------------------------------------------------
+    // A bank account (#394)
+    // ------------------------------------------------------------------
+
+    private static final String IBAN = "AZ21NABZ00000000137010001944";
+
+    @Test
+    @DisplayName("a creator files an IBAN; it is sealed, fingerprinted, and only the hint is readable")
+    void aBankAccountIsSealed() {
+        keys = BankDetailsKeys.install(destinations);
+        UUID creator = creator();
+
+        PayoutDestination filed = destinations.recordBankAccount(creator, "az21 nabz 0000 0000 1370 1000 1944", "Aysel Mammadova");
+
+        assertThat(filed.getState()).isEqualTo(DestinationState.AWAITING_VERIFICATION);
+        assertThat(filed.kind()).isEqualTo(DestinationKind.BANK_TRANSFER);
+        assertThat(filed.getProvider()).isEqualTo("BANK_TRANSFER");
+        assertThat(filed.getDisplayHint()).isEqualTo("AZ21…1944");
+        assertThat(destinations.kindOf(creator)).contains(DestinationKind.BANK_TRANSFER);
+
+        // What is in the row: no IBAN anywhere a SELECT would show it.
+        Map<String, Object> row = new JdbcTemplate(dataSource)
+                .queryForMap("SELECT * FROM payout_destinations WHERE user_id = ?", creator);
+        assertThat(row.values()).noneSatisfy(value -> assertThat(String.valueOf(value)).contains("NABZ0000"));
+        assertThat((byte[]) row.get("account_ciphertext"))
+                .isNotEmpty()
+                .satisfies(bytes -> assertThat(new String(bytes, StandardCharsets.ISO_8859_1)).doesNotContain(IBAN));
+        assertThat(row.get("account_key_id")).isEqualTo(BankDetailsKeys.LABEL);
+        // The reference is the keyed fingerprint, under the key it was made with.
+        assertThat(row.get("reference")).isEqualTo(BankDetailsKeys.fingerprints().of(IBAN));
+        assertThat((String) row.get("reference")).startsWith(BankDetailsKeys.LABEL + ":").doesNotContain("NABZ");
+
+        // And it opens, with this creator's row as the additional data and with nothing else.
+        Sealed sealed = filed.sealedAccount().orElseThrow();
+        assertThat(new String(
+                        BankDetailsKeys.cipher().open(sealed, PayoutDestination.accountContext(creator)),
+                        StandardCharsets.UTF_8))
+                .isEqualTo(IBAN);
+        assertThatThrownBy(() -> BankDetailsKeys.cipher().open(sealed, PayoutDestination.accountContext(creator())))
+                .isInstanceOf(az.ideanest.shared.crypto.FieldUnreadableException.class);
+
+        // The trail carries the hint, never the number.
+        String detail = auditDetail("compliance.payout_destination_recorded", creator);
+        assertThat(detail).contains("account=AZ21…1944").contains("sameAccountElsewhere=0").doesNotContain("NABZ");
+    }
+
+    @Test
+    @DisplayName("without a bank-details key nothing is stored, and what was on file stays")
+    void withoutAKeyNothingChanges() {
+        UUID creator = creator();
+        destinations.record(creator, "EPOINT", "tok-1", "Aysel Mammadova", "**4321");
+
+        assertThatThrownBy(() -> destinations.recordBankAccount(creator, IBAN, "Aysel Mammadova"))
+                .isInstanceOf(FieldEncryptionNotConfiguredException.class);
+
+        // Never stored in the clear to satisfy the request, and the token on file is untouched.
+        PayoutDestination still = destinations.mine(creator).orElseThrow();
+        assertThat(still.kind()).isEqualTo(DestinationKind.PROVIDER_TOKEN);
+        assertThat(still.getReference()).isEqualTo("tok-1");
+    }
+
+    @Test
+    @DisplayName("an IBAN that is not Azerbaijani, or not an IBAN, is refused before anything is written")
+    void aBadIbanIsRefused() {
+        keys = BankDetailsKeys.install(destinations);
+        UUID creator = creator();
+
+        assertThatThrownBy(() -> destinations.recordBankAccount(creator, "GB82WEST12345698765432", "Aysel Mammadova"))
+                .isInstanceOf(MalformedIbanException.class)
+                .satisfies(thrown -> assertThat(((MalformedIbanException) thrown).defect())
+                        .isEqualTo(Iban.Defect.COUNTRY_NOT_ACCEPTED));
+        assertThatThrownBy(() -> destinations.recordBankAccount(creator, "AZ21NABZ00000000137010001945", "Aysel Mammadova"))
+                .isInstanceOf(MalformedIbanException.class);
+
+        assertThat(destinations.mine(creator)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("an account holder who is not the creator's legal name is a mismatch, as for a token")
+    void aBankAccountMismatchIsStored() {
+        keys = BankDetailsKeys.install(destinations);
+        UUID creator = creator();
+        subjects.record(creator, LegalSubject.individual("Aysel Mammadova"));
+
+        PayoutDestination filed = destinations.recordBankAccount(creator, IBAN, "Rashad Aliyev");
+
+        assertThat(filed.getState()).isEqualTo(DestinationState.NAME_MISMATCH);
+        assertThat(destinations.standingOf(creator)).isEqualTo(DestinationStanding.NAME_MISMATCH);
+    }
+
+    @Test
+    @DisplayName("an IBAN filed over a verified token clears the verification, and a token over an IBAN clears the IBAN")
+    void replacingAcrossKindsResets() {
+        keys = BankDetailsKeys.install(destinations);
+        UUID creator = creator();
+        UUID reviewer = complianceReviewer();
+        destinations.record(creator, "EPOINT", "tok-1", "Aysel Mammadova", "**4321");
+        destinations.verify(reviewer, creator, DestinationVerificationMethod.STAFF_ATTESTED);
+
+        PayoutDestination bank = destinations.recordBankAccount(creator, IBAN, "Aysel Mammadova");
+
+        assertThat(bank.getState()).isEqualTo(DestinationState.AWAITING_VERIFICATION);
+        assertThat(bank.getVerifiedBy()).isNull();
+        assertThat(destinations.standingOf(creator)).isEqualTo(DestinationStanding.AWAITING_VERIFICATION);
+
+        destinations.verify(reviewer, creator, DestinationVerificationMethod.STAFF_ATTESTED);
+        PayoutDestination token = destinations.record(creator, "EPOINT", "tok-2", "Aysel Mammadova", "**9876");
+
+        // The sealed account goes with the replacement: a token never sits beside an IBAN.
+        assertThat(token.getState()).isEqualTo(DestinationState.AWAITING_VERIFICATION);
+        assertThat(token.sealedAccount()).isEmpty();
+        assertThat(new JdbcTemplate(dataSource)
+                        .queryForObject(
+                                "SELECT account_ciphertext IS NULL FROM payout_destinations WHERE user_id = ?",
+                                Boolean.class,
+                                creator))
+                .isTrue();
+    }
+
+    @Test
+    @DisplayName("a verified bank account releases the payout and is never offered to a provider as a token")
+    void aBankAccountIsNotAProviderReference() {
+        keys = BankDetailsKeys.install(destinations);
+        UUID creator = creator();
+        destinations.recordBankAccount(creator, IBAN, "Aysel Mammadova");
+        destinations.verify(complianceReviewer(), creator, DestinationVerificationMethod.STAFF_ATTESTED);
+
+        assertThat(destinations.standingOf(creator)).isEqualTo(DestinationStanding.VERIFIED);
+        // A fingerprint is not somewhere money can be sent, through any provider or none.
+        for (String provider : List.of("AZERICARD", "EPOINT", "PAYRIFF", "BANK_TRANSFER")) {
+            assertThat(destinations.referenceFor(creator, provider)).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("compliance and finance open the IBAN, the opening is audited with the hint, and a moderator cannot")
+    void revealingIsCapabilityCheckedAndAudited() {
+        keys = BankDetailsKeys.install(destinations);
+        UUID creator = creator();
+        destinations.recordBankAccount(creator, IBAN, "Aysel Mammadova");
+
+        BankAccount seenByCompliance =
+                destinations.revealBankAccount(complianceReviewer(), creator).orElseThrow();
+        BankAccount seenByFinance =
+                destinations.revealBankAccount(staff("finance-dest", StaffRole.FINANCE), creator).orElseThrow();
+
+        assertThat(seenByCompliance.iban()).isEqualTo(IBAN);
+        assertThat(seenByCompliance.holderName()).isEqualTo("Aysel Mammadova");
+        assertThat(seenByFinance).isEqualTo(seenByCompliance);
+        assertThat(seenByCompliance.toString()).doesNotContain(IBAN);
+
+        String detail = auditDetail("compliance.payout_destination_account_revealed", creator);
+        assertThat(detail).contains("AZ21…1944").doesNotContain("NABZ");
+
+        UUID moderator = staff("moderator-dest", StaffRole.MODERATOR);
+        assertThatThrownBy(() -> destinations.revealBankAccount(moderator, creator))
+                .isInstanceOf(InsufficientStaffCapabilityException.class);
+    }
+
+    @Test
+    @DisplayName("a token has no account to reveal, and nothing filed has none either")
+    void revealingATokenIsEmpty() {
+        UUID creator = creator();
+        UUID reviewer = complianceReviewer();
+        assertThat(destinations.revealBankAccount(reviewer, creator)).isEmpty();
+        assertThat(destinations.kindOf(creator)).isEmpty();
+
+        destinations.record(creator, "EPOINT", "tok-1", "Aysel Mammadova", "**4321");
+
+        assertThat(destinations.revealBankAccount(reviewer, creator)).isEmpty();
+        assertThat(destinations.kindOf(creator)).contains(DestinationKind.PROVIDER_TOKEN);
+    }
+
+    @Test
+    @DisplayName("a second account filing the same IBAN is counted in the trail for the reviewer")
+    void theSameAccountTwiceIsNoticed() {
+        keys = BankDetailsKeys.install(destinations);
+        UUID first = creator();
+        UUID second = creator();
+        destinations.recordBankAccount(first, IBAN, "Aysel Mammadova");
+
+        destinations.recordBankAccount(second, "AZ21 NABZ 0000 0000 1370 1000 1944", "Aysel Mammadova");
+
+        assertThat(auditDetail("compliance.payout_destination_recorded", second)).contains("sameAccountElsewhere=1");
+    }
+
+    private String auditDetail(String action, UUID entity) {
+        return new JdbcTemplate(dataSource)
+                .queryForObject(
+                        "SELECT detail FROM audit_logs WHERE action = ? AND entity_id = ? ORDER BY occurred_at DESC LIMIT 1",
+                        String.class,
+                        action,
+                        entity);
     }
 
     // ------------------------------------------------------------------

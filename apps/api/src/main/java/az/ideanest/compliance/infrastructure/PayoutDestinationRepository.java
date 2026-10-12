@@ -2,6 +2,7 @@ package az.ideanest.compliance.infrastructure;
 
 import az.ideanest.compliance.domain.DestinationState;
 import az.ideanest.compliance.domain.PayoutDestination;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
@@ -19,4 +20,18 @@ public interface PayoutDestinationRepository extends JpaRepository<PayoutDestina
      */
     @Query("select d from PayoutDestination d where d.state <> :verified order by d.updatedAt asc")
     List<PayoutDestination> awaiting(DestinationState verified, Pageable page);
+
+    /**
+     * How many other accounts have filed the same IBAN — #394.
+     *
+     * <p>By fingerprint, under every key still configured, which is what V97's partial index on
+     * {@code reference} is for. Two creators paid into one account is either one person with two
+     * accounts or somebody being paid on another's behalf, and either is worth a reviewer
+     * knowing before they verify.
+     */
+    @Query("""
+            select count(d) from PayoutDestination d
+             where d.provider = :provider and d.reference in :fingerprints and d.userId <> :userId
+            """)
+    long countOthersWithReference(String provider, Collection<String> fingerprints, UUID userId);
 }

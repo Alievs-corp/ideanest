@@ -771,6 +771,19 @@ public enum AuditAction {
      */
     PAYOUT_DESTINATION_READ("compliance.payout_destination_read", "account"),
 
+    /**
+     * <strong>A member of staff opened a creator's IBAN in full</strong> — #394.
+     *
+     * <p>Separate from {@link #PAYOUT_DESTINATION_READ}, which shows the masked hint and the
+     * holder's name. This one returns the account number itself, to somebody holding
+     * {@code READ_BANK_DETAILS}, and "who has seen this creator's account number" has to be one
+     * query with an answer.
+     *
+     * <p>Written whether or not there was an account to open, and the detail carries the hint
+     * and never the number: an audit row is no more allowed to hold an IBAN than a log line is.
+     */
+    PAYOUT_DESTINATION_ACCOUNT_REVEALED("compliance.payout_destination_account_revealed", "account"),
+
     // --- #214: maintenance windows -------------------------------------------------
     //
     // One action per verb rather than one "changed", because the trail is read during and

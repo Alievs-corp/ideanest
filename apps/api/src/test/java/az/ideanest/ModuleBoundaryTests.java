@@ -69,6 +69,12 @@ class ModuleBoundaryTests {
     private static final String PROJECT_SUMMARIES = "az.ideanest.shared.project.ProjectSummaries";
 
     /**
+     * Where a creator is paid, asked across the boundary — #432, and since #394 the only route
+     * by which a creator's IBAN leaves the compliance module.
+     */
+    private static final String PAYOUT_DESTINATIONS = "az.ideanest.shared.compliance.PayoutDestinations";
+
+    /**
      * One import, shared with every other ArchUnit suite — see {@link ProductionClasses}.
      *
      * <p>Each suite used to build its own, and five identical object graphs alive at once in one
@@ -203,6 +209,35 @@ class ModuleBoundaryTests {
 
         // And the implementation is the project module's, because `projects` is its table.
         assertThat(modulesNaming(PROJECT_SUMMARIES)).contains("project");
+    }
+
+    @Test
+    @DisplayName("a creator's bank account crosses only through the shared contract")
+    void bankAccountsCrossOnlyThroughTheSharedContract() {
+        // #394. The payout module will pay creators by bank transfer and needs the IBAN to do
+        // it, and it may no more read `payout_destinations` than `identity_verifications`. The
+        // wrong answers are the familiar two: reach into compliance's domain for the row and
+        // open the ciphertext itself -- which would put the capability check and the audit row
+        // on whichever side remembered them -- or copy the IBAN into a payout. So the payout
+        // module names the question, and compliance answers it with the check and the audit.
+        assertThat(modulesNaming(PAYOUT_DESTINATIONS))
+                .withFailMessage(
+                        "The payout module stopped asking for a published payout destination. Expected it to"
+                                + " name %s; found %s.",
+                        PAYOUT_DESTINATIONS, modulesNaming(PAYOUT_DESTINATIONS))
+                .contains("payout", "compliance");
+
+        noClasses()
+                .that()
+                .resideOutsideOfPackage("az.ideanest.compliance..")
+                .should()
+                .dependOnClassesThat()
+                .haveFullyQualifiedName("az.ideanest.compliance.domain.PayoutDestination")
+                .orShould()
+                .dependOnClassesThat()
+                .haveFullyQualifiedName("az.ideanest.compliance.domain.Iban")
+                .because("a creator's account crosses as " + PAYOUT_DESTINATIONS + ", which checks and audits")
+                .check(PRODUCTION_CLASSES);
     }
 
     @Test

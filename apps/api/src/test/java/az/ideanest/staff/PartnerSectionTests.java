@@ -39,6 +39,7 @@ class PartnerSectionTests {
             StaffCapability.REVIEW_IDENTITY_VERIFICATION,
             StaffCapability.OPEN_IDENTITY_DOCUMENT,
             StaffCapability.VERIFY_PAYOUT_DESTINATION,
+            StaffCapability.READ_BANK_DETAILS,
             StaffCapability.GRANT_COMPLIANCE_OVERRIDE,
             StaffCapability.PUBLISH_LEGAL_DOCUMENT);
 
