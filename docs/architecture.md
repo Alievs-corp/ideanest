@@ -4548,6 +4548,69 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > part of is never alone on its charge, so the reconciliation cannot tell from the payment's status
 > which reversal happened: it always goes to `markForReview`, stays `REQUESTED` (counted as gone), and
 > waits for a person rather than being settled or resent.
+>
+> **Past the provider's refund window, by bank transfer (#399).** A provider reverses a card payment
+> only for so long — Payriff for thirty days, and only as a refund — and the owner decided
+> (2026-10-12) that a refund owed after that goes back by bank transfer: inside the window it still
+> goes through the provider automatically; past it the backer is told to contact support, support
+> records the backer's IBAN and the account holder's name on the refund, and a member of finance
+> transfers the money from IdeyaNest's bank account and records it with the bank's reference. The
+> provider's commission is not returned.
+>
+> - **The window is configuration**, `ideanest.payment.refunds.windows.<provider>` (an ISO duration;
+>   `IDEANEST_PAYMENT_REFUNDS_WINDOWS_PAYRIFF=P28D` — under thirty days by a margin, because it is
+>   measured from `transactions.created_at`, when the platform recorded the charge). **A provider
+>   with no entry has no window, which is the default**: every refund goes to the provider, as
+>   before. It is set only once every node runs this release, because a node of the release before
+>   cannot read the two new refund states (V99).
+> - **Routing.** A refund — staff, campaign, raise or dispute — whose charge is older than its
+>   provider's window is never sent: it is recorded `AWAITING_BANK_DETAILS`, audited
+>   `refund.routed_to_bank_transfer` as the system's decision, and the backer gets
+>   `REFUND_NEEDS_BANK_DETAILS` (email and in-app, linking to their pledge) **once per pledge**,
+>   however many charges its refund has. A provider that refuses a refund as too old is routed the
+>   same way, but only when its answer code is configured as meaning that
+>   (`ideanest.payment.payriff.refund-window-closed-codes`, empty by default: Payriff does not
+>   document the code, and a wrong guess would turn an ordinary refusal into a bank transfer).
+>   Otherwise such a refusal is `FAILED`, and staff route it by hand:
+>   `POST /v1/admin/refunds/{id}/bank-transfer` (`ISSUE_REFUND`) records a new refund for what the
+>   charge has left, no more than the refused one, keyed `bank-refund:<refusedId>`, so a retry
+>   answers the same refund.
+> - **Both new states count as gone, as `REQUESTED` does**: every sum reads "not `FAILED`", so the
+>   charge is not offered again by `campaign-refunds`, a second staff refund finds nothing left, the
+>   payout's refunded figure excludes the money, and a pledge with such a refund cannot be raised.
+>   Neither is settled (`settled_at` is null, V99's rewritten `refunds_settled_at_matches_state`);
+>   the pledge stays `COLLECTED` until the transfer is recorded.
+> - **Support records the account**: `PUT /v1/admin/pledges/{pledgeId}/refund-bank-details`
+>   `{iban, holderName, ticketId}` (`HANDLE_SUPPORT`). Any country's valid IBAN, checked by the same
+>   `Iban` a creator's account goes through (ISO 13616 length and mod-97), asked across the module
+>   boundary as `shared.compliance.BankAccountNumbers`; the ticket must be one the pledge's backer
+>   raised. It applies to every part of the pledge's refund waiting for a transfer: those waiting
+>   for an account become `AWAITING_TRANSFER`, and one already waiting has its account replaced,
+>   audited `refund.bank_details_recorded` with the old and new masked hints. The IBAN is sealed per
+>   refund in `refund_bank_transfers` (§17.4).
+> - **Finance pays and records it**: `GET /v1/admin/refunds/{id}/bank-details` (`ISSUE_REFUND`,
+>   audited `refund.bank_details_revealed`, `no-store`) opens the account; `POST
+>   /v1/admin/refunds/{id}/bank-transfer/record` `{bankReference, transferredOn}` settles the refund
+>   exactly as a provider's acceptance does — a `REFUND` transaction under `BANK_TRANSFER`, keyed
+>   `<refund key>-bank`, with no provider identifier and the bank's reference in its response; the
+>   same posting (debit `refunds`, credit `escrow`); the pledge `REFUNDED` when nothing is left on
+>   it — audited `refund.bank_transfer_recorded`. The same reference again answers the settled
+>   refund; another reference is refused (409 `REFUND_NOT_AWAITING_TRANSFER`). **Two people**: the
+>   member of staff who recorded the account cannot record the transfer (403
+>   `REFUND_DUTIES_NOT_SEPARATE`, and a CHECK in V99). Refused as well: a transfer date after today,
+>   a bank reference already recorded for another backer's refund (409 `BANK_REFERENCE_TAKEN`; one
+>   transfer may pay several parts of one pledge), and — both the reveal and the record — while the
+>   charge is in an open chargeback (409 `REFUND_CHARGE_DISPUTED`, §9.8).
+> - **Escrow now spans two places**, the provider's balance and IdeyaNest's bank account. The
+>   ledger reconciliation (§8.4) still balances, because it compares the ledger with `transactions`;
+>   a comparison against a provider's settlement report, when there is one, must leave out
+>   `provider = BANK_TRANSFER`, which the bank statement answers instead.
+> - **An upheld backer dispute** past the window waits for the transfer: the decision answers 409
+>   `DISPUTE_REFUND_FAILED` with `meta.awaitingBankTransfer: true`, nothing is sent beside the
+>   waiting refund on a retry (`countRequestedAgainst` counts both new states), and the dispute is
+>   upheld on the retry after the transfer is recorded.
+> - The console's list shows each refund's `bankTransfer` (masked hint, ticket, who recorded what,
+>   the reference) and filters by the two new states; the screens are #392's next sub-issue.
 
 ### 9.8 Chargebacks
 
@@ -4606,6 +4669,14 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 > below the chargebacks: each open dispute shows the backer's reason and takes a note; upholding asks
 > first, because it refunds in full and recalculates the payout, and rejecting is one press. A refund
 > the provider refuses leaves the dispute open and says so.
+>
+> **A refund paid by bank transfer (#399, §9.7).** A chargeback cannot be prevented by a refund the
+> card network does not know about: a backer refunded from IdeyaNest's bank account can still
+> dispute the card payment and be paid twice. So a refund waiting for its transfer is neither
+> revealed nor recorded while its charge has an open dispute (409 `REFUND_CHARGE_DISPUTED`), and a
+> chargeback that arrives — or is reopened — on a charge already refunded by bank transfer is logged
+> at `ERROR` for a person, who answers the case with the transfer's reference as evidence. If it is
+> lost anyway, the loss is recorded as every loss is, and the double payment is recovered by hand.
 
 ---
 
@@ -6654,7 +6725,7 @@ Apple requires to revoke the token.
 |---|---|
 | Shipping addresses | Encrypted at rest with application-managed keys. **Built (#75).** One AES-256-GCM ciphertext per pledge over the whole structured address, with a 12-byte nonce and a `key_id` beside it; the key is configuration and never reaches PostgreSQL, which is why `pgcrypto` was rejected -- its passphrase travels in the query text and lands in `pg_stat_statements` and in every statement log. Rotation is two deploys: publish the new key, then move `primary-key-id`; rows re-seal as they are rewritten. **A deployment with no key configured starts normally and refuses the first address with a 503**, rather than failing to start or -- much worse -- storing one in the clear. The cost is stated in V36: nothing inside the envelope is queryable, so the destination country stays outside it on `pledges.shipping_country` |
 | Identity documents | Separate bucket, restricted access, automatic deletion after a retention period |
-| Bank details | Encrypted; only the last four digits are ever displayed. **Built: a creator's payout IBAN (#394)**, sealed in `payout_destinations` and shown as `AZ21…1944`; a backer's refund IBAN follows (#399). Every application-encrypted field goes through one `FieldCipher` (`shared/crypto`): the AES-256-GCM parameters above, moved out of the address cipher so that a second field cannot choose differently, with one keyring per kind of data so that one leaked key opens one kind of data. Shipping addresses still use it without additional data, which is why every address sealed before #393 opens unchanged; **bank rows bind each ciphertext to its row** -- table and id as additional authenticated data -- so a ciphertext copied into another person's row fails its tag instead of opening as their account. The keyring is `ideanest.crypto.bank-details.{primary-key-id,keys}` and, like the address keyring, **has no default**: a deployment without it starts, and the first write that needs it is refused with a 503 (`ENCRYPTED_STORAGE_UNAVAILABLE`). A key is 32 random bytes, base64 (`openssl rand -base64 32`), under a label of lowercase letters and digits only, such as `b1`; set `IDEANEST_CRYPTO_BANKDETAILS_PRIMARYKEYID=b1` and `IDEANEST_CRYPTO_BANKDETAILS_KEYS_B1`. Not a date such as `2026-10`: the environment binding reads `-` and `_` in a variable name as separators, so the key is bound under another name and never found. It is a separate key from the address key, and rotation is the same two deploys. **The same keys fingerprint each IBAN** -- HMAC-SHA256 under a key derived from each keyring key, stored as `<label>:<hex>` -- so that one account filed twice is an indexed lookup that survives rotation, without a second secret to provision |
+| Bank details | Encrypted; only the last four digits are ever displayed. **Built: a creator's payout IBAN (#394)**, sealed in `payout_destinations` and shown as `AZ21…1944`; and a backer's refund IBAN (#399), sealed per refund in `refund_bank_transfers` with the same keyring and shown as the same mask; only `ISSUE_REFUND`'s audited reveal opens it. Every application-encrypted field goes through one `FieldCipher` (`shared/crypto`): the AES-256-GCM parameters above, moved out of the address cipher so that a second field cannot choose differently, with one keyring per kind of data so that one leaked key opens one kind of data. Shipping addresses still use it without additional data, which is why every address sealed before #393 opens unchanged; **bank rows bind each ciphertext to its row** -- table and id as additional authenticated data -- so a ciphertext copied into another person's row fails its tag instead of opening as their account. The keyring is `ideanest.crypto.bank-details.{primary-key-id,keys}` and, like the address keyring, **has no default**: a deployment without it starts, and the first write that needs it is refused with a 503 (`ENCRYPTED_STORAGE_UNAVAILABLE`). A key is 32 random bytes, base64 (`openssl rand -base64 32`), under a label of lowercase letters and digits only, such as `b1`; set `IDEANEST_CRYPTO_BANKDETAILS_PRIMARYKEYID=b1` and `IDEANEST_CRYPTO_BANKDETAILS_KEYS_B1`. Not a date such as `2026-10`: the environment binding reads `-` and `_` in a variable name as separators, so the key is bound under another name and never found. It is a separate key from the address key, and rotation is the same two deploys. **The same keys fingerprint each IBAN** -- HMAC-SHA256 under a key derived from each keyring key, stored as `<label>:<hex>` -- so that one account filed twice is an indexed lookup that survives rotation, without a second secret to provision |
 | Personal data in logs | Redacted: email, phone, address, card, token, password |
 | Backups | Encrypted, cross-region, restore rehearsed quarterly |
 | Retention | On deletion: 30-day delay, then anonymisation. Financial records retained for the statutory period |
