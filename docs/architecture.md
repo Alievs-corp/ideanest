@@ -4609,7 +4609,9 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 >   it — audited `refund.bank_transfer_recorded`. The same reference again answers the settled
 >   refund; another reference is refused (409 `REFUND_NOT_AWAITING_TRANSFER`). **Two people**: the
 >   member of staff who recorded the account cannot record the transfer (403
->   `REFUND_DUTIES_NOT_SEPARATE`, and a CHECK in V99). Refused as well: a transfer date after today,
+>   `REFUND_DUTIES_NOT_SEPARATE`, and a CHECK in V99). Refused as well: a transfer date after today in
+>   Baku (#400: the bank and the payout's transfer date reckon the day there, and in UTC a transfer
+>   recorded between midnight and four in Baku would be refused),
 >   a bank reference already recorded for another backer's refund (409 `BANK_REFERENCE_TAKEN`; one
 >   transfer may pay several parts of one pledge), and — both the reveal and the record — while the
 >   charge is in an open chargeback (409 `REFUND_CHARGE_DISPUTED`, §9.8).
@@ -4622,7 +4624,17 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 >   waiting refund on a retry (`countRequestedAgainst` counts both new states), and the dispute is
 >   upheld on the retry after the transfer is recorded.
 > - The console's list shows each refund's `bankTransfer` (masked hint, ticket, who recorded what,
->   the reference) and filters by the two new states; the screens are #392's next sub-issue.
+>   the reference) and filters by the two new states. **The screens (#400):** the support console
+>   records the account from a pledge's ticket, checking the IBAN with `@ideanest/account/iban` as
+>   it is typed; the refund console reveals it on a press only, with the amount first, and records
+>   the transfer after a confirmation, or explains the two-people rule to whoever recorded the
+>   account; and a `FAILED` row offers the fallback. `docs/runbooks/bank-transfers.md`
+>   §6 is the procedure.
+> - **The backer sees it on their pledge.** `GET /v1/pledges/{id}` carries
+>   `refundAwaitingBankTransfer`: the sum of the pledge's refunds in either new state, in the
+>   pledge's currency, or null. While it is not null the web and the app say "Refund pending —
+>   contact support" with the amount and the pledge's reference, and open the WhatsApp
+>   conversation with the pledge quoted, because a backer has no way to raise a ticket themselves.
 
 ### 9.8 Chargebacks
 
