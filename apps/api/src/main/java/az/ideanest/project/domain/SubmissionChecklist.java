@@ -84,8 +84,11 @@ public final class SubmissionChecklist {
 
     public static final int COVER_MIN_HEIGHT = 576;
 
-    /** §5.3: 1–60 days, 30 recommended. Also {@code projects_duration_in_range}. */
-    public static final int DURATION_MIN_DAYS = 1;
+    /**
+     * §5.3: 30–60 days, 30 recommended (#390). {@code projects_duration_in_range} still allows
+     * 1–60, because campaigns submitted before #390 hold shorter durations.
+     */
+    public static final int DURATION_MIN_DAYS = 30;
 
     public static final int DURATION_MAX_DAYS = 60;
 

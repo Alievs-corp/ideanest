@@ -55,7 +55,7 @@ class CampaignFinalisationTests extends AbstractIntegrationTest {
     /** Distinguishes the accounts and slugs these tests create. */
     private static final AtomicInteger SEQUENCE = new AtomicInteger();
 
-    /** How long a fixture campaign ran for. Inside §5.3's 1–60 days, and otherwise arbitrary. */
+    /** How long a fixture campaign ran for. Inside §5.3's 30–60 days, and otherwise arbitrary. */
     private static final Duration CAMPAIGN_LENGTH = Duration.ofDays(30);
 
     @Autowired

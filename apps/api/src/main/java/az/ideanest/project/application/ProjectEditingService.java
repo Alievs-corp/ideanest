@@ -8,6 +8,7 @@ import az.ideanest.project.domain.Project;
 import az.ideanest.project.domain.ProjectEditLocks;
 import az.ideanest.project.domain.ProjectState;
 import az.ideanest.project.domain.StoryDocuments;
+import az.ideanest.project.domain.SubmissionChecklist;
 import az.ideanest.project.infrastructure.CategoryRepository;
 import az.ideanest.project.infrastructure.ProjectRepository;
 import az.ideanest.project.infrastructure.SubcategoryRepository;
@@ -54,10 +55,10 @@ public class ProjectEditingService {
     /** §5.3. Also {@code projects_blurb_length}. */
     private static final int BLURB_MAX = 135;
 
-    /** §5.3: 1-60 days, 30 recommended. Also {@code projects_duration_in_range}. */
-    private static final int DURATION_MIN = 1;
+    /** §5.3: 30–60 days (#390). Tighter than {@code projects_duration_in_range}, which keeps 1–60. */
+    private static final int DURATION_MIN = SubmissionChecklist.DURATION_MIN_DAYS;
 
-    private static final int DURATION_MAX = 60;
+    private static final int DURATION_MAX = SubmissionChecklist.DURATION_MAX_DAYS;
 
     /**
      * How many numbered slugs to try before falling back to a random suffix. The

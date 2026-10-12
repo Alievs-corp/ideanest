@@ -425,18 +425,18 @@ describe('BasicsPanel', () => {
       expect(screen.getByText('15 characters remaining')).toBeInTheDocument();
     });
 
-    it.each(['0', '61'])('refuses a duration of %s days', async (days) => {
+    it.each(['0', '29', '61'])('refuses a duration of %s days', async (days) => {
       const user = await openBasics();
 
       await user.clear(durationField());
       await user.type(durationField(), days);
       await tick(DEBOUNCE);
 
-      expect(screen.getByText('A campaign runs for 1 to 60 days.')).toBeInTheDocument();
+      expect(screen.getByText('A campaign runs for 30 to 60 days.')).toBeInTheDocument();
       expect(sent()).not.toContainEqual({ durationDays: Number(days) });
     });
 
-    it.each(['1', '60'])('accepts a duration of %s days', async (days) => {
+    it.each(['31', '60'])('accepts a duration of %s days', async (days) => {
       const user = await openBasics();
 
       await user.clear(durationField());

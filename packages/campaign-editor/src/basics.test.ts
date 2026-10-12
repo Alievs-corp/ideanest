@@ -104,14 +104,14 @@ describe('validateBasics', () => {
 
   describe('duration', () => {
     it(`runs from ${DURATION_MIN_DAYS} to ${DURATION_MAX_DAYS} days inclusive`, () => {
-      for (const days of ['1', '30', '60']) {
+      for (const days of ['30', '45', '60']) {
         expect(validateBasics(draft({ durationDays: days }), BASICS_COPY.validation, { now: NOW }).durationDays).toBeUndefined();
       }
     });
 
-    it.each(['0', '61', '600'])('refuses %s days', (days) => {
+    it.each(['0', '1', '29', '61', '600'])('refuses %s days', (days) => {
       expect(validateBasics(draft({ durationDays: days }), BASICS_COPY.validation, { now: NOW }).durationDays).toBe(
-        'A campaign runs for 1 to 60 days.',
+        'A campaign runs for 30 to 60 days.',
       );
     });
 

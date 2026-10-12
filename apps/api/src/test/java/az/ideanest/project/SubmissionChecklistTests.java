@@ -48,7 +48,7 @@ class SubmissionChecklistTests {
             Title                 1-60 characters
             Summary               1-135 characters
             Goal                  configurable minimum and maximum
-            Duration              1-60 days
+            Duration              30-60 days
             Cover image           required, minimum 1024x576
             Story                 minimum 500 characters
             Risks and challenges  required, minimum 200 characters
@@ -74,8 +74,8 @@ class SubmissionChecklistTests {
         assertThat(SubmissionChecklist.TITLE_MAX_CHARACTERS).isEqualTo(60);
         assertThat(SPECIFICATION).contains("1-135 characters");
         assertThat(SubmissionChecklist.SUMMARY_MAX_CHARACTERS).isEqualTo(135);
-        assertThat(SPECIFICATION).contains("1-60 days");
-        assertThat(SubmissionChecklist.DURATION_MIN_DAYS).isEqualTo(1);
+        assertThat(SPECIFICATION).contains("30-60 days");
+        assertThat(SubmissionChecklist.DURATION_MIN_DAYS).isEqualTo(30);
         assertThat(SubmissionChecklist.DURATION_MAX_DAYS).isEqualTo(60);
         assertThat(SPECIFICATION).contains("minimum 1024x576");
         assertThat(SubmissionChecklist.COVER_MIN_WIDTH).isEqualTo(1024);
@@ -298,12 +298,13 @@ class SubmissionChecklistTests {
     }
 
     @Test
-    @DisplayName("a duration outside 1-60 days is blocking")
+    @DisplayName("a duration outside 30-60 days is blocking")
     void duration() {
         assertBlocks(complete().duration(null), ChecklistRequirement.DURATION);
         assertBlocks(complete().duration(0), ChecklistRequirement.DURATION);
         assertBlocks(complete().duration(61), ChecklistRequirement.DURATION);
-        assertPasses(complete().duration(1), ChecklistRequirement.DURATION);
+        assertBlocks(complete().duration(29), ChecklistRequirement.DURATION);
+        assertPasses(complete().duration(30), ChecklistRequirement.DURATION);
         assertPasses(complete().duration(60), ChecklistRequirement.DURATION);
     }
 

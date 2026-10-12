@@ -39,7 +39,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 public final class Campaigns {
 
-    /** What a campaign gets when a test did not care. Inside §5.3's 1–60 days. */
+    /** What a campaign gets when a test did not care. Inside §5.3's 30–60 days. */
     private static final int DEFAULT_DURATION_DAYS = 30;
 
     private Campaigns() {
