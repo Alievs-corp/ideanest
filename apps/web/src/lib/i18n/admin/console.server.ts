@@ -44,6 +44,7 @@ import {
   revenueReportCopyFrom,
   paymentLogCopyFrom,
   payoutQueueCopyFrom,
+  payoutDestinationQueueCopyFrom,
   reconciliationCopyFrom,
   refundConsoleCopyFrom,
   type BackerDisputeQueueCopy,
@@ -54,6 +55,7 @@ import {
   type RevenueReportCopy,
   type PaymentLogCopy,
   type PayoutQueueCopy,
+  type PayoutDestinationQueueCopy,
   type ReconciliationCopy,
   type RefundConsoleCopy,
 } from './money-copy';
@@ -220,6 +222,11 @@ export async function reconciliationCopy(): Promise<ReconciliationCopy> {
 
 export async function payoutQueueCopy(): Promise<PayoutQueueCopy> {
   return payoutQueueCopyFrom(await getTranslations('admin'), await consoleChrome());
+}
+
+/** #396: COMPLIANCE's queue of payout destinations. */
+export async function payoutDestinationQueueCopy(): Promise<PayoutDestinationQueueCopy> {
+  return payoutDestinationQueueCopyFrom(await getTranslations('admin'), await consoleChrome());
 }
 
 export async function refundConsoleCopy(): Promise<RefundConsoleCopy> {

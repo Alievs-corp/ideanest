@@ -689,6 +689,7 @@
       "/admin/ledger": "Ledger",
       "/admin/reconciliation": "Reconciliation",
       "/admin/payouts": "Payouts",
+      "/admin/payout-destinations": "Payout destinations",
       "/admin/refunds": "Refunds",
       "/admin/disputes": "Chargebacks",
       "/admin/fees": "Fees",
@@ -961,6 +962,12 @@
         "metaDescription": "What each creator is owed, the hold it is under, and the signatures before it leaves.",
         "title": "Payouts",
         "intro": "Figures are frozen when a payout is calculated and never recomputed — the payout two people approved has to be the one that is sent. Approving needs APPROVE_PAYOUT, which the finance role deliberately does not confer."
+      },
+      "payoutDestinations": {
+        "metaTitle": "Payout destinations",
+        "metaDescription": "The bank accounts and cards creators are paid to that nobody has verified yet.",
+        "title": "Payout destinations",
+        "intro": "Where creators have asked to be paid and nobody has yet confirmed the account is theirs, oldest first. Verify or reject each one here; both need VERIFY_PAYOUT_DESTINATION, which the finance role deliberately does not hold. Revealing a full IBAN needs READ_BANK_DETAILS and every reveal is recorded in the audit trail."
       },
       "reconciliation": {
         "metaTitle": "Reconciliation",
@@ -1709,7 +1716,7 @@
           "OTHER": "Other"
         },
         "reversal": "Reversal",
-        "payoutHeading": "VÖEN and business card",
+        "payoutHeading": "VÖEN and payout destination",
         "loadingPayout": "Loading this account's payout details",
         "subjectLabel": "Paid as",
         "subjectKind": {
@@ -1722,18 +1729,18 @@
         "taxIdMissing": "Not provided",
         "legalSubjectForbidden": "The VÖEN is shown to staff who review identity verification.",
         "legalSubjectFailed": "The VÖEN on this account could not be read. Everything else on this page is as written.",
-        "cardLabel": "Business card",
+        "cardLabel": "Payout destination",
         "cardHolder": "holder {name}",
         "cardStanding": {
-          "NONE": "Not attached",
+          "NONE": "None on file",
           "AWAITING_VERIFICATION": "Waiting for verification",
           "VERIFIED": "Verified",
           "WAIVED": "Verification waived",
           "NAME_MISMATCH": "Name does not match",
           "REJECTED": "Rejected"
         },
-        "cardForbidden": "The business card is shown to staff who verify payout destinations.",
-        "cardFailed": "The business card on this account could not be read. Everything else on this page is as written."
+        "cardForbidden": "The payout destination is shown to staff who verify payout destinations.",
+        "cardFailed": "The payout destination on this account could not be read. Everything else on this page is as written."
       },
       "support": {
         "subject": "the support queue",
@@ -2047,6 +2054,68 @@
           "UNDER_REVIEW": "waiting on the review queue",
           "REJECTED": "waiting — the documents were refused and the creator has to send others",
           "EXPIRED": "waiting — the approval has aged out and the creator has to verify again"
+        }
+      },
+      "payoutDestinations": {
+        "subject": "the payout destination queue",
+        "filterLabel": "Filter by state",
+        "everything": "Everything waiting",
+        "loadingList": "Loading the payout destinations waiting on a reviewer",
+        "emptyTitle": "Nothing waiting",
+        "emptyBody": "Every payout destination on file has been verified.",
+        "emptyFilterTitle": "None in this state",
+        "emptyFilterBody": "Nothing in the queue is in this state. Choose another filter to see the rest.",
+        "capped": "Showing the {count} that have waited longest. Deciding these brings the next ones in.",
+        "openAccount": "Open account",
+        "openAccountLabel": "Open account: {name}",
+        "kind": {
+          "BANK_TRANSFER": "Bank account",
+          "PROVIDER_TOKEN": "Provider card"
+        },
+        "standing": {
+          "NONE": "None on file",
+          "AWAITING_VERIFICATION": "Waiting for verification",
+          "VERIFIED": "Verified",
+          "WAIVED": "Verification waived",
+          "NAME_MISMATCH": "Name does not match",
+          "REJECTED": "Rejected"
+        },
+        "rejectionReason": {
+          "UNREADABLE": "Unreadable",
+          "EXPIRED_DOCUMENT": "Expired document",
+          "MISMATCHED_NAME": "Name does not match",
+          "INCOMPLETE": "Incomplete",
+          "SUSPECTED_FORGERY": "Suspected forgery"
+        },
+        "holder": "holder {name}",
+        "updated": "changed {date}",
+        "rejectedFor": "Rejected: {reason}",
+        "reveal": {
+          "action": "Reveal IBAN",
+          "revealing": "Opening the IBAN…",
+          "hide": "Hide IBAN",
+          "audited": "Revealing the full IBAN is recorded in the audit trail under your name. It is not kept once you hide it or leave this page.",
+          "ibanLabel": "IBAN",
+          "holderLabel": "Account holder",
+          "notFound": "There is no bank account on file for this account, so there is no IBAN to reveal.",
+          "forbidden": "Revealing an IBAN needs READ_BANK_DETAILS.",
+          "failed": "The IBAN could not be opened. Nothing was shown."
+        },
+        "decision": {
+          "verify": "Verify",
+          "confirmVerify": "Verify this account as the creator's own? You are attesting it under your name, and payouts to it will be released.",
+          "confirmVerifyAction": "Yes, verify",
+          "verifying": "Verifying…",
+          "reject": "Reject",
+          "reasonLabel": "Reason the creator is shown",
+          "reasonPlaceholder": "Choose a reason",
+          "confirmReject": "Reject with this reason",
+          "rejecting": "Rejecting…",
+          "cancel": "Cancel",
+          "nameMismatch": "The holder's name does not match the creator's legal name, so this account cannot be verified. Reject it, or wait for the creator to correct their details.",
+          "self": "Nobody verifies or rejects their own payout destination.",
+          "gone": "There is no payout destination on this account any more.",
+          "failedTitle": "Not saved"
         }
       },
       "refunds": {

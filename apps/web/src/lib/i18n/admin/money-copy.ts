@@ -1,5 +1,6 @@
 import type { DisputeState, EvidenceKind } from '../../admin/disputes';
 import type { FeeScope } from '../../admin/fees';
+import type { DestinationKind, DestinationRejectionReason } from '../../admin/api';
 import type { TransactionStatus, TransactionType } from '../../admin/payments';
 import type { DestinationStanding, PayoutState, VerificationStanding } from '../../admin/payouts';
 import type { RefundReason, RefundState } from '../../admin/refunds';
@@ -1041,5 +1042,133 @@ export function revenueReportCopyFrom(t: AdminTranslator, chrome: ConsoleChromeC
     exporting: word('exporting'),
     exported: forms('exported'),
     truncated: template('truncated'),
+  };
+}
+
+/**
+ * What a payout destination is called wherever staff see one — #396.
+ *
+ * <p>One table for the queue and the account screen, so that a destination is called the same
+ * thing in both places. `reveal` and `decision` are the controls both of them draw.
+ *
+ * <p>`holder` carries `{name}`, `updated` carries `{date}` and `rejectedFor` carries `{reason}`.
+ */
+export interface PayoutDestinationCopy {
+  readonly kind: Readonly<Record<DestinationKind, string>>;
+  /** Keyed by `DestinationStanding`. */
+  readonly standing: Readonly<Record<string, string>>;
+  readonly rejectionReason: Readonly<Record<DestinationRejectionReason, string>>;
+  readonly holder: string;
+  readonly updated: string;
+  readonly rejectedFor: string;
+  readonly reveal: {
+    readonly action: string;
+    readonly revealing: string;
+    readonly hide: string;
+    readonly audited: string;
+    readonly ibanLabel: string;
+    readonly holderLabel: string;
+    readonly notFound: string;
+    readonly forbidden: string;
+    readonly failed: string;
+  };
+  readonly decision: {
+    readonly verify: string;
+    readonly confirmVerify: string;
+    readonly confirmVerifyAction: string;
+    readonly verifying: string;
+    readonly reject: string;
+    readonly reasonLabel: string;
+    readonly reasonPlaceholder: string;
+    readonly confirmReject: string;
+    readonly rejecting: string;
+    readonly cancel: string;
+    readonly nameMismatch: string;
+    readonly self: string;
+    readonly gone: string;
+    readonly failedTitle: string;
+  };
+}
+
+export function payoutDestinationCopyFrom(t: AdminTranslator): PayoutDestinationCopy {
+  const at = (key: string) => String(t.raw(`screens.payoutDestinations.${key}`));
+  return {
+    kind: t.raw('screens.payoutDestinations.kind') as Readonly<Record<DestinationKind, string>>,
+    standing: t.raw('screens.payoutDestinations.standing') as Readonly<Record<string, string>>,
+    rejectionReason: t.raw('screens.payoutDestinations.rejectionReason') as Readonly<
+      Record<DestinationRejectionReason, string>
+    >,
+    holder: at('holder'),
+    updated: at('updated'),
+    rejectedFor: at('rejectedFor'),
+    reveal: {
+      action: at('reveal.action'),
+      revealing: at('reveal.revealing'),
+      hide: at('reveal.hide'),
+      audited: at('reveal.audited'),
+      ibanLabel: at('reveal.ibanLabel'),
+      holderLabel: at('reveal.holderLabel'),
+      notFound: at('reveal.notFound'),
+      forbidden: at('reveal.forbidden'),
+      failed: at('reveal.failed'),
+    },
+    decision: {
+      verify: at('decision.verify'),
+      confirmVerify: at('decision.confirmVerify'),
+      confirmVerifyAction: at('decision.confirmVerifyAction'),
+      verifying: at('decision.verifying'),
+      reject: at('decision.reject'),
+      reasonLabel: at('decision.reasonLabel'),
+      reasonPlaceholder: at('decision.reasonPlaceholder'),
+      confirmReject: at('decision.confirmReject'),
+      rejecting: at('decision.rejecting'),
+      cancel: at('decision.cancel'),
+      nameMismatch: at('decision.nameMismatch'),
+      self: at('decision.self'),
+      gone: at('decision.gone'),
+      failedTitle: at('decision.failedTitle'),
+    },
+  };
+}
+
+/**
+ * COMPLIANCE's queue of payout destinations — `/admin/payout-destinations`, #396.
+ *
+ * <p>`capped` carries `{count}` and `openAccountLabel` carries `{name}`.
+ */
+export interface PayoutDestinationQueueCopy extends ConsoleChromeCopy {
+  readonly subject: string;
+  readonly filterLabel: string;
+  readonly everything: string;
+  readonly loadingList: string;
+  readonly emptyTitle: string;
+  readonly emptyBody: string;
+  readonly emptyFilterTitle: string;
+  readonly emptyFilterBody: string;
+  readonly capped: string;
+  readonly openAccount: string;
+  readonly openAccountLabel: string;
+  readonly destination: PayoutDestinationCopy;
+}
+
+export function payoutDestinationQueueCopyFrom(
+  t: AdminTranslator,
+  chrome: ConsoleChromeCopy,
+): PayoutDestinationQueueCopy {
+  const at = (key: string) => String(t.raw(`screens.payoutDestinations.${key}`));
+  return {
+    ...chrome,
+    subject: at('subject'),
+    filterLabel: at('filterLabel'),
+    everything: at('everything'),
+    loadingList: at('loadingList'),
+    emptyTitle: at('emptyTitle'),
+    emptyBody: at('emptyBody'),
+    emptyFilterTitle: at('emptyFilterTitle'),
+    emptyFilterBody: at('emptyFilterBody'),
+    capped: at('capped'),
+    openAccount: at('openAccount'),
+    openAccountLabel: at('openAccountLabel'),
+    destination: payoutDestinationCopyFrom(t),
   };
 }

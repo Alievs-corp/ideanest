@@ -1,3 +1,4 @@
+import type { components } from '@ideanest/api-client';
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { DestinationStanding, LegalSubject } from '../account/payout';
@@ -273,12 +274,28 @@ export async function readAccountLegalSubject(
   return (await response.json()) as AdminLegalSubject;
 }
 
+/** A bank account the platform pays by transfer, or a provider's card token (#394). */
+export type DestinationKind = NonNullable<components['schemas']['ForStaff']['kind']>;
+
+/** V58's closed set, shown to the creator in their language — never free text. */
+export type DestinationRejectionReason = NonNullable<components['schemas']['ForStaff']['rejectionReason']>;
+
+/** In the service's own order, which is the order a reviewer is offered them. */
+export const DESTINATION_REJECTION_REASONS: readonly DestinationRejectionReason[] = Object.freeze([
+  'UNREADABLE',
+  'EXPIRED_DOCUMENT',
+  'MISMATCHED_NAME',
+  'INCOMPLETE',
+  'SUSPECTED_FORGERY',
+]);
+
 /**
- * The business card an account is paid to, as staff see it — the other half.
+ * Where an account is paid, as staff see it — the other half.
  *
- * <p>Never the card number or the provider's token: `displayHint` is the masked form the
- * provider gave back, and it is all the service sends. Null fields may be absent rather than
- * null — the service serialises `non_null`.
+ * <p>Never the account number or the provider's token: `displayHint` is the masked form —
+ * `AZ21…1944` for an IBAN, the provider's own for a card — and it is all the service sends
+ * here. The number itself is {@link revealPayoutBankAccount}'s, a separate and audited read.
+ * Null fields may be absent rather than null — the service serialises `non_null`.
  *
  * <p>The service answers only a caller holding `VERIFY_PAYOUT_DESTINATION`.
  */
@@ -286,9 +303,13 @@ export interface AdminPayoutDestination {
   readonly creatorId: string;
   readonly recorded: boolean;
   readonly standing: DestinationStanding;
+  /** Absent when nothing is on file. */
+  readonly kind?: DestinationKind | null;
   readonly provider?: string | null;
   readonly holderName?: string | null;
   readonly displayHint?: string | null;
+  /** Set only when a reviewer refused it. */
+  readonly rejectionReason?: DestinationRejectionReason | null;
   readonly verifiedAt?: string | null;
   readonly updatedAt?: string | null;
 }
@@ -304,4 +325,107 @@ export async function readAccountPayoutDestination(
   if (!response.ok) throw await errorFrom(response);
 
   return (await response.json()) as AdminPayoutDestination;
+}
+
+/**
+ * How many destinations one read of the queue holds — `CreatorPayoutDestinations.PAGE_SIZE`.
+ *
+ * <p>The service takes no page and no filter: it answers the fifty that have waited longest,
+ * oldest first, and deciding one is what brings the next one in. A screen that shows exactly
+ * this many says so, because "fifty waiting" and "at least fifty waiting" are different
+ * workloads.
+ */
+export const PAYOUT_DESTINATION_QUEUE_SIZE = 50;
+
+/**
+ * COMPLIANCE's queue: every destination that is not verified, oldest first (#432, #396).
+ *
+ * <p>Not audited by the service, and that is its argument rather than an omission here: the
+ * list shows that a destination exists and what state it is in, and opening one on the account
+ * screen is the read worth a row. `VERIFY_PAYOUT_DESTINATION`.
+ */
+export async function readPayoutDestinationQueue(
+  signal?: AbortSignal,
+): Promise<readonly AdminPayoutDestination[]> {
+  const response = await authorizedFetch('/v1/admin/payout-destinations', { cache: 'no-store', signal });
+  if (!response.ok) throw await errorFrom(response);
+
+  const body = (await response.json()) as { destinations: readonly AdminPayoutDestination[] };
+  return body.destinations;
+}
+
+/**
+ * Confirms the account belongs to the creator it is filed under.
+ *
+ * <p>`STAFF_ATTESTED` is sent rather than left to the service, which wants the method stated:
+ * it is the only one anybody can perform today, and the row records how it was established.
+ * 409 `DESTINATION_NAME_MISMATCH` when the holder is not the creator's legal name, 403
+ * `SELF_VERIFIED_DESTINATION` on one's own account.
+ */
+export async function verifyPayoutDestination(
+  creatorId: string,
+  signal?: AbortSignal,
+): Promise<AdminPayoutDestination> {
+  const response = await authorizedFetch(
+    `/v1/admin/accounts/${encodeURIComponent(creatorId)}/payout-destination/verify`,
+    {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ method: 'STAFF_ATTESTED' }),
+      signal,
+    },
+  );
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as AdminPayoutDestination;
+}
+
+/** Refuses the account, with a reason from the closed set that the creator is shown. */
+export async function rejectPayoutDestination(
+  creatorId: string,
+  reason: DestinationRejectionReason,
+  signal?: AbortSignal,
+): Promise<AdminPayoutDestination> {
+  const response = await authorizedFetch(
+    `/v1/admin/accounts/${encodeURIComponent(creatorId)}/payout-destination/reject`,
+    {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ reason }),
+      signal,
+    },
+  );
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as AdminPayoutDestination;
+}
+
+/** A creator's IBAN in full, with the holder it is filed under. */
+export interface RevealedBankAccount {
+  readonly creatorId: string;
+  readonly iban: string;
+  readonly holderName: string;
+  readonly displayHint: string;
+}
+
+/**
+ * Opens a creator's IBAN — #394's one place the number is served.
+ *
+ * <p>`READ_BANK_DETAILS`, and every call is audited as `PAYOUT_DESTINATION_ACCOUNT_REVEALED`
+ * whatever it finds, so nothing calls this until somebody asks: not on load, not on hover, and
+ * never twice for one press. The response is `no-store` and so is the request, and nothing
+ * here keeps it — the component that asked holds it for as long as it is on screen. 404
+ * `PAYOUT_BANK_ACCOUNT_NOT_FOUND` when what is on file is a card or nothing.
+ */
+export async function revealPayoutBankAccount(
+  creatorId: string,
+  signal?: AbortSignal,
+): Promise<RevealedBankAccount> {
+  const response = await authorizedFetch(
+    `/v1/admin/accounts/${encodeURIComponent(creatorId)}/payout-destination/account`,
+    { cache: 'no-store', signal },
+  );
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as RevealedBankAccount;
 }
