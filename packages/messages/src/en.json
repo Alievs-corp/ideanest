@@ -247,7 +247,7 @@
       },
       "payout": {
         "label": "Payout details",
-        "summary": "Your VÖEN and the business card payouts go to."
+        "summary": "Your VÖEN and the bank account payouts go to."
       }
     },
     "pages": {
@@ -576,7 +576,7 @@
         "NEW_DEVICE_SIGN_IN": "A new device signed in to your account",
         "CAMPAIGN_EXTENDED": "A campaign you backed has a new deadline",
         "WITHDRAWAL_REQUESTED": "The creator of a campaign you backed requested their payout",
-        "PAYOUT_DETAILS_NEEDED": "Your payout is waiting for your VÖEN and business card",
+        "PAYOUT_DETAILS_NEEDED": "Your payout is waiting for your VÖEN and IBAN",
         "UPDATE_DUE_SOON": "An update for your campaign is due {when}"
       },
       "amount": {
@@ -2922,7 +2922,7 @@
       },
       "payout": {
         "metaTitle": "Payout details",
-        "metaDescription": "Your VÖEN and the business card your campaign payouts go to.",
+        "metaDescription": "Your VÖEN and the bank account your campaign payouts go to.",
         "title": "Payout details",
         "intro": "Where the money from a campaign you withdraw is sent. Payouts are held until this is complete and verified."
       }
@@ -2964,7 +2964,7 @@
       "payout": {
         "loading": "Loading your payout details",
         "subjectHeading": "Who is paid",
-        "subjectIntro": "IdeyaNest pays the person or company named here. Before any payout is sent, an administrator checks that the VÖEN is real and that the business card belongs to its holder.",
+        "subjectIntro": "IdeyaNest pays the person or company named here. Before any payout is sent, an administrator checks that the VÖEN is real and that the bank account belongs to its holder.",
         "kind": "You are",
         "kindIndividual": "An individual",
         "kindEntity": "A company",
@@ -2977,15 +2977,34 @@
         "save": "Save",
         "saving": "Saving…",
         "saved": "Saved.",
-        "cardHeading": "Business card",
-        "cardIntro": "Payouts go to a business card you register on the payment provider’s page. The card number is never entered on IdeyaNest.",
-        "cardNone": "No card on file yet.",
-        "cardOnFile": "{hint}, held by {holder}",
+        "bankHeading": "Bank account",
+        "bankIntro": "Payouts are sent by bank transfer to an Azerbaijani IBAN in your name or your company’s. IdeyaNest stores it encrypted and shows only its first and last four characters.",
+        "accountNone": "No bank account on file yet.",
+        "accountOnFile": "Bank account {hint}, held by {holder}",
+        "ibanLabel": "IBAN",
+        "ibanHint": "28 characters starting with AZ, as on your bank statement or in your banking app. Spaces are fine.",
+        "holderLabel": "Account holder",
+        "holderHint": "The name the bank has on the account. It must match your legal name above.",
+        "ibanDefect": {
+          "CHARACTERS": "An IBAN has only letters and digits. Remove any other characters.",
+          "COUNTRY": "An IBAN starts with a two-letter country code, such as AZ.",
+          "LENGTH": "An Azerbaijani IBAN is 28 characters. Check that none are missing or extra.",
+          "FORMAT": "An Azerbaijani IBAN is AZ, two digits, a four-letter bank code, then 20 letters or digits.",
+          "CHECKSUM": "The check digits do not match. A character is probably mistyped, or two are swapped.",
+          "COUNTRY_NOT_ACCEPTED": "Payouts go only to an Azerbaijani bank account. Enter an IBAN that starts with AZ."
+        },
+        "saveBank": "Save bank account",
+        "bankSaved": "Saved. An administrator verifies the account before the first payout.",
+        "bankUnavailable": "A bank account cannot be saved right now. Nothing was recorded; try again later.",
         "standingAwaiting": "Waiting for verification",
         "standingVerified": "Verified",
         "standingWaived": "Verification waived",
-        "standingMismatch": "The name on the card does not match your legal name",
+        "standingMismatch": "The account holder’s name does not match your legal name",
+        "mismatchHelp": "Payouts wait until the two match. Enter the holder’s name exactly as the bank has it, or correct your legal name above.",
         "standingRejected": "Rejected",
+        "cardHeading": "Or a business card",
+        "cardIntro": "Instead of a bank account, payouts can go to a business card you register on the payment provider’s page. The card number is never entered on IdeyaNest.",
+        "cardOnFile": "Business card {hint}, held by {holder}",
         "register": "Register a business card",
         "replace": "Register a different card",
         "opening": "Opening the payment provider’s page…",
@@ -5480,7 +5499,7 @@
     "withdrawConfirmBody": "The campaign stops taking pledges at once and cannot reopen. The payout is held for fourteen days, during which backers may dispute their payment. You owe every reward to every backer.",
     "withdrawNow": "Withdraw and close",
     "withdrawing": "Withdrawing…",
-    "withdrawn": "The campaign is closed and the payout is requested. We will ask for your VÖEN and business card before it is sent.",
+    "withdrawn": "The campaign is closed and the payout is requested. We will ask for your VÖEN and bank account (IBAN) before it is sent.",
     "cancel": "Cancel",
     "belowThreshold": "Funds can be withdrawn once the campaign has raised 80% of its goal.",
     "extendWrongState": "This campaign cannot be extended in its current state.",

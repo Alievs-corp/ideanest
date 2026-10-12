@@ -247,7 +247,7 @@
       },
       "payout": {
         "label": "Ödeme bilgileri",
-        "summary": "VÖEN'iniz ve ödemelerin gönderildiği iş kartı."
+        "summary": "VÖEN'iniz ve ödemelerin gönderildiği banka hesabı."
       }
     },
     "pages": {
@@ -576,7 +576,7 @@
         "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni bir cihazdan giriş yapıldı",
         "CAMPAIGN_EXTENDED": "Desteklediğiniz kampanyanın yeni bir bitiş tarihi var",
         "WITHDRAWAL_REQUESTED": "Desteklediğiniz kampanyanın sahibi ödeme talep etti",
-        "PAYOUT_DETAILS_NEEDED": "Ödemeniz VÖEN ve işletme kartınızı bekliyor",
+        "PAYOUT_DETAILS_NEEDED": "Ödemeniz VÖEN ve IBAN bilgilerinizi bekliyor",
         "UPDATE_DUE_SOON": "Kampanyanız için güncellemeniz {when} bekleniyor"
       },
       "amount": {
@@ -2922,7 +2922,7 @@
       },
       "payout": {
         "metaTitle": "Ödeme bilgileri",
-        "metaDescription": "VÖEN'iniz ve kampanya ödemelerinin gönderildiği iş kartı.",
+        "metaDescription": "VÖEN'iniz ve kampanya ödemelerinin gönderildiği banka hesabı.",
         "title": "Ödeme bilgileri",
         "intro": "Parasını çektiğiniz bir kampanyanın parasının gönderildiği yer. Bu bilgiler tamamlanıp doğrulanana kadar ödemeler bekletilir."
       }
@@ -2964,7 +2964,7 @@
       "payout": {
         "loading": "Ödeme bilgileriniz yükleniyor",
         "subjectHeading": "Kime ödenir",
-        "subjectIntro": "IdeyaNest burada adı geçen kişiye ya da şirkete öder. Herhangi bir ödeme gönderilmeden önce bir yönetici VÖEN'in gerçek olduğunu ve iş kartının sahibine ait olduğunu kontrol eder.",
+        "subjectIntro": "IdeyaNest burada adı geçen kişiye ya da şirkete öder. Herhangi bir ödeme gönderilmeden önce bir yönetici VÖEN'in gerçek olduğunu ve banka hesabının sahibine ait olduğunu kontrol eder.",
         "kind": "Siz",
         "kindIndividual": "Bireysiniz",
         "kindEntity": "Şirketsiniz",
@@ -2977,15 +2977,34 @@
         "save": "Kaydet",
         "saving": "Kaydediliyor…",
         "saved": "Kaydedildi.",
-        "cardHeading": "İş kartı",
-        "cardIntro": "Ödemeler, ödeme sağlayıcısının sayfasında kaydettiğiniz iş kartına gönderilir. Kart numarası hiçbir zaman IdeyaNest'te girilmez.",
-        "cardNone": "Henüz kayıtlı kart yok.",
-        "cardOnFile": "{hint}, sahibi: {holder}",
+        "bankHeading": "Banka hesabı",
+        "bankIntro": "Ödemeler, sizin ya da şirketiniz adına açılmış bir Azerbaycan IBAN'ına banka havalesiyle gönderilir. IdeyaNest bunu şifreli olarak saklar ve yalnızca ilk ve son dört karakterini gösterir.",
+        "accountNone": "Henüz kayıtlı banka hesabı yok.",
+        "accountOnFile": "Banka hesabı {hint}, sahibi: {holder}",
+        "ibanLabel": "IBAN",
+        "ibanHint": "AZ ile başlayan 28 karakter; banka ekstrenizde ya da banka uygulamanızda göründüğü gibi. Boşluk kullanabilirsiniz.",
+        "holderLabel": "Hesap sahibi",
+        "holderHint": "Bankanın hesapta kayıtlı tuttuğu ad. Yukarıdaki yasal adınızla aynı olmalıdır.",
+        "ibanDefect": {
+          "CHARACTERS": "IBAN yalnızca harf ve rakamlardan oluşur. Diğer karakterleri silin.",
+          "COUNTRY": "IBAN, AZ gibi iki harfli bir ülke koduyla başlar.",
+          "LENGTH": "Azerbaycan IBAN'ı 28 karakterdir. Eksik ya da fazla karakter olmadığını kontrol edin.",
+          "FORMAT": "Azerbaycan IBAN'ı şöyledir: AZ, iki rakam, dört harfli banka kodu, ardından 20 harf ya da rakam.",
+          "CHECKSUM": "Kontrol basamakları uyuşmuyor. Büyük olasılıkla bir karakter yanlış yazıldı ya da iki karakterin yeri değişti.",
+          "COUNTRY_NOT_ACCEPTED": "Ödemeler yalnızca Azerbaycan'daki bir banka hesabına gönderilir. AZ ile başlayan bir IBAN girin."
+        },
+        "saveBank": "Banka hesabını kaydet",
+        "bankSaved": "Kaydedildi. İlk ödemeden önce bir yönetici hesabı doğrular.",
+        "bankUnavailable": "Şu anda banka hesabı kaydedilemiyor. Hiçbir şey kaydedilmedi; daha sonra yeniden deneyin.",
         "standingAwaiting": "Doğrulama bekleniyor",
         "standingVerified": "Doğrulandı",
         "standingWaived": "Doğrulamadan muaf",
-        "standingMismatch": "Karttaki ad yasal adınızla eşleşmiyor",
+        "standingMismatch": "Hesap sahibinin adı yasal adınızla eşleşmiyor",
+        "mismatchHelp": "Adlar eşleşene kadar ödemeler bekler. Hesap sahibinin adını bankadaki haliyle girin ya da yukarıdaki yasal adınızı düzeltin.",
         "standingRejected": "Reddedildi",
+        "cardHeading": "Ya da bir iş kartı",
+        "cardIntro": "Banka hesabı yerine ödemeler, ödeme sağlayıcısının sayfasında kaydettiğiniz bir iş kartına da gönderilebilir. Kart numarası hiçbir zaman IdeyaNest'te girilmez.",
+        "cardOnFile": "İş kartı {hint}, sahibi: {holder}",
         "register": "İş kartı kaydet",
         "replace": "Başka bir kart kaydet",
         "opening": "Ödeme sağlayıcısının sayfası açılıyor…",
@@ -5480,7 +5499,7 @@
     "withdrawConfirmBody": "Kampanya destek kabul etmeyi hemen durdurur ve yeniden açılmaz. Ödeme on dört gün bekletilir; bu süre içinde destekçiler ödemelerine itiraz edebilir. Tüm ödülleri tüm destekçilere teslim etmek zorundasınız.",
     "withdrawNow": "Çek ve kapat",
     "withdrawing": "Çekiliyor…",
-    "withdrawn": "Kampanya kapandı ve ödeme talep edildi. Ödeme gönderilmeden önce VÖEN'inizi ve iş kartınızı isteyeceğiz.",
+    "withdrawn": "Kampanya kapandı ve ödeme talep edildi. Ödeme gönderilmeden önce VÖEN'inizi ve banka hesabınızı (IBAN) isteyeceğiz.",
     "cancel": "Vazgeç",
     "belowThreshold": "Kampanya hedefinin %80'ini topladığında parayı çekebilirsiniz.",
     "extendWrongState": "Bu kampanya mevcut durumunda uzatılamaz.",
