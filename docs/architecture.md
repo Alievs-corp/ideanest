@@ -2819,6 +2819,17 @@ day the transfer was started and today (Baku). `POST .../bank-transfer/abandon` 
 transfer was never made and clears the mark. Nobody handles their own campaign's payout this way
 (403 `SELF_PAID_PAYOUT`, V66's rule).
 
+**Worked at** the console's `/admin/payouts` (#398). For a payout whose `destinationKind` is
+`BANK_TRANSFER` the file draws "Transfer by hand" where Send was: Start (offered to a reader holding
+`APPROVE_PAYOUT` and `READ_BANK_DETAILS`, with the sentence that the read is audited beside it), then
+the net and its currency, the IBAN in groups of four, the holder and the payment description, each
+with a copy control. The account is read only on a press and kept only while it is on screen; a
+started transfer shows who started it and when, and offers the account again as another audited
+read. The record form takes the bank's reference, the value date (today in Baku by default, bounded
+by the start day and today) and a note, and asks before it records; Abandon takes a note. Cancel and
+Withdraw mine are not offered while a transfer is in progress. The steps a member of staff follows
+are in [`docs/runbooks/bank-transfers.md`](runbooks/bank-transfers.md).
+
 **There is no new state.** A started transfer is an `APPROVED` payout with
 `bank_transfer_started_at`, and it means what `send_unconfirmed_at` means: the money may have left.
 So until it is recorded or abandoned the payout cannot be cancelled or lose a signature (409
@@ -4359,7 +4370,8 @@ in, and IdeyaNest's bank account, which bank transfers leave from — and the le
 distinguish them. `ledger-reconciliation`'s three checks still balance, because they sum every
 provider together. A comparison against a provider's settlement report, when one is written,
 compares only that provider's transactions and **excludes `BANK_TRANSFER` rows**, which are
-checked against the bank's statement by their reference instead.
+checked against the bank's statement by their reference instead. How staff pay and record a
+transfer is [`docs/runbooks/bank-transfers.md`](runbooks/bank-transfers.md).
 
 **The person who confirms the destination is not the person who sends to it.** V66
 decided that one issue before there was anything to confirm, and it is the same

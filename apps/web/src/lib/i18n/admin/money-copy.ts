@@ -383,6 +383,135 @@ export interface PayoutQueueCopy extends ConsoleChromeCopy {
   /** The tag on the row, so the queue says which payouts are waiting on an account. */
   readonly destinationHeld: string;
   readonly destinationStanding: Readonly<Record<DestinationStanding, string>>;
+  /** The "transfer by hand" panel for a creator paid into a bank account — #398. */
+  readonly bankTransfer: PayoutBankTransferCopy;
+  /**
+   * A sentence per refusal the payout file can meet, keyed by the service's `code` — #398.
+   *
+   * <p>`FIGURES_MOVED` is the one key that is not a code: it is `PAYOUT_NOT_SENDABLE` with the
+   * payout already cancelled, which sends the reader to a fresh calculation rather than to a
+   * signature. `BANK_TRANSFER_DATE_OUT_OF_RANGE` carries `{start}` and `{today}`.
+   */
+  readonly refusal: Readonly<Record<PayoutRefusalKey, string>>;
+}
+
+/** The refusals {@link PayoutQueueCopy.refusal} has words for. */
+export type PayoutRefusalKey =
+  | 'PAYOUT_SETTLES_THROUGH_PROVIDER'
+  | 'PAYOUT_SETTLES_BY_BANK_TRANSFER'
+  | 'PAYOUT_BACKER_DISPUTE_OPEN'
+  | 'FIGURES_MOVED'
+  | 'PAYOUT_NOT_SENDABLE'
+  | 'PAYOUT_DESTINATION_NOT_VERIFIED'
+  | 'SELF_PAID_PAYOUT'
+  | 'PAYOUT_BANK_TRANSFER_ALREADY_RECORDED'
+  | 'PAYOUT_REFERENCE_TAKEN'
+  | 'BANK_TRANSFER_DATE_OUT_OF_RANGE'
+  | 'PAYOUT_BANK_TRANSFER_IN_PROGRESS'
+  | 'PAYOUT_BANK_TRANSFER_NOT_STARTED'
+  | 'PAYOUT_SIGNATURES_SHORT'
+  | 'CAMPAIGN_ALREADY_PAID_OUT'
+  | 'PAYOUT_SEND_UNCONFIRMED';
+
+/**
+ * Paying a payout by hand from IdeyaNest's bank account — #398.
+ *
+ * <p>The amount is never in the catalogue: `confirmRecord` carries `{amount}`, filled with the
+ * service's own figure through `formatMoney`, beside `{reference}` and `{date}`.
+ */
+export interface PayoutBankTransferCopy {
+  readonly heading: string;
+  readonly intro: string;
+  readonly inProgressTag: string;
+  readonly notApproved: string;
+  readonly needsApprovePayout: string;
+  readonly needsReadBankDetails: string;
+  /** Said beside the control that opens the account, before anybody presses it. */
+  readonly audited: string;
+  readonly startTransfer: string;
+  readonly starting: string;
+  /** Carries `{who}` and `{date}`. */
+  readonly transferStarted: string;
+  readonly revealIban: string;
+  readonly hide: string;
+  readonly amountLabel: string;
+  readonly ibanLabel: string;
+  readonly holderLabel: string;
+  readonly descriptionLabel: string;
+  readonly copy: string;
+  /** A copy control's accessible name. Carries `{field}`. */
+  readonly copyField: string;
+  readonly copied: string;
+  readonly revealFailed: string;
+  readonly recordHeading: string;
+  readonly recordIntro: string;
+  readonly bankReference: string;
+  readonly bankReferenceHint: string;
+  readonly transferredOn: string;
+  readonly transferredOnHint: string;
+  readonly noteLabel: string;
+  readonly recordNoteHint: string;
+  readonly recordTransfer: string;
+  /** Carries `{amount}`, `{reference}`, `{date}`. */
+  readonly confirmRecord: string;
+  readonly confirmRecordAction: string;
+  readonly recording: string;
+  readonly back: string;
+  readonly abandonTransfer: string;
+  readonly abandonIntro: string;
+  readonly abandonNoteLabel: string;
+  readonly confirmAbandon: string;
+  readonly abandoning: string;
+  /** Carries `{date}`. */
+  readonly paidOn: string;
+}
+
+/** Raw rather than formatted throughout, because several carry placeholders the component fills. */
+function payoutBankTransferCopyFrom(t: AdminTranslator): PayoutBankTransferCopy {
+  const raw = (key: keyof PayoutBankTransferCopy): string =>
+    String(t.raw(`screens.payouts.bankTransfer.${key}`));
+
+  return {
+    heading: raw('heading'),
+    intro: raw('intro'),
+    inProgressTag: raw('inProgressTag'),
+    notApproved: raw('notApproved'),
+    needsApprovePayout: raw('needsApprovePayout'),
+    needsReadBankDetails: raw('needsReadBankDetails'),
+    audited: raw('audited'),
+    startTransfer: raw('startTransfer'),
+    starting: raw('starting'),
+    transferStarted: raw('transferStarted'),
+    revealIban: raw('revealIban'),
+    hide: raw('hide'),
+    amountLabel: raw('amountLabel'),
+    ibanLabel: raw('ibanLabel'),
+    holderLabel: raw('holderLabel'),
+    descriptionLabel: raw('descriptionLabel'),
+    copy: raw('copy'),
+    copyField: raw('copyField'),
+    copied: raw('copied'),
+    revealFailed: raw('revealFailed'),
+    recordHeading: raw('recordHeading'),
+    recordIntro: raw('recordIntro'),
+    bankReference: raw('bankReference'),
+    bankReferenceHint: raw('bankReferenceHint'),
+    transferredOn: raw('transferredOn'),
+    transferredOnHint: raw('transferredOnHint'),
+    noteLabel: raw('noteLabel'),
+    recordNoteHint: raw('recordNoteHint'),
+    recordTransfer: raw('recordTransfer'),
+    confirmRecord: raw('confirmRecord'),
+    confirmRecordAction: raw('confirmRecordAction'),
+    recording: raw('recording'),
+    back: raw('back'),
+    abandonTransfer: raw('abandonTransfer'),
+    abandonIntro: raw('abandonIntro'),
+    abandonNoteLabel: raw('abandonNoteLabel'),
+    confirmAbandon: raw('confirmAbandon'),
+    abandoning: raw('abandoning'),
+    paidOn: raw('paidOn'),
+  };
 }
 
 export function payoutQueueCopyFrom(
@@ -444,6 +573,8 @@ export function payoutQueueCopyFrom(
     destinationStanding: t.raw('screens.payouts.destinationStanding') as Readonly<
       Record<DestinationStanding, string>
     >,
+    bankTransfer: payoutBankTransferCopyFrom(t),
+    refusal: t.raw('screens.payouts.refusal') as Readonly<Record<PayoutRefusalKey, string>>,
   };
 }
 
