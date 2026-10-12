@@ -34,7 +34,7 @@ def main() -> None:
     if not source.is_dir():
         sys.exit(f"captures folder not found: {source} (set PROMO_CAPTURES)")
 
-    for folder in ("clips", "stills", "crops", "fx", "audio"):
+    for folder in ("clips", "frames", "stills", "crops", "fx", "audio"):
         (MEDIA / folder).mkdir(parents=True, exist_ok=True)
 
     for clip in manifest["clips"]:
@@ -46,6 +46,12 @@ def main() -> None:
             "-movflags", "+faststart", str(out),
         )
         print("clip", out.name)
+        frames = MEDIA / "frames" / clip["id"]
+        if frames.exists():
+            shutil.rmtree(frames)
+        frames.mkdir(parents=True)
+        run("-i", str(out), "-q:v", "2", "-start_number", "0", str(frames / "%04d.jpg"))
+        print("frames", clip["id"], len(list(frames.glob("*.jpg"))))
 
     for still in manifest["stills"]:
         out = MEDIA / "stills" / f"{still['id']}.png"
