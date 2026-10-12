@@ -45,8 +45,37 @@ export type RefundReason =
    */
   | 'CHARGEBACK';
 
-/** Where a refund has got to. `REQUESTED` is the one worth watching. */
-export type RefundState = 'REQUESTED' | 'SUCCEEDED' | 'FAILED';
+/**
+ * Where a refund has got to. `REQUESTED` is the one worth watching.
+ *
+ * #399's two: a refund past the provider's refund window is paid by bank transfer, and waits
+ * first for support to record the backer's account (`AWAITING_BANK_DETAILS`) and then for
+ * finance to make and record the transfer (`AWAITING_TRANSFER`).
+ */
+export type RefundState =
+  | 'REQUESTED'
+  | 'SUCCEEDED'
+  | 'FAILED'
+  | 'AWAITING_BANK_DETAILS'
+  | 'AWAITING_TRANSFER';
+
+/**
+ * The bank transfer behind a refund, as the list shows it — #399.
+ *
+ * The masked hint and never the number, and no holder name: the list is `VIEW_FINANCE`'s and is
+ * not audited, so what identifies the account is read through `revealRefundBankDetails`, which
+ * is. The transfer fields are absent until finance records the transfer.
+ */
+export interface RefundBankTransfer {
+  ibanHint: string;
+  ticketId: string;
+  detailsRecordedBy: string;
+  detailsRecordedAt: string;
+  bankReference?: string | null;
+  transferredOn?: string | null;
+  transferRecordedBy?: string | null;
+  transferRecordedAt?: string | null;
+}
 
 export interface Refund {
   id: string;
@@ -66,6 +95,8 @@ export interface Refund {
   requestedBy?: string | null;
   requestedAt: string;
   settledAt?: string | null;
+  /** Once support has recorded the account it is paid into; null before that and for a card refund. */
+  bankTransfer?: RefundBankTransfer | null;
 }
 
 export interface RefundPage {

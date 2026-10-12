@@ -1,3 +1,4 @@
+import type { IbanDefect } from '@ideanest/account/iban';
 import type { ProjectState } from '../../projects/api';
 import type { StaffCapability, StaffRole } from '../../admin/staff';
 import type { TicketPriority, TicketState } from '../../admin/tickets';
@@ -210,6 +211,36 @@ export interface SupportConsoleCopy extends ConsoleChromeCopy {
   readonly failedTitle: string;
   readonly priority: Readonly<Record<TicketPriority, string>>;
   readonly state: Readonly<Record<TicketState, string>>;
+  readonly bankDetails: RefundBankDetailsCopy;
+}
+
+/**
+ * #400: the form on a pledge's ticket that records the account its refund is paid into.
+ *
+ * <p>`ibanDefect` is its own table rather than the creator's payout form's: that one tells a
+ * creator an IBAN must be Azerbaijani, and a backer's refund goes to any country's. `errors` is
+ * keyed by the service's `code`; anything else falls through to the console's refusal table.
+ */
+export interface RefundBankDetailsCopy {
+  readonly open: string;
+  readonly heading: string;
+  readonly intro: string;
+  readonly ibanLabel: string;
+  readonly ibanHint: string;
+  readonly holderLabel: string;
+  readonly holderHint: string;
+  readonly holderRequired: string;
+  readonly ticketLabel: string;
+  readonly ticketHint: string;
+  readonly save: string;
+  readonly saving: string;
+  readonly cancel: string;
+  readonly savedTitle: string;
+  /** Carries `{hint}`, `{amount}`. */
+  readonly savedBody: string;
+  readonly failedTitle: string;
+  readonly ibanDefect: Readonly<Record<IbanDefect, string>>;
+  readonly errors: Readonly<Record<string, string>>;
 }
 
 export function supportConsoleCopyFrom(
@@ -256,6 +287,7 @@ export function supportConsoleCopyFrom(
     failedTitle: t('screens.support.failedTitle'),
     priority: t.raw('screens.support.priority') as Readonly<Record<TicketPriority, string>>,
     state: t.raw('screens.support.state') as Readonly<Record<TicketState, string>>,
+    bankDetails: t.raw('screens.support.bankDetails') as RefundBankDetailsCopy,
   };
 }
 

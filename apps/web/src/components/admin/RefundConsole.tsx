@@ -31,8 +31,26 @@ import { ConsoleRefusal } from './ConsoleRefusal';
 import { EntityName } from './ConsoleIdentity';
 import { useConsoleResource } from './useConsoleResource';
 import { useDirectoryNames } from './useDirectoryNames';
+import { useConsoleMembership } from './ConsoleMembership';
+import { holds } from '../../lib/admin/staff';
+import {
+  AwaitingTransfer,
+  BankTransferFacts,
+  RouteToBankTransfer,
+  type RefundRowNotice,
+} from './RefundBankTransfer';
 
-const STATES: readonly RefundState[] = ['REQUESTED', 'SUCCEEDED', 'FAILED'];
+/*
+ * #400: the two bank-transfer states sit after REQUESTED, because they are the same kind of thing
+ * — money the platform decided to send back and has not sent yet — and before the settled two.
+ */
+const STATES: readonly RefundState[] = [
+  'REQUESTED',
+  'AWAITING_BANK_DETAILS',
+  'AWAITING_TRANSFER',
+  'SUCCEEDED',
+  'FAILED',
+];
 
 /**
  * §4.11's AD-06: full and partial refunds with reason codes — issues #67 and #307.
@@ -56,6 +74,14 @@ const STATES: readonly RefundState[] = ['REQUESTED', 'SUCCEEDED', 'FAILED'];
  * before an earlier partial refund would be both wrong and confident; blank makes the service
  * work it out from the row it has locked.
  *
+ * <h2>A refund past the provider's window is paid by bank transfer — #400</h2>
+ *
+ * Its row says what it waits for and who did the step before. To a reader holding
+ * `ISSUE_REFUND` it offers the next step: revealing the account and recording the transfer, or,
+ * on a refund the provider refused, sending it by bank transfer instead. `RefundBankTransfer.tsx`
+ * has the rules those controls keep. What a row did is said above the list rather than in the
+ * row, because the list reloads after it and the row it would have been said in is redrawn.
+ *
  * <h2>Motion: none</h2>
  *
  * docs/motion-system.md §5 puts motion at its lowest as money gets closer, and nothing on this
@@ -68,6 +94,11 @@ export interface RefundConsoleProps {
 export function RefundConsole({ copy }: RefundConsoleProps) {
   const [state, setState] = useState<RefundState | null>('REQUESTED');
   const [page, setPage] = useState(0);
+  const [rowNotice, setRowNotice] = useState<RefundRowNotice | null>(null);
+  const { membership } = useConsoleMembership();
+  /* What is offered, never what is allowed: the service refuses every one of these on its own. */
+  const canIssue = holds(membership, 'ISSUE_REFUND');
+  const readerId = membership?.accountId ?? null;
 
   const refunds = useConsoleResource(
     (signal) => listRefunds({ state, page, signal }),
@@ -89,10 +120,19 @@ export function RefundConsole({ copy }: RefundConsoleProps) {
      4a10278a" is a record nobody can read back. */
   const names = useDirectoryNames(
     (refunds.data?.refunds ?? [])
-      .map((refund) => refund.requestedBy)
+      .flatMap((refund) => [
+        refund.requestedBy,
+        refund.bankTransfer?.detailsRecordedBy,
+        refund.bankTransfer?.transferRecordedBy,
+      ])
       .filter((id): id is string => id != null),
     [],
   );
+
+  function settled(notice: RefundRowNotice): void {
+    setRowNotice(notice);
+    refunds.reload();
+  }
 
   if (refunds.status === 'signed-out' || refunds.status === 'forbidden') {
     return <ConsoleRefusal status={refunds.status} capability={refunds.capability} subject={copy.subject} copy={copy.refusals} />;
@@ -208,6 +248,7 @@ export function RefundConsole({ copy }: RefundConsoleProps) {
               ? ` ${fillPlaceholders(copy.providerSaid, { message: issued.failureMessage })}`
               : ''}
             {issued.state === 'REQUESTED' ? ` ${copy.awaitingProvider}` : ''}
+            {issued.state === 'AWAITING_BANK_DETAILS' ? ` ${copy.bank.awaitingBankDetails}` : ''}
           </InlineAlert>
         )}
         {writeError && (
@@ -231,12 +272,23 @@ export function RefundConsole({ copy }: RefundConsoleProps) {
               onClick={() => {
                 setState(option);
                 setPage(0);
+                setRowNotice(null);
               }}
             >
               {option === null ? copy.all : copy.state[option]}
             </Pill>
           ))}
         </div>
+
+        {rowNotice !== null && (
+          <InlineAlert
+            variant="success"
+            title={rowNotice.title}
+            className="mt-4"
+          >
+            {rowNotice.body}
+          </InlineAlert>
+        )}
 
         {refunds.status === 'loading' && (
           <SkeletonGroup label={copy.loadingList} className="mt-4">
@@ -278,7 +330,15 @@ export function RefundConsole({ copy }: RefundConsoleProps) {
         {refunds.status === 'ready' && refunds.data !== null && refunds.data.refunds.length > 0 && (
           <ul className="mt-4 flex list-none flex-col gap-2">
             {refunds.data.refunds.map((refund) => (
-              <RefundRow key={refund.id} refund={refund} names={names} copy={copy} />
+              <RefundRow
+                key={refund.id}
+                refund={refund}
+                names={names}
+                copy={copy}
+                canIssue={canIssue}
+                readerId={readerId}
+                onSettled={settled}
+              />
             ))}
           </ul>
         )}
@@ -308,11 +368,20 @@ function RefundRow({
   names,
   refund,
   copy,
+  canIssue,
+  readerId,
+  onSettled,
 }: {
   readonly refund: Refund;
   readonly names: DirectoryNames;
   readonly copy: RefundConsoleCopy;
+  /** Whether the reader holds `ISSUE_REFUND` — the reveal, the record and the fallback are its. */
+  readonly canIssue: boolean;
+  readonly readerId: string | null;
+  readonly onSettled: (notice: RefundRowNotice) => void;
 }) {
+  const transfer = refund.bankTransfer ?? null;
+
   return (
     <li className="rounded-lg border border-white/8 bg-surface-1 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -355,6 +424,26 @@ function RefundRow({
           ? ` · ${fillPlaceholders(copy.refused, { code: refund.failureCode })}`
           : ''}
       </p>
+
+      {transfer !== null && <BankTransferFacts transfer={transfer} names={names} copy={copy} />}
+
+      {refund.state === 'AWAITING_BANK_DETAILS' && (
+        <p className="mt-2 max-w-[62ch] text-xs text-white/64">{copy.bank.awaitingBankDetails}</p>
+      )}
+
+      {refund.state === 'AWAITING_TRANSFER' && transfer !== null && canIssue && (
+        <AwaitingTransfer
+          refund={refund}
+          transfer={transfer}
+          readerId={readerId}
+          copy={copy}
+          onSettled={onSettled}
+        />
+      )}
+
+      {refund.state === 'FAILED' && canIssue && (
+        <RouteToBankTransfer refund={refund} copy={copy} onSettled={onSettled} />
+      )}
     </li>
   );
 }
