@@ -22,8 +22,10 @@ import java.util.regex.Pattern;
  * <h2>Generating a key</h2>
  *
  * <p>Thirty-two random bytes, base64: {@code openssl rand -base64 32}. The label is
- * free-form within {@link #KEY_ID}'s shape; a date such as {@code 2026-10} is the
- * convention, because it says which key is older at a glance.
+ * free-form within {@link #KEY_ID}'s shape, but in a deployment it should be letters and
+ * digits only, such as {@code b1} then {@code b2}: the keys are bound from environment
+ * variables, where Spring reads {@code -} and {@code _} in the name as separators, so a
+ * label such as {@code 2026-10} is bound under a different name and never found.
  *
  * @param primaryKeyId which key new values are sealed under. Rotation is: add the new
  *     key to {@code keys}, deploy, then move this label — so that every instance can read

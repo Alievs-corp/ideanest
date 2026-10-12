@@ -583,12 +583,14 @@ ideanest:
       # configured and refuses every write. A deployment sets, in its own
       # environment:
       #
-      #   IDEANEST_PLEDGEMANAGER_ADDRESSES_PRIMARYKEYID=2026-08
-      #   IDEANEST_PLEDGEMANAGER_ADDRESSES_KEYS_2026-08=<32 bytes, base64>
+      #   IDEANEST_PLEDGEMANAGER_ADDRESSES_PRIMARYKEYID=k1
+      #   IDEANEST_PLEDGEMANAGER_ADDRESSES_KEYS_K1=<32 bytes, base64>
       #
       # Generate the key material with `openssl rand -base64 32` -- 32 random bytes,
-      # base64. The label is any lowercase name V36's key_id check accepts; a date
-      # is the convention, because it says which key is older at a glance.
+      # base64. The label is lowercase letters and digits only -- k1, then k2 at the
+      # next rotation -- because Spring's environment binding reads `-` and `_` in
+      # the variable name as separators, so a label such as 2026-08 is bound as
+      # "2026.08" and the primary key is never found.
       primary-key-id: ~
 
   # §17.4: keyrings for encrypted fields that belong to no single module -- #393,
@@ -610,8 +612,16 @@ ideanest:
       # Same shape, same rotation (add the key, deploy, then move primary-key-id),
       # and nothing bound here for the same reason. In the deployment's environment:
       #
-      #   IDEANEST_CRYPTO_BANKDETAILS_PRIMARYKEYID=2026-10
-      #   IDEANEST_CRYPTO_BANKDETAILS_KEYS_2026-10=<output of `openssl rand -base64 32`>
+      #   IDEANEST_CRYPTO_BANKDETAILS_PRIMARYKEYID=b1
+      #   IDEANEST_CRYPTO_BANKDETAILS_KEYS_B1=<output of `openssl rand -base64 32`>
+      #
+      # A label of letters and digits only (b1, then b2), for the address keyring's
+      # reason: a `-` or `_` in it is read as a separator by the environment binding,
+      # and the key ends up under a different name from the one primary-key-id gives.
+      #
+      # The same keys also fingerprint each IBAN (#394) -- HMAC under a key derived
+      # from them, so that one account filed by two creators can be noticed -- so
+      # there is no second secret to provision.
       primary-key-id: ~
 
   fx:
