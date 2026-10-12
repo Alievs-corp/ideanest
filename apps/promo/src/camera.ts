@@ -1,6 +1,7 @@
 import { CAPTURE, DEVICE, FRAME } from './theme';
 
 export const PERSPECTIVE = 2200;
+export const SCREEN_Z = DEVICE.depth / 2 + 1;
 
 export interface Pose {
   x: number;
@@ -60,12 +61,12 @@ function projectWithDepth(p: Pose, lx: number, ly: number, lz = 0): [number, num
 
 export function projectCapture(p: Pose, cx: number, cy: number): [number, number] {
   const [lx, ly] = captureToDevice(cx, cy);
-  return project(p, lx, ly);
+  return project(p, lx, ly, SCREEN_Z);
 }
 
 export function focusPose(base: Pose, cx: number, cy: number, s: number, target: [number, number]): Pose {
   const [lx, ly] = captureToDevice(cx, cy);
-  const [fx, fy, k] = projectWithDepth({ ...base, x: 0, y: 0, s }, lx, ly);
+  const [fx, fy, k] = projectWithDepth({ ...base, x: 0, y: 0, s }, lx, ly, SCREEN_Z);
   return {
     ...base,
     s,

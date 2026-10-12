@@ -121,8 +121,15 @@ Every text/surface pair must be one the contrast table in the tokens accepts.
 
 ## 5. The device
 
-- Our own device frame (`apps/promo/src/device/`): a rounded body with a slim bezel and a
-  generic camera pill, drawn from tokens. No real phone model, no manufacturer marks.
+- The device is an **iPhone 17 Pro–style** body, by the owner's decision (2026-10-12),
+  built in code in `apps/promo/src/device/` from tokens: 71.9 × 150.0 × 8.75 mm
+  proportions, a 40-layer flat metal rim with chamfer highlights, Action and volume
+  buttons on the left, side button and Camera Control on the right, Dynamic Island, and a
+  full-width camera plateau with three lenses, flash and LiDAR on the back. **No Apple
+  logo, no wordmark, no Apple product photography.** Check Apple's marketing guidelines
+  before a paid placement (`apps/promo/LICENSES.md`).
+- The device shows its back once: it rises back-first and spins 186° to the screen
+  (bar 2), with motion blur. Every other shot tilts it enough to show the rim.
 - The screen shows captures recorded at the device's native resolution, so macros at 2×
   stay sharp.
 - Status bar: clean — 9:41, full signal, full battery, no notifications (see

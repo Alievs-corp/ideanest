@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { focusPose, mixPose, project, projectCapture, REST } from './camera';
-import { FRAME } from './theme';
+import { DEVICE, FRAME, IPHONE_BUTTONS } from './theme';
 
 describe('the device camera', () => {
   it('puts the centre of an untransformed device at the centre of the frame', () => {
@@ -19,6 +19,14 @@ describe('the device camera', () => {
     const [x, y] = projectCapture(pose, 280, 1505);
     expect(x).toBeCloseTo(540, 6);
     expect(y).toBeCloseTo(1200, 6);
+  });
+
+  it('builds the body to iPhone 17 Pro proportions, 71.9 x 150.0 x 8.75 mm', () => {
+    expect(DEVICE.depth / DEVICE.body.width).toBeCloseTo(8.75 / 71.9, 2);
+    expect(DEVICE.body.height / DEVICE.body.width).toBeCloseTo(150 / 71.9, 1);
+    for (const b of [...IPHONE_BUTTONS.left, ...IPHONE_BUTTONS.right]) {
+      expect(b.to * DEVICE.mm).toBeLessThan(DEVICE.body.height);
+    }
   });
 
   it('blends poses linearly', () => {

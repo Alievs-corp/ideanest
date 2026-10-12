@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +27,7 @@ for (const lang of languages) {
   const name = `spark-to-nest-9x16-${lang}`;
   const master = join(out, `${name}.master.mp4`);
   const delivery = join(out, `${name}.mp4`);
+  for (const stale of [master, delivery, join(out, `${name}.png`)]) rmSync(stale, { force: true });
   remotion('render', 'src/index.ts', id, master, '--log=error', '--overwrite');
   remotion(
     'ffmpeg', '-v', 'error', '-y', '-i', master, '-i', soundtrack, '-map', '0:v', '-map', '1:a',
