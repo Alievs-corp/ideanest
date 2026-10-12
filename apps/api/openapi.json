@@ -2414,6 +2414,134 @@
         "tags" : [ "payout-controller" ]
       }
     },
+    "/v1/admin/payouts/{payoutId}/bank-transfer" : {
+      "get" : {
+        "operationId" : "payoutBankTransfer",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "payoutId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BankTransferInstruction"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "payout-controller" ]
+      }
+    },
+    "/v1/admin/payouts/{payoutId}/bank-transfer/abandon" : {
+      "post" : {
+        "operationId" : "payoutAbandonBankTransfer",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "payoutId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AbandonBankTransferRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PayoutSummary"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "payout-controller" ]
+      }
+    },
+    "/v1/admin/payouts/{payoutId}/bank-transfer/record" : {
+      "post" : {
+        "operationId" : "payoutRecordBankTransfer",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "payoutId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecordBankTransferRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PayoutSummary"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "payout-controller" ]
+      }
+    },
+    "/v1/admin/payouts/{payoutId}/bank-transfer/start" : {
+      "post" : {
+        "operationId" : "payoutStartBankTransfer",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "payoutId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BankTransferInstruction"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "payout-controller" ]
+      }
+    },
     "/v1/admin/payouts/{payoutId}/cancel" : {
       "post" : {
         "operationId" : "payoutCancel",
@@ -10404,6 +10532,17 @@
   },
   "components" : {
     "schemas" : {
+      "AbandonBankTransferRequest" : {
+        "type" : "object",
+        "properties" : {
+          "note" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "note" ]
+      },
       "AcceptRequest" : {
         "type" : "object",
         "properties" : {
@@ -11290,6 +11429,29 @@
           "transferredOn" : {
             "type" : "string",
             "format" : "date"
+          }
+        }
+      },
+      "BankTransferInstruction" : {
+        "type" : "object",
+        "properties" : {
+          "accountHint" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "$ref" : "#/components/schemas/Money"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "holderName" : {
+            "type" : "string"
+          },
+          "iban" : {
+            "type" : "string"
+          },
+          "payout" : {
+            "$ref" : "#/components/schemas/PayoutSummary"
           }
         }
       },
@@ -14958,6 +15120,18 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "bankTransferStartedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "bankTransferStartedBy" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "bankTransferredOn" : {
+            "type" : "string",
+            "format" : "date"
+          },
           "calculatedAt" : {
             "type" : "string",
             "format" : "date-time"
@@ -14969,6 +15143,10 @@
           "creatorStanding" : {
             "type" : "string",
             "enum" : [ "NOT_REQUIRED", "WAIVED", "VERIFIED", "NEVER_REQUESTED", "AWAITING_DOCUMENTS", "UNDER_REVIEW", "REJECTED", "EXPIRED" ]
+          },
+          "destinationKind" : {
+            "type" : "string",
+            "enum" : [ "PROVIDER_TOKEN", "BANK_TRANSFER" ]
           },
           "destinationStanding" : {
             "type" : "string",
@@ -16188,6 +16366,26 @@
             }
           }
         }
+      },
+      "RecordBankTransferRequest" : {
+        "type" : "object",
+        "properties" : {
+          "bankReference" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "note" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          },
+          "transferredOn" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "required" : [ "bankReference", "note", "transferredOn" ]
       },
       "RecoveryCodesResponse" : {
         "type" : "object",

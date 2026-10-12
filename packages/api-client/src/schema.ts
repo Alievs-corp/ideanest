@@ -1044,6 +1044,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/payouts/{payoutId}/bank-transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["payoutBankTransfer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payouts/{payoutId}/bank-transfer/abandon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["payoutAbandonBankTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payouts/{payoutId}/bank-transfer/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["payoutRecordBankTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payouts/{payoutId}/bank-transfer/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["payoutStartBankTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/payouts/{payoutId}/cancel": {
         parameters: {
             query?: never;
@@ -4216,6 +4280,9 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AbandonBankTransferRequest: {
+            note: string;
+        };
         AcceptRequest: {
             /** Format: int32 */
             version: number;
@@ -4534,6 +4601,14 @@ export interface components {
             transferRecordedBy?: string;
             /** Format: date */
             transferredOn?: string;
+        };
+        BankTransferInstruction: {
+            accountHint?: string;
+            amount?: components["schemas"]["Money"];
+            description?: string;
+            holderName?: string;
+            iban?: string;
+            payout?: components["schemas"]["PayoutSummary"];
         };
         BeginRequest: {
             fin: string;
@@ -5890,11 +5965,19 @@ export interface components {
             /** Format: int32 */
             approvalsRequired?: number;
             /** Format: date-time */
+            bankTransferStartedAt?: string;
+            /** Format: uuid */
+            bankTransferStartedBy?: string;
+            /** Format: date */
+            bankTransferredOn?: string;
+            /** Format: date-time */
             calculatedAt?: string;
             /** Format: uuid */
             creatorId?: string;
             /** @enum {string} */
             creatorStanding?: "NOT_REQUIRED" | "WAIVED" | "VERIFIED" | "NEVER_REQUESTED" | "AWAITING_DOCUMENTS" | "UNDER_REVIEW" | "REJECTED" | "EXPIRED";
+            /** @enum {string} */
+            destinationKind?: "PROVIDER_TOKEN" | "BANK_TRANSFER";
             /** @enum {string} */
             destinationStanding?: "WAIVED" | "VERIFIED" | "NONE" | "AWAITING_VERIFICATION" | "NAME_MISMATCH" | "REJECTED";
             failureCode?: string;
@@ -6357,6 +6440,12 @@ export interface components {
         RatesResponse: {
             base?: string;
             rates?: components["schemas"]["Rate"][];
+        };
+        RecordBankTransferRequest: {
+            bankReference: string;
+            note: string;
+            /** Format: date */
+            transferredOn: string;
         };
         RecoveryCodesResponse: {
             recoveryCodes?: string[];
@@ -7352,6 +7441,7 @@ export interface components {
     headers: never;
     pathItems: never;
 }
+export type SchemaAbandonBankTransferRequest = components['schemas']['AbandonBankTransferRequest'];
 export type SchemaAcceptRequest = components['schemas']['AcceptRequest'];
 export type SchemaAcceptance = components['schemas']['Acceptance'];
 export type SchemaAcceptanceRecord = components['schemas']['AcceptanceRecord'];
@@ -7387,6 +7477,7 @@ export type SchemaBankAccountRequest = components['schemas']['BankAccountRequest
 export type SchemaBankDetails = components['schemas']['BankDetails'];
 export type SchemaBankDetailsRequest = components['schemas']['BankDetailsRequest'];
 export type SchemaBankTransfer = components['schemas']['BankTransfer'];
+export type SchemaBankTransferInstruction = components['schemas']['BankTransferInstruction'];
 export type SchemaBeginRequest = components['schemas']['BeginRequest'];
 export type SchemaBeginUploadBody = components['schemas']['BeginUploadBody'];
 export type SchemaBranch = components['schemas']['Branch'];
@@ -7583,6 +7674,7 @@ export type SchemaRaisePledgeRequest = components['schemas']['RaisePledgeRequest
 export type SchemaRaiseRequest = components['schemas']['RaiseRequest'];
 export type SchemaRate = components['schemas']['Rate'];
 export type SchemaRatesResponse = components['schemas']['RatesResponse'];
+export type SchemaRecordBankTransferRequest = components['schemas']['RecordBankTransferRequest'];
 export type SchemaRecoveryCodesResponse = components['schemas']['RecoveryCodesResponse'];
 export type SchemaReferralVisitResponse = components['schemas']['ReferralVisitResponse'];
 export type SchemaReferrerReportResponse = components['schemas']['ReferrerReportResponse'];
@@ -9485,6 +9577,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PayoutFile"];
+                };
+            };
+        };
+    };
+    payoutBankTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payoutId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankTransferInstruction"];
+                };
+            };
+        };
+    };
+    payoutAbandonBankTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payoutId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AbandonBankTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutSummary"];
+                };
+            };
+        };
+    };
+    payoutRecordBankTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payoutId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordBankTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutSummary"];
+                };
+            };
+        };
+    };
+    payoutStartBankTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payoutId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankTransferInstruction"];
                 };
             };
         };
