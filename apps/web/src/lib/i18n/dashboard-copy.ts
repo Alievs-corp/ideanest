@@ -417,6 +417,8 @@ export interface FinanceCopy {
   readonly taxWithheld: string;
   readonly taxNote: string;
   readonly refunded: string;
+  /** #400: what the refunded figure includes besides refunds already back with their backers. */
+  readonly refundedNote: string;
   readonly payable: string;
   readonly payableProjected: string;
   readonly payoutsHeading: string;
@@ -457,6 +459,7 @@ export function financeCopyFrom(t: DashboardTranslator): FinanceCopy {
     taxWithheld: t('finance.taxWithheld'),
     taxNote: t('finance.taxNote'),
     refunded: t('finance.refunded'),
+    refundedNote: t('finance.refundedNote'),
     payable: t('finance.payable'),
     payableProjected: t('finance.payableProjected'),
     payoutsHeading: t('finance.payoutsHeading'),

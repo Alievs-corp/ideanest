@@ -182,7 +182,9 @@ describe('FinancePanel summary', () => {
     expect(
       screen.getByLabelText(`${en.dashboard.finance.taxWithheld}, − 0.00 AZN. ${en.dashboard.finance.taxNote}`),
     ).toBeTruthy();
-    expect(screen.getByLabelText(`${en.dashboard.finance.refunded}, − 250.00 AZN`)).toBeTruthy();
+    expect(
+      screen.getByLabelText(`${en.dashboard.finance.refunded}, − 250.00 AZN. ${en.dashboard.finance.refundedNote}`),
+    ).toBeTruthy();
   });
 
   it('leaves the tax note out when tax is collected', async () => {

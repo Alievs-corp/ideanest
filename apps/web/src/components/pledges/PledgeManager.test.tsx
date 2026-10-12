@@ -8,6 +8,7 @@ import { checkoutCopyFrom } from '../../lib/i18n/checkout-copy';
 import { pledgeManagerCopyFrom } from '../../lib/i18n/pledges-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { formatExactTime } from '../../lib/time';
+import { formatMoney } from '../../lib/money';
 import { translatorFor } from '../../test-copy';
 
 vi.mock('../../lib/pledges/api', async (importOriginal) => ({
@@ -196,6 +197,40 @@ describe('the pledge screen for a paid pledge', () => {
 
       expect(screen.getByText(PLEDGES.lockedTitle)).toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: PLEDGES.editor.raiseHeading })).not.toBeInTheDocument();
+    });
+  });
+
+  /* #400: a refund past the provider's window waits for a bank transfer, and the backer is the
+     one who has to give support the account. */
+  describe('a refund waiting for a bank transfer', () => {
+    it('says the refund is pending, how much, and how to reach support with the pledge quoted', async () => {
+      pledgeMock.mockResolvedValue(
+        paid({ raisable: false, refundAwaitingBankTransfer: { amount: '1234.50', currency: 'AZN' } }),
+      );
+      await open();
+
+      const notice = screen.getByRole('alert');
+      expect(within(notice).getByText(PLEDGES.refundPending.title)).toBeInTheDocument();
+      expect(notice).toHaveTextContent(
+        fillPlaceholders(PLEDGES.refundPending.body, {
+          amount: formatMoney({ amount: '1234.50', currency: 'AZN' }),
+        }),
+      );
+      expect(notice).toHaveTextContent('pledge-1');
+
+      const contact = within(notice).getByRole('link', { name: PLEDGES.refundPending.contact });
+      const href = new URL(contact.getAttribute('href') ?? '');
+      expect(href.origin).toBe('https://wa.me');
+      expect(href.searchParams.get('text')).toBe(
+        fillPlaceholders(PLEDGES.refundPending.message, { reference: 'pledge-1' }),
+      );
+    });
+
+    it('says nothing about one when nothing waits', async () => {
+      pledgeMock.mockResolvedValue(paid({ raisable: false, refundAwaitingBankTransfer: null }));
+      await open();
+
+      expect(screen.queryByText(PLEDGES.refundPending.title)).not.toBeInTheDocument();
     });
   });
 

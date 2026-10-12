@@ -36,8 +36,10 @@ import type { CheckoutCopy } from '../../lib/i18n/checkout-copy';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import type { Locale } from '../../lib/i18n/locale';
 import { regionNames } from '../../lib/i18n/formats';
-import type { PledgeManagerCopy, RaiseReturnCopy } from '../../lib/i18n/pledges-copy';
-import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import type { PledgeManagerCopy, RaiseReturnCopy, RefundPendingCopy } from '../../lib/i18n/pledges-copy';
+import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
+import { whatsappDraftHref } from '../../lib/contact/whatsapp';
+import type { Money } from '../../lib/money';
 
 /**
  * One of the caller's own pledges, with §4.5's PL-09 edit. Issue #287.
@@ -243,6 +245,14 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
         )}
       </div>
 
+      {pledge.refundAwaitingBankTransfer != null && (
+        <RefundPendingNotice
+          pledgeId={pledge.id}
+          amount={pledge.refundAwaitingBankTransfer}
+          copy={pledges.refundPending}
+        />
+      )}
+
       <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
@@ -387,6 +397,51 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
         </Link>
       </div>
     </div>
+  );
+}
+
+/**
+ * A refund waiting to be paid by bank transfer — #400.
+ *
+ * The provider could no longer send it back to the card, so the money goes by bank transfer and
+ * support needs the account it should go to. A backer cannot raise a ticket from the site, so the
+ * way to reach support is the WhatsApp conversation the site already offers, opened here with the
+ * pledge quoted. The pledge is printed in full as well, for whoever gets in touch another way: it is
+ * what support finds the refund by.
+ *
+ * <p>Both waiting states read the same here. Whether the account is already on file is a fact
+ * about the back office, and to the backer the money has not arrived either way, so the notice
+ * says what to do if they have not been in touch and that nothing more is needed if they have.
+ */
+export function RefundPendingNotice({
+  pledgeId,
+  amount,
+  copy,
+}: {
+  readonly pledgeId: string;
+  readonly amount: Money;
+  readonly copy: RefundPendingCopy;
+}) {
+  return (
+    <InlineAlert variant="warning" title={copy.title}>
+      <p>{fillPlaceholders(copy.body, { amount: formatMoney(amount) })}</p>
+      <p className="mt-2">{copy.already}</p>
+      <p className="mt-2">
+        {fillNodes(copy.reference, {
+          reference: <span className="select-all break-all font-mono text-white">{pledgeId}</span>,
+        })}
+      </p>
+      <p className="mt-3">
+        <a
+          href={whatsappDraftHref(fillPlaceholders(copy.message, { reference: pledgeId }))}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-sm font-medium text-white underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lime-500)]"
+        >
+          {copy.contact}
+        </a>
+      </p>
+    </InlineAlert>
   );
 }
 

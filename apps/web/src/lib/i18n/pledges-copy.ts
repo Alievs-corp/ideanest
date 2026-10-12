@@ -204,6 +204,20 @@ export interface PledgeManagerCopy {
   readonly states: PledgeStatesCopy;
   readonly editor: PledgeEditorCopy;
   readonly raiseReturned: RaiseReturnCopy;
+  readonly refundPending: RefundPendingCopy;
+}
+
+/**
+ * #400: a refund the provider could no longer send back to the card, waiting to be paid by bank
+ * transfer. `body` carries `{amount}`; `reference` and `message` carry `{reference}`, the pledge.
+ */
+export interface RefundPendingCopy {
+  readonly title: string;
+  readonly body: string;
+  readonly already: string;
+  readonly reference: string;
+  readonly contact: string;
+  readonly message: string;
 }
 
 export function pledgeManagerCopyFrom(t: PledgesTranslator): PledgeManagerCopy {
@@ -234,6 +248,14 @@ export function pledgeManagerCopyFrom(t: PledgesTranslator): PledgeManagerCopy {
       heldBody: String(t.raw('manager.raiseReturned.heldBody')),
       unappliedTitle: t('manager.raiseReturned.unappliedTitle'),
       unappliedBody: t('manager.raiseReturned.unappliedBody'),
+    },
+    refundPending: {
+      title: t('manager.refundPending.title'),
+      body: String(t.raw('manager.refundPending.body')),
+      already: t('manager.refundPending.already'),
+      reference: String(t.raw('manager.refundPending.reference')),
+      contact: t('manager.refundPending.contact'),
+      message: String(t.raw('manager.refundPending.message')),
     },
   };
 }

@@ -58,15 +58,21 @@ import {
 export function WhatsAppSheet({
   visible,
   onClose,
+  draft,
 }: {
   readonly visible: boolean;
   readonly onClose: () => void;
+  /**
+   * A message to start from, which the reader may change before sending — #400's refund notice
+   * quotes the pledge so support can find it. Read once, when the sheet mounts.
+   */
+  readonly draft?: string;
 }) {
   const t = useT('shell.whatsapp');
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(draft ?? '');
   const [missing, setMissing] = useState<readonly EnquiryField[]>([]);
   /** The link that was handed over, kept so it can be followed again. */
   const [handoff, setHandoff] = useState<string | null>(null);

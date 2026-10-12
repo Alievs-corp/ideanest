@@ -442,3 +442,42 @@ describe('the dispute', () => {
     expect(screen.getByTestId('dispute-error')).toHaveTextContent(wording);
   });
 });
+
+describe('a refund waiting for a bank transfer (#400)', () => {
+  const R = M.refundPending;
+
+  it('says the refund is pending, how much, and quotes the pledge', async () => {
+    api.readPledge.mockResolvedValue(
+      pledge({ state: 'COLLECTED', refundAwaitingBankTransfer: money('1234.50') }),
+    );
+    await show();
+
+    const notice = screen.getByTestId('refund-pending');
+    expect(within(notice).getByText(R.title)).toBeTruthy();
+    expect(within(notice).getByText(new RegExp('1,234\.50 AZN'))).toBeTruthy();
+    expect(screen.getByTestId('refund-pending-reference')).toHaveTextContent(
+      R.reference.replace('{reference}', 'pl-1'),
+    );
+  });
+
+  it('opens the WhatsApp sheet with the pledge already written into the message', async () => {
+    api.readPledge.mockResolvedValue(
+      pledge({ state: 'COLLECTED', refundAwaitingBankTransfer: money('25.00') }),
+    );
+    await show();
+
+    await fireEvent.press(screen.getByRole('button', { name: R.contact }));
+    await settle();
+
+    expect(screen.getByLabelText(en.shell.whatsapp.fields.message).props.value).toBe(
+      R.message.replace('{reference}', 'pl-1'),
+    );
+  });
+
+  it('says nothing about one when nothing waits', async () => {
+    api.readPledge.mockResolvedValue(pledge({ state: 'COLLECTED', refundAwaitingBankTransfer: null }));
+    await show();
+
+    expect(screen.queryByTestId('refund-pending')).toBeNull();
+  });
+});

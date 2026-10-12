@@ -182,7 +182,12 @@ function Summary({ finance }: { readonly finance: CampaignFinance }) {
               // A bare zero would read as "no tax is due", which the platform cannot say.
               note={finance.taxCollected ? undefined : t('taxNote')}
             />
-            <AmountRow label={t('refunded')} amount={`− ${formatMoney(finance.refunded)}`} />
+            <AmountRow
+              label={t('refunded')}
+              amount={`− ${formatMoney(finance.refunded)}`}
+              // #400: includes refunds still on their way to backers by bank transfer.
+              note={t('refundedNote')}
+            />
             <AmountRow
               label={projected ? t('payableProjected') : t('payable')}
               amount={formatMoney(finance.net)}

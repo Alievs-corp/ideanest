@@ -4,6 +4,7 @@ import {
   WHATSAPP_CONTACT_NUMBER,
   composeEnquiry,
   missingFields,
+  whatsappDraftHref,
   whatsappHref,
 } from './whatsapp';
 
@@ -92,5 +93,14 @@ describe('the WhatsApp enquiry link', () => {
       message: 'ю'.repeat(MESSAGE_MAX_LENGTH),
     });
     expect(href.length).toBeLessThan(8000);
+  });
+});
+
+describe('a draft the platform writes', () => {
+  it('opens the same conversation with the draft as it was written, and no name above it', () => {
+    const href = whatsappDraftHref(' Salam. 11111111-2222 ');
+    expect(href.startsWith(`https://wa.me/${WHATSAPP_CONTACT_NUMBER}?text=`)).toBe(true);
+    expect(new URL(href).searchParams.get('text')).toBe('Salam. 11111111-2222');
+    expect(href).not.toContain('+');
   });
 });

@@ -158,7 +158,17 @@ export function FinancialSummary({ projectId, load, copy }: FinancialSummaryProp
                   copy.taxNote
             }
           />
-          <Row label={copy.refunded} amount={`− ${formatMoney(finance.refunded)}`} />
+          {/*
+            #400: a refund past the provider's window is subtracted here as soon as it is decided,
+            although the backer is paid by bank transfer later. The figure is right, because the
+            money is no longer the creator's; the note says why it can be ahead of what backers
+            have received.
+          */}
+          <Row
+            label={copy.refunded}
+            amount={`− ${formatMoney(finance.refunded)}`}
+            note={copy.refundedNote}
+          />
           <Row
             label={projected ? copy.payableProjected : copy.payable}
             amount={formatMoney(finance.net)}
