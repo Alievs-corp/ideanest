@@ -1,11 +1,13 @@
 package az.ideanest.payment.api;
 
+import az.ideanest.payment.application.BankRefundRefusedException;
 import az.ideanest.payment.application.DisputeNotFoundException;
 import az.ideanest.payment.application.NothingToRefundException;
 import az.ideanest.payment.application.NothingToSubmitException;
 import az.ideanest.payment.application.RefundExceedsCollectionException;
 import az.ideanest.payment.application.RefundReasonNotIssuableException;
 import az.ideanest.payment.application.UnconfiguredProviderException;
+import az.ideanest.shared.compliance.UnacceptableIbanException;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
@@ -30,7 +32,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * which has its own and whose caller is a provider rather than a person.
  */
 @RestControllerAdvice(
-        assignableTypes = {RefundController.class, DisputeController.class, ReconciliationController.class})
+        assignableTypes = {
+            RefundController.class,
+            DisputeController.class,
+            ReconciliationController.class,
+            RefundBankTransferController.class
+        })
 public class PaymentAdminExceptionHandler {
 
     @ExceptionHandler(NotAModeratorException.class)
@@ -85,6 +92,39 @@ public class PaymentAdminExceptionHandler {
         problem.setTitle("Not a reason a refund is sent for");
         problem.setDetail(exception.getMessage());
         problem.setProperty("code", "REFUND_REASON_NOT_ISSUABLE");
+        return problem;
+    }
+
+    /**
+     * #399: a step of a refund paid by bank transfer, refused. The reason carries its own status and
+     * code; {@code meta.subject} is the refund, pledge or ticket it is about.
+     */
+    @ExceptionHandler(BankRefundRefusedException.class)
+    public ProblemDetail handleBankRefundRefused(BankRefundRefusedException exception) {
+        BankRefundRefusedException.Reason reason = exception.reason();
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.valueOf(reason.status()));
+        problem.setType(URI.create(
+                "https://ideanest.az/problems/" + reason.name().toLowerCase(java.util.Locale.ROOT).replace('_', '-')));
+        problem.setTitle(reason.title());
+        problem.setProperty("code", reason.name());
+        if (exception.subject() != null) {
+            problem.setProperty("meta", Map.of("subject", exception.subject().toString()));
+        }
+        return problem;
+    }
+
+    /**
+     * #399: 400, that is not an IBAN. {@code meta.defect} says what is wrong, from {@code Iban.Defect}'s
+     * closed set, and — as for a creator's account — the refusal does not repeat what was typed.
+     */
+    @ExceptionHandler(UnacceptableIbanException.class)
+    public ProblemDetail handleUnacceptableIban(UnacceptableIbanException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/malformed-iban"));
+        problem.setTitle("That is not an IBAN");
+        problem.setDetail("An IBAN is a country code, two check digits and the account, as the bank prints it.");
+        problem.setProperty("code", "MALFORMED_IBAN");
+        problem.setProperty("meta", Map.of("defect", exception.defect()));
         return problem;
     }
 

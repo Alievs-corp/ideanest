@@ -56,10 +56,12 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Creators are paid by bank transfer from IdeyaNest's own account (epic #392): a
  * {@code PAYOUT} transaction whose provider is {@code BANK_TRANSFER}, with the same posting a
- * provider's payout gets. So {@code escrow} is money held across the provider's balance
- * <em>and</em> the bank account — collected through the one, paid out from the other — and the
- * three checks here still balance, because {@code settledTotals} sums every provider and the
- * ledger never distinguished them.
+ * provider's payout gets. Since #399 a refund past the provider's refund window goes the same
+ * way, as a {@code REFUND} transaction under {@code BANK_TRANSFER} with the ordinary posting.
+ * So {@code escrow} is money held across the provider's balance <em>and</em> the bank account
+ * — collected through the one, paid out or refunded from either — and the three checks here
+ * still balance, because {@code settledTotals} sums every provider and the ledger never
+ * distinguished them.
  *
  * <p>What does split is the comparison above, when it is written: a provider's settlement
  * report knows nothing of a bank transfer, so it is compared only against transactions whose

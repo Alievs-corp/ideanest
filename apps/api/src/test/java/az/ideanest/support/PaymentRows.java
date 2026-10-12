@@ -44,6 +44,10 @@ public final class PaymentRows {
                     "DELETE FROM creator_debts WHERE dispute_id IN (SELECT id FROM disputes WHERE pledge_id IN (" + in + "))",
                     ids);
             jdbc.update("DELETE FROM disputes WHERE pledge_id IN (" + in + ")", ids);
+            jdbc.update(
+                    "DELETE FROM refund_bank_transfers WHERE refund_id IN (SELECT id FROM refunds WHERE pledge_id IN ("
+                            + in + "))",
+                    ids);
             jdbc.update("DELETE FROM refunds WHERE pledge_id IN (" + in + ")", ids);
             jdbc.update("DELETE FROM transactions WHERE pledge_id IN (" + in + ")", ids);
         } finally {
@@ -73,6 +77,10 @@ public final class PaymentRows {
         try {
             jdbc.update("DELETE FROM ledger_entries WHERE project_id IN (" + in + ")", ids);
             jdbc.update("DELETE FROM disputes WHERE project_id IN (" + in + ")", ids);
+            jdbc.update(
+                    "DELETE FROM refund_bank_transfers WHERE refund_id IN (SELECT id FROM refunds WHERE project_id IN ("
+                            + in + "))",
+                    ids);
             jdbc.update("DELETE FROM refunds WHERE project_id IN (" + in + ")", ids);
             jdbc.update("DELETE FROM transactions WHERE project_id IN (" + in + ")", ids);
         } finally {

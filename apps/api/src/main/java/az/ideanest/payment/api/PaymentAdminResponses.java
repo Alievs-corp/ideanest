@@ -1,5 +1,6 @@
 package az.ideanest.payment.api;
 
+import az.ideanest.payment.application.RefundBankTransfers;
 import az.ideanest.payment.domain.Dispute;
 import az.ideanest.payment.domain.DisputeEvidence;
 import az.ideanest.payment.domain.DisputeState;
@@ -7,7 +8,9 @@ import az.ideanest.payment.domain.RefundReason;
 import az.ideanest.payment.domain.RefundState;
 import az.ideanest.shared.money.Money;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -31,6 +34,8 @@ public final class PaymentAdminResponses {
      *
      * @param refundTransactionId the provider call that carried it out, null until there
      *     has been one and forever on a refund that failed before the provider answered
+     * @param bankTransfer #399: the bank transfer that pays it, once support has recorded the
+     *     account; null for every refund that goes through a provider
      */
     public record Refund(
             UUID id,
@@ -47,9 +52,15 @@ public final class PaymentAdminResponses {
             String failureMessage,
             UUID requestedBy,
             Instant requestedAt,
-            Instant settledAt) {
+            Instant settledAt,
+            BankTransfer bankTransfer) {
 
         public static Refund of(az.ideanest.payment.domain.Refund refund) {
+            return of(refund, null);
+        }
+
+        public static Refund of(
+                az.ideanest.payment.domain.Refund refund, az.ideanest.payment.domain.RefundBankTransfer bank) {
             return new Refund(
                     refund.id(),
                     refund.pledgeId(),
@@ -65,7 +76,72 @@ public final class PaymentAdminResponses {
                     refund.failureMessage(),
                     refund.requestedBy(),
                     refund.requestedAt(),
-                    refund.settledAt());
+                    refund.settledAt(),
+                    bank == null ? null : BankTransfer.of(bank));
+        }
+    }
+
+    /**
+     * How a refund is paid by bank transfer — #399. The account's masked hint and never its number,
+     * nor its holder's name: the list is {@code VIEW_FINANCE}'s, and the account is opened only
+     * through the audited reveal.
+     *
+     * @param bankReference null until finance records the transfer, as are the three after it
+     */
+    public record BankTransfer(
+            String ibanHint,
+            UUID ticketId,
+            UUID detailsRecordedBy,
+            Instant detailsRecordedAt,
+            String bankReference,
+            LocalDate transferredOn,
+            UUID transferRecordedBy,
+            Instant transferRecordedAt) {
+
+        static BankTransfer of(az.ideanest.payment.domain.RefundBankTransfer row) {
+            return new BankTransfer(
+                    row.ibanHint(),
+                    row.ticketId(),
+                    row.detailsRecordedBy(),
+                    row.detailsRecordedAt(),
+                    row.bankReference(),
+                    row.transferredOn(),
+                    row.transferRecordedBy(),
+                    row.transferRecordedAt());
+        }
+    }
+
+    /**
+     * A backer's bank account, opened for the transfer that pays their refund — #399.
+     *
+     * @param iban the number in full, normalised
+     * @param detailsRecordedBy who recorded it, and so who may not record the transfer
+     */
+    public record BankDetails(
+            UUID refundId,
+            UUID pledgeId,
+            Money amount,
+            String iban,
+            String holderName,
+            String ibanHint,
+            UUID ticketId,
+            UUID detailsRecordedBy) {
+
+        public static BankDetails of(RefundBankTransfers.BankDetails details) {
+            return new BankDetails(
+                    details.refundId(),
+                    details.pledgeId(),
+                    details.amount(),
+                    details.iban(),
+                    details.holderName(),
+                    details.ibanHint(),
+                    details.ticketId(),
+                    details.detailsRecordedBy());
+        }
+
+        @Override
+        public String toString() {
+            return "BankDetails[" + refundId + ", " + ibanHint + "]";
         }
     }
 
@@ -79,8 +155,15 @@ public final class PaymentAdminResponses {
      */
     public record RefundPage(List<Refund> refunds, int page, boolean hasMore) {
 
-        public static RefundPage of(List<az.ideanest.payment.domain.Refund> refunds, int page, int size) {
-            return new RefundPage(refunds.stream().map(Refund::of).toList(), page, refunds.size() == size);
+        public static RefundPage of(
+                List<az.ideanest.payment.domain.Refund> refunds,
+                Map<UUID, az.ideanest.payment.domain.RefundBankTransfer> bank,
+                int page,
+                int size) {
+            return new RefundPage(
+                    refunds.stream().map(refund -> Refund.of(refund, bank.get(refund.id()))).toList(),
+                    page,
+                    refunds.size() == size);
         }
     }
 

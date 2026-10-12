@@ -462,6 +462,29 @@ public enum AuditAction {
      */
     REFUND_ISSUED("refund.issued", "refund"),
 
+    /**
+     * #399: a refund the provider will no longer carry out was routed to a bank transfer — past the
+     * provider's refund window, refused by it as too old, or routed by a member of staff after a
+     * refusal. The system's decision in the first two cases, a person's in the third.
+     */
+    REFUND_ROUTED_TO_BANK_TRANSFER("refund.routed_to_bank_transfer", "refund"),
+
+    /**
+     * #399: support recorded, or replaced, the bank account a refund is paid into. The detail carries
+     * the masked hint and the ticket, never the number.
+     */
+    REFUND_BANK_DETAILS_RECORDED("refund.bank_details_recorded", "refund"),
+
+    /**
+     * #399: a member of finance opened a backer's IBAN in full, to make the transfer.
+     * {@link #PAYOUT_DESTINATION_ACCOUNT_REVEALED}'s argument for a backer's account: who has seen it
+     * is one query with an answer.
+     */
+    REFUND_BANK_DETAILS_REVEALED("refund.bank_details_revealed", "refund"),
+
+    /** #399: a member of finance recorded the bank transfer that paid a refund, with the bank's reference. */
+    REFUND_BANK_TRANSFER_RECORDED("refund.bank_transfer_recorded", "refund"),
+
     /** AD-07 (#68, #308): evidence was submitted, or an outcome recorded, on a dispute. */
     DISPUTE_HANDLED("dispute.handled", "dispute"),
 

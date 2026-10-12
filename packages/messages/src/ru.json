@@ -549,6 +549,7 @@
         "CAMPAIGN_EXTENDED": "У кампании {campaign} новый срок",
         "WITHDRAWAL_REQUESTED": "Автор кампании {campaign} запросил вывод средств",
         "PAYOUT_DETAILS_NEEDED": "Выплата по кампании {campaign} ждёт ваши реквизиты",
+        "REFUND_NEEDS_BANK_DETAILS": "Для возврата по кампании {campaign} нужны ваши банковские реквизиты",
         "UPDATE_DUE_SOON": "Обновление кампании {campaign} нужно опубликовать {when}"
       },
       "unnamed": {
@@ -577,6 +578,7 @@
         "CAMPAIGN_EXTENDED": "У кампании, которую вы поддержали, новый срок",
         "WITHDRAWAL_REQUESTED": "Автор поддержанной вами кампании запросил вывод средств",
         "PAYOUT_DETAILS_NEEDED": "Выплата ждёт ваш VÖEN и IBAN",
+        "REFUND_NEEDS_BANK_DETAILS": "Для возврата нужны ваши банковские реквизиты",
         "UPDATE_DUE_SOON": "Обновление вашей кампании нужно опубликовать {when}"
       },
       "amount": {
@@ -1174,7 +1176,11 @@
             "update_published": "Обновление опубликовано"
           },
           "refund": {
-            "issued": "Возврат оформлен"
+            "issued": "Возврат оформлен",
+            "routed_to_bank_transfer": "Возврат переведён на банковский перевод",
+            "bank_details_recorded": "Реквизиты для возврата записаны",
+            "bank_details_revealed": "Реквизиты для возврата открыты",
+            "bank_transfer_recorded": "Банковский перевод возврата записан"
           },
           "report": {
             "dismissed": "Жалоба отклонена",

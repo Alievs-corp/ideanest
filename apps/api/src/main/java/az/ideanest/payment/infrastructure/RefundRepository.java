@@ -28,6 +28,12 @@ import org.springframework.transaction.annotation.Transactional;
  * succeeded ones would let two staff members each issue a full refund in the seconds
  * before the first one settles.
  *
+ * <p><strong>Nor are the two states of a refund paid by bank transfer (#399)</strong>,
+ * {@code AWAITING_BANK_DETAILS} and {@code AWAITING_TRANSFER}: the money is owed to the backer
+ * and is about to leave by another route. Every sum here reads "not {@code FAILED}", so each
+ * counts them without naming them, and so does every native read of {@code refunds} in the other
+ * modules — the payout's refunded figure, the raise's check for pledge money gone back.
+ *
  * <p><strong>Except a {@code FAILED} one whose provider could not be reached (#183).</strong> This
  * release never writes one — such a refund stays {@code REQUESTED} (#176) — but the release before it
  * did, and during a rolling deploy it still can after V85 has run. Whether that reversal happened is
@@ -254,17 +260,64 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
 
     /**
      * How many refunds against one pledge have no outcome yet — #174's review, for a dispute's retry.
-     * A {@code FAILED} {@code provider_unreachable} row a previous release wrote is one of them (#183).
+     * A {@code FAILED} {@code provider_unreachable} row a previous release wrote is one of them (#183),
+     * and so is a refund waiting to be paid by bank transfer (#399): an upheld dispute is answered once
+     * the money has gone back, and that money has not.
      */
     @Query(
             """
             SELECT COUNT(r) FROM Refund r
             WHERE r.pledgeId = :pledgeId
-              AND (r.state = az.ideanest.payment.domain.RefundState.REQUESTED
+              AND (r.state IN (az.ideanest.payment.domain.RefundState.REQUESTED,
+                               az.ideanest.payment.domain.RefundState.AWAITING_BANK_DETAILS,
+                               az.ideanest.payment.domain.RefundState.AWAITING_TRANSFER)
                    OR (r.state = az.ideanest.payment.domain.RefundState.FAILED
                        AND r.failureCode = 'provider_unreachable'))
             """)
     long countRequestedAgainst(@Param("pledgeId") UUID pledgeId);
+
+    /** The parts of a pledge's refund waiting to be paid by bank transfer, oldest first — #399. */
+    @Query(
+            """
+            SELECT r FROM Refund r
+            WHERE r.pledgeId = :pledgeId
+              AND r.state IN (az.ideanest.payment.domain.RefundState.AWAITING_BANK_DETAILS,
+                              az.ideanest.payment.domain.RefundState.AWAITING_TRANSFER)
+            ORDER BY r.requestedAt ASC, r.id ASC
+            """)
+    List<Refund> awaitingBankTransferOn(@Param("pledgeId") UUID pledgeId);
+
+    /**
+     * Whether a refund of this pledge other than this one already waits for a bank transfer — #399,
+     * so the backer is asked for their account once per pledge rather than once per charge.
+     */
+    @Query(
+            """
+            SELECT COUNT(r) > 0 FROM Refund r
+            WHERE r.pledgeId = :pledgeId
+              AND r.id <> :refundId
+              AND r.state IN (az.ideanest.payment.domain.RefundState.AWAITING_BANK_DETAILS,
+                              az.ideanest.payment.domain.RefundState.AWAITING_TRANSFER)
+            """)
+    boolean otherAwaitsBankTransfer(@Param("pledgeId") UUID pledgeId, @Param("refundId") UUID refundId);
+
+    /**
+     * Whether money already went back on this charge by bank transfer — #399, for a chargeback that
+     * arrives afterwards: the backer would be paid twice, once by the platform and once by the card
+     * network. Native for the join to the refund's transaction.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT EXISTS (
+                        SELECT 1 FROM refunds r
+                          JOIN transactions t ON t.id = r.refund_transaction_id
+                         WHERE r.charge_transaction_id = :chargeId
+                           AND r.state = 'SUCCEEDED'
+                           AND t.provider = 'BANK_TRANSFER')
+                    """,
+            nativeQuery = true)
+    boolean refundedByBankTransfer(@Param("chargeId") UUID chargeId);
 
     /** Every refund against one pledge, for the detail a support conversation needs. */
     @Query("SELECT r FROM Refund r WHERE r.pledgeId = :pledgeId ORDER BY r.requestedAt DESC")

@@ -549,6 +549,7 @@
         "CAMPAIGN_EXTENDED": "{campaign} has a new deadline",
         "WITHDRAWAL_REQUESTED": "The creator of {campaign} requested their payout",
         "PAYOUT_DETAILS_NEEDED": "Your payout for {campaign} is waiting for your details",
+        "REFUND_NEEDS_BANK_DETAILS": "Your refund for {campaign} needs your bank details",
         "UPDATE_DUE_SOON": "Your update for {campaign} is due {when}"
       },
       "unnamed": {
@@ -577,6 +578,7 @@
         "CAMPAIGN_EXTENDED": "A campaign you backed has a new deadline",
         "WITHDRAWAL_REQUESTED": "The creator of a campaign you backed requested their payout",
         "PAYOUT_DETAILS_NEEDED": "Your payout is waiting for your VÖEN and IBAN",
+        "REFUND_NEEDS_BANK_DETAILS": "Your refund needs your bank details",
         "UPDATE_DUE_SOON": "An update for your campaign is due {when}"
       },
       "amount": {
@@ -1174,7 +1176,11 @@
             "update_published": "Update published"
           },
           "refund": {
-            "issued": "Refund issued"
+            "issued": "Refund issued",
+            "routed_to_bank_transfer": "Refund routed to a bank transfer",
+            "bank_details_recorded": "Refund bank details recorded",
+            "bank_details_revealed": "Refund bank details opened",
+            "bank_transfer_recorded": "Refund bank transfer recorded"
           },
           "report": {
             "dismissed": "Report dismissed",

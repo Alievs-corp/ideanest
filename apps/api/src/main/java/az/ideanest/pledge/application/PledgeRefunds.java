@@ -45,6 +45,15 @@ public class PledgeRefunds {
     }
 
     /**
+     * Who made the pledge — #399, for the backer a refund paid by bank transfer has to ask for their
+     * account. Empty when there is no such pledge.
+     */
+    @Transactional(readOnly = true)
+    public Optional<UUID> backerOf(UUID pledgeId) {
+        return pledges.findById(pledgeId).map(Pledge::getBackerId);
+    }
+
+    /**
      * The pledge's money has all gone back: it is {@code REFUNDED} and leaves its campaign's totals.
      *
      * <p>Called only once the refunds that returned it have settled — never when one is merely

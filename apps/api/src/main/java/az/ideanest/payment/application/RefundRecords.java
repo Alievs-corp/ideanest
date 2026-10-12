@@ -7,17 +7,29 @@ import az.ideanest.audit.AuditOutcome;
 import az.ideanest.ledger.application.Ledger;
 import az.ideanest.ledger.application.LedgerAccount;
 import az.ideanest.ledger.application.Posting;
+import az.ideanest.payment.application.BankRefundRefusedException.Reason;
 import az.ideanest.payment.domain.PaymentTransaction;
+import az.ideanest.payment.domain.ProviderName;
+import az.ideanest.payment.domain.ProviderOutcome;
 import az.ideanest.payment.domain.Refund;
+import az.ideanest.payment.domain.RefundBankTransfer;
 import az.ideanest.payment.domain.RefundReason;
 import az.ideanest.payment.domain.RefundResult;
 import az.ideanest.payment.domain.RefundState;
+import az.ideanest.payment.infrastructure.DisputeRepository;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
+import az.ideanest.payment.infrastructure.RefundBankTransferRepository;
 import az.ideanest.payment.infrastructure.RefundRepository;
 import az.ideanest.pledge.application.PledgeRefunds;
 import az.ideanest.shared.money.Money;
+import az.ideanest.shared.outbox.Outbox;
 import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * The two database halves of a refund, each in its own transaction — #67.
@@ -60,6 +73,10 @@ public class RefundRecords {
     private final PledgeRefunds pledges;
     private final AuditLog audit;
     private final Clock clock;
+    private final RefundBankTransferRepository bankTransfers;
+    private final DisputeRepository disputes;
+    private final Outbox outbox;
+    private final ObjectMapper json;
 
     public RefundRecords(
             RefundRepository refunds,
@@ -67,13 +84,21 @@ public class RefundRecords {
             Ledger ledger,
             PledgeRefunds pledges,
             AuditLog audit,
-            Clock clock) {
+            Clock clock,
+            RefundBankTransferRepository bankTransfers,
+            DisputeRepository disputes,
+            Outbox outbox,
+            ObjectMapper json) {
         this.refunds = refunds;
         this.transactions = transactions;
         this.ledger = ledger;
         this.pledges = pledges;
         this.audit = audit;
         this.clock = clock;
+        this.bankTransfers = bankTransfers;
+        this.disputes = disputes;
+        this.outbox = outbox;
+        this.json = json;
     }
 
     /**
@@ -273,13 +298,22 @@ public class RefundRecords {
                         && result.providerTransactionId().equals(charge.getProviderTransactionId())
                 ? new RefundResult(result.outcome(), null, result.failureCode(), result.failureMessage(), result.rawResponse())
                 : result;
+        return settle(current, charge.getProvider(), stored, refund.idempotencyKey());
+    }
+
+    /**
+     * What {@link #settleSuccess} and {@link #settleByBankTransfer} share: the transaction row, the ledger
+     * posting, the state and the pledge, under the lock the caller took.
+     */
+    private Refund settle(Refund current, ProviderName provider, RefundResult stored, String transactionKey) {
+        Refund refund = current;
         PaymentTransaction recorded = transactions.save(PaymentTransaction.refund(
                 refund.pledgeId(),
                 refund.projectId(),
                 refund.amount(),
-                charge.getProvider(),
+                provider,
                 stored,
-                refund.idempotencyKey()));
+                transactionKey));
 
         ledger.post(Posting.of(recorded.getId(), refund.projectId())
                 .debit(LedgerAccount.REFUNDS, refund.amount())
@@ -300,6 +334,183 @@ public class RefundRecords {
         }
 
         log.info("Refund {} of {} settled on pledge {}", refund.id(), refund.amount(), refund.pledgeId());
+        return settled;
+    }
+
+    /**
+     * The provider will not carry this refund out, so it waits for the backer's bank account — #399.
+     *
+     * <p>No provider call, no transaction and no posting: nothing has moved. The refund stays counted as
+     * gone, so no path sends it again, and the backer is told to contact support — <strong>once per
+     * pledge</strong>: a raised pledge's refund is one part per charge, and a backer asked three times for
+     * one account would answer three times. Under the pledge's lock, so two parts routed at the same
+     * moment cannot both find the other not yet routed.
+     *
+     * @param why what routed it, for the audit row and the log
+     */
+    @Transactional
+    Refund awaitBankDetails(Refund refund, String why) {
+        pledges.lock(refund.pledgeId());
+        Refund attached = refunds.findById(refund.id()).orElseThrow();
+        if (attached.state() != RefundState.REQUESTED) {
+            return attached;
+        }
+        attached.awaitBankDetails();
+        Refund saved = refunds.saveAndFlush(attached);
+        announceBankTransfer(saved, AuditActor.system(), why);
+        return saved;
+    }
+
+    /**
+     * Staff route a refund the provider refused to a bank transfer — #399's fallback, for a refusal the
+     * adapter could not recognise as "too old".
+     *
+     * <p>The refused row is terminal and stays as it is; what is owed is a new refund for what its charge
+     * still has left, no more than the refused one was for, keyed {@code bank-refund:<refusedId>} so a
+     * retried request finds it rather than recording a second.
+     *
+     * @throws BankRefundRefusedException {@code REFUND_NOT_FAILED} for a refund that was not refused
+     * @throws NothingToRefundException when the charge has nothing left — refunded since, or charged back
+     */
+    @Transactional
+    Refund bankRefundFor(UUID staffId, UUID refusedId) {
+        Refund refused = refunds.findById(refusedId)
+                .orElseThrow(() -> new BankRefundRefusedException(Reason.REFUND_NOT_FOUND, refusedId));
+        String key = "bank-refund:" + refusedId;
+        pledges.lock(refused.pledgeId());
+        Optional<Refund> earlier = refunds.byIdempotencyKey(key);
+        if (earlier.isPresent()) {
+            return earlier.get();
+        }
+        if (refused.state() != RefundState.FAILED
+                || "provider_unreachable".equals(refused.failureCode())
+                || refused.chargeTransactionId() == null) {
+            throw new BankRefundRefusedException(Reason.REFUND_NOT_FAILED, refusedId);
+        }
+        PaymentTransaction charge = transactions.findById(refused.chargeTransactionId())
+                .orElseThrow(() -> new BankRefundRefusedException(Reason.REFUND_NOT_FAILED, refusedId));
+        Money left = remainingOnCharge(charge).min(refused.amount());
+        if (!left.isPositive()) {
+            throw new NothingToRefundException(refused.pledgeId());
+        }
+        Refund owed = Refund.requested(
+                refused.pledgeId(),
+                refused.projectId(),
+                charge.getId(),
+                left,
+                refused.fullRefund(),
+                refused.reason(),
+                "By bank transfer, after refund " + refusedId + " was refused (" + refused.failureCode() + ").",
+                staffId,
+                key);
+        owed.awaitBankDetails();
+        Refund saved = refunds.saveAndFlush(owed);
+        audit.record(
+                AuditAction.REFUND_ISSUED,
+                saved.id(),
+                AuditActor.moderator(staffId),
+                AuditOutcome.SUCCEEDED,
+                "pledge=%s; charge=%s; amount=%s; reason=%s; full=%s; after=%s"
+                        .formatted(saved.pledgeId(), charge.getId(), left, saved.reason(), saved.fullRefund(), refusedId));
+        announceBankTransfer(saved, AuditActor.moderator(staffId), "refused by the provider as " + refused.failureCode());
+        return saved;
+    }
+
+    /** The audit row, the log line and, once per pledge, the backer's notification. */
+    private void announceBankTransfer(Refund refund, AuditActor actor, String why) {
+        audit.record(
+                AuditAction.REFUND_ROUTED_TO_BANK_TRANSFER,
+                refund.id(),
+                actor,
+                AuditOutcome.SUCCEEDED,
+                "pledge=%s; charge=%s; amount=%s; why=%s"
+                        .formatted(refund.pledgeId(), refund.chargeTransactionId(), refund.amount(), why));
+        log.info("Refund {} of {} on pledge {} waits for a bank transfer: {}", refund.id(), refund.amount(), refund.pledgeId(), why);
+        if (refunds.otherAwaitsBankTransfer(refund.pledgeId(), refund.id())) {
+            return;
+        }
+        Optional<UUID> backer = pledges.backerOf(refund.pledgeId());
+        if (backer.isEmpty()) {
+            log.error("Refund {} waits for a bank transfer and its pledge {} has no backer to ask.", refund.id(), refund.pledgeId());
+            return;
+        }
+        outbox.record(
+                RefundNeedsBankDetailsEvent.AGGREGATE_TYPE,
+                refund.pledgeId(),
+                RefundNeedsBankDetailsEvent.EVENT_TYPE,
+                new RefundNeedsBankDetailsEvent(
+                        refund.id(),
+                        refund.pledgeId(),
+                        refund.projectId(),
+                        backer.get(),
+                        clock.instant().truncatedTo(ChronoUnit.MICROS)));
+    }
+
+    /**
+     * Finance made the bank transfer that pays this refund — #399.
+     *
+     * <p>{@link #settleSuccess}'s commit, for money that left from IdeyaNest's own account rather than
+     * through a provider: a {@code REFUND} transaction under {@link ProviderName#BANK_TRANSFER} with no
+     * provider identifier and the bank's reference in its response, keyed {@code <refund key>-bank}; the
+     * same posting, debit {@code refunds} and credit {@code escrow}; and the pledge {@code REFUNDED} when
+     * nothing is left on it. Escrow therefore spans two places the money sits, the provider's balance
+     * and the bank account, and the ledger reconciliation still balances: it compares the ledger with
+     * {@code transactions}, not with either.
+     *
+     * <p><strong>Idempotent.</strong> A refund already paid under the same reference answers itself; under
+     * another reference it is refused, because that is a second transfer recorded against one refund.
+     * Refused too, under the pledge's lock: while the charge is in an open chargeback (the network may
+     * return the money itself), by the person who recorded the account, and with a bank reference already
+     * recorded for another backer's refund.
+     */
+    @Transactional
+    Refund settleByBankTransfer(UUID staffId, UUID refundId, String bankReference, LocalDate transferredOn) {
+        Refund found = refunds.findById(refundId)
+                .orElseThrow(() -> new BankRefundRefusedException(Reason.REFUND_NOT_FOUND, refundId));
+        pledges.lock(found.pledgeId());
+        Refund current = refunds.findById(refundId).orElseThrow();
+        String reference = bankReference.trim();
+        Optional<RefundBankTransfer> row = bankTransfers.findById(refundId);
+        if (current.state() == RefundState.SUCCEEDED
+                && row.map(RefundBankTransfer::bankReference).filter(reference::equals).isPresent()) {
+            log.info("Bank transfer of refund {} replayed under the reference it was recorded with.", refundId);
+            return current;
+        }
+        if (current.state() != RefundState.AWAITING_TRANSFER || row.isEmpty() || row.get().isTransferred()) {
+            throw new BankRefundRefusedException(Reason.REFUND_NOT_AWAITING_TRANSFER, refundId);
+        }
+        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        if (transferredOn.isAfter(LocalDate.ofInstant(now, ZoneOffset.UTC))) {
+            throw new BankRefundRefusedException(Reason.TRANSFER_DATE_IN_FUTURE, refundId);
+        }
+        if (staffId.equals(row.get().detailsRecordedBy())) {
+            throw new BankRefundRefusedException(Reason.REFUND_DUTIES_NOT_SEPARATE, refundId);
+        }
+        if (current.chargeTransactionId() != null && disputes.openOnCharge(current.chargeTransactionId())) {
+            throw new BankRefundRefusedException(Reason.REFUND_CHARGE_DISPUTED, refundId);
+        }
+        if (bankTransfers.referenceTakenElsewhere(reference, current.pledgeId())) {
+            throw new BankRefundRefusedException(Reason.BANK_REFERENCE_TAKEN, refundId);
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("bankReference", reference);
+        response.put("transferredOn", transferredOn.toString());
+        Refund settled = settle(
+                current,
+                ProviderName.BANK_TRANSFER,
+                new RefundResult(ProviderOutcome.APPROVED, null, null, null, json.writeValueAsString(response)),
+                current.idempotencyKey() + "-bank");
+        RefundBankTransfer paid = row.get();
+        paid.transferred(reference, transferredOn, staffId, now);
+        bankTransfers.save(paid);
+        audit.record(
+                AuditAction.REFUND_BANK_TRANSFER_RECORDED,
+                refundId,
+                AuditActor.moderator(staffId),
+                AuditOutcome.SUCCEEDED,
+                "pledge=%s; amount=%s; account=%s; reference=%s; transferredOn=%s"
+                        .formatted(current.pledgeId(), current.amount(), paid.ibanHint(), reference, transferredOn));
         return settled;
     }
 

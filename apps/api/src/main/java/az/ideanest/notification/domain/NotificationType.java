@@ -116,6 +116,13 @@ public enum NotificationType {
     /** IDN-EXT-01 (#41): to the creator, weekly — the payout waits for their VÖEN and business card. */
     PAYOUT_DETAILS_NEEDED(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.IN_APP),
 
+    /**
+     * #399: to a backer — a refund owed to them can no longer go back to their card, because the
+     * provider's refund window has closed, and support needs the bank account it goes to. Once per
+     * pledge. No push, like {@link #PAYOUT_DETAILS_NEEDED}: it asks for something to be done at a desk.
+     */
+    REFUND_NEEDS_BANK_DETAILS(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.IN_APP),
+
     /** A campaign published an update — §5.5 and #83. */
     NEW_UPDATE_PUBLISHED(NotificationCategory.COMMUNITY, NotificationChannel.EMAIL, NotificationChannel.PUSH,
             NotificationChannel.IN_APP),

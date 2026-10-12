@@ -357,6 +357,16 @@ public final class NotificationEvents {
         public static final String EVENT_TYPE = "payout.details_needed";
     }
 
+    /**
+     * {@code refund.needs_bank_details} — #399. Recipient: the backer alone. Recorded once per pledge by
+     * the payment module's {@code RefundNeedsBankDetailsEvent}.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record RefundNeedsBankDetails(UUID refundId, UUID pledgeId, UUID projectId, UUID backerId, Instant routedAt) {
+
+        public static final String EVENT_TYPE = "refund.needs_bank_details";
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ProjectLaunched(UUID projectId, UUID creatorId, Instant launchedAt, Instant deadline) {
 

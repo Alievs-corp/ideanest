@@ -51,6 +51,17 @@ public final class BankDetailsKeys {
         };
     }
 
+    /**
+     * Gives a service that only seals — {@code RefundBankTransfers} (#399) — a configured cipher in its
+     * {@code bankDetails} field, and returns what puts the original back.
+     */
+    public static Installed installCipher(Object service) {
+        Object target = AopTestUtils.getUltimateTargetObject(service);
+        Object cipher = ReflectionTestUtils.getField(target, "bankDetails");
+        ReflectionTestUtils.setField(target, "bankDetails", cipher());
+        return () -> ReflectionTestUtils.setField(target, "bankDetails", cipher);
+    }
+
     /** The test keyring's cipher, for a test that opens what the service sealed. */
     public static FieldCipher cipher() {
         return new AesGcmFieldCipher(CryptoProperties.BANK_DETAILS, KEYRING);

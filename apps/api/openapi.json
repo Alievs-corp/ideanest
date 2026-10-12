@@ -1093,7 +1093,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         } ],
         "responses" : {
@@ -1111,7 +1111,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         } ],
         "responses" : {
@@ -1136,7 +1136,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         } ],
         "requestBody" : {
@@ -1173,7 +1173,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }, {
           "in" : "query",
@@ -1213,7 +1213,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         } ],
         "responses" : {
@@ -1233,7 +1233,7 @@
           "required" : true,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         } ],
         "responses" : {
@@ -2751,6 +2751,43 @@
         "tags" : [ "admin-subscription-controller" ]
       }
     },
+    "/v1/admin/pledges/{pledgeId}/refund-bank-details" : {
+      "put" : {
+        "operationId" : "refundBankTransferRecordBankDetails",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "pledgeId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BankDetailsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RefundPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "refund-bank-transfer-controller" ]
+      }
+    },
     "/v1/admin/projects" : {
       "get" : {
         "operationId" : "campaignDirectoryCampaigns",
@@ -3012,7 +3049,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "enum" : [ "REQUESTED", "SUCCEEDED", "FAILED" ]
+            "enum" : [ "REQUESTED", "SUCCEEDED", "FAILED", "AWAITING_BANK_DETAILS", "AWAITING_TRANSFER" ]
           }
         }, {
           "in" : "query",
@@ -3100,6 +3137,97 @@
           }
         },
         "tags" : [ "refund-controller" ]
+      }
+    },
+    "/v1/admin/refunds/{refundId}/bank-details" : {
+      "get" : {
+        "operationId" : "refundBankTransferBankDetails",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "refundId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BankDetails"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "refund-bank-transfer-controller" ]
+      }
+    },
+    "/v1/admin/refunds/{refundId}/bank-transfer" : {
+      "post" : {
+        "operationId" : "refundBankTransferRouteToBankTransfer",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "refundId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Refund"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "refund-bank-transfer-controller" ]
+      }
+    },
+    "/v1/admin/refunds/{refundId}/bank-transfer/record" : {
+      "post" : {
+        "operationId" : "refundBankTransferRecordTransfer",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "refundId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TransferRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Refund"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "refund-bank-transfer-controller" ]
       }
     },
     "/v1/admin/risk/pledges/{pledgeId}" : {
@@ -11216,6 +11344,94 @@
         },
         "required" : [ "holderName", "iban" ]
       },
+      "BankDetails" : {
+        "type" : "object",
+        "properties" : {
+          "amount" : {
+            "$ref" : "#/components/schemas/Money"
+          },
+          "detailsRecordedBy" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "holderName" : {
+            "type" : "string"
+          },
+          "iban" : {
+            "type" : "string"
+          },
+          "ibanHint" : {
+            "type" : "string"
+          },
+          "pledgeId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "refundId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "ticketId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
+      "BankDetailsRequest" : {
+        "type" : "object",
+        "properties" : {
+          "holderName" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "iban" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "minLength" : 0
+          },
+          "ticketId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "holderName", "iban", "ticketId" ]
+      },
+      "BankTransfer" : {
+        "type" : "object",
+        "properties" : {
+          "bankReference" : {
+            "type" : "string"
+          },
+          "detailsRecordedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "detailsRecordedBy" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "ibanHint" : {
+            "type" : "string"
+          },
+          "ticketId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "transferRecordedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "transferRecordedBy" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "transferredOn" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        }
+      },
       "BankTransferInstruction" : {
         "type" : "object",
         "properties" : {
@@ -12972,7 +13188,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }
       },
@@ -14555,7 +14771,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
+            "enum" : [ "PLEDGE_CONFIRMED", "PLEDGE_EDITED", "GOAL_REACHED", "DEADLINE_48H", "DEADLINE_24H", "CAMPAIGN_SUCCEEDED", "CAMPAIGN_UNSUCCESSFUL", "CAMPAIGN_EXTENDED", "UPDATE_DUE_SOON", "PROJECT_APPROVED", "PAYMENT_COLLECTED", "PAYMENT_FAILED", "FINAL_PAYMENT_WARNING", "PAYOUT_SENT", "WITHDRAWAL_REQUESTED", "PAYOUT_DETAILS_NEEDED", "REFUND_NEEDS_BANK_DETAILS", "NEW_UPDATE_PUBLISHED", "COMMENT_REPLY", "DIRECT_MESSAGE", "SURVEY_AVAILABLE", "SURVEY_OVERDUE", "REWARD_SHIPPED", "FOLLOWED_CREATOR_LAUNCHED", "LAUNCH_REMINDER", "SAVED_PROJECT_ENDING_SOON", "NEW_DEVICE_SIGN_IN" ]
           }
         }
       },
@@ -16234,6 +16450,9 @@
           "amount" : {
             "$ref" : "#/components/schemas/Money"
           },
+          "bankTransfer" : {
+            "$ref" : "#/components/schemas/BankTransfer"
+          },
           "chargeTransactionId" : {
             "type" : "string",
             "format" : "uuid"
@@ -16284,7 +16503,7 @@
           },
           "state" : {
             "type" : "string",
-            "enum" : [ "REQUESTED", "SUCCEEDED", "FAILED" ]
+            "enum" : [ "REQUESTED", "SUCCEEDED", "FAILED", "AWAITING_BANK_DETAILS", "AWAITING_TRANSFER" ]
           }
         }
       },
@@ -18454,6 +18673,21 @@
             "type" : "string"
           }
         }
+      },
+      "TransferRequest" : {
+        "type" : "object",
+        "properties" : {
+          "bankReference" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "transferredOn" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "required" : [ "bankReference", "transferredOn" ]
       },
       "Translation" : {
         "type" : "object",

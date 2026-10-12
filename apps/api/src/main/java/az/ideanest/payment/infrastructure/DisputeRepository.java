@@ -51,6 +51,20 @@ public interface DisputeRepository extends JpaRepository<Dispute, UUID> {
             """)
     List<Dispute> queue(Pageable pageable);
 
+    /**
+     * Whether the card network is contesting this charge right now — #399. A refund of it is not paid by
+     * bank transfer while it is: if the network finds for the backer, they are paid twice.
+     */
+    @Query(
+            """
+            SELECT COUNT(d) > 0 FROM Dispute d
+            WHERE d.chargeTransactionId = :chargeId
+              AND d.state IN (
+                  az.ideanest.payment.domain.DisputeState.OPEN,
+                  az.ideanest.payment.domain.DisputeState.UNDER_REVIEW)
+            """)
+    boolean openOnCharge(@Param("chargeId") UUID chargeId);
+
     /** Every dispute, newest first, for the history behind a resolved one. */
     @Query("SELECT d FROM Dispute d ORDER BY d.openedAt DESC")
     List<Dispute> page(Pageable pageable);

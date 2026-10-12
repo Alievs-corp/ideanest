@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -273,6 +274,33 @@ class PayriffPaymentProviderTests {
                 .isInstanceOf(ProviderUnavailableException.class);
     }
 
+    @Test
+    @DisplayName("#399: a code configured as too old to refund is a closed window; unconfigured, the same code is a plain decline")
+    void aRefundTooOldIsAClosedWindowOnlyWhenConfigured() {
+        String tooOld = """
+                {"code":"15499","message":"The payment is too old to refund"}
+                """;
+        Wire configured = new Wire(List.of("15499"));
+        configured.expect(HttpMethod.POST, "/refund")
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(tooOld));
+        RefundResult closed = configured.adapter().refund(refund("5.00"));
+        assertThat(closed.isWindowClosed()).isTrue();
+        assertThat(closed.failureCode()).isEqualTo(RefundResult.WINDOW_CLOSED);
+        assertThat(closed.failureMessage()).contains("15499").contains("too old");
+
+        // The shipped default: no code is known, so nothing is guessed.
+        Wire unconfigured = new Wire();
+        unconfigured.expect(HttpMethod.POST, "/refund")
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(tooOld));
+        RefundResult declined = unconfigured.adapter().refund(refund("5.00"));
+        assertThat(declined.isWindowClosed()).isFalse();
+        assertThat(declined.failureCode()).isEqualTo("15499");
+
+        assertThat(PaymentProperties.Payriff.defaults().refundWindowClosedCodes()).isEmpty();
+        assertThat(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az", List.of(" 15499 ", "")).refundWindowClosedCodes())
+                .containsExactly("15499");
+    }
+
     // ------------------------------------------------------------------
     // Callbacks
     // ------------------------------------------------------------------
@@ -416,16 +444,16 @@ class PayriffPaymentProviderTests {
     @DisplayName("naming PAYRIFF without a key, or with an http callback, is a start-up failure; the key is never printed")
     void configurationIsCheckedAtStartUp() {
         assertThatThrownBy(() -> new PayriffPaymentProvider(
-                        RestClient.builder(), properties(new PaymentProperties.Payriff(BASE, "", CALLBACK, "az")), JSON))
+                        RestClient.builder(), properties(new PaymentProperties.Payriff(BASE, "", CALLBACK, "az", null)), JSON))
                 .isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> new PayriffPaymentProvider(
                         RestClient.builder(),
-                        properties(new PaymentProperties.Payriff(BASE, SECRET, "http://api.ideanest.test/hook", "az")),
+                        properties(new PaymentProperties.Payriff(BASE, SECRET, "http://api.ideanest.test/hook", "az", null)),
                         JSON))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("https");
 
-        assertThat(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az").toString())
+        assertThat(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az", null).toString())
                 .doesNotContain(SECRET)
                 .contains("<redacted>");
         assertThat(PaymentProperties.Payriff.defaults().baseUrl()).isEqualTo("https://api.payriff.com/api/v3");
@@ -437,7 +465,16 @@ class PayriffPaymentProviderTests {
     private static final class Wire {
         private final RestClient.Builder builder = RestClient.builder();
         private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        private final List<String> windowClosedCodes;
         private PayriffPaymentProvider adapter;
+
+        Wire() {
+            this(List.of());
+        }
+
+        Wire(List<String> windowClosedCodes) {
+            this.windowClosedCodes = windowClosedCodes;
+        }
 
         ResponseActions expect(HttpMethod verb, String path) {
             return server.expect(requestTo(BASE + path)).andExpect(method(verb));
@@ -446,7 +483,7 @@ class PayriffPaymentProviderTests {
         PayriffPaymentProvider adapter() {
             if (adapter == null) {
                 adapter = PayriffPaymentProvider.over(
-                        builder, properties(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az")), JSON);
+                        builder, properties(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az", windowClosedCodes)), JSON);
             }
             return adapter;
         }

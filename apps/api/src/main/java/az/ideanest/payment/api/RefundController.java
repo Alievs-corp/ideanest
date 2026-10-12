@@ -1,5 +1,6 @@
 package az.ideanest.payment.api;
 
+import az.ideanest.payment.application.RefundBankTransfers;
 import az.ideanest.payment.application.RefundService;
 import az.ideanest.payment.domain.RefundReason;
 import az.ideanest.payment.domain.RefundState;
@@ -8,6 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +48,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RefundController {
 
     private final RefundService refunds;
+    private final RefundBankTransfers bankRefunds;
 
     /**
      * The console's page size.
@@ -57,16 +60,18 @@ public class RefundController {
      */
     private static final int PAGE_SIZE = 50;
 
-    public RefundController(RefundService refunds) {
+    public RefundController(RefundService refunds, RefundBankTransfers bankRefunds) {
         this.refunds = refunds;
+        this.bankRefunds = bankRefunds;
     }
 
     /**
      * The refund list, newest first.
      *
-     * @param state narrows to {@code REQUESTED}, {@code SUCCEEDED} or {@code FAILED}.
-     *     {@code REQUESTED} is the one worth watching: a row that stays there is a refund
-     *     the platform intended and did not complete
+     * @param state narrows to {@code REQUESTED}, {@code SUCCEEDED} or {@code FAILED}, or since
+     *     #399 to {@code AWAITING_BANK_DETAILS} or {@code AWAITING_TRANSFER}, support's and
+     *     finance's queues for a refund paid by bank transfer. {@code REQUESTED} is the one worth
+     *     watching: a row that stays there is a refund the platform intended and did not complete
      * @param page offset-paged rather than keyset, which is a departure from the rest of
      *     the console — {@code RefundRepository} has the argument
      */
@@ -76,10 +81,10 @@ public class RefundController {
             @RequestParam(required = false) RefundState state,
             @RequestParam(defaultValue = "0") int page) {
 
+        List<az.ideanest.payment.domain.Refund> listed = refunds.list(callerOf(accessToken), state, page, PAGE_SIZE);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(PaymentAdminResponses.RefundPage.of(
-                        refunds.list(callerOf(accessToken), state, page, PAGE_SIZE), page, PAGE_SIZE));
+                .body(PaymentAdminResponses.RefundPage.of(listed, bankRefunds.of(listed), page, PAGE_SIZE));
     }
 
     /** Every refund against one pledge. */
@@ -87,10 +92,10 @@ public class RefundController {
     public ResponseEntity<PaymentAdminResponses.RefundPage> forPledge(
             @AuthenticationPrincipal Jwt accessToken, @org.springframework.web.bind.annotation.PathVariable UUID pledgeId) {
 
+        List<az.ideanest.payment.domain.Refund> listed = refunds.forPledge(callerOf(accessToken), pledgeId);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(PaymentAdminResponses.RefundPage.of(
-                        refunds.forPledge(callerOf(accessToken), pledgeId), 0, PAGE_SIZE));
+                .body(PaymentAdminResponses.RefundPage.of(listed, bankRefunds.of(listed), 0, PAGE_SIZE));
     }
 
     /** Sends money back. */

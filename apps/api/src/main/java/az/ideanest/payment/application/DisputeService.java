@@ -143,6 +143,7 @@ public class DisputeService {
                 // A second presentment. The case is not new and is not finished either.
                 open.reopened(now);
                 log.info("Dispute {} reopened by {}", open.id(), provider);
+                warnIfRefundedByBank(open);
             }
             return open;
         }
@@ -164,7 +165,26 @@ public class DisputeService {
                 now));
 
         log.info("Dispute {} opened by {} on charge {}", opened.id(), provider, chargeTransactionId);
+        warnIfRefundedByBank(opened);
         return opened;
+    }
+
+    /**
+     * #399: a chargeback on a charge whose refund the platform already paid by bank transfer. If the
+     * network finds for the backer, they are paid twice — once from IdeyaNest's account and once through
+     * the card — and nothing automatic can take either back. Logged at {@code ERROR} so a person answers
+     * the case with the transfer's reference as evidence. A transfer not yet made waits instead: it is
+     * refused while the case is open.
+     */
+    private void warnIfRefundedByBank(Dispute dispute) {
+        if (refunds.refundedByBankTransfer(dispute.chargeTransactionId())) {
+            log.error(
+                    "Dispute {} is a chargeback on charge {} of pledge {}, which was already refunded by bank"
+                            + " transfer: answer it with the transfer as evidence, or the backer is paid twice.",
+                    dispute.id(),
+                    dispute.chargeTransactionId(),
+                    dispute.pledgeId());
+        }
     }
 
     /** AD-07's queue: unresolved, soonest deadline first. */

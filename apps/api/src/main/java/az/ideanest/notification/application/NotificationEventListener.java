@@ -13,6 +13,7 @@ import az.ideanest.notification.application.NotificationEvents.CampaignExtended;
 import az.ideanest.notification.application.NotificationEvents.PayoutDetailsNeeded;
 import az.ideanest.notification.application.NotificationEvents.PayoutRequested;
 import az.ideanest.notification.application.NotificationEvents.ProjectLaunched;
+import az.ideanest.notification.application.NotificationEvents.RefundNeedsBankDetails;
 import az.ideanest.notification.application.NotificationEvents.UpdateDueSoon;
 import az.ideanest.notification.domain.NotificationType;
 import az.ideanest.shared.audience.AudienceProperties;
@@ -363,6 +364,19 @@ public class NotificationEventListener {
                         projectId,
                         about(projectId, "payableAt", dueDate(event.payableAt())),
                         at(event.remindedAt(), message)));
+            }
+            case RefundNeedsBankDetails.EVENT_TYPE -> {
+                RefundNeedsBankDetails event = read(message, RefundNeedsBankDetails.class);
+                UUID pledgeId = required(event.pledgeId(), "pledgeId", message);
+                // The pledge goes in the document as well as being the subject: the message links to the
+                // backer's pledge page, where support's contact is, rather than to the campaign.
+                yield List.of(NotificationRequest.about(
+                        required(event.backerId(), "backerId", message),
+                        NotificationType.REFUND_NEEDS_BANK_DETAILS,
+                        PLEDGE,
+                        pledgeId,
+                        about(event.projectId(), "pledgeId", pledgeId),
+                        at(event.routedAt(), message)));
             }
             case ProjectLaunched.EVENT_TYPE -> {
                 ProjectLaunched event = read(message, ProjectLaunched.class);
