@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/accounts/{creatorId}/payout-destination/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminPayoutDestinationRevealAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/accounts/{creatorId}/payout-destination/reject": {
         parameters: {
             query?: never;
@@ -2708,6 +2724,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/payout-destination/bank-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["myPayoutDestinationRecordBankAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/payout-destination/card-registration": {
         parameters: {
             query?: never;
@@ -4399,6 +4431,10 @@ export interface components {
             account?: string;
             net?: components["schemas"]["Money"];
         };
+        BankAccountRequest: {
+            holderName: string;
+            iban: string;
+        };
         BeginRequest: {
             fin: string;
             mobile: string;
@@ -5176,6 +5212,8 @@ export interface components {
             creatorId?: string;
             displayHint?: string;
             holderName?: string;
+            /** @enum {string} */
+            kind?: "PROVIDER_TOKEN" | "BANK_TRANSFER";
             provider?: string;
             recorded?: boolean;
             /** @enum {string} */
@@ -5498,7 +5536,7 @@ export interface components {
             /** Format: uuid */
             accountId?: string;
             bootstrapped?: boolean;
-            capabilities?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
+            capabilities?: ("MODERATE_CONTENT" | "ADMINISTER_ACCOUNTS" | "CURATE" | "VIEW_FINANCE" | "ISSUE_REFUND" | "MANAGE_DISPUTES" | "APPROVE_PAYOUT" | "HANDLE_SUPPORT" | "CONFIGURE_PLATFORM" | "VIEW_AUDIT" | "VIEW_HEALTH" | "PUBLISH_LEGAL_DOCUMENT" | "READ_ACCEPTANCE_RECORD" | "READ_SIGNED_AGREEMENT" | "REVIEW_IDENTITY_VERIFICATION" | "OPEN_IDENTITY_DOCUMENT" | "VERIFY_PAYOUT_DESTINATION" | "READ_BANK_DETAILS" | "GRANT_COMPLIANCE_OVERRIDE" | "ADMINISTER_STAFF" | "VIEW_PARTNER_STATISTICS")[];
             roles?: ("MODERATOR" | "CURATOR" | "FINANCE" | "COMPLIANCE" | "SUPER_ADMIN" | "PARTNER")[];
             staff?: boolean;
         };
@@ -5515,8 +5553,11 @@ export interface components {
             internal?: boolean;
         };
         Mine: {
+            cardRegistrationAvailable?: boolean;
             displayHint?: string;
             holderName?: string;
+            /** @enum {string} */
+            kind?: "PROVIDER_TOKEN" | "BANK_TRANSFER";
             provider?: string;
             recorded?: boolean;
             /** @enum {string} */
@@ -6401,6 +6442,13 @@ export interface components {
             /** Format: uuid */
             pledgeId?: string;
         };
+        RevealedBankAccount: {
+            /** Format: uuid */
+            creatorId?: string;
+            displayHint?: string;
+            holderName?: string;
+            iban?: string;
+        };
         RewardItemBody: {
             /** Format: uuid */
             itemId?: string;
@@ -7229,6 +7277,7 @@ export type SchemaBackerSegmentResponse = components['schemas']['BackerSegmentRe
 export type SchemaBackerSurveyBody = components['schemas']['BackerSurveyBody'];
 export type SchemaBackerSurveyListResponse = components['schemas']['BackerSurveyListResponse'];
 export type SchemaBalance = components['schemas']['Balance'];
+export type SchemaBankAccountRequest = components['schemas']['BankAccountRequest'];
 export type SchemaBeginRequest = components['schemas']['BeginRequest'];
 export type SchemaBeginUploadBody = components['schemas']['BeginUploadBody'];
 export type SchemaBranch = components['schemas']['Branch'];
@@ -7454,6 +7503,7 @@ export type SchemaResetPasswordRequest = components['schemas']['ResetPasswordReq
 export type SchemaResolution = components['schemas']['Resolution'];
 export type SchemaResolveRequest = components['schemas']['ResolveRequest'];
 export type SchemaRespondRequest = components['schemas']['RespondRequest'];
+export type SchemaRevealedBankAccount = components['schemas']['RevealedBankAccount'];
 export type SchemaRewardItemBody = components['schemas']['RewardItemBody'];
 export type SchemaRewardPatchRequest = components['schemas']['RewardPatchRequest'];
 export type SchemaRewardResponse = components['schemas']['RewardResponse'];
@@ -7704,6 +7754,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ForStaff"];
+                };
+            };
+        };
+    };
+    adminPayoutDestinationRevealAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                creatorId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevealedBankAccount"];
                 };
             };
         };
@@ -12133,6 +12205,30 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DestinationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Mine"];
+                };
+            };
+        };
+    };
+    myPayoutDestinationRecordBankAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BankAccountRequest"];
             };
         };
         responses: {

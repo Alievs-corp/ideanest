@@ -1843,6 +1843,7 @@
           "REVIEW_IDENTITY_VERIFICATION": "Kimlik doğrulamasını onaylamak veya reddetmek",
           "OPEN_IDENTITY_DOCUMENT": "Kimlik belgesini açmak — platformdaki en hassas okuma",
           "VERIFY_PAYOUT_DESTINATION": "Ödeme adresinin yaratıcıya ait olduğunu doğrulamak",
+          "READ_BANK_DETAILS": "Yaratıcının IBAN'ını tam olarak açmak — doğrulamak ya da ödeme yapmak için",
           "GRANT_COMPLIANCE_OVERRIDE": "Bir hesap için uyum gereğini sınırlı bir süreyle kaldırmak",
           "ADMINISTER_STAFF": "Rol vermek ve geri almak",
           "VIEW_PARTNER_STATISTICS": "Finansal istatistikleri ortak olarak okumak: yalnızca toplamlar, anlaşılan paya göre"

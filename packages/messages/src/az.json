@@ -1843,6 +1843,7 @@
           "REVIEW_IDENTITY_VERIFICATION": "Şəxsiyyət təsdiqini qəbul və ya rədd etmək",
           "OPEN_IDENTITY_DOCUMENT": "Şəxsiyyət sənədini açmaq — platformadakı ən həssas oxu",
           "VERIFY_PAYOUT_DESTINATION": "Ödəniş ünvanının müəllifə aid olduğunu təsdiqləmək",
+          "READ_BANK_DETAILS": "Müəllifin IBAN-ını tam açmaq — yoxlamaq və ya ödəniş etmək üçün",
           "GRANT_COMPLIANCE_OVERRIDE": "Bir hesab üçün uyğunluq tələbini məhdud müddətə ləğv etmək",
           "ADMINISTER_STAFF": "Rol vermək və geri almaq",
           "VIEW_PARTNER_STATISTICS": "Maliyyə statistikasını tərəfdaş kimi oxumaq: yalnız yekunlar, razılaşdırılmış paya uyğun"

@@ -1843,6 +1843,7 @@
           "REVIEW_IDENTITY_VERIFICATION": "Approve or reject an identity verification",
           "OPEN_IDENTITY_DOCUMENT": "Open an identity document — the most sensitive read on the platform",
           "VERIFY_PAYOUT_DESTINATION": "Confirm that a payout destination belongs to its creator",
+          "READ_BANK_DETAILS": "Open a creator's IBAN in full, to verify it or to pay into it",
           "GRANT_COMPLIANCE_OVERRIDE": "Waive a compliance requirement for one account, for a bounded time",
           "ADMINISTER_STAFF": "Grant and withdraw roles",
           "VIEW_PARTNER_STATISTICS": "Read the financial statistics as a partner: totals only, scaled to an agreed share"
