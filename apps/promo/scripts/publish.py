@@ -20,6 +20,7 @@ BUCKET = "ideyanest-media"
 PREFIX = "media/promo"
 OUT = ROOT / "out"
 PUBLISH = OUT / "publish"
+POSTER_AT = 5.5
 
 
 def run(*args: str) -> None:
@@ -40,7 +41,7 @@ def cuts(lang: str) -> list[Path]:
         "-c:v", "libx264", "-profile:v", "high", "-preset", "slow", "-b:v", "4M", "-maxrate", "5M", "-bufsize", "8M",
         "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(phone),
     )
-    run("-sseof", "-0.05", "-i", str(web), "-frames:v", "1", "-q:v", "3", "-vf", "scale=720:-1", str(poster))
+    run("-ss", str(POSTER_AT), "-i", str(web), "-frames:v", "1", "-q:v", "3", "-vf", "scale=720:-1", str(poster))
     return [web, phone, poster]
 
 
