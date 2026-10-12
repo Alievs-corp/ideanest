@@ -22,12 +22,12 @@
 -- ---------------------------------------------------------------------------
 --
 -- ---------------------------------------------------------------------------
--- Expand only. Nothing to contract.
+-- Contract: none in the expand-then-contract sense. The one DROP replaces the
+-- provider constraint with a wider one -- V93's move -- so every row the old one
+-- accepted, the new one accepts. The rest is three nullable columns and four new
+-- constraints every existing row already satisfies: no row the previous release
+-- wrote is refused, and nothing it reads changes shape.
 -- ---------------------------------------------------------------------------
---
--- Three nullable columns, a widened constraint and three new ones that every
--- existing row already satisfies: no row the previous release wrote is refused,
--- and nothing the previous release reads changes shape.
 --
 -- A node still running the previous release, during the rollout, reads a
 -- BANK_TRANSFER row as a destination issued by a provider it does not send
