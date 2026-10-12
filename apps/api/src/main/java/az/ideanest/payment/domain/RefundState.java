@@ -13,6 +13,13 @@ package az.ideanest.payment.domain;
  * <p>{@link #FAILED} is terminal. A retry is a new row, because it is a new decision and
  * because replaying the same idempotency key would ask the provider to repeat a call it
  * has already refused.
+ *
+ * <p><strong>Two more since #399</strong>, for a refund the provider can no longer carry out
+ * because its refund window has closed: {@link #AWAITING_BANK_DETAILS} and
+ * {@link #AWAITING_TRANSFER}. Both are owed and unsettled, like {@link #REQUESTED}, and every sum
+ * that counts a refund which has not failed as gone counts them too. V99 has the rolling-deploy
+ * argument: a node of the release before reads neither, so nothing writes one until a refund window
+ * is configured.
  */
 public enum RefundState {
 
@@ -40,5 +47,23 @@ public enum RefundState {
      * The provider refused, the reconciliation found the payment still paid, or the refund could not
      * be sent at all. Terminal for this row. Never "unreachable" (#176): that outcome is unknown.
      */
-    FAILED
+    FAILED,
+
+    /**
+     * Owed, and the provider will not take it: the charge is older than its provider's refund window,
+     * or the provider refused it as too old (#399). Nothing was or will be sent to the provider; the
+     * backer is told to contact support, and support records the account it goes to.
+     */
+    AWAITING_BANK_DETAILS,
+
+    /**
+     * The backer's bank account is on file and a member of finance has not yet recorded the transfer
+     * (#399). Becomes {@link #SUCCEEDED} when they do, with the bank's reference.
+     */
+    AWAITING_TRANSFER;
+
+    /** Whether this refund is waiting on a person to pay it by bank transfer (#399). */
+    public boolean awaitsBankTransfer() {
+        return this == AWAITING_BANK_DETAILS || this == AWAITING_TRANSFER;
+    }
 }

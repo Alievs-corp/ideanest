@@ -16,6 +16,7 @@ import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.shared.idempotency.IdempotencyKeyReusedException;
 import az.ideanest.shared.money.Money;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -63,6 +64,15 @@ import org.springframework.transaction.annotation.Transactional;
  * {@code ISSUE_REFUND}. §4.11's AD-06 is one module and those are not one authority — the
  * mistakes are not comparable, and {@code StaffCapability} draws the line in the same
  * place for the same reason.
+ *
+ * <h2>Past the provider's refund window (#399)</h2>
+ *
+ * <p>A provider reverses a card payment only for so long — Payriff, thirty days — and a refund owed
+ * after that is still owed. {@link #send} does not ask the provider about a charge older than its
+ * window ({@link RefundWindows}); it records the refund {@code AWAITING_BANK_DETAILS}, and
+ * {@code RefundBankTransfers} takes it from there: support records the backer's account, finance
+ * makes the transfer and records it. A provider that refuses a refund as too old despite the window
+ * ({@code RefundResult#isWindowClosed}) is routed the same way.
  */
 @Service
 public class RefundService {
@@ -77,18 +87,24 @@ public class RefundService {
     private final PaymentProviders providers;
     private final RefundRecords records;
     private final PlatformStaff staff;
+    private final RefundWindows windows;
+    private final Clock clock;
 
     public RefundService(
             RefundRepository refunds,
             PaymentTransactionRepository transactions,
             PaymentProviders providers,
             RefundRecords records,
-            PlatformStaff staff) {
+            PlatformStaff staff,
+            RefundWindows windows,
+            Clock clock) {
         this.refunds = refunds;
         this.transactions = transactions;
         this.providers = providers;
         this.records = records;
         this.staff = staff;
+        this.windows = windows;
+        this.clock = clock;
     }
 
     /** AD-06's list, newest first, optionally narrowed to one state. */
@@ -220,6 +236,11 @@ public class RefundService {
      * path sends that money again, and settled by {@link #reconcile} from the provider's status of the
      * payment once it is {@code unresolved-after} old. Only a reconciliation that finds the payment
      * still paid makes it {@code FAILED}, and only then does the sweep send it again.
+     *
+     * <p><strong>A charge past its provider's refund window is not sent at all (#399)</strong>, and a
+     * refund the provider refuses as too old is not failed: both wait for the backer's bank account.
+     * Checked before the provider is looked up, because a charge that cannot be refunded through the
+     * provider does not need the provider to be configured.
      */
     private Refund send(Refund refund) {
         Optional<PaymentTransaction> found = transactions.findById(refund.chargeTransactionId());
@@ -227,6 +248,12 @@ public class RefundService {
             return records.settleFailure(refund, NOT_SENT, "The charge this refund reverses was not found.");
         }
         PaymentTransaction charge = found.get();
+        if (windows.isClosed(charge, clock.instant())) {
+            return records.awaitBankDetails(
+                    refund,
+                    "the charge of " + charge.getCreatedAt() + " is past " + charge.getProvider() + "'s refund window of "
+                            + windows.of(charge.getProvider()).orElseThrow());
+        }
         Optional<PaymentProvider> configured = providers.byName(charge.getProvider());
         if (configured.isEmpty()) {
             return records.settleFailure(
@@ -254,6 +281,16 @@ public class RefundService {
             return refunds.findById(refund.id()).orElse(refund);
         }
 
+        if (result.isWindowClosed()) {
+            log.warn(
+                    "Refund {} of {} on pledge {} was refused by {} as too old; it goes by bank transfer: {}",
+                    refund.id(),
+                    refund.amount(),
+                    refund.pledgeId(),
+                    charge.getProvider(),
+                    result.failureMessage());
+            return records.awaitBankDetails(refund, "refused by " + charge.getProvider() + " as past its refund window");
+        }
         if (result.outcome() == ProviderOutcome.DECLINED) {
             return records.settleFailure(refund, result.failureCode(), result.failureMessage());
         }
@@ -367,6 +404,15 @@ public class RefundService {
         List<Refund> parts = issueParts(staffId, pledgeId, null, RefundReason.DISPUTE_CONCEDED, detail, idempotencyKey);
         boolean allSucceeded = parts.stream().allMatch(part -> part.state() == RefundState.SUCCEEDED);
         return allSucceeded ? settledInFull(pledgeId).or(() -> Optional.of(parts.getFirst().id())) : Optional.empty();
+    }
+
+    /**
+     * Whether part of this pledge's refund waits to be paid by bank transfer — #399, so an upheld
+     * dispute that cannot be answered yet says why.
+     */
+    @Transactional(readOnly = true)
+    public boolean awaitsBankTransfer(UUID pledgeId) {
+        return !refunds.awaitingBankTransferOn(pledgeId).isEmpty();
     }
 
     /** The latest refund that went back, when nothing on the pledge is still without an outcome. */

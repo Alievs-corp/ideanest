@@ -177,6 +177,7 @@ public class ScriptedPaymentProvider implements PaymentProvider {
      */
     public void reset() {
         refundRefusal = null;
+        refundsTooOld = false;
         lostRefundAnswers.set(0);
         lostRefundAnswersFor.clear();
         unreachableRefunds.clear();
@@ -339,10 +340,20 @@ public class ScriptedPaymentProvider implements PaymentProvider {
     /** The next refunds are refused with this code, until {@link #willRefund()}. */
     public void willRefuseRefunds(String code) {
         refundRefusal = code;
+        refundsTooOld = false;
     }
+
+    /** #399: the next refunds are refused as past the refund window, until {@link #willRefund()}. */
+    public void willRefuseRefundsAsTooOld() {
+        refundRefusal = null;
+        refundsTooOld = true;
+    }
+
+    private volatile boolean refundsTooOld;
 
     public void willRefund() {
         refundRefusal = null;
+        refundsTooOld = false;
     }
 
     private final AtomicInteger lostRefundAnswers = new AtomicInteger();
@@ -410,6 +421,9 @@ public class ScriptedPaymentProvider implements PaymentProvider {
         if (lostRefundAnswersFor.remove(request.providerTransactionId())
                 || lostRefundAnswers.getAndUpdate(left -> Math.max(left - 1, 0)) > 0) {
             throw new IllegalStateException("Scripted: the refund's answer was lost");
+        }
+        if (refundsTooOld) {
+            return RefundResult.windowClosed("scripted_too_old", "Scripted: past the refund window", "{\"scripted\":true}");
         }
         String refusal = refundRefusal;
         if (refusal != null) {

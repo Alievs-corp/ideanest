@@ -25,6 +25,10 @@ import java.util.UUID;
  * <p><strong>Two methods change anything</strong>, and they are the two outcomes. There is
  * no setter for the amount or the reason: a refund that could be edited after it was sent
  * would be a record of what somebody currently says they did.
+ *
+ * <p>Since #399 a refund the provider can no longer carry out waits for a person on the way to
+ * its outcome: {@link #awaitBankDetails} and {@link #awaitTransfer} are those two waits, and the
+ * outcome is still {@link #succeeded}, when the transfer is recorded.
  */
 @Entity
 @Table(name = "refunds")
@@ -214,6 +218,29 @@ public class Refund {
         this.failureCode = null;
         this.failureMessage = null;
         this.reviewReason = null;
+    }
+
+    /**
+     * The provider will not carry this refund out, so it goes back by bank transfer (#399): the charge
+     * is older than the provider's refund window, or the provider refused it as too old.
+     *
+     * <p>Unsettled, and still owed: every sum counts it as gone, so nothing sends it again, and the
+     * backer is asked for the account it goes to.
+     */
+    public void awaitBankDetails() {
+        if (state != RefundState.REQUESTED) {
+            throw new IllegalStateException("Only a refund nobody has settled waits for bank details");
+        }
+        this.state = RefundState.AWAITING_BANK_DETAILS;
+        this.reviewReason = null;
+    }
+
+    /** Support recorded the backer's bank account; finance makes the transfer (#399). */
+    public void awaitTransfer() {
+        if (state != RefundState.AWAITING_BANK_DETAILS) {
+            throw new IllegalStateException("Only a refund waiting for bank details can wait for a transfer");
+        }
+        this.state = RefundState.AWAITING_TRANSFER;
     }
 
     /**

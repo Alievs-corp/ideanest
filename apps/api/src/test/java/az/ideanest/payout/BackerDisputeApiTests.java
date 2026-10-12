@@ -3,13 +3,21 @@ package az.ideanest.payout;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
+import az.ideanest.payment.application.RefundBankTransfers;
+import az.ideanest.payment.application.RefundWindows;
+import az.ideanest.payment.domain.ProviderName;
 import az.ideanest.shared.outbox.OutboxRelay;
 import az.ideanest.support.AbstractIntegrationTest;
+import az.ideanest.support.AdjustableClock;
+import az.ideanest.support.BankDetailsKeys;
 import az.ideanest.support.Campaigns;
 import az.ideanest.support.PaymentRows;
 import az.ideanest.support.ScriptedWebhooks;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,6 +39,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * A backer disputes their payment during the payout hold — IDN-EXT-01 (#43), §6.3.
@@ -58,6 +67,15 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
     @Autowired
     private AccessTokenIssuer tokens;
 
+    @Autowired
+    private RefundWindows windows;
+
+    @Autowired
+    private RefundBankTransfers bankRefunds;
+
+    @Autowired
+    private AdjustableClock clock;
+
     private final List<UUID> paidPledges = new ArrayList<>();
     private final List<UUID> projects = new ArrayList<>();
 
@@ -80,6 +98,7 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
         projects.clear();
         // `granted_by` is RESTRICT, so a grant left behind stops IdentitySchemaTests emptying `users`.
         jdbc().update("DELETE FROM staff_role_grants WHERE note = '#43 fixture'");
+        jdbc().update("DELETE FROM support_tickets WHERE subject = '#399 fixture'");
     }
 
     @Test
@@ -169,6 +188,58 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
         Map<String, Object> recalculated = jdbc().queryForMap(
                 "SELECT refunded_amount FROM payouts WHERE project_id = ? AND state = 'CALCULATED'", campaign.projectId());
         assertThat((BigDecimal) recalculated.get("refunded_amount")).isEqualByComparingTo("40.00");
+    }
+
+    @Test
+    @DisplayName("#399: upheld past the provider's refund window, the dispute waits for the bank transfer, then is upheld")
+    void anUpheldDisputePastTheWindowWaitsForTheBankTransfer() {
+        Campaign campaign = aWithdrawnCampaign("dispute-by-bank");
+        Object disputeId = dispute(campaign.first()).getBody().get("id");
+        Object unlimited = ReflectionTestUtils.getField(windows, "windows");
+        ReflectionTestUtils.setField(windows, "windows", Map.of(ProviderName.AZERICARD, Duration.ofDays(1)));
+        clock.advance(Duration.ofDays(2));
+        BankDetailsKeys.Installed keys = BankDetailsKeys.installCipher(bankRefunds);
+        try {
+            ResponseEntity<Map<String, Object>> waiting = decide(disputeId, "UPHOLD");
+            assertThat(waiting.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(waiting.getBody()).containsEntry("code", "DISPUTE_REFUND_FAILED");
+            assertThat(waiting.getBody().get("meta")).isEqualTo(Map.of("awaitingBankTransfer", true));
+            assertThat(decide(disputeId, "UPHOLD").getStatusCode())
+                    .as("a retry while the transfer is owed sends nothing beside it")
+                    .isEqualTo(HttpStatus.CONFLICT);
+            assertThat(jdbc().queryForList(
+                            "SELECT state FROM refunds WHERE pledge_id = ?", String.class, campaign.first().pledgeId()))
+                    .containsExactly("AWAITING_BANK_DETAILS");
+
+            UUID pledgeId = campaign.first().pledgeId();
+            UUID support = staff("backer-dispute-support", "MODERATOR");
+            UUID ticket = UUID.randomUUID();
+            jdbc().update(
+                    "INSERT INTO support_tickets (id, requester_id, subject, subject_type, subject_ref)"
+                            + " VALUES (?, ?, '#399 fixture', 'PLEDGE', ?)",
+                    ticket,
+                    campaign.first().account().id(),
+                    pledgeId);
+            UUID refundId = bankRefunds
+                    .recordBankDetails(support, pledgeId, "AZ21NABZ00000000137010001944", "Test Backer", ticket)
+                    .getFirst()
+                    .id();
+            bankRefunds.recordTransfer(
+                    staff("backer-dispute-administrator", "SUPER_ADMIN"),
+                    refundId,
+                    "DISPUTE-REF-" + refundId,
+                    LocalDate.now(ZoneOffset.UTC));
+
+            ResponseEntity<Map<String, Object>> upheld = decide(disputeId, "UPHOLD");
+            assertThat(upheld.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(upheld.getBody()).containsEntry("state", "UPHELD");
+            assertThat(jdbc().queryForObject("SELECT state FROM pledges WHERE id = ?", String.class, pledgeId))
+                    .isEqualTo("REFUNDED");
+        } finally {
+            keys.close();
+            clock.reset();
+            ReflectionTestUtils.setField(windows, "windows", unlimited);
+        }
     }
 
     @Test
@@ -329,6 +400,21 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
                 id,
                 id);
         return tokenFor(id);
+    }
+
+    /** A member of staff holding one V48 role, granted under this suite's note. */
+    private UUID staff(String handle, String role) {
+        UUID id = Campaigns.creator(dataSource, handle);
+        jdbc().update(
+                """
+                INSERT INTO staff_role_grants (account_id, role, granted_by, note)
+                VALUES (?, ?, ?, '#43 fixture')
+                ON CONFLICT DO NOTHING
+                """,
+                id,
+                role,
+                id);
+        return id;
     }
 
     /** An account written straight into {@code users}, for the same reason: nothing here is about registering. */

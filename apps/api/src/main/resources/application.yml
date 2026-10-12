@@ -745,6 +745,11 @@ ideanest:
       callback-url: ${PAYRIFF_CALLBACK_URL:}
       # The payment page's language when a request names none: az, en or ru.
       language: ${PAYRIFF_LANGUAGE:az}
+      # #399: the /refund answer codes that mean "too old to refund", comma-separated. Such a
+      # refund waits for the backer's bank details instead of failing. Empty until Payriff
+      # confirms the code: a wrong guess would turn an ordinary refusal into a bank transfer,
+      # and staff route a refused refund by hand meanwhile.
+      refund-window-closed-codes: ${PAYRIFF_REFUND_WINDOW_CLOSED_CODES:}
     # Issue #139: where a provider may send a person back to. `successUrl` and `errorUrl` on
     # the payment and payout-card endpoints come from the caller, and the provider redirects
     # to them from its own page -- unchecked, an open redirect running through checkout. So an
@@ -781,6 +786,13 @@ ideanest:
       retry-after: PT6H
       # A refund with no recorded outcome this old is settled from the provider's status.
       unresolved-after: PT1H
+      # #399: how long after a charge each provider still reverses it. A refund of an older
+      # charge is never sent to the provider; it waits for the backer's bank details and is
+      # paid by bank transfer. No entry means no window, which is the default. Payriff's is
+      # thirty days, measured from when it took the payment; set it with a margin, and only
+      # once every node runs the release that reads the new refund states (V99):
+      #   IDEANEST_PAYMENT_REFUNDS_WINDOWS_PAYRIFF=P28D
+      # (no `windows:` key here: an absent map is the unlimited default.)
     # #353: `hosted-charge-sweep`. A payment page is settled by the provider's callback; this
     # asks the provider about pages still pending after `answered-after`, so a callback lost
     # for good does not leave a backer who paid with a pledge that never confirms. Settles

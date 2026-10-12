@@ -238,6 +238,9 @@ class ModuleBoundaryTests {
                 .haveFullyQualifiedName("az.ideanest.compliance.domain.Iban")
                 .because("a creator's account crosses as " + PAYOUT_DESTINATIONS + ", which checks and audits")
                 .check(PRODUCTION_CLASSES);
+
+        // #399: a backer's refund IBAN is checked by the same Iban, asked for the same way.
+        assertThat(modulesNaming("az.ideanest.shared.compliance.BankAccountNumbers")).contains("payment", "compliance");
     }
 
     @Test

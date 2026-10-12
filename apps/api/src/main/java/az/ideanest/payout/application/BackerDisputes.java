@@ -152,8 +152,14 @@ public class BackerDisputes {
         Optional<UUID> refund = refunds.refundForDispute(
                 staffId, dispute.pledgeId(), detail, "backer-dispute-" + disputeId + "-" + now.toEpochMilli());
         if (refund.isEmpty()) {
-            log.warn("Backer dispute {} stays open: its refund did not go through.", disputeId);
-            throw new DisputeRefundFailedException(disputeId);
+            // #399: past the provider's refund window the refund waits for a bank transfer, and the dispute
+            // is upheld on a retry once the transfer is recorded.
+            boolean byBank = refunds.awaitsBankTransfer(dispute.pledgeId());
+            log.warn(
+                    "Backer dispute {} stays open: its refund {}.",
+                    disputeId,
+                    byBank ? "waits for a bank transfer" : "did not go through");
+            throw new DisputeRefundFailedException(disputeId, byBank);
         }
         // The payout the campaign is owed now excludes this backer. Its hold is kept: the dispute did not
         // start a new one.

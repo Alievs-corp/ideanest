@@ -48,11 +48,16 @@ public class BackerDisputeExceptionHandler {
 
     @ExceptionHandler(DisputeRefundFailedException.class)
     public ProblemDetail handleRefundFailed(DisputeRefundFailedException exception) {
-        return problem(
+        ProblemDetail problem = problem(
                 HttpStatus.CONFLICT,
                 "dispute-refund-failed",
-                "The refund did not go through; the dispute stays open",
+                exception.awaitingBankTransfer()
+                        ? "The refund waits for a bank transfer; the dispute stays open"
+                        : "The refund did not go through; the dispute stays open",
                 "DISPUTE_REFUND_FAILED");
+        // #399: the same code, so a console that does not know the flag still says the dispute is open.
+        problem.setProperty("meta", java.util.Map.of("awaitingBankTransfer", exception.awaitingBankTransfer()));
+        return problem;
     }
 
     private static ProblemDetail problem(HttpStatus status, String type, String title, String code) {

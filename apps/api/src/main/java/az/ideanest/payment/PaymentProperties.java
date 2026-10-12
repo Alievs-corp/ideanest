@@ -1,7 +1,10 @@
 package az.ideanest.payment;
 
+import az.ideanest.payment.domain.ProviderName;
 import java.time.Duration;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -127,13 +130,21 @@ public record PaymentProperties(
      * @param callbackUrl where Payriff posts an order's news: this service's
      *     {@code /v1/webhooks/psp/payriff}
      * @param language the payment page's language when a request names none: az, en or ru
+     * @param refundWindowClosedCodes the {@code /refund} answer codes that mean "this payment is too
+     *     old to refund" (#399), which route the refund to a bank transfer instead of failing it.
+     *     <strong>Empty by default, deliberately</strong>: Payriff does not document which code it
+     *     answers past its thirty days, and a code guessed wrong would turn an ordinary refusal into a
+     *     bank transfer. Until one is confirmed and configured, such a refund is recorded failed and
+     *     staff route it by hand ({@code POST /v1/admin/refunds/{id}/bank-transfer}); the refund
+     *     window in {@link Refunds#windows} keeps most of them from reaching Payriff at all
      */
-    public record Payriff(String baseUrl, String secretKey, String callbackUrl, String language) {
+    public record Payriff(
+            String baseUrl, String secretKey, String callbackUrl, String language, List<String> refundWindowClosedCodes) {
 
         private static final String DEFAULT_BASE_URL = "https://api.payriff.com/api/v3";
 
         public static Payriff defaults() {
-            return new Payriff(DEFAULT_BASE_URL, "", "", "az");
+            return new Payriff(DEFAULT_BASE_URL, "", "", "az", List.of());
         }
 
         public Payriff {
@@ -141,6 +152,12 @@ public record PaymentProperties(
             secretKey = secretKey == null ? "" : secretKey.trim();
             callbackUrl = callbackUrl == null ? "" : callbackUrl.trim();
             language = language == null || language.isBlank() ? "az" : language.trim();
+            refundWindowClosedCodes = refundWindowClosedCodes == null
+                    ? List.of()
+                    : refundWindowClosedCodes.stream()
+                            .filter(code -> code != null && !code.isBlank())
+                            .map(String::trim)
+                            .toList();
         }
 
         public boolean isComplete() {
@@ -151,7 +168,7 @@ public record PaymentProperties(
         @Override
         public String toString() {
             return "Payriff[baseUrl=" + baseUrl + ", secretKey=<redacted>, callbackUrl=" + callbackUrl
-                    + ", language=" + language + "]";
+                    + ", language=" + language + ", refundWindowClosedCodes=" + refundWindowClosedCodes + "]";
         }
     }
 
@@ -162,11 +179,20 @@ public record PaymentProperties(
      * @param perPass how many paid pledges one pass may refund, and how many lost outcomes it settles
      * @param retryAfter how long a refused refund waits before it is sent again
      * @param unresolvedAfter how old a refund with no recorded outcome is before the provider is asked
+     * @param windows #399: how long after a charge each provider still reverses it. A refund of a
+     *     charge older than its provider's window is never sent to the provider: it waits for the
+     *     backer's bank details and is paid by bank transfer. <strong>A provider with no entry has no
+     *     window</strong>, which is the shipped default and the behaviour before #399 — every refund
+     *     goes to the provider. Set per deployment, and only once every node runs the release that
+     *     reads the new refund states (V99): {@code IDEANEST_PAYMENT_REFUNDS_WINDOWS_PAYRIFF=P28D},
+     *     under Payriff's thirty days by a margin, because the window is measured from when the
+     *     platform recorded the charge, which is later than when Payriff took it
      */
-    public record Refunds(String schedule, int perPass, Duration retryAfter, Duration unresolvedAfter) {
+    public record Refunds(
+            String schedule, int perPass, Duration retryAfter, Duration unresolvedAfter, Map<ProviderName, Duration> windows) {
 
         public static Refunds defaults() {
-            return new Refunds("0 */10 * * * *", 100, Duration.ofHours(6), Duration.ofHours(1));
+            return new Refunds("0 */10 * * * *", 100, Duration.ofHours(6), Duration.ofHours(1), Map.of());
         }
 
         public Refunds {
@@ -174,6 +200,20 @@ public record PaymentProperties(
             perPass = perPass < 1 ? 100 : perPass;
             retryAfter = retryAfter == null ? Duration.ofHours(6) : retryAfter;
             unresolvedAfter = unresolvedAfter == null ? Duration.ofHours(1) : unresolvedAfter;
+            Map<ProviderName, Duration> checked = new EnumMap<>(ProviderName.class);
+            if (windows != null) {
+                windows.forEach((provider, window) -> {
+                    if (provider == null || window == null) {
+                        return;
+                    }
+                    if (window.isNegative() || window.isZero()) {
+                        throw new IllegalArgumentException(
+                                "refunds.windows." + provider.slug() + " must be positive, and is " + window);
+                    }
+                    checked.put(provider, window);
+                });
+            }
+            windows = Map.copyOf(checked);
         }
     }
 
