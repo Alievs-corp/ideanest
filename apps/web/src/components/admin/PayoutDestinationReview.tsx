@@ -3,15 +3,14 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Field, InlineAlert, Pill, Select } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
+import type { AdminPayoutDestination, DestinationRejectionReason } from '../../lib/admin/api';
 import {
   DESTINATION_REJECTION_REASONS,
   rejectPayoutDestination,
   revealPayoutBankAccount,
   verifyPayoutDestination,
-  type AdminPayoutDestination,
-  type DestinationRejectionReason,
   type RevealedBankAccount,
-} from '../../lib/admin/api';
+} from '../../lib/admin/payout-destinations';
 import { consoleMessageFor, statusFor, wasAborted } from '../../lib/admin/refusals';
 import type { ConsoleRefusalsCopy } from '../../lib/i18n/admin/common-copy';
 import type { PayoutDestinationCopy } from '../../lib/i18n/admin/money-copy';

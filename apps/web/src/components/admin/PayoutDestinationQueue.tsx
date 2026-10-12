@@ -2,11 +2,8 @@
 
 import { useState } from 'react';
 import { Chip, ChipRow, EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
-import {
-  PAYOUT_DESTINATION_QUEUE_SIZE,
-  readPayoutDestinationQueue,
-  type AdminPayoutDestination,
-} from '../../lib/admin/api';
+import type { AdminPayoutDestination } from '../../lib/admin/api';
+import { PAYOUT_DESTINATION_QUEUE_SIZE, readPayoutDestinationQueue } from '../../lib/admin/payout-destinations';
 import { shortId } from '../../lib/admin/refusals';
 import { holds } from '../../lib/admin/staff';
 import type { DestinationStanding } from '../../lib/account/payout';

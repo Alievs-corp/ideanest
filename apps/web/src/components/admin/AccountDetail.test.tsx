@@ -8,14 +8,16 @@ import {
   readAccountSubscriptions,
   readUser,
   readUserPledges,
-  rejectPayoutDestination,
-  revealPayoutBankAccount,
-  verifyPayoutDestination,
   type AdminAccountSubscriptions,
   type AdminPayoutDestination,
   type AdminUser,
   type AdminUserPledge,
 } from '../../lib/admin/api';
+import {
+  rejectPayoutDestination,
+  revealPayoutBankAccount,
+  verifyPayoutDestination,
+} from '../../lib/admin/payout-destinations';
 import { ROLE_CAPABILITIES, type StaffMembership } from '../../lib/admin/staff';
 import { ConsoleMembershipProvider } from './ConsoleMembership';
 import { listCampaigns, type DirectoryCampaign } from '../../lib/admin/campaigns';
@@ -43,11 +45,15 @@ vi.mock('../../lib/admin/api', async (importOriginal) => {
     readAccountSubscriptions: vi.fn(),
     readAccountLegalSubject: vi.fn(),
     readAccountPayoutDestination: vi.fn(),
-    verifyPayoutDestination: vi.fn(),
-    rejectPayoutDestination: vi.fn(),
-    revealPayoutBankAccount: vi.fn(),
   };
 });
+
+vi.mock('../../lib/admin/payout-destinations', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/admin/payout-destinations')>()),
+  verifyPayoutDestination: vi.fn(),
+  rejectPayoutDestination: vi.fn(),
+  revealPayoutBankAccount: vi.fn(),
+}));
 
 vi.mock('../../lib/admin/campaigns', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/admin/campaigns')>();

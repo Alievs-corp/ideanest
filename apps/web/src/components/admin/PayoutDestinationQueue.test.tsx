@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
+import type { AdminPayoutDestination } from '../../lib/admin/api';
 import {
   readPayoutDestinationQueue,
   rejectPayoutDestination,
   revealPayoutBankAccount,
   verifyPayoutDestination,
-  type AdminPayoutDestination,
-} from '../../lib/admin/api';
+} from '../../lib/admin/payout-destinations';
 import { lookUpNames } from '../../lib/admin/directory';
 import { ROLE_CAPABILITIES, type StaffMembership, type StaffRole } from '../../lib/admin/staff';
 import { consoleChromeCopyFrom } from '../../lib/i18n/admin/common-copy';
@@ -23,8 +23,8 @@ const COPY = payoutDestinationQueueCopyFrom(
 );
 const WORDS = COPY.destination;
 
-vi.mock('../../lib/admin/api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../lib/admin/api')>()),
+vi.mock('../../lib/admin/payout-destinations', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/admin/payout-destinations')>()),
   readPayoutDestinationQueue: vi.fn(),
   verifyPayoutDestination: vi.fn(),
   rejectPayoutDestination: vi.fn(),
