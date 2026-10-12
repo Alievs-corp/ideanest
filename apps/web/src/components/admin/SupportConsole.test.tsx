@@ -297,7 +297,8 @@ async function openTicket(ticket: Ticket, membership: StaffMembership = supporte
 
 async function fillIn(iban: string, holder = 'Aysel Məmmədova'): Promise<void> {
   await userEvent.click(await screen.findByRole('button', { name: WORDS.open }));
-  await userEvent.type(screen.getByLabelText(new RegExp(WORDS.ibanLabel)), iban);
+  /* The form is fetched when it is asked for. */
+  await userEvent.type(await screen.findByLabelText(new RegExp(WORDS.ibanLabel)), iban);
   await userEvent.type(screen.getByLabelText(new RegExp(WORDS.holderLabel)), holder);
   await userEvent.click(screen.getByRole('button', { name: WORDS.save }));
 }

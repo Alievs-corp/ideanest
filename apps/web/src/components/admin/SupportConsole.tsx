@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import {
   Checkbox,
   Chip,
@@ -40,9 +40,6 @@ import { ConsoleRefusal } from './ConsoleRefusal';
 import { EntityName } from './ConsoleIdentity';
 import { useConsoleResource } from './useConsoleResource';
 import { useDirectoryNames } from './useDirectoryNames';
-import { useConsoleMembership } from './ConsoleMembership';
-import { holds } from '../../lib/admin/staff';
-import { RefundBankDetailsForm } from './RefundBankDetailsForm';
 
 /**
  * §4.11's AD-10: tickets with user context and action history — issue #310.
@@ -70,6 +67,16 @@ import { RefundBankDetailsForm } from './RefundBankDetailsForm';
  * in a support conversation. So a ticket about a pledge carries the form that records it on that
  * pledge, with this ticket as its source; `RefundBankDetailsForm` says what it checks.
  */
+/**
+ * #400's refund bank-account form, fetched when a pledge's ticket is opened. Bundled with the
+ * console it put `/admin/support` well over its First Load JS budget (the IBAN rules and
+ * `decimal.js`), and no other ticket needs it. `React.lazy` for `PayoutQueue`'s reason; the form
+ * decides for itself whether the reader may be offered it.
+ */
+const RefundBankDetailsForm = lazy(() =>
+  import('./RefundBankDetailsForm').then((module) => ({ default: module.RefundBankDetailsForm })),
+);
+
 export interface SupportConsoleProps {
   readonly copy: SupportConsoleCopy;
 }
@@ -375,7 +382,6 @@ function TicketDetail({
   readonly onChanged: () => void;
 }) {
   const locale = useRouteLocale();
-  const { membership } = useConsoleMembership();
   const context = useConsoleResource(
     (signal) => readTicket(ticketId, signal),
     copy.ticketSubject,
@@ -523,8 +529,8 @@ function TicketDetail({
         </Pill>
       </div>
 
-      {pledgeId !== null && holds(membership, 'HANDLE_SUPPORT') && (
-        <div className="mt-4 border-t border-white/8 pt-4">
+      {pledgeId !== null && (
+        <Suspense fallback={null}>
           <RefundBankDetailsForm
             pledgeId={pledgeId}
             ticketId={file.ticket.id}
@@ -532,7 +538,7 @@ function TicketDetail({
             subject={copy.ticketSubject}
             refusals={copy.refusals}
           />
-        </div>
+        </Suspense>
       )}
 
       {others.length > 0 && (

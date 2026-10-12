@@ -5,7 +5,6 @@ export {
   missingFields,
   composeEnquiry,
   whatsappHref,
-  whatsappDraftHref,
   type WhatsAppEnquiry,
   type EnquiryField,
 } from '@ideanest/messages';

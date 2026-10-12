@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import {
   EmptyState,
   Field,
@@ -33,12 +33,22 @@ import { useConsoleResource } from './useConsoleResource';
 import { useDirectoryNames } from './useDirectoryNames';
 import { useConsoleMembership } from './ConsoleMembership';
 import { holds } from '../../lib/admin/staff';
-import {
-  AwaitingTransfer,
-  BankTransferFacts,
-  RouteToBankTransfer,
-  type RefundRowNotice,
-} from './RefundBankTransfer';
+import type { RefundRowNotice } from './RefundBankTransfer';
+
+/*
+ * #400's bank-transfer pieces, fetched when a row draws one. Most refunds go back through the
+ * provider, and bundled with the console they would take `/admin/refunds` past its First Load JS
+ * budget. `React.lazy` for `PayoutQueue`'s reason: the rows render in the browser after the read.
+ */
+const BankTransferFacts = lazy(() =>
+  import('./RefundBankTransfer').then((module) => ({ default: module.BankTransferFacts })),
+);
+const AwaitingTransfer = lazy(() =>
+  import('./RefundBankTransfer').then((module) => ({ default: module.AwaitingTransfer })),
+);
+const RouteToBankTransfer = lazy(() =>
+  import('./RefundBankTransfer').then((module) => ({ default: module.RouteToBankTransfer })),
+);
 
 /*
  * #400: the two bank-transfer states sit after REQUESTED, because they are the same kind of thing
@@ -425,25 +435,27 @@ function RefundRow({
           : ''}
       </p>
 
-      {transfer !== null && <BankTransferFacts transfer={transfer} names={names} copy={copy} />}
+      <Suspense fallback={null}>
+        {transfer !== null && <BankTransferFacts transfer={transfer} names={names} copy={copy} />}
 
-      {refund.state === 'AWAITING_BANK_DETAILS' && (
-        <p className="mt-2 max-w-[62ch] text-xs text-white/64">{copy.bank.awaitingBankDetails}</p>
-      )}
+        {refund.state === 'AWAITING_BANK_DETAILS' && (
+          <p className="mt-2 max-w-[62ch] text-xs text-white/64">{copy.bank.awaitingBankDetails}</p>
+        )}
 
-      {refund.state === 'AWAITING_TRANSFER' && transfer !== null && canIssue && (
-        <AwaitingTransfer
-          refund={refund}
-          transfer={transfer}
-          readerId={readerId}
-          copy={copy}
-          onSettled={onSettled}
-        />
-      )}
+        {refund.state === 'AWAITING_TRANSFER' && transfer !== null && canIssue && (
+          <AwaitingTransfer
+            refund={refund}
+            transfer={transfer}
+            readerId={readerId}
+            copy={copy}
+            onSettled={onSettled}
+          />
+        )}
 
-      {refund.state === 'FAILED' && canIssue && (
-        <RouteToBankTransfer refund={refund} copy={copy} onSettled={onSettled} />
-      )}
+        {refund.state === 'FAILED' && canIssue && (
+          <RouteToBankTransfer refund={refund} copy={copy} onSettled={onSettled} />
+        )}
+      </Suspense>
     </li>
   );
 }

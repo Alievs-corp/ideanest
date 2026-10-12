@@ -12,6 +12,8 @@ import { formatMoney, toMoney } from '../../lib/money';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { ConsoleRefusalsCopy } from '../../lib/i18n/admin/common-copy';
 import type { RefundBankDetailsCopy } from '../../lib/i18n/admin/people-copy';
+import { holds } from '../../lib/admin/staff';
+import { useConsoleMembership } from './ConsoleMembership';
 
 /**
  * The account a pledge's refund is paid into, recorded from the ticket the backer gave it in —
@@ -20,9 +22,10 @@ import type { RefundBankDetailsCopy } from '../../lib/i18n/admin/people-copy';
  * <h2>Behind a press, on a pledge's ticket only</h2>
  *
  * Most pledge tickets are not about a bank refund, so the form is one control until somebody asks
- * for it. It is drawn only on a ticket whose subject is a pledge, because that is the pledge the
- * account is recorded on, and only for a reader holding `HANDLE_SUPPORT` — what is offered, not
- * what is allowed: the service refuses anybody else.
+ * for it. `SupportConsole` loads this module only when a pledge's ticket is opened, which keeps
+ * the IBAN table and `decimal.js` off the console's first load. It is drawn only for a reader
+ * holding `HANDLE_SUPPORT` — what is offered, not what is allowed: the service refuses anybody
+ * else.
  *
  * <h2>The IBAN is checked here in the service's own terms</h2>
  *
@@ -55,7 +58,14 @@ interface Saved {
   readonly amount: string;
 }
 
-export function RefundBankDetailsForm({ pledgeId, ticketId, copy, subject, refusals }: RefundBankDetailsFormProps) {
+export function RefundBankDetailsForm({
+  pledgeId,
+  ticketId,
+  copy,
+  subject,
+  refusals,
+}: RefundBankDetailsFormProps) {
+  const { membership } = useConsoleMembership();
   const [open, setOpen] = useState(false);
   const [iban, setIban] = useState('');
   const [holder, setHolder] = useState('');
@@ -125,9 +135,11 @@ export function RefundBankDetailsForm({ pledgeId, ticketId, copy, subject, refus
     }
   }
 
+  if (!holds(membership, 'HANDLE_SUPPORT')) return null;
+
   if (!open) {
     return (
-      <div>
+      <div className="mt-4 border-t border-white/8 pt-4">
         <Pill variant="ghost" size="sm" onClick={() => setOpen(true)}>
           {copy.open}
         </Pill>
@@ -136,7 +148,7 @@ export function RefundBankDetailsForm({ pledgeId, ticketId, copy, subject, refus
   }
 
   return (
-    <section aria-labelledby={`refund-bank-${pledgeId}`} className="flex flex-col gap-3">
+    <section aria-labelledby={`refund-bank-${pledgeId}`} className="mt-4 flex flex-col gap-3 border-t border-white/8 pt-4">
       <h4 id={`refund-bank-${pledgeId}`} className="text-sm font-medium text-white">
         {copy.heading}
       </h4>

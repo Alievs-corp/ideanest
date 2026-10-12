@@ -208,6 +208,9 @@ describe('the pledge screen for a paid pledge', () => {
         paid({ raisable: false, refundAwaitingBankTransfer: { amount: '1234.50', currency: 'AZN' } }),
       );
       await open();
+      /* The notice is fetched on demand: wait for the import, then for the render it unblocks. */
+      await import('./RefundPendingNotice');
+      for (let tick = 0; tick < 5; tick += 1) await settle();
 
       const notice = screen.getByRole('alert');
       expect(within(notice).getByText(PLEDGES.refundPending.title)).toBeInTheDocument();

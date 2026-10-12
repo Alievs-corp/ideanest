@@ -83,14 +83,6 @@ export function composeEnquiry(enquiry: WhatsAppEnquiry): string {
  * `%20` is what the draft has to carry.
  */
 export function whatsappHref(enquiry: WhatsAppEnquiry): string {
-  return whatsappDraftHref(composeEnquiry(enquiry));
-}
-
-/**
- * The same link with a draft the platform wrote rather than one composed from the form — #400's
- * "refund pending" notice, which quotes the pledge so support can find it. No name above it: the
- * message arrives from the backer's own number, and the backer may add one before pressing send.
- */
-export function whatsappDraftHref(draft: string): string {
-  return `https://wa.me/${WHATSAPP_CONTACT_NUMBER}?text=${encodeURIComponent(draft.trim())}`;
+  const text = encodeURIComponent(composeEnquiry(enquiry));
+  return `https://wa.me/${WHATSAPP_CONTACT_NUMBER}?text=${text}`;
 }
