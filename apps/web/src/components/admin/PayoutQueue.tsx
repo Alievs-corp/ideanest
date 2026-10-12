@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import {
   EmptyState,
   Field,
@@ -15,6 +15,7 @@ import {
 } from '@ideanest/ui';
 import {
   approvePayout,
+  bankTransferInProgress,
   calculatePayout,
   cancelPayout,
   readPayout,
@@ -23,7 +24,8 @@ import {
   withdrawApproval,
   type Payout,
 } from '../../lib/admin/payouts';
-import { readMembership } from '../../lib/admin/staff';
+import { holds, readMembership, type StaffMembership } from '../../lib/admin/staff';
+import { payoutRefusalFor } from '../../lib/admin/payout-refusals';
 import { consoleMessageFor, shortId } from '../../lib/admin/refusals';
 import { formatMoney } from '../../lib/money';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -81,10 +83,29 @@ import { useDirectoryNames } from './useDirectoryNames';
  * check</strong> — the service decides all three, and `approve()` is idempotent, so what
  * changes here is only what the screen claims about itself.
  *
+ * <h2>A creator paid into a bank account is paid by hand — issue #398</h2>
+ *
+ * <p>The service refuses to `send` a payout whose destination is an IBAN, so for those the file
+ * draws `PayoutBankTransfer` where Send was: start, the account to pay into, and the record from
+ * the statement. While a transfer is in progress the payout cannot be cancelled or lose a
+ * signature, and the file says so beside the two controls rather than offering them.
+ *
  * <h2>Motion: none</h2>
  *
  * The last screen on the platform that should feel eager.
  */
+/**
+ * The "transfer by hand" panel, fetched when a file draws it — #398.
+ *
+ * <p>Most payouts are sent through the provider and never draw it, and bundled with the queue it
+ * put `/admin/payouts` 2.4 KiB over its First Load JS budget. `React.lazy` rather than
+ * `next/dynamic`, for `BasicsPanel`'s measured reason: the file renders only in the browser,
+ * after its read, so there is no server render to switch off.
+ */
+const PayoutBankTransfer = lazy(() =>
+  import('./PayoutBankTransfer').then((module) => ({ default: module.PayoutBankTransfer })),
+);
+
 export interface PayoutQueueProps {
   readonly copy: PayoutQueueCopy;
 }
@@ -117,14 +138,31 @@ export function PayoutQueue({ copy }: PayoutQueueProps) {
     [],
   );
 
-  /* The creators being paid, named — #402. */
+  /* The creators being paid, and whoever started a bank transfer of one, named — #402, #398. */
   const names = useDirectoryNames(
-    queue.data?.payouts.map((payout) => payout.creatorId) ?? [],
+    queue.data?.payouts.flatMap((payout) =>
+      payout.bankTransferStartedBy == null
+        ? [payout.creatorId]
+        : [payout.creatorId, payout.bankTransferStartedBy],
+    ) ?? [],
     queue.data?.payouts.map((payout) => payout.projectId) ?? [],
   );
 
   if (queue.status === 'signed-out' || queue.status === 'forbidden') {
     return <ConsoleRefusal status={queue.status} capability={queue.capability} subject={copy.subject} copy={copy.refusals} />;
+  }
+
+  /*
+   * A bank-transfer write answers the payout as it now stands, and the row takes it without a
+   * read: reloading the queue would unmount the open file, and with it the account the reader
+   * has just been shown and is about to type into a bank's form.
+   */
+  function updated(next: Payout): void {
+    if (queue.data === null) return;
+    queue.set({
+      ...queue.data,
+      payouts: queue.data.payouts.map((payout) => (payout.id === next.id ? next : payout)),
+    });
   }
 
   async function calculate(event: React.FormEvent): Promise<void> {
@@ -270,6 +308,7 @@ export function PayoutQueue({ copy }: PayoutQueueProps) {
                         this one sends them to a creator who has not said where they bank.
                       */}
                       {payout.heldForDestination && <Tag>{copy.destinationHeld}</Tag>}
+                      {bankTransferInProgress(payout) && <Tag>{copy.bankTransfer.inProgressTag}</Tag>}
                       <Tag>{copy.state[payout.state]}</Tag>
                     </span>
                   </div>
@@ -280,9 +319,11 @@ export function PayoutQueue({ copy }: PayoutQueueProps) {
                   <PayoutDetail
                     payoutId={payout.id}
                     readerId={me.data?.accountId ?? null}
+                    membership={me.data}
                     names={names}
                     copy={copy}
                     onChanged={queue.reload}
+                    onUpdated={updated}
                   />
                 )}
               </li>
@@ -345,15 +386,19 @@ function Breakdown({
 function PayoutDetail({
   payoutId,
   readerId,
+  membership,
   names,
   copy,
   onChanged,
+  onUpdated,
 }: {
   readonly payoutId: string;
   readonly readerId: string | null;
+  readonly membership: StaffMembership | null;
   readonly names: DirectoryNames;
   readonly copy: PayoutQueueCopy;
   readonly onChanged: () => void;
+  readonly onUpdated: (payout: Payout) => void;
 }) {
   const file = useConsoleResource(
     (signal) => readPayout(payoutId, signal),
@@ -374,7 +419,7 @@ function PayoutDetail({
       file.reload();
       onChanged();
     } catch (cause) {
-      setError(consoleMessageFor(cause, copy.payoutSubject, copy.refusals));
+      setError(payoutRefusalFor(cause, copy, file.data?.payout));
     } finally {
       setBusy(false);
     }
@@ -402,6 +447,11 @@ function PayoutDetail({
   // the service decides all of this anyway; what these change is what the screen claims.
   const iHaveSigned = readerId !== null && approvals.some((one) => one.approverId === readerId);
   const canApprove = payout.payableNow && !iHaveSigned;
+  // #398. Paid into a bank account by hand rather than sent, and while a transfer is in progress
+  // the money may have left, so neither cancelling nor withdrawing a signature is offered.
+  const byBankTransfer = payout.destinationKind === 'BANK_TRANSFER';
+  const transferring = bankTransferInProgress(payout);
+  const current = file.data;
 
   return (
     <div className="mt-2 rounded-lg border border-white/8 bg-surface-1 p-4">
@@ -527,13 +577,37 @@ function PayoutDetail({
             variant="ghost"
             size="sm"
             className="mb-1"
-            disabled={busy}
+            disabled={busy || transferring}
             onClick={() => void act(() => withdrawApproval(payoutId))}
           >
             {copy.withdrawMine}
           </Pill>
         )}
       </div>
+
+      {byBankTransfer && (
+        <Suspense
+          fallback={
+            <SkeletonGroup label={copy.loadingPayout} className="mt-4 border-t border-white/8 pt-4">
+              <Skeleton height="0.875rem" width="40%" />
+            </SkeletonGroup>
+          }
+        >
+          <PayoutBankTransfer
+            payout={payout}
+            stillNeeded={stillNeeded}
+            canPay={holds(membership, 'APPROVE_PAYOUT')}
+            canReveal={holds(membership, 'READ_BANK_DETAILS')}
+            readerId={readerId}
+            names={names}
+            copy={copy}
+            onUpdated={(next) => {
+              file.set({ ...current, payout: next });
+              onUpdated(next);
+            }}
+          />
+        </Suspense>
+      )}
 
       <div className="mt-4 flex flex-wrap items-end gap-3">
         {/*
@@ -542,28 +616,37 @@ function PayoutDetail({
           label, and the destination hold is in its own alert. There is no longer a field
           here for the reader to fill in, because there is no longer anything on this screen
           that decides where money goes.
+
+          #398: not drawn for a creator paid into a bank account, which the service refuses
+          to send. The panel above is that payout's way out.
         */}
-        <Pill
-          variant="outline"
-          size="sm"
-          className="mb-1"
-          disabled={busy || stillNeeded > 0 || payout.heldForDestination}
-          onClick={() => void act(() => sendPayout(payoutId))}
-        >
-          {stillNeeded > 0
-            ? fillPlaceholders(copy.needsMore, { count: String(stillNeeded) })
-            : copy.send}
-        </Pill>
+        {!byBankTransfer && (
+          <Pill
+            variant="outline"
+            size="sm"
+            className="mb-1"
+            disabled={busy || stillNeeded > 0 || payout.heldForDestination}
+            onClick={() => void act(() => sendPayout(payoutId))}
+          >
+            {stillNeeded > 0
+              ? fillPlaceholders(copy.needsMore, { count: String(stillNeeded) })
+              : copy.send}
+          </Pill>
+        )}
 
         <Pill
           variant="ghost"
           size="sm"
           className="mb-1"
-          disabled={busy}
+          disabled={busy || transferring}
           onClick={() => void act(() => cancelPayout(payoutId))}
         >
           {copy.cancel}
         </Pill>
+
+        {transferring && (
+          <p className="mb-2 text-xs text-white/48">{copy.refusal.PAYOUT_BANK_TRANSFER_IN_PROGRESS}</p>
+        )}
       </div>
 
       {error && (
