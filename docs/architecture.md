@@ -3911,11 +3911,18 @@ collecting it.
 > name, `AWAITING_VERIFICATION` until a person verifies it, hint `**` and the last four digits. A
 > callback about a card nobody began, or one already settled, moves nothing.
 >
-> **Built (#44), the page.** `/settings/payout`, linked from the account's settings, holds both halves:
-> the legal subject form (individual or company, legal name, VÖEN) saved to `/v1/me/legal-subject`,
-> and the card on file with its standing in words and a control that opens the provider's page,
-> returning to `/{locale}/settings/payout?card=returned|failed`. A return re-reads the destination
-> every three seconds for a minute until it changes. No card number is entered on the page.
+> **Built (#44), the page.** `/settings/payout`, linked from the account's settings, holds the
+> legal subject form (individual or company, legal name, VÖEN) saved to `/v1/me/legal-subject`,
+> and what is on file as its masked hint with its standing in words — a name mismatch also says
+> what to do about it. **Since #395 the bank account form is the primary path** (web and app): the
+> IBAN, grouped in fours as it is typed and sent in its electronic form, and the holder's name,
+> which starts as the legal name, `PUT` to `/v1/me/payout-destination/bank-account`. Both
+> clients check the IBAN with `@ideanest/account/iban`, which mirrors `Iban` defect for defect
+> (its test reads `Iban.java`), so a local check and a `MALFORMED_IBAN` refusal show one sentence;
+> once filed the field is emptied and only the hint is shown. The card section — a control that
+> opens the provider's page, returning to `/{locale}/settings/payout?card=returned|failed` — is
+> drawn only when `cardRegistrationAvailable` is true. A return re-reads the destination every
+> three seconds for a minute until it changes. No card number is entered on the page.
 
 ```mermaid
 sequenceDiagram
