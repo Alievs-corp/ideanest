@@ -4,13 +4,14 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
-  "description": "The account rules with one right answer, shared by apps/web and apps/mobile: naming a signed-in device from its user agent, the notification preference table's order and modes, what an inbox notification says and where it goes, survey question order, and how a delivery's status and tracking link are read.",
+  "description": "The account rules with one right answer, shared by apps/web and apps/mobile: naming a signed-in device from its user agent, the notification preference table's order and modes, what an inbox notification says and where it goes, survey question order, how a delivery's status and tracking link are read, and whether an IBAN is one a creator can be paid to.",
   "exports": {
     "./sessions": "./src/sessions.ts",
     "./notifications": "./src/notifications.ts",
     "./surveys": "./src/surveys.ts",
     "./fulfilment": "./src/fulfilment.ts",
-    "./inbox": "./src/inbox.ts"
+    "./inbox": "./src/inbox.ts",
+    "./iban": "./src/iban.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
