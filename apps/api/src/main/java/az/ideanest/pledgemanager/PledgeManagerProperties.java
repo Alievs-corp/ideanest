@@ -1,11 +1,8 @@
 package az.ideanest.pledgemanager;
 
+import az.ideanest.shared.crypto.Keyring;
 import java.time.Duration;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Pattern;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -202,6 +199,9 @@ public record PledgeManagerProperties(Surveys surveys, Addresses addresses, Fulf
      * deployment may not have reached yet — and would do it at the worst moment, which
      * is a rolling deploy that has already replaced half the fleet.
      *
+     * <p>Since #393 the rules are {@link Keyring}'s, shared with every other keyring, and
+     * this record stays where #75 put it so that no deployment's configuration moves.
+     *
      * @param primaryKeyId which key new addresses are sealed under. Rotation is: add
      *     the new key to {@code keys}, deploy, then move this label — so that every
      *     instance can read the new key before any instance writes under it
@@ -212,51 +212,22 @@ public record PledgeManagerProperties(Surveys surveys, Addresses addresses, Fulf
      */
     public record Addresses(String primaryKeyId, Map<String, String> keys) {
 
-        /** AES-256. A shorter key is a configuration mistake rather than a weaker choice. */
-        private static final int KEY_BYTES = 32;
-
-        /** The shape V36's check constraint holds {@code key_id} to. */
-        private static final Pattern KEY_ID = Pattern.compile("^[a-z0-9][a-z0-9._-]{0,62}$");
-
         public static Addresses unconfigured() {
             return new Addresses(null, Map.of());
         }
 
         public Addresses {
-            keys = keys == null ? Map.of() : Map.copyOf(keys);
+            // The rules are every keyring's, so they are Keyring's: blank is
+            // unconfigured, a primary label must name a configured key, and every key
+            // is 32 bytes of base64 under a label V36's check constraint accepts.
+            Keyring validated = new Keyring(primaryKeyId, keys);
+            primaryKeyId = validated.primaryKeyId();
+            keys = validated.keys();
+        }
 
-            // Blank is unconfigured, not a label. A placeholder resolving to an empty
-            // string is what an environment that has not set the variable produces,
-            // and treating it as a name would refuse to start over an absence the
-            // record is designed to tolerate.
-            if (primaryKeyId != null && primaryKeyId.isBlank()) {
-                primaryKeyId = null;
-            }
-            if (primaryKeyId != null) {
-                primaryKeyId = primaryKeyId.trim().toLowerCase(Locale.ROOT);
-                if (!KEY_ID.matcher(primaryKeyId).matches()) {
-                    throw new IllegalArgumentException(
-                            "An address key label is lowercase letters, digits, dot, dash or underscore");
-                }
-                if (!keys.containsKey(primaryKeyId)) {
-                    // Caught at start-up rather than on the first address written,
-                    // because this one *is* a mistake rather than an absence: a
-                    // deployment that named a primary key meant to configure the
-                    // feature, and every write would fail.
-                    throw new IllegalArgumentException(
-                            "The primary address key '" + primaryKeyId + "' is not among the configured keys");
-                }
-            }
-            for (Map.Entry<String, String> entry : keys.entrySet()) {
-                if (!KEY_ID.matcher(entry.getKey()).matches()) {
-                    throw new IllegalArgumentException(
-                            "An address key label is lowercase letters, digits, dot, dash or underscore");
-                }
-                if (decode(entry.getKey(), entry.getValue()).length != KEY_BYTES) {
-                    throw new IllegalArgumentException(
-                            "The address key '" + entry.getKey() + "' is not " + KEY_BYTES + " bytes of base64");
-                }
-            }
+        /** The same keys as the shared cipher reads them. */
+        public Keyring keyring() {
+            return new Keyring(primaryKeyId, keys);
         }
 
         /** Whether this deployment can store an address at all. */
@@ -264,26 +235,10 @@ public record PledgeManagerProperties(Surveys surveys, Addresses addresses, Fulf
             return primaryKeyId != null;
         }
 
-        /**
-         * The key material, decoded once.
-         *
-         * <p>A fresh map each call rather than a cached field, so that the arrays a
-         * caller holds are its own. The cipher asks for this once at construction.
-         */
-        public Map<String, byte[]> decodedKeys() {
-            Map<String, byte[]> decoded = new LinkedHashMap<>();
-            keys.forEach((label, material) -> decoded.put(label, decode(label, material)));
-            return Map.copyOf(decoded);
-        }
-
-        private static byte[] decode(String label, String material) {
-            try {
-                return Base64.getDecoder().decode(material == null ? "" : material.trim());
-            } catch (IllegalArgumentException e) {
-                // The message names the label and never the material, for the reason
-                // AddressInvalidException gives about values in log lines.
-                throw new IllegalArgumentException("The address key '" + label + "' is not valid base64");
-            }
+        @Override
+        public String toString() {
+            // Labels only, for the reason Keyring#toString gives.
+            return "Addresses[primary=" + primaryKeyId + ", keys=" + keys.keySet() + "]";
         }
     }
 }

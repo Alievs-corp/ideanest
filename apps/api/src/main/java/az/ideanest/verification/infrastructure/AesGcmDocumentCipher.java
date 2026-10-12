@@ -17,8 +17,9 @@ import org.springframework.stereotype.Component;
  *
  * <h2>The same envelope as a shipping address, deliberately</h2>
  *
- * <p>{@code AesGcmAddressCipher} makes every one of the arguments below and this class
- * repeats the parameters rather than inventing its own: AES-256-GCM, a 12-byte nonce from
+ * <p>{@code AesGcmAddressCipher} made every one of the arguments below, and since #393
+ * {@code shared.crypto.AesGcmFieldCipher} holds them; this class still repeats the
+ * parameters rather than inventing its own: AES-256-GCM, a 12-byte nonce from
  * {@link SecureRandom} on every seal, a 128-bit tag, no additional authenticated data. One
  * platform with two encryption schemes is one platform whose second scheme is the one
  * nobody reviews.
