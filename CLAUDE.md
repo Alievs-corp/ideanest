@@ -263,6 +263,8 @@ answer. Do not implement around them — the decision changes the design.
 - Read `docs/ui-kit.md` and `docs/motion-system.md` before touching any UI;
   for `apps/mobile`, read the `mobile-design` skill as well, which takes
   precedence where they differ
+- Read the `promo-video` skill (`.claude/skills/promo-video/SKILL.md`) before
+  planning, building or reviewing any promo or marketing video
 - Never invent a colour, radius, or duration. Everything exists as a token
 - Never commit to `main`
 - Never claim something works without running it. "Typecheck passes" means you
