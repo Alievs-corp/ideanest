@@ -460,6 +460,14 @@
           "heldBody": "Ödeme gerçekleşmedi ve hiçbir tutar tahsil edilmedi. Desteğiniz olduğu gibi kaldı, başlattığınız ödeme ise şu zamana kadar açık kalır: {time}. Sonrasında yeniden başlayabilirsiniz.",
           "unappliedTitle": "Artırma uygulanamadı",
           "unappliedBody": "Ödeme, desteğiniz zaten değiştikten sonra gerçekleşti, bu yüzden desteğe eklenmedi. Bu ödeme size otomatik olarak tamamen iade edilir."
+        },
+        "refundPending": {
+          "title": "İade bekleniyor — destek ekibiyle iletişime geçin",
+          "body": "Kart ödemesi geri alınamayacak kadar eski olduğu için bu destekten {amount} size banka havalesiyle iade ediliyor. Destek ekibiyle iletişime geçin ve paranın gönderileceği hesabın IBAN’ını ve hesap sahibinin adını bildirin. Kart bilgilerinizi asla göndermeyin.",
+          "already": "Bunları zaten bildirdiyseniz başka bir şey yapmanıza gerek yok: havale yolda.",
+          "reference": "Bu desteği belirtin: {reference}",
+          "contact": "WhatsApp’tan bize yazın",
+          "message": "Merhaba. {reference} numaralı desteğimin iadesi hakkında yazıyorum."
         }
       },
       "editor": {
@@ -1798,6 +1806,37 @@
           "PENDING": "Beklemede",
           "RESOLVED": "Çözüldü",
           "CLOSED": "Kapandı"
+        },
+        "bankDetails": {
+          "open": "İade için banka hesabını kaydet",
+          "heading": "İade banka hesabı",
+          "intro": "Kart ödemesi geri alınamayacak kadar eski olduğu için desteğin iadesi banka havalesiyle yapılıyorsa bunu kullanın. Destekçinin bu talepte verdiği hesabı kaydedin. Havaleyi finans ekibi yapar ve hesabı kaydeden kişi havaleyi kaydedemez.",
+          "ibanLabel": "IBAN",
+          "ibanHint": "Herhangi bir ülkenin IBAN’ı, destekçinin verdiği şekliyle. Boşluk olabilir.",
+          "holderLabel": "Hesap sahibi",
+          "holderHint": "Bankanın hesapta kayıtlı adı, destekçinin yazdığı şekliyle.",
+          "holderRequired": "Hesap sahibinin adını yazın.",
+          "ticketLabel": "Destek talebi",
+          "ticketHint": "Bu talep. Desteği veren destekçi tarafından açılmış olmalıdır.",
+          "save": "Hesabı kaydet",
+          "saving": "Kaydediliyor…",
+          "cancel": "İptal",
+          "savedTitle": "Hesap kaydedildi",
+          "savedBody": "{amount} için {hint} hesabı kaydedildi. Finans ekibi artık havaleyi yapabilir.",
+          "failedTitle": "Hesap kaydedilmedi",
+          "ibanDefect": {
+            "CHARACTERS": "IBAN yalnızca harf ve rakamlardan oluşur. Diğer karakterleri silin.",
+            "COUNTRY": "IBAN iki harfli bir ülke koduyla başlar ve bu ülke IBAN vermiyor.",
+            "LENGTH": "Bu ülkenin IBAN’ı bu uzunlukta olmaz. Eksik ya da fazla karakter olmadığını kontrol edin.",
+            "FORMAT": "Bu ülkenin IBAN’ı böyle düzenlenmez. Destekçinin gönderdiğiyle karşılaştırın.",
+            "CHECKSUM": "Kontrol basamakları uyuşmuyor. Muhtemelen bir karakter yanlış yazıldı ya da ikisinin yeri değişti.",
+            "COUNTRY_NOT_ACCEPTED": "İade bu ülkenin IBAN’ına gönderilemez."
+          },
+          "errors": {
+            "SUPPORT_TICKET_NOT_FROM_BACKER": "Bu talebi desteği veren destekçi açmadı. Hesabı yalnızca destekçinin kendi talebinden kaydedin.",
+            "NO_REFUND_AWAITING_BANK_DETAILS": "Bu destekte banka havalesiyle iade edilmeyi bekleyen bir şey yok, bu yüzden kaydedilecek hesap da yok.",
+            "ENCRYPTED_STORAGE_UNAVAILABLE": "Şifreli depolama yapılandırılmadığı için banka hesapları şu anda kaydedilemiyor. Hiçbir şey kaydedilmedi."
+          }
         }
       },
       "staff": {
@@ -2218,7 +2257,9 @@
         "state": {
           "REQUESTED": "Talep edildi",
           "SUCCEEDED": "Başarılı",
-          "FAILED": "Başarısız"
+          "FAILED": "Başarısız",
+          "AWAITING_BANK_DETAILS": "Banka bilgileri bekleniyor",
+          "AWAITING_TRANSFER": "Havale bekleniyor"
         },
         "reason": {
           "BACKER_REQUEST": "Destekçi istedi",
@@ -2231,6 +2272,61 @@
           "FRAUD": "Kart sahibi değil",
           "RAISE_NOT_APPLIED": "Uygulanamayan bir artırma",
           "CHARGEBACK": "Ters ibrazla iade edildi"
+        },
+        "awaitingBankDetails": "Sağlayıcının iade süresi geçti. Destek ekibi destekçinin banka hesabını talebinden kaydeder; o zamana kadar havale edilecek bir şey yok.",
+        "awaitingTransfer": "Destekçinin hesabı kayıtlı. Hesabı gösterin, havaleyi IdeyaNest’in banka hesabından yapın, ardından bankanın referansıyla burada kaydedin.",
+        "bankDetailsHeading": "Banka havalesi",
+        "accountOnFile": "Hesap {hint}, talep {ticket}",
+        "detailsRecordedBy": "Hesabı kaydeden: {by}, tarih: {date}",
+        "transferRecorded": "Havale tarihi: {date}, banka referansı: {reference}, kaydeden: {by}",
+        "ibanLabel": "IBAN",
+        "holderLabel": "Hesap sahibi",
+        "ticketLabel": "Destek talebi",
+        "transferAmountLabel": "Havale edilecek tutar",
+        "reveal": {
+          "action": "Hesabı göster",
+          "revealing": "Hesap açılıyor…",
+          "hide": "Hesabı gizle",
+          "audited": "Hesabın açılması denetim kaydına sizin adınızla yazılır. Gizlediğinizde ya da bu sayfadan ayrıldığınızda saklanmaz.",
+          "failed": "Hesap açılamadı. Hiçbir şey gösterilmedi.",
+          "forbidden": "Destekçinin banka hesabını göstermek ISSUE_REFUND gerektirir."
+        },
+        "copy": {
+          "copy": "Kopyala",
+          "copied": "Kopyalandı",
+          "iban": "IBAN’ı kopyala",
+          "holder": "Hesap sahibinin adını kopyala",
+          "amount": "Tutarı kopyala"
+        },
+        "recordTransfer": "Havaleyi kaydet",
+        "recordIntro": "Para IdeyaNest’in banka hesabından çıktıktan sonra havaleyi kaydedin. Bundan sonra iade ödenmiş sayılır.",
+        "bankReference": "Banka referansı",
+        "bankReferenceHint": "Banka ekstresinde göründüğü şekliyle.",
+        "transferredOn": "Valör tarihi",
+        "transferredOnHint": "Paranın IdeyaNest’in hesabından çıktığı gün, Bakü saatiyle. Bugünden sonra olamaz.",
+        "confirmRecord": "{amount} tutarı {date} tarihinde {hint} hesabına {reference} banka referansıyla havale edilmiş olarak kaydedilsin mi? Bundan sonra iade ödenmiş sayılır ve bu geri alınamaz.",
+        "confirmRecordAction": "Kaydet",
+        "recording": "Kaydediliyor…",
+        "cancel": "İptal",
+        "recordedTitle": "Havale kaydedildi",
+        "recordedBody": "{id} desteği için {amount} iade edilmiş sayılır.",
+        "fourEyesTitle": "Bu havaleyi başka biri kaydeder",
+        "fourEyes": "Bu destekçinin banka hesabını siz kaydettiniz, bu yüzden havaleyi finans ekibinden başka biri yapar ve kaydeder. İkisinin ayrı tutulması, kimsenin hem iadenin nereye gideceğini seçip hem de ödendiğini onaylamaması demektir.",
+        "refundByBank": "Banka havalesiyle iade et",
+        "confirmRefundByBank": "Sağlayıcı bu iadeyi reddetti. Kalan tutar bunun yerine banka havalesiyle gönderilsin mi? Yeni bir iade oluşturulur ve destek ekibi destekçinin banka hesabını kaydedene kadar bekler.",
+        "confirmRefundByBankAction": "Banka havalesiyle gönder",
+        "routing": "Yönlendiriliyor…",
+        "routedTitle": "Banka havalesine yönlendirildi",
+        "routedBody": "{id} desteği için {amount} artık destekçinin banka bilgilerini bekliyor.",
+        "errors": {
+          "REFUND_NOT_FOUND": "Bu iade artık yok. Listeyi yenileyin.",
+          "REFUND_NOT_AWAITING_TRANSFER": "Bu iade artık havale beklemiyor: ya henüz hesap kaydedilmedi ya da havale zaten kaydedildi. Listeyi yenileyin.",
+          "REFUND_NOT_FAILED": "Banka havalesiyle yalnızca sağlayıcının reddettiği bir iade gönderilebilir ve bu iade reddedilmiş değil. Listeyi yenileyin.",
+          "REFUND_CHARGE_DISPUTED": "Bu ödeme için açık bir ters ibraz var. Hiçbir şey havale etmeyin: kart ağı bu parayı destekçiye zaten iade ediyor olabilir. Ters ibraz karara bağlanana kadar bekleyin.",
+          "BANK_REFERENCE_TAKEN": "Bu banka referansı başka bir destekçinin iadesi için zaten kayıtlı. Ekstreyi kontrol edin ve bu havalenin referansını girin.",
+          "REFUND_DUTIES_NOT_SEPARATE": "Bu destekçinin banka hesabını siz kaydettiniz, bu yüzden havaleyi finans ekibinden başka biri kaydetmelidir.",
+          "TRANSFER_DATE_IN_FUTURE": "Valör tarihi gelecekte. Havaleyi yapıldıktan sonra kaydedin.",
+          "ENCRYPTED_STORAGE_UNAVAILABLE": "Şifreli depolama yapılandırılmadığı için banka bilgileri şu anda açılamıyor. Hiçbir şey gösterilmedi ya da değiştirilmedi."
         }
       },
       "disputes": {
@@ -5559,7 +5655,8 @@
         "PAID": "Ödendi",
         "FAILED": "Başarısız",
         "CANCELLED": "İptal edildi"
-      }
+      },
+      "refundedNote": "Destekçilere hâlâ banka havalesiyle gönderilmekte olan iadeler de dahildir."
     },
     "surveys": {
       "heading": "Anketler",

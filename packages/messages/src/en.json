@@ -460,6 +460,14 @@
           "heldBody": "The payment did not go through, and nothing was charged. Your pledge is as it was, and the payment you started stays open until {time}; you can start again after that.",
           "unappliedTitle": "The raise could not be applied",
           "unappliedBody": "The payment went through after your pledge had already changed, so it was not added to it. That payment is refunded to you in full, automatically."
+        },
+        "refundPending": {
+          "title": "Refund pending — contact support",
+          "body": "{amount} from this pledge is being returned to you by bank transfer, because the card payment is too old to reverse. Contact support and give the IBAN and the account holder’s name of the account it should go to. Never send card details.",
+          "already": "If you have already given them, there is nothing more to do: the transfer is on its way.",
+          "reference": "Quote this pledge: {reference}",
+          "contact": "Message us on WhatsApp",
+          "message": "Hello. I am writing about the refund of my pledge {reference}."
         }
       },
       "editor": {
@@ -1798,6 +1806,37 @@
           "PENDING": "Pending",
           "RESOLVED": "Resolved",
           "CLOSED": "Closed"
+        },
+        "bankDetails": {
+          "open": "Record a refund bank account",
+          "heading": "Refund bank account",
+          "intro": "Use this when the pledge’s refund is paid by bank transfer because the card payment is too old to reverse. Record the account the backer gave in this ticket. Finance makes the transfer, and whoever records the account cannot also record the transfer.",
+          "ibanLabel": "IBAN",
+          "ibanHint": "Any country’s IBAN, as the backer gave it. Spaces are fine.",
+          "holderLabel": "Account holder",
+          "holderHint": "The name the bank has on the account, as the backer wrote it.",
+          "holderRequired": "Enter the account holder’s name.",
+          "ticketLabel": "Support ticket",
+          "ticketHint": "This ticket. It must be one the pledge’s backer raised.",
+          "save": "Record account",
+          "saving": "Recording…",
+          "cancel": "Cancel",
+          "savedTitle": "Account recorded",
+          "savedBody": "{hint} is on file for {amount}. Finance can now make the transfer.",
+          "failedTitle": "The account was not recorded",
+          "ibanDefect": {
+            "CHARACTERS": "An IBAN has only letters and digits. Remove any other characters.",
+            "COUNTRY": "An IBAN starts with a two-letter country code, and that country does not issue IBANs.",
+            "LENGTH": "That is not the length of an IBAN from this country. Check that no characters are missing or extra.",
+            "FORMAT": "That is not how an IBAN from this country is laid out. Check it against what the backer sent.",
+            "CHECKSUM": "The check digits do not match. A character is probably mistyped, or two are swapped.",
+            "COUNTRY_NOT_ACCEPTED": "A refund cannot be sent to an IBAN from that country."
+          },
+          "errors": {
+            "SUPPORT_TICKET_NOT_FROM_BACKER": "This ticket was not raised by the pledge’s backer. Record an account only from the backer’s own ticket.",
+            "NO_REFUND_AWAITING_BANK_DETAILS": "Nothing on this pledge is waiting to be refunded by bank transfer, so there is no account to record.",
+            "ENCRYPTED_STORAGE_UNAVAILABLE": "Bank accounts cannot be recorded right now because encrypted storage is not configured. Nothing was saved."
+          }
         }
       },
       "staff": {
@@ -2218,7 +2257,9 @@
         "state": {
           "REQUESTED": "Requested",
           "SUCCEEDED": "Succeeded",
-          "FAILED": "Failed"
+          "FAILED": "Failed",
+          "AWAITING_BANK_DETAILS": "Waiting for bank details",
+          "AWAITING_TRANSFER": "Waiting for transfer"
         },
         "reason": {
           "BACKER_REQUEST": "The backer asked",
@@ -2231,6 +2272,61 @@
           "FRAUD": "Not the cardholder",
           "RAISE_NOT_APPLIED": "A raise that could not be applied",
           "CHARGEBACK": "Returned through a chargeback"
+        },
+        "awaitingBankDetails": "Past the provider’s refund window. Support records the backer’s bank account from their ticket; until then there is nothing to transfer.",
+        "awaitingTransfer": "The backer’s account is on file. Reveal it, make the transfer from IdeyaNest’s bank account, then record it here with the bank’s reference.",
+        "bankDetailsHeading": "Bank transfer",
+        "accountOnFile": "Account {hint}, from ticket {ticket}",
+        "detailsRecordedBy": "Account recorded by {by} on {date}",
+        "transferRecorded": "Transferred on {date} with bank reference {reference}, recorded by {by}",
+        "ibanLabel": "IBAN",
+        "holderLabel": "Account holder",
+        "ticketLabel": "Support ticket",
+        "transferAmountLabel": "Amount to transfer",
+        "reveal": {
+          "action": "Reveal account",
+          "revealing": "Opening the account…",
+          "hide": "Hide account",
+          "audited": "Revealing the account is recorded in the audit trail under your name. It is not kept once you hide it or leave this page.",
+          "failed": "The account could not be opened. Nothing was shown.",
+          "forbidden": "Revealing a backer’s bank account needs ISSUE_REFUND."
+        },
+        "copy": {
+          "copy": "Copy",
+          "copied": "Copied",
+          "iban": "Copy the IBAN",
+          "holder": "Copy the account holder’s name",
+          "amount": "Copy the amount"
+        },
+        "recordTransfer": "Record transfer",
+        "recordIntro": "Record the transfer once the money has left IdeyaNest’s bank account. The refund then counts as paid.",
+        "bankReference": "Bank reference",
+        "bankReferenceHint": "Exactly as the bank statement shows it.",
+        "transferredOn": "Value date",
+        "transferredOnHint": "The day the money left IdeyaNest’s account, in Baku time. Not after today.",
+        "confirmRecord": "Record {amount} as transferred to {hint} on {date}, with bank reference {reference}? The refund then counts as paid, and this cannot be undone.",
+        "confirmRecordAction": "Record it",
+        "recording": "Recording…",
+        "cancel": "Cancel",
+        "recordedTitle": "Transfer recorded",
+        "recordedBody": "{amount} on pledge {id} counts as refunded.",
+        "fourEyesTitle": "Somebody else records this transfer",
+        "fourEyes": "You recorded this backer’s bank account, so another member of finance makes and records the transfer. Keeping the two apart means no one person both chooses where a refund goes and confirms that it was paid.",
+        "refundByBank": "Refund by bank transfer",
+        "confirmRefundByBank": "The provider refused this refund. Send what is left of it by bank transfer instead? A new refund is created, and it waits until support records the backer’s bank account.",
+        "confirmRefundByBankAction": "Send it by bank transfer",
+        "routing": "Routing…",
+        "routedTitle": "Routed to a bank transfer",
+        "routedBody": "{amount} on pledge {id} now waits for the backer’s bank details.",
+        "errors": {
+          "REFUND_NOT_FOUND": "That refund no longer exists. Reload the list.",
+          "REFUND_NOT_AWAITING_TRANSFER": "This refund is no longer waiting for a transfer: either no account is on file yet, or the transfer has already been recorded. Reload the list.",
+          "REFUND_NOT_FAILED": "Only a refund the provider refused can be sent by bank transfer, and this one is not refused. Reload the list.",
+          "REFUND_CHARGE_DISPUTED": "The charge is in an open chargeback. Transfer nothing: the card network may already be returning this money to the backer. Wait until the chargeback is decided.",
+          "BANK_REFERENCE_TAKEN": "That bank reference is already recorded for another backer’s refund. Check the statement and enter the reference of this transfer.",
+          "REFUND_DUTIES_NOT_SEPARATE": "You recorded this backer’s bank account, so somebody else in finance must record the transfer.",
+          "TRANSFER_DATE_IN_FUTURE": "The value date is in the future. Record a transfer once it has been made.",
+          "ENCRYPTED_STORAGE_UNAVAILABLE": "Bank details cannot be opened right now because encrypted storage is not configured. Nothing was shown or changed."
         }
       },
       "disputes": {
@@ -5559,7 +5655,8 @@
         "PAID": "Paid",
         "FAILED": "Failed",
         "CANCELLED": "Cancelled"
-      }
+      },
+      "refundedNote": "Includes refunds still on their way to backers by bank transfer."
     },
     "surveys": {
       "heading": "Surveys",

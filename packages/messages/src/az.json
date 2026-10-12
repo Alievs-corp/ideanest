@@ -460,6 +460,14 @@
           "heldBody": "Ödəniş keçmədi və heç nə tutulmadı. Dəstəyiniz əvvəlki kimi qalır, başladığınız ödəniş isə bu vaxtadək açıq qalır: {time}. Ondan sonra yenidən başlaya bilərsiniz.",
           "unappliedTitle": "Artırma tətbiq oluna bilmədi",
           "unappliedBody": "Ödəniş dəstəyiniz artıq dəyişdikdən sonra keçdi, buna görə də dəstəyə əlavə olunmadı. Həmin ödəniş sizə avtomatik olaraq tam qaytarılır."
+        },
+        "refundPending": {
+          "title": "Geri ödəniş gözlənilir — dəstək xidməti ilə əlaqə saxlayın",
+          "body": "Kart ödənişini geri qaytarmaq üçün müddət bitdiyinə görə bu dəstək üzrə {amount} sizə bank köçürməsi ilə qaytarılır. Dəstək xidməti ilə əlaqə saxlayın və pulun göndəriləcəyi hesabın IBAN-ını və hesab sahibinin adını bildirin. Kart məlumatlarını heç vaxt göndərməyin.",
+          "already": "Bunları artıq bildirmisinizsə, başqa heç nə etməyə ehtiyac yoxdur: köçürmə yoldadır.",
+          "reference": "Dəstəyin nömrəsini bildirin: {reference}",
+          "contact": "WhatsApp ilə bizə yazın",
+          "message": "Salam. {reference} nömrəli dəstəyimin geri ödənişi ilə bağlı yazıram."
         }
       },
       "editor": {
@@ -1798,6 +1806,37 @@
           "PENDING": "Gözləyir",
           "RESOLVED": "Həll olunub",
           "CLOSED": "Bağlanıb"
+        },
+        "bankDetails": {
+          "open": "Geri ödəniş üçün bank hesabını qeyd et",
+          "heading": "Geri ödəniş üçün bank hesabı",
+          "intro": "Kart ödənişini geri qaytarmaq üçün çox gec olduğuna görə dəstəyin geri ödənişi bank köçürməsi ilə edilirsə, bundan istifadə edin. Dəstəkçinin bu müraciətdə verdiyi hesabı qeyd edin. Köçürməni maliyyə komandası edir və hesabı qeyd edən əməkdaş köçürməni qeyd edə bilməz.",
+          "ibanLabel": "IBAN",
+          "ibanHint": "İstənilən ölkənin IBAN-ı, dəstəkçi necə veribsə. Boşluqlar ola bilər.",
+          "holderLabel": "Hesab sahibi",
+          "holderHint": "Bankda hesabın üzərində yazılan ad, dəstəkçinin yazdığı kimi.",
+          "holderRequired": "Hesab sahibinin adını yazın.",
+          "ticketLabel": "Dəstək müraciəti",
+          "ticketHint": "Bu müraciət. O, dəstəyin sahibi olan dəstəkçi tərəfindən açılmalıdır.",
+          "save": "Hesabı qeyd et",
+          "saving": "Qeyd edilir…",
+          "cancel": "Ləğv et",
+          "savedTitle": "Hesab qeyd edildi",
+          "savedBody": "{amount} üçün {hint} hesabı qeydə alındı. Maliyyə komandası indi köçürməni edə bilər.",
+          "failedTitle": "Hesab qeyd edilmədi",
+          "ibanDefect": {
+            "CHARACTERS": "IBAN yalnız hərflərdən və rəqəmlərdən ibarətdir. Başqa simvolları silin.",
+            "COUNTRY": "IBAN iki hərfli ölkə kodu ilə başlayır, bu ölkə isə IBAN vermir.",
+            "LENGTH": "Bu ölkənin IBAN-ı bu uzunluqda olmur. Əskik və ya artıq simvol olmadığını yoxlayın.",
+            "FORMAT": "Bu ölkənin IBAN-ı belə qurulmur. Dəstəkçinin göndərdiyi ilə müqayisə edin.",
+            "CHECKSUM": "Yoxlama rəqəmləri uyğun gəlmir. Çox güman, bir simvol səhv yazılıb və ya iki simvolun yeri dəyişib.",
+            "COUNTRY_NOT_ACCEPTED": "Geri ödəniş bu ölkənin IBAN-ına göndərilə bilməz."
+          },
+          "errors": {
+            "SUPPORT_TICKET_NOT_FROM_BACKER": "Bu müraciəti dəstəyin sahibi olan dəstəkçi açmayıb. Hesabı yalnız dəstəkçinin öz müraciətindən qeyd edin.",
+            "NO_REFUND_AWAITING_BANK_DETAILS": "Bu dəstək üzrə bank köçürməsi ilə qaytarılmağı gözləyən heç nə yoxdur, ona görə qeyd ediləcək hesab da yoxdur.",
+            "ENCRYPTED_STORAGE_UNAVAILABLE": "Şifrəli saxlama sazlanmadığı üçün bank hesablarını indi qeyd etmək mümkün deyil. Heç nə saxlanmadı."
+          }
         }
       },
       "staff": {
@@ -2218,7 +2257,9 @@
         "state": {
           "REQUESTED": "Tələb olunub",
           "SUCCEEDED": "Uğurlu",
-          "FAILED": "Uğursuz"
+          "FAILED": "Uğursuz",
+          "AWAITING_BANK_DETAILS": "Bank rekvizitləri gözlənilir",
+          "AWAITING_TRANSFER": "Köçürmə gözlənilir"
         },
         "reason": {
           "BACKER_REQUEST": "Dəstəkçi istədi",
@@ -2231,6 +2272,61 @@
           "FRAUD": "Kart sahibi deyil",
           "RAISE_NOT_APPLIED": "Tətbiq oluna bilməyən artırma",
           "CHARGEBACK": "Geri tələblə qaytarıldı"
+        },
+        "awaitingBankDetails": "Provayderin geri ödəniş müddəti bitib. Dəstək xidməti dəstəkçinin bank hesabını onun müraciətindən qeyd edir; o vaxta qədər köçürüləcək heç nə yoxdur.",
+        "awaitingTransfer": "Dəstəkçinin hesabı qeydə alınıb. Hesabı göstərin, köçürməni IdeyaNest-in bank hesabından edin, sonra bankın istinad nömrəsi ilə burada qeyd edin.",
+        "bankDetailsHeading": "Bank köçürməsi",
+        "accountOnFile": "Hesab: {hint}, müraciət: {ticket}",
+        "detailsRecordedBy": "Hesabı qeyd edən: {by}, tarix: {date}",
+        "transferRecorded": "Köçürmə tarixi: {date}, bank istinadı: {reference}, qeyd edən: {by}",
+        "ibanLabel": "IBAN",
+        "holderLabel": "Hesab sahibi",
+        "ticketLabel": "Dəstək müraciəti",
+        "transferAmountLabel": "Köçürüləcək məbləğ",
+        "reveal": {
+          "action": "Hesabı göstər",
+          "revealing": "Hesab açılır…",
+          "hide": "Hesabı gizlət",
+          "audited": "Hesabın açılması audit jurnalında sizin adınızla qeydə alınır. Gizlətdikdən və ya bu səhifədən çıxdıqdan sonra saxlanmır.",
+          "failed": "Hesab açılmadı. Heç nə göstərilmədi.",
+          "forbidden": "Dəstəkçinin bank hesabını göstərmək üçün ISSUE_REFUND lazımdır."
+        },
+        "copy": {
+          "copy": "Kopyala",
+          "copied": "Kopyalandı",
+          "iban": "IBAN-ı kopyala",
+          "holder": "Hesab sahibinin adını kopyala",
+          "amount": "Məbləği kopyala"
+        },
+        "recordTransfer": "Köçürməni qeyd et",
+        "recordIntro": "Pul IdeyaNest-in bank hesabından çıxdıqdan sonra köçürməni qeyd edin. Bundan sonra geri ödəniş ödənilmiş sayılır.",
+        "bankReference": "Bank istinadı",
+        "bankReferenceHint": "Bank çıxarışında necə göstərilirsə, eynilə elə.",
+        "transferredOn": "Valyutalaşma tarixi",
+        "transferredOnHint": "Pulun IdeyaNest-in hesabından çıxdığı gün, Bakı vaxtı ilə. Bu gündən gec ola bilməz.",
+        "confirmRecord": "{amount} məbləği {hint} hesabına köçürülmüş kimi qeyd edilsin? Tarix: {date}, bank istinadı: {reference}. Bundan sonra geri ödəniş ödənilmiş sayılır və bunu geri almaq olmur.",
+        "confirmRecordAction": "Qeyd et",
+        "recording": "Qeyd edilir…",
+        "cancel": "Ləğv et",
+        "recordedTitle": "Köçürmə qeyd edildi",
+        "recordedBody": "{id} dəstəyi üzrə {amount} geri qaytarılmış sayılır.",
+        "fourEyesTitle": "Bu köçürməni başqası qeyd edir",
+        "fourEyes": "Bu dəstəkçinin bank hesabını siz qeyd etmisiniz, ona görə köçürməni maliyyə komandasından başqa bir əməkdaş edir və qeyd edir. Bu iki işin ayrı olması o deməkdir ki, heç kim həm geri ödənişin hara gedəcəyini seçib, həm də onun ödənildiyini təsdiqləmir.",
+        "refundByBank": "Bank köçürməsi ilə qaytar",
+        "confirmRefundByBank": "Provayder bu geri ödənişi rədd etdi. Qalan məbləğ bunun əvəzinə bank köçürməsi ilə göndərilsin? Yeni geri ödəniş yaradılır və dəstək xidməti dəstəkçinin bank hesabını qeyd edənə qədər gözləyir.",
+        "confirmRefundByBankAction": "Bank köçürməsi ilə göndər",
+        "routing": "Yönləndirilir…",
+        "routedTitle": "Bank köçürməsinə yönləndirildi",
+        "routedBody": "{id} dəstəyi üzrə {amount} indi dəstəkçinin bank rekvizitlərini gözləyir.",
+        "errors": {
+          "REFUND_NOT_FOUND": "Bu geri ödəniş artıq mövcud deyil. Siyahını yeniləyin.",
+          "REFUND_NOT_AWAITING_TRANSFER": "Bu geri ödəniş artıq köçürmə gözləmir: ya hələ hesab qeydə alınmayıb, ya da köçürmə artıq qeyd edilib. Siyahını yeniləyin.",
+          "REFUND_NOT_FAILED": "Bank köçürməsi ilə yalnız provayderin rədd etdiyi geri ödəniş göndərilə bilər, bu isə rədd edilməyib. Siyahını yeniləyin.",
+          "REFUND_CHARGE_DISPUTED": "Bu ödəniş üzrə açıq geri tələb var. Heç nə köçürməyin: kart şəbəkəsi bu pulu artıq dəstəkçiyə qaytarmaqda ola bilər. Geri tələb üzrə qərar verilənə qədər gözləyin.",
+          "BANK_REFERENCE_TAKEN": "Bu bank istinadı artıq başqa dəstəkçinin geri ödənişi üçün qeyd edilib. Çıxarışı yoxlayın və bu köçürmənin istinadını daxil edin.",
+          "REFUND_DUTIES_NOT_SEPARATE": "Bu dəstəkçinin bank hesabını siz qeyd etmisiniz, ona görə köçürməni maliyyə komandasından başqası qeyd etməlidir.",
+          "TRANSFER_DATE_IN_FUTURE": "Valyutalaşma tarixi gələcəkdədir. Köçürməni yalnız edildikdən sonra qeyd edin.",
+          "ENCRYPTED_STORAGE_UNAVAILABLE": "Şifrəli saxlama sazlanmadığı üçün bank rekvizitlərini indi açmaq mümkün deyil. Heç nə göstərilmədi və dəyişdirilmədi."
         }
       },
       "disputes": {
@@ -5559,7 +5655,8 @@
         "PAID": "Ödənilib",
         "FAILED": "Alınmadı",
         "CANCELLED": "Ləğv edilib"
-      }
+      },
+      "refundedNote": "Dəstəkçilərə hələ bank köçürməsi ilə qaytarılmaqda olan məbləğlər də daxildir."
     },
     "surveys": {
       "heading": "Sorğular",
