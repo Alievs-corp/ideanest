@@ -1,5 +1,7 @@
 package az.ideanest.shared.api;
 
+import az.ideanest.shared.crypto.FieldEncryptionNotConfiguredException;
+import az.ideanest.shared.crypto.FieldUnreadableException;
 import az.ideanest.shared.idempotency.IdempotencyKeyReusedException;
 import az.ideanest.shared.idempotency.IdempotentRequestInProgressException;
 import az.ideanest.shared.idempotency.MalformedIdempotencyKeyException;
@@ -12,6 +14,8 @@ import az.ideanest.shared.ratelimit.RateLimits;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -40,6 +44,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  */
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     /**
      * How long a client is told to wait before retrying a request whose first attempt
@@ -190,6 +196,49 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(MaintenanceInProgressException.class)
     public ResponseEntity<MaintenanceProblem> handleMaintenance(MaintenanceInProgressException exception) {
         return MaintenanceProblem.response(exception.window(), exception.retryAfterSeconds());
+    }
+
+    /**
+     * 503 when a keyring has no key — #393.
+     *
+     * <p>The shipping-address endpoints have answered this way since #75, and every keyring
+     * after them answers the same: the caller did nothing wrong, the platform is unable to
+     * store this kind of data until an operator sets a key, and every other endpoint keeps
+     * working. Logged at {@code error} for that last reason — nothing else will notice. The
+     * log names the property; the body does not, because a deployment's configuration is
+     * not the caller's business.
+     */
+    @ExceptionHandler(FieldEncryptionNotConfiguredException.class)
+    public ProblemDetail handleEncryptionNotConfigured(FieldEncryptionNotConfiguredException exception) {
+        log.error(
+                "A value could not be stored: {}.primary-key-id is not configured. Writes that need it are"
+                        + " refused until it is, because storing the value unencrypted would break §17.4"
+                        + " silently.",
+                exception.keyring());
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        problem.setType(URI.create("https://ideanest.az/problems/encrypted-storage-unavailable"));
+        problem.setTitle("This cannot be stored right now");
+        problem.setDetail("This platform is not currently able to store this information. Please try again later.");
+        problem.setProperty("code", "ENCRYPTED_STORAGE_UNAVAILABLE");
+        return problem;
+    }
+
+    /**
+     * 500 when an encrypted value cannot be sealed or opened.
+     *
+     * <p>Never an empty value, for the reason {@link FieldUnreadableException} gives. The
+     * exception carries the key label and keyring, which belong in the log and not in the
+     * response.
+     */
+    @ExceptionHandler(FieldUnreadableException.class)
+    public ProblemDetail handleFieldUnreadable(FieldUnreadableException exception) {
+        log.error("An encrypted value could not be read", exception);
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        problem.setType(URI.create("https://ideanest.az/problems/encrypted-value-unreadable"));
+        problem.setTitle("This could not be read");
+        problem.setDetail("We could not read this information. Please contact support rather than entering it again.");
+        problem.setProperty("code", "ENCRYPTED_VALUE_UNREADABLE");
+        return problem;
     }
 
     @Override
