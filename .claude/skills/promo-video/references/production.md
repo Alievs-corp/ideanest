@@ -14,11 +14,12 @@ apps/promo/
   captures.json         source recordings, segments, stills, crops and UI points (capture px)
   LICENSES.md           every asset and its terms; publish nothing while a row is open
   scripts/
-    prepare_media.py    recordings -> public/media (CFR 60 clips, stills, crops, grain)
+    prepare_media.py    recordings -> public/media (CFR 60 clips, their JPEG frames, stills, crops, grain)
     soundtrack.py       synthesises music + SFX from src/timeline.json, loudnorm to -14 LUFS
     render.mjs          render -> faststart -> poster, per language
     qa.py               specs, loudness, flash count, contact sheet, pause frames
     stills.mjs          one bundle, many half-size stills for review
+    publish.py          720p phone cut + JPEG poster, upload to media/promo/v<n>/ in the bucket
   src/
     index.ts, Root.tsx  one <Composition> per film x aspect x language
     timeline.json       scene spans, cues and sound cues in frames (film and soundtrack read it)
@@ -107,8 +108,11 @@ FF=ffmpeg   # or: python -c "import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmp
 $FF -i raw/shot-create.mp4 -vf fps=60 -c:v libx264 -crf 12 -preset slow -pix_fmt yuv420p -an shot-create.mp4
 ```
 
-Play captures with `<OffthreadVideo>`; speed up at most 1.5× and remove dead time by
-cutting, not by ramping.
+Show captures as **JPEG frame sequences**, not as video: `prepare_media.py` writes every
+frame of every clip to `public/media/frames/<id>/`, and `ClipScreen` shows the frame for the
+current time. `<OffthreadVideo>` failed renders with "No frame found at position" on frames
+that exist in the file, intermittently and more often at higher concurrency (2026-10-12); an
+image per frame cannot. Speed up at most 1.5× and remove dead time by cutting, not ramping.
 
 ## 4. Music and sound
 

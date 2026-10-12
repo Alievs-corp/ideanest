@@ -144,8 +144,16 @@ makes the film look like a template.
   positions with opacity falling from 0.35 to 0.03 (`@remotion/motion-blur` `<Trail>`, or
   by hand).
 - **Motion blur:** wrap whips, fast pop-outs and the spark's flight in
-  `@remotion/motion-blur`'s `<CameraMotionBlur>` (samples 10, shutter 180°). Render time
-  grows with samples; preview with blur off.
+  `@remotion/motion-blur`'s `<CameraMotionBlur>` (samples 6, shutter 180°). Render time
+  grows with samples; preview with blur off. Two rules learned the hard way (2026-10-12):
+  - **Compute the moving value inside the blurred subtree.** `CameraMotionBlur` renders its
+    children at sub-frame times through the frame context; a pose computed by the parent
+    and passed down as a prop is the same in every sample, so nothing blurs. Pass a function
+    (`<Device pose={montagePose} />`) and let the child call it with its own frame.
+  - **Never ask a video for a sub-frame.** Remotion's compositor can fail with "No frame
+    found at position" for a time between two frames, and it does so only sometimes. `Device`
+    wraps its screen in `<Freeze frame={Math.floor(frame)}>`, so the capture holds a whole
+    frame while the body moves.
 - **Depth of field:** blur only the background plate and only during push-ins. UI text
   is never blurred while it is meant to be read.
 - **Grain:** a static, full-frame noise texture at opacity 0.035, shifted by a random

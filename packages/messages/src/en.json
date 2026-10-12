@@ -5308,6 +5308,13 @@
       "metaDescription": "Backing a campaign, running one, and what happens between a pledge and a parcel on IdeyaNest.",
       "title": "How it works",
       "summary": "What happens between finding a campaign and holding the thing it funded.",
+      "film": {
+        "title": "IdeyaNest in 30 seconds",
+        "play": "Watch the film",
+        "playName": "Watch the promo film, 30 seconds",
+        "label": "IdeyaNest promo film",
+        "duration": "0:30"
+      },
       "backing": {
         "heading": "If you are backing something",
         "first": "Choose a reward tier, or pledge without one. <b>You are charged when you pledge</b>, and the money is held on the platform’s account. A pledge cannot be cancelled or lowered; while the campaign is taking pledges you can raise it with a higher tier, an add-on or a larger amount, and only the difference is charged, at once.",

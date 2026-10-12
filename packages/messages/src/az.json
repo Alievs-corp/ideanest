@@ -5308,6 +5308,13 @@
       "metaDescription": "Kampaniyaya dəstək olmaq, kampaniya aparmaq və IdeyaNest-də dəstəklə bağlama arasında nə baş verir.",
       "title": "Necə işləyir",
       "summary": "Kampaniyanı tapmaqla onun maliyyələşdirdiyi şeyi əldə etmək arasında nə baş verir.",
+      "film": {
+        "title": "30 saniyədə IdeyaNest",
+        "play": "Videonu izlə",
+        "playName": "Tanıtım videosunu izlə, 30 saniyə",
+        "label": "IdeyaNest tanıtım videosu",
+        "duration": "0:30"
+      },
       "backing": {
         "heading": "Əgər nəyisə dəstəkləyirsinizsə",
         "first": "Mükafat pilləsi seçin və ya mükafatsız dəstək olun. <b>Pul dəstək olduğunuz anda tutulur</b> və platformanın hesabında saxlanılır. Dəstəyi ləğv etmək və ya azaltmaq olmur; kampaniya dəstək qəbul etdiyi müddətdə onu daha yüksək pillə, əlavə və ya daha böyük məbləğlə artıra bilərsiniz, bu zaman yalnız fərq dərhal tutulur.",

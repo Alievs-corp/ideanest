@@ -4,11 +4,11 @@ import { colors, DEVICE, IPHONE_BUTTONS, shadow } from '../theme';
 const { body, bodyRadius, depth, mm } = DEVICE;
 const LAYERS = Math.round(depth / 2);
 
-function rimShade(u: number): number {
+function rimLayer(u: number): CSSProperties {
   const edge = Math.min(u, 1 - u);
-  if (edge < 0.06) return 1.9;
-  if (edge < 0.12) return 1.35;
-  return 1.05 + 0.12 * Math.cos(u * Math.PI * 2);
+  if (edge < 0.06) return { background: colors.whiteSurface, opacity: 0.3 };
+  if (edge < 0.12) return { background: colors.whiteSurface, opacity: 0.18 };
+  return { background: Math.abs(u - 0.5) < 0.2 ? colors.surface4 : colors.surface3 };
 }
 
 export function Rim() {
@@ -24,8 +24,7 @@ export function Rim() {
               position: 'absolute',
               inset: 0,
               borderRadius: bodyRadius,
-              background: colors.surface4,
-              filter: `brightness(${rimShade(u)})`,
+              ...rimLayer(u),
               transform: `translateZ(${z}px)`,
               boxShadow: i === 0 ? shadow.float : undefined,
             }}
@@ -53,8 +52,7 @@ function ButtonBlock({ side, from, to }: { side: 'left' | 'right'; from: number;
           width: 14,
           left: side === 'right' ? body.width - 9 : -5,
           borderRadius: 6,
-          background: colors.surface4,
-          filter: `brightness(${u < 0.15 || u > 0.85 ? 1.7 : 1.25})`,
+          background: u < 0.15 || u > 0.85 ? colors.textTertiary : colors.surface4,
           transform: `translateZ(${z}px)`,
         };
         return <div key={i} style={style} />;
@@ -87,8 +85,7 @@ function Lens({ x, y, size }: { x: number; y: number; size: number }) {
         height: size,
         borderRadius: '50%',
         background: colors.surface4,
-        filter: 'brightness(1.5)',
-        boxShadow: shadow.panel,
+        boxShadow: `${shadow.panel}, inset 0 0 0 2px ${colors.borderStrong}`,
       }}
     >
       <div
@@ -97,7 +94,6 @@ function Lens({ x, y, size }: { x: number; y: number; size: number }) {
           inset: size * 0.09,
           borderRadius: '50%',
           background: colors.black,
-          filter: 'brightness(0.66)',
         }}
       />
       <div

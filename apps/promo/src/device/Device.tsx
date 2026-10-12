@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, Freeze, interpolate, useCurrentFrame } from 'remotion';
 import { PERSPECTIVE, poseTransform, SCREEN_Z, type Pose } from '../camera';
 import { ease } from '../motion';
 import { colors, DEVICE, FRAME } from '../theme';
@@ -7,7 +7,7 @@ import { Back, Buttons, Rim } from './Body';
 import { StatusBar } from './StatusBar';
 
 interface DeviceProps {
-  pose: Pose;
+  pose: Pose | ((frame: number) => Pose);
   screen: ReactNode;
   overlay?: ReactNode;
   above?: ReactNode;
@@ -18,6 +18,7 @@ const GLASS_INSET = 3;
 
 export function Device({ pose, screen, overlay, above, sweepAt }: DeviceProps) {
   const frame = useCurrentFrame();
+  const posed = typeof pose === 'function' ? pose(frame) : pose;
   const { body, screen: s, bezel, bodyRadius, screenRadius, depth } = DEVICE;
   const sweep =
     sweepAt === undefined
@@ -40,7 +41,7 @@ export function Device({ pose, screen, overlay, above, sweepAt }: DeviceProps) {
           top: FRAME.height / 2 - body.height / 2,
           width: body.width,
           height: body.height,
-          transform: poseTransform(pose),
+          transform: poseTransform(posed),
           transformStyle: 'preserve-3d',
         }}
       >
@@ -73,7 +74,7 @@ export function Device({ pose, screen, overlay, above, sweepAt }: DeviceProps) {
         >
           <StatusBar />
           <div style={{ position: 'relative', width: s.width, height: s.height - DEVICE.statusBar }}>
-            {screen}
+            <Freeze frame={Math.floor(frame)}>{screen}</Freeze>
             {overlay}
           </div>
           <div

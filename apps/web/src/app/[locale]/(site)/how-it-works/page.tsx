@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Link } from '../../../../i18n/navigation';
+import { PromoFilm } from '../../../../components/content/PromoFilm';
 import { StaticPage } from '../../../../components/content/StaticPage';
 import { localeOrDefault } from '../../../../lib/i18n/locale';
 import { publicPageMetadata } from '../../../../lib/seo/metadata';
@@ -48,7 +49,8 @@ export async function generateMetadata({
 const INLINE_LINK = 'text-white underline underline-offset-4';
 const BOLD = (chunks: ReactNode) => <strong className="font-medium text-white">{chunks}</strong>;
 
-export default async function HowItWorksPage() {
+export default async function HowItWorksPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const t = await getTranslations('static.howItWorks');
 
   /*
@@ -64,6 +66,8 @@ export default async function HowItWorksPage() {
 
   return (
     <StaticPage title={t('title')} summary={t('summary')}>
+      <PromoFilm locale={localeOrDefault(locale)} />
+
       <h2>{t('backing.heading')}</h2>
       <p>{t.rich('backing.first', { b: BOLD })}</p>
       <p>{t('backing.second')}</p>

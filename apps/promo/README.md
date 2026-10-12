@@ -30,6 +30,18 @@ pnpm studio            # preview and scrub
 node scripts/stills.mjs az 140 790   # half-size review stills, one bundle
 ```
 
+## Publishing to the site and the app
+
+The web's `/how-it-works` and the app's How it works screen play the film from the media
+bucket (`@ideanest/messages/promo-film` builds the addresses). After a new render:
+
+```bash
+PROMO_S3_CREDENTIALS="<file: access key, then secret key>" python scripts/publish.py <version> az en ru
+```
+
+then set `PROMO_FILM_VERSION` to the same `<version>`. Each version is a new folder, so
+caches never serve an old cut.
+
 `render` writes three files per language: the CRF 16 master (about 175 MB, because the
 film grain defeats compression), the delivery file (16 Mbps H.264 High, TV-range bt709,
 AAC 320k, faststart; about 55 MB) and the poster frame. Upload the delivery file.
