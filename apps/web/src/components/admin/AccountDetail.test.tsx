@@ -9,9 +9,17 @@ import {
   readUser,
   readUserPledges,
   type AdminAccountSubscriptions,
+  type AdminPayoutDestination,
   type AdminUser,
   type AdminUserPledge,
 } from '../../lib/admin/api';
+import {
+  rejectPayoutDestination,
+  revealPayoutBankAccount,
+  verifyPayoutDestination,
+} from '../../lib/admin/payout-destinations';
+import { ROLE_CAPABILITIES, type StaffMembership } from '../../lib/admin/staff';
+import { ConsoleMembershipProvider } from './ConsoleMembership';
 import { listCampaigns, type DirectoryCampaign } from '../../lib/admin/campaigns';
 import { AccountDetail } from './AccountDetail';
 import { translatorFor } from '../../test-copy';
@@ -40,6 +48,13 @@ vi.mock('../../lib/admin/api', async (importOriginal) => {
   };
 });
 
+vi.mock('../../lib/admin/payout-destinations', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/admin/payout-destinations')>()),
+  verifyPayoutDestination: vi.fn(),
+  rejectPayoutDestination: vi.fn(),
+  revealPayoutBankAccount: vi.fn(),
+}));
+
 vi.mock('../../lib/admin/campaigns', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/admin/campaigns')>();
   return { ...actual, listCampaigns: vi.fn() };
@@ -50,6 +65,9 @@ const readUserPledgesMock = vi.mocked(readUserPledges);
 const readAccountSubscriptionsMock = vi.mocked(readAccountSubscriptions);
 const readAccountLegalSubjectMock = vi.mocked(readAccountLegalSubject);
 const readAccountPayoutDestinationMock = vi.mocked(readAccountPayoutDestination);
+const verifyPayoutDestinationMock = vi.mocked(verifyPayoutDestination);
+const rejectPayoutDestinationMock = vi.mocked(rejectPayoutDestination);
+const revealPayoutBankAccountMock = vi.mocked(revealPayoutBankAccount);
 const listCampaignsMock = vi.mocked(listCampaigns);
 
 const USER_ID = 'aaaaaaaa-0000-4000-8000-000000000001';
@@ -448,5 +466,203 @@ describe('the VÖEN and business card a creator attached', () => {
 
     expect(within(section).getByText(COPY.cardFailed)).toBeInTheDocument();
     expect(within(section).getByText(COPY.taxIdMissing)).toBeInTheDocument();
+  });
+});
+
+describe('the payout destination on the account — issue #396', () => {
+  const WORDS = COPY.destination;
+
+  const BANK_ACCOUNT: AdminPayoutDestination = {
+    creatorId: USER_ID,
+    recorded: true,
+    standing: 'AWAITING_VERIFICATION',
+    kind: 'BANK_TRANSFER',
+    provider: 'BANK_TRANSFER',
+    holderName: 'AYAN MAMMADOVA',
+    displayHint: 'AZ21…1944',
+  };
+
+  const IBAN = 'AZ21NABZ00000000137010001944';
+
+  /** COMPLIANCE's capabilities, and the account read that lets this screen open at all. */
+  const REVIEWER: StaffMembership = {
+    accountId: '0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0',
+    staff: true,
+    bootstrapped: false,
+    roles: ['COMPLIANCE', 'MODERATOR'],
+    capabilities: [...ROLE_CAPABILITIES.COMPLIANCE, ...ROLE_CAPABILITIES.MODERATOR],
+  };
+
+  function renderAs(membership: StaffMembership | null) {
+    return render(
+      <ConsoleMembershipProvider given={{ status: 'ready', membership }}>
+        <AccountDetail userId={USER_ID} copy={COPY} />
+      </ConsoleMembershipProvider>,
+    );
+  }
+
+  async function panel(): Promise<HTMLElement> {
+    const heading = await screen.findByRole('heading', { name: COPY.payoutHeading });
+    const section = heading.closest('section');
+    if (section === null) throw new Error('the payout heading is not inside its section');
+    await waitFor(() => expect(within(section).queryByText(COPY.loadingPayout)).not.toBeInTheDocument());
+    return section;
+  }
+
+  function word(table: Readonly<Record<string, string>>, key: string): string {
+    const found = table[key];
+    if (found === undefined) throw new Error(`the catalogue has no word for ${key}`);
+    return found;
+  }
+
+  beforeEach(() => {
+    readAccountPayoutDestinationMock.mockResolvedValue(BANK_ACCOUNT);
+    revealPayoutBankAccountMock.mockResolvedValue({
+      creatorId: USER_ID,
+      iban: IBAN,
+      holderName: 'AYAN MAMMADOVA',
+      displayHint: 'AZ21…1944',
+    });
+  });
+
+  it('says it is a bank account and shows only the masked hint', async () => {
+    renderAs(REVIEWER);
+    const section = await panel();
+
+    expect(within(section).getByText(word(WORDS.kind, 'BANK_TRANSFER'))).toBeInTheDocument();
+    expect(within(section).getByText('AZ21…1944')).toBeInTheDocument();
+    expect(within(section).queryByText(/NABZ/)).not.toBeInTheDocument();
+  });
+
+  it('reads the IBAN on the press and not before, and says first that it is audited', async () => {
+    const user = userEvent.setup();
+    renderAs(REVIEWER);
+    const section = await panel();
+
+    const reveal = within(section).getByRole('button', { name: WORDS.reveal.action });
+    expect(within(section).getByText(WORDS.reveal.audited)).toBeInTheDocument();
+    expect(reveal).toHaveAccessibleDescription(WORDS.reveal.audited);
+    expect(revealPayoutBankAccountMock).not.toHaveBeenCalled();
+
+    await user.click(reveal);
+
+    expect(await within(section).findByText('AZ21 NABZ 0000 0000 1370 1000 1944')).toBeInTheDocument();
+    expect(within(section).getByText(WORDS.reveal.holderLabel)).toBeInTheDocument();
+    expect(revealPayoutBankAccountMock).toHaveBeenCalledTimes(1);
+    expect(revealPayoutBankAccountMock).toHaveBeenCalledWith(USER_ID, expect.anything());
+  });
+
+  it('keeps nothing once hidden: seeing it again is another audited read', async () => {
+    const user = userEvent.setup();
+    renderAs(REVIEWER);
+    const section = await panel();
+
+    await user.click(within(section).getByRole('button', { name: WORDS.reveal.action }));
+    await within(section).findByText('AZ21 NABZ 0000 0000 1370 1000 1944');
+
+    await user.click(within(section).getByRole('button', { name: WORDS.reveal.hide }));
+    expect(within(section).queryByText('AZ21 NABZ 0000 0000 1370 1000 1944')).not.toBeInTheDocument();
+
+    await user.click(within(section).getByRole('button', { name: WORDS.reveal.action }));
+    await within(section).findByText('AZ21 NABZ 0000 0000 1370 1000 1944');
+    expect(revealPayoutBankAccountMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not offer the reveal without READ_BANK_DETAILS', async () => {
+    renderAs({ ...REVIEWER, capabilities: REVIEWER.capabilities.filter((c) => c !== 'READ_BANK_DETAILS') });
+    const section = await panel();
+
+    expect(within(section).queryByRole('button', { name: WORDS.reveal.action })).not.toBeInTheDocument();
+    // The decision is still offered: verifying is a different capability from reading the number.
+    expect(within(section).getByRole('button', { name: WORDS.decision.verify })).toBeInTheDocument();
+  });
+
+  it('does not offer the reveal for a provider card, whose number was never here', async () => {
+    readAccountPayoutDestinationMock.mockResolvedValue({
+      ...BANK_ACCOUNT,
+      kind: 'PROVIDER_TOKEN',
+      provider: 'PAYRIFF',
+      displayHint: '•••• 4242',
+    });
+    renderAs(REVIEWER);
+    const section = await panel();
+
+    expect(within(section).getByText(word(WORDS.kind, 'PROVIDER_TOKEN'))).toBeInTheDocument();
+    expect(within(section).queryByRole('button', { name: WORDS.reveal.action })).not.toBeInTheDocument();
+  });
+
+  it('says there is no bank account when the service finds none', async () => {
+    const user = userEvent.setup();
+    revealPayoutBankAccountMock.mockRejectedValue(
+      new ApiError(404, { status: 404, code: 'PAYOUT_BANK_ACCOUNT_NOT_FOUND', title: 'No bank account' }),
+    );
+    renderAs(REVIEWER);
+    const section = await panel();
+
+    await user.click(within(section).getByRole('button', { name: WORDS.reveal.action }));
+
+    expect(await within(section).findByText(WORDS.reveal.notFound)).toBeInTheDocument();
+  });
+
+  it('verifies on the second press and redraws from the answer', async () => {
+    const user = userEvent.setup();
+    verifyPayoutDestinationMock.mockResolvedValue({ ...BANK_ACCOUNT, standing: 'VERIFIED' });
+    renderAs(REVIEWER);
+    const section = await panel();
+
+    await user.click(within(section).getByRole('button', { name: WORDS.decision.verify }));
+    expect(verifyPayoutDestinationMock).not.toHaveBeenCalled();
+    await user.click(within(section).getByRole('button', { name: WORDS.decision.confirmVerifyAction }));
+
+    await waitFor(() => expect(verifyPayoutDestinationMock).toHaveBeenCalledWith(USER_ID));
+    expect(await within(section).findByText(word(COPY.cardStanding, 'VERIFIED'))).toBeInTheDocument();
+  });
+
+  it('rejects with the reason the creator will be shown', async () => {
+    const user = userEvent.setup();
+    rejectPayoutDestinationMock.mockResolvedValue({
+      ...BANK_ACCOUNT,
+      standing: 'REJECTED',
+      rejectionReason: 'SUSPECTED_FORGERY',
+    });
+    renderAs(REVIEWER);
+    const section = await panel();
+
+    await user.click(within(section).getByRole('button', { name: WORDS.decision.reject }));
+    await user.selectOptions(
+      within(section).getByLabelText(new RegExp(WORDS.decision.reasonLabel)),
+      'SUSPECTED_FORGERY',
+    );
+    await user.click(within(section).getByRole('button', { name: WORDS.decision.confirmReject }));
+
+    await waitFor(() => expect(rejectPayoutDestinationMock).toHaveBeenCalledWith(USER_ID, 'SUSPECTED_FORGERY'));
+    expect(await within(section).findByText(word(COPY.cardStanding, 'REJECTED'))).toBeInTheDocument();
+    expect(
+      within(section).getByText(new RegExp(word(WORDS.rejectionReason, 'SUSPECTED_FORGERY'))),
+    ).toBeInTheDocument();
+  });
+
+  it('says why a name mismatch cannot be verified when the service refuses it', async () => {
+    const user = userEvent.setup();
+    verifyPayoutDestinationMock.mockRejectedValue(
+      new ApiError(409, { status: 409, code: 'DESTINATION_NAME_MISMATCH', title: 'Name mismatch' }),
+    );
+    renderAs(REVIEWER);
+    const section = await panel();
+
+    await user.click(within(section).getByRole('button', { name: WORDS.decision.verify }));
+    await user.click(within(section).getByRole('button', { name: WORDS.decision.confirmVerifyAction }));
+
+    expect(await within(section).findByText(WORDS.decision.nameMismatch)).toBeInTheDocument();
+    expect(within(section).getByText(word(COPY.cardStanding, 'AWAITING_VERIFICATION'))).toBeInTheDocument();
+  });
+
+  it('offers no decision when nothing is on file', async () => {
+    readAccountPayoutDestinationMock.mockResolvedValue({ creatorId: USER_ID, recorded: false, standing: 'NONE' });
+    renderAs(REVIEWER);
+    const section = await panel();
+
+    expect(within(section).queryByRole('button', { name: WORDS.decision.verify })).not.toBeInTheDocument();
+    expect(within(section).queryByRole('button', { name: WORDS.reveal.action })).not.toBeInTheDocument();
   });
 });

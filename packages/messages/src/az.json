@@ -689,6 +689,7 @@
       "/admin/ledger": "Baş kitab",
       "/admin/reconciliation": "Uzlaşdırma",
       "/admin/payouts": "Ödənişlər",
+      "/admin/payout-destinations": "Ödəniş rekvizitləri",
       "/admin/refunds": "Geri qaytarmalar",
       "/admin/disputes": "Geri tələblər",
       "/admin/fees": "Komissiyalar",
@@ -961,6 +962,12 @@
         "metaDescription": "Hər müəllifə nə borcludur, hansı saxlama altındadır və getməzdən əvvəl hansı imzalar lazımdır.",
         "title": "Ödənişlər",
         "intro": "Rəqəmlər ödəniş hesablananda dondurulur və heç vaxt yenidən hesablanmır — iki nəfərin təsdiqlədiyi ödəniş göndərilən ödəniş olmalıdır. Təsdiq üçün APPROVE_PAYOUT lazımdır və maliyyə rolu bunu bilərəkdən vermir."
+      },
+      "payoutDestinations": {
+        "metaTitle": "Ödəniş rekvizitləri",
+        "metaDescription": "Müəlliflərin ödəniş almaq istədiyi, hələ heç kimin yoxlamadığı bank hesabları və kartlar.",
+        "title": "Ödəniş rekvizitləri",
+        "intro": "Müəlliflərin ödəniş almaq istədiyi və hesabın onlara aid olduğunu hələ heç kimin təsdiqləmədiyi rekvizitlər, ən köhnəsi birinci. Hər birini burada təsdiqləyin və ya rədd edin; hər ikisi üçün VERIFY_PAYOUT_DESTINATION lazımdır və maliyyə rolu bunu bilərəkdən vermir. Tam IBAN-ı göstərmək üçün READ_BANK_DETAILS lazımdır və hər açılış audit jurnalında qeydə alınır."
       },
       "reconciliation": {
         "metaTitle": "Uzlaşdırma",
@@ -1709,7 +1716,7 @@
           "OTHER": "Digər"
         },
         "reversal": "Geri qaytarma",
-        "payoutHeading": "VÖEN və biznes kartı",
+        "payoutHeading": "VÖEN və ödəniş rekvizitləri",
         "loadingPayout": "Bu hesabın ödəniş məlumatları yüklənir",
         "subjectLabel": "Alıcı",
         "subjectKind": {
@@ -1722,18 +1729,18 @@
         "taxIdMissing": "Göstərilməyib",
         "legalSubjectForbidden": "VÖEN şəxsiyyət yoxlamasını aparan əməkdaşlara göstərilir.",
         "legalSubjectFailed": "Bu hesabın VÖEN-i oxunmadı. Səhifədəki qalan hər şey yazıldığı kimidir.",
-        "cardLabel": "Biznes kartı",
+        "cardLabel": "Ödəniş rekvizitləri",
         "cardHolder": "sahibi {name}",
         "cardStanding": {
-          "NONE": "Əlavə edilməyib",
+          "NONE": "Qeyd yoxdur",
           "AWAITING_VERIFICATION": "Yoxlama gözlənilir",
           "VERIFIED": "Yoxlanılıb",
           "WAIVED": "Yoxlamadan azad edilib",
           "NAME_MISMATCH": "Ad uyğun gəlmir",
           "REJECTED": "Rədd edilib"
         },
-        "cardForbidden": "Biznes kartı ödəniş rekvizitlərini yoxlayan əməkdaşlara göstərilir.",
-        "cardFailed": "Bu hesabın biznes kartı oxunmadı. Səhifədəki qalan hər şey yazıldığı kimidir."
+        "cardForbidden": "Ödəniş rekvizitləri onları yoxlayan əməkdaşlara göstərilir.",
+        "cardFailed": "Bu hesabın ödəniş rekvizitləri oxunmadı. Səhifədəki qalan hər şey yazıldığı kimidir."
       },
       "support": {
         "subject": "dəstək növbəsini",
@@ -2047,6 +2054,68 @@
           "UNDER_REVIEW": "sənədlər baxış növbəsindədir",
           "REJECTED": "sənədlər rədd edilib — müəllif yenidən göndərməlidir",
           "EXPIRED": "təsdiq müddəti bitib — müəllif yenidən təsdiqləməlidir"
+        }
+      },
+      "payoutDestinations": {
+        "subject": "ödəniş rekvizitləri növbəsini",
+        "filterLabel": "Vəziyyətə görə süzgəc",
+        "everything": "Gözləyənlərin hamısı",
+        "loadingList": "Yoxlama gözləyən ödəniş rekvizitləri yüklənir",
+        "emptyTitle": "Gözləyən yoxdur",
+        "emptyBody": "Qeydə alınmış bütün ödəniş rekvizitləri yoxlanılıb.",
+        "emptyFilterTitle": "Bu vəziyyətdə heç nə yoxdur",
+        "emptyFilterBody": "Növbədə bu vəziyyətdə rekvizit yoxdur. Qalanlarını görmək üçün başqa süzgəc seçin.",
+        "capped": "Ən çox gözləyən {count} rekvizit göstərilir. Bunlar barədə qərar verdikcə növbətilər görünəcək.",
+        "openAccount": "Hesabı aç",
+        "openAccountLabel": "Hesabı aç: {name}",
+        "kind": {
+          "BANK_TRANSFER": "Bank hesabı",
+          "PROVIDER_TOKEN": "Provayder kartı"
+        },
+        "standing": {
+          "NONE": "Qeyd yoxdur",
+          "AWAITING_VERIFICATION": "Yoxlama gözlənilir",
+          "VERIFIED": "Yoxlanılıb",
+          "WAIVED": "Yoxlamadan azad edilib",
+          "NAME_MISMATCH": "Ad uyğun gəlmir",
+          "REJECTED": "Rədd edilib"
+        },
+        "rejectionReason": {
+          "UNREADABLE": "Oxunmur",
+          "EXPIRED_DOCUMENT": "Sənədin müddəti bitib",
+          "MISMATCHED_NAME": "Ad uyğun gəlmir",
+          "INCOMPLETE": "Natamamdır",
+          "SUSPECTED_FORGERY": "Saxtakarlıq şübhəsi"
+        },
+        "holder": "sahibi {name}",
+        "updated": "dəyişdirilib: {date}",
+        "rejectedFor": "Rədd səbəbi: {reason}",
+        "reveal": {
+          "action": "IBAN-ı göstər",
+          "revealing": "IBAN açılır…",
+          "hide": "IBAN-ı gizlət",
+          "audited": "Tam IBAN-ın açılması audit jurnalında sizin adınızla qeydə alınır. Gizlətdikdən və ya bu səhifədən çıxdıqdan sonra saxlanmır.",
+          "ibanLabel": "IBAN",
+          "holderLabel": "Hesab sahibi",
+          "notFound": "Bu hesab üçün bank hesabı qeydə alınmayıb, ona görə göstəriləcək IBAN yoxdur.",
+          "forbidden": "IBAN-ı göstərmək üçün READ_BANK_DETAILS lazımdır.",
+          "failed": "IBAN açılmadı. Heç nə göstərilmədi."
+        },
+        "decision": {
+          "verify": "Təsdiqlə",
+          "confirmVerify": "Bu hesabın müəllifin özünə aid olduğunu təsdiqləyirsiniz? Bunu öz adınızla təsdiq edirsiniz və bu hesaba ödənişlər açılacaq.",
+          "confirmVerifyAction": "Bəli, təsdiqlə",
+          "verifying": "Təsdiqlənir…",
+          "reject": "Rədd et",
+          "reasonLabel": "Müəllifə göstəriləcək səbəb",
+          "reasonPlaceholder": "Səbəb seçin",
+          "confirmReject": "Bu səbəblə rədd et",
+          "rejecting": "Rədd edilir…",
+          "cancel": "Ləğv et",
+          "nameMismatch": "Hesab sahibinin adı müəllifin hüquqi adı ilə uyğun gəlmir, ona görə bu hesab təsdiqlənə bilməz. Onu rədd edin və ya müəllifin məlumatlarını düzəltməsini gözləyin.",
+          "self": "Heç kim öz ödəniş rekvizitlərini təsdiqləmir və rədd etmir.",
+          "gone": "Bu hesabda artıq ödəniş rekvizitləri yoxdur.",
+          "failedTitle": "Yadda saxlanmadı"
         }
       },
       "refunds": {

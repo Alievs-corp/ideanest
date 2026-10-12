@@ -689,6 +689,7 @@
       "/admin/ledger": "Defter",
       "/admin/reconciliation": "Mutabakat",
       "/admin/payouts": "Ödemeler",
+      "/admin/payout-destinations": "Ödeme hesapları",
       "/admin/refunds": "İadeler",
       "/admin/disputes": "Ters ibrazlar",
       "/admin/fees": "Ücretler",
@@ -961,6 +962,12 @@
         "metaDescription": "Her yaratıcıya ne borçlu olunduğu, hangi bekletme altında olduğu ve gitmeden önceki imzalar.",
         "title": "Ödemeler",
         "intro": "Rakamlar bir ödeme hesaplandığında dondurulur ve asla yeniden hesaplanmaz — iki kişinin onayladığı ödeme, gönderilen ödeme olmalıdır. Onaylamak APPROVE_PAYOUT gerektirir ve finans rolü bunu bilerek vermez."
+      },
+      "payoutDestinations": {
+        "metaTitle": "Ödeme hesapları",
+        "metaDescription": "Yaratıcıların ödeme almak istediği ve henüz kimsenin doğrulamadığı banka hesapları ve kartlar.",
+        "title": "Ödeme hesapları",
+        "intro": "Yaratıcıların ödeme almak istediği ve hesabın onlara ait olduğunu henüz kimsenin onaylamadığı hesaplar, en eskisi önce. Her birini burada doğrulayın veya reddedin; ikisi de VERIFY_PAYOUT_DESTINATION gerektirir ve finans rolü bunu bilerek vermez. Tam IBAN'ı göstermek READ_BANK_DETAILS gerektirir ve her gösterim denetim kaydına yazılır."
       },
       "reconciliation": {
         "metaTitle": "Mutabakat",
@@ -1709,7 +1716,7 @@
           "OTHER": "Diğer"
         },
         "reversal": "İade",
-        "payoutHeading": "VÖEN ve iş kartı",
+        "payoutHeading": "VÖEN ve ödeme hesabı",
         "loadingPayout": "Bu hesabın ödeme bilgileri yükleniyor",
         "subjectLabel": "Alıcı",
         "subjectKind": {
@@ -1722,18 +1729,18 @@
         "taxIdMissing": "Belirtilmedi",
         "legalSubjectForbidden": "VÖEN, kimlik doğrulamasını inceleyen personele gösterilir.",
         "legalSubjectFailed": "Bu hesabın VÖEN'i okunamadı. Sayfadaki diğer her şey yazıldığı gibidir.",
-        "cardLabel": "İş kartı",
+        "cardLabel": "Ödeme hesabı",
         "cardHolder": "sahibi {name}",
         "cardStanding": {
-          "NONE": "Eklenmedi",
+          "NONE": "Kayıtlı değil",
           "AWAITING_VERIFICATION": "Doğrulama bekleniyor",
           "VERIFIED": "Doğrulandı",
           "WAIVED": "Doğrulamadan muaf",
           "NAME_MISMATCH": "Ad eşleşmiyor",
           "REJECTED": "Reddedildi"
         },
-        "cardForbidden": "İş kartı, ödeme hesaplarını doğrulayan personele gösterilir.",
-        "cardFailed": "Bu hesabın iş kartı okunamadı. Sayfadaki diğer her şey yazıldığı gibidir."
+        "cardForbidden": "Ödeme hesabı, ödeme hesaplarını doğrulayan personele gösterilir.",
+        "cardFailed": "Bu hesabın ödeme hesabı okunamadı. Sayfadaki diğer her şey yazıldığı gibidir."
       },
       "support": {
         "subject": "destek kuyruğunu",
@@ -2047,6 +2054,68 @@
           "UNDER_REVIEW": "inceleme sırasını bekliyor",
           "REJECTED": "bekliyor — belgeler reddedildi, kurucunun başkalarını göndermesi gerekiyor",
           "EXPIRED": "bekliyor — onayın süresi doldu, kurucunun yeniden doğrulaması gerekiyor"
+        }
+      },
+      "payoutDestinations": {
+        "subject": "ödeme hesapları kuyruğunu",
+        "filterLabel": "Duruma göre filtrele",
+        "everything": "Bekleyenlerin tümü",
+        "loadingList": "Doğrulama bekleyen ödeme hesapları yükleniyor",
+        "emptyTitle": "Bekleyen yok",
+        "emptyBody": "Kayıtlı tüm ödeme hesapları doğrulandı.",
+        "emptyFilterTitle": "Bu durumda hiçbiri yok",
+        "emptyFilterBody": "Kuyrukta bu durumda hesap yok. Diğerlerini görmek için başka bir filtre seçin.",
+        "capped": "En uzun bekleyen {count} hesap gösteriliyor. Bunlara karar verildikçe sonrakiler gelir.",
+        "openAccount": "Hesabı aç",
+        "openAccountLabel": "Hesabı aç: {name}",
+        "kind": {
+          "BANK_TRANSFER": "Banka hesabı",
+          "PROVIDER_TOKEN": "Sağlayıcı kartı"
+        },
+        "standing": {
+          "NONE": "Kayıtlı değil",
+          "AWAITING_VERIFICATION": "Doğrulama bekleniyor",
+          "VERIFIED": "Doğrulandı",
+          "WAIVED": "Doğrulamadan muaf",
+          "NAME_MISMATCH": "Ad eşleşmiyor",
+          "REJECTED": "Reddedildi"
+        },
+        "rejectionReason": {
+          "UNREADABLE": "Okunamıyor",
+          "EXPIRED_DOCUMENT": "Belgenin süresi dolmuş",
+          "MISMATCHED_NAME": "Ad eşleşmiyor",
+          "INCOMPLETE": "Eksik",
+          "SUSPECTED_FORGERY": "Sahtecilik şüphesi"
+        },
+        "holder": "sahibi {name}",
+        "updated": "değiştirildi: {date}",
+        "rejectedFor": "Ret nedeni: {reason}",
+        "reveal": {
+          "action": "IBAN'ı göster",
+          "revealing": "IBAN açılıyor…",
+          "hide": "IBAN'ı gizle",
+          "audited": "Tam IBAN'ın açılması denetim kaydına sizin adınızla yazılır. Gizlediğinizde ya da bu sayfadan ayrıldığınızda saklanmaz.",
+          "ibanLabel": "IBAN",
+          "holderLabel": "Hesap sahibi",
+          "notFound": "Bu hesap için kayıtlı banka hesabı yok, bu yüzden gösterilecek IBAN yok.",
+          "forbidden": "IBAN göstermek READ_BANK_DETAILS gerektirir.",
+          "failed": "IBAN açılamadı. Hiçbir şey gösterilmedi."
+        },
+        "decision": {
+          "verify": "Doğrula",
+          "confirmVerify": "Bu hesabın yaratıcının kendisine ait olduğunu doğruluyor musunuz? Bunu kendi adınızla onaylıyorsunuz ve bu hesaba ödemeler serbest kalacak.",
+          "confirmVerifyAction": "Evet, doğrula",
+          "verifying": "Doğrulanıyor…",
+          "reject": "Reddet",
+          "reasonLabel": "Yaratıcıya gösterilecek neden",
+          "reasonPlaceholder": "Bir neden seçin",
+          "confirmReject": "Bu nedenle reddet",
+          "rejecting": "Reddediliyor…",
+          "cancel": "Vazgeç",
+          "nameMismatch": "Hesap sahibinin adı yaratıcının yasal adıyla eşleşmiyor, bu yüzden bu hesap doğrulanamaz. Reddedin ya da yaratıcının bilgilerini düzeltmesini bekleyin.",
+          "self": "Kimse kendi ödeme hesabını doğrulamaz veya reddetmez.",
+          "gone": "Bu hesapta artık bir ödeme hesabı yok.",
+          "failedTitle": "Kaydedilmedi"
         }
       },
       "refunds": {
