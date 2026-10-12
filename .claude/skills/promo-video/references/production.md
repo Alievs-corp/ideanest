@@ -19,6 +19,7 @@ apps/promo/
     render.mjs          render -> faststart -> poster, per language
     qa.py               specs, loudness, flash count, contact sheet, pause frames
     stills.mjs          one bundle, many half-size stills for review
+    publish.py          720p phone cut + JPEG poster, upload to media/promo/v<n>/ in the bucket
   src/
     index.ts, Root.tsx  one <Composition> per film x aspect x language
     timeline.json       scene spans, cues and sound cues in frames (film and soundtrack read it)

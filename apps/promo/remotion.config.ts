@@ -7,5 +7,5 @@ Config.setCodec('h264');
 Config.setCrf(16);
 Config.setAudioCodec('aac');
 Config.setAudioBitrate('320k');
-Config.setConcurrency(4);
+Config.setConcurrency(8);
 Config.setDelayRenderTimeoutInMilliseconds(120000);

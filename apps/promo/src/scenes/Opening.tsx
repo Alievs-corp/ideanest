@@ -26,7 +26,7 @@ export function Rise() {
   const [bx, by] = screenPoint(...point('createButton'));
   const device = (
     <Device
-      pose={risePose(frame)}
+      pose={risePose}
       sweepAt={RISE_SPIN_END}
       screen={<StillScreen id="home-top" />}
       overlay={<TapRing x={bx} y={by} at={cues.createTap - scenes.rise.start} size={120} />}

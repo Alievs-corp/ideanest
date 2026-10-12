@@ -59,7 +59,7 @@ export function Montage({ copy }: { copy: Copy }) {
   const whip = frame >= cues.whip - start - 12 && frame < cues.whip - start + 21;
   const device = (
     <Device
-      pose={montagePose(frame)}
+      pose={montagePose}
       sweepAt={shot * 60}
       screen={
         <>
