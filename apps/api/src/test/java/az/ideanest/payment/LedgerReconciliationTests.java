@@ -168,6 +168,32 @@ class LedgerReconciliationTests {
         assertThat(reconciliation.reconcile().balanced()).isTrue();
     }
 
+    /**
+     * #397: a payout paid by bank transfer is a {@code PAYOUT} transaction with provider
+     * {@code BANK_TRANSFER} and the posting a provider's payout gets. {@code settledTotals} sums
+     * every provider together, so the books balance with it in them, and escrow — which now spans
+     * IdeyaNest's bank account as well as the provider's balance — reads what is left in both.
+     */
+    @Test
+    @DisplayName("a payout paid by bank transfer balances like any other payout")
+    void aBankTransferPayoutBalances() {
+        // 1000.00 collected through the provider, 900.00 of it paid to the creator from the bank.
+        booksOf(balance("escrow", "100.00"), balance(CREATOR, "-100.00"));
+        settled(total(TransactionType.CHARGE, "1000.00"), total(TransactionType.PAYOUT, "900.00"));
+
+        assertThat(reconciliation.reconcile().balanced()).isTrue();
+    }
+
+    /** And the check that would catch a bank transfer recorded without its posting. */
+    @Test
+    @DisplayName("finds a bank transfer recorded as a transaction and never posted")
+    void anUnpostedBankTransferIsFound() {
+        booksOf(balance("escrow", "1000.00"), balance(CREATOR, "-1000.00"));
+        settled(total(TransactionType.CHARGE, "1000.00"), total(TransactionType.PAYOUT, "900.00"));
+
+        assertThat(kinds(reconciliation.reconcile())).containsExactly(ReconciliationFinding.Kind.DISAGREES_WITH_PAYMENTS);
+    }
+
     @Test
     @DisplayName("ignores the two transaction kinds that never produce a posting")
     void verificationsAndReversalsAreNotMoney() {

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
@@ -45,7 +46,14 @@ import org.springframework.web.bind.annotation.RestController;
  * first.
  *
  * <p><strong>{@code no-store}</strong>: these responses carry what the platform is about
- * to pay out, and to whom.
+ * to pay out, and to whom — and a bank transfer's, since #397, the account number it goes to.
+ *
+ * <h2>A bank transfer is four more verbs, under {@code /bank-transfer}</h2>
+ *
+ * <p>Start, open again, record, abandon — all {@code APPROVE_PAYOUT}, the capability that sends, because
+ * starting a transfer is the decision to pay and recording it is the statement that the money left.
+ * Opening the account also needs {@code READ_BANK_DETAILS}, which {@code SUPER_ADMIN} holds with
+ * every other capability. {@code PayoutService.startBankTransfer} has the checks.
  */
 @RestController
 @RequestMapping("/v1/admin/payouts")
@@ -80,7 +88,8 @@ public class PayoutController {
                         PAGE_SIZE,
                         clock.instant(),
                         payouts.standingsOf(queued),
-                        payouts.destinationStandingsOf(queued)));
+                        payouts.destinationStandingsOf(queued),
+                        payouts.destinationKindsOf(queued)));
     }
 
     /** Everything, newest first, optionally narrowed to one state. */
@@ -99,7 +108,8 @@ public class PayoutController {
                         PAGE_SIZE,
                         clock.instant(),
                         payouts.standingsOf(listed),
-                        payouts.destinationStandingsOf(listed)));
+                        payouts.destinationStandingsOf(listed),
+                        payouts.destinationKindsOf(listed)));
     }
 
     /** One payout with its signatures. */
@@ -200,6 +210,60 @@ public class PayoutController {
                         callerOf(accessToken), payoutId, false, null, request.note().trim())));
     }
 
+    /**
+     * Starts paying a payout by bank transfer, and answers the account to pay into — #397.
+     *
+     * <p>A POST, and safe to repeat: on a payout already started it answers the same account again
+     * without moving the mark.
+     */
+    @PostMapping("/{payoutId}/bank-transfer/start")
+    public ResponseEntity<PayoutResponses.BankTransferInstruction> startBankTransfer(
+            @AuthenticationPrincipal Jwt accessToken, @PathVariable UUID payoutId) {
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(instructionOf(payouts.startBankTransfer(callerOf(accessToken), payoutId)));
+    }
+
+    /** The account a started transfer goes to, opened again and audited again. */
+    @GetMapping("/{payoutId}/bank-transfer")
+    public ResponseEntity<PayoutResponses.BankTransferInstruction> bankTransfer(
+            @AuthenticationPrincipal Jwt accessToken, @PathVariable UUID payoutId) {
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(instructionOf(payouts.bankTransfer(callerOf(accessToken), payoutId)));
+    }
+
+    /** Records the transfer from the bank statement: the payout is paid. */
+    @PostMapping("/{payoutId}/bank-transfer/record")
+    public ResponseEntity<PayoutResponses.PayoutSummary> recordBankTransfer(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable UUID payoutId,
+            @Valid @RequestBody RecordBankTransferRequest request) {
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(summaryOf(payouts.recordBankTransfer(
+                        callerOf(accessToken),
+                        payoutId,
+                        request.bankReference().trim(),
+                        request.transferredOn(),
+                        request.note().trim())));
+    }
+
+    /** The transfer was never made: the mark is cleared and the payout may be cancelled again. */
+    @PostMapping("/{payoutId}/bank-transfer/abandon")
+    public ResponseEntity<PayoutResponses.PayoutSummary> abandonBankTransfer(
+            @AuthenticationPrincipal Jwt accessToken,
+            @PathVariable UUID payoutId,
+            @Valid @RequestBody AbandonBankTransferRequest request) {
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(summaryOf(payouts.abandonBankTransfer(callerOf(accessToken), payoutId, request.note().trim())));
+    }
+
     /** Withdraws a payout before it is sent. */
     @PostMapping("/{payoutId}/cancel")
     public ResponseEntity<PayoutResponses.PayoutSummary> cancel(
@@ -231,10 +295,30 @@ public class PayoutController {
     public record UnconfirmedNotSentRequest(@NotBlank @Size(max = 2000) String note) {
     }
 
-    /** One payout, with both standings beside it — #431's and #432's "show why". */
+    /**
+     * What the bank statement shows of the transfer that paid a payout.
+     *
+     * @param bankReference the bank's reference for the transfer, as the statement shows it
+     * @param transferredOn the transfer's value date, as the statement shows it
+     */
+    public record RecordBankTransferRequest(
+            @NotBlank @Size(max = 200) String bankReference,
+            @NotNull LocalDate transferredOn,
+            @NotBlank @Size(max = 2000) String note) {
+    }
+
+    /** Why a started transfer is abandoned: that it was never made, and how that is known. */
+    public record AbandonBankTransferRequest(@NotBlank @Size(max = 2000) String note) {
+    }
+
+    /** One payout, with both standings beside it — #431's and #432's "show why" — and its route (#397). */
     private PayoutResponses.PayoutSummary summaryOf(Payout payout) {
         return PayoutResponses.PayoutSummary.of(
-                payout, clock.instant(), payouts.standingOf(payout), payouts.destinationStandingOf(payout));
+                payout,
+                clock.instant(),
+                payouts.standingOf(payout),
+                payouts.destinationStandingOf(payout),
+                payouts.destinationKindOf(payout));
     }
 
     private PayoutResponses.PayoutFile fileOf(PayoutService.PayoutFile file) {
@@ -242,7 +326,17 @@ public class PayoutController {
                 file,
                 clock.instant(),
                 payouts.standingOf(file.payout()),
-                payouts.destinationStandingOf(file.payout()));
+                payouts.destinationStandingOf(file.payout()),
+                payouts.destinationKindOf(file.payout()));
+    }
+
+    private PayoutResponses.BankTransferInstruction instructionOf(PayoutService.BankTransfer transfer) {
+        return PayoutResponses.BankTransferInstruction.of(
+                transfer,
+                clock.instant(),
+                payouts.standingOf(transfer.payout()),
+                payouts.destinationStandingOf(transfer.payout()),
+                payouts.destinationKindOf(transfer.payout()));
     }
 
     private static UUID callerOf(Jwt accessToken) {

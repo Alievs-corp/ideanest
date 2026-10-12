@@ -14,11 +14,14 @@ import az.ideanest.payout.PayoutProperties;
 import az.ideanest.payout.domain.Payout;
 import az.ideanest.payout.domain.PayoutApproval;
 import az.ideanest.payout.domain.PayoutState;
+import az.ideanest.payout.infrastructure.BackerDisputeRepository;
 import az.ideanest.payout.infrastructure.PayoutApprovalRepository;
 import az.ideanest.payout.infrastructure.PayoutRepository;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
+import az.ideanest.shared.compliance.BankAccount;
 import az.ideanest.shared.compliance.CreatorStandings;
+import az.ideanest.shared.compliance.DestinationKind;
 import az.ideanest.shared.compliance.DestinationStanding;
 import az.ideanest.shared.compliance.PayoutDestinations;
 import az.ideanest.shared.compliance.VerificationStanding;
@@ -27,9 +30,13 @@ import az.ideanest.shared.project.ProjectSummaries;
 import az.ideanest.shared.project.ProjectSummary;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -53,7 +60,9 @@ import org.springframework.transaction.annotation.Transactional;
  *       runs out.
  *   <li>{@link #approve} takes a signature. Above the configured threshold it takes two,
  *       from two different accounts.
- *   <li>{@link #send} instructs the provider.
+ *   <li>{@link #send} instructs the provider — or, when the creator is paid into an IBAN the
+ *       platform holds, {@link #startBankTransfer} opens the account for a member of staff who pays
+ *       it from IdeyaNest's bank, and {@link #recordBankTransfer} records what the statement shows.
  * </ol>
  *
  * <h2>The figures are frozen and never recomputed</h2>
@@ -75,6 +84,21 @@ import org.springframework.transaction.annotation.Transactional;
  * held by {@code SUPER_ADMIN} alone and deliberately not by {@code FINANCE} — a role
  * conferring both issuing and approving would make the second signature a formality
  * whenever the finance team is one person.
+ *
+ * <h2>Two routes out, since epic #392</h2>
+ *
+ * <p>The owner decided on 2026-10-12 that creators are paid by bank transfer, made by staff from
+ * IdeyaNest's account. {@code PayoutDestinations.kindOf} says which route a payout takes, and each
+ * refuses the other's payout: {@link #send} answers {@code PAYOUT_SETTLES_BY_BANK_TRANSFER} for an IBAN,
+ * and {@link #startBankTransfer} answers {@code PAYOUT_SETTLES_THROUGH_PROVIDER} for a token.
+ *
+ * <p>A bank transfer is three steps where a send is one, because a person makes it in another system.
+ * {@link #startBankTransfer} runs every check {@link #send} runs, opens the account and marks the payout;
+ * the person pays from the bank; {@link #recordBankTransfer} writes what the statement shows, through
+ * the same transaction row and posting a provider's payout gets. Between the first and the last the
+ * money may have left, so the payout — still {@code APPROVED}, V98's header has why — is treated as
+ * {@code send_unconfirmed_at} is: not cancelled, not recalculated, not disputed. If the transfer was
+ * never made, {@link #abandonBankTransfer} says so and clears the mark.
  */
 @Service
 public class PayoutService {
@@ -82,6 +106,9 @@ public class PayoutService {
     private static final Logger log = LoggerFactory.getLogger(PayoutService.class);
 
     private static final int PAGE_SIZE = 50;
+
+    /** Where a bank statement's value dates are written. §21.2: the platform operates in Azerbaijan. */
+    private static final ZoneId BANK_ZONE = ZoneId.of("Asia/Baku");
 
     private final PayoutRepository payouts;
     private final PayoutApprovalRepository approvals;
@@ -95,6 +122,7 @@ public class PayoutService {
     private final PayoutProperties properties;
     private final Clock clock;
     private final CreatorDebts debts;
+    private final BackerDisputeRepository backerDisputes;
 
     public PayoutService(
             PayoutRepository payouts,
@@ -108,7 +136,8 @@ public class PayoutService {
             AuditLog audit,
             PayoutProperties properties,
             Clock clock,
-            CreatorDebts debts) {
+            CreatorDebts debts,
+            BackerDisputeRepository backerDisputes) {
         this.payouts = payouts;
         this.approvals = approvals;
         this.gateway = gateway;
@@ -121,6 +150,7 @@ public class PayoutService {
         this.properties = properties;
         this.clock = clock;
         this.debts = debts;
+        this.backerDisputes = backerDisputes;
     }
 
     /**
@@ -324,6 +354,28 @@ public class PayoutService {
     }
 
     /**
+     * Which route each creator on a page is paid by — #397. {@link #standingsOf}'s shape.
+     *
+     * <p>Absent for a creator who has filed nothing. The console offers a bank transfer rather than a
+     * send before anybody presses either, so the route is read with the page rather than discovered as
+     * a refusal.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, DestinationKind> destinationKindsOf(List<Payout> page) {
+        Map<UUID, DestinationKind> kinds = new HashMap<>();
+        page.stream().map(Payout::creatorId).distinct().forEach(creatorId -> destinations
+                .kindOf(creatorId)
+                .ifPresent(kind -> kinds.put(creatorId, kind)));
+        return kinds;
+    }
+
+    /** The route one payout's creator is paid by, or null when nothing is filed. */
+    @Transactional(readOnly = true)
+    public DestinationKind destinationKindOf(Payout payout) {
+        return destinations.kindOf(payout.creatorId()).orElse(null);
+    }
+
+    /**
      * The token to send to, or the reason there is not one.
      *
      * <p>Re-read at send even though {@link #approve} already checked, because the two happen
@@ -490,6 +542,11 @@ public class PayoutService {
         if (!payout.state().isInFlight()) {
             throw new PayoutNotApprovableException(payoutId, payout.state());
         }
+        if (payout.bankTransferInProgress()) {
+            // #397: the signatures were the authority for a transfer somebody may already have made.
+            // Taking one back now would leave the money moved and the payout waiting to be approved.
+            throw new PayoutBankTransferInProgressException(payoutId);
+        }
 
         int removed = approvals.withdraw(payoutId, staffId);
         long signatures = approvals.countFor(payoutId);
@@ -550,6 +607,8 @@ public class PayoutService {
      *     expired, or the creator replaced the account, which resets its verification
      * @throws PayoutDestinationProviderMismatchException when the destination on file was
      *     issued by a provider this deployment does not send through
+     * @throws PayoutSettlesByBankTransferException when the creator is paid into an IBAN, or a bank
+     *     transfer of this payout has been started (#397)
      */
     @Transactional
     public Payout send(UUID staffId, UUID payoutId) {
@@ -558,6 +617,21 @@ public class PayoutService {
         Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
         if (payout.state() != PayoutState.APPROVED) {
             throw new PayoutNotSendableException(payoutId, payout.state());
+        }
+
+        // #397: a creator paid into an IBAN is paid by a person from IdeyaNest's bank, and a transfer
+        // already started is money that may be on its way. Either way the provider is not asked to pay it
+        // as well -- and the refusal comes first, because the route decides which of the checks below
+        // are the ones that matter.
+        if (payout.bankTransferInProgress()
+                || destinations.kindOf(payout.creatorId()).orElse(null) == DestinationKind.BANK_TRANSFER) {
+            audit.recordIndependently(
+                    AuditAction.PAYOUT_SENT,
+                    payoutId,
+                    AuditActor.moderator(staffId),
+                    AuditOutcome.REFUSED,
+                    "settlesByBankTransfer; started=%s".formatted(payout.bankTransferInProgress()));
+            throw new PayoutSettlesByBankTransferException(payoutId);
         }
 
         // The signatures are counted here as well as in `approve` — issue #398.
@@ -743,6 +817,9 @@ public class PayoutService {
         if (payout.sendUnconfirmed()) {
             throw new PayoutSendUnconfirmedException(payoutId);
         }
+        if (payout.bankTransferInProgress()) {
+            throw new PayoutBankTransferInProgressException(payoutId);
+        }
 
         payout.cancelled();
 
@@ -754,6 +831,328 @@ public class PayoutService {
                 "cancelled before sending");
 
         return payout;
+    }
+
+    /**
+     * Opens the creator's account to pay this payout into it by bank transfer, and marks it — #397.
+     *
+     * <p><strong>Every check {@link #send} makes, in the same order and for the same reasons</strong>,
+     * because this is the moment the money is committed: the signatures are counted rather than assumed,
+     * a campaign already paid is refused, the figures are re-read and a payout whose figures moved is
+     * cancelled rather than paid at a number that is no longer true, and the destination's standing is
+     * read rather than remembered. Two more belong to this route alone. The destination has to be a
+     * bank account, since a token is sent through its provider. And no backer's dispute on the campaign
+     * may still be open, because the mark closes the dispute window: {@code BackerDisputes} refunds
+     * nobody once the money may have left, so an open dispute would be decided by default.
+     *
+     * <p>Opening the account is {@code PayoutDestinations.revealBankAccount}, audited on the creator as
+     * {@code PAYOUT_DESTINATION_ACCOUNT_REVEALED}; the start is audited on the payout. Neither carries
+     * the number. Called again on a payout already started, it opens the account again for whoever asks
+     * and changes nothing else — a retried request must not fail, and must not move the mark.
+     *
+     * @throws SelfPaidPayoutException when the member of staff is the payout's creator
+     * @throws PayoutNotSendableException when it is not approved, or its figures moved and it was
+     *     cancelled
+     * @throws PayoutSendUnconfirmedException when a send through the provider may have been carried out
+     * @throws PayoutSignaturesShortException when the signatures on file do not reach the bar
+     * @throws CampaignAlreadyPaidOutException when another payout already paid the campaign
+     * @throws PayoutBackerDisputeOpenException when a backer's dispute on the campaign is undecided
+     * @throws PayoutDestinationNotVerifiedException when the destination does not release the payout
+     * @throws PayoutSettlesThroughProviderException when the destination is a provider's token
+     */
+    @Transactional(noRollbackFor = PayoutNotSendableException.class)
+    public BankTransfer startBankTransfer(UUID staffId, UUID payoutId) {
+        staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
+
+        Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
+        refuseOwnPayout(staffId, payout);
+        if (payout.state() != PayoutState.APPROVED) {
+            throw new PayoutNotSendableException(payoutId, payout.state());
+        }
+        if (payout.bankTransferInProgress()) {
+            return bankTransferOf(staffId, payout);
+        }
+        if (payout.sendUnconfirmed()) {
+            throw new PayoutSendUnconfirmedException(payoutId);
+        }
+
+        long signatures = approvals.countFor(payoutId);
+        if (signatures < payout.approvalsRequired()) {
+            audit.recordIndependently(
+                    AuditAction.PAYOUT_BANK_TRANSFER_STARTED,
+                    payoutId,
+                    AuditActor.moderator(staffId),
+                    AuditOutcome.REFUSED,
+                    "signaturesShort; signatures=%d/%d".formatted(signatures, payout.approvalsRequired()));
+            throw new PayoutSignaturesShortException(payoutId, signatures, payout.approvalsRequired());
+        }
+
+        Optional<Payout> alreadyPaid = payouts.paidFor(payout.projectId());
+        if (alreadyPaid.isPresent()) {
+            audit.recordIndependently(
+                    AuditAction.PAYOUT_BANK_TRANSFER_STARTED,
+                    payoutId,
+                    AuditActor.moderator(staffId),
+                    AuditOutcome.REFUSED,
+                    "alreadyPaidOut; paidBy=%s".formatted(alreadyPaid.get().id()));
+            throw new CampaignAlreadyPaidOutException(payout.projectId(), alreadyPaid.get().id());
+        }
+
+        if (backerDisputes.anyOpenOn(payout.projectId())) {
+            throw new PayoutBackerDisputeOpenException(payoutId, payout.projectId());
+        }
+
+        CampaignFunds funds = gateway.fundsOf(payout.projectId(), payout.currency());
+        if (!funds.collected().equals(payout.gross()) || !funds.refunded().equals(payout.refunded())) {
+            // Unlike `send`, the cancellation is kept: `noRollbackFor` above. The refusal says the payout
+            // was cancelled and the next step is a fresh calculation, which a rolled-back cancellation
+            // would make impossible -- the payout would still be in flight.
+            payout.cancelled();
+            audit.record(
+                    AuditAction.PAYOUT_BANK_TRANSFER_STARTED,
+                    payoutId,
+                    AuditActor.moderator(staffId),
+                    AuditOutcome.REFUSED,
+                    "figuresMoved; gross=%s->%s; refunded=%s->%s"
+                            .formatted(payout.gross(), funds.collected(), payout.refunded(), funds.refunded()));
+            throw new PayoutNotSendableException(payoutId, payout.state());
+        }
+
+        DestinationStanding standing = destinations.standingOf(payout.creatorId());
+        if (!standing.releasesPayout()) {
+            audit.recordIndependently(
+                    AuditAction.PAYOUT_BANK_TRANSFER_STARTED,
+                    payoutId,
+                    AuditActor.moderator(staffId),
+                    AuditOutcome.REFUSED,
+                    "destinationNotVerified; creator=%s; standing=%s".formatted(payout.creatorId(), standing));
+            throw new PayoutDestinationNotVerifiedException(payoutId, payout.creatorId(), standing);
+        }
+        if (destinations.kindOf(payout.creatorId()).orElse(null) != DestinationKind.BANK_TRANSFER) {
+            throw new PayoutSettlesThroughProviderException(payoutId);
+        }
+
+        BankAccount account = destinations
+                .revealBankAccount(staffId, payout.creatorId())
+                .orElseThrow(() -> new PayoutSettlesThroughProviderException(payoutId));
+        payout.bankTransferStarted(staffId, clock.instant().truncatedTo(ChronoUnit.MICROS));
+
+        audit.record(
+                AuditAction.PAYOUT_BANK_TRANSFER_STARTED,
+                payoutId,
+                AuditActor.moderator(staffId),
+                AuditOutcome.SUCCEEDED,
+                "amount=%s; account=%s".formatted(payout.net(), account.displayHint()));
+
+        log.info("Payout {} of {} to be paid by bank transfer, started by {}", payoutId, payout.net(), staffId);
+        return new BankTransfer(payout, account, descriptionOf(payout));
+    }
+
+    /**
+     * The account a started transfer goes to, opened again — #397.
+     *
+     * <p>For the person who started it and lost the page, or a colleague finishing it. Audited as the
+     * first opening was, on the creator. The standing is read again: if the creator replaced the account
+     * since, the new one has not been confirmed, and showing it would let a transfer go to an account
+     * nobody checked; the transfer is abandoned and started again once it has been.
+     *
+     * @throws PayoutBankTransferNotStartedException when no transfer is in progress
+     * @throws PayoutDestinationNotVerifiedException when the destination no longer releases the payout
+     */
+    @Transactional
+    public BankTransfer bankTransfer(UUID staffId, UUID payoutId) {
+        staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
+
+        Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
+        refuseOwnPayout(staffId, payout);
+        if (!payout.bankTransferInProgress()) {
+            throw new PayoutBankTransferNotStartedException(payoutId, payout.state());
+        }
+        return bankTransferOf(staffId, payout);
+    }
+
+    private BankTransfer bankTransferOf(UUID staffId, Payout payout) {
+        DestinationStanding standing = destinations.standingOf(payout.creatorId());
+        if (!standing.releasesPayout()) {
+            throw new PayoutDestinationNotVerifiedException(payout.id(), payout.creatorId(), standing);
+        }
+        BankAccount account = destinations
+                .revealBankAccount(staffId, payout.creatorId())
+                .orElseThrow(() -> new PayoutSettlesThroughProviderException(payout.id()));
+        return new BankTransfer(payout, account, descriptionOf(payout));
+    }
+
+    /**
+     * Records the bank transfer that paid a payout, from the bank statement — #397.
+     *
+     * <p>{@link #resolveUnconfirmed}'s settlement on the other route: the payout is {@code PAID} against
+     * a {@code BANK_TRANSFER} transaction carrying the bank's reference, with the posting a sent payout
+     * gets ({@code PayoutGateway.recordBankTransfer}) and its withheld debt recovered. The note is
+     * required and audited, because this is a person's reading of a statement.
+     *
+     * <p><strong>Nothing is re-checked that could refuse money that has already moved.</strong> The
+     * checks were made when the transfer was started; by now the money is in the creator's account, and
+     * a record refused for a figure that moved since would leave a real transfer unrecorded. What moved
+     * is logged as an error for the person settling it, as {@link #resolveUnconfirmed} does.
+     *
+     * <p>Idempotent: recorded again with the same reference, the payout is answered as it stands. A
+     * different reference is refused, and so is one another transaction already carries.
+     *
+     * @param transferredOn the value date on the statement: not after today, and not before the day the
+     *     transfer was started
+     * @throws SelfPaidPayoutException when the member of staff is the payout's creator
+     * @throws PayoutBankTransferNotStartedException when no transfer was started
+     * @throws BankTransferDateOutOfRangeException when the date cannot be the transfer's
+     * @throws CampaignAlreadyPaidOutException when another payout already paid the campaign
+     * @throws az.ideanest.payment.application.PayoutReferenceTakenException when another settled
+     *     transaction carries the reference
+     * @throws az.ideanest.payment.application.BankTransferAlreadyRecordedException when this payout's
+     *     transfer is recorded under a different reference
+     */
+    @Transactional
+    public Payout recordBankTransfer(
+            UUID staffId, UUID payoutId, String bankReference, LocalDate transferredOn, String note) {
+        staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
+        Objects.requireNonNull(bankReference, "bankReference");
+        Objects.requireNonNull(transferredOn, "transferredOn");
+
+        Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
+        refuseOwnPayout(staffId, payout);
+
+        if (payout.state() == PayoutState.PAID && payout.bankTransferredOn() != null) {
+            // A replay. The gateway answers the row it wrote, or refuses a different reference.
+            gateway.recordBankTransfer(
+                    payoutId,
+                    payout.projectId(),
+                    payout.creatorId(),
+                    payout.net(),
+                    bankReference,
+                    payout.bankTransferredOn(),
+                    payout.idempotencyKey());
+            return payout;
+        }
+        if (!payout.bankTransferInProgress()) {
+            throw new PayoutBankTransferNotStartedException(payoutId, payout.state());
+        }
+
+        Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        LocalDate started = LocalDate.ofInstant(payout.bankTransferStartedAt(), BANK_ZONE);
+        LocalDate today = LocalDate.ofInstant(now, BANK_ZONE);
+        if (transferredOn.isBefore(started) || transferredOn.isAfter(today)) {
+            throw new BankTransferDateOutOfRangeException(transferredOn, started, today);
+        }
+
+        Optional<Payout> alreadyPaid = payouts.paidFor(payout.projectId());
+        if (alreadyPaid.isPresent()) {
+            log.error("Payout {} was transferred by hand for campaign {}, which payout {} already paid.",
+                    payoutId, payout.projectId(), alreadyPaid.get().id());
+            throw new CampaignAlreadyPaidOutException(payout.projectId(), alreadyPaid.get().id());
+        }
+
+        PayoutGateway.Sent recorded = gateway.recordBankTransfer(
+                payoutId,
+                payout.projectId(),
+                payout.creatorId(),
+                payout.net(),
+                bankReference,
+                transferredOn,
+                payout.idempotencyKey());
+        payout.paidByBankTransfer(recorded.transactionId(), transferredOn, now);
+        if (payout.debtWithheld().isPositive()) {
+            debts.recover(payout.creatorId(), payout.debtWithheld(), now);
+        }
+
+        CampaignFunds funds = gateway.fundsOf(payout.projectId(), payout.currency());
+        Money movedSince = funds.refunded().minus(payout.refunded());
+        if (movedSince.isPositive()) {
+            log.error("Payout {} was transferred at its priced figure, and {} went back since: recover it from the creator.",
+                    payoutId, movedSince);
+        }
+
+        audit.record(
+                AuditAction.PAYOUT_SENT,
+                payoutId,
+                AuditActor.moderator(staffId),
+                AuditOutcome.SUCCEEDED,
+                "bankTransfer; amount=%s; bankReference=%s; transferredOn=%s; startedBy=%s; refundedSincePriced=%s; note=%s"
+                        .formatted(
+                                payout.net(),
+                                bankReference,
+                                transferredOn,
+                                payout.bankTransferStartedBy(),
+                                movedSince,
+                                note));
+
+        log.info("Payout {} recorded as paid by bank transfer by {}", payoutId, staffId);
+        return payout;
+    }
+
+    /**
+     * Abandons a started transfer that was never made — #397.
+     *
+     * <p>Clears the mark, so the payout may be cancelled, recalculated or disputed again. The person
+     * saying so is saying the money did not leave, which nothing here can check, so the note is required
+     * and audited. A transfer that was made is recorded instead; abandoning it would let the campaign be
+     * priced and paid a second time.
+     *
+     * @throws SelfPaidPayoutException when the member of staff is the payout's creator
+     * @throws PayoutBankTransferNotStartedException when no transfer is in progress
+     */
+    @Transactional
+    public Payout abandonBankTransfer(UUID staffId, UUID payoutId, String note) {
+        staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
+
+        Payout payout = payouts.findAndLock(payoutId).orElseThrow(() -> new PayoutNotFoundException(payoutId));
+        refuseOwnPayout(staffId, payout);
+        if (!payout.bankTransferInProgress()) {
+            throw new PayoutBankTransferNotStartedException(payoutId, payout.state());
+        }
+        UUID startedBy = payout.bankTransferStartedBy();
+        payout.bankTransferAbandoned();
+
+        audit.record(
+                AuditAction.PAYOUT_BANK_TRANSFER_ABANDONED,
+                payoutId,
+                AuditActor.moderator(staffId),
+                AuditOutcome.SUCCEEDED,
+                "startedBy=%s; note=%s".formatted(startedBy, note));
+
+        log.info("Bank transfer for payout {} abandoned by {}", payoutId, staffId);
+        return payout;
+    }
+
+    /**
+     * V66's rule on the route a person carries out: nobody pays their own campaign's payout by hand.
+     * Audited independently, because this throws and an attempt is what an investigation looks for.
+     */
+    private void refuseOwnPayout(UUID staffId, Payout payout) {
+        if (staffId.equals(payout.creatorId())) {
+            audit.recordIndependently(
+                    AuditAction.PAYOUT_BANK_TRANSFER_STARTED,
+                    payout.id(),
+                    AuditActor.moderator(staffId),
+                    AuditOutcome.REFUSED,
+                    "ownPayout");
+            throw new SelfPaidPayoutException(payout.id());
+        }
+    }
+
+    /**
+     * What the transfer's payment description says, so the bank statement names the payout it paid.
+     * The payout's identifier and nothing personal: a description is read by both banks.
+     */
+    private static String descriptionOf(Payout payout) {
+        return "IdeyaNest payout " + payout.id();
+    }
+
+    /**
+     * A started bank transfer, with the account it goes to — #397.
+     *
+     * @param account the creator's account in full. {@code BankAccount.toString} prints the hint, so a
+     *     record logged by accident does not put the number in a log
+     * @param description what to write as the transfer's payment description
+     */
+    public record BankTransfer(Payout payout, BankAccount account, String description) {
     }
 
     /** One payout with its signatures. */

@@ -19,6 +19,14 @@ public interface BackerDisputeRepository extends JpaRepository<BackerDispute, UU
             """)
     Optional<BackerDispute> openFor(@Param("pledgeId") UUID pledgeId);
 
+    /** Whether any backer of the campaign has a dispute waiting to be decided — #397's bank transfer. */
+    @Query(
+            """
+            SELECT COUNT(d) > 0 FROM BackerDispute d
+            WHERE d.projectId = :projectId AND d.state = az.ideanest.payout.domain.BackerDisputeState.OPEN
+            """)
+    boolean anyOpenOn(@Param("projectId") UUID projectId);
+
     @Query(
             """
             SELECT d FROM BackerDispute d

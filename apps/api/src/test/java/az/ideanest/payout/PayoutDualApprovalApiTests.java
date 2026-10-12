@@ -3,6 +3,7 @@ package az.ideanest.payout;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import az.ideanest.payout.application.PayoutBankTransferInProgressException;
 import az.ideanest.payout.application.PayoutNotSendableException;
 import az.ideanest.payout.application.PayoutService;
 import az.ideanest.payout.application.PayoutSignaturesShortException;
@@ -201,6 +202,44 @@ class PayoutDualApprovalApiTests extends AbstractIntegrationTest {
                 .isInstanceOf(PayoutNotSendableException.class)
                 .satisfies(cause -> assertThat(((PayoutNotSendableException) cause).state())
                         .isEqualTo(PayoutState.CANCELLED));
+    }
+
+    @Test
+    @DisplayName("#397: a bank transfer is not started on a row that says approved with too few signatures")
+    void aBankTransferCountsSignaturesToo() {
+        UUID payoutId = payoutAwaitingTwoSignatures();
+        UUID first = administrator();
+
+        payouts.approve(first, payoutId, "only one");
+        new JdbcTemplate(dataSource).update("UPDATE payouts SET state = 'APPROVED' WHERE id = ?", payoutId);
+
+        // The route a person carries out is gated on the rows exactly as the provider's is: the
+        // account is not opened for a payout one signature short.
+        assertThatThrownBy(() -> payouts.startBankTransfer(first, payoutId))
+                .isInstanceOf(PayoutSignaturesShortException.class);
+        assertThat(payoutRows.findById(payoutId).orElseThrow().bankTransferInProgress()).isFalse();
+    }
+
+    @Test
+    @DisplayName("#397: a signature cannot be withdrawn from a payout somebody has started paying by hand")
+    void aStartedBankTransferKeepsItsSignatures() {
+        UUID payoutId = payoutAwaitingTwoSignatures();
+        UUID first = administrator();
+        UUID second = secondApprover();
+        payouts.approve(first, payoutId, "first");
+        payouts.approve(second, payoutId, "second");
+        // Where `startBankTransfer` leaves it; the start itself needs a funded campaign and is
+        // PayoutBankTransferTests' subject.
+        new JdbcTemplate(dataSource).update(
+                "UPDATE payouts SET bank_transfer_started_at = now(), bank_transfer_started_by = ? WHERE id = ?",
+                first,
+                payoutId);
+
+        // Un-approving it would leave money that may have moved behind a payout waiting to be signed.
+        assertThatThrownBy(() -> payouts.withdrawApproval(second, payoutId))
+                .isInstanceOf(PayoutBankTransferInProgressException.class);
+        assertThat(approvals.countFor(payoutId)).isEqualTo(2);
+        assertThat(payoutRows.findById(payoutId).orElseThrow().state()).isEqualTo(PayoutState.APPROVED);
     }
 
     // ------------------------------------------------------------------

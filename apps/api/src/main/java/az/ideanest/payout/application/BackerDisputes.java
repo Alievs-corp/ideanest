@@ -90,9 +90,10 @@ public class BackerDisputes {
         Payout held = payouts
                 .inFlightFor(pledge.projectId())
                 .orElseThrow(() -> new DisputeWindowClosedException(pledge.projectId()));
-        if (held.sendUnconfirmed()) {
+        if (held.moneyMayHaveLeft()) {
             // #184's review: its send may already have been carried out, and nothing is refunded through the
-            // platform after payout. The window closes when the money may have left, not when it is confirmed.
+            // platform after payout. The window closes when the money may have left, not when it is confirmed --
+            // and a bank transfer somebody has started by hand (#397) is money that may have left.
             throw new DisputeWindowClosedException(pledge.projectId());
         }
         if (funds.refundableOn(pledgeId).isEmpty()) {
@@ -143,7 +144,7 @@ public class BackerDisputes {
         // already paid, or one whose send went unanswered, would not be recalculated without this backer --
         // the refund would go out beside a payout that still carries their money.
         boolean moneyMayHaveLeft = payouts.paidFor(dispute.projectId()).isPresent()
-                || payouts.inFlightFor(dispute.projectId()).filter(Payout::sendUnconfirmed).isPresent();
+                || payouts.inFlightFor(dispute.projectId()).filter(Payout::moneyMayHaveLeft).isPresent();
         if (moneyMayHaveLeft) {
             throw new DisputeWindowClosedException(dispute.projectId());
         }

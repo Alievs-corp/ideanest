@@ -1,10 +1,15 @@
 package az.ideanest.payout.api;
 
+import az.ideanest.payment.application.BankTransferAlreadyRecordedException;
 import az.ideanest.payment.application.NoPayoutProviderException;
 import az.ideanest.payment.application.PayoutReferenceTakenException;
+import az.ideanest.payout.application.BankTransferDateOutOfRangeException;
 import az.ideanest.payout.application.CampaignAlreadyPaidOutException;
 import az.ideanest.payout.application.NothingToPayException;
 import az.ideanest.payout.application.PayoutAlreadyInFlightException;
+import az.ideanest.payout.application.PayoutBackerDisputeOpenException;
+import az.ideanest.payout.application.PayoutBankTransferInProgressException;
+import az.ideanest.payout.application.PayoutBankTransferNotStartedException;
 import az.ideanest.payout.application.CreatorNotVerifiedException;
 import az.ideanest.payout.application.PayoutDestinationNotVerifiedException;
 import az.ideanest.payout.application.PayoutDestinationProviderMismatchException;
@@ -12,7 +17,10 @@ import az.ideanest.payout.application.PayoutNotApprovableException;
 import az.ideanest.payout.application.PayoutNotFoundException;
 import az.ideanest.payout.application.PayoutNotSendableException;
 import az.ideanest.payout.application.PayoutSendUnconfirmedException;
+import az.ideanest.payout.application.PayoutSettlesByBankTransferException;
+import az.ideanest.payout.application.PayoutSettlesThroughProviderException;
 import az.ideanest.payout.application.PayoutSignaturesShortException;
+import az.ideanest.payout.application.SelfPaidPayoutException;
 import az.ideanest.payout.application.UnknownPayoutCampaignException;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
@@ -25,7 +33,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
- * AD-05's payout refusals — issues #69, #306, #398 and #182.
+ * AD-05's payout refusals — issues #69, #306, #398, #182 and #397.
  *
  * <p>One handler per refusal rather than one over a shared supertype, and that is deliberate: each
  * carries a different {@code code} and leads the reader to a different next action. A base
@@ -120,6 +128,104 @@ public class PayoutExceptionHandler {
         problem.setTitle("That provider reference is already recorded");
         problem.setDetail("Another settled transaction carries this reference. Check the statement's reference again.");
         problem.setProperty("code", "PAYOUT_REFERENCE_TAKEN");
+        return problem;
+    }
+
+    /**
+     * 409 when {@code send} is asked to pay a payout that is paid by bank transfer — #397.
+     *
+     * <p>The console's next step is {@code /bank-transfer/start}, and the code says so without the
+     * reader having to know why the creator's destination is an IBAN.
+     */
+    @ExceptionHandler(PayoutSettlesByBankTransferException.class)
+    public ProblemDetail handleSettlesByBankTransfer(PayoutSettlesByBankTransferException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-settles-by-bank-transfer"));
+        problem.setTitle("This payout is paid by bank transfer");
+        problem.setDetail("The creator is paid into a bank account. Start a bank transfer instead of sending it.");
+        problem.setProperty("code", "PAYOUT_SETTLES_BY_BANK_TRANSFER");
+        return problem;
+    }
+
+    /** 409 when a bank transfer is started for a creator whose destination is a provider's token — #397. */
+    @ExceptionHandler(PayoutSettlesThroughProviderException.class)
+    public ProblemDetail handleSettlesThroughProvider(PayoutSettlesThroughProviderException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-settles-through-provider"));
+        problem.setTitle("This payout is sent through the provider");
+        problem.setDetail("The creator's destination is a provider's token, not a bank account. Send it instead.");
+        problem.setProperty("code", "PAYOUT_SETTLES_THROUGH_PROVIDER");
+        return problem;
+    }
+
+    /** 409 when a bank transfer is recorded, abandoned or opened with none in progress — #397. */
+    @ExceptionHandler(PayoutBankTransferNotStartedException.class)
+    public ProblemDetail handleBankTransferNotStarted(PayoutBankTransferNotStartedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-bank-transfer-not-started"));
+        problem.setTitle("No bank transfer in progress");
+        problem.setDetail("This payout is " + exception.state() + " and no bank transfer of it has been started.");
+        problem.setProperty("code", "PAYOUT_BANK_TRANSFER_NOT_STARTED");
+        problem.setProperty("meta", Map.of("state", exception.state().name()));
+        return problem;
+    }
+
+    /**
+     * 409 when a payout being paid by bank transfer is cancelled or loses a signature — #397.
+     * {@code PAYOUT_SEND_UNCONFIRMED}'s argument on the other route.
+     */
+    @ExceptionHandler(PayoutBankTransferInProgressException.class)
+    public ProblemDetail handleBankTransferInProgress(PayoutBankTransferInProgressException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-bank-transfer-in-progress"));
+        problem.setTitle("A bank transfer of this payout is in progress");
+        problem.setDetail("The money may already have left. Record the transfer, or abandon it if it was never made.");
+        problem.setProperty("code", "PAYOUT_BANK_TRANSFER_IN_PROGRESS");
+        return problem;
+    }
+
+    /** 409 when a bank transfer is started while a backer's dispute on the campaign is undecided — #397. */
+    @ExceptionHandler(PayoutBackerDisputeOpenException.class)
+    public ProblemDetail handleBackerDisputeOpen(PayoutBackerDisputeOpenException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-backer-dispute-open"));
+        problem.setTitle("A backer's dispute is waiting to be decided");
+        problem.setDetail("Decide the campaign's open disputes first. Once the transfer starts, none can be upheld.");
+        problem.setProperty("code", "PAYOUT_BACKER_DISPUTE_OPEN");
+        problem.setProperty("meta", Map.of("projectId", exception.projectId().toString()));
+        return problem;
+    }
+
+    /** 409 when this payout's transfer is already recorded under a different reference — #397. */
+    @ExceptionHandler(BankTransferAlreadyRecordedException.class)
+    public ProblemDetail handleBankTransferAlreadyRecorded(BankTransferAlreadyRecordedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-bank-transfer-already-recorded"));
+        problem.setTitle("This payout's transfer is already recorded");
+        problem.setDetail("It was recorded under a different bank reference. Check the statement again.");
+        problem.setProperty("code", "PAYOUT_BANK_TRANSFER_ALREADY_RECORDED");
+        return problem;
+    }
+
+    /** 400 when the transfer's value date is after today or before the transfer was started — #397. */
+    @ExceptionHandler(BankTransferDateOutOfRangeException.class)
+    public ProblemDetail handleBankTransferDate(BankTransferDateOutOfRangeException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/bank-transfer-date-out-of-range"));
+        problem.setTitle("That cannot be the transfer's date");
+        problem.setDetail("The value date is between the day the transfer was started and today.");
+        problem.setProperty("code", "BANK_TRANSFER_DATE_OUT_OF_RANGE");
+        return problem;
+    }
+
+    /** 403 when a member of staff handles their own campaign's payout by hand — #397, V66's rule. */
+    @ExceptionHandler(SelfPaidPayoutException.class)
+    public ProblemDetail handleSelfPaid(SelfPaidPayoutException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        problem.setType(URI.create("https://ideanest.az/problems/self-paid-payout"));
+        problem.setTitle("Nobody pays their own payout");
+        problem.setDetail("Ask a colleague who holds the capability to handle this one.");
+        problem.setProperty("code", "SELF_PAID_PAYOUT");
         return problem;
     }
 

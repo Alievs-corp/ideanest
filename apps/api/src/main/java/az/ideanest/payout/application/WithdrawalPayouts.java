@@ -121,9 +121,9 @@ public class WithdrawalPayouts {
             return Optional.empty();
         }
         Payout held = payouts.findAndLock(inFlight.get().id()).orElseThrow();
-        if (held.sendUnconfirmed()) {
-            // #184's review: its last send may have been carried out, so it is not cancelled and priced again
-            // under a new key. Only a dispute opened before that send gets here (BackerDisputes#open closes the
+        if (held.moneyMayHaveLeft()) {
+            // #184's review: its last send may have been carried out (or, #397, a bank transfer of it started by
+            // hand), so it is not cancelled and priced again under a new key. Only a dispute opened before that send gets here (BackerDisputes#open closes the
             // window after it); its refund stands and is left to staff against the payout as priced.
             log.error("Payout {} may already have been sent; campaign {} is not recalculated.", held.id(), projectId);
             return Optional.of(held);

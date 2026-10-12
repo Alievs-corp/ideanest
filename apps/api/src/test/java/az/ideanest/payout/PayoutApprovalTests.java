@@ -14,6 +14,7 @@ import az.ideanest.payout.domain.PayoutState;
 import az.ideanest.shared.money.Money;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -173,6 +174,82 @@ class PayoutApprovalTests {
         partly.withholdDebt(FIVE);
         assertThatThrownBy(() -> partly.settledAgainstDebts(at)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> payout((short) 1, at).settledAgainstDebts(at)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("#397: a bank transfer starts only on an approved payout, and leaves it approved with its money possibly gone")
+    void aBankTransferStartsOnlyFromApproved() {
+        Payout held = payout((short) 1, Instant.parse("2026-01-01T00:00:00Z"));
+        UUID staff = UUID.randomUUID();
+        Instant at = Instant.parse("2026-02-01T00:00:00Z");
+
+        // Before the signatures there is nothing to pay; the state machine refuses as the service does.
+        assertThatThrownBy(() -> held.bankTransferStarted(staff, at)).isInstanceOf(IllegalStateException.class);
+        held.payable();
+        assertThatThrownBy(() -> held.bankTransferStarted(staff, at)).isInstanceOf(IllegalStateException.class);
+        held.approved();
+
+        held.bankTransferStarted(staff, at);
+
+        // Not a new state: V98's header. Everything that asks "may the money have left" now hears yes.
+        assertThat(held.state()).isEqualTo(PayoutState.APPROVED);
+        assertThat(held.bankTransferInProgress()).isTrue();
+        assertThat(held.moneyMayHaveLeft()).isTrue();
+        assertThat(held.bankTransferStartedBy()).isEqualTo(staff);
+        assertThat(held.bankTransferStartedAt()).isEqualTo(at);
+        assertThatThrownBy(() -> held.bankTransferStarted(staff, at))
+                .as("started once; a retry is the service's to answer, not a second mark")
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("#397: a payout whose provider send went unanswered is not also paid by hand")
+    void anUnconfirmedSendCannotStartABankTransfer() {
+        Payout sending = payout((short) 1, Instant.parse("2026-01-01T00:00:00Z"));
+        sending.payable();
+        sending.approved();
+        sending.sendUnconfirmedAt(Instant.parse("2026-02-01T00:00:00Z"));
+
+        assertThat(sending.moneyMayHaveLeft()).isTrue();
+        assertThatThrownBy(() -> sending.bankTransferStarted(UUID.randomUUID(), Instant.now()))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("#397: a recorded transfer pays the payout and keeps its date; an abandoned one clears the mark")
+    void aBankTransferIsRecordedOrAbandoned() {
+        UUID staff = UUID.randomUUID();
+        Instant started = Instant.parse("2026-02-01T00:00:00Z");
+
+        Payout recorded = payout((short) 1, Instant.parse("2026-01-01T00:00:00Z"));
+        recorded.payable();
+        recorded.approved();
+        assertThatThrownBy(() -> recorded.paidByBankTransfer(UUID.randomUUID(), LocalDate.of(2026, 2, 2), started))
+                .as("not without a transfer somebody started here")
+                .isInstanceOf(IllegalStateException.class);
+        recorded.bankTransferStarted(staff, started);
+        UUID transaction = UUID.randomUUID();
+
+        recorded.paidByBankTransfer(transaction, LocalDate.of(2026, 2, 2), Instant.parse("2026-02-02T09:00:00Z"));
+
+        assertThat(recorded.state()).isEqualTo(PayoutState.PAID);
+        assertThat(recorded.payoutTransactionId()).isEqualTo(transaction);
+        assertThat(recorded.bankTransferredOn()).isEqualTo(LocalDate.of(2026, 2, 2));
+        assertThat(recorded.bankTransferInProgress()).isFalse();
+        assertThatThrownBy(recorded::bankTransferAbandoned).isInstanceOf(IllegalStateException.class);
+
+        Payout abandoned = payout((short) 1, Instant.parse("2026-01-01T00:00:00Z"));
+        abandoned.payable();
+        abandoned.approved();
+        assertThatThrownBy(abandoned::bankTransferAbandoned).isInstanceOf(IllegalStateException.class);
+        abandoned.bankTransferStarted(staff, started);
+
+        abandoned.bankTransferAbandoned();
+
+        assertThat(abandoned.state()).isEqualTo(PayoutState.APPROVED);
+        assertThat(abandoned.moneyMayHaveLeft()).isFalse();
+        assertThat(abandoned.bankTransferStartedAt()).isNull();
+        assertThat(abandoned.bankTransferStartedBy()).isNull();
     }
 
     @Test

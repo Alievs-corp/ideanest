@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -100,6 +101,22 @@ public class Payout {
      */
     @Column(name = "send_unconfirmed_at")
     private Instant sendUnconfirmedAt;
+
+    /**
+     * V98 (#397): when a member of staff opened the creator's account to pay this by bank transfer, and
+     * who. The money may have left from then on, so — like {@link #sendUnconfirmedAt} — the payout stays
+     * {@code APPROVED} and is neither cancelled nor recalculated until the transfer is recorded or
+     * abandoned.
+     */
+    @Column(name = "bank_transfer_started_at")
+    private Instant bankTransferStartedAt;
+
+    @Column(name = "bank_transfer_started_by")
+    private UUID bankTransferStartedBy;
+
+    /** V98 (#397): the value date the bank gave the transfer that paid this. Only on a paid payout. */
+    @Column(name = "bank_transferred_on")
+    private LocalDate bankTransferredOn;
 
     @Column(name = "idempotency_key", nullable = false, updatable = false)
     private String idempotencyKey;
@@ -256,6 +273,64 @@ public class Payout {
     }
 
     /**
+     * A member of staff has opened the creator's account to pay this by bank transfer — #397.
+     *
+     * <p>Not a state. V98's header has the argument: it is {@link #sendUnconfirmedAt}'s sibling on the
+     * other route, an {@code APPROVED} row whose money may have left. Only an approved payout whose send
+     * was never left unanswered can start one, because a send the provider may have carried out is
+     * settled from the provider's statement before anybody pays the same money by hand.
+     */
+    public void bankTransferStarted(UUID staffId, Instant at) {
+        if (state != PayoutState.APPROVED || sendUnconfirmed() || bankTransferStartedAt != null) {
+            throw new IllegalStateException("Payout " + id + " is " + state + " and cannot start a bank transfer");
+        }
+        this.bankTransferStartedAt = Objects.requireNonNull(at, "at");
+        this.bankTransferStartedBy = Objects.requireNonNull(staffId, "staffId");
+    }
+
+    /**
+     * Nobody made the transfer after all, and the payout may be cancelled again — #397.
+     *
+     * <p>A person's statement about their own bank, which is why the service requires a note and audits
+     * it. The method only asserts that there was a transfer to abandon.
+     */
+    public void bankTransferAbandoned() {
+        if (state != PayoutState.APPROVED || bankTransferStartedAt == null) {
+            throw new IllegalStateException("Payout " + id + " has no bank transfer in progress");
+        }
+        this.bankTransferStartedAt = null;
+        this.bankTransferStartedBy = null;
+    }
+
+    /**
+     * The transfer was made, and the bank statement shows it — #397.
+     *
+     * <p>{@link #paid} with the bank's value date beside it. Only from a started transfer: a payout
+     * recorded as paid by bank without one would be a transfer to an account nobody opened here.
+     */
+    public void paidByBankTransfer(UUID transactionId, LocalDate transferredOn, Instant at) {
+        if (state != PayoutState.APPROVED || bankTransferStartedAt == null) {
+            throw new IllegalStateException("Payout " + id + " has no bank transfer in progress");
+        }
+        paid(transactionId, at);
+        this.bankTransferredOn = Objects.requireNonNull(transferredOn, "transferredOn");
+    }
+
+    /** Whether a member of staff has started paying this by bank transfer and not yet recorded it. */
+    public boolean bankTransferInProgress() {
+        return state == PayoutState.APPROVED && bankTransferStartedAt != null;
+    }
+
+    /**
+     * Whether the money may already have left by either route: a send the provider never answered, or a
+     * bank transfer started by hand (#184's review, #397). What a dispute, a recalculation and a
+     * cancellation ask before they move a payout.
+     */
+    public boolean moneyMayHaveLeft() {
+        return sendUnconfirmed() || bankTransferInProgress();
+    }
+
+    /**
      * Everything it would have paid went towards the creator's debts (#184's review).
      *
      * <p>{@code PAID} with nothing sent and no transaction — V86 allows that for a net of zero — so the
@@ -387,5 +462,17 @@ public class Payout {
 
     public String idempotencyKey() {
         return idempotencyKey;
+    }
+
+    public Instant bankTransferStartedAt() {
+        return bankTransferStartedAt;
+    }
+
+    public UUID bankTransferStartedBy() {
+        return bankTransferStartedBy;
+    }
+
+    public LocalDate bankTransferredOn() {
+        return bankTransferredOn;
     }
 }

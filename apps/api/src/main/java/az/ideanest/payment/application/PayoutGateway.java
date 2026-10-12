@@ -4,12 +4,14 @@ import az.ideanest.payment.domain.PaymentProvider;
 import az.ideanest.payment.domain.PaymentTransaction;
 import az.ideanest.payment.domain.PayoutRequest;
 import az.ideanest.payment.domain.PayoutResult;
+import az.ideanest.payment.domain.ProviderName;
 import az.ideanest.payment.domain.ProviderOutcome;
 import az.ideanest.payment.domain.TransactionStatus;
 import az.ideanest.payment.domain.ProviderUnavailableException;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
 import az.ideanest.payment.infrastructure.RefundRepository;
 import az.ideanest.shared.money.Money;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -179,6 +181,57 @@ public class PayoutGateway {
                 amount,
                 provider.name(),
                 new PayoutResult(ProviderOutcome.APPROVED, providerTransactionId, null, null, "{\"source\":\"statement\"}"),
+                key);
+    }
+
+    /**
+     * Records a payout a member of staff paid by bank transfer from IdeyaNest's own account — #397.
+     *
+     * <p>{@link #recordFromStatement}'s shape on the other route: the row and the posting a sent payout
+     * gets, written from what a person read on the bank statement, with no provider asked. The provider
+     * is {@link ProviderName#BANK_TRANSFER}, which is not an adapter, and the bank's reference is the
+     * row's {@code provider_transaction_id}, so V41's {@code transactions_settled_provider_key} holds one
+     * reference to one movement of money exactly as it does for a provider's.
+     *
+     * <p>Under its own key ({@code <key>-bank}), and idempotent on it. Recording the same transfer again
+     * returns the row already written; recording it under a different reference is refused, because the
+     * payout was paid once and the second reference is either a typo or a second transfer — and in
+     * either case somebody has to look at the statement rather than have this pick one.
+     *
+     * @param transferredOn the value date on the statement, kept on the row beside the reference
+     * @throws PayoutReferenceTakenException when another settled transaction already carries the reference
+     * @throws BankTransferAlreadyRecordedException when this payout's transfer is already recorded under a
+     *     different reference
+     */
+    public Sent recordBankTransfer(
+            UUID payoutId,
+            UUID projectId,
+            UUID creatorId,
+            Money amount,
+            String bankReference,
+            LocalDate transferredOn,
+            String idempotencyKey) {
+        String key = idempotencyKey + "-bank";
+        Optional<PaymentTransaction> replayed = transactions.findByIdempotencyKey(key);
+        if (replayed.isPresent()) {
+            if (!bankReference.equals(replayed.get().getProviderTransactionId())) {
+                throw new BankTransferAlreadyRecordedException(payoutId);
+            }
+            log.info("Bank transfer for payout {} replayed under key {}", payoutId, key);
+            return new Sent(true, replayed.get().getId(), null, null);
+        }
+        if (transactions.existsByProviderAndProviderTransactionIdAndStatusIn(
+                ProviderName.BANK_TRANSFER, bankReference, List.of(TransactionStatus.SUCCEEDED, TransactionStatus.FAILED))) {
+            throw new PayoutReferenceTakenException(bankReference);
+        }
+        String statement = "{\"source\":\"bankTransfer\",\"transferredOn\":\"%s\"}".formatted(transferredOn);
+        return postings.record(
+                payoutId,
+                projectId,
+                creatorId,
+                amount,
+                ProviderName.BANK_TRANSFER,
+                new PayoutResult(ProviderOutcome.APPROVED, bankReference, null, null, statement),
                 key);
     }
 

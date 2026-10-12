@@ -1,5 +1,8 @@
 package az.ideanest.support;
 
+import az.ideanest.compliance.domain.PayoutDestination;
+import az.ideanest.shared.crypto.Sealed;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -54,6 +57,48 @@ public final class Destinations {
     /** Refused by a reviewer. */
     public static void rejected(DataSource dataSource, UUID creatorId, String holderName, String reason) {
         write(dataSource, creatorId, PROVIDER, holderName, "REJECTED", reason, null, null);
+    }
+
+    /**
+     * The IBAN {@link #bankAccount} files: a valid Azerbaijani number with a correct check, and the
+     * one {@code CreatorPayoutDestinationTests} files through the service.
+     */
+    public static final String IBAN = "AZ21NABZ00000000137010001944";
+
+    /** {@link #IBAN}'s masked form, which is all an audit row or a log line may carry. */
+    public static final String IBAN_HINT = "AZ21…1944";
+
+    /**
+     * A bank account filed and in the given state, sealed under {@link BankDetailsKeys}' test key —
+     * #397. The payout opens it only while {@code BankDetailsKeys.install} has the key on the service;
+     * without it, the row still says which route the payout takes and how it stands.
+     */
+    public static void bankAccount(
+            DataSource dataSource, UUID creatorId, UUID verifierId, String holderName, String state) {
+        Sealed sealed = BankDetailsKeys.cipher()
+                .seal(IBAN.getBytes(StandardCharsets.UTF_8), PayoutDestination.accountContext(creatorId));
+        boolean verified = "VERIFIED".equals(state);
+        new JdbcTemplate(dataSource)
+                .update(
+                        """
+                        INSERT INTO payout_destinations
+                            (user_id, provider, reference, holder_name, display_hint, state,
+                             verification_method, verified_at, verified_by,
+                             account_ciphertext, account_nonce, account_key_id, created_at, updated_at)
+                        VALUES (?, 'BANK_TRANSFER', ?, ?, ?, ?, ?,
+                                CASE WHEN ? THEN now() ELSE NULL END, ?, ?, ?, ?, now(), now())
+                        """,
+                        creatorId,
+                        BankDetailsKeys.fingerprints().of(IBAN),
+                        holderName,
+                        IBAN_HINT,
+                        state,
+                        verified ? "STAFF_ATTESTED" : null,
+                        verified,
+                        verified ? verifierId : null,
+                        sealed.ciphertext(),
+                        sealed.nonce(),
+                        sealed.keyId());
     }
 
     /** Removes every destination, for a suite that truncates around itself. */

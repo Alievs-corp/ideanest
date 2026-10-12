@@ -7,11 +7,13 @@ import az.ideanest.compliance.application.ComplianceOverrides;
 import az.ideanest.compliance.domain.OverrideReason;
 import az.ideanest.payout.application.PayoutDestinationNotVerifiedException;
 import az.ideanest.payout.application.PayoutService;
+import az.ideanest.payout.application.PayoutSettlesByBankTransferException;
 import az.ideanest.payout.domain.Payout;
 import az.ideanest.payout.domain.PayoutState;
 import az.ideanest.payout.infrastructure.PayoutRepository;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.shared.compliance.ComplianceRequirement;
+import az.ideanest.shared.compliance.DestinationKind;
 import az.ideanest.shared.compliance.DestinationStanding;
 import az.ideanest.shared.compliance.PayoutDestinations;
 import az.ideanest.shared.money.Money;
@@ -237,6 +239,41 @@ class PayoutDestinationGateTests extends AbstractIntegrationTest {
 
         assertThat(destinations.referenceFor(held.creatorId(), Destinations.PROVIDER))
                 .isEmpty();
+    }
+
+    // ------------------------------------------------------------------
+    // A bank account, since #397
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a bank account nobody has confirmed holds the approval, as a token does")
+    void anUnconfirmedBankAccountHolds() {
+        Held held = heldPayout();
+        Destinations.bankAccount(dataSource, held.creatorId(), null, "Test Creator", "AWAITING_VERIFICATION");
+
+        // Which route the money takes is a separate question from whether anybody checked where it
+        // goes, and the gate asks the second for both kinds.
+        assertThat(destinations.kindOf(held.creatorId())).contains(DestinationKind.BANK_TRANSFER);
+        assertThatThrownBy(() -> payouts.approve(administrator(), held.payoutId(), "looks fine"))
+                .isInstanceOf(PayoutDestinationNotVerifiedException.class);
+    }
+
+    @Test
+    @DisplayName("a payout to a confirmed bank account is approved, and the provider is never asked to send it")
+    void aBankAccountIsNotSentThroughTheProvider() {
+        Held held = heldPayout();
+        Destinations.bankAccount(dataSource, held.creatorId(), administrator(), "Test Creator", "VERIFIED");
+
+        payouts.approve(administrator(), held.payoutId(), "checked");
+        assertThat(state(held.payoutId())).isEqualTo(PayoutState.APPROVED);
+
+        // An IBAN is no token: `referenceFor` never offers its fingerprint as somewhere to send money,
+        // and `send` refuses before it asks.
+        assertThat(destinations.referenceFor(held.creatorId(), Destinations.PROVIDER)).isEmpty();
+        assertThat(destinations.referenceFor(held.creatorId(), "BANK_TRANSFER")).isEmpty();
+        assertThatThrownBy(() -> payouts.send(administrator(), held.payoutId()))
+                .isInstanceOf(PayoutSettlesByBankTransferException.class);
+        assertThat(state(held.payoutId())).isEqualTo(PayoutState.APPROVED);
     }
 
     // ------------------------------------------------------------------

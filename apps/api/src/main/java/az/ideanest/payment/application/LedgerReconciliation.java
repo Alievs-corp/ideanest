@@ -52,6 +52,21 @@ import org.springframework.transaction.annotation.Transactional;
  * provider is chosen, its report becomes a fourth source on the same right-hand side, and
  * the arithmetic below does not change.
  *
+ * <h2>Escrow spans two places since #397</h2>
+ *
+ * <p>Creators are paid by bank transfer from IdeyaNest's own account (epic #392): a
+ * {@code PAYOUT} transaction whose provider is {@code BANK_TRANSFER}, with the same posting a
+ * provider's payout gets. So {@code escrow} is money held across the provider's balance
+ * <em>and</em> the bank account — collected through the one, paid out from the other — and the
+ * three checks here still balance, because {@code settledTotals} sums every provider and the
+ * ledger never distinguished them.
+ *
+ * <p>What does split is the comparison above, when it is written: a provider's settlement
+ * report knows nothing of a bank transfer, so it is compared only against transactions whose
+ * provider is that provider, never against {@code BANK_TRANSFER} rows. Those are checked
+ * against the bank's statement instead, by their {@code provider_transaction_id}, which is the
+ * bank's reference.
+ *
  * <h2>It reports rather than repairs</h2>
  *
  * Nothing here writes to the ledger. An imbalance is a fact about money that a person has to
