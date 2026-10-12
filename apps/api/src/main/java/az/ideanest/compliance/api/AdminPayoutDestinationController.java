@@ -1,6 +1,7 @@
 package az.ideanest.compliance.api;
 
 import az.ideanest.compliance.application.CreatorPayoutDestinations;
+import az.ideanest.compliance.application.NoBankAccountOnFileException;
 import az.ideanest.compliance.domain.DestinationVerificationMethod;
 import az.ideanest.compliance.domain.PayoutDestination;
 import az.ideanest.shared.compliance.RejectionReason;
@@ -33,6 +34,11 @@ import org.springframework.web.bind.annotation.RestController;
  * check is in the service, where the audit row is also written — an authorised action nobody
  * recorded and a recorded action nobody authorised are the same defect from opposite ends.
  *
+ * <p><strong>The IBAN is one endpoint of its own</strong> (#394):
+ * {@code GET /accounts/{id}/payout-destination/account} returns the number in full to somebody
+ * holding {@code READ_BANK_DETAILS} — COMPLIANCE to verify it, FINANCE to pay into it — and
+ * audits the opening. Everything else here shows the masked hint.
+ *
  * <p><strong>No write of the destination itself.</strong> There is no endpoint here that sets a
  * token, and that absence is the whole point of the issue. A member of staff who could file a
  * destination would be a member of staff typing where money goes, which is what this replaces.
@@ -60,6 +66,26 @@ public class AdminPayoutDestinationController {
                         .map(row -> PayoutDestinationResponses.ForStaff.of(
                                 creatorId, row, destinations.standingOf(creatorId)))
                         .orElseGet(() -> PayoutDestinationResponses.ForStaff.none(creatorId)));
+    }
+
+    /**
+     * The creator's IBAN in full — #394. {@code READ_BANK_DETAILS}, and audited as
+     * {@code PAYOUT_DESTINATION_ACCOUNT_REVEALED}; a 404 when what is on file is not a bank
+     * account.
+     */
+    @GetMapping(
+            path = "/accounts/{creatorId}/payout-destination/account",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PayoutDestinationResponses.RevealedBankAccount> revealAccount(
+            @AuthenticationPrincipal Jwt accessToken, @PathVariable UUID creatorId) {
+
+        UUID staffId = callerOf(accessToken);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(destinations
+                        .revealBankAccount(staffId, creatorId)
+                        .map(account -> PayoutDestinationResponses.RevealedBankAccount.of(creatorId, account))
+                        .orElseThrow(() -> new NoBankAccountOnFileException(creatorId)));
     }
 
     /** The destinations waiting on somebody, oldest first. */

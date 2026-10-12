@@ -2,10 +2,12 @@ package az.ideanest.compliance.api;
 
 import az.ideanest.compliance.application.DestinationNameMismatchException;
 import az.ideanest.compliance.application.InvalidOverrideWindowException;
+import az.ideanest.compliance.application.NoBankAccountOnFileException;
 import az.ideanest.compliance.application.SelfVerifiedDestinationException;
 import az.ideanest.compliance.application.UnknownDestinationProviderException;
 import az.ideanest.compliance.application.UnknownPayoutDestinationException;
 import az.ideanest.compliance.application.UnknownOverrideException;
+import az.ideanest.compliance.domain.MalformedIbanException;
 import az.ideanest.compliance.domain.MalformedTaxIdentifierException;
 import az.ideanest.compliance.domain.SelfGrantedOverrideException;
 import az.ideanest.payment.application.PayoutCardsUnavailableException;
@@ -131,6 +133,44 @@ public class ComplianceExceptionHandler {
         problem.setDetail("A VÖEN is ten digits.");
         problem.setProperty("code", "MALFORMED_TAX_IDENTIFIER");
         problem.setProperty("meta", Map.of("typed", exception.typed() == null ? "" : exception.typed()));
+        return problem;
+    }
+
+    /**
+     * <strong>400: that is not an IBAN a creator can be paid to</strong> — #394.
+     *
+     * <p>{@code meta.defect} says what is wrong, from {@code Iban.Defect}'s closed set, so the
+     * screen can say "a character is mistyped" rather than "invalid". Unlike
+     * {@code MALFORMED_TAX_IDENTIFIER} the refusal does <strong>not</strong> repeat what was
+     * typed: even a mistyped IBAN is most of somebody's account number, and a response body is
+     * cached and pasted into bug reports. The creator still has it in the field they typed it in.
+     */
+    @ExceptionHandler(MalformedIbanException.class)
+    public ProblemDetail handleMalformedIban(MalformedIbanException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/malformed-iban"));
+        problem.setTitle("That is not an IBAN a creator can be paid to");
+        problem.setDetail("A creator is paid to an Azerbaijani IBAN: AZ, two check digits, a four-letter bank "
+                + "code and twenty letters or digits.");
+        problem.setProperty("code", "MALFORMED_IBAN");
+        problem.setProperty("meta", Map.of("defect", exception.defect().name()));
+        return problem;
+    }
+
+    /**
+     * <strong>404: what is on file is not a bank account</strong> — #394.
+     *
+     * <p>Nothing filed, or a provider's token, which has no account number to reveal. The
+     * console's cue is to reload the account rather than to retry.
+     */
+    @ExceptionHandler(NoBankAccountOnFileException.class)
+    public ProblemDetail handleNoBankAccount(NoBankAccountOnFileException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problem.setType(URI.create("https://ideanest.az/problems/payout-bank-account-not-found"));
+        problem.setTitle("No bank account on file");
+        problem.setDetail("This creator has not filed a bank account to be paid to. Reload the account.");
+        problem.setProperty("code", "PAYOUT_BANK_ACCOUNT_NOT_FOUND");
+        problem.setProperty("meta", Map.of("creator", exception.creatorId().toString()));
         return problem;
     }
 

@@ -206,6 +206,21 @@ class StaffRoleTests {
     }
 
     @Test
+    @DisplayName("#394: the IBAN in full is for the two jobs that need the number, and nobody else")
+    void readingBankDetailsIsNarrow() {
+        // Compliance compares the account with the evidence before verifying it; Finance types it
+        // into the bank to pay the creator. Every other screen shows the masked hint.
+        assertThat(StaffRole.COMPLIANCE.capabilities()).contains(StaffCapability.READ_BANK_DETAILS);
+        assertThat(StaffRole.FINANCE.capabilities()).contains(StaffCapability.READ_BANK_DETAILS);
+        assertThat(StaffRole.MODERATOR.capabilities()).doesNotContain(StaffCapability.READ_BANK_DETAILS);
+        assertThat(StaffRole.CURATOR.capabilities()).doesNotContain(StaffCapability.READ_BANK_DETAILS);
+        assertThat(StaffRole.PARTNER.capabilities()).doesNotContain(StaffCapability.READ_BANK_DETAILS);
+        // Seeing the number decides nothing, so V66's split is untouched: finance still does not
+        // certify that an account is the creator's.
+        assertThat(StaffRole.FINANCE.capabilities()).doesNotContain(StaffCapability.VERIFY_PAYOUT_DESTINATION);
+    }
+
+    @Test
     @DisplayName("compliance cannot waive the rules it enforces")
     void complianceCannotOverrideItself() {
         // The same argument a third time, and the reason overrides are SUPER_ADMIN's alone:

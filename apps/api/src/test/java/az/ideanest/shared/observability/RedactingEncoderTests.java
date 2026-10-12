@@ -108,6 +108,28 @@ class RedactingEncoderTests {
     }
 
     @Test
+    @DisplayName("#394: an IBAN is masked written solid and printed in groups, and its hint is not")
+    void masksIbans() {
+        ILoggingEvent event = event(
+                "%s paying AZ21NABZ00000000137010001944, statement shows AZ21 NABZ 0000 0000 1370 1000 1944"
+                        .formatted(MARKER),
+                null,
+                Map.of());
+
+        assertThat(encodeWith(patternEncoder(), event))
+                .contains("AZ21NABZ00000000137010001944")
+                .contains("AZ21 NABZ 0000 0000 1370 1000 1944");
+        assertThat(encodeWith(redacting(patternEncoder()), event))
+                .contains(MARKER)
+                .doesNotContain("NABZ00000000137010001944", "NABZ 0000 0000 1370 1000 1944", "1370 1000");
+
+        // The masked hint is what every screen and audit row carries instead, and it is too
+        // short to be an account number. Asked of the rules directly, so the platform's default
+        // charset cannot decide the answer.
+        assertThat(Redaction.redact("account=AZ21…1944 filed")).isEqualTo("account=AZ21…1944 filed");
+    }
+
+    @Test
     @DisplayName("a value that reached the MDC is masked too")
     void masksMdcValues() {
         Map<String, String> mdc = new LinkedHashMap<>();

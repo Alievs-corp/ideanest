@@ -81,6 +81,7 @@ public enum StaffRole {
             StaffCapability.ISSUE_REFUND,
             StaffCapability.MANAGE_DISPUTES,
             StaffCapability.HANDLE_SUPPORT,
+            StaffCapability.READ_BANK_DETAILS,
             StaffCapability.VIEW_AUDIT)),
 
     /**
@@ -110,6 +111,7 @@ public enum StaffRole {
             StaffCapability.REVIEW_IDENTITY_VERIFICATION,
             StaffCapability.OPEN_IDENTITY_DOCUMENT,
             StaffCapability.VERIFY_PAYOUT_DESTINATION,
+            StaffCapability.READ_BANK_DETAILS,
             StaffCapability.READ_ACCEPTANCE_RECORD,
             StaffCapability.READ_SIGNED_AGREEMENT,
             StaffCapability.VIEW_AUDIT)),

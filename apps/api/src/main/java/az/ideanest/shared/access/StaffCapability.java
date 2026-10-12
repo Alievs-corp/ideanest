@@ -206,6 +206,21 @@ public enum StaffCapability {
     VERIFY_PAYOUT_DESTINATION,
 
     /**
+     * Open a creator's bank account in full: the IBAN, not its masked hint. #394.
+     *
+     * <p>Held by {@code COMPLIANCE}, who compare it with the evidence before verifying, and by
+     * {@code FINANCE}, who type it into the bank to pay a creator by transfer. Narrower than
+     * {@link #VERIFY_PAYOUT_DESTINATION} and {@link #VIEW_FINANCE}, because every other screen
+     * shows the hint and only these two jobs need the number; every opening is audited under
+     * the name of whoever opened it.
+     *
+     * <p>Seeing the number is not deciding anything about it. FINANCE holding this does not
+     * reopen V66's split: confirming the account belongs to the creator is still
+     * {@link #VERIFY_PAYOUT_DESTINATION}, which FINANCE still does not hold.
+     */
+    READ_BANK_DETAILS,
+
+    /**
      * Waive a compliance requirement for one account, for a bounded time. #436.
      *
      * <p><strong>The dangerous one.</strong> An override exists because rules meet cases

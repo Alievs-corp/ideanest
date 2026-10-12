@@ -283,6 +283,22 @@ class ProviderWebhookApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("#394: bank transfer is not a provider, so its path is the same 404")
+    void theBankTransferIsNotAWebhookSource() {
+        // BANK_TRANSFER is on ProviderName because transactions record it, and nothing sends a
+        // webhook about a transfer staff made by hand. Its path must not reach any handler.
+        ResponseEntity<String> response = http.exchange(
+                "/v1/webhooks/psp/bank_transfer",
+                HttpMethod.POST,
+                new HttpEntity<>(body(PaymentEventType.CHARGE_SUCCEEDED).getBytes(), headers(ScriptedWebhooks.headers())),
+                String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).contains("WEBHOOK_ENDPOINT_NOT_FOUND");
+        assertThat(deliveries()).isEmpty();
+    }
+
+    @Test
     @DisplayName("the endpoint needs no credentials; the signature is what authorises it")
     void theEndpointIsUnauthenticated() {
         // No bearer token anywhere in this suite. Asserted explicitly because a security

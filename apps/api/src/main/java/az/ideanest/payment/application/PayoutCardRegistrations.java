@@ -88,6 +88,18 @@ public class PayoutCardRegistrations implements PaymentEventHandler {
         return new PayoutCardPage(provider.name().name(), session.redirectUrl());
     }
 
+    /**
+     * Whether {@link #begin} could open a page now: a primary provider is configured and it
+     * registers payout cards — #394.
+     *
+     * <p>What the creator's settings screen asks before offering the card route beside the IBAN.
+     * Not a promise that {@link #begin} succeeds — the provider can still be unreachable — but a
+     * {@code false} here is certain, and a button that can only ever fail is not shown.
+     */
+    public boolean available() {
+        return providers.primary().map(PaymentProvider::registersPayoutCards).orElse(false);
+    }
+
     @Override
     public Set<PaymentEventType> handles() {
         return Set.of(PaymentEventType.PAYOUT_CARD_REGISTERED, PaymentEventType.PAYOUT_CARD_FAILED);

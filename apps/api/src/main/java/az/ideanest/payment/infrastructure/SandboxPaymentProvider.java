@@ -123,6 +123,11 @@ public class SandboxPaymentProvider implements PaymentProvider {
         return new ProviderCapabilities(false, false, null, false, false, false, Set.of(), Set.of("AZN"));
     }
 
+    @Override
+    public boolean registersPayoutCards() {
+        return true;
+    }
+
     /**
      * Opens the sandbox's card page on the creator's own origin.
      *

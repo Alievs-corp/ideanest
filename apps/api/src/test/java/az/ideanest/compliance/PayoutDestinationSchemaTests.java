@@ -1,24 +1,31 @@
 package az.ideanest.compliance;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import az.ideanest.compliance.domain.DestinationState;
 import az.ideanest.compliance.domain.DestinationVerificationMethod;
 import az.ideanest.payment.application.PaymentProviders;
 import az.ideanest.payment.domain.ProviderName;
+import az.ideanest.shared.compliance.DestinationKind;
 import az.ideanest.shared.compliance.RejectionReason;
 import az.ideanest.support.AbstractIntegrationTest;
+import az.ideanest.support.Campaigns;
+import az.ideanest.support.Destinations;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
@@ -44,6 +51,11 @@ class PayoutDestinationSchemaTests extends AbstractIntegrationTest {
     @Autowired
     private DataSource dataSource;
 
+    @AfterEach
+    void clear() {
+        Destinations.clear(dataSource);
+    }
+
     @Test
     @DisplayName("the provider constraint lists exactly §9.3's providers")
     void theProviderConstraintMatchesTheEnum() {
@@ -66,11 +78,78 @@ class PayoutDestinationSchemaTests extends AbstractIntegrationTest {
         // The compliance module never sees ProviderName; what it sees is this method. If the
         // two ever disagreed, a creator could file a destination the database then refused.
         for (ProviderName provider : ProviderName.values()) {
+            if (!provider.isAdapter()) {
+                continue;
+            }
             assertThat(PaymentProviders.canonicalNameOf(provider.name().toLowerCase(Locale.ROOT)))
                     .contains(provider.name());
         }
+        // #394: the bank is in the constraint and is not a token's issuer. A bank account is
+        // filed with its IBAN, sealed, through its own endpoint.
+        assertThat(PaymentProviders.canonicalNameOf("bank_transfer")).isEmpty();
         assertThat(PaymentProviders.canonicalNameOf("stripe")).isEmpty();
         assertThat(PaymentProviders.canonicalNameOf(null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("#394: the bank transfer is spelled the same in the enum, the shared contract and the column")
+    void theBankTransferIsOneSpelling() {
+        // The compliance module writes DestinationKind.BANK_TRANSFER's name into `provider`; the
+        // payment module will record transactions as ProviderName.BANK_TRANSFER. One string.
+        assertThat(ProviderName.valueOf(DestinationKind.BANK_TRANSFER.name())).isEqualTo(ProviderName.BANK_TRANSFER);
+        assertThat(ProviderName.BANK_TRANSFER.isAdapter()).isFalse();
+        assertThat(valuesIn("payout_destinations_provider_known")).contains(DestinationKind.BANK_TRANSFER.name());
+    }
+
+    @Test
+    @DisplayName("#394: a sealed account is present exactly when the destination is a bank transfer")
+    void theSealedAccountBelongsOnlyToABankTransfer() {
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+
+        // A bank transfer with no account: a payout with nowhere to go.
+        UUID bankWithoutAccount = Campaigns.creator(dataSource, "schema-bank-empty-" + UUID.randomUUID().toString().substring(0, 8));
+        assertThatThrownBy(() -> insert(jdbc, bankWithoutAccount, "BANK_TRANSFER", null, null, null))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("payout_destinations_account_only_for_bank_transfer");
+
+        // A token with an IBAN still sealed beside it: what a replacement that forgot to clear it
+        // would leave behind.
+        UUID tokenWithAccount = Campaigns.creator(dataSource, "schema-token-sealed-" + UUID.randomUUID().toString().substring(0, 8));
+        assertThatThrownBy(() -> insert(jdbc, tokenWithAccount, "EPOINT", new byte[] {1}, new byte[12], "t1"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("payout_destinations_account_only_for_bank_transfer");
+
+        // Half an envelope, and a nonce GCM would not have produced.
+        UUID halfSealed = Campaigns.creator(dataSource, "schema-half-" + UUID.randomUUID().toString().substring(0, 8));
+        assertThatThrownBy(() -> insert(jdbc, halfSealed, "BANK_TRANSFER", new byte[] {1}, null, "t1"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("payout_destinations_account_is_whole");
+        assertThatThrownBy(() -> insert(jdbc, halfSealed, "BANK_TRANSFER", new byte[] {1}, new byte[8], "t1"))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("payout_destinations_account_nonce_length");
+
+        // And the whole shape is accepted.
+        UUID sealed = Campaigns.creator(dataSource, "schema-sealed-" + UUID.randomUUID().toString().substring(0, 8));
+        insert(jdbc, sealed, "BANK_TRANSFER", new byte[] {1, 2, 3}, new byte[12], "t1");
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM payout_destinations WHERE user_id = ?", Integer.class, sealed))
+                .isEqualTo(1);
+    }
+
+    private static void insert(
+            JdbcTemplate jdbc, UUID userId, String provider, byte[] ciphertext, byte[] nonce, String keyId) {
+        jdbc.update(
+                """
+                INSERT INTO payout_destinations
+                    (user_id, provider, reference, holder_name, display_hint, state,
+                     account_ciphertext, account_nonce, account_key_id)
+                VALUES (?, ?, 't1:fingerprint', 'Aysel Mammadova', 'AZ21…1944', 'AWAITING_VERIFICATION', ?, ?, ?)
+                """,
+                userId,
+                provider,
+                ciphertext,
+                nonce,
+                keyId);
     }
 
     @Test

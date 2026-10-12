@@ -3,9 +3,11 @@ package az.ideanest.compliance;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import az.ideanest.auth.application.AccessTokenIssuer;
+import az.ideanest.compliance.application.CreatorPayoutDestinations;
 import az.ideanest.shared.EmailAddress;
 import az.ideanest.staff.domain.StaffRole;
 import az.ideanest.support.AbstractIntegrationTest;
+import az.ideanest.support.BankDetailsKeys;
 import az.ideanest.support.Destinations;
 import az.ideanest.user.infrastructure.UserRepository;
 import java.time.Instant;
@@ -61,8 +63,18 @@ class PayoutDestinationApiTests extends AbstractIntegrationTest {
     @Autowired
     private DataSource dataSource;
 
+    @Autowired
+    private CreatorPayoutDestinations destinations;
+
+    /** A bank-details key, installed by the tests that store an IBAN and by nothing else. */
+    private BankDetailsKeys.Installed keys;
+
     @AfterEach
     void clear() {
+        if (keys != null) {
+            keys.close();
+            keys = null;
+        }
         Destinations.clear(dataSource);
         new JdbcTemplate(dataSource).update("DELETE FROM creator_legal_subjects");
     }
@@ -83,6 +95,8 @@ class PayoutDestinationApiTests extends AbstractIntegrationTest {
         assertThat(mine.get("recorded")).isEqualTo(false);
         assertThat(mine.get("standing")).isEqualTo("NONE");
         assertThat(mine.get("holderName")).isNull();
+        // The suite's scripted provider registers payout cards, so the route is offered.
+        assertThat(mine.get("cardRegistrationAvailable")).isEqualTo(true);
     }
 
     @Test
@@ -127,6 +141,163 @@ class PayoutDestinationApiTests extends AbstractIntegrationTest {
         Map<String, Object> saved = record(creator, destination("EPOINT", "tok-2", "Rəşad Əliyev"));
 
         assertThat(saved.get("standing")).isEqualTo("NAME_MISMATCH");
+    }
+
+    // ------------------------------------------------------------------
+    // A bank account (#394)
+    // ------------------------------------------------------------------
+
+    private static final String IBAN = "AZ21NABZ00000000137010001944";
+
+    @Test
+    @DisplayName("without a bank-details key an IBAN is a 503, and nothing is filed")
+    void anUnconfiguredKeyringIsUnavailable() {
+        // The suite's configuration has no bank-details key, exactly like a deployment that has
+        // not provisioned one: it starts, serves everything else, and refuses this write.
+        Account creator = account();
+
+        Map<String, Object> refused = refusal(
+                "/v1/me/payout-destination/bank-account",
+                HttpMethod.PUT,
+                creator,
+                bankAccount(IBAN, "Aygün Məmmədova"),
+                HttpStatus.SERVICE_UNAVAILABLE);
+
+        assertThat(refused.get("code")).isEqualTo("ENCRYPTED_STORAGE_UNAVAILABLE");
+        assertThat(mine(creator).get("recorded")).isEqualTo(false);
+    }
+
+    @Test
+    @DisplayName("with a key, a creator files an IBAN and reads back its hint and never the number")
+    void filingABankAccount() {
+        keys = BankDetailsKeys.install(destinations);
+        Account creator = account();
+
+        Map<String, Object> saved = recordBank(creator, bankAccount("AZ21 NABZ 0000 0000 1370 1000 1944", "Aygün Məmmədova"));
+
+        assertThat(saved.get("recorded")).isEqualTo(true);
+        assertThat(saved.get("standing")).isEqualTo("AWAITING_VERIFICATION");
+        assertThat(saved.get("kind")).isEqualTo("BANK_TRANSFER");
+        assertThat(saved.get("provider")).isEqualTo("BANK_TRANSFER");
+        assertThat(saved.get("displayHint")).isEqualTo("AZ21…1944");
+        assertThat(saved).doesNotContainKey("reference").doesNotContainKey("iban");
+        assertThat(saved.values()).noneSatisfy(value -> assertThat(String.valueOf(value)).contains("NABZ"));
+
+        Map<String, Object> mine = mine(creator);
+        assertThat(mine.get("displayHint")).isEqualTo("AZ21…1944");
+        assertThat(mine.values()).noneSatisfy(value -> assertThat(String.valueOf(value)).contains("NABZ"));
+    }
+
+    @Test
+    @DisplayName("an IBAN that does not check out is a 400 naming the defect and not the number")
+    void aMalformedIbanIsABadRequest() {
+        keys = BankDetailsKeys.install(destinations);
+        Account creator = account();
+
+        Map<String, Object> mistyped = refusal(
+                "/v1/me/payout-destination/bank-account",
+                HttpMethod.PUT,
+                creator,
+                bankAccount("AZ21NABZ00000000137010001945", "Aygün Məmmədova"),
+                HttpStatus.BAD_REQUEST);
+        Map<String, Object> foreign = refusal(
+                "/v1/me/payout-destination/bank-account",
+                HttpMethod.PUT,
+                creator,
+                bankAccount("GB82WEST12345698765432", "Aygün Məmmədova"),
+                HttpStatus.BAD_REQUEST);
+
+        assertThat(mistyped.get("code")).isEqualTo("MALFORMED_IBAN");
+        assertThat(meta(mistyped).get("defect")).isEqualTo("CHECKSUM");
+        assertThat(mistyped.toString()).doesNotContain("NABZ");
+        assertThat(meta(foreign).get("defect")).isEqualTo("COUNTRY_NOT_ACCEPTED");
+        assertThat(mine(creator).get("recorded")).isEqualTo(false);
+    }
+
+    @Test
+    @DisplayName("an IBAN held by a differently named party comes back as a mismatch")
+    void aBankAccountMismatch() {
+        keys = BankDetailsKeys.install(destinations);
+        Account creator = account();
+        recordSubject(creator, "Aygün Məmmədova");
+
+        Map<String, Object> saved = recordBank(creator, bankAccount(IBAN, "Rəşad Əliyev"));
+
+        assertThat(saved.get("standing")).isEqualTo("NAME_MISMATCH");
+    }
+
+    @Test
+    @DisplayName("the token endpoint refuses the bank as a token's issuer")
+    void theBankIsNotATokenIssuer() {
+        Account creator = account();
+
+        Map<String, Object> refused = refusal(
+                "/v1/me/payout-destination",
+                HttpMethod.PUT,
+                creator,
+                destination("BANK_TRANSFER", "AZ21NABZ00000000137010001944", "Aygün Məmmədova"),
+                HttpStatus.BAD_REQUEST);
+
+        // Otherwise an IBAN could be filed in the clear as a "token", unsealed and unchecked.
+        assertThat(refused.get("code")).isEqualTo("UNKNOWN_PAYMENT_PROVIDER");
+    }
+
+    @Test
+    @DisplayName("compliance opens the IBAN in full, finance may too, and the panel itself still shows the hint")
+    void revealingTheAccount() {
+        keys = BankDetailsKeys.install(destinations);
+        Account creator = account();
+        Account reviewer = staff("api-dest-compliance", StaffRole.COMPLIANCE);
+        Account financeOfficer = staff("api-dest-finance", StaffRole.FINANCE);
+        recordBank(creator, bankAccount(IBAN, "Aygün Məmmədova"));
+
+        Map<String, Object> panel = get("/v1/admin/accounts/" + creator.id() + "/payout-destination", reviewer);
+        assertThat(panel.get("kind")).isEqualTo("BANK_TRANSFER");
+        assertThat(panel.get("displayHint")).isEqualTo("AZ21…1944");
+        assertThat(panel.values()).noneSatisfy(value -> assertThat(String.valueOf(value)).contains("NABZ"));
+
+        Map<String, Object> opened =
+                get("/v1/admin/accounts/" + creator.id() + "/payout-destination/account", reviewer);
+        assertThat(opened.get("iban")).isEqualTo(IBAN);
+        assertThat(opened.get("holderName")).isEqualTo("Aygün Məmmədova");
+        assertThat(opened.get("displayHint")).isEqualTo("AZ21…1944");
+
+        assertThat(get("/v1/admin/accounts/" + creator.id() + "/payout-destination/account", financeOfficer)
+                        .get("iban"))
+                .isEqualTo(IBAN);
+
+        Integer audited = new JdbcTemplate(dataSource)
+                .queryForObject(
+                        "SELECT count(*) FROM audit_logs WHERE action = 'compliance.payout_destination_account_revealed'"
+                                + " AND entity_id = ? AND detail NOT LIKE '%NABZ%'",
+                        Integer.class,
+                        creator.id());
+        assertThat(audited).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("a moderator is refused the IBAN, and a token has none to reveal")
+    void revealingIsRefused() {
+        Account creator = account();
+        Account moderator = staff("api-dest-moderator", StaffRole.MODERATOR);
+        Account reviewer = staff("api-dest-compliance", StaffRole.COMPLIANCE);
+        record(creator, destination("EPOINT", "tok-1", "Aygün Məmmədova"));
+
+        Map<String, Object> forbidden = refusal(
+                "/v1/admin/accounts/" + creator.id() + "/payout-destination/account",
+                HttpMethod.GET,
+                moderator,
+                null,
+                HttpStatus.FORBIDDEN);
+        assertThat(forbidden.get("code")).isEqualTo("INSUFFICIENT_STAFF_CAPABILITY");
+
+        Map<String, Object> none = refusal(
+                "/v1/admin/accounts/" + creator.id() + "/payout-destination/account",
+                HttpMethod.GET,
+                reviewer,
+                null,
+                HttpStatus.NOT_FOUND);
+        assertThat(none.get("code")).isEqualTo("PAYOUT_BANK_ACCOUNT_NOT_FOUND");
     }
 
     // ------------------------------------------------------------------
@@ -279,6 +450,23 @@ class PayoutDestinationApiTests extends AbstractIntegrationTest {
         body.put("holderName", holderName);
         body.put("displayHint", "**4321");
         return body;
+    }
+
+    private static Map<String, Object> bankAccount(String iban, String holderName) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("iban", iban);
+        body.put("holderName", holderName);
+        return body;
+    }
+
+    private Map<String, Object> recordBank(Account account, Map<String, Object> body) {
+        ResponseEntity<Map<String, Object>> response = rest.exchange(
+                "/v1/me/payout-destination/bank-account",
+                HttpMethod.PUT,
+                new HttpEntity<>(body, authorised(account.accessToken())),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        return response.getBody();
     }
 
     private void recordSubject(Account creator, String legalName) {

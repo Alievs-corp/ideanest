@@ -6,6 +6,7 @@ import az.ideanest.payment.domain.PaymentEventType;
 import az.ideanest.payment.domain.PaymentProvider;
 import az.ideanest.payment.domain.ProviderName;
 import az.ideanest.payment.domain.ProviderWebhookEvent;
+import az.ideanest.payment.domain.UnknownProviderException;
 import az.ideanest.payment.domain.WebhookVerificationException;
 import az.ideanest.payment.infrastructure.ProviderWebhookEventRepository;
 import java.time.Clock;
@@ -130,6 +131,10 @@ public class ProviderWebhooks {
      */
     public WebhookReceipt receive(String providerSlug, byte[] rawBody, Map<String, String> headers) {
         ProviderName name = ProviderName.of(providerSlug);
+        if (!name.isAdapter()) {
+            // #394: nothing sends a webhook about a bank transfer, so the path names no provider.
+            throw new UnknownProviderException(providerSlug);
+        }
 
         // byName rather than primary(): after a provider change the platform still has to
         // verify deliveries about charges made through the old one, and answering those

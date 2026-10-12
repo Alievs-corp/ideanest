@@ -6,17 +6,25 @@ import az.ideanest.audit.AuditLog;
 import az.ideanest.audit.AuditOutcome;
 import az.ideanest.compliance.domain.DestinationState;
 import az.ideanest.compliance.domain.DestinationVerificationMethod;
+import az.ideanest.compliance.domain.Iban;
 import az.ideanest.compliance.domain.PayoutDestination;
 import az.ideanest.compliance.infrastructure.PayoutDestinationRepository;
 import az.ideanest.payment.application.PaymentProviders;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
+import az.ideanest.shared.compliance.BankAccount;
 import az.ideanest.shared.compliance.ComplianceRequirement;
+import az.ideanest.shared.compliance.DestinationKind;
 import az.ideanest.shared.compliance.DestinationStanding;
 import az.ideanest.shared.compliance.LegalSubject;
 import az.ideanest.shared.compliance.LegalSubjects;
 import az.ideanest.shared.compliance.PayoutDestinations;
 import az.ideanest.shared.compliance.RejectionReason;
+import az.ideanest.shared.crypto.FieldCipher;
+import az.ideanest.shared.crypto.FieldCipherConfiguration;
+import az.ideanest.shared.crypto.FieldFingerprints;
+import az.ideanest.shared.crypto.Sealed;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -24,6 +32,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,6 +79,17 @@ import org.springframework.transaction.annotation.Transactional;
  * token; no adapter exists to issue one, exactly as none exists to issue a
  * {@code StoredCard#token()}. This is the same inert-behind-the-interface shape §9.2 chose
  * deliberately, and the gate below is real whether or not anything can yet get through it.
+ *
+ * <h2>A bank account, since epic #392</h2>
+ *
+ * <p>{@link #recordBankAccount} files an IBAN instead of a token (#394): the owner decided that
+ * creators are paid by bank transfer, so the platform holds the account it pays into — sealed
+ * under the {@code bank-details} keyring and bound to the creator's row, fingerprinted so that
+ * the same account filed twice can be noticed, and shown everywhere but one place as a masked
+ * hint. The one place is {@link #revealBankAccount}, which a member of staff holding
+ * {@code READ_BANK_DETAILS} calls to verify the account or to pay into it, and which is audited.
+ * The name match, the reset on replacement and the verification are the token's, unchanged:
+ * both kinds go through the same {@code replace} in the entity and the same rules here.
  */
 @Service
 public class CreatorPayoutDestinations implements PayoutDestinations {
@@ -85,6 +105,8 @@ public class CreatorPayoutDestinations implements PayoutDestinations {
     private final PlatformStaff staff;
     private final AuditLog audit;
     private final Clock clock;
+    private final FieldCipher bankDetails;
+    private final FieldFingerprints fingerprints;
 
     public CreatorPayoutDestinations(
             PayoutDestinationRepository destinations,
@@ -92,13 +114,17 @@ public class CreatorPayoutDestinations implements PayoutDestinations {
             ComplianceOverrides overrides,
             PlatformStaff staff,
             AuditLog audit,
-            Clock clock) {
+            Clock clock,
+            @Qualifier(FieldCipherConfiguration.BANK_DETAILS) FieldCipher bankDetails,
+            @Qualifier(FieldCipherConfiguration.BANK_DETAILS_FINGERPRINTS) FieldFingerprints fingerprints) {
         this.destinations = destinations;
         this.legalSubjects = legalSubjects;
         this.overrides = overrides;
         this.staff = staff;
         this.audit = audit;
         this.clock = clock;
+        this.bankDetails = bankDetails;
+        this.fingerprints = fingerprints;
     }
 
     @Override
@@ -124,6 +150,40 @@ public class CreatorPayoutDestinations implements PayoutDestinations {
                 .findById(creatorId)
                 .filter(row -> row.issuedBy(provider))
                 .map(PayoutDestination::getReference);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<DestinationKind> kindOf(UUID creatorId) {
+        return destinations.findById(creatorId).map(PayoutDestination::kind);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p><strong>Not {@code readOnly}</strong>, for {@link #forStaff}'s reason: the audit insert
+     * joins this transaction. An opening that fails — a key removed from the keyring — rolls
+     * the audit row back with it, which is right: nothing was disclosed.
+     */
+    @Override
+    @Transactional
+    public Optional<BankAccount> revealBankAccount(UUID staffId, UUID creatorId) {
+        staff.requireCapability(staffId, StaffCapability.READ_BANK_DETAILS);
+        Optional<PayoutDestination> row = destinations.findById(creatorId).filter(PayoutDestination::isBankAccount);
+        audit.record(
+                AuditAction.PAYOUT_DESTINATION_ACCOUNT_REVEALED,
+                creatorId,
+                AuditActor.moderator(staffId),
+                AuditOutcome.SUCCEEDED,
+                row.map(found -> "account=%s; state=%s".formatted(found.getDisplayHint(), found.getState()))
+                        .orElse("account=none"));
+        return row.map(found -> {
+            Sealed sealed = found.sealedAccount().orElseThrow();
+            byte[] plain = bankDetails.open(sealed, PayoutDestination.accountContext(creatorId));
+            log.info("Bank account of {} opened by {}", creatorId, staffId);
+            return new BankAccount(
+                    new String(plain, StandardCharsets.UTF_8), found.getHolderName(), found.getDisplayHint());
+        });
     }
 
     /** What the creator has filed, for their own settings screen. */
@@ -180,6 +240,75 @@ public class CreatorPayoutDestinations implements PayoutDestinations {
                         .formatted(canonical, holderName, existing.isEmpty(), saved.getState(), subject.isPresent()));
 
         log.info("Account {} filed a {} payout destination; state {}", accountId, canonical, saved.getState());
+        return saved;
+    }
+
+    /**
+     * File a bank account, or replace whatever is on file with one — #394.
+     *
+     * <p>{@link #record}'s rules, unchanged: always a replacement, which clears any verification;
+     * the holder's name matched against the legal name, a disagreement stored as
+     * {@code NAME_MISMATCH} rather than refused; audited on the creator's own account.
+     *
+     * <p><strong>Only an Azerbaijani IBAN</strong> — {@link Iban#parseAzerbaijani}. The platform
+     * pays creators from an Azerbaijani account in manat, and a foreign account is a currency
+     * and a correspondent-bank question nobody has answered.
+     *
+     * <p>The account is sealed before anything is written, so an unconfigured keyring refuses
+     * with a 503 and leaves the row on file exactly as it was. The audit detail carries the
+     * masked hint and never the number, and {@code sameAccountElsewhere} — how many other
+     * accounts filed the same IBAN — so the reviewer sees the coincidence in the trail.
+     *
+     * @throws az.ideanest.compliance.domain.MalformedIbanException when the number is not a
+     *     valid Azerbaijani IBAN
+     * @throws az.ideanest.shared.crypto.FieldEncryptionNotConfiguredException when the
+     *     {@code bank-details} keyring has no key
+     */
+    @Transactional
+    public PayoutDestination recordBankAccount(UUID accountId, String typedIban, String holderName) {
+        Iban iban = Iban.parseAzerbaijani(typedIban);
+        String fingerprint = fingerprints.of(iban.value());
+        Sealed sealed = bankDetails.seal(
+                iban.value().getBytes(StandardCharsets.UTF_8), PayoutDestination.accountContext(accountId));
+
+        Instant now = clock.instant();
+        Optional<PayoutDestination> existing = destinations.findById(accountId);
+        PayoutDestination row = existing.map(found -> {
+                    found.replaceWithBankAccount(fingerprint, holderName, iban.displayHint(), sealed, now);
+                    return found;
+                })
+                .orElseGet(() -> PayoutDestination.ofBankAccount(
+                        accountId, fingerprint, holderName, iban.displayHint(), sealed, now));
+
+        Optional<LegalSubject> subject = legalSubjects.of(accountId);
+        boolean matched = subject.map(known -> known.nameMatches(holderName)).orElse(true);
+        if (!matched) {
+            row.nameDidNotMatch(now);
+        }
+
+        PayoutDestination saved = destinations.save(row);
+        long elsewhere = destinations.countOthersWithReference(
+                DestinationKind.BANK_TRANSFER.name(), fingerprints.candidates(iban.value()), accountId);
+        audit.record(
+                AuditAction.PAYOUT_DESTINATION_RECORDED,
+                accountId,
+                AuditActor.user(accountId),
+                matched ? AuditOutcome.SUCCEEDED : AuditOutcome.REFUSED,
+                "provider=%s; account=%s; holder=%s; first=%s; state=%s; hadSubject=%s; sameAccountElsewhere=%d"
+                        .formatted(
+                                DestinationKind.BANK_TRANSFER,
+                                iban.displayHint(),
+                                holderName,
+                                existing.isEmpty(),
+                                saved.getState(),
+                                subject.isPresent(),
+                                elsewhere));
+
+        log.info(
+                "Account {} filed a bank account payout destination {}; state {}",
+                accountId,
+                iban.displayHint(),
+                saved.getState());
         return saved;
     }
 

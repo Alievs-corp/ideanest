@@ -148,6 +148,7 @@ graph TD
 | Read an account's acceptance record | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
 | Read an account's legal subject | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
 | Read an account's payout destination | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
+| **Open a creator's IBAN in full** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
 | Read an account's signed creator agreement | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
 | Approve or reject an identity verification | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅³ | ❌ | ✅³ |
 | **Open an identity document** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ |
@@ -190,6 +191,13 @@ holds "initiate a payout"; the same role deciding both *where* money goes and *t
 the destination is correct* is one person holding both halves, which is the
 arrangement §4.11's dual approval exists to prevent. It is the argument `StaffRole`
 already makes about `APPROVE_PAYOUT`, applied one step earlier in the same sequence.
+
+**Opening an IBAN is its own capability, `READ_BANK_DETAILS`** (#394), held by
+Compliance, who compare the account with the evidence before verifying it, and by
+Finance, who type it into the bank to pay a creator by transfer. Every other screen
+shows the masked hint; only those two jobs need the number, and every opening is
+audited as `PAYOUT_DESTINATION_ACCOUNT_REVEALED`. Seeing the number decides nothing,
+so Finance holding it does not reopen the split above.
 
 **Overrides are Admin's alone, and not Compliance's**, for the third instance of that
 argument: a reviewer who could waive the requirement they enforce holds both halves of
@@ -4265,11 +4273,42 @@ The field is gone. `payout_destinations` holds one row per creator:
 
 | | |
 |---|---|
-| Filed by | the creator, at `PUT /v1/me/payout-destination` |
-| What is stored | the **provider's token**, never an IBAN — `stored_cards.token`'s argument, and `PayoutRequest` states it: bank details are the provider's to hold |
-| Also stored | the account holder's name, because that is the thing being checked, and a masked tail so a person can recognise the account |
+| Filed by | the creator: a bank account at `PUT /v1/me/payout-destination/bank-account` (`{iban, holderName}`), or a provider's token at `PUT /v1/me/payout-destination` or through the provider's card page |
+| What is stored | **a bank account** (#394): the IBAN, sealed by the `bank-details` keyring and bound to the row (§17.4), with `provider = BANK_TRANSFER` and the IBAN's keyed fingerprint as `reference`; **or a provider's token**, `stored_cards.token`'s argument |
+| Also stored | the account holder's name, because that is the thing being checked, and a masked hint so a person can recognise the account — `AZ21…1944` for an IBAN |
 | Confirmed by | somebody holding `VERIFY_PAYOUT_DESTINATION`, which V66 gave to `COMPLIANCE` and withheld from `FINANCE` |
-| Read at | `GET /v1/admin/accounts/{id}/payout-destination` and the queue at `/v1/admin/payout-destinations`, both audited |
+| Read at | `GET /v1/admin/accounts/{id}/payout-destination` and the queue at `/v1/admin/payout-destinations`, both showing the hint; the IBAN itself only at `GET /v1/admin/accounts/{id}/payout-destination/account`, with `READ_BANK_DETAILS`, audited |
+
+**The platform now holds the account it pays into.** #432 built this table on the
+position that bank details are the provider's to hold and an IBAN is never stored
+here. On 2026-10-12 the owner decided that creators are paid by bank transfer, made
+by staff from IdeyaNest's own account and recorded in the system, and that the
+provider's payouts are not used — so the platform has to know the account. V97
+reverses V72's position in its header, and the account is held as §17.4 says bank
+details are: encrypted, bound to the creator's row, and shown everywhere but one
+audited endpoint as a hint. An IBAN is not card data, so §17.2's SAQ A target is
+unchanged.
+
+**A creator is paid to an Azerbaijani IBAN.** `Iban` (compliance domain) normalises
+what was typed — spaces removed, upper case — and checks the characters, the length
+the country registers and the mod-97 check digits, which catch every single
+mistyped character; a creator's account must then be `AZ` and twenty-eight
+characters (`AZ`, two check digits, a four-letter bank code, twenty letters or
+digits). A refusal is `MALFORMED_IBAN` with the defect named and the number not
+repeated. The fingerprint — HMAC under a key derived from the same keyring — lets
+the audit row say how many other accounts filed the same IBAN, which a reviewer
+should know before verifying.
+
+**The settings screen offers the card route only when it can work.**
+`GET /v1/me/payout-destination` carries `cardRegistrationAvailable`, true only when
+the configured provider registers payout cards; the IBAN form is always offered.
+The response carries the hint and never the IBAN.
+
+`ProviderName.BANK_TRANSFER` names the route and is **not an adapter**: it cannot be
+the configured primary, is never resolved by name for a charge, refund, webhook or
+card page, and is not accepted as a token's issuer. It ships one release before
+anything writes a transaction with it (#397), because `transactions.provider` is read
+through that enum and every node must know a value before any node writes it.
 
 **The person who confirms the destination is not the person who sends to it.** V66
 decided that one issue before there was anything to confirm, and it is the same
@@ -6538,6 +6577,7 @@ Apple requires to revoke the token.
 | Webhooks | HMAC signature, timestamp check against replay, source allowlist |
 | Idempotency | Required on all payment mutations; keys retained 24 hours |
 | Payout approval | Dual approval above a configured threshold |
+| Bank details | **An IBAN is not card data**, so holding one does not touch the SAQ A target. Since #394 the platform holds a creator's IBAN to pay them by bank transfer: sealed and shown only as a hint (§17.4), opened in full only by `READ_BANK_DETAILS` and audited, never written to an audit row or a log — the redaction rules mask IBANs both written solid and printed in groups of four |
 | Fraud signals | Velocity, geography mismatch, new-account risk. **Built (#108)**, with one signal reported unavailable rather than passing: geography mismatch needs an IP-to-country source, no vendor is chosen and none ships with the service, so every assessment records that it could not be evaluated. A low score with an unavailable signal is a different statement from a low score without one. The other four — pledge velocity per account, pledge velocity per source address, account age, and an address the account has never been seen from — are live and advisory |
 
 ### 17.3 Application
@@ -6563,7 +6603,7 @@ Apple requires to revoke the token.
 |---|---|
 | Shipping addresses | Encrypted at rest with application-managed keys. **Built (#75).** One AES-256-GCM ciphertext per pledge over the whole structured address, with a 12-byte nonce and a `key_id` beside it; the key is configuration and never reaches PostgreSQL, which is why `pgcrypto` was rejected -- its passphrase travels in the query text and lands in `pg_stat_statements` and in every statement log. Rotation is two deploys: publish the new key, then move `primary-key-id`; rows re-seal as they are rewritten. **A deployment with no key configured starts normally and refuses the first address with a 503**, rather than failing to start or -- much worse -- storing one in the clear. The cost is stated in V36: nothing inside the envelope is queryable, so the destination country stays outside it on `pledges.shipping_country` |
 | Identity documents | Separate bucket, restricted access, automatic deletion after a retention period |
-| Bank details | Encrypted; only the last four digits are ever displayed. **The cipher and keyring are built (#393); nothing stores an IBAN yet (epic #392).** Every application-encrypted field goes through one `FieldCipher` (`shared/crypto`): the AES-256-GCM parameters above, moved out of the address cipher so that a second field cannot choose differently, with one keyring per kind of data so that one leaked key opens one kind of data. Shipping addresses still use it without additional data, which is why every address sealed before #393 opens unchanged; **bank rows bind each ciphertext to its row** -- table and id as additional authenticated data -- so a ciphertext copied into another person's row fails its tag instead of opening as their account. The keyring is `ideanest.crypto.bank-details.{primary-key-id,keys}` and, like the address keyring, **has no default**: a deployment without it starts, and the first write that needs it is refused with a 503 (`ENCRYPTED_STORAGE_UNAVAILABLE`). A key is 32 random bytes, base64 (`openssl rand -base64 32`), under a lowercase label such as `2026-10`; set `IDEANEST_CRYPTO_BANKDETAILS_PRIMARYKEYID` and `IDEANEST_CRYPTO_BANKDETAILS_KEYS_<label>`. It is a separate key from the address key, and rotation is the same two deploys |
+| Bank details | Encrypted; only the last four digits are ever displayed. **Built: a creator's payout IBAN (#394)**, sealed in `payout_destinations` and shown as `AZ21…1944`; a backer's refund IBAN follows (#399). Every application-encrypted field goes through one `FieldCipher` (`shared/crypto`): the AES-256-GCM parameters above, moved out of the address cipher so that a second field cannot choose differently, with one keyring per kind of data so that one leaked key opens one kind of data. Shipping addresses still use it without additional data, which is why every address sealed before #393 opens unchanged; **bank rows bind each ciphertext to its row** -- table and id as additional authenticated data -- so a ciphertext copied into another person's row fails its tag instead of opening as their account. The keyring is `ideanest.crypto.bank-details.{primary-key-id,keys}` and, like the address keyring, **has no default**: a deployment without it starts, and the first write that needs it is refused with a 503 (`ENCRYPTED_STORAGE_UNAVAILABLE`). A key is 32 random bytes, base64 (`openssl rand -base64 32`), under a label of lowercase letters and digits only, such as `b1`; set `IDEANEST_CRYPTO_BANKDETAILS_PRIMARYKEYID=b1` and `IDEANEST_CRYPTO_BANKDETAILS_KEYS_B1`. Not a date such as `2026-10`: the environment binding reads `-` and `_` in a variable name as separators, so the key is bound under another name and never found. It is a separate key from the address key, and rotation is the same two deploys. **The same keys fingerprint each IBAN** -- HMAC-SHA256 under a key derived from each keyring key, stored as `<label>:<hex>` -- so that one account filed twice is an indexed lookup that survives rotation, without a second secret to provision |
 | Personal data in logs | Redacted: email, phone, address, card, token, password |
 | Backups | Encrypted, cross-region, restore rehearsed quarterly |
 | Retention | On deletion: 30-day delay, then anonymisation. Financial records retained for the statutory period |

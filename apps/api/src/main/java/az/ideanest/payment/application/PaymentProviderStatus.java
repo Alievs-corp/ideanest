@@ -38,6 +38,10 @@ public class PaymentProviderStatus implements ProviderStatusSource {
         List<ProviderStatus> statuses = new ArrayList<>(ProviderName.values().length);
 
         for (ProviderName provider : ProviderName.values()) {
+            // #394: a bank transfer is staff and a bank, and has no adapter to be up or down.
+            if (!provider.isAdapter()) {
+                continue;
+            }
             boolean configured = registered.contains(provider);
             // #243's local sandbox is not a provider a deployment could configure, so a
             // deployment's health screen does not list it as one that is missing.

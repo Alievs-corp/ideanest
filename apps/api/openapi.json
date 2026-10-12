@@ -229,6 +229,33 @@
         "tags" : [ "admin-payout-destination-controller" ]
       }
     },
+    "/v1/admin/accounts/{creatorId}/payout-destination/account" : {
+      "get" : {
+        "operationId" : "adminPayoutDestinationRevealAccount",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "creatorId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RevealedBankAccount"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-payout-destination-controller" ]
+      }
+    },
     "/v1/admin/accounts/{creatorId}/payout-destination/reject" : {
       "post" : {
         "operationId" : "adminPayoutDestinationReject",
@@ -6336,6 +6363,34 @@
         "tags" : [ "my-payout-destination-controller" ]
       }
     },
+    "/v1/me/payout-destination/bank-account" : {
+      "put" : {
+        "operationId" : "myPayoutDestinationRecordBankAccount",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BankAccountRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Mine"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "my-payout-destination-controller" ]
+      }
+    },
     "/v1/me/payout-destination/card-registration" : {
       "post" : {
         "operationId" : "myPayoutDestinationRegisterCard",
@@ -11006,6 +11061,22 @@
           }
         }
       },
+      "BankAccountRequest" : {
+        "type" : "object",
+        "properties" : {
+          "holderName" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "iban" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "holderName", "iban" ]
+      },
       "BeginRequest" : {
         "type" : "object",
         "properties" : {
@@ -13187,6 +13258,10 @@
           "holderName" : {
             "type" : "string"
           },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "PROVIDER_TOKEN", "BANK_TRANSFER" ]
+          },
           "provider" : {
             "type" : "string"
           },
@@ -14019,7 +14094,7 @@
             "type" : "array",
             "items" : {
               "type" : "string",
-              "enum" : [ "MODERATE_CONTENT", "ADMINISTER_ACCOUNTS", "CURATE", "VIEW_FINANCE", "ISSUE_REFUND", "MANAGE_DISPUTES", "APPROVE_PAYOUT", "HANDLE_SUPPORT", "CONFIGURE_PLATFORM", "VIEW_AUDIT", "VIEW_HEALTH", "PUBLISH_LEGAL_DOCUMENT", "READ_ACCEPTANCE_RECORD", "READ_SIGNED_AGREEMENT", "REVIEW_IDENTITY_VERIFICATION", "OPEN_IDENTITY_DOCUMENT", "VERIFY_PAYOUT_DESTINATION", "GRANT_COMPLIANCE_OVERRIDE", "ADMINISTER_STAFF", "VIEW_PARTNER_STATISTICS" ]
+              "enum" : [ "MODERATE_CONTENT", "ADMINISTER_ACCOUNTS", "CURATE", "VIEW_FINANCE", "ISSUE_REFUND", "MANAGE_DISPUTES", "APPROVE_PAYOUT", "HANDLE_SUPPORT", "CONFIGURE_PLATFORM", "VIEW_AUDIT", "VIEW_HEALTH", "PUBLISH_LEGAL_DOCUMENT", "READ_ACCEPTANCE_RECORD", "READ_SIGNED_AGREEMENT", "REVIEW_IDENTITY_VERIFICATION", "OPEN_IDENTITY_DOCUMENT", "VERIFY_PAYOUT_DESTINATION", "READ_BANK_DETAILS", "GRANT_COMPLIANCE_OVERRIDE", "ADMINISTER_STAFF", "VIEW_PARTNER_STATISTICS" ]
             }
           },
           "roles" : {
@@ -14064,11 +14139,18 @@
       "Mine" : {
         "type" : "object",
         "properties" : {
+          "cardRegistrationAvailable" : {
+            "type" : "boolean"
+          },
           "displayHint" : {
             "type" : "string"
           },
           "holderName" : {
             "type" : "string"
+          },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "PROVIDER_TOKEN", "BANK_TRANSFER" ]
           },
           "provider" : {
             "type" : "string"
@@ -16424,6 +16506,24 @@
           "pledgeId" : {
             "type" : "string",
             "format" : "uuid"
+          }
+        }
+      },
+      "RevealedBankAccount" : {
+        "type" : "object",
+        "properties" : {
+          "creatorId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "displayHint" : {
+            "type" : "string"
+          },
+          "holderName" : {
+            "type" : "string"
+          },
+          "iban" : {
+            "type" : "string"
           }
         }
       },
