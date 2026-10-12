@@ -33,9 +33,11 @@ export type TransactionStatus = 'PENDING' | 'SUCCEEDED' | 'FAILED';
 
 /**
  * §9.3 requires at least two, so which one made a call is a fact about the row. `SANDBOX` only
- * ever appears on a developer's machine — #243, temporary.
+ * ever appears on a developer's machine — #243, temporary. `BANK_TRANSFER` is not a provider:
+ * it is a payout a member of staff paid from IdeyaNest's bank account and recorded (#397), and its
+ * `providerTransactionId` is the bank's reference.
  */
-export type ProviderName = 'PAYRIFF' | 'EPOINT' | 'AZERICARD' | 'SANDBOX';
+export type ProviderName = 'PAYRIFF' | 'EPOINT' | 'AZERICARD' | 'SANDBOX' | 'BANK_TRANSFER';
 
 /**
  * An amount of money, as `lib/money.ts` already defines it.

@@ -2796,6 +2796,38 @@ a policy the platform could adopt at any threshold. The bounded exception is #43
 override, which expires — and which cannot conjure an account: a waiver excuses the
 check, and a creator with no row at all still has nowhere for the money to go.
 
+**A creator paid into an IBAN is paid by a person** — #397, V98. Since epic #392 a payout
+whose destination is a bank account is not sent through a provider: `send` answers 409
+`PAYOUT_SETTLES_BY_BANK_TRANSFER`, and a member of staff holding `APPROVE_PAYOUT` pays it from
+IdeyaNest's own bank account in three steps. `POST /v1/admin/payouts/{id}/bank-transfer/start`
+runs every check `send` runs — the signatures counted, a campaign already paid refused, the
+figures re-read (a payout whose figures moved is cancelled, and stays cancelled), the destination
+standing `VERIFIED` or `WAIVED` — and two of its own: the destination has to be a bank account
+(`PAYOUT_SETTLES_THROUGH_PROVIDER` otherwise), and no backer's dispute on the campaign may still be
+open (`PAYOUT_BACKER_DISPUTE_OPEN`), because starting closes the window. It answers the IBAN, the
+holder's name, the net and a payment description naming the payout, opens the account through
+`PayoutDestinations.revealBankAccount` (audited on the creator) and audits
+`PAYOUT_BANK_TRANSFER_STARTED` with the masked hint. `GET .../bank-transfer` opens the account
+again, audited, while the destination still stands. `POST .../bank-transfer/record`
+(`{bankReference, transferredOn, note}`) writes what the statement shows: a `PAYOUT` transaction
+with provider `BANK_TRANSFER` and the bank's reference, under the key `<idempotencyKey>-bank`, with
+the posting a sent payout gets; the payout is `PAID` with `bank_transferred_on`, its withheld debt
+is recovered, and `PAYOUT_SENT` is audited with `bankTransfer`. Replayed with the same reference it
+answers the payout as it stands; with another, 409 `PAYOUT_BANK_TRANSFER_ALREADY_RECORDED`; with a
+reference another transaction carries, 409 `PAYOUT_REFERENCE_TAKEN`. The value date is between the
+day the transfer was started and today (Baku). `POST .../bank-transfer/abandon` (`{note}`) says the
+transfer was never made and clears the mark. Nobody handles their own campaign's payout this way
+(403 `SELF_PAID_PAYOUT`, V66's rule).
+
+**There is no new state.** A started transfer is an `APPROVED` payout with
+`bank_transfer_started_at`, and it means what `send_unconfirmed_at` means: the money may have left.
+So until it is recorded or abandoned the payout cannot be cancelled or lose a signature (409
+`PAYOUT_BANK_TRANSFER_IN_PROGRESS`), a withdrawal or an upheld dispute does not recalculate it, and
+a backer's dispute is neither opened nor upheld. V98 holds the mark to `APPROVED` and `PAID`, so a
+previous-release node that cancels a started payout during the rollout is refused. Record checks
+nothing that could refuse money that has already moved: a refund issued after the start is logged
+with the record (`refundedSincePriced`) for recovery by hand, as an unconfirmed send's is.
+
 ### 6.4 Subscription
 
 ```
@@ -4317,6 +4349,17 @@ the configured primary, is never resolved by name for a charge, refund, webhook 
 card page, and is not accepted as a token's issuer. It ships one release before
 anything writes a transaction with it (#397), because `transactions.provider` is read
 through that enum and every node must know a value before any node writes it.
+
+**Paying it, since #397.** A bank account is paid by a member of staff from IdeyaNest's own
+account and recorded from the bank statement (§6.3 has the steps). The record is a `PAYOUT`
+transaction whose provider is `BANK_TRANSFER` and whose `provider_transaction_id` is the bank's
+reference, with the same posting a provider's payout gets: the creator's account debited and escrow
+credited. **Escrow therefore spans two places** — the provider's balance, which collections arrive
+in, and IdeyaNest's bank account, which bank transfers leave from — and the ledger does not
+distinguish them. `ledger-reconciliation`'s three checks still balance, because they sum every
+provider together. A comparison against a provider's settlement report, when one is written,
+compares only that provider's transactions and **excludes `BANK_TRANSFER` rows**, which are
+checked against the bank's statement by their reference instead.
 
 **The person who confirms the destination is not the person who sends to it.** V66
 decided that one issue before there was anything to confirm, and it is the same

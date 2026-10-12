@@ -484,8 +484,27 @@ public enum AuditAction {
      */
     PAYOUT_APPROVED("payout.approved", "payout"),
 
-    /** The money left (#69, #306). */
+    /**
+     * The money left (#69, #306). Also written when a bank transfer is recorded (#397), with
+     * {@code bankTransfer} in the detail: the transfer is the money leaving, by the other route.
+     */
     PAYOUT_SENT("payout.sent", "payout"),
+
+    /**
+     * A member of staff opened a creator's account to pay a payout into it by bank transfer (#397).
+     *
+     * <p>Beside {@link #PAYOUT_DESTINATION_ACCOUNT_REVEALED}, which the opening also writes on the
+     * creator's account: that one answers "who has seen this account number", and this one "who
+     * started paying this payout, for how much". The detail carries the masked hint, never the number.
+     */
+    PAYOUT_BANK_TRANSFER_STARTED("payout.bank_transfer_started", "payout"),
+
+    /**
+     * A started bank transfer was abandoned: the person who started it says it was never made (#397).
+     * The payout may be cancelled again from here, so the note saying why is the record of a decision
+     * about money that might otherwise have been paid twice.
+     */
+    PAYOUT_BANK_TRANSFER_ABANDONED("payout.bank_transfer_abandoned", "payout"),
 
     /**
      * §22.1's anti-money-laundering row (#105): a creator submitted an identity document.

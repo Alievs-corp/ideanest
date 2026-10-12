@@ -4,10 +4,12 @@ import az.ideanest.payout.application.PayoutService;
 import az.ideanest.payout.domain.Payout;
 import az.ideanest.payout.domain.PayoutApproval;
 import az.ideanest.payout.domain.PayoutState;
+import az.ideanest.shared.compliance.DestinationKind;
 import az.ideanest.shared.compliance.DestinationStanding;
 import az.ideanest.shared.compliance.VerificationStanding;
 import az.ideanest.shared.money.Money;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -37,6 +39,12 @@ public final class PayoutResponses {
      *     service would then refuse a button that looked enabled
      * @param feeScheduleId which terms produced the deductions, so the arithmetic can be
      *     traced back. Null only for a payout priced when no schedule was configured
+     * @param destinationKind which route the creator is paid by (#397): a provider's token is sent,
+     *     an IBAN is transferred by hand. Null when the creator has filed nothing
+     * @param bankTransferStartedAt when a member of staff started paying this by bank transfer, and
+     *     {@code bankTransferStartedBy} who. Set on an {@code APPROVED} payout while the transfer is
+     *     in progress, and kept once it is recorded
+     * @param bankTransferredOn the value date of the transfer that paid it, from the statement
      */
     public record PayoutSummary(
             UUID id,
@@ -61,7 +69,11 @@ public final class PayoutResponses {
             VerificationStanding creatorStanding,
             boolean heldForVerification,
             DestinationStanding destinationStanding,
-            boolean heldForDestination) {
+            boolean heldForDestination,
+            DestinationKind destinationKind,
+            Instant bankTransferStartedAt,
+            UUID bankTransferStartedBy,
+            LocalDate bankTransferredOn) {
 
         /**
          * @param standing where the creator stands with identity verification (#431). Drawn on
@@ -72,9 +84,14 @@ public final class PayoutResponses {
          *     are chased differently: an identity standing waits on a document queue, and a
          *     destination standing waits on a creator filing an account or a reviewer looking
          *     at one. An operator shown a single flag would not know which screen to open
+         * @param kind which route the creator is paid by (#397), or null when nothing is filed
          */
         public static PayoutSummary of(
-                Payout payout, Instant now, VerificationStanding standing, DestinationStanding destination) {
+                Payout payout,
+                Instant now,
+                VerificationStanding standing,
+                DestinationStanding destination,
+                DestinationKind kind) {
             return new PayoutSummary(
                     payout.id(),
                     payout.projectId(),
@@ -98,7 +115,55 @@ public final class PayoutResponses {
                     standing,
                     !standing.releasesPayout() && payout.state().isInFlight(),
                     destination,
-                    !destination.releasesPayout() && payout.state().isInFlight());
+                    !destination.releasesPayout() && payout.state().isInFlight(),
+                    kind,
+                    payout.bankTransferStartedAt(),
+                    payout.bankTransferStartedBy(),
+                    payout.bankTransferredOn());
+        }
+    }
+
+    /**
+     * A bank transfer in progress, with everything the person making it types into the bank — #397.
+     *
+     * <p><strong>The one response that carries a creator's account number in full</strong>, to a
+     * member of staff about to pay into it, and only after {@code PayoutDestinations.revealBankAccount}
+     * has audited the opening. {@code no-store} like every response here; never logged.
+     *
+     * @param iban the account to pay into, normalised: upper case, no spaces
+     * @param holderName who holds it, as matched against the creator's legal name
+     * @param accountHint the masked form, for the screen that lists it afterwards
+     * @param amount what to transfer: the payout's net, as a string with its currency
+     * @param description what to write as the transfer's payment description, so the statement names
+     *     the payout it paid
+     */
+    public record BankTransferInstruction(
+            PayoutSummary payout,
+            String iban,
+            String holderName,
+            String accountHint,
+            Money amount,
+            String description) {
+
+        public static BankTransferInstruction of(
+                PayoutService.BankTransfer transfer,
+                Instant now,
+                VerificationStanding standing,
+                DestinationStanding destination,
+                DestinationKind kind) {
+            return new BankTransferInstruction(
+                    PayoutSummary.of(transfer.payout(), now, standing, destination, kind),
+                    transfer.account().iban(),
+                    transfer.account().holderName(),
+                    transfer.account().displayHint(),
+                    transfer.payout().net(),
+                    transfer.description());
+        }
+
+        /** Never the number: a response logged by accident must not put an IBAN in a log. */
+        @Override
+        public String toString() {
+            return "BankTransferInstruction[" + payout.id() + ", " + accountHint + "]";
         }
     }
 
@@ -123,9 +188,10 @@ public final class PayoutResponses {
                 PayoutService.PayoutFile file,
                 Instant now,
                 VerificationStanding standing,
-                DestinationStanding destination) {
+                DestinationStanding destination,
+                DestinationKind kind) {
             return new PayoutFile(
-                    PayoutSummary.of(file.payout(), now, standing, destination),
+                    PayoutSummary.of(file.payout(), now, standing, destination, kind),
                     file.approvals().stream().map(Approval::of).toList(),
                     file.stillNeeded());
         }
@@ -140,6 +206,7 @@ public final class PayoutResponses {
          * @param destinations the same, for #432's destination standing. Two maps rather than
          *     one of pairs, because the two are read from different modules and a page where
          *     one of them was cheap should not pay for the other
+         * @param kinds which route each creator is paid by (#397); absent for one who filed nothing
          */
         public static PayoutPage of(
                 List<Payout> payouts,
@@ -147,14 +214,16 @@ public final class PayoutResponses {
                 int size,
                 Instant now,
                 Map<UUID, VerificationStanding> standings,
-                Map<UUID, DestinationStanding> destinations) {
+                Map<UUID, DestinationStanding> destinations,
+                Map<UUID, DestinationKind> kinds) {
             return new PayoutPage(
                     payouts.stream()
                             .map(payout -> PayoutSummary.of(
                                     payout,
                                     now,
                                     standings.getOrDefault(payout.creatorId(), VerificationStanding.NOT_REQUIRED),
-                                    destinations.getOrDefault(payout.creatorId(), DestinationStanding.NONE)))
+                                    destinations.getOrDefault(payout.creatorId(), DestinationStanding.NONE),
+                                    kinds.get(payout.creatorId())))
                             .toList(),
                     page,
                     payouts.size() == size);
