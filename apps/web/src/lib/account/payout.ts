@@ -3,12 +3,14 @@ import { errorFrom } from '../api/problem';
 import { localeOrDefault, type Locale } from '../i18n/locale';
 
 /**
- * The creator's payout details — IDN-EXT-01 (#44): who is paid, and the card the money goes to.
+ * The creator's payout details — IDN-EXT-01 (#44): who is paid, and the account the money goes to.
  *
- * Three existing endpoints and one new one. `/v1/me/legal-subject` holds the legal name and the
- * VÖEN (#430); `/v1/me/payout-destination` reads the card on file and its verification standing
- * (#432); `/v1/me/payout-destination/card-registration` opens the payment provider's page where the
- * business card is entered. A card is never typed into IdeyaNest.
+ * `/v1/me/legal-subject` holds the legal name and the VÖEN (#430); `/v1/me/payout-destination` reads
+ * what is on file and its verification standing (#432). Since #394 the money goes by bank transfer,
+ * so the creator files an IBAN at `/v1/me/payout-destination/bank-account`, sent in its electronic
+ * form and answered with the masked hint only. A business card is still possible where the provider
+ * can take one — `cardRegistrationAvailable` says so — and is registered on the provider's page at
+ * `/v1/me/payout-destination/card-registration`; a card is never typed into IdeyaNest.
  *
  * Null fields may be absent rather than null — the service serialises `non_null` — so every optional
  * field is `?: T | null`, the convention `lib/pledges/api.ts` states.
@@ -43,13 +45,25 @@ export type DestinationStanding =
   | 'NAME_MISMATCH'
   | 'REJECTED';
 
+/** What is on file: an IBAN the platform holds sealed (#394), or a provider's token for a card. */
+export type DestinationKind = 'BANK_TRANSFER' | 'PROVIDER_TOKEN';
+
 export interface PayoutDestination {
   recorded: boolean;
   standing: DestinationStanding;
+  kind?: DestinationKind | null;
+  /** Whether the configured provider can register a business card at all. */
+  cardRegistrationAvailable?: boolean | null;
   provider?: string | null;
   holderName?: string | null;
   displayHint?: string | null;
   updatedAt?: string | null;
+}
+
+export interface BankAccountRequest {
+  /** The electronic form: upper case, no spaces. */
+  iban: string;
+  holderName: string;
 }
 
 export interface CardRegistrationRequest {
@@ -87,6 +101,17 @@ export async function saveMyLegalSubject(body: LegalSubjectRequest, signal?: Abo
 
 export async function getMyPayoutDestination(signal?: AbortSignal): Promise<PayoutDestination> {
   return read(await authorizedFetch('/v1/me/payout-destination', { cache: 'no-store', signal }));
+}
+
+export async function saveMyBankAccount(body: BankAccountRequest, signal?: AbortSignal): Promise<PayoutDestination> {
+  return read(
+    await authorizedFetch('/v1/me/payout-destination/bank-account', {
+      method: 'PUT',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(body),
+      signal,
+    }),
+  );
 }
 
 export async function beginPayoutCardRegistration(
