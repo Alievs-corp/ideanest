@@ -13,6 +13,7 @@
     "./formats": "./src/formats.ts",
     "./azerbaijani": "./src/azerbaijani.ts",
     "./hermes": "./src/hermes.ts",
+    "./promo-film": "./src/promo-film.ts",
     "./az.json": "./src/az.json",
     "./en.json": "./src/en.json",
     "./ru.json": "./src/ru.json",

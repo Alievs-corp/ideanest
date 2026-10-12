@@ -6,6 +6,7 @@ import {
   StaticPage,
 } from '../../components/content/static-page';
 import { useT } from '../../lib/i18n';
+import { PromoFilm } from './promo-film';
 
 /*
  * About, How it works and Trust and safety — the web's three `(site)` pages, issue #164, block for
@@ -60,6 +61,8 @@ export function HowItWorksScreen() {
       sharePath="/how-it-works"
       testID="how-it-works-screen"
     >
+      <PromoFilm />
+
       <Heading2>{t('backing.heading')}</Heading2>
       <RichParagraph>{(tag) => t.rich('backing.first', { b: tag.b })}</RichParagraph>
       <Paragraph>{t('backing.second')}</Paragraph>

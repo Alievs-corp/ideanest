@@ -4,6 +4,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
 import en from '@ideanest/messages/en.json';
+import * as ExpoVideo from 'expo-video';
+import { promoFilm } from '@ideanest/messages/promo-film';
 import { siteUrl } from '../../api/config';
 import { RichParagraph, textOf } from '../../components/content/static-page';
 import { setLocale } from '../../lib/locale';
@@ -26,6 +28,7 @@ jest.mock('expo-router', () => {
         options?.headerRight === undefined ? null : React.createElement(React.Fragment, null, options.headerRight()),
     }),
     useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn() }),
+    useIsFocused: () => true,
   };
 });
 
@@ -106,6 +109,36 @@ describe('How it works', () => {
     expect(mockPush).toHaveBeenLastCalledWith('/account/surveys');
     await fireEvent.press(links[1]!);
     expect(mockPush).toHaveBeenLastCalledWith('/account/deliveries');
+  });
+
+  it('shows the promo film as its poster, and streams nothing until play is pressed', async () => {
+    const players = (ExpoVideo as unknown as { __players: { source: unknown; play: jest.Mock }[] }).__players;
+    players.length = 0;
+    const film = promoFilm('en');
+    await show(<HowItWorksScreen />);
+
+    expect(screen.getByTestId('promo-film-poster', { includeHiddenElements: true }).props.source).toEqual({
+      uri: film.posterUrl,
+    });
+    expect(screen.getByText(`${en.static.howItWorks.film.title} · ${en.static.howItWorks.film.duration}`)).toBeTruthy();
+    expect(screen.queryByTestId('campaign-video-player')).toBeNull();
+    expect(players).toHaveLength(0);
+
+    await fireEvent.press(screen.getByRole('button', { name: en.static.howItWorks.film.playName }));
+
+    expect(screen.getByTestId('campaign-video-player').props.accessibilityLabel).toBe(en.static.howItWorks.film.label);
+    expect(players).toHaveLength(1);
+    expect(players[0]?.source).toBe(film.mobileUrl);
+    expect(players[0]?.play).toHaveBeenCalled();
+  });
+
+  it("plays the language's own cut", async () => {
+    const players = (ExpoVideo as unknown as { __players: { source: unknown }[] }).__players;
+    players.length = 0;
+    await act(async () => setLocale('ru'));
+    await show(<HowItWorksScreen />);
+    await fireEvent.press(screen.getByTestId('promo-film-play'));
+    expect(players[0]?.source).toBe(promoFilm('ru').mobileUrl);
   });
 });
 

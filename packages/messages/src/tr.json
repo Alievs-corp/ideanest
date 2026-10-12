@@ -5059,6 +5059,13 @@
       "metaDescription": "Bir kampanyaya destek olmak, kampanya yürütmek ve IdeyaNest'te destekle kargo arasında neler olur.",
       "title": "Nasıl çalışır",
       "summary": "Bir kampanyayı bulmakla onun fonladığı şeyi elinize almak arasında neler olur.",
+      "film": {
+        "title": "30 saniyede IdeyaNest",
+        "play": "Videoyu izle",
+        "playName": "Tanıtım videosunu izle, 30 saniye",
+        "label": "IdeyaNest tanıtım videosu",
+        "duration": "0:30"
+      },
       "backing": {
         "heading": "Bir şeye destek oluyorsanız",
         "first": "Bir ödül seviyesi seçin ya da ödülsüz destek olun. <b>Ücret destek verdiğiniz anda tahsil edilir</b> ve platformun hesabında tutulur. Destek iptal edilemez ve düşürülemez; kampanya destek kabul ettiği sürece daha yüksek bir seviye, bir ek ya da daha büyük bir tutarla desteğinizi artırabilirsiniz ve yalnızca aradaki fark hemen tahsil edilir.",
