@@ -26,7 +26,7 @@ import az.ideanest.shared.outbox.Outbox;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -66,6 +66,14 @@ import tools.jackson.databind.ObjectMapper;
 public class RefundRecords {
 
     private static final Logger log = LoggerFactory.getLogger(RefundRecords.class);
+
+    /**
+     * The zone a bank transfer's value date is reckoned in — #400. The bank and the console both
+     * date a transfer in Baku, and {@code PayoutService} checks a payout's transfer date the same
+     * way; in UTC, a transfer recorded between midnight and four in the morning in Baku would be
+     * refused as dated in the future.
+     */
+    private static final ZoneId BANK_ZONE = ZoneId.of("Asia/Baku");
 
     private final RefundRepository refunds;
     private final PaymentTransactionRepository transactions;
@@ -480,7 +488,7 @@ public class RefundRecords {
             throw new BankRefundRefusedException(Reason.REFUND_NOT_AWAITING_TRANSFER, refundId);
         }
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
-        if (transferredOn.isAfter(LocalDate.ofInstant(now, ZoneOffset.UTC))) {
+        if (transferredOn.isAfter(LocalDate.ofInstant(now, BANK_ZONE))) {
             throw new BankRefundRefusedException(Reason.TRANSFER_DATE_IN_FUTURE, refundId);
         }
         if (staffId.equals(row.get().detailsRecordedBy())) {
