@@ -94,7 +94,7 @@ Four pillars, observed across established platforms in this category:
 | **Goal** | The minimum amount required for success |
 | **Stretch goal** | A bonus target announced beyond the goal |
 | **All-or-nothing** | No money moves unless the goal is met |
-| **Funding period** | The window a campaign is open, 1–60 days |
+| **Funding period** | The window a campaign is open, 30–60 days |
 | **Late pledge** | A pledge accepted after the deadline |
 | **Pledge manager** | Post-campaign tooling for surveys, add-ons, and shipping |
 | **Fulfilment** | Manufacturing and delivering rewards |
@@ -1127,7 +1127,7 @@ sequenceDiagram
 
 **Basics** — title (≤60 characters), summary (≤135), category and subcategory,
 location with geocoding, cover image (min 1024×576), video, goal and currency,
-duration (1–60 days), scheduled launch, late-pledge toggle, pre-launch page.
+duration (30–60 days), scheduled launch, late-pledge toggle, pre-launch page.
 
 **Rewards** — atomic **items** first, then **tiers** composed from them:
 title, description, price, included items with quantities, images, estimated
@@ -2138,7 +2138,7 @@ individual agreement can differ without a deployment.
 | Title | 1–60 characters |
 | Summary | 1–135 characters |
 | Goal | Minimum and maximum are configurable |
-| Duration | 1–60 days (30 recommended) |
+| Duration | 30–60 days (30 recommended; 1–60 until #390, which the database constraint still allows for campaigns submitted before it) |
 | Cover image | Required, minimum 1024×576 |
 | Story | Minimum 500 characters |
 | Risks and challenges | **Required**, minimum 200 characters |

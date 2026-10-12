@@ -237,7 +237,8 @@ class ProjectSchemaTests extends AbstractIntegrationTest {
     void durationIsWithinRange() {
         UUID projectId = insertProject(insertUser(), "a-campaign");
 
-        // §5.3: 1-60 days, 30 recommended.
+        // The constraint keeps 1-60 days. §5.3 asks for 30-60 since #390, which the
+        // application enforces: campaigns submitted earlier hold shorter durations.
         assertThatCode(() -> jdbc().update("UPDATE projects SET duration_days = 60 WHERE id = ?", projectId))
                 .doesNotThrowAnyException();
         assertThatThrownBy(() -> jdbc().update("UPDATE projects SET duration_days = 61 WHERE id = ?", projectId))

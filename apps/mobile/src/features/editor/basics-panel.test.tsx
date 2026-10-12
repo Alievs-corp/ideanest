@@ -192,11 +192,11 @@ describe('BasicsPanel', () => {
     expect(patches()).toEqual([]);
   });
 
-  it('refuses a duration outside 1 to 60 days', async () => {
+  it.each(['29', '61'])('refuses a duration of %s days', async (days) => {
     await show();
-    await fireEvent.changeText(screen.getByTestId('basics-duration'), '61');
+    await fireEvent.changeText(screen.getByTestId('basics-duration'), days);
     await blur('basics-duration');
-    expect(screen.getByText('A campaign runs for 1 to 60 days.')).toBeTruthy();
+    expect(screen.getByText('A campaign runs for 30 to 60 days.')).toBeTruthy();
     expect(patches()).toEqual([]);
   });
 

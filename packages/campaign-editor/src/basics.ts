@@ -35,7 +35,7 @@ import type { BasicsValidationCopy } from './copy';
 
 export const TITLE_MAX_CHARACTERS = 60;
 export const BLURB_MAX_CHARACTERS = 135;
-export const DURATION_MIN_DAYS = 1;
+export const DURATION_MIN_DAYS = 30;
 export const DURATION_MAX_DAYS = 60;
 /** §5.3: "30 recommended". Shown as guidance, never enforced. */
 export const DURATION_RECOMMENDED_DAYS = 30;

@@ -82,7 +82,7 @@ final class RelevanceScore {
      * would make every old campaign tie and fall back on the id tiebreaker.
      *
      * <p><strong>Seven days rather than 48 hours or a month.</strong> §5.3 puts a
-     * campaign's duration between one and sixty days and the common case is thirty, so
+     * campaign's duration between thirty and sixty days and the common case is thirty, so
      * the half-life has to be inside a campaign's own lifetime or the term is just
      * "launched recently" with extra steps. A week is one full cycle of the weekly
      * rhythm every crowdfunding platform runs on, and it leaves a thirty-day campaign

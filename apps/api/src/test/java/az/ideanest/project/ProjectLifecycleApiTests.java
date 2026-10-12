@@ -421,7 +421,7 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("a goal of zero and a duration outside 1-60 days are refused by field")
+    @DisplayName("a goal of zero and a duration outside 30-60 days are refused by field")
     void invalidFieldsAreNamed() {
         Creator creator = creator();
         UUID id = idOf(draft(creator, "A campaign"));
@@ -438,6 +438,12 @@ class ProjectLifecycleApiTests extends AbstractIntegrationTest {
                 patch("/v1/projects/" + id, creator.accessToken(), Map.of("durationDays", 61));
         assertThat(tooLong.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(tooLong.getBody().get("meta")).isEqualTo(Map.of("field", "durationDays"));
+
+        // #390: thirty days is the shortest campaign, although the database still accepts one.
+        ResponseEntity<Map<String, Object>> tooShort =
+                patch("/v1/projects/" + id, creator.accessToken(), Map.of("durationDays", 29));
+        assertThat(tooShort.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(tooShort.getBody().get("meta")).isEqualTo(Map.of("field", "durationDays"));
     }
 
     @Test

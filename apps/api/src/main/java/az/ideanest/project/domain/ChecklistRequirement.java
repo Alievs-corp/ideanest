@@ -81,7 +81,7 @@ public enum ChecklistRequirement {
     /** §5.3: present, above zero, and within the configured bounds. */
     GOAL(ChecklistSeverity.BLOCKING, EditorSection.BASICS),
 
-    /** §5.3: 1–60 days, 30 recommended. */
+    /** §5.3: 30–60 days, 30 recommended (#390). */
     DURATION(ChecklistSeverity.BLOCKING, EditorSection.BASICS),
 
     /**
