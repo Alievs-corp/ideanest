@@ -11,36 +11,39 @@ strict TypeScript settings.
 apps/promo/
   package.json          private, "name": "@ideanest/promo"
   remotion.config.ts
-  captures.json         every shot to record: id, route/deep link, actions, length
-  LICENSES.md           music, SFX, fonts, avatar images: source + licence
+  captures.json         source recordings, segments, stills, crops and UI points (capture px)
+  LICENSES.md           every asset and its terms; publish nothing while a row is open
+  scripts/
+    prepare_media.py    recordings -> public/media (CFR 60 clips, stills, crops, grain)
+    soundtrack.py       synthesises music + SFX from src/timeline.json, loudnorm to -14 LUFS
+    render.mjs          render -> faststart -> poster, per language
+    qa.py               specs, loudness, flash count, contact sheet, pause frames
   src/
-    index.ts            registerRoot
-    Root.tsx            one <Composition> per film × aspect × language
+    index.ts, Root.tsx  one <Composition> per film x aspect x language
+    timeline.json       scene spans, cues and sound cues in frames (film and soundtrack read it)
     motion.ts           FPS, BPM, BEAT, ease, springs, dur  (motion reference §2)
-    copy.ts             reads headlines from @ideanest/messages
-    device/             Device frame, StatusBar, Screen, Glass sweep
-    fx/                 Spark, Trail, TapRing, Grain, StudioBackground, Shadow
-    text/               LineRise, WordDrop, KeywordPill, HandUnderline, Wordmark
-    ui/                 PopOut, ExplodedList, NestRing, Odometer, CountUp
-    transitions/        SparkCarry, SheetWipe, Whip, Dive, RadialReveal, BackgroundSwap
-    scenes/             Hook, Create, Gather, Montage, Pledge, Funded, Resolve, EndCard
-  public/
-    captures/           git-ignored: converted screen recordings
-    audio/              git-ignored if licence forbids redistribution
-  out/                  git-ignored: renders
+    camera.ts, poses.ts 3D device camera; project() mirrors the CSS transform
+    copy.ts             az/en/ru headlines (drafts until the owner approves)
+    device/             Device frame, StatusBar, Screen
+    fx/                 Spark, SparkLayer (with Trail), TapRing, Grain, Studio, Scrim
+    text/               Headline (line mask rise), WordDrop
+    ui/                 NestRing, Mark (spark -> logo), CountUp
+    scenes/             Opening, Middle, Finale
+  public/media/         git-ignored: everything prepare_media.py and soundtrack.py write
+  out/                  git-ignored: renders and QA output
 ```
 
 Dependencies: `remotion`, `@remotion/cli`, `@remotion/motion-blur`,
 `@remotion/google-fonts`, `react` and `react-dom` at the web app's versions. **Every
 `remotion` and `@remotion/*` package pinned to the same exact version** — Remotion
-refuses mismatched versions.
+refuses mismatched versions. Pinned at 4.0.534 (2026-10-12; the newest release was under
+pnpm's one-day age limit). In this version audio is `Html5Audio` (`Audio` is a deprecated
+alias) and media trimming is `trimBefore`/`trimAfter`, not `startFrom`/`endAt`.
 
 Notes for this repository:
 
-- Adding the package changes `pnpm-lock.yaml`, which runs the web and mobile CI jobs once.
-  Later changes inside `apps/promo/**` alone match no CI filter, so `CI complete` passes
-  without them; add a promo typecheck job to `ci.yml` (and to `ci-complete`'s `needs`
-  *and* its checked list, per CLAUDE.md §1) when the package lands.
+- `apps/promo/**` is in `ci.yml`'s `web` filter: the Frontend job's `pnpm -r typecheck`
+  and `pnpm -r test` are what check the film's code.
 - The web Docker image copies only the package manifests it names, so `apps/promo` never
   enters it.
 - `pnpm` scripts break on this checkout's path (it contains `;`). Work and render from a
@@ -118,13 +121,15 @@ cutting, not by ramping.
 ## 5. Rendering
 
 ```bash
-R="node node_modules/@remotion/cli/remotion-cli.js"
-$R studio src/index.ts
-$R render src/index.ts SparkToNest-9x16-az out/spark-to-nest-9x16-az.mp4 \
-  --codec=h264 --crf=16 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k
-$R still src/index.ts SparkToNest-9x16-az out/spark-to-nest-9x16-az.png --frame=1799
-$FF -i out/spark-to-nest-9x16-az.mp4 -c copy -movflags +faststart out/spark-to-nest-9x16-az.final.mp4
+pnpm prepare-media     # captures -> public/media, then the soundtrack
+pnpm studio            # preview; motion blur makes scrubbing slow, that is expected
+pnpm render az         # master (CRF 16), delivery (16 Mbps, TV range, faststart), poster
 ```
+
+The master is about 175 MB for 30 s: the moving grain defeats compression. The delivery
+file is what gets uploaded. Remotion renders full-range (`yuvj420p`) frames; the delivery
+encode converts them to TV-range bt709, which is what players and platforms expect.
+For a fast look, `remotion render ... --scale=0.5 --muted` takes about four minutes.
 
 Composition ids: `<Film>-<aspect>-<lang>`, e.g. `SparkToNest-1x1-en`, `Bumper6-9x16-ru`.
 Preview with motion blur off; final renders with it on.
@@ -143,7 +148,8 @@ $FF -v error -y -i $F -vf "fps=2,scale=216:-1,tile=10x6" -frames:v 1 out/sheet.p
 # Pause test: 12 evenly spaced full-resolution frames, each must stand as a poster
 $FF -v error -y -i $F -vf "fps=12/30" out/pause-%02d.png
 
-# Loudness: I ≈ −14 LUFS, true peak ≤ −1 dBTP
+# Loudness: I ≈ −14 LUFS, true peak ≤ −1 dBTP. AAC adds about 0.1 dB of overshoot,
+# so the soundtrack is normalised to −1.5 dBTP to leave room
 $FF -i $F -vn -af ebur128=peak=true -f null - 2>&1 | grep -E "I:|Peak:" | tail -2
 
 # Flash check input: per-frame mean luma
