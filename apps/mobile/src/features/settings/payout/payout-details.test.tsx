@@ -42,14 +42,31 @@ const COMPANY = {
   registeredAddress: 'Nizami street 10, Baku',
   registrationNumber: 'R 55',
 };
-const NO_CARD = { recorded: false, standing: 'NONE' };
+/** Nothing on file, on a deployment whose provider can also register a business card. */
+const NO_CARD = { recorded: false, standing: 'NONE', cardRegistrationAvailable: true };
+/** Nothing on file, and no card registration: the bank account is the only way to be paid. */
+const NOTHING = { recorded: false, standing: 'NONE', cardRegistrationAvailable: false };
 const CARD = {
   recorded: true,
   standing: 'AWAITING_VERIFICATION',
+  kind: 'PROVIDER_TOKEN',
+  cardRegistrationAvailable: true,
   displayHint: 'Visa ending 4242',
   holderName: 'KILIM STUDIO',
   updatedAt: '2030-01-01T00:00:00Z',
 };
+
+const ACCOUNT = {
+  recorded: true,
+  standing: 'AWAITING_VERIFICATION',
+  kind: 'BANK_TRANSFER',
+  cardRegistrationAvailable: false,
+  displayHint: 'AZ21…1944',
+  holderName: 'Kilim Studio MMC',
+  updatedAt: '2030-01-01T00:00:00Z',
+};
+/** The SWIFT registry's Azerbaijani example: a valid IBAN nobody holds. */
+const IBAN = 'AZ21NABZ00000000137010001944';
 
 let subject: unknown = EMPTY_SUBJECT;
 let destination: unknown = NO_CARD;
@@ -149,7 +166,7 @@ describe('payout details', () => {
     await fireEvent.press(screen.getByLabelText(en.common.tryAgain));
     await settle();
     expect(screen.queryByTestId('payout-failed')).toBeNull();
-    expect(screen.getByTestId('payout-card-none')).toBeTruthy();
+    expect(screen.getByTestId('payout-none')).toBeTruthy();
     expect(screen.getByLabelText(P.register)).toBeTruthy();
   });
 
@@ -162,7 +179,7 @@ describe('payout details', () => {
     expect(screen.getByTestId('payout-registered-address').props.value).toBe('Nizami street 10, Baku');
     expect(screen.getByTestId('payout-kind-LEGAL_ENTITY').props.accessibilityState).toMatchObject({ selected: true });
     expect(screen.getByTestId('payout-kind-INDIVIDUAL').props.accessibilityState).toMatchObject({ selected: false });
-    expect(screen.getByText('Visa ending 4242, held by KILIM STUDIO')).toBeTruthy();
+    expect(screen.getByText('Business card Visa ending 4242, held by KILIM STUDIO')).toBeTruthy();
     expect(screen.getByText(P.standingAwaiting)).toBeTruthy();
     expect(screen.getByLabelText(P.replace)).toBeTruthy();
     expect(screen.getByTestId('payout-tax-id').props.keyboardType).toBe('number-pad');
@@ -268,7 +285,7 @@ describe('payout details', () => {
     await wait(CHECK_INTERVAL_MS);
     expect(destinationReads()).toBe(start + 3);
     expect(screen.queryByTestId('payout-card-waiting')).toBeNull();
-    expect(screen.getByText('Visa ending 4242, held by KILIM STUDIO')).toBeTruthy();
+    expect(screen.getByText('Business card Visa ending 4242, held by KILIM STUDIO')).toBeTruthy();
 
     await wait(CHECK_INTERVAL_MS * 5);
     expect(destinationReads()).toBe(start + 3);
@@ -338,11 +355,105 @@ describe('payout details', () => {
 
     expect(screen.getByTestId('settings-offline')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('payout-subject-save'));
+    await fireEvent.press(screen.getByTestId('payout-bank-save'));
     await fireEvent.press(screen.getByTestId('payout-card-register'));
     await settle();
     expect(sendJson).not.toHaveBeenCalled();
     expect(screen.getByTestId('payout-legal-name').props.editable).toBe(false);
-    expect(screen.getByText('Visa ending 4242, held by KILIM STUDIO')).toBeTruthy();
+    expect(screen.getByTestId('payout-iban').props.editable).toBe(false);
+    expect(screen.getByText('Business card Visa ending 4242, held by KILIM STUDIO')).toBeTruthy();
+  });
+
+  it('shows a bank account on file as its masked hint, and offers no card without a provider for one', async () => {
+    subject = COMPANY;
+    destination = ACCOUNT;
+    await show();
+
+    expect(screen.getByText('Bank account AZ21…1944, held by Kilim Studio MMC')).toBeTruthy();
+    expect(screen.getByText(P.standingAwaiting)).toBeTruthy();
+    // The number itself is never drawn back, not even into the field.
+    expect(screen.getByTestId('payout-iban').props.value).toBe('');
+    expect(screen.getByTestId('payout-holder').props.value).toBe('Kilim Studio MMC');
+    expect(screen.queryByTestId('payout-card')).toBeNull();
+    expect(screen.queryByTestId('payout-card-register')).toBeNull();
+  });
+
+  it('groups the IBAN in fours as it is typed, and sends it in one piece', async () => {
+    subject = COMPANY;
+    destination = NOTHING;
+    sendJson.mockResolvedValue(ACCOUNT);
+    await show();
+    expect(screen.getByTestId('payout-none')).toBeTruthy();
+    // The holder starts as the legal name, which it has to match.
+    expect(screen.getByTestId('payout-holder').props.value).toBe('Kilim Studio MMC');
+
+    await fireEvent.changeText(screen.getByTestId('payout-iban'), 'az21nabz00000000137010001944');
+    expect(screen.getByTestId('payout-iban').props.value).toBe('AZ21 NABZ 0000 0000 1370 1000 1944');
+    await fireEvent.press(screen.getByTestId('payout-bank-save'));
+    await settle();
+
+    expect(sendJson).toHaveBeenCalledWith('PUT', '/v1/me/payout-destination/bank-account', {
+      iban: IBAN,
+      holderName: 'Kilim Studio MMC',
+    });
+    expect(screen.getByTestId('payout-bank-saved')).toBeTruthy();
+    expect(screen.getByText('Bank account AZ21…1944, held by Kilim Studio MMC')).toBeTruthy();
+    expect(screen.getByTestId('payout-iban').props.value).toBe('');
+  });
+
+  it('says what is wrong with a mistyped IBAN under the field, and sends nothing', async () => {
+    subject = COMPANY;
+    destination = NOTHING;
+    await show();
+
+    await fireEvent.changeText(screen.getByTestId('payout-iban'), 'AZ21NABZ00000000137010001945');
+    await fireEvent.press(screen.getByTestId('payout-bank-save'));
+    await settle();
+    expect(screen.getAllByText(P.ibanDefect.CHECKSUM).length).toBeGreaterThan(0);
+    expect(sendJson).not.toHaveBeenCalled();
+
+    await fireEvent.changeText(screen.getByTestId('payout-iban'), 'GB82 WEST 1234 5698 7654 32');
+    expect(screen.queryByText(P.ibanDefect.CHECKSUM)).toBeNull();
+    await fireEvent.press(screen.getByTestId('payout-bank-save'));
+    await settle();
+    expect(screen.getAllByText(P.ibanDefect.COUNTRY_NOT_ACCEPTED).length).toBeGreaterThan(0);
+    expect(sendJson).not.toHaveBeenCalled();
+  });
+
+  it('reads MALFORMED_IBAN into the same sentences, and a missing key as cannot save now', async () => {
+    subject = COMPANY;
+    destination = NOTHING;
+    sendJson.mockRejectedValueOnce(
+      new ApiError(400, {
+        type: 'about:blank',
+        title: 'Refused',
+        status: 400,
+        detail: 'Refused.',
+        code: 'MALFORMED_IBAN',
+        meta: { defect: 'FORMAT' },
+      }),
+    );
+    await show();
+    await fireEvent.changeText(screen.getByTestId('payout-iban'), IBAN);
+    await fireEvent.press(screen.getByTestId('payout-bank-save'));
+    await settle();
+    expect(screen.getAllByText(P.ibanDefect.FORMAT).length).toBeGreaterThan(0);
+
+    sendJson.mockRejectedValueOnce(refusal(503, 'ENCRYPTED_STORAGE_UNAVAILABLE'));
+    await fireEvent.press(screen.getByTestId('payout-bank-save'));
+    await settle();
+    expect(screen.getByText(P.bankUnavailable)).toBeTruthy();
+    expect(screen.queryByText(P.ibanDefect.FORMAT)).toBeNull();
+    expect(screen.getByTestId('payout-iban').props.value).toBe('AZ21 NABZ 0000 0000 1370 1000 1944');
+  });
+
+  it('says in words that the holder does not match the legal name, and what to do', async () => {
+    subject = COMPANY;
+    destination = { ...ACCOUNT, standing: 'NAME_MISMATCH', holderName: 'Someone Else' };
+    await show();
+    expect(screen.getByText(P.standingMismatch)).toBeTruthy();
+    expect(screen.getByTestId('payout-mismatch')).toBeTruthy();
+    expect(screen.getByText(P.mismatchHelp)).toBeTruthy();
   });
 
   it('sends a signed-out reader to sign in and reads nothing', async () => {
