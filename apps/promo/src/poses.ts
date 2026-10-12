@@ -7,14 +7,18 @@ const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 
 const drift = (rel: number, length: number) => interpolate(rel, [0, length], [0, 1], { easing: ease.drift, ...clamp });
 
+export const RISE_SPIN_START = 6;
+export const RISE_SPIN_END = 54;
+
 export function risePose(rel: number): Pose {
   const rise = spring({ frame: rel, fps: FPS, config: springs.heavy });
   const d = drift(rel, BAR);
+  const spin = interpolate(rel, [RISE_SPIN_START, RISE_SPIN_END], [-186, 0], { easing: ease.move, ...clamp });
   return {
     x: 0,
     y: interpolate(rise, [0, 1], [1500, 170]),
     rx: 16 - 4 * d,
-    ry: -20 + 6 * d,
+    ry: -20 + 6 * d + spin,
     rz: 4 - 2 * d,
     s: 1,
   };

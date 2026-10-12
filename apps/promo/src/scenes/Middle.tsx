@@ -76,7 +76,7 @@ export function Montage({ copy }: { copy: Copy }) {
     <>
       {onSun ? <Studio surface={accent.sun.surface} /> : <Studio glow={accent.mint.glow} glowY={1760} />}
       {whip ? (
-        <CameraMotionBlur shutterAngle={180} samples={10}>
+        <CameraMotionBlur shutterAngle={180} samples={6}>
           {device}
         </CameraMotionBlur>
       ) : (

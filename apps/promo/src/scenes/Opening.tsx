@@ -1,3 +1,4 @@
+import { CameraMotionBlur } from '@remotion/motion-blur';
 import { Img, Sequence, spring, useCurrentFrame } from 'remotion';
 import type { Copy } from '../copy';
 import { captureToDevice } from '../camera';
@@ -7,7 +8,7 @@ import { Studio } from '../fx/Studio';
 import { TapRing } from '../fx/TapRing';
 import { crop, cropSrc, point } from '../media';
 import { cues, FPS, scenes, springs } from '../motion';
-import { risePose, showPose } from '../poses';
+import { RISE_SPIN_END, risePose, showPose } from '../poses';
 import { accent, DEVICE, shadow } from '../theme';
 import { Headline, WordDrop } from '../text/Headline';
 
@@ -23,15 +24,24 @@ export function Hook({ copy }: { copy: Copy }) {
 export function Rise() {
   const frame = useCurrentFrame();
   const [bx, by] = screenPoint(...point('createButton'));
+  const device = (
+    <Device
+      pose={risePose(frame)}
+      sweepAt={RISE_SPIN_END}
+      screen={<StillScreen id="home-top" />}
+      overlay={<TapRing x={bx} y={by} at={cues.createTap - scenes.rise.start} size={120} />}
+    />
+  );
   return (
     <>
       <Studio glow={accent.sky.glow} glowY={1720} />
-      <Device
-        pose={risePose(frame)}
-        sweepAt={30}
-        screen={<StillScreen id="home-top" />}
-        overlay={<TapRing x={bx} y={by} at={cues.createTap - scenes.rise.start} size={120} />}
-      />
+      {frame < RISE_SPIN_END - 10 ? (
+        <CameraMotionBlur shutterAngle={180} samples={6}>
+          {device}
+        </CameraMotionBlur>
+      ) : (
+        device
+      )}
     </>
   );
 }

@@ -280,6 +280,12 @@ importers:
         specifier: 4.0.534
         version: 4.0.534(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
     devDependencies:
+      '@remotion/bundler':
+        specifier: 4.0.534
+        version: 4.0.534(@swc/helpers@0.5.23)(postcss@8.5.28)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@remotion/renderer':
+        specifier: 4.0.534
+        version: 4.0.534(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@types/node':
         specifier: ~22.20.2
         version: 22.20.2

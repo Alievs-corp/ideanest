@@ -18,13 +18,14 @@ apps/promo/
     soundtrack.py       synthesises music + SFX from src/timeline.json, loudnorm to -14 LUFS
     render.mjs          render -> faststart -> poster, per language
     qa.py               specs, loudness, flash count, contact sheet, pause frames
+    stills.mjs          one bundle, many half-size stills for review
   src/
     index.ts, Root.tsx  one <Composition> per film x aspect x language
     timeline.json       scene spans, cues and sound cues in frames (film and soundtrack read it)
     motion.ts           FPS, BPM, BEAT, ease, springs, dur  (motion reference §2)
     camera.ts, poses.ts 3D device camera; project() mirrors the CSS transform
     copy.ts             az/en/ru headlines (drafts until the owner approves)
-    device/             Device frame, StatusBar, Screen
+    device/             Device (front, back, rim), Body (iPhone rim, buttons, plateau), StatusBar, Screen
     fx/                 Spark, SparkLayer (with Trail), TapRing, Grain, Studio, Scrim
     text/               Headline (line mask rise), WordDrop
     ui/                 NestRing, Mark (spark -> logo), CountUp

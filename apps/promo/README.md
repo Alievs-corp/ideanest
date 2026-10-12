@@ -27,6 +27,7 @@ pnpm render            # out/spark-to-nest-9x16-az.{master.mp4,mp4,png}
 pnpm render az en ru   # every language
 python scripts/qa.py out/spark-to-nest-9x16-az.mp4
 pnpm studio            # preview and scrub
+node scripts/stills.mjs az 140 790   # half-size review stills, one bundle
 ```
 
 `render` writes three files per language: the CRF 16 master (about 175 MB, because the
