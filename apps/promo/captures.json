@@ -1,0 +1,33 @@
+{
+  "recorded": "2026-10-09",
+  "device": "Xiaomi Mi 10T Pro, release APK 0.1.0 (3), app language az, font scale 1.0",
+  "format": "1080x2160, 60 fps, status and navigation bars cropped off",
+  "source": "~/Videos/IdeyaNest promo",
+  "how": "adb screenrecord + uiautomator taps on the prod app with the 10 promo demo campaigns; see the promo-video skill, production.md section 3",
+  "clips": [
+    { "id": "home", "file": "01-ana-sehife.mp4", "route": "ideanest://", "from": 3.5, "to": 6.5, "note": "Home scrolls from the hero to the Seyyah card" },
+    { "id": "discover", "file": "02-kampaniya-kesf.mp4", "route": "ideanest://discover", "from": 0.5, "to": 3.5, "note": "Discover grid scrolling" },
+    { "id": "campaign", "file": "02-kampaniya-kesf.mp4", "route": "Gece Baki campaign page", "from": 9.8, "to": 12.8, "note": "Campaign page opens, amount counts up in the app" },
+    { "id": "games", "file": "03-kateqoriyalar.mp4", "route": "ideanest://categories/games", "from": 13.0, "to": 16.0, "note": "Games category with the Qala card" },
+    { "id": "tumar", "file": "05-kampaniya-sehifesi.mp4", "route": "Tumar campaign page", "from": 5.0, "to": 8.0, "note": "Amount, 109% progress, backers" },
+    { "id": "rewards", "file": "06-mukafat-sec.mp4", "route": "Qala campaign, rewards section", "from": 2.0, "to": 8.0, "note": "Reward tiers scroll and settle" },
+    { "id": "funded", "file": "07-hedefe-catdi.mp4", "route": "Gece Baki campaign page", "from": 5.0, "to": 11.0, "note": "115% funded, still page" }
+  ],
+  "stills": [
+    { "id": "home-top", "file": "01-ana-sehife.mp4", "t": 0.0 },
+    { "id": "home-card", "file": "01-ana-sehife.mp4", "t": 6.5 },
+    { "id": "rewards", "file": "06-mukafat-sec.mp4", "t": 5.0 },
+    { "id": "funded", "file": "07-hedefe-catdi.mp4", "t": 7.0 }
+  ],
+  "crops": [
+    { "id": "card", "still": "home-card", "x": 70, "y": 1014, "w": 940, "h": 900, "note": "The Seyyah campaign card, above the tab bar" }
+  ],
+  "points": {
+    "createButton": [540, 2050],
+    "rewardSelect": [280, 1505],
+    "backButton": [540, 2072],
+    "fundedAmount": [330, 1090],
+    "fundedProgressEnd": [1024, 1296],
+    "tumarProgress": [540, 1000]
+  }
+}

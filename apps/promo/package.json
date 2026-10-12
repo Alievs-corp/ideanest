@@ -1,0 +1,30 @@
+{
+  "name": "@ideanest/promo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "studio": "remotion studio src/index.ts",
+    "prepare-media": "python scripts/prepare_media.py && python scripts/soundtrack.py",
+    "render": "node scripts/render.mjs"
+  },
+  "dependencies": {
+    "@ideanest/design-tokens": "workspace:*",
+    "@ideanest/money": "workspace:*",
+    "@remotion/cli": "4.0.534",
+    "@remotion/google-fonts": "4.0.534",
+    "@remotion/motion-blur": "4.0.534",
+    "decimal.js": "^10.6.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "4.0.534"
+  },
+  "devDependencies": {
+    "@types/node": "~22.20.2",
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

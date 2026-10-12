@@ -33,8 +33,9 @@ commands are in `references/production.md`. Read all three before starting.
    frame from a decimal, never from a float.
 6. **Demo data is fictional and seeded.** Invented campaigns, names and amounts on a demo
    account. No real users, real photos without a licence, or third-party brands.
-7. **Copy is the owner's.** Draft lines live in `packages/messages` (az, en, ru); the
-   owner approves them before a render is published. Azerbaijani is the master language.
+7. **Copy is the owner's.** Draft lines live in `apps/promo/src/copy.ts` (az, en, ru), not
+   in `packages/messages`, so no app bundle carries film copy. The owner approves them
+   before a render is published. Azerbaijani is the master language.
 8. **Publishing is the owner's call.** Rendering is fine; uploading anywhere (Reels,
    TikTok, stores, YouTube, the website) is an outward action — ask first.
 9. **Flash-safe.** No more than 3 flashes in any second (WCAG 2.3.1), checked on every
@@ -87,7 +88,7 @@ Draft copy is in English for the review; the az/en/ru lines go into the catalogu
 | 10–11 | 0:18–0:22 | Progress macro: count-up to 100%; the spark is the bar's head. At 100% a **radial reveal** in `success` with a check and "Funded" | "And the idea finds its nest." | Count-up; T6 radial reveal |
 | 12 | 0:22–0:24 | The success surface contracts back into the spark; the nest ring returns around it | — | Spark carry (reverse) |
 | 13 | 0:24–0:26 | The ring and the spark collapse into the IdeyaNest mark; wordmark reveals letter by letter | — | Logo resolve |
-| 14–15 | 0:26–0:30 | End card, still: mark, wordmark, "ideyanest.com". On bar 15 beat 1 the **lime CTA pill** grows from the spark's position: "Start yours" | — | CTA pill scale-in from the left, then hold ≥ 2 s |
+| 14–15 | 0:26–0:30 | End card, still: mark, wordmark, "ideyanest.com". A second spark drops from the mark's dot and on bar 14 beat 3 becomes the **lime CTA pill**: "Start yours" | — | CTA pill grows from the spark (centre), then the frame holds still ≥ 2 s (a test enforces it) |
 
 Store badges appear on the end card only once the listing is live. The last 2 seconds are
 completely still — the poster frame.
@@ -187,7 +188,7 @@ must be recorded to reproduce a film.
 
 1. **Brief** — confirm with the owner: goal (install, launch, feature), platforms,
    length set, languages, which features appear, release date. One feature per bar.
-2. **Copy** — draft headlines into the catalogue; owner approves before building.
+2. **Copy** — draft headlines in `apps/promo/src/copy.ts`; owner approves before publishing.
 3. **Seed and capture** — demo account with fictional campaigns; record each shot listed
    in `captures.json` on the phone (`ideanest-device-test` for the release APK and deep
    links, `production.md` §3 for recording).

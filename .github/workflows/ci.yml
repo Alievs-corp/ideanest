@@ -119,6 +119,10 @@ jobs:
             web:
               - *shared
               - 'apps/web/**'
+              # The promo film has no job of its own: its typecheck and tests
+              # run in the Frontend job's `pnpm -r`, so a change to it alone
+              # must start that job or nothing checks it.
+              - 'apps/promo/**'
               - 'apps/api/openapi.json'
             mobile:
               - *shared
