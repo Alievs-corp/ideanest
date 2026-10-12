@@ -9,9 +9,8 @@ import {
   startBankTransfer,
   type BankTransferInstruction,
 } from '../../lib/admin/payout-bank-transfers';
-import { bakuToday } from '../../lib/admin/dashboard';
 import type { DirectoryNames } from '../../lib/admin/directory';
-import { bankTransferInProgress, type Payout } from '../../lib/admin/payouts';
+import { bankDay, bankTransferInProgress, type Payout } from '../../lib/admin/payouts';
 import { payoutRefusalFor } from '../../lib/admin/payout-refusals';
 import { wasAborted } from '../../lib/admin/refusals';
 import { formatMoney } from '../../lib/money';
@@ -112,7 +111,7 @@ export function PayoutBankTransfer({
   const [error, setError] = useState<string | null>(null);
 
   const [reference, setReference] = useState('');
-  const [transferredOn, setTransferredOn] = useState(() => bakuToday());
+  const [transferredOn, setTransferredOn] = useState(() => bankDay());
   const [recordNote, setRecordNote] = useState('');
   const [abandonNote, setAbandonNote] = useState('');
 
@@ -165,8 +164,8 @@ export function PayoutBankTransfer({
   if (payout.state === 'CANCELLED' || payout.state === 'FAILED') return null;
 
   const amount = instruction?.amount ?? payout.net;
-  const startedOn = payout.bankTransferStartedAt == null ? null : bakuToday(new Date(payout.bankTransferStartedAt));
-  const today = bakuToday();
+  const startedOn = payout.bankTransferStartedAt == null ? null : bankDay(new Date(payout.bankTransferStartedAt));
+  const today = bankDay();
   const recordReady = reference.trim() !== '' && transferredOn !== '' && recordNote.trim() !== '';
 
   return (

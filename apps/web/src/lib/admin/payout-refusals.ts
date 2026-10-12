@@ -1,8 +1,7 @@
 import { ApiError } from '../api/problem';
 import { fillPlaceholders } from '../i18n/placeholders';
 import type { PayoutQueueCopy } from '../i18n/admin/money-copy';
-import { bakuToday } from './dashboard';
-import type { Payout } from './payouts';
+import { bankDay, type Payout } from './payouts';
 import { consoleMessageFor } from './refusals';
 
 /**
@@ -30,8 +29,8 @@ export function payoutRefusalFor(cause: unknown, copy: PayoutQueueCopy, payout?:
     if (code === 'BANK_TRANSFER_DATE_OUT_OF_RANGE') {
       const startedAt = payout?.bankTransferStartedAt;
       return fillPlaceholders(words.BANK_TRANSFER_DATE_OUT_OF_RANGE, {
-        start: startedAt == null ? '—' : bakuToday(new Date(startedAt)),
-        today: bakuToday(),
+        start: startedAt == null ? '—' : bankDay(new Date(startedAt)),
+        today: bankDay(),
       });
     }
     if (code !== undefined && code !== 'FIGURES_MOVED' && Object.hasOwn(words, code)) {

@@ -157,6 +157,24 @@ export function bankTransferInProgress(payout: Payout): boolean {
   return payout.state === 'APPROVED' && payout.bankTransferStartedAt != null;
 }
 
+/**
+ * The calendar day an instant falls on in Baku, `YYYY-MM-DD` — the day a bank statement is dated
+ * in, and the one the service bounds a transfer's value date by (#397).
+ *
+ * <p>`lib/admin/dashboard.ts` has the same function as `bakuToday`, and importing it from here
+ * was measured: sharing that module between the console's front page and this route moved it
+ * into a chunk of its own and put `/admin` over its First Load JS budget. Eight lines are cheaper
+ * than that chunk.
+ */
+export function bankDay(at: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Baku',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(at);
+}
+
 /** The queue: everything still on its way, oldest first, holds included. */
 export async function readPayoutQueue(page = 0, signal?: AbortSignal): Promise<PayoutPage> {
   const response = await authorizedFetch(`/v1/admin/payouts/queue?page=${page}`, { signal });
