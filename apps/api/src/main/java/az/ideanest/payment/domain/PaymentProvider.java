@@ -171,6 +171,17 @@ public interface PaymentProvider {
     }
 
     /**
+     * Whether {@link #beginPayoutCardRegistration} opens a page rather than refusing — #394.
+     *
+     * <p>Asked before offering the creator the card route at all, so that a settings screen
+     * does not show a button whose only answer is a 503. An adapter that overrides the call
+     * says so here; the default matches the default above.
+     */
+    default boolean registersPayoutCards() {
+        return false;
+    }
+
+    /**
      * What this provider can do, from §9.3's table.
      *
      * <p>Read at start-up by {@code PaymentProviders}, which refuses an adapter that

@@ -45,7 +45,36 @@ public enum ProviderName {
      * {@code test} profiles, and a deployment naming it has no adapter to resolve, which is a
      * start-up failure. Removed once Epoint is configured.
      */
-    SANDBOX;
+    SANDBOX,
+
+    /**
+     * Money moved by a member of staff from IdeyaNest's own bank account, and recorded here —
+     * epic #392. <strong>Not a provider and never an adapter.</strong>
+     *
+     * <p>A value on this list because the list is also the vocabulary of
+     * {@code transactions.provider} and {@code payout_destinations.provider}: a creator paid by
+     * bank transfer has a destination that names no provider, and the transfer that pays them
+     * will be a transaction that went through none. {@link #isAdapter()} is false, so nothing can
+     * charge, refund, receive a webhook or register a card through it: {@code PaymentProviders}
+     * refuses it as the primary and as an adapter's name and never resolves it by name, and
+     * {@code canonicalNameOf} does not publish it as a token's issuer.
+     *
+     * <p><strong>Added one release before anything writes a transaction with it</strong> (#394
+     * adds it; #397 is the first writer). {@code transactions.provider} is read through this
+     * enum, and a node that does not know a stored value fails to load the row — so every node
+     * must know the value before any node writes it.
+     */
+    BANK_TRANSFER;
+
+    /**
+     * Whether a {@code PaymentProvider} adapter can exist for this name.
+     *
+     * <p>False only for {@link #BANK_TRANSFER}. Asked wherever a name is about to be turned into
+     * an adapter, so that a configuration or a URL naming the bank cannot reach one.
+     */
+    public boolean isAdapter() {
+        return this != BANK_TRANSFER;
+    }
 
     /**
      * The name as it is written in a URL and in configuration: lower case.

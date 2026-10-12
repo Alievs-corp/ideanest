@@ -257,6 +257,11 @@ public class ScriptedPaymentProvider implements PaymentProvider {
         }
     }
 
+    @Override
+    public boolean registersPayoutCards() {
+        return true;
+    }
+
     /** A card entry page on a host nothing resolves; the registration is settled by a scripted webhook. */
     @Override
     public PayoutCardSession beginPayoutCardRegistration(PayoutCardRequest request) {

@@ -198,6 +198,11 @@ public class EpointPaymentProvider implements PaymentProvider {
     }
 
     @Override
+    public boolean registersPayoutCards() {
+        return true;
+    }
+
+    @Override
     public PayoutCardSession beginPayoutCardRegistration(PayoutCardRequest request) {
         Map<String, Object> parameters = parameters(request.language());
         // 1 is a payout card; 0 would register a card to be charged.

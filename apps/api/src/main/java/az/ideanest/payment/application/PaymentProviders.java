@@ -52,6 +52,11 @@ public class PaymentProviders {
 
     public PaymentProviders(List<PaymentProvider> discovered, PaymentProperties properties) {
         for (PaymentProvider adapter : discovered) {
+            if (!adapter.name().isAdapter()) {
+                // #394: BANK_TRANSFER is staff moving money by hand, and a bean claiming it
+                // would be something calling itself the bank.
+                throw new IllegalStateException(adapter.name() + " is not a provider an adapter can claim");
+            }
             // IDN-EXT-01 (#38): an adapter that cannot collect stored cards is no longer refused.
             // The platform charges when a pledge is confirmed, and stored-card collection at close
             // is retired by #39 — so R-01 to R-03 decide only whether collecting() hands the
@@ -112,6 +117,9 @@ public class PaymentProviders {
      * those from {@code primary()} would verify a Payriff signature with Epoint's key.
      */
     public Optional<PaymentProvider> byName(ProviderName name) {
+        if (name == null || !name.isAdapter()) {
+            return Optional.empty();
+        }
         return Optional.ofNullable(adapters.get(name));
     }
 
@@ -142,7 +150,12 @@ public class PaymentProviders {
      * refuses at send because no provider is configured rather than because the name was
      * wrong.
      *
-     * @return the constant's own spelling, or empty when nothing matches
+     * <p><strong>{@code BANK_TRANSFER} is not published here</strong> (#394). It issues no
+     * token, so a destination naming it through this route would be a bank account with no
+     * account number. A creator's IBAN is filed through its own endpoint, which seals it.
+     *
+     * @return the constant's own spelling, or empty when nothing matches or the name is not a
+     *     provider an adapter can exist for
      */
     public static Optional<String> canonicalNameOf(String provider) {
         if (provider == null) {
@@ -150,7 +163,7 @@ public class PaymentProviders {
         }
         String trimmed = provider.trim();
         for (ProviderName candidate : ProviderName.values()) {
-            if (candidate.name().equalsIgnoreCase(trimmed)) {
+            if (candidate.isAdapter() && candidate.name().equalsIgnoreCase(trimmed)) {
                 return Optional.of(candidate.name());
             }
         }
@@ -165,6 +178,10 @@ public class PaymentProviders {
         // IllegalStateException below on a name that is but has no adapter. Both are
         // start-up failures: see the class comment.
         ProviderName name = ProviderName.of(properties.provider().primary());
+        if (!name.isAdapter()) {
+            throw new IllegalStateException(
+                    "ideanest.payment.provider.primary names %s, which is not a payment provider".formatted(name));
+        }
         PaymentProvider adapter = adapters.get(name);
         if (adapter == null) {
             throw new IllegalStateException(
