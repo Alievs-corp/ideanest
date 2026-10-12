@@ -1044,70 +1044,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/admin/payouts/{payoutId}/bank-transfer": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["payoutBankTransfer"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/admin/payouts/{payoutId}/bank-transfer/abandon": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["payoutAbandonBankTransfer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/admin/payouts/{payoutId}/bank-transfer/record": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["payoutRecordBankTransfer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/admin/payouts/{payoutId}/bank-transfer/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["payoutStartBankTransfer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/admin/payouts/{payoutId}/cancel": {
         parameters: {
             query?: never;
@@ -1202,6 +1138,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["adminSubscriptionChange"];
+        trace?: never;
+    };
+    "/v1/admin/pledges/{pledgeId}/refund-bank-details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["refundBankTransferRecordBankDetails"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/admin/projects": {
@@ -1358,6 +1310,54 @@ export interface paths {
         get: operations["refundForPledge"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/refunds/{refundId}/bank-details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["refundBankTransferBankDetails"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/refunds/{refundId}/bank-transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["refundBankTransferRouteToBankTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/refunds/{refundId}/bank-transfer/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["refundBankTransferRecordTransfer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4216,9 +4216,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AbandonBankTransferRequest: {
-            note: string;
-        };
         AcceptRequest: {
             /** Format: int32 */
             version: number;
@@ -4502,13 +4499,41 @@ export interface components {
             holderName: string;
             iban: string;
         };
-        BankTransferInstruction: {
-            accountHint?: string;
+        BankDetails: {
             amount?: components["schemas"]["Money"];
-            description?: string;
+            /** Format: uuid */
+            detailsRecordedBy?: string;
             holderName?: string;
             iban?: string;
-            payout?: components["schemas"]["PayoutSummary"];
+            ibanHint?: string;
+            /** Format: uuid */
+            pledgeId?: string;
+            /** Format: uuid */
+            refundId?: string;
+            /** Format: uuid */
+            ticketId?: string;
+        };
+        BankDetailsRequest: {
+            holderName: string;
+            iban: string;
+            /** Format: uuid */
+            ticketId: string;
+        };
+        BankTransfer: {
+            bankReference?: string;
+            /** Format: date-time */
+            detailsRecordedAt?: string;
+            /** Format: uuid */
+            detailsRecordedBy?: string;
+            ibanHint?: string;
+            /** Format: uuid */
+            ticketId?: string;
+            /** Format: date-time */
+            transferRecordedAt?: string;
+            /** Format: uuid */
+            transferRecordedBy?: string;
+            /** Format: date */
+            transferredOn?: string;
         };
         BeginRequest: {
             fin: string;
@@ -5139,7 +5164,7 @@ export interface components {
             shippedBody?: string;
             shippedSubject?: string;
             /** @enum {string} */
-            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
         };
         DraftPledgeRequest: {
             addons?: components["schemas"]["PledgeAddonBody"][];
@@ -5729,7 +5754,7 @@ export interface components {
             subjectId?: string;
             subjectType?: string;
             /** @enum {string} */
-            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+            type?: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
         };
         OAuthSignInRequest: {
             deviceLabel?: string;
@@ -5865,19 +5890,11 @@ export interface components {
             /** Format: int32 */
             approvalsRequired?: number;
             /** Format: date-time */
-            bankTransferStartedAt?: string;
-            /** Format: uuid */
-            bankTransferStartedBy?: string;
-            /** Format: date */
-            bankTransferredOn?: string;
-            /** Format: date-time */
             calculatedAt?: string;
             /** Format: uuid */
             creatorId?: string;
             /** @enum {string} */
             creatorStanding?: "NOT_REQUIRED" | "WAIVED" | "VERIFIED" | "NEVER_REQUESTED" | "AWAITING_DOCUMENTS" | "UNDER_REVIEW" | "REJECTED" | "EXPIRED";
-            /** @enum {string} */
-            destinationKind?: "PROVIDER_TOKEN" | "BANK_TRANSFER";
             /** @enum {string} */
             destinationStanding?: "WAIVED" | "VERIFIED" | "NONE" | "AWAITING_VERIFICATION" | "NAME_MISMATCH" | "REJECTED";
             failureCode?: string;
@@ -6341,12 +6358,6 @@ export interface components {
             base?: string;
             rates?: components["schemas"]["Rate"][];
         };
-        RecordBankTransferRequest: {
-            bankReference: string;
-            note: string;
-            /** Format: date */
-            transferredOn: string;
-        };
         RecoveryCodesResponse: {
             recoveryCodes?: string[];
         };
@@ -6368,6 +6379,7 @@ export interface components {
         };
         Refund: {
             amount?: components["schemas"]["Money"];
+            bankTransfer?: components["schemas"]["BankTransfer"];
             /** Format: uuid */
             chargeTransactionId?: string;
             detail?: string;
@@ -6391,7 +6403,7 @@ export interface components {
             /** Format: date-time */
             settledAt?: string;
             /** @enum {string} */
-            state?: "REQUESTED" | "SUCCEEDED" | "FAILED";
+            state?: "REQUESTED" | "SUCCEEDED" | "FAILED" | "AWAITING_BANK_DETAILS" | "AWAITING_TRANSFER";
         };
         RefundPage: {
             hasMore?: boolean;
@@ -7193,6 +7205,11 @@ export interface components {
             status?: string;
             type?: string;
         };
+        TransferRequest: {
+            bankReference: string;
+            /** Format: date */
+            transferredOn: string;
+        };
         Translation: {
             /** Format: uuid */
             entryId?: string;
@@ -7335,7 +7352,6 @@ export interface components {
     headers: never;
     pathItems: never;
 }
-export type SchemaAbandonBankTransferRequest = components['schemas']['AbandonBankTransferRequest'];
 export type SchemaAcceptRequest = components['schemas']['AcceptRequest'];
 export type SchemaAcceptance = components['schemas']['Acceptance'];
 export type SchemaAcceptanceRecord = components['schemas']['AcceptanceRecord'];
@@ -7368,7 +7384,9 @@ export type SchemaBackerSurveyBody = components['schemas']['BackerSurveyBody'];
 export type SchemaBackerSurveyListResponse = components['schemas']['BackerSurveyListResponse'];
 export type SchemaBalance = components['schemas']['Balance'];
 export type SchemaBankAccountRequest = components['schemas']['BankAccountRequest'];
-export type SchemaBankTransferInstruction = components['schemas']['BankTransferInstruction'];
+export type SchemaBankDetails = components['schemas']['BankDetails'];
+export type SchemaBankDetailsRequest = components['schemas']['BankDetailsRequest'];
+export type SchemaBankTransfer = components['schemas']['BankTransfer'];
 export type SchemaBeginRequest = components['schemas']['BeginRequest'];
 export type SchemaBeginUploadBody = components['schemas']['BeginUploadBody'];
 export type SchemaBranch = components['schemas']['Branch'];
@@ -7565,7 +7583,6 @@ export type SchemaRaisePledgeRequest = components['schemas']['RaisePledgeRequest
 export type SchemaRaiseRequest = components['schemas']['RaiseRequest'];
 export type SchemaRate = components['schemas']['Rate'];
 export type SchemaRatesResponse = components['schemas']['RatesResponse'];
-export type SchemaRecordBankTransferRequest = components['schemas']['RecordBankTransferRequest'];
 export type SchemaRecoveryCodesResponse = components['schemas']['RecoveryCodesResponse'];
 export type SchemaReferralVisitResponse = components['schemas']['ReferralVisitResponse'];
 export type SchemaReferrerReportResponse = components['schemas']['ReferrerReportResponse'];
@@ -7668,6 +7685,7 @@ export type SchemaTokenResponse = components['schemas']['TokenResponse'];
 export type SchemaTotals = components['schemas']['Totals'];
 export type SchemaTrailPage = components['schemas']['TrailPage'];
 export type SchemaTransaction = components['schemas']['Transaction'];
+export type SchemaTransferRequest = components['schemas']['TransferRequest'];
 export type SchemaTranslation = components['schemas']['Translation'];
 export type SchemaTranslationRequest = components['schemas']['TranslationRequest'];
 export type SchemaTree = components['schemas']['Tree'];
@@ -8458,7 +8476,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -8480,7 +8498,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -8506,7 +8524,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -8528,7 +8546,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -8551,7 +8569,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -8571,7 +8589,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
+                type: "PLEDGE_CONFIRMED" | "PLEDGE_EDITED" | "GOAL_REACHED" | "DEADLINE_48H" | "DEADLINE_24H" | "CAMPAIGN_SUCCEEDED" | "CAMPAIGN_UNSUCCESSFUL" | "CAMPAIGN_EXTENDED" | "UPDATE_DUE_SOON" | "PROJECT_APPROVED" | "PAYMENT_COLLECTED" | "PAYMENT_FAILED" | "FINAL_PAYMENT_WARNING" | "PAYOUT_SENT" | "WITHDRAWAL_REQUESTED" | "PAYOUT_DETAILS_NEEDED" | "REFUND_NEEDS_BANK_DETAILS" | "NEW_UPDATE_PUBLISHED" | "COMMENT_REPLY" | "DIRECT_MESSAGE" | "SURVEY_AVAILABLE" | "SURVEY_OVERDUE" | "REWARD_SHIPPED" | "FOLLOWED_CREATOR_LAUNCHED" | "LAUNCH_REMINDER" | "SAVED_PROJECT_ENDING_SOON" | "NEW_DEVICE_SIGN_IN";
             };
             cookie?: never;
         };
@@ -9471,102 +9489,6 @@ export interface operations {
             };
         };
     };
-    payoutBankTransfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                payoutId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BankTransferInstruction"];
-                };
-            };
-        };
-    };
-    payoutAbandonBankTransfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                payoutId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AbandonBankTransferRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PayoutSummary"];
-                };
-            };
-        };
-    };
-    payoutRecordBankTransfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                payoutId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RecordBankTransferRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PayoutSummary"];
-                };
-            };
-        };
-    };
-    payoutStartBankTransfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                payoutId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BankTransferInstruction"];
-                };
-            };
-        };
-    };
     payoutCancel: {
         parameters: {
             query?: never;
@@ -9729,6 +9651,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Plan"];
+                };
+            };
+        };
+    };
+    refundBankTransferRecordBankDetails: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pledgeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BankDetailsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundPage"];
                 };
             };
         };
@@ -9922,7 +9870,7 @@ export interface operations {
     refundList: {
         parameters: {
             query?: {
-                state?: "REQUESTED" | "SUCCEEDED" | "FAILED";
+                state?: "REQUESTED" | "SUCCEEDED" | "FAILED" | "AWAITING_BANK_DETAILS" | "AWAITING_TRANSFER";
                 page?: number;
             };
             header?: never;
@@ -9986,6 +9934,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefundPage"];
+                };
+            };
+        };
+    };
+    refundBankTransferBankDetails: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankDetails"];
+                };
+            };
+        };
+    };
+    refundBankTransferRouteToBankTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refund"];
+                };
+            };
+        };
+    };
+    refundBankTransferRecordTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refundId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refund"];
                 };
             };
         };

@@ -72,8 +72,8 @@ function notification(
 }
 
 describe('the contract', () => {
-  it('publishes 26 types', () => {
-    expect(TYPES).toHaveLength(26);
+  it('publishes 27 types', () => {
+    expect(TYPES).toHaveLength(27);
   });
 });
 
@@ -117,6 +117,14 @@ describe('hrefOf', () => {
     expect(hrefOf(notification({ type: 'GOAL_REACHED' }))).toBe('/projects/aysel-studio/xari-bulbul-ceramics');
     expect(hrefOf(notification({ type: 'NEW_DEVICE_SIGN_IN', category: 'SECURITY' }))).toBe('/settings/sessions');
     expect(hrefOf(notification({ type: 'GOAL_REACHED', params: { creatorSlug: 'a' } }))).toBeNull();
+  });
+
+  it('sends a refund waiting for bank details to the backer’s pledge, as the email does (#399)', () => {
+    const pledgeId = '0193f2a1-0000-7000-8000-000000000042';
+    expect(
+      hrefOf(notification({ type: 'REFUND_NEEDS_BANK_DETAILS', category: 'PAYMENTS', params: { pledgeId } })),
+    ).toBe(`/pledges/${pledgeId}`);
+    expect(hrefOf(notification({ type: 'REFUND_NEEDS_BANK_DETAILS', category: 'PAYMENTS', params: {} }))).toBeNull();
   });
 });
 

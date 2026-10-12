@@ -197,15 +197,19 @@ export function campaignOf(params: Record<string, unknown>): {
 
 /**
  * Where the row goes, in `EmailComposer`'s order so the inbox and the email land in one place:
- * the type when the message is not about a campaign (only the sign-in alert), then the campaign's
- * page, then nothing. **A row with no destination is not a link**, rather than a link to the home
- * page.
+ * the type when the message is not about a campaign (the sign-in alert, and since #399 a refund
+ * waiting for the backer's bank account, which goes to their pledge), then the campaign's page,
+ * then nothing. **A row with no destination is not a link**, rather than a link to the home page.
  */
 export function hrefOf(
   notification: Pick<InboxNotification, 'type' | 'params'>,
   campaignHref: string | null = campaignOf(readParams(notification.params)).href,
 ): string | null {
   if (notification.type === 'NEW_DEVICE_SIGN_IN') return '/settings/sessions';
+  if (notification.type === 'REFUND_NEEDS_BANK_DETAILS') {
+    const pledge = textOf(readParams(notification.params), 'pledgeId');
+    if (pledge !== null) return `/pledges/${encodeURIComponent(pledge)}`;
+  }
   return campaignHref;
 }
 

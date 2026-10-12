@@ -549,6 +549,7 @@
         "CAMPAIGN_EXTENDED": "{campaign} kampaniyasının yeni müddəti var",
         "WITHDRAWAL_REQUESTED": "{campaign} kampaniyasının müəllifi vəsaitin çıxarılmasını tələb edib",
         "PAYOUT_DETAILS_NEEDED": "{campaign} kampaniyası üzrə ödənişiniz rekvizitlərinizi gözləyir",
+        "REFUND_NEEDS_BANK_DETAILS": "{campaign} kampaniyası üzrə geri ödəniş üçün bank rekvizitləriniz lazımdır",
         "UPDATE_DUE_SOON": "{campaign} kampaniyası üçün yenilik {when} gözlənilir"
       },
       "unnamed": {
@@ -577,6 +578,7 @@
         "CAMPAIGN_EXTENDED": "Dəstəklədiyiniz kampaniyanın yeni müddəti var",
         "WITHDRAWAL_REQUESTED": "Dəstəklədiyiniz kampaniyanın müəllifi vəsaitin çıxarılmasını tələb edib",
         "PAYOUT_DETAILS_NEEDED": "Ödənişiniz VÖEN və IBAN məlumatlarınızı gözləyir",
+        "REFUND_NEEDS_BANK_DETAILS": "Geri ödəniş üçün bank rekvizitləriniz lazımdır",
         "UPDATE_DUE_SOON": "Kampaniyanız üçün yenilik {when} gözlənilir"
       },
       "amount": {
@@ -1174,7 +1176,11 @@
             "update_published": "Yenilik dərc edildi"
           },
           "refund": {
-            "issued": "Geri qaytarma edildi"
+            "issued": "Geri qaytarma edildi",
+            "routed_to_bank_transfer": "Geri ödəniş bank köçürməsinə yönəldildi",
+            "bank_details_recorded": "Geri ödənişin bank rekvizitləri qeyd edildi",
+            "bank_details_revealed": "Geri ödənişin bank rekvizitləri açıldı",
+            "bank_transfer_recorded": "Geri ödənişin bank köçürməsi qeyd edildi"
           },
           "report": {
             "dismissed": "Şikayət rədd edildi",

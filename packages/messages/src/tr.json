@@ -549,6 +549,7 @@
         "CAMPAIGN_EXTENDED": "{campaign} kampanyasının yeni bir bitiş tarihi var",
         "WITHDRAWAL_REQUESTED": "{campaign} kampanyasının sahibi ödeme talep etti",
         "PAYOUT_DETAILS_NEEDED": "{campaign} kampanyası için ödemeniz bilgilerinizi bekliyor",
+        "REFUND_NEEDS_BANK_DETAILS": "{campaign} kampanyası için iadeniz banka bilgilerinizi bekliyor",
         "UPDATE_DUE_SOON": "{campaign} kampanyası için güncellemeniz {when} bekleniyor"
       },
       "unnamed": {
@@ -577,6 +578,7 @@
         "CAMPAIGN_EXTENDED": "Desteklediğiniz kampanyanın yeni bir bitiş tarihi var",
         "WITHDRAWAL_REQUESTED": "Desteklediğiniz kampanyanın sahibi ödeme talep etti",
         "PAYOUT_DETAILS_NEEDED": "Ödemeniz VÖEN ve IBAN bilgilerinizi bekliyor",
+        "REFUND_NEEDS_BANK_DETAILS": "İadeniz için banka bilgilerinize ihtiyacımız var",
         "UPDATE_DUE_SOON": "Kampanyanız için güncellemeniz {when} bekleniyor"
       },
       "amount": {
@@ -1174,7 +1176,11 @@
             "update_published": "Güncelleme yayımlandı"
           },
           "refund": {
-            "issued": "İade yapıldı"
+            "issued": "İade yapıldı",
+            "routed_to_bank_transfer": "İade banka havalesine yönlendirildi",
+            "bank_details_recorded": "İadenin banka bilgileri kaydedildi",
+            "bank_details_revealed": "İadenin banka bilgileri açıldı",
+            "bank_transfer_recorded": "İadenin banka havalesi kaydedildi"
           },
           "report": {
             "dismissed": "Şikayet reddedildi",

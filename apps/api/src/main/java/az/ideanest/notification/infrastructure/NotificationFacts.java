@@ -118,6 +118,9 @@ public class NotificationFacts {
             case PAYOUT_SENT -> facts.withAmount(money(params, "amount"));
             case WITHDRAWAL_REQUESTED -> facts.withDetail(text(params, "disputeUntil"));
             case PAYOUT_DETAILS_NEEDED -> facts.withDetail(text(params, "payableAt"));
+            // #399. No amount: the refund of a raised pledge is routed one charge at a time, and the
+            // first part's amount would read as the whole of what is owed.
+            case REFUND_NEEDS_BANK_DETAILS -> facts;
             case NEW_UPDATE_PUBLISHED,
                     COMMENT_REPLY,
                     DIRECT_MESSAGE,
@@ -191,7 +194,9 @@ public class NotificationFacts {
     }
 
     /**
-     * {@link #pathFor}'s first two sources and none of its fallbacks, or null.
+     * {@link #pathFor}'s first two sources and none of its fallbacks, or null. Since #399 a refund
+     * waiting for the backer's bank account goes to their pledge instead, which both the web and the
+     * application have a screen for.
      *
      * <p>The session list for {@code NEW_DEVICE_SIGN_IN}, otherwise the campaign. These are
      * the two destinations the web inbox's {@code hrefOf} links, and both are screens the
@@ -199,6 +204,12 @@ public class NotificationFacts {
      * why push sends this rather than {@link #pathFor}.
      */
     public String appPathFor(NotificationType type, JsonNode params) {
+        if (type == NotificationType.REFUND_NEEDS_BANK_DETAILS) {
+            String pledge = text(params, "pledgeId");
+            if (!pledge.isEmpty()) {
+                return "/pledges/" + encode(pledge);
+            }
+        }
         return type == NotificationType.NEW_DEVICE_SIGN_IN ? SESSIONS : campaignPath(params);
     }
 
