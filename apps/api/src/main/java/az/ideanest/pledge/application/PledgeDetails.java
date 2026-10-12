@@ -7,9 +7,11 @@ import az.ideanest.pledge.domain.PledgeSupplement;
 import az.ideanest.pledge.domain.SupplementAddon;
 import az.ideanest.pledge.infrastructure.PledgeAddonRepository;
 import az.ideanest.pledge.infrastructure.PledgeRaiseRepository;
+import az.ideanest.pledge.infrastructure.PledgeRepository;
 import az.ideanest.pledge.infrastructure.PledgeSupplementRepository;
 import az.ideanest.pledge.infrastructure.SupplementAddonRepository;
 import az.ideanest.project.application.PledgeAcceptance;
+import az.ideanest.shared.money.Money;
 import java.time.Clock;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
@@ -37,6 +39,7 @@ public class PledgeDetails {
     private final PledgeSupplementRepository supplements;
     private final SupplementAddonRepository supplementLines;
     private final PledgeRaiseRepository raises;
+    private final PledgeRepository pledges;
     private final PledgeAcceptance acceptance;
     private final Clock clock;
 
@@ -45,6 +48,7 @@ public class PledgeDetails {
             PledgeSupplementRepository supplements,
             SupplementAddonRepository supplementLines,
             PledgeRaiseRepository raises,
+            PledgeRepository pledges,
             PledgeAcceptance acceptance,
             Clock clock) {
 
@@ -52,6 +56,7 @@ public class PledgeDetails {
         this.supplements = supplements;
         this.supplementLines = supplementLines;
         this.raises = raises;
+        this.pledges = pledges;
         this.acceptance = acceptance;
         this.clock = clock;
     }
@@ -82,7 +87,17 @@ public class PledgeDetails {
                 ? null
                 : latestRaise.resumeUrlAt(clock.instant()).orElse(null);
 
+        Money awaitingBankTransfer =
+                Money.orNull(pledges.refundAwaitingBankTransfer(pledge.getId()), pledge.getCurrency());
+
         return new PledgeDetail(
-                pledge, addons.findByPledge(pledge.getId()), bought, lines, latestRaise, raisable, resumeUrl);
+                pledge,
+                addons.findByPledge(pledge.getId()),
+                bought,
+                lines,
+                latestRaise,
+                raisable,
+                resumeUrl,
+                awaitingBankTransfer);
     }
 }

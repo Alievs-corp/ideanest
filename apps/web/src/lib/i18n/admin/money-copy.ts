@@ -632,6 +632,70 @@ export interface RefundConsoleCopy extends ConsoleChromeCopy {
   readonly refused: string;
   readonly state: Readonly<Record<RefundState, string>>;
   readonly reason: Readonly<Record<RefundReason, string>>;
+  readonly bank: RefundBankTransferCopy;
+}
+
+/**
+ * #400: a refund paid by bank transfer, on the refund console — the account, the reveal, the
+ * record form, the four-eyes rule and the fallback for a refund the provider refused.
+ *
+ * <p>`errors` is keyed by the service's `code` (`BankRefundRefusedException.Reason`, and the
+ * shared 503 for a missing keyring). A code with no sentence falls through to the console's
+ * shared refusal table, which is what a capability refusal reaches.
+ */
+export interface RefundBankTransferCopy {
+  readonly awaitingBankDetails: string;
+  readonly awaitingTransfer: string;
+  readonly heading: string;
+  /** Carries `{hint}`, `{ticket}`. */
+  readonly accountOnFile: string;
+  /** Carries `{by}`, `{date}`. */
+  readonly detailsRecordedBy: string;
+  /** Carries `{date}`, `{reference}`, `{by}`. */
+  readonly transferRecorded: string;
+  readonly ibanLabel: string;
+  readonly holderLabel: string;
+  readonly ticketLabel: string;
+  readonly amountLabel: string;
+  readonly reveal: {
+    readonly action: string;
+    readonly revealing: string;
+    readonly hide: string;
+    readonly audited: string;
+    readonly failed: string;
+    readonly forbidden: string;
+  };
+  readonly copy: {
+    readonly copy: string;
+    readonly copied: string;
+    readonly iban: string;
+    readonly holder: string;
+    readonly amount: string;
+  };
+  readonly recordTransfer: string;
+  readonly recordIntro: string;
+  readonly bankReference: string;
+  readonly bankReferenceHint: string;
+  readonly transferredOn: string;
+  readonly transferredOnHint: string;
+  /** Carries `{amount}`, `{hint}`, `{date}`, `{reference}`. */
+  readonly confirmRecord: string;
+  readonly confirmRecordAction: string;
+  readonly recording: string;
+  readonly cancel: string;
+  readonly recordedTitle: string;
+  /** Carries `{amount}`, `{id}`. */
+  readonly recordedBody: string;
+  readonly fourEyesTitle: string;
+  readonly fourEyes: string;
+  readonly refundByBank: string;
+  readonly confirmRefundByBank: string;
+  readonly confirmRefundByBankAction: string;
+  readonly routing: string;
+  readonly routedTitle: string;
+  /** Carries `{amount}`, `{id}`. */
+  readonly routedBody: string;
+  readonly errors: Readonly<Record<string, string>>;
 }
 
 export function refundConsoleCopyFrom(
@@ -674,6 +738,41 @@ export function refundConsoleCopyFrom(
     refused: String(t.raw('screens.refunds.refused')),
     state: t.raw('screens.refunds.state') as Readonly<Record<RefundState, string>>,
     reason: t.raw('screens.refunds.reason') as Readonly<Record<RefundReason, string>>,
+    bank: {
+      awaitingBankDetails: t('screens.refunds.awaitingBankDetails'),
+      awaitingTransfer: t('screens.refunds.awaitingTransfer'),
+      heading: t('screens.refunds.bankDetailsHeading'),
+      accountOnFile: String(t.raw('screens.refunds.accountOnFile')),
+      detailsRecordedBy: String(t.raw('screens.refunds.detailsRecordedBy')),
+      transferRecorded: String(t.raw('screens.refunds.transferRecorded')),
+      ibanLabel: t('screens.refunds.ibanLabel'),
+      holderLabel: t('screens.refunds.holderLabel'),
+      ticketLabel: t('screens.refunds.ticketLabel'),
+      amountLabel: t('screens.refunds.transferAmountLabel'),
+      reveal: t.raw('screens.refunds.reveal') as RefundBankTransferCopy['reveal'],
+      copy: t.raw('screens.refunds.copy') as RefundBankTransferCopy['copy'],
+      recordTransfer: t('screens.refunds.recordTransfer'),
+      recordIntro: t('screens.refunds.recordIntro'),
+      bankReference: t('screens.refunds.bankReference'),
+      bankReferenceHint: t('screens.refunds.bankReferenceHint'),
+      transferredOn: t('screens.refunds.transferredOn'),
+      transferredOnHint: t('screens.refunds.transferredOnHint'),
+      confirmRecord: String(t.raw('screens.refunds.confirmRecord')),
+      confirmRecordAction: t('screens.refunds.confirmRecordAction'),
+      recording: t('screens.refunds.recording'),
+      cancel: t('screens.refunds.cancel'),
+      recordedTitle: t('screens.refunds.recordedTitle'),
+      recordedBody: String(t.raw('screens.refunds.recordedBody')),
+      fourEyesTitle: t('screens.refunds.fourEyesTitle'),
+      fourEyes: t('screens.refunds.fourEyes'),
+      refundByBank: t('screens.refunds.refundByBank'),
+      confirmRefundByBank: t('screens.refunds.confirmRefundByBank'),
+      confirmRefundByBankAction: t('screens.refunds.confirmRefundByBankAction'),
+      routing: t('screens.refunds.routing'),
+      routedTitle: t('screens.refunds.routedTitle'),
+      routedBody: String(t.raw('screens.refunds.routedBody')),
+      errors: t.raw('screens.refunds.errors') as Readonly<Record<string, string>>,
+    },
   };
 }
 

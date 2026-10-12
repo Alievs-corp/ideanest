@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from '../../i18n/navigation';
 import { InlineAlert, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
 import { countryName } from '../checkout/DestinationField';
@@ -93,6 +93,15 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  */
 
 type Status = 'loading' | 'ready' | 'failed';
+
+/**
+ * #400's "refund pending" notice, fetched only for a pledge that needs it. Almost no pledge does,
+ * and bundled with the manager it put `/pledges/{id}` over its First Load JS budget. `React.lazy`
+ * for the reason `PayoutQueue` gives: this renders in the browser after the pledge is read.
+ */
+const RefundPendingNotice = lazy(() =>
+  import('./RefundPendingNotice').then((module) => ({ default: module.RefundPendingNotice })),
+);
 
 export interface PledgeManagerProps {
   readonly pledgeId: string;
@@ -242,6 +251,16 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
           />
         )}
       </div>
+
+      {pledge.refundAwaitingBankTransfer != null && (
+        <Suspense fallback={null}>
+          <RefundPendingNotice
+            pledgeId={pledge.id}
+            amount={pledge.refundAwaitingBankTransfer}
+            copy={pledges.refundPending}
+          />
+        </Suspense>
+      )}
 
       <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">

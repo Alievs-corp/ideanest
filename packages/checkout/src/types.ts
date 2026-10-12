@@ -266,6 +266,12 @@ export interface PledgeResponse {
   raisable?: boolean;
   /** #171: the most recent attempt to raise this pledge, or null when there has been none. */
   latestRaise?: PledgeRaise | null;
+  /**
+   * #400: what of this pledge's refund is waiting to be paid by bank transfer, or null when nothing
+   * is. The provider could no longer send it back to the card, so the backer is told to contact
+   * support with the account it should go to. Optional so an older response reads as "nothing".
+   */
+  refundAwaitingBankTransfer?: Money | null;
 }
 
 /**

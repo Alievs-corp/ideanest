@@ -15415,6 +15415,9 @@
           "raisable" : {
             "type" : "boolean"
           },
+          "refundAwaitingBankTransfer" : {
+            "$ref" : "#/components/schemas/Money"
+          },
           "reservationExpiresAt" : {
             "type" : "string",
             "format" : "date-time"

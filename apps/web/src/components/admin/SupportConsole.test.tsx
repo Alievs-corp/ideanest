@@ -1,7 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { listTickets, readTicketQueue, type Ticket, type TicketPage } from '../../lib/admin/tickets';
+import {
+  listTickets,
+  readTicket,
+  readTicketQueue,
+  type Ticket,
+  type TicketContext,
+  type TicketPage,
+} from '../../lib/admin/tickets';
+import { recordRefundBankDetails } from '../../lib/admin/refund-bank-details';
+import type { Refund, RefundPage } from '../../lib/admin/refunds';
+import { ROLE_CAPABILITIES, type StaffMembership, type StaffRole } from '../../lib/admin/staff';
+import { ApiError } from '../../lib/api/problem';
+import { formatMoney } from '../../lib/money';
+import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { ConsoleMembershipProvider } from './ConsoleMembership';
 import { listUsers, type AdminUser } from '../../lib/admin/api';
 import { SupportConsole } from './SupportConsole';
 import { translatorFor } from '../../test-copy';
@@ -29,7 +43,11 @@ vi.mock('../../lib/admin/api', async (importOriginal) => {
   return { ...actual, listUsers: vi.fn() };
 });
 
+vi.mock('../../lib/admin/refund-bank-details', () => ({ recordRefundBankDetails: vi.fn() }));
+
 const readTicketQueueMock = vi.mocked(readTicketQueue);
+const readTicketMock = vi.mocked(readTicket);
+const recordDetailsMock = vi.mocked(recordRefundBankDetails);
 const listTicketsMock = vi.mocked(listTickets);
 const listUsersMock = vi.mocked(listUsers);
 
@@ -240,5 +258,140 @@ describe('the support console — issue #404', () => {
 
     expect(await screen.findByText(COPY.filteredTitle)).toBeInTheDocument();
     expect(screen.queryByText(COPY.emptyTitle)).not.toBeInTheDocument();
+  });
+});
+
+/* -------------------------------------------------------------------------
+ * #400: the account a pledge's refund is paid into, from the backer's ticket.
+ * ---------------------------------------------------------------------- */
+
+const PLEDGE_ID = '11111111-2222-4333-8444-555555555555';
+const PLEDGE_TICKET: Ticket = { ...TICKET, subjectRef: PLEDGE_ID };
+const WORDS = COPY.bankDetails;
+
+function supporter(roles: readonly StaffRole[] = ['MODERATOR']): StaffMembership {
+  const capabilities = new Set(roles.flatMap((role) => ROLE_CAPABILITIES[role]));
+  return {
+    accountId: 'ffffffff-0000-4000-8000-000000000001',
+    staff: true,
+    bootstrapped: false,
+    roles: [...roles],
+    capabilities: [...capabilities],
+  };
+}
+
+function context(ticket: Ticket): TicketContext {
+  return { file: { ticket, messages: [] }, history: [ticket] };
+}
+
+async function openTicket(ticket: Ticket, membership: StaffMembership = supporter()): Promise<void> {
+  readTicketQueueMock.mockResolvedValue(page({ tickets: [ticket] }));
+  readTicketMock.mockResolvedValue(context(ticket));
+  render(
+    <ConsoleMembershipProvider given={{ status: 'ready', membership }}>
+      <SupportConsole copy={COPY} />
+    </ConsoleMembershipProvider>,
+  );
+  await userEvent.click(await screen.findByRole('button', { name: new RegExp(ticket.subject) }));
+}
+
+async function fillIn(iban: string, holder = 'Aysel Məmmədova'): Promise<void> {
+  await userEvent.click(await screen.findByRole('button', { name: WORDS.open }));
+  /* The form is fetched when it is asked for. */
+  await userEvent.type(await screen.findByLabelText(new RegExp(WORDS.ibanLabel)), iban);
+  await userEvent.type(screen.getByLabelText(new RegExp(WORDS.holderLabel)), holder);
+  await userEvent.click(screen.getByRole('button', { name: WORDS.save }));
+}
+
+function parts(): RefundPage {
+  const part = (id: string, amount: string): Refund => ({
+    id,
+    pledgeId: PLEDGE_ID,
+    projectId: 'p',
+    amount: { amount, currency: 'AZN' },
+    fullRefund: false,
+    reason: 'BACKER_REQUEST',
+    detail: 'x',
+    state: 'AWAITING_TRANSFER',
+    requestedAt: '2026-10-11T09:00:00.000Z',
+    bankTransfer: {
+      ibanHint: 'DE89…3000',
+      ticketId: TICKET.id,
+      detailsRecordedBy: 'ffffffff-0000-4000-8000-000000000001',
+      detailsRecordedAt: '2026-10-12T09:00:00.000Z',
+    },
+  });
+  return { refunds: [part('r1', '10.10'), part('r2', '0.20')], page: 0, hasMore: false };
+}
+
+describe('the refund bank account on a pledge ticket (#400)', () => {
+  it('records any country’s IBAN in its electronic form, against this pledge and this ticket', async () => {
+    recordDetailsMock.mockResolvedValue(parts());
+    await openTicket(PLEDGE_TICKET);
+
+    await fillIn('de89 3704 0044 0532 0130 00');
+
+    expect(recordDetailsMock).toHaveBeenCalledWith(PLEDGE_ID, {
+      iban: 'DE89370400440532013000',
+      holderName: 'Aysel Məmmədova',
+      ticketId: TICKET.id,
+    });
+    /* Two parts, summed as decimals: 10.10 + 0.20 is 10.30 and never 10.299999999999999. */
+    expect(
+      await screen.findByText(
+        fillPlaceholders(WORDS.savedBody, {
+          hint: 'DE89…3000',
+          amount: formatMoney({ amount: '10.30', currency: 'AZN' }),
+        }),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('refuses a mistyped IBAN before sending it, in the words a refusal would use', async () => {
+    await openTicket(PLEDGE_TICKET);
+
+    await fillIn('DE89 3704 0044 0532 0130 01');
+
+    expect(recordDetailsMock).not.toHaveBeenCalled();
+    expect(await screen.findByText(WORDS.ibanDefect.CHECKSUM)).toBeInTheDocument();
+  });
+
+  it.each(['SUPPORT_TICKET_NOT_FROM_BACKER', 'NO_REFUND_AWAITING_BANK_DETAILS', 'ENCRYPTED_STORAGE_UNAVAILABLE'])(
+    'words the refusal %s',
+    async (code) => {
+      recordDetailsMock.mockRejectedValue(new ApiError(400, { code, title: 'Refused' }));
+      await openTicket(PLEDGE_TICKET);
+
+      await fillIn('DE89370400440532013000');
+
+      const sentence = WORDS.errors[code];
+      expect(sentence).toBeTruthy();
+      expect(await screen.findByText(sentence ?? '')).toBeInTheDocument();
+    },
+  );
+
+  it('puts a defect the service found under the IBAN field', async () => {
+    recordDetailsMock.mockRejectedValue(
+      new ApiError(400, { code: 'MALFORMED_IBAN', title: 'Not an IBAN', meta: { defect: 'COUNTRY' } }),
+    );
+    await openTicket(PLEDGE_TICKET);
+
+    await fillIn('DE89370400440532013000');
+
+    expect(await screen.findByText(WORDS.ibanDefect.COUNTRY)).toBeInTheDocument();
+  });
+
+  it('is not offered on a ticket that is not about a pledge', async () => {
+    await openTicket({ ...TICKET, subjectType: 'ACCOUNT', subjectRef: 'x' });
+
+    await screen.findByText(COPY.replyLabel);
+    expect(screen.queryByRole('button', { name: WORDS.open })).not.toBeInTheDocument();
+  });
+
+  it('is not offered to a reader without HANDLE_SUPPORT', async () => {
+    await openTicket(PLEDGE_TICKET, supporter(['CURATOR']));
+
+    await screen.findByText(COPY.replyLabel);
+    expect(screen.queryByRole('button', { name: WORDS.open })).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import {
   Checkbox,
   Chip,
@@ -60,7 +60,23 @@ import { useDirectoryNames } from './useDirectoryNames';
  * Staff talking to staff leaves the requester still waiting, so the ticket stays where it is.
  * Everything else about a reply does move it, in the entity rather than here — a reply that did
  * not take the ticket off the queue is a reply the next person has to notice by reading it.
+ *
+ * <h2>A pledge's ticket is where a bank refund's account comes from — #400</h2>
+ *
+ * A refund past the provider's window is paid by bank transfer, and the backer gives the account
+ * in a support conversation. So a ticket about a pledge carries the form that records it on that
+ * pledge, with this ticket as its source; `RefundBankDetailsForm` says what it checks.
  */
+/**
+ * #400's refund bank-account form, fetched when a pledge's ticket is opened. Bundled with the
+ * console it put `/admin/support` well over its First Load JS budget (the IBAN rules and
+ * `decimal.js`), and no other ticket needs it. `React.lazy` for `PayoutQueue`'s reason; the form
+ * decides for itself whether the reader may be offered it.
+ */
+const RefundBankDetailsForm = lazy(() =>
+  import('./RefundBankDetailsForm').then((module) => ({ default: module.RefundBankDetailsForm })),
+);
+
 export interface SupportConsoleProps {
   readonly copy: SupportConsoleCopy;
 }
@@ -410,6 +426,8 @@ function TicketDetail({
 
   const { file, history } = context.data;
   const others = history.filter((other) => other.id !== file.ticket.id);
+  const pledgeId =
+    file.ticket.subjectType === 'PLEDGE' && file.ticket.subjectRef != null ? file.ticket.subjectRef : null;
 
   return (
     <div className="mt-2 rounded-lg border border-white/8 bg-surface-1 p-4">
@@ -510,6 +528,18 @@ function TicketDetail({
           {copy.putBack}
         </Pill>
       </div>
+
+      {pledgeId !== null && (
+        <Suspense fallback={null}>
+          <RefundBankDetailsForm
+            pledgeId={pledgeId}
+            ticketId={file.ticket.id}
+            copy={copy.bankDetails}
+            subject={copy.ticketSubject}
+            refusals={copy.refusals}
+          />
+        </Suspense>
+      )}
 
       {others.length > 0 && (
         <div className="mt-4 border-t border-white/8 pt-4">

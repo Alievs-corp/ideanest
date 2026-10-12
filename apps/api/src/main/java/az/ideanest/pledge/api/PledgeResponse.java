@@ -56,6 +56,9 @@ import java.util.UUID;
  * @param latestRaise #171: the most recent attempt to raise it, or null. A page the payment provider
  *     sent the backer back to reads its state: {@code PENDING} is a payment still settling,
  *     {@code SUCCEEDED} is applied, and anything else changed nothing
+ * @param refundAwaitingBankTransfer #400: what of this pledge's refund the provider could no longer
+ *     send back and is waiting to be paid by bank transfer, or null. While it is not null the backer
+ *     is told to contact support, who record the account it is paid into
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record PledgeResponse(
@@ -99,7 +102,8 @@ public record PledgeResponse(
         String displayRate,
         List<PledgeSupplementBody> supplements,
         boolean raisable,
-        PledgeRaiseBody latestRaise) {
+        PledgeRaiseBody latestRaise,
+        Money refundAwaitingBankTransfer) {
 
     /**
      * §4.5's PL-06, broken out: what the backer is charged, and what it is made of.
@@ -161,6 +165,7 @@ public record PledgeResponse(
                 detail.raisable(),
                 detail.latestRaise() == null
                         ? null
-                        : PledgeRaiseBody.of(detail.latestRaise(), detail.raiseResumeUrl()));
+                        : PledgeRaiseBody.of(detail.latestRaise(), detail.raiseResumeUrl()),
+                detail.refundAwaitingBankTransfer());
     }
 }
