@@ -173,7 +173,7 @@ export const CONSOLE_MODULES: readonly ConsoleModule[] = Object.freeze([
      * answered "do the books balance" to a log line and a Prometheus gauge, and to nobody
      * who works in this console.
      */
-    otherScreens: ['/admin/ledger', '/admin/payouts', '/admin/reconciliation'],
+    otherScreens: ['/admin/ledger', '/admin/payouts', '/admin/payout-destinations', '/admin/reconciliation'],
     issue: 306,
   },
   {
@@ -366,6 +366,7 @@ export const CONSOLE_GROUPS: readonly ConsoleGroup[] = Object.freeze([
       '/admin/ledger',
       '/admin/reconciliation',
       '/admin/payouts',
+      '/admin/payout-destinations',
       '/admin/refunds',
       '/admin/disputes',
       '/admin/fees',
@@ -450,6 +451,9 @@ export const CONSOLE_LINK_CAPABILITIES: Readonly<Record<string, readonly StaffCa
     '/admin/ledger': ['VIEW_FINANCE'],
     '/admin/reconciliation': ['VIEW_FINANCE'],
     '/admin/payouts': ['VIEW_FINANCE'],
+    // COMPLIANCE's queue, and not FINANCE's: the person who confirms an account belongs to its
+    // creator is not the person who sends money to it, which is V66's split and §4.11's.
+    '/admin/payout-destinations': ['VERIFY_PAYOUT_DESTINATION'],
     '/admin/refunds': ['VIEW_FINANCE'],
     '/admin/disputes': ['VIEW_FINANCE', 'MANAGE_DISPUTES'],
     '/admin/fees': ['CONFIGURE_PLATFORM'],

@@ -34,8 +34,11 @@ import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { formatDate } from '../../lib/time';
 import { formatMoney } from '../../lib/money';
 import type { Locale } from '../../lib/i18n/locale';
+import { holds } from '../../lib/admin/staff';
 import { ConsoleRefusal } from './ConsoleRefusal';
 import { CopyIdentifier } from './ConsoleIdentity';
+import { useConsoleMembership } from './ConsoleMembership';
+import { DESTINATION_STANDING_TONE, PayoutDestinationReview } from './PayoutDestinationReview';
 
 /**
  * §4.11's AD-04, one account — issue #404.
@@ -67,12 +70,17 @@ import { CopyIdentifier } from './ConsoleIdentity';
  * together as soon as the account resolves, because they are two questions about the same
  * person and nothing about the second depends on the first.
  *
- * <h2>No decision is taken here</h2>
+ * <h2>No suspension is decided here</h2>
  *
  * Suspending stays on the directory, with its confirmation dialog and its required reason.
  * This screen exists so that the decision made there is an informed one; putting a second ban
  * control on it would mean two paths into an audited, session-revoking write, and the second
  * one would be the one without the dialog. The link back is the whole affordance.
+ *
+ * <p>The payout destination is the exception, and #396 is why: verifying it, rejecting it and
+ * revealing its IBAN are COMPLIANCE's, through `PayoutDestinationReview`, which the queue at
+ * `/admin/payout-destinations` draws as well — the same confirmation and the same refusals in
+ * both places, because a compliance reviewer cannot open this screen at all.
  *
  * <h2>Motion: none</h2>
  *
@@ -279,8 +287,13 @@ type Half<T> =
   | { readonly kind: 'forbidden' }
   | { readonly kind: 'failed' };
 
-function useHalf<T>(read: (signal: AbortSignal) => Promise<T>, userId: string): Half<T> {
+/** The half, and a way to replace a read value with the service's answer to a decision. */
+function useHalf<T>(
+  read: (signal: AbortSignal) => Promise<T>,
+  userId: string,
+): readonly [Half<T>, (value: T) => void] {
   const [half, setHalf] = useState<Half<T>>({ kind: 'loading' });
+  const replace = useCallback((value: T) => setHalf({ kind: 'ready', value }), []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -302,23 +315,25 @@ function useHalf<T>(read: (signal: AbortSignal) => Promise<T>, userId: string): 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  return half;
+  return [half, replace];
 }
 
 /**
- * Whether this person can be paid: the VÖEN they entered and the business card they attached.
+ * Whether this person can be paid: the VÖEN they entered and where they asked to be paid — a
+ * bank account since #394, or a provider's card.
  *
  * <p><strong>Two reads, two capabilities, two answers.</strong> The VÖEN is served to staff who
- * review identity (`REVIEW_IDENTITY_VERIFICATION`) and the card to staff who verify payout
+ * review identity (`REVIEW_IDENTITY_VERIFICATION`) and the destination to staff who verify payout
  * destinations (`VERIFY_PAYOUT_DESTINATION`) — V66 keeps those apart on purpose. A moderator who
  * holds one and not the other sees the half they may see and is told who sees the other, rather
  * than the whole panel failing on the first refusal.
  *
- * <p><strong>Read-only.</strong> Verifying or rejecting a card is COMPLIANCE's decision and has its
- * own audited controls; this panel answers "has this person given us a VÖEN and a card", which is
- * what a moderator approving a campaign needs to know.
+ * <p><strong>The destination is decided here — #396.</strong> A reader who could read it holds
+ * `VERIFY_PAYOUT_DESTINATION`, so the verify and reject controls are drawn beneath it, and the
+ * IBAN can be revealed by a reader holding `READ_BANK_DETAILS`. The panel redraws from the
+ * service's answer to a decision rather than from what it expected.
  *
- * <p>"Not provided" and "Not attached" are words, not an empty cell — docs/ui-kit.md §9.2.
+ * <p>"Not provided" is a word, not an empty cell — docs/ui-kit.md §9.2.
  */
 function PayoutDetails({
   userId,
@@ -327,11 +342,12 @@ function PayoutDetails({
   readonly userId: string;
   readonly copy: AccountDetailCopy;
 }) {
-  const subject = useHalf<AdminLegalSubject>(
+  const { membership } = useConsoleMembership();
+  const [subject] = useHalf<AdminLegalSubject>(
     (signal) => readAccountLegalSubject(userId, signal),
     userId,
   );
-  const card = useHalf<AdminPayoutDestination>(
+  const [card, replaceCard] = useHalf<AdminPayoutDestination>(
     (signal) => readAccountPayoutDestination(userId, signal),
     userId,
   );
@@ -355,10 +371,24 @@ function PayoutDetails({
           </div>
         </SkeletonGroup>
       ) : (
-        <dl className="mt-3 flex flex-col gap-3 rounded-lg border border-white/8 bg-surface-1 p-4 text-sm">
-          <LegalSubjectRows half={subject} copy={copy} />
-          <CardRow half={card} copy={copy} />
-        </dl>
+        <div className="mt-3 rounded-lg border border-white/8 bg-surface-1 p-4">
+          <dl className="flex flex-col gap-3 text-sm">
+            <LegalSubjectRows half={subject} copy={copy} />
+            <CardRow half={card} copy={copy} />
+          </dl>
+          {card.kind === 'ready' && card.value.recorded && (
+            <div className="mt-4 border-t border-white/8 pt-4">
+              <PayoutDestinationReview
+                destination={card.value}
+                copy={copy.destination}
+                subject={copy.subject}
+                refusals={copy.refusals}
+                canReveal={holds(membership, 'READ_BANK_DETAILS')}
+                onDecided={replaceCard}
+              />
+            </div>
+          )}
+        </div>
       )}
     </section>
   );
@@ -421,15 +451,6 @@ function LegalSubjectRows({
   );
 }
 
-/** The standing as a word, toned to agree with it. */
-const STANDING_TONE: Readonly<Record<string, 'success' | 'warning' | 'danger' | 'default'>> = {
-  VERIFIED: 'success',
-  WAIVED: 'success',
-  AWAITING_VERIFICATION: 'warning',
-  NAME_MISMATCH: 'danger',
-  REJECTED: 'danger',
-};
-
 function CardRow({
   half,
   copy,
@@ -456,9 +477,22 @@ function CardRow({
                   ` · ${fillPlaceholders(copy.cardHolder, { name: half.value.holderName })}`}
               </span>
             )}
-            <Tag variant={half.value.recorded ? STANDING_TONE[half.value.standing] ?? 'default' : 'default'}>
+            {half.value.recorded && half.value.kind != null && (
+              <Tag>{copy.destination.kind[half.value.kind] ?? half.value.kind}</Tag>
+            )}
+            <Tag
+              variant={half.value.recorded ? DESTINATION_STANDING_TONE[half.value.standing] ?? 'default' : 'default'}
+            >
               {copy.cardStanding[half.value.recorded ? half.value.standing : 'NONE'] ?? half.value.standing}
             </Tag>
+            {half.value.recorded && half.value.rejectionReason != null && (
+              <span className="text-white/64">
+                {fillPlaceholders(copy.destination.rejectedFor, {
+                  reason:
+                    copy.destination.rejectionReason[half.value.rejectionReason] ?? half.value.rejectionReason,
+                })}
+              </span>
+            )}
           </>
         )}
       </dd>

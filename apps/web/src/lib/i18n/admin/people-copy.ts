@@ -4,6 +4,7 @@ import type { TicketPriority, TicketState } from '../../admin/tickets';
 import type { AdminTranslator } from '../admin-copy';
 import type { PluralForms } from '../plurals';
 import type { ConsoleChromeCopy, ConsoleRefusalsCopy } from './common-copy';
+import { payoutDestinationCopyFrom, type PayoutDestinationCopy } from './money-copy';
 
 /**
  * The words the console's people screens draw — issue #324, epic #259.
@@ -362,7 +363,7 @@ export interface AccountDetailCopy extends ConsoleChromeCopy {
   readonly paymentMethod: Readonly<Record<string, string>>;
   readonly reversal: string;
 
-  /* Who they are paid as, and where — the VÖEN and the business card. */
+  /* Who they are paid as, and where — the VÖEN and the payout destination. */
   readonly payoutHeading: string;
   readonly loadingPayout: string;
   readonly subjectLabel: string;
@@ -377,10 +378,12 @@ export interface AccountDetailCopy extends ConsoleChromeCopy {
   readonly cardLabel: string;
   /** Carries `{name}`. */
   readonly cardHolder: string;
-  /** Keyed by `DestinationStanding`. `NONE` is the card that was never attached. */
+  /** Keyed by `DestinationStanding`. `NONE` is the destination that was never filed. */
   readonly cardStanding: Readonly<Record<string, string>>;
   readonly cardForbidden: string;
   readonly cardFailed: string;
+  /** The kind, the reveal and the verification controls — #396, shared with the queue. */
+  readonly destination: PayoutDestinationCopy;
 }
 
 export function accountDetailCopyFrom(
@@ -449,6 +452,7 @@ export function accountDetailCopyFrom(
     cardStanding: t.raw(at('cardStanding')) as Readonly<Record<string, string>>,
     cardForbidden: t(at('cardForbidden')),
     cardFailed: t(at('cardFailed')),
+    destination: payoutDestinationCopyFrom(t),
   };
 }
 

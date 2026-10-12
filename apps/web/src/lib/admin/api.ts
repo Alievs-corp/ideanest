@@ -1,3 +1,4 @@
+import type { components } from '@ideanest/api-client';
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { DestinationStanding, LegalSubject } from '../account/payout';
@@ -273,12 +274,20 @@ export async function readAccountLegalSubject(
   return (await response.json()) as AdminLegalSubject;
 }
 
+/** A bank account the platform pays by transfer, or a provider's card token (#394). */
+export type DestinationKind = NonNullable<components['schemas']['ForStaff']['kind']>;
+
+/** V58's closed set, shown to the creator in their language — never free text. */
+export type DestinationRejectionReason = NonNullable<components['schemas']['ForStaff']['rejectionReason']>;
+
 /**
- * The business card an account is paid to, as staff see it — the other half.
+ * Where an account is paid, as staff see it — the other half.
  *
- * <p>Never the card number or the provider's token: `displayHint` is the masked form the
- * provider gave back, and it is all the service sends. Null fields may be absent rather than
- * null — the service serialises `non_null`.
+ * <p>Never the account number or the provider's token: `displayHint` is the masked form —
+ * `AZ21…1944` for an IBAN, the provider's own for a card — and it is all the service sends
+ * here. The number itself is `revealPayoutBankAccount`'s (`payout-destinations.ts`), a separate
+ * and audited read.
+ * Null fields may be absent rather than null — the service serialises `non_null`.
  *
  * <p>The service answers only a caller holding `VERIFY_PAYOUT_DESTINATION`.
  */
@@ -286,9 +295,13 @@ export interface AdminPayoutDestination {
   readonly creatorId: string;
   readonly recorded: boolean;
   readonly standing: DestinationStanding;
+  /** Absent when nothing is on file. */
+  readonly kind?: DestinationKind | null;
   readonly provider?: string | null;
   readonly holderName?: string | null;
   readonly displayHint?: string | null;
+  /** Set only when a reviewer refused it. */
+  readonly rejectionReason?: DestinationRejectionReason | null;
   readonly verifiedAt?: string | null;
   readonly updatedAt?: string | null;
 }
