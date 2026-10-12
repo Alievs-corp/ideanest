@@ -5,6 +5,7 @@ import az.ideanest.pledge.domain.PledgeAddon;
 import az.ideanest.pledge.domain.PledgeRaise;
 import az.ideanest.pledge.domain.PledgeSupplement;
 import az.ideanest.pledge.domain.SupplementAddon;
+import az.ideanest.shared.money.Money;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,6 +37,9 @@ import java.util.UUID;
  *     the service can: whether a campaign is taking pledges depends on windows the client is not shown
  * @param raiseResumeUrl #171: the provider's page {@code latestRaise} is waiting to be paid on, while
  *     it is pending and its hold lasts; null otherwise. Where a backer who left the page goes back to
+ * @param refundAwaitingBankTransfer #400: what of this pledge's refund waits to be paid by bank
+ *     transfer — for the backer's account details or for the transfer itself — or null when nothing
+ *     does. The backer is told to contact support, and this is the amount they are told about
  */
 public record PledgeDetail(
         Pledge pledge,
@@ -44,15 +48,16 @@ public record PledgeDetail(
         List<SupplementAddon> supplementAddons,
         PledgeRaise latestRaise,
         boolean raisable,
-        String raiseResumeUrl) {
+        String raiseResumeUrl,
+        Money refundAwaitingBankTransfer) {
 
-    /** A pledge that has never been raised and cannot be now. */
+    /** A pledge that has never been raised and cannot be now, and whose money nobody is returning. */
     public PledgeDetail(
             Pledge pledge,
             List<PledgeAddon> addons,
             List<PledgeSupplement> supplements,
             List<SupplementAddon> supplementAddons) {
-        this(pledge, addons, supplements, supplementAddons, null, false, null);
+        this(pledge, addons, supplements, supplementAddons, null, false, null, null);
     }
 
     public PledgeDetail {

@@ -6085,6 +6085,7 @@ export interface components {
             /** Format: uuid */
             projectId?: string;
             raisable?: boolean;
+            refundAwaitingBankTransfer?: components["schemas"]["Money"];
             /** Format: date-time */
             reservationExpiresAt?: string;
             /** Format: uuid */

@@ -3,6 +3,7 @@ package az.ideanest.pledge.infrastructure;
 import az.ideanest.pledge.domain.Pledge;
 import az.ideanest.pledge.domain.PledgeState;
 import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -287,4 +288,24 @@ public interface PledgeRepository extends JpaRepository<Pledge, UUID> {
 
     /** How many pledges on this campaign are still owed an attempt. For the collection's progress. */
     long countByProjectIdAndStateIn(UUID projectId, Collection<PledgeState> states);
+
+    /**
+     * What of this pledge's refund waits to be paid by bank transfer, or null when nothing does — #400.
+     *
+     * <p>Both waiting states: the backer's account is not on file yet, or it is and finance has not
+     * recorded the transfer. To the backer the two are one thing — the money has not arrived and
+     * support is who to talk to. In the pledge's currency, because a refund is refused in any other.
+     *
+     * <p>Native, because refunds are the payment module's table and this module may not name its
+     * classes ({@code PledgeRaiseRepository.hasRefundOfPledgeMoney} reads it the same way).
+     */
+    @Query(
+            value =
+                    """
+                    SELECT SUM(r.amount) FROM refunds r
+                     WHERE r.pledge_id = :pledgeId
+                       AND r.state IN ('AWAITING_BANK_DETAILS', 'AWAITING_TRANSFER')
+                    """,
+            nativeQuery = true)
+    BigDecimal refundAwaitingBankTransfer(@Param("pledgeId") UUID pledgeId);
 }

@@ -27,7 +27,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -300,6 +302,60 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
         ResponseEntity<Map<String, Object>> another = recordTransfer(finance, refundId, "ANOTHER-REF", today);
         assertThat(another.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(another.getBody()).containsEntry("code", "REFUND_NOT_AWAITING_TRANSFER");
+    }
+
+    @Test
+    @DisplayName("the backer's pledge says what waits for a bank transfer until the transfer is recorded")
+    void theBackerSeesWhatIsOwed() {
+        Paid paid = aPaidPledge("bank-backer", "25.00");
+        Account backer = tokenFor(
+                jdbc().queryForObject("SELECT backer_id FROM pledges WHERE id = ?", UUID.class, paid.pledgeId()));
+        assertThat(get("/v1/pledges/" + paid.pledgeId(), backer).getBody())
+                .containsEntry("refundAwaitingBankTransfer", null);
+
+        UUID refundId = routed(paid);
+        assertThat(asMap(get("/v1/pledges/" + paid.pledgeId(), backer).getBody().get("refundAwaitingBankTransfer")))
+                .containsEntry("amount", "25.00")
+                .containsEntry("currency", "AZN");
+
+        recordDetails(staff("bank-support", "MODERATOR"), paid.pledgeId(), IBAN, "Test Backer", ticketFromBacker(paid));
+        assertThat(asMap(get("/v1/pledges/" + paid.pledgeId(), backer).getBody().get("refundAwaitingBankTransfer")))
+                .as("the account is on file and the money has still not arrived")
+                .containsEntry("amount", "25.00");
+
+        recordTransfer(
+                staff("bank-finance", "FINANCE"),
+                refundId,
+                "BANK-REF-" + paid.pledgeId(),
+                LocalDate.now(ZoneOffset.UTC).toString());
+        assertThat(get("/v1/pledges/" + paid.pledgeId(), backer).getBody())
+                .containsEntry("refundAwaitingBankTransfer", null)
+                .containsEntry("state", "REFUNDED");
+    }
+
+    @Test
+    @DisplayName("the value date is Baku's day: one hour past midnight there is today, not the future")
+    void theValueDateIsBakusDay() {
+        Paid paid = pastTheWindow("bank-baku", "25.00");
+        UUID refundId = routed(paid);
+        recordDetails(staff("bank-support", "MODERATOR"), paid.pledgeId(), IBAN, "Test Backer", ticketFromBacker(paid));
+        ZoneId baku = ZoneId.of("Asia/Baku");
+        ZonedDateTime oneInTheMorning =
+                clock.instant().atZone(baku).toLocalDate().plusDays(1).atTime(1, 0).atZone(baku);
+        clock.advance(Duration.between(clock.instant(), oneInTheMorning.toInstant()));
+        LocalDate today = oneInTheMorning.toLocalDate();
+        assertThat(today).as("still yesterday in UTC").isAfter(LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC));
+        Account finance = staff("bank-finance", "FINANCE");
+
+        ResponseEntity<Map<String, Object>> tomorrow =
+                recordTransfer(finance, refundId, "BAKU-" + paid.pledgeId(), today.plusDays(1).toString());
+        assertThat(tomorrow.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(tomorrow.getBody()).containsEntry("code", "TRANSFER_DATE_IN_FUTURE");
+
+        ResponseEntity<Map<String, Object>> recorded =
+                recordTransfer(finance, refundId, "BAKU-" + paid.pledgeId(), today.toString());
+        assertThat(recorded.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(recorded.getBody()).containsEntry("state", "SUCCEEDED");
     }
 
     @Test
