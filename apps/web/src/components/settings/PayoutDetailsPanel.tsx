@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { CreditCard } from 'lucide-react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { CreditCard, Landmark } from 'lucide-react';
+import { checkAzerbaijaniIban, ibanDefectOf, reformatIban } from '@ideanest/account/iban';
 import { Field, InlineAlert, Pill, Skeleton, SkeletonGroup, TextInput } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import {
@@ -10,6 +11,7 @@ import {
   cardReturnHint,
   getMyLegalSubject,
   getMyPayoutDestination,
+  saveMyBankAccount,
   saveMyLegalSubject,
   type CardReturnHint,
   type DestinationStanding,
@@ -21,14 +23,19 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { leaveForPaymentPage } from '../../lib/pledges/payment';
 
 /**
- * Who is paid, and the card the money goes to — IDN-EXT-01 (#44).
+ * Who is paid, and the account the money goes to — IDN-EXT-01 (#44), a bank account since #395.
  *
- * <h2>Two halves, saved separately</h2>
+ * <h2>Three parts, saved separately</h2>
  *
  * The legal subject — individual or company, the legal name, the VÖEN — is a form, saved with
- * `PUT /v1/me/legal-subject`. The card is not a form at all: it is registered on the payment
- * provider's page and filed by the provider's callback, so this panel only shows what is on file,
- * its verification standing, and a control that sends the creator to the provider. A card number is
+ * `PUT /v1/me/legal-subject`. The bank account is the second form: the IBAN and the holder's name,
+ * saved with `PUT /v1/me/payout-destination/bank-account`. Creators are paid by bank transfer, so
+ * this is the primary path. The IBAN is grouped in fours while it is typed, checked by
+ * `@ideanest/account/iban` in the service's own terms, and sent in its electronic form; once filed
+ * it is only ever shown as the service's masked hint, and the field is emptied.
+ *
+ * A business card registered on the payment provider's page is the third part, and appears only
+ * when `cardRegistrationAvailable` says the configured provider can take one. A card number is
  * never entered here.
  *
  * <h2>Coming back from the provider</h2>
@@ -41,7 +48,7 @@ import { leaveForPaymentPage } from '../../lib/pledges/payment';
  * <h2>Motion and colour</h2>
  *
  * None, and neutral: this is account settings (docs/motion-system.md §5), and the standing is a word
- * beside the card rather than a colour.
+ * beside the account rather than a colour. A holder's name that does not match is said in words.
  */
 
 const CHECKS = 20;
@@ -66,6 +73,15 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
   const [saved, setSaved] = useState(false);
   const [subjectError, setSubjectError] = useState<string | null>(null);
   const [taxIdError, setTaxIdError] = useState<string | null>(null);
+
+  const [iban, setIban] = useState('');
+  const [holder, setHolder] = useState('');
+  const [bankSaving, setBankSaving] = useState(false);
+  const [bankSaved, setBankSaved] = useState(false);
+  const [ibanError, setIbanError] = useState<string | null>(null);
+  const [bankError, setBankError] = useState<string | null>(null);
+  const caret = useRef<{ readonly input: HTMLInputElement; readonly at: number } | null>(null);
+  const bankForm = useRef<HTMLFormElement>(null);
 
   const [opening, setOpening] = useState(false);
   const [cardError, setCardError] = useState<string | null>(null);
@@ -93,6 +109,8 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
           setRegisteredAddress(subject.registeredAddress ?? '');
           setRegistrationNumber(subject.registrationNumber ?? '');
         }
+        // The holder on file, else the legal name: the two have to match, so it is the likely answer.
+        setHolder((isBankAccount(current) ? current.holderName : subject.legalName) ?? '');
         setDestination(current);
         setFirstUpdate(current.updatedAt ?? null);
         setStatus('ready');
@@ -104,6 +122,17 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
       cancelled = true;
     };
   }, []);
+
+  useLayoutEffect(() => {
+    const pending = caret.current;
+    if (pending === null) return;
+    caret.current = null;
+    if (document.activeElement === pending.input) pending.input.setSelectionRange(pending.at, pending.at);
+  }, [iban]);
+
+  useEffect(() => {
+    if (ibanError !== null) bankForm.current?.querySelector<HTMLInputElement>('input[name="iban"]')?.focus();
+  }, [ibanError]);
 
   const changedSinceReturn = destination !== null && firstUpdate !== undefined && (destination.updatedAt ?? null) !== firstUpdate;
   const waiting = returned === 'returned' && !changedSinceReturn && checks < CHECKS;
@@ -133,7 +162,7 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
         registrationNumber: kind === 'LEGAL_ENTITY' ? blankToNull(registrationNumber) : null,
       });
       setSaved(true);
-      // The standing depends on the legal name, so the card's standing is read again.
+      // The standing depends on the legal name, so the destination's standing is read again.
       void readDestination().catch(() => undefined);
     } catch (cause) {
       if (cause instanceof ApiError && cause.problem?.code === 'MALFORMED_TAX_IDENTIFIER') {
@@ -143,6 +172,46 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  function typeIban(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const forward = (event.nativeEvent as Partial<InputEvent>).inputType === 'deleteContentForward';
+    const next = reformatIban(iban, input.value, input.selectionStart ?? input.value.length, forward ? 'forward' : 'backward');
+    caret.current = { input, at: next.caret };
+    setIban(next.value);
+    setIbanError(null);
+    setBankSaved(false);
+  }
+
+  async function saveBank(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (bankSaving) return;
+    setBankSaved(false);
+    setBankError(null);
+    const checked = checkAzerbaijaniIban(iban);
+    if (!checked.ok) {
+      setIbanError(copy.ibanDefect[checked.defect]);
+      return;
+    }
+    setIbanError(null);
+    setBankSaving(true);
+    try {
+      const next = await saveMyBankAccount({ iban: checked.value, holderName: holder.trim() });
+      setDestination(next);
+      setIban('');
+      setBankSaved(true);
+    } catch (cause) {
+      const problem = cause instanceof ApiError ? cause.problem : undefined;
+      const defect = problem?.code === 'MALFORMED_IBAN' ? ibanDefectOf(problem.meta?.['defect']) : null;
+      if (defect !== null) {
+        setIbanError(copy.ibanDefect[defect]);
+      } else {
+        setBankError(problem?.code === 'ENCRYPTED_STORAGE_UNAVAILABLE' ? copy.bankUnavailable : copy.failed);
+      }
+    } finally {
+      setBankSaving(false);
     }
   }
 
@@ -173,6 +242,9 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
   if (status === 'failed' || destination === null) {
     return <InlineAlert variant="danger">{copy.failed}</InlineAlert>;
   }
+
+  const cardOnFile = destination.recorded && !isBankAccount(destination);
+  const OnFileIcon = cardOnFile ? CreditCard : Landmark;
 
   return (
     <div className="flex flex-col gap-6">
@@ -236,11 +308,11 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
         </form>
       </section>
 
-      <section aria-labelledby="payout-card-heading" className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
-        <h2 id="payout-card-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
-          {copy.cardHeading}
+      <section aria-labelledby="payout-bank-heading" className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
+        <h2 id="payout-bank-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+          {copy.bankHeading}
         </h2>
-        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.cardIntro}</p>
+        <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.bankIntro}</p>
 
         {waiting && (
           <div className="mt-4">
@@ -258,11 +330,11 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
         )}
 
         <div className="mt-5 flex items-start gap-3 text-sm">
-          <CreditCard aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-white/40" />
+          <OnFileIcon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-white/40" />
           {destination.recorded ? (
             <div>
               <p className="text-white">
-                {fillPlaceholders(copy.cardOnFile, {
+                {fillPlaceholders(cardOnFile ? copy.cardOnFile : copy.accountOnFile, {
                   hint: destination.displayHint ?? '',
                   holder: destination.holderName ?? '',
                 })}
@@ -270,24 +342,90 @@ export function PayoutDetailsPanel({ copy }: PayoutDetailsPanelProps) {
               <p className="mt-1 text-white/64">{standingWord(destination.standing, copy)}</p>
             </div>
           ) : (
-            <p className="text-white/64">{copy.cardNone}</p>
+            <p className="text-white/64">{copy.accountNone}</p>
           )}
         </div>
 
-        {cardError !== null && (
+        {destination.standing === 'NAME_MISMATCH' && (
           <div className="mt-4">
-            <InlineAlert variant="danger">{cardError}</InlineAlert>
+            <InlineAlert variant="warning">
+              <p>{copy.mismatchHelp}</p>
+            </InlineAlert>
           </div>
         )}
 
-        <div className="mt-5">
-          <Pill type="button" variant="outline" aria-disabled={opening} onClick={() => void registerCard()}>
-            {opening ? copy.opening : destination.recorded ? copy.replace : copy.register}
-          </Pill>
-        </div>
+        <form ref={bankForm} onSubmit={saveBank} noValidate className="mt-6 flex max-w-[30rem] flex-col gap-5">
+          <Field label={copy.ibanLabel} hint={copy.ibanHint} error={ibanError} required>
+            <TextInput
+              name="iban"
+              value={iban}
+              autoComplete="off"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              className="font-mono"
+              onChange={typeIban}
+            />
+          </Field>
+
+          <Field label={copy.holderLabel} hint={copy.holderHint} required>
+            <TextInput
+              value={holder}
+              autoComplete="off"
+              onChange={(event) => {
+                setHolder(event.currentTarget.value);
+                setBankSaved(false);
+              }}
+            />
+          </Field>
+
+          {bankError !== null && <InlineAlert variant="danger">{bankError}</InlineAlert>}
+          {bankSaved && (
+            <p role="status" className="text-sm text-white/64">
+              {copy.bankSaved}
+            </p>
+          )}
+
+          <div>
+            <Pill
+              type="submit"
+              variant="outline"
+              aria-disabled={bankSaving}
+              disabled={iban.trim() === '' || holder.trim() === ''}
+            >
+              {bankSaving ? copy.saving : copy.saveBank}
+            </Pill>
+          </div>
+        </form>
       </section>
+
+      {destination.cardRegistrationAvailable === true && (
+        <section aria-labelledby="payout-card-heading" className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
+          <h2 id="payout-card-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
+            {copy.cardHeading}
+          </h2>
+          <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.cardIntro}</p>
+
+          {cardError !== null && (
+            <div className="mt-4">
+              <InlineAlert variant="danger">{cardError}</InlineAlert>
+            </div>
+          )}
+
+          <div className="mt-5">
+            <Pill type="button" variant="outline" aria-disabled={opening} onClick={() => void registerCard()}>
+              {opening ? copy.opening : cardOnFile ? copy.replace : copy.register}
+            </Pill>
+          </div>
+        </section>
+      )}
     </div>
   );
+}
+
+/** A bank account on file (#394). A recorded row without `kind` predates it, and is a card. */
+function isBankAccount(destination: PayoutDestination): boolean {
+  return destination.recorded && destination.kind === 'BANK_TRANSFER';
 }
 
 function standingWord(standing: DestinationStanding, copy: PayoutPanelCopy): string {
@@ -303,7 +441,7 @@ function standingWord(standing: DestinationStanding, copy: PayoutPanelCopy): str
     case 'REJECTED':
       return copy.standingRejected;
     default:
-      return copy.cardNone;
+      return copy.accountNone;
   }
 }
 

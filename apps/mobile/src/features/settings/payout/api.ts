@@ -2,7 +2,8 @@ import { api, sendJson } from '../../../api/client';
 
 /**
  * The creator's payout details (#161), the web's `lib/account/payout.ts`: who is paid
- * (`/v1/me/legal-subject`) and the card the money goes to (`/v1/me/payout-destination`).
+ * (`/v1/me/legal-subject`) and the account the money goes to (`/v1/me/payout-destination`) — a
+ * bank account filed by IBAN since #395, or a business card where the provider can take one.
  *
  * <p>The types are declared here rather than read from `@ideanest/api-client`: both endpoints
  * answer a record the service calls `Mine`, so the generated schema has one `Mine` (the
@@ -39,13 +40,25 @@ export type DestinationStanding =
   | 'NAME_MISMATCH'
   | 'REJECTED';
 
+/** What is on file: an IBAN the platform holds sealed (#394), or a provider's token for a card. */
+export type DestinationKind = 'BANK_TRANSFER' | 'PROVIDER_TOKEN';
+
 export interface PayoutDestination {
   readonly recorded?: boolean;
   readonly standing?: DestinationStanding;
+  readonly kind?: DestinationKind | null;
+  /** Whether the configured provider can register a business card at all. */
+  readonly cardRegistrationAvailable?: boolean | null;
   readonly provider?: string | null;
   readonly holderName?: string | null;
   readonly displayHint?: string | null;
   readonly updatedAt?: string | null;
+}
+
+export interface BankAccountRequest {
+  /** The electronic form: upper case, no spaces. */
+  readonly iban: string;
+  readonly holderName: string;
 }
 
 export interface CardRegistrationRequest {
@@ -69,6 +82,10 @@ export async function saveLegalSubject(body: LegalSubjectRequest): Promise<Legal
 
 export async function readPayoutDestination(signal?: AbortSignal): Promise<PayoutDestination> {
   return (await api().get('/v1/me/payout-destination', { signal })) as PayoutDestination;
+}
+
+export async function saveBankAccount(body: BankAccountRequest): Promise<PayoutDestination> {
+  return (await sendJson('PUT', '/v1/me/payout-destination/bank-account', body)) as PayoutDestination;
 }
 
 export async function beginCardRegistration(body: CardRegistrationRequest): Promise<CardRegistrationPage> {

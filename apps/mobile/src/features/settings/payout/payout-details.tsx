@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
+import { checkAzerbaijaniIban, formatIban, ibanDefectOf, type IbanDefect } from '@ideanest/account/iban';
 import { Glyphs } from '../../../icons';
 import { queryKeys } from '../../../api/queries';
 import {
@@ -28,6 +29,7 @@ import {
   beginCardRegistration,
   readLegalSubject,
   readPayoutDestination,
+  saveBankAccount,
   saveLegalSubject,
   type DestinationStanding,
   type LegalSubject,
@@ -44,9 +46,14 @@ import {
 } from './card-return';
 
 /**
- * `settings/payout` — the web's `PayoutDetailsPanel` (#161): who is paid, saved as a form, and the
- * card the money goes to, which is registered on the provider's page in the in-app browser and
- * never typed here.
+ * `settings/payout` — the web's `PayoutDetailsPanel` (#161): who is paid, saved as a form; the bank
+ * account the money goes to, filed by IBAN (#395), which is the primary path; and, only where
+ * `cardRegistrationAvailable` says the provider can take one, a business card registered on the
+ * provider's page in the in-app browser and never typed here.
+ *
+ * <p>The IBAN is grouped in fours as it is typed, checked by `@ideanest/account/iban` in the
+ * service's own terms, and sent in its electronic form. Once filed it is shown only as the
+ * service's masked hint, and the field is emptied.
  *
  * <p>`card` is the route's `?card=returned|failed` — a return that arrived as a link rather than
  * through the browser session (a cold start from `ideanest://settings/payout?card=…`).
@@ -153,12 +160,15 @@ function PayoutDetails({ card }: { readonly card?: unknown }) {
   return (
     <>
       <SubjectForm initial={subject.data!} onSaved={() => void reread()} />
-      <CardSection
+      <BankSection
         destination={current}
+        suggestedHolder={subject.data!.recorded ? (subject.data!.legalName ?? '') : ''}
         waiting={waiting}
         failed={cardReturn.kind === 'failed'}
-        onReturn={(kind) => startReturn(kind, current.updatedAt ?? null)}
       />
+      {current.cardRegistrationAvailable === true ? (
+        <CardSection destination={current} onReturn={(kind) => startReturn(kind, current.updatedAt ?? null)} />
+      ) : null}
     </>
   );
 }
@@ -310,25 +320,175 @@ function SubjectForm({ initial, onSaved }: { readonly initial: LegalSubject; rea
 
 type CardFailure = 'unavailable' | 'failed';
 
-function CardSection({
+/** A bank account on file (#394). A recorded row without `kind` predates it, and is a card. */
+function isBankAccount(destination: PayoutDestination): boolean {
+  return destination.recorded === true && destination.kind === 'BANK_TRANSFER';
+}
+
+type BankFailure =
+  | { readonly kind: 'iban'; readonly defect: IbanDefect }
+  | { readonly kind: 'unavailable' | 'failed' };
+
+function BankSection({
   destination,
+  suggestedHolder,
   waiting,
   failed,
+}: {
+  readonly destination: PayoutDestination;
+  readonly suggestedHolder: string;
+  readonly waiting: boolean;
+  readonly failed: boolean;
+}) {
+  const t = useT('settings.panels.payout');
+  const online = useOnline();
+  const surface = useSurface();
+  const queryClient = useQueryClient();
+  const recorded = destination.recorded === true;
+  const card = recorded && !isBankAccount(destination);
+
+  const [iban, setIban] = useState('');
+  // The holder on file, else the legal name: the two have to match, so it is the likely answer.
+  const [holder, setHolder] = useState(() =>
+    isBankAccount(destination) ? (destination.holderName ?? '') : suggestedHolder,
+  );
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [failure, setFailure] = useState<BankFailure | null>(null);
+  const inFlight = useRef(false);
+
+  async function save(): Promise<void> {
+    if (inFlight.current || !online) return;
+    setSaved(false);
+    const checked = checkAzerbaijaniIban(iban);
+    if (!checked.ok) {
+      setFailure({ kind: 'iban', defect: checked.defect });
+      return;
+    }
+    inFlight.current = true;
+    setSaving(true);
+    setFailure(null);
+    try {
+      const next = await saveBankAccount({ iban: checked.value, holderName: holder.trim() });
+      queryClient.setQueryData(queryKeys.payoutDestination(), next);
+      setIban('');
+      setSaved(true);
+    } catch (cause) {
+      const problem = cause instanceof ApiError ? cause.problem : undefined;
+      const defect = problem?.code === 'MALFORMED_IBAN' ? ibanDefectOf(problem.meta?.['defect']) : null;
+      if (defect !== null) setFailure({ kind: 'iban', defect });
+      else setFailure({ kind: problem?.code === 'ENCRYPTED_STORAGE_UNAVAILABLE' ? 'unavailable' : 'failed' });
+    } finally {
+      inFlight.current = false;
+      setSaving(false);
+    }
+  }
+
+  const locked = saving || !online;
+  const ibanError = failure?.kind === 'iban' ? t(`ibanDefect.${failure.defect}`) : null;
+
+  return (
+    <SettingsCard title={t('bankHeading')} intro={t('bankIntro')} testID="payout-bank">
+      {waiting ? (
+        <InlineAlert variant="info" politeness="polite" description={t('waiting')} testID="payout-card-waiting" />
+      ) : null}
+      {failed ? <InlineAlert variant="warning" description={t('cardFailed')} testID="payout-card-failed" /> : null}
+
+      <View style={styles.onFile}>
+        <Icon icon={card ? Glyphs.Card : Glyphs.Bank} size={20} color={TONES[surface].tertiary} />
+        {recorded ? (
+          <View style={styles.onFileWords} accessible testID="payout-on-file">
+            <Body tone="primary">
+              {t(card ? 'cardOnFile' : 'accountOnFile', {
+                hint: destination.displayHint ?? '',
+                holder: destination.holderName ?? '',
+              })}
+            </Body>
+            <Body>{t(standingKey(destination.standing))}</Body>
+          </View>
+        ) : (
+          <View style={styles.onFileWords}>
+            <Body testID="payout-none">{t('accountNone')}</Body>
+          </View>
+        )}
+      </View>
+
+      {destination.standing === 'NAME_MISMATCH' ? (
+        <InlineAlert variant="warning" description={t('mismatchHelp')} testID="payout-mismatch" />
+      ) : null}
+
+      <View style={styles.form}>
+        <Field label={t('ibanLabel')} hint={t('ibanHint')} error={ibanError} required>
+          <TextInput
+            value={iban}
+            onChangeText={(typed) => {
+              setIban(formatIban(typed));
+              setSaved(false);
+              if (failure?.kind === 'iban') setFailure(null);
+            }}
+            autoCapitalize="characters"
+            autoComplete="off"
+            autoCorrect={false}
+            spellCheck={false}
+            disabled={locked}
+            testID="payout-iban"
+          />
+        </Field>
+
+        <Field label={t('holderLabel')} hint={t('holderHint')} required>
+          <TextInput
+            value={holder}
+            onChangeText={(typed) => {
+              setHolder(typed);
+              setSaved(false);
+            }}
+            autoComplete="off"
+            autoCorrect={false}
+            disabled={locked}
+            testID="payout-holder"
+          />
+        </Field>
+
+        {failure !== null && failure.kind !== 'iban' ? (
+          <InlineAlert
+            variant="danger"
+            description={failure.kind === 'unavailable' ? t('bankUnavailable') : t('failed')}
+            testID="payout-bank-error"
+          />
+        ) : null}
+        {saved ? (
+          <InlineAlert variant="success" politeness="polite" description={t('bankSaved')} testID="payout-bank-saved" />
+        ) : null}
+
+        <View style={styles.start}>
+          <Pill
+            label={saving ? t('saving') : t('saveBank')}
+            variant="outline"
+            busy={saving}
+            disabled={!online || iban.trim() === '' || holder.trim() === ''}
+            onPress={() => void save()}
+            testID="payout-bank-save"
+          />
+        </View>
+      </View>
+    </SettingsCard>
+  );
+}
+
+function CardSection({
+  destination,
   onReturn,
 }: {
   readonly destination: PayoutDestination;
-  readonly waiting: boolean;
-  readonly failed: boolean;
   readonly onReturn: (kind: ReturnKind) => void;
 }) {
   const t = useT('settings.panels.payout');
   const online = useOnline();
   const locale = useLocale();
-  const surface = useSurface();
   const [opening, setOpening] = useState(false);
   const [failure, setFailure] = useState<CardFailure | null>(null);
   const inFlight = useRef(false);
-  const recorded = destination.recorded === true;
+  const card = destination.recorded === true && !isBankAccount(destination);
 
   async function register(): Promise<void> {
     if (inFlight.current || !online) return;
@@ -352,27 +512,6 @@ function CardSection({
 
   return (
     <SettingsCard title={t('cardHeading')} intro={t('cardIntro')} testID="payout-card">
-      {waiting ? (
-        <InlineAlert variant="info" politeness="polite" description={t('waiting')} testID="payout-card-waiting" />
-      ) : null}
-      {failed ? <InlineAlert variant="warning" description={t('cardFailed')} testID="payout-card-failed" /> : null}
-
-      <View style={styles.onFile}>
-        <Icon icon={Glyphs.Card} size={20} color={TONES[surface].tertiary} />
-        {recorded ? (
-          <View style={styles.onFileWords} accessible testID="payout-card-on-file">
-            <Body tone="primary">
-              {t('cardOnFile', { hint: destination.displayHint ?? '', holder: destination.holderName ?? '' })}
-            </Body>
-            <Body>{t(standingKey(destination.standing))}</Body>
-          </View>
-        ) : (
-          <View style={styles.onFileWords}>
-            <Body testID="payout-card-none">{t('cardNone')}</Body>
-          </View>
-        )}
-      </View>
-
       {failure === null ? null : (
         <InlineAlert
           variant="danger"
@@ -383,7 +522,7 @@ function CardSection({
 
       <View style={styles.start}>
         <Pill
-          label={opening ? t('opening') : recorded ? t('replace') : t('register')}
+          label={opening ? t('opening') : card ? t('replace') : t('register')}
           variant="outline"
           busy={opening}
           disabled={!online}
@@ -401,7 +540,7 @@ type StandingKey =
   | 'standingWaived'
   | 'standingMismatch'
   | 'standingRejected'
-  | 'cardNone';
+  | 'accountNone';
 
 function standingKey(standing: DestinationStanding | undefined): StandingKey {
   switch (standing) {
@@ -416,7 +555,7 @@ function standingKey(standing: DestinationStanding | undefined): StandingKey {
     case 'REJECTED':
       return 'standingRejected';
     default:
-      return 'cardNone';
+      return 'accountNone';
   }
 }
 

@@ -247,7 +247,7 @@
       },
       "payout": {
         "label": "Ödəniş məlumatları",
-        "summary": "VÖEN-iniz və ödənişlərin göndərildiyi biznes kartı."
+        "summary": "VÖEN-iniz və ödənişlərin göndərildiyi bank hesabı."
       }
     },
     "pages": {
@@ -576,7 +576,7 @@
         "NEW_DEVICE_SIGN_IN": "Hesabınıza yeni cihazdan daxil olundu",
         "CAMPAIGN_EXTENDED": "Dəstəklədiyiniz kampaniyanın yeni müddəti var",
         "WITHDRAWAL_REQUESTED": "Dəstəklədiyiniz kampaniyanın müəllifi vəsaitin çıxarılmasını tələb edib",
-        "PAYOUT_DETAILS_NEEDED": "Ödənişiniz VÖEN və biznes kartınızı gözləyir",
+        "PAYOUT_DETAILS_NEEDED": "Ödənişiniz VÖEN və IBAN məlumatlarınızı gözləyir",
         "UPDATE_DUE_SOON": "Kampaniyanız üçün yenilik {when} gözlənilir"
       },
       "amount": {
@@ -2922,7 +2922,7 @@
       },
       "payout": {
         "metaTitle": "Ödəniş məlumatları",
-        "metaDescription": "VÖEN-iniz və kampaniya ödənişlərinin göndərildiyi biznes kartı.",
+        "metaDescription": "VÖEN-iniz və kampaniya ödənişlərinin göndərildiyi bank hesabı.",
         "title": "Ödəniş məlumatları",
         "intro": "Vəsaitini çıxardığınız kampaniyanın pulunun göndərildiyi yer. Bu məlumatlar tamamlanıb yoxlanılana qədər ödənişlər saxlanılır."
       }
@@ -2964,7 +2964,7 @@
       "payout": {
         "loading": "Ödəniş məlumatlarınız yüklənir",
         "subjectHeading": "Kimə ödənilir",
-        "subjectIntro": "IdeyaNest burada göstərilən şəxsə və ya şirkətə ödəyir. Hər hansı ödəniş göndərilməzdən əvvəl administrator VÖEN-in həqiqi olduğunu və biznes kartının onun sahibinə məxsus olduğunu yoxlayır.",
+        "subjectIntro": "IdeyaNest burada göstərilən şəxsə və ya şirkətə ödəyir. Hər hansı ödəniş göndərilməzdən əvvəl administrator VÖEN-in həqiqi olduğunu və bank hesabının onun sahibinə məxsus olduğunu yoxlayır.",
         "kind": "Siz",
         "kindIndividual": "Fiziki şəxssiniz",
         "kindEntity": "Şirkətsiniz",
@@ -2977,15 +2977,34 @@
         "save": "Yadda saxla",
         "saving": "Saxlanılır…",
         "saved": "Yadda saxlanıldı.",
-        "cardHeading": "Biznes kartı",
-        "cardIntro": "Ödənişlər ödəniş provayderinin səhifəsində qeydiyyatdan keçirdiyiniz biznes kartına göndərilir. Kart nömrəsi heç vaxt IdeyaNest-də daxil edilmir.",
-        "cardNone": "Hələ kart yoxdur.",
-        "cardOnFile": "{hint}, sahibi: {holder}",
+        "bankHeading": "Bank hesabı",
+        "bankIntro": "Ödənişlər sizin və ya şirkətinizin adına açılmış Azərbaycan bank hesabına, IBAN üzrə köçürmə ilə göndərilir. IdeyaNest onu şifrələnmiş şəkildə saxlayır və yalnız ilk və son dörd simvolunu göstərir.",
+        "accountNone": "Hələ bank hesabı əlavə edilməyib.",
+        "accountOnFile": "Bank hesabı {hint}, sahibi: {holder}",
+        "ibanLabel": "IBAN",
+        "ibanHint": "AZ ilə başlayan 28 simvol, bank çıxarışında və ya bank tətbiqində olduğu kimi. Boşluqlarla da yaza bilərsiniz.",
+        "holderLabel": "Hesab sahibi",
+        "holderHint": "Bankda hesab sahibi kimi qeyd olunan ad. Yuxarıdakı hüquqi adınızla eyni olmalıdır.",
+        "ibanDefect": {
+          "CHARACTERS": "IBAN yalnız hərf və rəqəmlərdən ibarətdir. Digər simvolları silin.",
+          "COUNTRY": "IBAN ölkənin iki hərfli kodu ilə başlayır, məsələn, AZ.",
+          "LENGTH": "Azərbaycan IBAN-ı 28 simvoldan ibarətdir. Əskik və ya artıq simvol olmadığını yoxlayın.",
+          "FORMAT": "Azərbaycan IBAN-ı belə qurulur: AZ, iki rəqəm, dörd hərfli bank kodu, sonra 20 hərf və ya rəqəm.",
+          "CHECKSUM": "Yoxlama rəqəmləri uyğun gəlmir. Çox güman ki, bir simvol səhv yazılıb və ya iki simvolun yeri dəyişib.",
+          "COUNTRY_NOT_ACCEPTED": "Ödənişlər yalnız Azərbaycan bank hesabına göndərilir. AZ ilə başlayan IBAN daxil edin."
+        },
+        "saveBank": "Bank hesabını yadda saxla",
+        "bankSaved": "Yadda saxlanıldı. İlk ödənişdən əvvəl administrator hesabı yoxlayır.",
+        "bankUnavailable": "Hazırda bank hesabını yadda saxlamaq mümkün deyil. Heç nə qeyd olunmadı; sonra yenidən cəhd edin.",
         "standingAwaiting": "Yoxlama gözlənilir",
         "standingVerified": "Yoxlanılıb",
         "standingWaived": "Yoxlamadan azad edilib",
-        "standingMismatch": "Kartdakı ad hüquqi adınızla uyğun gəlmir",
+        "standingMismatch": "Hesab sahibinin adı hüquqi adınızla uyğun gəlmir",
+        "mismatchHelp": "Adlar uyğun gələnə qədər ödənişlər gözləyir. Hesab sahibinin adını bankda olduğu kimi yazın və ya yuxarıda hüquqi adınızı düzəldin.",
         "standingRejected": "Rədd edilib",
+        "cardHeading": "Və ya biznes kartı",
+        "cardIntro": "Ödənişləri bank hesabı əvəzinə ödəniş provayderinin səhifəsində qeydiyyatdan keçirdiyiniz biznes kartına da almaq olar. Kart nömrəsi heç vaxt IdeyaNest-də daxil edilmir.",
+        "cardOnFile": "Biznes kartı {hint}, sahibi: {holder}",
         "register": "Biznes kartını qeydiyyatdan keçirin",
         "replace": "Başqa kart qeydiyyatdan keçirin",
         "opening": "Ödəniş provayderinin səhifəsi açılır…",
@@ -5480,7 +5499,7 @@
     "withdrawConfirmBody": "Kampaniya dərhal dəstək qəbul etməyi dayandırır və yenidən açılmır. Ödəniş on dörd gün saxlanılır və bu müddətdə dəstəkçilər ödənişlərinə etiraz edə bilər. Bütün mükafatları bütün dəstəkçilərə çatdırmalısınız.",
     "withdrawNow": "Çıxarmaq və bağlamaq",
     "withdrawing": "Çıxarılır…",
-    "withdrawn": "Kampaniya bağlandı və ödəniş tələb olundu. Ödəniş göndərilməzdən əvvəl sizdən VÖEN və biznes kartı istəniləcək.",
+    "withdrawn": "Kampaniya bağlandı və ödəniş tələb olundu. Ödəniş göndərilməzdən əvvəl sizdən VÖEN və bank hesabınızın IBAN-ı istəniləcək.",
     "cancel": "Ləğv et",
     "belowThreshold": "Vəsaiti kampaniya hədəfinin 80%-ini topladıqdan sonra çıxarmaq olar.",
     "extendWrongState": "Bu kampaniyanı hazırkı vəziyyətində uzatmaq olmaz.",
