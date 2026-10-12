@@ -1,6 +1,7 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { Money } from '../money';
+import type { DestinationKind } from './api';
 
 /**
  * §4.11's AD-05 payout queue — issues #69 and #306.
@@ -108,6 +109,17 @@ export interface Payout {
   destinationStanding: DestinationStanding;
   /** Whether that standing is what is holding this payout. `heldForVerification`'s reason. */
   heldForDestination: boolean;
+  /**
+   * How the destination on file is paid — #397. `BANK_TRANSFER` is an IBAN that staff pay by
+   * hand from IdeyaNest's account, and `send` refuses it. Absent when nothing is on file.
+   */
+  destinationKind?: DestinationKind | null;
+  /** When somebody started paying it by bank transfer. Set while a transfer is in progress. */
+  bankTransferStartedAt?: string | null;
+  /** Who started it. */
+  bankTransferStartedBy?: string | null;
+  /** The value date the bank statement showed, once the transfer is recorded. `YYYY-MM-DD`. */
+  bankTransferredOn?: string | null;
   payoutTransactionId?: string | null;
   failureCode?: string | null;
   failureMessage?: string | null;
@@ -132,6 +144,17 @@ export interface PayoutPage {
   payouts: Payout[];
   page: number;
   hasMore: boolean;
+}
+
+/**
+ * Whether a bank transfer of this payout has been started and not yet recorded — #397, #398.
+ *
+ * <p>The marker stays on a payout once it is paid, so the state is read beside it. While this
+ * holds the money may have left: the service refuses to cancel the payout or take a signature
+ * off it.
+ */
+export function bankTransferInProgress(payout: Payout): boolean {
+  return payout.state === 'APPROVED' && payout.bankTransferStartedAt != null;
 }
 
 /** The queue: everything still on its way, oldest first, holds included. */
