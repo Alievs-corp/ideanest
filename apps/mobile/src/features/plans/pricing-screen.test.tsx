@@ -293,6 +293,100 @@ describe('what the reader holds', () => {
   });
 });
 
+describe('paying on the website (#452)', () => {
+  const M = en.mobile.pricing;
+  /** A catalogue sentence as a pattern, its full stops and dashes taken literally. */
+  const words = (text: string) => new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const fill = (text: string, values: Record<string, string>) =>
+    Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, value), text);
+
+  it('inside the renewal window, names the end date and sends the renewal to the website', async () => {
+    mine = () => json({ subscription: held({ paymentDue: 'RENEWAL', renewalOpensAt: '2026-11-07T10:00:00Z' }) });
+    await show();
+
+    const standing = screen.getByTestId('pricing-held-standing');
+    expect(standing).toHaveTextContent(words(fill(M.renewalTitle, { plan: 'Growth', date: '14 November 2026' })));
+    expect(standing).toHaveTextContent(words(P.payment.renewalBody));
+    expect(standing).not.toHaveTextContent(words(P.payment.renewalCancelled));
+    // No price beside the action, and the action names the page, not a payment.
+    expect(screen.getByTestId('pricing-held')).not.toHaveTextContent(/19\.00/);
+    expect(screen.getByTestId('pricing-held-open-web')).toHaveTextContent(M.webOnly.open);
+    expect(screen.queryByText(/Renew for|Pay by card/)).toBeNull();
+    // One button for the website on the screen, not two.
+    expect(screen.queryByTestId('pricing-open-web')).toBeNull();
+    expect(screen.getByTestId('pricing-web-only')).toHaveTextContent(words(M.webOnly.body));
+
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-held-open-web')));
+    await settle();
+    expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://test.invalid/en/pricing');
+  });
+
+  it('says renewing keeps a cancelled plan going, when the window is open for one', async () => {
+    mine = () => json({ subscription: held({ paymentDue: 'RENEWAL', cancelAtPeriodEnd: true }) });
+    await show();
+    expect(screen.getByTestId('pricing-held-standing')).toHaveTextContent(words(P.payment.renewalCancelled));
+  });
+
+  it('re-reads the plan when the browser closes, so a renewal made there shows at once', async () => {
+    browserDismissedOnReturn();
+    mine = () => json({ subscription: held({ paymentDue: 'RENEWAL' }) });
+    await show();
+    mine = () => json({ subscription: held({ currentPeriodEnd: '2026-12-14T10:00:00Z' }) });
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-held-open-web')));
+    await settle();
+    expect(screen.getByTestId('pricing-held-standing')).toHaveTextContent(/You are on Growth until 14 December 2026/);
+    expect(screen.queryByTestId('pricing-held-open-web')).toBeNull();
+  });
+
+  it('before the window, says from when it can be renewed on the website, with no button', async () => {
+    mine = () => json({ subscription: held({ paymentDue: null, renewalOpensAt: '2026-11-07T10:00:00Z' }) });
+    await show();
+    const standing = screen.getByTestId('pricing-held-standing');
+    expect(standing).toHaveTextContent(/You are on Growth until 14 November 2026/);
+    expect(standing).toHaveTextContent(words(fill(M.renewsFromOnWeb, { date: '7 November 2026' })));
+    expect(screen.queryByTestId('pricing-held-open-web')).toBeNull();
+    expect(screen.getByTestId('pricing-open-web')).toBeTruthy();
+  });
+
+  it('for a first period, says it is paid on the website by card or bank transfer', async () => {
+    mine = () =>
+      json({ subscription: held({ state: 'PENDING_PAYMENT', entitled: false, currentPeriodEnd: null, paymentDue: 'FIRST_PERIOD' }) });
+    await show();
+    const standing = screen.getByTestId('pricing-held-standing');
+    expect(standing).toHaveTextContent(words(M.pendingOnWeb));
+    expect(standing).not.toHaveTextContent(words(P.held.pendingBody));
+    expect(screen.getByTestId('pricing-held')).not.toHaveTextContent(/19\.00/);
+
+    await act(async () => fireEvent.press(screen.getByTestId('pricing-held-open-web')));
+    await settle();
+    expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://test.invalid/en/pricing');
+  });
+
+  it('keeps the transfer sentence alone for a pending plan no card can pay', async () => {
+    mine = () => json({ subscription: held({ state: 'PENDING_PAYMENT', entitled: false, paymentDue: null }) });
+    await show();
+    expect(screen.getByTestId('pricing-held-standing')).toHaveTextContent(words(P.held.pendingBody));
+    expect(screen.queryByTestId('pricing-held-open-web')).toBeNull();
+  });
+
+  it('offers the website from the panel when plans are chosen in the app, and never a payment', async () => {
+    mockInApp = true;
+    mine = () => json({ subscription: held({ paymentDue: 'RENEWAL' }) });
+    await show();
+    expect(screen.queryByTestId('pricing-web-only')).toBeNull();
+    expect(screen.getByTestId('pricing-held-open-web')).toHaveTextContent(M.webOnly.open);
+    expect(writes()).toHaveLength(0);
+  });
+
+  it('cannot open the website offline', async () => {
+    mine = () => json({ subscription: held({ paymentDue: 'RENEWAL' }) });
+    await show();
+    await act(async () => setOnline(false));
+    await settle();
+    expect(screen.getByTestId('pricing-held-open-web')).toBeDisabled();
+  });
+});
+
 describe('from a refused submission', () => {
   it('says why the creator is here and links back to the campaign', async () => {
     await show(PROJECT);

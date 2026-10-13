@@ -10,17 +10,18 @@ import {
   type MySubscription,
   type SubscriptionRefusal,
 } from '@ideanest/plans/catalogue';
-import { inAppPlanChoice, siteUrl } from '../../api/config';
+import { inAppPlanChoice } from '../../api/config';
 import { queryKeys } from '../../api/queries';
 import { StaticPage } from '../../components/content/static-page';
 import { FeeDisclosure } from '../../components/fees/fee-disclosure';
-import { HeldPanel, PlanCards, describeHeld } from '../../components/plans/plan-chooser';
+import { HeldPanel, PlanCards, describeHeld, isPaymentDue } from '../../components/plans/plan-chooser';
 import { InlineAlert, Pill, Skeleton, SkeletonCard, SkeletonGroup, announce } from '../../components/ui';
 import { useOnline } from '../../lib/connectivity';
 import { signInHrefFor } from '../../lib/guard';
 import { useT } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { useSession } from '../../lib/use-session';
+import { webPageUrl } from '../../lib/web-pages';
 import { spacing } from '../../theme';
 import {
   cancelSubscription,
@@ -41,6 +42,14 @@ import {
  * reader holds and the fee terms, and sends the choice to the web page in the in-app browser
  * (`inAppPlanChoice()` off, the default). With the flag on, the cards choose and the held panel
  * cancels here, exactly as the web's `PlanChooser` does.
+ *
+ * <h2>Paying for a plan is on the website, whatever the flag says</h2>
+ *
+ * The flag is about choosing. The first period and every renewal (#448) are paid on the website, by
+ * card or bank transfer, and the app takes no money for a plan. While one is due (`paymentDue`) the
+ * held panel says so — inside the renewal window, "your plan ends on {date}, renew it on the
+ * website" (#452) — and carries the open-the-pricing-page action itself, so the web-only notice
+ * below does not offer a second copy of the same button.
  *
  * <h2>`from=submit` — a refused submission sent the creator here</h2>
  *
@@ -139,7 +148,7 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
   const openOnWeb = async () => {
     let result: WebBrowser.WebBrowserResult;
     try {
-      result = await WebBrowser.openBrowserAsync(`${siteUrl()}/${locale}${pricingPath}`);
+      result = await WebBrowser.openBrowserAsync(webPageUrl(locale, pricingPath));
     } catch {
       return;
     }
@@ -232,6 +241,8 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
           onCancel={inApp ? () => void cancel() : undefined}
           cancelling={cancelling}
           cancelDisabled={!online}
+          onOpenWeb={() => void openOnWeb()}
+          openDisabled={!online}
         />
       )}
 
@@ -241,13 +252,15 @@ export function PricingScreen({ fromProjectId }: { readonly fromProjectId?: stri
           title={t('mobile.pricing.webOnly.title')}
           description={t('mobile.pricing.webOnly.body')}
           action={
-            <Pill
-              label={t('mobile.pricing.webOnly.open')}
-              size="sm"
-              disabled={!online}
-              onPress={() => void openOnWeb()}
-              testID="pricing-open-web"
-            />
+            held !== null && isPaymentDue(held) ? undefined : (
+              <Pill
+                label={t('mobile.pricing.webOnly.open')}
+                size="sm"
+                disabled={!online}
+                onPress={() => void openOnWeb()}
+                testID="pricing-open-web"
+              />
+            )
           }
           testID="pricing-web-only"
         />
