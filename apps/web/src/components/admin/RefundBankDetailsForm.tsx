@@ -40,6 +40,12 @@ import { useConsoleMembership } from './ConsoleMembership';
  * field because a backer sometimes writes twice, and the service checks whichever is given: a
  * ticket the pledge's backer did not raise is refused.
  *
+ * <h2>Also the second step of a ticket raised for a backer — #416</h2>
+ *
+ * `BackerTicketForm` draws it bound to the ticket it has just raised. From a refund's row it is
+ * drawn open, since recording the account is why the ticket was raised there, and the row hears
+ * of the recording so the list can move the refund on.
+ *
  * <h2>Motion: none</h2>
  *
  * A step before money moves.
@@ -48,12 +54,17 @@ export interface RefundBankDetailsFormProps {
   readonly pledgeId: string;
   readonly ticketId: string;
   readonly copy: RefundBankDetailsCopy;
-  /** The support console's subject and refusal table, for a refusal this form has no words for. */
+  /** The console's subject and refusal table, for a refusal this form has no words for. */
   readonly subject: string;
   readonly refusals: ConsoleRefusalsCopy;
+  /** Drawn open rather than behind its press. */
+  readonly startOpen?: boolean;
+  /** Told what was recorded, after the form has said so itself. */
+  readonly onRecorded?: (saved: RecordedRefundAccount) => void;
 }
 
-interface Saved {
+/** What was recorded: the masked hint and the total now waiting for the transfer, formatted. */
+export interface RecordedRefundAccount {
   readonly hint: string;
   readonly amount: string;
 }
@@ -64,9 +75,11 @@ export function RefundBankDetailsForm({
   copy,
   subject,
   refusals,
+  startOpen = false,
+  onRecorded,
 }: RefundBankDetailsFormProps) {
   const { membership } = useConsoleMembership();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   const [iban, setIban] = useState('');
   const [holder, setHolder] = useState('');
   const [ticket, setTicket] = useState(ticketId);
@@ -74,7 +87,7 @@ export function RefundBankDetailsForm({
   const [holderError, setHolderError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState<Saved | null>(null);
+  const [saved, setSaved] = useState<RecordedRefundAccount | null>(null);
   const form = useRef<HTMLFormElement | null>(null);
   const caret = useRef<{ readonly input: HTMLInputElement; readonly at: number } | null>(null);
 
@@ -118,9 +131,11 @@ export function RefundBankDetailsForm({
         holderName: name,
         ticketId: ticket.trim(),
       });
-      setSaved(summaryOf(page.refunds));
+      const summary = summaryOf(page.refunds);
+      setSaved(summary);
       setIban('');
       setHolder('');
+      onRecorded?.(summary);
     } catch (cause) {
       const problem = cause instanceof ApiError ? cause.problem : undefined;
       const defect = problem?.code === 'MALFORMED_IBAN' ? ibanDefectOf(problem.meta?.['defect']) : null;
@@ -229,7 +244,7 @@ export function RefundBankDetailsForm({
  * <p>Summed with `decimal.js` and never as numbers, since a pledge's refund may be in parts. One
  * currency, because the service refuses a refund in any currency but the pledge's.
  */
-function summaryOf(parts: readonly Refund[]): Saved {
+function summaryOf(parts: readonly Refund[]): RecordedRefundAccount {
   const waiting = parts.filter((part) => part.state === 'AWAITING_TRANSFER');
   const first = waiting[0] ?? parts[0];
   const total = waiting.reduce((sum, part) => sum.plus(part.amount.amount), new Decimal(0));

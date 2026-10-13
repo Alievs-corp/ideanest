@@ -18,6 +18,8 @@ import { ApiError } from '../../lib/api/problem';
 import { formatMoney } from '../../lib/money';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { ConsoleMembershipProvider } from './ConsoleMembership';
+import { raiseBackerTicket, type Ticket } from '../../lib/admin/tickets';
+import { recordRefundBankDetails } from '../../lib/admin/refund-bank-details';
 
 /* Built from `messages/en.json` with the route's own builders; `src/test-copy.ts` says why. */
 const COPY = refundConsoleCopyFrom(
@@ -45,6 +47,13 @@ vi.mock('../../lib/admin/refund-bank-transfers', async (importOriginal) => {
     routeRefundToBankTransfer: vi.fn(),
   };
 });
+
+vi.mock('../../lib/admin/tickets', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../lib/admin/tickets')>();
+  return { ...actual, raiseBackerTicket: vi.fn() };
+});
+
+vi.mock('../../lib/admin/refund-bank-details', () => ({ recordRefundBankDetails: vi.fn() }));
 
 const listMock = vi.mocked(listRefunds);
 const issueMock = vi.mocked(issueRefund);
@@ -176,7 +185,7 @@ describe('refunds paid by bank transfer (#400)', () => {
     expect(listMock).toHaveBeenLastCalledWith(expect.objectContaining({ state: 'AWAITING_BANK_DETAILS' }));
   });
 
-  it('says a refund waiting for bank details waits for support, and offers nothing to press', async () => {
+  it('says a refund waiting for bank details waits for support, and offers finance nothing to reveal', async () => {
     showList([refund({ state: 'AWAITING_BANK_DETAILS' })]);
 
     expect(await screen.findByText(BANK.awaitingBankDetails)).toBeInTheDocument();
@@ -357,5 +366,106 @@ describe('today in Baku', () => {
   it('is already tomorrow after eight in the evening in UTC', () => {
     expect(todayInBaku(new Date('2026-10-12T20:30:00Z'))).toBe('2026-10-13');
     expect(todayInBaku(new Date('2026-10-12T19:30:00Z'))).toBe('2026-10-12');
+  });
+});
+
+/* -------------------------------------------------------------------------
+ * #416: support's step on a refund waiting for bank details.
+ * ---------------------------------------------------------------------- */
+
+const raiseMock = vi.mocked(raiseBackerTicket);
+const recordDetailsMock = vi.mocked(recordRefundBankDetails);
+const RAISE = COPY.backerTicket;
+const DETAILS = COPY.bankDetails;
+
+const RAISED: Ticket = {
+  id: '99999999-0000-4000-8000-000000000001',
+  requesterId: 'bbbbbbbb-0000-4000-8000-000000000009',
+  subject: RAISE.subjectDefault,
+  subjectType: 'PLEDGE',
+  subjectRef: PLEDGE,
+  state: 'OPEN',
+  priority: 'NORMAL',
+  assigneeId: null,
+  createdAt: '2026-10-13T09:00:00.000Z',
+  updatedAt: '2026-10-13T09:00:00.000Z',
+  resolvedAt: null,
+};
+
+describe('a refund waiting for bank details: the backer’s ticket and account (#416)', () => {
+  beforeEach(() => {
+    raiseMock.mockReset();
+    recordDetailsMock.mockReset();
+  });
+
+  it('opens the ticket in the backer’s name from the row’s pledge and goes straight on to the account', async () => {
+    const user = userEvent.setup();
+    raiseMock.mockResolvedValue({ ticket: RAISED, messages: [] });
+    recordDetailsMock.mockResolvedValue({
+      refunds: [
+        refund({
+          state: 'AWAITING_TRANSFER',
+          bankTransfer: {
+            ibanHint: 'AZ21…1944',
+            ticketId: RAISED.id,
+            detailsRecordedBy: ME,
+            detailsRecordedAt: '2026-10-13T09:05:00.000Z',
+          },
+        }),
+      ],
+      page: 0,
+      hasMore: false,
+    });
+    showList([refund({ state: 'AWAITING_BANK_DETAILS' })]);
+
+    await user.click(await screen.findByRole('button', { name: RAISE.openFromRefund }));
+    /* The row knows the pledge, so the form does not ask for it. */
+    const form = screen.getByRole('region', { name: RAISE.heading });
+    expect(within(form).queryByLabelText(new RegExp(RAISE.pledgeLabel))).not.toBeInTheDocument();
+    await user.type(within(form).getByLabelText(new RegExp(RAISE.bodyLabel)), 'WhatsApp, 2026-10-12: my IBAN is below.');
+    await user.click(screen.getByRole('button', { name: RAISE.raise }));
+
+    expect(raiseMock).toHaveBeenCalledWith({
+      pledgeId: PLEDGE,
+      subject: RAISE.subjectDefault,
+      body: 'WhatsApp, 2026-10-12: my IBAN is below.',
+    });
+
+    /* Open at once, bound to the ticket just raised. */
+    await user.type(await screen.findByLabelText(new RegExp(DETAILS.ibanLabel)), IBAN);
+    await user.type(screen.getByLabelText(new RegExp(DETAILS.holderLabel)), 'Aysel Məmmədova');
+    expect(screen.getByLabelText(new RegExp(DETAILS.ticketLabel))).toHaveValue(RAISED.id);
+    const reads = listMock.mock.calls.length;
+    await user.click(screen.getByRole('button', { name: DETAILS.save }));
+
+    expect(recordDetailsMock).toHaveBeenCalledWith(PLEDGE, {
+      iban: IBAN,
+      holderName: 'Aysel Məmmədova',
+      ticketId: RAISED.id,
+    });
+    /*
+     * Said above the list too, which is read again so the refund moves on. A real read redraws
+     * the row; the mocked one answers before it is drawn, so the form's own word may still be there.
+     */
+    const said = fillPlaceholders(DETAILS.savedBody, {
+      hint: 'AZ21…1944',
+      amount: formatMoney({ amount: '25.00', currency: 'AZN' }),
+    });
+    expect((await screen.findAllByText(said)).length).toBeGreaterThan(0);
+    expect(listMock.mock.calls.length).toBeGreaterThan(reads);
+  });
+
+  it('is not offered to a reader without HANDLE_SUPPORT', async () => {
+    showList([refund({ state: 'AWAITING_BANK_DETAILS' })], reader(['CURATOR']));
+
+    expect(await screen.findByText(BANK.awaitingBankDetails)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: RAISE.openFromRefund })).not.toBeInTheDocument();
+  });
+
+  it('is not offered on a refund that is not waiting for bank details', async () => {
+    showList([awaitingTransfer()], reader(['FINANCE'], SUPPORT_PERSON));
+
+    expect(await screen.findByText(BANK.fourEyesTitle)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: RAISE.openFromRefund })).not.toBeInTheDocument();
   });
 });

@@ -125,12 +125,12 @@ the browser half of the auth flow work at all.
 | `/admin/ledger` | Console | **Staff only.** The double-entry ledger, both sides of each posting, and the balances (#305) |
 | `/admin/reconciliation` | Console | **Staff only.** Whether the platform's money adds up, and what is wrong when it does not. Reports and never repairs (#106) |
 | `/admin/payouts` | Console | **Staff only.** What each creator is owed, the hold it is under, and the two signatures before it leaves (#306) |
-| `/admin/refunds` | Console | **Staff only.** Full and partial refunds, with a reason code and a ledger posting behind each (#307) |
+| `/admin/refunds` | Console | **Staff only.** Full and partial refunds, with a reason code and a ledger posting behind each (#307). A refund waiting for bank details offers support the backer's ticket and the account recorded from it (#416) |
 | `/admin/disputes` | Console | **Staff only.** Chargebacks: notification, evidence, outcome, and the deadline each runs against (#308) |
 | `/admin/fees` | Console | **Staff only.** Platform and processing rates. There is no edit — a change closes one schedule and opens another (#311) |
 | `/admin/moderation/content` | Console | **Staff only.** Complaints about comments and campaign updates (#297) |
 | `/admin/staff` | Console | **Staff only.** Who works here, and which of §4.11's capabilities each of them holds (#295) |
-| `/admin/support` | Console | **Staff only.** Tickets with the account context and the history of what was done (#310) |
+| `/admin/support` | Console | **Staff only.** Tickets with the account context and the history of what was done (#310). Opens a ticket in a backer's name from the pledge they quoted, for a backer who wrote in elsewhere (#416) |
 | `/admin/taxonomy` | Console | **Staff only.** Categories, subcategories and tags, with a translation per locale (#309) |
 | `/admin/analytics` | Console | **Staff only.** Volume, success rate and average pledge across the platform (#313) |
 | `/admin/email-templates` | Console | **Staff only.** Every transactional type, and which have been edited (#315) |

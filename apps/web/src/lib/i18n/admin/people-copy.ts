@@ -212,6 +212,39 @@ export interface SupportConsoleCopy extends ConsoleChromeCopy {
   readonly priority: Readonly<Record<TicketPriority, string>>;
   readonly state: Readonly<Record<TicketState, string>>;
   readonly bankDetails: RefundBankDetailsCopy;
+  readonly backerTicket: BackerTicketCopy;
+}
+
+/**
+ * #416: a ticket raised for a backer who wrote in somewhere else, from the pledge they quoted.
+ *
+ * <p>Drawn on the support console and on a refund waiting for bank details, from the one key,
+ * because it is one form. `errors` is keyed by the service's `code`; anything else falls through
+ * to the console's refusal table.
+ */
+export interface BackerTicketCopy {
+  readonly open: string;
+  /** The same form opened from a refund's row, where it goes straight on to the account. */
+  readonly openFromRefund: string;
+  readonly heading: string;
+  readonly intro: string;
+  readonly pledgeLabel: string;
+  readonly pledgeHint: string;
+  readonly pledgeInvalid: string;
+  readonly subjectLabel: string;
+  readonly subjectDefault: string;
+  readonly bodyLabel: string;
+  readonly bodyHint: string;
+  readonly raise: string;
+  readonly raising: string;
+  readonly cancel: string;
+  /** Puts the form away once the ticket is raised, so the next one starts empty. */
+  readonly done: string;
+  readonly raisedTitle: string;
+  /** Carries `{id}`. */
+  readonly raisedBody: string;
+  readonly failedTitle: string;
+  readonly errors: Readonly<Record<string, string>>;
 }
 
 /**
@@ -288,6 +321,7 @@ export function supportConsoleCopyFrom(
     priority: t.raw('screens.support.priority') as Readonly<Record<TicketPriority, string>>,
     state: t.raw('screens.support.state') as Readonly<Record<TicketState, string>>,
     bankDetails: t.raw('screens.support.bankDetails') as RefundBankDetailsCopy,
+    backerTicket: t.raw('screens.support.backerTicket') as BackerTicketCopy,
   };
 }
 

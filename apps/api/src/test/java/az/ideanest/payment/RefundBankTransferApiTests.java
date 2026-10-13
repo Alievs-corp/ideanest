@@ -426,6 +426,46 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("support opens the backer's ticket from the pledge alone, and the account is recorded from it")
+    void aTicketRaisedForThePledgesBacker() {
+        Paid paid = pastTheWindow("bank-raised", "25.00");
+        routed(paid);
+        Account support = staff("bank-support", "MODERATOR");
+        UUID backer = jdbc().queryForObject("SELECT backer_id FROM pledges WHERE id = ?", UUID.class, paid.pledgeId());
+
+        ResponseEntity<Map<String, Object>> raised = raiseTicket(support, "PLEDGE", paid.pledgeId());
+        assertThat(raised.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Map<String, Object> ticket = asMap(raised.getBody().get("ticket"));
+        assertThat(ticket).containsEntry("requesterId", backer.toString()).containsEntry("subjectType", "PLEDGE");
+        UUID ticketId = UUID.fromString((String) ticket.get("id"));
+        assertThat(audits("support.ticket_handled", ticketId))
+                .singleElement()
+                .asString()
+                .contains("requester=" + backer + " (the pledge's backer)");
+
+        assertThat(recordDetails(support, paid.pledgeId(), IBAN, "Test Backer", ticketId).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(refundStates(paid.pledgeId())).containsExactly("AWAITING_TRANSFER");
+    }
+
+    @Test
+    @DisplayName("a ticket with no requester must be about a pledge that exists")
+    void aTicketWithNoRequester() {
+        Account support = staff("bank-support", "MODERATOR");
+
+        ResponseEntity<Map<String, Object>> aboutNothing = raiseTicket(support, "NONE", null);
+        assertThat(aboutNothing.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(aboutNothing.getBody()).containsEntry("code", "TICKET_REQUESTER_REQUIRED");
+
+        ResponseEntity<Map<String, Object>> noSuchPledge = raiseTicket(support, "PLEDGE", UUID.randomUUID());
+        assertThat(noSuchPledge.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(noSuchPledge.getBody()).containsEntry("code", "PLEDGE_NOT_FOUND");
+
+        Account curator = staff("bank-curator", "CURATOR");
+        assertThat(raiseTicket(curator, "PLEDGE", UUID.randomUUID()).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
     @DisplayName("nothing is revealed or paid by bank while the charge is in an open chargeback")
     void notDuringAChargeback() {
         Paid paid = pastTheWindow("bank-disputed", "25.00");
@@ -659,6 +699,16 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
                 staff,
                 null,
                 Map.of("iban", iban, "holderName", holder, "ticketId", ticket.toString()));
+    }
+
+    /** #416: a ticket raised without naming its requester. */
+    private ResponseEntity<Map<String, Object>> raiseTicket(Account staff, String subjectType, UUID subjectRef) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("subject", NOTE);
+        body.put("subjectType", subjectType);
+        body.put("subjectRef", subjectRef == null ? null : subjectRef.toString());
+        body.put("body", "Sent on WhatsApp: please refund my pledge to my bank account.");
+        return post("/v1/admin/tickets", staff, body);
     }
 
     private ResponseEntity<Map<String, Object>> recordTransfer(Account staff, UUID refundId, String reference, String on) {

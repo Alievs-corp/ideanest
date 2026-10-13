@@ -164,7 +164,8 @@ export async function readRequesterThread(
 }
 
 export interface RaiseTicketRequest {
-  readonly requesterId: string;
+  /** Null only on a `PLEDGE` ticket, which the service then raises for the pledge's backer (#416). */
+  readonly requesterId: string | null;
   readonly subject: string;
   readonly subjectType: TicketSubjectType;
   readonly subjectRef: string | null;
@@ -197,6 +198,35 @@ export async function raiseTicket(request: RaiseTicketRequest): Promise<TicketFi
   if (!response.ok) throw await errorFrom(response);
 
   return (await response.json()) as TicketFile;
+}
+
+export interface RaiseBackerTicketRequest {
+  readonly pledgeId: string;
+  readonly subject: string;
+  readonly body: string;
+  readonly priority?: TicketPriority;
+  readonly signal?: AbortSignal;
+}
+
+/**
+ * Records a conversation a backer had about their pledge somewhere else — WhatsApp, email, a
+ * call — as a ticket in their name — issue #416.
+ *
+ * <p>No requester is sent: the service raises a `PLEDGE` ticket that names none for whoever made
+ * the pledge, so support starts from the reference the backer quoted rather than from a
+ * directory search that might find the wrong person. That ticket is what a refund's bank account
+ * is recorded from. Refused with 404 `PLEDGE_NOT_FOUND` for a pledge that does not exist.
+ */
+export async function raiseBackerTicket(request: RaiseBackerTicketRequest): Promise<TicketFile> {
+  return raiseTicket({
+    requesterId: null,
+    subject: request.subject,
+    subjectType: 'PLEDGE',
+    subjectRef: request.pledgeId,
+    priority: request.priority ?? 'NORMAL',
+    body: request.body,
+    signal: request.signal,
+  });
 }
 
 /** Answers a ticket, or leaves a note. A note does not move it — they are still waiting. */

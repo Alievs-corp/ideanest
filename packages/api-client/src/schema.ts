@@ -6423,7 +6423,7 @@ export interface components {
             /** @enum {string} */
             priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
             /** Format: uuid */
-            requesterId: string;
+            requesterId?: string;
             subject: string;
             /** Format: uuid */
             subjectRef?: string;

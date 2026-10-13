@@ -1837,6 +1837,30 @@
             "NO_REFUND_AWAITING_BANK_DETAILS": "Bu dəstək üzrə bank köçürməsi ilə qaytarılmağı gözləyən heç nə yoxdur, ona görə qeyd ediləcək hesab da yoxdur.",
             "ENCRYPTED_STORAGE_UNAVAILABLE": "Şifrəli saxlama sazlanmadığı üçün bank hesablarını indi qeyd etmək mümkün deyil. Heç nə saxlanmadı."
           }
+        },
+        "backerTicket": {
+          "open": "Dəstəkçi üçün müraciət aç",
+          "openFromRefund": "Dəstəkçinin müraciətini aç və hesabını qeyd et",
+          "heading": "Dəstəkçi üçün müraciət",
+          "intro": "Başqa yerdə — WhatsApp-da, e-poçtla və ya zənglə — yazan dəstəkçi üçün. Müraciət dəstəyi edən şəxsin adından açılır, audit jurnalı isə onu sizin açdığınızı qeyd edir.",
+          "pledgeLabel": "Dəstək",
+          "pledgeHint": "Dəstəyin tam identifikatoru, dəstəkçinin göndərdiyi kimi. Müraciət dəstəyi edən şəxs üçün açılır.",
+          "pledgeInvalid": "Dəstəyin tam identifikatorunu daxil edin: dəstəkçinin göndərdiyi kimi 36 simvol.",
+          "subjectLabel": "Mövzu",
+          "subjectDefault": "Bank köçürməsi ilə geri ödəniş",
+          "bodyLabel": "Dəstəkçinin dedikləri",
+          "bodyHint": "Onun sözləri, harada və nə vaxt dediyi. Yazışma bu mətnlə dəstəkçinin adından başlayır.",
+          "raise": "Müraciət aç",
+          "raising": "Açılır…",
+          "cancel": "Ləğv et",
+          "done": "Bitdi",
+          "raisedTitle": "Müraciət açıldı",
+          "raisedBody": "{id} müraciəti dəstəkçinin adından növbədədir.",
+          "failedTitle": "Müraciət açılmadı",
+          "errors": {
+            "PLEDGE_NOT_FOUND": "Bu identifikatorla dəstək yoxdur. Onu dəstəkçinin göndərdiyi ilə yoxlayın.",
+            "ACCOUNT_NOT_FOUND": "Dəstəkçinin hesabı artıq mövcud deyil, ona görə onun adından müraciət açmaq olmaz."
+          }
         }
       },
       "staff": {
