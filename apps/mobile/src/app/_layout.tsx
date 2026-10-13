@@ -13,6 +13,8 @@ import { SharedTransitionHost } from '../components/ui/shared-transition';
 import { sweepAccountExports } from '../lib/account-export-files';
 import { startConnectivity } from '../lib/connectivity';
 import { listenForLinks, type Destination } from '../lib/links';
+import { currentLocale } from '../lib/locale';
+import { webPageUrl } from '../lib/web-pages';
 import { openWhenAllowed } from '../lib/open-when-allowed';
 import { useMaintenanceGate } from '../lib/maintenance-gate';
 import { watchUpcoming } from '../lib/upcoming-maintenance';
@@ -184,6 +186,18 @@ export default function RootLayout() {
   );
 
   /*
+   * A push about the creator's plan opens the website's pricing page (#452): the app does not sell
+   * or renew plans. Behind the same gate as a link; a browser that will not open stays put.
+   */
+  const openWeb = useCallback(
+    (path: string) =>
+      openWhenAllowed(() => {
+        WebBrowser.openBrowserAsync(webPageUrl(currentLocale(), path)).catch(() => undefined);
+      }),
+    [],
+  );
+
+  /*
    * A tapped push notification arrives at the same parser, by `PushSync` (`lib/push-sync.tsx`):
    * a notification tap does not go through `Linking` on either platform, and a push with no
    * destination opens the inbox where a shared link would stay put.
@@ -210,7 +224,7 @@ export default function RootLayout() {
           <AppIntlProvider>
             <StatusBar style="light" />
             <AccountSync />
-            <PushSync siteHost={host} onOpen={go} />
+            <PushSync siteHost={host} onOpen={go} onOpenWeb={openWeb} />
             <OfflineAnnouncer />
             {/* A downloaded over-the-air update, offered once it is one tap away (`lib/app-update.ts`). */}
             <UpdatePrompt />

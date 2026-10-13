@@ -27,7 +27,8 @@ function refreshInbox(client: QueryClient): void {
  *       A sign-in during this launch registers through the sign-in flow instead.</li>
  *   <li><strong>A push arriving in the foreground</strong> refreshes the unread count and the
  *       inbox.</li>
- *   <li><strong>A tapped push</strong> opens {@link pushTapOf}'s destination through `onOpen` and,
+ *   <li><strong>A tapped push</strong> opens {@link pushTapOf}'s destination through `onOpen` — or,
+ *       for a message about the creator's plan, its web page through `onOpenWeb` (#452) — and,
  *       when the payload names its inbox row, marks it read in the background. The cold-start tap
  *       is handled once, whatever remounts. A tap that arrives while the biometric lock is shut is
  *       marked read once the lock opens, and forgotten if the session ends first.</li>
@@ -36,9 +37,12 @@ function refreshInbox(client: QueryClient): void {
 export function PushSync({
   siteHost,
   onOpen,
+  onOpenWeb,
 }: {
   readonly siteHost: string;
   readonly onOpen: (destination: Destination) => void;
+  /** Opens a locale-less path of the website in the browser. */
+  readonly onOpenWeb: (path: string) => void;
 }) {
   const client = useQueryClient();
   const state = useSessionState();
@@ -48,11 +52,13 @@ export function PushSync({
   const hasSession = useRef(false);
   const readable = useRef(false);
   const latestOpen = useRef(onOpen);
+  const latestOpenWeb = useRef(onOpenWeb);
   useEffect(() => {
     signedIn.current = state === 'signed-in';
     hasSession.current = session.signedIn;
     readable.current = canReadAccount(session);
     latestOpen.current = onOpen;
+    latestOpenWeb.current = onOpenWeb;
   });
 
   const markRead = useCallback(
@@ -111,7 +117,8 @@ export function PushSync({
           unsent.current.push(tap.notificationId);
         }
       }
-      if (tap.destination !== null) latestOpen.current(tap.destination);
+      if (tap.web !== null) latestOpenWeb.current(tap.web);
+      else if (tap.destination !== null) latestOpen.current(tap.destination);
     };
 
     void Notifications.getLastNotificationResponseAsync().then(handle, () => undefined);

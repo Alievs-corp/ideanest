@@ -4,11 +4,13 @@ import type { Locale } from '@ideanest/messages';
 import {
   categoryLabel,
   describeNotification,
+  isAboutAPlan,
   isUnread,
   type InboxNotification,
   type NotificationsCopy,
 } from '@ideanest/account/inbox';
-import { Pill, PressableScale, Tag, TONES, useSurface } from '../../components/ui';
+import { Icon, Pill, PressableScale, Tag, TONES, useSurface } from '../../components/ui';
+import { Glyphs } from '../../icons';
 import { BLOCK, blockSurface } from '../../components/ui/surface';
 import { formatDateTime, useT } from '../../lib/i18n';
 import { font, fontSize, lineHeight, radius, size, spacing, tint } from '../../theme';
@@ -38,6 +40,8 @@ export interface NotificationRowProps {
  *   <li>The time is relative; the exact time is the accessibility hint, and a long press on the
  *       time shows it in place.</li>
  *   <li>Mark as read is a sibling of the link, so a screen reader reaches each on its own.</li>
+ *   <li>A row the app opens on the website — one about the creator's plan (#452) — ends in the
+ *       external-link glyph the Me tab's web rows use, and its hint says where it goes.</li>
  * </ul>
  */
 export const NotificationRow = memo(function NotificationRow({
@@ -62,6 +66,7 @@ export const NotificationRow = memo(function NotificationRow({
   const category = categoryLabel(notification.category, copy);
   const relative = relativeTime(notification.occurredAt, now, locale);
   const exactTime = formatDateTime(notification.occurredAt, locale);
+  const onWeb = view.href !== null && isAboutAPlan(notification.type);
   const spoken = [view.headline, category, relative, unread ? t('unreadWord') : null]
     .filter((part): part is string => part !== null)
     .join(', ');
@@ -87,6 +92,11 @@ export const NotificationRow = memo(function NotificationRow({
           {unread ? <Text style={[styles.unread, { color: tones.primary }]}>{t('unreadWord')}</Text> : null}
         </View>
       </View>
+      {onWeb ? (
+        <View style={styles.external}>
+          <Icon icon={Glyphs.ExportSquare} size={18} color={tones.tertiary} />
+        </View>
+      ) : null}
     </>
   );
 
@@ -109,7 +119,7 @@ export const NotificationRow = memo(function NotificationRow({
       <PressableScale
         accessibilityRole="link"
         accessibilityLabel={spoken}
-        accessibilityHint={exactTime}
+        accessibilityHint={onWeb ? `${tAll('mobile.notifications.opensOnWeb')}. ${exactTime}` : exactTime}
         onPress={() => onOpen(notification, href)}
         style={styles.main}
         contentStyle={({ pressed }) => [
@@ -164,4 +174,5 @@ const styles = StyleSheet.create({
   time: { ...font.regular, fontSize: fontSize.xs, lineHeight: lineHeight.small },
   unread: { ...font.medium, fontSize: fontSize.xs, lineHeight: lineHeight.small },
   trailing: { paddingTop: spacing[2] },
+  external: { paddingTop: spacing[1] },
 });

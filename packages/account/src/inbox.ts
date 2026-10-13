@@ -261,8 +261,12 @@ export function describeNotification(
  * Whether the row is about the creator's own plan rather than a campaign — #450. Such a row names
  * the plan where another names the campaign, so the `headline` table is the one that names it and
  * `unnamed` the one for a document that carries no plan name.
+ *
+ * <p>Exported for the application (#452): it does not sell or renew plans (Apple 3.1.1 and Play
+ * Billing, #164), so it opens such a row's `/pricing` on the website, in the browser, rather than
+ * on its own pricing screen.
  */
-function isAboutAPlan(type: NotificationType): boolean {
+export function isAboutAPlan(type: NotificationType): boolean {
   return (
     type === 'SUBSCRIPTION_RENEWAL_DUE' ||
     type === 'SUBSCRIPTION_LAPSED' ||

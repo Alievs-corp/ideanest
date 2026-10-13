@@ -63,6 +63,7 @@ function response(identifier: string, data: Record<string, unknown>): Notificati
 let foreground: ((state: AppStateStatus) => void) | undefined;
 let client: QueryClient;
 const onOpen = jest.fn();
+const onOpenWeb = jest.fn();
 
 async function mount() {
   jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
@@ -74,7 +75,7 @@ async function mount() {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
-  const view = await render(<PushSync siteHost={HOST} onOpen={onOpen} />, { wrapper });
+  const view = await render(<PushSync siteHost={HOST} onOpen={onOpen} onOpenWeb={onOpenWeb} />, { wrapper });
   await act(async () => {});
   return view;
 }
@@ -107,7 +108,7 @@ describe('registration', () => {
     const view = await mount();
     expect(sync).toHaveBeenCalledTimes(1);
 
-    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} />);
+    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} onOpenWeb={onOpenWeb} />);
     await act(async () => {});
     expect(sync).toHaveBeenCalledTimes(1);
 
@@ -147,6 +148,19 @@ describe('a tapped push', () => {
       { pathname: '/settings/sessions' },
       { pathname: '/notifications' },
     ]);
+  });
+
+  it('opens a message about the creator’s plan on the website, not on a screen (#452)', async () => {
+    await mount();
+    await act(async () =>
+      mockTapped?.(response('t-1', { url: 'ideanest://pricing', type: 'SUBSCRIPTION_RENEWAL_DUE', notificationId: 'n-1' })),
+    );
+    // Sent before the service gave these a path: the type decides, not the url.
+    await act(async () => mockTapped?.(response('t-2', { url: 'ideanest://', type: 'SUBSCRIPTION_LAPSED' })));
+
+    expect(onOpenWeb.mock.calls).toEqual([['/pricing'], ['/pricing']]);
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(markRead).toHaveBeenCalledWith('n-1');
   });
 
   it('ignores a foreign host and a non-string url', async () => {
@@ -189,13 +203,13 @@ describe('a tapped push', () => {
 
     mockState = 'signed-in';
     mockLock = { locked: true, unlocked: true };
-    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} />);
+    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} onOpenWeb={onOpenWeb} />);
     await act(async () => {});
     expect(markRead).toHaveBeenCalledTimes(1);
     expect(markRead).toHaveBeenCalledWith('n-7');
     expect(client.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['unread'] });
 
-    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} />);
+    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} onOpenWeb={onOpenWeb} />);
     await act(async () => {});
     expect(markRead).toHaveBeenCalledTimes(1);
   });
@@ -208,12 +222,12 @@ describe('a tapped push', () => {
 
     mockState = 'signed-out';
     mockLock = { locked: false, unlocked: false };
-    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} />);
+    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} onOpenWeb={onOpenWeb} />);
     await act(async () => {});
 
     // The next account to sign in is not asked to mark another account's row.
     mockState = 'signed-in';
-    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} />);
+    await view.rerender(<PushSync siteHost={HOST} onOpen={onOpen} onOpenWeb={onOpenWeb} />);
     await act(async () => {});
     expect(markRead).not.toHaveBeenCalled();
   });

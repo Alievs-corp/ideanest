@@ -38,10 +38,39 @@ describe('where a tapped push goes (#160)', () => {
   it('reads the inbox row to mark read when the payload names one', () => {
     expect(pushTapOf({ url: 'ideanest://', notificationId: 'n-1', type: 'GOAL_REACHED' }, HOST)).toEqual({
       destination: { pathname: '/notifications' },
+      web: null,
       notificationId: 'n-1',
     });
     expect(pushTapOf({ url: 'ideanest://', notificationId: 7 }, HOST).notificationId).toBeNull();
     expect(pushTapOf({ url: 'ideanest://', notificationId: ' ' }, HOST).notificationId).toBeNull();
+  });
+});
+
+describe('a message about the creator’s plan (#452)', () => {
+  it('opens the pricing page on the website for each of the three types, whatever the url says', () => {
+    for (const type of ['SUBSCRIPTION_RENEWAL_DUE', 'SUBSCRIPTION_LAPSED', 'SUBSCRIPTION_RENEWED']) {
+      expect(pushTapOf({ url: 'ideanest://pricing', type, notificationId: 'n-1' }, HOST)).toEqual({
+        destination: null,
+        web: '/pricing',
+        notificationId: 'n-1',
+      });
+      // A push sent before the service gave these a path carried the bare scheme.
+      expect(pushTapOf({ url: 'ideanest://', type }, HOST)).toEqual({
+        destination: null,
+        web: '/pricing',
+        notificationId: null,
+      });
+    }
+  });
+
+  it('leaves every other type, and a pricing link without a plan type, to the parser', () => {
+    expect(pushTapOf({ url: 'ideanest://pricing', type: 'GOAL_REACHED' }, HOST)).toEqual({
+      destination: { pathname: '/pricing' },
+      web: null,
+      notificationId: null,
+    });
+    expect(pushTapOf({ url: 'ideanest://pricing' }, HOST).web).toBeNull();
+    expect(pushTapOf({ url: 'ideanest://pricing', type: 42 }, HOST).web).toBeNull();
   });
 });
 
