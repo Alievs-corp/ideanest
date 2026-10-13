@@ -4620,9 +4620,11 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 >   `refund.routed_to_bank_transfer` as the system's decision, and the backer gets
 >   `REFUND_NEEDS_BANK_DETAILS` (email and in-app, linking to their pledge) **once per pledge**,
 >   however many charges its refund has. A provider that refuses a refund as too old is routed the
->   same way, but only when its answer code is configured as meaning that
->   (`ideanest.payment.payriff.refund-window-closed-codes`, empty by default: Payriff does not
->   document the code, and a wrong guess would turn an ordinary refusal into a bank transfer).
+>   same way, but only when its answer is configured as meaning that: Payriff confirmed (#417)
+>   code `01000` with the message "Refund time expired", the defaults of
+>   `ideanest.payment.payriff.refund-window-closed-codes` and `refund-window-closed-messages`.
+>   Both must match, because `01000` is Payriff's general business refusal and the code alone
+>   would turn an ordinary refusal into a bank transfer.
 >   Otherwise such a refusal is `FAILED`, and staff route it by hand:
 >   `POST /v1/admin/refunds/{id}/bank-transfer` (`ISSUE_REFUND`) records a new refund for what the
 >   charge has left, no more than the refused one, keyed `bank-refund:<refusedId>`, so a retry

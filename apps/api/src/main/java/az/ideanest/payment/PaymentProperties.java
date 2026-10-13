@@ -4,6 +4,7 @@ import az.ideanest.payment.domain.ProviderName;
 import java.time.Duration;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -130,21 +131,29 @@ public record PaymentProperties(
      * @param callbackUrl where Payriff posts an order's news: this service's
      *     {@code /v1/webhooks/psp/payriff}
      * @param language the payment page's language when a request names none: az, en or ru
-     * @param refundWindowClosedCodes the {@code /refund} answer codes that mean "this payment is too
+     * @param refundWindowClosedCodes the {@code /refund} answer codes that can mean "this payment is too
      *     old to refund" (#399), which route the refund to a bank transfer instead of failing it.
-     *     <strong>Empty by default, deliberately</strong>: Payriff does not document which code it
-     *     answers past its thirty days, and a code guessed wrong would turn an ordinary refusal into a
-     *     bank transfer. Until one is confirmed and configured, such a refund is recorded failed and
-     *     staff route it by hand ({@code POST /v1/admin/refunds/{id}/bank-transfer}); the refund
-     *     window in {@link Refunds#windows} keeps most of them from reaching Payriff at all
+     *     Payriff confirmed {@code 01000} with the message "Refund time expired" (#417, support ticket
+     *     840029). {@code 01000} is Payriff's general business refusal, so the code alone would turn an
+     *     ordinary refusal into a bank transfer; {@code refundWindowClosedMessages} narrows it
+     * @param refundWindowClosedMessages text one of which the answer's {@code message} must contain,
+     *     ignoring case, for a listed code to mean a closed window. Empty means the code alone decides.
+     *     Any other refusal is recorded failed and staff route it by hand
+     *     ({@code POST /v1/admin/refunds/{id}/bank-transfer}); the refund window in
+     *     {@link Refunds#windows} keeps most of them from reaching Payriff at all
      */
     public record Payriff(
-            String baseUrl, String secretKey, String callbackUrl, String language, List<String> refundWindowClosedCodes) {
+            String baseUrl,
+            String secretKey,
+            String callbackUrl,
+            String language,
+            List<String> refundWindowClosedCodes,
+            List<String> refundWindowClosedMessages) {
 
         private static final String DEFAULT_BASE_URL = "https://api.payriff.com/api/v3";
 
         public static Payriff defaults() {
-            return new Payriff(DEFAULT_BASE_URL, "", "", "az", List.of());
+            return new Payriff(DEFAULT_BASE_URL, "", "", "az", List.of("01000"), List.of("Refund time expired"));
         }
 
         public Payriff {
@@ -152,10 +161,28 @@ public record PaymentProperties(
             secretKey = secretKey == null ? "" : secretKey.trim();
             callbackUrl = callbackUrl == null ? "" : callbackUrl.trim();
             language = language == null || language.isBlank() ? "az" : language.trim();
-            refundWindowClosedCodes = refundWindowClosedCodes == null
+            refundWindowClosedCodes = trimmed(refundWindowClosedCodes);
+            refundWindowClosedMessages = trimmed(refundWindowClosedMessages);
+        }
+
+        /** Whether a {@code /refund} answer says the payment is too old to refund. */
+        public boolean meansWindowClosed(String code, String message) {
+            if (code == null || !refundWindowClosedCodes.contains(code.trim())) {
+                return false;
+            }
+            if (refundWindowClosedMessages.isEmpty()) {
+                return true;
+            }
+            String said = message == null ? "" : message.toLowerCase(Locale.ROOT);
+            return refundWindowClosedMessages.stream()
+                    .anyMatch(text -> said.contains(text.toLowerCase(Locale.ROOT)));
+        }
+
+        private static List<String> trimmed(List<String> values) {
+            return values == null
                     ? List.of()
-                    : refundWindowClosedCodes.stream()
-                            .filter(code -> code != null && !code.isBlank())
+                    : values.stream()
+                            .filter(value -> value != null && !value.isBlank())
                             .map(String::trim)
                             .toList();
         }
@@ -168,7 +195,8 @@ public record PaymentProperties(
         @Override
         public String toString() {
             return "Payriff[baseUrl=" + baseUrl + ", secretKey=<redacted>, callbackUrl=" + callbackUrl
-                    + ", language=" + language + ", refundWindowClosedCodes=" + refundWindowClosedCodes + "]";
+                    + ", language=" + language + ", refundWindowClosedCodes=" + refundWindowClosedCodes
+                    + ", refundWindowClosedMessages=" + refundWindowClosedMessages + "]";
         }
     }
 

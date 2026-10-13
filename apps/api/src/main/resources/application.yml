@@ -745,11 +745,12 @@ ideanest:
       callback-url: ${PAYRIFF_CALLBACK_URL:}
       # The payment page's language when a request names none: az, en or ru.
       language: ${PAYRIFF_LANGUAGE:az}
-      # #399: the /refund answer codes that mean "too old to refund", comma-separated. Such a
-      # refund waits for the backer's bank details instead of failing. Empty until Payriff
-      # confirms the code: a wrong guess would turn an ordinary refusal into a bank transfer,
-      # and staff route a refused refund by hand meanwhile.
-      refund-window-closed-codes: ${PAYRIFF_REFUND_WINDOW_CLOSED_CODES:}
+      # #399, #417: how Payriff says "too old to refund", which makes such a refund wait for the
+      # backer's bank details instead of failing. Payriff confirmed code 01000 with "Refund time
+      # expired" (ticket 840029). 01000 is its general business refusal, so the message must also
+      # contain one of the texts (comma-separated, ignoring case); empty texts means code alone.
+      refund-window-closed-codes: ${PAYRIFF_REFUND_WINDOW_CLOSED_CODES:01000}
+      refund-window-closed-messages: ${PAYRIFF_REFUND_WINDOW_CLOSED_MESSAGES:Refund time expired}
     # Issue #139: where a provider may send a person back to. `successUrl` and `errorUrl` on
     # the payment and payout-card endpoints come from the caller, and the provider redirects
     # to them from its own page -- unchecked, an open redirect running through checkout. So an
