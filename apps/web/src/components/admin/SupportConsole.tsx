@@ -66,6 +66,12 @@ import { useDirectoryNames } from './useDirectoryNames';
  * A refund past the provider's window is paid by bank transfer, and the backer gives the account
  * in a support conversation. So a ticket about a pledge carries the form that records it on that
  * pledge, with this ticket as its source; `RefundBankDetailsForm` says what it checks.
+ *
+ * <h2>A backer who wrote in elsewhere gets a ticket from here — #416</h2>
+ *
+ * The backer cannot raise one, so the account above had nowhere to come from. Support opens one
+ * in their name from the pledge they quoted, and records the account against it in the same
+ * place; `BackerTicketForm` has the rest.
  */
 /**
  * #400's refund bank-account form, fetched when a pledge's ticket is opened. Bundled with the
@@ -75,6 +81,11 @@ import { useDirectoryNames } from './useDirectoryNames';
  */
 const RefundBankDetailsForm = lazy(() =>
   import('./RefundBankDetailsForm').then((module) => ({ default: module.RefundBankDetailsForm })),
+);
+
+/* #416's ticket for a backer. Bundled, it put `/admin/support` 3.6 KiB over its budget again. */
+const BackerTicketForm = lazy(() =>
+  import('./BackerTicketForm').then((module) => ({ default: module.BackerTicketForm })),
 );
 
 export interface SupportConsoleProps {
@@ -184,6 +195,16 @@ export function SupportConsole({ copy }: SupportConsoleProps) {
           )}
         </h2>
         <p className="mt-2 max-w-[62ch] text-sm text-white/64">{copy.intro}</p>
+
+        <Suspense fallback={null}>
+          <BackerTicketForm
+            copy={copy.backerTicket}
+            bankDetails={copy.bankDetails}
+            subject={copy.ticketSubject}
+            refusals={copy.refusals}
+            onRaised={queue.reload}
+          />
+        </Suspense>
 
         {/*
           Three rows, because they are three independent questions and a reader combines them:

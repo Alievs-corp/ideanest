@@ -7,7 +7,6 @@ import az.ideanest.ticket.domain.TicketState;
 import az.ideanest.ticket.domain.TicketSubjectType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
@@ -191,13 +190,15 @@ public class SupportTicketController {
     /**
      * A new ticket.
      *
+     * @param requesterId whose conversation it is. May be left out of a ticket about a pledge,
+     *     which is then raised for the pledge's backer (#416) — the service has why
      * @param subjectType what it is about. Defaults to {@code NONE} — plenty of tickets are
      *     about nothing in particular, and requiring a subject produces one chosen at
      *     random
      * @param body the opening message, attributed to the requester. The service has why
      */
     public record RaiseRequest(
-            @NotNull UUID requesterId,
+            UUID requesterId,
             @NotBlank @Size(max = 200) String subject,
             TicketSubjectType subjectType,
             UUID subjectRef,

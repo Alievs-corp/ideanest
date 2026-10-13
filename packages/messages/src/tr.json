@@ -1837,6 +1837,30 @@
             "NO_REFUND_AWAITING_BANK_DETAILS": "Bu destekte banka havalesiyle iade edilmeyi bekleyen bir şey yok, bu yüzden kaydedilecek hesap da yok.",
             "ENCRYPTED_STORAGE_UNAVAILABLE": "Şifreli depolama yapılandırılmadığı için banka hesapları şu anda kaydedilemiyor. Hiçbir şey kaydedilmedi."
           }
+        },
+        "backerTicket": {
+          "open": "Destekçi adına talep aç",
+          "openFromRefund": "Destekçinin talebini aç ve hesabını kaydet",
+          "heading": "Destekçi adına talep",
+          "intro": "Başka bir yerden — WhatsApp’tan, e-postayla ya da telefonla — yazan destekçi için. Talep, desteği verenin adına açılır ve denetim kaydı onu sizin açtığınızı yazar.",
+          "pledgeLabel": "Destek",
+          "pledgeHint": "Desteğin tam tanımlayıcısı, destekçinin gönderdiği gibi. Talep, desteği veren kişi adına açılır.",
+          "pledgeInvalid": "Desteğin tam tanımlayıcısını girin: destekçinin gönderdiği gibi 36 karakter.",
+          "subjectLabel": "Konu",
+          "subjectDefault": "Banka havalesiyle iade",
+          "bodyLabel": "Destekçinin söyledikleri",
+          "bodyHint": "Kendi sözleri, nerede ve ne zaman söylediği. Yazışma bu metinle destekçinin adına başlar.",
+          "raise": "Talep aç",
+          "raising": "Açılıyor…",
+          "cancel": "İptal",
+          "done": "Tamam",
+          "raisedTitle": "Talep açıldı",
+          "raisedBody": "{id} talebi destekçinin adına kuyrukta.",
+          "failedTitle": "Talep açılmadı",
+          "errors": {
+            "PLEDGE_NOT_FOUND": "Bu tanımlayıcıyla bir destek yok. Destekçinin gönderdiğiyle karşılaştırın.",
+            "ACCOUNT_NOT_FOUND": "Destekçinin hesabı artık yok, bu yüzden onun adına talep açılamaz."
+          }
         }
       },
       "staff": {

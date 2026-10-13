@@ -49,6 +49,10 @@ const AwaitingTransfer = lazy(() =>
 const RouteToBankTransfer = lazy(() =>
   import('./RefundBankTransfer').then((module) => ({ default: module.RouteToBankTransfer })),
 );
+/* #416's ticket for the backer and the account recorded from it, for the same reason. */
+const BackerTicketForm = lazy(() =>
+  import('./BackerTicketForm').then((module) => ({ default: module.BackerTicketForm })),
+);
 
 /*
  * #400: the two bank-transfer states sit after REQUESTED, because they are the same kind of thing
@@ -91,6 +95,13 @@ const STATES: readonly RefundState[] = [
  * on a refund the provider refused, sending it by bank transfer instead. `RefundBankTransfer.tsx`
  * has the rules those controls keep. What a row did is said above the list rather than in the
  * row, because the list reloads after it and the row it would have been said in is redrawn.
+ *
+ * <h2>And support's step, on a refund waiting for bank details — #416</h2>
+ *
+ * The account is recorded only from a ticket the backer raised, and a backer cannot raise one.
+ * To a reader holding `HANDLE_SUPPORT` the row offers to open that ticket in the backer's name
+ * from the row's pledge and record the account against it straight away; `BackerTicketForm` has
+ * the rest.
  *
  * <h2>Motion: none</h2>
  *
@@ -439,7 +450,23 @@ function RefundRow({
         {transfer !== null && <BankTransferFacts transfer={transfer} names={names} copy={copy} />}
 
         {refund.state === 'AWAITING_BANK_DETAILS' && (
-          <p className="mt-2 max-w-[62ch] text-xs text-white/64">{copy.bank.awaitingBankDetails}</p>
+          <>
+            <p className="mt-2 max-w-[62ch] text-xs text-white/64">{copy.bank.awaitingBankDetails}</p>
+            <BackerTicketForm
+              pledgeId={refund.pledgeId}
+              copy={copy.backerTicket}
+              bankDetails={copy.bankDetails}
+              subject={copy.subject}
+              refusals={copy.refusals}
+              recordAccount
+              onRecorded={(saved) =>
+                onSettled({
+                  title: copy.bankDetails.savedTitle,
+                  body: fillPlaceholders(copy.bankDetails.savedBody, { hint: saved.hint, amount: saved.amount }),
+                })
+              }
+            />
+          </>
         )}
 
         {refund.state === 'AWAITING_TRANSFER' && transfer !== null && canIssue && (

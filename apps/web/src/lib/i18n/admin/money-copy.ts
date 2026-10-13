@@ -9,6 +9,7 @@ import type { FindingCode, FindingKind } from '../../admin/reconciliation';
 import type { AdminTranslator } from '../admin-copy';
 import type { PluralForms } from '../plurals';
 import type { ConsoleChromeCopy } from './common-copy';
+import type { BackerTicketCopy, RefundBankDetailsCopy } from './people-copy';
 
 /**
  * The words the console's money screens draw — issue #324, epic #259.
@@ -633,6 +634,12 @@ export interface RefundConsoleCopy extends ConsoleChromeCopy {
   readonly state: Readonly<Record<RefundState, string>>;
   readonly reason: Readonly<Record<RefundReason, string>>;
   readonly bank: RefundBankTransferCopy;
+  /**
+   * #416: support's half, on a refund waiting for bank details — the backer's ticket and the
+   * account recorded from it. The support console's own keys, because they are its forms.
+   */
+  readonly backerTicket: BackerTicketCopy;
+  readonly bankDetails: RefundBankDetailsCopy;
 }
 
 /**
@@ -773,6 +780,8 @@ export function refundConsoleCopyFrom(
       routedBody: String(t.raw('screens.refunds.routedBody')),
       errors: t.raw('screens.refunds.errors') as Readonly<Record<string, string>>,
     },
+    backerTicket: t.raw('screens.support.backerTicket') as BackerTicketCopy,
+    bankDetails: t.raw('screens.support.bankDetails') as RefundBankDetailsCopy,
   };
 }
 

@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   listTickets,
+  raiseBackerTicket,
   readTicket,
   readTicketQueue,
   type Ticket,
@@ -32,7 +33,13 @@ const COPY = supportConsoleCopyFrom(ADMIN, consoleChromeCopyFrom(ADMIN, translat
 
 vi.mock('../../lib/admin/tickets', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../lib/admin/tickets')>();
-  return { ...actual, readTicketQueue: vi.fn(), listTickets: vi.fn(), readTicket: vi.fn() };
+  return {
+    ...actual,
+    readTicketQueue: vi.fn(),
+    listTickets: vi.fn(),
+    readTicket: vi.fn(),
+    raiseBackerTicket: vi.fn(),
+  };
 });
 
 /* #414's picker searches the account directory, which is a different module and an audited
@@ -50,6 +57,7 @@ const readTicketMock = vi.mocked(readTicket);
 const recordDetailsMock = vi.mocked(recordRefundBankDetails);
 const listTicketsMock = vi.mocked(listTickets);
 const listUsersMock = vi.mocked(listUsers);
+const raiseMock = vi.mocked(raiseBackerTicket);
 
 const COLLEAGUE: AdminUser = {
   id: 'cccccccc-0000-4000-8000-000000000001',
@@ -393,5 +401,103 @@ describe('the refund bank account on a pledge ticket (#400)', () => {
 
     await screen.findByText(COPY.replyLabel);
     expect(screen.queryByRole('button', { name: WORDS.open })).not.toBeInTheDocument();
+  });
+});
+
+/* -------------------------------------------------------------------------
+ * #416: a ticket raised for a backer who wrote in somewhere else.
+ * ---------------------------------------------------------------------- */
+
+const RAISE = COPY.backerTicket;
+const RAISED: Ticket = {
+  ...TICKET,
+  id: '99999999-0000-4000-8000-000000000001',
+  subject: RAISE.subjectDefault,
+  subjectRef: PLEDGE_ID,
+  priority: 'NORMAL',
+};
+
+function showConsole(membership: StaffMembership = supporter()): void {
+  render(
+    <ConsoleMembershipProvider given={{ status: 'ready', membership }}>
+      <SupportConsole copy={COPY} />
+    </ConsoleMembershipProvider>,
+  );
+}
+
+async function raiseFor(pledge: string, said = 'On WhatsApp, 2026-10-12: please send my refund to my bank.'): Promise<void> {
+  await userEvent.click(await screen.findByRole('button', { name: RAISE.open }));
+  await userEvent.type(screen.getByLabelText(new RegExp(RAISE.pledgeLabel)), pledge);
+  await userEvent.type(screen.getByLabelText(new RegExp(RAISE.bodyLabel)), said);
+  await userEvent.click(screen.getByRole('button', { name: RAISE.raise }));
+}
+
+describe('a ticket for a backer who wrote in elsewhere (#416)', () => {
+  it('raises it from the pledge alone, then records the account against the new ticket', async () => {
+    raiseMock.mockResolvedValue({ ticket: RAISED, messages: [] });
+    recordDetailsMock.mockResolvedValue(parts());
+    showConsole();
+    await screen.findByText('My card was refused four times');
+    const readsBefore = readTicketQueueMock.mock.calls.length;
+
+    await raiseFor(PLEDGE_ID);
+
+    /* No requester is chosen here: the service raises it for whoever made the pledge. */
+    expect(raiseMock).toHaveBeenCalledWith({
+      pledgeId: PLEDGE_ID,
+      subject: RAISE.subjectDefault,
+      body: 'On WhatsApp, 2026-10-12: please send my refund to my bank.',
+    });
+    expect(
+      await screen.findByText(fillPlaceholders(RAISE.raisedBody, { id: RAISED.id.slice(0, 8) })),
+    ).toBeInTheDocument();
+    /* The queue is read again, so the new ticket is in it. */
+    await waitFor(() => expect(readTicketQueueMock.mock.calls.length).toBeGreaterThan(readsBefore));
+
+    await fillIn('DE89370400440532013000');
+
+    expect(recordDetailsMock).toHaveBeenCalledWith(PLEDGE_ID, {
+      iban: 'DE89370400440532013000',
+      holderName: 'Aysel Məmmədova',
+      ticketId: RAISED.id,
+    });
+    expect(await screen.findByText(WORDS.savedTitle)).toBeInTheDocument();
+  });
+
+  it('refuses a truncated pledge identifier before sending anything', async () => {
+    showConsole();
+
+    await raiseFor(PLEDGE_ID.slice(0, 30));
+
+    expect(raiseMock).not.toHaveBeenCalled();
+    const field = screen.getByLabelText(new RegExp(RAISE.pledgeLabel));
+    expect(field).toHaveAttribute('aria-invalid', 'true');
+    expect(await screen.findByText(RAISE.pledgeInvalid)).toBeInTheDocument();
+  });
+
+  it('cannot be sent until it says what the backer said', async () => {
+    showConsole();
+
+    await userEvent.click(await screen.findByRole('button', { name: RAISE.open }));
+    await userEvent.type(screen.getByLabelText(new RegExp(RAISE.pledgeLabel)), PLEDGE_ID);
+
+    expect(screen.getByRole('button', { name: RAISE.raise })).toBeDisabled();
+  });
+
+  it('words a pledge the service cannot find', async () => {
+    raiseMock.mockRejectedValue(new ApiError(404, { code: 'PLEDGE_NOT_FOUND', title: 'No such pledge' }));
+    showConsole();
+
+    await raiseFor(PLEDGE_ID);
+
+    expect(await screen.findByText(RAISE.errors['PLEDGE_NOT_FOUND'] ?? '')).toBeInTheDocument();
+    expect(screen.getByText(RAISE.failedTitle)).toBeInTheDocument();
+  });
+
+  it('is not offered to a reader without HANDLE_SUPPORT', async () => {
+    showConsole(supporter(['CURATOR']));
+
+    await screen.findByText('My card was refused four times');
+    expect(screen.queryByRole('button', { name: RAISE.open })).not.toBeInTheDocument();
   });
 });

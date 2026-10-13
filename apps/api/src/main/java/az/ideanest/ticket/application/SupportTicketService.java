@@ -4,6 +4,7 @@ import az.ideanest.audit.AuditAction;
 import az.ideanest.audit.AuditActor;
 import az.ideanest.audit.AuditLog;
 import az.ideanest.audit.AuditOutcome;
+import az.ideanest.pledge.application.PledgeRefunds;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.ticket.domain.SupportTicket;
@@ -62,6 +63,7 @@ public class SupportTicketService {
     private final SupportTicketRepository tickets;
     private final TicketMessageRepository messages;
     private final UserAccounts accounts;
+    private final PledgeRefunds pledges;
     private final PlatformStaff staff;
     private final AuditLog audit;
     private final Clock clock;
@@ -70,12 +72,14 @@ public class SupportTicketService {
             SupportTicketRepository tickets,
             TicketMessageRepository messages,
             UserAccounts accounts,
+            PledgeRefunds pledges,
             PlatformStaff staff,
             AuditLog audit,
             Clock clock) {
         this.tickets = tickets;
         this.messages = messages;
         this.accounts = accounts;
+        this.pledges = pledges;
         this.staff = staff;
         this.audit = audit;
         this.clock = clock;
@@ -91,7 +95,20 @@ public class SupportTicketService {
      * workflow the platform has today — somebody writes in, and a member of staff records
      * the conversation against their account so that it has the context AD-10 is about.
      *
+     * <p><strong>A ticket about a pledge may leave the requester to the pledge (#416).</strong>
+     * A refund paid by bank transfer is recorded only from a ticket the pledge's backer
+     * raised, and the backer writes in on WhatsApp, where the pledge's reference is what they
+     * quote. So with no requester named, a {@code PLEDGE} ticket is raised for whoever made
+     * that pledge: support starts from the identifier they were given rather than searching
+     * the directory for a person and hoping it is the right one. A requester that is named is
+     * taken as it is — a creator may well write in about somebody else's pledge.
+     *
+     * @param requesterId whose conversation it is, or null to raise a {@code PLEDGE} ticket
+     *     for the pledge's backer
      * @throws UnknownRequesterException when the account named does not exist
+     * @throws RequesterRequiredException when no requester is named on a ticket that is not
+     *     about a pledge
+     * @throws UnknownPledgeException when the requester is left to a pledge that does not exist
      */
     @Transactional
     public TicketFile raise(
@@ -104,22 +121,35 @@ public class SupportTicketService {
             String body) {
 
         staff.requireCapability(staffId, StaffCapability.HANDLE_SUPPORT);
-        accounts.findById(requesterId).orElseThrow(() -> new UnknownRequesterException(requesterId));
+        UUID requester = requesterId != null ? requesterId : backerOf(subjectType, subjectRef);
+        accounts.findById(requester).orElseThrow(() -> new UnknownRequesterException(requester));
 
         Instant now = clock.instant().truncatedTo(ChronoUnit.MICROS);
         SupportTicket ticket =
-                tickets.save(SupportTicket.raised(requesterId, subject, subjectType, subjectRef, priority, now));
+                tickets.save(SupportTicket.raised(requester, subject, subjectType, subjectRef, priority, now));
 
         // The opening message is attributed to the requester, because they are the person
         // who said it — a member of staff transcribing a phone call has not raised a
         // complaint about themselves, and attributing it to staff would make every
         // recorded call look like the platform contacting somebody.
-        messages.save(new TicketMessage(ticket.id(), requesterId, TicketSide.REQUESTER, body, false));
+        messages.save(new TicketMessage(ticket.id(), requester, TicketSide.REQUESTER, body, false));
 
-        record(staffId, ticket.id(), "raised; requester=%s; priority=%s".formatted(requesterId, priority));
-        log.info("Ticket {} raised for {} by {}", ticket.id(), requesterId, staffId);
+        record(
+                staffId,
+                ticket.id(),
+                "raised; requester=%s%s; priority=%s"
+                        .formatted(requester, requesterId == null ? " (the pledge's backer)" : "", priority));
+        log.info("Ticket {} raised for {} by {}", ticket.id(), requester, staffId);
 
         return new TicketFile(ticket, messages.forTicket(ticket.id()));
+    }
+
+    /** Who made the pledge a ticket is about, for a ticket raised without naming its requester. */
+    private UUID backerOf(TicketSubjectType subjectType, UUID subjectRef) {
+        if (subjectType != TicketSubjectType.PLEDGE || subjectRef == null) {
+            throw new RequesterRequiredException();
+        }
+        return pledges.backerOf(subjectRef).orElseThrow(() -> new UnknownPledgeException(subjectRef));
     }
 
     /** AD-10's queue: everything still somebody's work, most urgent first. */
