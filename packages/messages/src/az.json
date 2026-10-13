@@ -46,7 +46,7 @@
   },
   "shell": {
     "skipToContent": "Məzmuna keç",
-    "tagline": "Mükafat əsaslı kütləvi maliyyələşdirmə. Müəlliflər kampaniyalarını yerləşdirir, dəstəkçilər dəstək olur, hədəfinin 80%-ini toplamayan kampaniya isə hər dəstəkçiyə məbləği tam qaytarır.",
+    "tagline": "Mükafat əsaslı kütləvi maliyyələşdirmə. Müəlliflər kampaniyalarını yerləşdirir, dəstəkçilər dəstək olur, hədəfinin 80%-ini toplamayan kampaniya isə hər dəstəkçiyə məbləği ödəniş provayderinin komissiyası çıxılmaqla qaytarır.",
     "nav": {
       "label": "Əsas",
       "discover": "Kəşf et",
@@ -255,7 +255,7 @@
         "metaTitle": "Dəstəkləriniz",
         "metaDescription": "Dəstəklədiyiniz bütün kampaniyalar və seçdikləriniz.",
         "title": "Dəstəkləriniz",
-        "intro": "Dəstəklədiyiniz bütün kampaniyalar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, tam qaytarılır. Kampaniya dəstək qəbul etdiyi müddətdə dəstəyinizi artıra bilərsiniz — yalnız fərq tutulur — lakin onu azalda və ya geri götürə bilməzsiniz."
+        "intro": "Dəstəklədiyiniz bütün kampaniyalar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, ödəniş provayderinin komissiyası çıxılmaqla qaytarılır. Kampaniya dəstək qəbul etdiyi müddətdə dəstəyinizi artıra bilərsiniz — yalnız fərq tutulur — lakin onu azalda və ya geri götürə bilməzsiniz."
       },
       "campaigns": {
         "metaTitle": "Kampaniyalarım",
@@ -309,7 +309,7 @@
         "metaTitle": "Dəstəyiniz",
         "metaDescription": "Nə seçdiniz, məbləği nə qədərdir və onu necə artırmaq olar.",
         "title": "Dəstəyiniz",
-        "intro": "Nə seçdiniz, məbləği nə qədərdir və onu necə artırmaq olar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, tam qaytarılır. Ödənilmiş dəstəyi artıranda yalnız fərq dərhal tutulur."
+        "intro": "Nə seçdiniz, məbləği nə qədərdir və onu necə artırmaq olar. Dəstək edildiyi anda pul tutulur və kampaniya uğursuz olarsa, ödəniş provayderinin komissiyası çıxılmaqla qaytarılır. Ödənilmiş dəstəyi artıranda yalnız fərq dərhal tutulur."
       }
     },
     "fulfilment": {
@@ -425,7 +425,7 @@
         "loading": "Dəstəkləriniz yüklənir",
         "failedTitle": "Dəstəkləriniz yüklənə bilmədi",
         "emptyTitle": "Hələ heç nəyi dəstəkləməmisiniz",
-        "emptyBody": "Etdiyiniz hər dəstək burada görünür — nə seçdiyiniz və nə qədər tutulduğu ilə birlikdə. Dəstəyin məbləği onu təsdiqlədiyiniz anda tutulur; kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pul tam geri qaytarılır.",
+        "emptyBody": "Etdiyiniz hər dəstək burada görünür — nə seçdiyiniz və nə qədər tutulduğu ilə birlikdə. Dəstəyin məbləği onu təsdiqlədiyiniz anda tutulur; kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pul ödəniş provayderinin komissiyası çıxılmaqla geri qaytarılır.",
         "browse": "Kampaniyalara bax",
         "noReward": "Mükafatsız dəstək",
         "byCreator": "müəllif: {creator}",
@@ -455,7 +455,7 @@
         "lockedBody": "Dəstək verilərkən dəyişdirilə bilər. Ödənildikdən sonra isə kampaniya dəstək qəbul etdiyi müddətdə yalnız artırıla bilər — azaldıla və ya geri götürülə bilməz — və yalnız fərq tutulur. Bunun vəziyyəti: {state}. Ya dəstək həmin mərhələni keçib, ya da kampaniya artıq dəstək qəbul etmir, ona görə həmin idarəetmələr təklif olunmur. Burada nəsə səhvdirsə, kampaniyanın müəllifinə müraciət edin.",
         "raiseReturned": {
           "raisedTitle": "Dəstəyiniz artırıldı",
-          "raisedBody": "Fərq ödənildi və bu səhifədəki rəqəmlərə daxildir. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, ödədiyiniz hər şey tam qaytarılır.",
+          "raisedBody": "Fərq ödənildi və bu səhifədəki rəqəmlərə daxildir. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, ödədiyiniz hər şey ödəniş provayderinin komissiyası çıxılmaqla qaytarılır.",
           "failedTitle": "Artırma baş tutmadı",
           "failedBody": "Heç nə tutulmadı və dəstəyiniz əvvəlki kimi qalır. Kampaniya dəstək qəbul etdiyi müddətdə yenidən cəhd edə bilərsiniz.",
           "heldBody": "Ödəniş keçmədi və heç nə tutulmadı. Dəstəyiniz əvvəlki kimi qalır, başladığınız ödəniş isə bu vaxtadək açıq qalır: {time}. Ondan sonra yenidən başlaya bilərsiniz.",
@@ -484,7 +484,7 @@
         "save": "Dəyişiklikləri saxla",
         "noChanges": "Hələ heç nə dəyişdirilməyib.",
         "savedTitle": "Dəstəyiniz yeniləndi",
-        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Dəyişiklik saxlanarkən kartınızdan heç nə tutulmadı. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, hər dəstəkçiyə pul tam geri qaytarılır.",
+        "savedBody": "Yuxarıdakı rəqəmlər bu səhifənin hesablaması deyil, xidmətin özünündür. Dəyişiklik saxlanarkən kartınızdan heç nə tutulmadı. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, hər dəstəkçiyə pul ödəniş provayderinin komissiyası çıxılmaqla qaytarılır.",
         "raiseHeading": "Bu dəstəyi artır",
         "raiseIntro": "Bu dəstək ödənilib. Kampaniya dəstək qəbul etdiyi müddətdə onu artıra bilərsiniz — daha yüksək pillə, daha çox əlavə və ya daha böyük məbləğ — lakin azalda bilməzsiniz. Yalnız fərq ödəniş provayderinin səhifəsində tutulur və dəstəyiniz həmin ödəniş keçəndən sonra dəyişir.",
         "raiseDue": "İndi ödəniləcək məbləğ: {amount}",
@@ -3400,7 +3400,7 @@
   },
   "auth": {
     "layout": {
-      "footer": "Mükafat əsaslı kollektiv maliyyələşdirmə. Hədəfinin 80%-ini toplamayan kampaniya hər dəstəkçiyə məbləği tam qaytarır."
+      "footer": "Mükafat əsaslı kollektiv maliyyələşdirmə. Hədəfinin 80%-ini toplamayan kampaniya hər dəstəkçiyə məbləği ödəniş provayderinin komissiyası çıxılmaqla qaytarır."
     },
     "loadingForm": "Forma yüklənir…",
     "checkingLink": "Keçid yoxlanılır…",
@@ -3926,7 +3926,7 @@
       "heading": "Ödəniş",
       "none": "Ödənişi ödəniş provayderinin səhifəsində edirsiniz",
       "body": "Davam etdikdə ödəniş provayderinin təhlükəsiz səhifəsi açılır və kartınızı orada daxil edirsiniz. Kart məlumatları heç vaxt IdeyaNest-də daxil edilmir və dəstəyinizin məbləği orada bir dəfə tutulur.",
-      "later": "Kampaniya hədəfinin 80%-ini toplamasa, ləğv edilsə və ya dayandırılsa, dəstəyiniz sizə tam qaytarılır."
+      "later": "Kampaniya hədəfinin 80%-ini toplamasa, ləğv edilsə və ya dayandırılsa, dəstəyiniz ödəniş provayderinin komissiyası çıxılmaqla qaytarılır, çünki provayder bu komissiyanı geri vermir. IdeyaNest-in öz komissiyası çıxılmır."
     },
     "anonymous": {
       "label": "Anonim dəstək olun",
@@ -4087,7 +4087,7 @@
     },
     "returned": {
       "paidTitle": "Dəstəyiniz ödənildi",
-      "paidBody": "Ödəniş keçdi və kampaniya dəstəyinizi aldı. Kampaniya uğurlu olmasa, məbləğ sizə tam qaytarılır.",
+      "paidBody": "Ödəniş keçdi və kampaniya dəstəyinizi aldı. Kampaniya uğurlu olmasa, məbləğ ödəniş provayderinin komissiyası çıxılmaqla sizə qaytarılır.",
       "waitingTitle": "Ödənişin təsdiqi gözlənilir",
       "waitingBody": "Ödəniş provayderi hələ nəticəni bildirməyib. Bu səhifə bir dəqiqə ərzində yenidən yoxlayır; ikinci dəfə ödəməyiniz lazım deyil.",
       "failedTitle": "Ödəniş keçmədi",
@@ -4281,10 +4281,10 @@
     },
     "trust": {
       "heading": "Maliyyələşdirmə burada necə işləyir",
-      "body": "Platforma müəlliflərlə dəstəkçiləri bir araya gətirir. Mükafatlar zəmanətli deyil, lakin müəlliflər dəstəkçiləri məlumatlandırmalıdır. Pul dəstək olduğunuz anda tutulur və layihə hədəfinin 80%-ini toplamasa, sizə tam qaytarılır.",
-      "open": "Bu kampaniya <deadline></deadline> tarixinədək <b>{threshold}</b> — {goal} hədəfinin 80%-i — toplasa, uğurlu sayılır. Toplamasa və uzadılmasa, hər dəstəkçiyə məbləğ tam qaytarılır.",
-      "openNoGoal": "Bu kampaniya <deadline></deadline> tarixinədək hədəfinin 80%-ini toplasa, uğurlu sayılır. Toplamasa və uzadılmasa, hər dəstəkçiyə məbləğ tam qaytarılır.",
-      "closed": "Bu kampaniyanın son tarixi <deadline></deadline> idi. Son tarixinədək və ya yeganə uzadılmasının sonunadək hədəfinin 80%-ini toplamayan kampaniya hər dəstəkçiyə məbləği tam qaytarır."
+      "body": "Platforma müəlliflərlə dəstəkçiləri bir araya gətirir. Mükafatlar zəmanətli deyil, lakin müəlliflər dəstəkçiləri məlumatlandırmalıdır. Pul dəstək olduğunuz anda tutulur və layihə hədəfinin 80%-ini toplamasa, ödəniş provayderinin komissiyası çıxılmaqla sizə qaytarılır.",
+      "open": "Bu kampaniya <deadline></deadline> tarixinədək <b>{threshold}</b> — {goal} hədəfinin 80%-i — toplasa, uğurlu sayılır. Toplamasa və uzadılmasa, hər dəstəkçiyə məbləğ ödəniş provayderinin komissiyası çıxılmaqla qaytarılır.",
+      "openNoGoal": "Bu kampaniya <deadline></deadline> tarixinədək hədəfinin 80%-ini toplasa, uğurlu sayılır. Toplamasa və uzadılmasa, hər dəstəkçiyə məbləğ ödəniş provayderinin komissiyası çıxılmaqla qaytarılır.",
+      "closed": "Bu kampaniyanın son tarixi <deadline></deadline> idi. Son tarixinədək və ya yeganə uzadılmasının sonunadək hədəfinin 80%-ini toplamayan kampaniya hər dəstəkçiyə məbləği ödəniş provayderinin komissiyası çıxılmaqla qaytarır."
     },
     "obligation": {
       "lateHeading": "Bu müəllifin yenilənmə borcu var",
@@ -4302,7 +4302,7 @@
       "summary": "{date} tarixində {backers, plural, other {# dəstəkçidən}} <b>{pledged}</b> topladı; hədəfi {goal} idi.",
       "summaryUndated": "{backers, plural, other {# dəstəkçidən}} <b>{pledged}</b> topladı; hədəfi {goal} idi.",
       "settling": "Yuxarıdakı rəqəmlər kampaniyanın bağlandığı anda topladığı məbləğdir. Ondan sonrakı geri qaytarma müəllifə ödəniləni azaldır, nəticəni isə dəyişmir.",
-      "refunded": "Hər dəstəkçiyə məbləğ tam qaytarılır. Hədəfinin 80%-ini toplamayan kampaniya heç bir komissiya ödəmir."
+      "refunded": "Hər dəstəkçiyə məbləğ ödəniş provayderinin komissiyası çıxılmaqla qaytarılır. Hədəfinin 80%-ini toplamayan kampaniya heç bir komissiya ödəmir."
     },
     "faqs": {
       "heading": "Tez-tez verilən suallar",
@@ -4462,7 +4462,7 @@
       "subcategoryHintNone": "Bu kateqoriyanın alt kateqoriyası yoxdur.",
       "subcategoryHint": "İstəyə bağlı, amma daha dəqiq.",
       "goal": "Maliyyə hədəfi",
-      "goalHint": "Kampaniya bu məbləğin 80%-ində uğurlu sayılır. Ondan az olarsa, hər dəstəkçiyə məbləğ tam qaytarılır.",
+      "goalHint": "Kampaniya bu məbləğin 80%-ində uğurlu sayılır. Ondan az olarsa, hər dəstəkçiyə məbləğ ödəniş provayderinin komissiyası çıxılmaqla qaytarılır.",
       "goalHintLocked": "Kampaniya başladıqdan sonra hədəfi dəyişmək olmaz.",
       "currency": "Valyuta",
       "currencyHint": "Kampaniya başlayanda sabitlənir.",
@@ -5329,10 +5329,10 @@
       "metaDescription": "IdeyaNest nədir, hədəfin 80%-ində uğur necə işləyir və nəyə başa gəlir.",
       "title": "IdeyaNest haqqında",
       "summary": "Hələ mövcud olmayan şeyləri maliyyələşdirmək üçün yer — şərtlər hamı üçün eynidir.",
-      "intro": "IdeyaNest mükafat əsaslı kütləvi maliyyələşdirmə platformasıdır. Müəllif hədəfi və son tarixi olan kampaniya yerləşdirir; həmin şeyin var olmasını istəyənlər ona dəstək olur və pul elə o an tutulur; kampaniya hədəfinin ən azı 80%-ini toplasa, müəllif vəsaiti çıxarır və həmin şeyi hazırlayır. Toplamasa, hər dəstəkçiyə məbləğ tam qaytarılır.",
+      "intro": "IdeyaNest mükafat əsaslı kütləvi maliyyələşdirmə platformasıdır. Müəllif hədəfi və son tarixi olan kampaniya yerləşdirir; həmin şeyin var olmasını istəyənlər ona dəstək olur və pul elə o an tutulur; kampaniya hədəfinin ən azı 80%-ini toplasa, müəllif vəsaiti çıxarır və həmin şeyi hazırlayır. Toplamasa, hər dəstəkçiyə məbləğ ödəniş provayderinin komissiyası çıxılmaqla qaytarılır.",
       "allOrNothing": {
         "heading": "80%-də uğur və bu həddin səbəbi",
-        "first": "Hədəfinin 80%-ini toplayan kampaniya uğurlu sayılır və müəllif kampaniyanın neçə faizlə bağlanmasından asılı olmayaraq bütün mükafatları bütün dəstəkçilərə çatdırmalıdır. Ondan az məbləğə arxalanmaq olmaz, ona görə belə kampaniya uğursuz sayılır, müəllifinə heç bir komissiyaya başa gəlmir və hər dəstəkçiyə məbləğ tam qaytarılır.",
+        "first": "Hədəfinin 80%-ini toplayan kampaniya uğurlu sayılır və müəllif kampaniyanın neçə faizlə bağlanmasından asılı olmayaraq bütün mükafatları bütün dəstəkçilərə çatdırmalıdır. Ondan az məbləğə arxalanmaq olmaz, ona görə belə kampaniya uğursuz sayılır, müəllifinə heç bir komissiyaya başa gəlmir və hər dəstəkçiyə məbləğ ödəniş provayderinin komissiyası çıxılmaqla qaytarılır, çünki provayder bu komissiyanı geri vermir.",
         "second": "Son tarix yenə də məna daşıyır. Müəllif onu bir dəfə, ilk son tarixdən ən çoxu altmış gün sonrasınadək uzada bilər və dəstəkçilərə yeni tarix bildirilir. Bunun sonunda 80%-dən aşağı qalan kampaniyanın vəsaiti qaytarılır və platforma bunu bəzəmədən deyir."
       },
       "cost": {
@@ -5365,7 +5365,7 @@
       "backing": {
         "heading": "Əgər nəyisə dəstəkləyirsinizsə",
         "first": "Mükafat pilləsi seçin və ya mükafatsız dəstək olun. <b>Pul dəstək olduğunuz anda tutulur</b> və platformanın hesabında saxlanılır. Dəstəyi ləğv etmək və ya azaltmaq olmur; kampaniya dəstək qəbul etdiyi müddətdə onu daha yüksək pillə, əlavə və ya daha böyük məbləğlə artıra bilərsiniz, bu zaman yalnız fərq dərhal tutulur.",
-        "second": "Kampaniya hədəfinin 80%-ində uğurlu sayılır. Müəllif o andan vəsaiti çıxara və ya son tarixi bir dəfə uzada bilər. Kampaniya son tarixinədək və ya uzadılmanın sonunadək 80%-ə çatmasa, hər dəstəkçiyə məbləğ tam qaytarılır və heç bir komissiya tutulmur.",
+        "second": "Kampaniya hədəfinin 80%-ində uğurlu sayılır. Müəllif o andan vəsaiti çıxara və ya son tarixi bir dəfə uzada bilər. Kampaniya son tarixinədək və ya uzadılmanın sonunadək 80%-ə çatmasa, hər dəstəkçiyə məbləğ ödəniş provayderinin komissiyası çıxılmaqla qaytarılır, IdeyaNest isə öz komissiyasını tutmur.",
         "third": "Müəllif vəsaiti çıxardıqdan sonra ödəniş on dörd gün saxlanılır. Bu müddətdə dəstəkçi ödənişinə etiraz edə bilər və qərarı administrator verir; qəbul edilən etiraz üzrə məbləğ tam qaytarılır."
       },
       "surveys": {
@@ -5413,7 +5413,7 @@
       },
       "money": {
         "heading": "Pulunuz",
-        "first": "Kart məlumatları heç vaxt IdeyaNest-in öz serverlərinə çatmır; ödənişlər provayderin öz sahələri üzrə keçir. Dəstəyinizi təsdiqlədiyiniz anda pul tutulur və platformanın hesabında saxlanılır. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pulunuz tam geri qaytarılır.",
+        "first": "Kart məlumatları heç vaxt IdeyaNest-in öz serverlərinə çatmır; ödənişlər provayderin öz sahələri üzrə keçir. Dəstəyinizi təsdiqlədiyiniz anda pul tutulur və platformanın hesabında saxlanılır. Kampaniya uğursuz olsa, dayandırılsa və ya ləğv edilsə, pulunuz ödəniş provayderinin komissiyası çıxılmaqla qaytarılır: provayder bu komissiyanı hər ödənişdə tutur və geri vermir.",
         "second": "Hər ödəniş əməliyyatı idempotentdir — bu, cazibədar görünməyən, lakin ən vacib xassədir: əlaqə kəsildiyi üçün təkrarlanan sorğu iki deyil, bir dəstək və bir tutulma yaradır."
       },
       "account": {

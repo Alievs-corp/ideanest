@@ -229,10 +229,10 @@ describe('the public pages’ money sentences in every language', () => {
   });
 
   it.each([
-    ['en', en, /charged when you confirm it[\s\S]*refunded in full/u],
-    ['az', az, /təsdiqlədiyiniz anda pul tutulur[\s\S]*tam geri qaytarılır/u],
-    ['ru', ru, /списываются, когда вы подтверждаете взнос[\s\S]*вернут взнос полностью/u],
-    ['tr', tr, /onayladığınız anda tahsil edilir[\s\S]*tamamı size iade edilir/u],
+    ['en', en, /charged when you confirm it[\s\S]*refunded less the payment provider's fee/u],
+    ['az', az, /təsdiqlədiyiniz anda pul tutulur[\s\S]*ödəniş provayderinin komissiyası çıxılmaqla qaytarılır/u],
+    ['ru', ru, /списываются, когда вы подтверждаете взнос[\s\S]*вернут взнос за вычетом комиссии платёжного провайдера/u],
+    ['tr', tr, /onayladığınız anda tahsil edilir[\s\S]*komisyonu düşülerek size iade edilir/u],
   ] as const)('says on Trust and safety that a pledge is charged at confirmation in %s', (_, catalogue, said) => {
     expect(catalogue.static.trustSafety.money.first).toMatch(said);
   });

@@ -365,8 +365,8 @@ describe('the trust block', () => {
     expect(screen.getByText(TRUST_COPY)).toBeInTheDocument();
     expect(TRUST_COPY).toBe(
       'The platform connects creators with backers. Rewards are not guaranteed, but creators ' +
-        'must keep backers informed. You are charged when you pledge, and refunded in full if the ' +
-        'project does not raise 80% of its goal.',
+        'must keep backers informed. You are charged when you pledge, and refunded, less the payment ' +
+        "provider's fee, if the project does not raise 80% of its goal.",
     );
   });
 
@@ -376,7 +376,7 @@ describe('the trust block', () => {
     // IDN-EXT-01 (#44): the amount to raise is 80% of the goal, and the goal is named beside it.
     expect(screen.getByText('8,000.00 AZN')).toBeInTheDocument();
     expect(container.textContent).toContain('80% of its 10,000.00 AZN goal');
-    expect(container.textContent).toContain('every backer is refunded in full');
+    expect(container.textContent).toContain("every backer is refunded less the payment provider's fee");
     expect(container.textContent).not.toMatch(/all or nothing/iu);
 
     // The words are a presentation of the instant; the `datetime` is the fact.

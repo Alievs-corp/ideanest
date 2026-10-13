@@ -287,7 +287,7 @@ describe('the outcome notice', () => {
     );
 
     expect(screen.getByRole('heading', { name: /was not funded/ })).toBeInTheDocument();
-    expect(screen.getByText(/Every backer is refunded in full/)).toBeInTheDocument();
+    expect(screen.getByText(/Every backer is refunded, less the payment provider's fee/)).toBeInTheDocument();
   });
 
   it('renders nothing while the campaign is still running', async () => {

@@ -289,7 +289,7 @@ describe('the editor’s account of the money', () => {
       expect(sentence).not.toMatch(/when the campaign closes|collection happens|nothing has been charged/iu);
     }
     expect(EDITOR.intro).toMatch(/only be raised/u);
-    expect(EDITOR.savedBody).toMatch(/refunded in full/u);
+    expect(EDITOR.savedBody).toMatch(/refunded, less the payment provider's fee/u);
   });
 });
 
