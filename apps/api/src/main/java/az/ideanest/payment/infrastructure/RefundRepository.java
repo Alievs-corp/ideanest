@@ -39,6 +39,14 @@ import org.springframework.transaction.annotation.Transactional;
  * did, and during a rolling deploy it still can after V85 has run. Whether that reversal happened is
  * unknown, so every sum here counts it as gone until {@link #reopenUnreachable} hands it to the
  * reconciliation; counted as failed, the next refund would send the same money again.
+ *
+ * <p><strong>What a refund settles is its amount and its withheld fee (#436).</strong> A failed
+ * campaign's refund of a charge taken under that rule sends the charge back less the provider's fee
+ * and records the fee as {@code withheld_fee}. Every sum here that decides what a charge or a pledge
+ * has left adds the two, so a net refund leaves nothing: the sweep does not offer the fee again, the
+ * overdraft check does not let a staff refund send it, and the pledge is refunded in full when the
+ * net refund settles. {@code withheld_fee} is zero on every other refund, so those sums are unchanged
+ * for them.
  */
 public interface RefundRepository extends JpaRepository<Refund, UUID> {
 
@@ -49,10 +57,12 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
      * here would be compared against an amount by whichever caller forgot, and the
      * comparison that silently succeeds is the one that lets a second full refund
      * through.
+     *
+     * <p>With each refund's withheld fee (#436): money the refund settled without sending.
      */
     @Query(
             """
-            SELECT COALESCE(SUM(r.amount), 0) FROM Refund r
+            SELECT COALESCE(SUM(r.amount + r.withheldFee), 0) FROM Refund r
             WHERE r.pledgeId = :pledgeId
               AND (r.state <> az.ideanest.payment.domain.RefundState.FAILED
                    OR r.failureCode = 'provider_unreachable')
@@ -64,11 +74,11 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
      *
      * <p>A raised pledge was paid for in more than one charge and a provider reverses each on its own,
      * so what one charge has left is asked of that charge. {@code FAILED} refunds excluded, for
-     * {@link #refundedAgainst}'s reason.
+     * {@link #refundedAgainst}'s reason, and withheld fees counted, for its other (#436).
      */
     @Query(
             """
-            SELECT COALESCE(SUM(r.amount), 0) FROM Refund r
+            SELECT COALESCE(SUM(r.amount + r.withheldFee), 0) FROM Refund r
             WHERE r.chargeTransactionId = :chargeId
               AND (r.state <> az.ideanest.payment.domain.RefundState.FAILED
                    OR r.failureCode = 'provider_unreachable')
@@ -76,15 +86,31 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
     BigDecimal refundedAgainstCharge(@Param("chargeId") UUID chargeId);
 
     /**
+     * How much of one charge's provider fee a refund not failed has already kept back — #436. At most the
+     * fee: only a campaign-outcome refund withholds it, and only what its charge has not had withheld yet.
+     */
+    @Query(
+            """
+            SELECT COALESCE(SUM(r.withheldFee), 0) FROM Refund r
+            WHERE r.chargeTransactionId = :chargeId
+              AND (r.state <> az.ideanest.payment.domain.RefundState.FAILED
+                   OR r.failureCode = 'provider_unreachable')
+            """)
+    BigDecimal withheldAgainstCharge(@Param("chargeId") UUID chargeId);
+
+    /**
      * How much has actually gone back on one pledge: its {@code SUCCEEDED} refunds only — #171.
      *
      * <p>What decides that a pledge is refunded in full. Unlike {@link #refundedAgainst}, a refund
      * still in flight does not count: it may yet fail, and a pledge must not be taken out of its
      * campaign's figures for money that has not left.
+     *
+     * <p>With each settled refund's withheld fee (#436): a pledge refunded net of the provider's fee is
+     * refunded in full, because the fee is what the provider kept when the charge was taken.
      */
     @Query(
             """
-            SELECT COALESCE(SUM(r.amount), 0) FROM Refund r
+            SELECT COALESCE(SUM(r.amount + r.withheldFee), 0) FROM Refund r
             WHERE r.pledgeId = :pledgeId
               AND r.state = az.ideanest.payment.domain.RefundState.SUCCEEDED
             """)
@@ -126,11 +152,14 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
      * left out of the payout's gross ({@code PaymentTransactionRepository#settledChargesOfProject}),
      * because it is owed back and never the creator's; subtracting its refund as well would take it
      * out twice. Native for that join, which reads the pledge module's table.
+     *
+     * <p><strong>With the provider fees refunds withheld (#436).</strong> A charge refunded net of its fee
+     * is settled: the platform never received the fee, so it is not the creator's either.
      */
     @Query(
             value =
                     """
-                    SELECT COALESCE(SUM(r.amount), 0) FROM refunds r
+                    SELECT COALESCE(SUM(r.amount + r.withheld_fee), 0) FROM refunds r
                       LEFT JOIN transactions t ON t.id = r.charge_transaction_id
                       LEFT JOIN pledge_raises rs ON rs.charge_key = t.idempotency_key
                      WHERE r.project_id = :projectId
@@ -152,8 +181,13 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
      * whatever the campaign's state: it bought nothing.
      *
      * <p>A charge is offered while it has money left: its amount less every refund against it that has
-     * not failed. A refund in flight counts as gone, so nothing is sent twice, and a charge refunded in
-     * part — by a member of staff, say — is offered for the rest. One whose last refund failed more
+     * not failed, each with its withheld fee — and, for a charge taken under #436's rule that a failed or
+     * halted campaign refunds less the provider's fee, less the part of the fee posted with it to
+     * {@code psp_fee} that no refund has withheld yet. The same arithmetic as
+     * {@code RefundRecords#recordForCharge}; were they to differ, a charge that has nothing owed would be
+     * offered on every pass and take a place in each batch. A refund in flight counts as gone, so
+     * nothing is sent twice, and a charge refunded in part — by a member of staff, say — is offered
+     * for the rest. One whose last refund failed more
      * recently than the retry interval waits. A pledge with a refund that names no charge — V53 allows
      * one, and nothing writes one — is left to staff rather than refunded again beside money that
      * cannot be placed. Rows of charge id, pledge id and the refund reason's
@@ -175,9 +209,22 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
                        AND t.status = 'SUCCEEDED'
                        AND t.pledge_id IS NOT NULL
                        AND (rs.state = 'UNAPPLIED' OR p.state IN ('UNSUCCESSFUL', 'CANCELED', 'SUSPENDED'))
-                       AND t.amount > (SELECT COALESCE(SUM(r.amount), 0) FROM refunds r
+                       AND t.amount > (SELECT COALESCE(SUM(r.amount + r.withheld_fee), 0) FROM refunds r
                                         WHERE r.charge_transaction_id = t.id
                                           AND (r.state <> 'FAILED' OR r.failure_code = 'provider_unreachable'))
+                                    + CASE WHEN t.provider_fee_withheld_on_refund
+                                                AND rs.state IS DISTINCT FROM 'UNAPPLIED'
+                                           THEN GREATEST(
+                                                (SELECT COALESCE(SUM(le.amount), 0) FROM ledger_entries le
+                                                  WHERE le.transaction_id = t.id
+                                                    AND le.account = 'psp_fee'
+                                                    AND le.direction = 'DEBIT')
+                                                - (SELECT COALESCE(SUM(r.withheld_fee), 0) FROM refunds r
+                                                    WHERE r.charge_transaction_id = t.id
+                                                      AND (r.state <> 'FAILED'
+                                                           OR r.failure_code = 'provider_unreachable')),
+                                                0)
+                                           ELSE 0 END
                        AND NOT EXISTS (SELECT 1 FROM refunds r
                                         WHERE r.charge_transaction_id = t.id AND r.state = 'FAILED'
                                           AND r.settled_at > :retryBefore)

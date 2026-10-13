@@ -47,7 +47,9 @@ A **reward-based crowdfunding platform**. Creators publish projects; backers
 pledge money and receive a physical or digital reward in return. The platform
 operates a **threshold** funding model (IDN-EXT-01, §5.1): a backer is charged when
 they pledge, a campaign succeeds at **80% of its goal**, a creator may extend the
-deadline once, and if a campaign ends below 80% every backer is refunded in full.
+deadline once, and if a campaign ends below 80% every backer is refunded: the pledge less
+the payment provider's fee, never the platform's, when it was paid after the backer was
+told so, and in full before that (#436, §9.7).
 It is not all-or-nothing, and must not be described as such.
 
 > **This is not investment.** A backer receives no equity, no share, and no
@@ -87,7 +89,7 @@ Four pillars, observed across established platforms in this category:
 | **Project / Campaign** | A creative undertaking seeking funding |
 | **Creator** | The person or organisation running a project |
 | **Backer** | A user who pledges money to a project |
-| **Pledge** | A backer's commitment to a campaign, charged when the backer confirms it (IDN-EXT-01, §1.1) and refunded in full if the campaign fails, is suspended or is cancelled |
+| **Pledge** | A backer's commitment to a campaign, charged when the backer confirms it (IDN-EXT-01, §1.1) and refunded if the campaign fails, is suspended or is cancelled: less the payment provider's fee when it was paid under #436's rule, otherwise in full (§9.7) |
 | **Reward tier** | A package promised in exchange for a pledge amount |
 | **Add-on** | An extra item purchasable alongside a reward |
 | **Item** | The atomic physical or digital unit rewards are composed from |
@@ -2038,7 +2040,10 @@ Preferences are per category and per channel, with a digest option.
 **The pledge.** A backer's card is charged when the pledge is confirmed, and the
 money is held on the platform's account. A backer **cannot cancel** a pledge; they
 may only **raise** it (a higher tier or more add-ons), and only before the campaign
-stops taking pledges. Every refund is for the **full** amount.
+stops taking pledges. A campaign that fails, is suspended or is cancelled refunds each
+pledge **less the payment provider's fee** when it was paid after the checkout and the
+terms said so, and **in full** when it was paid before; the platform's own fee is never
+deducted (#436, §9.7).
 
 **The thresholds**, measured against the goal, which never changes after launch:
 
@@ -2054,7 +2059,7 @@ for the first deadline:
 ```
 D-7 .. D+7   the Extend control is available, at 50% or more
 D .. D+7     the campaign still takes pledges and is badged "Closing soon"
-D+8          not extended AND below 80%   → UNSUCCESSFUL → every backer refunded in full
+D+8          not extended AND below 80%   → UNSUCCESSFUL → every backer refunded (§9.7)
              not extended AND 80% or more → SUCCESSFUL; the 30 days to withdraw run from D
 ```
 
@@ -2078,8 +2083,12 @@ the 14-day hold, the automatic payout on day 30 + 14, and disputes.
 > deadline's time of day. Each asks before acting and states what it closes or promises; the
 > service applies the window and the thresholds and its `meta.reason` is worded, never guessed.
 
-**Everyone is refunded in full** when: D+8 passes unextended below 80%; an extension
-ends below 80%; a moderator suspends the campaign; the creator cancels it.
+**Everyone is refunded** when: D+8 passes unextended below 80%; an extension
+ends below 80%; a moderator suspends the campaign; the creator cancels it. The refund is the
+pledge **less the payment provider's fee** (Payriff keeps 3%, so 100 AZN refunds 97 AZN) for a
+pledge paid after the checkout and the terms said so, and the **whole pledge** for every one
+paid before. The platform's fee is never deducted: the campaign failed, so the platform
+charges nothing for it (owner, 2026-10-13, #436; §9.7).
 
 **A campaign that has withdrawn at 80% or more owes every reward to every backer**
 (§5.5), whatever percentage between 80 and 100 it closed at.
@@ -2134,7 +2143,7 @@ is withdrawn.
 | Platform fee | **15% of any withdrawal, bank and provider fees included** | Every withdrawal (IDN-EXT-01) |
 | Processing fee | **Inside the 15%** — `processing_rate = 0` | Never charged separately |
 | Small pledge fee | None | — |
-| Unsuccessful project | **Zero** to the creator | The cost of refunding backers is the platform's, on its own expense account |
+| Unsuccessful project | **Zero** to the creator | The platform charges nothing. The payment provider's fee on a refunded pledge is withheld from the refund when the pledge was paid under #436's rule (§9.7); on every earlier pledge it is the platform's cost |
 
 > **15% including the bank replaced "5% plus the bank"** (IDN-EXT-01). A creator reads one
 > number and receives 85% of what they withdraw. The schedule change is #42: `platform_rate =
@@ -2155,7 +2164,9 @@ is withdrawn.
 > the backer receives. The reconciliation adds `platform_expense` to escrow beside `psp_fee`, so a
 > cost with no transaction row of its own still agrees with what moved. The provider's commission on
 > a charge is a different fee, posted to `psp_fee` with the charge (§9.5), and a refund does not
-> reverse it: Payriff keeps it (#387).
+> reverse it: Payriff keeps it (#387). Since #436 a failed or halted campaign's refund of a charge
+> taken under the net rule keeps that fee back from the backer (§9.7); on any other refund the
+> platform bears it.
 
 Rates are configuration, not code — a `fee_schedules` table, so a category or an
 individual agreement can differ without a deployment.
@@ -3924,7 +3935,7 @@ collecting it.
 | Approach | Problem |
 |---|---|
 | **Card authorisation hold** | Holds typically expire after 7 days, occasionally 30. A 30–60 day campaign outlives them. **Unworkable.** |
-| **Charge immediately, refund on failure** | ✅ **The selected approach since IDN-EXT-01.** Its costs are accepted rather than avoided: mass refunds on unsuccessful campaigns (paid by the platform, §5.2), and holding backers' money for up to ~120 days (§22.1) |
+| **Charge immediately, refund on failure** | ✅ **The selected approach since IDN-EXT-01.** Its costs are accepted rather than avoided: mass refunds on unsuccessful campaigns (the provider's fee on each withheld from the refund since #436, §9.7), and holding backers' money for up to ~120 days (§22.1) |
 | **Stored card, charge at close** | **Superseded.** Built (#64, #65) and retired by #39; removed by #45 |
 
 ### 9.2 Card-on-file with merchant-initiated collection
@@ -4403,7 +4414,9 @@ reconciliation's sign check leaves them out. A payout withheld whole against deb
 no transaction and still posts nothing. **The provider's commission is posted with the charge**:
 `ideanest.payment.provider-fees.rates` (Payriff `0.03`, `PAYRIFF_FEE_RATE`) takes it out of escrow
 to `psp_fee`, because it never reaches the platform. A provider with no rate posts none. The
-provider's settlement report stays the authority on the figure.
+provider's settlement report stays the authority on the figure. A failed or halted campaign's
+refund of a charge taken under #436's rule returns the charge less exactly this posted figure,
+so escrow ends at zero for that charge (§9.7).
 
 **Escrow therefore spans two places** — the provider's balance, which collections arrive
 in, and IdeyaNest's bank account, which bank transfers leave from — and the ledger does not
@@ -4502,10 +4515,10 @@ expired cards, limits, and issuer declines.
 
 | Scenario | Outcome (IDN-EXT-01) |
 |---|---|
-| D+8 passes unextended below 80% | **Full refund to every backer** |
-| An extension ends below 80% | **Full refund to every backer** |
-| Creator cancels | **Full refund to every backer.** The halt is built (#103); the refund of charged pledges is #40 |
-| Moderator suspends | **Full refund to every backer.** The same release, from the same event — §4.11's AD-02 |
+| D+8 passes unextended below 80% | **Refund to every backer**, less the payment provider's fee under #436's rule (below) |
+| An extension ends below 80% | **Refund to every backer**, less the payment provider's fee under #436's rule (below) |
+| Creator cancels | **Refund to every backer**, as above. The halt is built (#103); the refund of charged pledges is #40 |
+| Moderator suspends | **Refund to every backer**, as above. The same release, from the same event — §4.11's AD-02 |
 | Backer disputes during the payout hold | An administrator decides; an upheld dispute refunds that backer in full and reduces the payout. **Built (#43)**: `POST /v1/pledges/{id}/disputes` while a payout for the campaign is in flight (409 `DISPUTE_WINDOW_CLOSED` otherwise); `/v1/admin/backer-disputes` queue and `…/{id}/decision` (UPHOLD refunds with `DISPUTE_CONCEDED` and recalculates the payout keeping its hold end; REJECT moves nothing); V79 `backer_disputes`, one open per pledge |
 | Backer changes their mind | **No cancellation.** A pledge may only be raised (§5.1) |
 | After the creator is paid | Nothing is refunded through the platform; a bank chargeback is recovered from the creator (§9.8) |
@@ -4515,9 +4528,49 @@ expired cards, limits, and issuer declines.
 Refunds go out in batches through Epoint's `/reverse`, with the platform's own protection
 against refunding twice, reconciled against the provider's `returned` status (#40).
 
+> **Net of the provider's fee (#436).** The owner decided on 2026-10-13, replacing #387's "the
+> commission Payriff keeps on a refunded charge is a cost the platform accepts": when a campaign
+> ends below 80%, is suspended or is cancelled, the backer gets the pledge back **less the payment
+> provider's fee**. Payriff keeps 3% of a refunded charge, so 100 AZN refunds 97 AZN. The
+> platform's own fee is never deducted. Staff refunds (AD-06), upheld disputes, chargebacks and a
+> raise that could not be applied (`RAISE_NOT_APPLIED`) keep their own amounts.
+>
+> - **The cut-over follows the words, not a date.** Each charge records whether the rule applied
+>   when it was taken: `transactions.provider_fee_withheld_on_refund` (V101), insert-only like the
+>   rest of the row and false on every earlier one. It is written from
+>   `ideanest.payment.refunds.withhold-provider-fee` (`PAYMENT_REFUNDS_WITHHOLD_PROVIDER_FEE`,
+>   **false by default**) when the payment page is opened, which is the moment the backer has read
+>   the checkout, and the settled charge copies it from that page's row. A collection at close
+>   (`CollectionRun`) is always taken under the old words. A refund reads its charge's flag, never
+>   today's setting. The setting is switched on only once the checkout, the terms and the refund
+>   notices say so, and once every node runs V101: a node of the release before reads `amount`
+>   alone and would send the withheld fee.
+> - **The amount.** A campaign refund of a flagged charge sends what the charge has left less the
+>   part of its provider fee no refund has kept back yet. The fee is the figure debited to `psp_fee`
+>   in the charge's own posting (§9.5, `Ledger.debitedTo`), not today's rate applied again, and a
+>   charge with no fee posted is refunded in full. The refund records what it kept back as
+>   `refunds.withheld_fee`; `amount` stays what was sent. A staff refund taken first keeps its own
+>   amount, and the campaign refund sends the rest less the fee.
+> - **Every sum that decides what is left counts `amount + withheld_fee`**: the overdraft check, the
+>   per-charge remainder, the pledge's refunded-in-full decision and the payout's refunded figure.
+>   `campaign-refunds` offers a charge on the same arithmetic, so the fee is never sent later and
+>   the pledge becomes `REFUNDED` when the net refund settles. V101's CHECK allows a withheld fee
+>   only on `CAMPAIGN_FAILED` and `CAMPAIGN_HALTED` refunds.
+> - **The books close at zero.** The charge debited escrow with the whole amount and moved the fee
+>   to `psp_fee`; the net refund credits escrow with the rest. Escrow ends at zero for the charge,
+>   and the reconciliation's `escrow + psp_fee = charges - refunds` holds. A full refund of a charge
+>   whose fee was posted leaves escrow short by that fee, which is the fee being the platform's cost.
+> - **By bank transfer too.** A refund routed past the provider's window (#399) is the same row, so
+>   the backer is owed the same net amount; a refused one that staff route by hand carries the
+>   refused refund's withheld fee.
+> - **The backer is shown both figures.** `GET /v1/pledges/{id}` and each row of
+>   `GET /v1/me/pledges` carry `refunded` (what has gone back, as sent, or null) and
+>   `refundWithheldFee` (the fee a refund that has not failed keeps back, or null), as money
+>   strings. The words on the web and in the app are the next part of #436.
+
 > **Built (#40).** `campaign-refunds` (every ten minutes, `ideanest.payment.refunds`) finds paid
-> (`COLLECTED`) pledges on `UNSUCCESSFUL`, `SUSPENDED` and `CANCELED` campaigns and refunds each in
-> full, a bounded batch per pass, each refund in its own transactions. The reason is
+> (`COLLECTED`) pledges on `UNSUCCESSFUL`, `SUSPENDED` and `CANCELED` campaigns and refunds each, in
+> full or less the provider's fee under #436's rule (above), a bounded batch per pass, each refund in its own transactions. The reason is
 > `CAMPAIGN_FAILED` or `CAMPAIGN_HALTED`, and the refund has no staff author — V76 lets
 > `requested_by` be null for exactly those two reasons, and the audit row names the system. **Double
 > refunds**: a pledge is offered only with no refund `REQUESTED` or `SUCCEEDED`; a `REQUESTED` row

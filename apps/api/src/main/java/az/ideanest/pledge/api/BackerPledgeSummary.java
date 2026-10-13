@@ -46,6 +46,9 @@ import java.util.UUID;
  *     removed
  * @param refundAwaitingBankTransfer #419: {@code PledgeResponse}'s field of the same name, so the
  *     list can tag a pledge whose refund waits for a bank transfer. Null when nothing does
+ * @param refunded #436: {@code PledgeResponse}'s field of the same name — what has gone back, as sent
+ * @param refundWithheldFee #436: {@code PledgeResponse}'s field of the same name — the provider's fee
+ *     the refund keeps back, or null
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record BackerPledgeSummary(
@@ -59,7 +62,9 @@ public record BackerPledgeSummary(
         Instant confirmedAt,
         Instant canceledAt,
         Campaign project,
-        Money refundAwaitingBankTransfer) {
+        Money refundAwaitingBankTransfer,
+        Money refunded,
+        Money refundWithheldFee) {
 
     /**
      * The campaign a pledge is on, as a row of this list needs it.
@@ -140,6 +145,8 @@ public record BackerPledgeSummary(
                 pledge.confirmedAt(),
                 pledge.canceledAt(),
                 Campaign.of(entry.campaign()),
-                pledge.refundAwaitingBankTransfer());
+                pledge.refundAwaitingBankTransfer(),
+                pledge.refunded(),
+                pledge.refundWithheldFee());
     }
 }

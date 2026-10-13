@@ -61,7 +61,12 @@ public class BackerArchiveRows {
             p.confirmed_at, p.canceled_at, p.created_at,
             (SELECT SUM(r.amount) FROM refunds r
               WHERE r.pledge_id = p.id
-                AND r.state IN ('AWAITING_BANK_DETAILS', 'AWAITING_TRANSFER')) AS refund_awaiting_bank_transfer
+                AND r.state IN ('AWAITING_BANK_DETAILS', 'AWAITING_TRANSFER')) AS refund_awaiting_bank_transfer,
+            (SELECT SUM(r.amount) FROM refunds r
+              WHERE r.pledge_id = p.id AND r.state = 'SUCCEEDED') AS refunded,
+            (SELECT SUM(r.withheld_fee) FROM refunds r
+              WHERE r.pledge_id = p.id AND r.withheld_fee > 0
+                AND (r.state <> 'FAILED' OR r.failure_code = 'provider_unreachable')) AS refund_withheld_fee
             """;
 
     /** Newest first, tie-broken on the identifier — the pair {@link BackerCursor} names. */
@@ -195,7 +200,9 @@ public class BackerArchiveRows {
                 instantOf(row, "confirmed_at"),
                 instantOf(row, "canceled_at"),
                 instantOf(row, "created_at"),
-                Money.orNull(row.getBigDecimal("refund_awaiting_bank_transfer"), currency));
+                Money.orNull(row.getBigDecimal("refund_awaiting_bank_transfer"), currency),
+                Money.orNull(row.getBigDecimal("refunded"), currency),
+                Money.orNull(row.getBigDecimal("refund_withheld_fee"), currency));
     }
 
     /**

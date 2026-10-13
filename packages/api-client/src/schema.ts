@@ -4521,6 +4521,8 @@ export interface components {
             pledgeId?: string;
             project?: components["schemas"]["Campaign"];
             refundAwaitingBankTransfer?: components["schemas"]["Money"];
+            refundWithheldFee?: components["schemas"]["Money"];
+            refunded?: components["schemas"]["Money"];
             /** Format: uuid */
             rewardTierId?: string;
             rewardTitle?: string;
@@ -6093,6 +6095,8 @@ export interface components {
             projectId?: string;
             raisable?: boolean;
             refundAwaitingBankTransfer?: components["schemas"]["Money"];
+            refundWithheldFee?: components["schemas"]["Money"];
+            refunded?: components["schemas"]["Money"];
             /** Format: date-time */
             reservationExpiresAt?: string;
             /** Format: uuid */

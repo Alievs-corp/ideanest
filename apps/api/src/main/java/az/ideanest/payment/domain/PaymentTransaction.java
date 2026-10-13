@@ -106,6 +106,14 @@ public class PaymentTransaction {
     @Column(name = "idempotency_key", nullable = false, updatable = false)
     private String idempotencyKey;
 
+    /**
+     * #436 (V101): whether a campaign-outcome refund of this charge returns it less the provider's fee
+     * posted with it. Decided when the charge is recorded, from the words the backer was shown, and
+     * like every other column here never changed: a refund months later reads this, not the setting.
+     */
+    @Column(name = "provider_fee_withheld_on_refund", nullable = false, updatable = false)
+    private boolean providerFeeWithheldOnRefund;
+
     @Generated(event = EventType.INSERT)
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
@@ -126,7 +134,8 @@ public class PaymentTransaction {
             String failureCode,
             String failureMessage,
             int attemptNumber,
-            String idempotencyKey) {
+            String idempotencyKey,
+            boolean providerFeeWithheldOnRefund) {
         // v7, like every other identifier the application mints: time-ordered, so this
         // table's primary key index stays local as it becomes the largest in the schema.
         this.id = Identifiers.newIdentifier();
@@ -143,6 +152,7 @@ public class PaymentTransaction {
         this.failureMessage = truncate(failureMessage);
         this.attemptNumber = attemptNumber;
         this.idempotencyKey = idempotencyKey;
+        this.providerFeeWithheldOnRefund = providerFeeWithheldOnRefund;
     }
 
     /**
@@ -157,6 +167,9 @@ public class PaymentTransaction {
      * @param attemptNumber which of §9.6's attempts, counted from one
      * @param idempotencyKey the key the provider was given, so that the platform's
      *     record and the provider's can be matched even when the call itself was lost
+     * @param providerFeeWithheldOnRefund #436: whether this charge was taken under the rule that a
+     *     failed, suspended or cancelled campaign refunds it less the provider's fee. A parameter with
+     *     no default, so every place that records a charge says which words it was taken under
      */
     public static PaymentTransaction charge(
             UUID pledgeId,
@@ -165,7 +178,8 @@ public class PaymentTransaction {
             ProviderName provider,
             ChargeResult result,
             int attemptNumber,
-            String idempotencyKey) {
+            String idempotencyKey,
+            boolean providerFeeWithheldOnRefund) {
         return new PaymentTransaction(
                 pledgeId,
                 projectId,
@@ -178,7 +192,8 @@ public class PaymentTransaction {
                 result.failureCode(),
                 result.failureMessage(),
                 attemptNumber,
-                idempotencyKey);
+                idempotencyKey,
+                providerFeeWithheldOnRefund);
     }
 
     /**
@@ -216,7 +231,8 @@ public class PaymentTransaction {
                 UNREACHABLE,
                 failureMessage,
                 attemptNumber,
-                idempotencyKey);
+                idempotencyKey,
+                false);
     }
 
     /**
@@ -251,7 +267,8 @@ public class PaymentTransaction {
                 result.failureCode(),
                 result.failureMessage(),
                 1,
-                idempotencyKey);
+                idempotencyKey,
+                false);
     }
 
     /**
@@ -279,7 +296,8 @@ public class PaymentTransaction {
                 result.failureCode(),
                 result.failureMessage(),
                 1,
-                idempotencyKey);
+                idempotencyKey,
+                false);
     }
 
     /**
@@ -349,6 +367,11 @@ public class PaymentTransaction {
 
     public String getIdempotencyKey() {
         return idempotencyKey;
+    }
+
+    /** #436: whether a campaign-outcome refund of this charge withholds the provider's fee. */
+    public boolean isProviderFeeWithheldOnRefund() {
+        return providerFeeWithheldOnRefund;
     }
 
     public Instant getCreatedAt() {

@@ -308,4 +308,30 @@ public interface PledgeRepository extends JpaRepository<Pledge, UUID> {
                     """,
             nativeQuery = true)
     BigDecimal refundAwaitingBankTransfer(@Param("pledgeId") UUID pledgeId);
+
+    /**
+     * What of this pledge has gone back to the backer: its settled refunds, as sent — net of any
+     * provider fee a refund kept back (#436) — or null when nothing has. Native, for
+     * {@link #refundAwaitingBankTransfer}'s reason.
+     */
+    @Query(
+            value = "SELECT SUM(r.amount) FROM refunds r WHERE r.pledge_id = :pledgeId AND r.state = 'SUCCEEDED'",
+            nativeQuery = true)
+    BigDecimal refunded(@Param("pledgeId") UUID pledgeId);
+
+    /**
+     * The payment provider's fee this pledge's refund keeps back — #436: a failed, suspended or cancelled
+     * campaign refunds a charge taken under that rule less the fee posted with it. Every refund that has
+     * not failed, so a refund still on its way says so too; null when none keeps anything back.
+     */
+    @Query(
+            value =
+                    """
+                    SELECT SUM(r.withheld_fee) FROM refunds r
+                     WHERE r.pledge_id = :pledgeId
+                       AND r.withheld_fee > 0
+                       AND (r.state <> 'FAILED' OR r.failure_code = 'provider_unreachable')
+                    """,
+            nativeQuery = true)
+    BigDecimal refundWithheldFee(@Param("pledgeId") UUID pledgeId);
 }

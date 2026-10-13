@@ -215,12 +215,23 @@ public record PaymentProperties(
      *     reads the new refund states (V99): {@code IDEANEST_PAYMENT_REFUNDS_WINDOWS_PAYRIFF=P28D},
      *     under Payriff's thirty days by a margin, because the window is measured from when the
      *     platform recorded the charge, which is later than when Payriff took it
+     * @param withholdProviderFee #436: whether a charge taken <strong>from now on</strong> is refunded
+     *     net of the provider's fee if its campaign fails, is suspended or is cancelled. Recorded on the
+     *     charge when it is taken ({@code transactions.provider_fee_withheld_on_refund}) and never read
+     *     again for that charge, so switching it changes no charge already taken. Off by default, which
+     *     is refunded in full; switched on only once the checkout and the terms tell the backer, and
+     *     once every node runs the release that reads {@code refunds.withheld_fee} (V101)
      */
     public record Refunds(
-            String schedule, int perPass, Duration retryAfter, Duration unresolvedAfter, Map<ProviderName, Duration> windows) {
+            String schedule,
+            int perPass,
+            Duration retryAfter,
+            Duration unresolvedAfter,
+            Map<ProviderName, Duration> windows,
+            boolean withholdProviderFee) {
 
         public static Refunds defaults() {
-            return new Refunds("0 */10 * * * *", 100, Duration.ofHours(6), Duration.ofHours(1), Map.of());
+            return new Refunds("0 */10 * * * *", 100, Duration.ofHours(6), Duration.ofHours(1), Map.of(), false);
         }
 
         public Refunds {

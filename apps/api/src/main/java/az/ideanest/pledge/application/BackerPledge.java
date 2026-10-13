@@ -40,6 +40,10 @@ import java.util.UUID;
  * @param refundAwaitingBankTransfer #419: what of this pledge's refund waits to be paid by bank
  *     transfer, or null — the figure {@code PledgeDetail} carries, so the list can say a refund is
  *     pending without the backer opening every pledge to find out which one
+ * @param refunded #436: what of this pledge has gone back to the backer, as sent, or null —
+ *     {@code PledgeDetail}'s figure
+ * @param refundWithheldFee #436: the payment provider's fee its refund keeps back, or null —
+ *     {@code PledgeDetail}'s figure
  */
 public record BackerPledge(
         UUID id,
@@ -57,5 +61,7 @@ public record BackerPledge(
         Instant confirmedAt,
         Instant canceledAt,
         Instant createdAt,
-        Money refundAwaitingBankTransfer) {
+        Money refundAwaitingBankTransfer,
+        Money refunded,
+        Money refundWithheldFee) {
 }

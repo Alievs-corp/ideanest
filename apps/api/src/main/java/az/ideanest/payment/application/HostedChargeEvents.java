@@ -123,7 +123,8 @@ public class HostedChargeEvents implements PaymentEventHandler {
                             "The provider reported the payment failed.",
                             event.rawBody()),
                     1,
-                    pending.getIdempotencyKey()));
+                    pending.getIdempotencyKey(),
+                    pending.isProviderFeeWithheldOnRefund()));
             if (raise) {
                 raises.recordFailed(pending.getIdempotencyKey(), now);
             }
@@ -138,7 +139,10 @@ public class HostedChargeEvents implements PaymentEventHandler {
                 pending.getProvider(),
                 new ChargeResult(ProviderOutcome.APPROVED, reference, null, null, event.rawBody()),
                 1,
-                pending.getIdempotencyKey()));
+                pending.getIdempotencyKey(),
+                // #436: the terms of the page the backer was sent to pay on, recorded when it was opened —
+                // not the setting at the moment the provider's answer arrives.
+                pending.isProviderFeeWithheldOnRefund()));
 
         CollectingCampaign campaign = campaigns
                 .describe(pending.getProjectId())

@@ -40,6 +40,13 @@ import java.util.UUID;
  * @param refundAwaitingBankTransfer #400: what of this pledge's refund waits to be paid by bank
  *     transfer — for the backer's account details or for the transfer itself — or null when nothing
  *     does. The backer is told to contact support, and this is the amount they are told about
+ * @param refunded #436: what of this pledge has gone back to the backer — its settled refunds, as
+ *     sent — or null when nothing has. Net of {@code refundWithheldFee} for a refund that kept the
+ *     provider's fee back, so a pledge refunded in full may show less than its total
+ * @param refundWithheldFee #436: the payment provider's fee this pledge's refund keeps back — a
+ *     failed, suspended or cancelled campaign refunds a charge taken under that rule less the fee
+ *     posted with it — or null when none does. Counted from a refund on its way as well as a settled
+ *     one, so a screen can say why the amount is lower before the money arrives
  */
 public record PledgeDetail(
         Pledge pledge,
@@ -49,7 +56,9 @@ public record PledgeDetail(
         PledgeRaise latestRaise,
         boolean raisable,
         String raiseResumeUrl,
-        Money refundAwaitingBankTransfer) {
+        Money refundAwaitingBankTransfer,
+        Money refunded,
+        Money refundWithheldFee) {
 
     /** A pledge that has never been raised and cannot be now, and whose money nobody is returning. */
     public PledgeDetail(
@@ -57,7 +66,7 @@ public record PledgeDetail(
             List<PledgeAddon> addons,
             List<PledgeSupplement> supplements,
             List<SupplementAddon> supplementAddons) {
-        this(pledge, addons, supplements, supplementAddons, null, false, null, null);
+        this(pledge, addons, supplements, supplementAddons, null, false, null, null, null, null);
     }
 
     public PledgeDetail {

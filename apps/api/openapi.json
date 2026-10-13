@@ -11239,6 +11239,12 @@
           "refundAwaitingBankTransfer" : {
             "$ref" : "#/components/schemas/Money"
           },
+          "refundWithheldFee" : {
+            "$ref" : "#/components/schemas/Money"
+          },
+          "refunded" : {
+            "$ref" : "#/components/schemas/Money"
+          },
           "rewardTierId" : {
             "type" : "string",
             "format" : "uuid"
@@ -15455,6 +15461,12 @@
             "type" : "boolean"
           },
           "refundAwaitingBankTransfer" : {
+            "$ref" : "#/components/schemas/Money"
+          },
+          "refundWithheldFee" : {
+            "$ref" : "#/components/schemas/Money"
+          },
+          "refunded" : {
             "$ref" : "#/components/schemas/Money"
           },
           "reservationExpiresAt" : {
