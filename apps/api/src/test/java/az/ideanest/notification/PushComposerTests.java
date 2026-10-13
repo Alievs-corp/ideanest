@@ -165,6 +165,30 @@ class PushComposerTests {
         assertThat(content.url()).isEqualTo("ideanest://settings/sessions");
     }
 
+    @Test
+    @DisplayName("opens the inbox for a message about a plan, because the application sells none (#450)")
+    void aPlanMessageOpensTheInbox() {
+        // The email and the web inbox go to /pricing. The application has no pricing screen -- it does not
+        // sell plans (#164) -- and its parser refuses the path, so the push opens the inbox, from where
+        // #452 sends the reader to the web.
+        for (NotificationType type : List.of(
+                NotificationType.SUBSCRIPTION_RENEWAL_DUE,
+                NotificationType.SUBSCRIPTION_LAPSED,
+                NotificationType.SUBSCRIPTION_RENEWED)) {
+            PushComposer.PushContent content = composer.compose(
+                    message(type, """
+                            {"planName":"Growth","price":{"amount":"49.00","currency":"AZN"},\r
+                            "amount":{"amount":"49.00","currency":"AZN"},"periodEnd":"2026-11-13"}"""),
+                    null,
+                    "",
+                    ENGLISH);
+
+            assertThat(content.url()).as("%s", type).isEqualTo("ideanest://");
+            assertThat(content.title()).as("%s", type).contains("Growth");
+            assertThat(content.body()).as("%s", type).contains("2026-11-13");
+        }
+    }
+
     // ------------------------------------------------------------------
     // What the application is handed
     // ------------------------------------------------------------------

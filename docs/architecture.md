@@ -1493,6 +1493,9 @@ The most valuable and most complex module. It begins when funding closes.
 | Project approved | ✅ | ✅ | ✅ |
 | Payout sent | ✅ | ✅ | ✅ |
 | Refund sent by bank transfer | ✅ | ✅ | ✅ |
+| Plan due for renewal | ✅ | ✅ | ✅ |
+| Plan lapsed | ✅ | ✅ | ✅ |
+| Plan payment received | ✅ | ✅ | ✅ |
 | Sign-in from a new device | ✅ | ✅ | ✅ |
 
 Preferences are per category and per channel, with a digest option.
@@ -1527,6 +1530,18 @@ Preferences are per category and per channel, with a digest option.
 > when there is one, the masked account (`AZ21…1944`), never the number. The account is
 > its own email paragraph (`.account`), left out when the document has none, which a
 > provider's payout never has. A replayed or refused call records nothing.
+>
+> **A creator's own plan is told since #450.** Nothing renews a plan by itself (epic
+> #448), so §8.4's `subscription-renewal-reminders` tells the creator of every priced,
+> `ACTIVE` plan they have not cancelled that it is due ("Plan due for renewal",
+> `SUBSCRIPTION_RENEWAL_DUE`, three days and one day before the end by default), and once
+> that it lapsed when the period ended without a renewal ("Plan lapsed",
+> `SUBSCRIPTION_LAPSED`). "Plan payment received" (`SUBSCRIPTION_RENEWED`) is the receipt
+> for #449's `subscription.paid`, a first period or a renewal alike. All three are
+> `PAYMENTS`, the creator's own bill and transactional, name the plan in a slot of their
+> own (`{5}`, never the campaign's `{1}`), the snapshot price or the amount paid, and the
+> day the period ends, and link to `/pricing` by email and in the web inbox. A push opens
+> the inbox instead: the application sells no plans (#164) and has no pricing screen.
 >
 > **All three columns are real.** #86 built the email transport (§12.3), the in-app
 > inbox was #85's, and push is #87's (its payload is described under §12.2). Every
@@ -2612,6 +2627,21 @@ that can refund a part-month or charge a stored card. A per-plan fee rate would
 compete with §5.2's schedule for the same answer and belongs there as a fourth
 scope if it is ever wanted.
 
+**The creator is reminded, because nothing renews by itself (#450).** §8.4's
+`subscription-renewal-reminders` runs daily. A priced, `ACTIVE` plan whose creator has
+not set `cancel_at_period_end` is reminded at each lead before its period ends —
+`ideanest.subscription.reminders.leads`, three days and one day by default — and told
+once when the period ended without a renewal, for periods that ended within
+`lapsed-look-back` (seven days), so the first pass after deployment does not write to
+everybody whose plan ran out last year. A creator who cancelled is told neither: the
+plan ends as they asked. A free plan has nothing to renew. Each lead owns the window down
+to the next smaller lead, so one pass reminds a subscription at most once, and every
+reminder is claimed in `subscription_reminders` (V103) — keyed by subscription, period end,
+kind and lead — in the transaction that records its outbox event, so a pass run twice or on
+two replicas sends nothing twice, and a renewal, which moves the period end, re-arms the
+next period's reminders without clearing anything. The price in the message is the
+subscription's snapshot; the plan's name is the catalogue's, as the pricing page shows it.
+
 ---
 
 ## 6. Domain model and state machines
@@ -2946,6 +2976,9 @@ creator has paid for the period, so their cancellation sets
 `cancel_at_period_end` and leaves the row `ACTIVE` until the clock catches up.
 Staff ending one — a reversed payment, a fraud finding, a purchase made by
 mistake — takes the entitlement away at once.
+
+The reminders of §5.6 (#450) read the same pair and change nothing: a lapse notice
+is a message, and the row stays `ACTIVE` until its creator buys again.
 
 ---
 
@@ -3564,6 +3597,7 @@ by a database constraint and verified by a nightly reconciliation job.
 | `compliance_overrides` | One exception to one compliance requirement for one account (#436). Time-boxed by a NOT NULL `expires_at`, so there is no shape for a permanent one; reasoned from a closed set plus the grantor's own words; attributed through a `RESTRICT` foreign key rather than `SET NULL`, unlike `identity_verifications.reviewed_by`, because an override with no named grantor is an anonymous waiver. `granted_by <> subject_user_id` is total -- both columns are NOT NULL and the grantor cannot become null -- which is the gap `payout_approvals` warns a two-column CHECK leaves. Never deleted: expiry is a comparison rather than a swept state, so an override stops working because time passed |
 | `signatures` | One SİMA İmza signature: what was signed, by which certificate subject, and when (#428). **Never a copy of the certificate material**, which is V58's territory with V58's encryption and V58's sweep -- this must not become a second uncontrolled place where a person's identity sits. The name and FIN are §17.4 personal data and are kept because without them the row proves a certificate signed and not that *this creator* did; #423 governs for how long. `document_acceptances.signature_id` finally has its referent, `RESTRICT`, so a signed agreement cannot silently become a ticked one |
 | `subscription_payments` | What the platform was paid for a subscription, one append-only row per payment (§5.6). **Not `transactions` and `ledger_entries`**: those hold a backer's money moving through the platform — `transactions.project_id` is NOT NULL and `ledger_entries.account` is closed by a CHECK over escrow, fees, tax and a creator's own — and a subscription payment has no campaign and belongs to none of those accounts, so making it fit would mean relaxing a NOT NULL and widening a CHECK on the two tables that hold every pledge, to admit rows that are not pledges. **The plan is copied onto the row** — code, name, price, billing period — because a plan is editable on purpose, so a report joining to `subscription_plans` would be retitled by a rename and re-priced by a repricing; `plan_id` is kept alongside so it can still be filtered by. **No foreign keys at all**, for V21's reason with a sharper edge: `subscriptions` cascades with its account, so a key here would delete the platform's only record of money it was paid when the payer closed their account — or, as `RESTRICT`, make closing the account fail — and either arrives as a DELETE the append-only trigger then refuses, breaking account closure with an error about a table nobody touched. `amount` is **signed and never zero**: a correction is a reversing row, so every total is a sum that nets, and `reverses` is unique so a payment cannot be reversed twice. `received_at` is the caller's and may be backdated to the day a transfer cleared — it is what every total is grouped by, so the report agrees with the bank statement it is checked against — while `recorded_at` is `DEFAULT now()`, which is what makes backdating visible rather than silent; a future `received_at` is refused by the service rather than clamped. `method` is a closed CHECK (`BANK_TRANSFER`, `CARD`, `CASH`, `OTHER`) unlike the free-text plan code, because an operator adds a plan from the console and nobody adds a way of being paid without the platform learning to reconcile it |
+| `subscription_reminders` | Which renewal reminders and lapse notices a subscription period has been sent (#450, V103). **The row is the claim**: inserted with `ON CONFLICT DO NOTHING` in the transaction that records the outbox event it authorises, keyed by `(subscription_id, period_end, kind, lead_hours)`, so a pass run twice sends nothing twice and a renewal, which moves `period_end`, needs nothing cleared. `lead_hours` is an integer, as `deadline_notices.threshold_hours` is, because the leads are configurable and a key over a free interval would compare `3 days` and `72 hours` by a rule nobody reads; a lapse is `LAPSED` with 0. Cascades with the subscription; no personal data |
 | `signature_sessions` | A signing session in flight (#429): what was to be signed, by whom, and what became of it. **A row rather than a handle the client holds**, and V71 names the three quiet failures of the stateless alternative -- a session identifier becomes a bearer token for somebody else's signature, the hash a resolve compares against arrives from the party with the reason to change it, and a cancellation leaves nothing, so "the citizen declined" is indistinguishable from "nothing happened". The FIN and mobile number the citizen typed are passed to the provider and **not stored**: §17.4 asks for the data the purpose needs and this purpose needs neither; the FIN that is kept is the certificate's, in `signatures`. Terminal outcomes are recorded once and a resolved session is never re-resolved, which is what stops one act of signing producing two `signatures` rows |
 | `creator_legal_subjects` | Who a creator legally is (#430): the subject kind, the legal name, the VÖEN -- a company's, or an individual entrepreneur's since #239, because §6.3 approves no payout without one -- and, for a registered entity only, the registered address and the registration number. **A fact about the account and not a record of a check**, which is the whole of #430: `identity_verifications.subject_kind` says what a reviewer was looking at when they looked, and a creator who has never been asked to verify has no row there at all while a payout still needs to know whether to withhold as a person or as a company. The VÖEN is **shape-validated and nothing more** -- ten digits, in the schema -- because a validator that appeared to confirm existence "would produce a green tick that means nothing, in front of the exact field where a green tick is relied upon"; whether the number names a real company is a human reading a `COMPANY_REGISTRATION` document in V58's queue. There is deliberately **no constraint requiring a legal entity to carry all three of its fields**: completeness is a gate's question, asked of a row rather than enforced on one, so a creator part-way through a form does not lose their work. The foreign key cascades, for the reason every reference to `users` in this schema gives twice over |
 | `campaign_legal_subjects` | The creator's legal subject as it stood when a campaign was submitted (#430). **A copy, never a reference**, and there is no foreign key back to the live row precisely so it cannot follow it: §5.6 snapshots a subscription's price, V42 freezes a retry window, and `payouts.creator_id` is denormalised because "a campaign's creator is a mutable fact and the payout was calculated for the person who held it at the time". A creator who submits as an individual and registers a company three months later has not retroactively submitted as a company, and a payout reading the live row would withhold as though they had. Keyed by the campaign: a resubmission overwrites, because that submission is the one being decided |
@@ -3800,6 +3834,7 @@ load profile).
 | `deadline-reminder` | Every 5 minutes | Deadline reminders: §4.10's 48- and 24-hour thresholds (#90) |
 | `survey-nudge` | Daily | Chase non-responders (#74). The `survey_nudges` row is the claim -- written in the same transaction as the outbox event, so a crash leaves somebody either unchased and unclaimed or chased and claimed. Without it the sweep's question is true for as long as they have not answered, and every pass is another email. Bounded per pass and by a configured number of attempts: one is a reminder and five is a campaign of its own |
 | `update-obligation-sweep` | Daily | §5.5's monthly clock (#437): warn the creators whose month is nearly up, and put the ones whose month is up in front of a moderator. **Two claims, each keyed to the due date it was made for**, so a reminder is sent once per cycle and an escalation happens once rather than every morning -- and a new due date re-arms both without anything having to clear a flag. Daily rather than by the minute because the obligation is monthly and the state a campaign page reads is a comparison rather than a column: a late pass shows the right thing on the page and only delays the warning. One obligation per transaction, never one pass per transaction |
+| `subscription-renewal-reminders` | Daily | Tell a creator their priced plan is due for renewal at each configured lead (three days and one day by default) and, once, that it lapsed (#450, §5.6). **Each lead owns the window down to the next smaller one**, so a plan first seen with twenty hours left is reminded once rather than twice in one morning, and a pass that misses a window costs that reminder rather than sending a burst. The `subscription_reminders` row is the claim, written with the outbox event. The lapse is bounded by a seven-day look-back, so the first deployment does not announce every plan that ever ran out. Not paused during maintenance: it records outbox events, and `notification-sender`, which delivers them, is what pauses |
 | `ledger-reconciliation` | Daily | Verify the balance invariant, compare to settlement |
 | `token-cleaner` | Daily | Purge tokens from unsuccessful campaigns |
 | `exchange-rate-refresh` | Hourly | §21.2's display currency (#327): fetch the central bank's publication and store what is new. **Hourly over a source that publishes daily is not a contradiction** — the hour is how quickly the platform notices a new publication, and eleven of the twelve passes write nothing because V59's unique index over `(source, base, quote, published_for)` already holds the day. An unreachable source is a `WARN` and not a thrown run: throwing would make `JobRunner` back the job off and eventually stop it, so a central bank's bad afternoon would permanently disable a feature whose failure mode is a missing figure. What makes that safe is the age check on the other side — a rate past `max-age` stops being offered, so a source that is genuinely gone takes the approximation off the screen within days |

@@ -426,6 +426,25 @@ ideanest:
     # VÖEN and business card is reminded on the days that are whole weeks after the hold ended.
     destination-reminder-schedule: "0 0 9 * * *"
 
+  subscription:
+    # Creator plans, epic #448. A plan is paid by the creator for every period on the
+    # provider's page; nothing is charged on a schedule. Renewing is offered this long
+    # before a period ends (#449).
+    renewal-window: ${SUBSCRIPTION_RENEWAL_WINDOW:P7D}
+    reminders:
+      # #450: `subscription-renewal-reminders`. Daily. Nothing renews a plan by itself
+      # (epic #448), so a priced plan its creator has not cancelled is reminded before its
+      # period ends and told once when it lapses. Each reminder is claimed in
+      # `subscription_reminders`, so a pass run twice sends nothing twice.
+      schedule: "0 0 9 * * *"
+      # How long before the end, largest first. Each lead's window ends where the next
+      # smaller one begins, so one pass reminds a subscription at most once.
+      leads: P3D, P1D
+      # A lapse is announced only for a period that ended this recently, so the first
+      # pass after deployment does not tell everybody whose plan ran out last year.
+      lapsed-look-back: P7D
+      batch-size: 500
+
   project:
     collaborators:
       # Seven days. An invitation nobody has accepted in a week is a typo or
@@ -884,11 +903,6 @@ ideanest:
       # queueing, short enough that a captured request is not a usable instruction
       # an hour later.
       tolerance: PT5M
-
-  # Creator plans, epic #448. A plan is paid by the creator for every period on the provider's
-  # page; nothing is charged on a schedule. Renewing is offered this long before a period ends.
-  subscription:
-    renewal-window: ${SUBSCRIPTION_RENEWAL_WINDOW:P7D}
 
   # SIMA Imza, and the two things that keep it switched off -- issue #428.
   #

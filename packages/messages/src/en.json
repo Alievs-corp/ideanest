@@ -564,6 +564,9 @@
         "PAYOUT_DETAILS_NEEDED": "Your payout for {campaign} is waiting for your details",
         "REFUND_NEEDS_BANK_DETAILS": "Your refund for {campaign} needs your bank details",
         "REFUND_SENT_BY_BANK": "A refund of {amount} for {campaign} was sent by bank transfer {when}",
+        "SUBSCRIPTION_RENEWAL_DUE": "Your {plan} plan ends {when}: renew it for {amount}",
+        "SUBSCRIPTION_LAPSED": "Your {plan} plan ended {when}",
+        "SUBSCRIPTION_RENEWED": "Your {plan} plan is paid {when}",
         "UPDATE_DUE_SOON": "Your update for {campaign} is due {when}"
       },
       "unnamed": {
@@ -594,6 +597,9 @@
         "PAYOUT_DETAILS_NEEDED": "Your payout is waiting for your VÖEN and IBAN",
         "REFUND_NEEDS_BANK_DETAILS": "Your refund needs your bank details",
         "REFUND_SENT_BY_BANK": "A refund of {amount} was sent by bank transfer {when}",
+        "SUBSCRIPTION_RENEWAL_DUE": "Your plan ends {when}: renew it for {amount}",
+        "SUBSCRIPTION_LAPSED": "Your plan ended {when}",
+        "SUBSCRIPTION_RENEWED": "Your plan is paid {when}",
         "UPDATE_DUE_SOON": "An update for your campaign is due {when}"
       },
       "amount": {
@@ -603,7 +609,8 @@
         "needed": "what it needed",
         "closingTotal": "its closing total",
         "funds": "your funds",
-        "refund": "the amount owed to you"
+        "refund": "the amount owed to you",
+        "price": "the plan's price"
       },
       "due": {
         "on": "by {date}",
@@ -613,6 +620,11 @@
         "on": "on {date}",
         "onTo": "on {date} to {account}",
         "unknown": "recently"
+      },
+      "period": {
+        "on": "on {date}",
+        "until": "until {date}",
+        "unknown": "for another period"
       },
       "category": {
         "PLEDGES": "Your pledges",

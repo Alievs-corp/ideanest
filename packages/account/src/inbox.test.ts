@@ -59,6 +59,9 @@ const FULL_PARAMS = {
   dueAt: '2026-10-05',
   sentOn: '2026-10-13',
   accountHint: 'AZ21…1944',
+  planName: 'Growth',
+  price: { amount: '49.00', currency: 'AZN' },
+  periodEnd: '2026-11-13',
 };
 
 function notification(
@@ -74,8 +77,8 @@ function notification(
 }
 
 describe('the contract', () => {
-  it('publishes 28 types', () => {
-    expect(TYPES).toHaveLength(28);
+  it('publishes 31 types', () => {
+    expect(TYPES).toHaveLength(31);
   });
 });
 
@@ -141,6 +144,13 @@ describe('hrefOf', () => {
       hrefOf(notification({ type: 'REFUND_SENT_BY_BANK', category: 'PAYMENTS', params: { pledgeId } })),
     ).toBe(`/pledges/${pledgeId}`);
     expect(hrefOf(notification({ type: 'REFUND_SENT_BY_BANK', category: 'PAYMENTS', params: {} }))).toBeNull();
+  });
+
+  it('sends every message about the creator’s plan to the pricing page, as the email does (#450)', () => {
+    for (const type of ['SUBSCRIPTION_RENEWAL_DUE', 'SUBSCRIPTION_LAPSED', 'SUBSCRIPTION_RENEWED'] as const) {
+      expect(hrefOf(notification({ type, category: 'PAYMENTS' }))).toBe('/pricing');
+      expect(hrefOf(notification({ type, category: 'PAYMENTS', params: {} }))).toBe('/pricing');
+    }
   });
 });
 
@@ -405,6 +415,70 @@ describe('money paid out — #418', () => {
         expect(view.headline).toMatch(/120[.,]00/);
         expect(view.headline).not.toContain('{');
       }
+    },
+  );
+});
+
+describe('a creator’s plan — #450', () => {
+  it('names the plan, the day it ends and the price of renewing it', () => {
+    const view = describeNotification(
+      notification({ type: 'SUBSCRIPTION_RENEWAL_DUE', category: 'PAYMENTS' }),
+      COPY,
+      'en',
+    );
+
+    expect(view.headline).toMatch(/^Your Growth plan ends on 13 November 2026: renew it for 49\.00 AZN$/);
+    expect(view.campaign).toBeNull();
+    expect(view.href).toBe('/pricing');
+  });
+
+  it('reads the plan rather than the campaign a document might also name', () => {
+    const view = describeNotification(
+      notification({ type: 'SUBSCRIPTION_LAPSED', category: 'PAYMENTS' }),
+      COPY,
+      'en',
+    );
+
+    expect(view.headline).toBe('Your Growth plan ended on 13 November 2026');
+    expect(view.headline).not.toContain('Xari Bulbul Ceramics');
+  });
+
+  it('says the day a payment runs the plan to', () => {
+    const view = describeNotification(
+      notification({ type: 'SUBSCRIPTION_RENEWED', category: 'PAYMENTS' }),
+      COPY,
+      'en',
+    );
+
+    expect(view.headline).toBe('Your Growth plan is paid until 13 November 2026');
+  });
+
+  it('still forms a sentence from a document with no plan, price or date', () => {
+    const view = (type: NotificationType) =>
+      describeNotification(notification({ type, category: 'PAYMENTS', params: {} }), COPY, 'en').headline;
+
+    expect(view('SUBSCRIPTION_RENEWAL_DUE')).toBe("Your plan ends soon: renew it for the plan's price");
+    expect(view('SUBSCRIPTION_LAPSED')).toBe('Your plan ended recently');
+    expect(view('SUBSCRIPTION_RENEWED')).toBe('Your plan is paid for another period');
+  });
+
+  it.each(Object.keys(CATALOGUES) as (keyof typeof CATALOGUES)[])(
+    '%s names the plan and the day in every plan message',
+    (locale) => {
+      const copy = notificationsCopyOf(CATALOGUES[locale].account.notifications);
+      for (const type of ['SUBSCRIPTION_RENEWAL_DUE', 'SUBSCRIPTION_LAPSED', 'SUBSCRIPTION_RENEWED'] as const) {
+        const view = describeNotification(notification({ type, category: 'PAYMENTS' }), copy, locale);
+        expect(view.headline).toContain('Growth');
+        expect(view.headline).toContain('2026');
+        expect(view.headline).not.toContain('Xari Bulbul Ceramics');
+        expect(view.headline).not.toContain('{');
+      }
+      const due = describeNotification(
+        notification({ type: 'SUBSCRIPTION_RENEWAL_DUE', category: 'PAYMENTS' }),
+        copy,
+        locale,
+      );
+      expect(due.headline).toMatch(/49[.,]00/);
     },
   );
 });

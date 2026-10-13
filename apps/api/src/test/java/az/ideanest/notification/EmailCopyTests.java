@@ -55,6 +55,8 @@ class EmailCopyTests extends AbstractIntegrationTest {
      * plumbing. {@code extendedUntil} joined with IDN-EXT-01's {@code CAMPAIGN_EXTENDED}, a date
      * for the same reason. {@code sentOn} and {@code accountHint} joined with #418's {@code PAYOUT_SENT}
      * and {@code REFUND_SENT_BY_BANK}: the day the money was paid, and the masked account it went to.
+     * {@code planName}, {@code price} and {@code periodEnd} joined with #450's three subscription types: the
+     * creator's plan, what it costs, and the day its period ends.
      */
     private static final String PARAMS =
             """
@@ -71,7 +73,10 @@ class EmailCopyTests extends AbstractIntegrationTest {
               "disputeUntil": "2026-12-01",
               "payableAt": "2026-12-01",
               "sentOn": "2026-10-13",
-              "accountHint": "AZ21…1944"
+              "accountHint": "AZ21…1944",
+              "planName": "Growth",
+              "price": {"amount": "49.00", "currency": "AZN"},
+              "periodEnd": "2026-11-13"
             }""";
 
     private static final String TITLE = "Xari Bulbul Ceramics";
@@ -100,7 +105,10 @@ class EmailCopyTests extends AbstractIntegrationTest {
               "disputeUntil": "2026-12-01",
               "payableAt": "2026-12-01",
               "sentOn": "2026-10-13",
-              "accountHint": "AZ21…1944"
+              "accountHint": "AZ21…1944",
+              "planName": "Growth",
+              "price": {"amount": "49.00", "currency": "AZN"},
+              "periodEnd": "2026-11-13"
             }""";
 
     /** The suffix on a key that names the campaign, as {@code EmailComposer} spells it. */
@@ -331,6 +339,69 @@ class EmailCopyTests extends AbstractIntegrationTest {
             assertThat(body).as("in %s", locale).contains("120.00 AZN").contains("2026-10-13").contains("AZ21…1944");
             assertThat(content.actionUrl()).endsWith("/pledges/" + pledgeId);
         }
+    }
+
+    /**
+     * That a plan due for renewal names the plan, its price and the day it ends, in every language, and
+     * goes to the pricing page, where it is renewed (#450).
+     */
+    @Test
+    @DisplayName("a renewal reminder names the plan, the price and the end date, and links to the pricing page")
+    void aRenewalReminderSaysWhichPlanWhatAndWhen() {
+        for (Locale locale : LANGUAGES) {
+            EmailContent content =
+                    composer.compose(message(NotificationType.SUBSCRIPTION_RENEWAL_DUE), RECIPIENT, locale);
+            String body = String.join(" ", content.paragraphs());
+
+            assertThat(body).as("in %s", locale).contains("Growth").contains("49.00 AZN").contains("2026-11-13");
+            assertThat(content.subject()).as("in %s", locale).contains("Growth").contains("2026-11-13");
+            assertThat(content.actionUrl()).endsWith("/pricing");
+        }
+    }
+
+    /** That a lapse names the plan and the day it ended, and links to the pricing page (#450). */
+    @Test
+    @DisplayName("a lapse names the plan and the day it ended, and links to the pricing page")
+    void aLapseSaysWhichPlanAndWhen() {
+        for (Locale locale : LANGUAGES) {
+            EmailContent content = composer.compose(message(NotificationType.SUBSCRIPTION_LAPSED), RECIPIENT, locale);
+
+            assertThat(String.join(" ", content.paragraphs())).as("in %s", locale).contains("Growth").contains("2026-11-13");
+            assertThat(content.actionUrl()).endsWith("/pricing");
+        }
+    }
+
+    /**
+     * That the receipt names what was paid and the day the plan now runs to (#450). The amount is the
+     * document's {@code amount}, what was collected, rather than the plan's {@code price}.
+     */
+    @Test
+    @DisplayName("a plan receipt names the amount paid and the day the plan runs to")
+    void aPlanReceiptSaysWhatWasPaidAndUntilWhen() {
+        for (Locale locale : LANGUAGES) {
+            EmailContent content = composer.compose(message(NotificationType.SUBSCRIPTION_RENEWED), RECIPIENT, locale);
+            String body = String.join(" ", content.paragraphs());
+
+            assertThat(body).as("in %s", locale).contains("Growth").contains("120.00 AZN").contains("2026-11-13");
+            assertThat(body).as("in %s", locale).doesNotContain("49.00 AZN");
+            assertThat(content.actionUrl()).endsWith("/pricing");
+        }
+    }
+
+    /**
+     * That a message about a plan is never read as one about a campaign (#450): a document that also
+     * carries a campaign's title and slugs still names the plan and links to the pricing page.
+     */
+    @ParameterizedTest
+    @EnumSource(
+            value = NotificationType.class,
+            names = {"SUBSCRIPTION_RENEWAL_DUE", "SUBSCRIPTION_LAPSED", "SUBSCRIPTION_RENEWED"})
+    @DisplayName("a plan message names the plan rather than a campaign, and links to the pricing page")
+    void aPlanMessageIsNotAboutACampaign(NotificationType type) {
+        EmailContent content = composer.compose(named(type), RECIPIENT, Locale.ENGLISH);
+
+        assertThat(content.subject()).contains("Growth").doesNotContain(TITLE);
+        assertThat(content.actionUrl()).endsWith("/pricing");
     }
 
     /**

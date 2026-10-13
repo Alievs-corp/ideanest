@@ -98,7 +98,10 @@ export function cursorOf(page: Pick<InboxPage, 'nextCursor' | 'nextCursorId'>): 
  * twin.
  */
 export interface NotificationsCopy {
-  /** Keyed by `NotificationType`. Carries `{campaign}` and, where the type has one, `{amount}`. */
+  /**
+   * Keyed by `NotificationType`. Carries `{campaign}` and, where the type has one, `{amount}`; a
+   * creator's plan (#450) carries `{plan}` in its place.
+   */
   readonly headline: Readonly<Record<string, string>>;
   /** The same types, for a row whose document carries no campaign title. */
   readonly unnamed: Readonly<Record<string, string>>;
@@ -111,6 +114,11 @@ export interface NotificationsCopy {
    * it went to when the document has one, and `unknown` stands in for no date.
    */
   readonly sent: { readonly on: string; readonly onTo: string; readonly unknown: string };
+  /**
+   * The `{when}` of a creator's plan — #450: `on` carries the `{date}` it ends or ended, `until` the
+   * `{date}` a payment runs it to, and `unknown` stands in for the second when the document has no date.
+   */
+  readonly period: { readonly on: string; readonly until: string; readonly unknown: string };
   readonly category: Readonly<Record<string, string>>;
   readonly categoryDescription: Readonly<Record<string, string>>;
   readonly channel: Readonly<Record<string, string>>;
@@ -127,6 +135,7 @@ export function notificationsCopyOf(tables: NotificationsCopy): NotificationsCop
     amount: tables.amount,
     due: { on: tables.due.on, unknown: tables.due.unknown },
     sent: { on: tables.sent.on, onTo: tables.sent.onTo, unknown: tables.sent.unknown },
+    period: { on: tables.period.on, until: tables.period.until, unknown: tables.period.unknown },
     category: tables.category,
     categoryDescription: tables.categoryDescription,
     channel: tables.channel,
@@ -206,7 +215,8 @@ export function campaignOf(params: Record<string, unknown>): {
  * the type when the message is not about a campaign (the sign-in alert, since #399 a refund
  * waiting for the backer's bank account, which goes to their pledge, and since #411 the reminder
  * to enter an IBAN, which goes to the payout settings; since #418 a paid payout goes to the payout
- * settings too and a refund sent by bank to the pledge), then the campaign's page,
+ * settings too and a refund sent by bank to the pledge; since #450 a message about the creator's own
+ * plan goes to the pricing page, where it is renewed), then the campaign's page,
  * then nothing. **A row with no destination is not a link**, rather than a link to the home page.
  */
 export function hrefOf(
@@ -214,6 +224,7 @@ export function hrefOf(
   campaignHref: string | null = campaignOf(readParams(notification.params)).href,
 ): string | null {
   if (notification.type === 'NEW_DEVICE_SIGN_IN') return '/settings/sessions';
+  if (isAboutAPlan(notification.type)) return '/pricing';
   if (notification.type === 'PAYOUT_DETAILS_NEEDED' || notification.type === 'PAYOUT_SENT') {
     return '/settings/payout';
   }
@@ -236,13 +247,27 @@ export function describeNotification(
 ): NotificationView {
   const params = readParams(notification.params);
   const campaign = campaignOf(params);
-  const named = campaign.title;
+  // A creator's plan is about no campaign (#450), whatever else the document carries.
+  const named = isAboutAPlan(notification.type) ? null : campaign.title;
 
   return {
     campaign: named,
     href: hrefOf(notification, campaign.href),
     headline: headlineOf(notification.type, params, named, copy, locale),
   };
+}
+
+/**
+ * Whether the row is about the creator's own plan rather than a campaign — #450. Such a row names
+ * the plan where another names the campaign, so the `headline` table is the one that names it and
+ * `unnamed` the one for a document that carries no plan name.
+ */
+function isAboutAPlan(type: NotificationType): boolean {
+  return (
+    type === 'SUBSCRIPTION_RENEWAL_DUE' ||
+    type === 'SUBSCRIPTION_LAPSED' ||
+    type === 'SUBSCRIPTION_RENEWED'
+  );
 }
 
 function headlineOf(
@@ -252,20 +277,24 @@ function headlineOf(
   copy: NotificationsCopy,
   locale: Locale,
 ): string {
-  const template = campaign === null ? copy.unnamed[type] : copy.headline[type];
+  const plan = isAboutAPlan(type) ? textOf(params, 'planName') : null;
+  const named = isAboutAPlan(type) ? plan : campaign;
+  const template = named === null ? copy.unnamed[type] : copy.headline[type];
   if (template === undefined) return type;
 
   return fillPlaceholders(template, {
     campaign: campaign ?? '',
+    plan: plan ?? '',
     amount: amountFor(type, params, copy),
     when: whenFor(type, params, copy, locale),
   });
 }
 
 /**
- * The day a headline refers to, or the words that stand in for one: a deadline's (#138), or the day
- * money was paid out and the masked account it went to (#418). Both are calendar days, read in UTC so
- * that no reader's time zone moves them to the day before.
+ * The day a headline refers to, or the words that stand in for one: a deadline's (#138), the day
+ * money was paid out and the masked account it went to (#418), or the day a creator's plan ends,
+ * ended or is paid until (#450). All are calendar days, read in UTC so that no reader's time zone
+ * moves them to the day before.
  */
 function whenFor(
   type: NotificationType,
@@ -284,6 +313,16 @@ function whenFor(
     return account === null
       ? fillPlaceholders(copy.sent.on, { date })
       : fillPlaceholders(copy.sent.onTo, { date, account });
+  }
+  if (type === 'SUBSCRIPTION_RENEWAL_DUE' || type === 'SUBSCRIPTION_LAPSED') {
+    // The day the plan ends, or ended. Without one, the words a deadline and a past payment use.
+    const date = dayOf(params, 'periodEnd', locale);
+    if (date !== null) return fillPlaceholders(copy.period.on, { date });
+    return type === 'SUBSCRIPTION_RENEWAL_DUE' ? copy.due.unknown : copy.sent.unknown;
+  }
+  if (type === 'SUBSCRIPTION_RENEWED') {
+    const date = dayOf(params, 'periodEnd', locale);
+    return date === null ? copy.period.unknown : fillPlaceholders(copy.period.until, { date });
   }
   return '';
 }
@@ -332,6 +371,11 @@ function amountFor(
       return amountOr(params, 'amount', copy.amount['funds'] ?? '');
     case 'REFUND_SENT_BY_BANK':
       return amountOr(params, 'amount', copy.amount['refund'] ?? '');
+    case 'SUBSCRIPTION_RENEWAL_DUE':
+    case 'SUBSCRIPTION_LAPSED':
+      return amountOr(params, 'price', copy.amount['price'] ?? '');
+    case 'SUBSCRIPTION_RENEWED':
+      return amountOr(params, 'amount', copy.amount['price'] ?? '');
     default:
       return '';
   }

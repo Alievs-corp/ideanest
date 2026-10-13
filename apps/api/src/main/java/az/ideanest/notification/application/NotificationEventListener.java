@@ -16,6 +16,9 @@ import az.ideanest.notification.application.NotificationEvents.PayoutRequested;
 import az.ideanest.notification.application.NotificationEvents.ProjectLaunched;
 import az.ideanest.notification.application.NotificationEvents.RefundNeedsBankDetails;
 import az.ideanest.notification.application.NotificationEvents.RefundSentByBank;
+import az.ideanest.notification.application.NotificationEvents.SubscriptionLapsed;
+import az.ideanest.notification.application.NotificationEvents.SubscriptionPaid;
+import az.ideanest.notification.application.NotificationEvents.SubscriptionRenewalDue;
 import az.ideanest.notification.application.NotificationEvents.UpdateDueSoon;
 import az.ideanest.notification.domain.NotificationType;
 import az.ideanest.shared.audience.AudienceProperties;
@@ -134,6 +137,9 @@ public class NotificationEventListener {
     private static final String PLEDGE = "pledge";
 
     private static final String PROJECT = "project";
+
+    /** A creator's own plan — #450. Not about a campaign, so no title is looked up for it. */
+    private static final String SUBSCRIPTION = "subscription";
 
     private final NotificationFanOut fanOut;
     private final ProjectAudiences audiences;
@@ -424,6 +430,72 @@ public class NotificationEventListener {
                                 "accountHint",
                                 blankToNull(event.ibanHint())),
                         at(event.recordedAt(), message)));
+            }
+            case SubscriptionRenewalDue.EVENT_TYPE -> {
+                SubscriptionRenewalDue event = read(message, SubscriptionRenewalDue.class);
+                UUID subscriptionId = required(event.subscriptionId(), "subscriptionId", message);
+                // The creator alone, about their own bill: no campaign, so no title is looked up. The end
+                // is a calendar day for dueDate's reason -- it is printed in a sentence.
+                yield List.of(NotificationRequest.about(
+                        required(event.accountId(), "accountId", message),
+                        NotificationType.SUBSCRIPTION_RENEWAL_DUE,
+                        SUBSCRIPTION,
+                        subscriptionId,
+                        params(
+                                "subscriptionId",
+                                subscriptionId,
+                                "planName",
+                                required(event.planName(), "planName", message),
+                                "price",
+                                required(event.price(), "price", message),
+                                "periodEnd",
+                                dueDate(required(event.periodEnd(), "periodEnd", message)),
+                                "daysLeft",
+                                event.daysLeft()),
+                        at(event.remindedAt(), message)));
+            }
+            case SubscriptionLapsed.EVENT_TYPE -> {
+                SubscriptionLapsed event = read(message, SubscriptionLapsed.class);
+                UUID subscriptionId = required(event.subscriptionId(), "subscriptionId", message);
+                yield List.of(NotificationRequest.about(
+                        required(event.accountId(), "accountId", message),
+                        NotificationType.SUBSCRIPTION_LAPSED,
+                        SUBSCRIPTION,
+                        subscriptionId,
+                        params(
+                                "subscriptionId",
+                                subscriptionId,
+                                "planName",
+                                required(event.planName(), "planName", message),
+                                "price",
+                                required(event.price(), "price", message),
+                                "periodEnd",
+                                dueDate(required(event.periodEnd(), "periodEnd", message))),
+                        at(event.noticedAt(), message)));
+            }
+            case SubscriptionPaid.EVENT_TYPE -> {
+                SubscriptionPaid event = read(message, SubscriptionPaid.class);
+                UUID subscriptionId = required(event.subscriptionId(), "subscriptionId", message);
+                // One type for a first period and a renewal: the receipt says the same thing either way --
+                // what was paid and the day the plan now runs to. `renewal` is kept for a client that
+                // wants to tell them apart.
+                yield List.of(NotificationRequest.about(
+                        required(event.accountId(), "accountId", message),
+                        NotificationType.SUBSCRIPTION_RENEWED,
+                        SUBSCRIPTION,
+                        subscriptionId,
+                        params(
+                                "subscriptionId",
+                                subscriptionId,
+                                "planName",
+                                required(event.planName(), "planName", message),
+                                "amount",
+                                required(event.amount(), "amount", message),
+                                "periodEnd",
+                                dueDate(required(event.periodEnd(), "periodEnd", message)),
+                                "renewal",
+                                event.renewal()),
+                        at(event.paidAt(), message)));
             }
             case ProjectLaunched.EVENT_TYPE -> {
                 ProjectLaunched event = read(message, ProjectLaunched.class);

@@ -47,6 +47,12 @@ public class NotificationFacts {
      */
     private static final String PAYOUT_SETTINGS = "/settings/payout";
 
+    /**
+     * The pricing page, where a creator's plan is bought and renewed. Where the three subscription
+     * types go by email and in the web inbox (#450) -- but not by push: see {@link #appPathFor}.
+     */
+    private static final String PRICING = "/pricing";
+
     private final ObjectMapper json;
 
     public NotificationFacts(ObjectMapper json) {
@@ -131,6 +137,14 @@ public class NotificationFacts {
             case PAYOUT_SENT, REFUND_SENT_BY_BANK -> facts.withAmount(money(params, "amount"))
                     .withDetail(text(params, "sentOn"))
                     .withAccount(text(params, "accountHint"));
+            // #450. A creator's own plan: which one, what it costs or what was paid, and the day its
+            // period ends -- the day it is due, the day it lapsed, or the day it is now paid until.
+            case SUBSCRIPTION_RENEWAL_DUE, SUBSCRIPTION_LAPSED -> facts.withPlan(text(params, "planName"))
+                    .withAmount(money(params, "price"))
+                    .withDetail(text(params, "periodEnd"));
+            case SUBSCRIPTION_RENEWED -> facts.withPlan(text(params, "planName"))
+                    .withAmount(money(params, "amount"))
+                    .withDetail(text(params, "periodEnd"));
             case NEW_UPDATE_PUBLISHED,
                     COMMENT_REPLY,
                     DIRECT_MESSAGE,
@@ -190,6 +204,9 @@ public class NotificationFacts {
      * @return a path beginning with {@code /}, never empty and never a whole URL
      */
     public String pathFor(NotificationType type, JsonNode params, String subjectType, UUID subjectId) {
+        if (isAboutAPlan(type)) {
+            return PRICING;
+        }
         String exact = appPathFor(type, params);
         if (exact != null) {
             return exact;
@@ -218,6 +235,12 @@ public class NotificationFacts {
      * why push sends this rather than {@link #pathFor}.
      */
     public String appPathFor(NotificationType type, JsonNode params) {
+        if (isAboutAPlan(type)) {
+            // #450. The application does not sell plans (Apple 3.1.1 and Play Billing, #164), so it has
+            // no pricing screen and its parser refuses the path: a push about a plan opens the inbox,
+            // and #452 sends the reader on to the web from there.
+            return null;
+        }
         if (type == NotificationType.REFUND_NEEDS_BANK_DETAILS || type == NotificationType.REFUND_SENT_BY_BANK) {
             String pledge = text(params, "pledgeId");
             if (!pledge.isEmpty()) {
@@ -228,6 +251,13 @@ public class NotificationFacts {
             return PAYOUT_SETTINGS;
         }
         return type == NotificationType.NEW_DEVICE_SIGN_IN ? SESSIONS : campaignPath(params);
+    }
+
+    /** Whether the message is about the creator's own plan rather than about a campaign — #450. */
+    private static boolean isAboutAPlan(NotificationType type) {
+        return type == NotificationType.SUBSCRIPTION_RENEWAL_DUE
+                || type == NotificationType.SUBSCRIPTION_LAPSED
+                || type == NotificationType.SUBSCRIPTION_RENEWED;
     }
 
     /** The campaign's public path from the two slugs, or null when the document has neither. */

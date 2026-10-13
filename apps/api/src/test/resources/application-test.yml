@@ -149,6 +149,12 @@ ideanest:
     # `-`, like every other job's schedule in this profile; PayoutDestinationReminderTests drives it.
     destination-reminder-schedule: "-"
 
+  subscription:
+    reminders:
+      # `-`, like every other job's schedule in this profile; SubscriptionRenewalReminderTests
+      # drives it with the instant it is asserting about.
+      schedule: "-"
+
   project:
     withdrawal:
       # `-`, like every other job's schedule in this profile; AutomaticWithdrawalTests drives it.

@@ -5,11 +5,15 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * {@code subscription.paid} — issues #449 and #450: a creator paid for a plan period by card, and is
- * sent a receipt. Recorded in the transaction that opens or extends the period.
+ * {@code subscription.paid} — epic #448: a payment for a creator plan was collected, for a first period
+ * or for a renewal, and the creator is sent {@code SUBSCRIPTION_RENEWED} as the receipt (#450).
  *
- * @param renewal whether it extended a running period rather than opening the first one
- * @param periodEnd when the period it paid for ends
+ * <p>The contract between #449, which records it in the transaction that opens or extends the period,
+ * and the notification module, which reads it by name. Changing a component is changing both.
+ *
+ * @param amount what was collected, the subscription's own snapshot price
+ * @param renewal whether this extended a running period rather than opening the first one
+ * @param periodEnd the end of the period the payment bought
  */
 public record SubscriptionPaidEvent(
         UUID subscriptionId,

@@ -564,6 +564,9 @@
         "PAYOUT_DETAILS_NEEDED": "{campaign} kampanyası için ödemeniz bilgilerinizi bekliyor",
         "REFUND_NEEDS_BANK_DETAILS": "{campaign} kampanyası için iadeniz banka bilgilerinizi bekliyor",
         "REFUND_SENT_BY_BANK": "{campaign} kampanyası için {amount} iadeniz {when} banka havalesiyle gönderildi",
+        "SUBSCRIPTION_RENEWAL_DUE": "{plan} planınız {when} sona eriyor: {amount} ödeyerek yenileyin",
+        "SUBSCRIPTION_LAPSED": "{plan} planınız {when} sona erdi",
+        "SUBSCRIPTION_RENEWED": "{plan} planınız {when} ödendi",
         "UPDATE_DUE_SOON": "{campaign} kampanyası için güncellemeniz {when} bekleniyor"
       },
       "unnamed": {
@@ -594,6 +597,9 @@
         "PAYOUT_DETAILS_NEEDED": "Ödemeniz VÖEN ve IBAN bilgilerinizi bekliyor",
         "REFUND_NEEDS_BANK_DETAILS": "İadeniz için banka bilgilerinize ihtiyacımız var",
         "REFUND_SENT_BY_BANK": "Banka havalesiyle {amount} iadeniz {when} gönderildi",
+        "SUBSCRIPTION_RENEWAL_DUE": "Planınız {when} sona eriyor: {amount} ödeyerek yenileyin",
+        "SUBSCRIPTION_LAPSED": "Planınız {when} sona erdi",
+        "SUBSCRIPTION_RENEWED": "Planınız {when} ödendi",
         "UPDATE_DUE_SOON": "Kampanyanız için güncellemeniz {when} bekleniyor"
       },
       "amount": {
@@ -603,7 +609,8 @@
         "needed": "gereken tutar",
         "closingTotal": "kapanış tutarı",
         "funds": "paranız",
-        "refund": "size ait"
+        "refund": "size ait",
+        "price": "plan ücretini"
       },
       "due": {
         "on": "{date} tarihine kadar",
@@ -613,6 +620,11 @@
         "on": "{date} tarihinde",
         "onTo": "{date} tarihinde {account} hesabına",
         "unknown": "kısa süre önce"
+      },
+      "period": {
+        "on": "{date} tarihinde",
+        "until": "{date} tarihine kadar",
+        "unknown": "bir sonraki dönem için"
       },
       "category": {
         "PLEDGES": "Destekleriniz",

@@ -135,6 +135,29 @@ public enum NotificationType {
     REFUND_SENT_BY_BANK(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.PUSH,
             NotificationChannel.IN_APP),
 
+    /**
+     * #450: to a creator — their priced plan ends in a few days and nothing renews it by itself (epic
+     * #448), with the price, the end date and a link to renew. Sent at each configured lead, once per
+     * period. {@code PAYMENTS}: it is the creator's own bill, and like the rest of the category it is
+     * transactional rather than marketing.
+     */
+    SUBSCRIPTION_RENEWAL_DUE(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.PUSH,
+            NotificationChannel.IN_APP),
+
+    /**
+     * #450: to a creator — the period ended without a renewal, so a new campaign cannot be submitted
+     * until they buy a plan again. Live campaigns are untouched. Once per period.
+     */
+    SUBSCRIPTION_LAPSED(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.PUSH,
+            NotificationChannel.IN_APP),
+
+    /**
+     * #450: to a creator — the receipt for a plan payment collected by card, a first period or a renewal,
+     * with the amount and the day the plan now runs to. Produced from #449's {@code subscription.paid}.
+     */
+    SUBSCRIPTION_RENEWED(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.PUSH,
+            NotificationChannel.IN_APP),
+
     /** A campaign published an update — §5.5 and #83. */
     NEW_UPDATE_PUBLISHED(NotificationCategory.COMMUNITY, NotificationChannel.EMAIL, NotificationChannel.PUSH,
             NotificationChannel.IN_APP),

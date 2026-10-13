@@ -90,6 +90,11 @@ function sharedFrom(t: NotificationsTranslator): NotificationsCopy {
       onTo: String(t.raw('sent.onTo')),
       unknown: t('sent.unknown'),
     },
+    period: {
+      on: String(t.raw('period.on')),
+      until: String(t.raw('period.until')),
+      unknown: t('period.unknown'),
+    },
     category: record('category'),
     categoryDescription: record('categoryDescription'),
     channel: record('channel'),

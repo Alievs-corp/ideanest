@@ -1,7 +1,7 @@
 package az.ideanest.notification.infrastructure;
 
 /**
- * The five things any email copy in {@code messages.properties} may refer to.
+ * The six things any email copy in {@code messages.properties} may refer to.
  *
  * <p><strong>One argument vector for every type, rather than a bespoke one each.</strong>
  * {@code MessageFormat} is positional, so a per-type vector would mean twenty
@@ -36,12 +36,16 @@ package az.ideanest.notification.infrastructure;
  * @param account {@code {4}} — the masked account money went to ({@code AZ21…1944}), never the
  *     number — #418. Often absent, so only a type's {@code .account} paragraph names it, and
  *     {@code EmailComposer} leaves that paragraph out when this is empty
+ * @param plan {@code {5}} — the creator plan a subscription message is about ({@code Growth}) — #450.
+ *     Its own slot rather than {@code {1}}: the plan is not a campaign, and putting it there would
+ *     make every {@code .named} key, and the inbox's campaign link, read a plan as one
  */
-public record EmailFacts(String recipientName, String projectTitle, String amount, String detail, String account) {
+public record EmailFacts(
+        String recipientName, String projectTitle, String amount, String detail, String account, String plan) {
 
     /** What a type with nothing to add says: the recipient's name and nothing else. */
     public static EmailFacts of(String recipientName) {
-        return new EmailFacts(recipientName, "", "", "", "");
+        return new EmailFacts(recipientName, "", "", "", "", "");
     }
 
     public EmailFacts {
@@ -50,30 +54,36 @@ public record EmailFacts(String recipientName, String projectTitle, String amoun
         amount = amount == null ? "" : amount;
         detail = detail == null ? "" : detail;
         account = account == null ? "" : account;
+        plan = plan == null ? "" : plan;
     }
 
     /** The same, with the campaign named. */
     public EmailFacts about(String title) {
-        return new EmailFacts(recipientName, title, amount, detail, account);
+        return new EmailFacts(recipientName, title, amount, detail, account, plan);
     }
 
     /** The same, carrying an amount. */
     public EmailFacts withAmount(String formatted) {
-        return new EmailFacts(recipientName, projectTitle, formatted, detail, account);
+        return new EmailFacts(recipientName, projectTitle, formatted, detail, account, plan);
     }
 
     /** The same, carrying the type's one further fact. */
     public EmailFacts withDetail(String value) {
-        return new EmailFacts(recipientName, projectTitle, amount, value, account);
+        return new EmailFacts(recipientName, projectTitle, amount, value, account, plan);
     }
 
     /** The same, carrying the masked account. */
     public EmailFacts withAccount(String hint) {
-        return new EmailFacts(recipientName, projectTitle, amount, detail, hint);
+        return new EmailFacts(recipientName, projectTitle, amount, detail, hint, plan);
+    }
+
+    /** The same, naming the creator plan. */
+    public EmailFacts withPlan(String name) {
+        return new EmailFacts(recipientName, projectTitle, amount, detail, account, name);
     }
 
     /** The vector, in the order the keys document. */
     public Object[] arguments() {
-        return new Object[] {recipientName, projectTitle, amount, detail, account};
+        return new Object[] {recipientName, projectTitle, amount, detail, account, plan};
     }
 }
