@@ -1,7 +1,8 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import { localeOrDefault, type Locale } from '../i18n/locale';
-import type { HeldSubscription, MySubscription, PlanPaymentReturnHint } from '@ideanest/plans/catalogue';
+import type { HeldSubscription, MySubscription } from '@ideanest/plans/catalogue';
+import type { PlanPaymentReturnHint } from '@ideanest/plans/payment';
 
 /**
  * What the platform charges a creator to publish, and what one account holds.
@@ -35,10 +36,9 @@ export type {
   MySubscription,
   PaymentDue,
   Plan,
-  PlanPaymentReturn,
-  PlanPaymentReturnHint,
   SubscriptionState,
 } from '@ideanest/plans/catalogue';
+export type { PlanPaymentReturn, PlanPaymentReturnHint } from '@ideanest/plans/payment';
 
 /**
  * What this account holds, or nothing.
