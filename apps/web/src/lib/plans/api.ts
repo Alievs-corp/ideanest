@@ -1,6 +1,7 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
-import type { HeldSubscription, MySubscription } from '@ideanest/plans/catalogue';
+import { localeOrDefault, type Locale } from '../i18n/locale';
+import type { HeldSubscription, MySubscription, PlanPaymentReturnHint } from '@ideanest/plans/catalogue';
 
 /**
  * What the platform charges a creator to publish, and what one account holds.
@@ -32,7 +33,10 @@ export type {
   Catalogue,
   HeldSubscription,
   MySubscription,
+  PaymentDue,
   Plan,
+  PlanPaymentReturn,
+  PlanPaymentReturnHint,
   SubscriptionState,
 } from '@ideanest/plans/catalogue';
 
@@ -65,8 +69,8 @@ function normaliseMine(body: { subscription?: HeldSubscription | null }): MySubs
  * Buys a plan.
  *
  * <p>What comes back is not necessarily an entitlement. A priced plan arrives
- * `PENDING_PAYMENT` with `entitled: false`, because nothing on this platform can charge a
- * card yet — the service's own comment names the issue. The caller renders what it is given
+ * `PENDING_PAYMENT` with `entitled: false`, and opens when it is paid — by card through
+ * {@link payForPlan}, or by a bank transfer staff record (#449). The caller renders what it is given
  * rather than assuming a purchase succeeded.
  */
 export async function subscribeToPlan(planId: string, signal?: AbortSignal): Promise<MySubscription> {
@@ -92,6 +96,77 @@ export async function cancelSubscription(signal?: AbortSignal): Promise<MySubscr
   if (!response.ok) throw await errorFrom(response);
 
   return normaliseMine((await response.json()) as { subscription?: HeldSubscription | null });
+}
+
+/** Where the provider sends the creator back to, and the language its page is drawn in. */
+export interface PlanPaymentRequest {
+  readonly language: Locale;
+  readonly successUrl: string;
+  readonly errorUrl: string;
+}
+
+/** Where to send the browser to pay. Nothing has been paid when this arrives. */
+export interface PlanPaymentPage {
+  readonly providerTransactionId: string;
+  readonly redirectUrl: string;
+}
+
+/**
+ * Opens the provider's page for whatever the caller owes now — #449.
+ *
+ * <p>The first period of a pending plan, or the next period of one inside its renewal window: the
+ * service decides which, and answers `409 SUBSCRIPTION_PAYMENT_NOT_DUE` with a `reason` when it is
+ * neither. `Idempotency-Key` is required, as on every payment mutation (§10.3), and the caller owns
+ * it: one key per press of the button, so a retried request answers with the page the first one
+ * opened rather than opening a second.
+ */
+export async function payForPlan(
+  body: PlanPaymentRequest,
+  idempotencyKey: string,
+  signal?: AbortSignal,
+): Promise<PlanPaymentPage> {
+  const response = await authorizedFetch('/v1/me/subscription/payment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!response.ok) throw await errorFrom(response);
+
+  return (await response.json()) as PlanPaymentPage;
+}
+
+/**
+ * Where the provider returns the creator: the pricing page, in the language it was read in, with
+ * `?payment=` saying which door they came through — the same shape as a pledge's return
+ * (`lib/pledges/payment.ts`). The word is a hint and not a fact: the provider's callback is what
+ * opens the period, and it can land before or after the browser, so the page re-reads the
+ * subscription rather than believing the address.
+ *
+ * <p>`from` and `project` are carried through when a refused submission sent the creator here, so
+ * the banner and the way back to their campaign survive the trip to the provider. Absolute URLs,
+ * because the provider redirects from its own domain; `localePrefix` is `always`, so the first path
+ * segment is the locale.
+ */
+export function planPaymentReturnFor(
+  fromProjectId?: string,
+  location: Pick<Location, 'origin' | 'pathname'> = window.location,
+): PlanPaymentRequest {
+  const language = localeOrDefault(location.pathname.split('/')[1]);
+  const page = `${location.origin}/${language}/pricing`;
+  const from =
+    fromProjectId === undefined ? '' : `from=submit&project=${encodeURIComponent(fromProjectId)}&`;
+  return {
+    language,
+    successUrl: `${page}?${from}payment=returned`,
+    errorUrl: `${page}?${from}payment=failed`,
+  };
+}
+
+/** What `?payment=` may say. Anything else is not a return from the payment page. */
+export function planPaymentReturnHint(search: string): PlanPaymentReturnHint | null {
+  const value = new URLSearchParams(search).get('payment');
+  return value === 'returned' || value === 'failed' ? value : null;
 }
 
 /**

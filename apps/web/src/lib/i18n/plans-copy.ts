@@ -63,6 +63,36 @@ export interface HeldCopy {
   readonly currentTag: string;
 }
 
+/** What the page says on the way back from the payment provider — #451. */
+export interface PlanPaymentReturnCopy {
+  readonly waitingTitle: string;
+  readonly waitingBody: string;
+  readonly paidTitle: string;
+  /** Carries `{plan}` and `{date}`. */
+  readonly paidBody: string;
+  readonly unconfirmedTitle: string;
+  readonly unconfirmedBody: string;
+  readonly failedTitle: string;
+  readonly failedBody: string;
+}
+
+/** Paying for a plan by card, and renewing one — #451. */
+export interface PlanPaymentCopy {
+  /** Carries `{price}`, already formatted as money. */
+  readonly payByCard: string;
+  /** Carries `{price}`, already formatted as money. */
+  readonly renew: string;
+  readonly opening: string;
+  readonly cardBody: string;
+  /** Carries `{plan}` and `{date}`. */
+  readonly renewalTitle: string;
+  readonly renewalBody: string;
+  readonly renewalCancelled: string;
+  /** Carries `{date}`. */
+  readonly renewsFrom: string;
+  readonly returned: PlanPaymentReturnCopy;
+}
+
 export interface PricingCopy {
   readonly title: string;
   readonly intro: string;
@@ -79,11 +109,17 @@ export interface PricingCopy {
   readonly limits: PlanLimitsCopy;
   readonly fromSubmit: FromSubmitCopy;
   readonly held: HeldCopy;
+  readonly payment: PlanPaymentCopy;
   readonly errors: {
     readonly alreadySubscribed: string;
     readonly notOnSale: string;
     readonly signedOut: string;
     readonly generic: string;
+    readonly freePlan: string;
+    readonly renewalNotOpen: string;
+    readonly lapsed: string;
+    readonly notDue: string;
+    readonly paymentUnavailable: string;
   };
 }
 
@@ -140,11 +176,36 @@ export function pricingCopyFrom(t: PricingTranslator): PricingCopy {
       cancelling: t('held.cancelling'),
       currentTag: t('held.currentTag'),
     },
+    payment: {
+      payByCard: String(t.raw('payment.payByCard')),
+      renew: String(t.raw('payment.renew')),
+      opening: t('payment.opening'),
+      cardBody: t('payment.cardBody'),
+      renewalTitle: String(t.raw('payment.renewalTitle')),
+      renewalBody: t('payment.renewalBody'),
+      renewalCancelled: t('payment.renewalCancelled'),
+      renewsFrom: String(t.raw('payment.renewsFrom')),
+      returned: {
+        waitingTitle: t('payment.returned.waitingTitle'),
+        waitingBody: t('payment.returned.waitingBody'),
+        paidTitle: t('payment.returned.paidTitle'),
+        paidBody: String(t.raw('payment.returned.paidBody')),
+        unconfirmedTitle: t('payment.returned.unconfirmedTitle'),
+        unconfirmedBody: t('payment.returned.unconfirmedBody'),
+        failedTitle: t('payment.returned.failedTitle'),
+        failedBody: t('payment.returned.failedBody'),
+      },
+    },
     errors: {
       alreadySubscribed: t('errors.alreadySubscribed'),
       notOnSale: t('errors.notOnSale'),
       signedOut: t('errors.signedOut'),
       generic: t('errors.generic'),
+      freePlan: t('errors.freePlan'),
+      renewalNotOpen: t('errors.renewalNotOpen'),
+      lapsed: t('errors.lapsed'),
+      notDue: t('errors.notDue'),
+      paymentUnavailable: t('errors.paymentUnavailable'),
     },
   };
 }

@@ -3,15 +3,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CircleCheck } from 'lucide-react';
 import { InlineAlert, Pill } from '@ideanest/ui';
+import { newIdempotencyKey } from '@ideanest/checkout/idempotency';
+import { PAYMENT_CHECKS, PAYMENT_CHECK_INTERVAL_MS } from '@ideanest/checkout/pledge';
+import { planPaymentRefusalOf, planPaymentReturnOf } from '@ideanest/plans/catalogue';
 import { ApiError } from '../../lib/api/problem';
 import {
   cancelSubscription,
   formatPrice,
+  payForPlan,
+  planPaymentReturnFor,
+  planPaymentReturnHint,
   readMySubscription,
   subscribeToPlan,
   type HeldSubscription,
   type Plan,
+  type PlanPaymentReturn,
+  type PlanPaymentReturnHint,
 } from '../../lib/plans/api';
+import { leaveForPaymentPage } from '../../lib/pledges/payment';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import type { PricingCopy } from '../../lib/i18n/plans-copy';
 import { dateTimeFormat } from '../../lib/i18n/formats';
@@ -38,10 +47,22 @@ import { Link, useRouter } from '../../i18n/navigation';
  *
  * <h2>Buying does not always mean paid</h2>
  *
- * A priced plan comes back `PENDING_PAYMENT` with `entitled: false`, because nothing on this
- * platform can charge a card yet. The panel says what happens next rather than congratulating
- * somebody on a purchase the platform has not seen the money for. A free plan comes back
- * active. Both are the same code path; the panel branches on what the service answered.
+ * A priced plan comes back `PENDING_PAYMENT` with `entitled: false`. The panel says what happens
+ * next rather than congratulating somebody on a purchase the platform has not seen the money for.
+ * A free plan comes back active. Both are the same code path; the panel branches on what the
+ * service answered.
+ *
+ * <h2>Paying and renewing by card (#451)</h2>
+ *
+ * The service says what can be paid for now in `paymentDue`, and the panel offers exactly that:
+ * "Pay by card" for the first period of a pending plan, beside the bank transfer that stays the
+ * alternative, and "Renew" inside the renewal window before a period ends. Nothing is charged on
+ * a schedule (epic #448), so outside the window the panel only says when renewing opens. The
+ * button opens the provider's page through `POST /v1/me/subscription/payment`, with a fresh
+ * idempotency key per press, and the provider sends the creator back here with `?payment=`. That
+ * word is a hint: the callback is what opens the period, and it can arrive after the browser, so
+ * the subscription is re-read every few seconds for a minute (the pledge page's bound) and the
+ * notice says paid, still waiting, or not paid from what the subscription now says.
  *
  * MOTION: none. `docs/motion-system.md` §5 gives money surfaces no entry animation, and this
  * is the page where somebody decides to spend some.
@@ -68,9 +89,21 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
   const [held, setHeld] = useState<HeldSubscription | null>(null);
   const [busyPlan, setBusyPlan] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [returned, setReturned] = useState<PlanPaymentReturnHint | null>(null);
+  const [checks, setChecks] = useState(0);
 
   const announcement = useRef<HTMLDivElement>(null);
+
+  /*
+   * Read from the address once, after hydration, as the pledge page does: the hint changes nothing
+   * the server renders, and reading it here keeps the page free of a Suspense boundary for one
+   * query parameter.
+   */
+  useEffect(() => {
+    setReturned(planPaymentReturnHint(window.location.search));
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -133,9 +166,9 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
   /*
    * THE MOMENT A TRANSFER IS RECORDED HAPPENS SOMEWHERE ELSE.
    *
-   * Nothing on this platform can charge a card yet, so a priced plan is activated by a member
-   * of staff who has seen the money — minutes or days after the creator chose it, and with no
-   * signal to this tab. Without this the creator sits on a page that still says "we are
+   * A plan paid by bank transfer is activated by a member of staff who has seen the money —
+   * minutes or days after the creator chose it, and with no signal to this tab. (A card payment
+   * returns to this page with `?payment=`, which is read below.) Without this the creator sits on a page that still says "we are
    * waiting for your transfer" long after it arrived, and their campaign stays unsubmitted
    * because they were never told they could go back.
    *
@@ -169,6 +202,66 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
       window.removeEventListener('focus', recheck);
     };
   }, [fromProjectId, held]);
+
+  /*
+   * BACK FROM THE PROVIDER, AND THE CALLBACK MAY NOT HAVE LANDED YET.
+   *
+   * The pledge page's bound: every three seconds for a minute, and only while the payment the
+   * creator has just come back from is still due. Once it is not, or once the page has stopped
+   * asking, the notice says so in words. "Still waiting" is never turned into "failed", because the
+   * money may have left their account.
+   */
+  const stoppedAsking = checks >= PAYMENT_CHECKS;
+  const outcome: PlanPaymentReturn | null =
+    returned !== null && status === 'ready' ? planPaymentReturnOf(returned, held, stoppedAsking) : null;
+
+  useEffect(() => {
+    if (outcome !== 'waiting') return;
+    const timer = setTimeout(() => {
+      setChecks((count) => count + 1);
+      void (async () => {
+        try {
+          const mine = await readMySubscription();
+          setHeld(mine.subscription);
+        } catch {
+          // Keep what is on screen and ask again on the next tick; one failed read is not news.
+        }
+      })();
+    }, PAYMENT_CHECK_INTERVAL_MS);
+    return () => clearTimeout(timer);
+  }, [outcome, checks]);
+
+  /*
+   * One key per press, minted here. A key belongs to an intent, and the intent is this press: a
+   * retry of the request after a lost response answers with the page the first attempt opened. The
+   * next press is a new intent, and the service sends a second key back to a page that is still
+   * open rather than opening another, so a creator who closed the provider's tab is not stuck
+   * behind a spent key.
+   */
+  const pay = useCallback(async (): Promise<void> => {
+    if (paying) return;
+    setPaying(true);
+    setError(null);
+    try {
+      const page = await payForPlan(planPaymentReturnFor(fromProjectId), newIdempotencyKey());
+      // Leaving, not done: `paying` stays set so the control cannot be pressed again while the
+      // browser is on its way to the provider.
+      leaveForPaymentPage(page.redirectUrl);
+    } catch (cause) {
+      setError(paymentMessageFor(cause, copy));
+      setPaying(false);
+      // "Nothing is due" means the panel is out of date (the window closed, the plan lapsed, or a
+      // transfer was recorded meanwhile), so it is read again and stops offering the button.
+      if (cause instanceof ApiError && cause.status === 409) {
+        try {
+          const mine = await readMySubscription();
+          setHeld(mine.subscription);
+        } catch {
+          // The message above already says what to do; a failed re-read adds nothing to it.
+        }
+      }
+    }
+  }, [copy, fromProjectId, paying]);
 
   const stop = useCallback(async (): Promise<void> => {
     setCancelling(true);
@@ -226,6 +319,16 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
         {held !== null ? describeHeld(held, copy, locale) : ''}
       </div>
 
+      {/*
+        Present before anything is put in it, so the notice changing under the polling above --
+        waiting, then paid -- is announced. `role="status"`: politely, and without taking focus.
+      */}
+      <div role="status" aria-live="polite" className="empty:hidden">
+        {outcome !== null && held !== null && (
+          <PaymentReturnNotice outcome={outcome} held={held} copy={copy} locale={locale} />
+        )}
+      </div>
+
       {status === 'loading' && <p className="text-sm text-white/64">{copy.loading}</p>}
 
       {status === 'signed-out' && (
@@ -243,6 +346,11 @@ export function PlanChooser({ plans, copy, locale, fromProjectId }: PlanChooserP
           locale={locale}
           cancelling={cancelling}
           onCancel={() => void stop()}
+          paying={paying}
+          // While the payment the creator has just made is being confirmed, a second button would
+          // invite a second payment the notice above says they do not need to make.
+          canPay={outcome !== 'waiting'}
+          onPay={() => void pay()}
         />
       )}
 
@@ -281,10 +389,19 @@ interface HeldPanelProps {
   locale: Locale;
   cancelling: boolean;
   onCancel: () => void;
+  paying: boolean;
+  canPay: boolean;
+  onPay: () => void;
 }
 
-function HeldPanel({ held, copy, locale, cancelling, onCancel }: HeldPanelProps) {
+function HeldPanel({ held, copy, locale, cancelling, onCancel, paying, canPay, onPay }: HeldPanelProps) {
   const pending = held.state === 'PENDING_PAYMENT';
+  const due = held.paymentDue ?? null;
+  const renewing = due === 'RENEWAL' && held.entitled;
+  // The subscription's own snapshot price, not today's catalogue price (V62): a renewal is charged
+  // at the price the creator bought at.
+  const price = formatPrice(held.price, held.currency, locale);
+  const opensAt = due === null && held.entitled ? formatDate(held.renewalOpensAt, locale) : '';
 
   return (
     <section
@@ -301,12 +418,40 @@ function HeldPanel({ held, copy, locale, cancelling, onCancel }: HeldPanelProps)
         that entitles nobody is the one thing this panel must not show.
       */}
       <InlineAlert
-        variant={pending ? 'warning' : held.entitled ? 'success' : 'info'}
+        variant={pending || renewing ? 'warning' : held.entitled ? 'success' : 'info'}
         title={describeHeld(held, copy, locale)}
         className="mt-3"
       >
-        {pending && <p>{copy.held.pendingBody}</p>}
+        {pending && due === 'FIRST_PERIOD' && <p>{copy.payment.cardBody}</p>}
+        {/* Bank transfer stays as the alternative (epic #448), so it is said beside the card. */}
+        {pending && <p className={due === 'FIRST_PERIOD' ? 'mt-2' : undefined}>{copy.held.pendingBody}</p>}
+        {renewing && <p>{copy.payment.renewalBody}</p>}
+        {renewing && held.cancelAtPeriodEnd && <p className="mt-2">{copy.payment.renewalCancelled}</p>}
+        {opensAt !== '' && <p>{fillPlaceholders(copy.payment.renewsFrom, { date: opensAt })}</p>}
       </InlineAlert>
+
+      {/*
+        White, the primary action, not lime: lime says "act now" (ui-kit 2.3) and the plan cards
+        below already carry it. No entry motion either: this is the step that takes money
+        (motion-system 5). `aria-disabled` rather than `disabled` while the request is in flight,
+        as the plan cards do, so focus is not thrown off the control the reader just pressed.
+      */}
+      {due !== null && canPay && (pending || renewing) && (
+        <Pill
+          variant="primary"
+          size="md"
+          className={paying ? 'mt-4 opacity-40' : 'mt-4'}
+          aria-disabled={paying}
+          onClick={() => {
+            if (paying) return;
+            onPay();
+          }}
+        >
+          {paying
+            ? copy.payment.opening
+            : fillPlaceholders(due === 'RENEWAL' ? copy.payment.renew : copy.payment.payByCard, { price })}
+        </Pill>
+      )}
 
       {held.entitled && !held.cancelAtPeriodEnd && (
         <Pill variant="ghost" size="sm" className="mt-4" aria-disabled={cancelling} onClick={onCancel}>
@@ -330,8 +475,60 @@ function describeHeld(held: HeldSubscription, copy: PricingCopy, locale: Locale)
 
   if (held.state === 'PENDING_PAYMENT') return fillPlaceholders(copy.held.pendingTitle, { plan });
   if (!held.entitled) return fillPlaceholders(copy.held.lapsed, { plan, date });
+  if (held.paymentDue === 'RENEWAL') return fillPlaceholders(copy.payment.renewalTitle, { plan, date });
   if (held.cancelAtPeriodEnd) return fillPlaceholders(copy.held.endingOn, { plan, date });
   return fillPlaceholders(copy.held.activeUntil, { plan, date });
+}
+
+/**
+ * What the creator is told on the way back from the provider.
+ *
+ * <p>The subscription decides it (`planPaymentReturnOf`), not the word in the address. Words and an
+ * icon-bearing alert rather than colour alone (ui-kit 9.2), and no motion: this is money.
+ */
+function PaymentReturnNotice({
+  outcome,
+  held,
+  copy,
+  locale,
+}: {
+  readonly outcome: PlanPaymentReturn;
+  readonly held: HeldSubscription;
+  readonly copy: PricingCopy;
+  readonly locale: Locale;
+}) {
+  const returned = copy.payment.returned;
+  switch (outcome) {
+    case 'paid':
+      return (
+        <InlineAlert variant="success" title={returned.paidTitle}>
+          <p>
+            {fillPlaceholders(returned.paidBody, {
+              plan: held.plan.name,
+              date: formatDate(held.currentPeriodEnd, locale),
+            })}
+          </p>
+        </InlineAlert>
+      );
+    case 'waiting':
+      return (
+        <InlineAlert variant="info" title={returned.waitingTitle}>
+          <p>{returned.waitingBody}</p>
+        </InlineAlert>
+      );
+    case 'unconfirmed':
+      return (
+        <InlineAlert variant="warning" title={returned.unconfirmedTitle}>
+          <p>{returned.unconfirmedBody}</p>
+        </InlineAlert>
+      );
+    case 'failed':
+      return (
+        <InlineAlert variant="warning" title={returned.failedTitle}>
+          <p>{returned.failedBody}</p>
+        </InlineAlert>
+      );
+  }
 }
 
 /* -------------------------------------------------------------------------
@@ -445,6 +642,15 @@ function messageFor(cause: unknown, copy: PricingCopy): string {
     if (cause.status === 401) return copy.errors.signedOut;
   }
   return copy.errors.generic;
+}
+
+/**
+ * A refused plan payment as something to read (#451): by `code` and `reason`, never by prose.
+ */
+function paymentMessageFor(cause: unknown, copy: PricingCopy): string {
+  if (!(cause instanceof ApiError)) return copy.errors.generic;
+  const problem: Record<string, unknown> = { ...cause.problem };
+  return copy.errors[planPaymentRefusalOf(cause.status, cause.problem?.code, problem.reason)];
 }
 
 /**
