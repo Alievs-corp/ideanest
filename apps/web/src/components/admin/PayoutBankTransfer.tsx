@@ -9,6 +9,7 @@ import {
   startBankTransfer,
   type BankTransferInstruction,
 } from '../../lib/admin/payout-bank-transfers';
+import { bankFeeFrom } from '../../lib/admin/bank-fee';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import { bankDay, bankTransferInProgress, type Payout } from '../../lib/admin/payouts';
 import { figuresMoved, payoutRefusalFor } from '../../lib/admin/payout-refusals';
@@ -119,6 +120,7 @@ export function PayoutBankTransfer({
   const [reference, setReference] = useState('');
   const [transferredOn, setTransferredOn] = useState(() => bankDay());
   const [recordNote, setRecordNote] = useState('');
+  const [bankFee, setBankFee] = useState('');
   const [abandonNote, setAbandonNote] = useState('');
 
   const inFlight = useRef<AbortController | null>(null);
@@ -173,7 +175,9 @@ export function PayoutBankTransfer({
   const amount = instruction?.amount ?? payout.net;
   const startedOn = payout.bankTransferStartedAt == null ? null : bankDay(new Date(payout.bankTransferStartedAt));
   const today = bankDay();
-  const recordReady = reference.trim() !== '' && transferredOn !== '' && recordNote.trim() !== '';
+  const fee = bankFeeFrom(bankFee);
+  const recordReady =
+    reference.trim() !== '' && transferredOn !== '' && recordNote.trim() !== '' && fee !== undefined;
 
   return (
     <section aria-labelledby={headingId} className="mt-4 border-t border-white/8 pt-4">
@@ -257,6 +261,9 @@ export function PayoutBankTransfer({
               setReference={setReference}
               transferredOn={transferredOn}
               setTransferredOn={setTransferredOn}
+              bankFee={bankFee}
+              setBankFee={setBankFee}
+              fee={fee}
               recordNote={recordNote}
               setRecordNote={setRecordNote}
               abandonNote={abandonNote}
@@ -271,6 +278,7 @@ export function PayoutBankTransfer({
                     bankReference: reference.trim(),
                     transferredOn,
                     note: recordNote.trim(),
+                    ...(fee ? { bankFee: fee } : {}),
                   }),
                 )
               }
@@ -415,6 +423,9 @@ function RecordAndAbandon({
   setReference,
   transferredOn,
   setTransferredOn,
+  bankFee,
+  setBankFee,
+  fee,
   recordNote,
   setRecordNote,
   abandonNote,
@@ -434,6 +445,9 @@ function RecordAndAbandon({
   readonly setReference: (value: string) => void;
   readonly transferredOn: string;
   readonly setTransferredOn: (value: string) => void;
+  readonly bankFee: string;
+  readonly setBankFee: (value: string) => void;
+  readonly fee: string | null | undefined;
   readonly recordNote: string;
   readonly setRecordNote: (value: string) => void;
   readonly abandonNote: string;
@@ -491,6 +505,13 @@ function RecordAndAbandon({
               date: transferredOn,
             })}
           </p>
+          {fee && (
+            <p className="max-w-[62ch] text-sm text-white">
+              {fillPlaceholders(words.confirmBankFee, {
+                amount: formatMoney({ amount: fee, currency: amount.currency }),
+              })}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Pill size="sm" autoFocus aria-disabled={busy} onClick={onRecord}>
               {busy ? words.recording : words.confirmRecordAction}
@@ -525,6 +546,20 @@ function RecordAndAbandon({
                 min={min}
                 max={max}
                 onChange={(event) => setTransferredOn(event.target.value)}
+              />
+            </Field>
+            <Field
+              label={words.bankFee}
+              hint={words.bankFeeHint}
+              error={fee === undefined ? words.bankFeeInvalid : undefined}
+              className="min-w-[160px]"
+            >
+              <TextInput
+                inputMode="decimal"
+                autoComplete="off"
+                value={bankFee}
+                maxLength={16}
+                onChange={(event) => setBankFee(event.target.value)}
               />
             </Field>
           </div>

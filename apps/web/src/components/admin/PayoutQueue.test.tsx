@@ -417,6 +417,34 @@ describe('a transfer in progress', () => {
     expect(await screen.findByText(fillPlaceholders(WORDS.paidOn, { date: bakuToday() }))).toBeInTheDocument();
   });
 
+  it('records the bank fee as typed from the statement, and refuses one that is not an amount', async () => {
+    const user = await openFile(startedPayout());
+    recordMock.mockResolvedValue(bankPayout({ state: 'PAID', bankTransferredOn: bakuToday() }));
+
+    const form = screen.getByRole('form', { name: WORDS.recordHeading });
+    await user.type(within(form).getByLabelText(new RegExp(WORDS.bankReference)), 'FT26285ABC12');
+    await user.type(within(form).getByLabelText(new RegExp(`^${WORDS.noteLabel}`)), 'Statement line 14');
+    const fee = within(form).getByLabelText(new RegExp(`^${WORDS.bankFee}`));
+    await user.type(fee, '1.234');
+
+    expect(within(form).getByText(WORDS.bankFeeInvalid)).toBeInTheDocument();
+    expect(within(form).getByRole('button', { name: WORDS.recordTransfer })).toBeDisabled();
+
+    await user.clear(fee);
+    await user.type(fee, '1,20');
+    await user.click(within(form).getByRole('button', { name: WORDS.recordTransfer }));
+
+    expect(screen.getByText(fillPlaceholders(WORDS.confirmBankFee, { amount: '1.20 AZN' }))).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: WORDS.confirmRecordAction }));
+
+    expect(recordMock).toHaveBeenCalledWith(PAYOUT, {
+      bankReference: 'FT26285ABC12',
+      transferredOn: bakuToday(),
+      note: 'Statement line 14',
+      bankFee: '1.20',
+    });
+  });
+
   it.each([
     ['PAYOUT_BANK_TRANSFER_ALREADY_RECORDED', 409, COPY.refusal.PAYOUT_BANK_TRANSFER_ALREADY_RECORDED],
     ['PAYOUT_REFERENCE_TAKEN', 409, COPY.refusal.PAYOUT_REFERENCE_TAKEN],

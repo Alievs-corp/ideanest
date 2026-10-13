@@ -79,6 +79,8 @@ export interface BankTransferRecord {
   /** The value date, `YYYY-MM-DD`, between the day the transfer started and today in Baku. */
   readonly transferredOn: string;
   readonly note: string;
+  /** What the bank charged, a decimal string in the payout's currency. Absent for none (#401). */
+  readonly bankFee?: string;
 }
 
 /**

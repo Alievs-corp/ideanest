@@ -276,6 +276,29 @@ describe('refunds paid by bank transfer (#400)', () => {
     expect(listMock).toHaveBeenCalledTimes(2);
   });
 
+  it('sends the bank fee typed from the statement and says it is a platform expense', async () => {
+    const user = userEvent.setup();
+    recordMock.mockResolvedValue(awaitingTransfer({ state: 'SUCCEEDED' }));
+    showList([awaitingTransfer()]);
+
+    const form = await screen.findByRole('form', { name: BANK.recordTransfer });
+    await user.type(within(form).getByLabelText(new RegExp(`^${BANK.bankFee}`)), '0,50');
+    await fillRecordForm(user, 'KB-2026-0042');
+
+    expect(
+      screen.getByText(
+        fillPlaceholders(BANK.confirmBankFee, { amount: formatMoney({ amount: '0.50', currency: 'AZN' }) }),
+      ),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: BANK.confirmRecordAction }));
+
+    expect(recordMock).toHaveBeenCalledWith('aaaaaaaa-0000-0000-0000-000000000077', {
+      bankReference: 'KB-2026-0042',
+      transferredOn: todayInBaku(),
+      bankFee: '0.50',
+    });
+  });
+
   it.each([
     'BANK_REFERENCE_TAKEN',
     'TRANSFER_DATE_IN_FUTURE',

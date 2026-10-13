@@ -450,6 +450,11 @@ export interface PayoutBankTransferCopy {
   readonly bankReferenceHint: string;
   readonly transferredOn: string;
   readonly transferredOnHint: string;
+  readonly bankFee: string;
+  readonly bankFeeHint: string;
+  readonly bankFeeInvalid: string;
+  /** Carries `{amount}`. */
+  readonly confirmBankFee: string;
   readonly noteLabel: string;
   readonly recordNoteHint: string;
   readonly recordTransfer: string;
@@ -499,6 +504,10 @@ function payoutBankTransferCopyFrom(t: AdminTranslator): PayoutBankTransferCopy 
     bankReferenceHint: raw('bankReferenceHint'),
     transferredOn: raw('transferredOn'),
     transferredOnHint: raw('transferredOnHint'),
+    bankFee: raw('bankFee'),
+    bankFeeHint: raw('bankFeeHint'),
+    bankFeeInvalid: raw('bankFeeInvalid'),
+    confirmBankFee: raw('confirmBankFee'),
     noteLabel: raw('noteLabel'),
     recordNoteHint: raw('recordNoteHint'),
     recordTransfer: raw('recordTransfer'),
@@ -685,6 +694,11 @@ export interface RefundBankTransferCopy {
   readonly bankReferenceHint: string;
   readonly transferredOn: string;
   readonly transferredOnHint: string;
+  readonly bankFee: string;
+  readonly bankFeeHint: string;
+  readonly bankFeeInvalid: string;
+  /** Carries `{amount}`. */
+  readonly confirmBankFee: string;
   /** Carries `{amount}`, `{hint}`, `{date}`, `{reference}`. */
   readonly confirmRecord: string;
   readonly confirmRecordAction: string;
@@ -764,6 +778,10 @@ export function refundConsoleCopyFrom(
       bankReferenceHint: t('screens.refunds.bankReferenceHint'),
       transferredOn: t('screens.refunds.transferredOn'),
       transferredOnHint: t('screens.refunds.transferredOnHint'),
+      bankFee: t('screens.refunds.bankFee'),
+      bankFeeHint: t('screens.refunds.bankFeeHint'),
+      bankFeeInvalid: t('screens.refunds.bankFeeInvalid'),
+      confirmBankFee: String(t.raw('screens.refunds.confirmBankFee')),
       confirmRecord: String(t.raw('screens.refunds.confirmRecord')),
       confirmRecordAction: t('screens.refunds.confirmRecordAction'),
       recording: t('screens.refunds.recording'),

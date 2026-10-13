@@ -12,6 +12,7 @@ import {
   type RevealedRefundBankDetails,
 } from '../../lib/admin/refund-bank-transfers';
 import { consoleMessageFor, shortId, statusFor, wasAborted } from '../../lib/admin/refusals';
+import { bankFeeFrom } from '../../lib/admin/bank-fee';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import { formatMoney } from '../../lib/money';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -319,11 +320,13 @@ function RecordTransfer({
   const today = todayInBaku();
   const [reference, setReference] = useState('');
   const [on, setOn] = useState(today);
+  const [bankFee, setBankFee] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const ready = reference.trim() !== '' && on !== '';
+  const fee = bankFeeFrom(bankFee);
+  const ready = reference.trim() !== '' && on !== '' && fee !== undefined;
 
   async function record(): Promise<void> {
     if (busy) return;
@@ -333,6 +336,7 @@ function RecordTransfer({
       const settled = await recordRefundBankTransfer(refund.id, {
         bankReference: reference.trim(),
         transferredOn: on,
+        ...(fee ? { bankFee: fee } : {}),
       });
       onSettled({
         title: words.recordedTitle,
@@ -381,6 +385,21 @@ function RecordTransfer({
             onChange={(event) => setOn(event.target.value)}
           />
         </Field>
+        <Field
+          label={words.bankFee}
+          hint={words.bankFeeHint}
+          error={fee === undefined ? words.bankFeeInvalid : undefined}
+          className="min-w-[160px]"
+        >
+          <TextInput
+            inputMode="decimal"
+            autoComplete="off"
+            value={bankFee}
+            maxLength={16}
+            disabled={confirming}
+            onChange={(event) => setBankFee(event.target.value)}
+          />
+        </Field>
       </div>
 
       {error !== null && (
@@ -399,6 +418,13 @@ function RecordTransfer({
               reference: reference.trim(),
             })}
           </p>
+          {fee && (
+            <p className="max-w-[62ch] text-sm text-white">
+              {fillPlaceholders(words.confirmBankFee, {
+                amount: formatMoney({ amount: fee, currency: refund.amount.currency }),
+              })}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Pill size="sm" autoFocus aria-disabled={busy} onClick={() => void record()}>
               {busy ? words.recording : words.confirmRecordAction}
