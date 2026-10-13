@@ -51,6 +51,8 @@ import tools.jackson.databind.JsonNode;
  * {@code NEW_DEVICE_SIGN_IN}, otherwise the campaign, exactly the two the web inbox links
  * — and when there is neither it sends the bare scheme, which the application's tap
  * handler opens as the inbox (#160). The copy for those types does not promise more.
+ * A message about the creator's plan sends {@code ideanest://pricing}, and the application
+ * opens it on the website, where plans are paid for (#452).
  *
  * <h2>{@code data} says which inbox row this is</h2>
  *

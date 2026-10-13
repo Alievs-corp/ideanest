@@ -35,12 +35,33 @@ import {
  *
  * <p>Plan choices are white `primary` pills, not lime: the kit allows at most one accent per screen,
  * and a choice between plans is not "act now". The held plan's pill is `ghost`.
+ *
+ * <h2>Paying and renewing happen on the website (#452)</h2>
+ *
+ * <p>The app never takes money for a plan (Apple 3.1.1 and Play Billing, #164). When a payment is due
+ * (`paymentDue`, #449) the held panel says so and offers the screen's "open the pricing page" action
+ * — the same words and the same page as the web-only notice — never a pay or renew button and never
+ * a price beside one.
  */
 
-/** One sentence saying where a holder stands — four states, four sentences. */
+/** Whether the service would take a renewal for this plan now: inside its window, still running. */
+export function isRenewing(held: HeldSubscription): boolean {
+  return held.paymentDue === 'RENEWAL' && held.entitled;
+}
+
+/** Whether something is to be paid on the website now: the first period, or a renewal. */
+export function isPaymentDue(held: HeldSubscription): boolean {
+  return (held.state === 'PENDING_PAYMENT' && held.paymentDue === 'FIRST_PERIOD') || isRenewing(held);
+}
+
+/**
+ * One sentence saying where a holder stands — four states, four sentences, and a fifth inside the
+ * renewal window, which names the end date and the website as the place to renew.
+ */
 export function describeHeld(held: HeldSubscription, t: Translate, locale: Locale): string {
   const plan = held.plan.name;
   const date = formatDay(held.currentPeriodEnd, locale) ?? '';
+  if (isRenewing(held)) return t('mobile.pricing.renewalTitle', { plan, date });
   switch (standingOf(held)) {
     case 'pending':
       return t('pricing.held.pendingTitle', { plan });
@@ -61,12 +82,31 @@ const STANDING_VARIANT: Record<ReturnType<typeof standingOf>, InlineAlertVariant
   lapsed: 'info',
 };
 
+/**
+ * What the holder is told under the sentence: how a pending plan is paid, what renewing does, or
+ * when renewing opens. The bank transfer stays as the alternative to the card (epic #448), so a
+ * pending plan the service cannot take a card for keeps the transfer sentence alone.
+ */
+function heldDetail(held: HeldSubscription, t: Translate, locale: Locale): string | undefined {
+  if (held.state === 'PENDING_PAYMENT') {
+    return held.paymentDue === 'FIRST_PERIOD' ? t('mobile.pricing.pendingOnWeb') : t('pricing.held.pendingBody');
+  }
+  if (isRenewing(held)) {
+    const body = t('pricing.payment.renewalBody');
+    return held.cancelAtPeriodEnd ? `${body} ${t('pricing.payment.renewalCancelled')}` : body;
+  }
+  const opensAt = held.entitled && (held.paymentDue ?? null) === null ? formatDay(held.renewalOpensAt, locale) : null;
+  return opensAt === null ? undefined : t('mobile.pricing.renewsFromOnWeb', { date: opensAt });
+}
+
 export function HeldPanel({
   held,
   locale,
   onCancel,
   cancelling = false,
   cancelDisabled = false,
+  onOpenWeb,
+  openDisabled = false,
 }: {
   readonly held: HeldSubscription;
   readonly locale: Locale;
@@ -74,6 +114,10 @@ export function HeldPanel({
   readonly onCancel?: () => void;
   readonly cancelling?: boolean;
   readonly cancelDisabled?: boolean;
+  /** Opens the pricing page on the website, offered while a payment is due there. */
+  readonly onOpenWeb?: () => void;
+  /** Offline: the website cannot be opened. */
+  readonly openDisabled?: boolean;
 }) {
   const t = useT();
   const standing = standingOf(held);
@@ -82,9 +126,21 @@ export function HeldPanel({
       <View style={styles.stack}>
         <Eyebrow accessibilityRole="header">{t('pricing.held.heading')}</Eyebrow>
         <InlineAlert
-          variant={STANDING_VARIANT[standing]}
+          // A renewal that is due is something to do, like a pending plan: never a green tick.
+          variant={isRenewing(held) ? 'warning' : STANDING_VARIANT[standing]}
           title={describeHeld(held, t, locale)}
-          description={standing === 'pending' ? t('pricing.held.pendingBody') : undefined}
+          description={heldDetail(held, t, locale)}
+          action={
+            onOpenWeb !== undefined && isPaymentDue(held) ? (
+              <Pill
+                label={t('mobile.pricing.webOnly.open')}
+                size="sm"
+                disabled={openDisabled}
+                onPress={onOpenWeb}
+                testID="pricing-held-open-web"
+              />
+            ) : undefined
+          }
           // The screen announces a change itself, politely, as the web's live region does.
           politeness="off"
           testID="pricing-held-standing"

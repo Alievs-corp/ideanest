@@ -49,7 +49,7 @@ public class NotificationFacts {
 
     /**
      * The pricing page, where a creator's plan is bought and renewed. Where the three subscription
-     * types go by email and in the web inbox (#450) -- but not by push: see {@link #appPathFor}.
+     * types go on every channel (#450), push included since #452: see {@link #appPathFor}.
      */
     private static final String PRICING = "/pricing";
 
@@ -204,9 +204,6 @@ public class NotificationFacts {
      * @return a path beginning with {@code /}, never empty and never a whole URL
      */
     public String pathFor(NotificationType type, JsonNode params, String subjectType, UUID subjectId) {
-        if (isAboutAPlan(type)) {
-            return PRICING;
-        }
         String exact = appPathFor(type, params);
         if (exact != null) {
             return exact;
@@ -233,13 +230,16 @@ public class NotificationFacts {
      * inbox's {@code hrefOf} links, and all are screens the mobile application has — the
      * fallbacks resolve to paths it has no screen for, which is
      * why push sends this rather than {@link #pathFor}.
+     *
+     * <p>A message about the creator's own plan goes to the pricing page (#450). The application
+     * parses {@code /pricing} like any other link, and since #452 its push tap handler opens a plan
+     * message's destination on the web, in the browser, rather than in the application: the
+     * application does not sell or renew plans (Apple 3.1.1 and Play Billing, #164), the website
+     * does. An application built before #452 opens its own pricing screen, which links to the web.
      */
     public String appPathFor(NotificationType type, JsonNode params) {
         if (isAboutAPlan(type)) {
-            // #450. The application does not sell plans (Apple 3.1.1 and Play Billing, #164), so it has
-            // no pricing screen and its parser refuses the path: a push about a plan opens the inbox,
-            // and #452 sends the reader on to the web from there.
-            return null;
+            return PRICING;
         }
         if (type == NotificationType.REFUND_NEEDS_BANK_DETAILS || type == NotificationType.REFUND_SENT_BY_BANK) {
             String pledge = text(params, "pledgeId");

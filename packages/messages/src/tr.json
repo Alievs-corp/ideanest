@@ -6161,6 +6161,9 @@
       "chooseNamed": "Bu planı seç: {plan}",
       "offline": "İnternet bağlantısı yok. Plan seçmek veya iptal etmek için bağlantı gerekir; bağlantı geri gelene kadar bu seçenek sunulmaz.",
       "subscriptionUnavailable": "Hangi plana sahip olduğunuzu kontrol edemedik.",
+      "renewalTitle": "{plan} planınız {date} tarihinde sona eriyor — web sitesinden yenileyin",
+      "pendingOnWeb": "Ödemeyi IdeyaNest web sitesinde kartla ya da havaleyle tamamlayın. Ödeme onaylanır onaylanmaz plan başlar ve yayımlayabilirsiniz.",
+      "renewsFromOnWeb": "{date} tarihinden itibaren web sitesinden yenileyebilirsiniz",
       "webOnly": {
         "title": "Planlar web sitesinde seçilir",
         "body": "Bir plan seçmek, değiştirmek veya iptal etmek için bu sayfayı IdeyaNest web sitesinde açın. Orada seçtiğiniz plan etkinleştiği anda uygulamada da geçerli olur.",
@@ -6251,6 +6254,9 @@
       "signedOutBody": "Bildirimleriniz bu telefona değil, hesabınıza aittir. Okumak için giriş yapın.",
       "stale": "Daha önce yüklenen bildirimler gösteriliyor. Güncel olmayabilirler.",
       "offline": "Çevrimdışısınız. Bir bildirimi okundu olarak işaretlemek için bağlantı gerekir.",
+      "opensOnWeb": "IdeyaNest web sitesinde açılır",
+      "renewalDue": "{plan} planınız {when} sona eriyor: web sitesinden yenileyin",
+      "renewalDueUnnamed": "Planınız {when} sona eriyor: web sitesinden yenileyin",
       "explainer": {
         "title": "Bu telefonda bildirim alın",
         "pledgeBody": "Bu kampanya hedefine ulaştığında, güncelleme paylaştığında veya ödemenizi aldığında haberiniz olsun.",

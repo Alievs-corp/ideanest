@@ -556,13 +556,20 @@ prompt-free calls run (#160):
 Never on launch while signed out, and never again after a refusal. The tap handler
 (`src/lib/push-sync.tsx`, rules in `src/lib/push-taps.ts`) opens `data.url` through
 `destinationFor`; a push of ours with no destination (`ideanest://`, a digest) opens
-the inbox, and a `notificationId` in the payload marks that row read. The cold-start
-tap is handled once per response. No badge is ever set.
+the inbox, and a `notificationId` in the payload marks that row read. A push about the
+creator's own plan (`data.type` is one of the three `SUBSCRIPTION_*` types, #452) opens
+the website's `/{locale}/pricing` in the in-app browser instead of a screen, whatever its
+`url` says: the app does not sell or renew plans. The cold-start tap is handled once per
+response. No badge is ever set.
 
 `notifications` (#160) is the inbox — `GET /v1/me/notifications` paged by
 `before`/`beforeId`, held in memory only (the `inbox` root is never persisted), with
 the sentence and destination of each row from `@ideanest/account/inbox`, shared with
-the web. The header bell's count is a one-row read of the same endpoint.
+the web. The header bell's count is a one-row read of the same endpoint. A row about the
+creator's plan (`isAboutAPlan`, #452) opens its `/pricing` on the website in the in-app
+browser, ends in the external-link glyph and says so in its hint; the renewal reminder's
+sentence is the app's own (`mobile.notifications.renewalDue`), which leaves out the price
+the web's "renew it for {amount}" names (`src/features/notifications/copy.ts`).
 
 `settings/notifications` (#161) is one of those moments: turning a Push switch from
 Off while the phone has not allowed IdeyaNest calls `registerForPush()`.
@@ -1131,6 +1138,16 @@ policy). Until the owner decides between store billing and a written exemption, 
 action opens the web page in the in-app browser. When it closes, the subscription is read again.
 With the flag on, the cards choose (`POST`) and the held panel cancels (`DELETE`) in the app, as
 the web's `PlanChooser` does. Store billing itself is not built.
+
+**Paying and renewing are on the website, whatever the flag says (#452).** The held panel shows
+the end date. While the service says a payment is due (`paymentDue`, #449), it says where it is
+made and carries the same "Open the pricing page" action, and the web-only notice drops its own
+copy of the button: for `FIRST_PERIOD`, that the payment is completed on the website by card or
+bank transfer; for `RENEWAL`, "Your {plan} plan ends on {date} — renew it on the website", what
+renewing early costs (nothing) and, for a cancelled plan, that renewing keeps it going. Before the
+window opens it says from which day the plan can be renewed on the website. There is no pay or
+renew button and no price beside an action. Closing the browser re-reads the subscription, so a
+renewal made there shows at once.
 
 `?from=submit&project=<id>` — what a refused submission adds — draws the banner with a way back to
 the campaign's review step, and an entitling plan replaces the screen with that step; a pending

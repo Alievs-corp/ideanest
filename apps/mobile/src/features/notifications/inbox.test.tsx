@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react-n
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntlProvider } from 'use-intl';
+import * as WebBrowser from 'expo-web-browser';
 import { ApiError } from '@ideanest/api-client';
 import type { InboxNotification, InboxPage } from '@ideanest/account/inbox';
 import en from '@ideanest/messages/en.json';
@@ -272,6 +273,70 @@ describe('the inbox', () => {
 
     await fireEvent.press(screen.getByTestId('notification-s'));
     expect(mockRouter.push).toHaveBeenLastCalledWith('/settings/sessions');
+  });
+
+  describe('a message about the creator’s plan (#452)', () => {
+    const plan = (id: string, type: InboxNotification['type']) =>
+      row(id, {
+        type,
+        category: 'PAYMENTS',
+        params: {
+          planName: 'Growth',
+          price: { amount: '49.00', currency: 'AZN' },
+          amount: { amount: '49.00', currency: 'AZN' },
+          periodEnd: '2026-11-13',
+        },
+      });
+
+    it('says each of the three in the shared words, and a reminder without a price', async () => {
+      api.listNotifications.mockResolvedValueOnce(
+        page([
+          plan('due', 'SUBSCRIPTION_RENEWAL_DUE'),
+          plan('lapsed', 'SUBSCRIPTION_LAPSED'),
+          plan('renewed', 'SUBSCRIPTION_RENEWED'),
+        ]),
+      );
+      await show();
+
+      const due = screen.getByTestId('notification-due');
+      expect(due).toHaveTextContent(/Your Growth plan ends on 13 November 2026: renew it on the website/);
+      expect(due).not.toHaveTextContent(/49\.00/);
+      expect(screen.getByTestId('notification-lapsed')).toHaveTextContent(/Your Growth plan ended on 13 November 2026/);
+      expect(screen.getByTestId('notification-renewed')).toHaveTextContent(
+        /Your Growth plan is paid until 13 November 2026/,
+      );
+      expect(due.props.accessibilityLabel).toContain(en.account.notifications.category.PAYMENTS);
+    });
+
+    it('opens the pricing page on the website, says so, and marks the row read', async () => {
+      api.listNotifications.mockResolvedValueOnce(page([plan('due', 'SUBSCRIPTION_RENEWAL_DUE')]));
+      api.markNotificationRead.mockResolvedValue({ ...plan('due', 'SUBSCRIPTION_RENEWAL_DUE'), readAt: NOW.toISOString() });
+      await show();
+
+      const due = screen.getByTestId('notification-due');
+      expect(due.props.accessibilityRole).toBe('link');
+      expect(due.props.accessibilityHint).toContain(en.mobile.notifications.opensOnWeb);
+
+      await fireEvent.press(due);
+      await settle();
+      expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://test.invalid/en/pricing');
+      expect(mockRouter.push).not.toHaveBeenCalled();
+      expect(api.markNotificationRead).toHaveBeenCalledWith('due');
+    });
+
+    it('leaves every other row in the app, with no web hint', async () => {
+      api.listNotifications.mockResolvedValueOnce(page([row('a')]));
+      api.markNotificationRead.mockResolvedValue({ ...row('a'), readAt: NOW.toISOString() });
+      await show();
+
+      expect(screen.getByTestId('notification-a').props.accessibilityHint).not.toContain(
+        en.mobile.notifications.opensOnWeb,
+      );
+      await fireEvent.press(screen.getByTestId('notification-a'));
+      await settle();
+      expect(mockRouter.push).toHaveBeenCalledWith('/projects/maker/camp-a');
+      expect(WebBrowser.openBrowserAsync).not.toHaveBeenCalled();
+    });
   });
 
   it('reloads from the newest page on pull to refresh', async () => {

@@ -17,6 +17,7 @@ import {
   describeNotification,
   groupByDay,
   hrefOf,
+  isAboutAPlan,
   isUnread,
   mandatoryReason,
   modeLabel,
@@ -151,6 +152,16 @@ describe('hrefOf', () => {
       expect(hrefOf(notification({ type, category: 'PAYMENTS' }))).toBe('/pricing');
       expect(hrefOf(notification({ type, category: 'PAYMENTS', params: {} }))).toBe('/pricing');
     }
+  });
+});
+
+describe('isAboutAPlan', () => {
+  it('is true for the three messages about the creator’s plan and nothing else (#452)', () => {
+    expect(isAboutAPlan('SUBSCRIPTION_RENEWAL_DUE')).toBe(true);
+    expect(isAboutAPlan('SUBSCRIPTION_LAPSED')).toBe(true);
+    expect(isAboutAPlan('SUBSCRIPTION_RENEWED')).toBe(true);
+    expect(isAboutAPlan('PAYMENT_FAILED')).toBe(false);
+    expect(isAboutAPlan('PAYOUT_SENT')).toBe(false);
   });
 });
 

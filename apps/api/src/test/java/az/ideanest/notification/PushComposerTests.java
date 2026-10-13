@@ -166,11 +166,11 @@ class PushComposerTests {
     }
 
     @Test
-    @DisplayName("opens the inbox for a message about a plan, because the application sells none (#450)")
-    void aPlanMessageOpensTheInbox() {
-        // The email and the web inbox go to /pricing. The application has no pricing screen -- it does not
-        // sell plans (#164) -- and its parser refuses the path, so the push opens the inbox, from where
-        // #452 sends the reader to the web.
+    @DisplayName("sends a message about a plan to the pricing page, as the email and the inbox do (#452)")
+    void aPlanMessageOpensThePricingPage() {
+        // The application does not sell plans (#164): its tap handler sees the plan type and opens
+        // /pricing on the website, in the browser. The path is still the pricing page's, so an
+        // application built before #452 opens its own pricing screen, which links to the web.
         for (NotificationType type : List.of(
                 NotificationType.SUBSCRIPTION_RENEWAL_DUE,
                 NotificationType.SUBSCRIPTION_LAPSED,
@@ -183,9 +183,28 @@ class PushComposerTests {
                     "",
                     ENGLISH);
 
-            assertThat(content.url()).as("%s", type).isEqualTo("ideanest://");
+            assertThat(content.url()).as("%s", type).isEqualTo("ideanest://pricing");
+            assertThat(content.data()).as("%s", type).containsEntry("type", type.name());
             assertThat(content.title()).as("%s", type).contains("Growth");
             assertThat(content.body()).as("%s", type).contains("2026-11-13");
+        }
+    }
+
+    @Test
+    @DisplayName("puts no price beside \"renew\" in a renewal reminder, in any language (#452)")
+    void aRenewalReminderNamesNoPrice() {
+        // The push is shown by the application, which does not sell plans (Apple 3.1.1 and Play
+        // Billing, #164). The email, which the application does not show, still names the price.
+        for (String language : ReaderLocale.SUPPORTED) {
+            PushComposer.PushContent content = composer.compose(
+                    message(NotificationType.SUBSCRIPTION_RENEWAL_DUE, """
+                            {"planName":"Growth","price":{"amount":"49.00","currency":"AZN"},"periodEnd":"2026-11-13"}"""),
+                    null,
+                    "",
+                    ReaderLocale.of(language));
+
+            assertThat(content.title() + " " + content.body()).as("in %s", language).doesNotContain("49.00");
+            assertThat(content.body()).as("in %s", language).contains("Growth").contains("2026-11-13");
         }
     }
 

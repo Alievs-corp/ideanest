@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Stack, useRouter, type Href } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedScrollHandler,
@@ -14,8 +15,8 @@ import {
   categoryLabel,
   dayLabelOf,
   groupByDay,
+  isAboutAPlan,
   isUnread,
-  notificationsCopyOf,
   visibleNotifications,
   type InboxFilter,
   type InboxNotification,
@@ -45,11 +46,13 @@ import {
 } from '../../components/ui';
 import { useOnline } from '../../lib/connectivity';
 import { signInHrefFor } from '../../lib/guard';
-import { catalogue, useT, type Translate } from '../../lib/i18n';
+import { useT, type Translate } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale';
 import { useSession } from '../../lib/use-session';
+import { webPageUrl } from '../../lib/web-pages';
 import { colors, spacing } from '../../theme';
 import { InlineLink } from '../settings/settings-page';
+import { appNotificationsCopy } from './copy';
 import { NotificationRow } from './notification-row';
 import { useInbox } from './use-inbox';
 
@@ -91,6 +94,9 @@ function itemKey(item: Item): string {
  *       and the filtered-empty state says so.</li>
  *   <li>Mark as read waits for the service, then replaces the row and lowers the count. Opening a
  *       row with a destination navigates and marks it read on the way.</li>
+ *   <li>A row about the creator's own plan (#452) opens its `/pricing` on the website, in the
+ *       browser, not on the app's pricing screen: the app does not sell or renew plans (Apple 3.1.1
+ *       and Play Billing, #164).</li>
  *   <li>Offline: what this process read, with a notice; marking read waits for a connection.</li>
  * </ul>
  */
@@ -106,7 +112,7 @@ export function InboxScreen() {
   const { signedIn } = useSession();
   const inbox = useInbox(signedIn);
   const gate = useRowEntryGate(inbox.items, (row) => row.id);
-  const copy = useMemo(() => notificationsCopyOf(catalogue(locale).account.notifications), [locale]);
+  const copy = useMemo(() => appNotificationsCopy(locale), [locale]);
 
   const [filter, setFilter] = useState<InboxFilter>('ALL');
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -168,10 +174,15 @@ export function InboxScreen() {
    */
   const onOpen = useCallback(
     (notification: InboxNotification, href: string) => {
-      router.push(href as Href);
+      if (isAboutAPlan(notification.type)) {
+        // A browser that will not open (another session is already up) leaves the reader here.
+        WebBrowser.openBrowserAsync(webPageUrl(locale, href)).catch(() => undefined);
+      } else {
+        router.push(href as Href);
+      }
       if (isUnread(notification) && online) void markRead(notification.id).catch(() => undefined);
     },
-    [markRead, online, router],
+    [locale, markRead, online, router],
   );
 
   const renderItem = useCallback(
