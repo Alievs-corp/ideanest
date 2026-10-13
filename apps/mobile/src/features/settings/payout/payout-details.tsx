@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@ideanest/api-client';
-import { checkAzerbaijaniIban, formatIban, ibanDefectOf, type IbanDefect } from '@ideanest/account/iban';
+import { checkAzerbaijaniIban, ibanDefectOf, type IbanDefect } from '@ideanest/account/iban';
 import { Glyphs } from '../../../icons';
 import { queryKeys } from '../../../api/queries';
 import {
@@ -44,6 +44,7 @@ import {
   useCardSettling,
   type CardReturnHint,
 } from './card-return';
+import { useIbanField } from './iban-field';
 
 /**
  * `settings/payout` — the web's `PayoutDetailsPanel` (#161): who is paid, saved as a form; the bank
@@ -51,9 +52,10 @@ import {
  * `cardRegistrationAvailable` says the provider can take one, a business card registered on the
  * provider's page in the in-app browser and never typed here.
  *
- * <p>The IBAN is grouped in fours as it is typed, checked by `@ideanest/account/iban` in the
- * service's own terms, and sent in its electronic form. Once filed it is shown only as the
- * service's masked hint, and the field is emptied.
+ * <p>The IBAN is grouped in fours as it is typed, the caret kept where it was and a backspace over
+ * a grouping space taking the character before it (`iban-field.ts`), checked by
+ * `@ideanest/account/iban` in the service's own terms, and sent in its electronic form. Once filed
+ * it is shown only as the service's masked hint, and the field is emptied.
  *
  * <p>`card` is the route's `?card=returned|failed` — a return that arrived as a link rather than
  * through the browser session (a cold start from `ideanest://settings/payout?card=…`).
@@ -347,7 +349,6 @@ function BankSection({
   const recorded = destination.recorded === true;
   const card = recorded && !isBankAccount(destination);
 
-  const [iban, setIban] = useState('');
   // The holder on file, else the legal name: the two have to match, so it is the likely answer.
   const [holder, setHolder] = useState(() =>
     isBankAccount(destination) ? (destination.holderName ?? '') : suggestedHolder,
@@ -355,6 +356,11 @@ function BankSection({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [failure, setFailure] = useState<BankFailure | null>(null);
+  const ibanField = useIbanField(() => {
+    setSaved(false);
+    setFailure((previous) => (previous?.kind === 'iban' ? null : previous));
+  });
+  const iban = ibanField.value;
   const inFlight = useRef(false);
 
   async function save(): Promise<void> {
@@ -371,7 +377,7 @@ function BankSection({
     try {
       const next = await saveBankAccount({ iban: checked.value, holderName: holder.trim() });
       queryClient.setQueryData(queryKeys.payoutDestination(), next);
-      setIban('');
+      ibanField.reset('');
       setSaved(true);
     } catch (cause) {
       const problem = cause instanceof ApiError ? cause.problem : undefined;
@@ -421,11 +427,9 @@ function BankSection({
         <Field label={t('ibanLabel')} hint={t('ibanHint')} error={ibanError} required>
           <TextInput
             value={iban}
-            onChangeText={(typed) => {
-              setIban(formatIban(typed));
-              setSaved(false);
-              if (failure?.kind === 'iban') setFailure(null);
-            }}
+            selection={ibanField.selection}
+            onChangeText={ibanField.onChangeText}
+            onSelectionChange={ibanField.onSelectionChange}
             autoCapitalize="characters"
             autoComplete="off"
             autoCorrect={false}
