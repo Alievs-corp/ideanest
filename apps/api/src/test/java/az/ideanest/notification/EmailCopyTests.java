@@ -253,6 +253,20 @@ class EmailCopyTests extends AbstractIntegrationTest {
     }
 
     /**
+     * That the reminder to enter an IBAN goes where an IBAN is entered (#411).
+     *
+     * <p>It names a campaign, and its button used to open that campaign's page, where the
+     * creator could not do what the email asked.
+     */
+    @Test
+    @DisplayName("a payout-details reminder links to the payout settings rather than to the campaign")
+    void thePayoutDetailsReminderLinksToThePayoutSettings() {
+        EmailContent content = composer.compose(named(NotificationType.PAYOUT_DETAILS_NEEDED), RECIPIENT, PRIMARY);
+
+        assertThat(content.actionUrl()).endsWith("/settings/payout");
+    }
+
+    /**
      * That an amount reaches the copy as the string §10.3 stored, unrounded.
      *
      * <p>Money is the reason this file is not only about spelling. {@code params} holds
