@@ -161,6 +161,20 @@ describe('PledgeListScreen', () => {
     expect(within(screen.getByTestId('pledge-card-draft')).getByTestId('icon-Clock', hidden)).toBeTruthy();
   });
 
+  it('tags a pledge whose refund waits for a bank transfer, with an icon and in its name — #419', async () => {
+    api.listMyPledges.mockResolvedValueOnce({
+      items: [summary('owed', { refundAwaitingBankTransfer: { amount: '45.00', currency: 'AZN' } }), summary('paid')],
+      nextCursor: null,
+    });
+    await show();
+
+    const owed = screen.getByTestId('pledge-card-owed');
+    expect(within(owed).getByText(en.account.pledges.list.refundPending)).toBeTruthy();
+    expect(within(owed).getByTestId('icon-MoneyRecive', { includeHiddenElements: true })).toBeTruthy();
+    expect(owed.props.accessibilityLabel).toContain(en.account.pledges.list.refundPending);
+    expect(within(screen.getByTestId('pledge-card-paid')).queryByText(en.account.pledges.list.refundPending)).toBeNull();
+  });
+
   it('opens a pledge under Reduce Motion as well', async () => {
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValueOnce(true);
     api.listMyPledges.mockResolvedValueOnce({ items: [summary('a')], nextCursor: null });

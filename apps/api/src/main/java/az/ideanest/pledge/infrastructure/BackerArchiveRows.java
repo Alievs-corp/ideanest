@@ -58,7 +58,10 @@ public class BackerArchiveRows {
             p.base_amount, p.addons_amount, p.bonus_amount, p.shipping_amount,
             p.tax_amount, p.total_amount,
             p.is_anonymous, p.is_late_pledge,
-            p.confirmed_at, p.canceled_at, p.created_at
+            p.confirmed_at, p.canceled_at, p.created_at,
+            (SELECT SUM(r.amount) FROM refunds r
+              WHERE r.pledge_id = p.id
+                AND r.state IN ('AWAITING_BANK_DETAILS', 'AWAITING_TRANSFER')) AS refund_awaiting_bank_transfer
             """;
 
     /** Newest first, tie-broken on the identifier — the pair {@link BackerCursor} names. */
@@ -191,7 +194,8 @@ public class BackerArchiveRows {
                 row.getBoolean("is_late_pledge"),
                 instantOf(row, "confirmed_at"),
                 instantOf(row, "canceled_at"),
-                instantOf(row, "created_at"));
+                instantOf(row, "created_at"),
+                Money.orNull(row.getBigDecimal("refund_awaiting_bank_transfer"), currency));
     }
 
     /**

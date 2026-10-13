@@ -88,6 +88,8 @@ export interface PledgeListCopy {
   readonly charged: string;
   /** Beside a pledge that ended before anything was taken — an abandoned or expired checkout. */
   readonly notCharged: string;
+  /** #419: the tag on a pledge whose refund waits for a bank transfer. The pledge page says the rest. */
+  readonly refundPending: string;
   readonly loadingMore: string;
   readonly showMore: string;
   readonly nextPageFailed: string;
@@ -109,6 +111,7 @@ export function pledgeListCopyFrom(t: PledgesTranslator): PledgeListCopy {
     confirmedAt: String(t.raw('list.confirmedAt')),
     charged: t('list.charged'),
     notCharged: t('list.notCharged'),
+    refundPending: t('list.refundPending'),
     loadingMore: t('list.loadingMore'),
     showMore: t('list.showMore'),
     nextPageFailed: t('list.nextPageFailed'),

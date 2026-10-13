@@ -386,6 +386,20 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("the backer's list says what waits for a bank transfer, so the pledge can be tagged there")
+    void theBackersListSeesWhatIsOwed() {
+        Paid paid = aPaidPledge("bank-list", "25.00");
+        Account backer = tokenFor(
+                jdbc().queryForObject("SELECT backer_id FROM pledges WHERE id = ?", UUID.class, paid.pledgeId()));
+        assertThat(listed(backer, paid.pledgeId())).containsEntry("refundAwaitingBankTransfer", null);
+
+        routed(paid);
+        assertThat(asMap(listed(backer, paid.pledgeId()).get("refundAwaitingBankTransfer")))
+                .containsEntry("amount", "25.00")
+                .containsEntry("currency", "AZN");
+    }
+
+    @Test
     @DisplayName("the value date is Baku's day: one hour past midnight there is today, not the future")
     void theValueDateIsBakusDay() {
         Paid paid = pastTheWindow("bank-baku", "25.00");
@@ -777,6 +791,16 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> asMap(Object value) {
         return (Map<String, Object>) value;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> listed(Account backer, UUID pledgeId) {
+        List<Map<String, Object>> pledges =
+                (List<Map<String, Object>>) get("/v1/me/pledges", backer).getBody().get("pledges");
+        return pledges.stream()
+                .filter(pledge -> pledgeId.toString().equals(pledge.get("pledgeId")))
+                .findFirst()
+                .orElseThrow();
     }
 
     @SuppressWarnings("unchecked")

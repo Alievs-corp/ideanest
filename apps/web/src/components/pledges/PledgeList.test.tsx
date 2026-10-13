@@ -93,6 +93,25 @@ describe('the pledge list', () => {
     expect(within(row).queryByText(COPY.notCharged)).not.toBeInTheDocument();
   });
 
+  it('tags a pledge whose refund waits for a bank transfer, and only that one — #419', async () => {
+    listMock.mockResolvedValue({
+      items: [
+        { ...summary('d', 'COLLECTED'), refundAwaitingBankTransfer: { amount: '40.00', currency: 'AZN' } },
+        { ...summary('e', 'COLLECTED'), refundAwaitingBankTransfer: null },
+        summary('f', 'COLLECTED'),
+      ],
+      nextCursor: null,
+    });
+    render(<PledgeList copy={COPY} />);
+
+    const pending = (await screen.findByText('Campaign d')).closest('li') as HTMLElement;
+    expect(within(pending).getByText(COPY.refundPending)).toBeInTheDocument();
+    for (const id of ['e', 'f']) {
+      const row = screen.getByText(`Campaign ${id}`).closest('li') as HTMLElement;
+      expect(within(row).queryByText(COPY.refundPending)).not.toBeInTheDocument();
+    }
+  });
+
   it('explains, when empty, that a pledge is charged when it is confirmed', async () => {
     listMock.mockResolvedValue({ items: [], nextCursor: null });
     render(<PledgeList copy={COPY} />);

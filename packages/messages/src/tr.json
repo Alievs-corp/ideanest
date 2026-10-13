@@ -433,6 +433,7 @@
         "confirmedAt": "{time} tarihinde onaylandı",
         "charged": "tahsil edildi",
         "notCharged": "tahsil edilmedi",
+        "refundPending": "İade bekleniyor",
         "loadingMore": "Yükleniyor",
         "showMore": "Daha fazla göster",
         "nextPageFailed": "Sonraki sayfa yüklenmedi"

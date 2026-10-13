@@ -433,6 +433,7 @@
         "confirmedAt": "Confirmed {time}",
         "charged": "charged",
         "notCharged": "not charged",
+        "refundPending": "Refund pending",
         "loadingMore": "Loading",
         "showMore": "Show more",
         "nextPageFailed": "The next page did not load"

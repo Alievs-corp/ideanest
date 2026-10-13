@@ -1,6 +1,7 @@
 import { authorizedFetch } from '../api/client';
 import { errorFrom } from '../api/problem';
 import type { Page } from '../community/signals';
+import type { Money } from '../money';
 import type { PledgeAmounts, PledgeState } from './api';
 
 /**
@@ -68,6 +69,11 @@ export interface BackerPledgeSummary {
   readonly confirmedAt: string | null;
   readonly canceledAt: string | null;
   readonly project: BackerPledgeProject;
+  /**
+   * #419: what of this pledge's refund waits to be paid by bank transfer, or null — the pledge
+   * page's field of the same name. Optional so an older response reads as "nothing".
+   */
+  readonly refundAwaitingBankTransfer?: Money | null;
 }
 
 /** How many rows a page asks for. The service clamps rather than refusing an over-large size. */

@@ -48,6 +48,7 @@ export function PledgeCard({ pledge, onOpen }: PledgeCardProps) {
     .filter((part): part is string => part !== null)
     .join(' · ');
   const id = pledge.pledgeId;
+  const refundPending = pledge.refundAwaitingBankTransfer != null;
 
   return (
     <Card
@@ -59,6 +60,7 @@ export function PledgeCard({ pledge, onOpen }: PledgeCardProps) {
         total,
         pledge.isAnonymous === true ? t('anonymous') : null,
         pledge.latePledge === true ? t('latePledge') : null,
+        refundPending ? t('list.refundPending') : null,
         note === null ? null : t(`list.${note}`),
         pledge.rewardTitle ?? t('list.noReward'),
         byline === '' ? null : byline,
@@ -88,6 +90,9 @@ export function PledgeCard({ pledge, onOpen }: PledgeCardProps) {
           <Tag label={stateLabel} variant={tone} icon={STATE_ICON[tone]} />
           {pledge.isAnonymous === true ? <Tag label={t('anonymous')} icon={Glyphs.EyeSlash} /> : null}
           {pledge.latePledge === true ? <Tag label={t('latePledge')} icon={Glyphs.Timer1} /> : null}
+          {refundPending ? (
+            <Tag label={t('list.refundPending')} variant="warning" icon={Glyphs.MoneyRecive} />
+          ) : null}
         </View>
       </View>
     </Card>
