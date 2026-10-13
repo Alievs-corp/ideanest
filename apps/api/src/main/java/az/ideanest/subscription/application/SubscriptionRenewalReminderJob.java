@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
  * <p>Largest first, and a lead's window ends where the next smaller one's begins: with three days and
  * one, a plan ending in two days is the three-day lead's and one ending in twenty hours is the one-day
  * lead's. A plan bought, or a job resumed, with twenty hours to run is reminded once rather than twice
- * in one morning. A window a daily pass happens to step over costs that one reminder, never a burst.
+ * in one pass. A window a pass happens to step over costs that one reminder, never a burst.
  *
  * <h2>The lapse is bounded by a look-back</h2>
  *
