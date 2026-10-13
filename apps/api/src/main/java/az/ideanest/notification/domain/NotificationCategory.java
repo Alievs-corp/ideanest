@@ -25,7 +25,7 @@ public enum NotificationCategory {
     /** A campaign's life: goal reached, deadlines, the outcome, approval. */
     CAMPAIGN(false),
 
-    /** Money moving: collection, failure, the final warning, a payout. */
+    /** Money moving: collection, failure, the final warning, a payout, and since #450 a creator's own plan. */
     PAYMENTS(false),
 
     /** People talking: updates, comment replies, direct messages. */

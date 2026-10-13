@@ -406,6 +406,65 @@ public final class NotificationEvents {
         public static final String EVENT_TYPE = "refund.sent_by_bank";
     }
 
+    /**
+     * {@code subscription.renewal_due} — #450. Recipient: the creator who holds the plan. Recorded by the
+     * subscription module's {@code subscription-renewal-reminders} once per period and lead.
+     *
+     * @param price what renewing costs, the subscription's snapshot price
+     * @param daysLeft whole days to the end, rounded up
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record SubscriptionRenewalDue(
+            UUID subscriptionId,
+            UUID accountId,
+            UUID planId,
+            String planName,
+            Money price,
+            Instant periodEnd,
+            Integer daysLeft,
+            Instant remindedAt) {
+
+        public static final String EVENT_TYPE = "subscription.renewal_due";
+    }
+
+    /**
+     * {@code subscription.lapsed} — #450. Recipient: the creator whose priced plan ended without a
+     * renewal. Recorded once per period by the same job.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record SubscriptionLapsed(
+            UUID subscriptionId,
+            UUID accountId,
+            UUID planId,
+            String planName,
+            Money price,
+            Instant periodEnd,
+            Instant noticedAt) {
+
+        public static final String EVENT_TYPE = "subscription.lapsed";
+    }
+
+    /**
+     * {@code subscription.paid} — #450 consumes what #449 produces: a plan payment was collected, for a
+     * first period or a renewal. Recipient: the creator. The receipt, {@code SUBSCRIPTION_RENEWED}.
+     *
+     * @param renewal whether it extended a running period rather than opening the first one
+     * @param periodEnd the end of the period the payment bought
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record SubscriptionPaid(
+            UUID subscriptionId,
+            UUID accountId,
+            UUID planId,
+            String planName,
+            Money amount,
+            boolean renewal,
+            Instant periodEnd,
+            Instant paidAt) {
+
+        public static final String EVENT_TYPE = "subscription.paid";
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ProjectLaunched(UUID projectId, UUID creatorId, Instant launchedAt, Instant deadline) {
 
