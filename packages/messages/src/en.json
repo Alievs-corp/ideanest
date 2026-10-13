@@ -1845,6 +1845,30 @@
             "NO_REFUND_AWAITING_BANK_DETAILS": "Nothing on this pledge is waiting to be refunded by bank transfer, so there is no account to record.",
             "ENCRYPTED_STORAGE_UNAVAILABLE": "Bank accounts cannot be recorded right now because encrypted storage is not configured. Nothing was saved."
           }
+        },
+        "backerTicket": {
+          "open": "Open a ticket for a backer",
+          "openFromRefund": "Open the backer’s ticket and record their account",
+          "heading": "Ticket for a backer",
+          "intro": "For a backer who wrote in somewhere else — on WhatsApp, by email or on a call. The ticket is raised in the name of whoever made the pledge, and the audit trail records that you raised it.",
+          "pledgeLabel": "Pledge",
+          "pledgeHint": "The pledge’s full identifier, as the backer quoted it. The ticket is raised for whoever made the pledge.",
+          "pledgeInvalid": "Enter the pledge’s full identifier: 36 characters, as the backer quoted it.",
+          "subjectLabel": "Subject",
+          "subjectDefault": "Refund by bank transfer",
+          "bodyLabel": "What the backer said",
+          "bodyHint": "Their words, and where and when they said them. The thread opens with this in the backer’s name.",
+          "raise": "Open ticket",
+          "raising": "Opening…",
+          "cancel": "Cancel",
+          "done": "Done",
+          "raisedTitle": "Ticket opened",
+          "raisedBody": "Ticket {id} is in the queue in the backer’s name.",
+          "failedTitle": "The ticket was not opened",
+          "errors": {
+            "PLEDGE_NOT_FOUND": "No pledge has that identifier. Check it against what the backer sent.",
+            "ACCOUNT_NOT_FOUND": "The backer’s account no longer exists, so no ticket can be raised in their name."
+          }
         }
       },
       "staff": {

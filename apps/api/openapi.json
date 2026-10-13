@@ -16335,7 +16335,7 @@
             "enum" : [ "NONE", "PROJECT", "PLEDGE", "ACCOUNT" ]
           }
         },
-        "required" : [ "body", "requesterId", "subject" ]
+        "required" : [ "body", "subject" ]
       },
       "Rate" : {
         "type" : "object",

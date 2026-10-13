@@ -114,9 +114,9 @@ IdeyaNest's own bank account and records the transfer from the bank statement.
 
 | | |
 |---|---|
-| Who records the account | A member of staff holding `HANDLE_SUPPORT` — `MODERATOR`, `FINANCE`, `SUPER_ADMIN` — on `/admin/support` |
+| Who records the account | A member of staff holding `HANDLE_SUPPORT` — `MODERATOR`, `FINANCE`, `SUPER_ADMIN` — on `/admin/support`, or on the refund's row on `/admin/refunds` for those who can read it |
 | Who transfers and records it | A member of staff holding `ISSUE_REFUND` — `FINANCE`, `SUPER_ADMIN` — on `/admin/refunds`, **and not the person who recorded the account** |
-| Related | `docs/architecture.md` §9.7 ("Past the provider's refund window") and §9.8; issues #392, #399, #400 |
+| Related | `docs/architecture.md` §9.7 ("Past the provider's refund window") and §9.8; issues #392, #399, #400, #416 |
 
 ### 6.1 How a refund ends up here
 
@@ -141,15 +141,25 @@ summary says so under *Refunded to backers*.
    pledge page has already written the pledge's reference into the message. You need the
    **IBAN** and the **name of the account holder**, exactly as the bank has them. **Never ask
    for card details**, and never take an account from anybody but the backer.
-2. **Open the backer's ticket about that pledge** on `/admin/support`. Its subject must be the
-   pledge and it must be one the pledge's backer raised: the account is recorded against it,
-   and the service refuses a ticket raised by anybody else.
-3. **Press *Record a refund bank account*** and fill in:
+2. **Open a ticket for the backer about that pledge.** A backer cannot open one themselves, so
+   you do it in their name, from the pledge's reference they quoted:
+   - on `/admin/refunds`, choose *Waiting for bank details* and press *Open the backer's ticket
+     and record their account* on the refund's row; or
+   - on `/admin/support`, press *Open a ticket for a backer* and paste the pledge's full
+     identifier.
+
+   Write down **what the backer said, and where and when** — for example the WhatsApp message
+   and its date — and press *Open ticket*. The ticket is raised for whoever made the pledge, so
+   you never choose the person, and the audit trail records that you raised it. If the backer
+   already has a ticket about the pledge, use that one instead: the account must be recorded
+   from a ticket the pledge's backer raised, and the service refuses any other.
+3. **Press *Record a refund bank account*** — from the refund's row the form is already open —
+   and fill in:
    - **IBAN** — any country's. Spaces are fine; the console groups it in fours and checks it,
      so a mistyped character or two swapped ones are caught before anything is sent.
    - **Account holder** — as the backer wrote it.
-   - **Support ticket** — prefilled with the open ticket. Leave it unless the backer gave the
-     account in another of their tickets.
+   - **Support ticket** — prefilled with the ticket you opened or are reading. Leave it unless
+     the backer gave the account in another of their tickets.
 4. **Press *Record account*.** Every part of the pledge's refund that is waiting moves to
    *Waiting for transfer*, and the console says which account — by its first and last four
    characters — is on file for how much.
@@ -204,6 +214,7 @@ deliberate: no one person both chooses where a refund goes and confirms that it 
 | Only a refund the provider refused can be sent by bank transfer | The refund is not *Failed* any more. Reload the list. |
 | This ticket was not raised by the pledge's backer | Record the account only from the backer's own ticket about this pledge. |
 | Nothing on this pledge is waiting to be refunded by bank transfer | There is no refund to attach an account to. Check `/admin/refunds` for the pledge. |
+| No pledge has that identifier | The identifier was mistyped or cut short. Check it against what the backer sent. |
 | … encrypted storage is not configured | The `bank-details` keyring is missing on this deployment (§6.6). Escalate. |
 | Needs `ISSUE_REFUND` / `HANDLE_SUPPORT` | Ask an administrator for the role. |
 

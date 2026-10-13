@@ -3,7 +3,9 @@ package az.ideanest.ticket.api;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
+import az.ideanest.ticket.application.RequesterRequiredException;
 import az.ideanest.ticket.application.TicketNotFoundException;
+import az.ideanest.ticket.application.UnknownPledgeException;
 import az.ideanest.ticket.application.UnknownRequesterException;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
@@ -49,6 +51,28 @@ public class TicketExceptionHandler {
         problem.setTitle("No such account");
         problem.setDetail("No account with that identifier.");
         problem.setProperty("code", "ACCOUNT_NOT_FOUND");
+        return problem;
+    }
+
+    /** 404 for a ticket left to the backer of a pledge that does not exist — #416. */
+    @ExceptionHandler(UnknownPledgeException.class)
+    public ProblemDetail handleUnknownPledge(UnknownPledgeException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problem.setType(URI.create("https://ideanest.az/problems/pledge-not-found"));
+        problem.setTitle("No such pledge");
+        problem.setDetail("No pledge with that identifier.");
+        problem.setProperty("code", "PLEDGE_NOT_FOUND");
+        return problem;
+    }
+
+    /** 400 for a ticket that names no requester and is not about a pledge — #416. */
+    @ExceptionHandler(RequesterRequiredException.class)
+    public ProblemDetail handleRequesterRequired(RequesterRequiredException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problem.setType(URI.create("https://ideanest.az/problems/ticket-requester-required"));
+        problem.setTitle("No requester");
+        problem.setDetail("Name the requester, or raise the ticket about a pledge to raise it for the pledge's backer.");
+        problem.setProperty("code", "TICKET_REQUESTER_REQUIRED");
         return problem;
     }
 
