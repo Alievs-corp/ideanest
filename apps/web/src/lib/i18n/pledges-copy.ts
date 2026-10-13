@@ -208,6 +208,7 @@ export interface PledgeManagerCopy {
   readonly editor: PledgeEditorCopy;
   readonly raiseReturned: RaiseReturnCopy;
   readonly refundPending: RefundPendingCopy;
+  readonly refunded: RefundedCopy;
 }
 
 /**
@@ -221,6 +222,15 @@ export interface RefundPendingCopy {
   readonly reference: string;
   readonly contact: string;
   readonly message: string;
+}
+
+/**
+ * #417: a pledge whose refund has been sent. How long it takes to show depends on the backer's
+ * bank, and the provider has not said how long, so the copy names no number of days.
+ */
+export interface RefundedCopy {
+  readonly title: string;
+  readonly body: string;
 }
 
 export function pledgeManagerCopyFrom(t: PledgesTranslator): PledgeManagerCopy {
@@ -259,6 +269,10 @@ export function pledgeManagerCopyFrom(t: PledgesTranslator): PledgeManagerCopy {
       reference: String(t.raw('manager.refundPending.reference')),
       contact: t('manager.refundPending.contact'),
       message: String(t.raw('manager.refundPending.message')),
+    },
+    refunded: {
+      title: t('manager.refunded.title'),
+      body: t('manager.refunded.body'),
     },
   };
 }

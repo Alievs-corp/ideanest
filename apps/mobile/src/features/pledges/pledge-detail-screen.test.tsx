@@ -481,3 +481,24 @@ describe('a refund waiting for a bank transfer (#400)', () => {
     expect(screen.queryByTestId('refund-pending')).toBeNull();
   });
 });
+
+describe('a refunded pledge (#417)', () => {
+  const R = M.refunded;
+
+  it('says the refund was sent and may take a few working days to appear', async () => {
+    api.readPledge.mockResolvedValue(pledge({ state: 'REFUNDED', refundAwaitingBankTransfer: null }));
+    await show();
+
+    const notice = screen.getByTestId('refund-sent');
+    expect(within(notice).getByText(R.title)).toBeTruthy();
+    expect(within(notice).getByText(R.body)).toBeTruthy();
+    expect(R.body).not.toMatch(/\d/);
+  });
+
+  it('says nothing of it while the pledge is still paid', async () => {
+    api.readPledge.mockResolvedValue(pledge({ state: 'COLLECTED', refundAwaitingBankTransfer: null }));
+    await show();
+
+    expect(screen.queryByTestId('refund-sent')).toBeNull();
+  });
+});

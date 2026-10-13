@@ -469,6 +469,10 @@
           "reference": "Quote this pledge: {reference}",
           "contact": "Message us on WhatsApp",
           "message": "Hello. I am writing about the refund of my pledge {reference}."
+        },
+        "refunded": {
+          "title": "Refund sent",
+          "body": "Your money has been sent back. Depending on your bank, it can take a few working days to appear on your card or account statement."
         }
       },
       "editor": {

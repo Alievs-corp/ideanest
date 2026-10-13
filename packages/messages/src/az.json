@@ -469,6 +469,10 @@
           "reference": "Dəstəyin nömrəsini bildirin: {reference}",
           "contact": "WhatsApp ilə bizə yazın",
           "message": "Salam. {reference} nömrəli dəstəyimin geri ödənişi ilə bağlı yazıram."
+        },
+        "refunded": {
+          "title": "Geri ödəniş göndərildi",
+          "body": "Pulunuz geri göndərilib. Bankınızdan asılı olaraq onun kart və ya hesab çıxarışınızda görünməsi bir neçə iş günü çəkə bilər."
         }
       },
       "editor": {

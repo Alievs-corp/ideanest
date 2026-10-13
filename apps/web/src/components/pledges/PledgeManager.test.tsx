@@ -237,6 +237,26 @@ describe('the pledge screen for a paid pledge', () => {
     });
   });
 
+  /* #417: a refunded pledge says the money is on its way and that the bank decides when it shows,
+     without promising a number of days nobody has confirmed. */
+  describe('a refunded pledge', () => {
+    it('says the refund was sent and may take a few working days to appear', async () => {
+      pledgeMock.mockResolvedValue(paid({ state: 'REFUNDED', raisable: false, refundAwaitingBankTransfer: null }));
+      await open();
+
+      expect(screen.getByText(PLEDGES.refunded.title)).toBeInTheDocument();
+      expect(screen.getByText(PLEDGES.refunded.body)).toBeInTheDocument();
+      expect(PLEDGES.refunded.body).not.toMatch(/\d/);
+    });
+
+    it('says nothing of it while the pledge is still paid', async () => {
+      pledgeMock.mockResolvedValue(paid({ raisable: false, refundAwaitingBankTransfer: null }));
+      await open();
+
+      expect(screen.queryByText(PLEDGES.refunded.title)).not.toBeInTheDocument();
+    });
+  });
+
   describe('while a raise it came back from settles', () => {
     it('asks again until the raise succeeds, announces it, and then stops asking', async () => {
       at('?raise=returned');
