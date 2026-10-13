@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { Chip, ChipRow, EmptyState, InlineAlert, Pill, Skeleton, SkeletonGroup, Tag } from '@ideanest/ui';
 import type { AdminPayoutDestination } from '../../lib/admin/api';
-import { PAYOUT_DESTINATION_QUEUE_SIZE, readPayoutDestinationQueue } from '../../lib/admin/payout-destinations';
+import {
+  readPayoutDestinationQueue,
+  type PayoutDestinationQueueState,
+} from '../../lib/admin/payout-destinations';
 import { shortId } from '../../lib/admin/refusals';
 import { holds } from '../../lib/admin/staff';
-import type { DestinationStanding } from '../../lib/account/payout';
 import type { PayoutDestinationQueueCopy } from '../../lib/i18n/admin/money-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
@@ -22,18 +24,18 @@ import { useDirectoryNames } from './useDirectoryNames';
 /**
  * COMPLIANCE's queue of payout destinations — issue #396, part of epic #392.
  *
- * <h2>What it lists, and why the filter is drawn here</h2>
+ * <h2>What it lists, and where the filter is applied</h2>
  *
- * `GET /v1/admin/payout-destinations` answers every destination that is not verified, the
- * fifty that have waited longest, oldest first — and takes no filter and no page. So the three
- * states a reviewer works through (waiting, name mismatch, rejected) are chips over the rows
- * the service sent, and the screen says when it is holding a full page, because then there
- * are more behind it and "nothing in this state" means only "nothing among these fifty".
+ * `GET /v1/admin/payout-destinations` answers every destination that is not verified, oldest
+ * first, fifty to a page. The three states a reviewer works through (waiting, name mismatch,
+ * rejected) are chips, and since #419 a chip asks the service rather than narrowing the page
+ * it holds: filtered in the browser, "nothing in this state" meant only "nothing among these
+ * fifty". Choosing a chip goes back to the first page, and the pager is `PayoutQueue`'s.
  *
  * <p>A destination under a waiver (#436) is drawn as one: the service reports the standing the
- * payout gate reads, and that is `WAIVED` whatever the row underneath says. It appears under
- * "everything" and under no narrower chip, because the chip would be naming a state the
- * service did not report.
+ * payout gate reads, and that is `WAIVED` whatever the row underneath says. The chip narrows
+ * by the row's state, so a waived destination is found under the state it is in, still tagged
+ * as waived — a reviewer looking for rejected accounts is looking for this one too.
  *
  * <h2>The decision is on the row</h2>
  *
@@ -53,7 +55,7 @@ export interface PayoutDestinationQueueProps {
 }
 
 /** The states a reviewer filters by. `WAIVED` is not one: see the docblock. */
-const FILTERS: readonly DestinationStanding[] = Object.freeze([
+const FILTERS: readonly PayoutDestinationQueueState[] = Object.freeze([
   'AWAITING_VERIFICATION',
   'NAME_MISMATCH',
   'REJECTED',
@@ -62,16 +64,17 @@ const FILTERS: readonly DestinationStanding[] = Object.freeze([
 export function PayoutDestinationQueue({ copy }: PayoutDestinationQueueProps) {
   const locale = useRouteLocale();
   const { membership } = useConsoleMembership();
-  const [filter, setFilter] = useState<DestinationStanding | null>(null);
+  const [filter, setFilter] = useState<PayoutDestinationQueueState | null>(null);
+  const [page, setPage] = useState(0);
 
   const queue = useConsoleResource(
-    (signal) => readPayoutDestinationQueue(signal),
+    (signal) => readPayoutDestinationQueue({ state: filter, page, signal }),
     copy.subject,
     copy.refusals,
-    [],
+    [filter, page],
   );
 
-  const rows = queue.data ?? [];
+  const rows = queue.data?.destinations ?? [];
   const names = useDirectoryNames(
     rows.map((row) => row.creatorId),
     [],
@@ -83,29 +86,38 @@ export function PayoutDestinationQueue({ copy }: PayoutDestinationQueueProps) {
     );
   }
 
-  const shown = filter === null ? rows : rows.filter((row) => row.standing === filter);
+  const ready = queue.status === 'ready' && queue.data !== null;
   const canReveal = holds(membership, 'READ_BANK_DETAILS');
   const canOpenAccount = holds(membership, 'ADMINISTER_ACCOUNTS');
   const destination = copy.destination;
 
   function replace(next: AdminPayoutDestination): void {
-    queue.set(rows.map((row) => (row.creatorId === next.creatorId ? next : row)));
+    if (queue.data === null) return;
+    queue.set({
+      ...queue.data,
+      destinations: rows.map((row) => (row.creatorId === next.creatorId ? next : row)),
+    });
+  }
+
+  function choose(next: PayoutDestinationQueueState | null): void {
+    setFilter(next);
+    setPage(0);
   }
 
   return (
     <section aria-label={copy.subject}>
       <ChipRow aria-label={copy.filterLabel}>
-        <Chip active={filter === null} onClick={() => setFilter(null)}>
+        <Chip active={filter === null} onClick={() => choose(null)}>
           {copy.everything}
         </Chip>
         {FILTERS.map((option) => (
-          <Chip key={option} active={filter === option} onClick={() => setFilter(option)}>
+          <Chip key={option} active={filter === option} onClick={() => choose(option)}>
             {destination.standing[option] ?? option}
           </Chip>
         ))}
       </ChipRow>
 
-      {queue.status === 'loading' && queue.data === null && (
+      {queue.status === 'loading' && (
         <SkeletonGroup label={copy.loadingList} className="mt-4">
           <div className="space-y-2">
             {[0, 1].map((row) => (
@@ -129,23 +141,26 @@ export function PayoutDestinationQueue({ copy }: PayoutDestinationQueueProps) {
         </>
       )}
 
-      {queue.data !== null && rows.length >= PAYOUT_DESTINATION_QUEUE_SIZE && (
-        <p className="mt-4 max-w-[62ch] text-sm text-white/48">
-          {fillPlaceholders(copy.capped, { count: String(rows.length) })}
-        </p>
+      {/*
+        Three empty answers, because they send a reviewer three different ways: past the last
+        page (a full page with nothing behind it offers a next one), a state with nothing in
+        it, and a queue with nothing in it at all.
+      */}
+      {ready && rows.length === 0 && page > 0 && (
+        <EmptyState className="mt-4" variant="empty" title={copy.emptyPageTitle} description={copy.emptyPageBody} />
       )}
 
-      {queue.data !== null && rows.length === 0 && (
+      {ready && rows.length === 0 && page === 0 && filter === null && (
         <EmptyState className="mt-4" variant="empty" title={copy.emptyTitle} description={copy.emptyBody} />
       )}
 
-      {queue.data !== null && rows.length > 0 && shown.length === 0 && (
+      {ready && rows.length === 0 && page === 0 && filter !== null && (
         <EmptyState className="mt-4" variant="empty" title={copy.emptyFilterTitle} description={copy.emptyFilterBody} />
       )}
 
-      {shown.length > 0 && (
+      {ready && rows.length > 0 && (
         <ul className="mt-4 flex list-none flex-col gap-3">
-          {shown.map((row) => {
+          {rows.map((row) => {
             const name = names.accounts.get(row.creatorId)?.name ?? shortId(row.creatorId);
             const updated = row.updatedAt == null ? null : formatDate(row.updatedAt, locale);
 
@@ -203,6 +218,22 @@ export function PayoutDestinationQueue({ copy }: PayoutDestinationQueueProps) {
             );
           })}
         </ul>
+      )}
+
+      {ready && (page > 0 || (queue.data?.hasMore ?? false)) && (
+        <div className="mt-4 flex gap-2">
+          <Pill variant="ghost" size="sm" disabled={page === 0} onClick={() => setPage((n) => n - 1)}>
+            {copy.previous}
+          </Pill>
+          <Pill
+            variant="ghost"
+            size="sm"
+            disabled={!(queue.data?.hasMore ?? false)}
+            onClick={() => setPage((n) => n + 1)}
+          >
+            {copy.next}
+          </Pill>
+        </div>
       )}
     </section>
   );

@@ -2221,12 +2221,30 @@
     "/v1/admin/payout-destinations" : {
       "get" : {
         "operationId" : "adminPayoutDestinationQueue",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "state",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "AWAITING_VERIFICATION", "NAME_MISMATCH", "REJECTED", "VERIFIED" ]
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        } ],
         "responses" : {
           "200" : {
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Queue"
+                  "$ref" : "#/components/schemas/DestinationQueuePage"
                 }
               }
             },
@@ -12902,6 +12920,24 @@
           "scheduledFor" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "DestinationQueuePage" : {
+        "type" : "object",
+        "properties" : {
+          "destinations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ForStaff"
+            }
+          },
+          "hasMore" : {
+            "type" : "boolean"
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },

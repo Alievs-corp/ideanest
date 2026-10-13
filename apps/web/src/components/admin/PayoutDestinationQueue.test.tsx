@@ -8,6 +8,7 @@ import {
   rejectPayoutDestination,
   revealPayoutBankAccount,
   verifyPayoutDestination,
+  type PayoutDestinationQueuePage,
 } from '../../lib/admin/payout-destinations';
 import { lookUpNames } from '../../lib/admin/directory';
 import { ROLE_CAPABILITIES, type StaffMembership, type StaffRole } from '../../lib/admin/staff';
@@ -81,6 +82,13 @@ const CARD: AdminPayoutDestination = {
   updatedAt: '2026-10-03T09:00:00Z',
 };
 
+function pageOf(
+  destinations: readonly AdminPayoutDestination[],
+  { page = 0, hasMore = false }: { page?: number; hasMore?: boolean } = {},
+): PayoutDestinationQueuePage {
+  return { destinations, page, hasMore };
+}
+
 function reader(...roles: readonly StaffRole[]): StaffMembership {
   const capabilities = new Set(roles.flatMap((role) => ROLE_CAPABILITIES[role]));
   return {
@@ -115,7 +123,7 @@ function word(table: Readonly<Record<string, string>>, key: string): string {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  readMock.mockResolvedValue([WAITING, MISMATCHED, CARD]);
+  readMock.mockResolvedValue(pageOf([WAITING, MISMATCHED, CARD]));
   namesMock.mockResolvedValue({
     accounts: [{ id: AYAN, name: 'Ayan Məmmədova', slug: 'ayan-m' }],
     projects: [],
@@ -138,46 +146,126 @@ describe('the payout destination queue — issue #396', () => {
     expect(within(card).getByText(new RegExp(word(WORDS.rejectionReason, 'UNREADABLE')))).toBeInTheDocument();
   });
 
-  it('narrows to one state without asking the service again', async () => {
-    const user = userEvent.setup();
+  it('asks the service for the first page of everything waiting', async () => {
     renderQueue();
     await screen.findByText('AZ21…1944');
 
-    await user.click(screen.getByRole('button', { name: word(WORDS.standing, 'NAME_MISMATCH') }));
-
-    expect(screen.getByText('AZ77…0042')).toBeInTheDocument();
-    expect(screen.queryByText('AZ21…1944')).not.toBeInTheDocument();
-    expect(screen.queryByText('•••• 4242')).not.toBeInTheDocument();
     expect(readMock).toHaveBeenCalledTimes(1);
+    expect(readMock).toHaveBeenCalledWith(expect.objectContaining({ state: null, page: 0 }));
   });
 
-  it('says so when a state has nothing in it, and when nothing is waiting at all', async () => {
+  it('asks the service for one state rather than narrowing the page it holds — #419', async () => {
     const user = userEvent.setup();
-    readMock.mockResolvedValue([WAITING]);
+    renderQueue();
+    await screen.findByText('AZ21…1944');
+    readMock.mockResolvedValue(pageOf([MISMATCHED]));
+
+    await user.click(screen.getByRole('button', { name: word(WORDS.standing, 'NAME_MISMATCH') }));
+
+    expect(await screen.findByText('AZ77…0042')).toBeInTheDocument();
+    expect(readMock).toHaveBeenLastCalledWith(expect.objectContaining({ state: 'NAME_MISMATCH', page: 0 }));
+    // What is drawn is what the service answered, not the first answer filtered.
+    expect(screen.queryByText('AZ21…1944')).not.toBeInTheDocument();
+    expect(screen.queryByText('•••• 4242')).not.toBeInTheDocument();
+  });
+
+  it('draws a waived destination under the state its row is in, still tagged as waived', async () => {
+    const user = userEvent.setup();
+    readMock.mockImplementation(async ({ state } = {}) =>
+      state === 'REJECTED' ? pageOf([{ ...CARD, standing: 'WAIVED' }]) : pageOf([WAITING]),
+    );
     renderQueue();
     await screen.findByText('AZ21…1944');
 
     await user.click(screen.getByRole('button', { name: word(WORDS.standing, 'REJECTED') }));
-    expect(screen.getByText(COPY.emptyFilterTitle)).toBeInTheDocument();
+
+    const card = await rowOf('•••• 4242');
+    expect(within(card).getByText(word(WORDS.standing, 'WAIVED'))).toBeInTheDocument();
+  });
+
+  it('says so when a state has nothing in it', async () => {
+    const user = userEvent.setup();
+    readMock.mockImplementation(async ({ state } = {}) => (state == null ? pageOf([WAITING]) : pageOf([])));
+    renderQueue();
+    await screen.findByText('AZ21…1944');
+
+    await user.click(screen.getByRole('button', { name: word(WORDS.standing, 'REJECTED') }));
+
+    expect(await screen.findByText(COPY.emptyFilterTitle)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.emptyTitle)).not.toBeInTheDocument();
   });
 
   it('says the queue is empty in words', async () => {
-    readMock.mockResolvedValue([]);
+    readMock.mockResolvedValue(pageOf([]));
     renderQueue();
 
     expect(await screen.findByText(COPY.emptyTitle)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.next })).not.toBeInTheDocument();
   });
 
-  it('says when it is holding a full page, because there are more behind it', async () => {
-    readMock.mockResolvedValue(
-      Array.from({ length: 50 }, (_, index) => ({
-        ...WAITING,
-        creatorId: `0193f2a1-0000-7000-8000-${String(index).padStart(12, '0')}`,
-      })),
+  it('offers no pager when everything fits on one page', async () => {
+    renderQueue();
+    await screen.findByText('AZ21…1944');
+
+    expect(screen.queryByRole('button', { name: COPY.next })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.previous })).not.toBeInTheDocument();
+  });
+
+  it('pages forward and back through the service while it says there is more', async () => {
+    const user = userEvent.setup();
+    readMock.mockImplementation(async ({ page = 0 } = {}) =>
+      page === 0 ? pageOf([WAITING], { page: 0, hasMore: true }) : pageOf([CARD], { page: 1, hasMore: false }),
     );
     renderQueue();
+    await screen.findByText('AZ21…1944');
 
-    expect(await screen.findByText(/50/)).toHaveTextContent(COPY.capped.replace('{count}', '50'));
+    expect(screen.getByRole('button', { name: COPY.previous })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: COPY.next }));
+
+    expect(await screen.findByText('•••• 4242')).toBeInTheDocument();
+    expect(screen.queryByText('AZ21…1944')).not.toBeInTheDocument();
+    expect(readMock).toHaveBeenLastCalledWith(expect.objectContaining({ state: null, page: 1 }));
+    expect(screen.getByRole('button', { name: COPY.next })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: COPY.previous }));
+
+    expect(await screen.findByText('AZ21…1944')).toBeInTheDocument();
+    expect(readMock).toHaveBeenLastCalledWith(expect.objectContaining({ state: null, page: 0 }));
+  });
+
+  it('goes back to the first page when the state changes', async () => {
+    const user = userEvent.setup();
+    readMock.mockImplementation(async ({ page = 0 } = {}) =>
+      pageOf(page === 0 ? [WAITING] : [CARD], { page, hasMore: page === 0 }),
+    );
+    renderQueue();
+    await screen.findByText('AZ21…1944');
+    await user.click(screen.getByRole('button', { name: COPY.next }));
+    await screen.findByText('•••• 4242');
+
+    await user.click(screen.getByRole('button', { name: word(WORDS.standing, 'AWAITING_VERIFICATION') }));
+
+    await waitFor(() =>
+      expect(readMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ state: 'AWAITING_VERIFICATION', page: 0 }),
+      ),
+    );
+  });
+
+  it('says so when a next page turns out empty, and offers the way back', async () => {
+    const user = userEvent.setup();
+    // Exactly a page's worth: the service offers a next page, and it holds nothing.
+    readMock.mockImplementation(async ({ page = 0 } = {}) =>
+      page === 0 ? pageOf([WAITING], { hasMore: true }) : pageOf([], { page: 1 }),
+    );
+    renderQueue();
+    await screen.findByText('AZ21…1944');
+
+    await user.click(screen.getByRole('button', { name: COPY.next }));
+
+    expect(await screen.findByText(COPY.emptyPageTitle)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.emptyTitle)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.previous })).toBeEnabled();
   });
 
   it('verifies only on the second press, and redraws the row from the answer', async () => {

@@ -2,11 +2,13 @@ package az.ideanest.compliance.api;
 
 import az.ideanest.compliance.application.CreatorPayoutDestinations;
 import az.ideanest.compliance.application.NoBankAccountOnFileException;
+import az.ideanest.compliance.domain.DestinationState;
 import az.ideanest.compliance.domain.DestinationVerificationMethod;
 import az.ideanest.compliance.domain.PayoutDestination;
 import az.ideanest.shared.compliance.RejectionReason;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -88,16 +91,34 @@ public class AdminPayoutDestinationController {
                         .orElseThrow(() -> new NoBankAccountOnFileException(creatorId)));
     }
 
-    /** The destinations waiting on somebody, oldest first. */
+    /**
+     * The destinations waiting on somebody, oldest first, a page at a time.
+     *
+     * @param state narrows the queue to one row state: {@code AWAITING_VERIFICATION},
+     *     {@code NAME_MISMATCH} or {@code REJECTED} (#419). It is the row's state and not the
+     *     standing each row reports, so a destination under a waiver is found under the state it
+     *     is in and still reports {@code WAIVED}. {@code VERIFIED} answers an empty page, because
+     *     nothing verified waits; a value that is not a state is a 400
+     * @param page from zero, {@link CreatorPayoutDestinations#PAGE_SIZE} to a page —
+     *     {@code PayoutController.queue}'s convention
+     */
     @GetMapping(path = "/payout-destinations", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PayoutDestinationResponses.Queue> queue(@AuthenticationPrincipal Jwt accessToken) {
+    public ResponseEntity<PayoutDestinationResponses.DestinationQueuePage> queue(
+            @AuthenticationPrincipal Jwt accessToken,
+            @RequestParam(required = false) DestinationState state,
+            @RequestParam(defaultValue = "0") int page) {
+
         UUID staffId = callerOf(accessToken);
+        List<PayoutDestination> rows = destinations.queue(staffId, state, page);
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(new PayoutDestinationResponses.Queue(destinations.queue(staffId).stream()
-                        .map(row -> PayoutDestinationResponses.ForStaff.of(
-                                row.getUserId(), row, destinations.standingOf(row.getUserId())))
-                        .toList()));
+                .body(new PayoutDestinationResponses.DestinationQueuePage(
+                        rows.stream()
+                                .map(row -> PayoutDestinationResponses.ForStaff.of(
+                                        row.getUserId(), row, destinations.standingOf(row.getUserId())))
+                                .toList(),
+                        Math.max(page, 0),
+                        rows.size() == CreatorPayoutDestinations.PAGE_SIZE));
     }
 
     /**

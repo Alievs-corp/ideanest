@@ -2205,7 +2205,8 @@
         "emptyBody": "Kayıtlı tüm ödeme hesapları doğrulandı.",
         "emptyFilterTitle": "Bu durumda hiçbiri yok",
         "emptyFilterBody": "Kuyrukta bu durumda hesap yok. Diğerlerini görmek için başka bir filtre seçin.",
-        "capped": "En uzun bekleyen {count} hesap gösteriliyor. Bunlara karar verildikçe sonrakiler gelir.",
+        "emptyPageTitle": "Bu sayfada hiçbir şey yok",
+        "emptyPageBody": "Bekleyen hesapların hepsi önceki sayfalarda. Görmek için bir sayfa geri dönün.",
         "openAccount": "Hesabı aç",
         "openAccountLabel": "Hesabı aç: {name}",
         "kind": {

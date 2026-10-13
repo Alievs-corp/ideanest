@@ -1402,7 +1402,9 @@ export interface PayoutDestinationQueueCopy extends ConsoleChromeCopy {
   readonly emptyBody: string;
   readonly emptyFilterTitle: string;
   readonly emptyFilterBody: string;
-  readonly capped: string;
+  /** Past the last page: a full page with nothing behind it still offers the next one. */
+  readonly emptyPageTitle: string;
+  readonly emptyPageBody: string;
   readonly openAccount: string;
   readonly openAccountLabel: string;
   readonly destination: PayoutDestinationCopy;
@@ -1423,7 +1425,8 @@ export function payoutDestinationQueueCopyFrom(
     emptyBody: at('emptyBody'),
     emptyFilterTitle: at('emptyFilterTitle'),
     emptyFilterBody: at('emptyFilterBody'),
-    capped: at('capped'),
+    emptyPageTitle: at('emptyPageTitle'),
+    emptyPageBody: at('emptyPageBody'),
     openAccount: at('openAccount'),
     openAccountLabel: at('openAccountLabel'),
     destination: payoutDestinationCopyFrom(t),
