@@ -76,6 +76,7 @@ class SubscriptionCardPaymentApiTests extends AbstractIntegrationTest {
         jdbc().update("DELETE FROM subscriptions");
         jdbc().update("DELETE FROM subscription_plans WHERE created_by IS NOT NULL");
         provider.willOpenHostedPayments();
+        provider.willRefund();
     }
 
     @Test
@@ -309,6 +310,126 @@ class SubscriptionCardPaymentApiTests extends AbstractIntegrationTest {
     }
 
     // ------------------------------------------------------------------
+    // #457: returning a payment that could not be applied
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("#457: an unapplied payment is listed for finance and returned to the card, once")
+    void anUnappliedPaymentIsReturnedToTheCard() {
+        Account creator = subscribed();
+        String order = unappliedPayment(creator);
+        UUID charge = chargeId(creator);
+
+        ResponseEntity<Map<String, Object>> listed = get("/v1/admin/plan-payments/unapplied", admin().accessToken());
+        assertThat(listed.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> payments = (List<Map<String, Object>>) listed.getBody().get("payments");
+        assertThat(payments).anySatisfy(row -> {
+            assertThat(row.get("id")).isEqualTo(charge.toString());
+            assertThat(row.get("amount")).isEqualTo("19.00");
+            assertThat(row.get("providerTransactionId")).isEqualTo(order);
+        });
+
+        int before = provider.refunds().size();
+        ResponseEntity<Map<String, Object>> refunded =
+                post("/v1/admin/plan-payments/" + charge + "/refund", admin().accessToken(), Map.of());
+
+        assertThat(refunded.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(provider.refunds()).hasSize(before + 1);
+        assertThat(provider.refunds().getLast().reference()).isEqualTo(charge);
+        assertThat(provider.refunds().getLast().amount().amount()).isEqualByComparingTo("19.00");
+        Map<String, Object> row = jdbc().queryForMap(
+                "SELECT status, refund_method, refunded_by FROM subscription_charges WHERE id = ?", charge);
+        assertThat(row.get("status")).isEqualTo("REFUNDED");
+        assertThat(row.get("refund_method")).isEqualTo("CARD");
+        assertThat(row.get("refunded_by")).isEqualTo(admin().id());
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM audit_logs WHERE action = 'subscription.payment_refunded' AND entity_id = ?",
+                        Long.class,
+                        charge))
+                .isEqualTo(1L);
+
+        ResponseEntity<Map<String, Object>> again =
+                post("/v1/admin/plan-payments/" + charge + "/refund", admin().accessToken(), Map.of());
+        assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(again.getBody().get("code")).isEqualTo("PLAN_REFUND_NOT_UNAPPLIED");
+        assertThat(provider.refunds()).hasSize(before + 1);
+    }
+
+    @Test
+    @DisplayName("#457: past the card window it is refused, and the bank transfer that returned it is recorded")
+    void pastTheWindowItGoesBackByBank() {
+        Account creator = subscribed();
+        unappliedPayment(creator);
+        UUID charge = chargeId(creator);
+        provider.willRefuseRefundsAsTooOld();
+
+        ResponseEntity<Map<String, Object>> refused =
+                post("/v1/admin/plan-payments/" + charge + "/refund", admin().accessToken(), Map.of());
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody().get("code")).isEqualTo("PLAN_REFUND_CARD_WINDOW_CLOSED");
+        assertThat(jdbc().queryForObject("SELECT status FROM subscription_charges WHERE id = ?", String.class, charge))
+                .isEqualTo("UNAPPLIED");
+
+        ResponseEntity<Map<String, Object>> recorded = post(
+                "/v1/admin/plan-payments/" + charge + "/bank-transfer",
+                admin().accessToken(),
+                Map.of("bankReference", "KAP-2026-118", "note", "returned to the creator's IBAN"));
+
+        assertThat(recorded.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Map<String, Object> row = jdbc().queryForMap(
+                "SELECT status, refund_method, refund_reference FROM subscription_charges WHERE id = ?", charge);
+        assertThat(row.get("status")).isEqualTo("REFUNDED");
+        assertThat(row.get("refund_method")).isEqualTo("BANK_TRANSFER");
+        assertThat(row.get("refund_reference")).isEqualTo("KAP-2026-118");
+    }
+
+    @Test
+    @DisplayName("#457: a provider refusal leaves the payment waiting, and a creator cannot reach the console")
+    void refusalsLeaveItWaiting() {
+        Account creator = subscribed();
+        unappliedPayment(creator);
+        UUID charge = chargeId(creator);
+
+        assertThat(get("/v1/admin/plan-payments/unapplied", creator.accessToken()).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(post("/v1/admin/plan-payments/" + charge + "/refund", creator.accessToken(), Map.of())
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+
+        provider.willRefuseRefunds("do_not_honour");
+        ResponseEntity<Map<String, Object>> refused =
+                post("/v1/admin/plan-payments/" + charge + "/refund", admin().accessToken(), Map.of());
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(refused.getBody().get("code")).isEqualTo("PLAN_REFUND_PROVIDER_REFUSED");
+        assertThat(jdbc().queryForObject("SELECT status FROM subscription_charges WHERE id = ?", String.class, charge))
+                .isEqualTo("UNAPPLIED");
+
+        // A paid page is not unapplied money, and is not returned from here.
+        Account paid = active();
+        UUID paidCharge = chargeId(paid);
+        assertThat(post("/v1/admin/plan-payments/" + paidCharge + "/refund", admin().accessToken(), Map.of())
+                        .getBody()
+                        .get("code"))
+                .isEqualTo("PLAN_REFUND_NOT_UNAPPLIED");
+    }
+
+    private String unappliedPayment(Account creator) {
+        String order = order(pay(creator, UUID.randomUUID().toString()));
+        jdbc().update("UPDATE subscriptions SET state = 'CANCELED', canceled_at = now() WHERE account_id = ?", creator.id());
+        deliver(order, "charge_succeeded");
+        assertThat(chargeStates(creator)).containsExactly("UNAPPLIED");
+        return order;
+    }
+
+    private UUID chargeId(Account creator) {
+        return jdbc().queryForObject(
+                "SELECT id FROM subscription_charges WHERE account_id = ? ORDER BY opened_at LIMIT 1", UUID.class, creator.id());
+    }
+
+    private ResponseEntity<Map<String, Object>> get(String path, String accessToken) {
+        return rest.exchange(path, HttpMethod.GET, new HttpEntity<>(authorised(accessToken)), mapType());
+    }
 
     private record Account(String accessToken, UUID id) {
     }

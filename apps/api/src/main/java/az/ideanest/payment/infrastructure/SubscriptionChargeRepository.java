@@ -32,6 +32,18 @@ public interface SubscriptionChargeRepository extends JpaRepository<Subscription
      * Pages whose callback has not come, opened inside the sweep's window, least recently asked about
      * first — {@code HostedChargeSweepJob}'s queue for pledges, kept the same way.
      */
+    /** #457: payments taken for subscriptions that had ended, oldest first — the refund window closes first. */
+    @Query("""
+            SELECT c FROM SubscriptionCharge c
+            WHERE c.status = az.ideanest.payment.domain.SubscriptionCharge.Status.UNAPPLIED
+            ORDER BY c.settledAt ASC
+            """)
+    List<SubscriptionCharge> unapplied();
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM SubscriptionCharge c WHERE c.id = :id")
+    Optional<SubscriptionCharge> lockById(@Param("id") UUID id);
+
     @Query("""
             SELECT c FROM SubscriptionCharge c
             WHERE c.status = az.ideanest.payment.domain.SubscriptionCharge.Status.PENDING

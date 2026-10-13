@@ -432,11 +432,12 @@ ideanest:
     # before a period ends (#449).
     renewal-window: ${SUBSCRIPTION_RENEWAL_WINDOW:P7D}
     reminders:
-      # #450: `subscription-renewal-reminders`. Daily. Nothing renews a plan by itself
+      # #450: `subscription-renewal-reminders`. Hourly, 09:00-20:00 in Baku (#457), so a lead
+      # is met within the hour and nobody is pushed at night. Nothing renews a plan by itself
       # (epic #448), so a priced plan its creator has not cancelled is reminded before its
       # period ends and told once when it lapses. Each reminder is claimed in
       # `subscription_reminders`, so a pass run twice sends nothing twice.
-      schedule: "0 0 9 * * *"
+      schedule: ${SUBSCRIPTION_REMINDER_SCHEDULE:0 0 5-16 * * *}
       # How long before the end, largest first. Each lead's window ends where the next
       # smaller one begins, so one pass reminds a subscription at most once.
       leads: P3D, P1D

@@ -80,7 +80,7 @@ public class SubscriptionChargeEvents implements PaymentEventHandler {
             charge.unapplied(now, event.rawBody());
             charges.save(charge);
             log.error(
-                    "Plan payment {} was paid for subscription {}, which has ended; refund it by hand.",
+                    "Plan payment {} was paid for subscription {}, which has ended; return it from /admin/refunds.",
                     reference,
                     charge.getSubscriptionId());
             return Optional.of("plan payment " + reference + " succeeded for a subscription that has ended");

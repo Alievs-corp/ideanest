@@ -12,9 +12,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * record: the renewal window of epic #448 is a different rule with a different owner (#449), and a
  * reminder cadence changed for a campaign of churn must not be able to move it.
  *
- * @param schedule the UTC cron the pass runs on, or {@code -} to register it unscheduled. Daily by
- *     default: the leads are measured in days, and a creator cannot tell a reminder sent at nine
- *     from one sent at ten
+ * @param schedule the UTC cron the pass runs on, or {@code -} to register it unscheduled. Hourly
+ *     from nine to eight in Baku by default (#457). Hourly so a lead is met within the hour rather
+ *     than missed until the next morning, when a period that ended just after a daily pass would
+ *     have its two reminders merged into one; daytime only, because a reminder is not worth a push
+ *     at three in the morning, and a lead crossed at night is still inside its window at nine
  * @param leads how long before a period ends the creator is told it is due, largest first. Three
  *     days and one day by default — two reminders before the end, as epic #448 asks. Each is a whole
  *     number of hours, because {@code subscription_reminders.lead_hours} is the claim's key
@@ -22,15 +24,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *     default. A bound rather than "every lapsed row", so the first pass after deployment does not
  *     tell every creator whose plan ran out last year that it has just ended
  * @param batchSize the most subscriptions one pass reminds per lead, and the most lapses it
- *     announces. A bound on a pass, not a target: the remainder is a day away, and ordered so the
+ *     announces. A bound on a pass, not a target: the remainder is an hour away, and ordered so the
  *     most urgent goes first
  */
 @ConfigurationProperties(prefix = "ideanest.subscription.reminders")
 public record SubscriptionReminderProperties(
         String schedule, List<Duration> leads, Duration lapsedLookBack, int batchSize) {
 
-    /** Nine in the morning UTC, one in the afternoon in Baku: read during a working day. */
-    private static final String DEFAULT_SCHEDULE = "0 0 9 * * *";
+    /** On the hour, 05:00–16:00 UTC: nine in the morning to eight in the evening in Baku. */
+    private static final String DEFAULT_SCHEDULE = "0 0 5-16 * * *";
 
     private static final List<Duration> DEFAULT_LEADS = List.of(Duration.ofDays(3), Duration.ofDays(1));
 
@@ -47,7 +49,7 @@ public record SubscriptionReminderProperties(
         for (Duration lead : leads) {
             if (lead == null || lead.isNegative() || lead.isZero() || lead.toSecondsPart() != 0
                     || lead.toMinutesPart() != 0) {
-                // Stops the process at start-up rather than at nine the next morning. A lead of zero
+                // Stops the process at start-up rather than at the first pass. A lead of zero
                 // would be a "renewal due" sent after the end, which is the lapse's message.
                 throw new IllegalArgumentException(
                         "A renewal reminder lead is a positive whole number of hours, not " + lead);

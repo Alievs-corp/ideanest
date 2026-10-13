@@ -1501,7 +1501,7 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
     }
 
     private List<RefundRequest> sentFor(UUID pledgeId) {
-        return provider.refunds().stream().filter(request -> request.pledgeId().equals(pledgeId)).toList();
+        return provider.refunds().stream().filter(request -> request.reference().equals(pledgeId)).toList();
     }
 
     private int pagesFor(UUID pledgeId) {

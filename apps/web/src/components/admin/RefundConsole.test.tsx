@@ -55,6 +55,12 @@ vi.mock('../../lib/admin/tickets', async (importOriginal) => {
 
 vi.mock('../../lib/admin/refund-bank-details', () => ({ recordRefundBankDetails: vi.fn() }));
 
+/* #457's section reads its own list; `PlanPaymentReturns.test.tsx` covers it. Empty here. */
+vi.mock('../../lib/admin/plan-payment-refunds', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../lib/admin/plan-payment-refunds')>()),
+  listUnappliedPlanPayments: vi.fn().mockResolvedValue({ payments: [] }),
+}));
+
 const listMock = vi.mocked(listRefunds);
 const issueMock = vi.mocked(issueRefund);
 const revealMock = vi.mocked(revealRefundBankDetails);

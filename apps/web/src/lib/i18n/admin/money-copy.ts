@@ -649,6 +649,66 @@ export interface RefundConsoleCopy extends ConsoleChromeCopy {
    */
   readonly backerTicket: BackerTicketCopy;
   readonly bankDetails: RefundBankDetailsCopy;
+  /** #457: plan payments that arrived after the subscription ended, and their return. */
+  readonly planPayments: PlanPaymentReturnsCopy;
+}
+
+/**
+ * #457: the plan payments the refund console returns to their creators.
+ *
+ * <p>`errors` is keyed by the service's `code` (`PlanRefundRefusedException`). A code with no
+ * sentence falls through to the console's shared refusal table, which is what a capability
+ * refusal reaches.
+ */
+export interface PlanPaymentReturnsCopy {
+  readonly subject: string;
+  readonly heading: string;
+  readonly intro: string;
+  readonly loadingList: string;
+  readonly emptyTitle: string;
+  readonly emptyBody: string;
+  /** Carries `{date}`. */
+  readonly paidOn: string;
+  /** Carries `{provider}`, `{order}`. */
+  readonly providerOrder: string;
+  /** Carries `{account}`. */
+  readonly paidBy: string;
+  readonly openAccount: string;
+  /** Carries `{id}`. */
+  readonly openAccountLabel: string;
+  /** Carries `{date}`, `{left}`. */
+  readonly cardOpenUntil: string;
+  /** Carries `{count}`. */
+  readonly daysLeft: string;
+  readonly lastDay: string;
+  /** Carries `{date}`. */
+  readonly cardClosed: string;
+  readonly noCardWindow: string;
+  readonly refundToCard: string;
+  readonly cardClosedReason: string;
+  /** Carries `{amount}`, `{provider}`. */
+  readonly confirmRefund: string;
+  readonly confirmRefundAction: string;
+  readonly refunding: string;
+  readonly recordBankTransfer: string;
+  readonly bankIntro: string;
+  readonly bankReference: string;
+  readonly bankReferenceHint: string;
+  readonly note: string;
+  readonly noteHint: string;
+  /** Carries `{amount}`, `{reference}`. */
+  readonly confirmRecord: string;
+  readonly confirmRecordAction: string;
+  readonly recording: string;
+  readonly cancel: string;
+  readonly refundedTitle: string;
+  /** Carries `{amount}`, `{order}`. */
+  readonly refundedBody: string;
+  readonly recordedTitle: string;
+  /** Carries `{amount}`, `{reference}`. */
+  readonly recordedBody: string;
+  readonly alreadyReturnedTitle: string;
+  readonly errors: Readonly<Record<string, string>>;
 }
 
 /**
@@ -800,6 +860,7 @@ export function refundConsoleCopyFrom(
     },
     backerTicket: t.raw('screens.support.backerTicket') as BackerTicketCopy,
     bankDetails: t.raw('screens.support.bankDetails') as RefundBankDetailsCopy,
+    planPayments: t.raw('screens.refunds.planPayments') as PlanPaymentReturnsCopy,
   };
 }
 

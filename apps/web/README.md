@@ -125,7 +125,7 @@ the browser half of the auth flow work at all.
 | `/admin/ledger` | Console | **Staff only.** The double-entry ledger, both sides of each posting, and the balances (#305) |
 | `/admin/reconciliation` | Console | **Staff only.** Whether the platform's money adds up, and what is wrong when it does not. Reports and never repairs (#106) |
 | `/admin/payouts` | Console | **Staff only.** What each creator is owed, the hold it is under, and the two signatures before it leaves (#306) |
-| `/admin/refunds` | Console | **Staff only.** Full and partial refunds, with a reason code and a ledger posting behind each (#307). A refund waiting for bank details offers support the backer's ticket and the account recorded from it (#416) |
+| `/admin/refunds` | Console | **Staff only.** Full and partial refunds, with a reason code and a ledger posting behind each (#307). A refund waiting for bank details offers support the backer's ticket and the account recorded from it (#416). Plan payments that arrived after the subscription ended are listed above the log, returned to the card while the provider's window is open or recorded as returned by bank transfer (#457) |
 | `/admin/disputes` | Console | **Staff only.** Chargebacks: notification, evidence, outcome, and the deadline each runs against (#308) |
 | `/admin/fees` | Console | **Staff only.** Platform and processing rates. There is no edit — a change closes one schedule and opens another (#311) |
 | `/admin/moderation/content` | Console | **Staff only.** Complaints about comments and campaign updates (#297) |

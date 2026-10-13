@@ -13,7 +13,8 @@ import java.util.UUID;
  * a partial refund would have hidden the requirement until the day somebody needed
  * one.
  *
- * @param pledgeId which pledge is being refunded
+ * @param reference what is being refunded: the pledge, or an unapplied plan payment (#457). Not sent
+ *     to the provider; it names the refund in the platform's own logs
  * @param providerTransactionId the charge being reversed. <strong>The provider's
  *     identifier and not ours</strong>: a refund is submitted against the original
  *     authorisation, and the platform's own transaction identifier means nothing on
@@ -32,10 +33,10 @@ import java.util.UUID;
  *     charge nobody complains about it
  */
 public record RefundRequest(
-        UUID pledgeId, String providerTransactionId, Money amount, String reasonCode, String idempotencyKey) {
+        UUID reference, String providerTransactionId, Money amount, String reasonCode, String idempotencyKey) {
 
     public RefundRequest {
-        Objects.requireNonNull(pledgeId, "A refund is a refund of a pledge");
+        Objects.requireNonNull(reference, "A refund is a refund of something");
         Objects.requireNonNull(amount, "A refund needs an amount");
         if (providerTransactionId == null || providerTransactionId.isBlank()) {
             throw new IllegalArgumentException("A refund is submitted against the charge it reverses");

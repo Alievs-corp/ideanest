@@ -485,6 +485,12 @@ public enum AuditAction {
     /** #399: a member of finance recorded the bank transfer that paid a refund, with the bank's reference. */
     REFUND_BANK_TRANSFER_RECORDED("refund.bank_transfer_recorded", "refund"),
 
+    /**
+     * A plan payment the platform could not apply was returned to the creator — #457. The detail
+     * names how (card or bank transfer), the provider's order and the reference.
+     */
+    PLAN_PAYMENT_REFUNDED("subscription.payment_refunded", "subscription_charge"),
+
     /** AD-07 (#68, #308): evidence was submitted, or an outcome recorded, on a dispute. */
     DISPUTE_HANDLED("dispute.handled", "dispute"),
 

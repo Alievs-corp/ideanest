@@ -12,11 +12,11 @@ import org.junit.jupiter.api.Test;
 class SubscriptionReminderPropertiesTests {
 
     @Test
-    @DisplayName("defaults to a daily pass, three days and one day before the end, and a week's look-back")
+    @DisplayName("defaults to an hourly daytime pass, three days and one day before the end, and a week's look-back")
     void defaults() {
         SubscriptionReminderProperties properties = new SubscriptionReminderProperties(null, null, null, 0);
 
-        assertThat(properties.schedule()).isEqualTo("0 0 9 * * *");
+        assertThat(properties.schedule()).isEqualTo("0 0 5-16 * * *");
         assertThat(properties.leads()).containsExactly(Duration.ofDays(3), Duration.ofDays(1));
         assertThat(properties.lapsedLookBack()).isEqualTo(Duration.ofDays(7));
         assertThat(properties.batchSize()).isEqualTo(500);

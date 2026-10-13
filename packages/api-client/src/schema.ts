@@ -1172,6 +1172,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/plan-payments/unapplied": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["planPaymentRefundUnapplied"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/plan-payments/{id}/bank-transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["planPaymentRefundRecordBankTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/plan-payments/{id}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["planPaymentRefundRefundToCard"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/plans": {
         parameters: {
             query?: never;
@@ -6057,6 +6105,10 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        PlanPaymentBankTransferRequest: {
+            bankReference: string;
+            note?: string;
+        };
         PlatformAnalyticsResponse: {
             /** Format: date-time */
             computedAt?: string;
@@ -7357,6 +7409,25 @@ export interface components {
             periodSeconds?: number;
             secret?: string;
         };
+        UnappliedPlanPayment: {
+            /** Format: uuid */
+            accountId?: string;
+            amount?: string;
+            /** Format: date-time */
+            cardRefundUntil?: string;
+            currency?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            paidAt?: string;
+            provider?: string;
+            providerTransactionId?: string;
+            /** Format: uuid */
+            subscriptionId?: string;
+        };
+        UnappliedPlanPaymentList: {
+            payments?: components["schemas"]["UnappliedPlanPayment"][];
+        };
         UnconfirmedNotSentRequest: {
             note: string;
         };
@@ -7674,6 +7745,7 @@ export type SchemaPayoutPage = components['schemas']['PayoutPage'];
 export type SchemaPayoutRecord = components['schemas']['PayoutRecord'];
 export type SchemaPayoutSummary = components['schemas']['PayoutSummary'];
 export type SchemaPlan = components['schemas']['Plan'];
+export type SchemaPlanPaymentBankTransferRequest = components['schemas']['PlanPaymentBankTransferRequest'];
 export type SchemaPlatformAnalyticsResponse = components['schemas']['PlatformAnalyticsResponse'];
 export type SchemaPlatformStatus = components['schemas']['PlatformStatus'];
 export type SchemaPledgeAddonBody = components['schemas']['PledgeAddonBody'];
@@ -7821,6 +7893,8 @@ export type SchemaTranslation = components['schemas']['Translation'];
 export type SchemaTranslationRequest = components['schemas']['TranslationRequest'];
 export type SchemaTree = components['schemas']['Tree'];
 export type SchemaTwoFactorEnrolmentResponse = components['schemas']['TwoFactorEnrolmentResponse'];
+export type SchemaUnappliedPlanPayment = components['schemas']['UnappliedPlanPayment'];
+export type SchemaUnappliedPlanPaymentList = components['schemas']['UnappliedPlanPaymentList'];
 export type SchemaUnconfirmedNotSentRequest = components['schemas']['UnconfirmedNotSentRequest'];
 export type SchemaUnconfirmedSentRequest = components['schemas']['UnconfirmedSentRequest'];
 export type SchemaUpdateNotificationPreferencesRequest = components['schemas']['UpdateNotificationPreferencesRequest'];
@@ -9811,6 +9885,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PayoutSummary"];
+                };
+            };
+        };
+    };
+    planPaymentRefundUnapplied: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnappliedPlanPaymentList"];
+                };
+            };
+        };
+    };
+    planPaymentRefundRecordBankTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanPaymentBankTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnappliedPlanPayment"];
+                };
+            };
+        };
+    };
+    planPaymentRefundRefundToCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnappliedPlanPayment"];
                 };
             };
         };
