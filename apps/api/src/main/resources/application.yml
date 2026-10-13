@@ -427,6 +427,10 @@ ideanest:
     destination-reminder-schedule: "0 0 9 * * *"
 
   subscription:
+    # Creator plans, epic #448. A plan is paid by the creator for every period on the
+    # provider's page; nothing is charged on a schedule. Renewing is offered this long
+    # before a period ends (#449).
+    renewal-window: ${SUBSCRIPTION_RENEWAL_WINDOW:P7D}
     reminders:
       # #450: `subscription-renewal-reminders`. Daily. Nothing renews a plan by itself
       # (epic #448), so a priced plan its creator has not cancelled is reminded before its
@@ -899,11 +903,6 @@ ideanest:
       # queueing, short enough that a captured request is not a usable instruction
       # an hour later.
       tolerance: PT5M
-
-  # Creator plans, epic #448. A plan is paid by the creator for every period on the provider's
-  # page; nothing is charged on a schedule. Renewing is offered this long before a period ends.
-  subscription:
-    renewal-window: ${SUBSCRIPTION_RENEWAL_WINDOW:P7D}
 
   # SIMA Imza, and the two things that keep it switched off -- issue #428.
   #
