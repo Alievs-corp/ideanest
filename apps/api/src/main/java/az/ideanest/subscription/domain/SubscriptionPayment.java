@@ -131,7 +131,7 @@ public class SubscriptionPayment {
      * @param receivedAt when the money arrived. May be earlier than now: a transfer that
      *     cleared on the 31st belongs in the month it cleared
      * @param recordedBy the member of staff confirming it, or null for a provider callback
-     *     when #60 lands
+     *     (#449)
      */
     public static SubscriptionPayment received(
             UUID id,

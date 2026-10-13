@@ -5,6 +5,7 @@ import az.ideanest.subscription.domain.Subscription;
 import az.ideanest.subscription.domain.SubscriptionPlan;
 import az.ideanest.subscription.domain.SubscriptionState;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -88,6 +89,11 @@ public final class SubscriptionResponses {
      * @param plan the plan as it stands now, so the page can say what the subscription
      *     currently allows. The price on {@link #price} is what was charged, which may
      *     differ — see V62 on why one is snapshotted and the other is not
+     * @param paymentDue what {@code POST /v1/me/subscription/payment} would pay for now —
+     *     {@code FIRST_PERIOD} or {@code RENEWAL} — or null when nothing is due (#449). The
+     *     client offers "Pay" or "Renew" on this rather than working out the window itself
+     * @param renewalOpensAt when renewing the running period is first offered, or null for a
+     *     pending or free subscription
      */
     public record Held(
             UUID id,
@@ -100,9 +106,16 @@ public final class SubscriptionResponses {
             Instant startedAt,
             Instant currentPeriodEnd,
             boolean cancelAtPeriodEnd,
-            Instant createdAt) {
+            Instant createdAt,
+            Subscription.DuePayment paymentDue,
+            Instant renewalOpensAt) {
 
-        public static Held of(Subscription subscription, SubscriptionPlan plan, Instant now) {
+        public static Held of(
+                Subscription subscription,
+                SubscriptionPlan plan,
+                Instant now,
+                Subscription.DuePayment paymentDue,
+                Instant renewalOpensAt) {
             return new Held(
                     subscription.getId(),
                     subscription.getState(),
@@ -114,8 +127,20 @@ public final class SubscriptionResponses {
                     subscription.getStartedAt(),
                     subscription.getCurrentPeriodEnd(),
                     subscription.isCancelAtPeriodEnd(),
-                    subscription.getCreatedAt());
+                    subscription.getCreatedAt(),
+                    paymentDue,
+                    renewalOpensAt);
         }
+    }
+
+    /**
+     * Where to send the creator to pay for their plan — #449.
+     *
+     * <p>Nothing has been paid when this is answered. The subscription changes when the provider
+     * tells the platform the payment went through, which is asynchronous; a client reads
+     * {@code /v1/me/subscription} again after the creator returns.
+     */
+    public record PaymentPage(String providerTransactionId, URI redirectUrl) {
     }
 
     /**

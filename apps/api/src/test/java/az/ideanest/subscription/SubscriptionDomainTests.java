@@ -9,6 +9,7 @@ import az.ideanest.subscription.domain.Subscription;
 import az.ideanest.subscription.domain.SubscriptionPlan;
 import az.ideanest.subscription.domain.SubscriptionState;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -213,6 +214,111 @@ class SubscriptionDomainTests {
 
             // A price that moved under a subscriber would be a bill they never agreed to.
             assertThat(bought.getPrice().amount()).isEqualByComparingTo("49.00");
+        }
+    }
+
+    @Nested
+    @DisplayName("paying by card (#449)")
+    class CardPayments {
+
+        private static final Duration WINDOW = Duration.ofDays(7);
+
+        @Test
+        @DisplayName("a paid first period names nobody as having activated it")
+        void paidActivationHasNoStaff() {
+            SubscriptionPlan plan = plan("GROWTH", "49.00");
+            Subscription bought = Subscription.awaitingPayment(UUID.randomUUID(), UUID.randomUUID(), plan, NOW);
+
+            bought.activatePaid(plan, NOW);
+
+            assertThat(bought.getState()).isEqualTo(SubscriptionState.ACTIVE);
+            assertThat(bought.getActivatedBy()).isNull();
+            assertThat(bought.getCurrentPeriodEnd()).isEqualTo(BillingPeriod.MONTHLY.endOf(NOW));
+        }
+
+        @Test
+        @DisplayName("a pending plan owes its first period, whatever the window")
+        void pendingOwesTheFirstPeriod() {
+            Subscription bought = Subscription.awaitingPayment(
+                    UUID.randomUUID(), UUID.randomUUID(), plan("GROWTH", "49.00"), NOW);
+
+            assertThat(bought.paymentDueAt(NOW, WINDOW)).contains(Subscription.DuePayment.FIRST_PERIOD);
+            assertThat(bought.renewalOpensAt(WINDOW)).isNull();
+        }
+
+        @Test
+        @DisplayName("renewal opens at the window's start, inclusive, and closes when the period ends")
+        void renewalWindow() {
+            Subscription held = active("49.00");
+            Instant end = held.getCurrentPeriodEnd();
+            Instant opens = end.minus(WINDOW);
+
+            assertThat(held.renewalOpensAt(WINDOW)).isEqualTo(opens);
+            assertThat(held.paymentDueAt(opens.minusMillis(1), WINDOW)).isEmpty();
+            assertThat(held.paymentDueAt(opens, WINDOW)).contains(Subscription.DuePayment.RENEWAL);
+            assertThat(held.paymentDueAt(end.minusMillis(1), WINDOW)).contains(Subscription.DuePayment.RENEWAL);
+            // A lapsed plan is bought again rather than renewed.
+            assertThat(held.paymentDueAt(end, WINDOW)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("a free plan owes nothing")
+        void freeOwesNothing() {
+            Subscription held = Subscription.activeFrom(UUID.randomUUID(), UUID.randomUUID(), plan("FREE", "0.00"), NOW);
+
+            assertThat(held.paymentDueAt(held.getCurrentPeriodEnd().minusSeconds(60), WINDOW)).isEmpty();
+            assertThat(held.renewalOpensAt(WINDOW)).isNull();
+        }
+
+        @Test
+        @DisplayName("renewing early extends from the old end, so no paid day is lost")
+        void earlyRenewalExtendsFromTheEnd() {
+            Subscription held = active("49.00");
+            Instant end = held.getCurrentPeriodEnd();
+
+            held.renew(end.minus(Duration.ofDays(3)));
+
+            assertThat(held.getCurrentPeriodEnd()).isEqualTo(BillingPeriod.MONTHLY.endOf(end));
+        }
+
+        @Test
+        @DisplayName("renewing after the end starts from the payment, so the period is not partly over")
+        void lateRenewalStartsFromNow() {
+            Subscription held = active("49.00");
+            Instant late = held.getCurrentPeriodEnd().plus(Duration.ofDays(2));
+
+            held.renew(late);
+
+            assertThat(held.getCurrentPeriodEnd()).isEqualTo(BillingPeriod.MONTHLY.endOf(late));
+            assertThat(held.entitlesAt(late)).isTrue();
+        }
+
+        @Test
+        @DisplayName("renewing withdraws the creator's cancellation")
+        void renewalLiftsACancellation() {
+            Subscription held = active("49.00");
+            held.cancelAtPeriodEnd(NOW.plusSeconds(60));
+
+            held.renew(NOW.plusSeconds(120));
+
+            assertThat(held.isCancelAtPeriodEnd()).isFalse();
+            assertThat(held.getCanceledAt()).isNull();
+        }
+
+        @Test
+        @DisplayName("only an active subscription renews")
+        void onlyActiveRenews() {
+            Subscription pending = Subscription.awaitingPayment(
+                    UUID.randomUUID(), UUID.randomUUID(), plan("GROWTH", "49.00"), NOW);
+
+            assertThatThrownBy(() -> pending.renew(NOW)).isInstanceOf(IllegalStateException.class);
+        }
+
+        private Subscription active(String price) {
+            SubscriptionPlan plan = plan("GROWTH", price);
+            Subscription bought = Subscription.awaitingPayment(UUID.randomUUID(), UUID.randomUUID(), plan, NOW);
+            bought.activatePaid(plan, NOW);
+            return bought;
         }
     }
 

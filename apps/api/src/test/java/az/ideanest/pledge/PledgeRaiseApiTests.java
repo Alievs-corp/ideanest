@@ -161,7 +161,7 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
         assertThat((String) opened.getBody().get("redirectUrl")).startsWith("https://");
 
         HostedPaymentRequest asked = provider.hostedPayments().getLast();
-        assertThat(asked.pledgeId()).isEqualTo(paid.pledgeId());
+        assertThat(asked.reference()).isEqualTo(paid.pledgeId());
         assertThat(asked.amount().amount()).isEqualByComparingTo("55.00");
         assertThat(asked.idempotencyKey()).startsWith("pledge-raise-");
 
@@ -1506,7 +1506,7 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
 
     private int pagesFor(UUID pledgeId) {
         return (int) provider.hostedPayments().stream()
-                .filter(request -> request.pledgeId().equals(pledgeId))
+                .filter(request -> request.reference().equals(pledgeId))
                 .count();
     }
 

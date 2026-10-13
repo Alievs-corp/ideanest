@@ -6920,6 +6920,41 @@
         "tags" : [ "subscription-controller" ]
       }
     },
+    "/v1/me/subscription/payment" : {
+      "post" : {
+        "operationId" : "subscriptionPay",
+        "parameters" : [ {
+          "in" : "header",
+          "name" : "Idempotency-Key",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PayForPlanRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "subscription-controller" ]
+      }
+    },
     "/v1/me/surveys" : {
       "get" : {
         "operationId" : "backerSurveyMine",
@@ -15076,6 +15111,22 @@
           },
           "shippingCountry" : {
             "type" : "string"
+          }
+        }
+      },
+      "PayForPlanRequest" : {
+        "type" : "object",
+        "properties" : {
+          "errorUrl" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "language" : {
+            "type" : "string"
+          },
+          "successUrl" : {
+            "type" : "string",
+            "format" : "uri"
           }
         }
       },

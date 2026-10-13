@@ -108,7 +108,7 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
         assertThat(transaction).startsWith("scripted-hosted-");
 
         HostedPaymentRequest asked = provider.hostedPayments().getLast();
-        assertThat(asked.pledgeId()).isEqualTo(checkout.pledgeId());
+        assertThat(asked.reference()).isEqualTo(checkout.pledgeId());
         assertThat(asked.amount().amount()).isEqualByComparingTo("25.00");
         assertThat(asked.idempotencyKey()).isEqualTo(key);
 
@@ -312,7 +312,7 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
         assertThat(pay(checkout.backer(), checkout.pledgeId(), null).getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(pay(account("hosted-stranger"), checkout.pledgeId(), UUID.randomUUID().toString()).getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(provider.hostedPayments()).noneMatch(request -> request.pledgeId().equals(checkout.pledgeId()));
+        assertThat(provider.hostedPayments()).noneMatch(request -> request.reference().equals(checkout.pledgeId()));
     }
 
     @Test
@@ -367,7 +367,7 @@ class HostedPaymentApiTests extends AbstractIntegrationTest {
         // The refusal does not repeat the address it refused.
         assertThat(asSuccess.getBody().toString()).doesNotContain(address);
 
-        assertThat(provider.hostedPayments()).noneMatch(request -> request.pledgeId().equals(checkout.pledgeId()));
+        assertThat(provider.hostedPayments()).noneMatch(request -> request.reference().equals(checkout.pledgeId()));
         assertThat(charges(checkout.pledgeId())).isEmpty();
         // Refused before the draft was held for the payment window.
         assertThat(reservationExpiresAt(checkout.pledgeId())).isEqualTo(heldUntil);

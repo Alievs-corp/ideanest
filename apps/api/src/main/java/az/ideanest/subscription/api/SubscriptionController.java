@@ -1,5 +1,10 @@
 package az.ideanest.subscription.api;
 
+import az.ideanest.payment.application.SubscriptionPaymentPage;
+import az.ideanest.shared.idempotency.IdempotencyKey;
+import az.ideanest.shared.idempotency.IdempotentRequests;
+import az.ideanest.shared.idempotency.RecordedResponse;
+import az.ideanest.subscription.application.SubscriptionCardPayments;
 import az.ideanest.subscription.application.SubscriptionPlans;
 import az.ideanest.subscription.application.Subscriptions;
 import az.ideanest.subscription.application.UnknownPlanException;
@@ -7,12 +12,14 @@ import az.ideanest.subscription.domain.Subscription;
 import az.ideanest.subscription.domain.SubscriptionPlan;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -20,6 +27,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -41,22 +49,34 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <h2>Buying is two steps for a priced plan, and the response says which step it is in</h2>
  *
- * <p>Nothing here charges a card — §9.2 ships no provider adapter while #60 is unanswered.
- * A priced plan comes back {@code PENDING_PAYMENT} with {@code entitled: false}, and the
- * pricing page tells the creator what happens next. A free plan comes back {@code ACTIVE}.
- * The client branches on {@code entitled} rather than on the price, so the day a provider
- * arrives the page needs no change.
+ * <p>A priced plan comes back {@code PENDING_PAYMENT} with {@code entitled: false} and
+ * {@code paymentDue: FIRST_PERIOD}. The creator pays it by card through
+ * {@code POST /v1/me/subscription/payment} (#449), or by bank transfer that a member of staff
+ * records. A free plan comes back {@code ACTIVE}. The client branches on {@code entitled} and
+ * {@code paymentDue} rather than on the price.
+ *
+ * <p>Every later period is paid the same way, inside the renewal window, by the creator: nothing
+ * is charged on a schedule (epic #448).
  */
 @RestController
 public class SubscriptionController {
 
     private final SubscriptionPlans plans;
     private final Subscriptions subscriptions;
+    private final SubscriptionCardPayments cardPayments;
+    private final IdempotentRequests idempotency;
     private final Clock clock;
 
-    public SubscriptionController(SubscriptionPlans plans, Subscriptions subscriptions, Clock clock) {
+    public SubscriptionController(
+            SubscriptionPlans plans,
+            Subscriptions subscriptions,
+            SubscriptionCardPayments cardPayments,
+            IdempotentRequests idempotency,
+            Clock clock) {
         this.plans = plans;
         this.subscriptions = subscriptions;
+        this.cardPayments = cardPayments;
+        this.idempotency = idempotency;
         this.clock = clock;
     }
 
@@ -120,6 +140,47 @@ public class SubscriptionController {
      * entitlement actually stops, which is the one thing the creator wants to know and
      * cannot work out from the request.
      */
+    /**
+     * Opens the provider's page for whatever the caller owes now — #449.
+     *
+     * <p>The first period of a pending subscription, or the next period of one whose end is inside
+     * the renewal window. Idempotent on the key like every payment mutation: a retried request
+     * answers with the page it opened. A second key while that page is still open is sent back to
+     * it rather than given a second order.
+     */
+    @PostMapping(path = "/v1/me/subscription/payment", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> pay(
+            @AuthenticationPrincipal Jwt accessToken,
+            @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestBody(required = false) PayForPlanRequest body) {
+
+        UUID accountId = callerOf(accessToken);
+        PayForPlanRequest request = body == null ? new PayForPlanRequest(null, null, null) : body;
+        RecordedResponse response = idempotency.execute(
+                accountId,
+                "subscription.pay",
+                IdempotencyKey.of(idempotencyKey),
+                request,
+                HttpStatus.OK.value(),
+                () -> {
+                    SubscriptionPaymentPage page =
+                            cardPayments.pay(accountId, request.language(), request.successUrl(), request.errorUrl());
+                    return new SubscriptionResponses.PaymentPage(page.providerTransactionId(), page.redirectUrl());
+                });
+        return ResponseEntity.status(response.status())
+                .cacheControl(CacheControl.noStore())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(response.body());
+    }
+
+    /**
+     * @param language the payment page's language: az, en or ru
+     * @param successUrl where the provider returns the creator after paying
+     * @param errorUrl where it returns them after a failure
+     */
+    public record PayForPlanRequest(String language, URI successUrl, URI errorUrl) {
+    }
+
     @DeleteMapping("/v1/me/subscription")
     public ResponseEntity<SubscriptionResponses.Mine> cancel(@AuthenticationPrincipal Jwt accessToken) {
         UUID accountId = callerOf(accessToken);
@@ -145,8 +206,12 @@ public class SubscriptionController {
 
         return subscriptions
                 .heldBy(accountId)
-                .map(held -> new SubscriptionResponses.Mine(
-                        SubscriptionResponses.Held.of(held, planOf(held), now)))
+                .map(held -> new SubscriptionResponses.Mine(SubscriptionResponses.Held.of(
+                        held,
+                        planOf(held),
+                        now,
+                        cardPayments.dueFor(held, now).orElse(null),
+                        cardPayments.renewalOpensAt(held))))
                 .orElse(SubscriptionResponses.Mine.NONE);
     }
 

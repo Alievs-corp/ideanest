@@ -39,6 +39,11 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
             """)
     Optional<Subscription> openFor(@Param("accountId") UUID accountId);
 
+    /** The row, locked: a card payment and a member of staff can change it at the same moment (#449). */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Subscription s WHERE s.id = :id")
+    Optional<Subscription> lockById(@Param("id") UUID id);
+
     /**
      * Everything this account has ever held, newest first.
      *

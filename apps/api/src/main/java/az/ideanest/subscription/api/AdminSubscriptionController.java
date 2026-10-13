@@ -175,9 +175,8 @@ public class AdminSubscriptionController {
     /**
      * Records that the payment arrived, which is what starts the entitlement.
      *
-     * <p>This exists because no payment provider is integrated (#60). V62's header argues
-     * why that is how a platform with no processor sells rather than a stub pretending to
-     * be one, and what changes when a provider lands: this endpoint, and nothing above it.
+     * <p>For a payment that did not come through the provider's page — a bank transfer, cash.
+     * A card payment activates itself through the provider's callback (#449).
      *
      * <p><strong>It also writes V73's journal row</strong>, in the same transaction, which
      * is what the revenue report is built on. The three payment fields are optional so
