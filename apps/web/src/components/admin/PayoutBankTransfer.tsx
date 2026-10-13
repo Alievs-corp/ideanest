@@ -11,7 +11,7 @@ import {
 } from '../../lib/admin/payout-bank-transfers';
 import type { DirectoryNames } from '../../lib/admin/directory';
 import { bankDay, bankTransferInProgress, type Payout } from '../../lib/admin/payouts';
-import { payoutRefusalFor } from '../../lib/admin/payout-refusals';
+import { figuresMoved, payoutRefusalFor } from '../../lib/admin/payout-refusals';
 import { wasAborted } from '../../lib/admin/refusals';
 import { formatMoney } from '../../lib/money';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -81,6 +81,11 @@ export interface PayoutBankTransferProps {
   readonly copy: PayoutQueueCopy;
   /** The service's answer to a write, so the file and the queue redraw from it without a read. */
   readonly onUpdated: (payout: Payout) => void;
+  /**
+   * #419: a start refused because the figures moved, which has cancelled the payout. The file says
+   * so and reads it again; this panel draws nothing for a cancelled payout, so it cannot.
+   */
+  readonly onFiguresMoved: (message: string) => void;
 }
 
 type Mode = 'idle' | 'confirm-record' | 'abandon';
@@ -99,6 +104,7 @@ export function PayoutBankTransfer({
   names,
   copy,
   onUpdated,
+  onFiguresMoved,
 }: PayoutBankTransferProps) {
   const words = copy.bankTransfer;
   const headingId = useId();
@@ -137,7 +143,8 @@ export function PayoutBankTransfer({
       onUpdated(answer.payout);
     } catch (cause) {
       if (controller.signal.aborted || wasAborted(cause)) return;
-      setError(payoutRefusalFor(cause, copy, payout));
+      if (figuresMoved(cause)) onFiguresMoved(payoutRefusalFor(cause, copy, payout));
+      else setError(payoutRefusalFor(cause, copy, payout));
     } finally {
       if (inFlight.current === controller) inFlight.current = null;
       setOpening(false);

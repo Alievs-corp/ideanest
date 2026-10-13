@@ -24,7 +24,7 @@ export function payoutRefusalFor(cause: unknown, copy: PayoutQueueCopy, payout?:
     const words = copy.refusal;
 
     if (code === 'PAYOUT_NOT_SENDABLE') {
-      return cause.problem?.meta?.state === 'CANCELLED' ? words.FIGURES_MOVED : words.PAYOUT_NOT_SENDABLE;
+      return figuresMoved(cause) ? words.FIGURES_MOVED : words.PAYOUT_NOT_SENDABLE;
     }
     if (code === 'BANK_TRANSFER_DATE_OUT_OF_RANGE') {
       const startedAt = payout?.bankTransferStartedAt;
@@ -38,4 +38,16 @@ export function payoutRefusalFor(cause: unknown, copy: PayoutQueueCopy, payout?:
     }
   }
   return consoleMessageFor(cause, copy.payoutSubject, copy.refusals);
+}
+
+/**
+ * Whether a send or a start was refused because the figures moved — #413, #419. The service has
+ * cancelled the payout by then (#421), so whatever the screen holds of it is out of date.
+ */
+export function figuresMoved(cause: unknown): boolean {
+  return (
+    cause instanceof ApiError &&
+    cause.problem?.code === 'PAYOUT_NOT_SENDABLE' &&
+    cause.problem.meta?.state === 'CANCELLED'
+  );
 }

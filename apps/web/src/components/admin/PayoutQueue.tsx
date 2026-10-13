@@ -25,7 +25,7 @@ import {
   type Payout,
 } from '../../lib/admin/payouts';
 import { holds, readMembership, type StaffMembership } from '../../lib/admin/staff';
-import { payoutRefusalFor } from '../../lib/admin/payout-refusals';
+import { figuresMoved, payoutRefusalFor } from '../../lib/admin/payout-refusals';
 import { consoleMessageFor, shortId } from '../../lib/admin/refusals';
 import { formatMoney } from '../../lib/money';
 import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
@@ -419,9 +419,27 @@ function PayoutDetail({
       file.reload();
       onChanged();
     } catch (cause) {
-      setError(payoutRefusalFor(cause, copy, file.data?.payout));
+      const message = payoutRefusalFor(cause, copy, file.data?.payout);
+      if (figuresMoved(cause)) void cancelledUnderneath(message);
+      else setError(message);
     } finally {
       setBusy(false);
+    }
+  }
+
+  /*
+   * #419: the figures moved and the service has cancelled this payout (#421), so the file and its
+   * queue row are read again rather than left offering it. Read and set rather than `reload`, which
+   * would unmount the file and the sentence saying what happened and what to do next.
+   */
+  async function cancelledUnderneath(message: string): Promise<void> {
+    setError(message);
+    try {
+      const next = await readPayout(payoutId);
+      file.set(next);
+      onUpdated(next.payout);
+    } catch {
+      // The sentence already says to work out a new payout; the queue's next read shows the rest.
     }
   }
 
@@ -451,6 +469,8 @@ function PayoutDetail({
   // the money may have left, so neither cancelling nor withdrawing a signature is offered.
   const byBankTransfer = payout.destinationKind === 'BANK_TRANSFER';
   const transferring = bankTransferInProgress(payout);
+  // #419: nothing below can be done to a cancelled payout, so nothing is offered.
+  const cancelled = payout.state === 'CANCELLED';
   const current = file.data;
 
   return (
@@ -534,56 +554,58 @@ function PayoutDetail({
         </InlineAlert>
       )}
 
-      <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-white/8 pt-4">
-        <Field label={copy.noteLabel} hint={copy.noteHint} className="min-w-[240px] flex-1">
-          <TextInput value={note} onChange={(event) => setNote(event.target.value)} />
-        </Field>
+      {!cancelled && (
+        <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-white/8 pt-4">
+          <Field label={copy.noteLabel} hint={copy.noteHint} className="min-w-[240px] flex-1">
+            <TextInput value={note} onChange={(event) => setNote(event.target.value)} />
+          </Field>
 
-        <Pill
-          variant="outline"
-          size="sm"
-          className="mb-1"
-          disabled={busy || !canApprove}
-          onClick={() =>
-            void act(async () => {
-              await approvePayout(payoutId, note.trim() === '' ? null : note.trim());
-              setNote('');
-            })
-          }
-        >
-          {copy.approve}
-        </Pill>
-
-        {/*
-          Every disabled control says what would enable it — #405. The hold is checked
-          first because it is the one a reader can wait out; having signed already is
-          permanent for them.
-        */}
-        {!canApprove && (
-          <p className="mb-2 text-xs text-white/48">
-            {!payout.payableNow
-              ? fillPlaceholders(copy.awaitingHold, { date: payout.payableAt.slice(0, 10) })
-              : copy.youHaveSigned}
-          </p>
-        )}
-
-        {/*
-          Offered only to somebody who has something to withdraw. At one signature of two
-          with only a colleague's name on the file, this used to offer to take back a
-          signature the reader had never given.
-        */}
-        {iHaveSigned && (
           <Pill
-            variant="ghost"
+            variant="outline"
             size="sm"
             className="mb-1"
-            disabled={busy || transferring}
-            onClick={() => void act(() => withdrawApproval(payoutId))}
+            disabled={busy || !canApprove}
+            onClick={() =>
+              void act(async () => {
+                await approvePayout(payoutId, note.trim() === '' ? null : note.trim());
+                setNote('');
+              })
+            }
           >
-            {copy.withdrawMine}
+            {copy.approve}
           </Pill>
-        )}
-      </div>
+
+          {/*
+            Every disabled control says what would enable it — #405. The hold is checked
+            first because it is the one a reader can wait out; having signed already is
+            permanent for them.
+          */}
+          {!canApprove && (
+            <p className="mb-2 text-xs text-white/48">
+              {!payout.payableNow
+                ? fillPlaceholders(copy.awaitingHold, { date: payout.payableAt.slice(0, 10) })
+                : copy.youHaveSigned}
+            </p>
+          )}
+
+          {/*
+            Offered only to somebody who has something to withdraw. At one signature of two
+            with only a colleague's name on the file, this used to offer to take back a
+            signature the reader had never given.
+          */}
+          {iHaveSigned && (
+            <Pill
+              variant="ghost"
+              size="sm"
+              className="mb-1"
+              disabled={busy || transferring}
+              onClick={() => void act(() => withdrawApproval(payoutId))}
+            >
+              {copy.withdrawMine}
+            </Pill>
+          )}
+        </div>
+      )}
 
       {byBankTransfer && (
         <Suspense
@@ -605,49 +627,52 @@ function PayoutDetail({
               file.set({ ...current, payout: next });
               onUpdated(next);
             }}
+            onFiguresMoved={(message) => void cancelledUnderneath(message)}
           />
         </Suspense>
       )}
 
-      <div className="mt-4 flex flex-wrap items-end gap-3">
-        {/*
-          #405: every disabled control says what would enable it, and both reasons this can
-          be disabled are said above rather than beside it — the signature count is in the
-          label, and the destination hold is in its own alert. There is no longer a field
-          here for the reader to fill in, because there is no longer anything on this screen
-          that decides where money goes.
+      {!cancelled && (
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          {/*
+            #405: every disabled control says what would enable it, and both reasons this can
+            be disabled are said above rather than beside it — the signature count is in the
+            label, and the destination hold is in its own alert. There is no longer a field
+            here for the reader to fill in, because there is no longer anything on this screen
+            that decides where money goes.
 
-          #398: not drawn for a creator paid into a bank account, which the service refuses
-          to send. The panel above is that payout's way out.
-        */}
-        {!byBankTransfer && (
+            #398: not drawn for a creator paid into a bank account, which the service refuses
+            to send. The panel above is that payout's way out.
+          */}
+          {!byBankTransfer && (
+            <Pill
+              variant="outline"
+              size="sm"
+              className="mb-1"
+              disabled={busy || stillNeeded > 0 || payout.heldForDestination}
+              onClick={() => void act(() => sendPayout(payoutId))}
+            >
+              {stillNeeded > 0
+                ? fillPlaceholders(copy.needsMore, { count: String(stillNeeded) })
+                : copy.send}
+            </Pill>
+          )}
+
           <Pill
-            variant="outline"
+            variant="ghost"
             size="sm"
             className="mb-1"
-            disabled={busy || stillNeeded > 0 || payout.heldForDestination}
-            onClick={() => void act(() => sendPayout(payoutId))}
+            disabled={busy || transferring}
+            onClick={() => void act(() => cancelPayout(payoutId))}
           >
-            {stillNeeded > 0
-              ? fillPlaceholders(copy.needsMore, { count: String(stillNeeded) })
-              : copy.send}
+            {copy.cancel}
           </Pill>
-        )}
 
-        <Pill
-          variant="ghost"
-          size="sm"
-          className="mb-1"
-          disabled={busy || transferring}
-          onClick={() => void act(() => cancelPayout(payoutId))}
-        >
-          {copy.cancel}
-        </Pill>
-
-        {transferring && (
-          <p className="mb-2 text-xs text-white/48">{copy.refusal.PAYOUT_BANK_TRANSFER_IN_PROGRESS}</p>
-        )}
-      </div>
+          {transferring && (
+            <p className="mb-2 text-xs text-white/48">{copy.refusal.PAYOUT_BANK_TRANSFER_IN_PROGRESS}</p>
+          )}
+        </div>
+      )}
 
       {error && (
         <InlineAlert variant="danger" title={copy.failedTitle} className="mt-4">
