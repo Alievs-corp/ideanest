@@ -401,6 +401,44 @@ describe('payout details', () => {
     expect(screen.getByTestId('payout-iban').props.value).toBe('');
   });
 
+  it('takes a backspace over a grouping space as the character before it, with the caret where it was', async () => {
+    subject = COMPANY;
+    destination = NOTHING;
+    sendJson.mockResolvedValue(ACCOUNT);
+    await show();
+    const field = () => screen.getByTestId('payout-iban');
+    const caret = (at: number) => ({ nativeEvent: { selection: { start: at, end: at } } });
+
+    await fireEvent.changeText(field(), IBAN);
+    // The person puts the caret after "NABZ " and backspaces: the native text loses only the space.
+    await fireEvent(field(), 'selectionChange', caret(10));
+    await fireEvent.changeText(field(), 'AZ21 NABZ0000 0000 1370 1000 1944');
+    expect(field().props.value).toBe('AZ21 NAB0 0000 0001 3701 0001 944');
+    expect(field().props.selection).toEqual({ start: 8, end: 8 });
+
+    // The native caret in the text before the regrouping, reported late: the regrouped caret stands.
+    await fireEvent(field(), 'selectionChange', caret(9));
+    expect(field().props.selection).toEqual({ start: 8, end: 8 });
+
+    // Typing the Z back puts the number back, the caret after it.
+    await fireEvent.changeText(field(), 'AZ21 NABZ0 0000 0001 3701 0001 944');
+    expect(field().props.value).toBe('AZ21 NABZ 0000 0000 1370 1000 1944');
+    expect(field().props.selection).toEqual({ start: 9, end: 9 });
+
+    // The person's own caret move releases the caret.
+    await fireEvent(field(), 'selectionChange', caret(34));
+    expect(field().props.selection).toBeUndefined();
+
+    await fireEvent.press(screen.getByTestId('payout-bank-save'));
+    await settle();
+    expect(sendJson).toHaveBeenCalledWith('PUT', '/v1/me/payout-destination/bank-account', {
+      iban: IBAN,
+      holderName: 'Kilim Studio MMC',
+    });
+    expect(field().props.value).toBe('');
+    expect(field().props.selection).toBeUndefined();
+  });
+
   it('says what is wrong with a mistyped IBAN under the field, and sends nothing', async () => {
     subject = COMPANY;
     destination = NOTHING;
