@@ -564,6 +564,9 @@
         "PAYOUT_DETAILS_NEEDED": "Выплата по кампании {campaign} ждёт ваши реквизиты",
         "REFUND_NEEDS_BANK_DETAILS": "Для возврата по кампании {campaign} нужны ваши банковские реквизиты",
         "REFUND_SENT_BY_BANK": "Возврат {amount} по кампании {campaign} отправлен банковским переводом {when}",
+        "SUBSCRIPTION_RENEWAL_DUE": "План {plan} заканчивается {when}: продлите его за {amount}",
+        "SUBSCRIPTION_LAPSED": "План {plan} закончился {when}",
+        "SUBSCRIPTION_RENEWED": "План {plan} оплачен {when}",
         "UPDATE_DUE_SOON": "Обновление кампании {campaign} нужно опубликовать {when}"
       },
       "unnamed": {
@@ -594,6 +597,9 @@
         "PAYOUT_DETAILS_NEEDED": "Выплата ждёт ваш VÖEN и IBAN",
         "REFUND_NEEDS_BANK_DETAILS": "Для возврата нужны ваши банковские реквизиты",
         "REFUND_SENT_BY_BANK": "Возврат {amount} отправлен банковским переводом {when}",
+        "SUBSCRIPTION_RENEWAL_DUE": "Ваш план заканчивается {when}: продлите его за {amount}",
+        "SUBSCRIPTION_LAPSED": "Ваш план закончился {when}",
+        "SUBSCRIPTION_RENEWED": "Ваш план оплачен {when}",
         "UPDATE_DUE_SOON": "Обновление вашей кампании нужно опубликовать {when}"
       },
       "amount": {
@@ -603,7 +609,8 @@
         "needed": "нужную сумму",
         "closingTotal": "итоговую сумму",
         "funds": "ваши средства",
-        "refund": "причитающейся вам суммы"
+        "refund": "причитающейся вам суммы",
+        "price": "его цену"
       },
       "due": {
         "on": "до {date}",
@@ -613,6 +620,11 @@
         "on": "{date}",
         "onTo": "{date} на счёт {account}",
         "unknown": "недавно"
+      },
+      "period": {
+        "on": "{date}",
+        "until": "до {date}",
+        "unknown": "на следующий период"
       },
       "category": {
         "PLEDGES": "Ваши взносы",

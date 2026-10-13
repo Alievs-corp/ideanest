@@ -564,6 +564,9 @@
         "PAYOUT_DETAILS_NEEDED": "{campaign} kampaniyası üzrə ödənişiniz rekvizitlərinizi gözləyir",
         "REFUND_NEEDS_BANK_DETAILS": "{campaign} kampaniyası üzrə geri ödəniş üçün bank rekvizitləriniz lazımdır",
         "REFUND_SENT_BY_BANK": "{campaign} kampaniyası üzrə {amount} məbləğində geri ödəniş {when} bank köçürməsi ilə göndərildi",
+        "SUBSCRIPTION_RENEWAL_DUE": "{plan} planınızın müddəti {when} bitir: {amount} ödəyərək yeniləyin",
+        "SUBSCRIPTION_LAPSED": "{plan} planınızın müddəti {when} bitdi",
+        "SUBSCRIPTION_RENEWED": "{plan} planınız {when} ödənilib",
         "UPDATE_DUE_SOON": "{campaign} kampaniyası üçün yenilik {when} gözlənilir"
       },
       "unnamed": {
@@ -594,6 +597,9 @@
         "PAYOUT_DETAILS_NEEDED": "Ödənişiniz VÖEN və IBAN məlumatlarınızı gözləyir",
         "REFUND_NEEDS_BANK_DETAILS": "Geri ödəniş üçün bank rekvizitləriniz lazımdır",
         "REFUND_SENT_BY_BANK": "Bank köçürməsi ilə {amount} məbləğində geri ödəniş {when} göndərildi",
+        "SUBSCRIPTION_RENEWAL_DUE": "Planınızın müddəti {when} bitir: {amount} ödəyərək yeniləyin",
+        "SUBSCRIPTION_LAPSED": "Planınızın müddəti {when} bitdi",
+        "SUBSCRIPTION_RENEWED": "Planınız {when} ödənilib",
         "UPDATE_DUE_SOON": "Kampaniyanız üçün yenilik {when} gözlənilir"
       },
       "amount": {
@@ -603,7 +609,8 @@
         "needed": "ehtiyacı olan məbləğ",
         "closingTotal": "bağlanış məbləği",
         "funds": "vəsaitiniz",
-        "refund": "sizə çatan"
+        "refund": "sizə çatan",
+        "price": "planın qiymətini"
       },
       "due": {
         "on": "{date} tarixinədək",
@@ -613,6 +620,11 @@
         "on": "{date} tarixində",
         "onTo": "{date} tarixində {account} hesabına",
         "unknown": "bu yaxınlarda"
+      },
+      "period": {
+        "on": "{date} tarixində",
+        "until": "{date} tarixinədək",
+        "unknown": "növbəti dövr üçün"
       },
       "category": {
         "PLEDGES": "Dəstəkləriniz",
