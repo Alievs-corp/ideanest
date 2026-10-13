@@ -187,7 +187,7 @@ export function ProjectCard({ card, priority = false, copy, locale }: ProjectCar
   return (
     <article
       data-on-accent=""
-      className={`group relative flex flex-col rounded-xl p-2.5 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
+      className={`group relative flex h-full flex-col rounded-xl p-2.5 text-on-accent transition-transform duration-300 ease-in-out motion-safe:focus-within:-translate-y-1 motion-safe:hover:-translate-y-1 ${ACCENT_SURFACE[accent]}`}
     >
       {/*
         HOVER LIFTS THE CARD AND LEANS INTO THE COVER (#341): a 4px rise and a 5%
