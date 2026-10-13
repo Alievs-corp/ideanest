@@ -38,6 +38,8 @@ const held = {
   currentPeriodEnd: '2026-10-01T00:00:00Z',
   cancelAtPeriodEnd: false,
   createdAt: '2026-09-01T00:00:00Z',
+  paymentDue: null,
+  renewalOpensAt: '2026-09-24T00:00:00Z',
 };
 
 describe('reading the plan catalogue', () => {
@@ -94,6 +96,19 @@ describe('reading what an account holds', () => {
 
   it('reads a held subscription', () => {
     expect(readMine({ subscription: held })?.subscription).toEqual(held);
+  });
+
+  it('reads what is due to be paid, and anything it does not know as nothing due', () => {
+    expect(readMine({ subscription: { ...held, paymentDue: 'RENEWAL' } })?.subscription?.paymentDue).toBe('RENEWAL');
+    expect(readMine({ subscription: { ...held, paymentDue: 'FIRST_PERIOD' } })?.subscription?.paymentDue).toBe(
+      'FIRST_PERIOD',
+    );
+    // A guess would offer to take money for the wrong thing; a missing button costs less.
+    expect(readMine({ subscription: { ...held, paymentDue: 'SOMETHING' } })?.subscription?.paymentDue).toBeNull();
+    const older = { ...held } as Record<string, unknown>;
+    delete older.paymentDue;
+    delete older.renewalOpensAt;
+    expect(readMine({ subscription: older })?.subscription).toMatchObject({ paymentDue: null, renewalOpensAt: null });
   });
 
   it('refuses a subscription it cannot render a decision from, rather than reading it as none', () => {

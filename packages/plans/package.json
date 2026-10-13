@@ -7,7 +7,8 @@
   "description": "What a creator pays to publish, as both clients read it: the plan and subscription wire types, their narrowing, the held subscription's standing, the refusal map, and the fee disclosure, shared by apps/web and apps/mobile.",
   "exports": {
     "./catalogue": "./src/catalogue.ts",
-    "./fees": "./src/fees.ts"
+    "./fees": "./src/fees.ts",
+    "./payment": "./src/payment.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -2539,6 +2539,21 @@ so a repricing reaches new buyers only.
 | What the money buys | Decided under a row lock when it arrives: pending → first period, active → one more period, ended → `UNAPPLIED`, refunded by a person |
 | Refusals | `SUBSCRIPTION_PAYMENT_NOT_DUE` (409, `reason` `FREE_PLAN` / `RENEWAL_NOT_OPEN` / `LAPSED`), `PAYMENT_UNAVAILABLE` (503) |
 
+**The pricing page offers what `paymentDue` says, and nothing else (#451).**
+`FIRST_PERIOD` shows "Pay by card" with the subscription's price, beside the
+bank-transfer instructions, which stay the alternative. `RENEWAL` shows the end
+date and "Renew for" the subscription's own snapshot price, and says that renewing
+a cancelled plan resumes it. An entitled plan outside the window shows when
+renewing opens and no button; a lapsed one is offered the plans again. Each press
+sends a fresh `Idempotency-Key`. The provider returns the creator to
+`/{locale}/pricing?payment=returned` or `?payment=failed`, carrying
+`from`/`project` through when a refused submission sent them, and the page reads
+the subscription again every three seconds for a minute, the pledge page's bound:
+paid once nothing is due and the plan entitles, still waiting while the payment
+is due, and "not heard back yet" rather than "failed" when it stops asking. The
+word in the address is a hint and the subscription decides. The app does not
+sell plans, so none of this is in `apps/mobile`.
+
 The payment module owns the page and the subscription module owns what it
 means: `subscription` already depends on `payment` through `admin`, so the
 settlement crosses back through `payment.application.SubscriptionChargeSettlement`,

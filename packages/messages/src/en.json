@@ -4140,18 +4140,43 @@
       "heading": "Your plan",
       "activeUntil": "You are on {plan} until {date}",
       "pendingTitle": "You chose {plan} and we are waiting for your payment",
-      "pendingBody": "We cannot take card payments yet, so a plan starts once we have seen your transfer and recorded it. You will be able to publish as soon as that happens.",
+      "pendingBody": "If you pay by bank transfer, the plan starts once we have seen your transfer and recorded it. You can publish as soon as that happens.",
       "endingOn": "Your {plan} plan runs until {date} and will not renew",
       "lapsed": "Your {plan} plan ended on {date}",
       "cancel": "Cancel at the end of this period",
       "cancelling": "Cancelling",
       "currentTag": "Your plan"
     },
+    "payment": {
+      "payByCard": "Pay by card — {price}",
+      "renew": "Renew for {price}",
+      "opening": "Opening the payment page",
+      "cardBody": "You pay on our payment provider's secure page, and the plan starts as soon as the payment goes through.",
+      "renewalTitle": "Your {plan} plan ends on {date}",
+      "renewalBody": "Renewing adds one more billing period from that date, so renewing early costs you no days. Nothing is charged unless you renew.",
+      "renewalCancelled": "You cancelled this plan. Renewing it now keeps it going.",
+      "renewsFrom": "You can renew from {date}",
+      "returned": {
+        "waitingTitle": "Waiting for the payment to be confirmed",
+        "waitingBody": "The payment provider has not told us the outcome yet. This page checks again for a minute; you do not need to pay a second time.",
+        "paidTitle": "Your payment went through",
+        "paidBody": "Your {plan} plan is active until {date}.",
+        "unconfirmedTitle": "We have not heard back about your payment yet",
+        "unconfirmedBody": "If money left your account, your plan will update as soon as the provider confirms it. Reload this page in a few minutes before paying again.",
+        "failedTitle": "The payment did not go through",
+        "failedBody": "Nothing was taken. You can try again."
+      }
+    },
     "errors": {
       "alreadySubscribed": "You already have a plan. Cancel it before choosing a different one.",
       "notOnSale": "That plan is no longer offered. Reload the page to see what is available now.",
       "signedOut": "Sign in again to choose a plan.",
-      "generic": "That did not work"
+      "generic": "That did not work",
+      "freePlan": "This plan is free, so there is nothing to pay.",
+      "renewalNotOpen": "This plan cannot be renewed yet. Reload the page to see when renewal opens.",
+      "lapsed": "This plan has ended. Choose a plan below to subscribe again.",
+      "notDue": "There is nothing to pay for right now. Reload the page to see where your plan stands.",
+      "paymentUnavailable": "Card payments are not available right now. Nothing was charged; try again in a few minutes."
     }
   },
   "campaign": {

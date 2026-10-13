@@ -60,7 +60,21 @@ export interface HeldSubscription {
   readonly currentPeriodEnd?: string | null;
   readonly cancelAtPeriodEnd: boolean;
   readonly createdAt: string;
+  /**
+   * What `POST /v1/me/subscription/payment` would pay for now, or `null` when nothing is due
+   * (#449). The "Pay" and "Renew" actions branch on this rather than on the dates: how long the
+   * renewal window is belongs to the service, and a client that worked it out would disagree
+   * with the service the day the setting changes.
+   *
+   * Optional because the field arrived after the type did; absent reads as `null`.
+   */
+  readonly paymentDue?: PaymentDue | null;
+  /** When renewing the running period is first offered, or `null` for a pending or free plan. */
+  readonly renewalOpensAt?: string | null;
 }
+
+/** #449: the first period of a pending plan, or the next period of one inside its renewal window. */
+export type PaymentDue = 'FIRST_PERIOD' | 'RENEWAL';
 
 export interface Catalogue {
   readonly plans: readonly Plan[];
@@ -73,6 +87,7 @@ export interface MySubscription {
 
 const BILLING_PERIODS: readonly string[] = ['MONTHLY', 'YEARLY'];
 const STATES: readonly string[] = ['PENDING_PAYMENT', 'ACTIVE', 'CANCELED', 'EXPIRED'];
+const PAYMENTS_DUE: readonly string[] = ['FIRST_PERIOD', 'RENEWAL'];
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -188,6 +203,13 @@ export function readMine(body: unknown): MySubscription | null {
       currentPeriodEnd: optionalText(held.currentPeriodEnd),
       cancelAtPeriodEnd: held.cancelAtPeriodEnd === true,
       createdAt: text(held.createdAt) ?? '',
+      // An unknown value reads as "nothing due" rather than refusing the whole body: the worst it
+      // costs is a missing button, where a guess would offer to take money for the wrong thing.
+      paymentDue:
+        typeof held.paymentDue === 'string' && PAYMENTS_DUE.includes(held.paymentDue)
+          ? (held.paymentDue as PaymentDue)
+          : null,
+      renewalOpensAt: optionalText(held.renewalOpensAt),
     },
   };
 }
