@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,6 +81,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class LedgerReconciliation {
 
+    private static final Set<String> CREDIT_NORMAL =
+            Set.of(LedgerAccount.PLATFORM_FEE.name(), LedgerAccount.TAX_PAYABLE.name());
+
     private final LedgerReader ledger;
     private final PaymentTransactionRepository transactions;
     private final Clock clock;
@@ -123,15 +127,24 @@ public class LedgerReconciliation {
     /**
      * Check two: no account holds a balance whose sign is impossible.
      *
-     * <p>The platform's five singletons are all money it holds or has disbursed, so each is
-     * non-negative. A creator's account is the claim they have on the platform, recorded as a
-     * credit, so it is non-positive — a positive one is money paid beyond what was earned.
+     * <p>Escrow, {@code psp_fee}, {@code refunds} and {@code platform_expense} are money the platform
+     * holds or has disbursed, so each is non-negative. A creator's account is the claim they have on
+     * the platform, recorded as a credit, so it is non-positive — a positive one is money paid beyond
+     * what was earned.
+     *
+     * <p>{@code platform_fee} and {@code tax_payable} are credited when a payout splits its gross
+     * (#401): the platform's revenue and what it owes a tax authority, both credits. Nothing debits
+     * either, so neither has a sign to get wrong in the direction this check reads, and they are left
+     * out of it rather than reported as negative for being what they are.
      */
     private static List<ReconciliationFinding> impossibleSigns(List<LedgerBalance> balances) {
         List<ReconciliationFinding> findings = new ArrayList<>();
 
         for (LedgerBalance balance : balances) {
             boolean creator = balance.account().startsWith("creator:");
+            if (CREDIT_NORMAL.contains(balance.account())) {
+                continue;
+            }
             int sign = balance.net().amount().signum();
 
             if (creator && sign > 0) {
@@ -148,11 +161,14 @@ public class LedgerReconciliation {
     /**
      * Check three: the ledger's view of what the platform holds agrees with the transactions.
      *
-     * <p>{@code escrow + psp_fee == charges − payouts − refunds}. Escrow is debited by every
-     * collection and credited by every payout, refund and provider fee; {@code psp_fee} is the
-     * only one of those four with no transaction row behind it, because a chargeback's fee is
-     * taken from the platform's balance rather than from a backer's card. Adding it back to
-     * escrow puts both sides in the same terms.
+     * <p>{@code escrow + psp_fee + platform_expense == charges − payouts − refunds}. Escrow is
+     * debited by every collection and credited by every payout, refund and fee; {@code psp_fee}
+     * and {@code platform_expense} are the ones with no transaction row behind them — the
+     * provider keeps its commission before a charge arrives, a chargeback's fee is taken from the
+     * platform's balance, and a bank charges for a transfer out of IdeyaNest's account (#401).
+     * Adding them back to escrow puts both sides in the same terms. What a payout credits to
+     * {@code platform_fee}, {@code tax_payable} and {@code refunds} never touches escrow, so it is
+     * on neither side.
      *
      * <p>Chargebacks are counted with refunds: {@code DisputeService} records a lost case as a
      * {@code REFUND} transaction, on the argument that it is the same movement seen from the
@@ -165,7 +181,8 @@ public class LedgerReconciliation {
         Map<String, BigDecimal> held = new LinkedHashMap<>();
         for (LedgerBalance balance : balances) {
             if (balance.account().equals(LedgerAccount.ESCROW.name())
-                    || balance.account().equals(LedgerAccount.PSP_FEE.name())) {
+                    || balance.account().equals(LedgerAccount.PSP_FEE.name())
+                    || balance.account().equals(LedgerAccount.PLATFORM_EXPENSE.name())) {
                 held.merge(balance.net().currency(), balance.net().amount(), BigDecimal::add);
             }
         }

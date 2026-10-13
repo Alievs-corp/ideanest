@@ -228,7 +228,8 @@ class BackerDisputeApiTests extends AbstractIntegrationTest {
                     staff("backer-dispute-administrator", "SUPER_ADMIN"),
                     refundId,
                     "DISPUTE-REF-" + refundId,
-                    LocalDate.now(ZoneOffset.UTC));
+                    LocalDate.now(ZoneOffset.UTC),
+                    null);
 
             ResponseEntity<Map<String, Object>> upheld = decide(disputeId, "UPHOLD");
             assertThat(upheld.getStatusCode()).isEqualTo(HttpStatus.OK);

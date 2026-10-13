@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -150,8 +151,17 @@ class PayoutBankTransferTests extends AbstractIntegrationTest {
 
         String reference = "BANK-" + UUID.randomUUID();
         LocalDate today = LocalDate.now(BAKU);
-        ResponseEntity<Map<String, Object>> recorded = post(
-                bankTransfer(payout, "record"), admin.accessToken(), record(reference, today, "On today's statement."));
+        Map<String, Object> badFee = new HashMap<>(record(reference, today, "On today's statement."));
+        badFee.put("bankFee", "1.234");
+        assertThat(post(bankTransfer(payout, "record"), admin.accessToken(), badFee).getStatusCode())
+                .as("money crosses the API as a decimal string of at most two places")
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(state(payout)).isEqualTo("APPROVED");
+
+        Map<String, Object> recordWithFee = new HashMap<>(record(reference, today, "On today's statement."));
+        recordWithFee.put("bankFee", "1.20");
+        ResponseEntity<Map<String, Object>> recorded =
+                post(bankTransfer(payout, "record"), admin.accessToken(), recordWithFee);
 
         assertThat(recorded.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(recorded.getBody())
@@ -173,17 +183,33 @@ class PayoutBankTransferTests extends AbstractIntegrationTest {
                 .containsEntry("idempotency_key", key(payout) + "-bank");
         assertThat((BigDecimal) transaction.get("amount")).isEqualByComparingTo(net);
 
-        // The posting a provider's payout gets: the creator's claim discharged against escrow, balanced.
+        // #401: the payout closes the campaign. The gross off the creator's account, the net out of escrow,
+        // the fees to the platform, and the bank's charge out of escrow as the platform's own cost.
+        Map<String, Object> priced = jdbc().queryForMap(
+                "SELECT gross_amount, platform_fee, processing_fee FROM payouts WHERE id = ?", payout);
+        BigDecimal gross = (BigDecimal) priced.get("gross_amount");
+        BigDecimal fees = ((BigDecimal) priced.get("platform_fee")).add((BigDecimal) priced.get("processing_fee"));
+        assertThat(fees).isPositive();
         List<Map<String, Object>> postings = jdbc().queryForList(
                 "SELECT account, direction, amount FROM ledger_entries WHERE transaction_id = ? ORDER BY direction",
                 transaction.get("id"));
-        assertThat(postings).hasSize(2);
-        assertThat(postings).anySatisfy(entry -> assertThat(entry)
-                .containsEntry("account", "creator:" + funded.creator().id())
-                .containsEntry("direction", "DEBIT"));
-        assertThat(postings).anySatisfy(entry -> assertThat(entry)
-                .containsEntry("account", "escrow")
-                .containsEntry("direction", "CREDIT"));
+        assertThat(postings).hasSize(5);
+        assertThat(postings).anySatisfy(entry -> assertPosting(entry, "creator:" + funded.creator().id(), "DEBIT", gross));
+        assertThat(postings).anySatisfy(entry -> assertPosting(entry, "escrow", "CREDIT", net));
+        assertThat(postings).anySatisfy(entry -> assertPosting(entry, "platform_fee", "CREDIT", fees));
+        assertThat(postings).anySatisfy(entry -> assertPosting(entry, "platform_expense", "DEBIT", new BigDecimal("1.20")));
+        assertThat(postings).anySatisfy(entry -> assertPosting(entry, "escrow", "CREDIT", new BigDecimal("1.20")));
+        assertThat(jdbc().queryForObject(
+                        """
+                        SELECT coalesce(sum(CASE direction WHEN 'DEBIT' THEN amount ELSE -amount END), 0)
+                          FROM ledger_entries WHERE project_id = ? AND account = ?
+                        """,
+                        BigDecimal.class,
+                        funded.projectId(),
+                        "creator:" + funded.creator().id()))
+                .as("the creator's account is closed by the payout")
+                .isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(auditDetail("payout.sent", payout)).contains("bankFee=1.20 AZN");
 
         // Replayed with the same reference: the payout as it stands, and still one row.
         ResponseEntity<Map<String, Object>> replayed = post(
@@ -484,6 +510,11 @@ class PayoutBankTransferTests extends AbstractIntegrationTest {
 
     private static String bankTransfer(UUID payout, String verb) {
         return "/v1/admin/payouts/" + payout + "/bank-transfer/" + verb;
+    }
+
+    private static void assertPosting(Map<String, Object> entry, String account, String direction, BigDecimal amount) {
+        assertThat(entry).containsEntry("account", account).containsEntry("direction", direction);
+        assertThat((BigDecimal) entry.get("amount")).isEqualByComparingTo(amount);
     }
 
     private static Map<String, Object> record(String reference, LocalDate on, String note) {

@@ -16376,6 +16376,10 @@
       "RecordBankTransferRequest" : {
         "type" : "object",
         "properties" : {
+          "bankFee" : {
+            "type" : "string",
+            "pattern" : "^\\d{1,12}(\\.\\d{1,2})?$"
+          },
           "bankReference" : {
             "type" : "string",
             "maxLength" : 200,
@@ -18683,6 +18687,10 @@
       "TransferRequest" : {
         "type" : "object",
         "properties" : {
+          "bankFee" : {
+            "type" : "string",
+            "pattern" : "^\\d{1,12}(\\.\\d{1,2})?$"
+          },
           "bankReference" : {
             "type" : "string",
             "maxLength" : 100,

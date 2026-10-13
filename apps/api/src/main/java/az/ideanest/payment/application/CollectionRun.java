@@ -7,6 +7,7 @@ import az.ideanest.payment.PaymentProperties;
 import az.ideanest.payment.domain.ChargeResult;
 import az.ideanest.payment.domain.PaymentProvider;
 import az.ideanest.payment.domain.PaymentTransaction;
+import az.ideanest.payment.domain.ProviderName;
 import az.ideanest.payment.domain.ProviderOutcome;
 import az.ideanest.payment.domain.ProviderUnavailableException;
 import az.ideanest.payment.domain.StoredCard;
@@ -109,6 +110,7 @@ public class CollectionRun {
     private final Ledger ledger;
     private final Outbox outbox;
     private final RetrySchedule schedule;
+    private final ProviderFees providerFees;
     private final PaymentProperties.Collection properties;
 
     public CollectionRun(
@@ -121,6 +123,7 @@ public class CollectionRun {
             Ledger ledger,
             Outbox outbox,
             RetrySchedule schedule,
+            ProviderFees providerFees,
             PaymentProperties paymentProperties) {
         this.providers = providers;
         this.storedCards = storedCards;
@@ -131,6 +134,7 @@ public class CollectionRun {
         this.ledger = ledger;
         this.outbox = outbox;
         this.schedule = schedule;
+        this.providerFees = providerFees;
         this.properties = paymentProperties.collection();
     }
 
@@ -248,7 +252,7 @@ public class CollectionRun {
                 pledge.attemptNumber(),
                 key));
 
-        ledger.post(post(transaction.getId(), campaign, pledge.amount()));
+        ledger.post(post(transaction.getId(), campaign, provider.name(), pledge.amount()));
         pledges.recordCollected(pledge.pledgeId(), now);
         outbox.record(
                 CollectionEvents.AGGREGATE_TYPE,
@@ -288,17 +292,18 @@ public class CollectionRun {
      * <p>The books come out in the same place either way. At payout, #69 debits the
      * creator's account for the gross and credits escrow with the net alongside the fee
      * accounts, so escrow ends holding exactly the fees and the creator's account ends at
-     * zero.
+     * zero (#401).
+     *
+     * <p>What the provider keeps is a different fee and is posted here (#401): it is taken
+     * before the money arrives, so it leaves escrow with the charge — {@link ProviderFees}.
      *
      * <p>§9.2's sequence diagram says "debit escrow, credit creator and fees" at the
      * approval step, which disagrees with §9.5. {@code docs/architecture.md} is amended
      * in the same change to say which one the platform does.
      */
-    private Posting post(UUID transactionId, CollectingCampaign campaign, Money amount) {
-        return Posting.of(transactionId, campaign.projectId())
-                .debit(LedgerAccount.ESCROW, amount)
-                .credit(LedgerAccount.creator(campaign.creatorId()), amount)
-                .build();
+    private Posting post(UUID transactionId, CollectingCampaign campaign, ProviderName provider, Money amount) {
+        return providerFees.chargePosting(
+                transactionId, campaign.projectId(), LedgerAccount.creator(campaign.creatorId()), provider, amount);
     }
 
     private CollectionOutcome recordDeclined(

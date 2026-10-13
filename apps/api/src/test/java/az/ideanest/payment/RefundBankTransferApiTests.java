@@ -270,12 +270,14 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
 
         String today = LocalDate.now(ZoneOffset.UTC).toString();
         Map<String, BigDecimal> gapsBefore = reconciliationGaps();
-        ResponseEntity<Map<String, Object>> paidOut = recordTransfer(finance, refundId, "BANK-REF-" + paid.pledgeId(), today);
+        ResponseEntity<Map<String, Object>> paidOut =
+                recordTransfer(finance, refundId, "BANK-REF-" + paid.pledgeId(), today, "0.50");
         assertThat(paidOut.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(paidOut.getBody()).containsEntry("state", "SUCCEEDED");
         assertThat(state(paid.pledgeId())).isEqualTo("REFUNDED");
         assertThat(reconciliationGaps())
-                .as("escrow spans the bank account too: the ledger still agrees with the transactions")
+                .as("escrow spans the bank account too, and the bank's fee leaves it for platform_expense:"
+                        + " the ledger still agrees with the transactions")
                 .isEqualTo(gapsBefore);
 
         String key = jdbc().queryForObject("SELECT idempotency_key FROM refunds WHERE id = ?", String.class, refundId);
@@ -295,7 +297,17 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
                         """,
                         Long.class,
                         key + "-bank"))
-                .isEqualTo(2L);
+                .as("the refund's pair, and the bank's fee out of escrow (#401)")
+                .isEqualTo(4L);
+        assertThat(jdbc().queryForObject(
+                        """
+                        SELECT e.amount FROM ledger_entries e JOIN transactions t ON t.id = e.transaction_id
+                         WHERE t.idempotency_key = ? AND e.account = 'platform_expense' AND e.direction = 'DEBIT'
+                        """,
+                        BigDecimal.class,
+                        key + "-bank"))
+                .isEqualByComparingTo("0.50");
+        assertThat(audits("refund.bank_transfer_recorded", refundId)).singleElement().asString().contains("bankFee=0.50 AZN");
 
         ResponseEntity<Map<String, Object>> replayed =
                 recordTransfer(finance, refundId, "BANK-REF-" + paid.pledgeId(), today);
@@ -782,6 +794,14 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
                 "/v1/admin/refunds/" + refundId + "/bank-transfer/record",
                 staff,
                 Map.of("bankReference", reference, "transferredOn", on));
+    }
+
+    private ResponseEntity<Map<String, Object>> recordTransfer(
+            Account staff, UUID refundId, String reference, String on, String bankFee) {
+        return post(
+                "/v1/admin/refunds/" + refundId + "/bank-transfer/record",
+                staff,
+                Map.of("bankReference", reference, "transferredOn", on, "bankFee", bankFee));
     }
 
     private static Map<String, Object> azn(String amount) {

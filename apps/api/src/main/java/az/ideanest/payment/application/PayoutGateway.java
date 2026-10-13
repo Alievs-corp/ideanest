@@ -107,6 +107,7 @@ public class PayoutGateway {
      * and another database write is atomic, so the platform picks the failure that leaves
      * a record.
      *
+     * @param figures what the payout settles; the provider is asked to send the net
      * @param idempotencyKey §9.3's R-08, and here it is the difference between paying a
      *     creator once and twice
      * @throws NoPayoutProviderException when no adapter is configured to send one
@@ -115,7 +116,7 @@ public class PayoutGateway {
             UUID payoutId,
             UUID projectId,
             UUID creatorId,
-            Money amount,
+            PayoutFigures figures,
             String destinationReference,
             String idempotencyKey) {
 
@@ -135,7 +136,7 @@ public class PayoutGateway {
         PayoutResult result;
         try {
             result = provider.payout(
-                    new PayoutRequest(payoutId, creatorId, amount, destinationReference, idempotencyKey));
+                    new PayoutRequest(payoutId, creatorId, figures.net(), destinationReference, idempotencyKey));
         } catch (ProviderUnavailableException e) {
             // No transaction row: nothing the provider said reached us to record. The payout
             // stays approved with its send unconfirmed (#184's review) and is retried only
@@ -150,7 +151,8 @@ public class PayoutGateway {
             throw new NoPayoutProviderException(provider.name() + " cannot send payouts", e);
         }
 
-        return postings.record(payoutId, projectId, creatorId, amount, provider.name(), result, idempotencyKey);
+        return postings.record(
+                payoutId, projectId, creatorId, figures, Money.zero(figures.net().currency()), provider.name(), result, idempotencyKey);
     }
 
     /**
@@ -163,7 +165,12 @@ public class PayoutGateway {
      * reference is what ties the row to the money.
      */
     public Sent recordFromStatement(
-            UUID payoutId, UUID projectId, UUID creatorId, Money amount, String providerTransactionId, String idempotencyKey) {
+            UUID payoutId,
+            UUID projectId,
+            UUID creatorId,
+            PayoutFigures figures,
+            String providerTransactionId,
+            String idempotencyKey) {
         String key = idempotencyKey + "-statement";
         Optional<PaymentTransaction> replayed = transactions.findByIdempotencyKey(key);
         if (replayed.isPresent()) {
@@ -178,7 +185,8 @@ public class PayoutGateway {
                 payoutId,
                 projectId,
                 creatorId,
-                amount,
+                figures,
+                Money.zero(figures.net().currency()),
                 provider.name(),
                 new PayoutResult(ProviderOutcome.APPROVED, providerTransactionId, null, null, "{\"source\":\"statement\"}"),
                 key);
@@ -199,6 +207,8 @@ public class PayoutGateway {
      * either case somebody has to look at the statement rather than have this pick one.
      *
      * @param transferredOn the value date on the statement, kept on the row beside the reference
+     * @param bankFee what the bank charged IdeyaNest for the transfer, as the statement shows it, or zero.
+     *     The platform's cost, posted beside the payout (#401); never taken from the creator
      * @throws PayoutReferenceTakenException when another settled transaction already carries the reference
      * @throws BankTransferAlreadyRecordedException when this payout's transfer is already recorded under a
      *     different reference
@@ -207,9 +217,10 @@ public class PayoutGateway {
             UUID payoutId,
             UUID projectId,
             UUID creatorId,
-            Money amount,
+            PayoutFigures figures,
             String bankReference,
             LocalDate transferredOn,
+            Money bankFee,
             String idempotencyKey) {
         String key = idempotencyKey + "-bank";
         Optional<PaymentTransaction> replayed = transactions.findByIdempotencyKey(key);
@@ -229,7 +240,8 @@ public class PayoutGateway {
                 payoutId,
                 projectId,
                 creatorId,
-                amount,
+                figures,
+                bankFee,
                 ProviderName.BANK_TRANSFER,
                 new PayoutResult(ProviderOutcome.APPROVED, bankReference, null, null, statement),
                 key);

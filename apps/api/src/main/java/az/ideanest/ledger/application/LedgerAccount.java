@@ -38,10 +38,17 @@ public record LedgerAccount(String name) {
      */
     public static final LedgerAccount ESCROW = new LedgerAccount("escrow");
 
-    /** §5.2's platform fee: 15% of a withdrawal, the bank's fee inside it (IDN-EXT-01). */
+    /**
+     * §5.2's platform fee: 15% of a withdrawal, the bank's fee inside it (IDN-EXT-01). Credited when a
+     * payout splits its gross (#401), with the processing fee the creator was charged beside it: the
+     * platform's revenue, so its balance is a credit.
+     */
     public static final LedgerAccount PLATFORM_FEE = new LedgerAccount("platform_fee");
 
-    /** §5.2's processing fee: what the provider keeps out of each successful collection. */
+    /**
+     * §5.2's processing fee: what the provider keeps out of each successful collection. Debited with the
+     * provider's commission in the charge's own posting (#401), and with a lost chargeback's fee.
+     */
     public static final LedgerAccount PSP_FEE = new LedgerAccount("psp_fee");
 
     /**
@@ -51,13 +58,17 @@ public record LedgerAccount(String name) {
      */
     public static final LedgerAccount TAX_PAYABLE = new LedgerAccount("tax_payable");
 
-    /** What has gone back to backers. #67's and #68's. */
+    /**
+     * What has gone back to backers. #67's and #68's. A payout credits back what its creator bore —
+     * the campaign's refunds and the chargeback debts it withheld (#401) — so the balance is what went
+     * back and no creator has borne: a failed campaign's refunds, and losses not yet recovered.
+     */
     public static final LedgerAccount REFUNDS = new LedgerAccount("refunds");
 
     /**
      * The platform's own costs, such as what refunding backers costs — §5.2, IDN-EXT-01 (#42). Kept
      * apart from {@link #REFUNDS}, which is backers' money going back, so a cost is never netted
-     * against a payout. Nothing posts to it until a provider reports such a cost.
+     * against a payout. A bank's charge for a transfer out of IdeyaNest's account posts here (#401).
      */
     public static final LedgerAccount PLATFORM_EXPENSE = new LedgerAccount("platform_expense");
 

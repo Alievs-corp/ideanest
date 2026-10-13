@@ -6444,6 +6444,7 @@ export interface components {
             rates?: components["schemas"]["Rate"][];
         };
         RecordBankTransferRequest: {
+            bankFee?: string;
             bankReference: string;
             note: string;
             /** Format: date */
@@ -7297,6 +7298,7 @@ export interface components {
             type?: string;
         };
         TransferRequest: {
+            bankFee?: string;
             bankReference: string;
             /** Format: date */
             transferredOn: string;

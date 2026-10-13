@@ -2,7 +2,6 @@ package az.ideanest.payment.application;
 
 import az.ideanest.ledger.application.Ledger;
 import az.ideanest.ledger.application.LedgerAccount;
-import az.ideanest.ledger.application.Posting;
 import az.ideanest.payment.domain.ChargeResult;
 import az.ideanest.payment.domain.PaymentEvent;
 import az.ideanest.payment.domain.PaymentEventType;
@@ -33,7 +32,7 @@ import org.springframework.stereotype.Component;
  *
  * <p>On {@code CHARGE_SUCCEEDED}, in the webhook's transaction and in this order: a
  * {@code SUCCEEDED} charge row, the ledger posting (escrow to the creator, as a collection at close
- * posted it), the pledge collected and counted towards its campaign, and {@code pledge.collected}.
+ * posted it, and the provider's fee out of escrow: {@link ProviderFees}), the pledge collected and counted towards its campaign, and {@code pledge.collected}.
  * On {@code CHARGE_FAILED}, a {@code FAILED} row and nothing else: the draft keeps its places until
  * its hold ends, and the backer may try again.
  *
@@ -64,6 +63,7 @@ public class HostedChargeEvents implements PaymentEventHandler {
     private final PledgePayments pledges;
     private final PledgeRaiseService raises;
     private final Outbox outbox;
+    private final ProviderFees providerFees;
     private final Clock clock;
 
     public HostedChargeEvents(
@@ -73,6 +73,7 @@ public class HostedChargeEvents implements PaymentEventHandler {
             PledgePayments pledges,
             PledgeRaiseService raises,
             Outbox outbox,
+            ProviderFees providerFees,
             Clock clock) {
         this.transactions = transactions;
         this.campaigns = campaigns;
@@ -80,6 +81,7 @@ public class HostedChargeEvents implements PaymentEventHandler {
         this.pledges = pledges;
         this.raises = raises;
         this.outbox = outbox;
+        this.providerFees = providerFees;
         this.clock = clock;
     }
 
@@ -142,10 +144,12 @@ public class HostedChargeEvents implements PaymentEventHandler {
                 .describe(pending.getProjectId())
                 .orElseThrow(() -> new IllegalStateException(
                         "Payment " + reference + " names campaign " + pending.getProjectId() + ", which is gone"));
-        ledger.post(Posting.of(settled.getId(), campaign.projectId())
-                .debit(LedgerAccount.ESCROW, pending.getAmount())
-                .credit(LedgerAccount.creator(campaign.creatorId()), pending.getAmount())
-                .build());
+        ledger.post(providerFees.chargePosting(
+                settled.getId(),
+                campaign.projectId(),
+                LedgerAccount.creator(campaign.creatorId()),
+                pending.getProvider(),
+                pending.getAmount()));
 
         if (raise) {
             RaiseSettlement settlement = raises.recordPaid(pending.getIdempotencyKey(), now);
