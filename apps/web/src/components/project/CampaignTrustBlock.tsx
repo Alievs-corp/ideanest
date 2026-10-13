@@ -86,8 +86,8 @@ import { localeOrDefault } from '../../lib/i18n/locale';
  */
 export const TRUST_COPY =
   'The platform connects creators with backers. Rewards are not guaranteed, but creators ' +
-  'must keep backers informed. You are charged when you pledge, and refunded in full if the ' +
-  'project does not raise 80% of its goal.';
+  'must keep backers informed. You are charged when you pledge, and refunded, less the payment ' +
+  "provider's fee, if the project does not raise 80% of its goal.";
 
 /**
  * The states in which the outcome is still ahead of the reader.

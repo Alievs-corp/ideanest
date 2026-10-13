@@ -46,7 +46,7 @@
   },
   "shell": {
     "skipToContent": "İçeriğe geç",
-    "tagline": "Ödül temelli kitlesel fonlama. Yaratıcılar kampanyalarını yayımlar, destekçiler destek verir; hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarın tamamını iade eder.",
+    "tagline": "Ödül temelli kitlesel fonlama. Yaratıcılar kampanyalarını yayımlar, destekçiler destek verir; hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarı, ödeme sağlayıcısının komisyonu düşülerek iade eder.",
     "nav": {
       "label": "Birincil",
       "discover": "Keşfet",
@@ -255,7 +255,7 @@
         "metaTitle": "Destekleriniz",
         "metaDescription": "Desteklediğiniz tüm kampanyalar ve seçtikleriniz.",
         "title": "Destekleriniz",
-        "intro": "Desteklediğiniz tüm kampanyalar. Destek verildiği anda tahsil edilir ve kampanya başarısız olursa tamamı iade edilir. Kampanya destek kabul ettiği sürece desteğinizi artırabilirsiniz — yalnızca aradaki fark tahsil edilir — ancak düşüremez veya geri çekemezsiniz."
+        "intro": "Desteklediğiniz tüm kampanyalar. Destek verildiği anda tahsil edilir ve kampanya başarısız olursa ödeme sağlayıcısının komisyonu düşülerek iade edilir. Kampanya destek kabul ettiği sürece desteğinizi artırabilirsiniz — yalnızca aradaki fark tahsil edilir — ancak düşüremez veya geri çekemezsiniz."
       },
       "campaigns": {
         "metaTitle": "Kampanyalarım",
@@ -309,7 +309,7 @@
         "metaTitle": "Desteğiniz",
         "metaDescription": "Ne seçtiniz, tutarı ne kadar ve nasıl artırılır.",
         "title": "Desteğiniz",
-        "intro": "Ne seçtiniz, tutarı ne kadar ve nasıl artırılır. Destek verildiği anda tahsil edilir ve kampanya başarılı olmazsa tamamı geri ödenir. Ödenmiş bir desteği artırdığınızda yalnızca aradaki fark hemen tahsil edilir."
+        "intro": "Ne seçtiniz, tutarı ne kadar ve nasıl artırılır. Destek verildiği anda tahsil edilir ve kampanya başarılı olmazsa ödeme sağlayıcısının komisyonu düşülerek geri ödenir. Ödenmiş bir desteği artırdığınızda yalnızca aradaki fark hemen tahsil edilir."
       }
     },
     "fulfilment": {
@@ -425,7 +425,7 @@
         "loading": "Destekleriniz yükleniyor",
         "failedTitle": "Destekleriniz yüklenemedi",
         "emptyTitle": "Henüz hiçbir şeyi desteklemediniz",
-        "emptyBody": "Verdiğiniz her destek burada görünür — ne seçtiğiniz ve ne kadar tahsil edildiğiyle birlikte. Bir destek onu onayladığınız anda tahsil edilir; kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse tamamı iade edilir.",
+        "emptyBody": "Verdiğiniz her destek burada görünür — ne seçtiğiniz ve ne kadar tahsil edildiğiyle birlikte. Bir destek onu onayladığınız anda tahsil edilir; kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse ödeme sağlayıcısının komisyonu düşülerek iade edilir.",
         "browse": "Kampanyalara göz at",
         "noReward": "Ödülsüz destek",
         "byCreator": "yaratıcı: {creator}",
@@ -455,7 +455,7 @@
         "lockedBody": "Bir destek verilirken değiştirilebilir. Ödendikten sonra ise kampanya destek aldığı sürece yalnızca yükseltilebilir — düşürülemez ve geri çekilemez — ve yalnızca aradaki fark tahsil edilir. Bunun durumu: {state}. Ya destek o aşamayı geçti ya da kampanya artık destek almıyor, bu yüzden o denetimler sunulmuyor. Bir şey yanlışsa sormanız gereken kişi kampanyanın yaratıcısıdır.",
         "raiseReturned": {
           "raisedTitle": "Desteğiniz artırıldı",
-          "raisedBody": "Aradaki fark ödendi ve bu sayfadaki rakamlara dahil. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse ödediğiniz her şey tamamen iade edilir.",
+          "raisedBody": "Aradaki fark ödendi ve bu sayfadaki rakamlara dahil. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse ödediğiniz her şey, ödeme sağlayıcısının komisyonu düşülerek iade edilir.",
           "failedTitle": "Artırma gerçekleşmedi",
           "failedBody": "Hiçbir tutar tahsil edilmedi ve desteğiniz olduğu gibi kaldı. Kampanya destek kabul ettiği sürece yeniden deneyebilirsiniz.",
           "heldBody": "Ödeme gerçekleşmedi ve hiçbir tutar tahsil edilmedi. Desteğiniz olduğu gibi kaldı, başlattığınız ödeme ise şu zamana kadar açık kalır: {time}. Sonrasında yeniden başlayabilirsiniz.",
@@ -484,7 +484,7 @@
         "save": "Değişiklikleri kaydet",
         "noChanges": "Henüz hiçbir şey değiştirilmedi.",
         "savedTitle": "Desteğiniz güncellendi",
-        "savedBody": "Yukarıdaki rakamlar bu sayfanın aritmetiği değil, servisin kendisinindir. Değişikliği kaydetmek hiçbir tahsilat yapmadı. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse her destekçiye tam iade yapılır.",
+        "savedBody": "Yukarıdaki rakamlar bu sayfanın aritmetiği değil, servisin kendisinindir. Değişikliği kaydetmek hiçbir tahsilat yapmadı. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse her destekçiye, ödeme sağlayıcısının komisyonu düşülerek iade yapılır.",
         "raiseHeading": "Bu desteği artır",
         "raiseIntro": "Bu destek ödendi. Kampanya destek kabul ettiği sürece onu artırabilirsiniz — daha yüksek bir seviye, daha fazla ek ya da daha büyük bir tutar — ama düşüremezsiniz. Yalnızca aradaki fark ödeme sağlayıcısının sayfasında tahsil edilir ve desteğiniz bu ödeme gerçekleştikten sonra değişir.",
         "raiseDue": "Şimdi ödenecek tutar: {amount}",
@@ -3400,7 +3400,7 @@
   },
   "auth": {
     "layout": {
-      "footer": "Ödüle dayalı kitlesel fonlama. Hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarın tamamını iade eder."
+      "footer": "Ödüle dayalı kitlesel fonlama. Hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarı, ödeme sağlayıcısının komisyonu düşülerek iade eder."
     },
     "loadingForm": "Form yükleniyor…",
     "checkingLink": "Bağlantı kontrol ediliyor…",
@@ -3926,7 +3926,7 @@
       "heading": "Ödeme",
       "none": "Ödemeyi ödeme sağlayıcısının sayfasında yaparsınız",
       "body": "Devam ettiğinizde ödeme sağlayıcısının güvenli sayfası açılır ve kartınızı orada girersiniz. Kart bilgileri hiçbir zaman IdeyaNest'te girilmez ve desteğiniz orada bir kez tahsil edilir.",
-      "later": "Kampanya hedefinin %80'ini toplayamazsa, iptal edilirse ya da askıya alınırsa desteğinizin tamamı iade edilir."
+      "later": "Kampanya hedefinin %80'ini toplayamazsa, iptal edilirse ya da askıya alınırsa desteğiniz, sağlayıcının geri vermediği ödeme sağlayıcısı komisyonu düşülerek iade edilir. IdeyaNest'in kendi komisyonu düşülmez."
     },
     "anonymous": {
       "label": "Anonim destek olun",
@@ -4087,7 +4087,7 @@
     },
     "returned": {
       "paidTitle": "Desteğiniz ödendi",
-      "paidBody": "Ödeme gerçekleşti ve kampanya desteğinizi aldı. Kampanya başarılı olmazsa tutarın tamamı iade edilir.",
+      "paidBody": "Ödeme gerçekleşti ve kampanya desteğinizi aldı. Kampanya başarılı olmazsa tutar, ödeme sağlayıcısının komisyonu düşülerek iade edilir.",
       "waitingTitle": "Ödemenin onaylanması bekleniyor",
       "waitingBody": "Ödeme sağlayıcısı sonucu henüz bildirmedi. Bu sayfa bir dakika boyunca yeniden kontrol eder; ikinci kez ödeme yapmanız gerekmez.",
       "failedTitle": "Ödeme gerçekleşmedi",
@@ -4281,10 +4281,10 @@
     },
     "trust": {
       "heading": "Burada fonlama nasıl işler",
-      "body": "Platform yaratıcılarla destekçileri bir araya getirir. Ödüller garanti değildir, ancak yaratıcılar destekçileri bilgilendirmek zorundadır. Destek verdiğinizde ücret tahsil edilir ve proje hedefinin %80'ini toplayamazsa tutarın tamamı iade edilir.",
-      "open": "Bu kampanya <deadline></deadline> tarihine kadar <b>{threshold}</b> — {goal} hedefinin %80'i — toplarsa başarılı sayılır. Toplayamazsa ve uzatılmazsa her destekçiye tutarın tamamı iade edilir.",
-      "openNoGoal": "Bu kampanya <deadline></deadline> tarihine kadar hedefinin %80'ini toplarsa başarılı sayılır. Toplayamazsa ve uzatılmazsa her destekçiye tutarın tamamı iade edilir.",
-      "closed": "Bu kampanyanın son tarihi <deadline></deadline> idi. Son tarihine ya da tek uzatmasının sonuna kadar hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarın tamamını iade eder."
+      "body": "Platform yaratıcılarla destekçileri bir araya getirir. Ödüller garanti değildir, ancak yaratıcılar destekçileri bilgilendirmek zorundadır. Destek verdiğinizde ücret tahsil edilir ve proje hedefinin %80'ini toplayamazsa tutar, ödeme sağlayıcısının komisyonu düşülerek iade edilir.",
+      "open": "Bu kampanya <deadline></deadline> tarihine kadar <b>{threshold}</b> — {goal} hedefinin %80'i — toplarsa başarılı sayılır. Toplayamazsa ve uzatılmazsa her destekçiye tutar, ödeme sağlayıcısının komisyonu düşülerek iade edilir.",
+      "openNoGoal": "Bu kampanya <deadline></deadline> tarihine kadar hedefinin %80'ini toplarsa başarılı sayılır. Toplayamazsa ve uzatılmazsa her destekçiye tutar, ödeme sağlayıcısının komisyonu düşülerek iade edilir.",
+      "closed": "Bu kampanyanın son tarihi <deadline></deadline> idi. Son tarihine ya da tek uzatmasının sonuna kadar hedefinin %80'ini toplayamayan bir kampanya her destekçiye tutarı, ödeme sağlayıcısının komisyonu düşülerek iade eder."
     },
     "obligation": {
       "lateHeading": "Bu yaratıcının bir güncelleme borcu var",
@@ -4302,7 +4302,7 @@
       "summary": "{date} tarihinde {backers, plural, other {# destekçiden}} <b>{pledged}</b> topladı; hedefi {goal} idi.",
       "summaryUndated": "{backers, plural, other {# destekçiden}} <b>{pledged}</b> topladı; hedefi {goal} idi.",
       "settling": "Yukarıdaki rakamlar kampanyanın kapandığı anda topladığı tutardır. Sonrasındaki bir iade yaratıcıya ödenen tutarı azaltır, sonucu değiştirmez.",
-      "refunded": "Her destekçiye tutarın tamamı iade edilir. Hedefinin %80'ini toplayamayan bir kampanya komisyon ödemez."
+      "refunded": "Her destekçiye tutar, ödeme sağlayıcısının komisyonu düşülerek iade edilir. Hedefinin %80'ini toplayamayan bir kampanya komisyon ödemez."
     },
     "faqs": {
       "heading": "Sıkça sorulan sorular",
@@ -4462,7 +4462,7 @@
       "subcategoryHintNone": "Bu kategorinin alt kategorisi yok.",
       "subcategoryHint": "İsteğe bağlı, daha belirgin.",
       "goal": "Fonlama hedefi",
-      "goalHint": "Kampanya bu tutarın %80'inde başarılı sayılır. Altında kalırsa her destekçiye tutarın tamamı iade edilir.",
+      "goalHint": "Kampanya bu tutarın %80'inde başarılı sayılır. Altında kalırsa her destekçiye tutar, ödeme sağlayıcısının komisyonu düşülerek iade edilir.",
       "goalHintLocked": "Kampanya başladıktan sonra hedef değiştirilemez.",
       "currency": "Para birimi",
       "currencyHint": "Kampanya başlayınca sabitlenir.",
@@ -5329,10 +5329,10 @@
       "metaDescription": "IdeyaNest nedir, hedefin %80'inde başarı nasıl işler ve maliyeti nedir.",
       "title": "IdeyaNest hakkında",
       "summary": "Henüz var olmayan şeyleri fonlamak için bir yer — koşullar herkes için aynı.",
-      "intro": "IdeyaNest, ödül temelli bir kitlesel fonlama platformudur. Bir yaratıcı hedefi ve son tarihi olan bir kampanya yayımlar; o şeyin var olmasını isteyenler destek verir ve ücret o anda tahsil edilir; kampanya hedefinin en az %80'ini toplarsa yaratıcı parayı çeker ve o şeyi yapar. Toplayamazsa her destekçiye tutarın tamamı iade edilir.",
+      "intro": "IdeyaNest, ödül temelli bir kitlesel fonlama platformudur. Bir yaratıcı hedefi ve son tarihi olan bir kampanya yayımlar; o şeyin var olmasını isteyenler destek verir ve ücret o anda tahsil edilir; kampanya hedefinin en az %80'ini toplarsa yaratıcı parayı çeker ve o şeyi yapar. Toplayamazsa her destekçiye tutar, ödeme sağlayıcısının komisyonu düşülerek iade edilir.",
       "allOrNothing": {
         "heading": "%80'de başarı — ve bu çizginin nedeni",
-        "first": "Hedefinin %80'ini toplayan bir kampanya başarılıdır ve yaratıcı, kampanya hangi yüzdeyle kapanmış olursa olsun tüm ödülleri tüm destekçilere teslim etmek zorundadır. Bunun altındaki bir tutara güvenilemez; bu yüzden kampanya başarısız sayılır, yaratıcısına hiçbir komisyona mal olmaz ve her destekçiye tutarın tamamı iade edilir.",
+        "first": "Hedefinin %80'ini toplayan bir kampanya başarılıdır ve yaratıcı, kampanya hangi yüzdeyle kapanmış olursa olsun tüm ödülleri tüm destekçilere teslim etmek zorundadır. Bunun altındaki bir tutara güvenilemez; bu yüzden kampanya başarısız sayılır, yaratıcısına hiçbir komisyona mal olmaz ve her destekçiye tutar, sağlayıcının geri vermediği ödeme sağlayıcısı komisyonu düşülerek iade edilir.",
         "second": "Son tarih yine de bir şey ifade eder. Yaratıcı onu bir kez, ilk son tarihten en fazla altmış gün sonrasına kadar uzatabilir ve destekçilere yeni tarih bildirilir. Bunun sonunda %80'in altında kalan bir kampanyanın destekleri iade edilir ve platform bunu süslemeden söyler."
       },
       "cost": {
@@ -5365,7 +5365,7 @@
       "backing": {
         "heading": "Bir şeye destek oluyorsanız",
         "first": "Bir ödül seviyesi seçin ya da ödülsüz destek olun. <b>Ücret destek verdiğiniz anda tahsil edilir</b> ve platformun hesabında tutulur. Destek iptal edilemez ve düşürülemez; kampanya destek kabul ettiği sürece daha yüksek bir seviye, bir ek ya da daha büyük bir tutarla desteğinizi artırabilirsiniz ve yalnızca aradaki fark hemen tahsil edilir.",
-        "second": "Bir kampanya hedefinin %80'inde başarılı sayılır. Yaratıcı o andan itibaren parayı çekebilir ya da son tarihi bir kez uzatabilir. Kampanya son tarihine ya da uzatmanın sonuna kadar %80'e ulaşmazsa her destekçiye tutarın tamamı iade edilir ve komisyon alınmaz.",
+        "second": "Bir kampanya hedefinin %80'inde başarılı sayılır. Yaratıcı o andan itibaren parayı çekebilir ya da son tarihi bir kez uzatabilir. Kampanya son tarihine ya da uzatmanın sonuna kadar %80'e ulaşmazsa her destekçiye tutar, ödeme sağlayıcısının komisyonu düşülerek iade edilir ve IdeyaNest kendi komisyonunu almaz.",
         "third": "Yaratıcı parayı çekmek istedikten sonra ödeme on dört gün bekletilir. Bu süre içinde bir destekçi ödemesine itiraz edebilir ve kararı bir yönetici verir; kabul edilen bir itirazda tutarın tamamı iade edilir."
       },
       "surveys": {
@@ -5413,7 +5413,7 @@
       },
       "money": {
         "heading": "Paranız",
-        "first": "Kart bilgileri hiçbir zaman IdeyaNest'in kendi sunucularına ulaşmaz; ödemeler sağlayıcının kendi alanları üzerinden geçer. Ücret desteğinizi onayladığınız anda tahsil edilir ve platformun hesabında tutulur. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse tutarın tamamı size iade edilir.",
+        "first": "Kart bilgileri hiçbir zaman IdeyaNest'in kendi sunucularına ulaşmaz; ödemeler sağlayıcının kendi alanları üzerinden geçer. Ücret desteğinizi onayladığınız anda tahsil edilir ve platformun hesabında tutulur. Kampanya başarısız olursa, askıya alınırsa ya da iptal edilirse tutar, ödeme sağlayıcısının komisyonu düşülerek size iade edilir: sağlayıcı bu komisyonu her ödemede alır ve geri vermez.",
         "second": "Her ödeme işlemi idempotenttir — bu, gösterişsiz ama en önemli özelliktir: bağlantı koptuğu için yinelenen bir istek iki değil bir destek ve bir tahsilat üretir."
       },
       "account": {
