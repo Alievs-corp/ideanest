@@ -4140,18 +4140,43 @@
       "heading": "Planınız",
       "activeUntil": "{date} tarixinə qədər {plan} planındasınız",
       "pendingTitle": "{plan} planını seçdiniz, ödənişinizi gözləyirik",
-      "pendingBody": "Hələ kart ödənişi qəbul edə bilmirik, ona görə plan köçürməniz görünüb qeydə alınandan sonra başlayır. Bu baş verən kimi dərc edə biləcəksiniz.",
+      "pendingBody": "Bank köçürməsi ilə ödəsəniz, plan köçürməniz görünüb qeydə alınandan sonra başlayır. Bu baş verən kimi dərc edə biləcəksiniz.",
       "endingOn": "{plan} planınız {date} tarixinə qədər işləyir və yenilənməyəcək",
       "lapsed": "{plan} planınız {date} tarixində bitdi",
       "cancel": "Bu dövrün sonunda ləğv et",
       "cancelling": "Ləğv edilir",
       "currentTag": "Sizin planınız"
     },
+    "payment": {
+      "payByCard": "Kartla ödə — {price}",
+      "renew": "Yenilə — {price}",
+      "opening": "Ödəniş səhifəsi açılır",
+      "cardBody": "Ödənişi ödəniş provayderimizin təhlükəsiz səhifəsində edirsiniz. Ödəniş keçən kimi plan başlayır.",
+      "renewalTitle": "{plan} planınız {date} tarixində bitir",
+      "renewalBody": "Yeniləmə həmin tarixdən daha bir ödəniş dövrü əlavə edir, ona görə vaxtından əvvəl yeniləsəniz, heç bir gün itirmirsiniz. Siz yeniləməsəniz, heç nə tutulmur.",
+      "renewalCancelled": "Bu planı ləğv etmisiniz. İndi yeniləsəniz, plan davam edəcək.",
+      "renewsFrom": "{date} tarixindən yeniləyə bilərsiniz",
+      "returned": {
+        "waitingTitle": "Ödənişin təsdiqi gözlənilir",
+        "waitingBody": "Ödəniş provayderi hələ nəticəni bildirməyib. Bu səhifə bir dəqiqə ərzində yenidən yoxlayır; ikinci dəfə ödəməyiniz lazım deyil.",
+        "paidTitle": "Ödəniş keçdi",
+        "paidBody": "{plan} planınız {date} tarixinə qədər aktivdir.",
+        "unconfirmedTitle": "Ödənişin nəticəsi hələ gəlməyib",
+        "unconfirmedBody": "Hesabınızdan pul çıxıbsa, provayder təsdiqləyən kimi planınız yenilənəcək. Yenidən ödəməzdən əvvəl bir neçə dəqiqədən sonra səhifəni yeniləyin.",
+        "failedTitle": "Ödəniş keçmədi",
+        "failedBody": "Heç nə tutulmadı. Yenidən cəhd edə bilərsiniz."
+      }
+    },
     "errors": {
       "alreadySubscribed": "Artıq bir planınız var. Başqasını seçməzdən əvvəl onu ləğv edin.",
       "notOnSale": "Bu plan artıq təklif olunmur. Mövcud olanları görmək üçün səhifəni yenidən yükləyin.",
       "signedOut": "Plan seçmək üçün yenidən daxil olun.",
-      "generic": "Alınmadı"
+      "generic": "Alınmadı",
+      "freePlan": "Bu plan pulsuzdur, ödəməli heç nə yoxdur.",
+      "renewalNotOpen": "Bu planı hələ yeniləmək olmur. Yeniləmənin nə vaxt açılacağını görmək üçün səhifəni yenidən yükləyin.",
+      "lapsed": "Bu planın müddəti bitib. Yenidən abunə olmaq üçün aşağıda plan seçin.",
+      "notDue": "Hazırda ödəməli heç nə yoxdur. Planınızın vəziyyətini görmək üçün səhifəni yenidən yükləyin.",
+      "paymentUnavailable": "Kartla ödəniş hazırda mümkün deyil. Heç nə tutulmadı; bir neçə dəqiqədən sonra yenidən cəhd edin."
     }
   },
   "campaign": {

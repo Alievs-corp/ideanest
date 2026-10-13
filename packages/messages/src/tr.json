@@ -4140,18 +4140,43 @@
       "heading": "Planınız",
       "activeUntil": "{date} tarihine kadar {plan} planındasınız",
       "pendingTitle": "{plan} planını seçtiniz, ödemenizi bekliyoruz",
-      "pendingBody": "Henüz kartla ödeme alamıyoruz; bu yüzden plan, havaleniz görülüp kaydedildiğinde başlar. Bu gerçekleşir gerçekleşmez yayımlayabilirsiniz.",
+      "pendingBody": "Havale ile öderseniz plan, havaleniz görülüp kaydedildiğinde başlar. Bu gerçekleşir gerçekleşmez yayımlayabilirsiniz.",
       "endingOn": "{plan} planınız {date} tarihine kadar geçerli ve yenilenmeyecek",
       "lapsed": "{plan} planınız {date} tarihinde sona erdi",
       "cancel": "Bu dönemin sonunda iptal et",
       "cancelling": "İptal ediliyor",
       "currentTag": "Sizin planınız"
     },
+    "payment": {
+      "payByCard": "Kartla öde — {price}",
+      "renew": "{price} karşılığında yenile",
+      "opening": "Ödeme sayfası açılıyor",
+      "cardBody": "Ödemeyi ödeme sağlayıcımızın güvenli sayfasında yaparsınız; ödeme gerçekleşir gerçekleşmez plan başlar.",
+      "renewalTitle": "{plan} planınız {date} tarihinde sona eriyor",
+      "renewalBody": "Yenileme, o tarihten itibaren bir ödeme dönemi daha ekler; bu yüzden erken yenilerseniz hiçbir gün kaybetmezsiniz. Yenilemediğiniz sürece hiçbir tutar tahsil edilmez.",
+      "renewalCancelled": "Bu planı iptal ettiniz. Şimdi yenilerseniz plan devam eder.",
+      "renewsFrom": "{date} tarihinden itibaren yenileyebilirsiniz",
+      "returned": {
+        "waitingTitle": "Ödemenin onaylanması bekleniyor",
+        "waitingBody": "Ödeme sağlayıcısı sonucu henüz bildirmedi. Bu sayfa bir dakika boyunca yeniden kontrol eder; ikinci kez ödeme yapmanız gerekmez.",
+        "paidTitle": "Ödemeniz gerçekleşti",
+        "paidBody": "{plan} planınız {date} tarihine kadar etkin.",
+        "unconfirmedTitle": "Ödemenizin sonucu henüz gelmedi",
+        "unconfirmedBody": "Hesabınızdan para çekildiyse, sağlayıcı onaylar onaylamaz planınız güncellenir. Yeniden ödemeden önce birkaç dakika sonra sayfayı yenileyin.",
+        "failedTitle": "Ödeme gerçekleşmedi",
+        "failedBody": "Hiçbir tutar tahsil edilmedi. Yeniden deneyebilirsiniz."
+      }
+    },
     "errors": {
       "alreadySubscribed": "Zaten bir planınız var. Başkasını seçmeden önce onu iptal edin.",
       "notOnSale": "Bu plan artık sunulmuyor. Güncel planları görmek için sayfayı yenileyin.",
       "signedOut": "Plan seçmek için tekrar giriş yapın.",
-      "generic": "Bu işe yaramadı"
+      "generic": "Bu işe yaramadı",
+      "freePlan": "Bu plan ücretsiz, ödenecek bir şey yok.",
+      "renewalNotOpen": "Bu plan henüz yenilenemez. Yenilemenin ne zaman açılacağını görmek için sayfayı yenileyin.",
+      "lapsed": "Bu planın süresi doldu. Yeniden abone olmak için aşağıdan bir plan seçin.",
+      "notDue": "Şu anda ödenecek bir şey yok. Planınızın durumunu görmek için sayfayı yenileyin.",
+      "paymentUnavailable": "Kartla ödeme şu anda kullanılamıyor. Hiçbir tutar tahsil edilmedi; birkaç dakika sonra yeniden deneyin."
     }
   },
   "campaign": {
