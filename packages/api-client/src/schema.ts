@@ -5136,6 +5136,12 @@ export interface components {
             /** Format: date-time */
             scheduledFor?: string;
         };
+        DestinationQueuePage: {
+            destinations?: components["schemas"]["ForStaff"][];
+            hasMore?: boolean;
+            /** Format: int32 */
+            page?: number;
+        };
         DestinationRequest: {
             displayHint?: string;
             holderName: string;
@@ -7546,6 +7552,7 @@ export type SchemaDay = components['schemas']['Day'];
 export type SchemaDecisionRequest = components['schemas']['DecisionRequest'];
 export type SchemaDeleteAccountRequest = components['schemas']['DeleteAccountRequest'];
 export type SchemaDeletionScheduledResponse = components['schemas']['DeletionScheduledResponse'];
+export type SchemaDestinationQueuePage = components['schemas']['DestinationQueuePage'];
 export type SchemaDestinationRequest = components['schemas']['DestinationRequest'];
 export type SchemaDeviceResponse = components['schemas']['DeviceResponse'];
 export type SchemaDirectory = components['schemas']['Directory'];
@@ -9428,7 +9435,10 @@ export interface operations {
     };
     adminPayoutDestinationQueue: {
         parameters: {
-            query?: never;
+            query?: {
+                state?: "AWAITING_VERIFICATION" | "NAME_MISMATCH" | "REJECTED" | "VERIFIED";
+                page?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -9441,7 +9451,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Queue"];
+                    "application/json": components["schemas"]["DestinationQueuePage"];
                 };
             };
         };

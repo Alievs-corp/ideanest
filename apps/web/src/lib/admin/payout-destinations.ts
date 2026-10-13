@@ -23,30 +23,52 @@ export const DESTINATION_REJECTION_REASONS: readonly DestinationRejectionReason[
 ]);
 
 /**
- * How many destinations one read of the queue holds — `CreatorPayoutDestinations.PAGE_SIZE`.
- *
- * <p>The service takes no page and no filter: it answers the fifty that have waited longest,
- * oldest first, and deciding one is what brings the next one in. A screen that shows exactly
- * this many says so, because "fifty waiting" and "at least fifty waiting" are different
- * workloads.
+ * The states a destination waits in, which are the ones the queue can be narrowed to. Every
+ * row state but `VERIFIED`: a verified destination is not waiting on anybody.
  */
-export const PAYOUT_DESTINATION_QUEUE_SIZE = 50;
+export type PayoutDestinationQueueState = 'AWAITING_VERIFICATION' | 'NAME_MISMATCH' | 'REJECTED';
+
+/** One page of the queue — `PayoutPage`'s shape, fifty to a page. */
+export interface PayoutDestinationQueuePage {
+  readonly destinations: readonly AdminPayoutDestination[];
+  readonly page: number;
+  /** Inferred from a full page rather than a count, so a next page can turn out empty. */
+  readonly hasMore: boolean;
+}
+
+export interface PayoutDestinationQueueRequest {
+  /** Null or absent for every state. */
+  readonly state?: PayoutDestinationQueueState | null;
+  readonly page?: number;
+  readonly signal?: AbortSignal;
+}
 
 /**
  * COMPLIANCE's queue: every destination that is not verified, oldest first (#432, #396).
+ *
+ * <p>The state is narrowed by the service since #419, not by the screen over one page: a
+ * filter applied to the fifty oldest says "none in this state" while any number wait behind
+ * them. It is the row's state, so a destination under a waiver is found under the state it is
+ * in and still reports the `WAIVED` standing.
  *
  * <p>Not audited by the service, and that is its argument rather than an omission here: the
  * list shows that a destination exists and what state it is in, and opening one on the account
  * screen is the read worth a row. `VERIFY_PAYOUT_DESTINATION`.
  */
 export async function readPayoutDestinationQueue(
-  signal?: AbortSignal,
-): Promise<readonly AdminPayoutDestination[]> {
-  const response = await authorizedFetch('/v1/admin/payout-destinations', { cache: 'no-store', signal });
+  request: PayoutDestinationQueueRequest = {},
+): Promise<PayoutDestinationQueuePage> {
+  const parameters = new URLSearchParams();
+  if (request.state != null) parameters.set('state', request.state);
+  parameters.set('page', String(request.page ?? 0));
+
+  const response = await authorizedFetch(`/v1/admin/payout-destinations?${parameters}`, {
+    cache: 'no-store',
+    signal: request.signal,
+  });
   if (!response.ok) throw await errorFrom(response);
 
-  const body = (await response.json()) as { destinations: readonly AdminPayoutDestination[] };
-  return body.destinations;
+  return (await response.json()) as PayoutDestinationQueuePage;
 }
 
 /**

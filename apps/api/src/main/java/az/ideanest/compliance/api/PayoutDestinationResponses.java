@@ -141,7 +141,19 @@ public final class PayoutDestinationResponses {
         }
     }
 
-    /** COMPLIANCE's queue of destinations waiting on somebody. */
-    public record Queue(List<ForStaff> destinations) {
+    /**
+     * One page of COMPLIANCE's queue of destinations waiting on somebody.
+     *
+     * <p>Named {@code DestinationQueuePage} rather than {@code Queue}, {@link RevealedBankAccount}'s
+     * reason: four other modules answer a record called {@code Queue}, the generated schema
+     * merged them into one, and until #419 this endpoint was described in the contract as a
+     * list of identity verifications.
+     *
+     * @param page the page this is, from zero, as it was asked for
+     * @param hasMore inferred from a full page rather than counted, as {@code PayoutPage} does:
+     *     a page of exactly fifty with nothing behind it offers a next page that turns out
+     *     empty, which costs one read and says so, where a count costs one on every read
+     */
+    public record DestinationQueuePage(List<ForStaff> destinations, int page, boolean hasMore) {
     }
 }

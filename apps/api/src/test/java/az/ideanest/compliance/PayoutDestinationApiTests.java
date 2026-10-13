@@ -10,7 +10,9 @@ import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.BankDetailsKeys;
 import az.ideanest.support.Destinations;
 import az.ideanest.user.infrastructure.UserRepository;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -342,6 +344,139 @@ class PayoutDestinationApiTests extends AbstractIntegrationTest {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> waiting = (List<Map<String, Object>>) response.getBody().get("destinations");
         assertThat(waiting).anySatisfy(row -> assertThat(row.get("creatorId")).isEqualTo(creator.id().toString()));
+        assertThat(response.getBody().get("page")).isEqualTo(0);
+        assertThat(response.getBody().get("hasMore")).isEqualTo(false);
+    }
+
+    @Test
+    @DisplayName("the queue narrows to one state on the server, and keeps the oldest first")
+    void theQueueFiltersByState() {
+        Destinations.clear(dataSource);
+        Account reviewer = staff("api-dest-compliance", StaffRole.COMPLIANCE);
+        Instant start = Instant.parse("2026-01-05T09:00:00Z");
+        // Written out of order, so that the order read back is the query's and not the insert's.
+        UUID mismatchedLater = waiting("NAME_MISMATCH", null, start.plusSeconds(30));
+        UUID awaiting = waiting("AWAITING_VERIFICATION", null, start.plusSeconds(10));
+        UUID mismatchedEarlier = waiting("NAME_MISMATCH", null, start.plusSeconds(20));
+        UUID rejected = waiting("REJECTED", "UNREADABLE", start);
+        UUID verified = seededAccount();
+        Destinations.verified(dataSource, verified, reviewer.id(), "Verified Holder");
+
+        assertThat(creatorIds(queue(reviewer, "")))
+                .containsExactly(rejected, awaiting, mismatchedEarlier, mismatchedLater);
+        assertThat(creatorIds(queue(reviewer, "?state=NAME_MISMATCH")))
+                .containsExactly(mismatchedEarlier, mismatchedLater);
+        assertThat(creatorIds(queue(reviewer, "?state=AWAITING_VERIFICATION"))).containsExactly(awaiting);
+        assertThat(creatorIds(queue(reviewer, "?state=REJECTED"))).containsExactly(rejected);
+
+        // Nothing verified waits, so asking for it is an empty page rather than the verified rows.
+        Map<String, Object> none = queue(reviewer, "?state=VERIFIED");
+        assertThat(creatorIds(none)).isEmpty();
+        assertThat(none.get("hasMore")).isEqualTo(false);
+    }
+
+    @Test
+    @DisplayName("the queue pages fifty at a time, oldest first, and says when there is more")
+    void theQueuePages() {
+        Destinations.clear(dataSource);
+        Account reviewer = staff("api-dest-compliance", StaffRole.COMPLIANCE);
+        Instant start = Instant.parse("2026-02-01T09:00:00Z");
+        int rows = CreatorPayoutDestinations.PAGE_SIZE + 1;
+        UUID[] oldestFirst = new UUID[rows];
+        for (int i = rows - 1; i >= 0; i--) {
+            oldestFirst[i] = waiting("AWAITING_VERIFICATION", null, start.plusSeconds(i));
+        }
+        UUID rejected = waiting("REJECTED", "INCOMPLETE", start.plusSeconds(rows));
+
+        Map<String, Object> first = queue(reviewer, "?page=0");
+        assertThat(first.get("page")).isEqualTo(0);
+        assertThat(first.get("hasMore")).isEqualTo(true);
+        assertThat(creatorIds(first)).containsExactly(Arrays.copyOfRange(oldestFirst, 0, 50));
+
+        Map<String, Object> second = queue(reviewer, "?page=1");
+        assertThat(second.get("page")).isEqualTo(1);
+        assertThat(second.get("hasMore")).isEqualTo(false);
+        assertThat(creatorIds(second)).containsExactly(oldestFirst[50], rejected);
+
+        // The filter and the page together: the second page of one state is that state's.
+        Map<String, Object> awaitingSecond = queue(reviewer, "?state=AWAITING_VERIFICATION&page=1");
+        assertThat(awaitingSecond.get("hasMore")).isEqualTo(false);
+        assertThat(creatorIds(awaitingSecond)).containsExactly(oldestFirst[50]);
+        assertThat(queue(reviewer, "?state=REJECTED&page=0").get("hasMore")).isEqualTo(false);
+    }
+
+    @Test
+    @DisplayName("two destinations changed in one instant keep one order between reads")
+    void aTieIsBrokenByTheAccount() {
+        Destinations.clear(dataSource);
+        Account reviewer = staff("api-dest-compliance", StaffRole.COMPLIANCE);
+        Instant same = Instant.parse("2026-03-01T09:00:00Z");
+        UUID one = waiting("AWAITING_VERIFICATION", null, same);
+        UUID other = waiting("AWAITING_VERIFICATION", null, same);
+
+        // Postgres orders a uuid by its bytes, which is the order of its lower-case text.
+        List<UUID> expected = List.of(one, other).stream()
+                .sorted((a, b) -> a.toString().compareTo(b.toString()))
+                .toList();
+        assertThat(creatorIds(queue(reviewer, ""))).containsExactlyElementsOf(expected);
+    }
+
+    @Test
+    @DisplayName("a waived destination is found under its row's state and still reports the waiver")
+    void aWaivedDestinationKeepsItsState() {
+        Destinations.clear(dataSource);
+        Account reviewer = staff("api-dest-compliance", StaffRole.COMPLIANCE);
+        UUID waived = waiting("REJECTED", "UNREADABLE", Instant.parse("2026-04-01T09:00:00Z"));
+        new JdbcTemplate(dataSource)
+                .update(
+                        """
+                        INSERT INTO compliance_overrides
+                            (id, subject_user_id, requirement, reason, note, granted_by, expires_at)
+                        VALUES (?, ?, 'PAYOUT_DESTINATION', 'PROVIDER_OUTAGE', '#419 fixture.', ?,
+                                now() + interval '1 day')
+                        """,
+                        UUID.randomUUID(),
+                        waived,
+                        administrator());
+
+        List<Map<String, Object>> rows = rowsOf(queue(reviewer, "?state=REJECTED"));
+        assertThat(rows).singleElement().satisfies(row -> {
+            assertThat(row.get("creatorId")).isEqualTo(waived.toString());
+            assertThat(row.get("standing")).isEqualTo("WAIVED");
+        });
+    }
+
+    @Test
+    @DisplayName("the queue is refused without VERIFY_PAYOUT_DESTINATION, filtered or not")
+    void theQueueNeedsTheCapability() {
+        Account financeOfficer = staff("api-dest-finance", StaffRole.FINANCE);
+        Account creator = account();
+
+        Map<String, Object> finance = refusal(
+                "/v1/admin/payout-destinations?state=REJECTED&page=1",
+                HttpMethod.GET,
+                financeOfficer,
+                null,
+                HttpStatus.FORBIDDEN);
+        assertThat(finance.get("code")).isEqualTo("INSUFFICIENT_STAFF_CAPABILITY");
+
+        Map<String, Object> notStaff =
+                refusal("/v1/admin/payout-destinations", HttpMethod.GET, creator, null, HttpStatus.FORBIDDEN);
+        assertThat(notStaff.get("code")).isEqualTo("NOT_A_MODERATOR");
+    }
+
+    @Test
+    @DisplayName("a state the queue does not know is a 400 rather than everything")
+    void anUnknownStateIsABadRequest() {
+        Account reviewer = staff("api-dest-compliance", StaffRole.COMPLIANCE);
+
+        ResponseEntity<String> response = rest.exchange(
+                "/v1/admin/payout-destinations?state=WAIVED",
+                HttpMethod.GET,
+                new HttpEntity<>(authorised(reviewer.accessToken())),
+                String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -524,6 +659,57 @@ class PayoutDestinationApiTests extends AbstractIntegrationTest {
                 new ParameterizedTypeReference<Map<String, Object>>() {});
         assertThat(response.getStatusCode()).isEqualTo(expected);
         return response.getBody();
+    }
+
+    private Map<String, Object> queue(Account reviewer, String query) {
+        return get("/v1/admin/payout-destinations" + query, reviewer);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> rowsOf(Map<String, Object> page) {
+        return (List<Map<String, Object>>) page.get("destinations");
+    }
+
+    private static List<UUID> creatorIds(Map<String, Object> page) {
+        return rowsOf(page).stream()
+                .map(row -> UUID.fromString((String) row.get("creatorId")))
+                .toList();
+    }
+
+    /**
+     * A destination waiting in {@code state}, last changed at {@code updatedAt}, on an account
+     * written with SQL — #419's paging needs more than a page of them, and registering fifty-one
+     * accounts over HTTP would be most of this suite's running time.
+     */
+    private UUID waiting(String state, String rejectionReason, Instant updatedAt) {
+        UUID creatorId = seededAccount();
+        new JdbcTemplate(dataSource)
+                .update(
+                        """
+                        INSERT INTO payout_destinations
+                            (user_id, provider, reference, holder_name, display_hint, state,
+                             rejection_reason, created_at, updated_at)
+                        VALUES (?, 'EPOINT', ?, 'Queue Holder', '**4321', ?, ?, ?, ?)
+                        """,
+                        creatorId,
+                        "test-destination-token-" + creatorId,
+                        state,
+                        rejectionReason,
+                        Timestamp.from(updatedAt),
+                        Timestamp.from(updatedAt));
+        return creatorId;
+    }
+
+    private UUID seededAccount() {
+        UUID id = UUID.randomUUID();
+        new JdbcTemplate(dataSource)
+                .update(
+                        "INSERT INTO users (id, email, name, slug) VALUES (?, ?, ?, ?)",
+                        id,
+                        "queue-" + id + "@example.com",
+                        "Queue Creator",
+                        "queue-" + id);
+        return id;
     }
 
     @SuppressWarnings("unchecked")

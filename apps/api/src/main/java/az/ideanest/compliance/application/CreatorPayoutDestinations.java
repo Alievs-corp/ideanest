@@ -97,7 +97,7 @@ public class CreatorPayoutDestinations implements PayoutDestinations {
     private static final Logger log = LoggerFactory.getLogger(CreatorPayoutDestinations.class);
 
     /** How many of COMPLIANCE's queue one page holds. {@code PayoutService.PAGE_SIZE}'s number. */
-    private static final int PAGE_SIZE = 50;
+    public static final int PAGE_SIZE = 50;
 
     private final PayoutDestinationRepository destinations;
     private final LegalSubjects legalSubjects;
@@ -425,10 +425,21 @@ public class CreatorPayoutDestinations implements PayoutDestinations {
      * holder's name, and that is the read worth a row. Auditing the list as well would write
      * fifty entries every time somebody refreshed a screen, which is how a trail stops being
      * readable.
+     *
+     * <p>Paged and filtered here since #419, in {@code PayoutService.queue}'s shape: a page
+     * number from zero, {@link #PAGE_SIZE} to a page. Before that the console filtered the
+     * fifty oldest in the browser, so a state with nothing among those fifty read as empty
+     * however many waited behind them.
+     *
+     * @param state one of the queue's states, or null for every one of them
      */
     @Transactional(readOnly = true)
-    public List<PayoutDestination> queue(UUID staffId) {
+    public List<PayoutDestination> queue(UUID staffId, DestinationState state, int page) {
         staff.requireCapability(staffId, StaffCapability.VERIFY_PAYOUT_DESTINATION);
-        return destinations.awaiting(DestinationState.VERIFIED, PageRequest.of(0, PAGE_SIZE));
+        PageRequest request = PageRequest.of(Math.max(page, 0), PAGE_SIZE);
+
+        return state == null
+                ? destinations.awaiting(DestinationState.VERIFIED, request)
+                : destinations.awaitingIn(state, DestinationState.VERIFIED, request);
     }
 }

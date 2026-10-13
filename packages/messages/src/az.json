@@ -2205,7 +2205,8 @@
         "emptyBody": "Qeydə alınmış bütün ödəniş rekvizitləri yoxlanılıb.",
         "emptyFilterTitle": "Bu vəziyyətdə heç nə yoxdur",
         "emptyFilterBody": "Növbədə bu vəziyyətdə rekvizit yoxdur. Qalanlarını görmək üçün başqa süzgəc seçin.",
-        "capped": "Ən çox gözləyən {count} rekvizit göstərilir. Bunlar barədə qərar verdikcə növbətilər görünəcək.",
+        "emptyPageTitle": "Bu səhifədə heç nə yoxdur",
+        "emptyPageBody": "Gözləyən rekvizitlərin hamısı əvvəlki səhifələrdədir. Onları görmək üçün bir səhifə geri qayıdın.",
         "openAccount": "Hesabı aç",
         "openAccountLabel": "Hesabı aç: {name}",
         "kind": {

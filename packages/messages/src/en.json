@@ -2205,7 +2205,8 @@
         "emptyBody": "Every payout destination on file has been verified.",
         "emptyFilterTitle": "None in this state",
         "emptyFilterBody": "Nothing in the queue is in this state. Choose another filter to see the rest.",
-        "capped": "Showing the {count} that have waited longest. Deciding these brings the next ones in.",
+        "emptyPageTitle": "Nothing on this page",
+        "emptyPageBody": "Everything waiting is on the earlier pages. Go back a page to see it.",
         "openAccount": "Open account",
         "openAccountLabel": "Open account: {name}",
         "kind": {
