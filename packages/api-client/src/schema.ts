@@ -2980,6 +2980,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/subscription/payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["subscriptionPay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/surveys": {
         parameters: {
             query?: never;
@@ -5939,6 +5955,13 @@ export interface components {
             rewardTierId?: string;
             shippingCountry?: string;
         };
+        PayForPlanRequest: {
+            /** Format: uri */
+            errorUrl?: string;
+            language?: string;
+            /** Format: uri */
+            successUrl?: string;
+        };
         PayPledgeRequest: {
             /** Format: int32 */
             acknowledgedAgreementVersion?: number;
@@ -7644,6 +7667,7 @@ export type SchemaOverride = components['schemas']['Override'];
 export type SchemaOwnProfileResponse = components['schemas']['OwnProfileResponse'];
 export type SchemaPartner = components['schemas']['Partner'];
 export type SchemaPatchPledgeRequest = components['schemas']['PatchPledgeRequest'];
+export type SchemaPayForPlanRequest = components['schemas']['PayForPlanRequest'];
 export type SchemaPayPledgeRequest = components['schemas']['PayPledgeRequest'];
 export type SchemaPayoutFile = components['schemas']['PayoutFile'];
 export type SchemaPayoutPage = components['schemas']['PayoutPage'];
@@ -12874,6 +12898,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Mine"];
+                };
+            };
+        };
+    };
+    subscriptionPay: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PayForPlanRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
                 };
             };
         };

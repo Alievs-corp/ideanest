@@ -14,10 +14,8 @@ public enum SubscriptionState {
     /**
      * Chosen and not yet paid for.
      *
-     * <p>Where a priced plan starts, because nothing on this platform can charge a card:
-     * §9.2 ships no provider adapter while #60 is unanswered. A member of staff records
-     * that the transfer arrived and the row becomes {@link #ACTIVE}. V62's header argues
-     * why that is honest rather than a stub.
+     * <p>Where a priced plan starts. The provider's callback for a card payment (#449), or a
+     * member of staff recording a bank transfer, makes it {@link #ACTIVE}.
      *
      * <p>A plan priced at zero never passes through here. There is no payment to wait for,
      * and a state that meant "waiting for nothing" would be a queue entry a member of

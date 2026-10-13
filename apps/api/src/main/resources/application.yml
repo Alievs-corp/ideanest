@@ -885,6 +885,11 @@ ideanest:
       # an hour later.
       tolerance: PT5M
 
+  # Creator plans, epic #448. A plan is paid by the creator for every period on the provider's
+  # page; nothing is charged on a schedule. Renewing is offered this long before a period ends.
+  subscription:
+    renewal-window: ${SUBSCRIPTION_RENEWAL_WINDOW:P7D}
+
   # SIMA Imza, and the two things that keep it switched off -- issue #428.
   #
   # A tick box is an acceptance; a SIMA Imza signature is a signature with the legal

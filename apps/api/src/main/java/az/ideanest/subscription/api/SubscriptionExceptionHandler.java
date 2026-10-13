@@ -1,11 +1,13 @@
 package az.ideanest.subscription.api;
 
+import az.ideanest.payment.application.SubscriptionCheckoutUnavailableException;
 import az.ideanest.staff.api.StaffRefusals;
 import az.ideanest.staff.application.InsufficientStaffCapabilityException;
 import az.ideanest.staff.application.NotAModeratorException;
 import az.ideanest.subscription.application.AlreadySubscribedException;
 import az.ideanest.subscription.application.InvalidPaymentCursorException;
 import az.ideanest.subscription.application.InvalidRevenuePeriodException;
+import az.ideanest.subscription.application.NoPaymentDueException;
 import az.ideanest.subscription.application.NoSubscriptionException;
 import az.ideanest.subscription.application.PaymentNotYetReceivedException;
 import az.ideanest.subscription.application.PlanCodeTakenException;
@@ -236,6 +238,36 @@ public class SubscriptionExceptionHandler {
         problem.setTitle("That plan cannot be saved");
         problem.setDetail(exception.getMessage());
         problem.setProperty("code", "INVALID_PLAN");
+        return problem;
+    }
+
+    /**
+     * 409: nothing on the subscription can be paid for now — #449. {@code reason} says why, so the
+     * page can say "renewal opens on the 24th" or offer to buy again.
+     */
+    @ExceptionHandler(NoPaymentDueException.class)
+    public ProblemDetail handleNoPaymentDue(NoPaymentDueException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setType(URI.create("https://ideanest.az/problems/subscription-payment-not-due"));
+        problem.setTitle("Nothing to pay for");
+        problem.setDetail(switch (exception.reason()) {
+            case FREE_PLAN -> "This plan is free; there is nothing to pay.";
+            case RENEWAL_NOT_OPEN -> "This period cannot be renewed yet.";
+            case LAPSED -> "This plan has ended. Choose a plan to subscribe again.";
+        });
+        problem.setProperty("code", "SUBSCRIPTION_PAYMENT_NOT_DUE");
+        problem.setProperty("reason", exception.reason().name());
+        return problem;
+    }
+
+    /** 503: no payment page can be opened now — #449. Nothing was charged. */
+    @ExceptionHandler(SubscriptionCheckoutUnavailableException.class)
+    public ProblemDetail handleCheckoutUnavailable(SubscriptionCheckoutUnavailableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.SERVICE_UNAVAILABLE);
+        problem.setType(URI.create("https://ideanest.az/problems/payment-unavailable"));
+        problem.setTitle("Payments are not available right now");
+        problem.setDetail("Nothing was charged. Try again in a moment.");
+        problem.setProperty("code", "PAYMENT_UNAVAILABLE");
         return problem;
     }
 }

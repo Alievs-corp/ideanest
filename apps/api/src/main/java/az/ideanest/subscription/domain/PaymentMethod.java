@@ -8,18 +8,16 @@ package az.ideanest.subscription.domain;
  * invents a way of being paid without the platform learning to reconcile it, so this is a
  * set that grows by a decision and a deployment rather than by a console form.
  *
- * <p><strong>{@link #BANK_TRANSFER} is the one that happens today.</strong> §9.2 ships no
- * payment provider adapter while #60 is unanswered, so the platform sells the way a
- * platform without a processor sells: an invoice, a transfer, and a member of staff who
- * records that it arrived. {@link #CARD} exists so the row a provider's callback will write
- * needs no migration to exist — not because anything can charge one yet.
+ * <p><strong>{@link #CARD} is written by the provider's callback</strong> (#449), with no
+ * member of staff on the row. {@link #BANK_TRANSFER} stays for a creator who pays by invoice,
+ * recorded by a member of staff.
  */
 public enum PaymentMethod {
 
     /** An invoice and a transfer, confirmed against a bank statement. */
     BANK_TRANSFER,
 
-    /** A provider-collected card payment. Nothing writes this until #60 lands. */
+    /** A card payment on the provider's page, recorded by its callback (#449). */
     CARD,
 
     /** Handed over in person, in an office, against a receipt. */

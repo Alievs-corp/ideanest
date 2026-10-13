@@ -13,10 +13,10 @@
  * {@code PublishingAllowance}. Nothing outside this module names {@code SubscriptionPlan}
  * or {@code Subscription}, or reads {@code subscription_plans} and {@code subscriptions}.
  *
- * <p><strong>No money moves here.</strong> §9.2 ships no payment provider adapter while
- * #60 is unanswered, so a paid plan is bought into {@code PENDING_PAYMENT} and a member of
- * staff records that the transfer arrived. V62's header argues why that is how a platform
- * with no processor sells rather than a stub pretending to be one, and what changes when
- * a provider exists: step two, and nothing above it.
+ * <p><strong>No card is handled here.</strong> A paid plan is bought into
+ * {@code PENDING_PAYMENT}; the creator pays it on the provider's page, which the payment
+ * module opens and settles ({@code SubscriptionCardPayments}, #449), or by bank transfer that
+ * a member of staff records. Every later period is paid the same way by the creator, inside
+ * the renewal window — nothing is charged on a schedule (epic #448).
  */
 package az.ideanest.subscription;

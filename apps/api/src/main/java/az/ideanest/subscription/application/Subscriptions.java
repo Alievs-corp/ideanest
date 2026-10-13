@@ -32,19 +32,12 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Buying, holding and ending a subscription.
  *
- * <h2>Two steps for a paid plan, and why that is not a stub</h2>
+ * <h2>Two steps for a paid plan</h2>
  *
- * <p>Nothing on this platform can charge a card. §9.2 ships no payment provider adapter
- * while #60 — confirm §9.3's fourteen capabilities in writing — is unanswered, and
- * {@code PaymentProvider}'s header says plainly why no stub adapter ships in the meantime:
- * an adapter that returned an approval would make the path look finished.
- *
- * <p>So a priced plan is bought into {@link SubscriptionState#PENDING_PAYMENT}, and a
- * member of staff records that the transfer arrived. That is how a platform with no
- * processor actually sells — an invoice and a bank transfer — and it is audited under the
- * name of whoever confirmed it. When #60 lands, the provider's callback replaces
- * {@link #activate} and nothing above it changes: the states, the gate and the pricing
- * page are already the shape a provider needs.
+ * <p>A priced plan is bought into {@link SubscriptionState#PENDING_PAYMENT}. The creator pays
+ * it by card on the provider's page — {@link SubscriptionCardPayments}, #449 — or by bank
+ * transfer, which a member of staff records here through {@link #activate}, audited under the
+ * name of whoever confirmed it.
  *
  * <p>A plan priced at zero has no second step. {@link #subscribe} activates it on the
  * spot, because there is no payment to wait for.
@@ -240,8 +233,8 @@ public class Subscriptions {
      * arrived, for which plan, at what price — and it survives the account being closed,
      * which V62 cascades the subscription away with.
      *
-     * @param method how it arrived. Null means {@link PaymentMethod#BANK_TRANSFER}, which
-     *     is the only way anything arrives while #60 is unanswered
+     * @param method how it arrived. Null means {@link PaymentMethod#BANK_TRANSFER}. A card
+     *     payment is not recorded here: the provider's callback records it (#449)
      * @param receivedAt when the money arrived. Null means now. May be earlier than now,
      *     because a transfer that cleared on the 31st belongs in the month it cleared
      * @param reference the transfer reference or invoice number. Not required by the

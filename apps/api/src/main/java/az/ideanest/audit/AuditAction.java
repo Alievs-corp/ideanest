@@ -594,9 +594,9 @@ public enum AuditAction {
      * A member of staff recorded that a subscription's payment arrived.
      *
      * <p>The most consequential thing anybody does to a subscription: it is what turns a
-     * chosen plan into an entitlement to publish. It exists as a staff action rather than a
-     * provider callback because no payment provider is integrated (#60), and V62's header
-     * argues why that is honest rather than a stub.
+     * chosen plan into an entitlement to publish. A member of staff records a bank
+     * transfer; since #449 a card payment's callback writes the same action with the system
+     * as the actor and the provider's order in the detail.
      *
      * <p>The entity is the subscription and the actor is the member of staff, so that
      * "who let this account publish, and on what evidence" is one row. The detail names
@@ -604,6 +604,15 @@ public enum AuditAction {
      * statement needs.
      */
     SUBSCRIPTION_ACTIVATED("subscription.activated", "subscription"),
+
+    /**
+     * A creator paid for one more period of their plan by card — #449.
+     *
+     * <p>The actor is the system: the provider's confirmation is what extended it. The detail names
+     * the provider's order and the new end, which is what a reconciliation against the provider's
+     * statement needs.
+     */
+    SUBSCRIPTION_RENEWED("subscription.renewed", "subscription"),
 
     /**
      * A member of staff ended a subscription outright.

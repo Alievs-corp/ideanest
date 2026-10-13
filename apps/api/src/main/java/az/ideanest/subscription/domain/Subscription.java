@@ -10,8 +10,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -163,6 +165,77 @@ public class Subscription {
         this.activatedBy = Objects.requireNonNull(activatedBy, "Somebody recorded this payment");
         this.note = trimmedOrNull(note);
         this.updatedAt = now;
+    }
+
+    /**
+     * Opens the first period because the provider said the card was charged — #449.
+     *
+     * <p>{@link #activate} without a member of staff: nobody confirmed this by hand, and naming
+     * the creator in {@link #activatedBy} would make the column mean two things.
+     */
+    public void activatePaid(SubscriptionPlan plan, Instant now) {
+        if (state != SubscriptionState.PENDING_PAYMENT) {
+            throw new IllegalStateException("Only a subscription waiting for payment can be activated");
+        }
+        this.state = SubscriptionState.ACTIVE;
+        this.startedAt = require(now);
+        this.currentPeriodEnd = requirePlan(plan).periodEndFrom(now);
+        this.updatedAt = now;
+    }
+
+    /**
+     * One more period, paid for by the creator — #449.
+     *
+     * <p>From the end of the running period, so renewing early loses no days; from now if the
+     * period has already run out, so a renewal paid late is not a period that is partly over
+     * before it starts. Paying is also the clearest way of withdrawing a cancellation, so it
+     * clears one.
+     *
+     * <p>The price and billing period are this row's own snapshot: what the creator renews is what
+     * they bought, whatever the plan costs new buyers today.
+     */
+    public void renew(Instant now) {
+        if (state != SubscriptionState.ACTIVE) {
+            throw new IllegalStateException("Only an active subscription can be renewed");
+        }
+        Instant from = currentPeriodEnd.isAfter(require(now)) ? currentPeriodEnd : now;
+        this.currentPeriodEnd = billingPeriod.endOf(from);
+        this.cancelAtPeriodEnd = false;
+        this.canceledAt = null;
+        this.updatedAt = now;
+    }
+
+    /**
+     * What a card payment made now would buy — #449. Empty when nothing is due.
+     *
+     * <p>The first period of a subscription waiting for payment, or the next period of a priced one
+     * that is still running and whose end is inside the renewal window. A lapsed subscription is
+     * bought again rather than renewed, through {@code Subscriptions.subscribe}.
+     *
+     * @param renewalWindow how long before the end of a period renewing it is offered
+     */
+    public Optional<DuePayment> paymentDueAt(Instant now, Duration renewalWindow) {
+        if (state == SubscriptionState.PENDING_PAYMENT) {
+            return Optional.of(DuePayment.FIRST_PERIOD);
+        }
+        if (price.signum() > 0 && entitlesAt(now) && !now.isBefore(renewalOpensAt(renewalWindow))) {
+            return Optional.of(DuePayment.RENEWAL);
+        }
+        return Optional.empty();
+    }
+
+    /** When renewing this period is first offered, or null for a row with no running period. */
+    public Instant renewalOpensAt(Duration renewalWindow) {
+        if (state != SubscriptionState.ACTIVE || currentPeriodEnd == null || price.signum() == 0) {
+            return null;
+        }
+        return currentPeriodEnd.minus(renewalWindow);
+    }
+
+    /** What paying for this subscription now would be for. */
+    public enum DuePayment {
+        FIRST_PERIOD,
+        RENEWAL
     }
 
     /**

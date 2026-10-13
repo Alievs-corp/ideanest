@@ -7,9 +7,11 @@ import az.ideanest.payment.domain.PaymentLookup;
 import az.ideanest.payment.domain.PaymentProvider;
 import az.ideanest.payment.domain.PaymentTransaction;
 import az.ideanest.payment.domain.ProviderUnavailableException;
+import az.ideanest.payment.domain.SubscriptionCharge;
 import az.ideanest.payment.infrastructure.HostedChargeCheckRepository;
 import az.ideanest.payment.infrastructure.HostedChargeCheckRepository.State;
 import az.ideanest.payment.infrastructure.PaymentTransactionRepository;
+import az.ideanest.payment.infrastructure.SubscriptionChargeRepository;
 import az.ideanest.shared.jobs.ScheduledJob;
 import java.time.Clock;
 import java.time.Instant;
@@ -19,6 +21,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -46,6 +49,9 @@ import org.springframework.transaction.support.TransactionTemplate;
  *   <li><strong>Pending, or not answered</strong>, goes to the back of the queue
  *       ({@code hosted_charge_checks}) and is asked again on a later pass, until {@code asked-for}
  *       after it was opened. A page abandoned unpaid stays pending at some providers for ever.
+ *   <li><strong>Plan pages too</strong> (#449). A creator who paid for a period and was never told
+ *       is the same failure, so {@code subscription_charges} is asked about on the same pass, with
+ *       the same window, and settled through {@link SubscriptionChargeEvents}.
  * </ul>
  */
 @Component
@@ -57,6 +63,8 @@ public class HostedChargeSweepJob implements ScheduledJob {
     private final HostedChargeCheckRepository checks;
     private final PaymentProviders providers;
     private final HostedChargeEvents settlement;
+    private final SubscriptionChargeRepository planCharges;
+    private final SubscriptionChargeEvents planSettlement;
     private final HostedChargeMetrics metrics;
     private final PaymentProperties.HostedCharges properties;
     private final TransactionTemplate transaction;
@@ -67,6 +75,8 @@ public class HostedChargeSweepJob implements ScheduledJob {
             HostedChargeCheckRepository checks,
             PaymentProviders providers,
             HostedChargeEvents settlement,
+            SubscriptionChargeRepository planCharges,
+            SubscriptionChargeEvents planSettlement,
             HostedChargeMetrics metrics,
             PaymentProperties properties,
             PlatformTransactionManager transactionManager,
@@ -75,6 +85,8 @@ public class HostedChargeSweepJob implements ScheduledJob {
         this.checks = checks;
         this.providers = providers;
         this.settlement = settlement;
+        this.planCharges = planCharges;
+        this.planSettlement = planSettlement;
         this.metrics = metrics;
         this.properties = properties.hostedCharges();
         this.transaction = new TransactionTemplate(transactionManager);
@@ -131,7 +143,82 @@ public class HostedChargeSweepJob implements ScheduledJob {
         metrics.attention(
                 checks.unsettledLastAnswered(State.RETURNED, windowStart),
                 checks.unsettledLastAnswered(State.UNANSWERED, windowStart));
+        return settled + sweepPlans(now);
+    }
+
+    /** #449: the plan pages, asked about the same way. @return how many this pass settled */
+    int sweepPlans(Instant now) {
+        List<SubscriptionCharge> unsettled = planCharges.unsettled(
+                now.minus(properties.askedFor()), now.minus(properties.answeredAfter()), Limit.of(properties.perPass()));
+        int settled = 0;
+        for (SubscriptionCharge pending : unsettled) {
+            try {
+                if (settlePlan(pending, now)) {
+                    settled++;
+                }
+            } catch (RuntimeException e) {
+                log.error(
+                        "hosted-charge-sweep: could not settle plan payment {}; the next pass asks again.",
+                        pending.getProviderTransactionId(),
+                        e);
+                markChecked(pending, now);
+            }
+        }
+        if (settled > 0) {
+            log.warn("hosted-charge-sweep: settled {} of {} plan payment pages whose callback never came.",
+                    settled, unsettled.size());
+        }
         return settled;
+    }
+
+    private boolean settlePlan(SubscriptionCharge pending, Instant now) {
+        String reference = pending.getProviderTransactionId();
+        Optional<PaymentProvider> provider = providers.byName(pending.getProvider());
+        if (provider.isEmpty()) {
+            markChecked(pending, now);
+            return false;
+        }
+        PaymentLookup lookup;
+        try {
+            lookup = provider.get().lookUpPayment(reference);
+        } catch (UnsupportedOperationException | ProviderUnavailableException e) {
+            log.info("hosted-charge-sweep: plan payment {} stays pending: {}", reference, e.getMessage());
+            markChecked(pending, now);
+            return false;
+        }
+        PaymentEventType type = switch (lookup.state()) {
+            case SUCCEEDED -> PaymentEventType.CHARGE_SUCCEEDED;
+            case FAILED -> PaymentEventType.CHARGE_FAILED;
+            case PENDING -> null;
+            case RETURNED -> {
+                log.error(
+                        "hosted-charge-sweep: plan payment {} for subscription {} was paid and returned without a"
+                                + " callback; a person decides the subscription.",
+                        reference,
+                        pending.getSubscriptionId());
+                yield null;
+            }
+        };
+        if (type == null) {
+            markChecked(pending, now);
+            return false;
+        }
+        String raw = lookup.rawResponse() == null || lookup.rawResponse().isBlank()
+                ? "{\"lookup\":\"" + lookup.state() + "\"}"
+                : lookup.rawResponse();
+        PaymentEvent answered = new PaymentEvent(
+                pending.getProvider(), "sweep:" + reference + ":" + lookup.state(), type, reference, null, null, raw);
+        Optional<String> outcome = transaction.execute(status -> planSettlement.handle(answered));
+        metrics.settled(type);
+        log.info("hosted-charge-sweep: {}.", outcome.orElse("plan payment " + reference + " settled"));
+        return true;
+    }
+
+    private void markChecked(SubscriptionCharge pending, Instant now) {
+        transaction.executeWithoutResult(status -> planCharges.findById(pending.getId()).ifPresent(charge -> {
+            charge.checked(now);
+            planCharges.save(charge);
+        }));
     }
 
     private boolean settle(PaymentTransaction pending, Instant now) {

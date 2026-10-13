@@ -2514,13 +2514,37 @@ is either a gift — the operator raised what a plan allows, and everybody on it
 gets that — or a reduction, which reaches only their next submission. §7.2's
 `subscriptions` carries the argument in full.
 
-**A paid plan is bought in two steps, because no payment provider is
-integrated.** §9.2 ships no adapter while #60 is unanswered, so a priced plan is
-written `PENDING_PAYMENT` and a member of staff records that the transfer
-arrived, audited under their name. That is how a platform with no processor
-sells — an invoice and a bank transfer — rather than a stub pretending to be one.
-A plan priced at zero activates on the spot. When #60 lands, the provider's
-callback replaces the second step and nothing above it changes.
+**A paid plan is bought in two steps.** A priced plan is written
+`PENDING_PAYMENT`, and the period opens when the money arrives: by card on the
+provider's page (#449), or by bank transfer that a member of staff records,
+audited under their name. A plan priced at zero activates on the spot.
+
+**Every period is paid by the creator, on purpose (epic #448).** There is no
+stored card and nothing is charged on a schedule. Inside the renewal window
+before a period ends (`ideanest.subscription.renewal-window`, seven days), the
+creator is reminded and may pay for the next period on the provider's page;
+paying extends the same row by one billing period **from the old end**, so
+renewing early loses no days, or from the payment if the period had already run
+out. A lapsed plan is not renewed but bought again. Why not `cardSave` and
+`autoPay`: nobody is charged without acting, which means no standing
+merchant-initiated consent in the terms and no chargebacks on a provider that
+keeps its fee on a refund. The renewal price is the subscription's own snapshot,
+so a repricing reaches new buyers only.
+
+| | |
+|---|---|
+| Opened by | `POST /v1/me/subscription/payment` → `SubscriptionCardPayments.pay` → `payment.SubscriptionCheckout` |
+| Recorded in | `subscription_charges` (V102), the page's life; `subscription_payments`, the receipt (`CARD`, `recorded_by` null) |
+| Settled by | `SubscriptionChargeEvents` on the provider's callback, or `hosted-charge-sweep` when it never came |
+| What the money buys | Decided under a row lock when it arrives: pending → first period, active → one more period, ended → `UNAPPLIED`, refunded by a person |
+| Refusals | `SUBSCRIPTION_PAYMENT_NOT_DUE` (409, `reason` `FREE_PLAN` / `RENEWAL_NOT_OPEN` / `LAPSED`), `PAYMENT_UNAVAILABLE` (503) |
+
+The payment module owns the page and the subscription module owns what it
+means: `subscription` already depends on `payment` through `admin`, so the
+settlement crosses back through `payment.application.SubscriptionChargeSettlement`,
+which the subscription module implements, rather than as a cycle. A plan's price
+is not posted to the ledger: it is the platform's revenue, not money held for a
+creator, and its record is `subscription_payments`.
 
 **What the platform was paid is written down separately, and it is not the
 subscription row.** A subscription carries a price; it does not carry a receipt.
@@ -2880,6 +2904,7 @@ with the record (`refundedSincePriced`) for recovery by hand, as an unconfirmed 
 ```
 a priced plan  →  PENDING_PAYMENT  →  ACTIVE  →  EXPIRED
 a free plan    →                      ACTIVE     (its period ended)
+                                      ACTIVE  →  ACTIVE   (renewed by card, #449)
 
                   PENDING_PAYMENT  →  CANCELED  ←  ACTIVE
                   (abandoned, or staff ended it)
@@ -5095,7 +5120,9 @@ DELETE /v1/admin/maintenance/{id}        # cancels a window that has not started
 # Creator subscriptions -- §5.6
 GET    /v1/plans                         # the catalogue on sale. Public and cacheable: a price list behind authentication is one nobody can decide to buy from
 GET    /v1/me/subscription               # what this account holds, or nothing. 200 with a null subscription rather than 404
-POST   /v1/me/subscription               # buy a plan. A priced one comes back PENDING_PAYMENT, because nothing charges a card yet (#60)
+POST   /v1/me/subscription               # buy a plan. A priced one comes back PENDING_PAYMENT with paymentDue FIRST_PERIOD
+POST   /v1/me/subscription/payment       # #449: open the provider's page for what is due now -- the first period, or the next one inside
+                                         # the renewal window. Idempotency-Key; a second key while a page is open returns that page
 DELETE /v1/me/subscription               # cancel: keeps the period that was paid for, stops the renewal
 GET    /v1/admin/plans                   # AD-11; every plan, retired ones included. CONFIGURE_PLATFORM
 POST   /v1/admin/plans                   # add one; on sale from the moment it is written
