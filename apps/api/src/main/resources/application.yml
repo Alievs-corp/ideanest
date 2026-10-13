@@ -793,6 +793,12 @@ ideanest:
       # once every node runs the release that reads the new refund states (V99):
       #   IDEANEST_PAYMENT_REFUNDS_WINDOWS_PAYRIFF=P28D
       # (no `windows:` key here: an absent map is the unlimited default.)
+    # #401: what each provider keeps out of a charge, as a fraction. Posted with the charge,
+    # out of escrow to `psp_fee`, because the money never reaches the platform. Payriff
+    # confirmed 3% on 2026-10-12 (#387). A provider with no entry posts no fee.
+    provider-fees:
+      rates:
+        payriff: ${PAYRIFF_FEE_RATE:0.03}
     # #353: `hosted-charge-sweep`. A payment page is settled by the provider's callback; this
     # asks the provider about pages still pending after `answered-after`, so a callback lost
     # for good does not leave a backer who paid with a pledge that never confirms. Settles

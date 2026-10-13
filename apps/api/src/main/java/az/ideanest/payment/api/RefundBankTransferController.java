@@ -5,7 +5,9 @@ import az.ideanest.payment.domain.RefundBankTransfer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +89,11 @@ public class RefundBankTransferController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(one(bankRefunds.recordTransfer(
-                        callerOf(accessToken), refundId, request.bankReference(), request.transferredOn())));
+                        callerOf(accessToken),
+                        refundId,
+                        request.bankReference(),
+                        request.transferredOn(),
+                        request.bankFee() == null ? null : new BigDecimal(request.bankFee()))));
     }
 
     /**
@@ -114,8 +120,13 @@ public class RefundBankTransferController {
      *
      * @param bankReference the bank's reference for the payment, as the statement shows it
      * @param transferredOn the day it left IdeyaNest's account, not after today
+     * @param bankFee what the bank charged for the transfer, in the refund's currency, as a decimal
+     *     string; absent or zero when it charged nothing (#401)
      */
-    public record TransferRequest(@NotBlank @Size(max = 100) String bankReference, @NotNull LocalDate transferredOn) {
+    public record TransferRequest(
+            @NotBlank @Size(max = 100) String bankReference,
+            @NotNull LocalDate transferredOn,
+            @Pattern(regexp = "^\\d{1,12}(\\.\\d{1,2})?$") String bankFee) {
     }
 
     private PaymentAdminResponses.Refund one(az.ideanest.payment.domain.Refund refund) {

@@ -2148,6 +2148,14 @@ is withdrawn.
 > apart from `refunds` (backers' money going back). **Nothing posts to it yet**: Epoint's `/reverse`
 > reports no fee, and a cost posted without a transaction would put escrow out of agreement with
 > reconciliation's record of what moved — the amount a refund costs is a question for Epoint.
+>
+> **Posted since #401.** A bank's charge for a transfer out of IdeyaNest's account — a payout or a
+> refund paid by bank — is entered by finance with the transfer (`bankFee`, optional) and leaves
+> escrow for `platform_expense` in the transfer's own posting; it never reduces what the creator or
+> the backer receives. The reconciliation adds `platform_expense` to escrow beside `psp_fee`, so a
+> cost with no transaction row of its own still agrees with what moved. The provider's commission on
+> a charge is a different fee, posted to `psp_fee` with the charge (§9.5), and a refund does not
+> reverse it: Payriff keeps it (#387).
 
 Rates are configuration, not code — a `fee_schedules` table, so a category or an
 individual agreement can differ without a deployment.
@@ -4381,7 +4389,23 @@ through that enum and every node must know a value before any node writes it.
 account and recorded from the bank statement (§6.3 has the steps). The record is a `PAYOUT`
 transaction whose provider is `BANK_TRANSFER` and whose `provider_transaction_id` is the bank's
 reference, with the same posting a provider's payout gets: the creator's account debited and escrow
-credited. **Escrow therefore spans two places** — the provider's balance, which collections arrive
+credited.
+
+**The payout posting closes the campaign, since #401.** A collection credits the creator's account
+with the whole charge, so a payout that debited only the net left the fees, the refunds and the
+withheld debt standing there as a claim the creator did not have. Every paid payout — sent, settled
+from a statement, or paid by bank — now debits the creator's account with the priced gross and
+credits escrow with the net, `platform_fee` with the platform and processing fees, `tax_payable`
+with any tax, and `refunds` with what the creator bore (the refunds and the chargeback debt the
+payout withheld). The creator's account ends at zero, escrow keeps the fees, and `refunds` holds
+what went back that no creator has borne. `platform_fee` and `tax_payable` are credits, so the
+reconciliation's sign check leaves them out. A payout withheld whole against debts (net zero) has
+no transaction and still posts nothing. **The provider's commission is posted with the charge**:
+`ideanest.payment.provider-fees.rates` (Payriff `0.03`, `PAYRIFF_FEE_RATE`) takes it out of escrow
+to `psp_fee`, because it never reaches the platform. A provider with no rate posts none. The
+provider's settlement report stays the authority on the figure.
+
+**Escrow therefore spans two places** — the provider's balance, which collections arrive
 in, and IdeyaNest's bank account, which bank transfers leave from — and the ledger does not
 distinguish them. `ledger-reconciliation`'s three checks still balance, because they sum every
 provider together. A comparison against a provider's settlement report, when one is written,

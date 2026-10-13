@@ -6,7 +6,9 @@ import az.ideanest.payout.domain.PayoutState;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
@@ -249,6 +251,7 @@ public class PayoutController {
                         payoutId,
                         request.bankReference().trim(),
                         request.transferredOn(),
+                        request.bankFee() == null ? null : new BigDecimal(request.bankFee()),
                         request.note().trim())));
     }
 
@@ -300,10 +303,13 @@ public class PayoutController {
      *
      * @param bankReference the bank's reference for the transfer, as the statement shows it
      * @param transferredOn the transfer's value date, as the statement shows it
+     * @param bankFee what the bank charged for the transfer, in the payout's currency, as the statement
+     *     shows it, as a decimal string; absent or zero when it charged nothing (#401)
      */
     public record RecordBankTransferRequest(
             @NotBlank @Size(max = 200) String bankReference,
             @NotNull LocalDate transferredOn,
+            @Pattern(regexp = "^\\d{1,12}(\\.\\d{1,2})?$") String bankFee,
             @NotBlank @Size(max = 2000) String note) {
     }
 

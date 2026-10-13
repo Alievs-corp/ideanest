@@ -80,6 +80,26 @@ class LedgerReconciliationTests {
         assertThat(report.runAt()).isEqualTo(NOW);
     }
 
+    /**
+     * #401's books for one campaign: a charge the provider took 3% of, and a payout by bank transfer
+     * that split the gross, closed the creator's account and cost a bank fee. The platform fee is a
+     * credit, which is what revenue is, and is not an impossible sign.
+     */
+    @Test
+    @DisplayName("a paid-out campaign with the provider's fee, the platform's fee and a bank fee balances")
+    void theFeeSplitBalances() {
+        booksOf(
+                balance("escrow", "118.80"),
+                balance("psp_fee", "30.00"),
+                balance("platform_fee", "-150.00"),
+                balance("platform_expense", "1.20"));
+        settled(total(TransactionType.CHARGE, "1000.00"), total(TransactionType.PAYOUT, "850.00"));
+
+        ReconciliationReport report = reconciliation.reconcile();
+
+        assertThat(report.findings()).isEmpty();
+    }
+
     @Test
     @DisplayName("a platform that has taken nothing is balanced rather than unchecked")
     void anEmptyPlatformBalances() {

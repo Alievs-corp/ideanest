@@ -45,21 +45,28 @@ public class PayoutPostings {
      * fact worth keeping — a reconciliation against the provider's statement needs it, and
      * so does the creator asking why they have not been paid.
      *
-     * <p>The posting is the counterpart of the collection's. A collection debits escrow and
-     * credits the creator's account; this debits the creator's account and credits escrow,
-     * discharging the claim as the money leaves. <strong>The fees are not touched</strong>
-     * — they were taken at collection, and taking them again here would charge twice.
+     * <p>The posting is the counterpart of the collection's, and closes the campaign (#401). A
+     * collection debits escrow and credits the creator's account with the whole charge; this
+     * debits the creator's account with the gross and credits escrow with the net, the
+     * platform's fees to {@code platform_fee}, any tax to {@code tax_payable}, and what the
+     * creator bore — refunds and withheld debt — to {@code refunds}. The creator's account ends
+     * at zero, and escrow keeps the fees. A bank's charge for the transfer is the platform's
+     * cost and leaves escrow for {@code platform_expense}.
+     *
+     * @param bankFee what the bank charged for the transfer, or zero
      */
     @Transactional
     PayoutGateway.Sent record(
             UUID payoutId,
             UUID projectId,
             UUID creatorId,
-            Money amount,
+            PayoutFigures figures,
+            Money bankFee,
             ProviderName provider,
             PayoutResult result,
             String idempotencyKey) {
 
+        Money amount = figures.net();
         PaymentTransaction recorded =
                 transactions.save(PaymentTransaction.payout(projectId, amount, provider, result, idempotencyKey));
 
@@ -70,8 +77,13 @@ public class PayoutPostings {
         }
 
         ledger.post(Posting.of(recorded.getId(), projectId)
-                .debit(LedgerAccount.creator(creatorId), amount)
-                .credit(LedgerAccount.ESCROW, amount)
+                .debit(LedgerAccount.creator(creatorId), figures.gross())
+                .creditIfAny(LedgerAccount.ESCROW, amount)
+                .creditIfAny(LedgerAccount.PLATFORM_FEE, figures.fees())
+                .creditIfAny(LedgerAccount.TAX_PAYABLE, figures.tax())
+                .creditIfAny(LedgerAccount.REFUNDS, figures.borne())
+                .debitIfAny(LedgerAccount.PLATFORM_EXPENSE, bankFee)
+                .creditIfAny(LedgerAccount.ESCROW, bankFee)
                 .build());
 
         log.info("Payout {} of {} sent for campaign {}", payoutId, amount, projectId);

@@ -20,6 +20,7 @@ import az.ideanest.shared.crypto.FieldCipher;
 import az.ideanest.shared.crypto.FieldCipherConfiguration;
 import az.ideanest.shared.crypto.Sealed;
 import az.ideanest.shared.money.Money;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
@@ -203,11 +204,12 @@ public class RefundBankTransfers {
      * Finance made the transfer. Settles the refund as {@code RefundRecords#settleByBankTransfer} says,
      * and replays: the same reference again answers the settled refund.
      */
-    public Refund recordTransfer(UUID staffId, UUID refundId, String bankReference, LocalDate transferredOn) {
+    public Refund recordTransfer(
+            UUID staffId, UUID refundId, String bankReference, LocalDate transferredOn, BigDecimal bankFee) {
         staff.requireCapability(staffId, StaffCapability.ISSUE_REFUND);
         Objects.requireNonNull(bankReference, "bankReference");
         Objects.requireNonNull(transferredOn, "transferredOn");
-        return records.settleByBankTransfer(staffId, refundId, bankReference, transferredOn);
+        return records.settleByBankTransfer(staffId, refundId, bankReference, transferredOn, bankFee);
     }
 
     /**

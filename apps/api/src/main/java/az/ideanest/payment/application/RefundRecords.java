@@ -23,6 +23,7 @@ import az.ideanest.payment.infrastructure.RefundRepository;
 import az.ideanest.pledge.application.PledgeRefunds;
 import az.ideanest.shared.money.Money;
 import az.ideanest.shared.outbox.Outbox;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -306,14 +307,14 @@ public class RefundRecords {
                         && result.providerTransactionId().equals(charge.getProviderTransactionId())
                 ? new RefundResult(result.outcome(), null, result.failureCode(), result.failureMessage(), result.rawResponse())
                 : result;
-        return settle(current, charge.getProvider(), stored, refund.idempotencyKey());
+        return settle(current, charge.getProvider(), stored, refund.idempotencyKey(), Money.zero(refund.amount().currency()));
     }
 
     /**
      * What {@link #settleSuccess} and {@link #settleByBankTransfer} share: the transaction row, the ledger
      * posting, the state and the pledge, under the lock the caller took.
      */
-    private Refund settle(Refund current, ProviderName provider, RefundResult stored, String transactionKey) {
+    private Refund settle(Refund current, ProviderName provider, RefundResult stored, String transactionKey, Money bankFee) {
         Refund refund = current;
         PaymentTransaction recorded = transactions.save(PaymentTransaction.refund(
                 refund.pledgeId(),
@@ -326,6 +327,8 @@ public class RefundRecords {
         ledger.post(Posting.of(recorded.getId(), refund.projectId())
                 .debit(LedgerAccount.REFUNDS, refund.amount())
                 .credit(LedgerAccount.ESCROW, refund.amount())
+                .debitIfAny(LedgerAccount.PLATFORM_EXPENSE, bankFee)
+                .creditIfAny(LedgerAccount.ESCROW, bankFee)
                 .build());
 
         current.succeeded(recorded.getId(), clock.instant().truncatedTo(ChronoUnit.MICROS));
@@ -470,9 +473,13 @@ public class RefundRecords {
      * Refused too, under the pledge's lock: while the charge is in an open chargeback (the network may
      * return the money itself), by the person who recorded the account, and with a bank reference already
      * recorded for another backer's refund.
+     *
+     * <p>What the bank charged for the transfer is the platform's cost (#401): it leaves escrow for
+     * {@code platform_expense} in the same posting and never reduces what the backer gets back.
      */
     @Transactional
-    Refund settleByBankTransfer(UUID staffId, UUID refundId, String bankReference, LocalDate transferredOn) {
+    Refund settleByBankTransfer(
+            UUID staffId, UUID refundId, String bankReference, LocalDate transferredOn, BigDecimal bankFee) {
         Refund found = refunds.findById(refundId)
                 .orElseThrow(() -> new BankRefundRefusedException(Reason.REFUND_NOT_FOUND, refundId));
         pledges.lock(found.pledgeId());
@@ -501,6 +508,7 @@ public class RefundRecords {
             throw new BankRefundRefusedException(Reason.BANK_REFERENCE_TAKEN, refundId);
         }
 
+        Money fee = bankFee == null ? Money.zero(current.amount().currency()) : Money.of(bankFee, current.amount().currency());
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("bankReference", reference);
         response.put("transferredOn", transferredOn.toString());
@@ -508,7 +516,8 @@ public class RefundRecords {
                 current,
                 ProviderName.BANK_TRANSFER,
                 new RefundResult(ProviderOutcome.APPROVED, null, null, null, json.writeValueAsString(response)),
-                current.idempotencyKey() + "-bank");
+                current.idempotencyKey() + "-bank",
+                fee);
         RefundBankTransfer paid = row.get();
         paid.transferred(reference, transferredOn, staffId, now);
         bankTransfers.save(paid);
@@ -517,8 +526,8 @@ public class RefundRecords {
                 refundId,
                 AuditActor.moderator(staffId),
                 AuditOutcome.SUCCEEDED,
-                "pledge=%s; amount=%s; account=%s; reference=%s; transferredOn=%s"
-                        .formatted(current.pledgeId(), current.amount(), paid.ibanHint(), reference, transferredOn));
+                "pledge=%s; amount=%s; account=%s; reference=%s; transferredOn=%s; bankFee=%s"
+                        .formatted(current.pledgeId(), current.amount(), paid.ibanHint(), reference, transferredOn, fee));
         announceTransferred(current, paid.ibanHint(), transferredOn, now);
         return settled;
     }

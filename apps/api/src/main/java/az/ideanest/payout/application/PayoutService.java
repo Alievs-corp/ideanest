@@ -10,6 +10,7 @@ import az.ideanest.payment.application.CampaignFunds;
 import az.ideanest.payment.application.CreatorDebts;
 import az.ideanest.payment.application.NoPayoutProviderException;
 import az.ideanest.payment.application.PayoutGateway;
+import az.ideanest.payment.application.PayoutFigures;
 import az.ideanest.payout.PayoutProperties;
 import az.ideanest.payout.domain.Payout;
 import az.ideanest.payout.domain.PayoutApproval;
@@ -29,6 +30,7 @@ import az.ideanest.shared.money.Money;
 import az.ideanest.shared.outbox.Outbox;
 import az.ideanest.shared.project.ProjectSummaries;
 import az.ideanest.shared.project.ProjectSummary;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -705,7 +707,7 @@ public class PayoutService {
                 payoutId,
                 payout.projectId(),
                 payout.creatorId(),
-                payout.net(),
+                figuresOf(payout),
                 destinationReference,
                 payout.idempotencyKey());
 
@@ -786,7 +788,7 @@ public class PayoutService {
                 payoutId,
                 payout.projectId(),
                 payout.creatorId(),
-                payout.net(),
+                figuresOf(payout),
                 providerTransactionId,
                 payout.idempotencyKey());
         payout.paid(recorded.transactionId(), now);
@@ -1011,6 +1013,8 @@ public class PayoutService {
      *
      * @param transferredOn the value date on the statement: not after today, and not before the day the
      *     transfer was started
+     * @param bankFee what the bank charged for the transfer, in the payout's currency, or null for none.
+     *     Posted to {@code platform_expense} (#401)
      * @throws SelfPaidPayoutException when the member of staff is the payout's creator
      * @throws PayoutBankTransferNotStartedException when no transfer was started
      * @throws BankTransferDateOutOfRangeException when the date cannot be the transfer's
@@ -1022,7 +1026,7 @@ public class PayoutService {
      */
     @Transactional
     public Payout recordBankTransfer(
-            UUID staffId, UUID payoutId, String bankReference, LocalDate transferredOn, String note) {
+            UUID staffId, UUID payoutId, String bankReference, LocalDate transferredOn, BigDecimal bankFee, String note) {
         staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
         Objects.requireNonNull(bankReference, "bankReference");
         Objects.requireNonNull(transferredOn, "transferredOn");
@@ -1036,9 +1040,10 @@ public class PayoutService {
                     payoutId,
                     payout.projectId(),
                     payout.creatorId(),
-                    payout.net(),
+                    figuresOf(payout),
                     bankReference,
                     payout.bankTransferredOn(),
+                    Money.zero(payout.currency()),
                     payout.idempotencyKey());
             return payout;
         }
@@ -1060,13 +1065,15 @@ public class PayoutService {
             throw new CampaignAlreadyPaidOutException(payout.projectId(), alreadyPaid.get().id());
         }
 
+        Money fee = bankFee == null ? Money.zero(payout.currency()) : Money.of(bankFee, payout.currency());
         PayoutGateway.Sent recorded = gateway.recordBankTransfer(
                 payoutId,
                 payout.projectId(),
                 payout.creatorId(),
-                payout.net(),
+                figuresOf(payout),
                 bankReference,
                 transferredOn,
+                fee,
                 payout.idempotencyKey());
         payout.paidByBankTransfer(recorded.transactionId(), transferredOn, now);
         if (payout.debtWithheld().isPositive()) {
@@ -1086,11 +1093,12 @@ public class PayoutService {
                 payoutId,
                 AuditActor.moderator(staffId),
                 AuditOutcome.SUCCEEDED,
-                "bankTransfer; amount=%s; bankReference=%s; transferredOn=%s; startedBy=%s; refundedSincePriced=%s; note=%s"
+                "bankTransfer; amount=%s; bankReference=%s; transferredOn=%s; bankFee=%s; startedBy=%s; refundedSincePriced=%s; note=%s"
                         .formatted(
                                 payout.net(),
                                 bankReference,
                                 transferredOn,
+                                fee,
                                 payout.bankTransferStartedBy(),
                                 movedSince,
                                 note));
@@ -1131,6 +1139,20 @@ public class PayoutService {
 
         log.info("Bank transfer for payout {} abandoned by {}", payoutId, staffId);
         return payout;
+    }
+
+    /**
+     * What a paid payout settles in the ledger — #401: the gross off the creator's account, the fees to
+     * the platform, what the creator bore back to {@code refunds}, the net out of escrow. Read from the
+     * row, as priced, and never recomputed.
+     */
+    private static PayoutFigures figuresOf(Payout payout) {
+        return new PayoutFigures(
+                payout.gross(),
+                payout.platformFee().plus(payout.processingFee()),
+                payout.taxWithheld(),
+                payout.refunded().plus(payout.debtWithheld()),
+                payout.net());
     }
 
     /**
