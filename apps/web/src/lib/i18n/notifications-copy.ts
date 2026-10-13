@@ -85,6 +85,11 @@ function sharedFrom(t: NotificationsTranslator): NotificationsCopy {
     unnamed: record('unnamed'),
     amount: record('amount'),
     due: { on: String(t.raw('due.on')), unknown: t('due.unknown') },
+    sent: {
+      on: String(t.raw('sent.on')),
+      onTo: String(t.raw('sent.onTo')),
+      unknown: t('sent.unknown'),
+    },
     category: record('category'),
     categoryDescription: record('categoryDescription'),
     channel: record('channel'),

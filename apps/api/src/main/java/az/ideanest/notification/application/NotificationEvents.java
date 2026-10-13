@@ -3,6 +3,7 @@ package az.ideanest.notification.application;
 import az.ideanest.shared.money.Money;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -365,6 +366,44 @@ public final class NotificationEvents {
     public record RefundNeedsBankDetails(UUID refundId, UUID pledgeId, UUID projectId, UUID backerId, Instant routedAt) {
 
         public static final String EVENT_TYPE = "refund.needs_bank_details";
+    }
+
+    /**
+     * {@code payout.paid} — #418. Recipient: the creator alone. Recorded by the payout module's
+     * {@code PayoutPaidEvent} on every route that marks a payout paid.
+     *
+     * @param paidOn the bank's value date, or the day it was sent or settled; a calendar day
+     * @param accountHint the masked account a bank transfer went to, or null on the provider's route
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record PayoutPaid(
+            UUID projectId,
+            UUID creatorId,
+            UUID payoutId,
+            Money amount,
+            LocalDate paidOn,
+            String accountHint,
+            Instant paidAt) {
+
+        public static final String EVENT_TYPE = "payout.paid";
+    }
+
+    /**
+     * {@code refund.sent_by_bank} — #418. Recipient: the backer alone, once per part of their refund
+     * that finance recorded as transferred, from the payment module's {@code RefundSentByBankEvent}.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record RefundSentByBank(
+            UUID refundId,
+            UUID pledgeId,
+            UUID projectId,
+            UUID backerId,
+            Money amount,
+            LocalDate transferredOn,
+            String ibanHint,
+            Instant recordedAt) {
+
+        public static final String EVENT_TYPE = "refund.sent_by_bank";
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

@@ -41,7 +41,10 @@ public class NotificationFacts {
     /** The session list. Where {@code NEW_DEVICE_SIGN_IN} goes on every channel. */
     private static final String SESSIONS = "/settings/sessions";
 
-    /** The payout settings. Where {@code PAYOUT_DETAILS_NEEDED} goes on every channel (#411). */
+    /**
+     * The payout settings. Where {@code PAYOUT_DETAILS_NEEDED} goes on every channel (#411), and since
+     * #418 {@code PAYOUT_SENT}: the screen that shows the account the money went to.
+     */
     private static final String PAYOUT_SETTINGS = "/settings/payout";
 
     private final ObjectMapper json;
@@ -118,12 +121,16 @@ public class NotificationFacts {
             // updates, #84 comments, and #90 saving and following. Each reads the amount
             // its future event will carry where an amount is the point of the message, and
             // nothing where it is not.
-            case PAYOUT_SENT -> facts.withAmount(money(params, "amount"));
             case WITHDRAWAL_REQUESTED -> facts.withDetail(text(params, "disputeUntil"));
             case PAYOUT_DETAILS_NEEDED -> facts.withDetail(text(params, "payableAt"));
             // #399. No amount: the refund of a raised pledge is routed one charge at a time, and the
             // first part's amount would read as the whole of what is owed.
             case REFUND_NEEDS_BANK_DETAILS -> facts;
+            // #418. Both say what was paid, on which day, and -- in a paragraph of its own, because a
+            // provider's payout has no account to name -- the masked account it went to. Never the number.
+            case PAYOUT_SENT, REFUND_SENT_BY_BANK -> facts.withAmount(money(params, "amount"))
+                    .withDetail(text(params, "sentOn"))
+                    .withAccount(text(params, "accountHint"));
             case NEW_UPDATE_PUBLISHED,
                     COMMENT_REPLY,
                     DIRECT_MESSAGE,
@@ -201,7 +208,8 @@ public class NotificationFacts {
     /**
      * {@link #pathFor}'s first two sources and none of its fallbacks, or null. Since #399 a refund
      * waiting for the backer's bank account goes to their pledge instead, which both the web and the
-     * application have a screen for.
+     * application have a screen for, and since #418 so does a refund sent by bank, while a paid payout
+     * goes to the payout settings.
      *
      * <p>The session list for {@code NEW_DEVICE_SIGN_IN}, the payout settings for
      * {@code PAYOUT_DETAILS_NEEDED}, otherwise the campaign. These are the destinations the web
@@ -210,13 +218,13 @@ public class NotificationFacts {
      * why push sends this rather than {@link #pathFor}.
      */
     public String appPathFor(NotificationType type, JsonNode params) {
-        if (type == NotificationType.REFUND_NEEDS_BANK_DETAILS) {
+        if (type == NotificationType.REFUND_NEEDS_BANK_DETAILS || type == NotificationType.REFUND_SENT_BY_BANK) {
             String pledge = text(params, "pledgeId");
             if (!pledge.isEmpty()) {
                 return "/pledges/" + encode(pledge);
             }
         }
-        if (type == NotificationType.PAYOUT_DETAILS_NEEDED) {
+        if (type == NotificationType.PAYOUT_DETAILS_NEEDED || type == NotificationType.PAYOUT_SENT) {
             return PAYOUT_SETTINGS;
         }
         return type == NotificationType.NEW_DEVICE_SIGN_IN ? SESSIONS : campaignPath(params);

@@ -11,9 +11,11 @@ import az.ideanest.notification.application.NotificationEvents.PledgeEdited;
 import az.ideanest.notification.application.NotificationEvents.ProjectApproved;
 import az.ideanest.notification.application.NotificationEvents.CampaignExtended;
 import az.ideanest.notification.application.NotificationEvents.PayoutDetailsNeeded;
+import az.ideanest.notification.application.NotificationEvents.PayoutPaid;
 import az.ideanest.notification.application.NotificationEvents.PayoutRequested;
 import az.ideanest.notification.application.NotificationEvents.ProjectLaunched;
 import az.ideanest.notification.application.NotificationEvents.RefundNeedsBankDetails;
+import az.ideanest.notification.application.NotificationEvents.RefundSentByBank;
 import az.ideanest.notification.application.NotificationEvents.UpdateDueSoon;
 import az.ideanest.notification.domain.NotificationType;
 import az.ideanest.shared.audience.AudienceProperties;
@@ -378,6 +380,51 @@ public class NotificationEventListener {
                         about(event.projectId(), "pledgeId", pledgeId),
                         at(event.routedAt(), message)));
             }
+            case PayoutPaid.EVENT_TYPE -> {
+                PayoutPaid event = read(message, PayoutPaid.class);
+                UUID projectId = required(event.projectId(), "projectId", message);
+                // The creator alone: the backers were told when the payout was requested. The date is the
+                // bank's value date or the day it was sent, already a calendar day; the hint, when there is
+                // one, is the masked account and never the number.
+                yield List.of(NotificationRequest.about(
+                        required(event.creatorId(), "creatorId", message),
+                        NotificationType.PAYOUT_SENT,
+                        PROJECT,
+                        projectId,
+                        about(
+                                projectId,
+                                "payoutId",
+                                event.payoutId(),
+                                "amount",
+                                required(event.amount(), "amount", message),
+                                "sentOn",
+                                required(event.paidOn(), "paidOn", message).toString(),
+                                "accountHint",
+                                blankToNull(event.accountHint())),
+                        at(event.paidAt(), message)));
+            }
+            case RefundSentByBank.EVENT_TYPE -> {
+                RefundSentByBank event = read(message, RefundSentByBank.class);
+                UUID pledgeId = required(event.pledgeId(), "pledgeId", message);
+                // To the pledge, like the request for the account before it: that is where the backer reads
+                // what is still owed.
+                yield List.of(NotificationRequest.about(
+                        required(event.backerId(), "backerId", message),
+                        NotificationType.REFUND_SENT_BY_BANK,
+                        PLEDGE,
+                        pledgeId,
+                        about(
+                                event.projectId(),
+                                "pledgeId",
+                                pledgeId,
+                                "amount",
+                                required(event.amount(), "amount", message),
+                                "sentOn",
+                                required(event.transferredOn(), "transferredOn", message).toString(),
+                                "accountHint",
+                                blankToNull(event.ibanHint())),
+                        at(event.recordedAt(), message)));
+            }
             case ProjectLaunched.EVENT_TYPE -> {
                 ProjectLaunched event = read(message, ProjectLaunched.class);
                 UUID projectId = required(event.projectId(), "projectId", message);
@@ -719,6 +766,11 @@ public class NotificationEventListener {
                     "A " + message.eventType() + " event " + message.id() + " carries no " + field);
         }
         return value;
+    }
+
+    /** A hint that is absent rather than blank, so the document carries no key the copy cannot use. */
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     /** The instant the event reports, which every type of event must carry. */

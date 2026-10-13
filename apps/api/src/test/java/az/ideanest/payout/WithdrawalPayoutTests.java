@@ -19,6 +19,8 @@ import az.ideanest.user.infrastructure.UserRepository;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -27,6 +29,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -249,6 +252,39 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("#418: a payout the provider sends tells its creator once, dated the day it was sent and naming no account")
+    void aSentPayoutTellsItsCreatorOnce() {
+        Funded funded = aFundedCampaign("payout-sent-told");
+        UUID payout = approvedAndSendable(funded);
+        Account admin = administrator();
+        provider.nextPayout(ProviderOutcome.APPROVED);
+
+        assertThat(post("/v1/admin/payouts/" + payout + "/send", admin.accessToken(), null, null).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(state(payout)).isEqualTo("PAID");
+        assertThat(post("/v1/admin/payouts/" + payout + "/send", admin.accessToken(), null, null).getStatusCode())
+                .as("sent once")
+                .isEqualTo(HttpStatus.CONFLICT);
+
+        List<String> events = paidEvents(payout);
+        assertThat(events).hasSize(1);
+        assertThat(events.getFirst())
+                .contains(funded.creator().id().toString())
+                .contains("\"paidOn\":\"" + sentOn(payout) + "\"")
+                .doesNotContainPattern("\"accountHint\":\"");
+
+        relay.run();
+        List<Map<String, Object>> told = jdbc().queryForList(
+                "SELECT DISTINCT recipient_id, params->>'sentOn' AS sent_on, (params->>'accountHint') IS NOT NULL AS hinted"
+                        + " FROM notifications WHERE type = 'PAYOUT_SENT' AND subject_id = ?",
+                funded.projectId());
+        assertThat(told).singleElement().satisfies(row -> assertThat(row)
+                .containsEntry("recipient_id", funded.creator().id())
+                .containsEntry("sent_on", sentOn(payout).toString())
+                .containsEntry("hinted", false));
+    }
+
+    @Test
     @DisplayName("#184's review: an unanswered send stays approved through a refused retry, until staff settle it as not sent")
     void anUnansweredSendIsSettledFromTheStatementAsNotSent() {
         Funded funded = aFundedCampaign("payout-unanswered-not-sent");
@@ -285,6 +321,7 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
 
         assertThat(settled.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(state(payout)).isEqualTo("FAILED");
+        assertThat(paidEvents(payout)).as("#418: nobody is told of money that did not move").isEmpty();
         assertThat(jdbc().queryForObject("SELECT failure_code FROM payouts WHERE id = ?", String.class, payout))
                 .isEqualTo("confirmed_not_sent");
         ResponseEntity<Map<String, Object>> again =
@@ -313,6 +350,18 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
 
         assertThat(settled.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(state(payout)).isEqualTo("PAID");
+        assertThat(paidEvents(payout))
+                .as("#418: told once, on the day it was settled from the statement")
+                .singleElement(InstanceOfAssertFactories.STRING)
+                .contains("\"paidOn\":\"" + sentOn(payout) + "\"");
+        assertThat(post(
+                                "/v1/admin/payouts/" + payout + "/unconfirmed-send/sent",
+                                admin.accessToken(),
+                                null,
+                                Map.of("providerTransactionId", "EP-STATEMENT-" + UUID.randomUUID(), "note", "Again."))
+                        .getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+        assertThat(paidEvents(payout)).hasSize(1);
         assertThat(jdbc().queryForObject(
                         """
                         SELECT count(*) FROM transactions t JOIN payouts p ON p.payout_transaction_id = t.id
@@ -519,6 +568,21 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
 
     private String state(UUID payout) {
         return jdbc().queryForObject("SELECT state FROM payouts WHERE id = ?", String.class, payout);
+    }
+
+    /** The {@code payout.paid} events recorded for this payout, as their payloads (#418). */
+    private List<String> paidEvents(UUID payout) {
+        return jdbc().queryForList(
+                "SELECT payload FROM outbox_events WHERE event_type = 'payout.paid' AND aggregate_id = ?",
+                String.class,
+                payout);
+    }
+
+    /** The day in Baku the payout was recorded as sent: what its creator is told. */
+    private LocalDate sentOn(UUID payout) {
+        java.sql.Timestamp sentAt =
+                jdbc().queryForObject("SELECT sent_at FROM payouts WHERE id = ?", java.sql.Timestamp.class, payout);
+        return LocalDate.ofInstant(sentAt.toInstant(), ZoneId.of("Asia/Baku"));
     }
 
     /** A member of staff who may calculate payouts: an account holding a V48 grant. */
