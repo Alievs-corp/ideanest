@@ -15,8 +15,9 @@ import javax.crypto.spec.SecretKeySpec;
  * <p>The parameters are the ones {@code AesGcmAddressCipher} chose for #75, moved here so
  * that a second encrypted field cannot choose differently: a 128-bit tag, a 12-byte nonce
  * from {@link SecureRandom} on every seal, and the key's label stored beside the
- * ciphertext. Addresses still go through this class, without additional data, so every
- * address sealed before it existed opens exactly as it did.
+ * ciphertext. Addresses and identity documents go through this class too, without
+ * additional data, so every address and document sealed before it existed opens exactly
+ * as it did.
  *
  * <h2>Why the key is the application's and not PostgreSQL's</h2>
  *
@@ -28,7 +29,7 @@ import javax.crypto.spec.SecretKeySpec;
  *
  * <p>Not a Spring component: one instance per keyring, constructed by whoever owns the
  * keyring's configuration — {@link FieldCipherConfiguration} for the shared ones, the
- * address cipher for its own.
+ * address and document ciphers for their own.
  */
 public final class AesGcmFieldCipher implements FieldCipher {
 
@@ -51,9 +52,23 @@ public final class AesGcmFieldCipher implements FieldCipher {
      *     setting to look at
      */
     public AesGcmFieldCipher(String name, Keyring keyring) {
+        this(name, keyring.primaryKeyId(), keyring.decodedKeys());
+    }
+
+    /**
+     * Over keys validated somewhere other than {@link Keyring}, for the one keyring that
+     * has to be: identity documents. Their labels are held to V58's shape, which allows a
+     * leading dot, dash or underscore and a 64th character that {@link Keyring#KEY_ID}
+     * does not, and narrowing it would refuse to start a deployment whose document key is
+     * named that way. Nothing new uses this; a new keyring is a {@link Keyring}.
+     *
+     * @param primaryKeyId the label new values are sealed under, or {@code null} for none
+     * @param keys label to raw key material, already checked for length by the caller
+     */
+    public AesGcmFieldCipher(String name, String primaryKeyId, Map<String, byte[]> keys) {
         this.name = Objects.requireNonNull(name, "name");
-        this.primaryKeyId = keyring.primaryKeyId();
-        this.keys = keyring.decodedKeys();
+        this.primaryKeyId = primaryKeyId;
+        this.keys = Map.copyOf(keys);
     }
 
     @Override
