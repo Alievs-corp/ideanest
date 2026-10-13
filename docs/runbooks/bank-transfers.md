@@ -61,7 +61,9 @@ A backer's refund waiting for a bank transfer is
 
    Press *Record the transfer*, read the confirmation (amount, reference, date), and confirm.
    **This cannot be undone**: the payout becomes *Paid*, the ledger records the payout, and any
-   debt withheld from the creator is recovered.
+   debt withheld from the creator is recovered. The creator is told, by email, push and in the
+   app, the amount, the value date you entered and the account's first and last four
+   characters — so enter the date exactly as the statement shows it.
 
 While a transfer is in progress the console shows *Transfer in progress* on the row, who
 started it and when. The payout cannot be cancelled and no signature can be withdrawn until it
@@ -185,7 +187,10 @@ deliberate: no one person both chooses where a refund goes and confirms that it 
    Press *Record transfer*, read the confirmation (amount, account, date, reference), and
    press *Record it*. **This cannot be undone**: the refund becomes *Succeeded*, the ledger
    records it (debit `refunds`, credit `escrow`), and the pledge becomes *Refunded* when
-   nothing is left on it. Recording the same reference again changes nothing.
+   nothing is left on it. Recording the same reference again changes nothing. The backer is
+   told, by email, push and in the app, the amount, the value date you entered and the
+   account's first and last four characters; if one transfer paid several parts of the pledge,
+   they get one message per part.
 
 ### 6.4 What the console's refusals mean
 

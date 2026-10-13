@@ -1489,6 +1489,7 @@ The most valuable and most complex module. It begins when funding closes.
 | Saved project ending soon | ✅ | ✅ | ✅ |
 | Project approved | ✅ | ✅ | ✅ |
 | Payout sent | ✅ | ✅ | ✅ |
+| Refund sent by bank transfer | ✅ | ✅ | ✅ |
 | Sign-in from a new device | ✅ | ✅ | ✅ |
 
 Preferences are per category and per channel, with a digest option.
@@ -1511,6 +1512,18 @@ Preferences are per category and per channel, with a digest option.
 > CD-13's bulk message to a segment. The remaining rows without a producer belong
 > to features that are not built — payments, the pledge manager, and §17.1's
 > device history.
+>
+> **Money paid out is told since #418.** "Payout sent" (`PAYOUT_SENT`) comes from
+> `payout.paid`, which `PayoutService` records in the transaction that marks a payout
+> `PAID` on every route — a provider's send, a send settled from the provider's
+> statement, a bank transfer recorded by staff — to the creator alone, linking to
+> `/settings/payout`. "Refund sent by bank transfer" (`REFUND_SENT_BY_BANK`) comes from
+> `refund.sent_by_bank`, recorded when finance records the transfer that paid a part of a
+> backer's refund (§9.7), linking to `/pledges/{id}`. Both name the amount, the day — the
+> bank's value date, or the day in Baku a provider's payout was sent or settled — and,
+> when there is one, the masked account (`AZ21…1944`), never the number. The account is
+> its own email paragraph (`.account`), left out when the document has none, which a
+> provider's payout never has. A replayed or refused call records nothing.
 >
 > **All three columns are real.** #86 built the email transport (§12.3), the in-app
 > inbox was #85's, and push is #87's (its payload is described under §12.2). Every
@@ -2812,7 +2825,10 @@ again, audited, while the destination still stands. `POST .../bank-transfer/reco
 (`{bankReference, transferredOn, note}`) writes what the statement shows: a `PAYOUT` transaction
 with provider `BANK_TRANSFER` and the bank's reference, under the key `<idempotencyKey>-bank`, with
 the posting a sent payout gets; the payout is `PAID` with `bank_transferred_on`, its withheld debt
-is recovered, and `PAYOUT_SENT` is audited with `bankTransfer`. Replayed with the same reference it
+is recovered, `PAYOUT_SENT` is audited with `bankTransfer`, and the creator is told (#418, §4.10)
+with the value date and the masked hint of the account opened for the transfer, which the start
+keeps on the payout (`bank_transfer_account_hint`, V100) so the message names the account that was
+shown without opening it again. Replayed with the same reference it
 answers the payout as it stands; with another, 409 `PAYOUT_BANK_TRANSFER_ALREADY_RECORDED`; with a
 reference another transaction carries, 409 `PAYOUT_REFERENCE_TAKEN`. The value date is between the
 day the transfer was started and today (Baku). `POST .../bank-transfer/abandon` (`{note}`) says the
@@ -4615,6 +4631,10 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 >   a bank reference already recorded for another backer's refund (409 `BANK_REFERENCE_TAKEN`; one
 >   transfer may pay several parts of one pledge), and — both the reveal and the record — while the
 >   charge is in an open chargeback (409 `REFUND_CHARGE_DISPUTED`, §9.8).
+> - **The backer is told (#418).** Recording a transfer records `refund.sent_by_bank` in the same
+>   transaction, and the backer gets `REFUND_SENT_BY_BANK` (email, push and in-app, linking to their
+>   pledge) with the part's amount, the value date and the masked account; a replay records nothing.
+>   One transfer that paid several parts of a pledge is one message per part, each with its amount.
 > - **Escrow now spans two places**, the provider's balance and IdeyaNest's bank account. The
 >   ledger reconciliation (§8.4) still balances, because it compares the ledger with `transactions`;
 >   a comparison against a provider's settlement report, when there is one, must leave out
