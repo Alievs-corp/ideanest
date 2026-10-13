@@ -753,7 +753,8 @@ one-time extension (§5.1) — with the deadline in the viewer's timezone.
 
 > The platform connects creators with backers. Rewards are not guaranteed, but
 > creators must keep backers informed. You are charged when you pledge; if the
-> campaign ends below 80% of its goal, you are refunded in full.
+> campaign ends below 80% of its goal, you are refunded less the payment provider's
+> fee (#436).
 
 The last sentence changed with IDN-EXT-01. `CampaignTrustBlock` and `wording.test.ts` still
 carry the all-or-nothing sentence until stage 3 (#44) — which is why this is written down
@@ -2028,7 +2029,7 @@ Preferences are per category and per channel, with a digest option.
 >
 > **Built (#44), the words.** The web states this rule wherever it used to state
 > all-or-nothing: the trust block names the amount a campaign must raise (80% of the
-> goal, rounded up to the cent) and says every backer is refunded in full below it; the
+> goal, rounded up to the cent) and says every backer is refunded below it, less the payment provider's fee (#436); the
 > rule is printed beside the progress bar on the campaign page and on every catalogue
 > card; a closed campaign that did not succeed says its backers are refunded rather than
 > that nobody was charged; the campaign page badges `CLOSING_WINDOW`, `EXTENDED` and
