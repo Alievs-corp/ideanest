@@ -1540,8 +1540,12 @@ Preferences are per category and per channel, with a digest option.
 > for #449's `subscription.paid`, a first period or a renewal alike. All three are
 > `PAYMENTS`, the creator's own bill and transactional, name the plan in a slot of their
 > own (`{5}`, never the campaign's `{1}`), the snapshot price or the amount paid, and the
-> day the period ends, and link to `/pricing` by email and in the web inbox. A push opens
-> the inbox instead: the application sells no plans (#164) and has no pricing screen.
+> day the period ends, and link to `/pricing` on every channel. The application does not sell
+> or renew plans (#164), so since #452 it opens that page on the website, in the in-app
+> browser, from both a push (`ideanest://pricing`, read by its `type`) and an inbox row, and
+> its renewal reminder names no price beside "renew": the push line and the app's inbox
+> sentence say the plan is renewed on the website. Its pricing screen shows the end date and,
+> inside the renewal window, "renew it on the website" with the same open-the-web action.
 >
 > **All three columns are real.** #86 built the email transport (§12.3), the in-app
 > inbox was #85's, and push is #87's (its payload is described under §12.2). Every
@@ -6009,7 +6013,7 @@ change nothing.
 >
 > | Key | Value |
 > |---|---|
-> | `url` | Always. `ideanest://settings/sessions` for `NEW_DEVICE_SIGN_IN`, otherwise `ideanest://projects/{creatorSlug}/{projectSlug}` — the two destinations the web inbox links — and the bare `ideanest://` when there is neither. The application opens the inbox for the bare scheme |
+> | `url` | Always. `ideanest://settings/sessions` for `NEW_DEVICE_SIGN_IN`, otherwise `ideanest://projects/{creatorSlug}/{projectSlug}` — the two destinations the web inbox links — and the bare `ideanest://` when there is neither. The application opens the inbox for the bare scheme. The three `SUBSCRIPTION_*` types carry `ideanest://pricing`, and the application opens the website's pricing page for them (#452) |
 > | `type` | The `NotificationType`. Absent on a digest |
 > | `notificationId` | The **inbox** row of the same event, which `POST /v1/me/notifications/{id}/read` accepts. Every channel writes its own row, so this is not the push row's identifier. Absent when the event wrote no inbox row (in-app switched off for the category) and on a digest |
 >
