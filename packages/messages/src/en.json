@@ -541,7 +541,7 @@
         "PROJECT_APPROVED": "{campaign} has been approved and can be launched",
         "PAYMENT_COLLECTED": "A payment of {amount} for {campaign} was collected",
         "FINAL_PAYMENT_WARNING": "Final notice: a payment of {amount} for {campaign}",
-        "PAYOUT_SENT": "A payout of {amount} for {campaign} has been sent",
+        "PAYOUT_SENT": "A payout of {amount} for {campaign} was paid {when}",
         "DEADLINE_48H": "{campaign} closes in two days",
         "DEADLINE_24H": "{campaign} closes tomorrow",
         "NEW_UPDATE_PUBLISHED": "{campaign} published an update",
@@ -558,6 +558,7 @@
         "WITHDRAWAL_REQUESTED": "The creator of {campaign} requested their payout",
         "PAYOUT_DETAILS_NEEDED": "Your payout for {campaign} is waiting for your details",
         "REFUND_NEEDS_BANK_DETAILS": "Your refund for {campaign} needs your bank details",
+        "REFUND_SENT_BY_BANK": "A refund of {amount} for {campaign} was sent by bank transfer {when}",
         "UPDATE_DUE_SOON": "Your update for {campaign} is due {when}"
       },
       "unnamed": {
@@ -570,7 +571,7 @@
         "PROJECT_APPROVED": "A campaign has been approved and can be launched",
         "PAYMENT_COLLECTED": "A payment of {amount} for a campaign was collected",
         "FINAL_PAYMENT_WARNING": "Final notice: a payment of {amount} for a campaign",
-        "PAYOUT_SENT": "A payout of {amount} for a campaign has been sent",
+        "PAYOUT_SENT": "A payout of {amount} for a campaign was paid {when}",
         "DEADLINE_48H": "A campaign closes in two days",
         "DEADLINE_24H": "A campaign closes tomorrow",
         "NEW_UPDATE_PUBLISHED": "A campaign published an update",
@@ -587,6 +588,7 @@
         "WITHDRAWAL_REQUESTED": "The creator of a campaign you backed requested their payout",
         "PAYOUT_DETAILS_NEEDED": "Your payout is waiting for your VÖEN and IBAN",
         "REFUND_NEEDS_BANK_DETAILS": "Your refund needs your bank details",
+        "REFUND_SENT_BY_BANK": "A refund of {amount} was sent by bank transfer {when}",
         "UPDATE_DUE_SOON": "An update for your campaign is due {when}"
       },
       "amount": {
@@ -595,11 +597,17 @@
         "pledge": "your pledge",
         "needed": "what it needed",
         "closingTotal": "its closing total",
-        "funds": "your funds"
+        "funds": "your funds",
+        "refund": "the amount owed to you"
       },
       "due": {
         "on": "by {date}",
         "unknown": "soon"
+      },
+      "sent": {
+        "on": "on {date}",
+        "onTo": "on {date} to {account}",
+        "unknown": "recently"
       },
       "category": {
         "PLEDGES": "Your pledges",

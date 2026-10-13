@@ -57,6 +57,8 @@ const FULL_PARAMS = {
   backersCount: 184,
   attempt: 2,
   dueAt: '2026-10-05',
+  sentOn: '2026-10-13',
+  accountHint: 'AZ21…1944',
 };
 
 function notification(
@@ -72,8 +74,8 @@ function notification(
 }
 
 describe('the contract', () => {
-  it('publishes 27 types', () => {
-    expect(TYPES).toHaveLength(27);
+  it('publishes 28 types', () => {
+    expect(TYPES).toHaveLength(28);
   });
 });
 
@@ -129,6 +131,16 @@ describe('hrefOf', () => {
 
   it('sends the payout-details reminder to the payout settings, not the campaign it names (#411)', () => {
     expect(hrefOf(notification({ type: 'PAYOUT_DETAILS_NEEDED', category: 'PAYMENTS' }))).toBe('/settings/payout');
+  });
+
+  it('sends a paid payout to the payout settings and a refund sent by bank to the pledge, as the email does (#418)', () => {
+    expect(hrefOf(notification({ type: 'PAYOUT_SENT', category: 'PAYMENTS' }))).toBe('/settings/payout');
+
+    const pledgeId = '0193f2a1-0000-7000-8000-000000000042';
+    expect(
+      hrefOf(notification({ type: 'REFUND_SENT_BY_BANK', category: 'PAYMENTS', params: { pledgeId } })),
+    ).toBe(`/pledges/${pledgeId}`);
+    expect(hrefOf(notification({ type: 'REFUND_SENT_BY_BANK', category: 'PAYMENTS', params: {} }))).toBeNull();
   });
 });
 
@@ -338,6 +350,63 @@ describe('UPDATE_DUE_SOON — #138', () => {
 
     expect(view.headline).toBe('Your update for Lamp is due soon');
   });
+});
+
+describe('money paid out — #418', () => {
+  it('says how much was paid out, on which day and to which masked account (#418)', () => {
+    const view = describeNotification(notification({ type: 'PAYOUT_SENT', category: 'PAYMENTS' }), COPY, 'en');
+
+    expect(view.headline).toMatch(/^A payout of 120\.00 AZN for Xari Bulbul Ceramics was paid on .*2026 to AZ21…1944$/);
+    expect(view.href).toBe('/settings/payout');
+  });
+
+  it('leaves the account out of a paid payout when the document names none (#418)', () => {
+    const withoutHint = { ...FULL_PARAMS, accountHint: undefined };
+    const view = describeNotification(
+      notification({ type: 'PAYOUT_SENT', category: 'PAYMENTS', params: withoutHint }),
+      COPY,
+      'en',
+    );
+
+    expect(view.headline).toMatch(/^A payout of 120\.00 AZN for Xari Bulbul Ceramics was paid on .*2026$/);
+  });
+
+  it('says how much of a refund was sent by bank, on which day and to which masked account (#418)', () => {
+    const view = describeNotification(
+      notification({ type: 'REFUND_SENT_BY_BANK', category: 'PAYMENTS', params: { ...FULL_PARAMS, pledgeId: 'p1' } }),
+      COPY,
+      'en',
+    );
+
+    expect(view.headline).toMatch(
+      /^A refund of 120\.00 AZN for Xari Bulbul Ceramics was sent by bank transfer on .*2026 to AZ21…1944$/,
+    );
+    expect(view.href).toBe('/pledges/p1');
+  });
+
+  it('says "recently" rather than inventing a day for money paid out with no date (#418)', () => {
+    const view = describeNotification(
+      notification({ type: 'REFUND_SENT_BY_BANK', category: 'PAYMENTS', params: {} }),
+      COPY,
+      'en',
+    );
+
+    expect(view.headline).toBe('A refund of the amount owed to you was sent by bank transfer recently');
+  });
+
+  it.each(Object.keys(CATALOGUES) as (keyof typeof CATALOGUES)[])(
+    '%s names the amount, the day and the masked account of money paid out (#418)',
+    (locale) => {
+      const copy = notificationsCopyOf(CATALOGUES[locale].account.notifications);
+      for (const type of ['PAYOUT_SENT', 'REFUND_SENT_BY_BANK'] as const) {
+        const view = describeNotification(notification({ type, category: 'PAYMENTS' }), copy, locale);
+        expect(view.headline).toContain('AZ21…1944');
+        expect(view.headline).toContain('2026');
+        expect(view.headline).toMatch(/120[.,]00/);
+        expect(view.headline).not.toContain('{');
+      }
+    },
+  );
 });
 
 describe('the catalogue covers the contract — #138', () => {

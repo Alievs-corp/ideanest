@@ -541,7 +541,7 @@
         "PROJECT_APPROVED": "{campaign} одобрена и может быть запущена",
         "PAYMENT_COLLECTED": "Платёж на сумму {amount} за {campaign} был списан",
         "FINAL_PAYMENT_WARNING": "Последнее предупреждение: платёж на сумму {amount} за {campaign}",
-        "PAYOUT_SENT": "Выплата на сумму {amount} по кампании {campaign} отправлена",
+        "PAYOUT_SENT": "Выплата на сумму {amount} по кампании {campaign} перечислена {when}",
         "DEADLINE_48H": "{campaign} закрывается через два дня",
         "DEADLINE_24H": "{campaign} закрывается завтра",
         "NEW_UPDATE_PUBLISHED": "{campaign} опубликовала обновление",
@@ -558,6 +558,7 @@
         "WITHDRAWAL_REQUESTED": "Автор кампании {campaign} запросил вывод средств",
         "PAYOUT_DETAILS_NEEDED": "Выплата по кампании {campaign} ждёт ваши реквизиты",
         "REFUND_NEEDS_BANK_DETAILS": "Для возврата по кампании {campaign} нужны ваши банковские реквизиты",
+        "REFUND_SENT_BY_BANK": "Возврат {amount} по кампании {campaign} отправлен банковским переводом {when}",
         "UPDATE_DUE_SOON": "Обновление кампании {campaign} нужно опубликовать {when}"
       },
       "unnamed": {
@@ -570,7 +571,7 @@
         "PROJECT_APPROVED": "Кампания одобрена и может быть запущена",
         "PAYMENT_COLLECTED": "Платёж на сумму {amount} за кампанию был списан",
         "FINAL_PAYMENT_WARNING": "Последнее предупреждение: платёж на сумму {amount} за кампанию",
-        "PAYOUT_SENT": "Выплата на сумму {amount} по кампании отправлена",
+        "PAYOUT_SENT": "Выплата на сумму {amount} по кампании перечислена {when}",
         "DEADLINE_48H": "Кампания закрывается через два дня",
         "DEADLINE_24H": "Кампания закрывается завтра",
         "NEW_UPDATE_PUBLISHED": "Кампания опубликовала обновление",
@@ -587,6 +588,7 @@
         "WITHDRAWAL_REQUESTED": "Автор поддержанной вами кампании запросил вывод средств",
         "PAYOUT_DETAILS_NEEDED": "Выплата ждёт ваш VÖEN и IBAN",
         "REFUND_NEEDS_BANK_DETAILS": "Для возврата нужны ваши банковские реквизиты",
+        "REFUND_SENT_BY_BANK": "Возврат {amount} отправлен банковским переводом {when}",
         "UPDATE_DUE_SOON": "Обновление вашей кампании нужно опубликовать {when}"
       },
       "amount": {
@@ -595,11 +597,17 @@
         "pledge": "ваш взнос",
         "needed": "нужную сумму",
         "closingTotal": "итоговую сумму",
-        "funds": "ваши средства"
+        "funds": "ваши средства",
+        "refund": "причитающейся вам суммы"
       },
       "due": {
         "on": "до {date}",
         "unknown": "в ближайшие дни"
+      },
+      "sent": {
+        "on": "{date}",
+        "onTo": "{date} на счёт {account}",
+        "unknown": "недавно"
       },
       "category": {
         "PLEDGES": "Ваши взносы",

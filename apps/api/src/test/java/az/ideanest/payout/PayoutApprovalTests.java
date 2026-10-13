@@ -227,7 +227,11 @@ class PayoutApprovalTests {
         assertThatThrownBy(() -> recorded.paidByBankTransfer(UUID.randomUUID(), LocalDate.of(2026, 2, 2), started))
                 .as("not without a transfer somebody started here")
                 .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> recorded.bankTransferAccount("AZ21…1944"))
+                .as("#418: no account is remembered for a transfer nobody started")
+                .isInstanceOf(IllegalStateException.class);
         recorded.bankTransferStarted(staff, started);
+        recorded.bankTransferAccount("AZ21…1944");
         UUID transaction = UUID.randomUUID();
 
         recorded.paidByBankTransfer(transaction, LocalDate.of(2026, 2, 2), Instant.parse("2026-02-02T09:00:00Z"));
@@ -235,6 +239,7 @@ class PayoutApprovalTests {
         assertThat(recorded.state()).isEqualTo(PayoutState.PAID);
         assertThat(recorded.payoutTransactionId()).isEqualTo(transaction);
         assertThat(recorded.bankTransferredOn()).isEqualTo(LocalDate.of(2026, 2, 2));
+        assertThat(recorded.bankTransferAccountHint()).as("kept for the creator's message").isEqualTo("AZ21…1944");
         assertThat(recorded.bankTransferInProgress()).isFalse();
         assertThatThrownBy(recorded::bankTransferAbandoned).isInstanceOf(IllegalStateException.class);
 
@@ -243,6 +248,7 @@ class PayoutApprovalTests {
         abandoned.approved();
         assertThatThrownBy(abandoned::bankTransferAbandoned).isInstanceOf(IllegalStateException.class);
         abandoned.bankTransferStarted(staff, started);
+        abandoned.bankTransferAccount("AZ21…1944");
 
         abandoned.bankTransferAbandoned();
 
@@ -250,6 +256,7 @@ class PayoutApprovalTests {
         assertThat(abandoned.moneyMayHaveLeft()).isFalse();
         assertThat(abandoned.bankTransferStartedAt()).isNull();
         assertThat(abandoned.bankTransferStartedBy()).isNull();
+        assertThat(abandoned.bankTransferAccountHint()).isNull();
     }
 
     @Test

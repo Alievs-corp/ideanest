@@ -541,7 +541,7 @@
         "PROJECT_APPROVED": "{campaign} onaylandı ve başlatılabilir",
         "PAYMENT_COLLECTED": "{campaign} için {amount} tutarındaki ödeme tahsil edildi",
         "FINAL_PAYMENT_WARNING": "Son uyarı: {campaign} için {amount} tutarındaki ödeme",
-        "PAYOUT_SENT": "{campaign} için {amount} tutarındaki ödeme gönderildi",
+        "PAYOUT_SENT": "{campaign} için {amount} tutarındaki ödeme {when} yapıldı",
         "DEADLINE_48H": "{campaign} iki gün içinde kapanıyor",
         "DEADLINE_24H": "{campaign} yarın kapanıyor",
         "NEW_UPDATE_PUBLISHED": "{campaign} bir güncelleme yayımladı",
@@ -558,6 +558,7 @@
         "WITHDRAWAL_REQUESTED": "{campaign} kampanyasının sahibi ödeme talep etti",
         "PAYOUT_DETAILS_NEEDED": "{campaign} kampanyası için ödemeniz bilgilerinizi bekliyor",
         "REFUND_NEEDS_BANK_DETAILS": "{campaign} kampanyası için iadeniz banka bilgilerinizi bekliyor",
+        "REFUND_SENT_BY_BANK": "{campaign} kampanyası için {amount} iadeniz {when} banka havalesiyle gönderildi",
         "UPDATE_DUE_SOON": "{campaign} kampanyası için güncellemeniz {when} bekleniyor"
       },
       "unnamed": {
@@ -570,7 +571,7 @@
         "PROJECT_APPROVED": "Bir kampanya onaylandı ve başlatılabilir",
         "PAYMENT_COLLECTED": "Bir kampanya için {amount} tutarındaki ödeme tahsil edildi",
         "FINAL_PAYMENT_WARNING": "Son uyarı: bir kampanya için {amount} tutarındaki ödeme",
-        "PAYOUT_SENT": "Bir kampanya için {amount} tutarındaki ödeme gönderildi",
+        "PAYOUT_SENT": "Bir kampanya için {amount} tutarındaki ödeme {when} yapıldı",
         "DEADLINE_48H": "Bir kampanya iki gün içinde kapanıyor",
         "DEADLINE_24H": "Bir kampanya yarın kapanıyor",
         "NEW_UPDATE_PUBLISHED": "Bir kampanya güncelleme yayımladı",
@@ -587,6 +588,7 @@
         "WITHDRAWAL_REQUESTED": "Desteklediğiniz kampanyanın sahibi ödeme talep etti",
         "PAYOUT_DETAILS_NEEDED": "Ödemeniz VÖEN ve IBAN bilgilerinizi bekliyor",
         "REFUND_NEEDS_BANK_DETAILS": "İadeniz için banka bilgilerinize ihtiyacımız var",
+        "REFUND_SENT_BY_BANK": "Banka havalesiyle {amount} iadeniz {when} gönderildi",
         "UPDATE_DUE_SOON": "Kampanyanız için güncellemeniz {when} bekleniyor"
       },
       "amount": {
@@ -595,11 +597,17 @@
         "pledge": "desteğiniz",
         "needed": "gereken tutar",
         "closingTotal": "kapanış tutarı",
-        "funds": "paranız"
+        "funds": "paranız",
+        "refund": "size ait"
       },
       "due": {
         "on": "{date} tarihine kadar",
         "unknown": "yakında"
+      },
+      "sent": {
+        "on": "{date} tarihinde",
+        "onTo": "{date} tarihinde {account} hesabına",
+        "unknown": "kısa süre önce"
       },
       "category": {
         "PLEDGES": "Destekleriniz",

@@ -26,6 +26,7 @@ import az.ideanest.shared.compliance.DestinationStanding;
 import az.ideanest.shared.compliance.PayoutDestinations;
 import az.ideanest.shared.compliance.VerificationStanding;
 import az.ideanest.shared.money.Money;
+import az.ideanest.shared.outbox.Outbox;
 import az.ideanest.shared.project.ProjectSummaries;
 import az.ideanest.shared.project.ProjectSummary;
 import java.time.Clock;
@@ -123,6 +124,7 @@ public class PayoutService {
     private final Clock clock;
     private final CreatorDebts debts;
     private final BackerDisputeRepository backerDisputes;
+    private final Outbox outbox;
 
     public PayoutService(
             PayoutRepository payouts,
@@ -137,7 +139,8 @@ public class PayoutService {
             PayoutProperties properties,
             Clock clock,
             CreatorDebts debts,
-            BackerDisputeRepository backerDisputes) {
+            BackerDisputeRepository backerDisputes,
+            Outbox outbox) {
         this.payouts = payouts;
         this.approvals = approvals;
         this.gateway = gateway;
@@ -151,6 +154,7 @@ public class PayoutService {
         this.clock = clock;
         this.debts = debts;
         this.backerDisputes = backerDisputes;
+        this.outbox = outbox;
     }
 
     /**
@@ -712,6 +716,7 @@ public class PayoutService {
             if (payout.debtWithheld().isPositive()) {
                 debts.recover(payout.creatorId(), payout.debtWithheld(), now);
             }
+            announcePaid(payout, LocalDate.ofInstant(now, BANK_ZONE), now);
         } else if (sent.transactionId() == null || payout.sendUnconfirmed()) {
             // #184's review: the provider could not be reached, so nothing it said was recorded and the
             // instruction may have been carried out. Failed, it would be followed by a fresh calculation
@@ -788,6 +793,8 @@ public class PayoutService {
         if (payout.debtWithheld().isPositive()) {
             debts.recover(payout.creatorId(), payout.debtWithheld(), now);
         }
+        // The day it was settled from the statement: the provider's own value date is not on the request.
+        announcePaid(payout, LocalDate.ofInstant(now, BANK_ZONE), now);
         // What went back after it was priced -- a chargeback lost while the send was unconfirmed -- was paid
         // to the creator as well. Not a creator debt automatically (a debt is keyed on its dispute), so it is
         // put in front of the person settling it.
@@ -938,6 +945,7 @@ public class PayoutService {
                 .revealBankAccount(staffId, payout.creatorId())
                 .orElseThrow(() -> new PayoutSettlesThroughProviderException(payoutId));
         payout.bankTransferStarted(staffId, clock.instant().truncatedTo(ChronoUnit.MICROS));
+        payout.bankTransferAccount(account.displayHint());
 
         audit.record(
                 AuditAction.PAYOUT_BANK_TRANSFER_STARTED,
@@ -981,6 +989,7 @@ public class PayoutService {
         BankAccount account = destinations
                 .revealBankAccount(staffId, payout.creatorId())
                 .orElseThrow(() -> new PayoutSettlesThroughProviderException(payout.id()));
+        payout.bankTransferAccount(account.displayHint());
         return new BankTransfer(payout, account, descriptionOf(payout));
     }
 
@@ -1063,6 +1072,7 @@ public class PayoutService {
         if (payout.debtWithheld().isPositive()) {
             debts.recover(payout.creatorId(), payout.debtWithheld(), now);
         }
+        announcePaid(payout, transferredOn, now);
 
         CampaignFunds funds = gateway.fundsOf(payout.projectId(), payout.currency());
         Money movedSince = funds.refunded().minus(payout.refunded());
@@ -1121,6 +1131,28 @@ public class PayoutService {
 
         log.info("Bank transfer for payout {} abandoned by {}", payoutId, staffId);
         return payout;
+    }
+
+    /**
+     * Tells the creator their payout was paid — #418. Called only on the line that moves a payout to
+     * {@code PAID}, in its transaction, so a replay, a refusal or a send the provider did not answer
+     * records nothing. The hint is the one written when the account was opened, never the number, and
+     * absent on the provider's route.
+     */
+    private void announcePaid(Payout payout, LocalDate paidOn, Instant now) {
+        outbox.record(
+                PayoutPaidEvent.AGGREGATE_TYPE,
+                payout.id(),
+                PayoutPaidEvent.EVENT_TYPE,
+                new PayoutPaidEvent(
+                        payout.projectId(),
+                        payout.creatorId(),
+                        payout.id(),
+                        payout.net(),
+                        paidOn,
+                        payout.bankTransferAccountHint(),
+                        payout.bankTransferredOn() != null,
+                        now));
     }
 
     /**

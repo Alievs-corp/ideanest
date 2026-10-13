@@ -106,6 +106,11 @@ export interface NotificationsCopy {
   readonly amount: Readonly<Record<string, string>>;
   /** The `{when}` of a deadline — #138. `on` carries `{date}`; `unknown` stands in for no date. */
   readonly due: { readonly on: string; readonly unknown: string };
+  /**
+   * The `{when}` of money paid out — #418: `on` carries `{date}`, `onTo` adds the masked `{account}`
+   * it went to when the document has one, and `unknown` stands in for no date.
+   */
+  readonly sent: { readonly on: string; readonly onTo: string; readonly unknown: string };
   readonly category: Readonly<Record<string, string>>;
   readonly categoryDescription: Readonly<Record<string, string>>;
   readonly channel: Readonly<Record<string, string>>;
@@ -121,6 +126,7 @@ export function notificationsCopyOf(tables: NotificationsCopy): NotificationsCop
     unnamed: tables.unnamed,
     amount: tables.amount,
     due: { on: tables.due.on, unknown: tables.due.unknown },
+    sent: { on: tables.sent.on, onTo: tables.sent.onTo, unknown: tables.sent.unknown },
     category: tables.category,
     categoryDescription: tables.categoryDescription,
     channel: tables.channel,
@@ -199,7 +205,8 @@ export function campaignOf(params: Record<string, unknown>): {
  * Where the row goes, in `EmailComposer`'s order so the inbox and the email land in one place:
  * the type when the message is not about a campaign (the sign-in alert, since #399 a refund
  * waiting for the backer's bank account, which goes to their pledge, and since #411 the reminder
- * to enter an IBAN, which goes to the payout settings), then the campaign's page,
+ * to enter an IBAN, which goes to the payout settings; since #418 a paid payout goes to the payout
+ * settings too and a refund sent by bank to the pledge), then the campaign's page,
  * then nothing. **A row with no destination is not a link**, rather than a link to the home page.
  */
 export function hrefOf(
@@ -207,8 +214,10 @@ export function hrefOf(
   campaignHref: string | null = campaignOf(readParams(notification.params)).href,
 ): string | null {
   if (notification.type === 'NEW_DEVICE_SIGN_IN') return '/settings/sessions';
-  if (notification.type === 'PAYOUT_DETAILS_NEEDED') return '/settings/payout';
-  if (notification.type === 'REFUND_NEEDS_BANK_DETAILS') {
+  if (notification.type === 'PAYOUT_DETAILS_NEEDED' || notification.type === 'PAYOUT_SENT') {
+    return '/settings/payout';
+  }
+  if (notification.type === 'REFUND_NEEDS_BANK_DETAILS' || notification.type === 'REFUND_SENT_BY_BANK') {
     const pledge = textOf(readParams(notification.params), 'pledgeId');
     if (pledge !== null) return `/pledges/${encodeURIComponent(pledge)}`;
   }
@@ -254,8 +263,9 @@ function headlineOf(
 }
 
 /**
- * The deadline a headline refers to, or the words that stand in for one — #138. `dueAt` is a
- * calendar day, read in UTC so that no reader's time zone moves it to the day before.
+ * The day a headline refers to, or the words that stand in for one: a deadline's (#138), or the day
+ * money was paid out and the masked account it went to (#418). Both are calendar days, read in UTC so
+ * that no reader's time zone moves them to the day before.
  */
 function whenFor(
   type: NotificationType,
@@ -263,18 +273,32 @@ function whenFor(
   copy: NotificationsCopy,
   locale: Locale,
 ): string {
-  if (type !== 'UPDATE_DUE_SOON') return '';
+  if (type === 'UPDATE_DUE_SOON') {
+    const date = dayOf(params, 'dueAt', locale);
+    return date === null ? copy.due.unknown : fillPlaceholders(copy.due.on, { date });
+  }
+  if (type === 'PAYOUT_SENT' || type === 'REFUND_SENT_BY_BANK') {
+    const date = dayOf(params, 'sentOn', locale);
+    if (date === null) return copy.sent.unknown;
+    const account = textOf(params, 'accountHint');
+    return account === null
+      ? fillPlaceholders(copy.sent.on, { date })
+      : fillPlaceholders(copy.sent.onTo, { date, account });
+  }
+  return '';
+}
 
-  const day = textOf(params, 'dueAt');
+/** A `YYYY-MM-DD` day from the document, written out in the reader's language, or null. */
+function dayOf(params: Record<string, unknown>, key: string, locale: Locale): string | null {
+  const day = textOf(params, key);
   const at = day !== null && /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00Z`) : null;
-  if (at === null || Number.isNaN(at.getTime())) return copy.due.unknown;
+  if (at === null || Number.isNaN(at.getTime())) return null;
 
-  const date = dateTimeFormat(
+  return dateTimeFormat(
     locale,
     { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' },
     'notification-due',
   ).format(at);
-  return fillPlaceholders(copy.due.on, { date });
 }
 
 function amountOr(params: Record<string, unknown>, key: string, fallback: string): string {
@@ -306,6 +330,8 @@ function amountFor(
       return amountOr(params, 'pledged', copy.amount['closingTotal'] ?? '');
     case 'PAYOUT_SENT':
       return amountOr(params, 'amount', copy.amount['funds'] ?? '');
+    case 'REFUND_SENT_BY_BANK':
+      return amountOr(params, 'amount', copy.amount['refund'] ?? '');
     default:
       return '';
   }

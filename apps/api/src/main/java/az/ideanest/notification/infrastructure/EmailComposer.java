@@ -196,6 +196,12 @@ public class EmailComposer {
      * <p>{@code .body} is required and {@code .body2} is optional, which covers every
      * message §4.10 asks for without inventing a list format in a properties file. A type
      * needing three would add {@code .body3} here; none does.
+     *
+     * <p>{@code .account} (#418) is the one paragraph that depends on a fact rather than on a
+     * key: it names the masked account money went to, between the two, and only when the
+     * document carries one. A provider's payout has none, and a sentence written around an
+     * empty {@code {4}} would leave a hole; a separate paragraph needs no fallback wording, which
+     * in Azerbaijani, Turkish and Russian would need its own case ending.
      */
     private List<String> paragraphs(String base, EmailFacts facts, Locale locale) {
         // Through the same `.named` preference as everything else, so that a second
@@ -208,9 +214,16 @@ public class EmailComposer {
         if (second == null) {
             second = optional(base + "body2", facts, locale);
         }
-        return second == null
-                ? List.of(copy(base + "body", facts, locale))
-                : List.of(copy(base + "body", facts, locale), second);
+        List<String> paragraphs = new ArrayList<>(3);
+        paragraphs.add(copy(base + "body", facts, locale));
+        String account = facts.account().isEmpty() ? null : optional(base + "account", facts, locale);
+        if (account != null) {
+            paragraphs.add(account);
+        }
+        if (second != null) {
+            paragraphs.add(second);
+        }
+        return List.copyOf(paragraphs);
     }
 
     /** An edited string when there is one, and the catalogue's otherwise. */

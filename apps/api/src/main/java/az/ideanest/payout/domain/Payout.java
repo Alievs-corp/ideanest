@@ -118,6 +118,13 @@ public class Payout {
     @Column(name = "bank_transferred_on")
     private LocalDate bankTransferredOn;
 
+    /**
+     * V100 (#418): the masked hint of the account last opened for this transfer, so the creator can be
+     * told which account was paid without the account being opened again. Never the number.
+     */
+    @Column(name = "bank_transfer_account_hint")
+    private String bankTransferAccountHint;
+
     @Column(name = "idempotency_key", nullable = false, updatable = false)
     private String idempotencyKey;
 
@@ -300,6 +307,19 @@ public class Payout {
         }
         this.bankTransferStartedAt = null;
         this.bankTransferStartedBy = null;
+        this.bankTransferAccountHint = null;
+    }
+
+    /**
+     * Which account was opened for the transfer in progress, as its masked hint — #418. Written each time
+     * the account is opened, so a transfer finished by a colleague after the creator replaced and
+     * re-verified their account names the account that was actually shown.
+     */
+    public void bankTransferAccount(String displayHint) {
+        if (!bankTransferInProgress()) {
+            throw new IllegalStateException("Payout " + id + " has no bank transfer in progress");
+        }
+        this.bankTransferAccountHint = displayHint;
     }
 
     /**
@@ -474,5 +494,10 @@ public class Payout {
 
     public LocalDate bankTransferredOn() {
         return bankTransferredOn;
+    }
+
+    /** The masked hint of the account a bank transfer was made to, or null. */
+    public String bankTransferAccountHint() {
+        return bankTransferAccountHint;
     }
 }

@@ -216,6 +216,54 @@ class PayoutBankTransferTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("#418: the creator is told once, with the amount, the bank's value date and the masked account")
+    void theCreatorIsToldOnce() {
+        Funded funded = aFundedCampaign("bank-told");
+        Account admin = administrator();
+        UUID payout = approvedToABankAccount(funded, admin);
+        post(bankTransfer(payout, "start"), admin.accessToken(), null);
+        assertThat(accountHint(payout)).isEqualTo(Destinations.IBAN_HINT);
+        assertThat(paidEvents(payout)).as("nothing is announced when a transfer only starts").isEmpty();
+
+        String reference = "BANK-" + UUID.randomUUID();
+        LocalDate valueDate = LocalDate.now(BAKU);
+        post(bankTransfer(payout, "record"), admin.accessToken(), record(reference, valueDate, "On the statement."));
+        post(bankTransfer(payout, "record"), admin.accessToken(), record(reference, valueDate, "Pressed twice."));
+        post(bankTransfer(payout, "record"), admin.accessToken(), record("BANK-OTHER-" + UUID.randomUUID(), valueDate, "x"));
+
+        List<String> events = paidEvents(payout);
+        assertThat(events).as("one announcement, however often the transfer is recorded").hasSize(1);
+        assertThat(events.getFirst())
+                .contains(funded.creator().id().toString())
+                .contains("\"paidOn\":\"" + valueDate + "\"")
+                .contains(Destinations.IBAN_HINT)
+                .doesNotContain(Destinations.IBAN)
+                .doesNotContain(reference);
+
+        relay.run();
+        List<Map<String, Object>> told = jdbc().queryForList(
+                """
+                SELECT recipient_id, params->>'sentOn' AS sent_on, params->>'accountHint' AS hint,
+                       params->'amount'->>'amount' AS amount, params->'amount'->>'currency' AS currency
+                  FROM notifications WHERE type = 'PAYOUT_SENT' AND subject_id = ?
+                """,
+                funded.projectId());
+        assertThat(told).isNotEmpty().allSatisfy(row -> assertThat(row)
+                .containsEntry("recipient_id", funded.creator().id())
+                .containsEntry("sent_on", valueDate.toString())
+                .containsEntry("hint", Destinations.IBAN_HINT)
+                .containsEntry("currency", "AZN"));
+        BigDecimal net = jdbc().queryForObject("SELECT net_amount FROM payouts WHERE id = ?", BigDecimal.class, payout);
+        assertThat(new BigDecimal((String) told.getFirst().get("amount"))).isEqualByComparingTo(net);
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM notifications WHERE params::text LIKE ?",
+                        Long.class,
+                        "%" + Destinations.IBAN.substring(4) + "%"))
+                .as("no notification carries the number")
+                .isZero();
+    }
+
+    @Test
     @DisplayName("a payout to a bank account is not sent through the provider")
     void sendIsRefusedForABankAccount() {
         Funded funded = aFundedCampaign("bank-send");
@@ -280,6 +328,7 @@ class PayoutBankTransferTests extends AbstractIntegrationTest {
 
         assertThat(abandoned.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(abandoned.getBody()).doesNotContainKey("bankTransferStartedAt");
+        assertThat(accountHint(payout)).as("#418: the account is forgotten with the transfer").isNull();
         assertThat(auditDetail("payout.bank_transfer_abandoned", payout)).contains("the bank was closed");
         assertThat(post(bankTransfer(payout, "record"), admin.accessToken(), record("BANK-1", LocalDate.now(BAKU), "x"))
                         .getBody())
@@ -523,6 +572,18 @@ class PayoutBankTransferTests extends AbstractIntegrationTest {
 
     private String state(UUID payout) {
         return jdbc().queryForObject("SELECT state FROM payouts WHERE id = ?", String.class, payout);
+    }
+
+    private String accountHint(UUID payout) {
+        return jdbc().queryForObject("SELECT bank_transfer_account_hint FROM payouts WHERE id = ?", String.class, payout);
+    }
+
+    /** The {@code payout.paid} events recorded for this payout, as their payloads (#418). */
+    private List<String> paidEvents(UUID payout) {
+        return jdbc().queryForList(
+                "SELECT payload FROM outbox_events WHERE event_type = 'payout.paid' AND aggregate_id = ?",
+                String.class,
+                payout);
     }
 
     private long payoutTransactions(UUID projectId) {

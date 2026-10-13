@@ -105,7 +105,11 @@ public enum NotificationType {
     FINAL_PAYMENT_WARNING(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.PUSH,
             NotificationChannel.IN_APP),
 
-    /** The creator's money left the platform — §4.11's AD-05. */
+    /**
+     * The creator's money left the platform — §4.11's AD-05. Produced since #418, by every route that
+     * marks a payout paid: a provider's send, a send settled from the provider's statement, and a bank
+     * transfer recorded by staff.
+     */
     PAYOUT_SENT(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.PUSH,
             NotificationChannel.IN_APP),
 
@@ -122,6 +126,14 @@ public enum NotificationType {
      * pledge. No push, like {@link #PAYOUT_DETAILS_NEEDED}: it asks for something to be done at a desk.
      */
     REFUND_NEEDS_BANK_DETAILS(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.IN_APP),
+
+    /**
+     * #418: to a backer — finance recorded the bank transfer that paid (part of) their refund, with its
+     * amount, value date and the masked account. Every channel {@link #PAYOUT_SENT} has: it is news that
+     * money arrived, not a request.
+     */
+    REFUND_SENT_BY_BANK(NotificationCategory.PAYMENTS, NotificationChannel.EMAIL, NotificationChannel.PUSH,
+            NotificationChannel.IN_APP),
 
     /** A campaign published an update — §5.5 and #83. */
     NEW_UPDATE_PUBLISHED(NotificationCategory.COMMUNITY, NotificationChannel.EMAIL, NotificationChannel.PUSH,

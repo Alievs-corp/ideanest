@@ -541,7 +541,7 @@
         "PROJECT_APPROVED": "{campaign} təsdiqləndi və başladıla bilər",
         "PAYMENT_COLLECTED": "{campaign} üçün {amount} məbləğində ödəniş alındı",
         "FINAL_PAYMENT_WARNING": "Son xəbərdarlıq: {campaign} üçün {amount} məbləğində ödəniş",
-        "PAYOUT_SENT": "{campaign} üçün {amount} məbləğində ödəniş göndərildi",
+        "PAYOUT_SENT": "{campaign} üçün {amount} məbləğində ödəniş {when} köçürüldü",
         "DEADLINE_48H": "{campaign} iki gündən sonra bağlanır",
         "DEADLINE_24H": "{campaign} sabah bağlanır",
         "NEW_UPDATE_PUBLISHED": "{campaign} yenilik dərc etdi",
@@ -558,6 +558,7 @@
         "WITHDRAWAL_REQUESTED": "{campaign} kampaniyasının müəllifi vəsaitin çıxarılmasını tələb edib",
         "PAYOUT_DETAILS_NEEDED": "{campaign} kampaniyası üzrə ödənişiniz rekvizitlərinizi gözləyir",
         "REFUND_NEEDS_BANK_DETAILS": "{campaign} kampaniyası üzrə geri ödəniş üçün bank rekvizitləriniz lazımdır",
+        "REFUND_SENT_BY_BANK": "{campaign} kampaniyası üzrə {amount} məbləğində geri ödəniş {when} bank köçürməsi ilə göndərildi",
         "UPDATE_DUE_SOON": "{campaign} kampaniyası üçün yenilik {when} gözlənilir"
       },
       "unnamed": {
@@ -570,7 +571,7 @@
         "PROJECT_APPROVED": "Bir kampaniya təsdiqləndi və başladıla bilər",
         "PAYMENT_COLLECTED": "Bir kampaniya üçün {amount} məbləğində ödəniş alındı",
         "FINAL_PAYMENT_WARNING": "Son xəbərdarlıq: bir kampaniya üçün {amount} məbləğində ödəniş",
-        "PAYOUT_SENT": "Bir kampaniya üçün {amount} məbləğində ödəniş göndərildi",
+        "PAYOUT_SENT": "Bir kampaniya üçün {amount} məbləğində ödəniş {when} köçürüldü",
         "DEADLINE_48H": "Bir kampaniya iki gündən sonra bağlanır",
         "DEADLINE_24H": "Bir kampaniya sabah bağlanır",
         "NEW_UPDATE_PUBLISHED": "Bir kampaniya yenilik dərc etdi",
@@ -587,6 +588,7 @@
         "WITHDRAWAL_REQUESTED": "Dəstəklədiyiniz kampaniyanın müəllifi vəsaitin çıxarılmasını tələb edib",
         "PAYOUT_DETAILS_NEEDED": "Ödənişiniz VÖEN və IBAN məlumatlarınızı gözləyir",
         "REFUND_NEEDS_BANK_DETAILS": "Geri ödəniş üçün bank rekvizitləriniz lazımdır",
+        "REFUND_SENT_BY_BANK": "Bank köçürməsi ilə {amount} məbləğində geri ödəniş {when} göndərildi",
         "UPDATE_DUE_SOON": "Kampaniyanız üçün yenilik {when} gözlənilir"
       },
       "amount": {
@@ -595,11 +597,17 @@
         "pledge": "dəstəyiniz",
         "needed": "ehtiyacı olan məbləğ",
         "closingTotal": "bağlanış məbləği",
-        "funds": "vəsaitiniz"
+        "funds": "vəsaitiniz",
+        "refund": "sizə çatan"
       },
       "due": {
         "on": "{date} tarixinədək",
         "unknown": "tezliklə"
+      },
+      "sent": {
+        "on": "{date} tarixində",
+        "onTo": "{date} tarixində {account} hesabına",
+        "unknown": "bu yaxınlarda"
       },
       "category": {
         "PLEDGES": "Dəstəkləriniz",

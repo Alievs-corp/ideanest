@@ -519,7 +519,33 @@ public class RefundRecords {
                 AuditOutcome.SUCCEEDED,
                 "pledge=%s; amount=%s; account=%s; reference=%s; transferredOn=%s"
                         .formatted(current.pledgeId(), current.amount(), paid.ibanHint(), reference, transferredOn));
+        announceTransferred(current, paid.ibanHint(), transferredOn, now);
         return settled;
+    }
+
+    /**
+     * Tells the backer this part of their refund was sent — #418. Per part, because each part is a
+     * transfer finance recorded with its own amount; the replay above returns before this line.
+     */
+    private void announceTransferred(Refund refund, String ibanHint, LocalDate transferredOn, Instant now) {
+        Optional<UUID> backer = pledges.backerOf(refund.pledgeId());
+        if (backer.isEmpty()) {
+            log.error("Refund {} was paid by bank transfer and its pledge {} has no backer to tell.", refund.id(), refund.pledgeId());
+            return;
+        }
+        outbox.record(
+                RefundSentByBankEvent.AGGREGATE_TYPE,
+                refund.pledgeId(),
+                RefundSentByBankEvent.EVENT_TYPE,
+                new RefundSentByBankEvent(
+                        refund.id(),
+                        refund.pledgeId(),
+                        refund.projectId(),
+                        backer.get(),
+                        refund.amount(),
+                        transferredOn,
+                        ibanHint,
+                        now));
     }
 
     /**

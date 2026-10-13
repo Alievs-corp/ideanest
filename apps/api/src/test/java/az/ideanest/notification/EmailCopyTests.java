@@ -53,7 +53,8 @@ class EmailCopyTests extends AbstractIntegrationTest {
      * {@code NotificationEventListener} formats it before it reaches a person — an ISO timestamp
      * with a Z on the end in the middle of an Azerbaijani sentence is the platform showing its
      * plumbing. {@code extendedUntil} joined with IDN-EXT-01's {@code CAMPAIGN_EXTENDED}, a date
-     * for the same reason.
+     * for the same reason. {@code sentOn} and {@code accountHint} joined with #418's {@code PAYOUT_SENT}
+     * and {@code REFUND_SENT_BY_BANK}: the day the money was paid, and the masked account it went to.
      */
     private static final String PARAMS =
             """
@@ -68,7 +69,9 @@ class EmailCopyTests extends AbstractIntegrationTest {
               "dueAt": "2026-10-05",
               "extendedUntil": "2026-11-12",
               "disputeUntil": "2026-12-01",
-              "payableAt": "2026-12-01"
+              "payableAt": "2026-12-01",
+              "sentOn": "2026-10-13",
+              "accountHint": "AZ21…1944"
             }""";
 
     private static final String TITLE = "Xari Bulbul Ceramics";
@@ -95,7 +98,9 @@ class EmailCopyTests extends AbstractIntegrationTest {
               "dueAt": "2026-10-05",
               "extendedUntil": "2026-11-12",
               "disputeUntil": "2026-12-01",
-              "payableAt": "2026-12-01"
+              "payableAt": "2026-12-01",
+              "sentOn": "2026-10-13",
+              "accountHint": "AZ21…1944"
             }""";
 
     /** The suffix on a key that names the campaign, as {@code EmailComposer} spells it. */
@@ -264,6 +269,68 @@ class EmailCopyTests extends AbstractIntegrationTest {
         EmailContent content = composer.compose(named(NotificationType.PAYOUT_DETAILS_NEEDED), RECIPIENT, PRIMARY);
 
         assertThat(content.actionUrl()).endsWith("/settings/payout");
+    }
+
+    /**
+     * That a paid payout says how much, on which day and to which account, in every language, and
+     * goes to the payout settings, where that account is shown (#418).
+     */
+    @Test
+    @DisplayName("a paid payout names the amount, the day and the masked account, and links to the payout settings")
+    void aPaidPayoutSaysWhatWhenAndWhere() {
+        for (Locale locale : LANGUAGES) {
+            EmailContent content = composer.compose(named(NotificationType.PAYOUT_SENT), RECIPIENT, locale);
+            String body = String.join(" ", content.paragraphs());
+
+            assertThat(body).as("in %s", locale).contains("120.00 AZN").contains("2026-10-13").contains("AZ21…1944");
+            assertThat(content.subject()).as("in %s", locale).contains(TITLE);
+            assertThat(content.actionUrl()).endsWith("/settings/payout");
+        }
+    }
+
+    /**
+     * That a payout with no account to name -- the provider's route -- leaves the sentence out rather
+     * than a hole where the account would be (#418).
+     */
+    @Test
+    @DisplayName("a payout paid without a masked account has no account paragraph, and nothing left unfilled")
+    void aPayoutWithoutAnAccountLeavesTheSentenceOut() {
+        String withoutHint = NAMED_PARAMS.replace("\"accountHint\": \"AZ21…1944\"", "\"accountHint\": null");
+        assertThat(withoutHint).doesNotContain("AZ21");
+
+        for (Locale locale : LANGUAGES) {
+            EmailContent named = composer.compose(named(NotificationType.PAYOUT_SENT), RECIPIENT, locale);
+            EmailContent content =
+                    composer.compose(message(NotificationType.PAYOUT_SENT, withoutHint), RECIPIENT, locale);
+
+            assertThat(content.paragraphs()).as("in %s", locale).hasSize(named.paragraphs().size() - 1);
+            assertThat(content.paragraphs()).allSatisfy(paragraph -> assertThat(paragraph)
+                    .doesNotContainPattern("\\{\\d}")
+                    .doesNotContain(EmailFactsHole.DOUBLE_SPACE)
+                    .doesNotContain(" ."));
+            assertThat(String.join(" ", content.paragraphs())).contains("120.00 AZN").contains("2026-10-13");
+        }
+    }
+
+    /**
+     * That a refund sent by bank says how much, on which day and to which account, and goes to the
+     * backer's pledge, as the request for the account before it did (#418).
+     */
+    @Test
+    @DisplayName("a refund sent by bank names the amount, the day and the masked account, and links to the pledge")
+    void aRefundSentByBankSaysWhatWhenAndWhere() {
+        String pledgeId = "01890000-0000-7000-8000-000000000042";
+        String params = NAMED_PARAMS.replace("\"projectId\":", "\"pledgeId\": \"" + pledgeId + "\", \"projectId\":");
+        assertThat(params).contains(pledgeId);
+
+        for (Locale locale : LANGUAGES) {
+            EmailContent content =
+                    composer.compose(message(NotificationType.REFUND_SENT_BY_BANK, params), RECIPIENT, locale);
+            String body = String.join(" ", content.paragraphs());
+
+            assertThat(body).as("in %s", locale).contains("120.00 AZN").contains("2026-10-13").contains("AZ21…1944");
+            assertThat(content.actionUrl()).endsWith("/pledges/" + pledgeId);
+        }
     }
 
     /**

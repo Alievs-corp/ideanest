@@ -15,6 +15,7 @@ import az.ideanest.payment.domain.RefundBankTransfer;
 import az.ideanest.payment.domain.RefundRequest;
 import az.ideanest.shared.crypto.Sealed;
 import az.ideanest.shared.money.Money;
+import az.ideanest.shared.outbox.OutboxRelay;
 import az.ideanest.support.AbstractIntegrationTest;
 import az.ideanest.support.AdjustableClock;
 import az.ideanest.support.BankDetailsKeys;
@@ -110,6 +111,9 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
 
     @Autowired
     private LedgerReconciliation reconciliation;
+
+    @Autowired
+    private OutboxRelay relay;
 
     private final List<UUID> paidPledges = new ArrayList<>();
     private final List<UUID> projects = new ArrayList<>();
@@ -302,6 +306,54 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
         ResponseEntity<Map<String, Object>> another = recordTransfer(finance, refundId, "ANOTHER-REF", today);
         assertThat(another.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(another.getBody()).containsEntry("code", "REFUND_NOT_AWAITING_TRANSFER");
+    }
+
+    @Test
+    @DisplayName("#418: the backer is told once that the transfer was sent, with the amount, the value date and the masked account")
+    void theBackerIsToldOnce() {
+        Paid paid = pastTheWindow("bank-told", "25.00");
+        UUID refundId = routed(paid);
+        UUID backer = jdbc().queryForObject("SELECT backer_id FROM pledges WHERE id = ?", UUID.class, paid.pledgeId());
+        recordDetails(staff("bank-support", "MODERATOR"), paid.pledgeId(), IBAN, "Test Backer", ticketFromBacker(paid));
+        assertThat(sentEvents(paid.pledgeId())).as("nothing is announced before the transfer").isEmpty();
+
+        Account finance = staff("bank-finance", "FINANCE");
+        String valueDate = LocalDate.now(ZoneOffset.UTC).toString();
+        String reference = "TOLD-" + paid.pledgeId();
+        assertThat(recordTransfer(finance, refundId, reference, valueDate).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(recordTransfer(finance, refundId, reference, valueDate).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(recordTransfer(finance, refundId, "TOLD-OTHER", valueDate).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+
+        List<String> events = sentEvents(paid.pledgeId());
+        assertThat(events).as("one announcement, however often the transfer is recorded").hasSize(1);
+        assertThat(events.getFirst())
+                .contains(backer.toString())
+                .contains(refundId.toString())
+                .contains("\"amount\":\"25.00\"")
+                .contains("\"transferredOn\":\"" + valueDate + "\"")
+                .contains("AZ21…1944")
+                .doesNotContain(IBAN)
+                .doesNotContain(reference);
+
+        // Only this event is delivered: an earlier suite's pending events name rows it has since removed.
+        jdbc().update(
+                "DELETE FROM outbox_events WHERE event_type <> 'refund.sent_by_bank' OR aggregate_id <> ?",
+                paid.pledgeId());
+        relay.run();
+        List<Map<String, Object>> told = jdbc().queryForList(
+                """
+                SELECT DISTINCT recipient_id, params->>'pledgeId' AS pledge, params->>'sentOn' AS sent_on,
+                       params->>'accountHint' AS hint, params->'amount'->>'amount' AS amount
+                  FROM notifications WHERE type = 'REFUND_SENT_BY_BANK' AND subject_id = ?
+                """,
+                paid.pledgeId());
+        assertThat(told).singleElement().satisfies(row -> assertThat(row)
+                .containsEntry("recipient_id", backer)
+                .containsEntry("pledge", paid.pledgeId().toString())
+                .containsEntry("sent_on", valueDate)
+                .containsEntry("hint", "AZ21…1944")
+                .containsEntry("amount", "25.00"));
     }
 
     @Test
@@ -766,6 +818,14 @@ class RefundBankTransferApiTests extends AbstractIntegrationTest {
         return jdbc().queryForObject(
                 "SELECT count(*) FROM outbox_events WHERE event_type = 'refund.needs_bank_details' AND aggregate_id = ?",
                 Long.class,
+                pledgeId);
+    }
+
+    /** The {@code refund.sent_by_bank} events recorded for this pledge, as their payloads (#418). */
+    private List<String> sentEvents(UUID pledgeId) {
+        return jdbc().queryForList(
+                "SELECT payload FROM outbox_events WHERE event_type = 'refund.sent_by_bank' AND aggregate_id = ?",
+                String.class,
                 pledgeId);
     }
 
