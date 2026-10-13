@@ -6,7 +6,7 @@ different answers about the same subscription.
 
 | Module | Contents |
 |---|---|
-| `./catalogue` | `Plan`, `HeldSubscription`, `MySubscription`, `BillingPeriod`, `SubscriptionState`; `readPlan`, `readPlanCatalogue` and `readMine` (response narrowing); `isFreePrice` (through `decimal.js`); `standingOf` (pending, lapsed, ending, active); `blocksChoice`, `isHeldPlan`; `refusalOf` (`ALREADY_SUBSCRIBED`, `PLAN_NOT_ON_SALE`, 401, anything else) |
+| `./catalogue` | `Plan`, `HeldSubscription`, `MySubscription`, `BillingPeriod`, `SubscriptionState`; `readPlan`, `readPlanCatalogue` and `readMine` (response narrowing); `isFreePrice` (through `decimal.js`); `standingOf` (pending, lapsed, ending, active); `blocksChoice`, `isHeldPlan`; `refusalOf` (`ALREADY_SUBSCRIBED`, `PLAN_NOT_ON_SALE`, 401, anything else); `PaymentDue` and `HeldSubscription.paymentDue` / `renewalOpensAt` (#449); `planPaymentRefusalOf` (`SUBSCRIPTION_PAYMENT_NOT_DUE` by `reason`, `PAYMENT_UNAVAILABLE`); `planPaymentReturnOf` (paid, waiting, unconfirmed or failed on the way back from the provider, decided by the subscription and not the address, #451) |
 | `./fees` | `FeeDisclosure`, `readFeeDisclosure`, `FeeAudience`, and `disclosureStateOf` — unconfigured, unavailable or configured, so a failed read never says "nothing is deducted" (#145) |
 
 Import by subpath only. There is no root entry, so a web bundle pulls in exactly the module it

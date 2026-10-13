@@ -60,7 +60,21 @@ export interface HeldSubscription {
   readonly currentPeriodEnd?: string | null;
   readonly cancelAtPeriodEnd: boolean;
   readonly createdAt: string;
+  /**
+   * What `POST /v1/me/subscription/payment` would pay for now, or `null` when nothing is due
+   * (#449). The "Pay" and "Renew" actions branch on this rather than on the dates: how long the
+   * renewal window is belongs to the service, and a client that worked it out would disagree
+   * with the service the day the setting changes.
+   *
+   * Optional because the field arrived after the type did; absent reads as `null`.
+   */
+  readonly paymentDue?: PaymentDue | null;
+  /** When renewing the running period is first offered, or `null` for a pending or free plan. */
+  readonly renewalOpensAt?: string | null;
 }
+
+/** #449: the first period of a pending plan, or the next period of one inside its renewal window. */
+export type PaymentDue = 'FIRST_PERIOD' | 'RENEWAL';
 
 export interface Catalogue {
   readonly plans: readonly Plan[];
@@ -73,6 +87,7 @@ export interface MySubscription {
 
 const BILLING_PERIODS: readonly string[] = ['MONTHLY', 'YEARLY'];
 const STATES: readonly string[] = ['PENDING_PAYMENT', 'ACTIVE', 'CANCELED', 'EXPIRED'];
+const PAYMENTS_DUE: readonly string[] = ['FIRST_PERIOD', 'RENEWAL'];
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -188,6 +203,13 @@ export function readMine(body: unknown): MySubscription | null {
       currentPeriodEnd: optionalText(held.currentPeriodEnd),
       cancelAtPeriodEnd: held.cancelAtPeriodEnd === true,
       createdAt: text(held.createdAt) ?? '',
+      // An unknown value reads as "nothing due" rather than refusing the whole body: the worst it
+      // costs is a missing button, where a guess would offer to take money for the wrong thing.
+      paymentDue:
+        typeof held.paymentDue === 'string' && PAYMENTS_DUE.includes(held.paymentDue)
+          ? (held.paymentDue as PaymentDue)
+          : null,
+      renewalOpensAt: optionalText(held.renewalOpensAt),
     },
   };
 }
@@ -246,4 +268,71 @@ export function refusalOf(status: number | null, code: string | null | undefined
   if (code === 'PLAN_NOT_ON_SALE') return 'notOnSale';
   if (status === 401) return 'signedOut';
   return 'generic';
+}
+
+/**
+ * A refused plan payment (#449), as the catalogue key under `pricing.errors` that says it.
+ *
+ * <p>`SUBSCRIPTION_PAYMENT_NOT_DUE` carries a `reason`, and each one asks the reader for something
+ * different: nothing at all for a free plan, patience until the window opens, a new purchase for a
+ * plan that has ended. `PAYMENT_UNAVAILABLE` is the provider out of reach — ours to fix, theirs to
+ * retry, and nothing was charged.
+ */
+export type PlanPaymentRefusal =
+  | 'freePlan'
+  | 'renewalNotOpen'
+  | 'lapsed'
+  | 'notDue'
+  | 'paymentUnavailable'
+  | 'signedOut'
+  | 'generic';
+
+export function planPaymentRefusalOf(
+  status: number | null,
+  code: string | null | undefined,
+  reason: unknown,
+): PlanPaymentRefusal {
+  if (code === 'SUBSCRIPTION_PAYMENT_NOT_DUE') {
+    if (reason === 'FREE_PLAN') return 'freePlan';
+    if (reason === 'RENEWAL_NOT_OPEN') return 'renewalNotOpen';
+    if (reason === 'LAPSED') return 'lapsed';
+    return 'notDue';
+  }
+  if (code === 'PAYMENT_UNAVAILABLE' || status === 503) return 'paymentUnavailable';
+  if (status === 401) return 'signedOut';
+  return 'generic';
+}
+
+/** What the provider's return address may say: `?payment=returned` or `?payment=failed`. */
+export type PlanPaymentReturnHint = 'returned' | 'failed';
+
+/**
+ * What to tell somebody who has just come back from paying for a plan.
+ *
+ * <ul>
+ *   <li>`paid` — the plan entitles them and nothing is due any more: the first period opened, or
+ *       the renewal moved the end out of the window.</li>
+ *   <li>`waiting` — back through the success door and the same payment is still due. The
+ *       provider's callback is asynchronous and can land after the browser, so the page asks
+ *       again.</li>
+ *   <li>`unconfirmed` — still due after the page stopped asking. Not `failed`: the money may have
+ *       left their account and the callback may still arrive.</li>
+ *   <li>`failed` — back through the error door and the payment is still due.</li>
+ * </ul>
+ *
+ * <p>The subscription decides, not the word in the address, as a pledge's state does on the
+ * pledge page: the word only says that somebody has just come back. `null` when there is nothing
+ * to add — no subscription, or one that has lapsed, about which the held panel already speaks.
+ */
+export type PlanPaymentReturn = 'paid' | 'waiting' | 'unconfirmed' | 'failed';
+
+export function planPaymentReturnOf(
+  hint: PlanPaymentReturnHint,
+  held: HeldSubscription | null,
+  stoppedAsking: boolean,
+): PlanPaymentReturn | null {
+  if (held === null) return null;
+  if ((held.paymentDue ?? null) === null) return held.entitled ? 'paid' : null;
+  if (hint === 'failed') return 'failed';
+  return stoppedAsking ? 'unconfirmed' : 'waiting';
 }

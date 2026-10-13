@@ -3,6 +3,8 @@ import {
   blocksChoice,
   isFreePrice,
   isHeldPlan,
+  planPaymentRefusalOf,
+  planPaymentReturnOf,
   readMine,
   readPlan,
   readPlanCatalogue,
@@ -38,6 +40,8 @@ const held = {
   currentPeriodEnd: '2026-10-01T00:00:00Z',
   cancelAtPeriodEnd: false,
   createdAt: '2026-09-01T00:00:00Z',
+  paymentDue: null,
+  renewalOpensAt: '2026-09-24T00:00:00Z',
 };
 
 describe('reading the plan catalogue', () => {
@@ -96,6 +100,19 @@ describe('reading what an account holds', () => {
     expect(readMine({ subscription: held })?.subscription).toEqual(held);
   });
 
+  it('reads what is due to be paid, and anything it does not know as nothing due', () => {
+    expect(readMine({ subscription: { ...held, paymentDue: 'RENEWAL' } })?.subscription?.paymentDue).toBe('RENEWAL');
+    expect(readMine({ subscription: { ...held, paymentDue: 'FIRST_PERIOD' } })?.subscription?.paymentDue).toBe(
+      'FIRST_PERIOD',
+    );
+    // A guess would offer to take money for the wrong thing; a missing button costs less.
+    expect(readMine({ subscription: { ...held, paymentDue: 'SOMETHING' } })?.subscription?.paymentDue).toBeNull();
+    const older = { ...held } as Record<string, unknown>;
+    delete older.paymentDue;
+    delete older.renewalOpensAt;
+    expect(readMine({ subscription: older })?.subscription).toMatchObject({ paymentDue: null, renewalOpensAt: null });
+  });
+
   it('refuses a subscription it cannot render a decision from, rather than reading it as none', () => {
     expect(readMine({ subscription: { ...held, entitled: 'yes' } })).toBeNull();
     expect(readMine({ subscription: { ...held, state: 'PAUSED' } })).toBeNull();
@@ -145,5 +162,33 @@ describe('the rules the page draws by', () => {
     expect(refusalOf(401, null)).toBe('signedOut');
     expect(refusalOf(500, 'SOMETHING')).toBe('generic');
     expect(refusalOf(null, undefined)).toBe('generic');
+  });
+
+  it('maps a refused plan payment by its code and reason', () => {
+    expect(planPaymentRefusalOf(409, 'SUBSCRIPTION_PAYMENT_NOT_DUE', 'FREE_PLAN')).toBe('freePlan');
+    expect(planPaymentRefusalOf(409, 'SUBSCRIPTION_PAYMENT_NOT_DUE', 'RENEWAL_NOT_OPEN')).toBe('renewalNotOpen');
+    expect(planPaymentRefusalOf(409, 'SUBSCRIPTION_PAYMENT_NOT_DUE', 'LAPSED')).toBe('lapsed');
+    expect(planPaymentRefusalOf(409, 'SUBSCRIPTION_PAYMENT_NOT_DUE', undefined)).toBe('notDue');
+    expect(planPaymentRefusalOf(503, 'PAYMENT_UNAVAILABLE', undefined)).toBe('paymentUnavailable');
+    expect(planPaymentRefusalOf(503, null, undefined)).toBe('paymentUnavailable');
+    expect(planPaymentRefusalOf(401, null, undefined)).toBe('signedOut');
+    expect(planPaymentRefusalOf(404, null, undefined)).toBe('generic');
+  });
+
+  it('decides what a return from the payment page means from the subscription, not the address', () => {
+    const pending = { ...subscription, state: 'PENDING_PAYMENT' as const, entitled: false, paymentDue: 'FIRST_PERIOD' as const };
+    const renewing = { ...subscription, paymentDue: 'RENEWAL' as const };
+
+    expect(planPaymentReturnOf('returned', pending, false)).toBe('waiting');
+    expect(planPaymentReturnOf('returned', pending, true)).toBe('unconfirmed');
+    expect(planPaymentReturnOf('failed', pending, false)).toBe('failed');
+    expect(planPaymentReturnOf('returned', renewing, false)).toBe('waiting');
+
+    // Paid is paid whichever door they came through: the callback is the fact, the word a hint.
+    expect(planPaymentReturnOf('returned', subscription, false)).toBe('paid');
+    expect(planPaymentReturnOf('failed', subscription, false)).toBe('paid');
+
+    expect(planPaymentReturnOf('returned', null, false)).toBeNull();
+    expect(planPaymentReturnOf('returned', { ...subscription, entitled: false }, true)).toBeNull();
   });
 });
