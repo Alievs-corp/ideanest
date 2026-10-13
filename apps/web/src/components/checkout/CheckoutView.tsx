@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { Fragment, useEffect, useMemo, useRef } from 'react';
 import {
   Checkbox,
   Field,
@@ -491,11 +491,14 @@ export function CheckoutView({
                 </InlineAlert>
               ) : (
                 <p className="text-sm text-white/64">
-                  Your reward is held for{' '}
                   {/* No transition on this number. docs/motion-system.md §6:
                       the countdown must not animate, it simply changes. */}
-                  <strong className="tabular-nums text-white">{clock.label}</strong>. After that the
-                  stock goes back to the campaign and you would reserve it again.
+                  {copy.heldFor.split('{time}').map((part, index) => (
+                    <Fragment key={index}>
+                      {index > 0 && <strong className="tabular-nums text-white">{clock.label}</strong>}
+                      {part}
+                    </Fragment>
+                  ))}
                 </p>
               )}
 
@@ -514,7 +517,7 @@ export function CheckoutView({
                       <div key={addon.rewardTierId} className="flex gap-2">
                         <dt>{copy.review.addon}</dt>
                         <dd className="text-white">
-                          {addon.quantity} × {named?.title ?? 'Add-on'}
+                          {addon.quantity} × {named?.title ?? copy.review.addon}
                         </dd>
                       </div>
                     );

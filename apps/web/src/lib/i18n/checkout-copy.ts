@@ -102,6 +102,12 @@ export interface CheckoutCopy {
     readonly noReward: string;
     readonly yourSupport: string;
     readonly rewardLine: string;
+    /** Carries `{country}`: where the pledge is delivered, after the reward's title. */
+    readonly to: string;
+    /** Under the total while the figures are the browser's arithmetic. */
+    readonly sourcePreview: string;
+    /** Under the total once the service has priced the reservation. */
+    readonly sourceQuoted: string;
   };
   readonly payment: {
     readonly heading: string;
@@ -116,6 +122,8 @@ export interface CheckoutCopy {
     readonly yourName: string;
   };
   readonly reserved: string;
+  /** Carries `{time}`, the reservation's countdown, drawn bold in the sentence. */
+  readonly heldFor: string;
   readonly review: {
     readonly heading: string;
     readonly reward: string;
@@ -324,6 +332,9 @@ export function checkoutCopyFrom(t: CheckoutTranslator): CheckoutCopy {
       noReward: t('summary.noReward'),
       yourSupport: t('summary.yourSupport'),
       rewardLine: t('summary.rewardLine'),
+      to: String(t.raw('summary.to')),
+      sourcePreview: t('summary.sourcePreview'),
+      sourceQuoted: t('summary.sourceQuoted'),
     },
     payment: {
       heading: t('payment.heading'),
@@ -338,6 +349,7 @@ export function checkoutCopyFrom(t: CheckoutTranslator): CheckoutCopy {
       yourName: t('anonymous.yourName'),
     },
     reserved: t('reserved'),
+    heldFor: String(t.raw('heldFor')),
     review: {
       heading: t('review.heading'),
       reward: t('review.reward'),

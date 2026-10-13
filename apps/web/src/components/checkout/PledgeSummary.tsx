@@ -107,7 +107,7 @@ export function PledgeSummary({
     <FloatingPanel title={copy.pledge}>
       <p className="text-sm text-on-white/64">
         {rewardTitle ?? copy.noReward}
-        {destination != null && <> · to {destination}</>}
+        {destination != null && <> · {fillPlaceholders(copy.to, { country: destination })}</>}
       </p>
 
       {unavailable != null ? (
@@ -171,9 +171,7 @@ export function PledgeSummary({
           </div>
 
           <p className="mt-1 text-[13px] text-on-white/64">
-            {source === 'preview'
-              ? 'An estimate from the prices on this page. The campaign confirms the amounts when it reserves your reward.'
-              : 'Confirmed by the campaign when it reserved your reward.'}
+            {source === 'preview' ? copy.sourcePreview : copy.sourceQuoted}
           </p>
         </div>
       )}
