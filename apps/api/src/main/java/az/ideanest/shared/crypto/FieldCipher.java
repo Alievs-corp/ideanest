@@ -21,9 +21,9 @@ import java.util.UUID;
  * other person's data. The context is recomputed from where the row lives on every
  * read and is never stored.
  *
- * <p>{@code null} means no additional data, and it exists for one caller: shipping
- * addresses, which were sealed without any before this interface existed and must stay
- * readable. Nothing new passes {@code null}.
+ * <p>{@code null} means no additional data, and it exists for two callers: shipping
+ * addresses and identity documents, which were sealed without any before this interface
+ * existed and must stay readable. Nothing new passes {@code null}.
  */
 public interface FieldCipher {
 
