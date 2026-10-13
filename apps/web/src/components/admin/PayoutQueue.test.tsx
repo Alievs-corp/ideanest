@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApiError } from '../../lib/api/problem';
 import { lookUpNames } from '../../lib/admin/directory';
@@ -304,6 +304,58 @@ describe('starting refused', () => {
 
     expect(await screen.findByText(words)).toBeInTheDocument();
     expect(screen.queryByText('AYAN MAMMADOVA')).not.toBeInTheDocument();
+  });
+});
+
+describe('the figures moved', () => {
+  const moved = () => refusal(409, 'PAYOUT_NOT_SENDABLE', { state: 'CANCELLED' });
+
+  it('reads the file again after a start is refused, and keeps saying why — #419', async () => {
+    const user = await openFile(bankPayout());
+    startMock.mockRejectedValue(moved());
+    fileMock.mockResolvedValue(fileOf(bankPayout({ state: 'CANCELLED' })));
+
+    await user.click(screen.getByRole('button', { name: WORDS.startTransfer }));
+
+    expect(await screen.findByText(COPY.refusal.FIGURES_MOVED)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('heading', { name: WORDS.heading })).not.toBeInTheDocument());
+    expect(fileMock).toHaveBeenCalledTimes(2);
+    // The row says cancelled without a second read of the queue, which would close the file.
+    expect(screen.getByText(COPY.state.CANCELLED)).toBeInTheDocument();
+    expect(queueMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: COPY.cancel })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.approve })).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.refusal.FIGURES_MOVED)).toBeInTheDocument();
+  });
+
+  it('does the same when Send is refused', async () => {
+    const user = userEvent.setup();
+    const payout = bankPayout({ destinationKind: 'PROVIDER_TOKEN' });
+    queueMock.mockResolvedValue({ payouts: [payout], page: 0, hasMore: false });
+    fileMock.mockResolvedValue(fileOf(payout));
+    membershipMock.mockResolvedValue(reader(ROLE_CAPABILITIES.SUPER_ADMIN));
+    sendMock.mockRejectedValue(moved());
+
+    render(<PayoutQueue copy={COPY} />);
+    await user.click(await screen.findByRole('button', { expanded: false }));
+    fileMock.mockResolvedValue(fileOf({ ...payout, state: 'CANCELLED' }));
+    await user.click(await screen.findByRole('button', { name: COPY.send }));
+
+    expect(await screen.findByText(COPY.refusal.FIGURES_MOVED)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('button', { name: COPY.send })).not.toBeInTheDocument());
+    expect(screen.getByText(COPY.state.CANCELLED)).toBeInTheDocument();
+    expect(queueMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the file as it was when the second read fails', async () => {
+    const user = await openFile(bankPayout());
+    startMock.mockRejectedValue(moved());
+    fileMock.mockRejectedValue(new Error('offline'));
+
+    await user.click(screen.getByRole('button', { name: WORDS.startTransfer }));
+
+    expect(await screen.findByText(COPY.refusal.FIGURES_MOVED)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: WORDS.heading })).toBeInTheDocument();
   });
 });
 

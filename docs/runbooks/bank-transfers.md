@@ -86,7 +86,7 @@ wrong; then escalate (see §5).
 |---|---|
 | The destination is a provider's token, not a bank account | The creator is paid through the provider. Use *Send*. |
 | A backer's dispute on this campaign is still undecided | Decide it on `/admin/disputes`, then start again. |
-| The figures moved, so the payout has been cancelled | A refund or collection changed the campaign's totals. Calculate a new payout for the campaign and have it approved again. |
+| The figures moved, so the payout has been cancelled | A refund or collection changed the campaign's totals. The open file and its row now show the payout as cancelled; it leaves the queue on its next read. Calculate a new payout for the campaign and have it approved again. |
 | The creator's account is not confirmed | Ask compliance to review it on `/admin/payout-destinations`. |
 | Nobody pays their own payout | A colleague has to handle it. |
 | Already recorded under a different bank reference | Somebody recorded it already. Check the statement and the audit trail before doing anything else. |
