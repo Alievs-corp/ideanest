@@ -37,6 +37,9 @@ import java.util.UUID;
  * @param createdAt when the pledge was made. The key {@link BackerCursor} pages on, and it
  *     is not serialised: {@code confirmedAt} is the date a backer means, and a draft that
  *     was never confirmed has no date worth showing
+ * @param refundAwaitingBankTransfer #419: what of this pledge's refund waits to be paid by bank
+ *     transfer, or null — the figure {@code PledgeDetail} carries, so the list can say a refund is
+ *     pending without the backer opening every pledge to find out which one
  */
 public record BackerPledge(
         UUID id,
@@ -53,5 +56,6 @@ public record BackerPledge(
         boolean latePledge,
         Instant confirmedAt,
         Instant canceledAt,
-        Instant createdAt) {
+        Instant createdAt,
+        Money refundAwaitingBankTransfer) {
 }

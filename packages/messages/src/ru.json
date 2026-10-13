@@ -433,6 +433,7 @@
         "confirmedAt": "Подтверждён {time}",
         "charged": "списано",
         "notCharged": "не списано",
+        "refundPending": "Возврат ожидается",
         "loadingMore": "Загружаем",
         "showMore": "Показать ещё",
         "nextPageFailed": "Следующая страница не загрузилась"

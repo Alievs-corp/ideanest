@@ -4520,6 +4520,7 @@ export interface components {
             /** Format: uuid */
             pledgeId?: string;
             project?: components["schemas"]["Campaign"];
+            refundAwaitingBankTransfer?: components["schemas"]["Money"];
             /** Format: uuid */
             rewardTierId?: string;
             rewardTitle?: string;

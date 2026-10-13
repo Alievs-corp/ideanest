@@ -433,6 +433,7 @@
         "confirmedAt": "{time} tarixində təsdiqlənib",
         "charged": "tutulub",
         "notCharged": "tutulmayıb",
+        "refundPending": "Geri ödəniş gözlənilir",
         "loadingMore": "Yüklənir",
         "showMore": "Daha çox göstər",
         "nextPageFailed": "Növbəti səhifə yüklənmədi"

@@ -4662,6 +4662,8 @@ against refunding twice, reconciled against the provider's `returned` status (#4
 >   pledge's currency, or null. While it is not null the web and the app say "Refund pending —
 >   contact support" with the amount and the pledge's reference, and open the WhatsApp
 >   conversation with the pledge quoted, because a backer has no way to raise a ticket themselves.
+>   `GET /v1/me/pledges` carries the same field on each row (#419), and the pledge list on the web
+>   and in the app tags such a pledge "Refund pending", so it can be found without opening each one.
 
 ### 9.8 Chargebacks
 

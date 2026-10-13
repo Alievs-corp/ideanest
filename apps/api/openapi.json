@@ -11218,6 +11218,9 @@
           "project" : {
             "$ref" : "#/components/schemas/Campaign"
           },
+          "refundAwaitingBankTransfer" : {
+            "$ref" : "#/components/schemas/Money"
+          },
           "rewardTierId" : {
             "type" : "string",
             "format" : "uuid"

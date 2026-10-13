@@ -4,6 +4,7 @@ import az.ideanest.pledge.application.BackerArchive;
 import az.ideanest.pledge.application.BackerPledge;
 import az.ideanest.project.api.CoverImageBody;
 import az.ideanest.project.application.ProfileCampaign;
+import az.ideanest.shared.money.Money;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 import java.util.UUID;
@@ -43,6 +44,8 @@ import java.util.UUID;
  * @param project null when the campaign row no longer exists. The pledge is still served: it
  *     is the backer's money, and it is still theirs when the thing they backed has been
  *     removed
+ * @param refundAwaitingBankTransfer #419: {@code PledgeResponse}'s field of the same name, so the
+ *     list can tag a pledge whose refund waits for a bank transfer. Null when nothing does
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record BackerPledgeSummary(
@@ -55,7 +58,8 @@ public record BackerPledgeSummary(
         boolean latePledge,
         Instant confirmedAt,
         Instant canceledAt,
-        Campaign project) {
+        Campaign project,
+        Money refundAwaitingBankTransfer) {
 
     /**
      * The campaign a pledge is on, as a row of this list needs it.
@@ -135,6 +139,7 @@ public record BackerPledgeSummary(
                 pledge.latePledge(),
                 pledge.confirmedAt(),
                 pledge.canceledAt(),
-                Campaign.of(entry.campaign()));
+                Campaign.of(entry.campaign()),
+                pledge.refundAwaitingBankTransfer());
     }
 }
