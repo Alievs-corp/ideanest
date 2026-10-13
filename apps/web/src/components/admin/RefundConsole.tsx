@@ -53,6 +53,13 @@ const RouteToBankTransfer = lazy(() =>
 const BackerTicketForm = lazy(() =>
   import('./BackerTicketForm').then((module) => ({ default: module.BackerTicketForm })),
 );
+/*
+ * #457's plan payments to return, for the same reason. The section reads its own list, so it costs
+ * the route nothing until it renders, and nothing at all to a reader the log has already refused.
+ */
+const PlanPaymentReturns = lazy(() =>
+  import('./PlanPaymentReturns').then((module) => ({ default: module.PlanPaymentReturns })),
+);
 
 /*
  * #400: the two bank-transfer states sit after REQUESTED, because they are the same kind of thing
@@ -102,6 +109,12 @@ const STATES: readonly RefundState[] = [
  * To a reader holding `HANDLE_SUPPORT` the row offers to open that ticket in the backer's name
  * from the row's pledge and record the account against it straight away; `BackerTicketForm` has
  * the rest.
+ *
+ * <h2>And plan payments that bought nothing — #457</h2>
+ *
+ * A creator's card payment for a plan that arrived after the subscription had ended is listed
+ * above the log, with a refund to the card while the provider takes one and a recorded bank
+ * transfer after that. `PlanPaymentReturns.tsx` has the rules.
  *
  * <h2>Motion: none</h2>
  *
@@ -278,6 +291,14 @@ export function RefundConsole({ copy }: RefundConsoleProps) {
           </InlineAlert>
         )}
       </section>
+
+      <Suspense fallback={null}>
+        <PlanPaymentReturns
+          copy={copy}
+          canIssue={canIssue}
+          canOpenAccount={holds(membership, 'ADMINISTER_ACCOUNTS')}
+        />
+      </Suspense>
 
       <section aria-labelledby="refund-log-heading">
         <h2 id="refund-log-heading" className="text-lg font-medium tracking-[-0.02em] text-white">
