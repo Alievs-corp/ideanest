@@ -58,6 +58,8 @@ export interface RecordRefundTransferRequest {
   readonly bankReference: string;
   /** `YYYY-MM-DD`, the day the money left IdeyaNest's account. Not after today. */
   readonly transferredOn: string;
+  /** What the bank charged, a decimal string in the refund's currency. Absent for none (#401). */
+  readonly bankFee?: string;
   readonly signal?: AbortSignal;
 }
 
@@ -76,7 +78,11 @@ export async function recordRefundBankTransfer(
     {
       method: 'POST',
       headers: JSON_HEADERS,
-      body: JSON.stringify({ bankReference: request.bankReference, transferredOn: request.transferredOn }),
+      body: JSON.stringify({
+        bankReference: request.bankReference,
+        transferredOn: request.transferredOn,
+        ...(request.bankFee === undefined ? {} : { bankFee: request.bankFee }),
+      }),
       signal: request.signal,
     },
   );
