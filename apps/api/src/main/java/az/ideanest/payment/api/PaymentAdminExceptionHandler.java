@@ -1,6 +1,7 @@
 package az.ideanest.payment.api;
 
 import az.ideanest.payment.application.BankRefundRefusedException;
+import az.ideanest.payment.application.PlanRefundRefusedException;
 import az.ideanest.payment.application.DisputeNotFoundException;
 import az.ideanest.payment.application.NothingToRefundException;
 import az.ideanest.payment.application.NothingToSubmitException;
@@ -36,7 +37,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
             RefundController.class,
             DisputeController.class,
             ReconciliationController.class,
-            RefundBankTransferController.class
+            RefundBankTransferController.class,
+            PlanPaymentRefundController.class
         })
 public class PaymentAdminExceptionHandler {
 
@@ -99,6 +101,19 @@ public class PaymentAdminExceptionHandler {
      * #399: a step of a refund paid by bank transfer, refused. The reason carries its own status and
      * code; {@code meta.subject} is the refund, pledge or ticket it is about.
      */
+    /** #457: an unapplied plan payment cannot be returned that way. {@code code} is the reason. */
+    @ExceptionHandler(PlanRefundRefusedException.class)
+    public ProblemDetail handlePlanRefundRefused(PlanRefundRefusedException exception) {
+        PlanRefundRefusedException.Reason reason = exception.reason();
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.valueOf(reason.status()));
+        problem.setType(URI.create("https://ideanest.az/problems/plan-refund-"
+                + reason.name().toLowerCase(java.util.Locale.ROOT).replace('_', '-')));
+        problem.setTitle(reason.title());
+        problem.setDetail(exception.getMessage());
+        problem.setProperty("code", "PLAN_REFUND_" + reason.name());
+        return problem;
+    }
+
     @ExceptionHandler(BankRefundRefusedException.class)
     public ProblemDetail handleBankRefundRefused(BankRefundRefusedException exception) {
         BankRefundRefusedException.Reason reason = exception.reason();

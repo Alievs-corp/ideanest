@@ -2688,6 +2688,88 @@
         "tags" : [ "payout-controller" ]
       }
     },
+    "/v1/admin/plan-payments/unapplied" : {
+      "get" : {
+        "operationId" : "planPaymentRefundUnapplied",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UnappliedPlanPaymentList"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "plan-payment-refund-controller" ]
+      }
+    },
+    "/v1/admin/plan-payments/{id}/bank-transfer" : {
+      "post" : {
+        "operationId" : "planPaymentRefundRecordBankTransfer",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlanPaymentBankTransferRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UnappliedPlanPayment"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "plan-payment-refund-controller" ]
+      }
+    },
+    "/v1/admin/plan-payments/{id}/refund" : {
+      "post" : {
+        "operationId" : "planPaymentRefundRefundToCard",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UnappliedPlanPayment"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "plan-payment-refund-controller" ]
+      }
+    },
     "/v1/admin/plans" : {
       "get" : {
         "operationId" : "adminSubscriptionCatalogue",
@@ -15357,6 +15439,22 @@
           }
         }
       },
+      "PlanPaymentBankTransferRequest" : {
+        "type" : "object",
+        "properties" : {
+          "bankReference" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "note" : {
+            "type" : "string",
+            "maxLength" : 500,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "bankReference" ]
+      },
       "PlatformAnalyticsResponse" : {
         "type" : "object",
         "properties" : {
@@ -18858,6 +18956,54 @@
           },
           "secret" : {
             "type" : "string"
+          }
+        }
+      },
+      "UnappliedPlanPayment" : {
+        "type" : "object",
+        "properties" : {
+          "accountId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "amount" : {
+            "type" : "string"
+          },
+          "cardRefundUntil" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "paidAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "provider" : {
+            "type" : "string"
+          },
+          "providerTransactionId" : {
+            "type" : "string"
+          },
+          "subscriptionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }
+      },
+      "UnappliedPlanPaymentList" : {
+        "type" : "object",
+        "properties" : {
+          "payments" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UnappliedPlanPayment"
+            }
           }
         }
       },

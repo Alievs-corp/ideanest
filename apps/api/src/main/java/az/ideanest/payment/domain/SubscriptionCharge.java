@@ -36,7 +36,17 @@ public class SubscriptionCharge {
         PAID,
         FAILED,
         /** Paid, for a subscription that could no longer take it. A person refunds it. */
-        UNAPPLIED
+        UNAPPLIED,
+        /** An unapplied payment returned to the creator (#457). */
+        REFUNDED
+    }
+
+    /** How an unapplied payment went back (#457). */
+    public enum RefundMethod {
+        /** Through the provider, to the card that paid. */
+        CARD,
+        /** By a bank transfer staff made after the card refund window closed. */
+        BANK_TRANSFER
     }
 
     @Id
@@ -86,6 +96,22 @@ public class SubscriptionCharge {
     @Column(name = "raw_response")
     private String rawResponse;
 
+    @Column(name = "refunded_at")
+    private Instant refundedAt;
+
+    @Column(name = "refunded_by")
+    private UUID refundedBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "refund_method")
+    private RefundMethod refundMethod;
+
+    @Column(name = "refund_reference")
+    private String refundReference;
+
+    @Column(name = "refund_note")
+    private String refundNote;
+
     protected SubscriptionCharge() {
         // Hibernate.
     }
@@ -124,6 +150,24 @@ public class SubscriptionCharge {
 
     public void unapplied(Instant at, String raw) {
         settle(Status.UNAPPLIED, at, raw);
+    }
+
+    /**
+     * Records that an unapplied payment went back to the creator (#457).
+     *
+     * @throws IllegalStateException unless it is {@link Status#UNAPPLIED}. Only money the platform
+     *     kept without giving anything for it is returned from here
+     */
+    public void refunded(RefundMethod method, UUID staffId, String reference, String note, Instant at) {
+        if (status != Status.UNAPPLIED) {
+            throw new IllegalStateException("Subscription charge " + id + " is " + status + ", not unapplied");
+        }
+        this.status = Status.REFUNDED;
+        this.refundMethod = Objects.requireNonNull(method);
+        this.refundedBy = Objects.requireNonNull(staffId, "Somebody returned it");
+        this.refundedAt = Objects.requireNonNull(at);
+        this.refundReference = trimmedOrNull(reference);
+        this.refundNote = trimmedOrNull(note);
     }
 
     public void checked(Instant at) {
@@ -190,5 +234,29 @@ public class SubscriptionCharge {
 
     public Instant getSettledAt() {
         return settledAt;
+    }
+
+    public Instant getRefundedAt() {
+        return refundedAt;
+    }
+
+    public UUID getRefundedBy() {
+        return refundedBy;
+    }
+
+    public RefundMethod getRefundMethod() {
+        return refundMethod;
+    }
+
+    public String getRefundReference() {
+        return refundReference;
+    }
+
+    private static String trimmedOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.length() <= 500 ? trimmed : trimmed.substring(0, 500);
     }
 }
