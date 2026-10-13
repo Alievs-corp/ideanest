@@ -65,11 +65,10 @@ public class SubscriptionRenewalReminderJob implements ScheduledJob {
         return properties.schedule();
     }
 
-    /** It sends messages, which a maintenance window exists to hold — {@code ScheduledJob} lists them. */
-    @Override
-    public boolean pausesDuringMaintenance() {
-        return true;
-    }
+    /*
+     * Not paused during maintenance, like `deadline-reminder` and `payout-destination-reminders`: it only
+     * records outbox events, and what leaves the platform is `notification-sender`'s, which does pause.
+     */
 
     @Override
     public void run() {
