@@ -6161,6 +6161,9 @@
       "chooseNamed": "Choose this plan: {plan}",
       "offline": "You are offline. Choosing or cancelling a plan needs a connection, so it is not offered until you are back online.",
       "subscriptionUnavailable": "We could not check which plan you have.",
+      "renewalTitle": "Your {plan} plan ends on {date} — renew it on the website",
+      "pendingOnWeb": "Complete the payment on the IdeyaNest website, by card or by bank transfer. The plan starts as soon as the payment is confirmed, and you can publish from then on.",
+      "renewsFromOnWeb": "You can renew it on the website from {date}",
       "webOnly": {
         "title": "Plans are chosen on the website",
         "body": "To choose, change or cancel a plan, open this page on the IdeyaNest website. What you choose there applies in the app as soon as it is active.",
@@ -6251,6 +6254,9 @@
       "signedOutBody": "Your notifications belong to your account, not to this phone. Sign in to read them.",
       "stale": "Showing the notifications read earlier. They may be out of date.",
       "offline": "You are offline. Marking a notification as read needs a connection.",
+      "opensOnWeb": "Opens on the IdeyaNest website",
+      "renewalDue": "Your {plan} plan ends {when}: renew it on the website",
+      "renewalDueUnnamed": "Your plan ends {when}: renew it on the website",
       "explainer": {
         "title": "Get notified on this phone",
         "pledgeBody": "Get told when this campaign reaches its goal, posts an update or takes your payment.",
