@@ -1067,13 +1067,17 @@ Project imagery runs full-bleed at the top of the card, with radius on the upper
 corners only. The black ground is the system's largest advantage here: it makes
 project photography stronger than a light theme can.
 
-#### Campaign cards are drawn at 85% (#368)
+#### Campaign cards: edge to edge, four across
 
 The campaign grids on the web (`CAMPAIGN_GRID` and `PROFILE_CAMPAIGN_GRID` in
-`apps/web/src/components/browse/campaign-grid-layout.ts`) take 85% of the
-content column, centred in it (#374), with the same columns and the same 16px gap, so every campaign
-card is 85% of the width it would otherwise have, at every breakpoint. The card
-interior steps down one rung with it: title `16px` rather than §7.1's `18px`,
+`apps/web/src/components/browse/campaign-grid-layout.ts`) fill the content
+column, so the cards run from the heading's edge to the column's right edge
+rather than sitting centred with empty page either side. `CAMPAIGN_GRID` is
+one column, two from `sm`, three from `lg` and four from `xl`, with the 16px
+gap; at 1400px a card is 326px wide. The profile grid stops at three columns,
+because its column is narrower. This replaces #368's 85%-wide grid and #374's
+centring: four columns keep the cards small without narrowing the grid. The card
+interior is drawn for that smaller card (#368): title `16px` rather than §7.1's `18px`,
 body and figures `12px` rather than `14px`, tags and meta `11px` (`--text-2xs`,
 the floor — nothing on a card goes below it), tags `22px` high rather than
 `26px`, and padding, gaps and icons one Tailwind step each. Colour, contrast

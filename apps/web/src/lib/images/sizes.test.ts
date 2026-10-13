@@ -71,33 +71,32 @@ describe('sizesFor', () => {
  */
 describe('the derived attributes', () => {
   it('describes the campaign grid', () => {
-    // max-w-[1400px] px-5 sm:px-6, then CAMPAIGN_GRID: 85% of that, gap-4, 1 → 2 → 3 columns.
-    for (const token of ['max-w-[85%]', 'grid-cols-1', 'gap-4', 'sm:grid-cols-2', 'xl:grid-cols-3']) {
+    // max-w-[1400px] px-5 sm:px-6, then CAMPAIGN_GRID: all of it, gap-4, 1 → 2 → 3 → 4 columns.
+    for (const token of ['w-full', 'grid-cols-1', 'gap-4', 'sm:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-4']) {
       expect(CAMPAIGN_GRID.split(' ')).toContain(token);
     }
-    // Centred at every width (#374). Where the grid sits does not change how wide a card is.
-    expect(CAMPAIGN_GRID.split(' ')).toContain('mx-auto');
-    expect(CAMPAIGN_GRID).not.toMatch(/(^|\s)\w+:mx-0(\s|$)/);
+    // Edge to edge: nothing narrows the grid or gathers it in the middle.
+    expect(CAMPAIGN_GRID).not.toMatch(/max-w-|mx-auto|justify-center/);
     expect(CAMPAIGN_CARD_SIZES).toBe(
-      '(min-width: 1400px) 373px, ' +
-        '(min-width: 1280px) calc((85vw - 72px) / 3), ' +
-        '(min-width: 640px) calc(42.5vw - 28px), ' +
-        'calc(85vw - 34px)',
+      '(min-width: 1400px) 326px, ' +
+        '(min-width: 1280px) calc(25vw - 24px), ' +
+        '(min-width: 1024px) calc((100vw - 80px) / 3), ' +
+        '(min-width: 640px) calc(50vw - 32px), ' +
+        'calc(100vw - 40px)',
     );
   });
 
   it('describes the profile campaign grid', () => {
-    // max-w-[1120px] px-5 sm:px-6, then PROFILE_CAMPAIGN_GRID: 85%, gap-4, 1 → 2 → 3 at lg.
-    for (const token of ['max-w-[85%]', 'grid-cols-1', 'gap-4', 'sm:grid-cols-2', 'lg:grid-cols-3']) {
+    // max-w-[1120px] px-5 sm:px-6, then PROFILE_CAMPAIGN_GRID: all of it, gap-4, 1 → 2 → 3 at lg.
+    for (const token of ['w-full', 'grid-cols-1', 'gap-4', 'sm:grid-cols-2', 'lg:grid-cols-3']) {
       expect(PROFILE_CAMPAIGN_GRID.split(' ')).toContain(token);
     }
-    expect(PROFILE_CAMPAIGN_GRID.split(' ')).toContain('mx-auto');
-    expect(PROFILE_CAMPAIGN_GRID).not.toMatch(/(^|\s)\w+:mx-0(\s|$)/);
+    expect(PROFILE_CAMPAIGN_GRID).not.toMatch(/max-w-|mx-auto|justify-center|xl:grid-cols/);
     expect(PROFILE_CARD_SIZES).toBe(
-      '(min-width: 1168px) 294px, ' +
-        '(min-width: 1024px) calc((85vw - 72px) / 3), ' +
-        '(min-width: 640px) calc(42.5vw - 28px), ' +
-        'calc(85vw - 34px)',
+      '(min-width: 1168px) 347px, ' +
+        '(min-width: 1024px) calc((100vw - 80px) / 3), ' +
+        '(min-width: 640px) calc(50vw - 32px), ' +
+        'calc(100vw - 40px)',
     );
   });
 

@@ -78,8 +78,8 @@ export async function generateMetadata({
   });
 }
 
-/** Six per rail: two full rows at two columns, two at three, and never a half-empty row. */
-const RAIL_SIZE = 6;
+/** Twelve per rail: full rows at two, three and four columns, and never a half-empty row. */
+const RAIL_SIZE = 12;
 
 export default async function HomePage() {
   const t = await getTranslations('home');
