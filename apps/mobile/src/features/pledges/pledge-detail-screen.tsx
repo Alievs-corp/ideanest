@@ -304,6 +304,15 @@ function PledgeDetail({ id, payment, raise, renderEditor }: PledgeDetailScreenPr
         {pledge.refundAwaitingBankTransfer == null ? null : (
           <RefundPendingNotice pledgeId={pledge.id} amount={pledge.refundAwaitingBankTransfer} />
         )}
+        {pledge.state !== 'REFUNDED' || pledge.refundAwaitingBankTransfer != null ? null : (
+          <InlineAlert
+            variant="info"
+            title={t('account.pledges.manager.refunded.title')}
+            description={t('account.pledges.manager.refunded.body')}
+            politeness="polite"
+            testID="refund-sent"
+          />
+        )}
         {paymentHint === null ? null : <PaymentReturnNotice hint={paymentHint} state={pledge.state} />}
         {paymentHint !== null && pledge.state === 'COLLECTED' ? <PushExplainer moment="pledge" /> : null}
         {raiseHint === null ? null : <RaiseReturnNotice hint={raiseHint} raise={pledge.latestRaise} />}

@@ -469,6 +469,10 @@
           "reference": "Bu desteği belirtin: {reference}",
           "contact": "WhatsApp’tan bize yazın",
           "message": "Merhaba. {reference} numaralı desteğimin iadesi hakkında yazıyorum."
+        },
+        "refunded": {
+          "title": "İade gönderildi",
+          "body": "Paranız geri gönderildi. Bankanıza bağlı olarak kart veya hesap ekstrenizde görünmesi birkaç iş günü sürebilir."
         }
       },
       "editor": {

@@ -262,6 +262,12 @@ export function PledgeManager({ pledgeId, copy, pledges }: PledgeManagerProps) {
         </Suspense>
       )}
 
+      {pledge.state === 'REFUNDED' && pledge.refundAwaitingBankTransfer == null && (
+        <InlineAlert variant="info" title={pledges.refunded.title}>
+          <p>{pledges.refunded.body}</p>
+        </InlineAlert>
+      )}
+
       <section className="rounded-2xl border border-white/8 bg-surface-2 p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
