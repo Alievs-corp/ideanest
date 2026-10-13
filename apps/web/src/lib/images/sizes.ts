@@ -76,43 +76,44 @@ export function sizesFor(stops: readonly SizeStop[]): string {
  * category landings, the search results and a collection's campaigns.
  *
  * Every one of those pages is `mx-auto w-full max-w-[1400px] px-5 sm:px-6`, and the grid is
- * `CAMPAIGN_GRID` in `components/browse/campaign-grid-layout.ts`: `max-w-[85%]` of that
- * column, `grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3` (#368). Tailwind's `sm` is 640px
- * and `xl` is 1280px, `gap-4` is 16px, `px-5` is 20px a side and `px-6` is 24.
+ * `CAMPAIGN_GRID` in `components/browse/campaign-grid-layout.ts`: the whole column,
+ * `grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`. Tailwind's `sm` is 640px,
+ * `lg` 1024px and `xl` 1280px, `gap-4` is 16px, `px-5` is 20px a side and `px-6` is 24.
  *
- *   ≥1400: the container stops growing — (0.85 × 1352 − 32) / 3 = 372.4, so 373px
- *   ≥1280: three columns      — (0.85 × (100vw − 48) − 32) / 3 = (85vw − 72.8) / 3
- *    ≥640: two columns        — (0.85 × (100vw − 48) − 16) / 2 = 42.5vw − 28.4
- *    else: one column         —  0.85 × (100vw − 40)           = 85vw − 34
+ *   ≥1400: the container stops growing — (1352 − 48) / 4 = 326px
+ *   ≥1280: four columns       — (100vw − 48 − 48) / 4 = 25vw − 24
+ *   ≥1024: three columns      — (100vw − 48 − 32) / 3 = (100vw − 80) / 3
+ *    ≥640: two columns        — (100vw − 48 − 16) / 2 = 50vw − 32
+ *    else: one column         —  100vw − 40
  *
- * The constants are rounded towards the larger box, so a cover is never upscaled. The widest
- * this ever asks for is 373 CSS pixels, so a 3× display wants 1119; nothing on this surface
- * has any use for the 2048 and 3840 candidates Next offers by default, which is why
- * `next.config.mjs` stops at 1440.
+ * The widest this asks for is a two-column card at 1023px, 479.5 CSS pixels, so a 3× display
+ * wants 1439; nothing on this surface has any use for the 2048 and 3840 candidates Next offers
+ * by default, which is why `next.config.mjs` stops at 1440.
  */
 export const CAMPAIGN_CARD_SIZES = sizesFor([
-  { minWidth: 1400, size: '373px' },
-  { minWidth: 1280, size: 'calc((85vw - 72px) / 3)' },
-  { minWidth: 640, size: 'calc(42.5vw - 28px)' },
-  { size: 'calc(85vw - 34px)' },
+  { minWidth: 1400, size: '326px' },
+  { minWidth: 1280, size: 'calc(25vw - 24px)' },
+  { minWidth: 1024, size: 'calc((100vw - 80px) / 3)' },
+  { minWidth: 640, size: 'calc(50vw - 32px)' },
+  { size: 'calc(100vw - 40px)' },
 ]);
 
 /**
  * A campaign card's cover on a profile — `ProfileCampaignCard`, in `PROFILE_CAMPAIGN_GRID`.
  *
- * The same 85% grid inside the profile page's `mx-auto w-full max-w-[1120px] px-5 sm:px-6`,
- * with the third column arriving at `lg` (1024px) rather than `xl`.
+ * The whole of the profile page's `mx-auto w-full max-w-[1120px] px-5 sm:px-6` column, with
+ * the third column arriving at `lg` (1024px) and no fourth.
  *
- *   ≥1168: the container stops growing — (0.85 × 1072 − 32) / 3 = 293.1, so 294px
- *   ≥1024: three columns      — (85vw − 72.8) / 3
- *    ≥640: two columns        — 42.5vw − 28.4
- *    else: one column         — 85vw − 34
+ *   ≥1168: the container stops growing — (1072 − 32) / 3 = 346.7, so 347px
+ *   ≥1024: three columns      — (100vw − 48 − 32) / 3 = (100vw − 80) / 3
+ *    ≥640: two columns        — 50vw − 32
+ *    else: one column         — 100vw − 40
  */
 export const PROFILE_CARD_SIZES = sizesFor([
-  { minWidth: 1168, size: '294px' },
-  { minWidth: 1024, size: 'calc((85vw - 72px) / 3)' },
-  { minWidth: 640, size: 'calc(42.5vw - 28px)' },
-  { size: 'calc(85vw - 34px)' },
+  { minWidth: 1168, size: '347px' },
+  { minWidth: 1024, size: 'calc((100vw - 80px) / 3)' },
+  { minWidth: 640, size: 'calc(50vw - 32px)' },
+  { size: 'calc(100vw - 40px)' },
 ]);
 
 /**

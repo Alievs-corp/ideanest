@@ -23,7 +23,7 @@ import { CAMPAIGN_GRID } from '../browse/campaign-grid-layout';
  * budget sanctions, and it is `transform` only.
  */
 
-const CARDS = Array.from({ length: 6 }, (_, index) => index);
+const CARDS = Array.from({ length: 12 }, (_, index) => index);
 
 export interface DiscoverySkeletonProps {
   /**
