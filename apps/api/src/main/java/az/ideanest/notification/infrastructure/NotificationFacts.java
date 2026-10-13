@@ -41,6 +41,9 @@ public class NotificationFacts {
     /** The session list. Where {@code NEW_DEVICE_SIGN_IN} goes on every channel. */
     private static final String SESSIONS = "/settings/sessions";
 
+    /** The payout settings. Where {@code PAYOUT_DETAILS_NEEDED} goes on every channel (#411). */
+    private static final String PAYOUT_SETTINGS = "/settings/payout";
+
     private final ObjectMapper json;
 
     public NotificationFacts(ObjectMapper json) {
@@ -148,9 +151,11 @@ public class NotificationFacts {
      * <p>Five sources, in this order, and the order is the point:
      *
      * <ol>
-     *   <li>The type, when the message is not about a campaign at all. Only
-     *       {@code NEW_DEVICE_SIGN_IN} is: it is about the account, and what a person who
-     *       did not recognise that sign-in needs is the session list.
+     *   <li>The type, when the message is not about a campaign at all.
+     *       {@code NEW_DEVICE_SIGN_IN} is about the account, and what a person who did not
+     *       recognise that sign-in needs is the session list. {@code PAYOUT_DETAILS_NEEDED}
+     *       names a campaign, but what it asks for is an IBAN, which is entered in the payout
+     *       settings rather than on the campaign page.
      *   <li>The campaign's public path, {@code /projects/{creatorSlug}/{projectSlug}}, from
      *       the two slugs #249 puts in {@code params}. <strong>This is the only one of
      *       these that addresses the campaign page.</strong>
@@ -198,9 +203,10 @@ public class NotificationFacts {
      * waiting for the backer's bank account goes to their pledge instead, which both the web and the
      * application have a screen for.
      *
-     * <p>The session list for {@code NEW_DEVICE_SIGN_IN}, otherwise the campaign. These are
-     * the two destinations the web inbox's {@code hrefOf} links, and both are screens the
-     * mobile application has — the fallbacks resolve to paths it has no screen for, which is
+     * <p>The session list for {@code NEW_DEVICE_SIGN_IN}, the payout settings for
+     * {@code PAYOUT_DETAILS_NEEDED}, otherwise the campaign. These are the destinations the web
+     * inbox's {@code hrefOf} links, and all are screens the mobile application has — the
+     * fallbacks resolve to paths it has no screen for, which is
      * why push sends this rather than {@link #pathFor}.
      */
     public String appPathFor(NotificationType type, JsonNode params) {
@@ -209,6 +215,9 @@ public class NotificationFacts {
             if (!pledge.isEmpty()) {
                 return "/pledges/" + encode(pledge);
             }
+        }
+        if (type == NotificationType.PAYOUT_DETAILS_NEEDED) {
+            return PAYOUT_SETTINGS;
         }
         return type == NotificationType.NEW_DEVICE_SIGN_IN ? SESSIONS : campaignPath(params);
     }

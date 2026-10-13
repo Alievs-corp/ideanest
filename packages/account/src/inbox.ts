@@ -197,8 +197,9 @@ export function campaignOf(params: Record<string, unknown>): {
 
 /**
  * Where the row goes, in `EmailComposer`'s order so the inbox and the email land in one place:
- * the type when the message is not about a campaign (the sign-in alert, and since #399 a refund
- * waiting for the backer's bank account, which goes to their pledge), then the campaign's page,
+ * the type when the message is not about a campaign (the sign-in alert, since #399 a refund
+ * waiting for the backer's bank account, which goes to their pledge, and since #411 the reminder
+ * to enter an IBAN, which goes to the payout settings), then the campaign's page,
  * then nothing. **A row with no destination is not a link**, rather than a link to the home page.
  */
 export function hrefOf(
@@ -206,6 +207,7 @@ export function hrefOf(
   campaignHref: string | null = campaignOf(readParams(notification.params)).href,
 ): string | null {
   if (notification.type === 'NEW_DEVICE_SIGN_IN') return '/settings/sessions';
+  if (notification.type === 'PAYOUT_DETAILS_NEEDED') return '/settings/payout';
   if (notification.type === 'REFUND_NEEDS_BANK_DETAILS') {
     const pledge = textOf(readParams(notification.params), 'pledgeId');
     if (pledge !== null) return `/pledges/${encodeURIComponent(pledge)}`;
