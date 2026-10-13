@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import az from '@ideanest/messages/az.json';
 import messages from '@ideanest/messages/en.json';
 import type { PledgeAmounts } from '../../lib/pledges/api';
 import { PledgeSummary } from './PledgeSummary';
@@ -76,5 +77,31 @@ describe('the approximation', () => {
 
     expect(screen.getAllByText('50.00 AZN')).toHaveLength(2);
     expect(screen.queryByText(/≈/)).not.toBeInTheDocument();
+  });
+});
+
+describe('the words around the figures (#435)', () => {
+  const azCopy = az.checkout.summary;
+
+  it('names the destination and the source of the figures in the reader language', () => {
+    const { rerender } = render(
+      <PledgeSummary
+        copy={azCopy}
+        amounts={amounts('50.00')}
+        source="preview"
+        rewardTitle="Bir şərf"
+        destination="Almaniya"
+      />,
+    );
+
+    expect(screen.getByText(/Çatdırılma: Almaniya/)).toBeInTheDocument();
+    expect(screen.getByText(azCopy.sourcePreview)).toBeInTheDocument();
+
+    rerender(
+      <PledgeSummary copy={azCopy} amounts={amounts('50.00')} source="quoted" rewardTitle={null} />,
+    );
+
+    expect(screen.getByText(azCopy.sourceQuoted)).toBeInTheDocument();
+    expect(screen.queryByText(/campaign|estimate| to /i)).not.toBeInTheDocument();
   });
 });

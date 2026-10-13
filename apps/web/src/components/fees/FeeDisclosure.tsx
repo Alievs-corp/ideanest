@@ -81,13 +81,11 @@ export interface FeeDisclosureProps {
  * page whose entire purpose is to print the number the platform charges.
  */
 function percent(fraction: string, locale: Locale): string {
-  const value = new Decimal(fraction).times(100);
-
   return numberFormat(
     locale,
-    { minimumFractionDigits: 0, maximumFractionDigits: 2 },
+    { style: 'percent', minimumFractionDigits: 0, maximumFractionDigits: 2 },
     'fee-percent',
-  ).format(Number(value.toFixed(2)));
+  ).format(Number(new Decimal(fraction).toFixed(4)));
 }
 
 export async function FeeDisclosure({ disclosure, audience, locale }: FeeDisclosureProps) {

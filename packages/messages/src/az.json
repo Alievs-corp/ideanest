@@ -3857,6 +3857,7 @@
   },
   "checkout": {
     "title": "Dəstək ol",
+    "metaDescription": "Mükafat seçin, əlavələri qeyd edin və dəstəyinizi təsdiqləyin.",
     "progress": "Dəstək mərhələləri",
     "steps": {
       "choose": "Mükafatınızı seçin",

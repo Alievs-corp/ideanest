@@ -86,6 +86,8 @@ describe.each(SUPPORTED_LOCALES)('the fee disclosure in %s', (locale) => {
 
     expect(text).toMatch(/5/u);
     expect(text).toMatch(/92[.,]1/u);
+    // #435: a rate is a percentage, and printed without its sign it reads as a sum of money.
+    expect(text.match(/%/gu)?.length ?? 0).toBeGreaterThanOrEqual(3);
     expect(text).not.toContain(copy.unconfigured);
     expect(text).not.toContain(plain(copy.unavailable));
   });

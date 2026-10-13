@@ -3857,6 +3857,7 @@
   },
   "checkout": {
     "title": "Back this campaign",
+    "metaDescription": "Choose a reward, add extras, and confirm your pledge.",
     "progress": "Pledge progress",
     "steps": {
       "choose": "Choose your reward",

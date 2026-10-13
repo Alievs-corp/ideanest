@@ -3857,6 +3857,7 @@
   },
   "checkout": {
     "title": "Bu kampanyaya destek ol",
+    "metaDescription": "Bir ödül seçin, ekstraları ekleyin ve desteğinizi onaylayın.",
     "progress": "Destek adımları",
     "steps": {
       "choose": "Ödülünüzü seçin",

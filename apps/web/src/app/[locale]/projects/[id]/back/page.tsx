@@ -57,10 +57,10 @@ import { getLocale, getTranslations } from 'next-intl/server';
  * Component, because it is a barrel and several of its members reach for
  * `createContext`.
  */
-export const metadata: Metadata = privatePageMetadata({
-  title: 'Back this campaign',
-  description: 'Choose a reward, add extras, and confirm your pledge.',
-});
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('checkout');
+  return privatePageMetadata({ title: t('title'), description: t('metaDescription') });
+}
 
 /**
  * PL-15's private link: `?token=abc&token=def`.
