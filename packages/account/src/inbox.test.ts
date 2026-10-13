@@ -126,6 +126,10 @@ describe('hrefOf', () => {
     ).toBe(`/pledges/${pledgeId}`);
     expect(hrefOf(notification({ type: 'REFUND_NEEDS_BANK_DETAILS', category: 'PAYMENTS', params: {} }))).toBeNull();
   });
+
+  it('sends the payout-details reminder to the payout settings, not the campaign it names (#411)', () => {
+    expect(hrefOf(notification({ type: 'PAYOUT_DETAILS_NEEDED', category: 'PAYMENTS' }))).toBe('/settings/payout');
+  });
 });
 
 describe('describeNotification', () => {
