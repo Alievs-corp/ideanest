@@ -580,7 +580,9 @@ public class PayoutService {
      * the figures are frozen, which is right for the approval and wrong for the
      * instruction. When the net has moved, the payout is refused rather than adjusted: a
      * different amount is a different decision, and the signatures on file were given for
-     * this one.
+     * this one. It is cancelled, and the cancellation is kept ({@code noRollbackFor}, #413), so
+     * the next step the refusal points to — a fresh calculation — is not refused because this
+     * payout is still in flight.
      *
      * <p><strong>And the signatures are counted rather than assumed.</strong> See #398:
      * {@code state} is a summary of rows in {@code payout_approvals}, and a summary can be
@@ -598,7 +600,7 @@ public class PayoutService {
      * key and at its own figure, and cannot be cancelled.
      *
      * @throws PayoutNotSendableException when it has not been approved, or the figures have
-     *     moved underneath it
+     *     moved underneath it and it was cancelled
      * @throws CampaignAlreadyPaidOutException when another payout already paid the campaign
      * @throws PayoutSignaturesShortException when the row says approved and the signatures
      *     on file do not reach {@code approvalsRequired}
@@ -610,7 +612,7 @@ public class PayoutService {
      * @throws PayoutSettlesByBankTransferException when the creator is paid into an IBAN, or a bank
      *     transfer of this payout has been started (#397)
      */
-    @Transactional
+    @Transactional(noRollbackFor = PayoutNotSendableException.class)
     public Payout send(UUID staffId, UUID payoutId) {
         staff.requireCapability(staffId, StaffCapability.APPROVE_PAYOUT);
 
@@ -904,7 +906,7 @@ public class PayoutService {
 
         CampaignFunds funds = gateway.fundsOf(payout.projectId(), payout.currency());
         if (!funds.collected().equals(payout.gross()) || !funds.refunded().equals(payout.refunded())) {
-            // Unlike `send`, the cancellation is kept: `noRollbackFor` above. The refusal says the payout
+            // As in `send`, the cancellation is kept: `noRollbackFor` above. The refusal says the payout
             // was cancelled and the next step is a fresh calculation, which a rolled-back cancellation
             // would make impossible -- the payout would still be in flight.
             payout.cancelled();

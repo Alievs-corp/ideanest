@@ -188,8 +188,8 @@ class PayoutDualApprovalApiTests extends AbstractIntegrationTest {
          * state it found, and a payout short of signatures never reaches the funds check at
          * all. Getting here is the proof the new count let a properly approved payout past.
          *
-         * The row itself is still APPROVED afterwards — `send` is @Transactional and throws,
-         * so the cancellation rolls back with everything else it did.
+         * The row is CANCELLED afterwards too: the refusal tells staff to calculate a new
+         * payout, which a cancellation rolled back with the throw would refuse (#413).
          *
          * A send that actually moved money would need `ScriptedPaymentProvider` to answer
          * payouts, and it does not: it throws "Payouts are #69; no test drives them yet".
@@ -202,6 +202,7 @@ class PayoutDualApprovalApiTests extends AbstractIntegrationTest {
                 .isInstanceOf(PayoutNotSendableException.class)
                 .satisfies(cause -> assertThat(((PayoutNotSendableException) cause).state())
                         .isEqualTo(PayoutState.CANCELLED));
+        assertThat(payoutRows.findById(payoutId).orElseThrow().state()).isEqualTo(PayoutState.CANCELLED);
     }
 
     @Test
