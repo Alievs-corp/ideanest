@@ -101,6 +101,18 @@ public class CollectionRun {
      */
     public static final String NO_PAYMENT_METHOD = "payment_method_missing";
 
+    /**
+     * #436: a collection at close is refunded in full if its campaign is later halted, whatever
+     * {@code withhold-provider-fee} says today.
+     *
+     * <p>It charges a pledge confirmed before the campaign closed — under IDN-EXT-01 one confirmed before
+     * pledges were charged at once — and the backer agreed to whatever the platform said when they
+     * confirmed it, which the platform does not record. Every such pledge was told "refunded in full",
+     * so that is what its charge is taken under. Only a charge the backer pays on the provider's page
+     * right after reading the checkout carries the net rule ({@code HostedPaymentPage}).
+     */
+    private static final boolean UNDER_THE_WORDS_IT_WAS_CONFIRMED_WITH = false;
+
     private final PaymentProviders providers;
     private final StoredCards storedCards;
     private final ProviderCircuitBreaker breaker;
@@ -250,7 +262,8 @@ public class CollectionRun {
                 provider.name(),
                 result,
                 pledge.attemptNumber(),
-                key));
+                key,
+                UNDER_THE_WORDS_IT_WAS_CONFIRMED_WITH));
 
         ledger.post(post(transaction.getId(), campaign, provider.name(), pledge.amount()));
         pledges.recordCollected(pledge.pledgeId(), now);
@@ -315,7 +328,8 @@ public class CollectionRun {
                 provider.name(),
                 result,
                 pledge.attemptNumber(),
-                key));
+                key,
+                UNDER_THE_WORDS_IT_WAS_CONFIRMED_WITH));
 
         Instant closedAt = schedule.closedAtFrom(pledge.windowEndsAt());
         Instant nextAttemptAt = schedule.nextAttemptAt(closedAt, pledge.attemptNumber());
@@ -359,7 +373,8 @@ public class CollectionRun {
                     provider.name(),
                     result,
                     pledge.attemptNumber(),
-                    key));
+                    key,
+                    UNDER_THE_WORDS_IT_WAS_CONFIRMED_WITH));
         }
         pledges.recordUnresolved(pledge.pledgeId(), schedule.recheckAt(now));
 

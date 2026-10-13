@@ -350,9 +350,12 @@ public class RefundService {
         }
 
         // Every refund against the charge that has not failed, this one included: equal to this one's
-        // amount only when it is the only one.
+        // amount and withheld fee (#436) only when it is the only one.
         boolean alone = refund.amount()
+                .plus(refund.withheldFee())
                 .equals(Money.of(refunds.refundedAgainstCharge(charge.getId()), refund.amount().currency()));
+        // What the provider was asked to reverse. A refund net of the provider's fee (#436) is part of the
+        // payment to the provider, and a partial reversal may leave it reported as paid.
         boolean whole = refund.amount().equals(charge.getAmount());
         return switch (lookup.state()) {
             case RETURNED -> alone

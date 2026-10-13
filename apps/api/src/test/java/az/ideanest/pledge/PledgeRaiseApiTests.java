@@ -1314,7 +1314,8 @@ class PledgeRaiseApiTests extends AbstractIntegrationTest {
                 new ChargeResult(
                         ProviderOutcome.APPROVED, (String) opened.getBody().get("providerTransactionId"), null, null, "{}"),
                 1,
-                "pledge-raise-" + opened.getBody().get("raiseId")));
+                "pledge-raise-" + opened.getBody().get("raiseId"),
+                false));
     }
 
     private ResponseEntity<Map<String, Object>> staffRefund(UUID pledgeId, Map<String, Object> amount) {

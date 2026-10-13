@@ -59,6 +59,11 @@ import java.util.UUID;
  * @param refundAwaitingBankTransfer #400: what of this pledge's refund the provider could no longer
  *     send back and is waiting to be paid by bank transfer, or null. While it is not null the backer
  *     is told to contact support, who record the account it is paid into
+ * @param refunded #436: what of this pledge has gone back to the backer, as sent, or null when
+ *     nothing has. A screen states this figure, not {@code amounts.total}: a refund net of the
+ *     provider's fee returns less than the pledge
+ * @param refundWithheldFee #436: the payment provider's fee this pledge's refund keeps back, or null
+ *     when none does — so a screen can say "97.00 AZN refunded, 3.00 AZN payment provider fee withheld"
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record PledgeResponse(
@@ -103,7 +108,9 @@ public record PledgeResponse(
         List<PledgeSupplementBody> supplements,
         boolean raisable,
         PledgeRaiseBody latestRaise,
-        Money refundAwaitingBankTransfer) {
+        Money refundAwaitingBankTransfer,
+        Money refunded,
+        Money refundWithheldFee) {
 
     /**
      * §4.5's PL-06, broken out: what the backer is charged, and what it is made of.
@@ -166,6 +173,8 @@ public record PledgeResponse(
                 detail.latestRaise() == null
                         ? null
                         : PledgeRaiseBody.of(detail.latestRaise(), detail.raiseResumeUrl()),
-                detail.refundAwaitingBankTransfer());
+                detail.refundAwaitingBankTransfer(),
+                detail.refunded(),
+                detail.refundWithheldFee());
     }
 }

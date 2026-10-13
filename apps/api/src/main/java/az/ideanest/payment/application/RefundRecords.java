@@ -86,6 +86,7 @@ public class RefundRecords {
     private final DisputeRepository disputes;
     private final Outbox outbox;
     private final ObjectMapper json;
+    private final RefundTerms terms;
 
     public RefundRecords(
             RefundRepository refunds,
@@ -97,7 +98,8 @@ public class RefundRecords {
             RefundBankTransferRepository bankTransfers,
             DisputeRepository disputes,
             Outbox outbox,
-            ObjectMapper json) {
+            ObjectMapper json,
+            RefundTerms terms) {
         this.refunds = refunds;
         this.transactions = transactions;
         this.ledger = ledger;
@@ -108,6 +110,7 @@ public class RefundRecords {
         this.disputes = disputes;
         this.outbox = outbox;
         this.json = json;
+        this.terms = terms;
     }
 
     /**
@@ -216,6 +219,13 @@ public class RefundRecords {
      * left. Whether the pledge is refunded in full is not decided here: a requested refund may fail, so
      * {@link #settleSuccess} decides it from what has actually gone back.
      *
+     * <p><strong>Net of the provider's fee, for a charge taken under that rule (#436).</strong> A failed
+     * or halted campaign's refund of such a charge keeps back the fee posted with it ({@link RefundTerms})
+     * — less any of it a refund not failed has already kept back — and records it as the refund's
+     * {@code withheld_fee}; what is sent is the rest of what the charge has left. A charge refunded in
+     * part by staff beforehand is refunded the rest less the fee, and nothing when the fee is more than
+     * what is left. {@code RefundRepository#owedPlatformRefunds} offers a charge on the same arithmetic.
+     *
      * @return empty when nothing of this charge remains to refund
      */
     @Transactional
@@ -229,7 +239,13 @@ public class RefundRecords {
         // Locked before what is left is read, so a staff refund recorded at the same moment is either
         // counted here or counts this one.
         pledges.lock(pledgeId);
-        Money left = remainingOnCharge(charge);
+        String currency = charge.getAmount().currency();
+        // #436: the part of the charge's provider fee no refund has kept back yet; zero unless the charge
+        // was taken under the net rule and this is a campaign's outcome.
+        Money withheld = terms.withheldOn(charge, reason)
+                .minus(Money.of(refunds.withheldAgainstCharge(charge.getId()), currency))
+                .max(Money.zero(currency));
+        Money left = remainingOnCharge(charge).minus(withheld);
         if (!left.isPositive()) {
             return Optional.empty();
         }
@@ -239,16 +255,11 @@ public class RefundRecords {
                 charge.getProjectId(),
                 charge.getId(),
                 left,
-                // A campaign refund is meant to return everything (§9.7); a raise's, only the raise.
+                withheld,
+                // A campaign refund is meant to return everything it owes (§9.7); a raise's, only the raise.
                 reason != RefundReason.RAISE_NOT_APPLIED,
                 reason,
-                switch (reason) {
-                    case CAMPAIGN_FAILED ->
-                        "The campaign ended below its success threshold; every backer is refunded in full.";
-                    case RAISE_NOT_APPLIED ->
-                        "The backer paid to raise their pledge and the raise could not be applied.";
-                    default -> "The campaign was suspended or cancelled; every backer is refunded in full.";
-                },
+                detailOf(reason, withheld),
                 null,
                 idempotencyKey));
         audit.record(
@@ -256,9 +267,25 @@ public class RefundRecords {
                 refund.id(),
                 AuditActor.system(),
                 AuditOutcome.SUCCEEDED,
-                "pledge=%s; charge=%s; amount=%s; reason=%s; full=%s"
-                        .formatted(pledgeId, chargeId, left, reason, refund.fullRefund()));
+                "pledge=%s; charge=%s; amount=%s; withheldFee=%s; reason=%s; full=%s"
+                        .formatted(pledgeId, chargeId, left, withheld, reason, refund.fullRefund()));
         return Optional.of(refund);
+    }
+
+    /** The sentence on a refund the platform issued itself — the console's "why". */
+    private static String detailOf(RefundReason reason, Money withheld) {
+        String outcome = switch (reason) {
+            case CAMPAIGN_FAILED -> "The campaign ended below its success threshold";
+            case RAISE_NOT_APPLIED -> null;
+            default -> "The campaign was suspended or cancelled";
+        };
+        if (outcome == null) {
+            return "The backer paid to raise their pledge and the raise could not be applied.";
+        }
+        return withheld.isPositive()
+                ? outcome + "; the backer is refunded less the payment provider's fee of " + withheld
+                        + ", which the charge was taken under (#436)."
+                : outcome + "; the backer is refunded in full.";
     }
 
     /** What a pledge has left to refund: everything it was charged, less every refund not failed. */
@@ -400,7 +427,10 @@ public class RefundRecords {
         }
         PaymentTransaction charge = transactions.findById(refused.chargeTransactionId())
                 .orElseThrow(() -> new BankRefundRefusedException(Reason.REFUND_NOT_FAILED, refusedId));
-        Money left = remainingOnCharge(charge).min(refused.amount());
+        // #436: a campaign refund that kept the provider's fee back keeps it back by bank transfer too, so
+        // the backer is owed the same net amount whichever way it goes.
+        Money withheld = refused.withheldFee();
+        Money left = remainingOnCharge(charge).minus(withheld).min(refused.amount());
         if (!left.isPositive()) {
             throw new NothingToRefundException(refused.pledgeId());
         }
@@ -409,6 +439,7 @@ public class RefundRecords {
                 refused.projectId(),
                 charge.getId(),
                 left,
+                withheld,
                 refused.fullRefund(),
                 refused.reason(),
                 "By bank transfer, after refund " + refusedId + " was refused (" + refused.failureCode() + ").",

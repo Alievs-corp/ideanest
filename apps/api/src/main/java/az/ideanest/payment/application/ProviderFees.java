@@ -19,7 +19,9 @@ import org.springframework.stereotype.Component;
  * escrow, so the books still agree with the transactions.
  *
  * <p><strong>A refund does not reverse it.</strong> The provider keeps its commission on a refunded charge
- * (#387), and the owner accepted that as the platform's cost; the fee stays posted.
+ * (#387); the fee stays posted. Who bears it is #436's rule: a failed, suspended or cancelled campaign
+ * refunds a charge taken under that rule less this very figure ({@link RefundTerms}), so escrow ends at
+ * zero for the charge; every other refund returns the whole charge and the fee is the platform's cost.
  *
  * <p>The figure is the provider's published rate applied to the charge. The provider's settlement report
  * is the authority, and a comparison against it, when one is written, is where a difference shows.
@@ -27,7 +29,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProviderFees {
 
-    private final ProviderFeeProperties properties;
+    /** Not final, so a test can give the suite's provider a rate; nothing in the application writes it. */
+    private ProviderFeeProperties properties;
 
     public ProviderFees(ProviderFeeProperties properties) {
         this.properties = properties;

@@ -16,7 +16,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 /**
- * {@code campaign-refunds} — IDN-EXT-01 (#40): every backer refunded in full.
+ * {@code campaign-refunds} — IDN-EXT-01 (#40): every backer refunded — in full, or less the payment
+ * provider's fee for a charge taken under #436's rule ({@link RefundTerms}).
  *
  * <p>§9.7's four cases that refund everybody are three campaign states: {@code UNSUCCESSFUL} (day 8
  * below 80%, or an extension ended below it), {@code SUSPENDED}, and {@code CANCELED}. A pass refunds

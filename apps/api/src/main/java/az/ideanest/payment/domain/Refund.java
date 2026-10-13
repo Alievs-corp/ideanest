@@ -59,6 +59,13 @@ public class Refund {
     @Column(name = "full_refund", nullable = false, updatable = false)
     private boolean fullRefund;
 
+    /**
+     * #436 (V101): the provider's fee this refund kept back from its charge, zero for every refund but a
+     * campaign-outcome refund of a charge taken under that rule. {@link #amount} stays what was sent.
+     */
+    @Column(name = "withheld_fee", nullable = false, updatable = false)
+    private BigDecimal withheldFee;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "reason", nullable = false, updatable = false)
     private RefundReason reason;
@@ -108,6 +115,7 @@ public class Refund {
             UUID projectId,
             UUID chargeTransactionId,
             Money amount,
+            Money withheldFee,
             boolean fullRefund,
             RefundReason reason,
             String detail,
@@ -122,6 +130,15 @@ public class Refund {
         this.currency = amount.currency();
         this.fullRefund = fullRefund;
         this.reason = Objects.requireNonNull(reason, "reason");
+        // #436: only a failed or halted campaign's refund keeps the provider's fee back; V101 says so too.
+        if (!withheldFee.currency().equals(amount.currency())) {
+            throw new IllegalArgumentException("A withheld fee is in the refund's own currency");
+        }
+        if (withheldFee.amount().signum() < 0
+                || (withheldFee.isPositive() && !withholdsProviderFee(reason))) {
+            throw new IllegalArgumentException("Only a campaign-outcome refund may withhold the provider's fee");
+        }
+        this.withheldFee = withheldFee.amount();
         this.detail = Objects.requireNonNull(detail, "detail");
         this.state = RefundState.REQUESTED;
         // Null only for a refund the platform issued itself, which V76 limits to the two campaign
@@ -138,6 +155,15 @@ public class Refund {
         return reason == RefundReason.CAMPAIGN_FAILED
                 || reason == RefundReason.CAMPAIGN_HALTED
                 || reason == RefundReason.RAISE_NOT_APPLIED;
+    }
+
+    /**
+     * #436: the reasons whose refund may keep the provider's fee back — a campaign that ended below its
+     * threshold, or was suspended or cancelled. Not a raise that could not be applied, which bought
+     * nothing, and never a refund a member of staff or a dispute decided.
+     */
+    public static boolean withholdsProviderFee(RefundReason reason) {
+        return reason == RefundReason.CAMPAIGN_FAILED || reason == RefundReason.CAMPAIGN_HALTED;
     }
 
     /**
@@ -160,11 +186,44 @@ public class Refund {
             UUID requestedBy,
             String idempotencyKey) {
 
+        return requested(
+                pledgeId,
+                projectId,
+                chargeTransactionId,
+                amount,
+                Money.zero(amount.currency()),
+                fullRefund,
+                reason,
+                detail,
+                requestedBy,
+                idempotencyKey);
+    }
+
+    /**
+     * The same, keeping the provider's fee back — #436: a campaign-outcome refund of a charge taken
+     * under the rule that withholds it. {@code amount} is what is sent, and the two together are what
+     * the refund settles of its charge.
+     *
+     * @param withheldFee zero, or the fee posted with the charge for {@link #withholdsProviderFee} reasons
+     */
+    public static Refund requested(
+            UUID pledgeId,
+            UUID projectId,
+            UUID chargeTransactionId,
+            Money amount,
+            Money withheldFee,
+            boolean fullRefund,
+            RefundReason reason,
+            String detail,
+            UUID requestedBy,
+            String idempotencyKey) {
+
         return new Refund(
                 pledgeId,
                 projectId,
                 chargeTransactionId,
                 amount,
+                withheldFee,
                 fullRefund,
                 reason,
                 detail,
@@ -201,6 +260,7 @@ public class Refund {
                 projectId,
                 Objects.requireNonNull(chargeTransactionId, "chargeTransactionId"),
                 amount,
+                Money.zero(amount.currency()),
                 tookTheRest,
                 RefundReason.CHARGEBACK,
                 detail,
@@ -302,6 +362,15 @@ public class Refund {
 
     public Money amount() {
         return Money.of(amount, currency);
+    }
+
+    /**
+     * #436: the provider's fee this refund kept back from its charge, or zero. Not money that moved: the
+     * provider kept it when the charge was taken (#427 posted it to {@code psp_fee} then), and this says
+     * the refund settles it rather than sending it.
+     */
+    public Money withheldFee() {
+        return Money.of(withheldFee, currency);
     }
 
     /**

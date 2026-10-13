@@ -184,7 +184,9 @@ deliberate: no one person both chooses where a refund goes and confirms that it 
    yourself, the row says so instead of offering anything: ask a colleague.
 2. **Press *Reveal account*.** The console shows:
    - the **amount to transfer**, with its currency — the charge's currency, which is the one
-     the transfer is made in;
+     the transfer is made in. For a failed or halted campaign's refund of a pledge paid under
+     the net-refund rule (#436) it is already the pledge less the payment provider's fee:
+     transfer exactly this amount, never the pledge's total;
    - the **IBAN**, in groups of four;
    - the **account holder**.
 
@@ -241,6 +243,10 @@ deliberate: no one person both chooses where a refund goes and confirms that it 
 - `IDEANEST_PAYMENT_REFUNDS_WINDOWS_PAYRIFF` — the provider's refund window, for example
   `P28D`. Unset means no window, and no refund is routed here automatically. Set it only once
   every node runs the release that knows the two new refund states (#399).
+- `PAYMENT_REFUNDS_WITHHOLD_PROVIDER_FEE` — whether a pledge paid from now on is refunded
+  less the payment provider's fee if its campaign fails, is suspended or is cancelled (#436).
+  `false` by default. It changes no pledge already paid: each charge records the rule it was
+  taken under. Turn it on only once the checkout and the terms say so.
 - `IDEANEST_CRYPTO_BANKDETAILS_PRIMARYKEYID` and `IDEANEST_CRYPTO_BANKDETAILS_KEYS_<LABEL>` —
   the `bank-details` keyring the IBAN is sealed under. Without it, recording and revealing an
   account are refused with "encrypted storage is not configured".

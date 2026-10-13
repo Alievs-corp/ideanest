@@ -130,6 +130,25 @@ public class Ledger {
         return Money.of(entries.balanceOf(account.name(), currency), currency);
     }
 
+    /**
+     * What one posting debited to one account, in one currency; zero when it has no such line.
+     *
+     * <p>#436: a failed campaign's refund keeps back the provider's fee that the charge's own posting
+     * debited to {@code psp_fee} (#427), the figure in the books rather than a rate applied again.
+     */
+    @Transactional(readOnly = true)
+    public Money debitedTo(UUID transactionId, LedgerAccount account, String currency) {
+        Money debited = Money.zero(currency);
+        for (LedgerEntry entry : entries.findByTransactionIdOrderByIdAsc(transactionId)) {
+            if (entry.getAccount().equals(account)
+                    && entry.getDirection() == EntryDirection.DEBIT
+                    && entry.getAmount().currency().equals(currency)) {
+                debited = debited.plus(entry.getAmount());
+            }
+        }
+        return debited;
+    }
+
     /** Every entry of one posting, in the order they were written. For support and for tests. */
     @Transactional(readOnly = true)
     public List<LedgerEntry> entriesOf(UUID transactionId) {

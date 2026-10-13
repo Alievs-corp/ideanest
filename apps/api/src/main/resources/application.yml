@@ -777,8 +777,15 @@ ideanest:
       # only ever added for this purpose.
       additional-origins: ${PAYMENT_RETURN_ORIGINS:}
     # IDN-EXT-01 (#40): `campaign-refunds`. Every backer of a campaign that ends below its
-    # threshold, or is suspended or cancelled, is refunded in full, a batch at a time.
+    # threshold, or is suspended or cancelled, is refunded, a batch at a time: in full, or
+    # net of the provider's fee for a charge taken under #436's rule (below).
     refunds:
+      # #436: whether a charge taken from now on is refunded net of the provider's fee (the
+      # figure posted to `psp_fee` with it) when its campaign fails, is suspended or is
+      # cancelled. Recorded on the charge when it is taken and never read again for it, so
+      # turning this on or off changes no charge already taken. Off: refunded in full. Turn it
+      # on only once the checkout and the terms say so, and once every node runs V101.
+      withhold-provider-fee: ${PAYMENT_REFUNDS_WITHHOLD_PROVIDER_FEE:false}
       # Every ten minutes: refunds are owed promptly, and a pass is bounded, so a campaign of
       # four thousand backers clears in a few hours without one pass holding the provider.
       schedule: "0 */10 * * * *"

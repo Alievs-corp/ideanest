@@ -89,6 +89,8 @@ public class PledgeDetails {
 
         Money awaitingBankTransfer =
                 Money.orNull(pledges.refundAwaitingBankTransfer(pledge.getId()), pledge.getCurrency());
+        Money refunded = Money.orNull(pledges.refunded(pledge.getId()), pledge.getCurrency());
+        Money withheldFee = Money.orNull(pledges.refundWithheldFee(pledge.getId()), pledge.getCurrency());
 
         return new PledgeDetail(
                 pledge,
@@ -98,6 +100,8 @@ public class PledgeDetails {
                 latestRaise,
                 raisable,
                 resumeUrl,
-                awaitingBankTransfer);
+                awaitingBankTransfer,
+                refunded,
+                withheldFee);
     }
 }

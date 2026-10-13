@@ -32,6 +32,10 @@ import tools.jackson.databind.node.ObjectNode;
  * is where they leave for the provider, and a second caller of {@link PaymentPage} must not be able to
  * skip the rule (#139). The pending row records them, so the payment's own record says where the
  * backer was sent back to.
+ *
+ * <p>#436: the pending row also records the refund terms the backer read at the checkout they came
+ * from ({@link RefundTerms}), and the row that settles the payment copies them, so a setting switched
+ * while the backer is on the provider's page does not change what they agreed to.
  */
 @Service
 public class HostedPaymentPage implements PaymentPage {
@@ -42,16 +46,19 @@ public class HostedPaymentPage implements PaymentPage {
     private final PaymentTransactionRepository transactions;
     private final ReturnUrls returnUrls;
     private final ObjectMapper json;
+    private final RefundTerms terms;
 
     public HostedPaymentPage(
             PaymentProviders providers,
             PaymentTransactionRepository transactions,
             ReturnUrls returnUrls,
-            ObjectMapper json) {
+            ObjectMapper json,
+            RefundTerms terms) {
         this.providers = providers;
         this.transactions = transactions;
         this.returnUrls = returnUrls;
         this.json = json;
+        this.terms = terms;
     }
 
     @Override
@@ -91,7 +98,8 @@ public class HostedPaymentPage implements PaymentPage {
                         null,
                         opened(successUrl, errorUrl)),
                 1,
-                idempotencyKey));
+                idempotencyKey,
+                terms.withholdsProviderFeeOnNewCharges()));
         log.info("Opened payment {} for pledge {}.", session.providerTransactionId(), pledge.pledgeId());
         return new PaymentPageSession(session.providerTransactionId(), session.redirectUrl());
     }
