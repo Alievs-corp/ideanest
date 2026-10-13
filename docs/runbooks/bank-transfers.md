@@ -244,5 +244,7 @@ deliberate: no one person both chooses where a refund goes and confirms that it 
 - `IDEANEST_CRYPTO_BANKDETAILS_PRIMARYKEYID` and `IDEANEST_CRYPTO_BANKDETAILS_KEYS_<LABEL>` —
   the `bank-details` keyring the IBAN is sealed under. Without it, recording and revealing an
   account are refused with "encrypted storage is not configured".
-- `PAYRIFF_REFUND_WINDOW_CLOSED_CODES` — optional: Payriff's "too old to refund" code, once
-  Payriff confirms it. Until then such a refusal is *Failed* and is routed by hand (§6.1).
+- `PAYRIFF_REFUND_WINDOW_CLOSED_CODES` and `PAYRIFF_REFUND_WINDOW_CLOSED_MESSAGES` — how
+  Payriff says "too old to refund". The defaults are Payriff's confirmed answer (#417): code
+  `01000` whose message contains "Refund time expired". Set them only if Payriff changes it.
+  Any other refusal is *Failed* and is routed by hand (§6.1).

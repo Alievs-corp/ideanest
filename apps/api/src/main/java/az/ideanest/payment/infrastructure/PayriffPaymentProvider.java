@@ -70,8 +70,8 @@ import tools.jackson.databind.node.ObjectNode;
  *   <li>{@link #refund} is {@code POST /refund}, in full or in part. Like Epoint's {@code /reverse} it
  *       takes no idempotency key, so this translates one call into one request and #40's protection is
  *       the platform's own. Payriff refunds a payment only within thirty days; an answer whose code is
- *       one of {@code refund-window-closed-codes} is {@link RefundResult#windowClosed} (#399), and
- *       every other refusal is a plain decline. The list is empty until Payriff confirms the code.
+ *       Payriff's {@code 01000} "Refund time expired" (#417, both configurable) is
+ *       {@link RefundResult#windowClosed} (#399), and every other refusal is a plain decline.
  *   <li>{@link #parseWebhook} is the order callback.
  * </ul>
  *
@@ -228,7 +228,7 @@ public class PayriffPaymentProvider implements PaymentProvider {
         if (SUCCESS.equals(code)) {
             return new RefundResult(ProviderOutcome.APPROVED, null, null, null, redacted(answer));
         }
-        if (!isBlank(code) && settings.refundWindowClosedCodes().contains(code)) {
+        if (settings.meansWindowClosed(code, text(answer, "message"))) {
             return RefundResult.windowClosed(code, text(answer, "message"), redacted(answer));
         }
         return new RefundResult(

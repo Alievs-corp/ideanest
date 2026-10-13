@@ -275,30 +275,62 @@ class PayriffPaymentProviderTests {
     }
 
     @Test
-    @DisplayName("#399: a code configured as too old to refund is a closed window; unconfigured, the same code is a plain decline")
+    @DisplayName("#417: Payriff's 01000 \"Refund time expired\" is a closed window by default")
+    void payriffsConfirmedRefusalIsAClosedWindow() {
+        Wire wire = new Wire();
+        wire.expect(HttpMethod.POST, "/refund")
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body("""
+                        {"code":"01000","message":"Refund time expired.\\n Support ticket: 840029",
+                         "route":"dashboard/main","responseId":"ef872e3f23fe42f1a8c37d4101a15181","responseDetails":null}
+                        """));
+        RefundResult closed = wire.adapter().refund(refund("5.00"));
+        assertThat(closed.isWindowClosed()).isTrue();
+        assertThat(closed.failureCode()).isEqualTo(RefundResult.WINDOW_CLOSED);
+        assertThat(closed.failureMessage()).contains("01000").contains("Refund time expired");
+    }
+
+    @Test
+    @DisplayName("#417: 01000 with any other message is a plain decline, not a bank transfer")
+    void payriffsGeneralRefusalIsADecline() {
+        Wire wire = new Wire();
+        wire.expect(HttpMethod.POST, "/refund")
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body("""
+                        {"code":"01000","message":"Refund amount exceeds the payment"}
+                        """));
+        RefundResult declined = wire.adapter().refund(refund("5.00"));
+        assertThat(declined.isWindowClosed()).isFalse();
+        assertThat(declined.failureCode()).isEqualTo("01000");
+    }
+
+    @Test
+    @DisplayName("#399: a configured code is a closed window; with no texts the code alone decides; unlisted, a decline")
     void aRefundTooOldIsAClosedWindowOnlyWhenConfigured() {
         String tooOld = """
                 {"code":"15499","message":"The payment is too old to refund"}
                 """;
-        Wire configured = new Wire(List.of("15499"));
-        configured.expect(HttpMethod.POST, "/refund")
+        Wire codeAlone = new Wire(List.of("15499"), List.of());
+        codeAlone.expect(HttpMethod.POST, "/refund")
                 .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(tooOld));
-        RefundResult closed = configured.adapter().refund(refund("5.00"));
+        RefundResult closed = codeAlone.adapter().refund(refund("5.00"));
         assertThat(closed.isWindowClosed()).isTrue();
-        assertThat(closed.failureCode()).isEqualTo(RefundResult.WINDOW_CLOSED);
         assertThat(closed.failureMessage()).contains("15499").contains("too old");
 
-        // The shipped default: no code is known, so nothing is guessed.
-        Wire unconfigured = new Wire();
-        unconfigured.expect(HttpMethod.POST, "/refund")
+        Wire unlisted = new Wire();
+        unlisted.expect(HttpMethod.POST, "/refund")
                 .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON).body(tooOld));
-        RefundResult declined = unconfigured.adapter().refund(refund("5.00"));
+        RefundResult declined = unlisted.adapter().refund(refund("5.00"));
         assertThat(declined.isWindowClosed()).isFalse();
         assertThat(declined.failureCode()).isEqualTo("15499");
 
-        assertThat(PaymentProperties.Payriff.defaults().refundWindowClosedCodes()).isEmpty();
-        assertThat(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az", List.of(" 15499 ", "")).refundWindowClosedCodes())
-                .containsExactly("15499");
+        PaymentProperties.Payriff defaults = PaymentProperties.Payriff.defaults();
+        assertThat(defaults.refundWindowClosedCodes()).containsExactly("01000");
+        assertThat(defaults.meansWindowClosed("01000", "REFUND TIME EXPIRED.")).isTrue();
+        assertThat(defaults.meansWindowClosed("01000", null)).isFalse();
+        assertThat(defaults.meansWindowClosed(null, "Refund time expired")).isFalse();
+        PaymentProperties.Payriff trimmed =
+                new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az", List.of(" 15499 ", ""), List.of(" too old ", ""));
+        assertThat(trimmed.refundWindowClosedCodes()).containsExactly("15499");
+        assertThat(trimmed.refundWindowClosedMessages()).containsExactly("too old");
     }
 
     // ------------------------------------------------------------------
@@ -444,16 +476,16 @@ class PayriffPaymentProviderTests {
     @DisplayName("naming PAYRIFF without a key, or with an http callback, is a start-up failure; the key is never printed")
     void configurationIsCheckedAtStartUp() {
         assertThatThrownBy(() -> new PayriffPaymentProvider(
-                        RestClient.builder(), properties(new PaymentProperties.Payriff(BASE, "", CALLBACK, "az", null)), JSON))
+                        RestClient.builder(), properties(new PaymentProperties.Payriff(BASE, "", CALLBACK, "az", null, null)), JSON))
                 .isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> new PayriffPaymentProvider(
                         RestClient.builder(),
-                        properties(new PaymentProperties.Payriff(BASE, SECRET, "http://api.ideanest.test/hook", "az", null)),
+                        properties(new PaymentProperties.Payriff(BASE, SECRET, "http://api.ideanest.test/hook", "az", null, null)),
                         JSON))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("https");
 
-        assertThat(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az", null).toString())
+        assertThat(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az", null, null).toString())
                 .doesNotContain(SECRET)
                 .contains("<redacted>");
         assertThat(PaymentProperties.Payriff.defaults().baseUrl()).isEqualTo("https://api.payriff.com/api/v3");
@@ -466,14 +498,17 @@ class PayriffPaymentProviderTests {
         private final RestClient.Builder builder = RestClient.builder();
         private final MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
         private final List<String> windowClosedCodes;
+        private final List<String> windowClosedMessages;
         private PayriffPaymentProvider adapter;
 
         Wire() {
-            this(List.of());
+            this(PaymentProperties.Payriff.defaults().refundWindowClosedCodes(),
+                    PaymentProperties.Payriff.defaults().refundWindowClosedMessages());
         }
 
-        Wire(List<String> windowClosedCodes) {
+        Wire(List<String> windowClosedCodes, List<String> windowClosedMessages) {
             this.windowClosedCodes = windowClosedCodes;
+            this.windowClosedMessages = windowClosedMessages;
         }
 
         ResponseActions expect(HttpMethod verb, String path) {
@@ -483,7 +518,8 @@ class PayriffPaymentProviderTests {
         PayriffPaymentProvider adapter() {
             if (adapter == null) {
                 adapter = PayriffPaymentProvider.over(
-                        builder, properties(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az", windowClosedCodes)), JSON);
+                        builder, properties(new PaymentProperties.Payriff(BASE, SECRET, CALLBACK, "az", windowClosedCodes, windowClosedMessages)),
+                        JSON);
             }
             return adapter;
         }
