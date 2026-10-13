@@ -222,6 +222,33 @@ class WithdrawalPayoutTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("#413: a send after the figures moved cancels the payout, keeps the cancellation, and a new one can be priced")
+    void aSendAfterTheFiguresMovedCancelsAndAllowsANewCalculation() {
+        Funded funded = aFundedCampaign("payout-moved");
+        UUID payout = approvedAndSendable(funded);
+        Account admin = administrator();
+        // As if a refund had gone out since it was priced: the frozen gross no longer matches the collections.
+        jdbc().update("UPDATE payouts SET gross_amount = gross_amount + 1 WHERE id = ?", payout);
+
+        ResponseEntity<Map<String, Object>> sent = post("/v1/admin/payouts/" + payout + "/send", admin.accessToken(), null, null);
+
+        assertThat(sent.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(sent.getBody()).containsEntry("code", "PAYOUT_NOT_SENDABLE");
+        assertThat(state(payout)).isEqualTo("CANCELLED");
+        assertThat(jdbc().queryForObject(
+                        "SELECT count(*) FROM transactions WHERE project_id = ? AND type = 'PAYOUT'", Long.class, funded.projectId()))
+                .isZero();
+
+        ResponseEntity<Map<String, Object>> priced =
+                post("/v1/admin/payouts", admin.accessToken(), null, Map.of("projectId", funded.projectId().toString()));
+
+        assertThat(priced.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(priced.getBody().get("id")).isNotEqualTo(payout.toString());
+        assertThat(jdbc().queryForObject("SELECT count(*) FROM payouts WHERE project_id = ?", Long.class, funded.projectId()))
+                .isEqualTo(2L);
+    }
+
+    @Test
     @DisplayName("#184's review: an unanswered send stays approved through a refused retry, until staff settle it as not sent")
     void anUnansweredSendIsSettledFromTheStatementAsNotSent() {
         Funded funded = aFundedCampaign("payout-unanswered-not-sent");
