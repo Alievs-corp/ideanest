@@ -210,10 +210,17 @@ describe('the pre-launch screen, phase by phase', () => {
   });
 
   it('names the wait on a rate-limited read', async () => {
-    // In the body: the read client keeps the problem as sent (`createApiClient`), not the header.
+    // Only in the body: a proxy that strips `Retry-After` still leaves the mirror.
     routes.page = () => problem(429, { status: 429, retryAfterSeconds: 61 });
     await show();
-    expect(screen.getByText(P.errors.rateLimitedIn.replace('{minutes}', '2'))).toBeTruthy();
+    expect(screen.getByText(P.errors.rateLimitedIn.other.replace('{count}', '2'))).toBeTruthy();
+  });
+
+  it('believes the Retry-After header on a read, and says "minute" for one', async () => {
+    routes.page = () =>
+      problem(429, { status: 429, retryAfterSeconds: 600 }, { 'Retry-After': '30' });
+    await show();
+    expect(screen.getByText(P.errors.rateLimitedIn.one.replace('{count}', '1'))).toBeTruthy();
   });
 
   it('says the service could not be reached when nothing answered and nothing is cached', async () => {
@@ -384,7 +391,7 @@ describe('asking to be reminded', () => {
       .mockImplementation(() => {});
     await show();
     await press(submit());
-    const sentence = P.errors.rateLimitedIn.replace('{minutes}', '3');
+    const sentence = P.errors.rateLimitedIn.other.replace('{count}', '3');
     expect(screen.getByText(sentence)).toBeTruthy();
     expect(assertive).toHaveBeenCalledWith(sentence, { queue: false });
     // The form stays, so the reader can try again later.

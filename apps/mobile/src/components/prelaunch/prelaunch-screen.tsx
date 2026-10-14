@@ -60,6 +60,7 @@ import { PrelaunchForm } from './prelaunch-form';
 export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
   const t = useT('campaign.prelaunch');
   const tAll = useT();
+  const locale = useLocale();
   const online = useOnline();
   const { signedIn } = useSession();
   const queryClient = useQueryClient();
@@ -132,7 +133,9 @@ export function PrelaunchScreen({ projectId }: { readonly projectId: string }) {
               title={t('failedTitle')}
               description={
                 reason.key === 'rateLimitedIn'
-                  ? t('errors.rateLimitedIn', { minutes: String(reason.minutes) })
+                  ? t(`errors.rateLimitedIn.${pluralCategory(locale, reason.minutes)}`, {
+                      count: String(reason.minutes),
+                    })
                   : reason.key === 'detail'
                     ? reason.text
                     : reason.key === 'none'

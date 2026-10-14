@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Glyphs } from '../../icons';
-import { useT } from '../../lib/i18n';
+import { pluralCategory, useT } from '../../lib/i18n';
+import { useLocale } from '../../lib/locale';
 import {
   looksLikeAnAddress,
   prelaunchFailure,
@@ -65,6 +66,7 @@ export function PrelaunchForm({
 }: PrelaunchFormProps) {
   const t = useT('campaign.prelaunch');
   const tAll = useT();
+  const locale = useLocale();
   const [email, setEmail] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -74,7 +76,9 @@ export function PrelaunchForm({
 
   const describe = (reason: PrelaunchFailure): string =>
     reason.key === 'rateLimitedIn'
-      ? t('errors.rateLimitedIn', { minutes: String(reason.minutes) })
+      ? t(`errors.rateLimitedIn.${pluralCategory(locale, reason.minutes)}`, {
+          count: String(reason.minutes),
+        })
       : reason.key === 'sessionExpired'
         ? // The comment composer's sentence for the same refusal: "Sign in and try again."
           tAll('campaign.comments.failures.sessionExpired')

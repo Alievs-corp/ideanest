@@ -167,6 +167,17 @@ describe('PrelaunchView', () => {
     expect(emailField()).toHaveValue('someone@example.com');
   });
 
+  it('says "minute" rather than "1 minutes" for a short wait', async () => {
+    const user = await openPage();
+    remindMeMock.mockRejectedValue(new ApiError(429, { retryAfterSeconds: 45 }));
+
+    await user.type(emailField(), 'someone@example.com');
+    await user.click(submit());
+    await tick();
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Try again in about 1 minute.');
+  });
+
   it('says nothing is here when the campaign has no pre-launch page', async () => {
     getPrelaunchPageMock.mockRejectedValue(new ApiError(404, null));
 

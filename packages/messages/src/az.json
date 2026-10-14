@@ -4469,7 +4469,12 @@
       "onListAnnouncement": "Siyahıdasınız. Bu kampaniya açılanda sizə e-məktub göndərəcəyik.",
       "errors": {
         "rateLimited": "Buradan çox cəhd edildi. Bir neçə dəqiqə sonra yenidən cəhd edin.",
-        "rateLimitedIn": "Buradan çox cəhd edildi. Təxminən {minutes} dəqiqə sonra yenidən cəhd edin.",
+        "rateLimitedIn": {
+          "one": "Buradan çox cəhd edildi. Təxminən {count} dəqiqə sonra yenidən cəhd edin.",
+          "few": "Buradan çox cəhd edildi. Təxminən {count} dəqiqə sonra yenidən cəhd edin.",
+          "many": "Buradan çox cəhd edildi. Təxminən {count} dəqiqə sonra yenidən cəhd edin.",
+          "other": "Buradan çox cəhd edildi. Təxminən {count} dəqiqə sonra yenidən cəhd edin."
+        },
         "notSaved": "Yadda saxlanıla bilmədi. Yenidən cəhd edin.",
         "unreachable": "Xidmətə çatmaq olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin."
       }

@@ -20,8 +20,8 @@ import { ApiError } from '../../lib/api/problem';
 import { getPrelaunchPage, remindMe, type PrelaunchPage } from '../../lib/projects/api';
 import type { PrelaunchCopy } from '../../lib/i18n/prelaunch-copy';
 import type { Locale } from '../../lib/i18n/locale';
-import { fillNodes, fillPlaceholders } from '../../lib/i18n/placeholders';
-import { pluralForm } from '../../lib/i18n/plurals';
+import { fillNodes } from '../../lib/i18n/placeholders';
+import { pluralForm, pluralise } from '../../lib/i18n/plurals';
 
 /**
  * A campaign's public pre-launch page: what is coming, and the one control that
@@ -77,15 +77,13 @@ function looksLikeAnAddress(value: string): boolean {
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value.trim());
 }
 
-function messageFor(cause: unknown, copy: PrelaunchCopy): string {
+function messageFor(cause: unknown, copy: PrelaunchCopy, locale: Locale): string {
   if (cause instanceof ApiError) {
     if (cause.status === 429) {
       const seconds = cause.problem?.retryAfterSeconds;
       return seconds === undefined
         ? copy.errors.rateLimited
-        : fillPlaceholders(copy.errors.rateLimitedIn, {
-            minutes: String(Math.ceil(seconds / 60)),
-          });
+        : pluralise(locale, copy.errors.rateLimitedIn, Math.ceil(seconds / 60));
     }
     // The service's own wording wherever there is one: the endpoint knows which
     // of its rules refused the request and this function cannot.
@@ -145,7 +143,7 @@ export function PrelaunchView({ projectId, copy, locale }: PrelaunchViewProps) {
           });
           return;
         }
-        setPhase({ kind: 'failed', message: messageFor(cause, copy) });
+        setPhase({ kind: 'failed', message: messageFor(cause, copy, locale) });
       }
     })();
 
@@ -179,7 +177,7 @@ export function PrelaunchView({ projectId, copy, locale }: PrelaunchViewProps) {
         });
         return;
       }
-      setFailure(messageFor(cause, copy));
+      setFailure(messageFor(cause, copy, locale));
     } finally {
       setSubmitting(false);
     }

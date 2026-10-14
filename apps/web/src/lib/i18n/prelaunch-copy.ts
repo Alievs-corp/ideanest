@@ -52,8 +52,8 @@ export interface PrelaunchCopy {
   readonly onListAnnouncement: string;
   readonly errors: {
     readonly rateLimited: string;
-    /** Carries `{minutes}`, known only when the service refuses. */
-    readonly rateLimitedIn: string;
+    /** A plural on the minutes to wait, known only when the service refuses. */
+    readonly rateLimitedIn: PluralForms;
     readonly notSaved: string;
     readonly unreachable: string;
   };
@@ -62,10 +62,9 @@ export interface PrelaunchCopy {
 /**
  * A message lookup, narrowed to what this builder needs.
  *
- * `raw` is required for the two keys that carry a placeholder or a plural: asking the
- * formatter for `errors.rateLimitedIn` without a value for `{minutes}` throws, and
- * `{count}` is filled beside the number rather than here. `checkout-copy.ts` carries the
- * same pair for the same reason.
+ * `raw` is required for the two keys that are plurals, `waiting` and `errors.rateLimitedIn`:
+ * each is an object of forms rather than a sentence, and `{count}` is filled beside the
+ * number rather than here. `checkout-copy.ts` carries the same pair for the same reason.
  */
 export interface PrelaunchTranslator {
   (key: string): string;
@@ -95,7 +94,7 @@ export function prelaunchCopyFrom(t: PrelaunchTranslator): PrelaunchCopy {
     onListAnnouncement: t('onListAnnouncement'),
     errors: {
       rateLimited: t('errors.rateLimited'),
-      rateLimitedIn: String(t.raw('errors.rateLimitedIn')),
+      rateLimitedIn: t.raw('errors.rateLimitedIn') as PluralForms,
       notSaved: t('errors.notSaved'),
       unreachable: t('errors.unreachable'),
     },
