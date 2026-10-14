@@ -172,7 +172,7 @@ export function InboxPanel({ copy }: InboxPanelProps) {
   if (status === 'signed-out') {
     return (
       <InlineAlert variant="info" title={copy.signedOut}>
-        Sign in again to read your notifications.
+        {copy.signedOutBody}
       </InlineAlert>
     );
   }

@@ -36,6 +36,8 @@ const COPY: MyCampaignsPanelCopy = {
   loadingList: 'Loading your campaigns',
   loadMore: 'Show more',
   loadingMore: 'Loading',
+  refused: 'The service refused the request. Try again.',
+  unreachable: 'The service could not be reached. Check your connection and try again.',
   draftHint: 'Not published yet',
   ...(() => {
     const t = translatorFor('account.pages.campaigns');

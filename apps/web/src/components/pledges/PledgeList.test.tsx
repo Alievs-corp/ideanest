@@ -26,7 +26,7 @@ vi.mock('../../lib/pledges/backer', async (importOriginal) => ({
 
 const listMock = vi.mocked(listMyPledges);
 
-const COPY = pledgeListCopyFrom(translatorFor('account.pledges'));
+const COPY = pledgeListCopyFrom(translatorFor('account.pledges'), translatorFor('common'));
 
 function summary(id: string, state: string): BackerPledgeSummary {
   const money = (amount: string) => ({ amount, currency: 'AZN' });

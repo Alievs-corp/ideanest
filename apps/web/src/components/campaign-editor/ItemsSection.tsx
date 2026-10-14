@@ -102,7 +102,9 @@ export function ItemsSection({
                     (docs/ui-kit.md §9.2).
                   */}
                   <Tag>{item.isDigital ? copy.digital : copy.physical}</Tag>
-                  {item.weightGrams != null && <Tag>{item.weightGrams} g</Tag>}
+                  {item.weightGrams != null && (
+                    <Tag>{fillPlaceholders(copy.weight, { grams: String(item.weightGrams) })}</Tag>
+                  )}
                   {item.sku != null && item.sku !== '' && <Tag>{item.sku}</Tag>}
                 </div>
               </div>

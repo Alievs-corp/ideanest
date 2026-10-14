@@ -556,7 +556,6 @@ function ItemCard({
   readonly onEdit: () => void;
   readonly onDelete: () => void;
 }) {
-  const t = useT('mobile.editor.rewards');
   return (
     <View style={styles.card} testID={`item-${item.id}`}>
       <View style={styles.summary} accessible>
@@ -565,7 +564,7 @@ function ItemCard({
         {/* Words, not colours: a download or a parcel decides whether an address is asked for. */}
         <View style={styles.tags}>
           <Tag label={item.isDigital ? words.items.digital : words.items.physical} />
-          {item.weightGrams == null ? null : <Tag label={t('weight', { grams: String(item.weightGrams) })} />}
+          {item.weightGrams == null ? null : <Tag label={fillPlaceholders(words.items.weight, { grams: String(item.weightGrams) })} />}
           {item.sku == null || item.sku === '' ? null : <Tag label={item.sku} />}
         </View>
       </View>

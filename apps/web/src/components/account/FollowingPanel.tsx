@@ -44,6 +44,7 @@ export function FollowingPanel({ copy }: FollowingPanelProps) {
   const { status, items, hasMore, loadingMore, error, loadMore, remove } =
     useCursorList<FollowedCreator>(
       useCallback((cursor, signal) => listFollowing(cursor, signal), []),
+      copy,
     );
 
   const [removalError, setRemovalError] = useState<string | null>(null);

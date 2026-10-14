@@ -78,6 +78,9 @@ export interface BlockedListCopy {
   readonly showMore: string;
   readonly loadingMore: string;
   readonly nextPageFailed: string;
+  /** `common.list`'s, for a page the service refused or never answered (#462). */
+  readonly refused: string;
+  readonly unreachable: string;
 }
 
 /** From `blocking`. */
@@ -102,7 +105,7 @@ export function blockControlCopyFrom(t: BlockTranslator): BlockControlCopy {
   };
 }
 
-/** From `blocking.list`, with the paginator's three words from `common.list`. */
+/** From `blocking.list`, with the paginator's words from `common.list`. */
 export function blockedListCopyFrom(t: BlockTranslator, common: BlockTranslator): BlockedListCopy {
   return {
     title: t('list.title'),
@@ -119,5 +122,7 @@ export function blockedListCopyFrom(t: BlockTranslator, common: BlockTranslator)
     showMore: common('list.showMore'),
     loadingMore: common('list.loadingMore'),
     nextPageFailed: common('list.nextPageFailed'),
+    refused: common('list.refused'),
+    unreachable: common('list.unreachable'),
   };
 }

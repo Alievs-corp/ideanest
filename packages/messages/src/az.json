@@ -21,7 +21,9 @@
     "list": {
       "showMore": "Daha çox göstər",
       "loadingMore": "Yüklənir",
-      "nextPageFailed": "Növbəti səhifə yüklənmədi"
+      "nextPageFailed": "Növbəti səhifə yüklənmədi",
+      "refused": "Xidmət sorğunu rədd etdi. Yenidən cəhd edin.",
+      "unreachable": "Xidmətə çıxmaq mümkün olmadı. Bağlantınızı yoxlayıb yenidən cəhd edin."
     },
     "trail": {
       "home": "Ana səhifə",
@@ -3186,6 +3188,8 @@
   },
   "settings": {
     "language": {
+      "metaTitle": "Dil və valyuta",
+      "metaDescription": "IdeyaNest-in sizə hansı dildə yazacağını və məbləğləri hansı valyutada göstərəcəyini seçin.",
       "title": "Dil və valyuta",
       "intro": "IdeyaNest sizə necə yazır və məbləğləri hansı valyutada oxuyursunuz.",
       "fieldLabel": "İnterfeys dili",
@@ -4603,6 +4607,7 @@
         "physical": "Fiziki",
         "editNamed": "«{name}» dəyiş",
         "deleteNamed": "«{name}» sil",
+        "weight": "{grams} q",
         "itemsHeading": "Əşyalar",
         "edit": "Dəyiş"
       },
@@ -6480,7 +6485,6 @@
         "confirmDateLabel": "{label} üçün {date} tarixini seç"
       },
       "rewards": {
-        "weight": "{grams} q",
         "image": "Şəkil",
         "imageHint": "İstəyə bağlı. Şəkil seçin, şəkil çəkin və ya artıq internetdə olan şəklin ünvanını yazın.",
         "imageRemove": "Şəkli sil",

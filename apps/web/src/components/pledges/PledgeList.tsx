@@ -96,6 +96,7 @@ export function PledgeList({ copy }: PledgeListProps) {
   const locale = useRouteLocale();
   const { status, items, hasMore, loadingMore, error, loadMore } = useCursorList<BackerPledgeSummary>(
     useCallback((cursor, signal) => listMyPledges(cursor, signal), []),
+    copy,
   );
 
   if (status === 'signed-out') return null;

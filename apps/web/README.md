@@ -427,12 +427,29 @@ message catalogue lives in `messages/{az,en,ru,tr}.json` and covers, in full:
   were formatted with `en-GB` whatever the reader's language, and use `dateTimeFormat` now.
   Most of these sentences already existed in four languages as `mobile.editor.*`, written for
   the app while the web still drew them inline; the web's copies are under `campaignEditor.*`
-  beside the rest of the editor's words, taken from those translations, and the app moving
-  onto them is #463.
+  beside the rest of the editor's words, taken from those translations. #463 moved the app
+  onto them and deleted its copies.
 
 **Nothing is listed as still English, and the table that listed it is gone.** A surface found
 drawing a literal now is a defect against the list above, not a row waiting on it. YouTube and
 Vimeo in the story's embed picker are names, and are the same in all four languages.
+
+**A test refuses the next literal (#462).** `src/components/prose-literals.test.ts` is the
+visible-word counterpart of `accessible-names.test.ts`, and the web's version of the app's
+`src/lib/no-literal-prose.test.ts`. It parses every non-test `.tsx` and `use…` hook under
+`src/components` and `src/app` with `@babel/parser`, because TypeScript 7 has no parser API for
+JavaScript. It fails on a JSX text node with a letter in it, on a literal rendered as a JSX
+child, on a word in a `placeholder`, `title`, `alt`, `label`, `hint` or `description` prop or
+property, and on any other literal that reads as a sentence: a capital letter, then a second
+word. Imports, types, `className`, `cn(…)`, `console.*` and `new Error(…)` are not read. Its
+allow-list is short and every entry gives its reason: the brand name, two embed providers, two
+URL path segments, two operator-facing identifiers, `TRUST_COPY`'s English original and the
+two-factor refusal it compares against the wire. `app/global-error.tsx` is skipped as a whole,
+because it renders outside the provider (#133). When it landed it found six literals, and all
+six went into the catalogue: `useCursorList`'s two fallbacks (now `common.list.refused` and
+`common.list.unreachable`, which every list panel hands the hook), the inbox's signed-out
+sentence, the item weight's unit (`campaignEditor.rewards.items.weight`, which is "г" in
+Russian), and `/settings/language`'s tab title and description.
 
 **Azerbaijani does not write an ordinal after a number it has not met yet (#104).** The
 suffix's vowel is chosen from the number's last digit — 1-ci, 3-cü, 6-cı, 9-cu — so twelve

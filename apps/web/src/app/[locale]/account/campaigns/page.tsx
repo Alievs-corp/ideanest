@@ -29,6 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function MyCampaignsPage() {
   const t = await getTranslations('account.pages.campaigns');
   const states = await getTranslations('admin.screens.campaignDirectory');
+  const common = await getTranslations('common');
 
   /*
    * The state names are borrowed from the console's campaign directory rather than written
@@ -45,6 +46,8 @@ export default async function MyCampaignsPage() {
     loadingList: t('loadingList'),
     loadMore: t('loadMore'),
     loadingMore: t('loadingMore'),
+    refused: common('list.refused'),
+    unreachable: common('list.unreachable'),
     draftHint: t('draftHint'),
     view: t('view'),
     edit: t('edit'),
