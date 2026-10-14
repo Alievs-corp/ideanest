@@ -62,6 +62,8 @@ public record ProjectUpdateListResponse(List<ProjectUpdateResponse> updates, Int
         canonical.append(nextCursor).append(FIELD_SEPARATOR).append(ROW_SEPARATOR);
         for (ProjectUpdateResponse update : updates) {
             canonical
+                    .append(update.id())
+                    .append(FIELD_SEPARATOR)
                     .append(update.number())
                     .append(FIELD_SEPARATOR)
                     .append(update.title())

@@ -7,9 +7,7 @@ import java.util.UUID;
 /**
  * One question and its answer, as the FAQ tab and the campaign editor read it.
  *
- * <p><strong>It carries an identifier, unlike {@code ProjectUpdateResponse}.</strong> An
- * update has none because §10.2 gives it no endpoint of its own and what names one is
- * its number; an FAQ entry is addressed directly by
+ * <p><strong>It carries an identifier.</strong> An FAQ entry is addressed directly by
  * {@code PATCH /v1/faqs/{id}} and {@code DELETE /v1/faqs/{id}}, and it is what a reorder
  * body is a list of. It is on the public projection as well as the creator's because
  * they are one endpoint — and because an identifier is what a tab uses to key a list it

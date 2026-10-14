@@ -21,9 +21,9 @@ import java.util.UUID;
  * campaign, which is not what deleting a comment is supposed to do to the person who
  * wrote it.
  *
- * <p><strong>It carries an identifier, unlike {@code ProjectUpdateResponse}.</strong>
- * §10.2 gives a comment three endpoints of its own — reply, delete, report — so this
- * one is a handle to a resource that really exists.
+ * <p><strong>It carries an identifier.</strong> §10.2 gives a comment three endpoints of
+ * its own — reply, delete, report — so this one is a handle to a resource that really
+ * exists. {@code ProjectUpdateResponse} carries one for its single endpoint, report.
  *
  * @param authorId who wrote it. The name behind it is the profile endpoint's to serve,
  *     for {@code ProjectUpdateResponse}'s reason: a body carrying names would need a
