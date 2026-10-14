@@ -47,6 +47,12 @@ export interface EditorDrawerProps {
   description: string;
   /** True while the save is in flight. */
   saving: boolean;
+  /**
+   * True while Save has to wait for something else in the drawer — an image upload. Only Save
+   * is held, and it says "Save" rather than "Saving": nothing is being saved yet, and Cancel
+   * still closes the drawer.
+   */
+  waiting?: boolean;
   onSave: () => void;
   children: ReactNode;
 }
@@ -58,6 +64,7 @@ export function EditorDrawer({
   title,
   description,
   saving,
+  waiting = false,
   onSave,
   children,
 }: EditorDrawerProps) {
@@ -76,7 +83,7 @@ export function EditorDrawer({
           <Pill variant="ghost" disabled={saving} onClick={() => onOpenChange(false)}>
             {copy.cancel}
           </Pill>
-          <Pill variant="primary" disabled={saving} onClick={onSave}>
+          <Pill variant="primary" disabled={saving || waiting} onClick={onSave}>
             {saving ? copy.saving : copy.save}
           </Pill>
         </div>

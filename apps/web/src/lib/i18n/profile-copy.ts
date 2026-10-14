@@ -1,9 +1,9 @@
 import {
   type CampaignEditorTranslator,
-  coverImageCopyFrom,
+  type ImageUploadCopy,
+  imageUploadCopyFrom,
 } from '@ideanest/campaign-editor/copy';
 import { type CardTranslator, type SharedCardCopy, sharedCardCopyFrom } from './card-copy';
-import type { ImageUploadCopy } from '../media/useImageUpload';
 
 /**
  * Every word `/u/[slug]` draws — issue #324.
@@ -230,9 +230,9 @@ export interface ProfileAvatarCopy {
   /** The form's own word, for the moment between a ready upload and its save. */
   readonly saving: string;
   /**
-   * The stages and the refusals, which are the cover's — `lib/media/useImageUpload.ts` says
-   * why — except `UPLOAD_STILL_PROCESSING`. The cover's sentence promises the image may appear
-   * later; a profile stores an address rather than a media id, so an avatar never will.
+   * The stages and the refusals, which are the cover's — `ImageUploadCopy` says why — except
+   * `UPLOAD_STILL_PROCESSING`. The cover's sentence promises the image may appear later; a
+   * profile stores an address rather than a media id, so an avatar never will.
    */
   readonly upload: ImageUploadCopy;
 }
@@ -323,7 +323,7 @@ export function profileEditorCopyFrom(
   t: ProfileRawTranslator,
   editor: CampaignEditorTranslator,
 ): ProfileEditorCopy {
-  const cover = coverImageCopyFrom(editor);
+  const upload = imageUploadCopyFrom(editor);
 
   return {
     heading: t('editor.heading'),
@@ -369,11 +369,9 @@ export function profileEditorCopyFrom(
       uploaded: t('editor.avatar.uploaded'),
       saving: t('editor.saving'),
       upload: {
-        stage: cover.stage,
-        notUsedTitle: cover.notUsedTitle,
-        unusable: cover.unusable,
+        ...upload,
         failures: {
-          ...cover.failures,
+          ...upload.failures,
           UPLOAD_STILL_PROCESSING: t('editor.avatar.stillProcessing'),
         },
       },

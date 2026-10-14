@@ -57,7 +57,7 @@ them, as it already did for `ProjectState` and the story types.
 | `./cover-image` | `COVER_MIN_WIDTH`/`HEIGHT` (1024×576, advice), `ImageSize`, `meetsCoverMinimum`, `describeSize` |
 | `./tabs` | `EditorTabKey`, `EDITOR_TABS` (Basics · Rewards · Story · FAQ · Pre-launch · Review), `editorTabHref` |
 | `./autosave` | `SaveState`, `SaveFailure`, `AutosaveMachine`, `AutosaveEvent`, `initialAutosave`, `autosaveReducer`, `isPending`, `canStart`, `unsavedPatch` |
-| `./copy` | `CampaignEditorTranslator`, `CharacterCountCopy`, every panel's copy type and its `…CopyFrom` builder |
+| `./copy` | `CampaignEditorTranslator`, `CharacterCountCopy`, every panel's copy type and its `…CopyFrom` builder; `ImageUploadCopy`/`imageUploadCopyFrom`, the cover's upload stages and refusals that every image field shares |
 
 Import by subpath only. There is no root entry, so a web bundle pulls in exactly the module it
 names, and the package is `sideEffects: false`: the web's first-load JS budgets have almost no

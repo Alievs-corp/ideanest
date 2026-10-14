@@ -1,7 +1,17 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
-import { CharacterCount, Field, InlineAlert, Switch, Textarea, TextInput } from '@ideanest/ui';
+import {
+  CharacterCount,
+  Field,
+  FileDropZone,
+  InlineAlert,
+  Media,
+  Pill,
+  Switch,
+  Textarea,
+  TextInput,
+} from '@ideanest/ui';
 import { createItem, patchItem, type Item } from '../../lib/projects/api';
 import { characterCount } from '@ideanest/campaign-editor/basics';
 import {
@@ -20,6 +30,7 @@ import {
 import { EditorDrawer } from './EditorDrawer';
 import type { SaveFailure } from '@ideanest/campaign-editor/autosave';
 import { describeFailure } from './useAutosave';
+import { useImageUpload } from '../../lib/media/useImageUpload';
 
 /**
  * One item: the atomic thing a campaign produces, which tiers are composed
@@ -72,6 +83,17 @@ export function ItemEditor({
   const [failure, setFailure] = useState<SaveFailure | null>(null);
   /** Whether a save has been attempted. See `visible` below. */
   const [attempted, setAttempted] = useState(false);
+  /*
+   * The image upload — the cover's, through `lib/media/useImageUpload.ts` (#313).
+   * Its result is an address, which is all `items.image_url` holds, so it lands in
+   * the draft like a typed one and is kept when the drawer is saved.
+   */
+  const { stage, upload: send } = useImageUpload(copy.upload);
+  const [imageNote, setImageNote] = useState<{
+    tone: 'success' | 'danger';
+    title?: string;
+    text: string;
+  } | null>(null);
 
   const digitalHintId = useId();
 
@@ -85,6 +107,7 @@ export function ItemEditor({
     setDraft(item === null ? EMPTY_ITEM : itemDraftFrom(item));
     setFailure(null);
     setAttempted(false);
+    setImageNote(null);
   }, [open, item]);
 
   const errors = validateItem(draft, validation);
@@ -97,6 +120,22 @@ export function ItemEditor({
    */
   const visible: ItemErrors = { ...(attempted ? errors : {}), ...serverErrors };
   const invalid = Object.keys(errors).length > 0;
+
+  async function uploadImage(file: File): Promise<void> {
+    setImageNote(null);
+    const result = await send(file);
+    // Abandoned for a newer file, which is the one this field now reports on.
+    if (result === null) return;
+    if ('refusal' in result) {
+      setImageNote({ tone: 'danger', title: copy.upload.notUsedTitle, text: result.refusal });
+      return;
+    }
+    const { image } = result;
+
+    // Into the draft as it is NOW: a name typed while the file uploaded is kept.
+    setDraft((current) => ({ ...current, imageUrl: image.url }));
+    setImageNote({ tone: 'success', text: copy.imageUploaded });
+  }
 
   async function save(): Promise<void> {
     setAttempted(true);
@@ -132,6 +171,8 @@ export function ItemEditor({
       title={item === null ? copy.addTitle : copy.editTitle}
       description={copy.drawerDescription}
       saving={saving}
+      // Saving mid-upload would store the item without the image being waited for.
+      waiting={stage !== null}
       onSave={() => void save()}
     >
       <div className="flex flex-col gap-6">
@@ -179,24 +220,90 @@ export function ItemEditor({
         </Field>
 
         <Field
-          label={copy.imageUrl}
-          hint={copy.imageUrlHint}
+          grouped
+          label={copy.image}
+          hint={copy.imageHint}
           error={visible.imageUrl}
         >
-          {/*
-            The same interim arrangement the cover image is in. There is no
-            media pipeline (docs/architecture.md §13), the column holds an
-            address the client declared, and saying so plainly is better than a
-            drop zone that cannot accept anything.
-          */}
-          <TextInput
-            type="url"
-            inputMode="url"
-            autoComplete="off"
-            placeholder={copy.imageUrlPlaceholder}
-            value={draft.imageUrl}
-            onChange={(event) => setDraft({ ...draft, imageUrl: event.target.value })}
-          />
+          <div className="flex flex-col gap-3">
+            {/*
+              An upload, or an address: the column holds an address either way.
+              The cover's pipeline reaches this field since #313, and the app
+              uploads here too (#162).
+
+              The preview is attempted only for an https address, the service's
+              own rule for this column, so a half-typed one fires no request.
+              NOT `next/image`, for the reason `CoverImageField` gives; decorative,
+              because the item's name beside it says what it is.
+            */}
+            {draft.imageUrl.trim().startsWith('https://') && (
+              <div className="flex items-center gap-4">
+                <div className="size-20 shrink-0 overflow-hidden rounded-lg border border-white/8 bg-surface-3">
+                  <Media src={draft.imageUrl.trim()} ratio="1/1" decorative />
+                </div>
+                <Pill
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={stage !== null}
+                  onClick={() => {
+                    setImageNote(null);
+                    setDraft((current) => ({ ...current, imageUrl: '' }));
+                  }}
+                >
+                  {copy.imageRemove}
+                </Pill>
+              </div>
+            )}
+
+            <FileDropZone
+              accept="image/*"
+              disabled={saving || stage !== null}
+              prompt={copy.imagePrompt}
+              dragPrompt={copy.imageDragPrompt}
+              buttonLabel={copy.imageButtonLabel}
+              hint={copy.imageDropHint}
+              onFiles={(files) => {
+                const [first] = files;
+                if (first) void uploadImage(first);
+              }}
+            />
+
+            {/*
+              Two regions, for the reason `CoverImageField` gives: an alert inside
+              a polite live region is two contradictory instructions about one
+              sentence.
+            */}
+            <div role="status" aria-live="polite" className="empty:hidden">
+              {stage !== null && <InlineAlert variant="info">{copy.upload.stage[stage]}</InlineAlert>}
+              {stage === null && imageNote !== null && imageNote.tone === 'success' && (
+                <InlineAlert variant="success">{imageNote.text}</InlineAlert>
+              )}
+            </div>
+            {imageNote !== null && imageNote.tone === 'danger' && (
+              <InlineAlert variant="danger" title={imageNote.title}>
+                {imageNote.text}
+              </InlineAlert>
+            )}
+
+            <TextInput
+              type="url"
+              inputMode="url"
+              autoComplete="off"
+              /*
+                The `Field` label names the group, so this box needs a name of its
+                own, or it is announced as "edit text" and nothing else.
+              */
+              aria-label={copy.imageUrl}
+              placeholder={copy.imageUrlPlaceholder}
+              value={draft.imageUrl}
+              disabled={stage !== null}
+              onChange={(event) => {
+                setImageNote(null);
+                setDraft({ ...draft, imageUrl: event.target.value });
+              }}
+            />
+          </div>
         </Field>
 
         <div className="rounded-lg border border-white/8 bg-surface-2 p-5">

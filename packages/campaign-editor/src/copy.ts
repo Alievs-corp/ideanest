@@ -468,9 +468,20 @@ export interface ItemEditorCopy {
   readonly descriptionHint: string;
   /** The drawer's own sentence, not the field label above. */
   readonly drawerDescription: string;
+  /** The image field's label; `imageUrl` names the address box inside it. */
+  readonly image: string;
+  readonly imageHint: string;
   readonly imageUrl: string;
-  readonly imageUrlHint: string;
   readonly imageUrlPlaceholder: string;
+  readonly imagePrompt: string;
+  readonly imageDragPrompt: string;
+  readonly imageButtonLabel: string;
+  readonly imageDropHint: string;
+  readonly imageRemove: string;
+  /** Said once an upload is ready: the item keeps it only when the drawer is saved. */
+  readonly imageUploaded: string;
+  /** The stages and refusals of an upload, which are the cover's — #313. */
+  readonly upload: ImageUploadCopy;
   readonly isDigital: string;
   readonly isDigitalHint: string;
   readonly weight: string;
@@ -768,9 +779,17 @@ export function rewardsPanelCopyFrom(
       drawerDescription: at('item.drawerDescription'),
       description: at('item.description'),
       descriptionHint: at('item.descriptionHint'),
+      image: at('item.image'),
+      imageHint: at('item.imageHint'),
       imageUrl: at('item.imageUrl'),
-      imageUrlHint: at('item.imageUrlHint'),
       imageUrlPlaceholder: at('item.imageUrlPlaceholder'),
+      imagePrompt: at('item.imagePrompt'),
+      imageDragPrompt: at('item.imageDragPrompt'),
+      imageButtonLabel: at('item.imageButtonLabel'),
+      imageDropHint: at('item.imageDropHint'),
+      imageRemove: at('item.imageRemove'),
+      imageUploaded: at('item.imageUploaded'),
+      upload: imageUploadCopyFrom(t),
       isDigital: at('item.isDigital'),
       isDigitalHint: at('item.isDigitalHint'),
       weight: at('item.weight'),
@@ -1131,13 +1150,20 @@ export interface StoryBlocksCopy {
   readonly embedTitlePlaceholder: string;
   readonly imageUrlPlaceholder: string;
   readonly imageAltPlaceholder: string;
-  readonly nothingUploadedTitle: string;
+  readonly imagePrompt: string;
+  readonly imageDragPrompt: string;
+  readonly imageButtonLabel: string;
+  readonly imageDropHint: string;
+  /** Says the address box is the second way in, and that its size is read in the browser. */
+  readonly imageAddressHint: string;
+  /** Carries `{name}`. The drop zone's accessible name, one per image block. */
+  readonly imageUploadOf: string;
+  /** The stages and refusals of an upload, which are the cover's — #313. */
+  readonly upload: ImageUploadCopy;
   readonly listHint: string;
   readonly imageHint: string;
   readonly quoteHint: string;
   readonly paragraphHint: string;
-  /** Under the image block's address field: what is read, and why. */
-  readonly imageAddressHint: string;
   readonly embedHint: string;
   readonly altHint: string;
   /** Carries `{size}`. */
@@ -1362,12 +1388,17 @@ export function storyPanelCopyFrom(
       embedTitlePlaceholder: at('blocks.embedTitlePlaceholder'),
       imageUrlPlaceholder: at('blocks.imageUrlPlaceholder'),
       imageAltPlaceholder: at('blocks.imageAltPlaceholder'),
-      nothingUploadedTitle: at('blocks.nothingUploadedTitle'),
+      imagePrompt: at('blocks.imagePrompt'),
+      imageDragPrompt: at('blocks.imageDragPrompt'),
+      imageButtonLabel: at('blocks.imageButtonLabel'),
+      imageDropHint: at('blocks.imageDropHint'),
+      imageAddressHint: at('blocks.imageAddressHint'),
+      imageUploadOf: tpl('blocks.imageUploadOf'),
+      upload: imageUploadCopyFrom(t),
       listHint: at('blocks.listHint'),
       imageHint: at('blocks.imageHint'),
       quoteHint: at('blocks.quoteHint'),
       paragraphHint: at('blocks.paragraphHint'),
-      imageAddressHint: at('blocks.imageAddressHint'),
       embedHint: at('blocks.embedHint'),
       altHint: at('blocks.altHint'),
       pixels: tpl('blocks.pixels'),
@@ -1797,8 +1828,28 @@ export type CoverFailureCode = (typeof COVER_FAILURE_CODES)[number];
  */
 export type CoverFailureCopy = Readonly<Record<CoverFailureCode, string>>;
 
+/**
+ * What every image upload says while it runs and when it is refused — the cover's words.
+ *
+ * Shared since the profile picture (#271), the story's image blocks and reward items (#313)
+ * upload through the same pipeline: the stages and refusals are about a file and an image,
+ * not about a cover, and a copy per field would be four translations of one sentence free to
+ * drift. A field that needs a different sentence for one code overrides that entry.
+ */
+export interface ImageUploadCopy {
+  readonly stage: {
+    readonly preparing: string;
+    readonly uploading: string;
+    readonly processing: string;
+  };
+  readonly notUsedTitle: string;
+  readonly unusable: string;
+  /** `TOO_SMALL` carries `{minimum}`: the service's floor, filled where the code is read. */
+  readonly failures: CoverFailureCopy;
+}
+
 /** `CoverImageField` — the basics tab's one upload. */
-export interface CoverImageCopy {
+export interface CoverImageCopy extends ImageUploadCopy {
   readonly label: string;
   /** Carries `{minimum}`. */
   readonly hint: string;
@@ -1814,8 +1865,6 @@ export interface CoverImageCopy {
   readonly checking: string;
   readonly useAddress: string;
   readonly needUrlFirst: string;
-  readonly notUsedTitle: string;
-  readonly unusable: string;
   readonly softTitle: string;
   /** Carries `{size}`. */
   readonly set: string;
@@ -1830,12 +1879,6 @@ export interface CoverImageCopy {
    */
   readonly size: string;
   readonly sizeUploaded: string;
-  readonly stage: {
-    readonly preparing: string;
-    readonly uploading: string;
-    readonly processing: string;
-  };
-  readonly failures: CoverFailureCopy;
 }
 
 /**
@@ -1991,6 +2034,17 @@ export function coverImageCopyFrom(t: CampaignEditorTranslator): CoverImageCopy 
     failures: record(COVER_FAILURE_CODES, (code) =>
       code === 'TOO_SMALL' ? tpl(`failures.${code}`) : at(`failures.${code}`),
     ),
+  };
+}
+
+/** The cover's upload words, for a field that is not the cover. */
+export function imageUploadCopyFrom(t: CampaignEditorTranslator): ImageUploadCopy {
+  const cover = coverImageCopyFrom(t);
+  return {
+    stage: cover.stage,
+    notUsedTitle: cover.notUsedTitle,
+    unusable: cover.unusable,
+    failures: cover.failures,
   };
 }
 

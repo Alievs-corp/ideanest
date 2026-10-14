@@ -10,7 +10,7 @@ import {
   meetsCoverMinimum,
 } from '@ideanest/campaign-editor/cover-image';
 import { measureImage } from '../../lib/projects/coverImage';
-import { describeUploadFailure, useImageUpload } from '../../lib/media/useImageUpload';
+import { useImageUpload } from '../../lib/media/useImageUpload';
 
 /**
  * The cover image.
@@ -67,7 +67,7 @@ export function CoverImageField({
    * The transfer itself, shared with every other field that takes a picture since #271:
    * `lib/media/useImageUpload.ts` abandons a superseded file rather than racing it.
    */
-  const { stage, upload: send } = useImageUpload();
+  const { stage, upload: send } = useImageUpload(copy);
   const [note, setNote] = useState<Note | null>(null);
   /*
    * The blur placeholder for the preview. For an upload it comes from the server, on the
@@ -129,9 +129,14 @@ export function CoverImageField({
     setChecking(true);
     setNote(null);
     try {
-      const image = await send(file);
+      const result = await send(file);
       // Abandoned for a newer file, which is the one this field now reports on.
-      if (image === null) return;
+      if (result === null) return;
+      if ('refusal' in result) {
+        setNote({ tone: 'danger', title: copy.notUsedTitle, text: result.refusal });
+        return;
+      }
+      const { image } = result;
 
       setPlaceholder(image.blurDataUrl === '' ? null : image.blurDataUrl);
       onAccept({
@@ -144,8 +149,6 @@ export function CoverImageField({
         mediaId: image.mediaId,
       });
       setNote(sizeAdvice(image));
-    } catch (cause) {
-      setNote({ tone: 'danger', title: copy.notUsedTitle, text: describeUploadFailure(cause, copy) });
     } finally {
       setChecking(false);
     }
