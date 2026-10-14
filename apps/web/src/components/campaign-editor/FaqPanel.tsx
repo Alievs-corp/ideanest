@@ -86,7 +86,7 @@ export interface FaqPanelProps {
 }
 
 export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
-  const { project, status, error, reload } = useProjectEdit(projectId);
+  const { project, status, error, reload } = useProjectEdit(projectId, copy.load);
 
   const [faqs, setFaqs] = useState<readonly ProjectFaq[]>([]);
   const [listStatus, setListStatus] = useState<ListStatus>('loading');
@@ -123,7 +123,7 @@ export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
         setListStatus('ready');
       } catch (cause) {
         if (controller.signal.aborted) return;
-        setListError(describeFailure(cause).message);
+        setListError(describeFailure(cause, copy.failures).message);
         setListStatus('failed');
       }
     })();
@@ -188,7 +188,7 @@ export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
           setFaqs(await reorderFaqs(projectId, order));
           setFailure(null);
         } catch (cause) {
-          setFailure(describeFailure(cause));
+          setFailure(describeFailure(cause, copy.failures));
           /*
            * The optimistic order on screen is now a lie. Re-reading is the only
            * honest recovery: the service refuses a partial order outright, so a
@@ -259,7 +259,7 @@ export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
       setAnnouncement(fillPlaceholders(words.deletedAnnouncement, { question: faq.question }));
       setDeleting(null);
     } catch (cause) {
-      setFailure(describeFailure(cause));
+      setFailure(describeFailure(cause, copy.failures));
     } finally {
       setBusyId(null);
     }
@@ -323,15 +323,12 @@ export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-lg font-medium tracking-[-0.02em] text-white">
-              Questions{' '}
+              {words.heading}{' '}
               {/* Tertiary at 12px: present, never competing with the title
                   (docs/ui-kit.md §7.12). */}
               <span className="text-xs font-normal text-white/40">({faqs.length})</span>
             </h2>
-            <p className="mt-1 max-w-[60ch] text-[13px] text-white/64">
-              These appear on the campaign’s FAQ tab, in this order. Answering the question a
-              backer would otherwise ask in the comments is the point of the list.
-            </p>
+            <p className="mt-1 max-w-[60ch] text-[13px] text-white/64">{words.explanation}</p>
           </div>
 
           <Pill
@@ -353,7 +350,7 @@ export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
             reason.
           */
           <InlineAlert variant="info" title={words.atLimitTitle}>
-            A campaign may publish {MAX_PROJECT_FAQS} questions. Delete one to add another.
+            {fillPlaceholders(words.atLimitBody, { max: String(MAX_PROJECT_FAQS) })}
           </InlineAlert>
         )}
 
@@ -478,10 +475,7 @@ export function FaqPanel({ projectId, copy, faq: words }: FaqPanelProps) {
           </div>
         }
       >
-        <p>
-          Nothing is owed against a question, so it goes for good — unlike a reward tier, which
-          can only be hidden once somebody has chosen it.
-        </p>
+        <p>{words.deleteBody}</p>
       </Modal>
     </EditorShell>
   );

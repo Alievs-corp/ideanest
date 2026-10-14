@@ -30,6 +30,7 @@ import type {
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { INTL_LOCALE } from '../../lib/i18n/formats';
+import { pluralise } from '../../lib/i18n/plurals';
 import { EditorShell } from './EditorShell';
 import { SaveStatus } from './SaveStatus';
 import { StoryBlockEditor } from './StoryBlockEditor';
@@ -104,7 +105,7 @@ export interface StoryPanelProps {
 }
 
 export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
-  const { project, status, error, reload, apply } = useProjectEdit(projectId);
+  const { project, status, error, reload, apply } = useProjectEdit(projectId, copy.load);
 
   /**
    * The document being edited, seeded once from the project.
@@ -122,6 +123,7 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
   const autosave = useAutosave<ProjectPatch, ProjectEdit>({
     send: (patch) => patchProject(projectId, patch),
     onSaved: apply,
+    failures: copy.failures,
   });
 
   useEffect(() => {
@@ -211,8 +213,7 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
         state={project.state}
       >
         <InlineAlert variant="warning" title={story.readOnlyTitle}>
-          It was written in a newer format than this editor understands. Reload the page to get the
-          current editor. Nothing has been changed, and the story is still on your project page.
+          {story.readOnlyDetail}
         </InlineAlert>
         <Pill variant="ghost" size="sm" className="mt-4" onClick={reload}>
           {story.reload}
@@ -266,10 +267,7 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
         {failure !== null && (
           <InlineAlert variant="danger" title={story.notSavedTitle}>
             <p>{failure.message}</p>
-            <p className="mt-2 text-white/64">
-              Nothing you have written has been lost — it is still on this page and will be sent
-              again.
-            </p>
+            <p className="mt-2 text-white/64">{story.notSavedDetail}</p>
             <Pill variant="ghost" size="sm" className="mt-3" onClick={autosave.retry}>
               {copy.tryAgain}
             </Pill>
@@ -285,7 +283,7 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
           <InlineAlert variant="warning" title={story.notSavingTitle}>
             {blockProblems.size === 1
               ? story.notSavingDetail
-              : `${blockProblems.size} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in.`}
+              : pluralise(story.locale, story.incomplete, blockProblems.size)}
           </InlineAlert>
         )}
 
@@ -351,7 +349,7 @@ export function StoryPanel({ projectId, copy, story }: StoryPanelProps) {
                   key={anchor.id}
                   className={anchor.level === 3 ? 'pl-4 text-[13px]' : 'text-[15px]'}
                 >
-                  <span className="text-white">{anchor.text || 'Untitled section'}</span>
+                  <span className="text-white">{anchor.text || story.untitledSection}</span>
                   <span className="ml-2 text-[13px] text-white/40">#{anchor.id}</span>
                 </li>
               ))}

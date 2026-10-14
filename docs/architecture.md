@@ -7406,8 +7406,9 @@ it was written in.
 > `Accept-Language` is still not negotiated, for #123's reason: the country is read on the one
 > response that is `private, no-store` anyway, so no localised page varies by it.
 >
-> **What is still English, stated rather than left to be found.** The campaign editor. Epic
-> #78 is the list of what was on this line and how each surface came off it.
+> **What is still English, stated rather than left to be found.** Nothing. The campaign
+> editor was the last surface on this line and came off it with #78, which is the list of
+> what was here and how each surface left. A literal found now is a defect, not a known gap.
 >
 > **Which language wins across devices: the latest explicit choice, written to the account
 > (#216).** A signed-in person has one language on the account, and mail and pushes are sent

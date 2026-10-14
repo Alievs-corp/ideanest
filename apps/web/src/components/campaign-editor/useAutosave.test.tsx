@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
+import { saveFailureCopyFrom } from '@ideanest/campaign-editor/copy';
 import { ApiError } from '../../lib/api/problem';
-import { useAutosave } from './useAutosave';
+import { EDITOR_COPY } from '../../test-editor-copy';
+import { translatorFor } from '../../test-copy';
+import { describeFailure, useAutosave } from './useAutosave';
 
 /**
  * The autosave contract (epic §6), tested where it lives rather than through a
@@ -16,6 +19,9 @@ interface Patch {
 }
 
 const DELAY = 800;
+
+/* The frame's words, as every panel hands them in. */
+const FAILURES = EDITOR_COPY.failures;
 
 /** A send function whose promises this test resolves by hand. */
 function controllable() {
@@ -49,7 +55,7 @@ afterEach(() => {
 describe('useAutosave', () => {
   it('waits for the pause before sending anything', async () => {
     const send = vi.fn(async () => 'saved');
-    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY }));
+    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }));
 
     act(() => result.current.save({ title: 'One' }));
     await advance(DELAY - 1);
@@ -61,7 +67,7 @@ describe('useAutosave', () => {
 
   it('merges everything typed during the pause into one request', async () => {
     const send = vi.fn(async () => 'saved');
-    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY }));
+    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }));
 
     act(() => result.current.save({ title: 'One' }));
     await advance(100);
@@ -76,7 +82,7 @@ describe('useAutosave', () => {
 
   it('says "saving" from the first keystroke, not from the request', async () => {
     const send = vi.fn(async () => 'saved');
-    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY }));
+    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }));
 
     act(() => result.current.save({ title: 'One' }));
     // "Saved" while unsent text is queued is the one lie this indicator must
@@ -91,7 +97,7 @@ describe('useAutosave', () => {
 
   it('sends immediately when asked to flush', async () => {
     const send = vi.fn(async () => 'saved');
-    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY }));
+    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }));
 
     act(() => result.current.save({ title: 'One' }));
     await act(async () => {
@@ -108,7 +114,7 @@ describe('useAutosave', () => {
    */
   it('never has two requests in flight, and sends the rest afterwards', async () => {
     const { calls, settlers, send } = controllable();
-    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY }));
+    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }));
 
     act(() => result.current.save({ title: 'One' }));
     await advance(DELAY);
@@ -127,7 +133,7 @@ describe('useAutosave', () => {
 
   it('keeps what it was given when the request fails, and sends it again on retry', async () => {
     const { calls, settlers, send } = controllable();
-    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY }));
+    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }));
 
     act(() => result.current.save({ title: 'One' }));
     await advance(DELAY);
@@ -137,7 +143,7 @@ describe('useAutosave', () => {
 
     expect(result.current.state).toBe('failed');
     expect(result.current.pending).toBe(true);
-    expect(result.current.failure?.message).toContain('could not be saved');
+    expect(result.current.failure?.message).toBe(FAILURES.generic);
 
     await act(async () => {
       result.current.retry();
@@ -154,7 +160,7 @@ describe('useAutosave', () => {
 
   it('lets a newer value win when a failed patch is merged back', async () => {
     const { calls, settlers, send } = controllable();
-    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY }));
+    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }));
 
     act(() => result.current.save({ title: 'One', blurb: 'First' }));
     await advance(DELAY);
@@ -171,7 +177,7 @@ describe('useAutosave', () => {
 
   it('does not retry a refusal by itself, because the same body would be refused again', async () => {
     const { calls, settlers, send } = controllable();
-    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY }));
+    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }));
 
     act(() => result.current.save({ title: '' }));
     await advance(DELAY);
@@ -194,7 +200,7 @@ describe('useAutosave', () => {
   it('sends what is still queued when it goes away', async () => {
     const send = vi.fn(async () => 'saved');
     const { result, unmount } = renderHook(() =>
-      useAutosave<Patch, string>({ send, delayMs: DELAY }),
+      useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }),
     );
 
     act(() => result.current.save({ title: 'Unsent' }));
@@ -206,7 +212,7 @@ describe('useAutosave', () => {
 
   it('reports the server problem detail rather than wording of its own', async () => {
     const { settlers, send } = controllable();
-    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY }));
+    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }));
 
     act(() => result.current.save({ title: 'One' }));
     await advance(DELAY);
@@ -229,7 +235,7 @@ describe('useAutosave', () => {
 
   it('says the service could not be reached when there is no response at all', async () => {
     const { settlers, send } = controllable();
-    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY }));
+    const { result } = renderHook(() => useAutosave<Patch, string>({ send, delayMs: DELAY, failures: FAILURES }));
 
     act(() => result.current.save({ title: 'One' }));
     await advance(DELAY);
@@ -237,7 +243,31 @@ describe('useAutosave', () => {
       settlers[0]?.reject(new TypeError('Failed to fetch'));
     });
 
-    expect(result.current.failure?.message).toContain('could not be reached');
+    expect(result.current.failure?.message).toBe(FAILURES.unreachable);
     expect(result.current.pending).toBe(true);
+  });
+});
+
+/*
+ * #78: these sentences were English literals inside `describeFailure` until the editor's last
+ * strings left it. English cannot show that they no longer are, so this asks in Azerbaijani.
+ */
+describe('describeFailure', () => {
+  const az = saveFailureCopyFrom(translatorFor('campaignEditor', 'az'));
+
+  it.each([
+    [401, 'signedOut'],
+    [403, 'forbidden'],
+    [404, 'notFound'],
+    [409, 'conflict'],
+    [422, 'rejected'],
+    [500, 'generic'],
+  ] as const)('puts a bare %i in the words it was handed', (status, key) => {
+    expect(describeFailure(new ApiError(status, null), az).message).toBe(az[key]);
+    expect(az[key]).not.toBe(FAILURES[key]);
+  });
+
+  it('puts an unreachable service in the words it was handed', () => {
+    expect(describeFailure(new TypeError('Failed to fetch'), az).message).toBe(az.unreachable);
   });
 });

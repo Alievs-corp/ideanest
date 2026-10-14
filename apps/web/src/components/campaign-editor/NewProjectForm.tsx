@@ -62,7 +62,10 @@ export function NewProjectForm({ copy, counter, locale }: NewProjectFormProps) {
   const tooLong = length > TITLE_MAX_CHARACTERS;
 
   const error = tooLong
-    ? `A title is ${TITLE_MAX_CHARACTERS} characters or fewer. Remove ${length - TITLE_MAX_CHARACTERS}.`
+    ? fillPlaceholders(copy.titleTooLong, {
+        max: String(TITLE_MAX_CHARACTERS),
+        over: String(length - TITLE_MAX_CHARACTERS),
+      })
     : undefined;
 
   async function create(): Promise<void> {

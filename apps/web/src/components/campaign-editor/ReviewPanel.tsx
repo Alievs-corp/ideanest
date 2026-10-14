@@ -30,6 +30,8 @@ import type {
 } from '@ideanest/campaign-editor/copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
 import { pluralise } from '../../lib/i18n/plurals';
+import { dateTimeFormat } from '../../lib/i18n/formats';
+import type { Locale } from '../../lib/i18n/locale';
 import { useRouteLocale } from '../../lib/i18n/useRouteLocale';
 import { EditorShell } from './EditorShell';
 import { useProjectEdit } from './useProjectEdit';
@@ -107,7 +109,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
    * checklist into `ProjectEdit` would put a query on `project_state_transitions`
    * behind every autosave in every other tab.
    */
-  const { project, status, error, reload, apply } = useProjectEdit(projectId);
+  const { project, status, error, reload, apply } = useProjectEdit(projectId, copy.load);
   const router = useRouter();
   // The checklist's rows and a refusal's reasons are written by the service, in the
   // language asked for -- so it is asked in the language this page is drawn in.
@@ -288,7 +290,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
               {moderation.note ?? words.noReason}
             </p>
             <p className="mt-2">
-              <time dateTime={moderation.decidedAt}>{formatDate(moderation.decidedAt)}</time>
+              <time dateTime={moderation.decidedAt}>{formatDate(moderation.decidedAt, words.locale)}</time>
             </p>
           </InlineAlert>
         )}
@@ -478,11 +480,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
                 <h3 id="review-launch-confirm-heading" className="text-[15px] font-medium text-white">
                   {words.confirmLaunchTitle}
                 </h3>
-                <p className="mt-2 text-[13px] text-white/64">
-                  It becomes public immediately and starts taking pledges. The funding goal and
-                  the deadline are fixed on launch and cannot be edited afterwards, and a live
-                  campaign cannot be taken back to a draft.
-                </p>
+                <p className="mt-2 text-[13px] text-white/64">{words.confirmLaunchBody}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Pill
                     variant="accent"
@@ -526,9 +524,7 @@ export function ReviewPanel({ projectId, copy, review: words }: ReviewPanelProps
                     it matters. Two copies of one warning on one screen is one of them being
                     read and the other being scrolled past. */}
                 <p id="review-launch-explanation" className="text-[13px] text-white/64">
-                  The campaign appears everywhere on the platform and starts taking pledges the
-                  moment it launches. Its goal and its deadline freeze from that point, and a
-                  live campaign cannot be taken back to a draft.
+                  {words.launchExplanation}
                 </p>
               </>
             )}
@@ -623,7 +619,7 @@ function ChecklistRow({
     would be unreadable to both (docs/ui-kit.md §9.2).
   */
   const status = item.satisfied
-    ? 'Done'
+    ? words.done
     : tone === 'blocking'
       ? words.requiredNotDone
       : words.recommendedNotDone;
@@ -728,8 +724,12 @@ function planLimitFrom(cause: ApiError): Refusal['limit'] {
   };
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: Locale): string {
   const when = new Date(iso);
   if (Number.isNaN(when.getTime())) return iso;
-  return when.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  return dateTimeFormat(
+    locale,
+    { day: 'numeric', month: 'long', year: 'numeric' },
+    'review-decided-on',
+  ).format(when);
 }

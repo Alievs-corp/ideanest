@@ -4634,7 +4634,9 @@
           "cancel": "İptal",
           "save": "Kaydet",
           "saving": "Kaydediliyor"
-        }
+        },
+        "notSavedDetail": "Yazdıklarınızdan hiçbiri kaybolmadı — metin aşağıdaki alanlarda duruyor.",
+        "weightHint": "İsteğe bağlı. Kargo ücreti daha sonra buna göre hesaplanır."
       },
       "tier": {
         "addTitle": "Ödül ekle",
@@ -4697,7 +4699,11 @@
           "cancel": "İptal",
           "save": "Kaydet",
           "saving": "Kaydediliyor"
-        }
+        },
+        "notSavedDetail": "Yazdıklarınızdan hiçbiri kaybolmadı — metin aşağıdaki alanlarda duruyor.",
+        "ratesNotSavedDetail": "Ödülle ilgili diğer her şey kaydedildi. Yalnızca ülkelere göre ücretler reddedildi; onları düzeltip yeniden kaydedin, geri kalanı ikinci kez gönderilmez.",
+        "earlyBirdHint": "Tükenen daha iyi bir teklif. Ya bir kapanış tarihi ya da sınırlı kontenjan gerekir — ikisi de yoksa insanları boş yere acele ettiren etiketli sıradan bir ödüldür.",
+        "secretHint": "Herkese açık listede görünmez, özel bir jetonla ulaşılır. Yeniden herkese açık yapmak bu jetonu geçersiz kılar, gönderilmiş bağlantılar çalışmaz."
       },
       "deleteItemNamed": "«{name}» silinsin mi?",
       "deleteRewardNamed": "«{title}» silinsin mi?",
@@ -4814,7 +4820,11 @@
           "unlimited": "Kontenjan sınırsız",
           "remaining": "{limit} kontenjandan {remaining} kaldı"
         }
-      }
+      },
+      "atCapacityBody": "Bir kampanya en fazla {max} ödül sunabilir. Yenisini eklemeden önce birini silin ya da birleştirin.",
+      "deleteItemBody": "Bir ödülün içindeki ürün silinemez — önce onu ödülden çıkarın. Bu sayfanın bildiği kadarıyla bu ürün hiçbir ödülde yok; hizmet bunu yeniden kontrol eder.",
+      "deleteRewardBody": "Bir ödülü biri seçtikten sonra o artık silinemez, yalnızca gizlenebilir — bu yüzden silme, henüz kimse seçmemişken sunulur.",
+      "deliversOn": "Teslimat: {date}"
     },
     "drawer": {
       "cancel": "İptal",
@@ -4875,7 +4885,16 @@
         "risks": "Riskler ve zorluklar",
         "risksHint": "Ne ters gidebilir ve bu konuda ne yapacaksınız. En az {min} karakter; incelemeye göndermeden önce zorunludur.",
         "risksPlaceholder": "Genellikle üç şey olur: üretim, kargo ve zamanlama. Nelerin çözüldüğünü, nelerin çözülmediğini yazın.",
-        "charactersNeeded": "Göndermek için gereken {min} karakterden {count} tanesi"
+        "charactersNeeded": "Göndermek için gereken {min} karakterden {count} tanesi",
+        "incomplete": {
+          "one": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder.",
+          "few": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder.",
+          "many": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder.",
+          "other": "Eksik blok sayısı: {count}. Blokların yanındaki mesajlar neyin eksik olduğunu söylüyor; doldurulur doldurulmaz kaydetme devam eder."
+        },
+        "untitledSection": "Başlıksız bölüm",
+        "readOnlyDetail": "Bu hikâye, bu düzenleyicinin anladığından daha yeni bir biçimde yazılmış. Güncel düzenleyiciyi almak için sayfayı yeniden yükleyin. Hiçbir şey değiştirilmedi ve hikâye proje sayfanızda duruyor.",
+        "notSavedDetail": "Yazdığınız hiçbir şey kaybolmadı — hepsi bu sayfada ve yeniden gönderilecek."
       },
       "blocks": {
         "heading": "Hikâye",
@@ -4932,7 +4951,11 @@
           "embed": "YouTube ya da Vimeo videosu.",
           "rule": "Yatay bir ayırıcı."
         },
-        "empty": "Burada henüz bir şey yok. Bir paragrafla başlayın — kampanyaların çoğu ürünün ne olduğu ve kimin için olduğuyla açılır."
+        "empty": "Burada henüz bir şey yok. Bir paragrafla başlayın — kampanyaların çoğu ürünün ne olduğu ve kimin için olduğuyla açılır.",
+        "embedHint": "Başlık, ekran okuyucunun «çerçeve» yerine okuduğu metindir. Yalnızca YouTube ve Vimeo videoları gömülebilir.",
+        "altHint": "Zorunlu. Ekran okuyucu kullanan bir destekçi görsel yerine bunu duyar; bu yüzden dosyanın adını değil, görselde ne olduğunu anlatın.",
+        "pixels": "{size} piksel",
+        "imageAddressHint": "Zaten yayımlanmış bir görselin adresini verin. Boyutu tarayıcınızda okunur ve hikâyeyle birlikte saklanır; böylece sayfa, görsel yüklenmeden önce yerini ayırabilir."
       },
       "history": {
         "title": "Önceki sürümler",
@@ -4960,7 +4983,23 @@
           "few": "{count} blok · {characters} karakter",
           "many": "{count} blok · {characters} karakter",
           "other": "{count} blok · {characters} karakter"
-        }
+        },
+        "version": "Sürüm {number}",
+        "mostRecent": "en son",
+        "characters": {
+          "one": "{count} karakter",
+          "few": "{count} karakter",
+          "many": "{count} karakter",
+          "other": "{count} karakter"
+        },
+        "hide": "Gizle",
+        "savedAt": "Sürüm {number} kaydedilme zamanı: {date}. Uzunluğu: {characters}.",
+        "currentHolds": "Şu anki hikâyenin uzunluğu: {characters}. Değiştirilmeden önce bir sürüm olarak saklanır, bu yüzden bu işlem aynı listeden geri alınabilir.",
+        "loadFailed": "Sürüm geçmişi yüklenemedi.",
+        "versionFailed": "Bu sürüm yüklenemedi.",
+        "restoreFailed": "Bu sürüm geri yüklenemedi. Hiçbir şey değişmedi.",
+        "unreachable": "Hizmete ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
+        "newerFormat": "Bu sürüm, bu düzenleyicinin anladığından daha yeni bir biçimde yazılmış. Güncel düzenleyiciyi almak için sayfayı yeniden yükleyin."
       },
       "toolbar": {
         "formattingFor": "«{label}» için biçimlendirme",
@@ -5032,7 +5071,11 @@
           "many": "Bu, sınırdan {count} karakter uzun. Bir yanıt en fazla {max} karakter olabilir.",
           "other": "Bu, sınırdan {count} karakter uzun. Bir yanıt en fazla {max} karakter olabilir."
         }
-      }
+      },
+      "heading": "Sorular",
+      "explanation": "Bunlar kampanyanın SSS sekmesinde bu sırayla görünür. Listenin amacı, bir destekçinin yoksa yorumlarda soracağı soruyu yanıtlamaktır.",
+      "atLimitBody": "Bir kampanya en fazla {max} soru yayımlayabilir. Yenisini eklemek için birini silin.",
+      "deleteBody": "Bir soru için kimseye bir şey borçlu değilsiniz, bu yüzden kalıcı olarak silinir — biri seçtikten sonra yalnızca gizlenebilen bir ödülün aksine."
     },
     "prelaunch": {
       "loadingLabel": "Kampanya yükleniyor",
@@ -5067,7 +5110,8 @@
       "confirmBody": "Başlık, özet ve kapak görseli herkesin açabileceği bir bağlantıda herkese açık olur. Bu geri alınamaz.",
       "cancel": "İptal",
       "opening": "Açılıyor",
-      "confirmOpen": "Sayfayı aç"
+      "confirmOpen": "Sayfayı aç",
+      "confirmDetail": "Ödülleriniz, hikâyeniz veya fonlama hedefiniz hakkında hiçbir şey yayımlanmaz ve kampanya incelenip başlatılana kadar para kabul etmez."
     },
     "review": {
       "loadFailedTitle": "Bu kampanya yüklenemedi",
@@ -5116,7 +5160,10 @@
         "many": "{count} zorunlu madde henüz tamamlanmadı.",
         "other": "{count} zorunlu madde henüz tamamlanmadı."
       },
-      "moderatorNote": "Bir moderatör kampanyayı okur ve ya onaylar, ya değişiklik ister, ya da reddeder. İnceleme sürerken düzenlemeye devam edebilirsiniz."
+      "moderatorNote": "Bir moderatör kampanyayı okur ve ya onaylar, ya değişiklik ister, ya da reddeder. İnceleme sürerken düzenlemeye devam edebilirsiniz.",
+      "done": "Tamamlandı",
+      "launchExplanation": "Kampanya başlatıldığı anda platformun her yerinde görünür ve destek almaya başlar. O andan itibaren hedefi ve bitiş tarihi değişmez, yayındaki bir kampanya taslağa geri alınamaz.",
+      "confirmLaunchBody": "Hemen herkese açık olur ve destek almaya başlar. Fonlama hedefi ve bitiş tarihi başlatıldığında sabitlenir ve sonradan düzenlenemez; yayındaki bir kampanya taslağa geri alınamaz."
     },
     "cover": {
       "label": "Kapak görseli",
@@ -5223,6 +5270,21 @@
       "faq": "Kampanyanızın kendi sayfasında yanıtladığı sorular ve destekçilerin bunları okuduğu sıra.",
       "prelaunch": "Lansman öncesi sayfayı açın, bağlantıyı paylaşın ve kampanyanızın açılışından haberdar olmak isteyenleri toplayın.",
       "review": "Kampanyanın ne kadar hazır olduğu, moderasyonun onun hakkında söyledikleri ve incelemeye gönderilmesi."
+    },
+    "failures": {
+      "signedOut": "Oturumunuz kapandı. Yeniden giriş yapın — yazdıklarınızın hiçbiri kaybolmadı.",
+      "forbidden": "Bu projeyi düzenleme izniniz yok.",
+      "notFound": "Bu proje artık mevcut değil.",
+      "rejected": "Hizmet değişikliği kabul etmedi. Aşağıda işaretlenen alanları kontrol edin.",
+      "generic": "Değişiklik kaydedilemedi. Yeniden deneyin.",
+      "unreachable": "Hizmete ulaşılamadı, bu yüzden hiçbir şey kaydedilmedi. Yeniden deneyin.",
+      "conflict": "Bu sayfa açıldığından beri proje değişti. Güncel sürümü görmek için sayfayı yeniden yükleyin."
+    },
+    "load": {
+      "forbidden": "Bu projeye erişiminiz yok.",
+      "notFound": "Bu proje bulunamadı.",
+      "refused": "Hizmet isteği reddetti. Yeniden deneyin.",
+      "unreachable": "Hizmete ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin."
     }
   },
   "moderation": {

@@ -139,6 +139,57 @@ export interface EditorChromeCopy {
   readonly tryAgain: string;
   /** The drawers open from three tabs, so their two buttons ride with the frame. */
   readonly drawer: EditorDrawerCopy;
+  /** What a refused or unreachable save is put in, on every tab (#78). */
+  readonly failures: SaveFailureCopy;
+  /** What a project that could not be loaded is put in, on every tab (#78). */
+  readonly load: ProjectLoadCopy;
+}
+
+/**
+ * The sentences a failed save falls back on when the service sent no `detail` of its own.
+ *
+ * Until #78 the web wrote these in English inside `useAutosave`'s `describeFailure`, which is
+ * why the app keeps a copy of them in `mobile.editor.failures`. The words are the same except
+ * `conflict`, which says "page" here and "screen" there.
+ */
+export interface SaveFailureCopy {
+  readonly signedOut: string;
+  readonly forbidden: string;
+  readonly notFound: string;
+  readonly conflict: string;
+  readonly rejected: string;
+  readonly generic: string;
+  readonly unreachable: string;
+}
+
+/** `useProjectEdit`'s four refusals, for a project that could not be loaded at all. */
+export interface ProjectLoadCopy {
+  readonly forbidden: string;
+  readonly notFound: string;
+  readonly refused: string;
+  readonly unreachable: string;
+}
+
+/** Both of the above, read once and handed to every builder that needs them. */
+export function saveFailureCopyFrom(t: CampaignEditorTranslator): SaveFailureCopy {
+  return {
+    signedOut: t('failures.signedOut'),
+    forbidden: t('failures.forbidden'),
+    notFound: t('failures.notFound'),
+    conflict: t('failures.conflict'),
+    rejected: t('failures.rejected'),
+    generic: t('failures.generic'),
+    unreachable: t('failures.unreachable'),
+  };
+}
+
+export function projectLoadCopyFrom(t: CampaignEditorTranslator): ProjectLoadCopy {
+  return {
+    forbidden: t('load.forbidden'),
+    notFound: t('load.notFound'),
+    refused: t('load.refused'),
+    unreachable: t('load.unreachable'),
+  };
 }
 
 /**
@@ -259,6 +310,8 @@ export function editorChromeCopyFrom(
       save: t('drawer.save'),
       saving: t('drawer.saving'),
     },
+    failures: saveFailureCopyFrom(t),
+    load: projectLoadCopyFrom(t),
   };
 }
 
@@ -428,6 +481,10 @@ export interface ItemEditorCopy {
   readonly isDigitalHint: string;
   readonly weight: string;
   readonly weightHintDigital: string;
+  /** The weight's hint for a physical item. */
+  readonly weightHint: string;
+  readonly notSavedDetail: string;
+  readonly failures: SaveFailureCopy;
   readonly sku: string;
   readonly skuHint: string;
 }
@@ -458,7 +515,11 @@ export interface RewardTierEditorCopy {
   readonly editTitle: string;
   readonly description: string;
   readonly notSavedTitle: string;
+  readonly notSavedDetail: string;
   readonly ratesNotSavedTitle: string;
+  /** Said when everything but the per-country rates was saved. */
+  readonly ratesNotSavedDetail: string;
+  readonly failures: SaveFailureCopy;
   readonly title: string;
   /** Carries `{max}`. */
   readonly titleHint: string;
@@ -484,9 +545,11 @@ export interface RewardTierEditorCopy {
   readonly closes: string;
   readonly closesHint: string;
   readonly earlyBird: string;
+  readonly earlyBirdHint: string;
   readonly featured: string;
   readonly featuredHint: string;
   readonly secret: string;
+  readonly secretHint: string;
   readonly addOn: string;
   readonly addOnHint: string;
   readonly contents: string;
@@ -535,6 +598,12 @@ export interface RewardsPanelCopy {
   /** Carries `{count}` and `{max}`. */
   readonly countOf: string;
   readonly atCapacityTitle: string;
+  /** Carries `{max}`. */
+  readonly atCapacityBody: string;
+  readonly deleteItemBody: string;
+  readonly deleteRewardBody: string;
+  /** Carries `{date}`, the creator's own estimate as they typed it. */
+  readonly deliversOn: string;
   readonly deleteItemTitle: string;
   readonly deleteRewardTitle: string;
   readonly cannotBeUndone: string;
@@ -619,6 +688,8 @@ export function rewardsPanelCopyFrom(
     save: at(`${where}.drawer.save`),
     saving: at(`${where}.drawer.saving`),
   });
+  /* Both drawers describe a refused save in the frame's words. */
+  const failures = saveFailureCopyFrom(t);
 
   return {
     loadingLabel: at('loadingLabel'),
@@ -632,6 +703,10 @@ export function rewardsPanelCopyFrom(
     rewardsHeading: at('rewardsHeading'),
     countOf: tpl('rewards.countOf'),
     atCapacityTitle: at('atCapacityTitle'),
+    atCapacityBody: tpl('rewards.atCapacityBody'),
+    deleteItemBody: at('deleteItemBody'),
+    deleteRewardBody: at('deleteRewardBody'),
+    deliversOn: tpl('rewards.deliversOn'),
     deleteItemTitle: at('deleteItemTitle'),
     deleteRewardTitle: at('deleteRewardTitle'),
     cannotBeUndone: at('cannotBeUndone'),
@@ -706,6 +781,9 @@ export function rewardsPanelCopyFrom(
       isDigitalHint: at('item.isDigitalHint'),
       weight: at('item.weight'),
       weightHintDigital: at('item.weightHintDigital'),
+      weightHint: at('item.weightHint'),
+      notSavedDetail: at('item.notSavedDetail'),
+      failures,
       sku: at('item.sku'),
       skuHint: at('item.skuHint'),
     },
@@ -716,7 +794,10 @@ export function rewardsPanelCopyFrom(
       editTitle: at('tier.editTitle'),
       description: at('tier.description'),
       notSavedTitle: at('tier.notSavedTitle'),
+      notSavedDetail: at('tier.notSavedDetail'),
       ratesNotSavedTitle: at('tier.ratesNotSavedTitle'),
+      ratesNotSavedDetail: at('tier.ratesNotSavedDetail'),
+      failures,
       title: at('tier.title'),
       titleHint: tpl('rewards.tier.titleHint'),
       summary: at('tier.summary'),
@@ -737,9 +818,11 @@ export function rewardsPanelCopyFrom(
       closes: at('tier.closes'),
       closesHint: at('tier.closesHint'),
       earlyBird: at('tier.earlyBird'),
+      earlyBirdHint: at('tier.earlyBirdHint'),
       featured: at('tier.featured'),
       featuredHint: at('tier.featuredHint'),
       secret: at('tier.secret'),
+      secretHint: at('tier.secretHint'),
       addOn: at('tier.addOn'),
       addOnHint: at('tier.addOnHint'),
       contents: at('tier.contents'),
@@ -1019,6 +1102,21 @@ export interface StoryHistoryCopy {
   readonly tryAgain: string;
   /** One form per category. Carries `{count}` and `{characters}`. */
   readonly previewSummary: AppPluralForms;
+  /** Carries `{number}`. */
+  readonly version: string;
+  readonly mostRecent: string;
+  /** One form per category. Carries `{count}`. */
+  readonly characters: AppPluralForms;
+  readonly hide: string;
+  /** Carries `{number}`, `{date}` and `{characters}` — the last a phrase from `characters`. */
+  readonly savedAt: string;
+  /** Carries `{characters}`, a phrase from `characters`. */
+  readonly currentHolds: string;
+  readonly loadFailed: string;
+  readonly versionFailed: string;
+  readonly restoreFailed: string;
+  readonly unreachable: string;
+  readonly newerFormat: string;
 }
 
 /** `StoryBlockEditor` — the document itself. */
@@ -1044,6 +1142,12 @@ export interface StoryBlocksCopy {
   readonly imageHint: string;
   readonly quoteHint: string;
   readonly paragraphHint: string;
+  /** Under the image block's address field: what is read, and why. */
+  readonly imageAddressHint: string;
+  readonly embedHint: string;
+  readonly altHint: string;
+  /** Carries `{size}`. */
+  readonly pixels: string;
   readonly needUrlFirst: string;
   readonly notAnImage: string;
   readonly measuring: string;
@@ -1080,9 +1184,15 @@ export interface StoryBlocksCopy {
 /** The story tab. */
 export interface StoryPanelCopy {
   readonly readOnlyTitle: string;
+  readonly readOnlyDetail: string;
   readonly notSavedTitle: string;
+  readonly notSavedDetail: string;
   readonly notSavingTitle: string;
   readonly notSavingDetail: string;
+  /** One form per category. Carries `{count}` — blocks that stop the story saving. */
+  readonly incomplete: AppPluralForms;
+  /** The anchor menu's entry for a heading with no text yet. */
+  readonly untitledSection: string;
   readonly loadingLabel: string;
   readonly reload: string;
   readonly earlierVersions: string;
@@ -1128,6 +1238,7 @@ export interface FaqEntryCopy {
   readonly characterCount: CharacterCountCopy;
   readonly locale: Locale;
   readonly validation: FaqValidationCopy;
+  readonly failures: SaveFailureCopy;
   readonly addTitle: string;
   readonly editTitle: string;
   readonly notSavedTitle: string;
@@ -1167,7 +1278,12 @@ export interface FaqOrderCopy {
 
 /** The FAQ tab. */
 export interface FaqPanelCopy {
+  readonly heading: string;
+  readonly explanation: string;
   readonly atLimitTitle: string;
+  /** Carries `{max}`. */
+  readonly atLimitBody: string;
+  readonly deleteBody: string;
   readonly failedTitle: string;
   readonly questionsFailedTitle: string;
   readonly emptyTitle: string;
@@ -1221,9 +1337,13 @@ export function storyPanelCopyFrom(
 
   return {
     readOnlyTitle: at('panel.readOnlyTitle'),
+    readOnlyDetail: at('panel.readOnlyDetail'),
     notSavedTitle: at('panel.notSavedTitle'),
+    notSavedDetail: at('panel.notSavedDetail'),
     notSavingTitle: at('panel.notSavingTitle'),
     notSavingDetail: at('panel.notSavingDetail'),
+    incomplete: t.raw('story.panel.incomplete') as AppPluralForms,
+    untitledSection: at('panel.untitledSection'),
     loadingLabel: at('panel.loadingLabel'),
     reload: at('panel.reload'),
     earlierVersions: at('panel.earlierVersions'),
@@ -1253,6 +1373,10 @@ export function storyPanelCopyFrom(
       imageHint: at('blocks.imageHint'),
       quoteHint: at('blocks.quoteHint'),
       paragraphHint: at('blocks.paragraphHint'),
+      imageAddressHint: at('blocks.imageAddressHint'),
+      embedHint: at('blocks.embedHint'),
+      altHint: at('blocks.altHint'),
+      pixels: tpl('blocks.pixels'),
       needUrlFirst: at('blocks.needUrlFirst'),
       notAnImage: at('blocks.notAnImage'),
       measuring: at('blocks.measuring'),
@@ -1298,6 +1422,17 @@ export function storyPanelCopyFrom(
       divider: at('history.divider'),
       tryAgain: at('history.tryAgain'),
       previewSummary: t.raw('story.history.previewSummary') as AppPluralForms,
+      version: tpl('history.version'),
+      mostRecent: at('history.mostRecent'),
+      characters: t.raw('story.history.characters') as AppPluralForms,
+      hide: at('history.hide'),
+      savedAt: tpl('history.savedAt'),
+      currentHolds: tpl('history.currentHolds'),
+      loadFailed: at('history.loadFailed'),
+      versionFailed: at('history.versionFailed'),
+      restoreFailed: at('history.restoreFailed'),
+      unreachable: at('history.unreachable'),
+      newerFormat: at('history.newerFormat'),
     },
     toolbar: {
       formattingFor: tpl('toolbar.formattingFor'),
@@ -1349,7 +1484,11 @@ export function faqPanelCopyFrom(
   const tpl = (key: string) => template(t, `faq.${key}`);
 
   return {
+    heading: at('heading'),
+    explanation: at('explanation'),
     atLimitTitle: at('atLimitTitle'),
+    atLimitBody: tpl('atLimitBody'),
+    deleteBody: at('deleteBody'),
     failedTitle: at('failedTitle'),
     questionsFailedTitle: at('questionsFailedTitle'),
     emptyTitle: at('emptyTitle'),
@@ -1389,6 +1528,7 @@ export function faqPanelCopyFrom(
         answerTooLong: t.raw('faq.validation.answerTooLong') as AppPluralForms,
         locale,
       },
+      failures: saveFailureCopyFrom(t),
       addTitle: at('entry.addTitle'),
       editTitle: at('entry.editTitle'),
       notSavedTitle: at('entry.notSavedTitle'),
@@ -1412,6 +1552,10 @@ export function faqPanelCopyFrom(
 export interface PrelaunchPanelCopy {
   readonly loadingLabel: string;
   readonly notSavedTitle: string;
+  /** The basics tab's sentence: both autosave, and say the same thing when that fails. */
+  readonly notSavedDetail: string;
+  /** Under the confirmation: what opening the page does not publish. */
+  readonly confirmDetail: string;
   readonly notOpenHeading: string;
   readonly notOpenBody: string;
   readonly notOpenIrreversible: string;
@@ -1462,6 +1606,8 @@ export function prelaunchPanelCopyFrom(
   return {
     loadingLabel: at('loadingLabel'),
     notSavedTitle: at('notSavedTitle'),
+    notSavedDetail: t('basics.notSavedDetail'),
+    confirmDetail: at('confirmDetail'),
     notOpenHeading: at('notOpenHeading'),
     notOpenBody: at('notOpenBody'),
     notOpenIrreversible: at('notOpenIrreversible'),
@@ -1522,6 +1668,12 @@ export interface ReviewPanelCopy {
   readonly recommendedDescription: string;
   readonly requiredNotDone: string;
   readonly recommendedNotDone: string;
+  /** A checklist item's spoken status once it is satisfied. */
+  readonly done: string;
+  /** Beside the launch control, before it is pressed. */
+  readonly launchExplanation: string;
+  /** Inside the confirmation, once it is. */
+  readonly confirmLaunchBody: string;
   /**
    * Carries `{section}`.
    *
@@ -1586,6 +1738,9 @@ export function reviewPanelCopyFrom(
     recommendedDescription: at('recommendedDescription'),
     requiredNotDone: at('requiredNotDone'),
     recommendedNotDone: at('recommendedNotDone'),
+    done: at('done'),
+    launchExplanation: at('launchExplanation'),
+    confirmLaunchBody: at('confirmLaunchBody'),
     fixIn: tpl('fixIn'),
     submit: at('submit'),
     submitting: at('submitting'),
@@ -1787,6 +1942,8 @@ export interface NewProjectCopy {
   readonly title: string;
   /** Carries `{max}`. */
   readonly titleHint: string;
+  /** The basics tab's own refusal — one title rule, one sentence. Carries `{max}` and `{over}`. */
+  readonly titleTooLong: string;
   readonly creating: string;
   readonly start: string;
   readonly signInFirst: string;
@@ -1887,6 +2044,7 @@ export function newProjectCopyFrom(t: CampaignEditorTranslator): NewProjectCopy 
     notCreated: t('newProject.notCreated'),
     title: t('newProject.title'),
     titleHint: template(t, 'newProject.titleHint'),
+    titleTooLong: template(t, 'basics.validation.titleTooLong'),
     creating: t('newProject.creating'),
     start: t('newProject.start'),
     signInFirst: t('newProject.signInFirst'),
