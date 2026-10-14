@@ -123,6 +123,7 @@ function profile(overrides: Partial<OwnProfile> = {}): OwnProfile {
     websiteUrl: 'https://aysel.example',
     location: location(),
     socialLinks: [link()],
+    profileVisibility: 'PUBLIC',
     ...overrides,
   };
 }

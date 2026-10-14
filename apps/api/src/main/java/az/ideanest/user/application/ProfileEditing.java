@@ -165,7 +165,8 @@ public class ProfileEditing {
                 account.getAvatarUrl(),
                 account.getWebsiteUrl(),
                 locations.findById(account.getLocationId()).orElse(null),
-                socialLinksOf(account.getId()));
+                socialLinksOf(account.getId()),
+                account.getProfileVisibility());
     }
 
     /** Every link this account has, in the order its owner put them. Never null. */

@@ -155,7 +155,6 @@ export interface TwoFactorPanelCopy {
   readonly introEmphasis: string;
   readonly setUp: string;
   readonly turnOff: string;
-  readonly bothOffered: string;
   readonly passwordIntro: string;
   readonly currentPassword: string;
   readonly checking: string;
@@ -212,7 +211,6 @@ export function twoFactorPanelCopyFrom(
     introEmphasis: t('twoFactor.introEmphasis'),
     setUp: t('twoFactor.setUp'),
     turnOff: t('twoFactor.turnOff'),
-    bothOffered: t('twoFactor.bothOffered'),
     passwordIntro: t('twoFactor.passwordIntro'),
     currentPassword: t('twoFactor.currentPassword'),
     checking: t('twoFactor.checking'),

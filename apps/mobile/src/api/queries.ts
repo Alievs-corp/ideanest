@@ -182,7 +182,7 @@ export const queryKeys = {
   locations: () => ['settings', 'locations'] as const,
   sessions: () => ['settings', 'sessions'] as const,
   notificationPreferences: () => ['settings', 'notifications'] as const,
-  profileVisibility: (slug: string) => ['settings', 'visibility', slug] as const,
+  profileVisibility: () => ['settings', 'visibility'] as const,
   legalSubject: () => ['settings', 'legalSubject'] as const,
   payoutDestination: () => ['settings', 'payoutDestination'] as const,
   /**

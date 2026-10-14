@@ -3353,7 +3353,6 @@
         "introEmphasis": "ödemeden önce zorunlu",
         "setUp": "Kur",
         "turnOff": "Kapat",
-        "bothOffered": "İkisi de sunuluyor, çünkü bu ekran hangisinin geçerli olduğunu okuyamıyor: servis, hesabınızın kayıtlı olup olmadığını söyleyen bir alan yayımlamıyor. Hangisini seçerseniz seçin, dürüst yanıt verir.",
         "passwordIntro": "Bir güvenlik denetimini açmak parolanıza mal olur; böylece çalınmış bir giriş hesabınıza ikinci bir faktör monte edemez.",
         "currentPassword": "Mevcut parola",
         "checking": "Kontrol ediliyor",

@@ -29,6 +29,13 @@ export interface Session {
    * approximate.
    */
   readonly currency?: string | null;
+  /**
+   * Whether sign-in asks this account for a second factor (#270) — a confirmed enrolment, never
+   * one that was started and abandoned. Optional because a service older than #270 answers
+   * without it; absent reads as off, and `TwoFactorPanel` still handles the service's "already
+   * enabled" refusal for that case.
+   */
+  readonly twoFactorEnabled?: boolean;
 }
 
 /**

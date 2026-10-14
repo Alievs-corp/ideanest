@@ -3,14 +3,14 @@ import { memoryStore } from '../../../lib/storage';
 import {
   cancelDeletion,
   fetchAccountExport,
-  probeProfileVisibility,
+  readProfileVisibility,
   requestDeletion,
   setProfileVisibility,
 } from './api';
 
 /**
- * The privacy requests against the real client, with only `fetch` replaced — so "no bearer on the
- * probe" is asserted on the request that leaves the phone, not on which mock was called.
+ * The privacy requests against the real client, with only `fetch` replaced — so which credentials
+ * each one carries is asserted on the request that leaves the phone, not on which mock was called.
  */
 
 const fetchMock = jest.fn<Promise<Response>, [string, RequestInit | undefined]>();
@@ -33,28 +33,31 @@ beforeEach(() => {
   rememberAccessToken('the signed in token');
 });
 
-describe('probeProfileVisibility', () => {
-  it('asks as a stranger, with no Authorization, although somebody is signed in', async () => {
-    fetchMock.mockResolvedValueOnce(respond({ slug: 'aysel', name: 'Aysel' }));
+describe('readProfileVisibility', () => {
+  it('reads the owner’s own profile, with the session', async () => {
+    fetchMock.mockResolvedValueOnce(respond({ slug: 'aysel', profileVisibility: 'PRIVATE' }));
 
-    await expect(probeProfileVisibility('aysel')).resolves.toBe('PUBLIC');
+    await expect(readProfileVisibility()).resolves.toBe('PRIVATE');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0]?.[0]).toMatch(/\/v1\/users\/aysel$/);
-    expect(headersOf(0).has('Authorization')).toBe(false);
+    expect(fetchMock.mock.calls[0]?.[0]).toMatch(/\/v1\/me\/profile$/);
+    expect(headersOf(0).get('Authorization')).toBe('Bearer the signed in token');
   });
 
-  it('reads 404 as PRIVATE, and an answer the contract does not describe as unknown', async () => {
-    fetchMock.mockResolvedValueOnce(respond({ status: 404, title: 'Not Found' }, 404));
-    await expect(probeProfileVisibility('aysel')).resolves.toBe('PRIVATE');
+  it('reads PUBLIC, and a response without the field as unknown rather than a guess', async () => {
+    fetchMock.mockResolvedValueOnce(respond({ slug: 'aysel', profileVisibility: 'PUBLIC' }));
+    await expect(readProfileVisibility()).resolves.toBe('PUBLIC');
 
+    fetchMock.mockResolvedValueOnce(respond({ slug: 'aysel' }));
+    await expect(readProfileVisibility()).resolves.toBeNull();
+  });
+
+  it('lets a refusal and a transport failure through, so the switch does not guess', async () => {
     fetchMock.mockResolvedValueOnce(respond({ status: 500, title: 'Broken' }, 500));
-    await expect(probeProfileVisibility('aysel')).resolves.toBeNull();
-  });
+    await expect(readProfileVisibility()).rejects.toMatchObject({ status: 500 });
 
-  it('lets a transport failure through, so the switch does not guess', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('Network request failed'));
-    await expect(probeProfileVisibility('aysel')).rejects.toThrow('Network request failed');
+    await expect(readProfileVisibility()).rejects.toThrow('Network request failed');
   });
 });
 

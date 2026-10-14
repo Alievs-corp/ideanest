@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authorizedFetch, publicFetch } from '../api/client';
 import {
   listBackedProjects,
   listCreatedProjects,
-  probeProfileVisibility,
   profileHref,
+  readProfileVisibility,
   setProfileVisibility,
 } from './api';
 
@@ -13,14 +13,9 @@ import {
  *
  * WHAT THESE COVER, and why each is worth a test rather than a comment:
  *
- *   - **the visibility probe is the whole of P-07's read.** There is no `GET` for the setting,
- *     so the switch on `/settings/privacy` positions itself from the public endpoint's status
- *     code. If 404 ever stopped meaning "hidden" here, the switch would silently show the
- *     opposite of the truth and the next press would write over somebody's choice.
- *   - **the probe must be anonymous.** `publicFetch` attaches the access token when there is
- *     one, and the question being asked is what a *stranger* sees. A request the service could
- *     recognise would answer for the owner, and the panel would say "public" about a profile
- *     nobody else can read.
+ *   - **P-07's read is the owner's own profile** (#270), not the public endpoint's status code.
+ *     A value the contract does not describe is `null` rather than a guess, because a switch
+ *     shown in a position nobody chose is one press away from writing over somebody's choice.
  *   - the paginated lists rename `projects` to `items`, which is the one line reconciling the
  *     service's naming with `useCursorList`'s.
  */
@@ -42,10 +37,6 @@ function json(body: unknown, status = 200): Response {
 
 beforeEach(() => {
   vi.clearAllMocks();
-});
-
-afterEach(() => {
-  vi.unstubAllGlobals();
 });
 
 describe('the profile lists', () => {
@@ -118,38 +109,33 @@ describe('the profile lists', () => {
   });
 });
 
-describe('the visibility probe', () => {
-  it('reads a profile that answers as public', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(json({ slug: 'aysel' }));
-    vi.stubGlobal('fetch', fetchMock);
+describe('reading the visibility', () => {
+  it('reads the owner’s own profile, with the bearer, and never the public endpoint', async () => {
+    authorizedMock.mockResolvedValue(json({ slug: 'aysel', profileVisibility: 'PRIVATE' }));
 
-    await expect(probeProfileVisibility('aysel')).resolves.toBe('PUBLIC');
-  });
+    await expect(readProfileVisibility()).resolves.toBe('PRIVATE');
 
-  it('reads a 404 as hidden, because for the caller’s own slug that is the only other answer', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await expect(probeProfileVisibility('aysel')).resolves.toBe('PRIVATE');
-  });
-
-  it('answers null for anything else, rather than guessing a position for the switch', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 503 }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await expect(probeProfileVisibility('aysel')).resolves.toBeNull();
-  });
-
-  it('sends no credentials, so the answer is the one a stranger gets', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(json({ slug: 'aysel' }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await probeProfileVisibility('aysel');
-
-    const [, init] = fetchMock.mock.calls[0] ?? [];
-    expect(init).toMatchObject({ credentials: 'omit', cache: 'no-store' });
-    // `publicFetch` would have attached the token. This must not use it.
+    const [path] = authorizedMock.mock.calls[0] ?? [];
+    expect(path).toBe('/v1/me/profile');
     expect(publicMock).not.toHaveBeenCalled();
+  });
+
+  it('reads a public profile as public', async () => {
+    authorizedMock.mockResolvedValue(json({ slug: 'aysel', profileVisibility: 'PUBLIC' }));
+
+    await expect(readProfileVisibility()).resolves.toBe('PUBLIC');
+  });
+
+  it('answers null for a value the contract does not describe, rather than guessing', async () => {
+    authorizedMock.mockResolvedValue(json({ slug: 'aysel' }));
+
+    await expect(readProfileVisibility()).resolves.toBeNull();
+  });
+
+  it('throws on a refusal, so the panel can say the setting could not be read', async () => {
+    authorizedMock.mockResolvedValue(json({ title: 'Service unavailable' }, 503));
+
+    await expect(readProfileVisibility()).rejects.toBeDefined();
   });
 });
 

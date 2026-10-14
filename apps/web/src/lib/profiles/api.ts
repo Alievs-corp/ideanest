@@ -333,50 +333,20 @@ export async function setProfileVisibility(visibility: ProfileVisibility): Promi
 }
 
 /**
- * What visibility the account's own profile is currently set to — **read from its effect**.
+ * What visibility the account's own profile is currently set to — `GET /v1/me/profile`'s
+ * `profileVisibility` (#270).
  *
- * <h2>Why this exists at all</h2>
+ * Until that field existed the setting was read from its effect, by asking `GET /v1/users/{slug}`
+ * anonymously and taking 200 for `PUBLIC` and 404 for `PRIVATE`. That was a second request on
+ * every visit and a disabled switch whenever it failed; the owner's own read now answers it.
  *
- * P-07's control is a write and there is no matching read: `GET /v1/me` carries six fields
- * and `profileVisibility` is not one of them. A switch that cannot show its own position is
- * not a switch, and the alternatives were both bad — guess `PUBLIC` because that is the
- * column default, which is a lie to everybody who has already turned it off; or offer two
- * buttons and no state, which asks somebody to make a decision the interface will not tell
- * them they have already made.
- *
- * So the setting is read from the thing it decides. `GET /v1/users/{slug}` answers 200 for a
- * public profile and 404 for a private one, and for the caller's own slug — an account that
- * is signed in, and therefore neither unknown nor closed — those are the only two answers
- * the contract allows. That makes the probe exact rather than a heuristic.
- *
- * <h2>It is deliberately anonymous, and that is the point rather than an economy</h2>
- *
- * A plain `fetch` rather than `publicFetch`, because `publicFetch` attaches the access token
- * when there is one and the question being asked is *what does a stranger see*. If the
- * service ever chose to show an owner their own hidden profile, a request carrying the
- * owner's token would answer 200 for a private account and the switch would read the
- * opposite of the truth. `credentials: 'omit'` makes the request unable to be recognised,
- * which is the only way to be sure the answer is the visitor's.
- *
- * `null` means neither — the service was unreachable, or answered something the contract
- * does not describe. The panel renders that as "not known" and refuses to move a switch it
- * cannot position, rather than picking a default and writing over somebody's choice.
+ * `null` means the response carried no value the contract describes. The panel renders that as
+ * "not known" and refuses to move a switch it cannot position, rather than picking a default and
+ * writing over somebody's choice. A refused or unreachable read throws, as `readOwnProfile` does.
  */
-export async function probeProfileVisibility(
-  slug: string,
-  signal?: AbortSignal,
-): Promise<ProfileVisibility | null> {
-  const response = await fetch(`/v1/users/${encodeURIComponent(slug)}`, {
-    credentials: 'omit',
-    headers: { accept: 'application/json' },
-    // Never a stored copy: the answer is what the previous write just changed.
-    cache: 'no-store',
-    ...(signal === undefined ? {} : { signal }),
-  });
-
-  if (response.ok) return 'PUBLIC';
-  if (response.status === 404) return 'PRIVATE';
-  return null;
+export async function readProfileVisibility(signal?: AbortSignal): Promise<ProfileVisibility | null> {
+  const value: unknown = (await readOwnProfile(signal)).profileVisibility;
+  return value === 'PUBLIC' || value === 'PRIVATE' ? value : null;
 }
 
 /* -------------------------------------------------------------------------
@@ -386,13 +356,14 @@ export async function probeProfileVisibility(
 /**
  * The caller's own profile, as `GET /v1/me/profile` sends it.
  *
- * <h2>It is not `PublicProfile`, and the difference is one field each way</h2>
+ * <h2>It is not `PublicProfile`, and the difference is a field or two each way</h2>
  *
  * This one carries no `joinedAt` — the editor has nothing to do with when the account was
  * created — and it carries `slug` for a reason the public projection does not need: the
- * editor has to show somebody their own handle and say that it is not theirs to change.
- * Reusing the public interface would mean either a `joinedAt` this endpoint never sends or an
- * optional field on the type every public caller then has to narrow.
+ * editor has to show somebody their own handle and say that it is not theirs to change. It
+ * also carries `profileVisibility`, which a stranger is never told: a private profile answers
+ * them 404. Reusing the public interface would mean either a `joinedAt` this endpoint never
+ * sends or optional fields on the type every public caller then has to narrow.
  *
  * <h2>Hand-written, not `@ideanest/api-client`'s generated type</h2>
  *
@@ -413,6 +384,11 @@ export interface OwnProfile {
   readonly location: ProfileLocation | null;
   /** Empty rather than null, in the order their owner put them. */
   readonly socialLinks: readonly ProfileSocialLink[];
+  /**
+   * P-07's position (#270). Read here and **not writable** here: `setProfileVisibility` is its
+   * write, on a path of its own.
+   */
+  readonly profileVisibility: ProfileVisibility;
 }
 
 /**

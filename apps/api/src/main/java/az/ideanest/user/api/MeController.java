@@ -1,5 +1,6 @@
 package az.ideanest.user.api;
 
+import az.ideanest.user.application.AccountSecurity;
 import az.ideanest.user.application.UserAccount;
 import az.ideanest.user.application.UserAccounts;
 import java.time.Instant;
@@ -20,9 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class MeController {
 
     private final UserAccounts users;
+    private final AccountSecurity security;
 
-    public MeController(UserAccounts users) {
+    public MeController(UserAccounts users, AccountSecurity security) {
         this.users = users;
+        this.security = security;
     }
 
     /**
@@ -41,6 +44,10 @@ public class MeController {
      *     the account is actually in — an account that has been closed and can
      *     still sign in has to say so, or the user assumes the deletion failed
      *     and asks support
+     * @param twoFactorEnabled whether sign-in demands a second factor (#270): a confirmed
+     *     enrolment, never one that was started and abandoned. Without it the owner's security
+     *     screen has to offer both "set it up" and "turn it off" and let the service's refusal
+     *     say which applied
      */
     public record MeResponse(
             UUID id,
@@ -56,7 +63,8 @@ public class MeController {
              */
             String currency,
             boolean emailVerified,
-            Instant deletionScheduledAt) {
+            Instant deletionScheduledAt,
+            boolean twoFactorEnabled) {
     }
 
     @GetMapping("/v1/me")
@@ -66,7 +74,7 @@ public class MeController {
         UUID userId = UUID.fromString(accessToken.getSubject());
 
         return users.findById(userId)
-                .map(MeController::toResponse)
+                .map(this::toResponse)
                 // A valid token for an account that no longer exists — deleted
                 // between issue and use. The token is genuine and there is
                 // nothing to return, which is 404 rather than 401.
@@ -74,7 +82,7 @@ public class MeController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private static MeResponse toResponse(UserAccount account) {
+    private MeResponse toResponse(UserAccount account) {
         return new MeResponse(
                 account.id(),
                 account.email().value(),
@@ -83,6 +91,7 @@ public class MeController {
                 account.locale(),
                 account.currency(),
                 account.emailVerified(),
-                account.deletionScheduledAt());
+                account.deletionScheduledAt(),
+                security.twoFactorEnabled(account.id()));
     }
 }

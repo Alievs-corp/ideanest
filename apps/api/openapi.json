@@ -14709,6 +14709,9 @@
           },
           "slug" : {
             "type" : "string"
+          },
+          "twoFactorEnabled" : {
+            "type" : "boolean"
           }
         }
       },
@@ -15239,6 +15242,10 @@
           },
           "name" : {
             "type" : "string"
+          },
+          "profileVisibility" : {
+            "type" : "string",
+            "enum" : [ "PUBLIC", "PRIVATE" ]
           },
           "slug" : {
             "type" : "string"

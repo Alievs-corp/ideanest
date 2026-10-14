@@ -102,6 +102,27 @@ class TwoFactorApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("GET /v1/me says two-factor is on only between a confirmation and a disable")
+    void theAccountReadReportsTheSecondFactor() {
+        Account account = registeredAndSignedIn();
+        assertThat(me(account)).containsEntry("twoFactorEnabled", false);
+
+        // #270. An enrolment that was started and not confirmed is not a second factor --
+        // sign-in does not ask for one -- so the owner's own read must not claim it either.
+        enable(account, PASSWORD);
+        assertThat(me(account)).containsEntry("twoFactorEnabled", false);
+
+        byte[] secret = secretOf(account.userId());
+        assertThat(confirm(account, currentCode(secret)).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(me(account)).containsEntry("twoFactorEnabled", true);
+
+        clock.advance(Totp.PERIOD);
+        assertThat(disable(account, PASSWORD, currentCode(secret)).getStatusCode())
+                .isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(me(account)).containsEntry("twoFactorEnabled", false);
+    }
+
+    @Test
     @DisplayName("starting an enrolment requires the current password")
     void enrolmentCostsThePassword() {
         Account account = registeredAndSignedIn();
@@ -433,6 +454,13 @@ class TwoFactorApiTests extends AbstractIntegrationTest {
 
         return rest.exchange(
                 "/v1/auth/2fa/verify", HttpMethod.POST, new HttpEntity<>(body, jsonHeaders()), mapOfObjects());
+    }
+
+    private Map<String, Object> me(Account account) {
+        ResponseEntity<Map<String, Object>> response =
+                rest.exchange("/v1/me", HttpMethod.GET, new HttpEntity<>(bearer(account.accessToken())), mapOfObjects());
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        return response.getBody();
     }
 
     private ResponseEntity<String> disable(Account account, String password, String code) {

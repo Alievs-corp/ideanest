@@ -68,6 +68,25 @@ describe('the two-factor steps', () => {
     expect(state.failure).toBeNull();
   });
 
+  it('learns whether it is on from what happened, and knows nothing before that', () => {
+    expect(INITIAL_TWO_FACTOR.enabled).toBeNull();
+    expect(run({ type: 'setUp' }, { type: 'submitted' }, { type: 'enrolled', enrolment: ENROLMENT }).enabled)
+      .toBeNull();
+    expect(
+      run(
+        { type: 'setUp' },
+        { type: 'submitted' },
+        { type: 'enrolled', enrolment: ENROLMENT },
+        { type: 'submitted' },
+        { type: 'confirmed', codes: CODES },
+        { type: 'acknowledge', acknowledged: true },
+        { type: 'done' },
+      ).enabled,
+    ).toBe(true);
+    expect(run({ type: 'setUp' }, { type: 'submitted' }, { type: 'alreadyEnabled' }).enabled).toBe(true);
+    expect(run({ type: 'turnOff' }, { type: 'submitted' }, { type: 'disabled' }).enabled).toBe(false);
+  });
+
   it('switches off through idle → disable → idle', () => {
     let state = run({ type: 'turnOff' });
     expect(state.step.kind).toBe('disable');

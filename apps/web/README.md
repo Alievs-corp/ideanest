@@ -1550,7 +1550,6 @@ One Tap is browser-arbitrated through FedCM and is suppressed after a dismissal 
 
 | Gap | What it costs | Whose it is |
 |---|---|---|
-| `GET /v1/me` carries no `twoFactorEnabled` | `/settings/security` cannot say whether two-factor is already on. It offers both paths and lets `POST /2fa/enable` answer — the service refuses an enrolled account with a sentence written for its owner, and the panel moves to the off-path on it | §17, not this epic |
 | No `PATCH /v1/me` | The profile editor (#276) has nowhere to save, so there is no entry for it in the account navigation | The user module |
 | `GET /v1/users/{slug}` carries no counts | The profile's two tabs cannot print "12 campaigns" above a list; they print the list. Answering the counts inside the user module would give the module every other module depends on a dependency on `project` and `pledge` in turn, and a `total` on each list would sit above a shorter one on the backed tab, which drops what the reader may not see | Decided, not a gap — `PublicProfiles` carries the argument |
 | No creator biography beyond `users.bio` | The Creator tab (#282) has a bio, an avatar and the campaigns this account has launched. §4.4 also asks for history and contact, and there is no column for either | The user module |
@@ -1558,7 +1557,10 @@ One Tap is browser-arbitrated through FedCM and is suppressed after a dismissal 
 
 Three rows left this table when #271, #274 and #287 landed: `GET /v1/users/{slug}`,
 `POST /v1/auth/forgot-password` and `GET /v1/me/pledges` are all built. What they
-unblocked is in the sections above.
+unblocked is in the sections above. A fourth left with #270: `GET /v1/me` carries
+`twoFactorEnabled`, so `/settings/security` offers only the action that applies, and
+`GET /v1/me/profile` carries `profileVisibility`, so the privacy switch no longer asks
+`GET /v1/users/{slug}` anonymously what a stranger sees.
 
 ## Real user monitoring
 

@@ -16,6 +16,7 @@ import { SecuritySettingsScreen } from './security-screen';
 /**
  * `settings/security`'s two-factor card (#161): the five steps on screen, focus on each step's
  * heading, the scan step's three ways to the secret, and recovery codes that exist only on screen.
+ * Idle offers the one action `GET /v1/me`'s `twoFactorEnabled` says applies (#270).
  */
 
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() };
@@ -33,7 +34,8 @@ jest.mock('expo-router', () => ({
   }),
 }));
 jest.mock('../../lib/use-session', () => ({ useSession: () => mockSession }));
-jest.mock('../../api/client', () => ({ sendJson: jest.fn() }));
+const mockGet = jest.fn();
+jest.mock('../../api/client', () => ({ sendJson: jest.fn(), api: () => ({ get: mockGet }) }));
 
 jest.setTimeout(30_000);
 
@@ -66,6 +68,9 @@ async function settle() {
     });
   }
 }
+
+type Me = { id: string; slug: string; twoFactorEnabled?: boolean };
+let me: Me;
 
 let queryClient: QueryClient;
 
@@ -149,6 +154,11 @@ beforeEach(async () => {
   jest.clearAllMocks();
   mockSession = { signedIn: true, locked: false, unlocked: true };
   mockScreenOptions.length = 0;
+  me = { id: 'u1', slug: 'aysel', twoFactorEnabled: false };
+  mockGet.mockImplementation(async (path: string) => {
+    if (path === '/v1/me') return { ...me };
+    throw new Error(`unexpected read ${path}`);
+  });
   setOnline(true);
   canOpen = jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(true);
   openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
@@ -168,16 +178,31 @@ afterEach(() => {
 });
 
 describe('two-factor: idle', () => {
-  it('offers both paths, and says why, because the account cannot say which applies', async () => {
+  it('offers only "Set it up" to an account without a second factor', async () => {
     await show();
 
     expect(headingText()).toBe(T.heading);
     expect(screen.getByText(T.introEmphasis)).toBeTruthy();
     expect(screen.getByRole('button', { name: T.setUp })).toBeTruthy();
-    expect(screen.getByRole('button', { name: T.turnOff })).toBeTruthy();
-    expect(screen.getByText(T.bothOffered)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: T.turnOff })).toBeNull();
     // Nobody asked for focus on arrival.
     expect(focus).not.toHaveBeenCalled();
+  });
+
+  it('offers only "Turn it off" to an account with one', async () => {
+    me.twoFactorEnabled = true;
+    await show();
+
+    expect(screen.getByRole('button', { name: T.turnOff })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: T.setUp })).toBeNull();
+  });
+
+  it('reads an account that does not say as off', async () => {
+    delete me.twoFactorEnabled;
+    await show();
+
+    expect(screen.getByRole('button', { name: T.setUp })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: T.turnOff })).toBeNull();
   });
 
   it('links the intro to the devices screen', async () => {
@@ -203,6 +228,19 @@ describe('two-factor: switching it on', () => {
     expect(headingText()).toBe(T.heading);
     expect(screen.getByText(T.enabledNotice)).toBeTruthy();
     expect(screen.queryByText(CODES[0]!)).toBeNull();
+  });
+
+  it('offers "Turn it off" once it is on, and has the account read again', async () => {
+    await show();
+    const reads = mockGet.mock.calls.length;
+    await enrolToCodes();
+    await press('two-factor-acknowledge');
+    await press('two-factor-done');
+
+    // The account read still says off until it is answered again; what the card did wins.
+    expect(screen.getByRole('button', { name: T.turnOff })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: T.setUp })).toBeNull();
+    expect(mockGet.mock.calls.length).toBeGreaterThan(reads);
   });
 
   /** Focus moved once more, onto the heading's host node, which now reads `words`. */
@@ -235,6 +273,7 @@ describe('two-factor: switching it on', () => {
   });
 
   it('moves focus to the heading on the way to switching it off, and back', async () => {
+    me.twoFactorEnabled = true;
     await show();
     await press('two-factor-turn-off');
     expectFocusOnHeading(1, T.disableHeading);
@@ -374,6 +413,7 @@ describe('two-factor: leaving the screen', () => {
   });
 
   it('cannot be left while turning it off is in flight', async () => {
+    me.twoFactorEnabled = true;
     await show();
     await press('two-factor-turn-off');
     sendJson.mockReturnValueOnce(new Promise(() => undefined));
@@ -477,6 +517,7 @@ describe('two-factor: switching it off', () => {
 
   it('sends a recovery code in place of a generated one when that is what was typed', async () => {
     sendJson.mockResolvedValueOnce(null);
+    me.twoFactorEnabled = true;
     await show();
     await press('two-factor-turn-off');
     await fireEvent.changeText(screen.getByTestId('two-factor-disable-password'), PASSWORD);
@@ -489,10 +530,13 @@ describe('two-factor: switching it off', () => {
     });
     expect(headingText()).toBe(T.heading);
     expect(screen.getByText(T.disabledNotice)).toBeTruthy();
+    expect(screen.getByRole('button', { name: T.setUp })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: T.turnOff })).toBeNull();
   });
 
   it('sends the generated code otherwise', async () => {
     sendJson.mockResolvedValueOnce(null);
+    me.twoFactorEnabled = true;
     await show();
     await press('two-factor-turn-off');
     await fireEvent.changeText(screen.getByTestId('two-factor-disable-password'), PASSWORD);

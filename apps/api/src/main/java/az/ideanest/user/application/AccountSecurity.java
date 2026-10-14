@@ -28,6 +28,16 @@ public interface AccountSecurity {
     boolean passwordMatches(UUID userId, String rawPassword);
 
     /**
+     * Whether the account has a confirmed second factor — {@code GET /v1/me}'s
+     * {@code twoFactorEnabled} (#270).
+     *
+     * <p>Confirmed, and nothing else. An enrolment that was started and never
+     * proved with a code is not a second factor: sign-in does not ask for one,
+     * so the owner's own screen must not say it is on either.
+     */
+    boolean twoFactorEnabled(UUID userId);
+
+    /**
      * Ends every session the account has.
      *
      * <p>Called when deletion is requested. A closing account should not stay

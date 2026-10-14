@@ -79,7 +79,7 @@ const METRICS = {
 
 type Me = { slug?: string; deletionScheduledAt?: string; email?: string };
 let me: Me;
-let visitorSees: 'PUBLIC' | 'PRIVATE' | 'BROKEN';
+let stored: 'PUBLIC' | 'PRIVATE' | 'BROKEN';
 
 function refusal(status: number, detail?: string): ApiError {
   return new ApiError(status, {
@@ -123,15 +123,18 @@ beforeEach(async () => {
   setOnline(true);
   mockFiles.clear();
   me = { slug: 'aysel', email: 'aysel@example.com' };
-  visitorSees = 'PUBLIC';
+  stored = 'PUBLIC';
   mockGet.mockImplementation(async (path: string) => {
     if (path === '/v1/me') return me;
+    if (path === '/v1/me/profile') {
+      if (stored === 'BROKEN') throw refusal(500);
+      return { name: 'Aysel', slug: 'aysel', socialLinks: [], profileVisibility: stored };
+    }
     if (path === '/v1/me/export') return { format: 'ideanest-account/1', account: { slug: 'aysel' } };
     throw new Error(`unexpected read ${path}`);
   });
-  mockPublicGet.mockImplementation(async () => {
-    if (visitorSees === 'PUBLIC') return { slug: 'aysel' };
-    throw refusal(visitorSees === 'PRIVATE' ? 404 : 500);
+  mockPublicGet.mockImplementation(async (path: string) => {
+    throw new Error(`unexpected anonymous read ${path}`);
   });
   isAvailableAsync.mockResolvedValue(true);
   shareAsync.mockResolvedValue(undefined);
@@ -147,15 +150,12 @@ it('draws visibility, then the export, then the closure', async () => {
 });
 
 describe('visibility', () => {
-  it('reads the position through the anonymous client and links to the public profile', async () => {
+  it('reads the position from the owner’s own profile and links to the public one', async () => {
     await show();
 
-    expect(mockPublicGet).toHaveBeenCalledWith(
-      '/v1/users/{slug}',
-      expect.objectContaining({ path: { slug: 'aysel' } }),
-    );
-    // The session client is never asked: with the bearer, the owner always sees their own profile.
-    expect(mockGet).not.toHaveBeenCalledWith('/v1/users/{slug}', expect.anything());
+    // #270: the owner's own read, with the session — no longer what a stranger is answered.
+    expect(mockGet).toHaveBeenCalledWith('/v1/me/profile', expect.anything());
+    expect(mockPublicGet).not.toHaveBeenCalled();
     expect(stateOf('privacy-visibility-switch')).toMatchObject({ checked: true, disabled: false });
     expect(screen.getByText(V.public)).toBeTruthy();
 
@@ -163,14 +163,23 @@ describe('visibility', () => {
     expect(mockRouter.push).toHaveBeenCalledWith({ pathname: '/u/[slug]', params: { slug: 'aysel' } });
   });
 
-  it('writes the new position and confirms it by asking as a stranger again', async () => {
+  it('shows a hidden profile as hidden, with nothing to link to', async () => {
+    stored = 'PRIVATE';
     await show();
-    visitorSees = 'PRIVATE';
+
+    expect(stateOf('privacy-visibility-switch')).toMatchObject({ checked: false, disabled: false });
+    expect(screen.getByText(V.hidden)).toBeTruthy();
+    expect(screen.queryByTestId('privacy-visibility-profile')).toBeNull();
+  });
+
+  it('writes the new position and takes the 204 at its word', async () => {
+    await show();
     await fireEvent.press(screen.getByTestId('privacy-visibility-switch'));
     await settle();
 
     expect(sendJson).toHaveBeenCalledWith('PATCH', '/v1/me/profile-visibility', { visibility: 'PRIVATE' });
-    expect(mockPublicGet).toHaveBeenCalledTimes(2);
+    // The position the write named is the one in force, so the setting is not read again.
+    expect(mockGet.mock.calls.filter(([path]) => path === '/v1/me/profile')).toHaveLength(1);
     expect(stateOf('privacy-visibility-switch')).toMatchObject({ checked: false });
     expect(screen.getByText(V.hidden)).toBeTruthy();
     expect(screen.queryByTestId('privacy-visibility-profile')).toBeNull();
@@ -186,29 +195,20 @@ describe('visibility', () => {
     expect(screen.getByText(V.failedTitle)).toBeTruthy();
   });
 
-  it('disables the switch with a warning when what a visitor sees cannot be read', async () => {
-    visitorSees = 'BROKEN';
+  it('disables the switch with a warning when the setting cannot be read', async () => {
+    stored = 'BROKEN';
     await show();
 
     expect(stateOf('privacy-visibility-switch')).toMatchObject({ checked: false, disabled: true });
     expect(screen.getByText(V.unknownTitle)).toBeTruthy();
     expect(screen.getByText(M.visibility.unknownBody)).toBeTruthy();
 
-    visitorSees = 'PRIVATE';
+    stored = 'PRIVATE';
     await fireEvent.press(screen.getByTestId('privacy-visibility-retry'));
     await settle();
     expect(stateOf('privacy-visibility-switch')).toMatchObject({ checked: false, disabled: false });
   });
 
-  it('goes to unknown, not to the hoped-for position, when the write cannot be confirmed', async () => {
-    await show();
-    visitorSees = 'BROKEN';
-    await fireEvent.press(screen.getByTestId('privacy-visibility-switch'));
-    await settle();
-
-    expect(stateOf('privacy-visibility-switch')).toMatchObject({ disabled: true });
-    expect(screen.getByTestId('privacy-visibility-unknown')).toBeTruthy();
-  });
 });
 
 describe('export', () => {

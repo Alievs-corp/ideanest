@@ -7,6 +7,8 @@ import {
   disableTwoFactor,
   startTwoFactorEnrolment,
 } from '../../lib/auth/twoFactor';
+import type { Session } from '../../lib/session/session';
+import { useSession, type SessionState } from '../session/SessionProvider';
 import { TwoFactorPanel } from './TwoFactorPanel';
 import { twoFactorPanelCopyFrom } from '../../lib/i18n/settings-copy';
 import { translatorFor } from '../../test-copy';
@@ -30,9 +32,11 @@ const COPY = twoFactorPanelCopyFrom(translatorFor('settings.panels'), translator
  *     `enable` would be lying about the state of their account.
  *   - **the recovery codes cannot be clicked past.** There is no re-issue endpoint, so the
  *     acknowledgement gates the only way off that step.
- *   - the "already enabled" refusal moves the panel to the off-path rather than being printed
- *     as an error. It is the answer to the question this screen cannot ask — `GET /v1/me`
- *     carries no `twoFactorEnabled`.
+ *   - **one action, the one that applies.** `GET /v1/me` carries `twoFactorEnabled` (#270), so
+ *     an account without a second factor is offered "Set it up" and one with it "Turn it off" —
+ *     never both — and what the panel just did overrides a session read before it.
+ *   - the "already enabled" refusal still moves the panel to the off-path rather than being
+ *     printed as an error, for a session that did not say.
  *   - disabling costs the password and a proof, because otherwise the whole feature is worth
  *     exactly one password.
  *   - **the step's heading has focus before control comes back.** #322: the move used to be
@@ -48,9 +52,32 @@ vi.mock('../../lib/auth/twoFactor', () => ({
   disableTwoFactor: vi.fn(),
 }));
 
+vi.mock('../session/SessionProvider', () => ({ useSession: vi.fn() }));
+
 const startMock = vi.mocked(startTwoFactorEnrolment);
 const confirmMock = vi.mocked(confirmTwoFactorEnrolment);
 const disableMock = vi.mocked(disableTwoFactor);
+const sessionMock = vi.mocked(useSession);
+const refreshMock = vi.fn<() => Promise<void>>();
+
+const ACCOUNT: Session = {
+  id: 'u1',
+  email: 'aysel@example.com',
+  name: 'Aysel',
+  slug: 'aysel',
+  emailVerified: true,
+  twoFactorEnabled: false,
+};
+
+function signedIn(account: Partial<Session> = {}): void {
+  const state: SessionState = {
+    status: 'signed-in',
+    session: { ...ACCOUNT, ...account },
+    refresh: refreshMock,
+    signOut: vi.fn(),
+  };
+  sessionMock.mockReturnValue(state);
+}
 
 const ENROLMENT = {
   secret: 'JBSWY3DPEHPK3PXP',
@@ -65,6 +92,8 @@ beforeEach(() => {
   startMock.mockResolvedValue(ENROLMENT);
   confirmMock.mockResolvedValue(['aaaa-1111', 'bbbb-2222']);
   disableMock.mockResolvedValue(undefined);
+  refreshMock.mockResolvedValue(undefined);
+  signedIn();
 });
 
 afterEach(cleanup);
@@ -74,6 +103,60 @@ async function reachTheSecret(user: ReturnType<typeof userEvent.setup>): Promise
   await user.type(screen.getByLabelText(/Current password/u), 'correct horse');
   await user.click(screen.getByRole('button', { name: 'Continue' }));
 }
+
+describe('which action is offered', () => {
+  it('offers only "Set it up" to an account without a second factor', () => {
+    render(<TwoFactorPanel copy={COPY} />);
+
+    expect(screen.getByRole('button', { name: 'Set it up' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Turn it off' })).not.toBeInTheDocument();
+  });
+
+  it('offers only "Turn it off" to an account with one', () => {
+    signedIn({ twoFactorEnabled: true });
+    render(<TwoFactorPanel copy={COPY} />);
+
+    expect(screen.getByRole('button', { name: 'Turn it off' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Set it up' })).not.toBeInTheDocument();
+  });
+
+  it('reads a session that does not say as off', () => {
+    signedIn({ twoFactorEnabled: undefined });
+    render(<TwoFactorPanel copy={COPY} />);
+
+    expect(screen.getByRole('button', { name: 'Set it up' })).toBeInTheDocument();
+  });
+
+  it('offers "Turn it off" once an enrolment is confirmed, and re-reads the session', async () => {
+    const user = userEvent.setup();
+    render(<TwoFactorPanel copy={COPY} />);
+
+    await reachTheSecret(user);
+    await user.type(screen.getByLabelText(/Code from your authenticator/u), '123456');
+    await user.click(screen.getByRole('button', { name: 'Switch it on' }));
+    await user.click(await screen.findByLabelText(/I have saved these/u));
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+
+    expect(screen.getByRole('button', { name: 'Turn it off' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Set it up' })).not.toBeInTheDocument();
+    expect(refreshMock).toHaveBeenCalled();
+  });
+
+  it('offers "Set it up" once it is turned off, and re-reads the session', async () => {
+    signedIn({ twoFactorEnabled: true });
+    const user = userEvent.setup();
+    render(<TwoFactorPanel copy={COPY} />);
+
+    await user.click(screen.getByRole('button', { name: 'Turn it off' }));
+    await user.type(screen.getByLabelText(/Current password/u), 'correct horse');
+    await user.type(screen.getByLabelText(/Code from your authenticator/u), '123456');
+    await user.click(screen.getByRole('button', { name: 'Turn it off' }));
+
+    expect(await screen.findByRole('button', { name: 'Set it up' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Turn it off' })).not.toBeInTheDocument();
+    expect(refreshMock).toHaveBeenCalled();
+  });
+});
 
 describe('enrolling', () => {
   it('does not claim two-factor is on before a code has been entered', async () => {
@@ -146,6 +229,10 @@ describe('enrolling', () => {
 });
 
 describe('disabling', () => {
+  beforeEach(() => {
+    signedIn({ twoFactorEnabled: true });
+  });
+
   it('sends the password and exactly one proof', async () => {
     const user = userEvent.setup();
     render(<TwoFactorPanel copy={COPY} />);
@@ -191,6 +278,10 @@ describe('moving between steps', () => {
       restore: () => spy.mockRestore(),
     };
   }
+
+  beforeEach(() => {
+    signedIn({ twoFactorEnabled: true });
+  });
 
   it('has moved focus to the new heading before the next frame, not on it', async () => {
     const frames = heldFrames();
