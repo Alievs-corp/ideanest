@@ -34,6 +34,9 @@ export interface PlatformTotals {
    * silent exclusion is worse than one with a stated gap.
    */
   otherCurrencyPledges: number;
+  /** What creators paid for plans in the window, net of reversals — the platform's own income. */
+  planRevenue: Money;
+  planPayments: number;
 }
 
 export interface PlatformDailyPoint {

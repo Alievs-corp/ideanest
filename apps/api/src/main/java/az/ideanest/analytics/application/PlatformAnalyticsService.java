@@ -5,12 +5,15 @@ import az.ideanest.analytics.infrastructure.PlatformRollupRepository;
 import az.ideanest.shared.access.PlatformStaff;
 import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.shared.money.Money;
+import az.ideanest.subscription.application.RevenueReport;
+import az.ideanest.subscription.application.SubscriptionRevenue;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,16 +74,19 @@ public class PlatformAnalyticsService {
     private static final int DEFAULT_WINDOW_DAYS = 30;
 
     private final PlatformRollupRepository rollups;
+    private final SubscriptionRevenue planRevenue;
     private final PlatformStaff staff;
     private final AnalyticsProperties properties;
     private final Clock clock;
 
     public PlatformAnalyticsService(
             PlatformRollupRepository rollups,
+            SubscriptionRevenue planRevenue,
             PlatformStaff staff,
             AnalyticsProperties properties,
             Clock clock) {
         this.rollups = rollups;
+        this.planRevenue = planRevenue;
         this.staff = staff;
         this.properties = properties;
         this.clock = clock;
@@ -129,6 +135,7 @@ public class PlatformAnalyticsService {
         java.time.Instant toInstant = end.plusDays(1).atStartOfDay(zone).toInstant();
 
         PlatformRollupRepository.Outcomes outcomes = rollups.outcomes(fromInstant, toInstant);
+        Optional<RevenueReport.Currency> plans = planRevenue.receivedBetween(fromInstant, toInstant, currency);
 
         return new PlatformAnalytics(
                 start,
@@ -140,7 +147,9 @@ public class PlatformAnalyticsService {
                         averageOf(volume, pledgeCount),
                         rollups.distinctBackers(fromInstant, toInstant),
                         rollups.liveProjects(),
-                        rollups.otherCurrencyPledges(start, end, currency)),
+                        rollups.otherCurrencyPledges(start, end, currency),
+                        plans.map(RevenueReport.Currency::net).orElse(Money.zero(currency)),
+                        plans.map(RevenueReport.Currency::payments).orElse(0L)),
                 daily,
                 PlatformAnalytics.Outcomes.of(outcomes.succeeded(), outcomes.failed()));
     }

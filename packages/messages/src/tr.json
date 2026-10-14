@@ -1321,6 +1321,8 @@
         "backers": "Destekçiler",
         "averagePledge": "Ortalama destek",
         "liveProjects": "Yayındaki kampanyalar",
+        "planRevenue": "Plan geliri",
+        "planPayments": "Plan ödemeleri",
         "otherCurrencyTitle": "Bazı destekler bu toplamlarda yok",
         "otherCurrencyBody": "Bu dönemdeki {count} destek başka bir para birimindeydi. §21.2 onları çevirecek bir şey vermiyor, bu yüzden burada sayılıyor ve kimsenin mutabık kılamayacağı bir rakama eklenmek yerine hacmin dışında bırakılıyorlar.",
         "outcomesHeading": "Kapanan kampanyalar",

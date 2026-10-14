@@ -10,9 +10,11 @@ import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.shared.export.Csv;
 import az.ideanest.subscription.infrastructure.SubscriptionRevenueRepository;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,6 +111,18 @@ public class SubscriptionRevenue {
         this.properties = properties;
         this.audit = audit;
         this.clock = clock;
+    }
+
+    /**
+     * Plan money received in {@code [from, to)} in one currency, for the platform dashboard (#478).
+     * Every plan, every method, reversals netted. The caller has already checked the reader.
+     */
+    @Transactional(readOnly = true)
+    public Optional<RevenueReport.Currency> receivedBetween(Instant from, Instant to, String currency) {
+        return journal.totalsByCurrency(from, to, null, null, null).stream()
+                .filter(total -> currency.equals(total.getCurrency()))
+                .findFirst()
+                .map(RevenueReport.Currency::of);
     }
 
     /**

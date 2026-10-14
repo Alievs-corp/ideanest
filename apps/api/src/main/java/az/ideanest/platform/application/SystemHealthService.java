@@ -10,14 +10,20 @@ import az.ideanest.shared.access.StaffCapability;
 import az.ideanest.shared.jobs.JobRecord;
 import az.ideanest.shared.jobs.JobRecordRepository;
 import az.ideanest.shared.jobs.JobState;
+import az.ideanest.shared.jobs.ScheduledJob;
 import az.ideanest.shared.observability.ProviderStatusSource;
 import az.ideanest.shared.observability.QueueDepthSource;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,16 +59,22 @@ public class SystemHealthService {
     private final PlatformStaff staff;
     private final PlatformProperties properties;
     private final java.time.Clock clock;
+    private final Map<String, CronExpression> schedules;
 
     public SystemHealthService(
             List<QueueDepthSource> queues,
             JobRecordRepository jobs,
+            List<ScheduledJob> scheduled,
             List<ProviderStatusSource> providers,
             PlatformStaff staff,
             PlatformProperties properties,
             java.time.Clock clock) {
         this.queues = queues;
         this.jobs = jobs;
+        this.schedules = scheduled.stream()
+                .filter(job -> !Scheduled.CRON_DISABLED.equals(job.schedule()))
+                .collect(java.util.stream.Collectors.toUnmodifiableMap(
+                        ScheduledJob::name, job -> CronExpression.parse(job.schedule()), (a, b) -> a));
         this.providers = providers;
         this.staff = staff;
         this.properties = properties;
@@ -138,7 +150,9 @@ public class SystemHealthService {
      * two can no longer disagree.
      */
     private JobHealth gradeJob(JobRecord job, Instant now, PlatformProperties.Health thresholds) {
-        Instant nextAttemptAt = job.getNextAttemptAt();
+        Instant nextAttemptAt = job.getState() == JobState.DEAD
+                ? job.getNextAttemptAt()
+                : dueAt(job.getNextAttemptAt(), Optional.ofNullable(schedules.get(job.getName())));
         long overdueBy = nextAttemptAt == null || nextAttemptAt.isAfter(now)
                 ? 0L
                 : Duration.between(nextAttemptAt, now).toSeconds();
@@ -163,6 +177,23 @@ public class SystemHealthService {
                 job.getAttempts(),
                 job.getLastError(),
                 status);
+    }
+
+    /**
+     * When the job will actually be picked up — #478.
+     *
+     * <p>{@code next_attempt_at} is when the job becomes <em>eligible</em>: a run that succeeds
+     * writes the instant it finished. The trigger is what decides when it runs, so an hourly
+     * job read fifty-five minutes after its last run was graded fifty-five minutes late. The
+     * job is due at the first firing of its cron at or after it becomes eligible; a row with
+     * no schedule on this deployment keeps the column as it is.
+     */
+    static Instant dueAt(Instant eligibleAt, Optional<CronExpression> schedule) {
+        if (eligibleAt == null || schedule.isEmpty()) {
+            return eligibleAt;
+        }
+        java.time.ZonedDateTime fired = schedule.get().next(eligibleAt.minusNanos(1).atZone(ZoneOffset.UTC));
+        return fired == null ? eligibleAt : fired.toInstant();
     }
 
     /**

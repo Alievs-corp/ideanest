@@ -151,6 +151,14 @@ export function PlatformAnalyticsView({ copy }: PlatformAnalyticsViewProps) {
                 label={copy.liveProjects}
                 value={String(analytics.data.totals.liveProjects)}
               />
+              <StatBlock
+                label={copy.planRevenue}
+                value={formatMoney(analytics.data.totals.planRevenue)}
+              />
+              <StatBlock
+                label={copy.planPayments}
+                value={String(analytics.data.totals.planPayments)}
+              />
             </StatRow>
 
             {analytics.data.totals.otherCurrencyPledges > 0 && (

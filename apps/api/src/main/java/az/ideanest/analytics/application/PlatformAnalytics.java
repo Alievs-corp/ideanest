@@ -52,6 +52,10 @@ public record PlatformAnalytics(
      * @param otherCurrencyPledges pledges excluded from {@link #volume} because they were
      *     in another currency. Reported rather than dropped: a figure with a silent
      *     exclusion is worse than one with a stated gap
+     * @param planRevenue what creators paid for plans in the window, net of reversals, in the
+     *     platform currency (#478). The platform's own income, unlike {@link #volume}, which is
+     *     the backers' money held for campaigns
+     * @param planPayments how many plan payments came in
      */
     public record Totals(
             long pledgeCount,
@@ -59,7 +63,9 @@ public record PlatformAnalytics(
             Money averagePledge,
             long backerCount,
             long liveProjects,
-            long otherCurrencyPledges) {
+            long otherCurrencyPledges,
+            Money planRevenue,
+            long planPayments) {
     }
 
     /**
