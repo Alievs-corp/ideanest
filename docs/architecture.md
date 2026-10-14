@@ -5049,6 +5049,10 @@ GET    /v1/projects/{id}/similar
 GET    /v1/projects/{id}/prelaunch
 POST   /v1/projects/{id}/save               # C-09 (#90); requires a token despite the block
 DELETE /v1/projects/{id}/save
+GET    /v1/projects/{id}/viewer             # #137; requires a token despite the block. saved, reminded,
+                                            # followingCreator, backed: the caller's own, no-store, 404 when not public.
+                                            # backed = a pledge in CONFIRMED, CHARGE_PENDING, CHARGE_FAILED, COLLECTED
+                                            # or FULFILLED; a DRAFT is a checkout in progress, not a backing
 POST   /v1/projects/{id}/remind
 DELETE /v1/projects/{id}/remind
 POST   /v1/projects/{id}/report

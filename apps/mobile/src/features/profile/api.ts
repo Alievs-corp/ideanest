@@ -161,7 +161,7 @@ const FOLLOWING_PAGES = 5;
 
 /**
  * Whether the signed-in reader follows `slug` — the web's `isFollowing`. There is no per-creator
- * read yet (#137), so the list is walked, five hundred accounts at most; past that the answer is
+ * read (#137's viewer read is per campaign), so the list is walked, five hundred accounts at most; past that the answer is
  * `false`, which is safe because following is idempotent.
  */
 export async function isFollowing(slug: string, signal?: AbortSignal): Promise<boolean> {

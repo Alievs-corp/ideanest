@@ -116,8 +116,8 @@ const FOLLOWING_SCAN_PAGES = 5;
 /**
  * Whether the signed-in reader follows `slug`, read from `GET /v1/me/following`. Issue #143.
  *
- * There is no per-creator "do I follow this" read (#137 proposes a viewer-state endpoint), so
- * the list is walked at the service's largest page size. The walk stops after
+ * There is no per-creator "do I follow this" read — #137's `viewerState` answers per campaign,
+ * and a profile is not one — so the list is walked at the service's largest page size. The walk stops after
  * `FOLLOWING_SCAN_PAGES` pages — five hundred accounts — and answers `false` beyond that. That
  * is safe rather than merely convenient, for the reason `CampaignActions` gives about saving:
  * following is idempotent, so the worst case is a reader who follows five hundred people

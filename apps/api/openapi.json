@@ -9839,6 +9839,33 @@
         "tags" : [ "project-update-controller" ]
       }
     },
+    "/v1/projects/{projectId}/viewer" : {
+      "get" : {
+        "operationId" : "backerSignalViewer",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "projectId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CampaignViewerResponse"
+                }
+              }
+            },
+            "description" : "The caller's own state on the campaign. 401 without a session; 404 for a campaign that does not exist or that the public may not see. Cache-Control: no-store."
+          }
+        },
+        "tags" : [ "backer-signal-controller" ]
+      }
+    },
     "/v1/rewards/{id}" : {
       "delete" : {
         "operationId" : "rewardDelete",
@@ -12068,6 +12095,29 @@
             "format" : "int32"
           }
         }
+      },
+      "CampaignViewerResponse" : {
+        "type" : "object",
+        "description" : "The signed-in reader's own state on one campaign (#137). Private and never cached.",
+        "properties" : {
+          "backed" : {
+            "type" : "boolean",
+            "description" : "This account holds a pledge on the campaign in CONFIRMED, CHARGE_PENDING, CHARGE_FAILED, COLLECTED or FULFILLED. A DRAFT (a checkout in progress) is not a backing, and neither is a pledge that EXPIRED, was cancelled, DROPPED, REFUNDED or charged back."
+          },
+          "followingCreator" : {
+            "type" : "boolean",
+            "description" : "This account follows the campaign's creator (POST /v1/users/{slug}/follow)."
+          },
+          "reminded" : {
+            "type" : "boolean",
+            "description" : "This account asked to be told when the campaign opens (POST /v1/projects/{id}/remind while signed in). A reminder registered with a bare email address is not counted, because the signed-in DELETE does not remove it."
+          },
+          "saved" : {
+            "type" : "boolean",
+            "description" : "The campaign is on this account's saved list (GET /v1/me/saved)."
+          }
+        },
+        "required" : [ "backed", "followingCreator", "reminded", "saved" ]
       },
       "CancelProjectRequest" : {
         "type" : "object",

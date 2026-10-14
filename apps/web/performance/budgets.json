@@ -66,7 +66,7 @@
     "/[locale]/pledges/[pledgeId]": 663,
     "/[locale]/pledges/[pledgeId]/address": 594,
     "/[locale]/pricing": 604,
-    "/[locale]/projects/[id]/[projectSlug]": 676,
+    "/[locale]/projects/[id]/[projectSlug]": 677,
     "/[locale]/projects/[id]/back": 637,
     "/[locale]/projects/[id]/dashboard": 612,
     "/[locale]/projects/[id]/dashboard/backers": 620,

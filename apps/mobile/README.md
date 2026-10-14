@@ -321,9 +321,12 @@ are `@ideanest/campaign`'s, the same functions the web calls.
   white; the only lime on the page is the two-days-left chip. A bar with the same pill is
   pinned under the list while the header's one is out of view; it has no animation and is
   hidden from screen readers, which meet the header's pill in reading order.
-- **Save** starts "off" until #137 publishes the viewer's state; it toggles at once, rolls
-  back on a refusal and refreshes the Saved list on success. **Remind** is offered before
-  launch only. Signed out, Save opens sign-in and Remind the pre-launch page.
+- **Save** and **Remind** start where the reader left them: signed in and online, the screen
+  asks `GET /v1/projects/{id}/viewer` (#137, `useCampaignViewer`, the unpersisted `viewer`
+  root, erased with the account) and both offer the action until it answers or if it fails.
+  A toggle flips at once, rolls back on a refusal, and writes its answer back into that read;
+  Save also refreshes the Saved list on success. **Remind** is offered before launch only.
+  Signed out, Save opens sign-in and Remind the pre-launch page.
 - **Live funding** opens `IDEANEST_REALTIME_ORIGIN`'s socket only while the screen is
   focused, the app is in the foreground and the device is online
   (`src/lib/use-campaign-updates.ts`); frames are added with `decimal.js`. The countdown

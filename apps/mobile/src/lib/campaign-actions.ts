@@ -7,7 +7,7 @@ import { sendJson } from '../api/client';
  * <p>Each write is the endpoint the web's `CampaignActions` calls, through `sendJson`, so it
  * carries the session the way every read does and a refusal arrives as the shared `ApiError`.
  * The service makes all four idempotent: saving a saved campaign is the same success, which is
- * what makes the control's "start off" honest until #137 publishes the real state.
+ * what makes offering the action safe when `useCampaignViewer` (#137) has not answered.
  */
 
 /** `POST /v1/projects/{id}/save`. The service's `saved` decides what the control shows. */

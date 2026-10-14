@@ -2,10 +2,17 @@ package az.ideanest.community.api;
 
 import az.ideanest.community.CommunityProperties;
 import az.ideanest.community.application.BackerSignalService;
+import az.ideanest.community.application.CampaignViewerService;
 import az.ideanest.community.application.SignalCursor;
 import az.ideanest.shared.ratelimit.RateLimiter;
 import az.ideanest.shared.ratelimit.RateLimits;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.UUID;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,13 +23,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * §4.9's C-09 and C-10 over HTTP: saving a campaign, following an account, and the two lists
- * that result.
+ * §4.9's C-09 and C-10 over HTTP: saving a campaign, following an account, the two lists that
+ * result, and #137's per-campaign answer to "have I already".
  *
  * <p><strong>One controller across three path prefixes</strong>, which is unusual here and is
  * the right shape for once. {@code CommentController} already declares full paths per method
  * rather than a class-level prefix, so the mechanism is the established one; what is new is
- * that these five endpoints genuinely span {@code /v1/projects}, {@code /v1/users} and
+ * that these endpoints genuinely span {@code /v1/projects}, {@code /v1/users} and
  * {@code /v1/me}. Splitting them by prefix would put one feature in three files that share a
  * service, a rate limit and an exception advice — and the reader looking for "where is
  * following handled" would have to find two of them.
@@ -36,7 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p><strong>Rate limiting is here rather than in the service</strong>, following
  * {@code CommentController} and {@code AuthController}: it is about the transport — a 429 with
  * {@code Retry-After} — and the service should not have to know it is being reached over HTTP.
- * The budget is per account and it is spent by the four writes and not by the two reads, for
+ * The budget is per account and it is spent by the four writes and not by the three reads, for
  * the reason {@code CommunityProperties.Signals} gives.
  *
  * <p><strong>The writes return the resulting state rather than 204.</strong> A toggle whose
@@ -48,12 +55,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class BackerSignalController {
 
     private final BackerSignalService signals;
+    private final CampaignViewerService viewers;
     private final RateLimiter rateLimiter;
     private final CommunityProperties properties;
 
     public BackerSignalController(
-            BackerSignalService signals, RateLimiter rateLimiter, CommunityProperties properties) {
+            BackerSignalService signals,
+            CampaignViewerService viewers,
+            RateLimiter rateLimiter,
+            CommunityProperties properties) {
         this.signals = signals;
+        this.viewers = viewers;
         this.rateLimiter = rateLimiter;
         this.properties = properties;
     }
@@ -137,6 +149,36 @@ public class BackerSignalController {
             @RequestParam(name = "size", required = false) Integer size) {
 
         return FollowingListResponse.of(signals.following(callerOf(accessToken), SignalCursor.decode(cursor), size));
+    }
+
+    /**
+     * What the caller has already said about this campaign — #137.
+     *
+     * <p><strong>A separate read from the campaign page, and that is what keeps the page
+     * cacheable.</strong> {@code GET /v1/projects/{creatorSlug}/{projectSlug}} is public and the
+     * same for everybody; folding the reader's state into it would make every copy of it
+     * somebody's. So the page is served to everyone and this is asked afterwards, with the
+     * bearer token the client already holds.
+     *
+     * <p>{@code no-store} for {@link #saved}'s reason, said in the header rather than left to a
+     * default: this is one account's state, and a shared cache that kept it would show one
+     * reader's saved campaigns to the next. 401 without a session, from the filter chain's
+     * catch-all, and 404 for a campaign the public may not see.
+     */
+    @GetMapping("/v1/projects/{projectId}/viewer")
+    @ApiResponse(
+            responseCode = "200",
+            description = "The caller's own state on the campaign. 401 without a session; 404 for a"
+                    + " campaign that does not exist or that the public may not see. Cache-Control: no-store.",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    schema = @Schema(implementation = CampaignViewerResponse.class)))
+    public ResponseEntity<CampaignViewerResponse> viewer(
+            @AuthenticationPrincipal Jwt accessToken, @PathVariable UUID projectId) {
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(CampaignViewerResponse.of(viewers.stateOf(projectId, callerOf(accessToken))));
     }
 
     /**

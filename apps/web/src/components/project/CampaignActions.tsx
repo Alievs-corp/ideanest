@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Bell, BellOff, Bookmark, BookmarkCheck, Check, Share2 } from 'lucide-react';
 import { Pill } from '@ideanest/ui';
 import { ApiError } from '../../lib/api/problem';
 import { signInHref } from '../../lib/auth/redirect';
 import { forgetMe, remindMe, saveCampaign, type ProjectState } from '../../lib/projects/api';
 import { unsaveCampaign } from '../../lib/community/signals';
+import { viewerState } from '../../lib/community/viewer';
 import { useSession } from '../session/SessionProvider';
 import { localeHref, useLocale } from '../../i18n/navigation';
 import type { CampaignActionsCopy } from '../../lib/i18n/campaign-copy';
@@ -30,18 +31,21 @@ import { fillPlaceholders } from '../../lib/i18n/placeholders';
  * Nothing here reaches `@ideanest/ui/motion`: 116 kB of animation runtime for a button that
  * changes its word is exactly the trade the page comment refuses.
  *
- * <h2>Save: the control offers the action, because the platform publishes no state</h2>
+ * <h2>Save and Remind start where the reader left them (#137)</h2>
  *
- * §10.2 has `GET /v1/me/saved` — a cursor-paginated list — and no per-campaign "have I saved
- * this". A page cannot know the initial state without walking every page of somebody's saved
- * campaigns, so the button reads "Save" until it is pressed and reads the answer from the
- * response afterwards.
+ * The page is public and served the same to everybody, so it cannot carry the reader's own
+ * state. Once the session says somebody is signed in, `GET /v1/projects/{id}/viewer` is asked
+ * for it and the two toggles are set from the answer — unless the reader has already pressed
+ * one, in which case the answer to that press is newer than the read and wins.
  *
- * <strong>That is honest rather than merely convenient.</strong> The write is idempotent and
- * the service says so: saving an already-saved campaign is the same success. So the worst
- * case is a reader who saved this campaign last week pressing Save again and being told it is
- * saved, which is true. The alternative — a button that guesses "Saved" and is wrong — would
- * quietly unsave a campaign on the next press.
+ * <strong>Nothing moves when the answer lands.</strong> Each toggle's label is drawn over its
+ * other label, held invisible in the same grid cell, so a pill is as wide as the longer of its
+ * two words from the first paint and turning "Save" into "Saved" changes a word, not the row.
+ *
+ * A read that fails leaves the controls offering the action. That is safe rather than merely
+ * convenient: both writes are idempotent, so the worst case is a reader who saved this campaign
+ * last week pressing Save and being told, truly, that it is saved. The alternative — a button
+ * that guessed "Saved" and was wrong — would quietly unsave a campaign on the next press.
  *
  * <h2>Share: the native sheet where there is one, the clipboard where there is not</h2>
  *
@@ -114,6 +118,24 @@ function messageFor(cause: unknown, failures: CampaignActionsCopy['failures']): 
   return failures.unreachable;
 }
 
+/**
+ * A toggle's word, drawn over the word it can turn into. The other one is held invisible in the
+ * same grid cell, so the pill is as wide as the longer of the two whichever it shows and the row
+ * does not move when the viewer read or a press changes it — nor when the session answers and a
+ * signed-out reader's link takes the button's place. `invisible` and `aria-hidden` keep the held
+ * word out of the accessible name as well as out of sight.
+ */
+function ToggleLabel({ shown, other }: { readonly shown: string; readonly other: string }) {
+  return (
+    <span className="inline-grid">
+      <span className="col-start-1 row-start-1">{shown}</span>
+      <span aria-hidden="true" className="invisible col-start-1 row-start-1">
+        {other}
+      </span>
+    </span>
+  );
+}
+
 /** `Pill`'s ghost variant at `sm`, on the link a signed-out reader is given instead of Save. */
 const SIGN_IN_PILL =
   'inline-flex h-8 items-center justify-center gap-2 rounded-full bg-surface-3 px-3.5 ' +
@@ -139,8 +161,27 @@ export function CampaignActions({ projectId, state, title, path,
 
   const signedOut = status === 'signed-out';
 
+  /** Which toggles the reader has pressed: their answer is newer than the viewer read's. */
+  const pressed = useRef({ save: false, remind: false });
+
+  useEffect(() => {
+    if (status !== 'signed-in') return;
+    const controller = new AbortController();
+    viewerState(projectId, controller.signal).then(
+      (viewer) => {
+        if (!pressed.current.save) setSave(viewer.saved ? 'saved' : 'idle');
+        if (!pressed.current.remind) setRemind(viewer.reminded ? 'following' : 'idle');
+      },
+      () => {
+        // Unread is not "not saved", but offering the action is safe; see the class comment.
+      },
+    );
+    return () => controller.abort();
+  }, [status, projectId]);
+
   async function toggleSave(): Promise<void> {
     if (save === 'busy') return;
+    pressed.current.save = true;
 
     const wasSaved = save === 'saved';
     setSave('busy');
@@ -195,6 +236,7 @@ export function CampaignActions({ projectId, state, title, path,
 
   async function toggleRemind(): Promise<void> {
     if (remind === 'busy') return;
+    pressed.current.remind = true;
 
     const wasFollowing = remind === 'following';
     setRemind('busy');
@@ -230,7 +272,7 @@ export function CampaignActions({ projectId, state, title, path,
           /* One focusable element: a link drawn as the ghost pill, not a button inside a link. */
           <a href={localeHref(signInHref(path), locale)} className={SIGN_IN_PILL}>
             <Bookmark aria-hidden="true" className="size-4" />
-            {copy.save}
+            <ToggleLabel shown={copy.save} other={copy.saved} />
           </a>
         ) : (
           <Pill
@@ -255,7 +297,7 @@ export function CampaignActions({ projectId, state, title, path,
               )
             }
           >
-            {saved ? copy.saved : copy.save}
+            <ToggleLabel shown={saved ? copy.saved : copy.save} other={saved ? copy.save : copy.saved} />
           </Pill>
         )}
 
@@ -282,7 +324,7 @@ export function CampaignActions({ projectId, state, title, path,
               className="rounded-full"
             >
               <Pill variant="ghost" size="sm" iconLeft={<Bell aria-hidden="true" className="size-4" />}>
-                {copy.remind}
+                <ToggleLabel shown={copy.remind} other={copy.reminderSet} />
               </Pill>
             </a>
           ) : (
@@ -304,7 +346,10 @@ export function CampaignActions({ projectId, state, title, path,
                 )
               }
             >
-              {remind === 'following' ? copy.reminderSet : copy.remind}
+              <ToggleLabel
+                shown={remind === 'following' ? copy.reminderSet : copy.remind}
+                other={remind === 'following' ? copy.remind : copy.reminderSet}
+              />
             </Pill>
           ))}
       </div>

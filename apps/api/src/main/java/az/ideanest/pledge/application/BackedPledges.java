@@ -66,6 +66,17 @@ public interface BackedPledges {
     List<BackedPledge> ofBacker(UUID backerId);
 
     /**
+     * Whether this account holds a backing on this campaign — #137's {@code backed}, asked by
+     * the campaign page through the community module.
+     *
+     * <p>The same five states as every other answer here, and so false for a draft: somebody
+     * half-way through a checkout has not backed anything yet, and a page that told them they
+     * had would hide the button that finishes it. False again once the pledge ends without
+     * money changing hands for good — expired, cancelled, dropped, refunded or charged back.
+     */
+    boolean isBacking(UUID projectId, UUID backerId);
+
+    /**
      * A pledge, in the terms the pledge manager needs it.
      *
      * <p>Plain values rather than the entity, for {@code RewardStock.SelectableTier}'s
