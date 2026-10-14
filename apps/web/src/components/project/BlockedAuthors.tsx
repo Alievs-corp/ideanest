@@ -23,7 +23,8 @@ import { useSession } from '../session/SessionProvider';
  * a visitor sees. Hiding everything until then would blank the tab for every signed-in reader
  * on every load — nearly all of whom have blocked nobody — to spare the few who have a moment
  * of a comment they chose not to read. The moment is named in the pull request rather than
- * hidden; the app has no such moment, because its reads carry the token.
+ * hidden. The app reads the tab anonymously for its own reasons (`apps/mobile/src/lib/
+ * comments.ts`) and hides the same way.
  *
  * <h2>Blocking from here is immediate</h2>
  *

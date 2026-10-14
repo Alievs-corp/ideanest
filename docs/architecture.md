@@ -1391,8 +1391,8 @@ The most valuable and most complex module. It begins when funding closes.
 > is served `private, no-cache` rather than `public`. **The web** reads the
 > Comments tab anonymously on the server, so it applies the reader's blocks in
 > the browser from their own list (`BlockedAuthors`): the page arrives as
-> everybody's and is thinned once the list is read, a brief window the app does
-> not have. Block sits beside Report under each comment and at the foot of a
+> everybody's and is thinned once the list is read. The app reads the tab
+> anonymously too, and does the same. Block sits beside Report under each comment and at the foot of a
 > profile, asked in place, and `/settings/privacy` lists blocked accounts with
 > Unblock.
 >
