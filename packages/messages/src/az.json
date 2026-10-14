@@ -4634,7 +4634,9 @@
           "cancel": "Ləğv et",
           "save": "Yadda saxla",
           "saving": "Yadda saxlanılır"
-        }
+        },
+        "notSavedDetail": "Yazdığınız heç nə itmədi — mətn aşağıdakı sahələrdə qalır.",
+        "weightHint": "İstəyə bağlı. Çatdırılma xərci sonra buna görə hesablanır."
       },
       "tier": {
         "addTitle": "Mükafat əlavə et",
@@ -4697,7 +4699,11 @@
           "cancel": "Ləğv et",
           "save": "Yadda saxla",
           "saving": "Yadda saxlanılır"
-        }
+        },
+        "notSavedDetail": "Yazdığınız heç nə itmədi — mətn aşağıdakı sahələrdə qalır.",
+        "ratesNotSavedDetail": "Mükafat haqqında qalan hər şey yadda saxlanıldı. Yalnız ölkələr üzrə tariflər qəbul olunmadı — onları düzəldib yenidən yadda saxlayın, qalanı ikinci dəfə göndərilməyəcək.",
+        "earlyBirdHint": "Bitən sərfəli təklif. Ona ya bağlanma tarixi, ya da məhdud yer sayı lazımdır — onsuz bu, insanları boş yerə tələsdirən etiketli adi mükafatdır.",
+        "secretHint": "İctimai siyahıda görünmür, ona gizli token ilə çatılır. Mükafatı yenidən ictimai etmək tokeni ləğv edir, ona görə artıq göndərilmiş keçidlər işləməyəcək."
       },
       "deleteItemNamed": "«{name}» silinsin?",
       "deleteRewardNamed": "«{title}» silinsin?",
@@ -4814,7 +4820,11 @@
           "unlimited": "Yer sayı limitsizdir",
           "remaining": "{limit} yerdən {remaining} qalıb"
         }
-      }
+      },
+      "atCapacityBody": "Kampaniya ən çox {max} mükafat təklif edə bilər. Yenisini əlavə etməzdən əvvəl birini silin və ya birləşdirin.",
+      "deleteItemBody": "Mükafatın tərkibində olan əşya silinə bilməz — əvvəlcə onu mükafatdan çıxarın. Bu səhifənin bildiyinə görə bu əşya heç bir mükafatda deyil, xidmət isə bunu yenidən yoxlayır.",
+      "deleteRewardBody": "Kimsə mükafatı seçəndən sonra onu silmək olmur, yalnız gizlətmək olar — ona görə silmək hələ heç kim seçməyəndə təklif olunur.",
+      "deliversOn": "Çatdırılma: {date}"
     },
     "drawer": {
       "cancel": "Ləğv et",
@@ -4875,7 +4885,16 @@
         "risks": "Risklər və çətinliklər",
         "risksHint": "Nə səhv gedə bilər və siz bununla nə edəcəksiniz. Ən azı {min} simvol; baxışa göndərməzdən əvvəl mütləqdir.",
         "risksPlaceholder": "Adətən üç şey olur: istehsal, çatdırılma və vaxt. Nəyin artıq həll olunduğunu, nəyin isə yox, yazın.",
-        "charactersNeeded": "Baxışa göndərmək üçün lazım olan {min} simvoldan {count} yazılıb"
+        "charactersNeeded": "Baxışa göndərmək üçün lazım olan {min} simvoldan {count} yazılıb",
+        "incomplete": {
+          "one": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
+          "few": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
+          "many": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək.",
+          "other": "Tamamlanmamış blok sayı: {count}. Blokların yanındakı mesajlar nəyin çatışmadığını deyir; onlar doldurulan kimi saxlama davam edəcək."
+        },
+        "untitledSection": "Adsız bölmə",
+        "readOnlyDetail": "Bu hekayə redaktorun anladığından daha yeni formatda yazılıb. Cari redaktoru almaq üçün səhifəni yenidən yükləyin. Heç nə dəyişdirilməyib və hekayə layihə səhifənizdə qalır.",
+        "notSavedDetail": "Yazdıqlarınızın heç biri itməyib — hamısı bu səhifədədir və yenidən göndəriləcək."
       },
       "blocks": {
         "heading": "Hekayə",
@@ -4932,7 +4951,11 @@
           "embed": "YouTube və ya Vimeo videosu.",
           "rule": "Üfüqi ayırıcı."
         },
-        "empty": "Hələ burada heç nə yoxdur. Bir abzasla başlayın — kampaniyaların çoxu məhsulun nə olduğu və kimin üçün olduğu ilə açılır."
+        "empty": "Hələ burada heç nə yoxdur. Bir abzasla başlayın — kampaniyaların çoxu məhsulun nə olduğu və kimin üçün olduğu ilə açılır.",
+        "embedHint": "Başlıq ekran oxuyucusunun «çərçivə» sözü əvəzinə oxuduğu mətndir. Yalnız YouTube və Vimeo videoları yerləşdirilə bilər.",
+        "altHint": "Məcburidir. Ekran oxuyucusundan istifadə edən dəstəkçi şəkil əvəzinə bunu eşidir, ona görə faylın adını yox, şəkildə nə göründüyünü təsvir edin.",
+        "pixels": "{size} piksel",
+        "imageAddressHint": "Artıq dərc olunmuş şəklin ünvanını verin. Onun ölçüsü brauzerinizdə oxunur və hekayə ilə birlikdə saxlanılır ki, səhifə şəkil yüklənməmişdən əvvəl onun yerini ayıra bilsin."
       },
       "history": {
         "title": "Əvvəlki versiyalar",
@@ -4960,7 +4983,23 @@
           "few": "{count} blok · {characters} simvol",
           "many": "{count} blok · {characters} simvol",
           "other": "{count} blok · {characters} simvol"
-        }
+        },
+        "version": "Versiya {number}",
+        "mostRecent": "ən son",
+        "characters": {
+          "one": "{count} simvol",
+          "few": "{count} simvol",
+          "many": "{count} simvol",
+          "other": "{count} simvol"
+        },
+        "hide": "Gizlət",
+        "savedAt": "Versiya {number} saxlanılma vaxtı: {date}. Həcmi: {characters}.",
+        "currentHolds": "Hazırkı hekayənin həcmi: {characters}. Əvəz olunmazdan əvvəl o, versiya kimi saxlanılır, ona görə bunu elə bu siyahıdan geri qaytarmaq olar.",
+        "loadFailed": "Versiya tarixçəsi yüklənə bilmədi.",
+        "versionFailed": "Bu versiya yüklənə bilmədi.",
+        "restoreFailed": "Bu versiya bərpa oluna bilmədi. Heç nə dəyişməyib.",
+        "unreachable": "Xidmətə qoşulmaq mümkün olmadı. Bağlantını yoxlayıb yenidən cəhd edin.",
+        "newerFormat": "Bu versiya redaktorun anladığından daha yeni formatda yazılıb. Cari redaktoru almaq üçün səhifəni yenidən yükləyin."
       },
       "toolbar": {
         "formattingFor": "«{label}» üçün formatlama",
@@ -5032,7 +5071,11 @@
           "many": "Bu, həddən {count} simvol uzundur. Cavab ən çox {max} simvol ola bilər.",
           "other": "Bu, həddən {count} simvol uzundur. Cavab ən çox {max} simvol ola bilər."
         }
-      }
+      },
+      "heading": "Suallar",
+      "explanation": "Bunlar kampaniyanın Suallar bölməsində bu sıra ilə görünür. Siyahının mənası dəstəkçinin şərhlərdə verəcəyi suala əvvəlcədən cavab verməkdir.",
+      "atLimitBody": "Kampaniya ən çox {max} sual dərc edə bilər. Yenisini əlavə etmək üçün birini silin.",
+      "deleteBody": "Sual üzrə heç kimə borc yoxdur, ona görə o birdəfəlik silinir — mükafatdan fərqli olaraq, mükafatı kimsə seçəndən sonra onu yalnız gizlətmək olar."
     },
     "prelaunch": {
       "loadingLabel": "Kampaniya yüklənir",
@@ -5067,7 +5110,8 @@
       "confirmBody": "Başlıq, qısa təsvir və örtük şəkli hər kəsin aça biləcəyi bir linkdə ictimai olur. Bunu geri qaytarmaq olmaz.",
       "cancel": "Ləğv et",
       "opening": "Açılır",
-      "confirmOpen": "Səhifəni aç"
+      "confirmOpen": "Səhifəni aç",
+      "confirmDetail": "Mükafatlarınız, hekayəniz və maliyyə hədəfiniz haqqında heç nə dərc olunmur. Kampaniya yoxlanılıb başladılana qədər pul qəbul etmir."
     },
     "review": {
       "loadFailedTitle": "Kampaniyanı yükləmək olmadı",
@@ -5116,7 +5160,10 @@
         "many": "{count} mütləq bənd hələ tamamlanmayıb.",
         "other": "{count} mütləq bənd hələ tamamlanmayıb."
       },
-      "moderatorNote": "Moderator kampaniyanı oxuyur və ya təsdiqləyir, ya dəyişiklik istəyir, ya da rədd edir. Baxış gedərkən redaktə etmək olar."
+      "moderatorNote": "Moderator kampaniyanı oxuyur və ya təsdiqləyir, ya dəyişiklik istəyir, ya da rədd edir. Baxış gedərkən redaktə etmək olar.",
+      "done": "Hazırdır",
+      "launchExplanation": "Kampaniya başladığı andan platformanın hər yerində görünür və dəstək qəbul etməyə başlayır. O andan hədəf və son tarix dəyişmir, canlı kampaniyanı yenidən qaralamaya qaytarmaq olmaz.",
+      "confirmLaunchBody": "Kampaniya dərhal ictimai olur və dəstək qəbul etməyə başlayır. Maliyyə hədəfi və son tarix başladılanda sabitlənir, sonra onları redaktə etmək olmaz. Canlı kampaniyanı yenidən qaralamaya qaytarmaq da olmaz."
     },
     "cover": {
       "label": "Örtük şəkli",
@@ -5223,6 +5270,21 @@
       "faq": "Kampaniyanızın öz səhifəsində cavablandırdığı suallar və dəstəkçilərin onları oxuduğu sıra.",
       "prelaunch": "Başlanğıcdan əvvəlki səhifəni açın, linki paylaşın və kampaniyanızın açılışından xəbər tutmaq istəyənləri toplayın.",
       "review": "Kampaniyanın nə qədər hazır olduğu, moderasiyanın onun haqqında dedikləri və baxışa göndərilməsi."
+    },
+    "failures": {
+      "signedOut": "Hesabdan çıxmısınız. Yenidən daxil olun — yazdıqlarınızın heç biri itməyib.",
+      "forbidden": "Bu layihəni redaktə etməyə icazəniz yoxdur.",
+      "notFound": "Bu layihə artıq mövcud deyil.",
+      "rejected": "Xidmət dəyişikliyi qəbul etmədi. Aşağıda qeyd olunan sahələri yoxlayın.",
+      "generic": "Dəyişiklik saxlanıla bilmədi. Yenidən cəhd edin.",
+      "unreachable": "Xidmətlə əlaqə qurulmadı, ona görə də heç nə saxlanmadı. Yenidən cəhd edin.",
+      "conflict": "Bu səhifə açılandan bəri layihə dəyişib. Cari versiyanı görmək üçün səhifəni yenidən yükləyin."
+    },
+    "load": {
+      "forbidden": "Bu layihəyə girişiniz yoxdur.",
+      "notFound": "Belə layihə tapılmadı.",
+      "refused": "Xidmət sorğunu rədd etdi. Yenidən cəhd edin.",
+      "unreachable": "Xidmətlə əlaqə qurulmadı. Bağlantını yoxlayıb yenidən cəhd edin."
     }
   },
   "moderation": {

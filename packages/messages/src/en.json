@@ -4634,7 +4634,9 @@
           "cancel": "Cancel",
           "save": "Save",
           "saving": "Saving"
-        }
+        },
+        "notSavedDetail": "Nothing you typed has been lost — it is still in the fields below.",
+        "weightHint": "Optional, and what shipping is worked out from later."
       },
       "tier": {
         "addTitle": "Add a reward",
@@ -4697,7 +4699,11 @@
           "cancel": "Cancel",
           "save": "Save",
           "saving": "Saving"
-        }
+        },
+        "notSavedDetail": "Nothing you typed has been lost — it is still in the fields below.",
+        "ratesNotSavedDetail": "Everything else about the reward was saved. Only the per-country rates were refused, so fix them and save again — the rest will not be sent twice.",
+        "earlyBirdHint": "A better deal that runs out. It needs either a closing date or a limited number of places — without one it is an ordinary reward with a label that hurries people for nothing.",
+        "secretHint": "Left out of the public list and reached by a private token instead. Making it public again destroys that token, so any link already sent stops working."
       },
       "deleteItemNamed": "Delete {name}?",
       "deleteRewardNamed": "Delete {title}?",
@@ -4814,7 +4820,11 @@
           "unlimited": "Unlimited places",
           "remaining": "{remaining} of {limit} places left"
         }
-      }
+      },
+      "atCapacityBody": "A campaign can offer {max} rewards. Delete or combine one before adding another.",
+      "deleteItemBody": "An item that a reward contains cannot be deleted — take it out of the reward first. This one is not in any reward as far as this page knows, and the service checks again.",
+      "deleteRewardBody": "Once somebody has backed a reward it can no longer be deleted, only hidden — so deleting is offered while nobody has.",
+      "deliversOn": "Delivers {date}"
     },
     "drawer": {
       "cancel": "Cancel",
@@ -4875,7 +4885,16 @@
         "risks": "Risks and challenges",
         "risksHint": "What could go wrong, and what you will do about it. At least {min} characters, and required before you can submit.",
         "risksPlaceholder": "Manufacturing, shipping, and timing are the usual three. Say what is already settled and what is not.",
-        "charactersNeeded": "{count} of {min} characters needed to submit"
+        "charactersNeeded": "{count} of {min} characters needed to submit",
+        "incomplete": {
+          "one": "{count} block is incomplete. The message beside it says what is missing, and saving resumes as soon as it is filled in.",
+          "few": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in.",
+          "many": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in.",
+          "other": "{count} blocks are incomplete. The messages beside them say what is missing, and saving resumes as soon as they are filled in."
+        },
+        "untitledSection": "Untitled section",
+        "readOnlyDetail": "It was written in a newer format than this editor understands. Reload the page to get the current editor. Nothing has been changed, and the story is still on your project page.",
+        "notSavedDetail": "Nothing you have written has been lost — it is still on this page and will be sent again."
       },
       "blocks": {
         "heading": "Story",
@@ -4932,7 +4951,11 @@
           "embed": "A YouTube or Vimeo video.",
           "rule": "A horizontal divider."
         },
-        "empty": "Nothing here yet. Add a paragraph to begin — most campaigns open with what the product is and who it is for."
+        "empty": "Nothing here yet. Add a paragraph to begin — most campaigns open with what the product is and who it is for.",
+        "embedHint": "The title is what a screen reader announces instead of “frame”. Only YouTube and Vimeo can be embedded.",
+        "altHint": "Required. It is what a backer using a screen reader receives instead of the picture, so describe what it shows rather than naming the file.",
+        "pixels": "{size} pixels",
+        "imageAddressHint": "Give the address of an image that is already published. Its size is read in your browser and stored with the story, so the page can reserve its space before it loads."
       },
       "history": {
         "title": "Earlier versions",
@@ -4960,7 +4983,23 @@
           "few": "{count} blocks · {characters} characters",
           "many": "{count} blocks · {characters} characters",
           "other": "{count} blocks · {characters} characters"
-        }
+        },
+        "version": "Version {number}",
+        "mostRecent": "most recent",
+        "characters": {
+          "one": "{count} character",
+          "few": "{count} characters",
+          "many": "{count} characters",
+          "other": "{count} characters"
+        },
+        "hide": "Hide",
+        "savedAt": "Version {number} was saved {date} and holds {characters}.",
+        "currentHolds": "The story you have now holds {characters}. It is kept as a version before being replaced, so this can be undone from this same list.",
+        "loadFailed": "The version history could not be loaded.",
+        "versionFailed": "That version could not be loaded.",
+        "restoreFailed": "That version could not be restored. Nothing has changed.",
+        "unreachable": "The service could not be reached. Check your connection and try again.",
+        "newerFormat": "This version was written in a newer format than this editor understands. Reload the page to get the current editor."
       },
       "toolbar": {
         "formattingFor": "Formatting for {label}",
@@ -5032,7 +5071,11 @@
           "many": "That is {count} characters too long. An answer is at most {max}.",
           "other": "That is {count} characters too long. An answer is at most {max}."
         }
-      }
+      },
+      "heading": "Questions",
+      "explanation": "These appear on the campaign’s FAQ tab, in this order. Answering the question a backer would otherwise ask in the comments is the point of the list.",
+      "atLimitBody": "A campaign may publish {max} questions. Delete one to add another.",
+      "deleteBody": "Nothing is owed against a question, so it goes for good — unlike a reward tier, which can only be hidden once somebody has chosen it."
     },
     "prelaunch": {
       "loadingLabel": "Loading this campaign",
@@ -5067,7 +5110,8 @@
       "confirmBody": "The title, summary, and cover image become public at a link anyone can open. This cannot be undone.",
       "cancel": "Cancel",
       "opening": "Opening",
-      "confirmOpen": "Open the page"
+      "confirmOpen": "Open the page",
+      "confirmDetail": "Nothing about your rewards, story, or funding goal is published, and the campaign does not take money until it is reviewed and launched."
     },
     "review": {
       "loadFailedTitle": "This campaign could not be loaded",
@@ -5116,7 +5160,10 @@
         "many": "{count} required items are not done yet.",
         "other": "{count} required items are not done yet."
       },
-      "moderatorNote": "A moderator reads the campaign and either clears it, asks for changes, or refuses it. You can keep editing while it is in review."
+      "moderatorNote": "A moderator reads the campaign and either clears it, asks for changes, or refuses it. You can keep editing while it is in review.",
+      "done": "Done",
+      "launchExplanation": "The campaign appears everywhere on the platform and starts taking pledges the moment it launches. Its goal and its deadline freeze from that point, and a live campaign cannot be taken back to a draft.",
+      "confirmLaunchBody": "It becomes public immediately and starts taking pledges. The funding goal and the deadline are fixed on launch and cannot be edited afterwards, and a live campaign cannot be taken back to a draft."
     },
     "cover": {
       "label": "Cover image",
@@ -5223,6 +5270,21 @@
       "faq": "The questions your campaign answers on its own page, and the order backers read them in.",
       "prelaunch": "Open a pre-launch page, share the link, and collect the people who want to be told when your campaign opens.",
       "review": "How complete your campaign is, what moderation has said about it, and submitting it for review."
+    },
+    "failures": {
+      "signedOut": "You have been signed out. Sign in again — nothing you typed has been lost.",
+      "forbidden": "You are not allowed to edit this project.",
+      "notFound": "This project no longer exists.",
+      "rejected": "The service rejected the change. Check the fields marked below.",
+      "generic": "The change could not be saved. Try again.",
+      "unreachable": "The service could not be reached, so nothing was saved. Try again.",
+      "conflict": "The project has changed since this page was opened. Reload it to see the current version."
+    },
+    "load": {
+      "forbidden": "You do not have access to this project.",
+      "notFound": "That project could not be found.",
+      "refused": "The service refused the request. Try again.",
+      "unreachable": "The service could not be reached. Check your connection and try again."
     }
   },
   "moderation": {
