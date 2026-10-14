@@ -24,17 +24,17 @@ import {
  * are `@ideanest/campaign/report` since #155, so the app's report sheet files exactly what this
  * dialog files. They are re-exported below under the same names; sending is this file's.
  *
- * <h2>Three targets, one budget, one function</h2>
+ * <h2>Four targets, one budget, one function</h2>
  *
- * `ContentReportController` publishes `/projects/{id}/report`, `/users/{slug}/report` and
- * `/comments/{id}/report` on one controller sharing one rate limit, and says why: separate
- * counters would let somebody who had spent their allowance on campaigns spend a second one
- * on people. This mirrors that — one function over a target type, so a fourth surface cannot
- * arrive with its own error handling.
+ * `ContentReportController` publishes `/projects/{id}/report`, `/users/{slug}/report`,
+ * `/comments/{id}/report` and `/updates/{id}/report` on one controller sharing one rate limit,
+ * and says why: separate counters would let somebody who had spent their allowance on campaigns
+ * spend a second one on people. This mirrors that — one function over a target type, so a fifth
+ * surface cannot arrive with its own error handling.
  *
  * <h2>Reporting needs an account, and that is the mechanism rather than friction</h2>
  *
- * All three endpoints fall through to the catch-all rule and require a bearer token. The
+ * All four endpoints fall through to the catch-all rule and require a bearer token. The
  * controller's own note: the duplicate suppression this feature is built on is unstateable
  * without an identity to compare. So the control is offered to a signed-in reader and a
  * sign-in prompt to everybody else — never a form that collects a complaint and then loses it.

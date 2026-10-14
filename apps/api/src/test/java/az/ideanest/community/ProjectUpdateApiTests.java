@@ -198,6 +198,28 @@ class ProjectUpdateApiTests extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("the public list names each update, so a reader can report the one they read (#255)")
+    void aListedUpdateCanBeReported() {
+        Account creator = account("updates-creator");
+        UUID project = liveCampaign(creator);
+        ResponseEntity<Map<String, Object>> published =
+                publish(project, creator, update("Moulds arrived", "PUBLIC", null));
+
+        Map<String, Object> listed = anonymousList(project).getFirst();
+        // The id the creator was answered with is the one every reader sees.
+        assertThat(listed).containsEntry("id", published.getBody().get("id"));
+        assertThat(listed.get("id")).isNotNull();
+
+        ResponseEntity<Map<String, Object>> reported = rest.exchange(
+                "/v1/updates/" + listed.get("id") + "/report",
+                HttpMethod.POST,
+                new HttpEntity<>(Map.of("reason", "SPAM"), bearer(account("updates-reader").accessToken())),
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+        assertThat(reported.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+    }
+
+    @Test
     @DisplayName("numbers are allocated in order, per campaign, starting again at 1")
     void numbersAreAllocatedPerCampaign() {
         Account creator = account("updates-numbering");

@@ -1,4 +1,4 @@
-import { CreatorAbout, CreatorCampaigns } from './creator/creator-panel';
+import { CreatorAbout, CreatorCampaigns, CreatorReport } from './creator/creator-panel';
 import { otherCampaigns, useCreatorProfile, useCreatorProjects } from './creator/creator-profile';
 import {
   INACTIVE_TAB,
@@ -16,7 +16,7 @@ import {
  * rows (`./creator/creator-panel.tsx`): the heading, the avatar (the profile's, else the
  * campaign's), the name — a link to `u/[slug]` with an arrow only when the profile was read —
  * "Member since {day}" and the biography; then up to six of the creator's other campaigns, this
- * one left out, and "See everything {name} has made".
+ * one left out, and "See everything {name} has made"; then "Report this account" (#255).
  *
  * <p>While the first answers are on their way the body is empty and `loading`, so the screen's
  * placeholder stands in rather than a name that turns into a link a moment later. A profile that
@@ -48,6 +48,12 @@ export function useCreatorTab(context: CampaignTabContext): CampaignTabBody {
       render: () => <CreatorCampaigns projects={others} profile={read} />,
     });
   }
+  rows.push({
+    key: 'report',
+    render: () => (
+      <CreatorReport creator={campaign.creator} profile={read} offline={context.offline} />
+    ),
+  });
 
   return { rows, footer: null, onEndReached: null, refresh, loading: false };
 }

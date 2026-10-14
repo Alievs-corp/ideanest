@@ -6426,6 +6426,8 @@ export interface components {
             /** Format: uuid */
             authorId?: string;
             body?: string;
+            /** Format: uuid */
+            id?: string;
             /** Format: int32 */
             number?: number;
             /** Format: date-time */

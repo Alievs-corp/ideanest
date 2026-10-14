@@ -16323,6 +16323,10 @@
           "body" : {
             "type" : "string"
           },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "number" : {
             "type" : "integer",
             "format" : "int32"

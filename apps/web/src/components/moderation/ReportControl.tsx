@@ -32,21 +32,22 @@ import { localeHref, useLocale } from '../../i18n/navigation';
 /**
  * §4.9's C-06 and C-07 — telling the platform that something is wrong. Issue #286.
  *
- * <h2>One control for three kinds of target</h2>
+ * <h2>One control for four kinds of target</h2>
  *
- * `ContentReportController` publishes three endpoints on one controller sharing one rate-limit
+ * `ContentReportController` publishes four endpoints on one controller sharing one rate-limit
  * budget, and gives the reason: separate counters would let somebody who had spent their
  * allowance on campaigns spend a second one on people. This is the same argument on this side
- * — one component over a target type, so the fourth surface to grow a Report control cannot
+ * — one component over a target type, so the next surface to grow a Report control cannot
  * arrive with its own copy of the reasons, its own error handling, or its own idea of when a
  * detail is required.
  *
- * Today it is mounted on the campaign page. The comment tab (#285) and the public profile
- * (#274) mount it as they land, and neither will need to write anything but a `target`.
+ * It is mounted at the foot of the campaign page, under every comment (#285) and every update
+ * (#255), in the Creator tab (#255) and on the public profile (#274), and none of them writes
+ * anything but a `target`.
  *
  * <h2>Signed out is a link, not a form</h2>
  *
- * All three endpoints require a bearer token. The controller is explicit that this is the
+ * All four endpoints require a bearer token. The controller is explicit that this is the
  * mechanism rather than friction: the duplicate suppression the feature is built on "is
  * unstateable without an identity to compare". So a visitor who is not signed in is offered a
  * sign-in that returns them here, and never a form that collects a complaint and then loses
@@ -66,7 +67,7 @@ import { localeHref, useLocale } from '../../i18n/navigation';
  * on file, as a 202. There is no way to tell the two apart from here and no reason to: the
  * acknowledgement says the platform has the complaint, which is true either way.
  *
- * <h2>Every word is a prop, and the three targets are three sentences</h2>
+ * <h2>Every word is a prop, and the four targets are four sentences</h2>
  *
  * This is a client component and cannot read the catalogue — issue #85, and
  * `lib/i18n/report-copy.ts` carries the rest. What is worth knowing here is that nothing is

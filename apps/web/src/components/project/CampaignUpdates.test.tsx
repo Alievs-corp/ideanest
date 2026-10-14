@@ -6,6 +6,8 @@ import { resolveServerTree } from '../../test-support/server-tree';
 import { expectNoViolations } from '../../test-axe';
 import { translatorFor } from '../../test-copy';
 import { fillPlaceholders } from '../../lib/i18n/placeholders';
+import { reportControlCopyFrom } from '../../lib/i18n/report-copy';
+import type { ReportControlProps } from '../moderation/ReportControl';
 
 /** `campaign.updates.number`, filled the way the catalogue fills it — #142, not retyped English. */
 const updateLabel = (number: number) =>
@@ -68,8 +70,28 @@ vi.mock('next-intl/server', async () => {
  *     crawler.
  */
 
+/*
+ * `ReportControl` is a client island with its own suite; here it is a marker that says which
+ * target it was handed, so these tests are about the wiring and need no session.
+ */
+vi.mock('../moderation/ReportControl', () => ({
+  ReportControl: ({ target, name, returnTo }: ReportControlProps) => (
+    <span data-testid="report-control" data-target={JSON.stringify(target)} data-name={name} data-return={returnTo} />
+  ),
+}));
+
+const REPORT = {
+  reportCopy: reportControlCopyFrom(
+    translatorFor('moderation.report'),
+    translatorFor('admin.moderation'),
+    translatorFor('common'),
+  ),
+  returnTo: '/projects/aysel/solar-lamp?tab=updates',
+};
+
 function update(overrides: Partial<CampaignUpdate> = {}): CampaignUpdate {
   return {
+    id: 'update-7',
     number: 7,
     title: 'The moulds were late',
     body: 'The factory slipped by two weeks.',
@@ -93,7 +115,7 @@ describe('the updates tab', () => {
   it('prints the number the service allocated rather than the position in the list', async () => {
     render(
       await resolveServerTree(
-        <CampaignUpdates
+        <CampaignUpdates {...REPORT}
         page={page({ updates: [update({ number: 7 }), update({ number: 2, title: 'Two' })] })}
         olderHref={null}
         paged={false}
@@ -110,7 +132,7 @@ describe('the updates tab', () => {
     route.locale = 'ru';
     render(
       await resolveServerTree(
-        <CampaignUpdates page={page({ updates: [update({ number: 7 })] })} olderHref={null} paged={false} />,
+        <CampaignUpdates {...REPORT} page={page({ updates: [update({ number: 7 })] })} olderHref={null} paged={false} />,
       ),
     );
 
@@ -119,7 +141,7 @@ describe('the updates tab', () => {
   });
 
   it('gives every update a heading and a machine-readable publication date', async () => {
-    const { container } = render(await resolveServerTree(<CampaignUpdates page={page()} olderHref={null} paged={false} />));
+    const { container } = render(await resolveServerTree(<CampaignUpdates {...REPORT} page={page()} olderHref={null} paged={false} />));
 
     expect(
       screen.getByRole('heading', { level: 3, name: 'The moulds were late' }),
@@ -130,7 +152,7 @@ describe('the updates tab', () => {
   it('renders a backers-only update the service sent, and marks it in words', async () => {
     render(
       await resolveServerTree(
-        <CampaignUpdates
+        <CampaignUpdates {...REPORT}
         page={page({ updates: [update({ visibility: 'BACKERS_ONLY' })] })}
         olderHref={null}
         paged={false}
@@ -145,7 +167,7 @@ describe('the updates tab', () => {
   it('renders the body as text, never as markup', async () => {
     render(
       await resolveServerTree(
-        <CampaignUpdates
+        <CampaignUpdates {...REPORT}
         page={page({ updates: [update({ body: '<img src=x onerror="alert(1)">' })] })}
         olderHref={null}
         paged={false}
@@ -159,7 +181,7 @@ describe('the updates tab', () => {
   it('keeps an update that is only a title', async () => {
     render(
       await resolveServerTree(
-        <CampaignUpdates
+        <CampaignUpdates {...REPORT}
         page={page({ updates: [update({ body: '' })] })}
         olderHref={null}
         paged={false}
@@ -171,20 +193,20 @@ describe('the updates tab', () => {
   });
 
   it('says the campaign has posted nothing only when the campaign has posted nothing', async () => {
-    render(await resolveServerTree(<CampaignUpdates page={page({ updates: [] })} olderHref={null} paged={false} />));
+    render(await resolveServerTree(<CampaignUpdates {...REPORT} page={page({ updates: [] })} olderHref={null} paged={false} />));
 
     expect(screen.getByText(/has not posted an update yet/u)).toBeInTheDocument();
   });
 
   it('blames the service, not the creator, when the read was refused', async () => {
-    render(await resolveServerTree(<CampaignUpdates page={null} olderHref={null} paged={false} />));
+    render(await resolveServerTree(<CampaignUpdates {...REPORT} page={null} olderHref={null} paged={false} />));
 
     expect(screen.getByText(/could not be loaded/u)).toBeInTheDocument();
     expect(screen.queryByText(/has not posted an update yet/u)).not.toBeInTheDocument();
   });
 
   it('says "no older updates" rather than "none at all" past the first page', async () => {
-    render(await resolveServerTree(<CampaignUpdates page={page({ updates: [] })} olderHref={null} paged />));
+    render(await resolveServerTree(<CampaignUpdates {...REPORT} page={page({ updates: [] })} olderHref={null} paged />));
 
     expect(screen.getByText('There are no older updates.')).toBeInTheDocument();
   });
@@ -192,7 +214,7 @@ describe('the updates tab', () => {
   it('offers the older page as a link, so it is reachable without JavaScript', async () => {
     render(
       await resolveServerTree(
-        <CampaignUpdates
+        <CampaignUpdates {...REPORT}
         page={page({ nextCursor: 3 })}
         olderHref="/projects/ayan/coffee-table-book?tab=updates&from=3"
         paged={false}
@@ -203,6 +225,25 @@ describe('the updates tab', () => {
     expect(screen.getByRole('link', { name: 'Older updates' })).toHaveAttribute('href', '/en/projects/ayan/coffee-table-book?tab=updates&from=3');
   });
 
+  it('ends each update on a Report control addressed to that update (#255)', async () => {
+    render(await resolveServerTree(<CampaignUpdates {...REPORT} page={page()} olderHref={null} paged={false} />));
+
+    const control = screen.getByTestId('report-control');
+    expect(JSON.parse(control.dataset['target'] ?? '')).toEqual({ kind: 'update', id: 'update-7' });
+    expect(control.dataset['name']).toBe('The moulds were late');
+    expect(control.dataset['return']).toBe(REPORT.returnTo);
+  });
+
+  it('offers no Report control on a row the service sent without an id', async () => {
+    render(
+      await resolveServerTree(
+        <CampaignUpdates {...REPORT} page={page({ updates: [update({ id: null })] })} olderHref={null} paged={false} />,
+      ),
+    );
+
+    expect(screen.queryByTestId('report-control')).not.toBeInTheDocument();
+  });
+
   /**
    * §4.9 lists C-05 — comments on an update — among the things that are not built, and the
    * comment endpoints address a campaign rather than an update. A control here would file a
@@ -210,7 +251,7 @@ describe('the updates tab', () => {
    * find it.
    */
   it('offers no comment control on an update', async () => {
-    render(await resolveServerTree(<CampaignUpdates page={page()} olderHref={null} paged={false} />));
+    render(await resolveServerTree(<CampaignUpdates {...REPORT} page={page()} olderHref={null} paged={false} />));
 
     expect(screen.queryByRole('button', { name: /comment|reply/iu })).not.toBeInTheDocument();
   });
@@ -220,7 +261,7 @@ describe('accessibility', () => {
   /** #129. The timeline, where every entry carries a time element and a heading. */
   it('leaves no automatically detectable violation', async () => {
     const { container } = render(
-      await resolveServerTree(<CampaignUpdates page={page()} olderHref={null} paged={false} />),
+      await resolveServerTree(<CampaignUpdates {...REPORT} page={page()} olderHref={null} paged={false} />),
     );
 
     await expectNoViolations(container);

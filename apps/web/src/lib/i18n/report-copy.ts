@@ -30,7 +30,7 @@ import type { ReportTarget } from '../moderation/report';
  * under `moderation.report.descriptions`, because "Not original work" is self-explanatory to
  * somebody who knows §5.4's taxonomy and to nobody else.
  *
- * <h2>Three targets, three whole sentences, never a noun in a slot</h2>
+ * <h2>Four targets, four whole sentences, never a noun in a slot</h2>
  *
  * The dialog says "Report this campaign" and "Nothing about the comment changes because of
  * it". Building those from one template and a noun works in English and breaks everywhere
@@ -46,7 +46,7 @@ export interface ReportTranslator {
   raw(key: string): unknown;
 }
 
-/** One phrase per target kind — `campaign`, `account`, `comment`. */
+/** One phrase per target kind — `campaign`, `account`, `comment`, `update`. */
 export type PerTarget = Readonly<Record<ReportTarget['kind'], string>>;
 
 /** §4.9's C-06 and C-07 — the dialog a member of the public files a complaint in. */

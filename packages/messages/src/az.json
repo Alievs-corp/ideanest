@@ -5303,7 +5303,8 @@
       "triggerOn": {
         "campaign": "Bu kampaniyadan şikayət et",
         "account": "Bu hesabdan şikayət et",
-        "comment": "Bu şərhdən şikayət et"
+        "comment": "Bu şərhdən şikayət et",
+        "update": "Bu yenilikdən şikayət et"
       },
       "dialogLabel": "{name} barəsində şikayət",
       "commentOn": "{title} kampaniyasındakı bir şərh",
@@ -5313,7 +5314,8 @@
       "filedBody": {
         "campaign": "Şikayətiniz bizdədir. Buna görə kampaniyada heç nə dəyişmir — şikayət bir insanın baxması üçün müraciətdir, səsvermə deyil.",
         "account": "Şikayətiniz bizdədir. Buna görə hesabda heç nə dəyişmir — şikayət bir insanın baxması üçün müraciətdir, səsvermə deyil.",
-        "comment": "Şikayətiniz bizdədir. Buna görə şərhdə heç nə dəyişmir — şikayət bir insanın baxması üçün müraciətdir, səsvermə deyil."
+        "comment": "Şikayətiniz bizdədir. Buna görə şərhdə heç nə dəyişmir — şikayət bir insanın baxması üçün müraciətdir, səsvermə deyil.",
+        "update": "Şikayətiniz bizdədir. Buna görə yenilikdə heç nə dəyişmir — şikayət bir insanın baxması üçün müraciətdir, səsvermə deyil."
       },
       "close": "Bağla",
       "errorTitle": "Göndərilmədi",

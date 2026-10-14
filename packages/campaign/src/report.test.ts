@@ -51,6 +51,8 @@ describe('the request', () => {
     // By slug — #143. The profile carries no account id.
     expect(reportPath({ kind: 'account', slug: 'ayan q' })).toBe('/v1/users/ayan%20q/report');
     expect(reportPath({ kind: 'comment', id: 'c1' })).toBe('/v1/comments/c1/report');
+    // #255: an update is reported by the id the public list now carries.
+    expect(reportPath({ kind: 'update', id: 'u1' })).toBe('/v1/updates/u1/report');
     expect(reportPath({ kind: 'campaign', id: 'p 1/../admin' })).toBe('/v1/projects/p%201%2F..%2Fadmin/report');
   });
 
